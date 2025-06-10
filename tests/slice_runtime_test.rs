@@ -4,42 +4,16 @@
 //! including creation, growth, memory management, and utility functions.
 
 use std::ffi::c_void;
-use cursed::runtime::slice_runtime::{SliceRuntime, SliceHeader, SliceConfiguration, SliceStatistics};
+use cursed::runtime::slice_runtime::  :: SliceRuntime, SliceHeader, SliceConfiguration, SliceStatistics;
 use cursed::runtime::slice_utils::*;
 
 mod common;
 
 #[test]
-fn test_slice_header_basic_operations() {
-    // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    // Test empty header
-    let header = SliceHeader::new()
-    assert!(header.ptr.is_null()
-    assert_eq!(header.len, 0)
-    assert_eq!(header.capacity, 0)
-    assert!(header.is_empty()
-    assert!(header.is_valid()
-    assert_eq!(header.remaining_capacity(), 0)
-    
-    // Test header with parameters;
-    let test_ptr = Box::into_raw(Box::new(42i32) as *mut c_void;
-    let header = SliceHeader::with_params(test_ptr, 5, 10)
-    assert_eq!(header.ptr, test_ptr)
-    assert_eq!(header.len, 5);
-    assert_eq!(header.capacity, 10);
-    assert!(!header.is_empty());
-    assert!(header.is_valid());
-    assert_eq!(header.remaining_capacity(), 5);
-    
-    // Cleanup
-    unsafe { drop(Box::from_raw(test_ptr as *mut i32)); }
-}
+fn test_slice_header_basic_operations() {drop(Box::from_raw(test_ptr as *mut i32);}
 
 #[test]
-fn test_slice_runtime_creation() {
-    // common::tracing::init_tracing!()
+fn test_slice_runtime_creation() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -48,35 +22,29 @@ fn test_slice_runtime_creation() {
     let stats = runtime.get_statistics()
     assert_eq!(stats.slices_created, 0)
     assert_eq!(stats.allocations, 0)
-    assert_eq!(stats.bytes_allocated, 0)
-}
+    assert_eq!(stats.bytes_allocated, 0)}
 
 #[test]
-fn test_slice_runtime_with_custom_config() {
-    // common::tracing::init_tracing!()
+fn test_slice_runtime_with_custom_config() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
-    let config = SliceConfiguration {
-        default_capacity: 16,
+    let config = SliceConfiguration {default_capacity: 16,
         growth_factor: 1.5,
         max_capacity: 1024,
         bounds_checking: true,
         zero_memory: false,
         auto_shrink: true,
-        shrink_threshold: 0.5,}
-    }
+        shrink_threshold: 0.5}
     
     let runtime = SliceRuntime::with_config(config.clone()
     
     // Create a slice and verify it uses the custom config
     let header = runtime.create_slice(4, None).unwrap();
     assert_eq!(header.capacity, 16); // Uses default_capacity from config
-    assert!(header.is_valid()
-}
+    assert!(header.is_valid();
 
 #[test]
-fn test_slice_creation_and_deallocation() {
-    // common::tracing::init_tracing!()
+fn test_slice_creation_and_deallocation() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -106,12 +74,10 @@ fn test_slice_creation_and_deallocation() {
     // Check final statistics
     let final_stats = runtime.get_statistics()
     assert_eq!(final_stats.deallocations, 1)
-    assert_eq!(final_stats.bytes_deallocated, 40)
-}
+    assert_eq!(final_stats.bytes_deallocated, 40)}
 
 #[test]
-fn test_slice_growth() {
-    // common::tracing::init_tracing!()
+fn test_slice_growth() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -129,23 +95,19 @@ fn test_slice_growth() {
     assert!(result.is_ok()
     // Pointer might be the same if system allocator reuses the same location
     // Just verify capacity increased beyond original
-    println!("Original capacity: 5, new capacity: {}", header.capacity)
+    println!(Original capacity: 5, new capacity:     {}, header.capacity)
     assert!(header.capacity > 5); // Should be larger than original
     
     let stats = runtime.get_statistics();
-    assert_eq!(stats.growths, 1); // One actual growth operation
-}
+    assert_eq!(stats.growths, 1); // One actual growth operation}
 
 #[test]
-fn test_slice_shrinking() {
-    // common::tracing::init_tracing!()
+fn test_slice_shrinking() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
-    let config = SliceConfiguration {
-        auto_shrink: true,
+    let config = SliceConfiguration {auto_shrink: true,
         shrink_threshold: 0.25,
         ..Default::default()}
-    }
     
     let runtime = SliceRuntime::with_config(config)
     let mut header = runtime.create_slice(4, Some(20).unwrap();
@@ -157,12 +119,10 @@ fn test_slice_shrinking() {
     
     // Capacity should be reduced but not below minimum
     assert!(header.capacity < 20);
-    assert!(header.capacity >= 8); // Default minimum capacity
-}
+    assert!(header.capacity >= 8); // Default minimum capacity}
 
 #[test]
-fn test_slice_bounds_checking() {
-    // common::tracing::init_tracing!()
+fn test_slice_bounds_checking() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -178,12 +138,10 @@ fn test_slice_bounds_checking() {
     assert!(runtime.check_bounds(&header, 0)
     assert!(runtime.check_bounds(&header, 2)
     assert!(!runtime.check_bounds(&header, 3)
-    assert!(!runtime.check_bounds(&header, 10)
-}
+    assert!(!runtime.check_bounds(&header, 10);
 
 #[test]
-fn test_slice_copy_operations() {
-    // common::tracing::init_tracing!()
+fn test_slice_copy_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -192,14 +150,12 @@ fn test_slice_copy_operations() {
     let mut src = runtime.create_slice(4, Some(5).unwrap()
     let mut dst = runtime.create_slice(4, Some(5).unwrap()
     
-    unsafe {
-        // Fill source with test data
+    unsafe {// Fill source with test data
         let src_data = [1i32, 2, 3, 4, 5]
         std::ptr::copy_nonoverlapping()
             src_data.as_ptr() as *const u8,
             src.ptr as *mut u8,
-            20
-        );
+            20);
         src.len = 5;
         
         // Test copying a subset
@@ -214,12 +170,9 @@ fn test_slice_copy_operations() {
         // Test copying beyond bounds
         let copied = slice_copy(&src, &mut dst, 4, 3, 0, 10);
         assert_eq!(copied, 2); // Only 2 elements available from index 3}
-    }
-}
 
 #[test]
-fn test_slice_fill_operations() {
-    // common::tracing::init_tracing!()
+fn test_slice_fill_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -243,25 +196,20 @@ fn test_slice_fill_operations() {
         
         let data = std::slice::from_raw_parts(slice.ptr as *const i32, 3)
         assert_eq!(data, &[42, 99, 99])}
-    }
-}
 
 #[test]
-fn test_slice_zero_operations() {
-    // common::tracing::init_tracing!()
+fn test_slice_zero_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
     let mut slice = runtime.create_slice(4, Some(5).unwrap()
     
-    unsafe {
-        // Fill with non-zero data first
+    unsafe {// Fill with non-zero data first
         let data = [1i32, 2, 3, 4, 5]
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             slice.ptr as *mut u8,
-            20
-        );
+            20);
         slice.len = 5;
         
         // Zero out middle elements
@@ -271,18 +219,14 @@ fn test_slice_zero_operations() {
         // Verify zeroed data
         let result_data = std::slice::from_raw_parts(slice.ptr as *const i32, 5)
         assert_eq!(result_data, &[1, 0, 0, 0, 5])}
-    }
-}
 
 #[test]
-fn test_slice_comparison_operations() {
-    // common::tracing::init_tracing!()
+fn test_slice_comparison_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
     
-    unsafe {
-        // Create two identical slices
+    unsafe {// Create two identical slices
         let mut slice1 = runtime.create_slice(4, Some(3).unwrap()
         let mut slice2 = runtime.create_slice(4, Some(3).unwrap()
         
@@ -292,15 +236,13 @@ fn test_slice_comparison_operations() {
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             slice1.ptr as *mut u8,
-            12
-        );
+            12);
         slice1.len = 3;
         
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             slice2.ptr as *mut u8,
-            12
-        )
+            12)
         slice2.len = 3;
         
         // Test equality
@@ -314,30 +256,24 @@ fn test_slice_comparison_operations() {
         std::ptr::copy_nonoverlapping()
             new_data.as_ptr() as *const u8,
             slice2.ptr as *mut u8,
-            12
-        )
+            12)
         
         // Test inequality
         assert!(!slice_equals(&slice1, &slice2, 4)
         assert_eq!(slice_compare(&slice1, &slice2, 4), std::cmp::Ordering::Less)}
-    }
-}
 
 #[test]
-fn test_slice_find_operations() {
-    // common::tracing::init_tracing!()
+fn test_slice_find_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
     let mut slice = runtime.create_slice(4, Some(5).unwrap()
     
-    unsafe {
-        let data = [10i32, 20, 30, 20, 40]
+    unsafe {let data = [10i32, 20, 30, 20, 40]
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             slice.ptr as *mut u8,
-            20
-        );
+            20);
         slice.len = 5;
         
         // Test finding existing value
@@ -352,25 +288,20 @@ fn test_slice_find_operations() {
         let not_found = 99i32;
         let index = slice_find(&slice, 4, &not_found as *const i32 as *const c_void)
         assert_eq!(index, usize::MAX)
-        assert!(!slice_contains(&slice, 4, &not_found as *const i32 as *const c_void)}
-    }
-}
+        assert!(!slice_contains(&slice, 4, &not_found as *const i32 as *const c_void);
 
 #[test]
-fn test_slice_element_access() {
-    // common::tracing::init_tracing!()
+fn test_slice_element_access() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
     let mut slice = runtime.create_slice(4, Some(3).unwrap()
     
-    unsafe {
-        let data = [10i32, 20, 30]
+    unsafe {let data = [10i32, 20, 30]
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             slice.ptr as *mut u8,
-            12
-        );
+            12);
         slice.len = 3;
         
         // Test valid element access
@@ -381,13 +312,10 @@ fn test_slice_element_access() {
         
         // Test out of bounds access
         let elem_ptr = slice_get_element_ptr(&slice, 4, 5)
-        assert!(elem_ptr.is_null()}
-    }
-}
+        assert!(elem_ptr.is_null();
 
 #[test]
-fn test_slice_length_operations() {
-    // common::tracing::init_tracing!()
+fn test_slice_length_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -407,24 +335,20 @@ fn test_slice_length_operations() {
     
     // Test truncating
     assert!(slice_set_length(&mut slice, 3)
-    assert_eq!(slice.len, 3)
-}
+    assert_eq!(slice.len, 3)}
 
 #[test]
-fn test_slice_move_within() {
-    // common::tracing::init_tracing!()
+fn test_slice_move_within() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
     let mut slice = runtime.create_slice(4, Some(5).unwrap()
     
-    unsafe {
-        let data = [1i32, 2, 3, 4, 5]
+    unsafe {let data = [1i32, 2, 3, 4, 5]
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             slice.ptr as *mut u8,
-            20
-        );
+            20);
         slice.len = 5;
         
         // Move elements within the slice
@@ -434,12 +358,9 @@ fn test_slice_move_within() {
         // Verify the move (elements 2,3 moved to positions 3,4)
         let result_data = std::slice::from_raw_parts(slice.ptr as *const i32, 5)
         assert_eq!(result_data, &[1, 2, 3, 2, 3])}
-    }
-}
 
 #[test]
-fn test_slice_statistics() {
-    // common::tracing::init_tracing!()
+fn test_slice_statistics() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     let runtime = SliceRuntime::new()
@@ -458,18 +379,14 @@ fn test_slice_statistics() {
     let reset_stats = runtime.get_statistics()
     assert_eq!(reset_stats.slices_created, 0)
     assert_eq!(reset_stats.allocations, 0)
-    assert_eq!(reset_stats.bytes_allocated, 0)
-}
+    assert_eq!(reset_stats.bytes_allocated, 0)}
 
 #[test]
-fn test_slice_error_conditions() {
-    // common::tracing::init_tracing!()
+fn test_slice_error_conditions() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
-    let config = SliceConfiguration {
-        max_capacity: 100,
+    let config = SliceConfiguration {max_capacity: 100,
         ..Default::default()}
-    }
     
     let runtime = SliceRuntime::with_config(config)
     
@@ -479,25 +396,20 @@ fn test_slice_error_conditions() {
     
     // Test overflow protection
     let result = runtime.create_slice(usize::MAX, Some(2)
-    assert!(result.is_err()
-}
+    assert!(result.is_err();
 
 #[test]
-fn test_thread_safe_slice_runtime() {
-    // common::tracing::init_tracing!()
+fn test_thread_safe_slice_runtime() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     use cursed::runtime::slice_runtime::{create_thread_safe_runtime, create_thread_safe_runtime_with_config}
     
     // Test creating thread-safe runtime
     let runtime = create_thread_safe_runtime()
-    {
-        let rt = runtime.read().unwrap()
+    {let rt = runtime.read().unwrap()
         let slice = rt.create_slice(8, Some(3)
-        assert!(slice.is_ok()
-    }
+        assert!(slice.is_ok();
     
     // Test with custom config
     let config = SliceConfiguration::default()
-    let _runtime_with_config = create_thread_safe_runtime_with_config(config);
-};
+    let _runtime_with_config = create_thread_safe_runtime_with_config(config);}

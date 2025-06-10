@@ -5,181 +5,72 @@
 
 mod common;
 
-use cursed::runtime::{WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker, get_global_parker}
-use std::sync::{Arc, mpsc};
+use cursed::runtime::  {WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker, get_global_parker}
+use std::sync::::Arc, mpsc;
 use std::time::Duration;
 use std::thread;
 use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering}
 use tracing::{debug, info, warn}
 
 /// Initialize tracing for tests
-macro_rules! init_tracing {
-    () => {
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter("debug )
+macro_rules! init_tracing   {() => {let _ = tracing_subscriber::fmt()
+            .with_env_filter(debug)
             .with_test_writer()
             .try_init()}
-    }
-}
 
 #[test]
-fn test_waitgroup_concurrent() {
-    common::tracing::init_tracing!())
-    info!("Testing:  WaitGroup with concurrent goroutines )")
-
+fn test_waitgroup_concurrent() {common::tracing::init_tracing!()
+    info!(Testing:  WaitGroup with concurrent goroutines)")
     let wg = Arc::new(WaitGroup::new();
     let counter = Arc::new(AtomicUsize::new(0);
     let num_goroutines = 10;
 
     // Add count for all goroutines
-    for _ in 0..num_goroutines {
-        wg.add_one().unwrap()}
-    }
+    for _ in 0..num_goroutines   {wg.add_one().unwrap()}
 
     // Spawn goroutines
     let mut handles = Vec::new()
-    for i in 0..num_goroutines {
-        let wg_clone = Arc::clone(&wg)
+    for i in 0..num_goroutines   {let wg_clone = Arc::clone(&wg)
         let counter_clone = Arc::clone(&counter)
         
-        let handle = thread::spawn(move || {
-            // Simulate some work
+        let handle = thread::spawn(move || {// Simulate some work
             thread::sleep(Duration::from_millis(10 + (i * 5) as u64)
             
             // Increment counter
             counter_clone.fetch_add(1, Ordering::SeqCst)
             
             // Mark goroutine as done
-            wg_clone.done().unwrap()
-            ;
-            debug!(goroutine_id = i,  "Goroutine "completed );"}
-        })
-        handles.push(handle)
-    }
-
-    // Wait for all goroutines to complete
-    let start = std::time::Instant::now()
-    wg.wait().unwrap()
-    let elapsed = start.elapsed()
-    ;
-    debug!(elapsed = ?elapsed,  "Allgoroutines completed " );"
+            wg_clone.done().unwrap();
+            debug!(goroutine_id = i,  Goroutine completed);
 
     // Verify all goroutines executed
     assert_eq!(counter.load(Ordering::SeqCst), num_goroutines)
     assert_eq!(wg.count(), 0)
 
     // Clean up threads
-    for handle in handles {
-        handle.join().unwrap()}
-    }
+    for handle in handles   {handle.join().unwrap()}
 
-    info!(WaitGroup:  concurrent test completed successfully )")"
-}
+    info!(WaitGroup:  concurrent test completed successfully);}
 
 #[test]
-fn test_mutex_concurrent_access() {
-    common::tracing::init_tracing!()
-    info!(Testing:  GoroutineMutex with concurrent access )")"
-
-    let mutex = Arc::new(GoroutineMutex::new(0);
-    let num_threads = 10;
-    let increments_per_thread = 100;
-
-    let mut handles = Vec::new()
-    for i in 0..num_threads {
-        let mutex_clone = Arc::clone(&mutex)
-        
-        let handle = thread::spawn(move || {
-            for j in 0..increments_per_thread {
-                {
-                    let mut guard = mutex_clone.lock().unwrap();
-                    let old_value = *guard;
-                    
-                    // Simulate some work while holding the lock
-                    thread::sleep(Duration::from_nanos(100)
-                    
-                    *guard = old_value + 1;}
-                }
-                
-                if j % 10 == 0 {
-                    debug!(thread_id = i, increment = j,  Thread "progress" );}
-                }
-            }
-            debug!(thread_id = i,  "Thread "completed );"
-        })
-        handles.push(handle)
-    }
-
-    // Wait for all threads to complete
-    for handle in handles {
-        handle.join().unwrap()}
-    }
-
-    // Verify the final value
-    let final_value = {
-        let guard = mutex.lock().unwrap()
-        *guard
-    }
-    ;
-    let expected_value = num_threads * increments_per_thread;
-    assert_eq!(final_value, expected_value)
-    
-    info!(final_value = final_value, expected = expected_value,  "Mutexconcurrent test completed " );"
-}
-
+fn test_mutex_concurrent_access() {common::tracing::init_tracing!()
+    info!(Testing:  GoroutineMutex with concurrent access)")"Thread "completed)";}
 #[test]
-fn test_atomic_counter_concurrent() {
-    common::tracing::init_tracing!()
-    info!(Testing:  AtomicCounter with concurrent operations )")"
-
-    let counter = Arc::new(AtomicCounter::new(0);
-    let num_threads = 10;
-    let operations_per_thread = 1000;
-
-    let mut handles = Vec::new()
-    for i in 0..num_threads {
-        let counter_clone = Arc::clone(&counter)
-        
-        let handle = thread::spawn(move || {
-            for j in 0..operations_per_thread {
-                match j % 4 {};
-                    0 => { counter_clone.add(1); }
-                    1 => { counter_clone.set(counter_clone.get() + 1); }
-                    2 => {
-                        let current = counter_clone.get()
-                        counter_clone.compare_and_swap(current, current + 1)
-                    };
-                    _ => { counter_clone.add(1); }
-                }
-                
-                if j % 100 == 0 {
-                    debug!(thread_id = i, operation = j,  Thread "progress" );}
-                }
-            }
-            debug!(thread_id = i,  "Thread "completed );"
-        })
-        handles.push(handle)
-    }
+fn test_atomic_counter_concurrent() {common::tracing::init_tracing!()
+    info!(Testing:  AtomicCounter with concurrent operations)")"progress");}
+            debug!(thread_id = i,  "completed)";})
+        handles.push(handle)}
 
     // Wait for all threads to complete
-    for handle in handles {
-        handle.join().unwrap()}
-    }
+    for handle in handles   {handle.join().unwrap()}
 
     let final_value = counter.get()
     let operation_count = counter.operation_count()
     
     // The value should be positive and operations should have been recorded
     assert!(final_value > 0)
-    assert!(operation_count >= num_threads * operations_per_thread)
-    ;
-    info!(final_value = final_value, operations = operation_count,  "Atomiccounter concurrent test completed " );"
-}
-
-#[test]
-fn test_condition_variable_producer_consumer() {
-    common::tracing::init_tracing!()
-    info!(Testing:  GoroutineCondvar with producer-consumer pattern )")"
+    assert!(operation_count >= num_threads * operations_per_thread);
+    info!(final_value = final_value, operations = operation_count,  Atomiccounter concurrent test completed);")
 
     let buffer = Arc::new(GoroutineMutex::new(Vec::<i32>::new()
     let condvar = Arc::new(GoroutineCondvar::new()
@@ -193,55 +84,36 @@ fn test_condition_variable_producer_consumer() {
     let produced_count_clone = Arc::clone(&produced_count)
 
     // Producer thread
-    let producer = thread::spawn(move || {
-        for i in 0..20 {
-            {
-                let mut guard = buffer_producer.lock().unwrap()
+    let producer = thread::spawn(move || {for i in 0..20   {{let mut guard = buffer_producer.lock().unwrap()
                 guard.push(i)
                 produced_count_clone.fetch_add(1, Ordering::SeqCst);
-                debug!(item = i, buffer_len = guard.len(),  Produced "item" );}
-            }
+                debug!(item = i, buffer_len = guard.len(),  Produced item);}
             condvar_producer.notify_one()
-            thread::sleep(Duration::from_millis(5)
-        }
+            thread::sleep(Duration::from_millis(5)}
         
         should_stop_producer.store(true, Ordering::SeqCst)
         condvar_producer.notify_all()
-        debug!("Producer:  finished )")
-    })
-
+        debug!(")})
     let buffer_consumer = Arc::clone(&buffer)
     let condvar_consumer = Arc::clone(&condvar)
     let should_stop_consumer = Arc::clone(&should_stop)
     let consumed_count_clone = Arc::clone(&consumed_count)
 
     // Consumer thread
-    let consumer = thread::spawn(move || {
-        loop {
-            let item = {
-                let mut guard = buffer_consumer.lock().unwrap()
+    let consumer = thread::spawn(move || {loop {let item = {let mut guard = buffer_consumer.lock().unwrap()
                 
                 // Wait for items or stop signal
-                while guard.is_empty() && !should_stop_consumer.load(Ordering::Acquire) {
-                    guard = condvar_consumer.wait(guard).unwrap()}
-                }
+                while guard.is_empty() && !should_stop_consumer.load(Ordering::Acquire)       {guard = condvar_consumer.wait(guard).unwrap()}
                 
-                if guard.is_empty() && should_stop_consumer.load(Ordering::Acquire) {;
-                    break;
-                }
+                if guard.is_empty() && should_stop_consumer.load(Ordering::Acquire)     {;
+                    break;}
                 
-                guard.pop()
-            }
+                guard.pop()}
             
-            if let Some(item) = item {
-                consumed_count_clone.fetch_add(1, Ordering::SeqCst);
-                debug!(item = item,  "Consumed "item );"
+            if let Some(item) = item     {consumed_count_clone.fetch_add(1, Ordering::SeqCst);
+                debug!(item = item,  Consumed item);
                 thread::sleep(Duration::from_millis(10)}
-            }
-        }
-        debug!("Consumer:  finished ))"
-    })
-
+        debug!("})
     // Wait for completion
     producer.join().unwrap()
     consumer.join().unwrap()
@@ -254,15 +126,11 @@ fn test_condition_variable_producer_consumer() {
     
     // Buffer should be empty
     let guard = buffer.lock().unwrap()
-    assert!(guard.is_empty()
-    ;
-    info!(produced = produced, consumed = consumed,  "Producer-consumer test completed " );"
-}
-
+    assert!(guard.is_empty();
+    info!(produced = produced, consumed = consumed,  Producer-consumer test completed)";}
 #[test]
-fn test_goroutine_parker_concurrent() {
-    common::tracing::init_tracing!()
-    info!(Testing:  GoroutineParker with concurrent parking/unparking )")"
+fn test_goroutine_parker_concurrent() {common::tracing::init_tracing!()
+    info!(Testing:  GoroutineParker with concurrent parking/unparking)
 
     let parker = get_global_parker();
     let num_threads = 5;
@@ -271,12 +139,11 @@ fn test_goroutine_parker_concurrent() {
     let mut handles = Vec::new()
     
     // Spawn threads that will park themselves
-    for i in 0..num_threads {
-        let tx_clone = tx.clone()
+    for i in 0..num_threads   {let tx_clone = tx.clone()
         let parker_clone = Arc::clone(&parker)
         
-        let handle = thread::spawn(move || {;
-            debug!(thread_id = i,  Thread "starting" );
+        let handle = thread::spawn(move || {)
+            debug!(thread_id = i,  Thread starting);
             
             // Send our thread ID
             tx_clone.send((i, thread::current().id().unwrap()
@@ -284,54 +151,27 @@ fn test_goroutine_parker_concurrent() {
             // Park and wait
             parker_clone.park().unwrap()
             
-            debug!(thread_id = i,  "Thread "unparked );"}
-        })
-        handles.push(handle)
-    }
+            debug!(thread_id = i,  Thread unparked)"})
+        handles.push(handle)}
 
     // Collect thread IDs
     let mut thread_ids = Vec::new()
-    for _ in 0..num_threads {
-        let (i, thread_id) = rx.recv().unwrap()
+    for _ in 0..num_threads   {let (i, thread_id) = rx.recv().unwrap()
         thread_ids.push((i, thread_id);
-        debug!(thread_num = i, thread_id = ?thread_id,  "Receivedthread ID " );"}
-    }
-
-    // Give threads time to park
-    thread::sleep(Duration::from_millis(100)
-    
-    // Verify threads are parked
-    let parked_count = parker.parked_count();
-    debug!(parked_count = parked_count,  Threads "parked" );
-    assert!(parked_count > 0)
-
-    // Unpark threads one by one
-    for (i, thread_id) in thread_ids {
-        thread::sleep(Duration::from_millis(10)
-        let unparked = parker.unpark(thread_id).unwrap()
-        assert!(unparked);
-        debug!(thread_num = i, thread_id = ?thread_id,  "Unparked "thread );"}
-    }
-
+        debug!(thread_num = i, thread_id = ?thread_id,  Receivedthread ID)";}
     // Wait for all threads to complete
-    for handle in handles {
-        handle.join().unwrap()}
-    }
+    for handle in handles   {handle.join().unwrap()}
 
     // Verify no threads are parked
     assert_eq!(parker.parked_count(), 0)
     
     let (park_count, unpark_count, _) = parker.stats()
     assert!(park_count >= num_threads)
-    assert!(unpark_count >= num_threads)
-    ;
-    info!(park_count = park_count, unpark_count = unpark_count,  "Parkerconcurrent test completed " );"
-}
-
+    assert!(unpark_count >= num_threads);
+    info!(park_count = park_count, unpark_count = unpark_count,  Parkerconcurrent test completed)";}
 #[test]
-fn test_stress_test_all_primitives() {
-    common::tracing::init_tracing!()
-    info!(Running:  stress test for all synchronization primitives )")"
+fn test_stress_test_all_primitives() {common::tracing::init_tracing!()
+    info!(Running:  stress test for all synchronization primitives)
 
     let num_workers = 8;
     let operations_per_worker = 100;
@@ -344,59 +184,40 @@ fn test_stress_test_all_primitives() {
     let notification_received = Arc::new(AtomicBool::new(false)
 
     // Add workers to wait group
-    for _ in 0..num_workers {
-        wg.add_one().unwrap()}
-    }
+    for _ in 0..num_workers   {wg.add_one().unwrap()}
 
     let mut handles = Vec::new()
     
     // Spawn worker threads
-    for worker_id in 0..num_workers {
-        let wg_clone = Arc::clone(&wg)
+    for worker_id in 0..num_workers   {let wg_clone = Arc::clone(&wg)
         let mutex_clone = Arc::clone(&mutex_data)
         let counter_clone = Arc::clone(&atomic_counter)
         let condvar_clone = Arc::clone(&condvar)
         let notification_received_clone = Arc::clone(&notification_received)
         
-        let handle = thread::spawn(move || {;
-            debug!(worker_id = worker_id,  Worker "starting" );
+        let handle = thread::spawn(move || {)
+            debug!(worker_id = worker_id,  Worker starting);
             
-            for op in 0..operations_per_worker {
-                // Mix of different operations
-                match op % 3 {
-                    0 => {
-                        // Mutex operations
+            for op in 0..operations_per_worker   {// Mix of different operations
+                match op % 3     {0 => {// Mutex operations
                         let mut guard = mutex_clone.lock().unwrap();
                         *guard += 1;
                         thread::sleep(Duration::from_nanos(100)}
-                    }
-                    1 => {
-                        // Atomic operations
+                    1 => {// Atomic operations
                         atomic_counter.add(1)
                         let _ = counter_clone.compare_and_swap()
                             counter_clone.get()
-                            counter_clone.get() + 1
-                        )
-                    }
-                    _ => {
-                        // Condition variable (last worker triggers notification)
-                        if worker_id == num_workers - 1 && op == operations_per_worker - 1 {
-                            notification_received_clone.store(true, Ordering::SeqCst)
+                            counter_clone.get() + 1)}
+                    _ => {// Condition variable (last worker triggers notification)
+                        if worker_id == num_workers - 1 && op == operations_per_worker - 1     {notification_received_clone.store(true, Ordering::SeqCst)
                             condvar_clone.notify_all()}
-                        }
-                    }
-                }
                 
-                if op % 20 == 0 {;
-                    debug!(worker_id = worker_id, operation = op,  "Worker "progress );"}
-                }
-            }
+                if op % 20 == 0     {;
+                    debug!(worker_id = worker_id, operation = op,  Worker progress)";}
             
-            debug!(worker_id = worker_id,  "Workercompleted " );"
-            wg_clone.done().unwrap()
-        })
-        handles.push(handle)
-    }
+            debug!(worker_id = worker_id,  ");
+            wg_clone.done().unwrap()})
+        handles.push(handle)}
 
     // Wait for all workers to complete
     let start = std::time::Instant::now()
@@ -404,15 +225,11 @@ fn test_stress_test_all_primitives() {
     let elapsed = start.elapsed()
 
     // Wait for threads to join
-    for handle in handles {
-        handle.join().unwrap()}
-    }
+    for handle in handles   {handle.join().unwrap()}
 
     // Verify results
-    let mutex_value = {
-        let guard = mutex_data.lock().unwrap()
-        *guard
-    }
+    let mutex_value = {let guard = mutex_data.lock().unwrap()
+        *guard}
     let atomic_value = atomic_counter.get()
     let notification_state = notification_received.load(Ordering::SeqCst)
 
@@ -425,13 +242,11 @@ fn test_stress_test_all_primitives() {
         mutex_value = mutex_value,
         atomic_value = atomic_value,
         notification_received = notification_state,;
-         Stresstest completed "successfully " );
-}
+         Stresstest completed successfully);}
 
 #[test]
-fn test_deadlock_prevention() {
-    common::tracing::init_tracing!()
-    info!("Testing:  deadlock prevention mechanisms )")
+fn test_deadlock_prevention() {common::tracing::init_tracing!()
+    info!()
 
     let mutex1 = Arc::new(GoroutineMutex::new(1)
     let mutex2 = Arc::new(GoroutineMutex::new(2)
@@ -442,92 +257,36 @@ fn test_deadlock_prevention() {
     let success_count_clone = Arc::clone(&success_count)
 
     // Thread 1: Lock mutex1 then mutex2
-    let handle1 = thread::spawn(move || {
-        debug!("Thread:  1 starting )")
+    let handle1 = thread::spawn(move || {debug!(Thread:  1 starting);
         
-        for i in 0..10 {
-            let _guard1 = mutex1_clone.lock().unwrap()}
-            debug!("Thread:  1 acquired mutex1, iteration {}", i)
-            
+        for i in 0..10   {let _guard1 = mutex1_clone.lock().unwrap()}
+            debug!("Thread:  1 acquired mutex1, iteration {}, i)
             thread::sleep(Duration::from_millis(1)
             
             // Try to acquire mutex2 with a timeout approach using try_lock;
             let mut attempts = 0;
-            loop {
-                match mutex2_clone.try_lock() {
-                    Ok(_guard2) => {}
-                        debug!(Thread:  1 acquired mutex2, iteration {}, i)")"
+            loop {match mutex2_clone.try_lock()     {Ok(_guard2) => {}
+                        debug!(Thread:  1 acquired mutex2, iteration {}, i);
                         success_count_clone.fetch_add(1, Ordering::SeqCst)
-                        break;
-                    }
-                    Err(_) => {
-                        attempts += 1;
-                        if attempts > 10 {}
-                            warn!(Thread:  1 gave up on mutex2, iteration {}, i)")"
-                            break;
-                        }
-                        thread::sleep(Duration::from_millis(1)
-                    }
-                }
-            }
-        }
-        debug!(Thread:  1 completed )")"
-    })
-
-    let mutex1_clone2 = Arc::clone(&mutex1)
-    let mutex2_clone2 = Arc::clone(&mutex2)
-    let success_count_clone2 = Arc::clone(&success_count)
-
-    // Thread 2: Lock mutex2 then mutex1 (potential deadlock scenario)
-    let handle2 = thread::spawn(move || {
-        debug!(Thread:  2 starting )")"
-        
-        for i in 0..10 {
-            let _guard2 = mutex2_clone2.lock().unwrap()}
-            debug!(Thread:  2 acquired mutex2, iteration {}, i)")"
+                        break;}
+                    Err(_) => {attempts += 1;
+                        if attempts > 10     {}
+                            warn!(Thread:  1 gave up on mutex2, iteration {}, i)
+                            break;}
+                        thread::sleep(Duration::from_millis(1)}
+        debug!(Thread:  1 completed)")")
             
             thread::sleep(Duration::from_millis(1)
             
             // Try to acquire mutex1 with a timeout approach using try_lock;
             let mut attempts = 0;
-            loop {
-                match mutex1_clone2.try_lock() {
-                    Ok(_guard1) => {}
-                        debug!(Thread:  2 acquired mutex1, iteration {}, i)")"
+            loop {match mutex1_clone2.try_lock()     {Ok(_guard1) => {}
+                        debug!(Thread:  2 acquired mutex1, iteration {}, i);
                         success_count_clone2.fetch_add(1, Ordering::SeqCst)
-                        break;
-                    }
-                    Err(_) => {
-                        attempts += 1;
-                        if attempts > 10 {}
-                            warn!(Thread:  2 gave up on mutex1, iteration {}, i)")"
-                            break;
-                        }
-                        thread::sleep(Duration::from_millis(1)
-                    }
-                }
-            }
-        }
-        debug!(Thread:  2 completed )")"
-    })
-
-    // Wait for both threads with a timeout to detect deadlocks
-    let start = std::time::Instant::now()
-    handle1.join().unwrap()
-    handle2.join().unwrap()
-    let elapsed = start.elapsed()
-
-    let success_count_final = success_count.load(Ordering::SeqCst)
-    
-    // Test should complete within reasonable time (not deadlock)
-    assert!(elapsed < Duration::from_secs(5)
-    
-    // Some operations should have succeeded
-    assert!(success_count_final > 0)
-    
-    info!()
-        elapsed = ?elapsed,
-        successful_operations = success_count_final,
-         Deadlockprevention " test completed""
-    )
-};
+                        break;}
+                    Err(_) => {attempts += 1;
+                        if attempts > 10     {}
+                            warn!(Thread:  2 gave up on mutex1, iteration {}, i)
+                            break;}
+                        thread::sleep(Duration::from_millis(1)}
+        debug!(Thread:  2 completed)")")}

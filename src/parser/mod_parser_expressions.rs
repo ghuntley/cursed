@@ -6,6 +6,19 @@ use crate::ast::*;
 use crate::error::Error;
 use crate::lexer::TokenType;
 
+/// Function parameter representation
+#[derive(Debug, Clone)]
+pub struct Parameter {
+    pub name: String,
+    pub param_type: String,
+}
+
+impl Parameter {
+    pub fn new(name: String, param_type: String) -> Self {
+        Self { name, param_type }
+    }
+}
+
 impl Parser {
     /// Parse expression with precedence climbing
     pub fn parse_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
@@ -289,8 +302,8 @@ impl Parser {
         
         Ok(Box::new(FunctionLiteral::new(
             token,
-            parameters,
-            body,
+            parameters.into_iter().map(|p| crate::ast::expressions::Parameter::new(p.name, p.param_type)).collect(),
+            Box::new(crate::ast::expressions::BlockExpression::new(body)),
             return_type.map(|id| id as Box<dyn Expression>),
         )))
     }
@@ -370,7 +383,7 @@ impl Parser {
         self.advance_token()?;
         let channel = self.parse_expression_with_precedence(Precedence::Prefix)?;
         
-        Ok(Box::new(ChannelReceive::new(token, channel)))
+        Ok(Box::new(ChannelReceive::new(channel)))
     }
     
     /// Parse channel send expression (channel <- value)
@@ -382,7 +395,7 @@ impl Parser {
         self.advance_token()?;
         let value = self.parse_expression_with_precedence(precedence)?;
         
-        Ok(Box::new(ChannelSend::new(token, left, value)))
+        Ok(Box::new(ChannelSend::new(left, value)))
     }
     
     /// Parse goroutine spawn expression (stan function_call)
@@ -393,7 +406,7 @@ impl Parser {
         self.advance_token()?;
         let function_call = self.parse_expression_with_precedence(Precedence::Prefix)?;
         
-        Ok(Box::new(GoroutineSpawn::new(token, function_call)))
+        Ok(Box::new(GoroutineSpawn::new(function_call)))
     }
     
     /// Parse channel type expression (dm Type)

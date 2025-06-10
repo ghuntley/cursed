@@ -252,15 +252,7 @@ impl LlvmExpressionCompiler {
                     is_constant: true,
                 })
             }
-            LiteralValue::Character(value) => {
-                let temp_name = self.context.next_temp();
-                self.ir_output.push(format!("  {} = add i8 0, {}", temp_name, *value as u8));
-                Ok(LlvmValue {
-                    value_type: LlvmType::Int32, // Characters are promoted to int32
-                    llvm_name: temp_name,
-                    is_constant: true,
-                })
-            }
+
         }
     }
     
@@ -768,7 +760,7 @@ mod tests {
         assert!(result.is_constant);
         
         // Test string literal
-        let string_literal = Literal::string("hello");
+        let string_literal = Literal::string("hello".to_string());
         let result = compiler.compile_literal(&string_literal).unwrap();
         assert_eq!(result.value_type, LlvmType::String);
         

@@ -56,6 +56,10 @@ parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
 # Memory profiling
 backtrace = "0.3.69"  # For stack trace capture
+rustc-demangle = "0.1"  # For demangling Rust symbols
+
+# Colored terminal output
+colored = "2.0"    # For colorized debug output
 
 # Glob pattern matching
 glob = "0.3"    # For file path pattern matching

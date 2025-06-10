@@ -1,61 +1,52 @@
 use cursed::error::Error;
 use std::path::Path;
 
-
-#[path = "common/mod.rs]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]
 fn test_while_statement() -> Result<(), Error> {
-    // common::tracing::init_tracing!()
-    // Initialize tracing
-    common::tracing::setup()
-
-    // Test a basic while loop that counts from 0 to 9
+    common::tracing::setup();
+    
+    // Test a simple while loop
     let program = r#"
-    slay main() lit {;
         sus counter = 0;
-        periodt (counter < 10) {
-            counter = counter + 1;}
+        lowkey (counter < 10) {
+            counter = counter + 1;
+            yolo counter;
         }
-        yolo counter;
-    }
     "#;
-
+    
     // Run the program in the JIT
     let result = common::run_jit_test_int(program)?;
     
     // The counter should be 10 after the loop
-    assert_eq!(result, 10, "While loop should run 10 ", times)
+    assert_eq!(result, 10, "While loop should run 10 times");
     
-    Ok(()
+    Ok(())
 }
 
 #[test]
 fn test_while_statement_with_break() -> Result<(), Error> {
-    // common::tracing::init_tracing!()
-    // Initialize tracing
-    common::tracing::setup()
+    common::tracing::setup();
 
     // Test a while loop with a break statement
     let program = r#"
-    slay main() lit {;
         sus counter = 0;
-        periodt (based) {
+        lowkey (counter < 10) {
             counter = counter + 1;
-            lowkey (counter >= 5) {
-                ghosted;}
+            lowkey (counter == 5) {
+                periodt;  // break
             }
+            yolo counter;
         }
-        yolo counter;
-    }
     "#;
-
+    
     // Run the program in the JIT
     let result = common::run_jit_test_int(program)?;
     
     // The counter should be 5 when the loop breaks
-    assert_eq!(result, 5,  "While " loop should break after 5 iterations;"
-    );
-    Ok(()
+    assert_eq!(result, 5, "While loop should break after 5 iterations");
+    
+    Ok(())
 }

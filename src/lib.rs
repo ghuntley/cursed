@@ -13,6 +13,27 @@ pub mod core;
 pub mod codegen;
 pub mod memory;
 pub mod runtime;
+
+// Re-export enhanced debug information types
+pub use runtime::{
+    EnhancedDebugInfo, EnhancedStackFrame, EnhancedStackTrace, VariableInfo,
+    StackTraceCapture, EnhancedStackTraceConfig, SymbolResolver, SymbolInfo,
+    DebugManager, SourceFile, FunctionDebugInfo, DebugManagerConfig, DebugManagerStats
+};
+
+pub use error::debug_context::{
+    DebugContext, DebugContextBuilder, DebugResult, IntoDebugContext, ErrorSeverity
+};
+
+// Re-export enhanced debugging system
+pub use debug::{
+    EnhancedDebugInfo as EnhancedDebugInfoNew, DebugInfoRegistry, SymbolMetadata, 
+    TypeDebugInfo, SourceMap, SymbolType, TypeKind
+};
+
+pub use runtime::debug_runtime::{
+    RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint
+};
 pub mod stdlib;
 pub mod profiling;
 pub mod docs;
@@ -36,6 +57,7 @@ pub mod tools;
 
 // Type system
 pub mod type_system;
+pub mod types;
 
 // Re-export commonly used types for convenience
 pub use error::{Error, SourceLocation};

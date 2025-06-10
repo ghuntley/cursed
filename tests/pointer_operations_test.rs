@@ -3,6 +3,4 @@
 
 #[cfg(test)]
 #[allow(dead_code)]
-mod disabled_pointer_tests {
-    // All tests disabled until pointer operations API is stabilized}
-}
+mod disabled_pointer_tests {// All tests disabled until pointer operations API is stabilized}

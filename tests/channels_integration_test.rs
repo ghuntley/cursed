@@ -8,64 +8,43 @@ use cursed::ast::*;
 use cursed::ast::concurrency::*;
 use cursed::ast::expressions::*;
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::lexer::{Token, TokenType};
+use cursed::lexer::  :: Token, TokenType;
 use cursed::parser::Parser;
-use cursed::runtime::channels::{Channel, ChannelRegistry};
+use cursed::runtime::channels::::Channel, ChannelRegistry;
 use cursed::runtime::goroutine::GoroutineScheduler;
 use cursed::runtime::value::Value;
-use cursed::types::{Type, TypeChecker};
+use cursed::types::{Type, TypeChecker;
 use cursed::memory::gc::GarbageCollector;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex;
 use std::time::Duration;
 use cursed::lexer::TokenType;
 
 use cursed::lexer::Lexer;
-#[path = "common/mod.rs]
-pub mod common;
-
-#[test]
-fn test_channel_ast_integration() {
-    common::tracing::init_tracing!()
+#[path = "common/mod.rs"]
+fn test_channel_ast_integration() {common::tracing::init_tracing!()
     
     // Test channel creation AST
     let channel_type = Type::Channel(Box::new(Type::I32)
-    let make_expr = MakeExpression {
-        token: Token::new(TokenType::Make, "make "
+    let make_expr = MakeExpression {token: Token::new(TokenType::Make, make 
         channel_type: channel_type.clone()
-        buffer_size: Some(Box::new(IntegerLiteral {
-            token: Token::new(TokenType::I32, 5 ),
-            value: 5,}
-        }),
-    }
-    ;
-    assert_eq!(make_expr.string(),  "make "(dm<int>, 5);"
+        buffer_size: Some(Box::new(IntegerLiteral {token: Token::new(TokenType::I32, 5),
+            value: 5}),};
+    assert_eq!(make_expr.string(),  "make 
     
     // Test send operation AST
-    let send_expr = SendExpression {
-        token: Token::new(TokenType::LeftAngle, "<-
-        channel:  "dummy_name.to_string()"
-        value: Box::new(IntegerLiteral {
-            token: Token::new(TokenType::I32, 42 ),
-            value: 42,}
-        }),
-    }
-    ;
-    assert_eq!(send_expr.string(),  "ch "<- , 42 );"
+    let send_expr = SendExpression {token: Token::new(TokenType::LeftAngle, <-
+        channel:  dummy_name.to_string()
+        value: Box::new(IntegerLiteral {token: Token::new(TokenType::I32, 42),
+            value: 42}),};
+    assert_eq!(send_expr.string(),  "<- , 42);
     
     // Test receive operation AST
-    let receive_expr = ReceiveExpression {
-        token: Token::new(TokenType::LeftAngle, "<-
-        channel:  "dummy_name.to_string()"}
-    }
-    ;
-    assert_eq!(receive_expr.string(), <-"ch " );
+    let receive_expr = ReceiveExpression {token: Token::new(TokenType::LeftAngle, <-
+        channel:  dummy_name.to_string()"ch ");
     
-    tracing::info!("OK Channel AST integration test passed )")
-}
-
+    tracing::info!(")}
 #[test]
-fn test_channel_type_checking() {
-    common::tracing::init_tracing!()
+fn test_channel_type_checking() {common::tracing::init_tracing!()
     
     let mut type_checker = TypeChecker::new()
     
@@ -87,66 +66,31 @@ fn test_channel_type_checking() {
     let invalid_send_type = type_checker.infer_send_type(&int_channel_type, &Type::Str)
     assert!(invalid_send_type.is_err()
     
-    tracing::info!("OK Channel type checking test passed )")
-}
+    tracing::info!(OK Channel type checking test passed);}
 
 #[test]
-fn test_llvm_channel_compilation() {
-    common::tracing::init_tracing!()
+fn test_llvm_channel_compilation() {common::tracing::init_tracing!()
     
     let mut codegen = LlvmCodeGenerator::new().unwrap()
     
     // Test channel allocation compilation
     let channel_type = Type::Channel(Box::new(Type::I32)
-    let make_expr = MakeExpression {
-        token: Token::new(TokenType::Make, "make "
+    let make_expr = MakeExpression {token: Token::new(TokenType::Make, make 
         channel_type: channel_type.clone()
-        buffer_size: Some(Box::new(IntegerLiteral {
-            token: Token::new(TokenType::I32, 3 ),
-            value: 3,}
-        }),
-    }
+        buffer_size: Some(Box::new(IntegerLiteral {token: Token::new(TokenType::I32, 3),
+            value: 3}),}
     
     let make_result = codegen.compile_expression(&make_expr)
     assert!(make_result.is_ok()
     
     // Test send operation compilation
-    let send_expr = SendExpression {
-        token: Token::new(TokenType::LeftAngle, "<-"
+    let send_expr = SendExpression {token: Token::new(TokenType::LeftAngle, <-
         channel:  dummy_name.to_string()"
-        value: Box::new(IntegerLiteral {
-            token: Token::new(TokenType::I32, "42 ),
-            value: 42,}
-        }),
-    }
-    
-    // Mock channel variable in scope
-    codegen.name(test_channel, channel_type.clone()
-    
-    let send_result = codegen.compile_expression(&send_expr)
-    assert!(send_result.is_ok()")
-    
-    // Test receive operation compilation
-    let receive_expr = ReceiveExpression {
-        token: Token::new(TokenType::LeftAngle, "<-
-        channel:  "dummy_name.to_string()"}
-    }
-    
+        value: Box::new(IntegerLiteral {token: Token::new(TokenType::I32, "}
     let receive_result = codegen.compile_expression(&receive_expr)
     assert!(receive_result.is_ok()
     
-    tracing::info!(OK LLVM channel compilation test passed )")"
-}
-
-#[test]
-fn test_complete_channel_program() {
-    common::tracing::init_tracing!()
-    
-    // Create a complete program with channels and goroutines
-    let program_source = r#
-        func main() {
-            facts ch = make(dm<int>, 2)
-            
+    tracing::info!(OK LLVM channel compilation test passed)")"        func main() {facts ch = make(dm<int>, 2)
             // Send some values
             ch <- 10
             ch <- 20
@@ -155,10 +99,7 @@ fn test_complete_channel_program() {
             facts value1 = <-ch
             facts value2 = <-ch
             
-            print(value1 + value2)
-        };
-    "#;"
-    
+            print(value1 + value2)};"#    #;
     let mut parser = Parser::new(Lexer::new(program_source)
     let program = parser.unwrap().parse_program()
     assert!(program.is_ok()
@@ -171,64 +112,32 @@ fn test_complete_channel_program() {
     assert!(compilation_result.is_ok()
     
     // Verify the LLVM IR contains channel operations
-    let llvm_ir = codegen.generate_ir( dummy)")";
-    assert!(llvm_ir.contains( channel;");
-    assert!(llvm_ir.contains("send;
-    assert!(llvm_ir.contains( receive)"
-    )
-    tracing::info!("OK Complete channel program test passed ))"
-}
-
+    let llvm_ir = codegen.generate_ir(dummy);
+    assert!(llvm_ir.contains(channel);"send);
+    assert!(llvm_ir.contains(receive)")
+    tracing::info!("}
 #[test]
-fn test_goroutine_channel_integration() {
-    common::tracing::init_tracing!()
+fn test_goroutine_channel_integration() {common::tracing::init_tracing!()
     
     let program_source = r#"
-        func worker(ch dm<string>) {
-            ch <-  Hello " from "goroutine}
-        
-        func main() {
-            facts ch = make(dm<string>, 1)
+        func worker(ch dm<string> {ch <-  Hello "goroutine}
+        func main() {facts ch = make(dm<string>, 1)
             stan worker(ch)
             facts message = <-ch
-            print(message)
-        };
-    "#;"
-    
-    let mut parser = Parser::new(Lexer::new(program_source)
-    let program = parser.unwrap().parse_program()
-    assert!(program.is_ok()
-    
-    let program = program.unwrap()
-    
-    // Type check the program
-    let mut type_checker = TypeChecker::new()
-    let type_check_result = type_checker.check_program(&program)
-    assert!(type_check_result.is_ok()
-    
-    // Compile the program
-    let mut codegen = LlvmCodeGenerator::new().unwrap();
-    let compilation_result = codegen.generate_ir( dummy, &program);"
-    assert!(compilation_result.is_ok()
-    
-    tracing::info!("OK Goroutine channel integration test passed ))"
-}
-
+            print(message)};
+    "#;"}
 #[test]
-fn test_channel_error_handling() {
-    common::tracing::init_tracing!()
+fn test_channel_error_handling() {common::tracing::init_tracing!()
     
-    let program_source = r#"
-        func main() {
-            facts ch = make(dm<int>, 1)
+    let program_source = r#""#
+        func main() {facts ch = make(dm<int>, 1)
             
             // This should work
             ch <- 42
             
             // This should block/error on full channel
-            ch <- 43? // Using error propagation
-        };
-    #;"
+            ch <- 43? // Using error propagation};
+    #;
     
     let mut parser = Parser::new(Lexer::new(program_source)
     let program = parser.unwrap().parse_program()
@@ -237,83 +146,23 @@ fn test_channel_error_handling() {
     let program = program.unwrap()
     
     // Verify error handling constructs are present
-    let has_error_propagation = program.statements.iter().any(|stmt| {
-        // Check if any statement contains error propagation syntax
-        stmt.string().contains("?
-    })
+    let has_error_propagation = program.statements.iter().any(|stmt| {// Check if any statement contains error propagation syntax
+        stmt.string().contains(?})
     
     assert!(has_error_propagation)
     
-    tracing::info!("OK Channel error handling test passed )")
-}
-
+    tracing::info!(OK Channel error handling test passed)"}
 #[test]
-fn test_channel_memory_management() {
-    common::tracing::init_tracing!()
+fn test_channel_select_statement() {common::tracing::init_tracing!()
     
-    let gc = Arc::new(Mutex::new(GarbageCollector::new()
-    let channel_registry = ChannelRegistry::new_with_gc(Arc::clone(&gc)
-    
-    // Create channels with different types
-    let int_channel = channel_registry.create_channel(Type::I32, 5)
-    let string_channel = channel_registry.create_channel(Type::Str, 3)
-    
-    assert!(int_channel.is_ok()
-    assert!(string_channel.is_ok()
-    
-    let int_channel = int_channel.unwrap()
-    let string_channel = string_channel.unwrap()
-    
-    // Send values that need memory management
-    for i in 0..5 {}
-        let large_string = format!("Largestring value {}x, .repeat(1000)
-        string_channel.send(Value::String(large_string).unwrap()
-        int_channel.send(Value::Integer(i).unwrap()
-    }
-    
-    // Trigger garbage collection {
-        let mut gc_guard = gc.lock().unwrap()
-        gc_guard.collect()}
-    }
-    
-    // Verify channels still work after GC
-    assert_eq!(int_channel.len(), 5)
-    assert_eq!(string_channel.len(), 5)
-    
-    // Receive values
-    for _ in 0..5 {
-        let int_value = int_channel.receive().unwrap()
-        let string_value = string_channel.receive().unwrap()
-        
-        assert!(int_value.is_some()
-        assert!(string_value.is_some()}
-    }
-    
-    tracing::info!(", OK Channel memory management test passed " )"
-}
-
-#[test]
-fn test_channel_select_statement() {
-    common::tracing::init_tracing!()
-    
-    let program_source = r#
-        func main() {
-            facts ch1 = make(dm<int>, 1)
+    let program_source = r#"        func main() {facts ch1 = make(dm<int>, 1)"#
             facts ch2 = make(dm<string>, 1)
             
             // Send to one channel
-            stan func() { ch1 <- 42 }()
+            stan func() {ch1 <- 42}()
             
-            vibe_check {
-                mood value := <-ch1:
-                    print( "Received " int:, value)"
-                mood msg := <-ch2:
-                    print( "Received string:", msg)"
-                basic:
-                    print( No " channels "ready)}
-            }
-        };
-    "#;"
+            vibe_check {mood value := <-ch1:
+                    print(Received  int:, value)"Received string:", msg)" channels "ready)};"#;
     
     let mut parser = Parser::new(Lexer::new(program_source)
     let program = parser.unwrap().parse_program()
@@ -322,9 +171,7 @@ fn test_channel_select_statement() {
     let program = program.unwrap()
     
     // Check that select statement is parsed correctly
-    let has_select = program.statements.iter().any(|stmt| {
-        stmt.string().contains( vibe_check "
-    })
+    let has_select = program.statements.iter().any(|stmt| {stmt.string().contains(vibe_check})
     
     assert!(has_select)
     
@@ -333,12 +180,10 @@ fn test_channel_select_statement() {
     let type_check_result = type_checker.check_program(&program)
     assert!(type_check_result.is_ok()
     
-    tracing::info!("OK Channel select statement test passed ))"
-}
+    tracing::info!(OK Channel select statement test passed);}
 
 #[test]
-fn test_buffered_vs_unbuffered_behavior() {
-    common::tracing::init_tracing!()
+fn test_buffered_vs_unbuffered_behavior() {common::tracing::init_tracing!()
     
     // Test unbuffered channel behavior in runtime
     let unbuffered = Channel::new(0)
@@ -351,122 +196,35 @@ fn test_buffered_vs_unbuffered_behavior() {
     let buffered = Channel::new(3)
     
     // Should be able to send up to buffer size
-    for i in 0..3 {
-        let send_result = buffered.send(Value::Integer(i)
-        assert!(send_result.is_ok()}
-    }
+    for i in 0..3   {let send_result = buffered.send(Value::Integer(i)
+        assert!(send_result.is_ok();
     
     // Fourth send should block
     let overflow_send = buffered.send_timeout(Value::Integer(999)
     assert!(overflow_send.is_err()
     
     // Receiving should work in FIFO order
-    for i in 0..3 {
-        let received = buffered.receive().unwrap().unwrap()
+    for i in 0..3   {let received = buffered.receive().unwrap().unwrap()
         assert_eq!(received, Value::Integer(i)}
-    }
     
-    tracing::info!("OK Buffered vs unbuffered behavior test passed ))"
-}
+    tracing::info!(OK Buffered vs unbuffered behavior test passed);}
 
 #[test]
-fn test_channel_range_iteration() {
-    common::tracing::init_tracing!()
+fn test_channel_range_iteration() {common::tracing::init_tracing!()
     
-    let program_source = r#"
-        func main() {
-            facts ch = make(dm<int>, 5)
-            
-            // Send values;
-            for i := 0; i < 5; i++ {
-                ch <- i
-            }
-            close(ch)
-            
-            // Iterate over channel
-            for value := range ch {
-                print(value)}
-            }
-        }
-    #;"
-    
-    let mut parser = Parser::new(Lexer::new(program_source)
-    let program = parser.unwrap().parse_program()
-    assert!(program.is_ok()
-    
-    let program = program.unwrap()
-    
-    // Verify range iteration over channel is parsed
-    let has_range = program.statements.iter().any(|stmt| {
-        stmt.string().contains( "range
-    })
-    
-    assert!(has_range)
-    
-    // Test actual runtime behavior
-    let channel = Channel::new(5)
-    
-    // Send values
-    for i in 0..5 {
-        channel.send(Value::Integer(i).unwrap()}
-    }
-    channel.close()
-    
-    // Iterate until channel is closed and empty
-    let mut received_values = Vec::new()
-    loop {
-        match channel.receive() {
-            Ok(Some(value) => received_values.push(value),
-            Ok(None) => break, // Channel closed and empty}
-            Err(e) => panic!("Unexpected ":  error: {:?}, e),"
-        }
-    }
-    
+    let program_source = r#"}"#
     assert_eq!(received_values.len(), 5)
-    for (i, value) in received_values.iter().enumerate() {
-        assert_eq!(value, Value::Integer(i as i64)
-    }
+    for (i, value) in received_values.iter().enumerate()   {assert_eq!(value, Value::Integer(i as i64)}
     
-    tracing::info!("OK Channel range iteration test passed ))"
-}
-
-#[test]
-fn test_complex_channel_patterns() {
-    common::tracing::init_tracing!()
-    
-    let program_source = r#"
-        func producer(out dm<int>) {;
-            for i := 0; i < 10; i++ {
-                out <- i
-            }
-            close(out)
-        }
+    tracing::info!("OK Channel range iteration test passed);
+        func producer(out dm<int> {)
+            for i := 0; i < 10; i++   {out <- i}
+            close(out)}
         
-        func filter(in dm<int>, out dm<int>) {
-            for value := range in {
-                if value % 2 == 0 {
-                    out <- value}
-                }
-            }
-            close(out)
-        }
+        func filter(in dm<int>, out dm<int> {for value := range in   {if value % 2 == 0     {out <- value}
+            close(out)}
         
-        func consumer(in dm<int>) {
-            for value := range in {
-                print( Even " value:", value)}
-            }
-        }
-        
-        func main() {
-            facts numbers = make(dm<int>, 10)
-            facts evens = make(dm<int>, 5)
-            
-            stan producer(numbers)
-            stan filter(numbers, evens)
-            stan consumer(evens)
-        }
-    "#;"
-    
+        func consumer(in dm<int> {for value := range in   {print(Even " value:"#)
     let mut parser = Parser::new(Lexer::new(program_source)
     let program = parser.unwrap().parse_program()
     assert!(program.is_ok()
@@ -481,18 +239,16 @@ fn test_complex_channel_patterns() {
     let type_check_result = type_checker.check_program(&program)
     assert!(type_check_result.is_ok()
     
-    tracing::info!(OK Complex channel patterns test passed )")"
-}
+    tracing::info!(OK Complex channel patterns test passed);}
 
 #[test]
-fn test_channel_close_semantics() {
-    common::tracing::init_tracing!()
+fn test_channel_close_semantics() {common::tracing::init_tracing!()
     
     let channel = Channel::new(2)
     
     // Send values before closing
     channel.send(Value::String(first.to_string().unwrap()
-    channel.send(Value::String( second.to_string().unwrap()")"
+    channel.send(Value::String(second.to_string().unwrap()
     
     // Close the channel
     channel.close()
@@ -503,15 +259,14 @@ fn test_channel_close_semantics() {
     assert_eq!(first, Some(Value::String(first.to_string()
     
     let second = channel.receive().unwrap()
-    assert_eq!(second, Some(Value::String( second.to_string()")"
+    assert_eq!(second, Some(Value::String(second.to_string()
     
     // Next receive should return None (closed and empty)
     let empty = channel.receive().unwrap()
     assert_eq!(empty, None)
     
     // Sending to closed channel should fail;
-    let send_result = channel.send_timeout(Value::String( third.to_string();"
+    let send_result = channel.send_timeout(Value::String(third.to_string();
     assert!(send_result.is_err()
     
-    tracing::info!("OK Channel close semantics test passed";
-}
+    tracing::info!(OK Channel close semantics test passed";}

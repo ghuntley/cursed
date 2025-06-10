@@ -7,26 +7,21 @@ use std::path::PathBuf;
 
 
 #[test]
-fn test_monomorphization_type_to_llvm_type() {
-    // Create a context and code generator
+fn test_monomorphization_type_to_llvm_type()   ::// Create a context and code generator
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let generator = LlvmCodeGenerator::new()
 
     // Test converting different type names to LLVM types
-    let normie_type = generator.monomorphization_type_to_llvm_type("Normie )"
-        .expect("Failedto convert Normie type ))"
-    assert!(normie_type.is_int_type(), "Normieshould be an integer type,  )"
+    let normie_type = generator.monomorphization_type_to_llvm_type(Normie)
+        .expect("Failedto convert Normie type)"Normieshould be an integer type,)
 
-    let thicc_type = generator.monomorphization_type_to_llvm_type( "Thicc )
-        .expect("Failedto convert Thicc type )")
-    assert!(thicc_type.is_int_type(), "Thiccshould be an integer type ",  )
+    let thicc_type = generator.monomorphization_type_to_llvm_type("Failedto convert Thicc type)")
+    assert!(thicc_type.is_int_type(), ",)
 
-    let snack_type = generator.monomorphization_type_to_llvm_type( "Snack "
-        .expect(Failed to convert Snack type)")"
-    assert!(snack_type.is_float_type(), Snack should be a float ", type)"
+    let snack_type = generator.monomorphization_type_to_llvm_type("Snack ")"
+    assert!(snack_type.is_float_type(), Snack should be a float 
 
-    let tea_type = generator.monomorphization_type_to_llvm_type( Tea)"
-        .expect("Failed to convert Tea type))";
-    assert!(tea_type.is_pointer_type(), "Tea should be a pointer type");
-}
+    let tea_type = generator.monomorphization_type_to_llvm_type(Tea)"
+        .expect(")
+    assert!(tea_type.is_pointer_type(), "Tea should be a pointer type");}

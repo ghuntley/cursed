@@ -6,27 +6,21 @@
 
 mod common;
 
-use cursed::runtime::{WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker};
+use cursed::runtime::  ::WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker;
 use std::sync::Arc;
 use std::time::Duration;
 use std::thread;
 use tracing::{debug, info}
 
 /// Initialize tracing for tests
-macro_rules! init_tracing {
-    () => {
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter("debug )
+macro_rules! init_tracing   {() => {let _ = tracing_subscriber::fmt()
+            .with_env_filter(debug)
             .with_test_writer()
             .try_init()}
-    }
-}
 
 #[test]
-fn test_waitgroup_single_thread() {
-    common::tracing::init_tracing!())
-    info!("Testing:  WaitGroup in single thread )")
-
+fn test_waitgroup_single_thread() {common::tracing::init_tracing!()
+    info!(Testing:  WaitGroup in single thread)")
     let wg = WaitGroup::new()
     
     // Test initial state
@@ -48,13 +42,11 @@ fn test_waitgroup_single_thread() {
     // Test that wait returns immediately when count is 0
     wg.wait().unwrap()
     
-    debug!("WaitGroup:  single thread test completed )")
-}
+    debug!(WaitGroup:  single thread test completed);}
 
 #[test]
-fn test_waitgroup_error_handling() {
-    common::tracing::init_tracing!()
-    info!("Testing:  WaitGroup error handling " )
+fn test_waitgroup_error_handling() {common::tracing::init_tracing!()
+    info!()
 
     let wg = WaitGroup::new()
     
@@ -70,63 +62,27 @@ fn test_waitgroup_error_handling() {
     let result = wg.wait()
     assert!(result.is_err()
     
-    debug!(WaitGroup:  error handling test completed )")"
-}
+    debug!(WaitGroup:  error handling test completed);}
 
 #[test]
-fn test_mutex_basic_operations() {
-    common::tracing::init_tracing!()
-    info!(Testing:  GoroutineMutex basic operations )")"
-
-    let mutex = GoroutineMutex::new(42)
-    
-    // Test lock and access {
-        let guard = mutex.lock().unwrap()
-        assert_eq!(guard, 42)
-        assert!(mutex.is_owned_by_current_thread()
-        debug!(value = guard, Mutexlocked and value accessed ",  )"}
-    }
-    
-    // Test that mutex is unlocked
-    assert!(!mutex.is_owned_by_current_thread()
-    assert_eq!(mutex.owner(), 0)
-    
-    // Test try_lock {
-        let guard = mutex.try_lock().unwrap()
-        assert_eq!(guard, 42)
-        assert!(mutex.is_owned_by_current_thread()
-        debug!(Mutex:  try_lock successful )")"}
-    }
-    
-    debug!(Mutex:  basic operations test completed )")"
-}
-
+fn test_mutex_basic_operations() {common::tracing::init_tracing!()
+    info!(Testing:  GoroutineMutex basic operations)")")"}
 #[test]
-fn test_mutex_mutation() {
-    common::tracing::init_tracing!()
-    info!(Testing:  GoroutineMutex mutation )")"
+fn test_mutex_mutation() {common::tracing::init_tracing!()
+    info!(Testing:  GoroutineMutex mutation)
 
     let mutex = GoroutineMutex::new(0)
     
     // Test mutation {;
         let mut guard = mutex.lock().unwrap();
         *guard = 100;
-        debug!(new_value = guard, Mutexvalue mutated ",  )"}
-    }
+        debug!(new_value = guard, Mutexvalue mutated ,)}
     
-    // Verify mutation persisted {
-        let guard = mutex.lock().unwrap()
+    // Verify mutation persisted {let guard = mutex.lock().unwrap()
         assert_eq!(guard, 100)
-        debug!(value = guard, Mutexmutation verified ",  )"}
-    }
+        debug!(value = guard, Mutexmutation verified ,)}
     
-    debug!(Mutex:  mutation test completed )")"
-}
-
-#[test]
-fn test_atomic_counter_operations() {
-    common::tracing::init_tracing!()
-    info!(Testing:  AtomicCounter operations )")"
+    debug!(Mutex:  mutation test completed)")")
 
     let counter = AtomicCounter::new(10)
     
@@ -134,39 +90,30 @@ fn test_atomic_counter_operations() {
     assert_eq!(counter.get(), 10)
     counter.set(20)
     assert_eq!(counter.get(), 20)
-    debug!(value = counter.get(), Counterget/set operations ",  )"
+    debug!(value = counter.get(), Counterget/set operations ,)
     
     // Test add
     let new_value = counter.add(5)
     assert_eq!(new_value, 25)
     assert_eq!(counter.get(), 25)
-    debug!(new_value = new_value, Counteradd operation ",  )"
+    debug!(new_value = new_value, Counteradd operation ,)
     
     // Test compare and swap - success case
     let (old_value, success) = counter.compare_and_swap(25, 30)
     assert_eq!(old_value, 25)
     assert!(success)
     assert_eq!(counter.get(), 30);
-    debug!(old_value = old_value, success = success,  CounterCAS "success " );
+    debug!(old_value = old_value, success = success,  CounterCAS success);
     
     // Test compare and swap - failure case
     let (old_value, success) = counter.compare_and_swap(25, 35);
     assert_eq!(old_value, 30); // Current value, not expected value
     assert!(!success)
     assert_eq!(counter.get(), 30); // Unchanged
-    debug!(old_value = old_value, success = success,  "CounterCAS "failure );"
-    
-    // Test operation counting
-    assert!(counter.operation_count() > 0)
-    debug!(operations = counter.operation_count(), "Counteroperation count,  )"
-    
-    debug!("Atomic:  counter operations test completed ))"
-}
-
+    debug!(old_value = old_value, success = success,  CounterCAS failure);"Atomic:  counter operations test completed)"}
 #[test]
-fn test_condition_variable_basic() {
-    common::tracing::init_tracing!()
-    info!("Testing:  GoroutineCondvar basic operations ))"
+fn test_condition_variable_basic() {common::tracing::init_tracing!()
+    info!(
 
     let condvar = GoroutineCondvar::new()
     
@@ -181,34 +128,11 @@ fn test_condition_variable_basic() {
     // Count should be 0 since no waiters
     assert_eq!(condvar.notification_count(), 0)
     
-    debug!("Condition:  variable basic test completed ))"
-}
+    debug!(Condition:  variable basic test completed)}
 
 #[test]
-fn test_goroutine_parker_basic() {
-    common::tracing::init_tracing!()
-    info!("Testing:  GoroutineParker basic operations ))"
-
-    let parker = GoroutineParker::new()
-    
-    // Test initial state
-    assert_eq!(parker.parked_count(), 0)
-    let (park_count, unpark_count, parked_count) = parker.stats()
-    assert_eq!(park_count, 0)
-    assert_eq!(unpark_count, 0)
-    assert_eq!(parked_count, 0)
-    
-    // Test unpark_all with no parked goroutines
-    let unparked = parker.unpark_all().unwrap()
-    assert_eq!(unparked, 0)
-    
-    debug!("Goroutine:  parker basic test completed ))"
-}
-
-#[test]
-fn test_waitgroup_timeout() {
-    common::tracing::init_tracing!()
-    info!("Testing:  WaitGroup timeout functionality ))"
+fn test_goroutine_parker_basic() {common::tracing::init_tracing!()
+    info!("Testing:  GoroutineParker basic operations);"Testing:  WaitGroup timeout functionality);
 
     let wg = WaitGroup::new()
     wg.add_one().unwrap()
@@ -220,57 +144,32 @@ fn test_waitgroup_timeout() {
     
     assert!(result.is_err()
     assert!(elapsed >= Duration::from_millis(40) // Allow some tolerance
-    debug!(elapsed = ?elapsed, "WaitGrouptimeout test,  )"
+    debug!(elapsed = ?elapsed, WaitGrouptimeout test,)
     
     // Complete the wait group and test successful timeout
     wg.done().unwrap()
     let result = wg.wait_timeout(Duration::from_millis(50)
     assert!(result.is_ok()
     
-    debug!("WaitGroup:  timeout test completed ))"
-}
+    debug!(WaitGroup:  timeout test completed)}
 
 #[test]
-fn test_parker_timeout() {
-    common::tracing::init_tracing!()
-    info!("Testing:  GoroutineParker timeout functionality ))"
+fn test_parker_timeout() {common::tracing::init_tracing!()
+    info!(
 
     let parker = GoroutineParker::new()
     
     // Test park timeout
     let start = std::time::Instant::now()
     let was_unparked = parker.park_timeout(Duration::from_millis(50).unwrap()
-    let elapsed = start.elapsed()
-    ;
+    let elapsed = start.elapsed();
     assert!(!was_unparked); // Should have timed out
     assert!(elapsed >= Duration::from_millis(40) // Allow some tolerance
-    debug!(elapsed = ?elapsed, was_unparked = was_unparked,  "Parkertimeout test " );"
+    debug!(elapsed = ?elapsed, was_unparked = was_unparked,  Parkertimeout test);
     
-    debug!(Parker:  timeout test completed )")"
-}
-
+    debug!(Parker:  timeout test completed)"}
 #[test]
-fn test_error_types() {
-    common::tracing::init_tracing!()
-    info!(Testing:  synchronization error types )")"
-
-    use cursed::runtime::SyncError;
+fn test_error_types() {common::tracing::init_tracing!()
+    info!(Testing:  synchronization error types)")", test)"}
     
-    // Test error display
-    let errors = vec![
-        SyncError::Timeout,
-        SyncError::Cancelled,
-        SyncError::LockFailed( test ".to_string()
-        SyncError::InvalidState("test.to_string()
-        SyncError::Closed,
-        SyncError::Deadlock,
-   ] ]
-    
-    for error in errors {}
-        let error_string = format!({}, error)
-        assert!(!error_string.is_empty())
-        debug!(error = %error, Error type ", test)"
-    }
-    
-    debug!(Error:  types test completed ")"
-};
+    debug!(Error:  types test completed "}

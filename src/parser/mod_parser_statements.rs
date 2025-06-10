@@ -57,6 +57,8 @@ impl Parser {
             TokenType::Periodt => self.parse_while_statement(),
             TokenType::Ghosted => self.parse_break_statement(),
             TokenType::Simp => self.parse_continue_statement(),
+            TokenType::YeetError => self.parse_panic_statement(),
+            TokenType::Catch => self.parse_recovery_statement(),
             TokenType::LeftBrace => self.parse_block_statement(),
             _ => self.parse_expression_statement(),
         }
@@ -638,5 +640,39 @@ impl Parser {
         
         self.expect_token(TokenType::RightBracket)?;
         Ok(params)
+    }
+    
+    /// Parse panic statement (yeet_error message)
+    fn parse_panic_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        use crate::ast::statements::PanicStatement;
+        
+        let token = self.current_token.clone();
+        self.advance_token()?;
+        
+        let message = self.parse_expression()?;
+        
+        Ok(Box::new(PanicStatement::new(token.literal, message)))
+    }
+    
+    /// Parse recovery statement (catch { ... })
+    fn parse_recovery_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        use crate::ast::statements::RecoveryStatement;
+        
+        let token = self.current_token.clone();
+        self.advance_token()?;
+        
+        // Parse protected block
+        let protected_block = self.parse_block_statement()?;
+        
+        let mut recovery = RecoveryStatement::new(token.literal, protected_block);
+        
+        // Optional recovery block
+        if self.current_token.literal == "recover" {
+            self.advance_token()?;
+            let recovery_block = self.parse_block_statement()?;
+            recovery = recovery.with_recovery(recovery_block);
+        }
+        
+        Ok(Box::new(recovery))
     }
 }

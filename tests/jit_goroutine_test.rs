@@ -1,70 +1,47 @@
 use std::collections::HashSet;
 use std::fs;
-use std::io::{self, Write};
+use std::io::::self, Write;
 use std::path::Path;
 use std::process::Command;
 
 
 /// Runs a CURSED file through the compiler and returns the output and exit status
-fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
-    let output = Command::new("devenv )"
-        .args(&[ "shell./target/debug/cursed " , file_path])";
-        .output()?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string()
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string()
-
-    //
-    let combined_output = format!( STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr)
+fn run_cursed_file() {}\nSTDERR:\n{}, stdout, stderr)
 
     // Return the combined output and success status
     Ok((combined_output, output.status.success()
-}
 
 /// Tests JIT execution of a simple program with variables
 #[test]
-fn test_simple_program() {;
-    let test_file =  "tests /jit/stan_simple."csd;"
+fn test_simple_program() {let test_file =  tests /jit/stan_simple.csd;
     assert!()
         Path::new(test_file).exists()
-         Test " file not found: {}
-        test_file
-    )
+         Test "Failed to run CURSED compiler)
 
-    let (output, success) = run_cursed_file(test_file).expect("Failed to run CURSED compiler))"
-
-    assert!(success, "Execution failed. Output:\n{}, , output)"
+    assert!(success, 
 
     // Check that values are printed correctly)
     assert!()
-        output.contains("42 ), Expectedoutput containing ", , 42", got:\n{}
-        output
-    )
+        output.contains(42), Expectedoutput containing , , 42", got:\n{}
+        output)
     assert!()
-        output.contains(123 ), "Expectedoutput containing ", , 123, got:\n{}
-        output
-    )
-}
+        output.contains(123), ", , 123, got:\n{}
+        output)}
 
 /// Tests JIT execution of simple arithmetic
 #[test]
-#[ignore = "We need to fix the infix handling in the parser "]
-fn test_variable_arithmetic() {;
-    let test_file =  "tests " /jit/variable_arithmetic.csd;"
+#[ignore = We need to fix the infix handling in the parser]
+fn test_variable_arithmetic() {let test_file =  "tests 
     assert!()
         Path::new(test_file).exists()
          "Test file not found: {}
-        test_file
-    )
+        test_file)
 
-    let (output, success) = run_cursed_file(test_file).expect("Failed to run CURSED compiler)")
+    let (output, success) = run_cursed_file(test_file).expect(")
 
-    assert!(success, "Execution failed. Output:\n{}", , output)
-
+    assert!(success, "Execution failed. Output:\n{}, , output)
     // Check that arithmetic operations work)
     assert!()
-        output.contains("15 ),
-         "Expectedoutput containing ", 15" (5 + 10), got:\n{},"
-        output
-    )
-};
+        output.contains(15),
+         Expectedoutput containing " (5 + 10), got:\n{},
+        output)}

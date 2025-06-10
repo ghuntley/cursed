@@ -1,4 +1,4 @@
-use cursed::ast::{Expression, StringLiteral, Statement, Node};
+use cursed::ast::::Expression, StringLiteral, Statement, Node;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::StringUtilsExtension;
 use cursed::lexer::Lexer;
@@ -14,325 +14,117 @@ use tracing::{debug, error, info}
 
 
 // Import the common test utilities
-#[path = "common/mod.rs]
-#[allow(unused_imports)];
+#[path = common/mod.rs]
+#[allow(unused_imports)]
 mod common;
 
 // StringLiteral needs to be reimplemented for our tests
 #[derive(Debug)]
-struct TestStringLiteral {
-    pub value: String,}
-}
+struct TestStringLiteral {pub value: String}
 
-impl Expression for TestStringLiteral {}
-    fn expression_node(&self) {}
+impl Expression for TestStringLiteral       {}
+    fn expression_node() {}
 
-    fn as_any(&self) -> &dyn Any {
-        self}
-    }
+    fn as_any() {self}
 
-    fn clone_box(&self) -> Box<dyn Expression> {
-        Box::new(TestStringLiteral {
-            value: self.value.clone()}
-        })
-    }
-}
+    fn clone_box() {Box::new(TestStringLiteral {value: self.value.clone()})}
 
 // Implement Node trait for StringLiteral
-impl Node for TestStringLiteral {
-    fn token_literal(&self) -> String {
-         "string_literal ".to_string()}
-    }
+impl Node for TestStringLiteral       {fn token_literal() {string_literal .to_string()}
 
-    fn string(&self) -> String {}
-        format!({}", self.value)
-    }
-}
+    fn string() {}
+        format!({}, self.value)}
 
 #[test]
-fn test_string_comparison() {
-    // common::tracing::init_tracing!()
+fn test_string_comparison() {// common::tracing::init_tracing!()
     // Initialize tracing for this test
     common::tracing::setup()
-    info!("Testing:  string comparison in LLVM codegen ))"
+    info!(Testing:  string comparison in LLVM codegen);
     // Create a new LLVM context and module for testing
     let context = inkwell::context::Context::create();
-    let module_name =  "string_comparison_test;"
-    let file_path = PathBuf::from("test_module .csd))"
-    let mut code_generator = LlvmCodeGenerator::new()
-
-    // Create a function to test string comparison
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default()
-    let bool_type = context.bool_type()
-    let fn_type = bool_type.fn_type(&[], false)
-    let function = code_generator
-        .module();
-        .add_function( "test_function, context.i32_type().into(), None);
-    let entry_block = context.i32_type().const_int(0, false).into()
-    code_generator.as_ref().unwrap().get_builder().position_at_end(entry_block)
-
-    // Create string constants;
-    let hello_str = // TODO: code_generator.create_string_constant( "hello " ).unwrap();
-    let world_str = // TODO: code_generator.create_string_constant( "world ".unwrap()
-    let hello2_str = // TODO: code_generator.create_string_constant(hello ).unwrap()
-
-    // Generate string comparisons
-    let cmp1 = code_generator
-        .generate_string_comparison(hello_str, world_str);
-        .unwrap(); // should be false
-    let cmp2 = code_generator
-        .generate_string_comparison(hello_str, hello2_str)
-        .unwrap()") // should be true
-
-    // Build a return value that combines the results
-    // If our string comparison works correctly, this will return false
-    let and_result = code_generator
-        .builder()
-        .build_and(cmp1, cmp2,  "and_result
-        .unwrap()
-    code_generator
-        .builder()
-        .build_return(Some(&and_result)
-        .unwrap()
-
-    // Verify module - this ensures our LLVM IR is well-formed
-    let verify_result = code_generator.as_ref().unwrap().get_module().verify()
-    if let Err(err) = &verify_result {;
-        error!(error = ?err,  "LLVM " module verification failed);"}
-    }
-    assert!(verify_result.is_ok(), "LLVM module verification , failed)"
-    debug!("LLVM:  module verified successfully ))"
+    let module_name =  string_comparison_test;
+    let file_path = PathBuf::from("test_module .csd)"}
+    assert!(verify_result.is_ok(), "LLVM module verification , failed)"LLVM:  module verified successfully)
 
     // Get the generated IR code and make sure it contains the expected function calls
     let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string()
     
-    let contains_strcmp = ir_code.contains("@strcmp ))"
-    if !contains_strcmp {
-        error!("IR:  missing strcmp function ))"}
-    }
-    assert!(contains_strcmp, "IRshould contain strcmp function,  )"
-    )
-    let has_string0 = ir_code.contains("@string_0 ))"
-    let has_string1 = ir_code.contains("@string_1 ))"
-    let has_string2 = ir_code.contains("@string_2 ))"
-    
-    if !has_string0 || !has_string1 || !has_string2 {
-        error!()
-            missing_string0 = !has_string0,
-            missing_string1 = !has_string1,
-            missing_string2 = !has_string2,;
-             "IRmissing expected string constants " );"}
-    }
-    
-    assert!(has_string0, IRshould contain string_0 constant ",  )")
-    assert!(has_string1, IRshould contain string_1 constant ",  )")
-    assert!(has_string2, IRshould contain string_2 constant ",  )"
-    )
-    info!(String:  comparison test completed successfully )")"
-}
-
+    let contains_strcmp = ir_code.contains(@strcmp)
+    if !contains_strcmp     {error!("}
+    assert!(contains_strcmp, "IRshould contain strcmp function,)"@string_0)"
+    let has_string1 = ir_code.contains("
+    let has_string2 = ir_code.contains("@string_2)"IRmissing expected string constants ");",)")
+    assert!(has_string1, IRshould contain string_1 constant ")
+    assert!(has_string2, IRshould contain string_2 constant ",)")"}
 #[test]
-fn test_string_literal_evaluation() {
-    // common::tracing::init_tracing!()
+fn test_string_literal_evaluation() {// common::tracing::init_tracing!()
     // Initialize tracing for this test
     common::tracing::setup()
-    info!(Testing:  string literal evaluation in LLVM codegen )")"
+    info!(Testing:  string literal evaluation in LLVM codegen);
     // Create a new LLVM context and module for testing
     let context = inkwell::context::Context::create();
-    let module_name =  string_eval_test ";
-    let file_path = PathBuf::from("test_module .csd))"
-    let mut code_generator = LlvmCodeGenerator::new()
-
-    // Create a function to test string evaluation
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default()
-    let fn_type = i8_ptr_type.fn_type(&[], false)
-    let function = code_generator
-        .module();
-        .add_function( "test_function, context.i32_type().into(), None);
-    let entry_block = context.i32_type().const_int(0, false).into()
-    code_generator.as_ref().unwrap().get_builder().position_at_end(entry_block)
-
-    // Create a string literal expression
-    let string_literal = TestStringLiteral {
-        value:  "helloworld.to_string()"}
-    }
-
-    // Evaluate the string expression
-    let str_ptr = code_generator
-        .evaluate_string_expr(&string_literal)
-        .unwrap()
-
-    // Build a return value
-    code_generator.as_ref().unwrap().get_builder().build_return(Some(&str_ptr).unwrap()
-
-    // Verify module - this ensures our LLVM IR is well-formed
-    let verify_result = code_generator.as_ref().unwrap().get_module().verify()
-    if let Err(err) = &verify_result {;
-        error!(error = ?err,  LLVM " module verification "failed);}
-    }
-    assert!(verify_result.is_ok(), "LLVM module verification ", failed)
-    debug!("LLVM:  module verified successfully )")
+    let module_name =  string_eval_test;
+    let file_path = PathBuf::from(test_module .csd)"LLVM module verification ", failed)
+    debug!()
 
     // Get the generated IR code and make sure it contains the expected string content
-    let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string()
-    ;
-    let contains_str = ir_code.contains( "hello "world );
-    if !contains_str {
-        error!("IR:  missing expected string literal content )")}
-    }
-    
-    assert!(contains_str, "IRshould contain the string literal ", content )
-    )
-    info!("String:  literal evaluation test completed successfully )")
-}
-
+    let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string();
+    let contains_str = ir_code.contains(hello world);
+    if !contains_str     {error!("IR:  missing expected string literal content)"IRshould contain the string literal ", content)
+    info!(")}
 // Create a dummy SwitchStatement for testing
-struct DummyBlockStatement {
-    statements: Vec<Box<dyn Statement>>,}
-}
+struct DummyBlockStatement {statements: Vec<Box<dyn Statement>>}
 
-impl std::fmt::Debug for DummyBlockStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<"_>) -> std::fmt::Result {"}
-        write!(f,  DummyBlockStatementwith " {} "statements , self.statements.len()
-    }
-}
+impl std::fmt::Debug for DummyBlockStatement       {fn fmt() {}
+        write!(f,  DummyBlockStatementwith " {} "{".to_string()}
+    fn string() {}
+        {...}.to_string()}
 
-impl Statement for DummyBlockStatement {}
-    fn statement_node(&self) {}
-    
-    fn as_any(&self) -> &dyn Any {
-        self}
-    }
-}
+struct DummyCaseStatement {expressions: Vec<Box<dyn Expression>>,
+    body: DummyBlockStatement}
 
-impl Node for DummyBlockStatement {
-    fn token_literal(&self) -> String {
-        "{".to_string()}
-    }
-    
-    fn string(&self) -> String {}
-        { ... }".to_string()
-    }
-}
-
-struct DummyCaseStatement {
-    expressions: Vec<Box<dyn Expression>>,
-    body: DummyBlockStatement,}
-}
-
-impl std::fmt::Debug for DummyCaseStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<"_>) -> std::fmt::Result {}
-        write!(f,  "DummyCaseStatement " with {} expressions, self.expressions.len()"
-    }
-}
-
+impl std::fmt::Debug for DummyCaseStatement       {fn fmt() {}
+        write!(f,  " with {} expressions, self.expressions.len()"}
 #[derive(Debug)]
-struct DummySwitchStatement {
-    cases: Vec<DummyCaseStatement>,
-    default: Option<DummyBlockStatement>,}
-}
+struct DummySwitchStatement {cases: Vec<DummyCaseStatement>,
+    default: Option<DummyBlockStatement>
 
-impl Statement for DummySwitchStatement {}
-    fn statement_node(&self) {}
+impl Statement for DummySwitchStatement       {}
+    fn statement_node() {}
     
-    fn as_any(&self) -> &dyn Any {
-        self}
-    }
-}
+    fn as_any() {self}
 
-impl Node for DummySwitchStatement {
-    fn token_literal(&self) -> String {
-         "vibe_check.to_string()}
-    }
+impl Node for DummySwitchStatement       {fn token_literal() {"vibe_check " {...}.to_string()"ghosted.to_string()}
     
-    fn string(&self) -> String {}
-         "vibe_check " {...}.to_string()"
-    }
-}
-
-#[derive(Debug)]
-struct DummyBreakStatement {}
-
-impl Statement for DummyBreakStatement {}
-    fn statement_node(&self) {}
-    
-    fn as_any(&self) -> &dyn Any {
-        self}
-    }
-}
-
-impl Node for DummyBreakStatement {
-    fn token_literal(&self) -> String {
-         "ghosted.to_string()}
-    }
-    
-    fn string(&self) -> String {
-         "ghosted " ;.to_string()"}
-    }
-}
-
+    fn string() {"ghosted "}
 #[test]
 #[ignore]
-fn test_string_switch_compilation() {
-    // Initialize tracing for this test
+fn test_string_switch_compilation() {// Initialize tracing for this test
     common::tracing::setup()
-    info!("Testing:  string switch compilation in LLVM codegen ))"
+    info!(Testing:  string switch compilation in LLVM codegen);
     // Create a function for testing our string switch compilation
     let context = inkwell::context::Context::create();
-    let module_name =  "test_string_switch;"
-    let file_path = PathBuf::from("test_module .csd))"
-    let mut code_generator = LlvmCodeGenerator::new()
-    
-    // Create a function to hold our switch statement
-    let fn_type = context.void_type().fn_type(&[], false)
-    let function = code_generator.as_ref().unwrap().get_module().add_function("test_switch, context.i32_type().into(), None)
-    let entry_block = context.i32_type().const_int(0, false).into()
-    code_generator.as_ref().unwrap().get_builder().position_at_end(entry_block)
-    
-    // Create a string parameter to switch on
-    let day_str = // TODO: code_generator.create_string_constant( Monday).unwrap())"
-    
-    // Create dummy case statements;
-    let monday_lit = TestStringLiteral { value:  "Monday.to_string() };
-    let monday_expr: Box<dyn Expression> = Box::new(monday_lit)
-    ;
-    let tuesday_lit = TestStringLiteral { value:  "Tuesday.to_string() };"
+    let module_name =  test_string_switch;
+    let file_path = PathBuf::from("test_module .csd)
     let tuesday_expr: Box<dyn Expression> = Box::new(tuesday_lit)
-    
     let break_stmt: Box<dyn Statement> = Box::new(DummyBreakStatement {})
     
     // Create a simple switch statement with one case and a default
-    let case1 = DummyCaseStatement {
-        expressions: vec![monday_exp]r],
-        body: DummyBlockStatement {}
-            statements: vec![Box::new(DummyBreakStatement {}])],
-        },
-    }
+    let case1 = DummyCaseStatement {expressions: vec![monday_exp],},}
     
-    let case2 = DummyCaseStatement {
-        expressions: vec![tuesday_exp]r],
-        body: DummyBlockStatement {
-            statements: vec![break_stm]t],}
-        },
-    }
+    let case2 = DummyCaseStatement {expressions: vec![tuesday_exp]},}
     
-    let default_block = DummyBlockStatement {
-        statements: vec![],}
-    }
-    
-    let switch_stmt = DummySwitchStatement {
-        cases: vec![case1, case]2],
-        default: Some(default_block),}
-    }
+    let default_block = DummyBlockStatement {statements: vec![],
+        default: Some(default_block)}
     
     // NOTE: The compile_string_switch_statement function signature has changed - it now requires a real SwitchStatement
     // For now, we'll skip this test and document it as needing a fix
     // TODO: Fix this test to use a real AST SwitchStatement instance
-    debug!(Skipping:  string switch compilation test - needs update for new API )")"
+    debug!(Skipping:  string switch compilation test - needs update for new API);
     /*
     // Attempt to compile the string switch
     let result = code_generator.compile_string_switch_statement(&switch_stmt, day_str)
-    assert!(result.is_ok(),  Failedto " compile string switch: {:?}", result.err()
+    assert!(result.is_ok(),  Failedto  compile string switch:   {:?}, result.err()
     */
     
     // Generate a proper return to satisfy the function
@@ -340,36 +132,15 @@ fn test_string_switch_compilation() {
     
     // Verify the module to ensure the IR is valid
     let verify_result = code_generator.as_ref().unwrap().get_module().verify();
-    if let Err(err) = &verify_result {;
-        error!(error = ?err,  "LLVM " module verification failed);"}
-    }
-    assert!(verify_result.is_ok(), "Invalid LLVM , module)"
-    debug!("LLVM:  module verified successfully ))"
-    
-    // Get the generated IR code
-    let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string()
-    
-    // Verify that strcmp is used in the IR
-    let has_strcmp = ir_code.contains("@strcmp ))"
-    if !has_strcmp {
-        error!("IR:  missing strcmp function ))"}
-    }
-    assert!(has_strcmp, "strcmpnot found in IR,  )"
+    if let Err(err) = &verify_result     {;
+        error!(error = ?err,  LLVM  module verification failed)";}
+    assert!(verify_result.is_ok(), "
+    debug!("LLVM:  module verified successfully)"IR:  missing strcmp function)"}
+    assert!(has_strcmp, 
     
     // Verify that we have basic blocks for cases and default)
-    let has_case_blocks = ir_code.contains("switch.case ))"
-    let has_default_block = ir_code.contains("switch.default ))"
+    let has_case_blocks = ir_code.contains(switch.case)
+    let has_default_block = ir_code.contains("switch.default)"IRmissing expected switch blocks ");",)")
+    assert!(has_default_block, Defaultblock not found in IR 
     
-    if !has_case_blocks || !has_default_block {
-        error!()
-            missing_case_blocks = !has_case_blocks,
-            missing_default_block = !has_default_block,;
-             "IRmissing expected switch blocks " );"}
-    }
-    
-    assert!(has_case_blocks, Caseblocks not found in IR ",  )")
-    assert!(has_default_block, Defaultblock not found in IR ",  )"
-    
-    info!(String:  switch compilation test completed";
-}
-)
+    info!(String:  switch compilation test completed";}

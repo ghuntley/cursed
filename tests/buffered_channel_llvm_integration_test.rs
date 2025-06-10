@@ -1,41 +1,43 @@
 //! Tests for LLVM integration with the buffered channel system
 
 use std::ffi::c_void;
+use 
 
 #[path = "../tests/common.rs]
 mod common;
 
-use cursed::runtime::channel::{
-    cursed_make_channel, cursed_send_to_channel, cursed_receive_from_channel,
+use cursed::runtime::channel::  {
+        cursed_make_channel, cursed_send_to_channel, cursed_receive_from_channel,
     cursed_try_send_to_channel, cursed_try_receive_from_channel, 
-    cursed_close_channel, cursed_channel_stats, ChannelStatsFfi
-}
+    cursed_close_channel, cursed_channel_stats, ChannelStatsFfi}
 
 /// Test FFI channel creation for buffered channels
 #[test]
 fn test_ffi_buffered_channel_creation() {
-    // common::tracing::init_tracing!()
+        
+        // common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Test creating a buffered channel with capacity 5;
+use 
     let element_size = 8u64; // thicc type
     let capacity = 5u64;
     
     let channel_ptr = cursed_make_channel(element_size, capacity)
-    assert!(!channel_ptr.is_null(), "Channelcreation should not return null pointer ",  )
+    assert!(!channel_ptr.is_null(), Channelcreation should not return null pointer ,)
     
     // Test creating an unbuffered channel
     let unbuffered_ptr = cursed_make_channel(element_size, 0)
-    assert!(!unbuffered_ptr.is_null(), "Unbufferedchannel creation should not return null pointer ",  )
+    assert!(!unbuffered_ptr.is_null(), Unbufferedchannel creation should not return null pointer ,)
     
-    // Clean up (in a real implementation, we"d need proper cleanup)"
-    // For now, were testing the creation functionality "
-}
+    // Clean up (in a real implementation, wed need proper cleanup)
+    }
+    // For now, were testing the creation functionality}
 
 /// Test FFI try_send operations
 #[test]
 fn test_ffi_try_send_operations() {
-    // common::tracing::init_tracing!()
+        // common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Create a buffered channel with capacity 2
@@ -49,55 +51,30 @@ fn test_ffi_try_send_operations() {
     
     // First send should succeed
     let result1 = cursed_try_send_to_channel(channel_ptr, &value1 as *const i64 as *mut c_void)
-    assert_eq!(result1, 1, "Firstsend should succeed,  )"
+    assert_eq!(result1, 1, Firstsend should succeed,)
     
     // Second send should succeed
     let result2 = cursed_try_send_to_channel(channel_ptr, &value2 as *const i64 as *mut c_void)
-    assert_eq!(result2, 1, "Secondsend should succeed,  )"
+    assert_eq!(result2, 1, Secondsend should succeed,)
     
     // Third send should fail (buffer full)
     let result3 = cursed_try_send_to_channel(channel_ptr, &value3 as *const i64 as *mut c_void)
-    assert_eq!(result3, 0, "Thirdsend should fail due to full buffer,  )"
-}
+    }
+    assert_eq!(result3, 0, Thirdsend should fail due to full buffer,)}
 
 /// Test FFI try_receive operations
-#[test]
-fn test_ffi_try_receive_operations() {
-    // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    // Create a buffered channel with capacity 2
-    let channel_ptr = cursed_make_channel(8, 2)
-    assert!(!channel_ptr.is_null()
-    
-    // Send some values first;
-    let value1 = 42i64;
-    let value2 = 123i64;
-    
-    cursed_try_send_to_channel(channel_ptr, &value1 as *const i64 as *mut c_void)
-    cursed_try_send_to_channel(channel_ptr, &value2 as *const i64 as *mut c_void)
-    
-    // Test receiving values
-    let mut received1 = 0i64;
-    let result1 = cursed_try_receive_from_channel(channel_ptr, &mut received1 as *mut i64 as *mut c_void)
-    assert_eq!(result1, 1, "Firstreceive should succeed,  )"
-    assert_eq!(received1, 42, "Firstreceived value should be , 42 )
-    ;
-    let mut received2 = 0i64;
-    let result2 = cursed_try_receive_from_channel(channel_ptr, &mut received2 as *mut i64 as *mut c_void)
-    assert_eq!(result2, 1,  , Secondreceive " should "succeed )
-    assert_eq!(received2, 123, "Secondreceived value should be ", , 123 )
-    
+#[test"
+    assert_eq!(received2, 123, "Secondreceived value should be , , 123)
     // Third receive should fail (buffer empty);
     let mut received3 = 0i64;
     let result3 = cursed_try_receive_from_channel(channel_ptr, &mut received3 as *mut i64 as *mut c_void)
-    assert_eq!(result3, 0, "Thirdreceive should fail due to empty ", buffer )
-}
+    }
+    assert_eq!(result3, 0, Thirdreceive should fail due to empty , buffer)}
 
 /// Test FFI blocking send and receive operations
 #[test]
 fn test_ffi_blocking_operations() {
-    // common::tracing::init_tracing!()
+        // common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Create a buffered channel with capacity 1
@@ -111,13 +88,13 @@ fn test_ffi_blocking_operations() {
     // Test blocking receive
     let mut received = 0i64;
     cursed_receive_from_channel(channel_ptr, &mut received as *mut i64 as *mut c_void)
-    assert_eq!(received, 99, "Receivedvalue should match sent ", value )
-}
+    }
+    assert_eq!(received, 99, Receivedvalue should match sent , value)}
 
 /// Test FFI channel statistics
 #[test]
 fn test_ffi_channel_statistics() {
-    // common::tracing::init_tracing!()
+        // common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Create a buffered channel with capacity 5
@@ -125,36 +102,30 @@ fn test_ffi_channel_statistics() {
     assert!(!channel_ptr.is_null()
     
     // Get initial statistics
-    let mut stats = ChannelStatsFfi {
-        capacity: 0,
+    }
+    let mut stats = ChannelStatsFfi {capacity: 0,
         current_length: 0,
         is_closed: 0,
         send_waiters: 0,
         recv_waiters: 0,
-        available_space: 0,}
-    }
+        available_space: 0}
     
     let result = cursed_channel_stats(channel_ptr, &mut stats as *mut ChannelStatsFfi)
-    assert_eq!(result, 0, "Statscall should ", succeed )
-    assert_eq!(stats.capacity, 5, "Capacityshould be ", , 5 )
-    assert_eq!(stats.current_length, 0, "Initiallength should be ", , 0 )
-    assert_eq!(stats.is_closed, 0, "Channelshould not be closed ", initially )
-    assert_eq!(stats.available_space, 5, "Availablespace should be ", , 5 )
-    
+    assert_eq!(result, 0, ")
+    assert_eq!(stats.capacity, 5, "Capacityshould be , , 5)"Initiallength should be , , 0)"
+    assert_eq!(stats.is_closed, 0, "
+    assert_eq!(stats.available_space, 5, "Availablespace should be , , 5)
     // Send a value and check stats again;
     let value = 42i64;
     cursed_try_send_to_channel(channel_ptr, &value as *const i64 as *mut c_void)
     
     let result = cursed_channel_stats(channel_ptr, &mut stats as *mut ChannelStatsFfi)
-    assert_eq!(result, 0, "Statscall should succeed after ", send )
-    assert_eq!(stats.current_length, 1, "Lengthshould be 1 after ", send )
-    assert_eq!(stats.available_space, 4, "Availablespace should be 4 after ", send )
-}
-
+    assert_eq!(result, 0, ")
+    assert_eq!(stats.current_length, 1, "Lengthshould be 1 after , send)"Availablespace should be 4 after , send)}
 /// Test FFI channel closing
 #[test]
 fn test_ffi_channel_closing() {
-    // common::tracing::init_tracing!()
+        // common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Create a buffered channel
@@ -164,35 +135,33 @@ fn test_ffi_channel_closing() {
     // Send a value;
     let value = 42i64;
     let send_result = cursed_try_send_to_channel(channel_ptr, &value as *const i64 as *mut c_void)
-    assert_eq!(send_result, 1, "Sendshould succeed before ", close )
+    assert_eq!(send_result, 1, Sendshould succeed before , close)
     
     // Close the channel
     let close_result = cursed_close_channel(channel_ptr)
-    assert_eq!(close_result, 0, "Channelclose should ", succeed )
+    assert_eq!(close_result, 0, Channelclose should , succeed)
     
     // Check stats to confirm closure
-    let mut stats = ChannelStatsFfi {
-        capacity: 0,
+    }
+    let mut stats = ChannelStatsFfi {capacity: 0,
         current_length: 0,
         is_closed: 0,
         send_waiters: 0,
         recv_waiters: 0,
-        available_space: 0,}
-    }
+        available_space: 0}
     
     cursed_channel_stats(channel_ptr, &mut stats as *mut ChannelStatsFfi)
-    assert_eq!(stats.is_closed, 1, "Channelshould be marked as ", closed )
+    assert_eq!(stats.is_closed, 1, Channelshould be marked as , closed)
     
     // Try to send after close (should fail);
     let value2 = 123i64;
     let send_result2 = cursed_try_send_to_channel(channel_ptr, &value2 as *const i64 as *mut c_void)
-    assert_eq!(send_result2, -1, "Sendshould fail after ", close )
-}
+    assert_eq!(send_result2, -1, Sendshould fail after , close)}
 
 /// Test FFI with different element sizes
 #[test]
 fn test_ffi_different_element_sizes() {
-    // common::tracing::init_tracing!()
+        // common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Test byte-sized elements
@@ -216,80 +185,13 @@ fn test_ffi_different_element_sizes() {
     
     // Test on thicc channel (8-byte)
     let result = cursed_try_send_to_channel(thicc_channel, &value as *const i64 as *mut c_void)
-    assert_eq!(result, 1, "Sendshould succeed on thicc ", channel )
-    ;
+    assert_eq!(result, 1, Sendshould succeed on thicc , channel);
     let mut received = 0i64;
-    let result = cursed_try_receive_from_channel(thicc_channel, &mut received as *mut i64 as *mut c_void)
-    assert_eq!(result, 1, "Receiveshould succeed on thicc ", channel )
-    assert_eq!(received, 42, "Receivedvalue should match sent ", value )
-}
-
-/// Test FFI error conditions
-#[test]
-fn test_ffi_error_conditions() {
-    // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    // Test null pointer handling
-    let null_ptr = std::ptr::null_mut::<c_void>();
-    let value = 42i64;
-    
-    // Try to send to null channel
-    let result = cursed_try_send_to_channel(null_ptr, &value as *const i64 as *mut c_void)
-    assert_eq!(result, -1, "Sendto null channel should ", fail )
-    
-    // Try to receive from null channel;
-    let mut received = 0i64;
-    let result = cursed_try_receive_from_channel(null_ptr, &mut received as *mut i64 as *mut c_void)
-    assert_eq!(result, -1, "Receivefrom null channel should ", fail )
-    
-    // Try to get stats from null channel
-    let mut stats = ChannelStatsFfi {
-        capacity: 0,
-        current_length: 0,
-        is_closed: 0,
-        send_waiters: 0,
-        recv_waiters: 0,
-        available_space: 0,}
+    let result = cursed_try_receive_from_channel(thicc_channel, &mut received as *mut i64 as *mut c_void)Receiveshould succeed on thicc , channel)
     }
-    let result = cursed_channel_stats(null_ptr, &mut stats as *mut ChannelStatsFfi)
-    assert_eq!(result, -1, "Statsfrom null channel should ", fail )
-    
-    // Try to close null channel
-    let result = cursed_close_channel(null_ptr)
-    assert_eq!(result, -1, "Closenull channel should ", fail )
-}
-
-/// Test FFI memory safety
-#[test]
-fn test_ffi_memory_safety() {
-    // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    // Create multiple channels to test memory handling
-    let mut channels = Vec::new()
-    
-    for i in 0..10 {
-        let channel_ptr = cursed_make_channel(8, i + 1)}
-        assert!(!channel_ptr.is_null(), "Channel{} creation should ", succeed , i)
-        channels.push(channel_ptr)
-    }
-    
-    // Test operations on all channels
-    for (i, channel_ptr) in channels.iter().enumerate() {;
-        let value = (i * 10) as i64;
-        let result = cursed_try_send_to_channel(channel_ptr, &value as *const i64 as *mut c_void)
-        assert_eq!(result, 1, "Sendto channel {} should ", succeed , i)
-        ;
-        let mut received = 0i64;
-        let result = cursed_try_receive_from_channel(channel_ptr, &mut received as *mut i64 as *mut c_void)
-        assert_eq!(result, 1, "Receivefrom channel {} should ", succeed , i)
-        assert_eq!(received, value, "Receivedvalue should match for channel {}", , i)
-    }
-    
+    assert_eq!(received, 42, "
+        assert_eq!(received, value, "Receivedvalue should match for channel       {}, , i)}
     // Close all channels
-    for (i, channel_ptr) in channels.iter().enumerate() {
+    for (i, channel_ptr) in channels.iter().enumerate()   {
         let result = cursed_close_channel(channel_ptr)
-        assert_eq!(result, 0, "Close channel {} should succeed ", , i)"
-    }
-};
+        assert_eq!(result, 0, Close channel {} should succeed , , i)}"

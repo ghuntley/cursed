@@ -7,6 +7,12 @@
 mod mod_parser_expressions;
 mod mod_parser_statements;
 
+// Export question mark parser
+pub mod question_mark;
+pub mod result_types;
+pub mod error_propagation_enhanced;
+pub mod error_propagation;
+
 use crate::ast::*;
 use crate::error::{Error, SourceLocation};
 use crate::lexer::{Token, TokenType, Lexer};

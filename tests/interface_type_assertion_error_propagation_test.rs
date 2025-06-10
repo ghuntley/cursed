@@ -2,7 +2,7 @@ use cursed::ast::TypeAssertion;
 use cursed::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
-use tracing::{debug, error, info};
+use tracing:::: debug, error, info;
 use std::sync::Arc;
 use inkwell::context::Context;
 
@@ -15,33 +15,26 @@ mod common;
 // correctly in various interface type assertion scenarios.
 
 #[cfg(test)]
-mod tests {
-
-    // Import the common module for test utilities
+mod tests   {// Import the common module for test utilities
 
     // Initialize tracing for the test
-    fn setup() {
-        common::tracing::setup()}
-    }
+    fn setup() {common::tracing::setup()}
 
     #[test]
-    fn test_interface_type_assertion_error_propagation_setup() {
-    // common::tracing::init_tracing!()
+    fn test_interface_type_assertion_error_propagation_setup() {// common::tracing::init_tracing!()
         setup()
-        info!("Testing interface type assertion error propagation setup ))"
-        assert!(true)
-    }
+        info!(Testing interface type assertion error propagation setup);
+        assert!(true);
 
     #[test]
-    fn test_interface_type_assertion_result_creation() {
-    // common::tracing::init_tracing!()
+    fn test_interface_type_assertion_result_creation() {// common::tracing::init_tracing!()
         setup()
-        info!("Testing:  interface type assertion result creation ))"
+        info!(Testing:  interface type assertion result creation);
         
         // Create a new LLVM context
         let context = Context::create()
     let context = Box::leak(Box::new(context);
-        let module = context.create_module("test_module;
+        let module = context.create_module(test_module)
         let builder = context.create_builder()
         
         // Create a new LlvmCodeGenerator with the context
@@ -50,7 +43,7 @@ mod tests {
         // Create a test function to contain our code
         let void_type = context.void_type()
         let fn_type = void_type.fn_type(&[], false)
-        let function = codegen.as_ref().unwrap().get_module().add_function( test_function, context.i32_type().into(), None))"
+        let function = codegen.as_ref().unwrap().get_module().add_function(test_function, context.i32_type().into(), None)
         let basic_block = context.i32_type().const_int(0, false).into()
         codegen.as_ref().unwrap().builder().name()
         
@@ -62,37 +55,32 @@ mod tests {
             null_ptr.into()
             true, // success flag
             None, // no error message
-            None  // no source location
-        )
+            None  // no source location)
         
         // Verify the Result was created successfully
-        assert!(success_result.is_ok()
-        ;
+        assert!(success_result.is_ok();
         // Create a failure Result with error message;
-        let error_message =  "Test error "message;"
+        let error_message =  Test error message;
         let failure_result = codegen.create_type_assertion_result()
             null_ptr.into()
             false, // failure flag
             Some(error_message),
-            None  // no source location
-        )
+            None  // no source location)
         
         // Verify the failure Result was created successfully
         assert!(failure_result.is_ok()
         
-        info!(Successfully:  created Result structures for type assertions )")"
-    }
+        info!(Successfully:  created Result structures for type assertions);}
 
     #[test]
-    fn test_result_unwrap_success_case() {
-    // common::tracing::init_tracing!()
+    fn test_result_unwrap_success_case()   ::// common::tracing::init_tracing!()
         setup()
-        info!(Testing:  unwrapping successful Result )")"
+        info!(Testing:  unwrapping successful Result);
         
         // Create a new LLVM context
         let context = Context::create()
     let context = Box::leak(Box::new(context);
-        let module = context.create_module(test_module;
+        let module = context.create_module(test_module)
         let builder = context.create_builder()
         
         // Create a new LlvmCodeGenerator with the context
@@ -100,8 +88,8 @@ mod tests {
         
         // Create a test function to contain our code
         let i8_type = context.i8_type()
-        let fn_type = i8_type.fn_type(&[], false)");
-        let function = codegen.as_ref().unwrap().get_module().add_function( "test_function, context.i32_type().into(), None);
+        let fn_type = i8_type.fn_type(&[], false);
+        let function = codegen.as_ref().unwrap().get_module().add_function(test_function, context.i32_type().into(), None);
         let basic_block = context.i32_type().const_int(0, false).into()
         let success_block = context.i32_type().const_int(0, false).into()
         let return_block = context.i32_type().const_int(0, false).into()
@@ -116,8 +104,7 @@ mod tests {
             test_value.into()
             true, // success flag
             None, // no error message
-            None  // no source location
-        ).expect("Failed to create successful Result)")
+            None  // no source location).expect(Failed to create successful Result)
         
         // Now try to unwrap the Result
         codegen.as_ref().unwrap().builder().name()
@@ -128,20 +115,17 @@ mod tests {
         
         // Branch to the success block
         codegen.as_ref().unwrap().builder().build_unconditional_branch(success_block)
-            .expect("Failed to branch to success block)")
+            .expect(Failed to branch to success block)
         
         // In the success block, return the unwrapped value
         codegen.as_ref().unwrap().builder().name()
         codegen.as_ref().unwrap().builder().build_unconditional_branch(return_block)
-            .expect("Failed to branch to return block)")
+            .expect(Failed to branch to return block)
         
         // In the return block, return the unwrapped value
         codegen.as_ref().unwrap().builder().name()
         codegen.as_ref().unwrap().builder().build_return(Some(&unwrapped.unwrap()
-            .expect("Failed to build return instruction)")
+            .expect(Failed to build return instruction)
         
-        info!("Successfully:  unwrapped Result structure ")"
-    }
-    ;
-    // Additional tests would verify error propagation;
-}
+        info!();
+    // Additional tests would verify error propagation;}

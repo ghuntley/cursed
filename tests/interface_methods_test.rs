@@ -11,94 +11,39 @@ use inkwell::context::Context;
 
 
 #[test]
-fn test_basic_interface_methods() -> Result<(), Error> {
-    // Define a simple program with an interface and implementation
-    let source = r#"
-    fr fr Interface method test
-    
-    collab Greeter {;
-        slay greet(tea name) tea;}
-    }
-    
-    squad Person {
-        tea name;
+fn test_basic_interface_methods() {tea name;
         normie age;}
-    }
     
-    slay Person_greet(Person self, tea name) tea {
-        tea buffer[100]
-        vibez sprintf(buffer,  Hello " , %s! I'm %s.", name, self.name);
+    slay Person_greet(Person self, tea name) tea {tea buffer[100]
+        vibez sprintf(buffer,  Hello  , %s! I'm %s.", name, self.name);
         yolo buffer;}
-    }
     
     slay main() normie {}
-        Person p = Person{name:  "Alice, age: 30};"
+        Person p = Person{name:  
         Greeter g = p;
         
-        tea msg = g.greet( Bob);"
-        vibez printf("%s\n , msg))"
+        tea msg = g.greet(Bob);"
+        vibez printf(
         
-        yolo 0;
-    }
-    "#;
-    
-    // Parse program
-    let mut lexer = Lexer::new(source.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
-    let program = parser.unwrap().parse_program()?;
-    
-    // Type check the program
-    let mut type_checker = TypeChecker::new();
-    type_checker.check_program(&program)?;
-    
-    // Generate code
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let file_path = PathBuf::from("interface_methods_test .csd)")
-    let mut code_gen = LlvmCodeGenerator::new()
-    
-    // Compile the program;
-    let compile_result = code_gen.generate_ir( "dummy, &program);"
-    assert!(compile_result.is_ok(), Program with interface methods failed to compile: {:?}", , compile_result.err()"
+        yolo 0;}"#    
     
     // Verify the functions exist in the compiled module
     let module = code_gen.as_ref().unwrap().get_module()
-    assert!(module.get_function( main.is_some(), "main function should exist in ", module)
-    assert!(module.get_function( Person_greet.is_some(), "Person_greet function should exist in ", module)
-    
-    Ok(()
-}
-
-#[test]
-fn test_interface_type_assertion() -> Result<(), Error> {
-    // Test program with interface type assertions
-    let source = r#
-    fr fr Interface type assertion test
-    
+    assert!(module.get_function(main.is_some(), main function should exist in , module)
+    assert!(module.get_function(Person_greet.is_some(), "Person_greet function should exist in "    fr fr Interface type assertion test
     collab Shape {;
         slay area() meal;}
-    }
     
-    squad Circle {
-        meal radius;}
-    }
+    squad Circle {meal radius;}
     
-    slay Circle_area(Circle self) meal {
-        yolo 3.14159 * self.radius * self.radius;}
-    }
+    slay Circle_area(Circle self) meal {yolo 3.14159 * self.radius * self.radius;}
     
-    squad Rectangle {
-        meal width;
+    squad Rectangle {meal width;
         meal height;}
-    }
     
-    slay Rectangle_area(Rectangle self) meal {
-        yolo self.width * self.height;}
-    }
+    slay Rectangle_area(Rectangle self) meal {yolo self.width * self.height;}
     
-    slay process_shape(Shape shape) meal {
-        yolo shape.area()}
-    }
+    slay process_shape(Shape shape) meal {yolo shape.area()}
     
     slay main() normie {}
         Circle c = Circle{radius: 5.0}
@@ -109,39 +54,11 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         
         fr fr Type assertions
         lit is_circle = s1 is Circle;
-        if (is_circle) {
-            Circle c2 = (Circle)s1;
-            vibez printf("Circle area: %f\n, c2.area()")
-        }
+        if (is_circle)     {Circle c2 = (Circle)s1;
+            vibez printf(Circle area: %f\n, c2.area()}
         
         lit is_rectangle = s2 is Rectangle;
-        if (is_rectangle) {
-            Rectangle r2 = (Rectangle)s2;
-            vibez printf("Rectangle area: %f\n, r2.area()")
-        }
-        
-        yolo 0;
-    }
-    "#";
-    
-    // Parse program
-    let mut lexer = Lexer::new(source.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
-    let program = parser.unwrap().parse_program()?;
-    
-    // Type check the program
-    let mut type_checker = TypeChecker::new();
-    type_checker.check_program(&program)?;
-    
-    // Generate code
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let file_path = PathBuf::from(interface_assertion_test .csd)")"
-    let mut code_gen = LlvmCodeGenerator::new()
-    
-    // Compile the program;
-    let compile_result = code_gen.generate_ir( dummy, &program);"
-    assert!(compile_result.is_ok(), "Program with interface type assertions failed to compile: {:?}, , compile_result.err()"
+        if (is_rectangle)     {Rectangle r2 = (Rectangle)s2;
+            vibez printf("Rectangle area: %f\n, r2.area()"#    "#
     
     Ok(()
-}

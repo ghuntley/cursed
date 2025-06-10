@@ -60,7 +60,8 @@ pub struct TypeEnvironment {
     pub type_definitions: HashMap<String, TypeDefinition>,
     /// Generic instantiations cache
     pub instantiations: HashMap<String, Vec<InstantiatedType>>,
-    // Constraint contexts disabled for simplified AST compatibility
+    /// Constraint context stack for type checking
+    pub context_stack: Vec<ConstraintContext>,
 }
 
 /// Type definition with full metadata
@@ -275,29 +276,29 @@ impl TypeEnvironment {
         Self {
             type_definitions: HashMap::new(),
             instantiations: HashMap::new(),
+            context_stack: Vec::new(),
         }
     }
 
-    // Constraint context methods disabled for simplified AST compatibility
-    // /// Push a new constraint context
-    // pub fn push_context(&mut self, context: ConstraintContext) {
-    //     self.constraint_contexts.push(context);
-    // }
+    /// Push a new constraint context
+    pub fn push_context(&mut self, context: ConstraintContext) {
+        self.context_stack.push(context);
+    }
 
-    // /// Pop the current constraint context
-    // pub fn pop_context(&mut self) -> Option<ConstraintContext> {
-    //     self.constraint_contexts.pop()
-    // }
+    /// Pop the current constraint context
+    pub fn pop_context(&mut self) -> Option<ConstraintContext> {
+        self.context_stack.pop()
+    }
 
-    // /// Get the current constraint context
-    // pub fn current_context(&self) -> Option<&ConstraintContext> {
-    //     self.constraint_contexts.last()
-    // }
+    /// Get the current constraint context
+    pub fn current_context(&self) -> Option<&ConstraintContext> {
+        self.context_stack.last()
+    }
 
-    // /// Get mutable access to current context
-    // pub fn current_context_mut(&mut self) -> Option<&mut ConstraintContext> {
-    //     self.constraint_contexts.last_mut()
-    // }
+    /// Get mutable access to current context
+    pub fn current_context_mut(&mut self) -> Option<&mut ConstraintContext> {
+        self.context_stack.last_mut()
+    }
 }
 
 impl TypeExpression {

@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -1120,4 +1120,232 @@ type-system-help:
 	@echo "  type-system-test-all        - Run all type system integration tests"
 	@echo "  type-system-test-quick      - Run quick type system validation"
 	@echo "  type-system-help            - Show this help message"
+	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."
+
+# Enhanced Debugging System Test Suite
+# ===================================
+
+# Quick validation of enhanced debug functionality
+enhanced-debug-test-quick:
+	@echo "Running quick enhanced debug validation..."
+	./tests/run_enhanced_debug_tests.sh --quick
+
+# Basic enhanced debug integration test
+enhanced-debug-test:
+	@echo "Running enhanced debug integration tests..."
+	./tests/run_enhanced_debug_tests.sh --integration
+
+# Integration tests for all enhanced debug features
+enhanced-debug-test-integration:
+	@echo "Running comprehensive enhanced debug integration tests..."
+	./tests/run_enhanced_debug_tests.sh --integration
+
+# Performance tests for enhanced debug system
+enhanced-debug-test-performance:
+	@echo "Running enhanced debug performance tests..."
+	./tests/run_enhanced_debug_tests.sh --performance
+
+# Edge case tests for enhanced debug system
+enhanced-debug-test-edge-cases:
+	@echo "Running enhanced debug edge case tests..."
+	./tests/run_enhanced_debug_tests.sh --edge-cases
+
+# Unit tests for enhanced debug modules
+enhanced-debug-test-unit:
+	@echo "Running enhanced debug unit tests..."
+	./fix_linking.sh devenv shell cargo test --lib debug::enhanced_debug::tests
+	./fix_linking.sh devenv shell cargo test --lib runtime::debug_runtime::tests
+
+# Run all enhanced debug tests
+enhanced-debug-test-all:
+	@echo "Running complete enhanced debug test suite..."
+	./tests/run_enhanced_debug_tests.sh
+
+# Generate enhanced debug test coverage report
+enhanced-debug-test-coverage:
+	@echo "Generating enhanced debug test coverage report..."
+	./tests/run_enhanced_debug_tests.sh --coverage
+
+# Generate detailed enhanced debug test report
+enhanced-debug-test-report:
+	@echo "Generating detailed enhanced debug test report..."
+	./tests/run_enhanced_debug_tests.sh --report enhanced_debug_test_report.md
+	@echo "Report generated: enhanced_debug_test_report.md"
+
+# Enhanced debug help
+enhanced-debug-help:
+	@echo "Enhanced Debug System Test Suite"
+	@echo "================================"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  enhanced-debug-test-quick       - Quick validation tests"
+	@echo "  enhanced-debug-test             - Basic integration tests"
+	@echo "  enhanced-debug-test-integration - Comprehensive integration tests"
+	@echo "  enhanced-debug-test-performance - Performance and scaling tests"
+	@echo "  enhanced-debug-test-edge-cases  - Edge case and error handling tests"
+	@echo "  enhanced-debug-test-unit        - Unit tests for debug modules"
+	@echo "  enhanced-debug-test-all         - Complete test suite"
+	@echo "  enhanced-debug-test-coverage    - Generate coverage report"
+	@echo "  enhanced-debug-test-report      - Generate detailed test report"
+	@echo "  enhanced-debug-help             - Show this help message"
+	@echo ""
+	@echo "Test Components:"
+	@echo "  - Debug Information System      - Enhanced debug info with source mapping"
+	@echo "  - Runtime Debugging Support     - Runtime symbol tables and inspection"
+	@echo "  - Error Context Enhancement     - Rich error reporting with debug context"
+	@echo "  - LLVM Debug Integration        - Debug metadata generation and embedding"
+	@echo "  - Source Mapping                - Precise location tracking and mapping"
+	@echo "  - Symbol Resolution             - Symbol metadata and type information"
+	@echo "  - Breakpoint Simulation         - Debugging workflow simulation"
+	@echo "  - Performance Monitoring        - Debug overhead analysis and optimization"
+	@echo ""
+	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."
+
+## Panic/Recovery System Testing
+## Comprehensive testing for panic handling and recovery mechanisms
+
+# Quick validation of panic/recovery functionality
+panic-recovery-test-quick:
+	@echo "Running quick panic/recovery system tests..."
+	./tests/run_panic_recovery_tests.sh --quick
+
+# Run all standard panic/recovery tests
+panic-recovery-test:
+	@echo "Running panic/recovery system tests..."
+	./tests/run_panic_recovery_tests.sh
+
+# Unit tests for panic/recovery components
+panic-recovery-test-unit:
+	@echo "Running panic/recovery unit tests..."
+	./tests/run_panic_recovery_tests.sh --test unit
+
+# Integration tests for complete panic/recovery workflows
+panic-recovery-test-integration:
+	@echo "Running panic/recovery integration tests..."
+	./tests/run_panic_recovery_tests.sh --test integration
+
+# LLVM integration tests for panic/recovery compilation
+panic-recovery-test-llvm:
+	@echo "Running panic/recovery LLVM integration tests..."
+	./tests/run_panic_recovery_tests.sh --test llvm
+
+# All panic/recovery tests including stress tests
+panic-recovery-test-all:
+	@echo "Running all panic/recovery tests including ignored ones..."
+	./tests/run_panic_recovery_tests.sh --test all --ignored
+
+# Generate code coverage report for panic/recovery system
+panic-recovery-test-coverage:
+	@echo "Generating panic/recovery test coverage report..."
+	./tests/run_panic_recovery_tests.sh --coverage
+
+# Generate comprehensive test report
+panic-recovery-test-report:
+	@echo "Generating panic/recovery test report..."
+	./tests/run_panic_recovery_tests.sh --report panic_recovery_report.md --verbose
+
+# Show panic/recovery testing help
+panic-recovery-help:
+	@echo "CURSED Panic/Recovery System Testing"
+	@echo "====================================="
+	@echo ""
+	@echo "Quick Testing:"
+	@echo "  panic-recovery-test-quick       - Essential tests only (fast)"
+	@echo "  panic-recovery-test             - Standard test suite"
+	@echo ""
+	@echo "Specific Test Categories:"
+	@echo "  panic-recovery-test-unit        - Unit tests for components"
+	@echo "  panic-recovery-test-integration - Integration and workflow tests"
+	@echo "  panic-recovery-test-llvm        - LLVM compilation tests"
+	@echo ""
+	@echo "Comprehensive Testing:"
+	@echo "  panic-recovery-test-all         - All tests including stress tests"
+	@echo ""
+	@echo "Analysis and Reporting:"
+	@echo "  panic-recovery-test-coverage    - Generate code coverage report"
+	@echo "  panic-recovery-test-report      - Generate detailed test report"
+	@echo ""
+	@echo "  panic-recovery-help             - Show this help message"
+	@echo ""
+	@echo "Test Components:"
+	@echo "  - Panic Runtime System          - Core panic handling infrastructure"
+	@echo "  - Recovery Manager              - Recovery scope and error management"
+	@echo "  - Gen Z Slang Functions         - no_cap, sus, cap, not_vibing panics"
+	@echo "  - LLVM Integration              - Panic/recovery code generation"
+	@echo "  - Error Conversion Utilities    - Panic-to-error and recovery actions"
+	@echo "  - Thread Safety                 - Concurrent panic/recovery handling"
+	@echo "  - Stack Trace Management        - Enhanced stack trace capture"
+	@echo "  - FFI Interface                 - C-compatible panic/recovery functions"
+	@echo ""
+	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."
+
+# ==============================================================================
+# Error Handling Testing Commands
+# ==============================================================================
+
+# Quick error handling validation (essential tests only)
+error-handling-test-quick:
+	./tests/run_error_handling_tests.sh --quick
+
+# Standard error handling test suite  
+error-handling-test:
+	./tests/run_error_handling_tests.sh
+
+# Run only integration tests
+error-handling-test-integration:
+	./tests/run_error_handling_tests.sh --integration
+
+# Run only stress tests (may take a while)
+error-handling-test-stress:
+	./tests/run_error_handling_tests.sh --stress --ignored
+
+# Run only edge case tests
+error-handling-test-edge-cases:
+	./tests/run_error_handling_tests.sh --edge-cases
+
+# Run all error handling tests including stress tests
+error-handling-test-all:
+	./tests/run_error_handling_tests.sh --all --ignored
+
+# Generate coverage report for error handling
+error-handling-test-coverage:
+	./tests/run_error_handling_tests.sh --coverage --quick
+
+# Generate detailed test report
+error-handling-test-report:
+	./tests/run_error_handling_tests.sh --all --report error_handling_report.md --verbose
+
+# Show error handling testing help
+error-handling-help:
+	@echo "CURSED Error Handling System Testing"
+	@echo "===================================="
+	@echo ""
+	@echo "Quick Testing:"
+	@echo "  error-handling-test-quick       - Essential tests only (fast)"
+	@echo "  error-handling-test             - Standard test suite"
+	@echo ""
+	@echo "Specific Test Categories:"
+	@echo "  error-handling-test-integration - Integration and workflow tests"
+	@echo "  error-handling-test-stress      - Stress tests (high load, concurrency)"
+	@echo "  error-handling-test-edge-cases  - Edge cases and boundary conditions"
+	@echo ""
+	@echo "Comprehensive Testing:"
+	@echo "  error-handling-test-all         - All tests including stress tests"
+	@echo ""
+	@echo "Analysis and Reporting:"
+	@echo "  error-handling-test-coverage    - Generate code coverage report"
+	@echo "  error-handling-test-report      - Generate detailed test report"
+	@echo ""
+	@echo "  error-handling-help             - Show this help message"
+	@echo ""
+	@echo "Test Components:"
+	@echo "  - Error Runtime System          - Core error handling infrastructure"
+	@echo "  - Error Propagation             - ? operator and error chaining"
+	@echo "  - Panic/Recovery Integration    - Panic handling with error conversion"
+	@echo "  - Stack Trace Management        - Enhanced stack trace capture"
+	@echo "  - Thread Safety                 - Concurrent error handling"
+	@echo "  - Performance Characteristics   - Error handling under load"
+	@echo "  - Memory Management             - Error handling with memory pressure"
+	@echo "  - Edge Case Handling            - Boundary conditions and corruption"
+	@echo ""
 	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."

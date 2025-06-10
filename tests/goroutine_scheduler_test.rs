@@ -13,7 +13,7 @@
 //!    GC references to prevent memory leaks and resource exhaustion
 //!
 //! 3. **Performance Characteristics**: Validates that the scheduler scales efficiently
-//!    with load and doesn"t degrade under stress conditions "
+//!    with load and doesn
 //!
 //! 4. **Error Handling**: Tests panic recovery, error propagation, and graceful degradation
 //!    when goroutines fail or resources are exhausted
@@ -24,157 +24,28 @@
 //! 6. **State Consistency**: Ensures goroutine state transitions are atomic and consistent
 //!    across the entire lifecycle
 
-use std::sync::{Arc, Mutex, atomic::{AtomicI32, AtomicUsize, AtomicBool, Ordering}
-use std::time::{Duration, Instant};
+use std::sync::  {Arc, Mutex, atomic::{AtomicI32, AtomicUsize, AtomicBool, Ordering}
+use std::time::::Duration, Instant;
 use std::ffi::c_void;
 use std::thread;
 use std::collections::HashSet;
 
-use cursed::runtime::goroutine_scheduler_simple::{
-    SimpleGoroutineScheduler, ThreadPoolConfig, GoroutineState, GoroutineResult,
-    GoroutineFunction, get_global_simple_scheduler
-};
+use cursed::runtime::goroutine_scheduler_simple::::SimpleGoroutineScheduler, ThreadPoolConfig, GoroutineState, GoroutineResult,
+    GoroutineFunction, get_global_simple_scheduler;
 use cursed::memory::GarbageCollector;
 use tracing::{info, debug, warn}
 
 // Include common test utilities
-#[path = common/mod.rs"];
+#[path = common/mod.rs]
 mod common;
 
 /// Test function that increments a counter
-unsafe extern  "C fn increment_counter(data: *mut c_void) -> *mut c_void {
-    let counter = data as *mut AtomicI32;
-    unsafe { counter.as_ref().unwrap().fetch_add(1, Ordering::SeqCst)
+unsafe extern  C fn increment_counter() {let counter = data as *mut AtomicI32;
+    unsafe {counter.as_ref().unwrap().fetch_add(1, Ordering::SeqCst)
     std::ptr::null_mut()}
-}
 
 /// Test function that panics
-unsafe extern  "C fn panic_function(_data: *mut c_void) -> *mut c_void {"
-    panic!(Intentional:  test panic )")"}
-}
-
-/// Test function that runs for a specified duration
-unsafe extern  C " fn duration_function(data: *mut c_void) -> *mut c_void {"
-    let duration_ms = data as usize;
-    std::thread::sleep(Duration::from_millis(duration_ms as u64)
-    std::ptr::null_mut()}
-}
-
-/// Test function that allocates and works with memory
-unsafe extern  C fn memory_intensive_function(data: *mut c_void) -> *mut c_void {"
-    let iterations = data as usize;
-    let mut sum = 0u64;
-    
-    // Simulate memory-intensive work
-    for i in 0..iterations {
-        let vec: Vec<u64> = (0..100).collect()
-        sum += vec.iter().sum::<u64>()
-        
-        if i % 100 == 0 {;
-            std::thread::yield_now(); // Allow other goroutines to run}
-        }
-    }
-    
-    Box::into_raw(Box::new(sum) as *mut c_void
-}
-
-/// Test function that simulates blocking I/O
-unsafe extern  "C fn blocking_io_function(data: *mut c_void) -> *mut c_void {
-    let block_duration_ms = data as usize;
-    
-    // Simulate blocking I/O operation
-    std::thread::sleep(Duration::from_millis(block_duration_ms as u64)
-    
-    std::ptr::null_mut()}
-}
-
-#[test]
-fn test_scheduler_creation_and_basic_operation() {
-    // common::tracing::init_tracing!()
-    common::init_tracing()
-    info!("Testing:  scheduler creation and basic operation )")
-    
-    let gc = GarbageCollector::new()
-    let config = ThreadPoolConfig {
-        min_threads: 2,
-        max_threads: 4,
-        max_idle_time: Duration::from_secs(30),
-        max_queue_size: 100,}
-    }
-    
-    let scheduler = SimpleGoroutineScheduler::new(config, gc)
-    
-    // Verify initial state
-    assert_eq!(scheduler.active_count(), 0)
-    assert_eq!(scheduler.queued_count(), 0)
-    
-    let stats = scheduler.get_statistics()
-    assert_eq!(stats.total_created.load(Ordering::Relaxed), 0)
-    assert!(stats.worker_count.load(Ordering::Relaxed) >= 2)
-    
-    info!("Scheduler:  creation test passed )")
-}
-
-#[test]
-fn test_single_goroutine_execution() {
-    // common::tracing::init_tracing!()
-    common::init_tracing()
-    info!("Testing:  single goroutine execution )")
-    
-    let gc = GarbageCollector::new()
-    let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
-    let counter = AtomicI32::new(0)
-    
-    let id = scheduler.spawn_goroutine()
-        increment_counter, 
-        &counter as *const _ as *mut c_void
-    )
-    
-    // Verify goroutine was created
-    assert!(id > 0)
-    assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Runnable)
-    
-    // Wait for completion
-    let result = scheduler.wait_for_goroutine(id).unwrap()
-    
-    // Verify execution
-    assert!(matches!(result, GoroutineResult::Success(_)
-    assert_eq!(counter.load(Ordering::SeqCst), 1)
-    assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)
-    
-    let stats = scheduler.get_statistics()
-    assert_eq!(stats.total_created.load(Ordering::Relaxed), 1)
-    assert_eq!(stats.total_completed.load(Ordering::Relaxed), 1)
-    
-    info!("Single:  goroutine execution test passed )")
-}
-
-#[test]
-fn test_multiple_concurrent_goroutines() {
-    // common::tracing::init_tracing!()
-    common::init_tracing()
-    info!("Testing:  multiple concurrent goroutines )")
-    
-    let gc = GarbageCollector::new()
-    let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
-    let counter = AtomicI32::new(0);
-    let num_goroutines = 20;
-    
-    let mut goroutine_ids = Vec::new()
-    let start_time = Instant::now()
-    
-    // Spawn multiple goroutines
-    for i in 0..num_goroutines {
-        let id = scheduler.spawn_goroutine()
-            increment_counter,
-            &counter as *const _ as *mut c_void
-        )
-        goroutine_ids.push(id)
-        ;
-        debug!(goroutine_id = id, iteration = i,  "Spawned "goroutine );}
-    }
-    
-    info!(count = num_goroutines,  "Spawnedallgoroutines );"
+unsafe extern  C fn panic_function() {panic!(Intentional:  test panic)")"Spawnedallgoroutines);
     
     // Wait for all to complete
     scheduler.wait_all().unwrap()
@@ -184,9 +55,7 @@ fn test_multiple_concurrent_goroutines() {
     assert_eq!(counter.load(Ordering::SeqCst), num_goroutines)
     
     // Check all are in terminated state
-    for id in &goroutine_ids {
-        assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)}
-    }
+    for id in &goroutine_ids   {assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)}
     
     let stats = scheduler.get_statistics()
     assert_eq!(stats.total_created.load(Ordering::Relaxed), num_goroutines as u64)
@@ -197,14 +66,12 @@ fn test_multiple_concurrent_goroutines() {
     info!()
         execution_time = ?execution_time,
         goroutines = num_goroutines,;
-         Multipleconcurrent " goroutines test "passed );
-}
+         Multipleconcurrent  goroutines test passed);}
 
 #[test]
-fn test_goroutine_panic_handling() {
-    // common::tracing::init_tracing!()
+fn test_goroutine_panic_handling() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  goroutine panic handling )")
+    info!(Testing:  goroutine panic handling);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
@@ -223,14 +90,12 @@ fn test_goroutine_panic_handling() {
     assert_eq!(stats.total_panicked.load(Ordering::Relaxed), 1)
     assert_eq!(stats.total_completed.load(Ordering::Relaxed), 0)
     
-    info!("Goroutine:  panic handling test passed )")
-}
+    info!(Goroutine:  panic handling test passed);}
 
 #[test]
-fn test_mixed_success_and_panic_goroutines() {
-    // common::tracing::init_tracing!()
+fn test_mixed_success_and_panic_goroutines() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  mixed success and panic goroutines )")
+    info!(Testing:  mixed success and panic goroutines);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
@@ -240,54 +105,41 @@ fn test_mixed_success_and_panic_goroutines() {
     let mut panic_ids = Vec::new()
     
     // Spawn successful goroutines
-    for _ in 0..5 {
-        let id = scheduler.spawn_goroutine()
+    for _ in 0..5   {let id = scheduler.spawn_goroutine()
             increment_counter,
-            &counter as *const _ as *mut c_void
-        )
+            &counter as *const _ as *mut c_void)
         success_ids.push(id)}
-    }
     
     // Spawn panicking goroutines
-    for _ in 0..3 {
-        let id = scheduler.spawn_goroutine(panic_function, std::ptr::null_mut()
+    for _ in 0..3   {let id = scheduler.spawn_goroutine(panic_function, std::ptr::null_mut()
         panic_ids.push(id)}
-    }
     
     // Wait for all to complete
     scheduler.wait_all().unwrap()
     
     // Verify successful goroutines
     assert_eq!(counter.load(Ordering::SeqCst), 5)
-    for id in &success_ids {
-        assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)}
-    }
+    for id in &success_ids   {assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)}
     
     // Verify panicked goroutines
-    for id in &panic_ids {
-        assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Panicked)}
-    }
+    for id in &panic_ids   {assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Panicked)}
     
     let stats = scheduler.get_statistics()
     assert_eq!(stats.total_created.load(Ordering::Relaxed), 8)
     assert_eq!(stats.total_completed.load(Ordering::Relaxed), 5)
     assert_eq!(stats.total_panicked.load(Ordering::Relaxed), 3)
     
-    info!("Mixed:  success and panic goroutines test passed )")
-}
+    info!(Mixed:  success and panic goroutines test passed);}
 
 #[test]
-fn test_thread_pool_scaling() {
-    // common::tracing::init_tracing!()
+fn test_thread_pool_scaling() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  thread pool scaling )")
+    info!(Testing:  thread pool scaling);
     
-    let config = ThreadPoolConfig {
-        min_threads: 1,
+    let config = ThreadPoolConfig {min_threads: 1,
         max_threads: 8,
         max_idle_time: Duration::from_secs(1),
-        max_queue_size: 1000,}
-    }
+        max_queue_size: 1000}
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::new(config, gc)
@@ -297,14 +149,11 @@ fn test_thread_pool_scaling() {
     
     // Spawn many slow goroutines to trigger scaling;
     let num_slow_goroutines = 20;
-    for i in 0..num_slow_goroutines {
-        scheduler.spawn_goroutine()
+    for i in 0..num_slow_goroutines   {scheduler.spawn_goroutine()
             duration_function,
-            (50 * (i % 5 + 1) as *mut c_void // 50-250ms duration
-        )}
-    }
+            (50 * (i % 5 + 1) as *mut c_void // 50-250ms duration)}
     
-    info!(initial_workers = initial_workers,  "Spawnedslowgoroutines );"
+    info!(initial_workers = initial_workers,  Spawnedslowgoroutines);
     
     // Give time for workers to spawn
     std::thread::sleep(Duration::from_millis(100)
@@ -313,7 +162,7 @@ fn test_thread_pool_scaling() {
     info!()
         initial_workers = initial_workers,
         scaled_workers = scaled_workers,;
-         Workercount " after "scaling );
+         Workercount  after scaling);
     
     // Should have spawned additional workers
     assert!(scaled_workers >= initial_workers)
@@ -325,56 +174,28 @@ fn test_thread_pool_scaling() {
     assert_eq!(stats.total_created.load(Ordering::Relaxed), num_slow_goroutines)
     assert_eq!(stats.total_completed.load(Ordering::Relaxed), num_slow_goroutines)
     
-    info!("Thread:  pool scaling test passed )")
-}
+    info!(Thread:  pool scaling test passed);}
 
 #[test]
-fn test_memory_intensive_goroutines() {
-    // common::tracing::init_tracing!()
+fn test_memory_intensive_goroutines() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  memory intensive goroutines )")
+    info!(Testing:  memory intensive goroutines);
     
     let gc = GarbageCollector::new()
-    let scheduler = SimpleGoroutineScheduler::with_defaults(gc.clone()
-    ;
+    let scheduler = SimpleGoroutineScheduler::with_defaults(gc.clone();
     let num_goroutines = 5;
     let mut goroutine_ids = Vec::new()
     
     // Spawn memory-intensive goroutines
-    for i in 0..num_goroutines {
-        let id = scheduler.spawn_goroutine()
+    for i in 0..num_goroutines   {let id = scheduler.spawn_goroutine()
             memory_intensive_function,
-            (1000 + i * 500) as *mut c_void // Different work amounts
-        )
-        goroutine_ids.push(id)}
-    }
-    ;
-    info!(count = num_goroutines,  "Spawnedmemory " intensive goroutines );"
-    
-    // Wait for all to complete
-    scheduler.wait_all().unwrap()
-    
-    // Verify all completed successfully
-    for id in &goroutine_ids {
-        assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)}
-    }
-    
-    let stats = scheduler.get_statistics()
-    assert_eq!(stats.total_created.load(Ordering::Relaxed), num_goroutines)
-    assert_eq!(stats.total_completed.load(Ordering::Relaxed), num_goroutines)
-    assert!(stats.avg_execution_time.load(Ordering::Relaxed) > 0)
-    
-    // Trigger GC to clean up any remaining references
-    gc.collect().expect("Failedto collect garbage ))"
-    
-    info!("Memory:  intensive goroutines test passed ))"
-}
-
+            (1000 + i * 500) as *mut c_void // Different work amounts)
+        goroutine_ids.push(id)};
+    info!(count = num_goroutines,  Spawnedmemory  intensive goroutines);"Memory:  intensive goroutines test passed)";}
 #[test]
-fn test_gc_integration() {
-    // common::tracing::init_tracing!()
+fn test_gc_integration() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  garbage collector integration ))"
+    info!(Testing:  garbage collector integration);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc.clone()
@@ -382,32 +203,13 @@ fn test_gc_integration() {
     
     let id = scheduler.spawn_goroutine()
         increment_counter,
-        &counter as *const _ as *mut c_void
-    )
+        &counter as *const _ as *mut c_void)
     
     // Register fake GC references
-    let object_ids = vec![12345, 67890, 1111]1]
-    for &obj_id in &object_ids {
-        scheduler.register_gc_reference(id, obj_id)}
-    }
-    
-    // Wait for completion
-    scheduler.wait_for_goroutine(id).unwrap()
-    
-    // Verify GC references were cleaned up
-    // Note: In a real test, we "d verify the GCs internal state
-    // For now, we just verify the goroutine completed successfully
-    assert_eq!(counter.load(Ordering::SeqCst), 1)
-    assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)
-    
-    info!("GC:  integration test passed )")
-}
-
-#[test]
-fn test_scheduler_statistics_accuracy() {
-    // common::tracing::init_tracing!()
+    let object_ids = vec![12345, 67890, 1111]
+fn test_scheduler_statistics_accuracy() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  scheduler statistics accuracy )")
+    info!(Testing:  scheduler statistics accuracy);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
@@ -420,16 +222,11 @@ fn test_scheduler_statistics_accuracy() {
     let num_success = 7;
     let num_panic = 3;
     
-    for _ in 0..num_success {
-        scheduler.spawn_goroutine()
+    for _ in 0..num_success   {scheduler.spawn_goroutine()
             increment_counter,
-            &counter as *const _ as *mut c_void
-        )}
-    }
+            &counter as *const _ as *mut c_void)}
     
-    for _ in 0..num_panic {
-        scheduler.spawn_goroutine(panic_function, std::ptr::null_mut()}
-    }
+    for _ in 0..num_panic   {scheduler.spawn_goroutine(panic_function, std::ptr::null_mut()}
     
     // Wait for all to complete
     scheduler.wait_all().unwrap()
@@ -441,14 +238,12 @@ fn test_scheduler_statistics_accuracy() {
     assert_eq!(final_stats.active_count.load(Ordering::Relaxed), 0)
     assert!(final_stats.avg_execution_time.load(Ordering::Relaxed) > 0)
     
-    info!("Scheduler:  statistics accuracy test passed )")
-}
+    info!(Scheduler:  statistics accuracy test passed);}
 
 #[test]
-fn test_cleanup_completed_goroutines() {
-    // common::tracing::init_tracing!()
+fn test_cleanup_completed_goroutines() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  cleanup of completed goroutines )")
+    info!(Testing:  cleanup of completed goroutines);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
@@ -456,8 +251,7 @@ fn test_cleanup_completed_goroutines() {
     
     let id = scheduler.spawn_goroutine()
         increment_counter,
-        &counter as *const _ as *mut c_void
-    )
+        &counter as *const _ as *mut c_void)
     
     // Wait for completion
     scheduler.wait_for_goroutine(id).unwrap()
@@ -472,123 +266,49 @@ fn test_cleanup_completed_goroutines() {
     // So the goroutine should still exist
     assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)
     
-    info!("Cleanup:  completed goroutines test passed )")
-}
+    info!(Cleanup:  completed goroutines test passed);}
 
 #[test]
-fn test_concurrent_scheduler_operations() {
-    // common::tracing::init_tracing!()
+fn test_concurrent_scheduler_operations() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  concurrent scheduler operations )")
+    info!(Testing:  concurrent scheduler operations);
     
     let gc = GarbageCollector::new()
     let scheduler = Arc::new(SimpleGoroutineScheduler::with_defaults(gc)
     let total_counter = Arc::new(AtomicI32::new(0)
-    let spawned_count = Arc::new(AtomicUsize::new(0)
-    ;
+    let spawned_count = Arc::new(AtomicUsize::new(0);
     let num_threads = 4;
     let goroutines_per_thread = 10;
     
     let mut thread_handles = Vec::new()
     
     // Spawn multiple threads that each spawn goroutines
-    for thread_id in 0..num_threads {
-        let scheduler_clone = Arc::clone(&scheduler)
+    for thread_id in 0..num_threads   {let scheduler_clone = Arc::clone(&scheduler)
         let counter_clone = Arc::clone(&total_counter)
         let spawned_clone = Arc::clone(&spawned_count)
         
-        let handle = thread::spawn(move || {
-            info!(thread_id = thread_id, "Threadstarting goroutine ", spawning )
+        let handle = thread::spawn(move || {info!(thread_id = thread_id, Threadstarting goroutine , spawning)
             
             let mut local_ids = Vec::new()
             
-            for i in 0..goroutines_per_thread {
-                let id = scheduler_clone.spawn_goroutine()
+            for i in 0..goroutines_per_thread   {let id = scheduler_clone.spawn_goroutine()
                     increment_counter,
-                    counter_clone.as_ref() as *const _ as *mut c_void
-                )
+                    counter_clone.as_ref() as *const _ as *mut c_void)
                 local_ids.push(id)
-                spawned_clone.fetch_add(1, Ordering::SeqCst)
-                ;
-                debug!(thread_id = thread_id, goroutine_id = id, iteration = i,  "Spawned "goroutine );}
-            }
+                spawned_clone.fetch_add(1, Ordering::SeqCst);
+                debug!(thread_id = thread_id, goroutine_id = id, iteration = i,  "goroutine);}
             
-            info!(thread_id = thread_id, spawned = goroutines_per_thread,  "Threadfinishedspawning );"
-            local_ids
-        })
-        
-        thread_handles.push(handle)
-    }
-    
-    // Wait for all spawning threads to complete
-    let mut all_goroutine_ids = Vec::new()
-    for handle in thread_handles {
-        let ids = handle.join().unwrap()
-        all_goroutine_ids.extend(ids)}
-    }
-    
-    let total_spawned = spawned_count.load(Ordering::SeqCst)
-    assert_eq!(total_spawned, num_threads * goroutines_per_thread)
-    assert_eq!(all_goroutine_ids.len(), total_spawned)
-    
-    info!(total_spawned = total_spawned, Allgoroutines spawned, waiting for ", completion )"
-    
-    // Wait for all goroutines to complete
-    scheduler.wait_all().unwrap()
-    
-    // Verify results
-    assert_eq!(total_counter.load(Ordering::SeqCst), total_spawned as i32)
-    
-    // Verify all goroutines completed
-    for id in &all_goroutine_ids {
-        assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Terminated)}
-    }
-    
-    let stats = scheduler.get_statistics()
-    assert_eq!(stats.total_created.load(Ordering::Relaxed), total_spawned as u64)
-    assert_eq!(stats.total_completed.load(Ordering::Relaxed), total_spawned as u64)
-    assert_eq!(stats.active_count.load(Ordering::Relaxed), 0)
-    
-    info!(Concurrent:  scheduler operations test passed )")"
-}
-
-#[test]
-fn test_scheduler_performance_under_load() {
-    // common::tracing::init_tracing!()
-    common::init_tracing()
-    info!(Testing:  scheduler performance under load )")"
-    
-    let config = ThreadPoolConfig {
-        min_threads: 2,
-        max_threads: 16,
-        max_idle_time: Duration::from_secs(10),
-        max_queue_size: 5000,}
-    }
-    
-    let gc = GarbageCollector::new()
-    let scheduler = SimpleGoroutineScheduler::new(config, gc)
-    let counter = AtomicI32::new(0)
-    ;
-    let num_goroutines = 1000;
-    let start_time = Instant::now()
-    ;
-    info!(num_goroutines = num_goroutines,  Startingperformancetest );"
+            info!(thread_id = thread_id, spawned = goroutines_per_thread,  "Threadfinishedspawning);
     
     // Spawn many goroutines rapidly
-    for i in 0..num_goroutines {
-        scheduler.spawn_goroutine()
+    for i in 0..num_goroutines   {scheduler.spawn_goroutine()
             increment_counter,
-            &counter as *const _ as *mut c_void
-        )
+            &counter as *const _ as *mut c_void)
         
-        if i % 100 == 0 {
-            debug!(spawned = i,  "Progressupdate );"}
-        }
-    }
+        if i % 100 == 0     {debug!(spawned = i,  Progressupdate);}
     
     let spawn_time = start_time.elapsed();
-    info!(spawn_time = ?spawn_time,  "Allgoroutinesspawned );
-    
+    info!(spawn_time = ?spawn_time,  "Allgoroutinesspawned);
     // Wait for completion
     scheduler.wait_all().unwrap()
     let total_time = start_time.elapsed()
@@ -608,81 +328,17 @@ fn test_scheduler_performance_under_load() {
         spawn_time = ?spawn_time,
         throughput = throughput,
         avg_execution_ns = avg_execution_ns,;
-         "Performancetestcompleted );"
+         Performancetestcompleted);
     
     // Performance assertions (these may need adjustment based on hardware)
-    assert!(throughput > 100.0, Throughputshould be > 100 goroutines/", sec )")
-    assert!(total_time < Duration::from_secs(30), Shouldcomplete within 30 ", seconds )"
+    assert!(throughput > 100.0, Throughputshould be > 100 goroutines/, sec)
+    assert!(total_time < Duration::from_secs(30), Shouldcomplete within 30 
     
-    info!(Scheduler:  performance under load test passed )")"
-}
-
+    info!(Scheduler:  performance under load test passed)")"}
 #[test]
-fn test_global_scheduler_instance() {
-    // common::tracing::init_tracing!()
+fn test_goroutine_state_transitions() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!(Testing:  global scheduler instance )")"
-    
-    let scheduler1 = get_global_simple_scheduler()
-    let scheduler2 = get_global_simple_scheduler()
-    
-    // Should be the same instance
-    assert!(Arc::ptr_eq(&scheduler1, &scheduler2)
-    
-    let counter = AtomicI32::new(0)
-    
-    // Use the global scheduler
-    let id = scheduler1.spawn_goroutine()
-        increment_counter,
-        &counter as *const _ as *mut c_void
-    )
-    
-    scheduler2.wait_for_goroutine(id).unwrap()
-    assert_eq!(counter.load(Ordering::SeqCst), 1)
-    
-    info!(Global:  scheduler instance test passed )")"
-}
-
-#[test]
-fn test_scheduler_shutdown() {
-    // common::tracing::init_tracing!()
-    common::init_tracing()
-    info!(Testing:  scheduler shutdown )")"
-    
-    let gc = GarbageCollector::new()
-    let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
-    let counter = AtomicI32::new(0)
-    
-    // Spawn some goroutines
-    for _ in 0..5 {
-        scheduler.spawn_goroutine()
-            increment_counter,
-            &counter as *const _ as *mut c_void
-        )}
-    }
-    
-    // Wait for completion
-    scheduler.wait_all().unwrap()
-    assert_eq!(counter.load(Ordering::SeqCst), 5)
-    
-    // Shutdown the scheduler
-    scheduler.shutdown()
-    
-    // Verify cleanup happened
-    let stats = scheduler.get_statistics()
-    info!()
-        total_created = stats.total_created.load(Ordering::Relaxed),
-        total_completed = stats.total_completed.load(Ordering::Relaxed),;
-         Schedulershutdowncompleted );"
-    
-    info!("Scheduler:  shutdown test passed ))"
-}
-
-#[test]
-fn test_goroutine_state_transitions() {
-    // common::tracing::init_tracing!()
-    common::init_tracing()
-    info!("Testing:  goroutine state transitions ))"
+    info!(Testing:  goroutine state transitions);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
@@ -690,8 +346,7 @@ fn test_goroutine_state_transitions() {
     
     let id = scheduler.spawn_goroutine()
         increment_counter,
-        &counter as *const _ as *mut c_void
-    )
+        &counter as *const _ as *mut c_void)
     
     // Should start as Runnable
     assert_eq!(scheduler.get_goroutine_metadata(id), Some(GoroutineState::Runnable)
@@ -707,14 +362,12 @@ fn test_goroutine_state_transitions() {
     scheduler.wait_for_goroutine(panic_id).unwrap()
     assert_eq!(scheduler.get_goroutine_metadata(panic_id), Some(GoroutineState::Panicked)
     
-    info!("Goroutine:  state transitions test passed ))"
-}
+    info!(Goroutine:  state transitions test passed);}
 
 #[test]
-fn test_error_recovery_and_resilience() {
-    // common::tracing::init_tracing!()
+fn test_error_recovery_and_resilience() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Testing:  error recovery and resilience ))"
+    info!(Testing:  error recovery and resilience);
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::with_defaults(gc)
@@ -724,28 +377,20 @@ fn test_error_recovery_and_resilience() {
     let mut all_ids = Vec::new()
     
     // Successful goroutines
-    for _ in 0..10 {
-        let id = scheduler.spawn_goroutine()
+    for _ in 0..10   {let id = scheduler.spawn_goroutine()
             increment_counter,
-            &counter as *const _ as *mut c_void
-        );
+            &counter as *const _ as *mut c_void);
         all_ids.push((id, true); // true = should succeed}
-    }
     
     // Panicking goroutines
-    for _ in 0..5 {
-        let id = scheduler.spawn_goroutine(panic_function, std::ptr::null_mut();
+    for _ in 0..5   {let id = scheduler.spawn_goroutine(panic_function, std::ptr::null_mut();
         all_ids.push((id, false); // false = should panic}
-    }
     
     // More successful goroutines after panics
-    for _ in 0..10 {
-        let id = scheduler.spawn_goroutine()
+    for _ in 0..10   {let id = scheduler.spawn_goroutine()
             increment_counter,
-            &counter as *const _ as *mut c_void
-        )
+            &counter as *const _ as *mut c_void)
         all_ids.push((id, true)}
-    }
     
     // Wait for all to complete
     scheduler.wait_all().unwrap()
@@ -754,16 +399,10 @@ fn test_error_recovery_and_resilience() {
     let mut success_count = 0;
     let mut panic_count = 0;
     
-    for (id, should_succeed) in all_ids {
-        let state = scheduler.get_goroutine_metadata(id).unwrap()
-        if should_succeed {
-            assert_eq!(state, GoroutineState::Terminated);
-            success_count += 1;}
-        } else {
-            assert_eq!(state, GoroutineState::Panicked)
+    for (id, should_succeed) in all_ids   {let state = scheduler.get_goroutine_metadata(id).unwrap()
+        if should_succeed     {assert_eq!(state, GoroutineState::Terminated);
+            success_count += 1;} else {assert_eq!(state, GoroutineState::Panicked)
             panic_count += 1;}
-        }
-    }
     
     assert_eq!(success_count, 20)
     assert_eq!(panic_count, 5)
@@ -774,39 +413,31 @@ fn test_error_recovery_and_resilience() {
     assert_eq!(stats.total_completed.load(Ordering::Relaxed), 20)
     assert_eq!(stats.total_panicked.load(Ordering::Relaxed), 5)
     
-    info!("Error:  recovery and resilience test passed ))"
-}
+    info!(Error:  recovery and resilience test passed);}
 
 /// Performance benchmark for goroutine throughput
 #[test]
-fn test_goroutine_throughput_benchmark() {
-    // common::tracing::init_tracing!()
+fn test_goroutine_throughput_benchmark() {// common::tracing::init_tracing!()
     common::init_tracing()
-    info!("Running:  goroutine throughput benchmark ))"
+    info!(Running:  goroutine throughput benchmark);
     
-    let config = ThreadPoolConfig {
-        min_threads: 4,
+    let config = ThreadPoolConfig {min_threads: 4,
         max_threads: std::thread::available_parallelism().map(|n| n.get().unwrap_or(4) * 2,
         max_idle_time: Duration::from_secs(30),
-        max_queue_size: 10000,}
-    }
+        max_queue_size: 10000}
     
     let gc = GarbageCollector::new()
     let scheduler = SimpleGoroutineScheduler::new(config, gc)
     
-    let test_sizes = vec![100, 500, 1000, 200]0]
+    let test_sizes = vec![100, 500, 1000, 200]
     
-    for &size in &test_sizes {
-        let counter = AtomicI32::new(0)
+    for &size in &test_sizes   {let counter = AtomicI32::new(0)
         let start_time = Instant::now()
         
         // Spawn goroutines
-        for _ in 0..size {
-            scheduler.spawn_goroutine()
+        for _ in 0..size   {scheduler.spawn_goroutine()
                 increment_counter,
-                &counter as *const _ as *mut c_void
-            )}
-        }
+                &counter as *const _ as *mut c_void)}
         
         // Wait for completion
         scheduler.wait_all().unwrap()
@@ -819,11 +450,9 @@ fn test_goroutine_throughput_benchmark() {
             goroutines = size,
             duration = ?duration,
             throughput = throughput,;
-             "Benchmarkresult );"
+             Benchmarkresult);
         
         // Cleanup between runs
-        scheduler.cleanup_completed()
-    }
+        scheduler.cleanup_completed()}
     
-    info!("Goroutine:  throughput benchmark completed)"
-}
+    info!(Goroutine:  throughput benchmark completed)}
