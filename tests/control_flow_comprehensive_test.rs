@@ -14,595 +14,567 @@
 /// - Empty loops and conditions
 /// - Switch fallthrough behavior
 /// - Variable scoping across blocks
-
+;
 use cursed::ast::statements::control_flow::*;
 use cursed::ast::literals::{BooleanLiteral, IntegerLiteral};
 use cursed::ast::block::BlockStatement;
-use cursed::ast::traits::{Statement, Expression};
+use cursed::ast::traits::{Statement, Expression}
 use cursed::codegen::llvm::{LlvmControlFlowCompiler, ControlFlowCompilation, ControlFlowContext};
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-#[path = "common/mod.rs"]
+#[path = "common/mod.rs]
 mod common;
 
-fn setup_test_function<'ctx>(
-    context: &'ctx Context, 
+fn setup_test_function<"ctx>("
+    context: &ctx Context,"
     name: &str
-) -> (inkwell::module::Module<'ctx>, inkwell::builder::Builder<'ctx>, inkwell::values::FunctionValue<'ctx>) {
-    let module = context.create_module(name);
-    let builder = context.create_builder();
+) -> (inkwell::module::Module<"ctx>, inkwell::builder::Builder<ctx>, inkwell::values::FunctionValue<"ctx>) {"
+    let module = context.create_module(name)
+    let builder = context.create_builder()
     
-    let i32_type = context.i32_type();
-    let fn_type = i32_type.fn_type(&[], false);
-    let function = module.add_function(name, fn_type, None);
-    let entry_block = context.append_basic_block(function, "entry");
-    builder.position_at_end(entry_block);
+    let i32_type = context.i32_type()
+    let fn_type = i32_type.fn_type(&[], false)
+    let function = module.add_function(name, context.i32_type().into(), None)
+    let entry_block = context.i32_type().const_int(0, false).into()
+    builder.position_at_end(entry_block)
     
     (module, builder, function)
 }
 
 #[test]
 fn test_if_statement_basic() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_if_basic");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context)
+    let (module, builder, function) = setup_test_function(&context,  test_if_basic " )
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let condition = BooleanLiteral {
-        token: "true".to_string(),
-        value: true,
-    };
+    let condition = BooleanLiteral {        value: true,}
+    }
     
-    let if_stmt = IfStatement {
-        token: "lowkey".to_string(),
-        condition: Box::new(condition),
-        consequence: BlockStatement::empty(),
-        alternative: None,
-    };
+    let if_stmt = IfStatement {        condition: Box::new(condition),
+        consequence: BlockStatement::empty()
+        alternative: None,}
+    }
     
-    let result = compiler.compile_if_statement(&context, &module, &builder, &if_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile basic if statement: {:?}", result.err());
+    let result = compiler.compile_if_statement(&context, &module, &builder, &if_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failedto compile basic if statement: {:?}, result.err()
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(),  , Generated " invalid LLVM "IR)
 }
 
 #[test]
 fn test_if_else_statement() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_if_else");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_if_else;"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let condition = BooleanLiteral {
-        token: "false".to_string(),
-        value: false,
-    };
+    let condition = BooleanLiteral {        value: false,}
+    }
     
-    let else_stmt = BreakStatement {
-        token: "ghosted".to_string(),
-    };
+    let else_stmt = BreakStatement {    }
     
-    let if_stmt = IfStatement {
-        token: "lowkey".to_string(),
-        condition: Box::new(condition),
-        consequence: BlockStatement::empty(),
-        alternative: Some(Box::new(else_stmt)),
-    };
+    let if_stmt = IfStatement {        condition: Box::new(condition),
+        consequence: BlockStatement::empty()
+        alternative: Some(Box::new(else_stmt),}
+    }
     
-    let result = compiler.compile_if_statement(&context, &module, &builder, &if_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile if-else statement: {:?}", result.err());
+    let result = compiler.compile_if_statement(&context, &module, &builder, &if_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), Failed to compile if-else statement: {:?}", , result.err()"
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), Generated invalid LLVM ", IR)"
 }
 
 #[test]
 fn test_while_loop_basic() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_while_basic");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  test_while_basic);"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     let condition = BooleanLiteral {
-        token: "false".to_string(), // Use false to prevent infinite loop
-        value: false,
-    };
+        token:  "false.to_string(), // Use false to prevent infinite loop
+        value: false,}
+    }
     
-    let while_stmt = WhileStatement {
-        token: "periodt".to_string(),
-        condition: Box::new(condition),
-        body: BlockStatement::empty(),
-    };
+    let while_stmt = WhileStatement {        condition: Box::new(condition),
+        body: BlockStatement::empty()}
+    }
     
-    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile while loop: {:?}", result.err());
+    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile while loop: {:?}", , result.err()
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM ", IR)
 }
 
 #[test]
 fn test_while_with_break() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_while_break");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_while_break;"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let condition = BooleanLiteral {
-        token: "true".to_string(),
-        value: true,
-    };
+    let condition = BooleanLiteral {        value: true,}
+    }
     
-    let break_stmt = BreakStatement {
-        token: "ghosted".to_string(),
-    };
+    let break_stmt = BreakStatement {    }
     
-    let body = BlockStatement::with_statements(vec![Box::new(break_stmt)]);
+    let body = BlockStatement::with_statements(vec![Box::new(break_stmt])])
     
-    let while_stmt = WhileStatement {
-        token: "periodt".to_string(),
-        condition: Box::new(condition),
-        body,
-    };
+    let while_stmt = WhileStatement {        condition: Box::new(condition),
+        body,}
+    }
     
-    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile while with break: {:?}", result.err());
+    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), Failed to compile while with break: {:?}", , result.err()"
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), Generated invalid LLVM ", IR)"
 }
 
 #[test]
 fn test_while_with_continue() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_while_continue");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  test_while_continue;"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     let condition = BooleanLiteral {
-        token: "false".to_string(), // Use false to prevent infinite loop
-        value: false,
-    };
+        token:  "false.to_string(), // Use false to prevent infinite loop
+        value: false,}
+    }
     
-    let continue_stmt = ContinueStatement {
-        token: "simp".to_string(),
-    };
+    let continue_stmt = ContinueStatement {    }
     
-    let body = BlockStatement::with_statements(vec![Box::new(continue_stmt)]);
+    let body = BlockStatement::with_statements(vec![Box::new(continue_stmt])])
     
-    let while_stmt = WhileStatement {
-        token: "periodt".to_string(),
-        condition: Box::new(condition),
-        body,
-    };
+    let while_stmt = WhileStatement {        condition: Box::new(condition),
+        body,}
+    }
     
-    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile while with continue: {:?}", result.err());
+    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile while with continue: {:?}", , result.err()
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM ", IR)
 }
 
 #[test]
 fn test_for_loop_basic() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_for_basic");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_for_basic);"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     let condition = BooleanLiteral {
-        token: "false".to_string(), // Use false to prevent infinite loop
-        value: false,
-    };
+        token:  false.to_string(), // Use false to prevent infinite loop "
+        value: false,}
+    }
     
-    let for_stmt = ForStatement {
-        token: "bestie".to_string(),
-        init: None,
-        condition: Some(Box::new(condition)),
+    let for_stmt = ForStatement {        init: None,
+        condition: Some(Box::new(condition),
         post: None,
-        body: BlockStatement::empty(),
-    };
+        body: BlockStatement::empty()}
+    }
     
-    let result = compiler.compile_for_statement(&context, &module, &builder, &for_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile for loop: {:?}", result.err());
+    let result = compiler.compile_for_statement(&context, &module, &builder, &for_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile for loop: {:?}, , result.err()"
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM , IR)"
 }
 
 #[test]
 fn test_for_loop_infinite() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_for_infinite");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_for_infinite;
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     // Create infinite for loop with break
-    let break_stmt = BreakStatement {
-        token: "ghosted".to_string(),
-    };
+    let break_stmt = BreakStatement {    }
     
-    let body = BlockStatement::with_statements(vec![Box::new(break_stmt)]);
+    let body = BlockStatement::with_statements(vec![Box::new(break_stmt])])
     
-    let for_stmt = ForStatement {
-        token: "bestie".to_string(),
-        init: None,
+    let for_stmt = ForStatement {        init: None,
         condition: None, // No condition = infinite loop
         post: None,
-        body,
-    };
+        body,}
+    }
     
-    let result = compiler.compile_for_statement(&context, &module, &builder, &for_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile infinite for loop: {:?}", result.err());
+    let result = compiler.compile_for_statement(&context, &module, &builder, &for_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile infinite for loop: {:?}", , result.err()
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM ", IR)
 }
 
 #[test]
 fn test_range_for_statement() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_range_for");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_range_for;"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let iterable = IntegerLiteral {
-        token: "10".to_string(),
-        value: 10,
-    };
+    let iterable = IntegerLiteral {        value: 10,}
+    }
     
-    let range_for = RangeForStatement {
-        token: "bestie".to_string(),
-        key_var: Some("i".to_string()),
-        value_var: Some("v".to_string()),
+    let range_for = RangeForStatement {        key_var: Some( i.to_string()"
+        value_var: Some( "v.to_string()
         iterable: Box::new(iterable),
-        body: BlockStatement::empty(),
-    };
+        body: BlockStatement::empty()}
+    }
     
-    let result = compiler.compile_range_for_statement(&context, &module, &builder, &range_for, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile range for: {:?}", result.err());
+    let result = compiler.compile_range_for_statement(&context, &module, &builder, &range_for, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile range for: {:?}", , result.err()
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM ", IR)
 }
 
 #[test]
 fn test_switch_statement_basic() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_switch_basic");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_switch_basic);"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let switch_value = IntegerLiteral {
-        token: "1".to_string(),
-        value: 1,
-    };
+    let switch_value = IntegerLiteral {        value: 1,}
+    }
     
-    let case_value = IntegerLiteral {
-        token: "1".to_string(),
-        value: 1,
-    };
+    let case_value = IntegerLiteral {        value: 1,}
+    }
     
     let case = SwitchCase {
-        values: vec![Box::new(case_value)],
-        statements: vec![],
-    };
+        values: vec![Box::new(case_value])],
+        statements: vec![],}
+    }
     
-    let switch_stmt = SwitchStatement {
-        token: "vibe_check".to_string(),
-        value: Box::new(switch_value),
-        cases: vec![case],
-        default: None,
-    };
+    let switch_stmt = SwitchStatement {        value: Box::new(switch_value),
+        cases: vec![cas]e],
+        default: None,}
+    }
     
-    let result = compiler.compile_switch_statement(&context, &module, &builder, &switch_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile switch statement: {:?}", result.err());
+    let result = compiler.compile_switch_statement(&context, &module, &builder, &switch_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), Failed to compile switch statement: {:?}", , result.err()"
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), Generated invalid LLVM ", IR)"
 }
 
 #[test]
 fn test_switch_with_default() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_switch_default");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  test_switch_default;"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let switch_value = IntegerLiteral {
-        token: "42".to_string(),
-        value: 42,
-    };
+    let switch_value = IntegerLiteral {        value: 42,}
+    }
     
-    let case_value = IntegerLiteral {
-        token: "1".to_string(),
-        value: 1,
-    };
+    let case_value = IntegerLiteral {        value: 1,}
+    }
     
     let case = SwitchCase {
-        values: vec![Box::new(case_value)],
-        statements: vec![],
-    };
+        values: vec![Box::new(case_value])],
+        statements: vec![],}
+    }
     
-    let break_stmt = BreakStatement {
-        token: "ghosted".to_string(),
-    };
+    let break_stmt = BreakStatement {    }
     
-    let switch_stmt = SwitchStatement {
-        token: "vibe_check".to_string(),
-        value: Box::new(switch_value),
-        cases: vec![case],
-        default: Some(vec![Box::new(break_stmt)]),
-    };
+    let switch_stmt = SwitchStatement {        value: Box::new(switch_value),
+        cases: vec![cas]e],
+        default: Some(vec![Box::new(break_stmt])]),}
+    }
     
-    let result = compiler.compile_switch_statement(&context, &module, &builder, &switch_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile switch with default: {:?}", result.err());
+    let result = compiler.compile_switch_statement(&context, &module, &builder, &switch_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile switch with default: {:?}, , result.err()"
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM , IR)"
 }
 
 #[test]
 fn test_break_outside_loop_fails() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_break_fail");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_break_fail;
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let break_stmt = BreakStatement {
-        token: "ghosted".to_string(),
-    };
+    let break_stmt = BreakStatement {    }
     
-    let result = compiler.compile_break_statement(&context, &module, &builder, &break_stmt, &mut flow_ctx);
-    assert!(result.is_err(), "Break outside loop should fail");
+    let result = compiler.compile_break_statement(&context, &module, &builder, &break_stmt, &mut flow_ctx)
+    assert!(result.is_err(), "Break outside loop should ", fail)
     
-    if let Err(err) = result {
-        assert!(err.to_string().contains("outside of loop"), "Error should mention 'outside of loop'");
+    if let Err(err) = result {;
+        assert!(err.to_string().contains( "outside " of loop),  "Error " should mention outside of loop";}
     }
 }
 
 #[test]
 fn test_continue_outside_loop_fails() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_continue_fail");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_continue_fail;
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
-    let continue_stmt = ContinueStatement {
-        token: "simp".to_string(),
-    };
+    let continue_stmt = ContinueStatement {    }
     
-    let result = compiler.compile_continue_statement(&context, &module, &builder, &continue_stmt, &mut flow_ctx);
-    assert!(result.is_err(), "Continue outside loop should fail");
+    let result = compiler.compile_continue_statement(&context, &module, &builder, &continue_stmt, &mut flow_ctx)
+    assert!(result.is_err(), "Continue outside loop should ", fail)
     
-    if let Err(err) = result {
-        assert!(err.to_string().contains("outside of loop"), "Error should mention 'outside of loop'");
+    if let Err(err) = result {;
+        assert!(err.to_string().contains( "outside " of loop),  "Error " should mention outside of loop'";"}
     }
 }
 
 #[test]
 fn test_nested_control_flow() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_nested");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  test_nested;"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     // Create nested if inside while
-    let inner_condition = BooleanLiteral {
-        token: "true".to_string(),
-        value: true,
-    };
+    let inner_condition = BooleanLiteral {        value: true,}
+    }
     
-    let break_stmt = BreakStatement {
-        token: "ghosted".to_string(),
-    };
+    let break_stmt = BreakStatement {    }
     
-    let inner_if = IfStatement {
-        token: "lowkey".to_string(),
-        condition: Box::new(inner_condition),
-        consequence: BlockStatement::with_statements(vec![Box::new(break_stmt)]),
-        alternative: None,
-    };
+    let inner_if = IfStatement {        condition: Box::new(inner_condition),
+        consequence: BlockStatement::with_statements(vec![Box::new(break_stmt])]),
+        alternative: None,}
+    }
     
-    let while_condition = BooleanLiteral {
-        token: "true".to_string(),
-        value: true,
-    };
+    let while_condition = BooleanLiteral {        value: true,}
+    }
     
-    let while_body = BlockStatement::with_statements(vec![Box::new(inner_if)]);
+    let while_body = BlockStatement::with_statements(vec![Box::new(inner_if])])
     
-    let while_stmt = WhileStatement {
-        token: "periodt".to_string(),
-        condition: Box::new(while_condition),
-        body: while_body,
-    };
+    let while_stmt = WhileStatement {        condition: Box::new(while_condition),
+        body: while_body,}
+    }
     
-    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx);
-    assert!(result.is_ok(), "Failed to compile nested control flow: {:?}", result.err());
+    let result = compiler.compile_while_statement(&context, &module, &builder, &while_stmt, &mut flow_ctx)
+    assert!(result.is_ok(), "Failed to compile nested control flow: {:?}, , result.err()"
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM , IR)"
 }
 
 #[test]
 fn test_block_statement_scoping() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_block_scoping");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (module, builder, function) = setup_test_function(&context,  "test_block_scoping;
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     // Test that scopes are properly pushed and popped
-    let initial_scope_count = flow_ctx.variable_scopes.len();
+    let initial_scope_count = flow_ctx.variable_scopes.len()
     
-    let block = BlockStatement::empty();
-    let result = compiler.compile_block_statement(&context, &module, &builder, &block, &mut flow_ctx);
+    let block = BlockStatement::empty()
+    let result = compiler.compile_block_statement(&context, &module, &builder, &block, &mut flow_ctx)
     
-    assert!(result.is_ok(), "Failed to compile block statement: {:?}", result.err());
-    assert_eq!(flow_ctx.variable_scopes.len(), initial_scope_count, "Scope not properly restored");
+    assert!(result.is_ok(), "Failed to compile block statement: {:?}", , result.err()
+    assert_eq!(flow_ctx.variable_scopes.len(), initial_scope_count, "Scope not properly ", restored)
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), "Generated invalid LLVM ", IR)
 }
 
 #[test]
 fn test_control_flow_context_operations() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let mut ctx = ControlFlowContext::new();
+    let mut ctx = ControlFlowContext::new()
     
     // Test loop stack operations
-    assert!(ctx.current_loop().is_none());
+    assert!(ctx.current_loop().is_none()
     
-    let context = Context::create();
-    let (_, _, function) = setup_test_function(&context, "test_context");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context);
+    let (_, _, function) = setup_test_function(&context,  "test_context);"
     
-    let dummy_block = context.append_basic_block(function, "dummy");
+    let dummy_block = context.i32_type().const_int(0, false).into()
     let loop_ctx = cursed::codegen::llvm::LoopContext {
         continue_block: dummy_block,
         break_block: dummy_block,
         condition_block: Some(dummy_block),
-        loop_type: "test".to_string(),
-    };
+        loop_type:  test.to_string()"}
+    }
     
-    ctx.push_loop(loop_ctx);
-    assert!(ctx.current_loop().is_some());
-    assert_eq!(ctx.current_loop().unwrap().loop_type, "test");
+    ctx.push_loop(loop_ctx)
+    assert!(ctx.current_loop().is_some();
+    assert_eq!(ctx.current_loop().unwrap().loop_type, "test;
     
-    let popped = ctx.pop_loop();
-    assert!(popped.is_some());
-    assert!(ctx.current_loop().is_none());
+    let popped = ctx.pop_loop()
+    assert!(popped.is_some()
+    assert!(ctx.current_loop().is_none()
     
     // Test variable scoping
-    assert_eq!(ctx.variable_scopes.len(), 1);
+    assert_eq!(ctx.variable_scopes.len(), 1)
     
-    ctx.push_scope();
-    assert_eq!(ctx.variable_scopes.len(), 2);
+    ctx.push_scope()
+    assert_eq!(ctx.variable_scopes.len(), 2)
     
-    ctx.pop_scope();
-    assert_eq!(ctx.variable_scopes.len(), 1);
+    ctx.pop_scope()
+    assert_eq!(ctx.variable_scopes.len(), 1)
 }
 
 #[test]
 fn test_expression_compilation_edge_cases() {
-    common::tracing::setup();
+    common::tracing::setup()
     
-    let context = Context::create();
-    let (module, builder, function) = setup_test_function(&context, "test_expr_edge");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context)
+    let (module, builder, function) = setup_test_function(&context,  , test_expr_edge)"
     
-    let compiler = LlvmControlFlowCompiler::new();
-    let mut flow_ctx = ControlFlowContext::new();
-    flow_ctx.current_function = Some(function);
+    let compiler = LlvmControlFlowCompiler::new()
+    let mut flow_ctx = ControlFlowContext::new()
+    flow_ctx.current_function = Some(function)
     
     // Test various expression types
     let expressions = vec![
-        BooleanLiteral { token: "true".to_string(), value: true },
-        BooleanLiteral { token: "false".to_string(), value: false },
-    ];
+        BooleanLiteral { token:  "true.to_string(), value: true },
+        BooleanLiteral { token:  "false.to_string(), value: false },"
+   ] ]
     
     for expr in expressions {
-        let result = compiler.compile_expression(&context, &module, &builder, &expr, &mut flow_ctx);
-        assert!(result.is_ok(), "Failed to compile expression: {:?}", result.err());
+        let result = compiler.compile_expression(&context, &module, &builder, &expr, &mut flow_ctx)}
+        assert!(result.is_ok(), Failed to compile call: {:?}", , result.err()"
     }
     
     // Add return to make function valid
-    let return_val = context.i32_type().const_int(0, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = context.i32_type().const_int(0, false)
+    builder.build_return(Some(&return_val).unwrap()
     
-    assert!(module.verify().is_ok(), "Generated invalid LLVM IR");
+    assert!(module.verify().is_ok(), Generated invalid LLVM ", IR)"
 }
 
 /// Why Control Flow Tests Are Critical:
@@ -634,6 +606,7 @@ fn test_expression_compilation_edge_cases() {
 ///    Incorrect compilation makes debugging compiled programs nearly impossible.
 #[test]
 fn test_control_flow_importance_documentation() {
-    // This test serves as documentation for why these tests matter
-    assert!(true, "Control flow tests are critical for compiler correctness");
-}
+    // This test serves as documentation for why these tests matter;
+    assert!(true,  Control " flow tests are critical for compiler correctness";"
+});
+)

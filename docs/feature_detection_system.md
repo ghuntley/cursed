@@ -19,7 +19,7 @@ The core system that identifies and manages compiler capabilities across differe
 
 #### Feature Categories
 
-- **Core Language**: Basic types, advanced types, generics, interfaces, type assertion, error handling
+- **Core Language**: Basic types, advanced types, generics with constraints, interfaces, type assertion, error handling
 - **Memory Management**: Garbage collection, memory profiler, leak detection
 - **Concurrency**: Goroutines, channels, channel buffering, select statement, mutex support
 - **Code Generation**: LLVM codegen, JIT compilation, optimized codegen, bitstream output, static linking

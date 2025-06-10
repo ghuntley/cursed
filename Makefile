@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -879,3 +879,245 @@ crypto-help:
 	@echo "  • Standard compliance verification"
 	@echo ""
 	@echo "For more details, see the AGENT.md file!"
+
+# Enhanced GC Test Suite Targets
+# These targets provide comprehensive testing for the enhanced garbage collection implementation
+
+# Run all enhanced GC tests (default)
+enhanced-gc-test:
+	@echo "Running comprehensive enhanced GC test suite..."
+	tests/run_enhanced_gc_tests.sh
+
+# Run unit tests for enhanced GC features
+enhanced-gc-test-unit:
+	@echo "Running enhanced GC unit tests..."
+	tests/run_enhanced_gc_tests.sh --test unit
+
+# Run integration tests for enhanced GC workflows
+enhanced-gc-test-integration:
+	@echo "Running enhanced GC integration tests..."
+	tests/run_enhanced_gc_tests.sh --test integration
+
+# Run performance tests for enhanced GC
+enhanced-gc-test-performance:
+	@echo "Running enhanced GC performance tests..."
+	tests/run_enhanced_gc_tests.sh --test performance --ignored
+
+# Run stress tests for enhanced GC
+enhanced-gc-test-stress:
+	@echo "Running enhanced GC stress tests..."
+	tests/run_enhanced_gc_tests.sh --test stress --ignored
+
+# Run memory safety tests for enhanced GC
+enhanced-gc-test-memory-safety:
+	@echo "Running enhanced GC memory safety tests..."
+	tests/run_enhanced_gc_tests.sh --test memory-safety
+
+# Run all enhanced GC tests including long-running ones
+enhanced-gc-test-all:
+	@echo "Running all enhanced GC tests (including stress and performance)..."
+	tests/run_enhanced_gc_tests.sh --ignored
+
+# Run quick enhanced GC tests (excluding long-running tests)
+enhanced-gc-test-quick:
+	@echo "Running quick enhanced GC tests..."
+	tests/run_enhanced_gc_tests.sh --quick
+
+# Run ignored enhanced GC tests (stress and performance)
+enhanced-gc-test-ignored:
+	@echo "Running ignored enhanced GC tests (stress and performance)..."
+	tests/run_enhanced_gc_tests.sh --ignored
+
+# Generate enhanced GC test coverage report
+enhanced-gc-test-coverage:
+	@echo "Generating enhanced GC test coverage report..."
+	tests/run_enhanced_gc_tests.sh --coverage
+
+# Generate enhanced GC test report
+enhanced-gc-test-report:
+	@echo "Generating enhanced GC test report..."
+	tests/run_enhanced_gc_tests.sh --report enhanced_gc_test_report.md
+
+# LLVM GC Integration Test Suite Targets
+
+# Run LLVM GC integration tests
+llvm-gc-test:
+	@echo "Running LLVM GC integration tests..."
+	./fix_linking.sh cargo test --test llvm_gc_integration_test
+
+# Run LLVM GC integration tests with verbose output
+llvm-gc-test-verbose:
+	@echo "Running LLVM GC integration tests (verbose)..."
+	./fix_linking.sh cargo test --test llvm_gc_integration_test -- --nocapture
+
+# Run specific LLVM GC integration test
+llvm-gc-test-single:
+	@echo "Running specific LLVM GC integration test: $(TEST_NAME)"
+	./fix_linking.sh cargo test --test llvm_gc_integration_test $(TEST_NAME)
+
+# Run all GC-related tests (enhanced + LLVM integration)
+gc-test-all:
+	@echo "Running all GC-related tests..."
+	@$(MAKE) enhanced-gc-test-quick
+	@$(MAKE) llvm-gc-test
+	@echo "All GC tests completed successfully!"
+
+# Enhanced GC test help
+enhanced-gc-help:
+	@echo "Enhanced GC Test Suite Commands:"
+	@echo ""
+	@echo "Basic Testing:"
+	@echo "  enhanced-gc-test               - Run all standard enhanced GC tests"
+	@echo "  enhanced-gc-test-quick         - Run quick tests only (exclude long-running)"
+	@echo "  enhanced-gc-test-all           - Run all tests including stress and performance"
+	@echo ""
+	@echo "Test Categories:"
+	@echo "  enhanced-gc-test-unit          - Unit tests for heap management features"
+	@echo "  enhanced-gc-test-integration   - Integration tests for generational collection"
+	@echo "  enhanced-gc-test-performance   - Performance tests for incremental collection"
+	@echo "  enhanced-gc-test-stress        - Stress tests for memory pressure scenarios"
+	@echo "  enhanced-gc-test-memory-safety - Memory safety guarantee validation"
+	@echo ""
+	@echo "Analysis and Reporting:"
+	@echo "  enhanced-gc-test-coverage      - Generate code coverage report"
+	@echo "  enhanced-gc-test-report        - Generate detailed test report"
+	@echo "  enhanced-gc-test-ignored       - Run long-running tests only"
+	@echo ""
+	@echo "LLVM GC Integration Test Commands:"
+	@echo "  llvm-gc-test                   - Run LLVM GC integration tests"
+	@echo "  llvm-gc-test-verbose           - Run LLVM GC integration tests (verbose)"
+	@echo "  llvm-gc-test-single TEST_NAME  - Run specific LLVM GC integration test"
+	@echo "  gc-test-all                    - Run all GC-related tests"
+	@echo ""
+	@echo "Test Features:"
+	@echo "  • Comprehensive unit testing for new heap management features"
+	@echo "  • End-to-end integration testing for generational collection"
+	@echo "  • Performance validation for incremental collection algorithms"
+	@echo "  • Stress testing under extreme memory pressure conditions"
+	@echo "  • Memory safety guarantee validation with concurrent scenarios"
+	@echo "  • Thread safety testing for concurrent GC operations"
+	@echo "  • Memory corruption detection and prevention testing"
+	@echo "  • Adaptive algorithm selection validation"
+	@echo "  • Cross-generational reference safety testing"
+	@echo "  • Complex object graph handling validation"
+	@echo ""
+
+# ===================================================================
+# String Manipulation Utilities
+# ===================================================================
+
+# String utilities help
+string-help:
+	@echo ""
+	@echo "🔤 CURSED String Manipulation Utilities"
+	@echo "======================================"
+	@echo ""
+	@echo "Test Commands:"
+	@echo "  string-test                - Run comprehensive string manipulation tests"
+	@echo "  string-test-verbose        - Run tests with verbose output"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  string-doc                 - Generate string utilities documentation"
+	@echo "  string-examples            - Show string manipulation examples"
+	@echo ""
+	@echo "Features:"
+	@echo "  • Core operations (length, concat, reverse, repeat)"
+	@echo "  • Search and replace (contains, find, replace variants)"
+	@echo "  • Transformations (case conversion, trimming, substrings)"
+	@echo "  • Splitting and joining (split by delimiter, whitespace, etc.)"
+	@echo "  • Validation (numeric, email, URL, phone, palindrome)"
+	@echo "  • Formatting (padding, centering, wrapping, escaping)"
+	@echo "  • Full Unicode support with proper character handling"
+	@echo "  • Error handling with detailed error messages"
+	@echo ""
+
+# Run string manipulation tests
+string-test:
+	@echo "🔤 Running string manipulation tests..."
+	$(LINK_FIX) cargo test --test string_manipulation_test
+
+# Run string tests with verbose output
+string-test-verbose:
+	@echo "🔤 Running string manipulation tests (verbose)..."
+	$(LINK_FIX) cargo test --test string_manipulation_test -- --nocapture
+
+# Generate string utilities documentation
+string-doc:
+	@echo "📚 Generating string utilities documentation..."
+	$(LINK_FIX) cargo doc --no-deps --document-private-items --package cursed
+
+# Show string manipulation examples
+string-examples:
+	@echo "📝 String Manipulation Examples:"
+	@echo ""
+	@echo "Core Operations:"
+	@echo "  length(\"hello\")           -> 5"
+	@echo "  reverse(\"hello\")         -> \"olleh\""
+	@echo "  repeat(\"abc\", 3)         -> \"abcabcabc\""
+	@echo ""
+	@echo "Search & Replace:"
+	@echo "  contains(\"hello\", \"ell\") -> true"
+	@echo "  find(\"hello\", \"ell\")     -> Some(1)"
+	@echo "  replace(\"hello\", \"l\", \"x\") -> \"hexxo\""
+	@echo ""
+	@echo "Transformations:"
+	@echo "  to_uppercase(\"hello\")    -> \"HELLO\""
+	@echo "  trim(\"  hello  \")        -> \"hello\""
+	@echo "  to_camel_case(\"hello world\") -> \"helloWorld\""
+	@echo ""
+	@echo "Validation:"
+	@echo "  is_numeric(\"123\")        -> true"
+	@echo "  is_email(\"user@example.com\") -> true"
+	@echo "  is_palindrome(\"racecar\") -> true"
+	@echo ""
+	@echo "For the complete demo, see: examples/string_manipulation_demo.csd"
+	@echo ""
+
+# Type System Integration Testing
+# ================================
+
+# Run basic type system integration tests
+type-system-test:
+	@echo "Running type system integration tests..."
+	./fix_linking.sh cargo test --test type_system_llvm_integration_test
+
+# Run type system LLVM integration tests
+type-system-test-integration:
+	@echo "Running type system LLVM integration tests..."
+	./fix_linking.sh cargo test --test type_system_llvm_integration_test
+
+# Run parser constraint integration tests
+type-system-test-parser:
+	@echo "Running parser constraint integration tests..."
+	./fix_linking.sh cargo test --test parser_constraint_integration_test
+
+# Run comprehensive generic integration tests
+type-system-test-comprehensive:
+	@echo "Running comprehensive generic integration tests..."
+	./fix_linking.sh cargo test --test comprehensive_generic_integration_test
+
+# Run all type system integration tests
+type-system-test-all:
+	@echo "Running all type system integration tests..."
+	./fix_linking.sh cargo test --test type_system_llvm_integration_test
+	./fix_linking.sh cargo test --test parser_constraint_integration_test
+	./fix_linking.sh cargo test --test comprehensive_generic_integration_test
+
+# Run quick type system validation
+type-system-test-quick:
+	@echo "Running quick type system validation..."
+	./fix_linking.sh cargo test test_generic_struct_compilation
+	./fix_linking.sh cargo test test_generic_instantiation
+	./fix_linking.sh cargo test test_constraint_validation
+
+# Type system test help
+type-system-help:
+	@echo "Type System Integration Test Targets:"
+	@echo "  type-system-test            - Run basic type system integration tests"
+	@echo "  type-system-test-integration - Run type system LLVM integration tests"
+	@echo "  type-system-test-parser     - Run parser constraint integration tests"
+	@echo "  type-system-test-comprehensive - Run comprehensive generic integration tests"
+	@echo "  type-system-test-all        - Run all type system integration tests"
+	@echo "  type-system-test-quick      - Run quick type system validation"
+	@echo "  type-system-help            - Show this help message"
+	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."

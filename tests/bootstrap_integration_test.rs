@@ -10,13 +10,13 @@ use tracing::info;
 
 #[test]
 fn test_bootstrap_integration_suite() {
-    // init_tracing!();
-    let _config = init_bootstrap_tests();
+    // common::tracing::init_tracing!()
+    let _config = init_bootstrap_tests()
     
-    info!("Running comprehensive bootstrap integration test suite");
+    info!("Running comprehensive bootstrap integration test suite ))"
     
     // This test ensures the bootstrap module is properly integrated
     // Individual tests are run in their respective modules
-    
-    info!("Bootstrap integration test suite completed");
+    ;
+    info!("Bootstrap:  integration test suite completed";
 }

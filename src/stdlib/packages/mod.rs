@@ -11,16 +11,16 @@ pub mod db_migrate;
 
 // Cryptography packages - comprehensive security suite
 // TODO: Re-enable when all modules are properly implemented
-// pub mod crypto_advanced;
-// pub mod crypto_asymmetric;
-// pub mod crypto_signatures;
-// pub mod crypto_kdf;
-// pub mod crypto_hash_advanced;
-// pub mod crypto_random;
-// pub mod crypto_zk;
-// pub mod crypto_pqc;
-// pub mod crypto_pki;
-// pub mod crypto_protocols;
+pub mod crypto_advanced;
+pub mod crypto_asymmetric;
+pub mod crypto_signatures;
+pub mod crypto_kdf;
+pub mod crypto_hash_advanced;
+pub mod crypto_random;
+pub mod crypto_zk;
+pub mod crypto_pqc;
+pub mod crypto_pki;
+pub mod crypto_protocols;
 
 // Existing packages
 pub mod web_vibez;
@@ -33,16 +33,16 @@ pub use db_sql::*;
 
 // Re-export cryptography packages for convenience
 // TODO: Re-enable when all modules are properly implemented
-// pub use crypto_advanced::*;
-// pub use crypto_asymmetric::*;
-// pub use crypto_signatures::*;
-// pub use crypto_kdf::*;
-// pub use crypto_hash_advanced::*;
-// pub use crypto_random::*;
-// pub use crypto_zk::*;
-// pub use crypto_pqc::*;
-// pub use crypto_pki::*;
-// pub use crypto_protocols::*;
+pub use crypto_advanced::*;
+pub use crypto_asymmetric::*;
+pub use crypto_signatures::*;
+pub use crypto_kdf::*;
+pub use crypto_hash_advanced::*;
+pub use crypto_random::*;
+pub use crypto_zk::*;
+pub use crypto_pqc::*;
+pub use crypto_pki::*;
+pub use crypto_protocols::*;
 
 // Re-export existing packages for convenience
 pub use web_vibez::*;

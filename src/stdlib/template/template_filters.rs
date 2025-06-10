@@ -390,6 +390,7 @@ impl FilterRegistry {
                 CursedObject::Integer(n) => n.to_string(),
                 CursedObject::Float(n) => n.to_string(),
                 CursedObject::Boolean(b) => b.to_string(),
+            CursedObject::Char(c) => c.to_string(),
                 CursedObject::Nil => "".to_string(),
                 _ => format!("{:?}", args[0]),
             };
@@ -708,6 +709,7 @@ fn extract_string(obj: &CursedObject) -> Result<String, CursedError> {
         CursedObject::Integer(n) => Ok(n.to_string()),
         CursedObject::Float(n) => Ok(n.to_string()),
         CursedObject::Boolean(b) => Ok(b.to_string()),
+            CursedObject::Char(c) => Ok(c.to_string()),
         _ => Err(CursedError::TemplateError {
             message: "Expected string value".to_string(),
             source_location: None,
@@ -782,6 +784,7 @@ fn is_truthy(obj: &CursedObject) -> bool {
         CursedObject::Integer(n) => *n != 0,
         CursedObject::Float(n) => *n != 0.0,
         CursedObject::String(s) => !s.is_empty(),
+        CursedObject::Char(_) => true, // Characters are always truthy
         CursedObject::Array(arr) => !arr.is_empty(),
         CursedObject::Map(map) => !map.is_empty(),
     }

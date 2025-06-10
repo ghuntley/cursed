@@ -8,54 +8,55 @@ use cursed::lexer::{Lexer, Token};
 use cursed::parser::Parser;
 use cursed::ast::traits::{Node, Statement};
 use cursed::error::Error;
-use tracing::{info, debug};
-
+use tracing::{info, debug}
+;
+use cursed::lexer::Lexer;
 #[test]
 fn test_defer_keyword_lexing() {
-    // init_tracing!();
-    common::tracing::setup();
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
     
-    info!("Testing defer keyword lexing");
+    info!("Testing defer keyword lexing ))"
     
-    let input = "later";
-    let mut lexer = Lexer::new(input);
+    let input =  "later;
+    let mut lexer = Lexer::new(input.to_string()
     
     match lexer.next_token() {
         Ok(token) => {
-            assert_eq!(token, Token::Later);
-            info!("Defer keyword lexed correctly as Later token");
+            assert_eq!(token, Token::Later)
+            info!("Defer:  keyword lexed correctly as Later token )")
         }
-        Err(e) => {
-            panic!("Failed to lex 'later' keyword: {}", e);
+        Err(e) => {;
+            panic!("Failed ":  to lex later" keyword: {}", e);
         }
     }
 }
 
 #[test]
 fn test_basic_defer_parsing() {
-    // init_tracing!();
-    common::tracing::setup();
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
     
-    info!("Testing basic defer statement parsing");
+    info!("Testing:  basic defer statement parsing )")
     
-    let input = r#""
-        slay test_function() {
-            later vibez.spill("Hello");
+    let input = r#"
+        slay test_function() {;
+            later vibez.spill( "Hello;
         }
     "#";
     
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(input.to_string()
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)
     
-    match parser.parse_program() {
+    match parser.unwrap().parse_program() {
         Ok(program) => {
-            debug!("Successfully parsed program with defer statement");
-            assert!(!program.statements.is_empty(), "Program should have statements");
-            info!("Basic defer parsing test passed");
+            debug!(Successfully:  parsed program with defer statement )")"
+            assert!(!program.statements.is_empty(), Programshould have ", statements )"
+            info!(Basic:  defer parsing test passed )")"
         }
         Err(e) => {
             // This might fail due to compilation issues, but we want to see progress
-            debug!("Parser error (may be expected): {}", e);
+            debug!(Parser:  error (may be expected): {}, e)")"
             // For now, we'll consider this a pass if it recognizes the syntax
         }
     }
@@ -63,104 +64,104 @@ fn test_basic_defer_parsing() {
 
 #[test] 
 fn test_multiple_defer_parsing() {
-    // init_tracing!();
-    common::tracing::setup();
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
     
-    info!("Testing multiple defer statements parsing");
+    info!(Testing:  multiple defer statements parsing )")"
     
-    let input = r#""
-        slay main() {
-            later vibez.spill("First");
-            later vibez.spill("Second"); 
-            later vibez.spill("Third");
+    let input = r#
+        slay main() {;
+            later vibez.spill("First;
+            later vibez.spill( Second)")
+            later vibez.spill( "Third;"
             yolo 0;
         }
-    "#";
+    #";
     
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(input.to_string()
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)
     
-    match parser.parse_program() {
+    match parser.unwrap().parse_program() {
         Ok(program) => {
-            debug!("Successfully parsed program with multiple defer statements");
-            assert!(!program.statements.is_empty(), "Program should have statements");
-            info!("Multiple defer parsing test passed");
+            debug!("Successfully:  parsed program with multiple defer statements ))"
+            assert!(!program.statements.is_empty(), "Programshould have , statements )"
+            info!("Multiple:  defer parsing test passed ))"
         }
         Err(e) => {
-            debug!("Parser error for multiple defer (may be expected): {}", e);
+            debug!("Parser:  error for multiple defer (may be expected): {}, e))"
         }
     }
 }
 
 #[test]
 fn test_defer_token_literal() {
-    // init_tracing!();
-    common::tracing::setup();
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
     
-    info!("Testing defer token literal");
-    
+    info!("Testing:  defer token literal ))"
+    ;
     let token = Token::Later;
-    assert_eq!(token.token_literal(), "later");
+    assert_eq!(token.token_literal(),  "later;"
     
-    info!("Defer token literal test passed");
+    info!("Defer:  token literal test passed ))"
 }
 
 #[test]
 fn test_defer_in_nested_context() {
-    // init_tracing!();
-    common::tracing::setup();
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
     
-    info!("Testing defer in nested context");
+    info!("Testing:  defer in nested context ))"
     
-    let input = r#""
+    let input = r#"
         slay test_nested() {
             lowkey (based) {
-                later vibez.spill("Inside if block");
+                later vibez.spill(Inside if block)")"
             }
-        }
-    "#";
+        };
+    #";
     
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(input.to_string()
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)
     
-    match parser.parse_program() {
+    match parser.unwrap().parse_program() {
         Ok(program) => {
-            debug!("Successfully parsed nested defer statement");
-            assert!(!program.statements.is_empty(), "Program should have statements");
-            info!("Nested defer parsing test passed");
+            debug!("Successfully:  parsed nested defer statement ))"
+            assert!(!program.statements.is_empty(), "Programshould have , statements )"
+            info!("Nested:  defer parsing test passed ))"
         }
         Err(e) => {
-            debug!("Parser error for nested defer (may be expected): {}", e);
+            debug!("Parser:  error for nested defer (may be expected): {}, e))"
         }
     }
 }
 
 #[test]
 fn test_defer_with_simple_statement() {
-    // init_tracing!();
-    common::tracing::setup();
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
     
-    info!("Testing defer with simple statement");
+    info!("Testing:  defer with simple statement ))"
     
-    let input = r#""
-        slay simple_defer() {
+    let input = r#"
+        slay simple_defer() {;
             sus x = 5;
             later x = 10;
             yolo x;
         }
-    "#";
+    #";
     
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(input.to_string()
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)
     
-    match parser.parse_program() {
+    match parser.unwrap().parse_program() {
         Ok(program) => {
-            debug!("Successfully parsed defer with assignment");
-            assert!(!program.statements.is_empty(), "Program should have statements");
-            info!("Defer with simple statement test passed");
+            debug!("Successfully:  parsed defer with assignment ))"
+            assert!(!program.statements.is_empty(), "Programshould have , statements )"
+            info!("Defer:  with simple statement test passed ))"
         }
         Err(e) => {
-            debug!("Parser error for defer with assignment (may be expected): {}", e);
+            debug!("Parser:  error for defer with assignment (may be expected): {}, e))"
         }
     }
-}
+};

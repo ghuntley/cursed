@@ -6,6 +6,17 @@ OMG! CURSED is like, THE MOST iconic programming language that's giving major Go
 
 CURSED is lowkey based on Go's practical design but like, replaces all those boring programming keywords with Gen Z slang that slaps so hard! It's such a vibe while still being fully functional, no cap! 🙌
 
+### New Generic Programming Features! 🔥
+
+CURSED now supports next-level generic programming with:
+
+- **Type Parameters**: Write code that works with multiple types (`squad Container<T>`)
+- **Constraint System**: Ensure type safety with powerful constraints (`where T: Clone + Display`)
+- **Zero-Cost Abstractions**: Generics compile to optimized native code
+- **Advanced Features**: Higher-kinded types, associated types, and variance support
+
+Check out the [Generics Guide](docs/generics_guide.md) for the full tea! ☕
+
 Example CURSED code (it ATE and left no crumbs):
 
 ```

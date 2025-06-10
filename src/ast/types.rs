@@ -237,7 +237,7 @@ impl Expression for ChannelTypeExpression {
 }
 
 /// Interface type for type assertions
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InterfaceType {
     pub name: String,
     pub methods: Vec<String>,
@@ -253,7 +253,7 @@ impl InterfaceType {
 }
 
 /// Struct type for type assertions
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StructType {
     pub name: String,
     pub fields: Vec<String>,
@@ -268,8 +268,8 @@ impl StructType {
     }
 }
 
-/// Generic type enum
-#[derive(Debug, Clone)]
+/// Generic type enum (simplified for basic AST compatibility)
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Interface(InterfaceType),
     Struct(StructType),

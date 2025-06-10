@@ -6,6 +6,7 @@ use crate::ast::statements::control_flow::{IfStatement, WhileStatement, ForState
 use crate::ast::block::BlockStatement;
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::error::Error;
+use crate::codegen::llvm::gc_integration::LlvmGcIntegration;
 use tracing::debug;
 use inkwell::context::Context;
 use inkwell::module::Module;
@@ -145,6 +146,15 @@ pub trait ControlFlowCompilation<'ctx> {
         expr: &dyn Expression,
         flow_ctx: &mut ControlFlowContext,
     ) -> Result<BasicValueEnum<'ctx>, Error>;
+
+    /// GC Integration Methods
+
+    /// Generate loop back edge safe point (for yolo yield points)
+    fn generate_loop_safe_point(
+        &self,
+        loop_id: &str,
+        gc_integration: Option<&LlvmGcIntegration>,
+    ) -> String;
 }
 
 /// Main implementation of control flow compilation
@@ -297,6 +307,20 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         } else {
             // Default to true for unknown expressions
             Ok(BasicValueEnum::IntValue(context.bool_type().const_int(1, false)))
+        }
+    }
+
+    /// GC Integration Method Implementations
+
+    fn generate_loop_safe_point(
+        &self,
+        loop_id: &str,
+        gc_integration: Option<&LlvmGcIntegration>,
+    ) -> String {
+        if let Some(gc) = gc_integration {
+            gc.generate_loop_yield_point(loop_id)
+        } else {
+            String::new()
         }
     }
 }

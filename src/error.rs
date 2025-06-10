@@ -26,6 +26,8 @@ pub enum Error {
     },
     /// Type compilation errors
     TypeCompilation(String),
+    /// Type system errors
+    Type(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -48,6 +50,7 @@ impl fmt::Display for Error {
                 }
             }
             Error::TypeCompilation(msg) => write!(f, "Type compilation error: {}", msg),
+            Error::Type(msg) => write!(f, "Type error: {}", msg),
         }
     }
 }

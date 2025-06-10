@@ -1,91 +1,140 @@
 #!/usr/bin/env python3
-"""
-Fix syntax errors in the AST files caused by malformed Clone implementations.
-"""
-
 import os
 import re
 
-def fix_file(file_path):
-    """Fix syntax errors in a single file."""
-    print(f"Processing {file_path}...")
+def fix_string_concatenation_errors(content):
+    """Fix string literal concatenation errors and missing commas"""
     
-    with open(file_path, 'r') as f:
-        content = f.read()
+    # Fix patterns like: "first"".to_string() -> "first".to_string()
+    content = re.sub(r'"([^"]+)""\.to_string\(\)', r'"\1".to_string()', content)
     
-    original_content = content
+    # Fix patterns like: "text" "more_text" -> "text", "more_text"
+    content = re.sub(r'"([^"]+)"\s+"([^"]+)"', r'"\1", "\2"', content)
     
-    # Fix "imp" -> "impl" errors
-    content = re.sub(r'\bimp\b(?=\s+Clone)', 'impl', content)
+    # Fix patterns like: Object::String( "text"".to_string()) -> Object::String("text".to_string())
+    content = re.sub(r'Object::String\(\s*"([^"]+)""\.to_string\(\)\)', r'Object::String("\1".to_string())', content)
     
-    # Fix impl blocks inside impl blocks by moving them out
-    # Look for impl blocks that start after a closing brace but before another impl
+    # Fix patterns like: "text" "other_text".to_string() -> "text".to_string(), "other_text".to_string()
+    content = re.sub(r'"([^"]+)"\s+"([^"]+)"\.to_string\(\)', r'"\1".to_string(), "\2".to_string()', content)
     
-    # First, find all nested impl Clone blocks and extract them
-    extracted_impls = []
+    # Fix patterns like: format_with_args("%"x" -> format_with_args("%x",
+    content = re.sub(r'format_with_args\("%"([^"]+)"\s*,', r'format_with_args("%\1",', content)
     
-    # Pattern to find impl Clone blocks inside other impls
-    impl_clone_pattern = r'(\n\s*impl Clone for \w+ \{[^}]*(?:\{[^}]*\}[^}]*)*\})'
+    # Fix patterns like: assert_eq!(result, "text"42) -> assert_eq!(result, "text", 42)
+    content = re.sub(r'assert_eq!\(([^,]+),\s*"([^"]+)"(\d+)', r'assert_eq!(\1, "\2", \3', content)
     
-    # Find all impl Clone blocks
-    clone_matches = list(re.finditer(impl_clone_pattern, content, re.DOTALL))
+    # Fix patterns like: ("text", "other_text"") -> ("text", "other_text")
+    content = re.sub(r'\("([^"]+)",\s*"([^"]+)""\)', r'("\1", "\2")', content)
     
-    for match in reversed(clone_matches):
-        impl_text = match.group(1).strip()
+    # Fix patterns like: .contains( "text" ") -> .contains("text")
+    content = re.sub(r'\.contains\(\s*"([^"]+)"\s*"\)', r'.contains("\1")', content)
+    
+    # Fix missing opening parentheses: new()) -> new()
+    content = re.sub(r'::new\(\)\)', r'::new()', content)
+    
+    # Fix patterns like: Token::new(TokenType::Something, "{"), -> Token::new(TokenType::Something, "{")
+    content = re.sub(r'Token::new\(([^,]+),\s*"([^"]+)"\),', r'Token::new(\1, "\2")', content)
+    
+    # Fix patterns like: "text" .something() -> "text".something()
+    content = re.sub(r'"([^"]+)"\s+\.([a-zA-Z_][a-zA-Z0-9_]*)', r'"\1".\2', content)
+    
+    return content
+
+def fix_unicode_characters(content):
+    """Fix unicode characters that cause compilation errors"""
+    # Replace checkmark unicode with regular text
+    content = content.replace('✓', 'OK')
+    return content
+
+def fix_literal_errors(content):
+    """Fix various literal and token errors"""
+    
+    # Fix underscore literal suffix errors: "_" " -> "_"
+    content = re.sub(r'"_"\s*"', r'"_"', content)
+    
+    # Fix character literal errors: 'text' -> "text"
+    content = re.sub(r"'([^']{2,})'", r'"\1"', content)
+    
+    # Fix raw string delimiter errors: r# "text" -> r#"text"#
+    content = re.sub(r'r#\s*"([^"]+)"\s*([^#])', r'r#"\1"# \2', content)
+    
+    # Fix escape sequence errors: \ " -> \"
+    content = re.sub(r'\\"\s*"', r'\\"', content)
+    
+    return content
+
+def fix_delimiter_errors(content):
+    """Fix mismatched delimiter errors"""
+    
+    # Fix common patterns with extra closing delimiters
+    lines = content.split('\n')
+    fixed_lines = []
+    
+    for line in lines:
+        # Fix patterns like: function_name(arg1, arg2)) -> function_name(arg1, arg2)
+        line = re.sub(r'\)\)', r')', line)
         
-        # Check if this is inside another impl block
-        before_impl = content[:match.start()]
+        # Fix patterns like: .expect( "text" to "other_text) -> .expect("text to other_text")
+        line = re.sub(r'\.expect\(\s*"([^"]+)"\s+to\s+"([^"]+)\)', r'.expect("\1 to \2")', line)
         
-        # Count open and closed braces to see if we're inside an impl
-        open_braces = before_impl.count('{')
-        close_braces = before_impl.count('}')
+        # Fix patterns like: info!("text" something "other_text" ) -> info!("text something other_text")
+        line = re.sub(r'info!\("([^"]+)"\s+([^"]+)\s+"([^"]+)"\s*\)', r'info!("\1 \2 \3")', line)
         
-        # If we have more open braces than close braces, we're likely inside an impl
-        if open_braces > close_braces:
-            # Extract this impl and remove it from its current location
-            extracted_impls.append(impl_text)
-            content = content[:match.start()] + content[match.end():]
+        fixed_lines.append(line)
     
-    # Add extracted impl blocks at the end of the file
-    if extracted_impls:
-        content = content.rstrip() + '\n\n' + '\n\n'.join(extracted_impls) + '\n'
+    return '\n'.join(fixed_lines)
+
+def fix_import_errors(content):
+    """Fix import and path errors"""
     
-    # Fix incomplete impl lines by adding proper signatures
-    content = re.sub(r'(\n\s*)imp(\s*$)', r'\1impl Node for Unknown {\n    fn string(&self) -> String { String::new() }\n    fn token_literal(&self) -> String { String::new() }\n}', content)
+    # Fix common module path issues
+    content = re.sub(r'#\[path = "([^"]+)\.([^"]+)"\s*\]', r'#[path = "\1.\2"]', content)
     
-    if content != original_content:
-        with open(file_path, 'w') as f:
-            f.write(content)
-        print(f"  Updated {file_path}")
-    else:
-        print(f"  No changes needed in {file_path}")
+    return content
+
+def fix_test_file(filepath):
+    """Fix a single test file"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        original_content = content
+        
+        # Apply all fixes
+        content = fix_string_concatenation_errors(content)
+        content = fix_unicode_characters(content)
+        content = fix_literal_errors(content)
+        content = fix_delimiter_errors(content)
+        content = fix_import_errors(content)
+        
+        # Only write if we made changes
+        if content != original_content:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"Fixed: {filepath}")
+            return True
+        
+        return False
+        
+    except Exception as e:
+        print(f"Error fixing {filepath}: {e}")
+        return False
 
 def main():
-    """Process all AST files."""
-    ast_files = [
-        'src/ast/expressions.rs',
-        'src/ast/statements.rs', 
-        'src/ast/declarations.rs',
-        'src/ast/literals.rs',
-        'src/ast/operators.rs',
-        'src/ast/conditionals.rs',
-        'src/ast/types.rs',
-        'src/ast/identifiers.rs',
-        'src/ast/block.rs',
-        'src/ast/calls.rs',
-        'src/ast/struct_expr.rs',
-        'src/ast/if_expression.rs',
-        'src/ast/dot_expression.rs',
-        'src/ast/slice_literal.rs',
-        'src/ast/concurrency.rs',
-        'src/ast/mod.rs'
-    ]
+    """Fix syntax errors in all test files"""
+    tests_dir = "tests"
+    fixed_count = 0
+    total_count = 0
     
-    for file_path in ast_files:
-        if os.path.exists(file_path):
-            fix_file(file_path)
-        else:
-            print(f"File not found: {file_path}")
+    for root, dirs, files in os.walk(tests_dir):
+        for file in files:
+            if file.endswith('.rs'):
+                filepath = os.path.join(root, file)
+                total_count += 1
+                if fix_test_file(filepath):
+                    fixed_count += 1
+    
+    print(f"\nFixed {fixed_count} out of {total_count} test files")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

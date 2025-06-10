@@ -82,6 +82,7 @@ impl TemplateFormatRenderer {
             CursedObject::Integer(n) => Ok(n.to_string()),
             CursedObject::Float(n) => Ok(n.to_string()),
             CursedObject::Boolean(b) => Ok(b.to_string()),
+            CursedObject::Char(c) => Ok(c.to_string()),
             CursedObject::Nil => Ok("".to_string()),
             CursedObject::Array(arr) => {
                 let items: Vec<String> = arr.iter()
@@ -107,6 +108,7 @@ impl TemplateFormatRenderer {
             CursedObject::Integer(n) => Ok(n.to_string()),
             CursedObject::Float(n) => Ok(n.to_string()),
             CursedObject::Boolean(b) => Ok(b.to_string()),
+            CursedObject::Char(c) => Ok(c.to_string()),
             CursedObject::Nil => Ok("".to_string()),
             CursedObject::Array(arr) => {
                 let mut html = String::from("<ul>\n");
@@ -177,6 +179,9 @@ impl TemplateFormatRenderer {
             CursedObject::Boolean(b) => {
                 Ok(format!("{}<{}>{}</{}>\n", indent, safe_tag, b, safe_tag))
             }
+            CursedObject::Char(c) => {
+                Ok(format!("{}<{}>{}</{}>\n", indent, safe_tag, self.escape_xml(&c.to_string()), safe_tag))
+            }
             CursedObject::Nil => {
                 Ok(format!("{}<{} />\n", indent, safe_tag))
             }
@@ -206,6 +211,7 @@ impl TemplateFormatRenderer {
             CursedObject::Integer(n) => Ok(n.to_string()),
             CursedObject::Float(n) => Ok(n.to_string()),
             CursedObject::Boolean(b) => Ok(b.to_string()),
+            CursedObject::Char(c) => Ok(c.to_string()),
             CursedObject::Nil => Ok("".to_string()),
             CursedObject::Array(arr) => {
                 let mut md = String::new();
@@ -661,6 +667,7 @@ impl TemplateFormatRenderer {
                 }
             }
             CursedObject::Boolean(b) => Ok(JsonValue::Bool(*b)),
+            CursedObject::Char(c) => Ok(JsonValue::String(c.to_string())),
             CursedObject::Nil => Ok(JsonValue::Null),
             CursedObject::Array(arr) => {
                 let json_arr: Result<Vec<JsonValue>, CursedError> = arr.iter()

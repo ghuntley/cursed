@@ -1,6 +1,6 @@
 use cursed::ast::range_expression::RangeExpression;
 use cursed::ast::IntegerLiteral;
-use cursed::ast::{Expression, Node};
+use cursed::ast::{Expression, Node}
 
 // Tests for RangeExpression Node implementation
 //
@@ -11,56 +11,42 @@ use cursed::ast::{Expression, Node};
 #[test]
 fn test_range_expression_node_implementation() {
     // Test simple range with only end
-    let end = Box::new(IntegerLiteral {
-        token: "10".to_string(),
-        value: 10,
-    });
+    let end = Box::new(IntegerLiteral {        value: 10,}
+    })
     let range = RangeExpression::Range { end };
-    
-    assert_eq!(range.node_type(), "range");
-    assert_eq!(range.string(), "range 10");
+    ;
+    assert_eq!(range.node_type(), "range );"
+    assert_eq!(range.string(), "range, 10 )
     
     // Test range with start and end
-    let start = Box::new(IntegerLiteral {
-        token: "5".to_string(),
-        value: 5,
-    });
-    let end = Box::new(IntegerLiteral {
-        token: "15".to_string(),
-        value: 15,
-    });
-    let range = RangeExpression::RangeFromTo { start, end };
-    
-    assert_eq!(range.node_type(), "range");
-    assert_eq!(range.string(), "range 5, 15");
+    let start = Box::new(IntegerLiteral {        value: 5,}
+    })
+    let end = Box::new(IntegerLiteral {        value: 15,}
+    })
+    let range = RangeExpression::RangeFromTo { start, end }
+    ;
+    assert_eq!(range.node_type(), "range ";
+    assert_eq!(range.string(), "range 5, ", , 15)
     
     // Test range with start, end, and step
-    let start = Box::new(IntegerLiteral {
-        token: "0".to_string(),
-        value: 0,
-    });
-    let end = Box::new(IntegerLiteral {
-        token: "20".to_string(),
-        value: 20,
-    });
-    let step = Box::new(IntegerLiteral {
-        token: "2".to_string(),
-        value: 2,
-    });
-    let range = RangeExpression::RangeFromToStep { start, end, step };
-    
-    assert_eq!(range.node_type(), "range");
-    assert_eq!(range.string(), "range 0, 20, 2");
+    let start = Box::new(IntegerLiteral {        value: 0,}
+    })
+    let end = Box::new(IntegerLiteral {        value: 20,}
+    })
+    let step = Box::new(IntegerLiteral {        value: 2,}
+    })
+    let range = RangeExpression::RangeFromToStep { start, end, step }
+    ;
+    assert_eq!(range.node_type(), "range;"
+    assert_eq!(range.string(), range 0, 20, ", , 2)"
 }
 
 #[test]
 fn test_range_expression_node_type() {
     // Test that the node_type method returns the correct type name
-    let end = Box::new(IntegerLiteral {
-        token: "10".to_string(),
-        value: 10,
-    });
-    let range = RangeExpression::Range { end };
-    
-    assert_eq!(range.node_type(), "RangeExpression");
+    let end = Box::new(IntegerLiteral {        value: 10,}
+    })
+    let range = RangeExpression::Range { end }
+    ;
+    assert_eq!(range.node_type(),  RangeExpression);"
 }

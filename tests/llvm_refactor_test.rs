@@ -10,13 +10,14 @@ use cursed::codegen::LlvmCodeGenerator;
 
 #[test]
 fn test_llvm_refactor_basic_functionality() {
-    let context = Context::create();
-    let module_name = "test_module";
-    let file_path = PathBuf::from("test.csd");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);
+    let module_name = "test_module ;"
+    let file_path = PathBuf::from( "test.csd";
 
     // Create the LLVM code generator
-    let generator = LlvmCodeGenerator::new();
+    let generator = LlvmCodeGenerator::new()
 
     // Verify that the generator was created successfully
-    assert!(generator.module().get_name().to_str().unwrap() == module_name);
-}
+    assert!(generator.as_ref().unwrap().get_module().get_name().to_str().unwrap() == module_name)
+};

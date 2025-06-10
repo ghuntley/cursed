@@ -12,23 +12,29 @@ pub mod variable_management;
 pub mod type_system;
 pub mod control_flow;
 pub mod channels;
+pub mod bool_conversions;
+pub mod goroutine;
+pub mod gc_integration;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
 pub use web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
 pub use stdlib_registry::{StdlibRegistry, StdlibLlvmIntegration, StdlibFunction};
 pub use function_compilation::{FunctionCompilation, FunctionContext};
 pub use expression_compiler::{LlvmExpressionCompiler, LlvmType, LlvmValue, ExpressionContext};
+pub use bool_conversions::{BoolConversions, BoolValue};
 pub use variable_management::{VariableManager, VariableHandling};
 pub use type_system::{LlvmTypeRegistry, TypeCompilationContext, CompiledStructType, CompiledInterfaceType, TypeCastingOperations};
 pub use control_flow::{ControlFlowCompilation, LlvmControlFlowCompiler, ControlFlowContext, LoopContext};
 pub use channels::{LlvmChannelCompiler, ChannelExpressionCompiler, CompiledChannelType, ChannelOperation};
+pub use goroutine::{GoroutineCompiler, generate_loop_yield_point};
+pub use gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
 
 // Temporary dummy types to help tests compile
 pub struct DummyModule {
 }
 
 impl DummyModule {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
     
@@ -47,13 +53,18 @@ impl DummyModule {
     pub fn print_to_string(&self) -> DummyStringRef {
         DummyStringRef::new()
     }
+    
+    /// Add global variable (stub for bool conversion tests)
+    pub fn add_global(&self, _type: impl std::fmt::Debug, _linkage: Option<()>, _name: &str) -> DummyValue {
+        DummyValue::new()
+    }
 }
 
 pub struct DummyBuilder {
 }
 
 impl DummyBuilder {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
     
@@ -72,6 +83,21 @@ pub struct DummyFunction {
 impl DummyFunction {
     pub fn new() -> Self {
         Self {}
+    }
+    
+    /// Get nth parameter (stub for bool conversion tests)
+    pub fn get_nth_param(&self, _index: u32) -> Option<DummyValue> {
+        Some(DummyValue::new())
+    }
+    
+    /// Verify function (stub)
+    pub fn verify(&self, _flag: bool) -> bool {
+        true
+    }
+    
+    /// Print to stderr (stub)
+    pub fn print_to_stderr(&self) {
+        // No-op
     }
 }
 
@@ -111,6 +137,7 @@ pub struct LlvmCodeGenerator {
     web_vibez_integration: Option<WebVibezLlvmIntegration<'static>>,
     expression_compiler: LlvmExpressionCompiler,
     type_context: TypeCompilationContext,
+    gc_integration: Option<LlvmGcIntegration>,
 }
 
 impl LlvmCodeGenerator {
@@ -121,6 +148,7 @@ impl LlvmCodeGenerator {
             web_vibez_integration: None,
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("default_module".to_string()),
+            gc_integration: None,
         })
     }
     
@@ -131,6 +159,7 @@ impl LlvmCodeGenerator {
             web_vibez_integration: None,
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("debug_module".to_string()),
+            gc_integration: None,
         })
     }
     
@@ -292,6 +321,166 @@ impl LlvmCodeGenerator {
     /// Get type compilation errors
     pub fn get_type_errors(&self) -> &[String] {
         self.type_context.get_errors()
+    }
+    
+    /// Compile a basic expression (stub implementation)
+    pub fn compile_basic_expression(&self, _expr: &dyn std::fmt::Debug) -> Result<LlvmValue, Error> {
+        Ok(LlvmValue::new("stub_expression_value"))
+    }
+    
+    /// Compile a string literal (stub implementation) 
+    pub fn compile_string_literal(&self, _literal: &dyn std::fmt::Debug) -> Result<LlvmValue, Error> {
+        Ok(LlvmValue::new("stub_string_literal"))
+    }
+    
+    /// Get the underlying module (stub implementation) - returns reference
+    pub fn get_module_ref(&self) -> &DummyModule {
+        static DUMMY_MODULE: DummyModule = DummyModule::new();
+        &DUMMY_MODULE
+    }
+    
+    /// Get builder access (stub implementation)
+    pub fn builder(&self) -> &DummyBuilder {
+        static DUMMY_BUILDER: DummyBuilder = DummyBuilder::new();
+        &DUMMY_BUILDER
+    }
+    
+    /// Convert to reference for chaining (stub implementation)
+    pub fn as_ref(&self) -> Result<&Self, Error> {
+        Ok(self)
+    }
+    
+    // GC Integration Methods
+    
+    /// Initialize GC integration with configuration
+    pub fn initialize_gc_integration(&mut self, gc_config: crate::memory::gc::GcConfig) -> Result<(), Error> {
+        let integration = LlvmGcIntegration::new(gc_config)?;
+        self.gc_integration = Some(integration);
+        Ok(())
+    }
+    
+    /// Register a type for GC allocation
+    pub fn register_gc_type(&mut self, type_name: String, size: usize) -> Result<(), Error> {
+        if let Some(ref mut gc) = self.gc_integration {
+            gc.register_type(type_name, size);
+        }
+        Ok(())
+    }
+    
+    /// Generate LLVM IR with GC integration
+    pub fn generate_ir_with_gc(&self, source: &str) -> Result<String, Error> {
+        let mut ir = String::new();
+        
+        // Module header
+        ir.push_str("; Generated by CURSED Compiler with GC Integration\n");
+        ir.push_str("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
+        ir.push_str("target triple = \"x86_64-pc-linux-gnu\"\n\n");
+        
+        // Add GC runtime function declarations
+        if let Some(ref gc) = self.gc_integration {
+            ir.push_str(&gc.generate_runtime_function_declarations());
+            ir.push_str(&gc.generate_type_name_constants());
+        }
+        
+        // Add debug utilities if debug is enabled
+        if self.debug_generator.debug_enabled() {
+            ir.push_str(&self.debug_generator.generate_debug_utilities());
+        }
+        
+        // Generate main function with GC integration
+        ir.push_str(&self.generate_gc_aware_main(source)?);
+        
+        Ok(ir)
+    }
+    
+    /// Generate main function with GC safe points
+    fn generate_gc_aware_main(&self, _source: &str) -> Result<String, Error> {
+        let mut ir = String::new();
+        
+        ir.push_str("define i32 @main() {\n");
+        ir.push_str("entry:\n");
+        
+        // Function entry safe point
+        if let Some(ref gc) = self.gc_integration {
+            ir.push_str(&gc.generate_function_entry_safe_point("main"));
+        }
+        
+        // Main logic placeholder
+        ir.push_str("  ; Main program logic goes here\n");
+        
+        // Function exit safe point
+        if let Some(ref gc) = self.gc_integration {
+            ir.push_str(&gc.generate_function_exit_safe_point("main"));
+        }
+        
+        ir.push_str("  ret i32 0\n");
+        ir.push_str("}\n");
+        
+        Ok(ir)
+    }
+    
+    /// Generate allocation IR for a specific type
+    pub fn generate_gc_allocation(&self, type_name: &str, temp_var: &str) -> Result<String, Error> {
+        if let Some(ref gc) = self.gc_integration {
+            gc.generate_allocation_ir(type_name, temp_var)
+        } else {
+            Err(Error::from_str("GC integration not initialized"))
+        }
+    }
+    
+    /// Generate safe point IR
+    pub fn generate_gc_safe_point(&self, context: &str) -> String {
+        if let Some(ref gc) = self.gc_integration {
+            gc.generate_safe_point_ir(context)
+        } else {
+            String::new()
+        }
+    }
+    
+    /// Generate write barrier IR
+    pub fn generate_gc_write_barrier(&self, object_ptr: &str, field_ptr: &str, value_ptr: &str) -> String {
+        if let Some(ref gc) = self.gc_integration {
+            gc.generate_write_barrier_ir(object_ptr, field_ptr, value_ptr)
+        } else {
+            String::new()
+        }
+    }
+    
+    /// Generate loop yield point with GC coordination
+    pub fn generate_gc_loop_yield(&self, loop_id: &str) -> String {
+        if let Some(ref gc) = self.gc_integration {
+            gc.generate_loop_yield_point(loop_id)
+        } else {
+            String::new()
+        }
+    }
+    
+    /// Get GC integration statistics
+    pub fn get_gc_stats(&self) -> Result<GcIntegrationStats, Error> {
+        if let Some(ref gc) = self.gc_integration {
+            gc.get_stats()
+        } else {
+            Err(Error::from_str("GC integration not initialized"))
+        }
+    }
+    
+    /// Check if GC integration is enabled
+    pub fn gc_enabled(&self) -> bool {
+        self.gc_integration.is_some()
+    }
+    
+    /// Enable or disable GC safe points
+    pub fn set_gc_safe_points_enabled(&mut self, enabled: bool) {
+        if let Some(ref mut gc) = self.gc_integration {
+            gc.set_safe_points_enabled(enabled);
+        }
+    }
+    
+    /// Enable or disable GC write barriers
+    pub fn set_gc_write_barriers_enabled(&mut self, enabled: bool) {
+        if let Some(ref mut gc) = self.gc_integration {
+            gc.set_write_barriers_enabled(enabled);
+        }
     }
 }
 

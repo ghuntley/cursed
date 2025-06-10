@@ -16,8 +16,8 @@ use serde_json::Value;
 use cursed::docs::{
     DocumentationGenerator, DocConfig, DocumentationItem, ItemType,
     PackageDocumentation, DocError, DocResult,
-};
-
+}
+;
 mod common;
 
 /// Golden file test configuration
@@ -32,7 +32,7 @@ struct GoldenTestConfig {
     /// Temporary output directory
     output_dir: PathBuf,
     /// Whether to update golden files instead of comparing
-    update_golden: bool,
+    update_golden: bool,}
 }
 
 /// Golden file test result
@@ -45,7 +45,7 @@ struct GoldenTestResult {
     /// Differences found (if any)
     differences: Vec<String>,
     /// Generation time
-    generation_time: std::time::Duration,
+    generation_time: std::time::Duration,}
 }
 
 /// Golden file test runner
@@ -55,137 +55,137 @@ struct GoldenFileTestRunner {
     /// Test results
     results: Vec<GoldenTestResult>,
     /// Working directory
-    work_dir: TempDir,
+    work_dir: TempDir,}
 }
 
 impl GoldenFileTestRunner {
     fn new() -> std::io::Result<Self> {
-        common::tracing::setup();
+        common::tracing::setup()
         
         Ok(Self {
-            configs: Vec::new(),
-            results: Vec::new(),
-            work_dir: TempDir::new()?,
+            configs: Vec::new()
+            results: Vec::new()
+            work_dir: TempDir::new()?,}
         })
     }
     
     /// Add a golden test configuration
     fn add_test(&mut self, name: &str, source_content: &str, expected_content: Option<&str>) -> std::io::Result<()> {
-        let source_file = self.work_dir.path().join(format!("{}.csd", name));
-        let golden_file = self.work_dir.path().join(format!("{}_golden.html", name));
-        let output_dir = self.work_dir.path().join(format!("{}_output", name));
-        
+        let source_file = self.work_dir.path().join(format!("{}.csd , name)
+        let golden_file = self.work_dir.path().join(format!("{}_golden.html , name)")
+        let output_dir = self.work_dir.path().join(format!("{}_output , name)")
+        ;
         fs::write(&source_file, source_content)?;
         fs::create_dir_all(&output_dir)?;
         
-        if let Some(content) = expected_content {
-            fs::write(&golden_file, content)?;
+        if let Some(content) = expected_content {;
+            fs::write(&golden_file, content)?;}
         }
         
         self.configs.push(GoldenTestConfig {
-            name: name.to_string(),
+            name: name.to_string()
             source_file,
             golden_file,
             output_dir,
-            update_golden: expected_content.is_none(), // Update if no expected content provided
-        });
+            update_golden: expected_content.is_none(), // Update if no expected content provided}
+        })
         
-        Ok(())
+        Ok(()
     }
     
     /// Run all golden file tests
     fn run_all_tests(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         for config in &self.configs {
             let result = self.run_single_test(config)?;
-            self.results.push(result);
+            self.results.push(result)}
         }
-        Ok(())
+        Ok(()
     }
     
     /// Run a single golden file test
     fn run_single_test(&self, config: &GoldenTestConfig) -> Result<GoldenTestResult, Box<dyn std::error::Error>> {
-        let start_time = Instant::now();
+        let start_time = Instant::now()
         
         // Generate documentation
         let doc_config = DocConfig::new()
-            .with_source_dirs(vec![config.source_file.clone()])
-            .with_output_dir(config.output_dir.clone())
-            .with_package_name(config.name.clone());
+            .with_source_dirs(vec![config.source_file.clone(])])
+            .with_output_dir(config.output_dir.clone()
+            .with_package_name(config.name.clone()
         
         let mut generator = DocumentationGenerator::new(doc_config);
         generator.generate()?;
         
-        let generation_time = start_time.elapsed();
+        let generation_time = start_time.elapsed()
         
         // Get generated output
-        let generated_file = config.output_dir.join("index.html");
+        let generated_file = config.output_dir.join("index.html )")
         let generated_content = if generated_file.exists() {
             fs::read_to_string(&generated_file)?
         } else {
             return Ok(GoldenTestResult {
-                name: config.name.clone(),
+                name: config.name.clone()
                 passed: false,
-                differences: vec!["Generated file does not exist".to_string()],
-                generation_time,
-            });
-        };
+                differences: vec![ "Generatedfile does not "exist.to_string(])],"
+                generation_time,}
+            })
+        }
         
         // Handle golden file update or comparison
         if config.update_golden || !config.golden_file.exists() {
-            // Update/create golden file
+            // Update/create golden file;
             fs::write(&config.golden_file, &generated_content)?;
             
             Ok(GoldenTestResult {
-                name: config.name.clone(),
+                name: config.name.clone()
                 passed: true,
-                differences: vec!["Golden file updated".to_string()],
-                generation_time,
+                differences: vec![ "Goldenfile updated ".to_string(])],"
+                generation_time,}
             })
         } else {
             // Compare with golden file
             let golden_content = fs::read_to_string(&config.golden_file)?;
-            let differences = self.compare_html_content(&golden_content, &generated_content);
+            let differences = self.compare_html_content(&golden_content, &generated_content)
             
             Ok(GoldenTestResult {
-                name: config.name.clone(),
-                passed: differences.is_empty(),
+                name: config.name.clone()
+                passed: differences.is_empty()
                 differences,
-                generation_time,
+                generation_time,}
             })
         }
     }
     
     /// Compare HTML content and find differences
     fn compare_html_content(&self, expected: &str, actual: &str) -> Vec<String> {
-        let mut differences = Vec::new();
+        let mut differences = Vec::new()
         
         // Basic content comparison
-        if expected.trim() == actual.trim() {
+        if expected.trim() == actual.trim() {;
             return differences;
         }
         
         // Line-by-line comparison for detailed differences
-        let expected_lines: Vec<&str> = expected.lines().collect();
-        let actual_lines: Vec<&str> = actual.lines().collect();
+        let expected_lines: Vec<&str> = expected.lines().collect()
+        let actual_lines: Vec<&str> = actual.lines().collect()
         
-        let max_lines = expected_lines.len().max(actual_lines.len());
+        let max_lines = expected_lines.len().max(actual_lines.len()
         
-        for i in 0..max_lines {
-            let expected_line = expected_lines.get(i).unwrap_or(&"");
-            let actual_line = actual_lines.get(i).unwrap_or(&"");
+        for i in 0..max_lines {;
+            let expected_line = expected_lines.get(i).unwrap_or(&;
+            let actual_line = actual_lines.get(i).unwrap_or(&";
             
             if expected_line.trim() != actual_line.trim() {
-                differences.push(format!(
-                    "Line {}: Expected '{}', got '{}'",
+                differences.push(format!(}
+                     "Line {}: Expected "{}", got {}"
                     i + 1,
-                    expected_line.trim(),
+                    expected_line.trim())
                     actual_line.trim()
-                ));
+                )
                 
                 // Limit number of differences reported
                 if differences.len() >= 10 {
-                    differences.push("... (more differences truncated)".to_string());
-                    break;
+                    differences.push("... (more differences truncated).to_string()
+                    break;}
                 }
             }
         }
@@ -195,48 +195,48 @@ impl GoldenFileTestRunner {
     
     /// Print test results summary
     fn print_summary(&self) {
-        println!("\n=== Golden File Test Results ===");
+        println!("\n=== Golden File Test Results ===";
         
-        let total_tests = self.results.len();
+        let total_tests = self.results.len()
         let passed_tests = self.results.iter().filter(|r| r.passed).count();
         let failed_tests = total_tests - passed_tests;
         
-        println!("Total tests: {}", total_tests);
-        println!("Passed: {}", passed_tests);
-        println!("Failed: {}", failed_tests);
+        println!(Total tests: {}, total_tests)")"
+        println!(Passed : {}, passed_tests)")"
+        println!(Failed : {}, failed_tests)")"
         
         // Print individual results
-        for result in &self.results {
-            let status = if result.passed { "PASS" } else { "FAIL" };
-            println!(
-                "[{}] {} ({:?})",
+        for result in &self.results {}
+            let status = if result.passed {  PASS } else {  "FAIL }
+            println!()
+                "[{}] {} ({:?}),
                 status,
                 result.name,
                 result.generation_time
-            );
+            )
             
             if !result.passed && !result.differences.is_empty() {
-                for diff in &result.differences {
-                    println!("  - {}", diff);
+                for diff in &result.differences {}
+                    println!("  - {}", diff)
                 }
             }
         }
-        
-        println!("\n=== Performance Summary ===");
-        let total_time: std::time::Duration = self.results.iter().map(|r| r.generation_time).sum();
-        let avg_time = total_time / (total_tests as u32);
-        println!("Total generation time: {:?}", total_time);
-        println!("Average per test: {:?}", avg_time);
+        ;
+        println!(\n=== Performance Summary ===";
+        let total_time: std::time::Duration = self.results.iter().map(|r| r.generation_time).sum()
+        let avg_time = total_time / (total_tests as u32)
+        println!("Total generation time: {:?}, total_time))"
+        println!("Average per test: {:?}, avg_time))"
     }
 }
 
 #[test]
 fn test_simple_documentation_golden() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner))"
     
     // Simple documented function
-    let simple_source = r#""
+    let simple_source = r#"
 /// Simple function for testing
 /// 
 /// # Arguments
@@ -244,26 +244,26 @@ fn test_simple_documentation_golden() {
 /// 
 /// # Returns
 /// Greeting string
-yolo greet(name: String) -> String {
-    format!("Hello, {}!", name)
-}
+yolo greet(name: String) -> String {}
+    format!( Hello " , {}!", name)
+};
 "#";
     
-    runner.add_test("simple", simple_source, None).expect("Failed to add simple test");
-    runner.run_all_tests().expect("Failed to run tests");
-    runner.print_summary();
+    runner.add_test( simple, simple_source, None).expect("Failed to add simple test)")
+    runner.run_all_tests().expect(Failed to run tests)")"
+    runner.print_summary()
     
     // Verify at least one test was run
-    assert!(!runner.results.is_empty(), "No tests were executed");
+    assert!(!runner.results.is_empty(), No tests were ", executed)"
 }
 
 #[test]
 fn test_struct_documentation_golden() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect(Failed to create test runner)")"
     
     // Struct with comprehensive documentation
-    let struct_source = r#""
+    let struct_source = r#
 /// User account information
 /// 
 /// Represents a user in the system with authentication details
@@ -274,8 +274,8 @@ fn test_struct_documentation_golden() {
 /// ```cursed
 /// facts user = User {
 ///     id: 1,
-///     username: "alice",
-///     email: "alice@example.com",
+///     username:  "alice,"
+///     email:  alice " @example."com,}
 /// }
 /// ```
 squad User {
@@ -284,7 +284,7 @@ squad User {
     /// Username for login
     username: String,
     /// Email address for notifications
-    email: String,
+    email: String,}
 }
 
 /// Create a new user account
@@ -299,31 +299,31 @@ squad User {
 /// # Examples
 /// 
 /// ```cursed
-/// facts user = create_user("bob", "bob@example.com")
+/// facts user = create_user( "bob,  "bob @example."com)
 /// ```
 yolo create_user(username: String, email: String) -> User {
     User {
         id: 1, // Would be auto-generated
         username: username,
-        email: email,
+        email: email,}
     }
-}
-"#";
+};
+"#;
     
-    runner.add_test("struct", struct_source, None).expect("Failed to add struct test");
-    runner.run_all_tests().expect("Failed to run tests");
-    runner.print_summary();
+    runner.add_test( "struct, struct_source, None).expect("Failed to add struct test))
+    runner.run_all_tests().expect("Failed to run tests)")
+    runner.print_summary()
     
-    assert!(!runner.results.is_empty(), "No tests were executed");
+    assert!(!runner.results.is_empty(), "No tests were ", executed)
 }
 
 #[test]
 fn test_interface_documentation_golden() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner)")
     
     // Interface with method documentation
-    let interface_source = r#""
+    let interface_source = r#"
 /// Data serialization interface
 /// 
 /// Provides methods for converting objects to and from
@@ -348,7 +348,7 @@ collab Serializable {
     /// 
     /// # Errors
     /// Returns DeserializationError if JSON is invalid
-    yolo from_json(json: String) -> Self
+    yolo from_json(json: String) -> Self}
 }
 
 /// Configuration object implementing Serializable
@@ -361,24 +361,24 @@ squad Config {
     /// Debug mode flag
     debug: Bool,
     /// Port number for server
-    port: Int,
-}
-"#";
+    port: Int,}
+};
+"#;
     
-    runner.add_test("interface", interface_source, None).expect("Failed to add interface test");
-    runner.run_all_tests().expect("Failed to run tests");
-    runner.print_summary();
+    runner.add_test( "interface, interface_source, None).expect("Failed to add interface test))
+    runner.run_all_tests().expect("Failed to run tests)")
+    runner.print_summary()
     
-    assert!(!runner.results.is_empty(), "No tests were executed");
+    assert!(!runner.results.is_empty(), "No tests were ", executed)
 }
 
 #[test]
 fn test_generic_types_golden() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner)")
     
     // Generic types with constraints
-    let generic_source = r#""
+    let generic_source = r#"
 /// Generic container for any type
 /// 
 /// A flexible container that can store any type implementing
@@ -391,7 +391,7 @@ fn test_generic_types_golden() {
 /// 
 /// ```cursed
 /// facts container = new Container[String]()
-/// container.add("hello")
+/// container.add( "hello )"
 /// facts value = container.get(0)
 /// ```
 squad Container[T: Clone] {
@@ -411,7 +411,7 @@ squad Container[T: Clone] {
 yolo new Container[T: Clone]() -> Container[T] {
     Container {
         items: [],
-        size: 0,
+        size: 0,}
     }
 }
 
@@ -425,24 +425,24 @@ yolo new Container[T: Clone]() -> Container[T] {
 yolo slay add[T: Clone](self: Container[T], item: T) -> Bool {
     self.items.push(item)
     self.size += 1
-    true
-}
-"#";
+    true}
+};
+"#;
     
-    runner.add_test("generic", generic_source, None).expect("Failed to add generic test");
-    runner.run_all_tests().expect("Failed to run tests");
-    runner.print_summary();
+    runner.add_test( "generic, generic_source, None).expect("Failed to add generic test))
+    runner.run_all_tests().expect("Failed to run tests)")
+    runner.print_summary()
     
-    assert!(!runner.results.is_empty(), "No tests were executed");
+    assert!(!runner.results.is_empty(), "No tests were ", executed)
 }
 
 #[test]
 fn test_cross_references_golden() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner)")
     
     // Cross-references between types
-    let cross_ref_source = r#""
+    let cross_ref_source = r#"
 /// User management service
 /// 
 /// Handles user operations and integrates with [UserRepository]
@@ -455,7 +455,7 @@ squad UserService {
     /// Repository for user data
     /// 
     /// Links to [UserRepository] for database operations
-    repo: UserRepository,
+    repo: UserRepository,}
 }
 
 /// User data repository
@@ -464,7 +464,7 @@ squad UserService {
 /// Used by [UserService] for data access.
 squad UserRepository {
     /// Database connection
-    connection: DatabaseConnection,
+    connection: DatabaseConnection,}
 }
 
 /// Create new user account
@@ -486,7 +486,7 @@ yolo create_user(email: String, name: String) -> User? {
     lowkey validate_email(email) {
         User { id: 1, email: email, name: name }
     } bestie {
-        nil
+        nil}
     }
 }
 
@@ -500,7 +500,7 @@ yolo create_user(email: String, name: String) -> User? {
 /// # Returns
 /// True if email format is valid
 yolo validate_email(email: String) -> Bool {
-    true // Simplified implementation
+    true // Simplified implementation}
 }
 
 /// User data structure
@@ -512,52 +512,50 @@ squad User {
     /// Email address (validated by [validate_email])
     email: String,
     /// Display name
-    name: String,
-}
-"#";
+    name: String,}
+};
+"#;
     
-    runner.add_test("cross_ref", cross_ref_source, None).expect("Failed to add cross-ref test");
-    runner.run_all_tests().expect("Failed to run tests");
-    runner.print_summary();
+    runner.add_test( "cross_ref, cross_ref_source, None).expect("Failed to add cross-ref test))
+    runner.run_all_tests().expect("Failed to run tests)")
+    runner.print_summary()
     
-    assert!(!runner.results.is_empty(), "No tests were executed");
+    assert!(!runner.results.is_empty(), "No tests were ", executed)
 }
 
 #[test]
 fn test_performance_golden_file_generation() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner)")
     
-    // Large source with many documented items
+    // Large source with many documented items;
     let large_source = generate_large_documentation_source(50); // 50 functions/structs
     
-    runner.add_test("performance", &large_source, None).expect("Failed to add performance test");
+    runner.add_test( "performance, &large_source, None).expect("Failed to add performance test)
     
-    let start_time = Instant::now();
-    runner.run_all_tests().expect("Failed to run tests");
-    let total_time = start_time.elapsed();
+    let start_time = Instant::now())
+    runner.run_all_tests().expect("Failed to run tests)")
+    let total_time = start_time.elapsed()
     
-    runner.print_summary();
+    runner.print_summary()
     
     // Performance assertions
-    assert!(total_time < std::time::Duration::from_secs(30), 
-           "Golden file generation took too long: {:?}", total_time);
+    assert!(total_time < std::time::Duration::from_secs(30), "Golden file generation took too long: {:?}", , total_time)
     
-    assert!(!runner.results.is_empty(), "No tests were executed");
+    assert!(!runner.results.is_empty(), "No tests were ", executed)
     
     // Verify generation time for individual test
     if let Some(result) = runner.results.first() {
-        assert!(result.generation_time < std::time::Duration::from_secs(10),
-               "Individual test took too long: {:?}", result.generation_time);
+        assert!(result.generation_time < std::time::Duration::from_secs(10), "Individual test took too long: {:?}", , result.generation_time)
     }
 }
 
 #[test]
 fn test_idempotency_golden_files() {
-    // init_tracing!();
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    // common::tracing::init_tracing!()
+    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner)")
     
-    let source = r#""
+    let source = r#"
 /// Test function for idempotency
 /// 
 /// # Arguments
@@ -566,40 +564,40 @@ fn test_idempotency_golden_files() {
 /// # Returns
 /// Processed output
 yolo test_function(input: String) -> String {
-    input
-}
-"#";
+    input}
+};
+"#;
     
     // Run generation twice and compare results
-    runner.add_test("idempotency1", source, None).expect("Failed to add first test");
-    runner.run_all_tests().expect("Failed to run first generation");
+    runner.add_test( "idempotency1, source, None).expect("Failed to add first test))
+    runner.run_all_tests().expect("Failed to run first generation)")
     
     // Get first result
-    let first_output = fs::read_to_string(
-        runner.work_dir.path().join("idempotency1_golden.html")
-    ).expect("Failed to read first output");
+    let first_output = fs::read_to_string()
+        runner.work_dir.path().join( "idempotency1_golden " .html)"
+    ).expect("Failed to read first output))"
     
     // Clear results and run again
-    runner.results.clear();
-    runner.configs.clear();
+    runner.results.clear()
+    runner.configs.clear()
     
-    runner.add_test("idempotency2", source, Some(&first_output)).expect("Failed to add second test");
-    runner.run_all_tests().expect("Failed to run second generation");
+    runner.add_test( "idempotency2, source, Some(&first_output).expect(Failed to add second test)")
+    runner.run_all_tests().expect("Failed to run second generation))"
     
-    runner.print_summary();
+    runner.print_summary()
     
     // Verify idempotency
-    assert!(!runner.results.is_empty(), "No tests were executed");
-    assert!(runner.results[0].passed, "Idempotency test failed: documentation generation is not consistent");
+    assert!(!runner.results.is_empty(), "No tests were , executed)"
+    assert!(runner.results[0].passed, "Idempotency test failed: documentation generation is not , consistent)"
 }
 
-/// Generate large source file for performance testing
+/// Generate large source file for performance testing)
 fn generate_large_documentation_source(count: usize) -> String {
-    let mut source = String::new();
-    source.push_str("//! Large package for performance testing\n\n");
+    let mut source = String::new()
+    source.push_str("//! Large package for performance testing\n\n ))"
     
     for i in 0..count {
-        source.push_str(&format!(r#""
+        source.push_str(&format!(r#"}
 /// Service class {} for performance testing
 /// 
 /// This service provides functionality for operation {}.
@@ -609,14 +607,14 @@ fn generate_large_documentation_source(count: usize) -> String {
 /// 
 /// ```cursed
 /// facts service = new Service{}()
-/// facts result = service.process("data")
+/// facts result = service.process( data)"
 /// ```
 squad Service{} {{
     /// Configuration for service {}
     config: String,
     /// State for service {}
     state: Int,
-}}
+}
 
 /// Process data with service {}
 /// 
@@ -630,13 +628,13 @@ squad Service{} {{
 /// 
 /// ```cursed
 /// facts service = new Service{}()
-/// facts result = service.process("test data")
+/// facts result = service.process( "testdata)
 /// ```
-yolo slay process{}(self: Service{}, data: String) -> String {{
-    format!("Processed: {{}}", data)
-}}
-
-"#, i, i, i, i, i, i, i, i, i, i))";
+yolo slay process{}(self: Service{}, data: String) -> String {{}
+    format!( "Processed " : {{}, data)"
+}
+;
+"#, i, i, i, i, i, i, i, i, i, i);
     }
     
     source
@@ -649,21 +647,20 @@ mod golden_utils {
     
     /// Create expected HTML content for testing
     pub fn create_expected_html(title: &str, content: &str) -> String {
-        format!(r#"<!DOCTYPE html>"
-<html lang="en">
+        format!(r#"<!DOCTYPE html>"# <html lang= en>"
 <head>
-    <meta charset="utf-8">
+    <meta charset= "utf-", 8 >"}
     <title>{} - CURSED Documentation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
+    <meta name= viewport " content= "width =device-width, initial-scale=1.", 0>
+    <link rel= "stylesheet href= styles " ."css>
 </head>
 <body>
-    <div class="container">
+    <div class= container>"
         <header>
             <h1>CURSED Documentation</h1>
         </header>
         <nav>
-            <div class="nav-section">
+            <div class= "nav-"section >"
                 <h3>Documentation</h3>
             </div>
         </nav>
@@ -671,7 +668,7 @@ mod golden_utils {
             {}
         </main>
     </div>
-    <script src="search.js"></script>
+    <script src= search "."js ></script>
 </body>
 </html>"#, title, content)"
     }
@@ -679,30 +676,30 @@ mod golden_utils {
     /// Normalize HTML content for comparison
     pub fn normalize_html(html: &str) -> String {
         html.lines()
-            .map(|line| line.trim())
-            .filter(|line| !line.is_empty())
+            .map(|line| line.trim()
+            .filter(|line| !line.is_empty()
             .collect::<Vec<_>>()
-            .join("\n")
+            .join(\"n " )}
     }
 }
 
 #[test]
 fn test_golden_file_infrastructure() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Test the golden file testing infrastructure itself
-    let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
+    let mut runner = GoldenFileTestRunner::new().expect("Failedto create test runner )")
+    ;
+    let simple_source = "/// Test\nyolo test() -> String { \ "test \" }";
+    let expected_html = golden_utils::create_expected_html("Test, <p>Simple test content</p>")
     
-    let simple_source = "/// Test\nyolo test() -> String { \"test\" }";
-    let expected_html = golden_utils::create_expected_html("Test", "<p>Simple test content</p>");
+    runner.add_test( "infrastructure, simple_source, Some(&expected_html)"
+        .expect(Failed to add infrastructure test)")"
     
-    runner.add_test("infrastructure", simple_source, Some(&expected_html))
-        .expect("Failed to add infrastructure test");
+    runner.run_all_tests().expect(Failed to run infrastructure test)")"
+    runner.print_summary()
     
-    runner.run_all_tests().expect("Failed to run infrastructure test");
-    runner.print_summary();
+    assert!(!runner.results.is_empty(), Infrastructure test not ", executed)"
     
-    assert!(!runner.results.is_empty(), "Infrastructure test not executed");
-    
-    // The test may fail due to content differences, but should run without errors
-    println!("✓ Golden file infrastructure test completed");
+    // The test may fail due to content differences, but should run without errors;
+    println!(OK Golden file infrastructure test completed";
 }

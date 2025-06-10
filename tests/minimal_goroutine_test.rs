@@ -1,3 +1,13 @@
+
+#[derive(Debug, Clone)]
+struct DummyExpression {}
+
+impl cursed::ast::Expression for DummyExpression {
+    fn string(&self) -> String {
+        "dummy.to_string()}
+    }
+}
+
 //! Minimal goroutine tests that focus on AST functionality only
 //!
 //! This test suite validates the goroutine AST components that should work
@@ -6,91 +16,89 @@
 use cursed::ast::concurrency::StanExpression;
 use cursed::ast::*;
 use cursed::lexer::Token;
+use cursed::lexer::TokenType;
 
 #[test]
 fn test_basic_stan_expression_creation() {
     // Test the most basic StanExpression creation
     let identifier = Box::new(Identifier {
-        token: "test_func".to_string(),
-        value: "test_func".to_string(),
-    }) as Box<dyn Expression>;
+            token: "identifier ".to_string()
+            value:  "test_func ".to_string()};
+        }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: identifier,
-    };
+        token: test_token".to_string()
+        call: identifier,}
+    }
     
-    // Test the string representation using the Node trait
+    // Test the string representation using the Node trait;
     use cursed::ast::traits::Node;
-    assert_eq!(stan_expr.string(), "stan test_func");
+    assert_eq!(stan_expr.string(),  "stantest_func);
     
-    println!("✓ Basic StanExpression creation test passed");
+    println!("OK Basic StanExpression creation test passed )")
 }
 
 #[test]
 fn test_stan_expression_with_function_call() {
     // Test StanExpression with a function call
     let call_expr = Box::new(CallExpression {
-        token: Token::LParen,
-        function: Box::new(Identifier {
-            token: "worker".to_string(),
-            value: "worker".to_string(),
-        }),
-        arguments: vec![],
+        token: "test_token ".to_string()
+        function:  dummy_name.to_string()"
+        arguments: vec![],};
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: call_expr,
-    };
-    
+        token: "test_token.to_string()
+        call: call_expr,}
+    }
+    ;
     use cursed::ast::traits::Node;
-    assert_eq!(stan_expr.string(), "stan worker()");
+    assert_eq!(stan_expr.string(),  "stan " worker();"
     
-    println!("✓ StanExpression with function call test passed");
+    println!("OK StanExpression with function call test passed ))"
 }
 
 #[test]
 fn test_stan_expression_cloning() {
     // Test that StanExpression can be cloned
     let identifier = Box::new(Identifier {
-        token: "task".to_string(),
-        value: "task".to_string(),
-    }) as Box<dyn Expression>;
+            token:  "identifier.to_string()
+            value:  "task.to_string()"};
+        }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: identifier,
-    };
+        token: test_token ".to_string()
+        call: identifier,}
+    }
     
-    let cloned_expr = stan_expr.clone();
-    
+    let cloned_expr = stan_expr.clone()
+    ;
     use cursed::ast::traits::Node;
-    assert_eq!(stan_expr.string(), cloned_expr.string());
-    assert_eq!(stan_expr.string(), "stan task");
+    assert_eq!(stan_expr.string(), cloned_expr.string()
+    assert_eq!(stan_expr.string(),  "stantask);
     
-    println!("✓ StanExpression cloning test passed");
+    println!("OK StanExpression cloning test passed )")
 }
 
 #[test] 
 fn test_stan_token_verification() {
     // Test that the Stan token is correctly stored
     let identifier = Box::new(Identifier {
-        token: "example".to_string(),
-        value: "example".to_string(),
-    }) as Box<dyn Expression>;
+            token:  "identifier ".to_string()
+            value:  example.to_string()"};
+        }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: identifier,
-    };
+        token: "test_token.to_string()
+        call: identifier,}
+    }
     
     // Verify the token field
     match stan_expr.token {
-        Token::new(TokenType::Stan, "stan") => {
-            println!("✓ Stan token correctly stored");
+        Token::new(TokenType::Stan,  "stan => {"
+            println!(OK Stan token correctly stored )")"}
         },
-        _ => panic!("Expected Stan token, got something else"),
+        _ => panic!(Expected:  Stan token, got something "else " ),
     }
 }
 
@@ -98,67 +106,62 @@ fn test_stan_token_verification() {
 fn test_complex_stan_expression() {
     // Test StanExpression with more complex nested expressions
     let func_call = Box::new(CallExpression {
-        token: Token::LParen,
-        function: Box::new(Identifier {
-            token: "processData".to_string(),
-            value: "processData".to_string(),
-        }),
+        token: "test_token ".to_string()
+        function:  dummy_name.to_string()"
         arguments: vec![
-            Box::new(IntegerLiteral {
-                token: Token::Int("42".to_string()),
-                value: 42,
+            Box::new(IntegerLiteral { token: ", 42.to_string(), value: 42,}
             }),
-        ],
+       ] ],;
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: func_call,
-    };
-    
+        token: "test_token ".to_string()
+        call: func_call,}
+    }
+    ;
     use cursed::ast::traits::Node;
-    let result = stan_expr.string();
-    assert!(result.starts_with("stan processData("));
-    assert!(result.contains("42"));
+    let result = stan_expr.string()
+    assert!(result.starts_with(stan processData(")")
+    assert!(result.contains(42 )
     
-    println!("✓ Complex StanExpression test passed");
+    println!("OK Complex StanExpression test passed )")
 }
 
 #[test]
 fn test_stan_expression_as_expression_trait() {
     // Test that StanExpression implements the Expression trait correctly
     let identifier = Box::new(Identifier {
-        token: "test".to_string(),
-        value: "test".to_string(),
-    }) as Box<dyn Expression>;
+            token:  "identifier ".to_string()
+            value:  test.to_string()"};
+        }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: identifier,
-    };
+        token: "test_token.to_string()
+        call: identifier,}
+    }
     
-    // Test as Expression trait object
+    // Test as Expression trait object;
     let expr_ref: &dyn Expression = &stan_expr;
     use cursed::ast::traits::Node;
-    assert_eq!(expr_ref.string(), "stan test");
+    assert_eq!(expr_ref.string(),  "stantest);"
     
     // Test cloning through trait
     let cloned_box = stan_expr.clone_box();
-    assert_eq!(cloned_box.string(), "stan test");
+    assert_eq!(cloned_box.string(),  stantest);"
     
-    println!("✓ StanExpression Expression trait test passed");
+    println!("OK StanExpression Expression trait test passed ))"
 }
 
 #[test]
 fn test_goroutine_test_file_exists() {
     // Simple test that the goroutine test file exists
     use std::path::Path;
-    let test_file = Path::new("tests/basic_goroutine.csd");
+    let test_file = Path::new( "tests/basic_goroutine.csd )
     
     if test_file.exists() {
-        println!("✓ Basic goroutine test file exists at: {:?}", test_file);
-    } else {
-        println!("ⓘ Basic goroutine test file not found (this is expected if not created yet)");
+        println!("OK Basic goroutine test file exists at: {:?}", test_file)
+    } else {;
+        println!(ⓘ Basic goroutine test file not found (this is expected if not created yet)";}
     }
 }
 
@@ -210,13 +213,13 @@ fn test_goroutine_test_file_exists() {
 #[test]
 fn test_comprehensive_foundation_validation() {
     // Meta-test to ensure we have a solid foundation
-    println!("✓ Comprehensive goroutine AST foundation validated");
-    println!("  - Basic StanExpression creation works");
-    println!("  - Function call integration works");
-    println!("  - Expression trait implementation works");
-    println!("  - Cloning and string representation work");
-    println!("  - Token storage and verification work");
-    println!("  - Complex expression nesting works");
+    println!("OK Comprehensive goroutine AST foundation validated ))"
+    println!("  - Basic StanExpression creation works )
+    println!("  - Function call integration works " )
+    println!(  - Expression trait implementation works" )
+    println!("  - Cloning and string representation work )
+    println!("  - Token storage and verification work " )
+    println!(  - Complex expression nesting works" )
     
-    println!("Foundation is ready for full goroutine system integration!");
+    println!( "Foundationis ready for full goroutine system integration!";
 }

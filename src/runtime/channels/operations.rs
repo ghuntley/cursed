@@ -17,7 +17,7 @@ impl<T> ChannelSender<T> {
     pub fn send(&self, value: T) -> ChannelResult<()> {
         self.increment_operation_count();
         
-        let data_arc = self.channel.upgrade()
+        let data_arc = self.channel().upgrade()
             .ok_or(ChannelError::Closed)?;
         
         let mut data = data_arc.lock().unwrap();
@@ -41,7 +41,7 @@ impl<T> ChannelSender<T> {
                 debug!(buffer_len = data.buffer.len(), capacity = data.capacity, 
                        "Adding value to buffer");
                 data.buffer.push_back(value);
-                self.condvar.notify_one();
+                self.condvar().notify_one();
                 return Ok(());
             } else {
                 debug!("Channel buffer is full, must block");
@@ -85,7 +85,7 @@ impl<T> ChannelSender<T> {
     pub fn try_send(&self, value: T) -> SendResult<T> {
         self.increment_operation_count();
         
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return SendResult::Closed(value),
         };
@@ -109,7 +109,7 @@ impl<T> ChannelSender<T> {
         if data.capacity > 0 && data.buffer.len() < data.capacity {
             debug!(buffer_len = data.buffer.len(), "try_send: added to buffer");
             data.buffer.push_back(value);
-            self.condvar.notify_one();
+            self.condvar().notify_one();
             return SendResult::Sent;
         }
         
@@ -124,7 +124,7 @@ impl<T> ChannelSender<T> {
     pub fn send_timeout(&self, value: T, timeout: Duration) -> SendResult<T> {
         self.increment_operation_count();
         
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return SendResult::Closed(value),
         };
@@ -148,7 +148,7 @@ impl<T> ChannelSender<T> {
         if data.capacity > 0 && data.buffer.len() < data.capacity {
             debug!("send_timeout: added to buffer");
             data.buffer.push_back(value);
-            self.condvar.notify_one();
+            self.condvar().notify_one();
             return SendResult::Sent;
         }
         
@@ -206,7 +206,7 @@ impl<T> ChannelSender<T> {
     /// Existing buffered messages can still be received
     #[instrument(skip(self))]
     pub fn close(&self) -> ChannelResult<()> {
-        let data_arc = self.channel.upgrade()
+        let data_arc = self.channel().upgrade()
             .ok_or(ChannelError::Closed)?;
         
         let mut data = data_arc.lock().unwrap();
@@ -216,7 +216,7 @@ impl<T> ChannelSender<T> {
             info!("Channel explicitly closed");
             
             // Wake up all waiting operations
-            self.condvar.notify_all();
+            self.condvar().notify_all();
         }
         
         Ok(())
@@ -245,7 +245,7 @@ impl<T> ChannelSender<T> {
     /// Increment operation counter for statistics
     fn increment_operation_count(&self) {
         unsafe {
-            (*self.operation_count).fetch_add(1, Ordering::Relaxed);
+            self.operation_count().fetch_add(1, Ordering::Relaxed);
         }
     }
 }
@@ -258,7 +258,7 @@ impl<T> ChannelReceiver<T> {
     pub fn receive(&self) -> ChannelResult<T> {
         self.increment_operation_count();
         
-        let data_arc = self.channel.upgrade()
+        let data_arc = self.channel().upgrade()
             .ok_or(ChannelError::Closed)?;
         
         let mut data = data_arc.lock().unwrap();
@@ -274,7 +274,7 @@ impl<T> ChannelReceiver<T> {
                 waiting_sender.notify.notify_one();
             }
             
-            self.condvar.notify_one();
+            self.condvar().notify_one();
             return Ok(value);
         }
         
@@ -337,7 +337,7 @@ impl<T> ChannelReceiver<T> {
     pub fn try_receive(&self) -> ReceiveResult<T> {
         self.increment_operation_count();
         
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return ReceiveResult::Closed,
         };
@@ -355,7 +355,7 @@ impl<T> ChannelReceiver<T> {
                 waiting_sender.notify.notify_one();
             }
             
-            self.condvar.notify_one();
+            self.condvar().notify_one();
             return ReceiveResult::Received(value);
         }
         
@@ -385,7 +385,7 @@ impl<T> ChannelReceiver<T> {
     pub fn receive_timeout(&self, timeout: Duration) -> ReceiveResult<T> {
         self.increment_operation_count();
         
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return ReceiveResult::Closed,
         };
@@ -402,7 +402,7 @@ impl<T> ChannelReceiver<T> {
                 waiting_sender.notify.notify_one();
             }
             
-            self.condvar.notify_one();
+            self.condvar().notify_one();
             return ReceiveResult::Received(value);
         }
         
@@ -477,7 +477,7 @@ impl<T> ChannelReceiver<T> {
     /// Check if channel has pending messages or senders
     #[instrument(skip(self))]
     pub fn is_empty(&self) -> bool {
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return true,
         };
@@ -489,7 +489,7 @@ impl<T> ChannelReceiver<T> {
     /// Check if channel is closed
     #[instrument(skip(self))]
     pub fn is_closed(&self) -> bool {
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return true,
         };
@@ -501,7 +501,7 @@ impl<T> ChannelReceiver<T> {
     /// Get number of pending messages in buffer
     #[instrument(skip(self))]
     pub fn len(&self) -> usize {
-        let data_arc = match self.channel.upgrade() {
+        let data_arc = match self.channel().upgrade() {
             Some(arc) => arc,
             None => return 0,
         };
@@ -513,7 +513,7 @@ impl<T> ChannelReceiver<T> {
     /// Increment operation counter for statistics
     fn increment_operation_count(&self) {
         unsafe {
-            (*self.operation_count).fetch_add(1, Ordering::Relaxed);
+            self.operation_count().fetch_add(1, Ordering::Relaxed);
         }
     }
 }

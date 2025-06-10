@@ -1,3 +1,4 @@
 slay main() {
-    yolo 42 periodt
+    facts x = 42;
+    yolo x;
 }

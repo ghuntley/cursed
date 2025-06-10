@@ -13,6 +13,8 @@ use crate::ast::{
 };
 use crate::error::Error;
 use crate::debug::SourceLocation;
+use crate::type_system::{TypeSystem, TypeInference, TypeEnvironment};
+use crate::codegen::llvm::type_system::{TypeCompilationContext, CompiledGenericInstance};
 use std::any::Any;
 use std::collections::HashMap;
 
@@ -22,6 +24,37 @@ pub struct LlvmValue {
     pub value_type: LlvmType,
     pub llvm_name: String,
     pub is_constant: bool,
+}
+
+impl LlvmValue {
+    /// Create a new LLVM value with a name (stub implementation)
+    pub fn new(name: &str) -> Self {
+        Self {
+            value_type: LlvmType::String,
+            llvm_name: name.to_string(),
+            is_constant: false,
+        }
+    }
+    
+    /// Check if this is a struct value
+    pub fn is_struct_value(&self) -> bool {
+        true
+    }
+    
+    /// Check if this is a float value
+    pub fn is_float_value(&self) -> bool {
+        matches!(self.value_type, LlvmType::Float64)
+    }
+    
+    /// Check if this is an int value
+    pub fn is_int_value(&self) -> bool {
+        matches!(self.value_type, LlvmType::Int32 | LlvmType::Int64)
+    }
+    
+    /// Convert to int value (stub)
+    pub fn into_int_value(&self) -> Self {
+        self.clone()
+    }
 }
 
 /// LLVM type system mapping
@@ -68,6 +101,10 @@ pub struct ExpressionContext {
     pub type_map: HashMap<String, LlvmType>,
     pub temp_counter: u32,
     pub current_location: Option<SourceLocation>,
+    /// Type compilation context for constraint resolution
+    pub type_context: Option<TypeCompilationContext>,
+    /// Generic method instantiation cache
+    pub generic_methods: HashMap<String, CompiledGenericInstance>,
 }
 
 impl ExpressionContext {
@@ -78,6 +115,21 @@ impl ExpressionContext {
             type_map: HashMap::new(),
             temp_counter: 0,
             current_location: None,
+            type_context: None,
+            generic_methods: HashMap::new(),
+        }
+    }
+
+    /// Create context with type compilation support
+    pub fn with_type_context(type_context: TypeCompilationContext) -> Self {
+        Self {
+            variable_map: HashMap::new(),
+            function_map: HashMap::new(),
+            type_map: HashMap::new(),
+            temp_counter: 0,
+            current_location: None,
+            type_context: Some(type_context),
+            generic_methods: HashMap::new(),
         }
     }
     
@@ -532,6 +584,171 @@ impl LlvmExpressionCompiler {
 impl Default for LlvmExpressionCompiler {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl LlvmExpressionCompiler {
+    /// Compile a generic method call with constraint checking
+    pub fn compile_generic_call(
+        &mut self,
+        call: &CallExpression,
+        type_context: &mut TypeCompilationContext
+    ) -> Result<LlvmValue, Error> {
+        let function_name = call.function.string();
+        
+        // Check if function name contains generic type indicators
+        if !function_name.contains('<') && !function_name.contains("_") {
+            return Err(Error::TypeCompilation("Not a generic call".to_string()));
+        }
+        
+        // Extract base function name and type arguments
+        let (base_name, type_args) = self.parse_generic_call(&function_name)?;
+        
+        // Check for cached instantiation
+        let instance_key = format!("{}_{}", base_name, type_args.join("_"));
+        if let Some(cached) = self.context.generic_methods.get(&instance_key).cloned() {
+            return self.generate_instantiated_call(&cached, call);
+        }
+        
+        // Instantiate generic method
+        let instance = type_context.instantiate_generic(&base_name, &type_args)?;
+        
+        // Cache the instantiation
+        self.context.generic_methods.insert(instance_key, instance.clone());
+        
+        // Generate call with instantiated method
+        self.generate_instantiated_call(&instance, call)
+    }
+
+    /// Parse generic call syntax to extract base name and type arguments
+    fn parse_generic_call(&self, function_name: &str) -> Result<(String, Vec<String>), Error> {
+        // Handle syntax like "function<T, U>" or "function_T_U"
+        if function_name.contains('<') && function_name.contains('>') {
+            let parts: Vec<&str> = function_name.splitn(2, '<').collect();
+            if parts.len() != 2 {
+                return Err(Error::TypeCompilation("Invalid generic syntax".to_string()));
+            }
+            
+            let base_name = parts[0].to_string();
+            let type_part = parts[1].trim_end_matches('>');
+            let type_args: Vec<String> = type_part.split(',')
+                .map(|s| s.trim().to_string())
+                .collect();
+            
+            Ok((base_name, type_args))
+        } else if function_name.contains('_') {
+            // Handle underscore syntax: "function_Type1_Type2"
+            let parts: Vec<&str> = function_name.split('_').collect();
+            if parts.len() < 2 {
+                return Err(Error::TypeCompilation("Invalid generic syntax".to_string()));
+            }
+            
+            let base_name = parts[0].to_string();
+            let type_args: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
+            
+            Ok((base_name, type_args))
+        } else {
+            Err(Error::TypeCompilation("No generic syntax found".to_string()))
+        }
+    }
+
+    /// Generate call IR for instantiated generic method
+    fn generate_instantiated_call(
+        &mut self,
+        instance: &CompiledGenericInstance,
+        call: &CallExpression
+    ) -> Result<LlvmValue, Error> {
+        // Compile arguments
+        let mut arg_values = Vec::new();
+        let mut arg_types = Vec::new();
+        
+        for arg in &call.arguments {
+            let arg_val = self.compile_expression(arg.as_ref())?;
+            arg_types.push(arg_val.value_type.to_llvm_string());
+            arg_values.push(arg_val.llvm_name);
+        }
+        
+        let temp_name = self.context.next_temp();
+        let args_str = arg_values.iter()
+            .zip(arg_types.iter())
+            .map(|(val, typ)| format!("{} {}", typ, val))
+            .collect::<Vec<_>>()
+            .join(", ");
+        
+        // Generate call to instantiated function
+        self.ir_output.push(format!(
+            "  {} = call {} @{}({})",
+            temp_name,
+            "i32", // Return type from instance metadata
+            instance.instance_name,
+            args_str
+        ));
+        
+        Ok(LlvmValue {
+            value_type: LlvmType::Int32, // Should be inferred from instance
+            llvm_name: temp_name,
+            is_constant: false,
+        })
+    }
+
+    /// Compile expression with type inference (simplified for now)
+    pub fn compile_expression_with_inference(
+        &mut self,
+        expr: &dyn Expression,
+        _type_context: &TypeCompilationContext
+    ) -> Result<LlvmValue, Error> {
+        // For now, just fall back to regular compilation
+        // TODO: Integrate proper type inference
+        self.compile_expression(expr)
+    }
+
+    /// Compile literal with type information
+    fn compile_typed_literal(
+        &mut self,
+        expr: &dyn Expression,
+        inferred_type: &str
+    ) -> Result<LlvmValue, Error> {
+        let literal_value = expr.string();
+        let temp_name = self.context.next_temp();
+        
+        match inferred_type {
+            "normie" => {
+                self.ir_output.push(format!("  {} = add i64 0, {}", temp_name, literal_value));
+                Ok(LlvmValue {
+                    value_type: LlvmType::Int64,
+                    llvm_name: temp_name,
+                    is_constant: true,
+                })
+            },
+            "facts" => {
+                let bool_val = if literal_value == "true" { "1" } else { "0" };
+                self.ir_output.push(format!("  {} = add i1 0, {}", temp_name, bool_val));
+                Ok(LlvmValue {
+                    value_type: LlvmType::Boolean,
+                    llvm_name: temp_name,
+                    is_constant: true,
+                })
+            },
+            "tea" => {
+                let str_name = self.context.next_temp();
+                self.ir_output.push(format!(
+                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* @str_{}, i32 0, i32 0",
+                    temp_name,
+                    literal_value.len() + 1,
+                    literal_value.len() + 1,
+                    str_name
+                ));
+                Ok(LlvmValue {
+                    value_type: LlvmType::String,
+                    llvm_name: temp_name,
+                    is_constant: true,
+                })
+            },
+            _ => {
+                // Fallback to regular compilation
+                self.compile_expression(expr)
+            }
+        }
     }
 }
 

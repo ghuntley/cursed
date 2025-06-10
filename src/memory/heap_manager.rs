@@ -883,6 +883,13 @@ impl HeapManager {
         Ok(allocations.get(&object_id).cloned())
     }
     
+    /// Get the complete allocation map for pointer-to-ObjectId resolution
+    pub fn get_allocation_map(&self) -> Result<HashMap<ObjectId, AllocationInfo>, String> {
+        let allocations = self.allocations.read()
+            .map_err(|_| "Failed to acquire read lock on allocations")?;
+        Ok(allocations.clone())
+    }
+    
     /// Check if pointer is valid (within heap bounds)
     pub fn is_valid_pointer(&self, ptr: *const u8) -> bool {
         if let Ok(blocks) = self.blocks.read() {

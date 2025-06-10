@@ -362,8 +362,16 @@ impl CycleDetector {
             }
         }
         
-        // TODO: Check if object is directly reachable from roots
-        // For now, we assume all objects could potentially be cycle roots
+        // Check if object is directly reachable from roots
+        let root_objects = self.object_registry.get_root_objects()?;
+        
+        // If it's a root object itself, it's reachable
+        if root_objects.contains(&object_id) {
+            return Ok(false); // Root objects can't be in unreferenced cycles
+        }
+        
+        // For now, we assume non-root objects could potentially be in cycles
+        // A more sophisticated implementation would do a full reachability analysis
         Ok(true)
     }
     
@@ -571,13 +579,29 @@ impl CycleDetector {
         for cycle in cycles {
             debug!("Collecting cycle with {} objects", cycle.size);
             
-            // TODO: Integrate with actual object collection
-            // For now, we just mark the objects for collection
+            // Actually collect the objects in the cycle
             for &object_id in &cycle.objects {
-                // In a real implementation, this would coordinate with the
-                // garbage collector to actually free the objects
-                debug!("Marking object {} for collection", object_id);
-                collected_objects += 1;
+                match self.object_registry.unregister(object_id) {
+                    Ok(Some(metadata)) => {
+                        debug!("Collected cyclic object {} (size: {} bytes)", object_id, metadata.size());
+                        collected_objects += 1;
+                        
+                        // Update statistics
+                        {
+                            let mut stats = self.stats.write()
+                                .map_err(|_| "Failed to acquire write lock on cycle detection stats")?;
+                            stats.cycles_collected += 1;
+                            stats.objects_in_cycles += 1;
+                        }
+                    }
+                    Ok(None) => {
+                        debug!("Object {} was already collected", object_id);
+                    }
+                    Err(e) => {
+                        warn!("Failed to collect cyclic object {}: {}", object_id, e);
+                        // Continue with other objects in the cycle
+                    }
+                }
             }
         }
         

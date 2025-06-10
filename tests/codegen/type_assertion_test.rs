@@ -15,14 +15,12 @@ use std::sync::Arc;
 fn test_compile_type_assertion() {
     // Create a simple mock type assertion: myInterface.(ConcreteType)
     let interface_value = Identifier {
-        token: "token".to_string(),
-        value: "myInterface".to_string(),
-    };
+            token: "identifier .to_string()
+            value:  myInterface ".to_string()};
+        };
     
-    let assertion = TypeAssertion {
-        token: "token".to_string(),
-        expression: Box::new(interface_value),
-        type_name: "ConcreteType".to_string(),
+    let assertion = TypeAssertion {        call: Box::new(interface_value),
+        type_name:  "ConcreteType .to_string()};
     };
     
     // In a real test, you would use a more complete test harness
@@ -30,11 +28,11 @@ fn test_compile_type_assertion() {
     // For this test, we're just verifying that the type assertion functionality
     // is properly implemented at the code level
     
-    // Verify that the TypeAssertion properly implements the Expression trait
+    // Verify that the TypeAssertion properly implements the Expression trait;
     let _expr: &dyn Expression = &assertion;
     
-    assert_eq!(assertion, ".");
-    assert_eq!(assertion.string(), "myInterface.(ConcreteType))");
+    assert_eq!(assertion, ".";
+    assert_eq!(assertion.string(),  myInterface .(ConcreteType)";
 }
 
 // Test that a type assertion produces a tuple with the value and success flag

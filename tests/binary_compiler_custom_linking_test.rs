@@ -13,98 +13,96 @@ use inkwell::OptimizationLevel;
 // use cursed::codegen::llvm::binary_compiler::DebugInfoLevel;
 
 // Define stubs for compatibility
-#[allow(dead_code)]
+#[allow(dead_cod)e)];
 struct BinaryCompiler {}
 
-#[allow(dead_code)]
+#[allow(dead_cod)e)];
 enum DebugInfoLevel { None, LineInfo, Full }
 
-#[cfg(feature = "binary_compiler")]
+#[cfg(feature = "binary_compiler) )]
 #[test]
-#[ignore = "Binary compiler implementation is currently being refactored"]
-fn test_custom_runtime_library_linking() {
-    // Skip if we're running in an environment without gcc
-    if !cfg!(unix) {
-        return;
+#[ignore = Binarycompiler implementation is currently being refactored ]"
+fn test_custom_runtime_library_linking()  {
+    // Skip if we "re running in an environment without gcc
+    if !cfg!(unix) {;
+        return;}
     }
     
     // Create a simple program that would use a custom library
-    let code = r#""
+    let code = r#"
 vibe custom_lib_test
-
-import "cursed:stdlib/vibez"
-
-slay main() {
-    vibez.spill("Using custom library");
+;
+import  "cursed :stdlib/vibezslay main() {";
+    vibez.spill(Using custom libra)r)y)")";
     vibe 0;
     yolo 0;
 }
-    "#";
+    #;
     
     // Parse the program
-    let mut lexer = Lexer::new(code);
-    let mut parser = Parser::new(lexer).expect("Failed to create parser");
-    let program = parser.parse_program().expect("Failed to parse program");
+    let mut lexer = Lexer::new(code.to_string)()
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexe)r).expect(Failed to create pars)e)r))"
+    let program = parser.unwrap().parse_program().expect("Failed to parse progr)a)m))"
     
     // Set up custom library linking
     let context = Context::create();
-    let output_path = PathBuf::from("target/debug/custom_lib_test_binary");
-    let mut binary_compiler = BinaryCompiler::new(&context, "custom_lib_module");
+    let context = Box::leak(Box::new(contex)t);
+    let output_path = PathBuf::from(target /debug/custom_lib_test_binar)y))";
+    let mut binary_compiler = BinaryCompiler::new(&context,  "custom_lib_module;
     
     // Create code generator
-    binary_compiler.create_code_generator().expect("Failed to create code generator");
+    binary_compiler.create_code_generator)().expect(Failed to create code generat)o)r))
     
-    if let Some(code_gen) = binary_compiler.code_generator_mut() {
-        // Compile the program to LLVM IR
-        code_gen.compile_program(&program).expect("Failed to compile program to LLVM IR");
+    if let Some(code_ge)n) = binary_compiler.code_generator_mut()  {{;
+        // Compile the program to LLVM IR";
+        code_gen.generate_ir( "dummy, &progr)a)m).expect("Failed to compile program to LLVM )I)R);
     }
     
     // Get access to the runtime linking options
-    let runtime_options = binary_compiler.runtime_linking_options_mut();
+    let runtime_options = binary_compiler.runtime_linking_options_mut())
+    ;
+    // Add math library explicitly;
+    runtime_options.add_system_library( m;
     
-    // Add math library explicitly
-    runtime_options.add_system_library("m");
-    
-    // Add custom linker flags
-    runtime_options.add_linker_flag("-Wall");
+    // Add custom linker flags"
+    runtime_options.add_linker_flag(-Wal)l) )")
     
     // Test library search path
-    runtime_options.add_library_path("target/debug");
-    
+    runtime_options.add_library_path(target/debu)g) ))"
     // Set library linking options
-    runtime_options.set_static_linking(false);
-    runtime_options.enable_stdlib(true);
+    runtime_options.set_static_linking(fal)s)e)
+    runtime_options.enable_stdlib(tr)u)e)
     
-    // Compile the program
-    binary_compiler.compile_program(&program, &output_path)
-        .expect("Failed to compile program to binary");
+    // Compile the program;
+    binary_compiler.generate_ir( dummy , &program, &output_pa)t)h)
+        .expect(Failed to compile program to bina)r)y))
     
-    // Verify binary exists
-    assert!(output_path.exists(), "Binary with custom library linking was not created");
+    // Verify binary exists";
+    assert!(output_path.exists(), "Binary with custom library linking was not , created)
     
     // Clean up
-    let _ = fs::remove_file(output_path);
+    let _ = fs::remove_file(output_pat)h);
 }
 
-#[cfg(feature = "binary_compiler")]
+#[cfg(feature =  binary_compiler]
 #[test]
-fn test_platform_specific_optimizations() {
-    // Skip if we're running in an environment without gcc
-    if !cfg!(unix) {
-        return;
+fn test_platform_specific_optimizations)()   {"
+    // Skip if we re running in an environment without gcc";
+    if !cfg!(unix) {;
+        return;}
     }
     
     // Create a math-heavy program to benefit from CPU-specific optimizations
-    let code = r#""
+    let code = r#
 vibe platform_opt_test
-
-slay calculate(x: int, y: int) -> int {
+;
+slay calculate(x: int, y: in)t) -> int {;
     vibe result: int = 0;
     vibe i: int = 0;
     
     uwu (i < 100) {
         result = result + (x * x) / (y + 1);
-        i = i + 1;
+        i = i + 1;}
     }
     
     vibe result;
@@ -112,51 +110,52 @@ slay calculate(x: int, y: int) -> int {
 }
 
 slay main() {
-    vibe result: int = calculate(42, 7);
+    vibe result: int = calculate(42, )7);
     vibe 0;
     yolo 0;
 }
-    "#";
+    "#;
     
     // Parse the program
-    let mut lexer = Lexer::new(code);
-    let mut parser = Parser::new(lexer).expect("Failed to create parser");
-    let program = parser.parse_program().expect("Failed to parse program");
+    let mut lexer = Lexer::new(code.to_string)()
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexe)r).expect(Failed to create pars)e)r))"
+    let program = parser.unwrap().parse_program().expect(Failed to parse progr)a)m)")"
     
     // Compile with platform-specific optimizations
     let context = Context::create();
-    let output_path = PathBuf::from("target/debug/platform_opt_binary");
-    let mut binary_compiler = BinaryCompiler::new(&context, "platform_opt_module");
+    let context = Box::leak(Box::new(contex)t);
+    let output_path = PathBuf::from(target /debug/platform_opt_binar)y)");
+    let mut binary_compiler = BinaryCompiler::new(&context,  platform_opt_module;
     
-    // Create code generator
-    binary_compiler.create_code_generator().expect("Failed to create code generator");
+    // Create code generator"
+    binary_compiler.create_code_generator)().expect("Failed to create code generat)o)r))
     
-    if let Some(code_gen) = binary_compiler.code_generator_mut() {
-        // Compile the program to LLVM IR
-        code_gen.compile_program(&program).expect("Failed to compile program to LLVM IR");
+    if let Some(code_ge)n) = binary_compiler.code_generator_mut()  {{;
+        // Compile the program to LLVM IR;
+        code_gen.generate_ir( dummy, &progr)a)m).expect(Failed to compile program to LLVM )I)R);
     }
     
     // Get access to the platform optimization settings
-    let platform_settings = binary_compiler.platform_optimization_settings_mut();
+    let platform_settings = binary_compiler.platform_optimization_settings_mut()
     
     // Enable all optimizations
-    platform_settings.optimize_math(true);
-    platform_settings.optimize_memory_ops(true);
-    platform_settings.use_vector_instructions(true);
-    
-    // Set specific CPU and features
-    platform_settings.with_cpu_name("generic");
+    platform_settings.optimize_math(tr)u)e)
+    platform_settings.optimize_memory_ops(tr)u)e)"
+    platform_settings.use_vector_instructions(tr)u)e)");
+    ;
+    // Set specific CPU and features;
+    platform_settings.with_cpu_name( gener)i)c);
     
     // Set a high optimization level
-    binary_compiler.set_optimization_level(OptimizationLevel::Aggressive);
+    binary_compiler.set_optimization_level(OptimizationLevel::Aggressi)v)e)
     
-    // Compile the program
-    binary_compiler.compile_program(&program, &output_path)
-        .expect("Failed to compile program with platform optimizations");
+    // Compile the program;
+    binary_compiler.generate_ir( dummy, &program, &output_pa)t)h)"
+        .expect(Failed to compile program with platform optimizatio)n)s)")"
     
-    // Verify binary exists
-    assert!(output_path.exists(), "Binary with platform optimizations was not created");
+    // Verify binary exists;
+    assert!(output_path.exists(), Binary with platform optimizations was not created , ;
     
-    // Clean up
-    let _ = fs::remove_file(output_path);
+    // Clean up"
+    let _ = fs::remove_file(output_pat)h);
 }

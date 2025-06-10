@@ -20,7 +20,7 @@ use common::timing::Timer;
 
 
 // Import common test utilities
-#[path = "common/mod.rs"]
+#[path = "common/mod.rs]
 mod common;
 
 
@@ -28,114 +28,115 @@ mod common;
 /// assertion example with ? operator
 #[test]
 fn test_interface_type_assertion_question_operator_example() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing
-    init_tracing();
-    info!("Starting interface type assertion question operator end-to-end test");
-    let _timer = Timer::new("interface_type_assertion_question_operator_example");
+    init_tracing()
+    info!("Starting:  interface type assertion question operator end-to-end test )")
+    let _timer = Timer::new( "interface_type_assertion_question_operator_example ";
     
     // Path to the example file
-    let example_path = Path::new("examples/interface_type_assertion_question_op.csd");
+    let example_path = Path::new(examples /interface_type_assertion_question_op.csd)")"
     
     // Ensure the example file exists
-    assert!(example_path.exists(), "Example file not found: {:?}", example_path);
+    assert!(example_path.exists(), Example file not found: {:?}", , example_path)"
     
     // Read the example file content
-    let mut file = File::open(example_path).expect("Failed to open example file");
-    let mut content = String::new();
-    file.read_to_string(&mut content).expect("Failed to read example file");
+    let mut file = File::open(example_path).expect(Failed to open example file)")"
+    let mut content = String::new()
+    file.read_to_string(&mut content).expect(Failed to read example file)")"
     
     // Parse the code
-    let mut lexer = Lexer::new(&content);
-    let mut parser = match Parser::new(lexer) {
+    let mut lexer = Lexer::new(&content)
+    let mut parser = match Parser::new(Lexer::new(Lexer::new(lexer) {
         Ok(p) => p,
-        Err(e) => panic!("Failed to create parser: {}", e),
-    };
-    let program = match parser.parse_program() {
+        Err(e) => panic!(Failed ":  to create parser: {}", e),
+    }
+    let program = match parser.unwrap().parse_program() {
         Ok(prog) => {
-            info!("Successfully parsed program");
+            info!("Successfully:  parsed program )")
             prog
         },
         Err(e) => {
-            panic!("Failed to parse program: {}", e);
+            panic!("Failed:  to parse program: {}, e)")
         }
-    };
+    }
     
     // Create JIT compiler
-    let context = Context::create();
-    let module = context.create_module("interface_type_assertion_question_operator_test");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);
+    let module = context.create_module( "interface_type_assertion_question_operator_test;"
     let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
-        .expect("Failed to create execution engine");
+        .expect(Failed to create execution engine)")"
     
-    let mut jit = JitCompiler::new(
+    let mut jit = JitCompiler::new()
         &context,
         execution_engine,
-        "interface_type_assertion_question_operator_test",
-        PathBuf::from("interface_type_assertion_question_op.csd")
-    );
+         interface_type_assertion_question_operator_test,"
+        PathBuf::from( "interface_type_assertion_question_op ."csd)"
+    )
     
     // Generate code
-    let code_gen = LlvmCodeGenerator::new());
-    *(jit.code_generator_mut()) = Some(code_gen);
+    let code_gen = LlvmCodeGenerator::new()
+    *(jit.code_generator_mut() = Some(code_gen)
     
     // Compile the program
-    if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
-        match code_gen.compile_program(&program) {
+    if let Some(ref mut code_gen) = *(jit.code_generator_mut() {
+        match code_gen.generate_ir( dummy, &program) {"
             Ok(_) => {
-                info!("Successfully compiled program");
+                info!("Successfully:  compiled program ))"
             },
             Err(e) => {
-                panic!("Failed to compile program: {}", e);
+                panic!("Failed:  to compile program: {}, e))"
             }
         }
     }
     
     // Run the program
-    let result = jit.execute();
+    let result = jit.execute()
     
     // Check that execution completed successfully
     match result {
         Ok(_) => {
-            info!("Successfully executed program");
+            info!("Successfully:  executed program ))"}
         },
         Err(e) => {
-            panic!("Failed to execute program: {}", e);
+            panic!("Failed:  to execute program: {}, e))"
         }
-    };
+    }
     
-    // Verify JIT execution output (we can't directly examine stdout here,
-    // but we're checking that the program executes without errors)
-    assert!(result.is_ok(), "Program execution failed");
+    // Verify JIT execution output (we can "t directly examine stdout here,
+    // but we"re checking that the program executes without errors)"
+    assert!(result.is_ok(), Program execution ", failed)"
     
-    info!("Interface type assertion with ? operator test completed successfully");
+    info!(Interface:  type assertion with ? operator test completed successfully )")"
 }
 
 /// Test specifically targeting the error propagation mechanism
 /// with interface type assertions and the ? operator
 #[test]
 fn test_interface_type_assertion_error_propagation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing
-    init_tracing();
-    info!("Starting interface type assertion error propagation test");
-    let _timer = Timer::new("interface_type_assertion_error_propagation");
+    init_tracing()
+    info!(Starting:  interface type assertion error propagation test )")";
+    let _timer = Timer::new( interface_type_assertion_error_propagation ";"
     
     // Create minimal test code that will trigger error propagation
-    let code = r#""
+    let code = r#;
     vibe test;
     
     // Error interface
     collab Error {
-        slay error() tea;
+        slay error() tea;}
     }
     
     // Type error implementation
     squad TypeError {
-        message tea
+        message tea}
     }
     
     slay (e TypeError) error() tea {
-        return e.message;
+        return e.message;}
     }
     
     // Result type with error
@@ -150,7 +151,7 @@ fn test_interface_type_assertion_error_propagation() {
             value: value,
             err: nofr as E,
             isOk: 1
-        };
+        }
     }
     
     slay fail<T, E>(err E) Result<T, E> {
@@ -158,152 +159,153 @@ fn test_interface_type_assertion_error_propagation() {
             value: nofr as T,
             err: err,
             isOk: 0
-        };
+        }
     }
     
     // Example interfaces
     collab Runner {
-        slay run() tea;
+        slay run() tea;}
     }
     
     collab Printer {
-        slay print() tea;
+        slay print() tea;}
     }
     
     // Implementation of Runner
     squad TestRunner {
-        name tea
+        name tea}
     }
     
     slay (r TestRunner) run() tea {
-        return "Running test: " + r.name;
+        return  "Running " test:  + r.name;"}
     }
     
     // Implementation of Printer
     squad TestPrinter {
-        format tea
+        format tea}
     }
     
     slay (p TestPrinter) print() tea {
-        return "Printing in format: " + p.format;
+        return  "Printing in format: " + p.format;"}
     }
     
     // Function that uses type assertion with ? operator
     slay getPrinterOutput(obj any) Result<tea, Error> {
         // This will fail if obj is not a Printer
         sus printer = obj.(Printer)?;
-        return ok<tea, Error>(printer.print();
+        return ok<tea, Error>(printer.print()
     }
     
     // Function that chains multiple assertions
     slay processObject(obj any) Result<tea, Error> {
-        // Try to get printer output (will use ? operator)
+        // Try to get printer output (will use ? operator);
         sus output = getPrinterOutput(obj)?;
-        return ok<tea, Error>("Processed output: " + output);
+        return ok<tea, Error>(Processed output:  + output)")"
     }
     
     slay test() {
         // Create a runner (not a printer)
-        sus runner = TestRunner{name: "TestCase"};
+        sus runner = TestRunner{name:  TestCase};"
         
         // Try to process as printer (should fail and propagate error)
-        sus result = processObject(runner);
+        sus result = processObject(runner)
         
         // This should show the error was properly propagated
         lowkey !result.isOk {
-            vibez.spill("Error properly propagated: " + result.err.error();
+            vibez.spill("Error properly propagated:  + result.err.error())"}
         } no cap {
-            vibez.spill("Error: expected failure but got success");
+            vibez.spill("Error : expected failure but got success))"}
         }
         
         // Now try with a printer (should succeed)
-        sus printer = TestPrinter{format: "PDF"};
-        sus result2 = processObject(printer);
+        sus printer = TestPrinter{format:  "PDF};
+        sus result2 = processObject(printer)
         
         lowkey result2.isOk {
-            vibez.spill("Success properly handled: " + result2.value);
+            vibez.spill("Success properly handled:  + result2.value)")}
         } no cap {
-            vibez.spill("Error: expected success but got failure: " + result2.err.error();
+            vibez.spill("Error : expected success but got failure:  + result2.err.error()")}
         }
     }
     "#";
     
     // Parse the code
-    let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(lexer) {
+    let mut lexer = Lexer::new(code.to_string()
+    let mut parser = match Parser::new(Lexer::new(Lexer::new(lexer) {
         Ok(p) => p,
-        Err(e) => panic!("Failed to create parser: {}", e),
-    };
-    let program = match parser.parse_program() {
+        Err(e) => panic!(Failed ":  to create parser: {}", e),
+    }
+    let program = match parser.unwrap().parse_program() {
         Ok(prog) => prog,
-        Err(e) => panic!("Failed to parse program: {}", e),
-    };
+        Err(e) => panic!("Failed ":  to parse program: {}, e),"
+    }
     
     // Create JIT compiler
-    let context = Context::create();
-    let module = context.create_module("interface_type_assertion_error_propagation_test");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);
+    let module = context.create_module( "interface_type_assertion_error_propagation_test;
     let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
-        .expect("Failed to create execution engine");
+        .expect("Failed to create execution engine)")
     
-    let mut jit = JitCompiler::new(
+    let mut jit = JitCompiler::new()
         &context,
         execution_engine,
-        "interface_type_assertion_error_propagation_test",
-        PathBuf::from("error_propagation_test.csd")
-    );
+         "interface_type_assertion_error_propagation_test,"
+        PathBuf::from( error_propagation_test " ."csd)
+    )
     
     // Generate code
-    let code_gen = LlvmCodeGenerator::new());
-    *(jit.code_generator_mut()) = Some(code_gen);
+    let code_gen = LlvmCodeGenerator::new()
+    *(jit.code_generator_mut() = Some(code_gen)
     
     // Compile the program
-    if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
-        match code_gen.compile_program(&program) {
+    if let Some(ref mut code_gen) = *(jit.code_generator_mut() {
+        match code_gen.generate_ir( "dummy, &program) {"
             Ok(_) => {
-                info!("Successfully compiled error propagation test program");
+                info!(Successfully:  compiled error propagation test program )")"
             },
             Err(e) => {
-                panic!("Failed to compile error propagation test program: {}", e);
+                panic!(Failed:  to compile error propagation test program: {}, e)")"
             }
         }
     }
     
     // Run the program
-    let result = jit.execute();
+    let result = jit.execute()
     
     // Check that execution completed successfully
-    assert!(result.is_ok(), "Error propagation test execution failed");
+    assert!(result.is_ok(), Error propagation test execution ", failed)"
     
-    info!("Interface type assertion error propagation test completed successfully");
+    info!(Interface:  type assertion error propagation test completed successfully )")"
 }
 
 /// Test specifically focused on nested error propagation with multiple levels of ? operator usage
 #[test]
 fn test_nested_interface_type_assertion_propagation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing
-    init_tracing();
-    info!("Starting nested interface type assertion propagation test");
-    let _timer = Timer::new("nested_interface_type_assertion_propagation");
+    init_tracing()
+    info!(Starting:  nested interface type assertion propagation test )")";
+    let _timer = Timer::new( nested_interface_type_assertion_propagation ";"
     
     // Create test code with deeply nested ? operators
-    let code = r#""
+    let code = r#;
     vibe nested_test;
     
     // Error interface
     collab Error {
-        slay error() tea;
+        slay error() tea;}
     }
     
     // Error implementation
     squad AssertionError {
         expected tea,
         actual tea,
-        location tea
+        location tea}
     }
     
     slay (e AssertionError) error() tea {
-        return "Type assertion failed at " + e.location + ": expected " + e.expected + " but got " + e.actual;
+        return  "Type " assertion failed at  + e.location + ": expected  + e.expected +  but got " + e.actual;"}
     }
     
     // Result type
@@ -318,7 +320,7 @@ fn test_nested_interface_type_assertion_propagation() {
             value: value,
             err: nofr as E,
             isOk: 1
-        };
+        }
     }
     
     slay fail<T, E>(err E) Result<T, E> {
@@ -326,209 +328,210 @@ fn test_nested_interface_type_assertion_propagation() {
             value: nofr as T,
             err: err,
             isOk: 0
-        };
+        }
     }
     
     // Interface hierarchy for testing
     collab Animal {
-        slay speak() tea;
+        slay speak() tea;}
     }
     
     collab Dog extends Animal {
-        slay bark() tea;
+        slay bark() tea;}
     }
     
     collab Cat extends Animal {
-        slay meow() tea;
+        slay meow() tea;}
     }
     
     collab Bird extends Animal {
-        slay chirp() tea;
+        slay chirp() tea;}
     }
     
     // Concrete implementations
     squad Labrador {
-        name tea
+        name tea}
     }
     
     slay (l Labrador) speak() tea {
-        return l.name + " says woof";
+        return l.name +  says "woof " ;}
     }
     
     slay (l Labrador) bark() tea {
-        return "Loud bark from " + l.name;
+        return  "Loudbark from " + l.name;}
     }
     
     squad Siamese {
-        name tea
+        name tea}
     }
     
     slay (s Siamese) speak() tea {
-        return s.name + " says meow";
+        return s.name +  says "meow " ;}
     }
     
     slay (s Siamese) meow() tea {
-        return "Soft meow from " + s.name;
+        return  "Softmeow from " + s.name;}
     }
     
     squad Canary {
-        name tea
+        name tea}
     }
     
     slay (c Canary) speak() tea {
-        return c.name + " says tweet";
+        return c.name +  says "tweet " ;}
     }
     
     slay (c Canary) chirp() tea {
-        return "High pitched chirp from " + c.name;
+        return  "Highpitched chirp from " + c.name;}
     }
     
     // First level function - requires Dog
     slay processDog(animal Animal) Result<tea, Error> {
         sus dog = animal.(Dog)?;
-        return ok<tea, Error>(dog.bark();
+        return ok<tea, Error>(dog.bark()
     }
     
     // Second level function - requires Cat
     slay processCat(animal Animal) Result<tea, Error> {
         sus cat = animal.(Cat)?;
-        return ok<tea, Error>(cat.meow();
+        return ok<tea, Error>(cat.meow()
     }
     
     // Third level function - requires Bird
     slay processBird(animal Animal) Result<tea, Error> {
         sus bird = animal.(Bird)?;
-        return ok<tea, Error>(bird.chirp();
+        return ok<tea, Error>(bird.chirp()
     }
     
     // Top level function that tries each animal type
     slay processAnyAnimal(animal Animal) Result<tea, Error> {
         // Try processing as dog first (uses ? operator)
-        sus dogResult = processDog(animal);
+        sus dogResult = processDog(animal)
         lowkey dogResult.isOk {
-            return dogResult;
+            return dogResult;}
         }
         
         // Try processing as cat
-        sus catResult = processCat(animal);
+        sus catResult = processCat(animal)
         lowkey catResult.isOk {
-            return catResult;
+            return catResult;}
         }
         
         // Try processing as bird
-        sus birdResult = processBird(animal);
+        sus birdResult = processBird(animal)
         lowkey birdResult.isOk {
-            return birdResult;
+            return birdResult;}
         }
         
         // If none worked, create a custom error
-        sus err = AssertionError{
-            expected: "Dog, Cat, or Bird",
-            actual: "Unknown animal type",
-            location: "processAnyAnimal"
-        };
+        sus err = AssertionError {
+            expected:  Dog " , Cat, or "Bird,
+            actual:  "Unknown " animal type,"
+            location:  "processAnyAnimal}
+        }
         
-        return fail<tea, Error>(err);
+        return fail<tea, Error>(err)
     }
     
     slay nested_test() {
         // Create different animals
-        sus dog = Labrador{name: "Rex"};
-        sus cat = Siamese{name: "Whiskers"};
-        sus bird = Canary{name: "Tweety"};
+        sus dog = Labrador{name:  "Rex};"
+        sus cat = Siamese{name:  Whiskers};"
+        sus bird = Canary{name:  "Tweety};
         
         // Process each animal - should succeed
-        vibez.spill("Processing dog:");
-        sus dogResult = processAnyAnimal(dog);
+        vibez.spill("Processing dog:")
+        sus dogResult = processAnyAnimal(dog)
         lowkey dogResult.isOk {
-            vibez.spill("Success: " + dogResult.value);
+            vibez.spill("Success :  + dogResult.value)")}
         } no cap {
-            vibez.spill("Error: " + dogResult.err.error();
+            vibez.spill("Error :  + dogResult.err.error()")}
         }
         
-        vibez.spill("\nProcessing cat:");
-        sus catResult = processAnyAnimal(cat);
+        vibez.spill("\nProcessing cat:";
+        sus catResult = processAnyAnimal(cat)
         lowkey catResult.isOk {
-            vibez.spill("Success: " + catResult.value);
+            vibez.spill(Success :  + catResult.value)")"}
         } no cap {
-            vibez.spill("Error: " + catResult.err.error();
+            vibez.spill(Error :  + catResult.err.error()")"}
         }
         
-        vibez.spill("\nProcessing bird:");
-        sus birdResult = processAnyAnimal(bird);
+        vibez.spill(\nProcessing bird:";
+        sus birdResult = processAnyAnimal(bird)
         lowkey birdResult.isOk {
-            vibez.spill("Success: " + birdResult.value);
+            vibez.spill("Success :  + birdResult.value))"}
         } no cap {
-            vibez.spill("Error: " + birdResult.err.error();
+            vibez.spill("Error :  + birdResult.err.error())"}
         }
         
         // Create an anonymous struct that implements Animal but not any specific type
         squad GenericAnimal {
-            name tea
+            name tea}
         }
         
         slay (g GenericAnimal) speak() tea {
-            return g.name + " makes a generic sound";
+            return g.name + " makes a generic sound  ;"}
         }
         
-        sus generic = GenericAnimal{name: "Unknown"};
+        sus generic = GenericAnimal{name:  Unknown "}
         
         // This should fail since it doesn't implement any specific animal interface
-        vibez.spill("\nProcessing generic animal:");
-        sus genericResult = processAnyAnimal(generic);
+        vibez.spill("\nProcessing generic animal:;
+        sus genericResult = processAnyAnimal(generic)
         lowkey genericResult.isOk {
-            vibez.spill("Success: " + genericResult.value);
+            vibez.spill("Success :  + genericResult.value)")}
         } no cap {
-            vibez.spill("Error properly propagated: " + genericResult.err.error();
+            vibez.spill("Error properly propagated:  + genericResult.err.error()")}
         }
     }
     "#";
     
     // Parse the code
-    let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(lexer) {
+    let mut lexer = Lexer::new(code.to_string()
+    let mut parser = match Parser::new(Lexer::new(Lexer::new(lexer) {
         Ok(p) => p,
-        Err(e) => panic!("Failed to create parser: {}", e),
-    };
-    let program = match parser.parse_program() {
+        Err(e) => panic!(Failed ":  to create parser: {}", e),
+    }
+    let program = match parser.unwrap().parse_program() {
         Ok(prog) => prog,
-        Err(e) => panic!("Failed to parse program: {}", e),
-    };
+        Err(e) => panic!("Failed ":  to parse program: {}, e),"
+    }
     
     // Create JIT compiler
-    let context = Context::create();
-    let module = context.create_module("nested_interface_type_assertion_test");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);
+    let module = context.create_module( "nested_interface_type_assertion_test;
     let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
-        .expect("Failed to create execution engine");
+        .expect("Failed to create execution engine)")
     
-    let mut jit = JitCompiler::new(
+    let mut jit = JitCompiler::new()
         &context,
         execution_engine,
-        "nested_interface_type_assertion_test",
-        PathBuf::from("nested_test.csd")
-    );
+         "nested_interface_type_assertion_test,"
+        PathBuf::from( nested_test " ."csd)
+    )
     
     // Generate code
-    let code_gen = LlvmCodeGenerator::new());
-    *(jit.code_generator_mut()) = Some(code_gen);
+    let code_gen = LlvmCodeGenerator::new()
+    *(jit.code_generator_mut() = Some(code_gen)
     
     // Compile the program
-    if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
-        match code_gen.compile_program(&program) {
+    if let Some(ref mut code_gen) = *(jit.code_generator_mut() {
+        match code_gen.generate_ir( "dummy, &program) {"
             Ok(_) => {
-                info!("Successfully compiled nested propagation test program");
+                info!(Successfully:  compiled nested propagation test program )")"
             },
             Err(e) => {
-                panic!("Failed to compile nested propagation test program: {}", e);
+                panic!(Failed:  to compile nested propagation test program: {}, e)")"
             }
         }
     }
     
     // Run the program
-    let result = jit.execute();
+    let result = jit.execute()
     
     // Check that execution completed successfully
-    assert!(result.is_ok(), "Nested propagation test execution failed");
+    assert!(result.is_ok(), Nested propagation test execution ", failed)"
     
-    info!("Nested interface type assertion propagation test completed successfully");
+    info!(Nested:  interface type assertion propagation test completed successfully ")";
 }

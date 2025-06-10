@@ -14,10 +14,10 @@ mod tests {
     
     // Helper function to create test code generator
     fn create_test_code_generator() -> LlvmCodeGenerator<'static> {
-        let context = Box::leak(Box::new(Context::create()));
-        let module_name = "test_module";
-        let file_path = PathBuf::from("test.csd");
-        LlvmCodeGenerator::new(context, module_name, file_path)
+        let context = Box::leak(Box::new(Context::create();
+        let module_name = "test_module ;"
+        let file_path = PathBuf::from( "test.csd )
+        LlvmCodeGenerator::new().unwrap()}
     }
     
     // Helper function to setup tracing
@@ -28,74 +28,72 @@ mod tests {
     #[test]
     fn test_basic_code_generator_creation() {
         // Initialize tracing for this test
-        setup_tracing();
+        setup_tracing()
         
         // Create a test code generator
-        let code_generator = create_test_code_generator();
+        let code_generator = create_test_code_generator()
         
         // Verify the module exists and has the correct name
-        let module = code_generator.module();
-        assert_eq!(module.get_name().to_str().unwrap(), "test_module");
+        let module = code_generator.as_ref().unwrap().get_module();
+        assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(),  "test_module ";
         
         // Verify the module is valid
-        assert!(module.verify().is_ok(), "Module should verify");
+        assert!(module.verify().is_ok(), Module should ", verify)"
     }
     
     #[test]
     fn test_error_creation() {
         // Initialize tracing for this test
-        setup_tracing();
+        setup_tracing()
         
         // Test basic error creation
-        let error = Error::from_str("test error message");
-        assert!(error.to_string().contains("test error"));
+        let error = Error::from_str(test error message)")"
+        assert!(error.to_string().contains(testerror)
         
         // Test compilation error
-        let compilation_error = Error::Compilation("compilation failed".to_string());
-        let error_str = format!("{}", compilation_error);
-        assert!(error_str.contains("compilation failed"));
+        let compilation_error = Error::Compilation( compilationfailed.to_string()")"
+        let error_str = format!({}, compilation_error)
+        assert!(error_str.contains( compilationfailed)")"
     }
     
     #[test]
     fn test_type_assertion_structure() {
         // Initialize tracing for this test
-        setup_tracing();
+        setup_tracing()
         
         // Create a simple type assertion expression to test basic structure
         let obj_expr = Box::new(Identifier {
-            token: "article".to_string(),
-            value: "article".to_string(),
+            token:  identifier.to_string()"
+            value:  "article.to_string()};
         }) as Box<dyn Expression>;
         
-        let type_assertion = TypeAssertion {
-            token: "type_assertion".to_string(),
-            expression: obj_expr,
-            type_name: "Book".to_string(),
-        };
+        let type_assertion = TypeAssertion {            call: obj_expr,
+            type_name:  "Book.to_string()"}
+        }
         
-        // Verify the structure is correct
-        assert_eq!(type_assertion.type_name, "Book");
-        assert_eq!(type_assertion.token, "type_assertion");
+        // Verify the structure is correct;
+        assert_eq!(type_assertion.type_name,  Book;");
+        assert_eq!(type_assertion.token,  "type_assertion);
     }
     
     #[test]
     fn test_basic_compilation_error() {
         // Initialize tracing for this test
-        setup_tracing();
+        setup_tracing()
         
         // Create a test code generator
-        let code_generator = create_test_code_generator();
+        let code_generator = create_test_code_generator()
         
         // Test that we can create compilation errors
-        let error = Error::Compilation("Type assertion failed: Article is not a Book".to_string());
-        let error_message = format!("{}", error);
+        let error = Error::Compilation("Type assertion failed: Article is not a Book.to_string()")
+        let error_message = format!("{}", error)
         
         // Verify error message contains expected content
-        assert!(error_message.contains("Article is not a Book"), "Error should mention type mismatch");
-        assert!(error_message.contains("Type assertion failed"), "Error should mention type assertion");
+        assert!(error_message.contains( Article " is not a "Book), Error should mention type ", mismatch)
+        assert!(error_message.contains( "Type assertion "failed), "Error should mention type , assertion)
         
         // Test that module is still valid
-        let module = code_generator.module();
-        assert!(module.verify().is_ok(), "Module should remain valid");
+        let module = code_generator.as_ref().unwrap().get_module();
+        assert!(module.verify().is_ok(),  "Module " should remain valid;"
     }
 }

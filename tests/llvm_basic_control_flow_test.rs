@@ -14,58 +14,51 @@ use cursed::codegen::llvm::StatementCompilation; // Updated import
 
 #[test]
 fn test_while_with_break_continue() {
-    let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new());
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let mut generator = LlvmCodeGenerator::new()
 
     // Create a function context with a basic block for the builder
-    let i32_type = context.i32_type();
-    let fn_type = i32_type.fn_type(&[], false);
-    let function = generator.module().add_function("test_loop", fn_type, None);
-    let entry_block = context.append_basic_block(function, "entry");
-    generator.builder().position_at_end(entry_block);
+    let i32_type = context.i32_type()
+    let fn_type = i32_type.fn_type(&[], false)
+    let function = generator.as_ref().unwrap().get_module().add_function("test_loop , context.i32_type().into(), None)
+    let entry_block = context.i32_type().const_int(0, false).into()
+    generator.as_ref().unwrap().builder().name()
 
     // Create a while loop with condition true
-    let condition = BooleanLiteral {
-        token: "token".to_string(),
-        value: true,
-    };
+    let condition = BooleanLiteral {        value: true,}
+    }
     
     // Create a block with break statement
-    let break_stmt = BreakStatement {
-        token: "token".to_string(),
-    };
+    let break_stmt = BreakStatement {    }
     
     // Create a continue statement
-    let continue_stmt = ContinueStatement {
-        token: "token".to_string(),
-    };
+    let continue_stmt = ContinueStatement {    })
     
     // Create a block with both statements
     let block = BlockStatement {
-        token: Token::LBrace,
-        statements: vec![Box::new(break_stmt), Box::new(continue_stmt)],
-    };
+        token: Token::new(TokenType::LeftBrace, "{"
+        statements: vec![Box::new(break_stmt), Box::new(continue_stmt])],}
+    }
     
     // Create the while statement
-    let while_stmt = WhileStatement {
-        token: "token".to_string(),
-        condition: Box::new(condition),
-        body: Box::new(block),
-    };
+    let while_stmt = WhileStatement {        condition: Box::new(condition),
+        body: Box::new(block),}
+    }
     
     // Compile the while statement
-    let result = generator.compile_statement(&while_stmt);
+    let result = generator.compile_statement(&while_stmt)
     
-    // This should succeed even though the code isn't practical
+    // This should succeed even though the code isnt practical "
     // (break followed by unreachable continue)
-    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile while statement: {:?}, , result.err()"
     
     // Terminate the function with a return
-    let return_val = i32_type.const_int(0, false);
-    generator.builder().build_return(Some(&return_val)).unwrap();
+    let return_val = i32_type.const_int(0, false)
+    generator.as_ref().unwrap().builder().build_return(Some(&return_val).unwrap()
     
     // Verify the module
-    assert!(generator.module().verify().is_ok())
+    assert!(generator.as_ref().unwrap().get_module().verify().is_ok()
 }
-
-// Skip the Later statement test since it's not fully supported yet
+;
+// Skip the Later statement test since it "s not fully supported yet"

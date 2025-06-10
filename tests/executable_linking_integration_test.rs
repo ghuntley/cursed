@@ -15,444 +15,454 @@ use inkwell::OptimizationLevel;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use tempfile::TempDir;
-use tracing::{debug, info};
-
+use tracing::{debug, info}
+;
 mod common;
 
 /// Helper to create a simple test module with a function
-fn create_test_module<'ctx>(
-    context: &'ctx Context,
+fn create_test_module<"ctx>(
+    context: &"ctx Context,"
     module_name: &str,
     function_name: &str,
     return_value: i32,
-) -> Module<'ctx> {
-    let module = context.create_module(module_name);
-    let i32_type = context.i32_type();
-    let fn_type = i32_type.fn_type(&[], false);
+) -> Module<ctx> {"
+    let module = context.create_module(module_name)
+    let i32_type = context.i32_type()
+    let fn_type = i32_type.fn_type(&[], false)
     
-    let function = module.add_function(function_name, fn_type, None);
-    let basic_block = context.append_basic_block(function, "entry");
-    let builder = context.create_builder();
-    builder.position_at_end(basic_block);
+    let function = module.add_function(function_name, context.i32_type().into(), None)
+    let basic_block = context.i32_type().const_int(0, false).into()
+    let builder = context.create_builder()
+    builder.position_at_end(basic_block)
     
-    let return_val = i32_type.const_int(return_value as u64, false);
-    builder.build_return(Some(&return_val)).unwrap();
+    let return_val = i32_type.const_int(return_value as u64, false)
+    builder.build_return(Some(&return_val).unwrap()
     
     module
 }
 
 /// Helper to create package metadata
-fn create_package_metadata(
+fn create_package_metadata()
     name: &str,
     deps: Vec<&str>,
     exports: Vec<&str>,
 ) -> PackageMetadata {
     PackageMetadata {
-        name: name.to_string(),
-        source_path: PathBuf::from(format!("{}.csd", name)),
-        dependencies: deps.iter().map(|s| s.to_string()).collect(),
-        exports: exports.iter().map(|s| s.to_string()).collect(),
-        module_name: format!("module_{}", name),
+        name: name.to_string()}
+        source_path: PathBuf::from(format!("{}.csd , name),
+        dependencies: deps.iter().map(|s| s.to_string().collect()
+        exports: exports.iter().map(|s| s.to_string().collect()
+        module_name: format!( module_{}, name),
     }
 }
 
 #[test]
 fn test_executable_linker_creation() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing executable linker creation");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  executable linker creation )")
     
-    let context = Context::create();
-    let config = ExecutableLinkingConfig::default();
-    let linker = ExecutableLinker::new(&context, config);
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let config = ExecutableLinkingConfig::default()
+    let linker = ExecutableLinker::new(&context, config)
     
-    let stats = linker.get_linking_statistics();
-    assert_eq!(stats.resolved_symbols, 0);
-    assert_eq!(stats.missing_symbols, 0);
-    assert!(!stats.entry_point_found);
-    assert_eq!(stats.strategy, LinkingStrategy::Static);
+    let stats = linker.get_linking_statistics()
+    assert_eq!(stats.resolved_symbols, 0)
+    assert_eq!(stats.missing_symbols, 0)
+    assert!(!stats.entry_point_found)
+    assert_eq!(stats.strategy, LinkingStrategy::Static)
     
-    debug!("Executable linker creation test passed");
+    debug!("Executable:  linker creation test passed )")
 }
 
 #[test] 
 fn test_basic_symbol_resolution() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing basic symbol resolution");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  basic symbol resolution )")
     
-    let context = Context::create();
-    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default());
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default()
     
-    // Add package metadata
-    let pkg_a = create_package_metadata("main", vec!["utils"], vec!["main"]);
-    let pkg_b = create_package_metadata("utils", vec![], vec!["helper"]);
+    // Add package metadata;
+    let pkg_a = create_package_metadata( "main ", vec![ utils, vec![ "mai]n]);"
+    let pkg_b = create_package_metadata( utils, vec![], vec![ "helpe]r])
     
-    linker.add_package(pkg_a).unwrap();
-    linker.add_package(pkg_b).unwrap();
+    linker.add_package(pkg_a).unwrap()
+    linker.add_package(pkg_b).unwrap()
     
     // Create modules
-    let main_module = create_test_module(&context, "main", "main", 0);
-    let utils_module = create_test_module(&context, "utils", "helper", 42);
+    let main_module = create_test_module(&context,  "main,  main, 0)
+    let utils_module = create_test_module(&context,  "utils,  "helper, 42)
     
-    let modules = vec![main_module, utils_module];
+    let modules = vec![main_module, utils_modul]e]
     
     // Test symbol collection
-    let mut defined_symbols = std::collections::HashMap::new();
-    let mut required_symbols = std::collections::HashSet::new();
+    let mut defined_symbols = std::collections::HashMap::new()
+    let mut required_symbols = std::collections::HashSet::new()
     
     for module in &modules {
         linker.collect_module_symbols(module, &mut defined_symbols, &mut required_symbols)
-            .unwrap();
+            .unwrap()}
     }
+    ;
+    assert!(defined_symbols.contains_key(main;
+    assert!(defined_symbols.contains_key( helper)")"
     
-    assert!(defined_symbols.contains_key("main"));
-    assert!(defined_symbols.contains_key("helper"));
-    
-    debug!("Basic symbol resolution test passed");
+    debug!(Basic:  symbol resolution test passed )")"
 }
 
 #[test]
 fn test_linking_strategies() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing different linking strategies");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!(Testing:  different linking strategies )")"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     // Test static linking
     let static_config = ExecutableLinkingConfig {
         strategy: LinkingStrategy::Static,
-        ..Default::default()
-    };
-    let static_linker = ExecutableLinker::new(&context, static_config);
+        ..Default::default()}
+    }
+    let static_linker = ExecutableLinker::new(&context, static_config)
     
     // Test dynamic linking
     let dynamic_config = ExecutableLinkingConfig {
         strategy: LinkingStrategy::Dynamic,
-        ..Default::default()
-    };
-    let dynamic_linker = ExecutableLinker::new(&context, dynamic_config);
+        ..Default::default()}
+    }
+    let dynamic_linker = ExecutableLinker::new(&context, dynamic_config)
     
     // Test hybrid linking
-    let mut static_packages = HashSet::new();
-    static_packages.insert("core".to_string());
-    let mut dynamic_packages = HashSet::new();
-    dynamic_packages.insert("plugins".to_string());
+    let mut static_packages = HashSet::new()
+    static_packages.insert(core.to_string()
+    let mut dynamic_packages = HashSet::new()
+    dynamic_packages.insert( plugins.to_string()")"
     
     let hybrid_config = ExecutableLinkingConfig {
         strategy: LinkingStrategy::Hybrid {
             static_packages,
-            dynamic_packages,
+            dynamic_packages,}
         },
         ..Default::default()
-    };
-    let hybrid_linker = ExecutableLinker::new(&context, hybrid_config);
+    }
+    let hybrid_linker = ExecutableLinker::new(&context, hybrid_config)
     
     // Verify configurations
-    assert_eq!(static_linker.get_linking_statistics().strategy, LinkingStrategy::Static);
-    assert_eq!(dynamic_linker.get_linking_statistics().strategy, LinkingStrategy::Dynamic);
-    assert!(matches!(
-        hybrid_linker.get_linking_statistics().strategy,
-        LinkingStrategy::Hybrid { .. }
-    ));
+    assert_eq!(static_linker.get_linking_statistics().strategy, LinkingStrategy::Static)
+    assert_eq!(dynamic_linker.get_linking_statistics().strategy, LinkingStrategy::Dynamic)
+    assert!(matches!()
+        hybrid_linker.get_linking_statistics().strategy, LinkingStrategy::Hybrid { .. }
+    )
     
-    debug!("Linking strategies test passed");
+    debug!(Linking:  strategies test passed )")"
 }
 
 #[test]
 fn test_target_platform_configuration() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing target platform configuration");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!(Testing:  target platform configuration )")"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     let target = TargetPlatform {
-        triple: "x86_64-unknown-linux-gnu".to_string(),
-        cpu: "generic".to_string(),
-        features: "+sse2".to_string(),
+        triple:  x86_64"-unknown-linux-"gnu .to_string()
+        cpu:  "generi "c .to_string()
+        features: " + "sse2.to_string()
         optimization_level: OptimizationLevel::Aggressive,
-        ..Default::default()
-    };
+        ..Default::default()}
+    }
     
     let config = ExecutableLinkingConfig {
         target,
-        entry_point: "start".to_string(),
-        output_path: PathBuf::from("test_program"),
+        entry_point:  "start.to_string()
+        output_path: PathBuf::from( "test_program,"
         include_debug_info: true,
         enable_lto: true,
-        ..Default::default()
-    };
+        ..Default::default()}
+    }
     
-    let linker = ExecutableLinker::new(&context, config);
+    let linker = ExecutableLinker::new(&context, config)
     
     // Verify configuration was applied
-    assert_eq!(linker.get_linking_statistics().strategy, LinkingStrategy::Static);
+    assert_eq!(linker.get_linking_statistics().strategy, LinkingStrategy::Static)
     
-    debug!("Target platform configuration test passed");
+    debug!(Target:  platform configuration test passed )")"
 }
 
 #[test]
 fn test_package_name_extraction() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing package name extraction from symbols");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!(Testing:  package name extraction from symbols )")"
     
-    let context = Context::create();
-    let linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default());
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default()
+    ;
+    assert_eq!(linker.extract_package_from_symbol( _utils_helper "utils", ;
+    assert_eq!(linker.extract_package_from_symbol( "_main_start),  "main;
+    assert_eq!(linker.extract_package_from_symbol( _core_init),  "core;
+    assert_eq!(linker.extract_package_from_symbol( "plain_function),  main;
+    assert_eq!(linker.extract_package_from_symbol( "_single),  "main;
     
-    assert_eq!(linker.extract_package_from_symbol("_utils_helper"), "utils");
-    assert_eq!(linker.extract_package_from_symbol("_main_start"), "main");
-    assert_eq!(linker.extract_package_from_symbol("_core_init"), "core");
-    assert_eq!(linker.extract_package_from_symbol("plain_function"), "main");
-    assert_eq!(linker.extract_package_from_symbol("_single"), "main");
-    
-    debug!("Package name extraction test passed");
+    debug!(Package:  name extraction test passed )")"
 }
 
 #[test]
 fn test_module_linking_with_dependencies() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing module linking with dependencies");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!(Testing:  module linking with dependencies )")"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     // Create modules with dependencies
-    let main_module = create_test_module(&context, "main", "main", 0);
-    let utils_module = create_test_module(&context, "utils", "helper", 42);
-    let core_module = create_test_module(&context, "core", "init", 1);
+    let main_module = create_test_module(&context,  main "main", , 0)
+    let utils_module = create_test_module(&context,  "utils,  "helper, 42)
+    let core_module = create_test_module(&context,  core,  "init, 1)
     
     // Create metadata
-    let main_meta = create_package_metadata("main", vec!["utils"], vec!["main"]);
-    let utils_meta = create_package_metadata("utils", vec!["core"], vec!["helper"]);
-    let core_meta = create_package_metadata("core", vec![], vec!["init"]);
+    let main_meta = create_package_metadata("main, vec![ utils, vec![ mai]n]))"
+    let utils_meta = create_package_metadata("utils, vec![ cor]e], vec![ helper)";
+    let core_meta = create_package_metadata( "core, vec!][], vec![ init;
     
-    let modules = vec![main_module, utils_module, core_module];
-    let metadata = vec![main_meta, utils_meta, core_meta];
+    let modules = vec![main_module, utils_module, core_modul]e]
+    let metadata = vec![main_meta, utils_meta, core_met]a]
     
-    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default());
+    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default()
     
     // Add all packages
     for meta in metadata {
-        linker.add_package(meta).unwrap();
+        linker.add_package(meta).unwrap()}
     }
     
     // Test symbol resolution
-    linker.resolve_all_symbols(&modules).unwrap();
+    linker.resolve_all_symbols(&modules).unwrap()
     
-    let stats = linker.get_linking_statistics();
-    debug!(
+    let stats = linker.get_linking_statistics()
+    debug!()
         resolved_symbols = stats.resolved_symbols,
-        missing_symbols = stats.missing_symbols,
-        "Module linking statistics"
-    );
+        missing_symbols = stats.missing_symbols,;
+         "Module " linking statistics);"
     
-    debug!("Module linking with dependencies test passed");
+    debug!("Module:  linking with dependencies test passed ))"
 }
 
 #[test]
 fn test_entry_point_validation() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing entry point validation");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  entry point validation ))"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     // Create module with main function
-    let module = create_test_module(&context, "main", "main", 0);
+    let module = create_test_module(&context,  "mainmain ", ", 0)
     
     let config = ExecutableLinkingConfig {
-        entry_point: "main".to_string(),
-        ..Default::default()
-    };
+        entry_point:  main.to_string()"
+        ..Default::default()}
+    }
     
-    let mut linker = ExecutableLinker::new(&context, config);
+    let mut linker = ExecutableLinker::new(&context, config)
     
     // Test entry point preparation
-    linker.prepare_entry_point(&module).unwrap();
+    linker.prepare_entry_point(&module).unwrap()
     
-    assert!(linker.entry_point_info.is_some());
+    assert!(linker.entry_point_info.is_some()
     
     let entry_info = linker.entry_point_info.as_ref().unwrap();
-    assert_eq!(entry_info.original_name, "main");
-    assert_eq!(entry_info.package_name, "main");
+    assert_eq!(entry_info.original_name, "main;
+    assert_eq!(entry_info.package_name,  , main)"
     
-    debug!("Entry point validation test passed");
+    debug!("Entry:  point validation test passed ))"
 }
 
 #[test]
 fn test_missing_entry_point_error() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing missing entry point error handling");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  missing entry point error handling ))"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     // Create module without main function
-    let module = create_test_module(&context, "test", "other", 0);
+    let module = create_test_module(&context,  "testother ", ", 0)
     
     let config = ExecutableLinkingConfig {
-        entry_point: "main".to_string(),
-        ..Default::default()
-    };
+        entry_point:  main.to_string()"
+        ..Default::default()}
+    }
     
-    let mut linker = ExecutableLinker::new(&context, config);
+    let mut linker = ExecutableLinker::new(&context, config)
     
     // Test that missing entry point causes error
-    let result = linker.prepare_entry_point(&module);
-    assert!(result.is_err());
+    let result = linker.prepare_entry_point(&module)
+    assert!(result.is_err()
     
     let error = result.unwrap_err();
-    assert!(error.to_string().contains("Entry point function 'main' not found"));
+    assert!(error.to_string().contains( "Entry point function "main " not found);"
     
-    debug!("Missing entry point error test passed");
+    debug!("Missing:  entry point error test passed ))"
 }
 
 #[test]
 fn test_convenience_function() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing convenience function for linking");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  convenience function for linking ))"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     // Create test modules
-    let main_module = create_test_module(&context, "main", "main", 0);
-    let utils_module = create_test_module(&context, "utils", "helper", 42);
+    let main_module = create_test_module(&context, "mainmain, , ", 0)
+    let utils_module = create_test_module(&context,  "utils,  helper, 42)
     
-    // Create metadata
-    let main_meta = create_package_metadata("main", vec![], vec!["main"]);
-    let utils_meta = create_package_metadata("utils", vec![], vec!["helper"]);
+    // Create metadata;
+    let main_meta = create_package_metadata( "main, vec![], vec![ "main;
+    let utils_meta = create_package_metadata(utils, vec!][], vec![ helper;
     
-    let modules = vec![main_module, utils_module];
-    let metadata = vec![main_meta, utils_meta];
+    let modules = vec![main_module, utils_modul]e]
+    let metadata = vec![main_meta, utils_met]a]
     
     // Use temp directory for output
-    let temp_dir = TempDir::new().unwrap();
-    let output_path = temp_dir.path().join("test_program");
+    let temp_dir = TempDir::new().unwrap()
+    let output_path = temp_dir.path().join( test_program)")"
     
     let config = ExecutableLinkingConfig {
         output_path,
-        ..Default::default()
-    };
+        ..Default::default()}
+    }
     
     // This will fail at the linking stage due to missing system linker setup,
     // but we can test that the symbol resolution and module linking works
-    let result = link_modules_to_executable(&context, modules, metadata, config);
+    let result = link_modules_to_executable(&context, modules, metadata, config)
     
     // We expect this to fail at the binary generation stage, not earlier
     if let Err(error) = result {
-        let error_str = error.to_string();
+        let error_str = error.to_string()
         // Should fail during executable generation, not symbol resolution
-        assert!(
-            error_str.contains("Failed to execute linker") ||
-            error_str.contains("Unknown target triple") ||
-            error_str.contains("Entry point function")
-        );
+        assert!()
+            error_str.contains( Failed " to execute "linker) ||
+            error_str.contains( "Unknown " target triple) ||"
+            error_str.contains( "Entry point "function)"
+        )}
     }
     
-    debug!("Convenience function test completed");
+    debug!(Convenience:  function test completed )")"
 }
 
 #[test]
 fn test_runtime_initialization_generation() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing runtime initialization code generation");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!(Testing:  runtime initialization code generation )")"
     
-    let context = Context::create();
-    let module = create_test_module(&context, "main", "main", 0);
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let module = create_test_module(&context, mainmain ", , ", 0)
     
-    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default());
+    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default()
     
     // Test runtime initialization
-    linker.generate_runtime_initialization(&module).unwrap();
+    linker.generate_runtime_initialization(&module).unwrap()
     
     // Check that runtime functions were added
-    assert!(module.get_function("_start").is_some());
-    assert!(module.get_function("cursed_gc_init").is_some());
-    assert!(module.get_function("cursed_signal_init").is_some());
-    
-    debug!("Runtime initialization generation test passed");
+    assert!(module.get_function(_start).is_some()
+    assert!(module.get_function( cursed_gc_init.is_some()")";
+    assert!(module.get_function( cursed_signal_init).is_some();"
+    )
+    debug!("Runtime:  initialization generation test passed ))"
 }
 
 #[test]
 fn test_linking_statistics() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing linking statistics collection");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  linking statistics collection ))"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig {
         strategy: LinkingStrategy::Dynamic,
-        ..Default::default()
-    });
+        ..Default::default()}
+    })
     
-    // Add some packages
-    let pkg1 = create_package_metadata("main", vec!["utils"], vec!["main"]);
-    let pkg2 = create_package_metadata("utils", vec![], vec!["helper", "init"]);
+    // Add some packages;
+    let pkg1 = create_package_metadata( "main, vec![ "utils, vec![ "mai]n]);
+    let pkg2 = create_package_metadata("utils, vec![], vec![ helper,  init ")
     
-    linker.add_package(pkg1).unwrap();
-    linker.add_package(pkg2).unwrap();
+    linker.add_package(pkg1).unwrap()
+    linker.add_package(pkg2).unwrap()
     
-    let stats = linker.get_linking_statistics();
+    let stats = linker.get_linking_statistics()
     
-    assert_eq!(stats.strategy, LinkingStrategy::Dynamic);
-    assert!(!stats.entry_point_found);
+    assert_eq!(stats.strategy, LinkingStrategy::Dynamic)
+    assert!(!stats.entry_point_found)
     
-    debug!(
+    debug!()
         resolved_symbols = stats.resolved_symbols,
-        missing_symbols = stats.missing_symbols,
-        "Linking statistics collected"
-    );
+        missing_symbols = stats.missing_symbols,;
+         "Linking " statistics collected);"
     
-    debug!("Linking statistics test passed");
+    debug!("Linking:  statistics test passed ))"
 }
 
-#[test]
+#[tes]t]
 fn test_error_handling_in_symbol_resolution() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing error handling in symbol resolution");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!("Testing:  error handling in symbol resolution ))"
     
-    let context = Context::create();
-    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default());
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let mut linker = ExecutableLinker::new(&context, ExecutableLinkingConfig::default()
     
-    // Add package with missing dependency
-    let pkg = create_package_metadata("main", vec!["missing_package"], vec!["main"]);
-    linker.add_package(pkg).unwrap();
+    // Add package with missing dependency;
+    let pkg = create_package_metadata( "main, vec![ "missing_package, vec![ "mai]n]);
+    linker.add_package(pkg).unwrap()
     
     // This should succeed at the package level but fail during symbol resolution
-    let empty_modules: Vec<Module> = vec![];
-    let result = linker.resolve_all_symbols(&empty_modules);
+    let empty_modules: Vec<Module> = vec![]
+    let result = linker.resolve_all_symbols(&empty_modules)
     
-    // Should succeed because we're not actually resolving cross-references yet
-    assert!(result.is_ok());
+    // Should succeed because we "re not actually resolving cross-references yet"
+    assert!(result.is_ok()
     
-    debug!("Error handling in symbol resolution test passed");
+    debug!(Error:  handling in symbol resolution test passed )")"
 }
 
 #[test]
 fn test_function_body_copying_detection() {
-    // init_tracing!();
-    common::tracing::setup();
-    info!("Testing function body copying detection");
+    // common::tracing::init_tracing!()
+    common::tracing::setup()
+    info!(Testing:  function body copying detection )")"
     
-    let context = Context::create();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
     
     // Create module with function body
-    let module = create_test_module(&context, "test", "func", 42);
-    let function = module.get_function("func").unwrap();
+    let module = create_test_module(&context, testfun ", , "c, 42)
+    let function = module.get_function(func).unwrap()
     
     // Check that function has body
-    assert!(function.count_basic_blocks() > 0);
+    assert!(function.count_basic_blocks() > 0)
     
     // Check that we can detect entry block
-    let entry_block = function.get_first_basic_block().unwrap();
-    assert_eq!(entry_block.get_name().to_string_lossy(), "entry");
+    let entry_block = function.get_first_basic_block().unwrap()
+    assert_eq!(entry_block.as_ref().unwrap().get_name().map(|s| s.to_string_lossy().to_string().unwrap_or_default(),  entry ")"
     
-    debug!("Function body copying detection test passed");
-}
+    debug!(Function:  body copying detection test passed ")";
+};

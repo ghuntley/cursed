@@ -10,11 +10,17 @@
 /// The implementation handles Gen Z slang syntax while generating efficient
 /// standard LLVM type operations with proper memory safety and performance.
 
-use crate::ast::declarations::{SquadStatement, CollabStatement, FieldStatement, MethodDeclaration};
+use crate::ast::declarations::{SquadStatement, CollabStatement, FieldStatement, MethodDeclaration, GenericConstraint};
 use crate::ast::identifiers::Identifier;
 use crate::ast::types::{TypeExpression, Type, StructType, InterfaceType};
 use crate::ast::traits::{Node, Expression};
 use crate::error::Error;
+use crate::type_system::{
+    TypeSystem, TypeEnvironment, GenericInstantiator,
+    TypeInference, TypeSubstitution, TypeExpression as TypeSystemExpression
+    // Disabled imports for simplified AST compatibility:
+    // ConstraintResolver, ConstraintSolution (require expanded constraint system)
+};
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -81,6 +87,24 @@ pub struct CompiledGenericInstance {
     pub compiled_type: String,
 }
 
+/// Compiled generic type with constraint information
+#[derive(Debug, Clone)]
+pub struct CompiledGenericType {
+    pub name: String,
+    pub type_parameters: Vec<String>,
+    pub constraints: Vec<CompiledConstraint>,
+    pub instantiations: HashMap<String, CompiledGenericInstance>,
+    pub llvm_template: String,
+}
+
+/// Compiled type constraint
+#[derive(Debug, Clone)]
+pub struct CompiledConstraint {
+    pub param_name: String,
+    pub constraint_type: String,
+    pub constraint_methods: Vec<String>,
+}
+
 /// Type compilation context for managing state
 #[derive(Debug)]
 pub struct TypeCompilationContext {
@@ -88,6 +112,10 @@ pub struct TypeCompilationContext {
     current_module: String,
     compilation_order: Vec<String>,
     errors: Vec<String>,
+    /// Integrated type system for constraint resolution and inference
+    type_system: TypeSystem,
+    /// Generic type compilation cache
+    generic_cache: HashMap<String, CompiledGenericType>,
 }
 
 impl LlvmTypeRegistry {
@@ -143,7 +171,106 @@ impl TypeCompilationContext {
             current_module: module_name,
             compilation_order: Vec::new(),
             errors: Vec::new(),
+            type_system: TypeSystem::new(),
+            generic_cache: HashMap::new(),
         }
+    }
+
+    /// Create context with existing type system
+    pub fn with_type_system(module_name: String, type_system: TypeSystem) -> Self {
+        Self {
+            registry: LlvmTypeRegistry::new(),
+            current_module: module_name,
+            compilation_order: Vec::new(),
+            errors: Vec::new(),
+            type_system,
+            generic_cache: HashMap::new(),
+        }
+    }
+
+    /// Compile a generic type with constraint resolution
+    pub fn compile_generic_type(
+        &mut self, 
+        name: &str,
+        type_parameters: &[String],
+        constraints: &[GenericConstraint]
+    ) -> Result<CompiledGenericType, Error> {
+        // Validate constraints using type system (simplified for now)
+        for constraint in constraints {
+            self.type_system.check_constraints(
+                &TypeSystemExpression::Named(constraint.constraint_name.clone()),
+                constraints,
+            )?;
+        }
+
+        // Compile constraints to LLVM representation
+        let compiled_constraints = constraints.iter()
+            .map(|c| self.compile_constraint(c))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        // Generate LLVM template
+        let llvm_template = self.generate_generic_template(name, type_parameters, &compiled_constraints)?;
+
+        let compiled_generic = CompiledGenericType {
+            name: name.to_string(),
+            type_parameters: type_parameters.to_vec(),
+            constraints: compiled_constraints,
+            instantiations: HashMap::new(),
+            llvm_template,
+        };
+
+        self.generic_cache.insert(name.to_string(), compiled_generic.clone());
+        Ok(compiled_generic)
+    }
+
+    /// Instantiate a generic type with concrete type arguments
+    pub fn instantiate_generic(
+        &mut self,
+        base_name: &str,
+        type_args: &[String]
+    ) -> Result<CompiledGenericInstance, Error> {
+        // Get the generic type
+        let generic_type = self.generic_cache.get(base_name)
+            .ok_or_else(|| Error::TypeCompilation(format!("Generic type '{}' not found", base_name)))?
+            .clone();
+
+        // Create type substitution map
+        let substitutions: HashMap<String, String> = generic_type.type_parameters
+            .iter()
+            .zip(type_args.iter())
+            .map(|(param, arg)| (param.clone(), arg.clone()))
+            .collect();
+
+        // Validate constraints with concrete types
+        self.validate_generic_constraints(&generic_type, &substitutions)?;
+
+        // Generate instance name
+        let instance_name = format!("{}_{}", base_name, type_args.join("_"));
+
+        // Check if already instantiated
+        if let Some(existing) = generic_type.instantiations.get(&instance_name) {
+            return Ok(existing.clone());
+        }
+
+        // Perform type substitution in LLVM template
+        let instantiated_llvm = self.substitute_types_in_template(
+            &generic_type.llvm_template,
+            &substitutions
+        )?;
+
+        let instance = CompiledGenericInstance {
+            base_name: base_name.to_string(),
+            concrete_types: type_args.to_vec(),
+            instance_name: instance_name.clone(),
+            compiled_type: instantiated_llvm,
+        };
+
+        // Cache the instantiation
+        if let Some(cached_generic) = self.generic_cache.get_mut(base_name) {
+            cached_generic.instantiations.insert(instance_name, instance.clone());
+        }
+
+        Ok(instance)
     }
 
     /// Compile a struct declaration to LLVM types
@@ -501,6 +628,172 @@ impl TypeCompilationContext {
     /// Get the type registry
     pub fn registry(&self) -> &LlvmTypeRegistry {
         &self.registry
+    }
+
+    /// Compile a generic constraint to LLVM representation
+    fn compile_constraint(&self, constraint: &GenericConstraint) -> Result<CompiledConstraint, Error> {
+        let param_name = constraint.type_parameters.first()
+            .unwrap_or(&"T".to_string()).clone();
+        let constraint_type = constraint.constraint_name.clone();
+        
+        // Extract required methods from constraint
+        let constraint_methods = match constraint.constraint_name.as_str() {
+            "Comparable" => vec!["compare".to_string(), "equals".to_string()],
+            "Hashable" => vec!["hash".to_string()],
+            "Printable" => vec!["to_string".to_string()],
+            "Numeric" => vec!["add".to_string(), "subtract".to_string(), "multiply".to_string()],
+            _ => vec![], // Interface constraints would have their methods
+        };
+
+        Ok(CompiledConstraint {
+            param_name,
+            constraint_type,
+            constraint_methods,
+        })
+    }
+
+    /// Generate LLVM template for generic type
+    fn generate_generic_template(
+        &self,
+        name: &str,
+        type_parameters: &[String],
+        constraints: &[CompiledConstraint]
+    ) -> Result<String, Error> {
+        let mut template = String::new();
+        
+        // Generate parameterized struct definition
+        template.push_str(&format!("; Generic type template for {}\n", name));
+        template.push_str(&format!("%struct.{}_template = type {{ ", name));
+        
+        // Add placeholder fields for type parameters
+        let param_placeholders: Vec<String> = type_parameters.iter()
+            .map(|param| format!("%TYPE_{}", param.to_uppercase()))
+            .collect();
+        
+        template.push_str(&param_placeholders.join(", "));
+        template.push_str(" }\n\n");
+        
+        // Generate constraint checking functions
+        for constraint in constraints {
+            template.push_str(&self.generate_constraint_check_template(constraint)?);
+        }
+        
+        Ok(template)
+    }
+
+    /// Generate constraint checking template
+    fn generate_constraint_check_template(&self, constraint: &CompiledConstraint) -> Result<String, Error> {
+        let mut template = String::new();
+        
+        template.push_str(&format!(
+            "; Constraint check template for {} : {}\n",
+            constraint.param_name, constraint.constraint_type
+        ));
+        
+        for method in &constraint.constraint_methods {
+            template.push_str(&format!(
+                "declare %TYPE_{}* @{}_{}_%TYPE_{}(%TYPE_{}*)\n",
+                constraint.param_name.to_uppercase(),
+                constraint.constraint_type.to_lowercase(),
+                method,
+                constraint.param_name.to_uppercase(),
+                constraint.param_name.to_uppercase()
+            ));
+        }
+        
+        template.push_str("\n");
+        Ok(template)
+    }
+
+    /// Validate generic constraints with concrete types
+    fn validate_generic_constraints(
+        &self,
+        generic_type: &CompiledGenericType,
+        substitutions: &HashMap<String, String>
+    ) -> Result<(), Error> {
+        for constraint in &generic_type.constraints {
+            let concrete_type = substitutions.get(&constraint.param_name)
+                .ok_or_else(|| Error::TypeCompilation(format!(
+                    "Missing concrete type for parameter '{}'", constraint.param_name
+                )))?;
+            
+            // Check if concrete type satisfies constraint
+            match constraint.constraint_type.as_str() {
+                "Comparable" => {
+                    if !self.type_implements_comparable(concrete_type) {
+                        return Err(Error::TypeCompilation(format!(
+                            "Type '{}' does not implement Comparable constraint", concrete_type
+                        )));
+                    }
+                },
+                "Hashable" => {
+                    if !self.type_implements_hashable(concrete_type) {
+                        return Err(Error::TypeCompilation(format!(
+                            "Type '{}' does not implement Hashable constraint", concrete_type
+                        )));
+                    }
+                },
+                "Numeric" => {
+                    if !self.type_implements_numeric(concrete_type) {
+                        return Err(Error::TypeCompilation(format!(
+                            "Type '{}' does not implement Numeric constraint", concrete_type
+                        )));
+                    }
+                },
+                _ => {
+                    // Check interface constraint
+                    if !self.registry.has_type(&constraint.constraint_type) {
+                        return Err(Error::TypeCompilation(format!(
+                            "Unknown constraint type: {}", constraint.constraint_type
+                        )));
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Substitute types in LLVM template
+    fn substitute_types_in_template(
+        &self,
+        template: &str,
+        substitutions: &HashMap<String, String>
+    ) -> Result<String, Error> {
+        let mut result = template.to_string();
+        
+        for (param, concrete_type) in substitutions {
+            let placeholder = format!("%TYPE_{}", param.to_uppercase());
+            let (llvm_type, _) = self.map_cursed_type_to_llvm(concrete_type)?;
+            result = result.replace(&placeholder, &llvm_type);
+        }
+        
+        Ok(result)
+    }
+
+    /// Check if type implements Comparable
+    fn type_implements_comparable(&self, type_name: &str) -> bool {
+        matches!(type_name, "normie" | "tea" | "facts")
+    }
+
+    /// Check if type implements Hashable
+    fn type_implements_hashable(&self, type_name: &str) -> bool {
+        matches!(type_name, "normie" | "tea" | "facts")
+    }
+
+    /// Check if type implements Numeric
+    fn type_implements_numeric(&self, type_name: &str) -> bool {
+        matches!(type_name, "normie")
+    }
+
+    /// Get access to type system for external use
+    pub fn type_system(&self) -> &TypeSystem {
+        &self.type_system
+    }
+
+    /// Get mutable access to type system
+    pub fn type_system_mut(&mut self) -> &mut TypeSystem {
+        &mut self.type_system
     }
 }
 

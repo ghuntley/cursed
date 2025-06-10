@@ -28,6 +28,7 @@ use crate::ast::{
 };
 use crate::core::type_checker::Type;
 use crate::error::Error;
+use crate::codegen::llvm::gc_integration::LlvmGcIntegration;
 use crate::debug::debug_symbols::DebugSymbolTable;
 
 /// Variable management for LLVM code generation
@@ -203,6 +204,58 @@ impl<'ctx> VariableManager<'ctx> {
         
         debug!(variable_name = %name, "Local variable allocated successfully");
         Ok(alloca)
+    }
+
+    /// Allocate GC-managed object
+    #[instrument(skip(self, gc_integration))]
+    pub fn allocate_gc_object(
+        &self, 
+        type_name: &str, 
+        gc_integration: &LlvmGcIntegration
+    ) -> Result<String, Error> {
+        debug!(type_name = %type_name, "Allocating GC-managed object");
+        
+        // Generate unique temporary variable for allocation
+        let temp_var = format!("%gc_obj_{}", self.variables.len());
+        
+        // Generate allocation IR through GC integration
+        let allocation_ir = gc_integration.generate_allocation_ir(type_name, &temp_var)?;
+        
+        // In a real implementation, this would be integrated into the IR generation
+        // For now, return the IR as a string for the caller to integrate
+        debug!(type_name = %type_name, temp_var = %temp_var, "GC object allocation prepared");
+        
+        Ok(allocation_ir)
+    }
+
+    /// Store value with GC write barrier
+    #[instrument(skip(self, pointer, value, gc_integration))]
+    pub fn store_with_write_barrier(
+        &self,
+        pointer: PointerValue<'ctx>,
+        value: BasicValueEnum<'ctx>,
+        gc_integration: Option<&LlvmGcIntegration>
+    ) -> Result<String, Error> {
+        debug!("Storing value with potential write barrier");
+        
+        let mut ir = String::new();
+        
+        // Check if write barrier is needed (if value is a pointer to GC object)
+        if let Some(gc) = gc_integration {
+            if value.is_pointer_value() {
+                let object_ptr = format!("{:?}", pointer);
+                let field_ptr = format!("{:?}", pointer);
+                let value_ptr = format!("{:?}", value);
+                
+                // Generate write barrier IR
+                ir.push_str(&gc.generate_write_barrier_ir(&object_ptr, &field_ptr, &value_ptr));
+            }
+        }
+        
+        // Generate the actual store instruction
+        ir.push_str(&format!("  store {:?}, {:?}\n", value, pointer));
+        
+        Ok(ir)
     }
 
     /// Allocate global variable
