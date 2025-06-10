@@ -11,47 +11,131 @@ use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 
+use std::any::Any;
 use std::collections::HashMap;
-use tracing::  {debug, info}
+use std::sync::Once;
+use tracing::{debug, info};
 
 /// Initialize tracing for tests
-fn init_test_tracing() {use std::sync::Once;}
-    static INIT: Once = Once::new(})
-    INIT.call_once(|| {tracing_subscriber::fmt(}))
-            .with_env_filter(debug);
-            .with_test_writer();
-            .init()})}
+fn init_test_tracing() {
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        tracing_subscriber::fmt()
+            .with_env_filter("debug")
+            .with_test_writer()
+            .init();
+    });
+}
 
 /// Parse a map literal from source code
-fn parse_map_literal() {let mut lexer = Lexer::new(source.to_string(};))
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;))
+fn parse_map_literal(source: &str) -> Result<HashLiteral, Error> {
+    let lexer = Lexer::new(source.to_string());
+    let mut parser = Parser::new(lexer)?;
     
-    // Parse as expression
-    let expr = parser.parse_expression()?)
+    let expression = parser.parse_expression()?;
     
-    // Downcast to HashLiteral
-    if let Some(hash_lit) = expr.as_any().downcast_ref::<HashLiteral>()     {Ok(hash_lit.clone(} else {Err(Error::from_str(Expressionis not a hash literal}"}))))
-    let test_cases = vec![(r#{# alice: 30,  bob: 25]#, 2,  "{1:  "# one, 2:  two, 3:  {# score: 95.5,  grade: 87.2}#, 2,  "{}#, 0,  empty,")}}
-        (r#, # value)#, 1,  ""
-    let test_cases = vec![(r#{# string_key: 42]#,  "")}
-        (r#{true:  # + ""fixed)}
-    let invalid_sources = vec![r## unclosed:]#,        // Missing value ""
-        r#{# ,  :}#,             // Missing "value
-        r#{# value "}
-    let program_source = r#", # : get_score(},  ")
-            yolo 0};";
-    assert!(is_valid.is_ok(), ", " to parse program with map and function , calls)
-    info!(")"
-    assert!(result.is_ok(), Failed to parse map with arithmetic , expressions)""}
-    let nested_source = r#{# outer: {inner:  value ", ":  structure parsing is supported}} else {info!(}")
-    let test_cases = vec![(r#{# : ", "]#,  {# key ", "}#,  extraspaces),"}
-        (r#"# key1:  # + "fixed)
-             multiline),"
-        (r#", # , key2: value2)#,  ", ":  whitespace: {}, description)
-        assert!(result.is_ok(), ", " have at least one )
-        info!(")"
-    info!(, ":  handling test passed)"{# name:  Alice,  , ":  NYC,  "active: true}#;
-    info!(Parsing:  performance test passed)";]"
-#[test], Singlepair parsing should work);,)""
-    assert!(test_results[ in program should work);"]
-    info!("]"fixed")
+    // Try to downcast to HashLiteral
+    if let Some(hash_literal) = expression.as_any().downcast_ref::<HashLiteral>() {
+        Ok(hash_literal.clone())
+    } else {
+        Err(Error::from_str("Expression is not a hash literal"))
+    }
+}
+
+#[test]
+fn test_basic_map_parsing() {
+    init_test_tracing();
+    info!("Starting basic map parsing test");
+    
+    let test_cases = vec![
+        (r#"#{alice: 30, bob: 25}"#, 2, "simple map"),
+        (r#"#{1: "one", 2: "two", 3: "three"}"#, 3, "numeric keys"),
+        (r#"#{score: 95.5, grade: 87.2}"#, 2, "float values"),
+        (r#"#{}"#, 0, "empty map"),
+    ];
+    
+    for (source, expected_count, description) in test_cases {
+        debug!("Testing: {}", description);
+        let result = parse_map_literal(source);
+        assert!(result.is_ok(), "Failed to parse {}: {}", description, source);
+        
+        let hash_literal = result.unwrap();
+        assert_eq!(hash_literal.pairs.len(), expected_count, 
+                  "Expected {} pairs for {}", expected_count, description);
+        info!("✓ {} test passed", description);
+    }
+}
+
+#[test]
+fn test_invalid_map_syntax() {
+    init_test_tracing();
+    info!("Starting invalid map syntax test");
+    
+    let invalid_sources = vec![
+        r#"#{unclosed: value"#,     // Missing closing brace
+        r#"#{,key: value}"#,        // Missing key
+        r#"#{key:}"#,              // Missing value
+        r#"#{key value}"#,         // Missing colon
+    ];
+    
+    for source in invalid_sources {
+        debug!("Testing invalid syntax: {}", source);
+        let result = parse_map_literal(source);
+        assert!(result.is_err(), "Expected error for invalid syntax: {}", source);
+        info!("✓ Invalid syntax correctly rejected: {}", source);
+    }
+}
+
+#[test]
+fn test_nested_map_parsing() {
+    init_test_tracing();
+    info!("Starting nested map parsing test");
+    
+    let nested_source = r#"#{outer: #{inner: "value"}, other: "test"}"#;
+    let result = parse_map_literal(nested_source);
+    assert!(result.is_ok(), "Failed to parse nested map structure");
+    
+    let hash_literal = result.unwrap();
+    assert_eq!(hash_literal.pairs.len(), 2, "Expected 2 pairs in nested structure");
+    info!("✓ Nested structure parsing test passed");
+}
+
+#[test]
+fn test_map_with_whitespace() {
+    init_test_tracing();
+    info!("Starting whitespace handling test");
+    
+    let test_cases = vec![
+        (r#"#{ key1: "value1" }"#, 1, "spaces around braces"),
+        (r#"#{key1:"value1",key2:"value2"}"#, 2, "no spaces"),
+        (r#"#{"
+            key1: "value1",
+            key2: "value2"
+        }"#, 2, "multiline formatting"),"
+    ];
+    
+    for (source, expected_count, description) in test_cases {
+        debug!("Testing whitespace: {}", description);
+        let result = parse_map_literal(source);
+        assert!(result.is_ok(), "Failed to parse map with {}", description);
+        
+        let hash_literal = result.unwrap();
+        assert_eq!(hash_literal.pairs.len(), expected_count,
+                  "Expected {} pairs for {}", expected_count, description);
+        info!("✓ {} test passed", description);
+    }
+}
+
+#[test]
+fn test_complex_map_parsing() {
+    init_test_tracing();
+    info!("Starting complex map parsing test");
+    
+    let complex_source = r#"#{name: "Alice", age: 30, city: "NYC", active: true}"#;
+    let result = parse_map_literal(complex_source);
+    assert!(result.is_ok(), "Failed to parse complex map");
+    
+    let hash_literal = result.unwrap();
+    assert!(hash_literal.pairs.len() >= 4, "Expected at least 4 pairs in complex map");
+    info!("✓ Complex map parsing test passed");
+}

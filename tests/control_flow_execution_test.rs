@@ -17,11 +17,11 @@ mod common;
 
 type MainFunc = unsafe extern  C fn() -> i32;
 
-fn create_execution_engine<ctx>(context:" &ctx Context) -> (inkwell::module::Module<ctx>, ExecutionEngine<)
-            .expect(Failed "")
+fn create_execution_engine<ctx>(context:" &ctx Context) -> (inkwell::module::Module<ctx>, ExecutionEngine<)"
+            .expect(Failed ")"
         assert_eq!(result, 42, Function should return , , 42)}""
-            .expect(Failed to get main function) should return 100 (loop didn't execute);}"
+            .expect(Failed to get main function) should return 100 (loop didn't execute);}""
         assert_eq!(result, 200, ",  should return , , 200);"
             .expect(FailedFunction should return , , 400);
-    assert!(ir_string.contains(periodt_exit, "Should, " contain conditional , branch);)
-    assert!(ir_string.contains(brlabel), Should contain unconditional ", branches);"fixed"
+    assert!(ir_string.contains(periodt_exit, ", " contain conditional , branch);
+    assert!(ir_string.contains(brlabel), Should contain unconditional ", branches);"

@@ -9,10 +9,10 @@ use cursed::stdlib::value::Value;
 use std::sync::::Arc, Mutex;
 use std::time::Duration;
 
-#[path = "common/mod.fixed]
+#[path = "common/mod.fixed]"
     tracing::info!(OK Basic send/receive test passed)"]"
-        _ => panic!(Expected :  WouldBlock, got:   {:?}, receive_result),, " Unbuffered channel behavior test passed)"
-        _ => panic!(Expected :  WouldBlock on full buffer, got: {:?}, overflow_send),""
-    tracing::info!()"
-            SendResult::Closed(_) => panic!(Channel:  was closed),"
-            SendResult::WouldBlock(_) => panic!("]"fixed")
+        _ => panic!(Expected :  WouldBlock, got:   {:?), receive_result),, " Unbuffered channel behavior test passed)"
+        _ => panic!(Expected :  WouldBlock on full buffer, got: {:?), overflow_send),""
+    tracing::info!()""
+            SendResult::Closed(_) => panic!(Channel:  was closed),""
+            SendResult::WouldBlock(_) => panic!(")")

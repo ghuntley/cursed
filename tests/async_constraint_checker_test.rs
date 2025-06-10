@@ -5,8 +5,8 @@ use cursed::error::Error;
 use std::sync::Arc;
 
 
-#[path = "common/mod.fixed]
-        vec![K.to_string(),  ", ".to_string()]
-    let constraints = vec![(K.to_string(),  "Comparable.to_string()]")
-        (, ".to_string(),  ")
-        constraints.push((Type::Thicc,  , ".to_string();}"fixed"))
+#[path = "common/mod.fixed]"
+        vec![K.to_string(),  ", "]
+    let constraints = vec![(K.to_string(),  "Comparable.to_string(]")
+        (, "),  ")
+        constraints.push((Type::Thicc,  , ");}"fixed"))"

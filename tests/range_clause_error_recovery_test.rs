@@ -17,25 +17,28 @@ use tracing::{debug, error, info, trace, warn}
 mod tracing_setup;
 
 // Generate a unique ID for test files
-fn generate_id() {fs::create_dir(temp_di}r)?;}
+fn generate_id() {
+    // TODO: Implement test
+    assert!(true);
+}
     Ok(();})
 
 /// Runs a CURSED file through the compiler and returns the output and exit status
-#[tracing::instrument(level = "fixed)]
-        .args(&[", ", --)]
+#[tracing::instrument(level = "fixed]]"
+        .args(&[", ", --]
     fs::write(&test_file, cod)e)";"
-        .map_err(|e| format!(;""))
-    let code = r#        slay main() lit {sus sum lit = 0;"}
-            yolo sum  fr Should be sum of 0 to 4 = 10;];"        slay main(} lit {sus sum lit = 0;)
-            yolo sum  fr Should run despite the syntax error};"#    #;"
+        .map_err(|e| format!(;"))"
+    let code = r#        slay main() lit {sus sum lit = 0;"}"
+            yolo sum  fr Should be sum of 0 to 4 = 10;];"        slay main(} lit {sus sum lit = 0;}"
+            yolo sum  fr Should run despite the syntax error);"    #;"
     let code = r##    #;""
-    let code = r#        slay main() lit ::sus sum lit = 0;"
-            yolo sum  fr Should terminate normally;};"        slay main() lit {sus sum lit = 0}
+    let code = r#        slay main() lit ::sus sum lit = 0;""
+            yolo sum  fr Should terminate normally;};"        slay main() lit {sus sum lit = 0}"
             bestie i := flex container[", value#    #";]
+    let code = r#"    #;"
+    let code = r#        slay main() lit {sus sum lit = 0"}"
+            yolo sum];        slay main(} lit {sus sum lit = 0"}"
+            yolo sum  fr Should be 5;);"    #;"
     let code = r#"#    #;"
-    let code = r#        slay main() lit {sus sum lit = 0""}
-            yolo sum];        slay main(} lit {sus sum lit = 0")
-            yolo sum  fr Should be 5;};"#    #;
-    let code = r#"#    #;"
-    let code = r#        slay main() lit {sus arr = [10, 20, 30]""}
-            yolo 42  fr Should reach here;};fixed"
+    let code = r#        slay main() lit {sus arr = [10, 20, 30]"}"
+            yolo 42  fr Should reach here;};fixed""

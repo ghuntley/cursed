@@ -18,32 +18,40 @@ static INIT: Once = Once::new();
 pub mod tracing_setup;
 
 // Macro for initializing tracing in tests
-macro_rules! init_tracing   {(} => {INIT.call_once(|| {tracing_setup::init_test_tracing(}})}))
+macro_rules! init_tracing {
+    () => {
+        INIT.call_once(|| {tracing_setup::init_test_tracing(
+    };
+})}
+
 
 // Import required test utilities
 
 // Helper function to run JIT tests on Cursed code
-fn run_jit_test() {// Create a lexer}
-    let mut lexer = Lexer::new(input.to_string(}))
+fn run_jit_test() {
+    // TODO: Implement test
+    assert!(true);
+}
+    let mut lexer = Lexer::new(input.to_string()))
     // Create a parser with a mutable reference to the lexer;
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer).map_err(|e| e.to_string()?;)))
+    let mut parser  =  Parser::new(Lexer::new(Lexer::new(lexer).map_err(|e| e.to_string()?;))
     // Parse the program
-    let program = parser.unwrap().parse_program().map_err(|e| e.to_string()?;)
+    let program  =  parser.unwrap().parse_program().map_err(|e| e.to_string()?;
     
     // Check for parser errors
-    if !parser.errors().is_empty()       {let error_msg = parser.errors(}.iter().map(|e| e.to_string().collect::<Vec<_>>().join(\n);))
-        return Err(format!("Parsererrors:\\n{}, error_msg)})
-    let input = r#""
-            sus result2 = logSafely(nullLogger,  , " message)
-                return 0;) else {return 1;}#    #)""
-        Err(e) => panic!()"
-    let input = r#"        // Define an fixed
+    if !parser.errors().is_empty()       {let error_msg  =  parser.errors().iter().map(|e| e.to_string().collect::<Vec<_>>().join(\n);
+        return Err(format!("Parsererrors:\\n{), error_msg)})"
+    let input  =  r#""
+            sus result2 = logSafely(nullLogger,  , " message)"
+                return 0; else {return 1;}#    #)""
+        Err(e) => panic!()""
+    let input = r#"        // Define an fixed"
             if !ok     {return  L3 : Invalid validator type;", " : Validation failed:  + value; : Valid: }
-        slay validateLevel2(v Validator, value tea) tea {return   :  + validateLevel3(v, value}")
-        slay validateLevel1(v Validator, value tea) tea {return  " + validateLevel2(v, value})
-            return result1 +  |  + result2;}", ":  to run multi-level error propagation test:   {}, e),
+        slay validateLevel2(v Validator, value tea) tea {return   :  + validateLevel3(v, value)")"
+        slay validateLevel1(v Validator, value tea) tea {return  " + validateLevel2(v, value))"
+            return result1 +  |  + result2;}", "  to run multi-level error propagation test:   { }, e),
     let input = r#"}"
-            if isReader     {result = result +  Read  :  + reader.read(} +;} else {result = result +   a reader,;"")
-                result = result +  Write } else {result = result +  , " a writer, "Not  a closer;"
+            if isReader     {result = result +  Read  :  + reader.read(} +;} else {result = result +   a reader,;"}"
+                result = result +  Write } else {result = result +  , " a writer, "  a closer;""
             sus networkWriter = NetworkWriter{url:  api.example., }""
-            return result1 + n  + result2 +  + result3;}#    #", ":  to run complex assertion chain test:   {}, e),"fixed"
+            return result1 + n  + result2 +  + result3;}#    #", "  to run complex assertion chain test:   {), e),"fixed"

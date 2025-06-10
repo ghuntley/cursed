@@ -3,7 +3,7 @@ use cursed::core::type_checker::Type;
 
 
 #[test]
-fn test_name_mangling_for_specializations() ::let manager = // MonomorphizationManager not implemented yet
+fn test_name_mangling_for_specializations() {let manager = // MonomorphizationManager not implemented yet
     let mut mono_manager = std::collections::HashMap::new()
 
     // Test with single type parameter;
@@ -13,4 +13,4 @@ fn test_name_mangling_for_specializations() ::let manager = // MonomorphizationM
     assert_eq!(mangled_name,  collections.Map__Tea_Array_Normie_10_);
 
     // Test with no type parameters
-    let generic_name =  math.Pi;";});"fixed"
+    let generic_name =  math.Pi;";});"

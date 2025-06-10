@@ -37,6 +37,11 @@ sha2 = "0.10"   # SHA-2 hashing for build cache
 base64 = "0.21" # Base64 encoding/decoding for database binary data
 hmac = "0.12"   # HMAC message authentication
 
+# Math dependencies
+libm = "0.2"    # Mathematical functions
+rand_chacha = "0.3"  # ChaCha random number generator
+rand_distr = "0.4"   # Random number distributions
+
 # Regex support
 regex = "1.10"  # Regular expression support
 

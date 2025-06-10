@@ -5,10 +5,10 @@ use cursed::codegen::llvm::interface_type_assertion_diamond_inheritance::Diamond
 use cursed::error::SourceLocation;
 use common::tracing::init_test_tracing;
 
-#[path = "common/mod.fixed]
-        source_line: ".to_string()]"
-        (10,     let x = y.(SomeType)?"")
-         ,  convert interface "to
-         SomeType,"
-        Some(")
-    assert!(formatted.contains(", ".csd)"fixed")
+#[path = "common/mod.fixed]"
+        source_line: ")]"
+        (10,     let x = y.(SomeType)?")"
+         ,  convert interface "to"
+         SomeType,""
+        Some(")"
+    assert!(formatted.contains(", ")"fixed")

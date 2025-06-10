@@ -412,7 +412,7 @@ mod tests {
 
     #[test]
     fn test_gdb_command_generation() {
-        let debug_manager = DebugInfoManager::new(DebugConfig::default());
+        let debug_manager = DebugInfoManager::new();
         let executable = PathBuf::from("/tmp/test_program");
         
         let commands = DebugUtils::generate_gdb_commands(&executable, &debug_manager);

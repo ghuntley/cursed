@@ -1,166 +1,89 @@
-// String Manipulation Demo for CURSED
-// This example demonstrates comprehensive string operations
+#!/usr/bin/env cursed
 
-import "stdlib";
+// Comprehensive string manipulation demo for CURSED
+// Shows all the string functions available in stdlib
 
-fn main() {
-    println("=== CURSED String Manipulation Demo ===\n")?;
-    
-    // Core operations
-    demo_core_operations();
-    
-    // Search and replace
-    demo_search_operations();
-    
-    // Transformations
-    demo_transformations();
-    
-    // Splitting and joining
-    demo_splitting_joining();
-    
-    // Validation
-    demo_validation();
-    
-    // Formatting
-    demo_formatting();
-}
+import "stdlib::string"
 
-fn demo_core_operations() {
-    println("🔧 Core String Operations:")?;
+slay main() {
+    facts message = "hello world"
     
-    sus text = "Hello, World! 🦀";
+    // Basic operations
+    println("=== Basic String Operations ===")
+    printf("Length: {}\n", &[Value::Integer(length(&message) as i64)])
+    printf("Is empty: {}\n", &[Value::Boolean(is_empty(&message))])
+    printf("Repeated 3 times: {}\n", &[Value::String(repeat(&message, 3))])
+    printf("Reversed: {}\n", &[Value::String(reverse(&message))])
+    printf("Char at index 1: {}\n", &[match char_at(&message, 1) {
+        Some(c) => Value::String(c.to_string()),
+        None => Value::String("None".to_string())
+    }])
     
-    printf("Original: '{}'\n", &[text])?;
-    printf("Length: {} characters\n", &[length(text).to_string()])?;
-    printf("Reversed: '{}'\n", &[reverse(text)])?;
-    printf("Repeated 3x: '{}'\n", &[repeat("CURSED", 3)])?;
-    printf("Character at index 7: '{}'\n", &[char_at(text, 7).unwrap_or(' ').to_string()])?;
-    printf("Is ASCII: {}\n", &[is_ascii(text).to_string()])?;
-    println("")?;
-}
-
-fn demo_search_operations() {
-    println("🔍 Search and Replace Operations:")?;
+    // Search operations
+    println("\n=== Search Operations ===")
+    printf("Contains 'world': {}\n", &[Value::Boolean(contains(&message, "world"))])
+    printf("Starts with 'hello': {}\n", &[Value::Boolean(starts_with(&message, "hello"))])
+    printf("Ends with 'world': {}\n", &[Value::Boolean(ends_with(&message, "world"))])
+    printf("Find 'world': {}\n", &[match find(&message, "world") {
+        Some(pos) => Value::Integer(pos as i64),
+        None => Value::Integer(-1)
+    }])
     
-    sus text = "The quick brown fox jumps over the lazy dog";
+    // Case conversions
+    println("\n=== Case Conversions ===")
+    printf("Uppercase: {}\n", &[Value::String(to_uppercase(&message))])
+    printf("Lowercase: {}\n", &[Value::String(to_lowercase(&message))])
+    printf("Title case: {}\n", &[Value::String(to_title_case(&message))])
+    printf("Capitalize: {}\n", &[Value::String(capitalize(&message))])
+    printf("Camel case: {}\n", &[Value::String(to_camel_case(&message))])
+    printf("Pascal case: {}\n", &[Value::String(to_pascal_case(&message))])
+    printf("Snake case: {}\n", &[Value::String(to_snake_case(&message))])
+    printf("Kebab case: {}\n", &[Value::String(to_kebab_case(&message))])
     
-    printf("Text: '{}'\n", &[text])?;
-    printf("Contains 'fox': {}\n", &[contains(text, "fox").to_string()])?;
-    printf("Starts with 'The': {}\n", &[starts_with(text, "The").to_string()])?;
-    printf("Ends with 'dog': {}\n", &[ends_with(text, "dog").to_string()])?;
-    printf("Position of 'fox': {}\n", &[find(text, "fox").unwrap_or(999).to_string()])?;
-    printf("Replace 'fox' with 'cat': '{}'\n", &[replace(text, "fox", "cat")])?;
-    printf("Count of 'the': {}\n", &[count_occurrences(text, "the").to_string()])?;
-    println("")?;
-}
-
-fn demo_transformations() {
-    println("🎨 String Transformations:")?;
+    // String transformations
+    println("\n=== String Transformations ===")
+    facts spaced_message = "   hello world   "
+    printf("Original: '{}'\\n", &[Value::String(spaced_message.to_string())])
+    printf("Trimmed: '{}'\\n", &[Value::String(trim(&spaced_message))])
+    printf("Trim start: '{}'\\n", &[Value::String(trim_start(&spaced_message))])
+    printf("Trim end: '{}'\\n", &[Value::String(trim_end(&spaced_message))])
     
-    sus text = "  Hello World Programming  ";
+    // Replace operations
+    println("\n=== Replace Operations ===")
+    facts test_str = "hello hello hello"
+    printf("Original: {}\n", &[Value::String(test_str.to_string())])
+    printf("Replace all 'hello' with 'hi': {}\n", &[Value::String(replace(&test_str, "hello", "hi"))])
+    printf("Replace first 'hello' with 'hi': {}\n", &[Value::String(replace_first(&test_str, "hello", "hi"))])
+    printf("Replace last 'hello' with 'hi': {}\n", &[Value::String(replace_last(&test_str, "hello", "hi"))])
+    printf("Replace 2 'hello' with 'hi': {}\n", &[Value::String(replace_n(&test_str, "hello", "hi", 2))])
+    printf("Count 'hello': {}\n", &[Value::Integer(count_occurrences(&test_str, "hello") as i64)])
     
-    printf("Original: '{}'\n", &[text])?;
-    printf("Trimmed: '{}'\n", &[trim(text)])?;
-    printf("Uppercase: '{}'\n", &[to_uppercase(trim(text))])?;
-    printf("Lowercase: '{}'\n", &[to_lowercase(trim(text))])?;
-    printf("Title Case: '{}'\n", &[to_title_case(trim(text))])?;
-    printf("Camel Case: '{}'\n", &[to_camel_case(trim(text))])?;
-    printf("Snake Case: '{}'\n", &[to_snake_case(trim(text))])?;
-    printf("Kebab Case: '{}'\n", &[to_kebab_case(trim(text))])?;
-    printf("Substring (0,5): '{}'\n", &[substring(trim(text), 0, 5).unwrap_or("ERROR".to_string())])?;
-    println("")?;
-}
-
-fn demo_splitting_joining() {
-    println("✂️ Splitting and Joining:")?;
+    // Concatenation operations
+    println("\n=== Concatenation Operations ===")
+    facts strings = vec!["hello", " ", "beautiful", " ", "world"]
+    printf("Concatenated: {}\n", &[Value::String(concat(&strings))])
     
-    sus csv_data = "name,age,city,country";
-    sus sentence = "The quick brown fox jumps";
+    // Unicode and special characters
+    println("\n=== Unicode Support ===")
+    facts unicode_str = "café 🦀 русский"
+    printf("Unicode string: {}\n", &[Value::String(unicode_str.to_string())])
+    printf("Length (chars): {}\n", &[Value::Integer(length(&unicode_str) as i64)])
+    printf("Uppercase: {}\n", &[Value::String(to_uppercase(&unicode_str))])
+    printf("Lowercase: {}\n", &[Value::String(to_lowercase(&unicode_str))])
+    printf("Is ASCII: {}\n", &[Value::Boolean(is_ascii(&unicode_str))])
     
-    printf("CSV: '{}'\n", &[csv_data])?;
-    facts csv_parts = split(csv_data, ",");
-    printf("Split by comma: {:?}\n", &[format!("{:?}", csv_parts)])?;
-    
-    printf("Sentence: '{}'\n", &[sentence])?;
-    facts words = split_whitespace(sentence);
-    printf("Words: {:?}\n", &[format!("{:?}", words)])?;
-    printf("Joined with ' | ': '{}'\n", &[join(&words.iter().map(|s| s.as_str()).collect::<Vec<_>>(), " | ")])?;
-    
-    facts (before, sep, after) = partition(sentence, "brown");
-    printf("Partition by 'brown': before='{}', sep='{}', after='{}'\n", &[before, sep, after])?;
-    
-    facts chunks = chunk(sentence, 5).unwrap_or(vec![]);
-    printf("Chunks of 5: {:?}\n", &[format!("{:?}", chunks)])?;
-    println("")?;
-}
-
-fn demo_validation() {
-    println("✅ String Validation:")?;
-    
-    sus numbers = vec!["123", "123.45", "abc", "-42"];
-    sus emails = vec!["user@example.com", "invalid.email", "test@domain.co.uk"];
-    sus urls = vec!["https://example.com", "not-a-url", "ftp://files.example.com"];
-    
-    println("Number validation:")?;
-    for num in numbers {
-        printf("  '{}': numeric={}, integer={}\n", 
-               &[num.to_string(), is_numeric(num).to_string(), is_integer(num).to_string()])?;
+    // Error handling with substring
+    println("\n=== Substring Operations ===")
+    facts long_str = "abcdefghijklmnop"
+    match substring(&long_str, 2, 5) {
+        Ok(substr) => printf("Substring (2, 5): {}\n", &[Value::String(substr)]),
+        Err(e) => printf("Substring error: {}\n", &[Value::String(e.to_string())])
     }
     
-    println("Email validation:")?;
-    for email in emails {
-        printf("  '{}': valid={}\n", &[email.to_string(), is_email(email).to_string()])?;
+    match substring_range(&long_str, 5, 10) {
+        Ok(substr) => printf("Substring range (5..10): {}\n", &[Value::String(substr)]),
+        Err(e) => printf("Substring range error: {}\n", &[Value::String(e.to_string())])
     }
     
-    println("URL validation:")?;
-    for url in urls {
-        printf("  '{}': valid={}\n", &[url.to_string(), is_url(url).to_string()])?;
-    }
-    
-    // Special validations
-    printf("Palindrome 'racecar': {}\n", &[is_palindrome("racecar").to_string()])?;
-    printf("Balanced '((()))': {}\n", &[has_balanced_parentheses("((()))").to_string()])?;
-    printf("Balanced brackets '{{[()]}}': {}\n", &[has_balanced_brackets("{[()]}").to_string()])?;
-    println("")?;
-}
-
-fn demo_formatting() {
-    println("📐 String Formatting:")?;
-    
-    sus name = "CURSED";
-    sus description = "A powerful programming language with Gen Z slang";
-    
-    printf("Pad left (10): '{}'\n", &[pad_left(name, 10, ' ')])?;
-    printf("Pad right (10): '{}'\n", &[pad_right(name, 10, ' ')])?;
-    printf("Center (12): '{}'\n", &[center(name, 12, '*')])?;
-    
-    printf("Truncate (20): '{}'\n", &[truncate(description, 20, true)])?;
-    
-    // Table formatting
-    facts headers = vec!["Language", "Type", "Year"];
-    facts row1 = vec!["CURSED", "Systems", "2024"];
-    facts row2 = vec!["Rust", "Systems", "2010"];
-    facts row3 = vec!["Python", "Interpreted", "1991"];
-    
-    facts rows = vec![headers, row1, row2, row3];
-    facts table = format_table(&rows.iter().map(|row| row.iter().map(|s| s.as_str()).collect()).collect::<Vec<_>>(), " | ").unwrap_or(vec![]);
-    
-    println("Table formatting:")?;
-    for line in table {
-        printf("  {}\n", &[line])?;
-    }
-    
-    // Line numbering
-    sus code = "fn main() {\n    println(\"Hello\");\n}";
-    println("Code with line numbers:")?;
-    printf("{}\n", &[add_line_numbers(code, 1, ": ")])?;
-    
-    // Escaping
-    sus html = "<script>alert('xss')</script>";
-    printf("HTML escaped: '{}'\n", &[escape_html(html)])?;
-    
-    sus json_str = "Line 1\nLine 2\t\"quoted\"";
-    printf("JSON escaped: '{}'\n", &[escape_json(json_str)])?;
-    
-    println("")?;
+    println("\nString manipulation demo completed!")
 }

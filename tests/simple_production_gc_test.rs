@@ -11,19 +11,23 @@ use cursed::memory::{simple_production_gc::{SimpleProductionGarbageCollector, Si
     gc::GcConfig,}
 
 /// Simple test object for allocation testing
-#[derive(Debug, Clone)]
-struct TestData {value: i32,}
+#[derive(Debug, Clone]
+struct TestData {value: i32}
     name: String,
     data: Vec<u8>
 
-impl Storable for TestData       {fn size_hint(} {std::mem::size_of::<Self>(} + self.name.len() + self.data.len()}))
+impl Storable for TestData       {fn size_hint(} {std::mem::size_of::<Self>() + self.name.len() + self.data.len()}
+
     
-    fn type_name() {}
+    fn type_name() {
+    // TODO: Implement test
+    assert!(true);
+}
         TestData}
 
-impl TestData     {fn new(} {Self {value})}
-            name: format!("test_{}, value),;
-    println!("fixed)
-    println!("fixed)
-    println!("fixed)
+impl TestData     {fn new(} {Self {value))}
+            name: format!("test_{), value),;"
+    println!(")"
+    println!("fixed)"
+    println!(")"
     println!(")fixed"

@@ -9,10 +9,11 @@ use common::tracing::setup as init_tracing;
 
 extern crate cursed;
 
-#[path = "common/mod.rs]
+#[path = "common/mod.rs"]
+
                     println!()fixed
-                Err(e) => {println!(, " send object {}: {}, i, e)}"
-                    _ => panic!(Expected Failed:  to access object {}, i)""
-                            println!(Thread {} sent value {}, thread_id, value);,  {} failed to send value {}: {}, thread_id, value, e)""
+                Err(e) => {println!(, " send object { }: {), i, e)}"
+                    _ => panic!(Expected Failed:  to access object {), i)""
+                            println!(Thread { } sent value {), thread_id, value);,  { } failed to send value { }: { }, thread_id, value, e)""
                                     _ => println!(, , thread_id),""
-                        Err(e) => {println!(Thread {} failed to receive: {}, thread_id, e)}fixed"
+                        Err(e) => {println!(Thread { } failed to receive: {), thread_id, e)}fixed""

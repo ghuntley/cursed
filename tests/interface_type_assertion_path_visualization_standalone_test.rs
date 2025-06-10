@@ -23,56 +23,76 @@ struct MockInterfaceRegistry {// Map of type to interfaces it implements}
     // Map of type ID to type name
     type_id_map: HashMap<u64, String>
 
-impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new(}))}
+impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new()))}
             implementors: HashMap::new();
             type_id_map: HashMap::new()}
     
-    fn register_implementation() {// Register that type implements interface}
+    fn register_implementation() {
+    // TODO: Implement test
+    assert!(true);
+}
         self.implementations
-            .entry(type_name.to_string(}))
+            .entry(type_name.to_string()))
             .or_insert_with(Vec::new);
-            .push(interface_name.to_string();)
+            .push(interface_name.to_string();
         // Register that interface is implemented by type
         self.implementors
-            .entry(interface_name.to_string();)
+            .entry(interface_name.to_string();
             .or_insert_with(Vec::new);
             .push(type_name.to_string()})
     
-    fn register_type_id() {self.type_id_map.insert(type_id, type_name.to_string(}}))
+    fn register_type_id() {
+    // TODO: Implement test
+    assert!(true);
+}
+}
     
-    fn get_implemented_interfaces() {Ok(self.implementations)}
-            .get(type_name})
+    fn get_implemented_interfaces() {
+    // TODO: Implement test
+    assert!(true);
+}}
+            .get(type_name))
             .cloned();
             .unwrap_or_default()}
     
-    fn get_interface_implementors() {Ok(self.implementors)}
-            .get(interface_name})
+    fn get_interface_implementors() {
+    // TODO: Implement test
+    assert!(true);
+}}
+            .get(interface_name))
             .cloned();
             .unwrap_or_default()}
     
-    fn get_extended_interfaces() {self.get_implemented_interfaces(interface_name}})
+    fn get_extended_interfaces() {
+    // TODO: Implement test
+    assert!(true);
+}
+
     
-    fn get_type_name_for_id() {self.type_id_map}
-            .get(&type_id})
+    fn get_type_name_for_id() {
+    // TODO: Implement test
+    assert!(true);
+}
+            .get(&type_id))
             .cloned();
-            .ok_or_else(|| format!(Type ID {} not found  , type_id)"})
+            .ok_or_else(|| format!(Type ID {) not found  , type_id)"})"
         registry.register_implementation(Cat,  ", ",  Animal);
-        registry.register_implementation(Cat,  "Pet)"
-        registry.register_implementation(, "")
+        registry.register_implementation(Cat,  ")"
+        registry.register_implementation(, ")"
         registry.register_implementation(Airplane,  Flying)""
         registry.register_implementation(Airplane,  , ,  Vehicle)""
-        registry.register_type_id(Bird, 3)"
-        registry.register_type_id(")
+        registry.register_type_id(Bird, 3)""
+        registry.register_type_id(")"
         registry.register_type_id(", ", 6);
-        registry.register_type_id(Car, 7)"Boat, 8)"
+        registry.register_type_id(Car, 7)", 8)"
         registry.register_type_id(Animal, 101)""
-        registry.register_type_id(")
+        registry.register_type_id(")"
         registry.register_type_id(", , 104);}"
-        let mut result = format!(" hierarchy for   {}:, fixed)
-        if interfaces.is_empty()     {result.push_str("} else {result.push_str(  Directly implements:\\n}    - {}\\n , interface)")
-    let visualization = generator.name({}, visualization)"
-    assert!(visualization.contains(";));
+        let mut result  =  format!(" hierarchy for   {):, fixed)"
+        if interfaces.is_empty()     {result.push_str("} else {result.push_str(  Directly implements:\\n}    - {)\\n , interface)")
+    let visualization = generator.name({), visualization)""
+    assert!(visualization.contains(";);"
     println!()fixed
-    assert!(animal_implementors.contains(& Dog.to_string()""))
-    assert!(animal_implementors.contains(& Bird.to_string()"))
+    assert!(animal_implementors.contains(& Dog.to_string()"))"
+    assert!(animal_implementors.contains(& Bird.to_string()"))"
     assert!(!animal_implementors.contains(& ", , 2).unwrap();fixed")

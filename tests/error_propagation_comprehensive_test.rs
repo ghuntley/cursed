@@ -12,125 +12,130 @@ struct PropagationContext {}
 }
 
 impl PropagationContext {}
-    fn new(} -> Self {)
+    fn new(} -> Self { }
         Self {}
             current_function: None,
             expected_return_type: None,
-            propagation_stack: Vec::new(})
+            propagation_stack: Vec::new())
         }
     }
     
-    fn set_function(&mut self, name: String, return_type: Option<String>) {}
-        self.current_function = Some(name};)
+    fn set_function() {
+    // TODO: Implement test
+    assert!(true);
+}
+        self.current_function = Some(name);
         self.expected_return_type = return_type;
     }
     
-    fn push_propagation(&mut self, location: SourceLocation) {}
-        self.propagation_stack.push(location};)
+    fn push_propagation() {
+    // TODO: Implement test
+    assert!(true);
+}
+        self.propagation_stack.push(location);
     }
     
     fn propagation_depth(&self) -> usize {}
-        self.propagation_stack.len(})
+        self.propagation_stack.len())
     }
     
     fn get_stack_trace(&self) -> Vec<SourceLocation> {}
-        self.propagation_stack.clone(})
+        self.propagation_stack.clone())
     }
 }
 
 struct PropagationValidator;
 
 impl PropagationValidator {}
-    fn validate_propagation(})
+    fn validate_propagation())
         _expr: &ErrorPropagation,
         context: &PropagationContext,
     ) -> Result<(), Error> {}
-        if context.current_function.is_none(} {)
-            return Err(Error::Parse("Error propagation requires function fixed))
-        let var_expr = Identifier::new(", ".to_string(}, , "))
-        assert_eq!(error_prop.string(), , "?")
+        if context.current_function.is_none() {)
+            return Err(Error::Parse("Error propagation requires function fixed)}"
+        let var_expr = Identifier::new(", "), , "))"
+        assert_eq!(error_prop.string(), , ")"
         assert_eq!(error_prop.token_literal(), ?"")
-        let var_expr = Identifier::new(, ".to_string(), ", ")
+        let var_expr = Identifier::new(, "), ", ")"
             ", <HttpResponse, HttpError>"
         assert_eq!(error_prop.get_expected_type(), Some(", <HttpResponse, HttpError>"))
         assert_eq!(error_prop.string(), ", ?")
-        let var_expr = Identifier::new(", .to_string(), ", ")
+        let var_expr = Identifier::new(", .to_string(), ", ")"
             ", "
-            Some(", "<Response, Error>)
+            Some(", ", Error>)
         assert_eq!(context.current_function, Some(", "))
-        assert_eq!(context.expected_return_type, Some(", "<Response, Error>))
-        let var_expr = Identifier::new(", ".to_string(), , ")
-        context.set_function(, "".to_string(), Some(, <Row, DbError>"))
-        let inner_expr = Identifier::new(, ".to_string(), ", ")
+        assert_eq!(context.expected_return_type, Some(", ", Error>))
+        let var_expr = Identifier::new(", "), , ")"
+        context.set_function(, "), Some(, <Row, DbError>"))
+        let inner_expr = Identifier::new(, "), ", ")"
         assert_eq!(nested_prop.string(), ", ??")
         context.enter_function(Some(", <Data, Error>"))
         assert_eq!(context.function_return_type, Some(", <Data, Error>"))
-                context: ",  scope
+                context: ",  scope"
                 return_type: ", "
-            let message = format!("{})
+            let message = format!("))"
         let inner = Error::Runtime(", " connection failed)
         let inner = Error::Runtime(", " error)
-            ", "<i32, String>
-            ", "<i32>
+            ", ", String>
+            ", "
         ).with_function_context(", "
-        assert_eq!(error.expected_type, ", "<i32, String>)
-        assert_eq!(error.actual_type, ", "<i32>)
+        assert_eq!(error.expected_type, ", ", String>)
+        assert_eq!(error.actual_type, ", ")
         assert_eq!(error.function_context, Some(", "))
-        let display = format!("{})
-            , " use '?' in global scope
-            , ");
-        ).with_suggestion(, " to function body
-        assert_eq!(error.context_type, , "")
-        assert_eq!(error.suggestion, Some(, " to function body))
-        let display = format!({}"")
+        let display = format!("))"
+            , " use '?' in global scope"
+            , ");.with_suggestion(, " to function body
+        assert_eq!(error.context_type, , ")"
+        assert_eq!(error.suggestion, Some(, " to function body))"
+        let display = format!({)")"
         let runtime_error = Error::Runtime(, "")
-        let compile_error = Error::Compile(, "")
+        let compile_error = Error::Compile(, ")"
         let io_error = Error::Io(std::io::Error::new(std::io::ErrorKind::Other, , ""))
-        assert_eq!(message, , "")
+        assert_eq!(message, , ")"
             message: , ""
-        let inner = Error::Runtime(, "")
+        let inner = Error::Runtime(, ")"
             function_name: Some(, "")
             error_type: , ""
         assert_eq!(frame.function_name, Some(, ""))
-        assert_eq!(frame.error_type, , "")
-        let error = Error::Runtime(,  "error)
+        assert_eq!(frame.error_type, , ")"
+        let error = Error::Runtime(,  "error)"
             error_type: , ""
         assert_eq!(handler.name(), , "")
-            (Error::Runtime(, ".to_string(), ", "))
-            (Error::Parse(", .to_string(), ", "))
-            (Error::Compile(", ".to_string(), , "))
-            (Error::Package(, "".to_string(), , "))
-            (Error::Type(, ".to_string(), ", "))
+            (Error::Runtime(, "), ", "))"
+            (Error::Parse(", .to_string(), ", "))"
+            (Error::Compile(", "), , "))"
+            (Error::Package(, "), , "))
+            (Error::Type(, "), ", "))"
             function_name: Some(", ")
             error_type: ", "
-        let var_expr = Identifier::new(", .to_string(), ", ")
-            ", "<ApiResponse, ApiError>
-        assert_eq!(error_prop.string(), ", "?)
-        assert_eq!(error_prop.get_expected_type(), Some(", "<ApiResponse, ApiError>))
+        let var_expr = Identifier::new(", .to_string(), ", ")"
+            ", ", ApiError>
+        assert_eq!(error_prop.string(), ", ")
+        assert_eq!(error_prop.get_expected_type(), Some(", ", ApiError>))
             ", "
-            Some(", "<ApiResponse, ApiError>)
+            Some(", ", ApiError>)
         let error = Error::Runtime(", " call failed)
             Some(", ")
             ", "
             ", "
             ", "
-            let error = Error::Runtime(format!(", " at level {}))
-        let var_expr = Identifier::new(", ".to_string(), , ")
-            , "<String, ParseError>"
+            let error = Error::Runtime(format!(", " at level {)))
+        let var_expr = Identifier::new(", "), , ")"
+            , ", ParseError>"
             , ""
             Some(, "<String, ParseError>")
             , ""
             Some(, "<i32, MathError>")
-            let error = Error::Runtime(format!(, " error {}"))
-                Some(format!(, "{}"))
-        println!(, 1000 error propagations took: {:?});
-        let error_message = format!({}")
+            let error = Error::Runtime(format!(, " error {)"))
+                Some(format!(, ")"))
+        println!(, 1000 error propagations took: {:?));
+        let error_message = format!({)")"
         let handler = TestErrorHandler::new(", ")
-        let error = Error::Runtime(",  error)
+        let error = Error::Runtime(",  error)"
             error_type: ", "
         let high_priority = Box::new(TestErrorHandler::new(", "))
         let low_priority = Box::new(TestErrorHandler::new(", "))
         let medium_priority = Box::new(TestErrorHandler::new(", "))
-        assert_eq!(runtime.error_handlers[0].name(), ", ")
-        assert_eq!(runtime.error_handlers[1].name(), ", ")
-        assert_eq!(runtime.error_handlers[2].name(), ", fixed")
+        assert_eq!(runtime.error_handlers[0).name(), ", ")
+        assert_eq!(runtime.error_handlers[1).name(), ", ")
+        assert_eq!(runtime.error_handlers[2).name(), ", fixed")

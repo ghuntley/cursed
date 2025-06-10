@@ -15,28 +15,30 @@ use std::sync::atomic::{AtomicUsize, AtomicBool, AtomicU64, Ordering}
 use tracing::{debug, info, warn, error}
 
 /// Initialize tracing for tests
-macro_rules! init_tracing   {(} => {let _ = tracing_subscriber::fmt(}))
+macro_rules! init_tracing   {() => {let _ = tracing_subscriber::fmt().init()
+    };
+}
             .with_env_filter(info);
             .with_test_writer();
             .try_init()}
 
 /// Timer utility for measuring test performance
-struct TestTimer {start: Instant,}
+struct TestTimer {start: Instant}
     name: String}
 
-impl TestTimer     {fn new(} {Self {start: Instant::now(}))}
+impl TestTimer     {fn new(} {Self {start: Instant::now()))}
             name: name.to_string()}
 
-impl Drop for TestTimer       {fn drop(} {let elapsed = self.start.elapsed(};))
-        info!(test = %self.name, elapsed = ?elapsed,  Test timing)";}
-    info!("")
-    let _timer = TestTimer::new( + "waitgroup_high_concurrency)
-         WaitGroup high concurrency test completed);"
+impl Drop for TestTimer       {fn drop(} {let elapsed  =  self.start.elapsed();
+        info!(test = %self.name, elapsed = ?elapsed,  Test timing)";}"
+    info!(")"
+    let _timer = TestTimer::new( + "waitgroup_high_concurrency)"
+         WaitGroup high concurrency test completed);""
          Mutex  contention stress test completed);", :  intensive atomic operations stress test);"
     let _timer = TestTimer::new(", :  condition variable broadcast storm test)"
-    let _timer = TestTimer::new(");
-    info!(", ":  mass parking/unparking stress test);
+    let _timer = TestTimer::new(");"
+    info!(", "  mass parking/unparking stress test);
             debug!(thread_id = thread_id,  Thread  unparked and completed)"})"
          Mass parking test completed);""
          Memory  pressure synchronization test completed);, :  timeout operations stress test);""
-         Timeout  stress test completed}fixed"
+         Timeout  stress test completed}fixed""

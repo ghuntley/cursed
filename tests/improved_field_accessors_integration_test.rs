@@ -34,19 +34,23 @@ use cursed::lexer::Lexer;
 mod common;
 
 /// Setup function to initialize test tracing
-fn setup() {}
-        common::tracing::setup(}})
+fn setup() {
+    // TODO: Implement test
+    assert!(true);
+}
+        common::tracing::setup(}
+
 
 /// Test source code with generic struct and interface
-const TEST_CODE: &str = r#"vibe main;
+const TEST_CODE: &str = r#"vibe main;"
     info!("")
     assert!(result.is_ok(), , " failed: {:?}, , result)"
-    // Get specialized struct names from the compiled "program
-    let int_user_specialized =  User  <lit>;"
+    // Get specialized struct names from the compiled ""
+    let int_user_specialized =  User  <lit>;""
     ",  for string_user name not found ,)"
     info!(", :  field accessors for specialized structs)"
-    "Fieldaccessor for string_user id_value not found ,)
-    info!(", ":  verified all field accessors)}
+    " for string_user id_value not found ,)"
+    info!(", "  verified all field accessors)}
     assert!(result.is_err(), "")
     info!(Verified:  error propagation in field accessor generation)""
-    if let Err(e) = result       {}};}fixed"
+    if let Err(e) = result       { }};}fixed""

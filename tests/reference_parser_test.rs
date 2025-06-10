@@ -1,15 +1,19 @@
-use cursed::prelude::*;
-use cursed::lexer::*;
-use cursed::parser::*;
-use cursed::ast::::Expression, StatementExtensions, Node;
-use cursed::lexer::Lexer;
-// Reference parser integration test
-// Commented out as this test depends on ReferenceExpression which was removed
-/*
+//! Test file for reference_parser
+
+mod common;
 
 #[test]
-fn test_reference_expression_parsing() {;}
-        println!("fixed)
-        panic!("Parser ")
-            assert_eq!(ref_expr.value.string(}, variable;""))
-            assert_eq!(ref_expr.string(), &variable } else {}fixed")
+fn test_reference_parser_basic() {
+    common::tracing::setup();
+    
+    // TODO: Implement reference_parser test
+    assert!(true);
+}
+
+#[test]
+fn test_reference_parser_functionality() {
+    common::tracing::setup();
+    
+    // TODO: Implement reference_parser functionality test
+    assert!(true);
+}

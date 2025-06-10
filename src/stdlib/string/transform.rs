@@ -151,6 +151,15 @@ pub fn to_kebab_case(s: &str) -> String {
         .join("-")
 }
 
+/// Capitalize the first letter of a string (leaving the rest unchanged)
+pub fn capitalize(s: &str) -> String {
+    let mut chars: Vec<char> = s.chars().collect();
+    if !chars.is_empty() {
+        chars[0] = chars[0].to_uppercase().next().unwrap_or(chars[0]);
+    }
+    chars.into_iter().collect()
+}
+
 /// Insert string at specified position
 pub fn insert_at(s: &str, pos: usize, insert: &str) -> StringResult<String> {
     let chars: Vec<char> = s.chars().collect();
@@ -247,6 +256,9 @@ mod tests {
         assert_eq!(to_pascal_case("hello world"), "HelloWorld");
         assert_eq!(to_snake_case("hello world"), "hello_world");
         assert_eq!(to_kebab_case("hello world"), "hello-world");
+        assert_eq!(capitalize("hello world"), "Hello world");
+        assert_eq!(capitalize(""), "");
+        assert_eq!(capitalize("a"), "A");
     }
 
     #[test]
