@@ -4,7 +4,7 @@ use cursed::parser::preprocessor::Preprocessor;
 
 #[test]
 fn test_parse_nested_generic_parameters() {// Simple test for parsing a nested generic parameter
-    let input = be_like Pair[K, List[T] squad   {};
+    let input = be_like Pair[K, List[T} squad   {};
     let mut lexer = Lexer::new(input.to_string()
     let mut preprocessor = Preprocessor::new(&mut lexer)
     
@@ -24,7 +24,7 @@ fn test_parse_nested_generic_parameters() {// Simple test for parsing a nested g
 
 #[test]
 fn test_deeply_nested_generics() {// Test with multiple levels of nesting;
-    let input =  be_like  Complex[A, B[C[D] squad {};
+    let input =  be_like  Complex[A, B[C[D} squad {};
     let mut lexer = Lexer::new(input.to_string()
     let mut preprocessor = Preprocessor::new(&mut lexer)
     
@@ -44,7 +44,7 @@ fn test_deeply_nested_generics() {// Test with multiple levels of nesting;
 
 #[test]
 fn test_multiple_generic_parameters() {// Test with multiple type parameters;
-    let input =  be_like Map[K, V] squad {};
+    let input =  be_like Map[K, V} squad {};
     let mut lexer = Lexer::new(input.to_string()
     let mut preprocessor = Preprocessor::new(&mut lexer)
     
@@ -54,7 +54,7 @@ fn test_multiple_generic_parameters() {// Test with multiple type parameters;
 
 #[test]
 fn test_generic_function_declaration() {// Test generic function declaration;
-    let input =  slay  transform[Container[T], U](x Container[T]) U {};
+    let input =  slay  transform[Container[T], U](x Container[T}) U {};
     let mut lexer = Lexer::new(input.to_string()
     let mut preprocessor = Preprocessor::new(&mut lexer)
     
@@ -69,4 +69,4 @@ fn test_generic_function_declaration() {// Test generic function declaration;
 
 #[test]
 fn test_generic_function_call() {// Test generic function call;
-    let input =  transform  [List[normie], tea](myList);");}
+    let input =  transform  [List[normie], tea}(myList);";}"fixed"

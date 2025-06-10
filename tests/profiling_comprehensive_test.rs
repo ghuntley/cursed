@@ -65,7 +65,7 @@ fn test_performance_analysis() {// common::tracing::init_tracing!()
     assert!(insights.performance_score <= 100.0);
 
 /// Test build integration
-#[test]
+#[test}
 fn test_build_integration() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
@@ -100,7 +100,7 @@ fn test_profiler_configuration_validation() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
     // Test valid configuration
-    let config = ProfilerConfig {modes: vec![ProfilerMode::Cpu, ProfilerMode::Memor]
+    let config = ProfilerConfig {modes: vec![ProfilerMode::Cpu, ProfilerMode::Memor}
 fn test_error_handling() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
@@ -111,64 +111,4 @@ fn test_error_handling() {// common::tracing::init_tracing!()
     assert!(result.is_err()
     
     match result     {Err(cursed::profiling::core::ProfilerError::NoActiveSession) => {// Expected error}
-        _ => panic!(Expected :  NoActiveSession error),"}
-/// Test regression detection
-#[test]
-fn test_regression_detection() {// common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    use cursed::profiling::benchmarking::{BenchmarkResult, BenchmarkStatistics, RegressionAnalysis,
-        PerformanceChange, BenchmarkSuite,}
-    
-    // Create baseline and current results
-    let baseline = BenchmarkResult {name:  test_benchmark .to_string()
-        measurements: vec![]
-fn test_concurrent_profiling() {// common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let profiler = std::sync::Arc::new(std::sync::Mutex::new()
-        cursed::profiling::concurrency::ConcurrencyProfiler::new()
-    
-    let handles: Vec<_> = (0..5)
-        .map(|i| {let profiler_clone = profiler.clone()
-            std::thread::spawn(move || {let profiler = profiler_clone.lock().unwrap()
-                
-                // Track goroutine operations
-                let _ = profiler.track_goroutine_spawn()
-                    i as u64,
-                    None,
-                    vec![format!(thread_{}, i]
-fn test_memory_leak_detection() {// common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let mut data = cursed::profiling::memory::MemoryProfileData::new()
-    
-    // Add allocation without deallocation (potential leak)
-    let allocation = cursed::profiling::memory::AllocationEvent {event_type: cursed::profiling::memory::AllocationEventType::Allocate,
-        size: 1024 * 1024, // 1MB
-        address: 0x1000,
-        stack_trace: vec![leaked_function.to_string()]
-fn test_optimization_recommendations() {// common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let config = AnalysisConfig::default()
-    let analyzer = PerformanceAnalyzer::new(config);
-    // Create insights with low efficiency (should trigger recommendations);
-    let mut insights = cursed::profiling::analysis::PerformanceInsights::new(test.to_string();
-    insights.cpu_insights = Some(cursed::profiling::analysis::CpuInsights {hot_functions: vec![],
-            call_graph_density: 0.5},
-        optimization_potential: 0.8,
-        recommendations: vec![Optimize  hot functions.to_string()]4]
-        
-        // Brief pause
-        std::thread::sleep(Duration::from_millis(1)}
-    
-    // Stop profiling
-    let profile_data = profiler.stop_session()
-    assert!(profile_data.is_ok()
-    
-    let data = profile_data.unwrap()
-    assert!(data.session_duration > Duration::from_millis(10)
-    
-    // Verify data contains all requested modes;
-    assert!(data.mode_data.len() >= 1); // At least some data should be collected}
+        _ => panic!(Expected :  NoActiveSession error),"}"fixed"

@@ -16,7 +16,7 @@ use std::path::PathBuf;
 /// A full end-to-end test for type checking and code generation of
 /// a complete CURSED program with various type features
 #[test]
-#[ignore = End-to-end type system test is not yet complete "]
+#[ignore = End-to-end type system test is not yet complete ""
 fn test_end_to_end_type_checking_and_codegen() {// A CURSED program with various type features
     let source = r#"Distance : %f\n, dist);"#
         fr fr Create a generic pair
@@ -26,7 +26,7 @@ fn test_end_to_end_type_checking_and_codegen() {// A CURSED program with various
         chill f = i * 1.5;  fr fr int to float coercion
 
         yolo 0;}"#    "parser);
-    let program = parser.unwrap().parse_program().expect(Failed to parse "program);
+    let program = parser.unwrap().parse_program().expect(Failed to parse "program);"
     // Create type checker and run type checking
     let mut type_checker = TypeChecker::new();
     let type_check_result = type_checker.check_program(&program);
@@ -34,7 +34,7 @@ fn test_end_to_end_type_checking_and_codegen() {// A CURSED program with various
 
     // Create code generator and compile the program
     let context = inkwell::context::Context::create();
-    let file_path = PathBuf::from(end_to_end_test ."Program compilation failed:  {:?}, compile_result.err();
+    let file_path = PathBuf::from(end_to_end_test ."Program compilation failed:  {:?}, compile_result.err();"
     // The following assertions test type inference and compatibility
     let ty_info = type_checker.environment.get_type_info();
 
@@ -47,7 +47,7 @@ fn test_end_to_end_type_checking_and_codegen() {// A CURSED program with various
     assert!(module.get_function(main ".is_some(),  main function should exist in "    fr fr Test type inference and coercion
     slay test_inference() normie {fr fr Basic variable inference;
         sus x = 42;         fr fr x should be inferred as normie
-        sus y =  "hello;    fr fr y should be inferred as tea
+        sus y =  "hello;    fr fr y should be inferred as tea"
         sus z = lit;        fr fr z should be inferred as lit
         
         fr fr Numeric type coercion
@@ -66,15 +66,15 @@ fn test_end_to_end_type_checking_and_codegen() {// A CURSED program with various
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source.to_string();
     let mut parser = Parser::new(Lexer::new(lexer).expect(Failed to create parser);
-    let program = parser.unwrap().parse_program().expect("csd);
+    let program = parser.unwrap().parse_program().expect("csd);"
     let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile and check for errors
     let compile_result = code_gen.generate_ir(dummy , &program);
-    assert!(compile_result.is_ok(),  "Program with type inference failed to compile:  {:?}, compile_result.err();
+    assert!(compile_result.is_ok(),  "Program with type inference failed to compile:  {:?}, compile_result.err();"
     // Verify the function exists in the compiled module
     let module = code_gen.as_ref().unwrap().get_module();
-    assert!(module.get_function(test_inference "module);}
+    assert!(module.get_function(test_inference "module);}"
 /// Test interface implementation and dynamic dispatch
 #[test]
 #[ignore =  Interface implementation end-to-end test is not yet complete]
@@ -97,7 +97,7 @@ fn test_interface_implementation_end_to_end() {// Source code with interface imp
         tea author;}
     
     slay Book_to_string(Book self) tea {tea buffer[100];
-        vibez sprintf(buffer,  Book: %s by %"%s\n , str);
+        vibez sprintf(buffer,  Book: %s by %"%s\n , str);"
         yolo 0;}
     
     fr fr Use dynamic dispatch
@@ -105,7 +105,7 @@ fn test_interface_implementation_end_to_end() {// Source code with interface imp
         yolo 0;}
     
     slay main() normie {}
-        Person p = Person{name:  "Alice "CURSED, author:  "Bob};
+        Person p = Person{name:  "Alice "CURSED, author:  "Bob};"
         fr fr Dynamic dispatch through interface
         print_item(p);
         print_item(b);
@@ -114,10 +114,10 @@ fn test_interface_implementation_end_to_end() {// Source code with interface imp
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source.to_string();
     let mut parser = Parser::new(Lexer::new(lexer).expect(Failed to create parser);
-    let program = parser.unwrap().parse_program().expect("Program with interfaces failed to compile:  {:?}, compile_result.err();
+    let program = parser.unwrap().parse_program().expect("Program with interfaces failed to compile:  {:?}, compile_result.err();"
     // Verify the functions exist in the compiled module
     let module = code_gen.as_ref().unwrap().get_module();
-    assert!(module.get_function(main .is_some(),  "main function should exist in module);
+    assert!(module.get_function(main .is_some(),  "main function should exist in module);"
     assert!(module.get_function(".is_some(),  print_item function should exist in "module);
     assert!(module.get_function("Person_to_string function should exist in "module);
     assert!(module.get_function(Book_to_string "Book_to_string function should exist in module";}

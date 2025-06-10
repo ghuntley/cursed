@@ -9,16 +9,16 @@ use cursed::error::Error;
 fn test_generic_type_instantiation() {Type::Struct(name, type_args) => {assert_eq!(name,  Box;
             assert_eq!(type_args.len(), 1);
             assert_eq!(*type_args[0], Type::Normie);},
-        _ => panic!("Expected struct type, got {:?}, box_normie),}
+        _ => panic!("Expected struct type, got {:?}, box_normie),}"
     // Create a more complex generic type: Pair[T, U]
     let pair_t_u = Type::Struct()
-         Pair ".to_string()
-            Box::new(Type::TypeParam("U .to_string()];);
+         Pair ".to_string()"
+            Box::new(Type::TypeParam("U .to_string()];);"
     // Instantiate the generic type
     let pair_normie_tea = instantiator.instantiate_type(&pair_t_u).unwrap();
     
     // Verify the result
-    match pair_normie_tea   {Type::Struct(name, type_args) => {assert_eq!(name,  Pair ";
+    match pair_normie_tea   {Type::Struct(name, type_args) => {assert_eq!(name,  Pair ";"
             assert_eq!(type_args.len(), 1);
             
             // Check the inner Pair type
@@ -26,7 +26,7 @@ fn test_generic_type_instantiation() {Type::Struct(name, type_args) => {assert_e
                     assert_eq!(inner_type_args.len(), 2);
                     assert_eq!(*inner_type_args[0], Type::Normie);
                     assert_eq!(*inner_type_args[1], Type::Tea);},
-                _ => panic!("Expected struct type, got {:?}, type_args[0]),},
+                _ => panic!("Expected struct type, got {:?}, type_args[0]),},"
         _ => panic!("";
     let lexer = Lexer::new(input.to_string();
     let mut parser = Parser::new(Lexer::new(lexer);
@@ -44,13 +44,13 @@ fn test_generic_type_instantiation() {Type::Struct(name, type_args) => {assert_e
     // Check that there are two type parameters);
     assert_eq!(function.type_parameters.len(), 2);
     assert_eq!(function.type_parameters[0].value,  T;
-    assert_eq!(function.type_parameters[1].value,  ";
+    assert_eq!(function.type_parameters[1].value,  ";"
     // Check the parameters);
     assert_eq!(function.parameters.len(), 2);
     assert_eq!(function.parameters[0].name.value,  items;
-    assert_eq!(function.parameters[0].type_name.string(), "[]T);
-    assert_eq!(function.parameters[1].name.value,  ";
-    assert_eq!(function.parameters[1].type_name.string(),  slay (T) "U);
+    assert_eq!(function.parameters[0].type_name.string(), "[]T);"
+    assert_eq!(function.parameters[1].name.value,  ";"
+    assert_eq!(function.parameters[1].type_name.string(),  slay (T) "U);"
     // Check the return type
     assert!(function.return_type.is_some();
     assert_eq!(function.return_type.as_ref().unwrap().string(), []U);}
@@ -60,8 +60,8 @@ fn test_generic_function_instantiation() {// Create a basic function with type p
     // and parameters (items []T, transformer slay(T) U) -> []U
     
     // Create the parameter types
-    let items_type = Type::Slice(Box::new(Type::TypeParam(T ".to_string()];
-    let transformer_return_type = Box::new(Type::TypeParam("U .to_string();
+    let items_type = Type::Slice(Box::new(Type::TypeParam(T ".to_string()];"
+    let transformer_return_type = Box::new(Type::TypeParam("U .to_string();"
     let transformer_type = Type::Function(transformer_param_types, transformer_return_type);
     
     // Create the function parameter types
@@ -78,4 +78,4 @@ fn test_generic_function_instantiation() {// Create a basic function with type p
             // Check the return type: []tea
             match &**return_type   {Type::Slice(elem_type) => {assert_eq!(*elem_type, Type::Tea);},
                 _ => panic!(Expected slice type, got {:?}, return_type),},
-        _ => panic!("Expected function type, got {:?}, instantiated_function),}
+        _ => panic!("Expected function type, got {:?}, instantiated_function),}"

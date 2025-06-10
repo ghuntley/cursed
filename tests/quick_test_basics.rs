@@ -5,7 +5,7 @@ use cursed::stdlib::quick_test::*;
 
 // Temporarily disabled while API is upgraded
 #[cfg(not(test)]
-mod tests       {#[test]
+mod tests       {#[test}
 fn test_basic_config() {let config = Config::default()
     assert_eq!(config.max_count, 100)
     assert_eq!(config.max_size, 100)
@@ -33,7 +33,7 @@ fn test_basic_generators() {let mut rand = Rand::new(12345)
     // Test one_of generator
     let values = vec![ObjectRef::new_int(1),
         ObjectRef::new_int(2),
-        ObjectRef::new_int(3),]
+        ObjectRef::new_int(3),}
 fn test_shrinking() {// Function that fails for arrays containing zero
     let has_zero = |arr: ObjectRef| -> bool     {if let Some(values) = arr.as_array()     {for val in values   {if let Some(n) = val.as_int()     {if n == 0     {;
                         return false;}

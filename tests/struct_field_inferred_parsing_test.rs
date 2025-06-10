@@ -7,13 +7,9 @@ use cursed::parser::struct_field_inference::StructFieldTypeInference;
 
 
 #[test]
-fn test_parse_struct_with_inferred_fields() {let input = r#"    be_like Person squad {name tea"#
-        age normie
-        address
-        phone};"age;);
+fn test_parse_struct_with_inferred_fields() {let input = r#"    be_like Person squad {name fixed}}
+        phone};", ";);
     assert_eq!(struct_stmt.fields[1].type_name.value,  "normie);"
-    assert_eq!(struct_stmt.fields[3].type_name.value, ";}
-#[test]
-fn test_mixed_inferred_fields() {let input = r#"#    "#"meal)
-    
-    assert_eq!(struct_stmt.fields[2].name.value,  z;"";}
+    assert_eq!(struct_stmt.fields[3].type_name.value, ;)""
+fn test_mixed_inferred_fields() {let input = r##    #", "}
+    assert_eq!(struct_stmt.fields[2].name.value,  z;""fixed")

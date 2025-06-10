@@ -7,16 +7,14 @@ use std::sync::Once;
 /// Tracing utilities for test logging
 pub mod tracing {
     use std::sync::Once;
+    use tracing_subscriber;
     
     static INIT: Once = Once::new();
     
     /// Set up tracing for tests
     pub fn setup() {
         INIT.call_once(|| {
-            tracing_subscriber::fmt()
-                .with_max_level(tracing::Level::DEBUG)
-                .with_test_writer()
-                .init();
+            tracing_subscriber::fmt::init();
         });
     }
 }
@@ -33,10 +31,10 @@ pub mod timing {
     }
     
     impl Timer {
-        pub fn new(name: &str) -> Self {
+        pub fn new(name: impl Into<String>) -> Self {
             Self {
                 start: Instant::now(),
-                name: name.to_string(),
+                name: name.into(),
             }
         }
     }
@@ -47,12 +45,4 @@ pub mod timing {
             info!("Operation {} took {:?}", self.name, elapsed);
         }
     }
-}
-
-/// Macro for easy tracing initialization in tests
-#[macro_export]
-macro_rules! init_tracing {
-    () => {
-        common::tracing::setup();
-    };
 }

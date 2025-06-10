@@ -14,7 +14,7 @@ fn test_loop_context_management()  {let context = Context::create()
 
     // Create a function for testing
     let void_type = context.void_type()
-    let fn_type = void_type.fn_type(&[], false)
+    let fn_type = void_type.fn_type(&[}, false)
     let function = generator
         .module()
         .add_function(test_loop_context , context.i32_type().into(), None)

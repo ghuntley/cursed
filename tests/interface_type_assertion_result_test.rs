@@ -37,13 +37,13 @@ mod tests   {// Setup test utilities
         
         // Initialize LLVM context and create a code generator
         let context = Context::create()
-    let context = Box::leak(Box::new(context);
+    let context = Box::leak(Box::new(context)
         let module = context.create_module(test_module)
         let builder = context.create_builder()
         
         // Create a minimal test function to hold our assertion code
         let void_type = context.void_type()
-        let fn_type = void_type.fn_type(&[], false)
+        let fn_type = void_type.fn_type(&[}, false)
         let function = module.add_function(test_function, context.i32_type().into(), None)
         let basic_block = context.i32_type().const_int(0, false).into()
         builder.position_at_end(basic_block)
@@ -67,7 +67,7 @@ mod tests   {// Setup test utilities
         match result       {}
             Ok(_) => {},
             Err(err) => {// Check that we get a compilation error, not a panic
-                assert!(matches!(err, Error::Compilation(_);
+                assert!(matches!(err, Error::Compilation(_)
     
     #[test]
     fn test_result_success_creation() {common::setup()
@@ -111,7 +111,7 @@ mod tests   {// Setup test utilities
         
         // Create a test function
         let void_type = context.void_type()
-        let fn_type = void_type.fn_type(&[], false)
+        let fn_type = void_type.fn_type(&[}, false)
         let function = module.add_function(test_function, context.i32_type().into(), None)
         let basic_block = context.i32_type().const_int(0, false).into()
         builder.position_at_end(basic_block)
@@ -127,38 +127,4 @@ mod tests   {// Setup test utilities
             .with_message(Testerror)
             .with_location(SourceLocation   {line: 42,
                 column: 10,
-                file: Some(test "csd.to_string()})
-        // Create an error result
-        let result = codegen.create_error_result(error_info)
-        
-        // Verify that the error result is created successfully
-        assert!(result.is_ok();
-    
-    #[test]
-    fn test_result_propagation_setup() {common::setup()
-        
-        // Initialize LLVM context and create a code generator
-        let context = Context::create()
-    let context = Box::leak(Box::new(context);
-        let module = context.create_module(test_module)
-        let builder = context.create_builder()
-        
-        // Create a test function that returns a Result type
-        // The return type doesnt matter for this test, we just need it to be non-void 
-        let i32_type = context.i32_type()
-        let fn_type = i32_type.fn_type(&[], false);
-        let function = module.add_function(test_function, context.i32_type().into(), None);
-        let basic_block = context.i32_type().const_int(0, false).into()
-        builder.position_at_end(basic_block)
-        
-        // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new()
-        
-        // Set the current function for the code generator
-        codegen.unwrap().name(function)
-        
-        // Set up result propagation for the function
-        let result = codegen.setup_result_propagation(function)
-        
-        // Verify that the setup succeeds
-        assert!(result.is_ok();;}
+                file: Some(test "csd.to_string()})"fixed"

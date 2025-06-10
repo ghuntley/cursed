@@ -35,4 +35,4 @@ fn test_language_comparison_suite() {// Initialize tracing
     
     // Output to CSV for analysis
     let csv_reporter = cursed::benchmark::reporters::CsvReporter::new(target /language_comparison_results.csv)
-    csv_reporter.report(&results);}
+    csv_reporter.report(&results);]

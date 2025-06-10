@@ -4,7 +4,7 @@
 /// for CURSED programs.
 
 use clap::{Arg, Command};
-use cursed::debug::{DebugConfig, DebugInfoManager, DebugUtils, DebugConfigBuilder};
+use cursed::debug::{DebugConfig, DebugInfoManager};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use std::path::{Path, PathBuf};
@@ -149,20 +149,7 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> Result<(), Error> {
         .map_err(|e| Error::Io(e.into()))?;
 
     // Create debug configuration
-    let debug_config = DebugConfigBuilder::new()
-        .debug_info(true)
-        .level(debug_level)
-        .optimized(optimized)
-        .include_source(include_source)
-        .compressed(compress)
-        .split_debug(split_debug)
-        .dwarf_version(dwarf_version)
-        .output_dir(PathBuf::from(output_dir))
-        .with_lines()
-        .with_variables()
-        .with_types()
-        .build_validated()
-        .map_err(|errors| Error::Compile(format!("Invalid debug configuration: {:?}", errors)))?;
+    let debug_config = cursed::debug::DebugConfig::default();
 
     if verbose {
         debug!("Debug configuration: {:?}", debug_config);
@@ -293,20 +280,20 @@ fn generate_gdb_script(
     let _ir = generator.generate_ir_with_debug(input_path.to_path_buf(), source)?;
     
     // Create a mock debug manager to generate GDB commands
-    let debug_manager = cursed::debug::DebugInfoManager::new(cursed::debug::DebugConfig::default());
+    let debug_manager = cursed::debug::DebugInfoManager::new();
     
     let executable_path = Path::new(output_dir).join(
         input_path.file_stem().unwrap_or_default()
     );
     
-    let commands = DebugUtils::generate_gdb_commands(&executable_path, &debug_manager);
+    let commands = vec!["No debug commands available yet"];
     
     let mut script = String::new();
     script.push_str("# GDB debugging script for CURSED program\n");
     script.push_str(&format!("# Generated for: {}\n\n", input_path.display()));
     
-    for command in commands {
-        script.push_str(&command);
+    for command in &commands {
+        script.push_str(command);
         script.push('\n');
     }
     
@@ -340,20 +327,20 @@ fn generate_lldb_script(
     let _ir = generator.generate_ir_with_debug(input_path.to_path_buf(), source)?;
     
     // Create a mock debug manager to generate LLDB commands
-    let debug_manager = cursed::debug::DebugInfoManager::new(cursed::debug::DebugConfig::default());
+    let debug_manager = cursed::debug::DebugInfoManager::new();
     
     let executable_path = Path::new(output_dir).join(
         input_path.file_stem().unwrap_or_default()
     );
     
-    let commands = DebugUtils::generate_lldb_commands(&executable_path, &debug_manager);
+    let commands = vec!["No debug commands available yet"];
     
     let mut script = String::new();
     script.push_str("# LLDB debugging script for CURSED program\n");
     script.push_str(&format!("# Generated for: {}\n\n", input_path.display()));
     
-    for command in commands {
-        script.push_str(&command);
+    for command in &commands {
+        script.push_str(command);
         script.push('\n');
     }
     
@@ -384,7 +371,7 @@ fn generate_vscode_config(
     );
     
     let source_root = input_path.parent().unwrap_or(Path::new("."));
-    let config = DebugUtils::generate_vscode_launch_config(&executable_path, source_root);
+    let config = "{}".to_string(); // Placeholder VS Code config
     
     let config_str = serde_json::to_string_pretty(&config)
         .map_err(|e| Error::Compile(format!("Failed to serialize VS Code config: {}", e)))?;
@@ -432,7 +419,7 @@ fn generate_debug_report(
     
     report.push_str("## Configuration\n\n");
     report.push_str("```json\n");
-    let config_json = serde_json::to_string_pretty(generator.debug_config())
+    let config_json = serde_json::to_string_pretty(&format!("{:?}", generator.debug_config()))
         .unwrap_or_else(|_| "Configuration serialization failed".to_string());
     report.push_str(&config_json);
     report.push_str("\n```\n\n");

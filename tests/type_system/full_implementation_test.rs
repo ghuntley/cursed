@@ -37,13 +37,13 @@ fn test_type_system_integration() {// Test code with various type system feature
         
         fr fr Function with channel parameters for concurrency
         slay worker(id normie, jobs dm<tea>, results dm<tea>  {periodt true {sus job = <-jobs}
-                results <- job + , "done}
+                results <- job + , "done}"
         slay main() {fr fr Create a Box of int
             sus box_int = Box[normie]{value: 42}
             
             fr fr Create a Pair of string and int
             sus pair = Pair[tea, normie]{first:  "job1 "
-            jobs <-  job2 ";
+            jobs <-  job2 ";"
     let lexer = Lexer::new(input.to_string();
     let mut parser = Parser::new(Lexer::new(lexer);
     let program = parser.unwrap().parse_program().unwrap();
@@ -83,13 +83,13 @@ fn test_channel_type_parsing() {let input =  dm <normie>;
         _ => panic!(Expected channel type, got {:?}, channel_type),}
 
 #[test]
-fn test_nested_generic_type_parsing() {let input =  "
-    match pair_type   {Type::Struct(name, type_args) => {assert_eq!(name,  Pair ";
+fn test_nested_generic_type_parsing() {let input =  ""
+    match pair_type   {Type::Struct(name, type_args) => {assert_eq!(name,  Pair ";"
             assert_eq!(type_args.len(), 2);
             
             // First type argument should be Box[tea]
             match &*type_args[0]   {Type::Struct(box_name, box_args) => {assert_eq!(box_name,  Box;
                     assert_eq!(box_args.len(), 1);
                     assert_eq!(*box_args[0], Type::Tea);},
-                _ => panic!("Expected List type, got {:?}, type_args[1]),},
-        _ => panic!("Expected Pair type, got {:?}, pair_type),}
+                _ => panic!("Expected List type, got {:?}, type_args[1]),},"
+        _ => panic!("Expected Pair type, got {:?}, pair_type),}"

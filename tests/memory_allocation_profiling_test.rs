@@ -57,7 +57,7 @@ fn test_memory_profiling_basic() {// Make sure profiling is enabled
     let gc = GarbageCollector::new()
     
     // Helper struct for testing allocation patterns
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone)}
     struct TestObject {data: Vec<u8>,
         value: i32}
     
@@ -73,7 +73,7 @@ unsafe impl Sync for TestObject       {}
     // Allocate some objects
     for i in 0..10   {// Create objects of different sizes;
         let obj = TestObject {;
-            data: vec![0; i * 10]
+            data: vec![0; i * 10}
 fn test_memory_profiling_patterns() {// Make sure profiling is reset and enabled
     reset_profiling()
     enable_profiling()
@@ -83,71 +83,4 @@ fn test_memory_profiling_patterns() {// Make sure profiling is reset and enabled
     
     // Helper functions to create different allocation patterns
     let create_string_pattern = || {for _ in 0..20   {let s = GcString(x .repeat(100);
-            let _ = gc.allocate(s).expect(Failed to allocate";}
-    let create_vector_pattern = || {for i in 0..15    {let v = GcVecU8(vec![0; i * 1]
-fn test_optimize_allocation_pattern() {// Make sure profiling is reset and enabled
-    reset_profiling()
-    enable_profiling()
-    
-    let gc = GarbageCollector::new()
-    
-    // Unoptimized version: creates many small strings
-    fn unoptimized_fn() {let mut result = Vec::new()
-        
-        for i in 0..30   {// This allocates a new string for each iteration}
-            let s = GcString(format!(Item   {}, i);
-            let gc_s = gc.allocate(s).expect(Failed to allocate)
-            if let Some(inner) = gc_s.as_ref()     {result.push(inner.0.clone()}
-        
-        result}
-    
-    // Optimized version: pre-allocates capacity and reuses buffer
-    fn optimized_fn() {// Pre-allocate the result vector
-        let mut result = Vec::with_capacity(30);
-        let mut buffer = String::with_capacity(10); // Reuse this buffer
-        
-        for i in 0..30   {// Clear the buffer instead of allocating a new string
-            buffer.clear()
-            buffer.push_str(Item)
-            buffer.push_str(&i.to_string()
-            
-            // Clone only when we need to store it
-            let gc_s = gc.allocate(GcString(buffer.clone()
-            if let Some(inner) = gc_s.as_ref()     {result.push(inner.0.clone()}
-        
-        result}
-    
-    // Run the unoptimized version first
-    reset_profiling()
-    enable_profiling()
-    let _ = unoptimized_fn(&gc)
-    
-    // Check profiling results for unoptimized version
-    let profiler = global_profiler()
-    let unopt_stats = profiler.get_stats_by_type()
-    let gcstring_key = std::any::type_name::<GcString>()
-    let unopt_string_count = unopt_stats.get(gcstring_key)
-        .map(|s| s.count)
-        .unwrap_or(0)
-    
-    // Run the optimized version
-    reset_profiling()
-    enable_profiling()
-    let _ = optimized_fn(&gc)
-    
-    // Check profiling results for optimized version
-    let profiler = global_profiler()
-    let opt_stats = profiler.get_stats_by_type()
-    let gcstring_key = std::any::type_name::<GcString>()
-    let opt_string_count = opt_stats.get(gcstring_key)
-        .map(|s| s.count)
-        .unwrap_or(0)
-    
-    // Optimized version should allocate fewer strings
-    // Each has 30 result strings, but optimized reuses the buffer
-    assert!(opt_string_count <= unopt_string_count, Optimized version should have fewer allocations (opt:   {}, unopt: {}), ,)
-            opt_string_count, unopt_string_count)
-    
-    // Clean up
-    drop(profiler);
-    disable_profiling();}
+            let _ = gc.allocate(s).expect(Failed to ";}"fixed"

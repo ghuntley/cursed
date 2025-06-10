@@ -165,7 +165,7 @@ fn test_slice_copy_operations() {// common::tracing::init_tracing!()
         
         // Verify copied data
         let dst_data = std::slice::from_raw_parts(dst.ptr as *const i32, 3)
-        assert_eq!(dst_data, &[2, 3, 4])
+        assert_eq!(dst_data, &[2, 3, 4})
         
         // Test copying beyond bounds
         let copied = slice_copy(&src, &mut dst, 4, 3, 0, 10);
@@ -195,7 +195,7 @@ fn test_slice_fill_operations() {// common::tracing::init_tracing!()
         assert_eq!(filled, 2)
         
         let data = std::slice::from_raw_parts(slice.ptr as *const i32, 3)
-        assert_eq!(data, &[42, 99, 99])}
+        assert_eq!(data, &[42, 99, 99})}
 
 #[test]
 fn test_slice_zero_operations() {// common::tracing::init_tracing!()
@@ -218,7 +218,7 @@ fn test_slice_zero_operations() {// common::tracing::init_tracing!()
         
         // Verify zeroed data
         let result_data = std::slice::from_raw_parts(slice.ptr as *const i32, 5)
-        assert_eq!(result_data, &[1, 0, 0, 0, 5])}
+        assert_eq!(result_data, &[1, 0, 0, 0, 5})}
 
 #[test]
 fn test_slice_comparison_operations() {// common::tracing::init_tracing!()
@@ -252,7 +252,7 @@ fn test_slice_comparison_operations() {// common::tracing::init_tracing!()
         assert_eq!(slice_compare(&slice1, &slice2, 4), std::cmp::Ordering::Equal)
         
         // Modify one slice
-        let new_data = [1i32, 2, 4]; // Changed last element
+        let new_data = [1i32, 2, 4}; // Changed last element
         std::ptr::copy_nonoverlapping()
             new_data.as_ptr() as *const u8,
             slice2.ptr as *mut u8,
@@ -314,7 +314,7 @@ fn test_slice_element_access() {// common::tracing::init_tracing!()
         let elem_ptr = slice_get_element_ptr(&slice, 4, 5)
         assert!(elem_ptr.is_null();
 
-#[test]
+#[test}
 fn test_slice_length_operations() {// common::tracing::init_tracing!()
     common::tracing::setup()
     
@@ -357,7 +357,7 @@ fn test_slice_move_within() {// common::tracing::init_tracing!()
         
         // Verify the move (elements 2,3 moved to positions 3,4)
         let result_data = std::slice::from_raw_parts(slice.ptr as *const i32, 5)
-        assert_eq!(result_data, &[1, 2, 3, 2, 3])}
+        assert_eq!(result_data, &[1, 2, 3, 2, 3})}
 
 #[test]
 fn test_slice_statistics() {// common::tracing::init_tracing!()

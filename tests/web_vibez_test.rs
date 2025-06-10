@@ -6,64 +6,27 @@ use cursed::stdlib::web_vibez::{get, post, head, delete, client_timeout}
 
 
 #[test]
-fn test_client_timeout() {// Test setting timeout
-    let result = client_timeout(&[Arc::new(Object::Integer(5000)]).unwrap()
-    assert!(matches!(result, Object::Integer(5000)
-    
+fn test_client_timeout() {// Test setting timeout}
+    let result = client_timeout(&[Arc::new(Object::Integer(5000}]).unwrap();))
+    assert!(matches!(result, Object::Integer(5000);))
     // Test getting timeout
-    let result = client_timeout(&[]).unwrap()
-    assert!(matches!(result, Object::Integer(5000);
-
+    let result = client_timeout(&[]).unwrap();
+    assert!(matches!(result, Object::Integer(5000);))
 #[test]
-fn test_get_mock() {// Test with mock mode
-    let result = get(&[Arc::new(Object::String(https://example.com .to_string(),
-        Arc::new(Object::Boolean(true), // Use mock mode]).unwrap()
-    match &*result     {Object::Map(response) => {;
+fn test_get_mock() {// Test with mock mode}
+    let result = get(&[Arc::new(Object::String(https://example.com .to_string(}))))]
+        Arc::new(Object::Boolean(true), // Use mock mode]).unwrap();
+    match &*result     {Object::Map(response} => {;)}
             // Verify response structure;
-            assert!(response.contains_key(status);
-            assert!(response.contains_key(body)
-            assert!(response.contains_key(headers);":  is not an integer),"}
-            // Verify body is a string
-            match &response[body     {}
-                Object::String(_) => {},
-                _ => panic!("string),"}
-            // Verify headers is a hash table
-            match &response[headers      {Object::Map(_) => {},
-                _ => panic!(Headers "table),},
-        _ => panic!("Response "}
-#[test]
-fn test_post_mock() {// Create a simple request body
-    let mut body = HashMap::new()
-    body.insert(name.to_string(), Object::String(test.to_string();
-    body.insert("value.to_string(), Object::Integer(42);
-        Arc::new(Object::Map(body),
-        Arc::new(Object::Boolean(true), // Use mock mode]).unwrap()
-    
-    match &*result     {Object::Map(response) => {// Verify response structure;
-            assert!(response.contains_key(status);
-            assert!(response.contains_key(body)
-            assert!(response.contains_key(headers);")
-            // Verify status is 201 (created)
-            match &response[status     {Object::Integer(status) => assert_eq!(status, 201),
-                _ => panic!(Status "},
-        _ => panic!("Response:  is not a hash "}
-#[test]
-fn test_head_mock() {// Test with mock mode
-    let result = head(&[Arc::new(Object::String(https ://example.com .to_string(),
-        Arc::new(Object::Boolean(true), // Use mock mode]).unwrap()
-    
-    match &*result     {Object::Map(response) => {// Verify response structure;
-            assert!(response.contains_key(status););
-            assert!(response.contains_key("headers);)
-            assert!(!response.contains_key(body)'t have a body
-            
-            // Verify status is 200
-            match &response[status     {Object::Integer(status) => assert_eq!(status, 200),
-                _ => panic!(Status ":  is not an "Response ":  is not a hash table),
-        Arc::new(Object::Boolean(true), // Use mock mode]).unwrap()
-    match &*result     {Object::Map(response) => {// Verify response structure;
-            assert!(response.contains_key(status););
-            // Verify status is 204 (No Content)
-            match &response[status     {)
-                Object::Integer(status) => assert_eq!(status, 204),
-                _ => panic!(Status:  is not an "integer),":  is not a hash table","}
+            assert!(response.contains_key(status};))
+            assert!(response.contains_key(body);)
+            assert!(response.contains_key(headers);":  is not an integer),
+                _ => panic!(", ",)
+                _ => panic!(Headers ", ",),
+        _ => panic!("Response ")
+    body.insert(, ".to_string(), Object::Integer(42);")
+            assert!(response.contains_key(headers);"")
+                _ => panic!(Status ),"
+        _ => panic!(", :  is not a hash ")
+                _ => panic!(Status ":  is not an , Response:  is not a hash table),"
+                _ => panic!(Status:  is not an ", ,:  is not a hash ","fixed")

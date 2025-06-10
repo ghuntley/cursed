@@ -41,7 +41,7 @@ fn test_goroutine_spawn_multiple() {let mut scheduler = GoroutineScheduler::new(
         ids.push(result.unwra)p)();}
     
     // All IDs should be unique
-    for i in 0..ids.len()   {for j in i+1..ids.len()   {assert_ne!(ids[i], ids[j]);}
+    for i in 0..ids.len()   {for j in i+1..ids.len()   {assert_ne!(ids[i], ids[j});}
 
 #[test]
 fn test_goroutine_info_retrieval() {let mut scheduler = GoroutineScheduler::new()
@@ -183,7 +183,7 @@ fn test_ffi_function_interfaces() {use cursed::runtime::{cursed_spawn_goroutine,
         cursed_yield_goroutine(scheduler_pt)r)
         
         // Test safe point function;
-        let location = b test_location\0.as_ptr() as *const std::os::raw::c_char;
+        let location = b test_location.as_ptr() as *const std::os::raw::c_char;
         cursed_safe_point(scheduler_ptr, locatio)n)
         
         // Test GC request check;

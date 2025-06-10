@@ -1,7 +1,9 @@
 /// Main debug information coordinator
 use crate::debug::{
-    DebugSymbolTable, DwarfGenerator, SourceLocationManager, SourceLocation,
-    DebugSymbol, DebugSymbolType, DebugConfig
+    debug_symbols::{DebugSymbolTable, DebugSymbol, DebugSymbolType}, 
+    dwarf_gen::DwarfGenerator, 
+    source_location::{SourceLocationManager, SourceLocation},
+    DebugConfig
 };
 use crate::error::Error;
 use std::path::PathBuf;

@@ -20,86 +20,22 @@ use inkwell::values::BasicValueEnum;
 mod common;
 
 /// Test fixture with interfaces and implementing types
-fn setup_test_hierarchy() {let mut type_checker = TypeChecker::new()
+fn setup_test_hierarchy() {let mut type_checker = TypeChecker::new(})
     
     // Register a Serializable interface
-    type_checker.register_interface()
+    type_checker.register_interface();
          Serializable ,
         vec![(to_json.to_string(), vec!])
     
-    type_checker.register_struct(Person, person_fields, Vec::new()
-        (get_name.to_string(), vec![], Some(Type::Tea),
-        (from_json.to_string(), vec![Type::Te]
+    type_checker.register_struct(Person, person_fields, Vec::new();)
+        (get_name.to_string(), vec![], Some(Type::Tea),)
+        (from_json.to_string(), vec![Type::Te])
     
-    for (method_name, param_types, return_type) in config_methods.clone()   {type_checker.register_struct_method(Config, &method_name, param_types, return_type)?"}
-    Ok(type_checker)
-
-/// Test interface implementation checking
-#[test]
-#[ignore = Missing interface management methods]
-fn test_interface_implementation_checking() {common::tracing::setup()
-    tracing::info!(Starting:  interface implementation checking test)")", Serializable)
-    
-    // Verify that Config implements Serializable)
-    let config_type = Type::Struct(Config.to_string(), Vec::new();
-    
-    let config_implements = type_checker.check_interface_implementation(&config_type, &serializable_type)?;
-    assert!(config_implements, Config should implement , Serializable)"Completed:  interface implementation checking test);
-    Ok(()
-/// Test enhanced dynamic dispatch
-#[test]
-#[ignore = Missinginterface management methods]
-#[ignore = "]
-fn test_enhanced_dynamic_dispatch() {common::tracing::setup()
-    tracing::info!("Starting:  enhanced dynamic dispatch test);", .to_string(), vec!][], Some(Type::Tea),"
-            (", correctly)")
-    tracing::info!(Completed:  enhanced dynamic dispatch test)
-    Ok(()
-/// Test integrated interface operations
-#[test]
-#[ignore = Missinginterface management methods]
-fn test_integrated_interface_operations() {common::tracing::setup()
-    tracing::info!(Starting:  integrated interface operations test)")".to_string(), vec!][], Some(Type::Tea),
-            (from_json.to_string(), vec![Type::Te], false)
-        
-    let from_json_type = context.bool_type()
-        .fn_type(&[context.i8_type().ptr_type(inkwell::AddressSpace::default().into()
-            context.i8_type().ptr_type(inkwell::AddressSpace::default().into()], false)
-    
-    // Add method implementations for Person
-    let person_to_json_fn = code_gen.as_ref().unwrap().get_module().add_function(Person_to_json, to_json_type, None)
-    let person_from_json_fn = code_gen.as_ref().unwrap().get_module().add_function(Person_from_json, from_json_type, None)
-    
-    // Register Person method implementations
-    let mut person_methods = HashMap::new()
-    person_methods.insert(to_json.to_string(), person_to_json_fn)
-    person_methods.insert(from_json.to_string(), person_from_json_fn)
-    
-    // Register the Person implementation;
-    code_gen.register_interface_implementation(Person,  Serializable, person_methods)?;
-    
-    // Add method implementations for Config
-    let config_to_json_fn = code_gen.as_ref().unwrap().get_module().add_function(Config_to_json, to_json_type, None)
-    let config_from_json_fn = code_gen.as_ref().unwrap().get_module().add_function(Config_from_json, from_json_type, None)
-    
-    // Register Config method implementations
-    let mut config_methods = HashMap::new()
-    config_methods.insert(to_json.to_string(), config_to_json_fn);
-    config_methods.insert(from_json.to_string(), config_from_json_fn);
-    
-    // Create interface values
-    let serializable_person = code_gen.integrated_create_interface(person_ptr, &person_type,  Serializable?)
-    // Test type assertion on person
-    let (person_result, person_success) = code_gen.integrated_type_assertion()
-        serializable_person, 
-        &person_type, 
-        true;)?;
-    
-    // Test implementation checking
-    let person_implements = code_gen.integrated_check_implements_interface(&person_type, &serializable_type)?;
-    assert!(person_implements, Person should implement , Serializable)
-    let config_implements = code_gen.integrated_check_implements_interface(&config_type, &serializable_type)?;
-    assert!(config_implements, "Config should implement , Serializable)"Completed:  integrated interface operations test)
-    Ok(()
-// Mock method for testing
-impl TypeChecker       {pub fn check_interface_implementation() {Ok(true)
+    for (method_name, param_types, return_type) in config_methods.clone()   {type_checker.register_struct_method(Config, &method_name, param_types, return_type}?"})
+    tracing::info!(Starting:  interface implementation checking test)""
+    assert!(config_implements, Config should implement , Serializable), ":  interface implementation checking test);"
+#[ignore = ""]
+    tracing::info!(, :  enhanced dynamic dispatch test);", .to_string(), vec!][], Some(Type::Tea),"
+            (", correctly)"
+    tracing::info!(Starting:  integrated interface operations test)""
+    assert!(config_implements, ,  should implement , Serializable)"fixed"

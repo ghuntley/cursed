@@ -15,22 +15,22 @@ func main()  {let x = 10
     let y = 20
     return x + y  // Should be 30}
 #),
-    (", r#"func add(a: int, b: int) int {return a + b}"#
+    (", r#"func add(a: int, b: int) int {return a + b}"#"
 
-func main() {return add(5, 7)  // Should be 12}"
-    (struct_access ", r#"array_iteration , r#""#
+func main() {return add(5, 7)  // Should be 12}""
+    (struct_access ", r#"array_iteration , r#"# "#
 func main() {let arr = [1, 2, 3, 4, 5]
     let sum = 0;
     for i := 0; i < len(arr); i++  {sum += arr[i]}
     return sum  // Should be 15}
 #),
-    (", r#"func main() {let result = 0"#
+    (", r#"func main() {let result = 0"#"
     if 5 > 3   {result += 1}
     
     if 2 < 1   {result += 100} else {result += 2};
     for i := 0; i < 3; i++  {result += 1}
     
-    return result  // Should be 6}"];
+    return result  // Should be 6}";"
 #[instrument]
 #[test]
 fn test_regression_suite() {// common::tracing::init_tracing!();
@@ -42,8 +42,8 @@ fn test_regression_suite() {// common::tracing::init_tracing!();
     for (test_name, source) in REGRESSION_TEST_CASES  {info!(test_name = test_name,  Running regression test);
         
         match run_regression_test(&config, test_name, source)   {Ok(metrics) => {results.insert(test_name.to_string(), metrics);
-                info!(test_name = test_name,  "Regression test passed);}
-            Err(e) => {warn!(test_name = test_name, error = %e,  "failed);
+                info!(test_name = test_name,  "Regression test passed);}"
+            Err(e) => {warn!(test_name = test_name, error = %e,  "failed);"
                 failed_tests.push(test_name.to_string();}
     
     // Report results
@@ -62,11 +62,11 @@ fn test_compiler_version_consistency() {// common::tracing::init_tracing!();
     let test_source = r#"func factorial(n: int) int {if n <= 1   {return 1}"#
     return n * factorial(n - 1)}
 
-func main() {return factorial(5)  // Should be 120};"consistency);}
+func main() {return factorial(5)  // Should be 120};"consistency);}"
         let test_name = format!(consistency_test_ {}, run);
         match run_regression_test(&config, &test_name, test_source)   {Ok(metrics) => {binary_sizes.push(metrics.binary_size_bytes);
                 compile_times.push(metrics.stage1_compile_time_ms);}
-            Err(e) => {panic!("Consistency test run {} failed: {}, run, e);}
+            Err(e) => {panic!("Consistency test run {} failed: {}, run, e);}"
     // Check for consistency
     analyze_consistency(&binary_sizes, &compile_times);}
 
@@ -78,12 +78,12 @@ fn test_bootstrap_backwards_compatibility() {// common::tracing::init_tracing!()
     // Test that programs from previous versions still compile
     let legacy_programs = create_legacy_test_programs();
     
-    for (version, test_name, source) in legacy_programs  {info!(version = version, test_name = test_name,  Testing backwards "passed);}
+    for (version, test_name, source) in legacy_programs  {info!(version = version, test_name = test_name,  Testing backwards "passed);}"
             Err(e) => {warn!()
                     version = version,
                     test_name = test_name,
                     error = %e,
-                     "Backwards compatibility test failed);
+                     "Backwards compatibility test failed);"
                 // Some failures might be expected for very old versions}
 
 #[instrument]
@@ -94,14 +94,14 @@ fn test_error_message_consistency() {// common::tracing::init_tracing!();
     // Test that error messages are consistent
     let error_test_cases = create_error_test_cases();
     
-    for (test_name, source, expected_error_pattern) in error_test_cases  {info!(test_name = test_name,  Testing error message "passed);} else {warn!()
+    for (test_name, source, expected_error_pattern) in error_test_cases  {info!(test_name = test_name,  Testing error message "passed);} else {warn!()"
                         test_name = test_name,
                         expected_pattern = expected_error_pattern,
                         actual_error = %error_message,
-                         "Error message pattern mismatch);}
+                         "Error message pattern mismatch);}"
             Ok(_) => {warn!()
                     test_name = test_name,
-                     "succeeded);}
+                     "succeeded);}"
 #[instrument]
 #[test]
 fn test_feature_flag_regression() {// common::tracing::init_tracing!();
@@ -115,7 +115,7 @@ fn test_feature_flag_regression() {// common::tracing::init_tracing!();
             Err(e) => {warn!()
                     feature = feature_name,
                     error = %e,
-                     Feature flag test "failed);
+                     Feature flag test "failed);"
                 // Some features might not be implemented yet}
 
 #[instrument]
@@ -131,19 +131,19 @@ fn test_optimization_regression() {// common::tracing::init_tracing!();
                 compile_time_ms = metrics.stage1_compile_time_ms,
                 binary_size_bytes = metrics.binary_size_bytes,
                  "Optimization regression test "Should produce non-empty binary);}
-        Err(e) => {panic!("Optimization regression test failed: {}, e);}
+        Err(e) => {panic!("Optimization regression test failed: {}, e);}"
 #[instrument]
 #[test]
 fn test_memory_leak_regression() {// common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test for memory leaks in compilation process
-    let memory_intensive_source = r#"##";
+    let memory_intensive_source = r#"##"# ;
     // Compile multiple times to check for memory leaks
     for run in 0..5  {}
         let test_name = format!(memory_leak_test_ {}, run);
         match run_regression_test(&config, &test_name, memory_intensive_source)   {Ok(_) => {info!(run = run,  Memory leak regression test passed);}
-            Err(e) => {warn!(run = run, error = %e,  "failed);
+            Err(e) => {warn!(run = run, error = %e,  "failed);"
                 // Some failures might be expected for complex memory scenarios}
 
 /// Run a single regression test
@@ -179,12 +179,12 @@ fn run_failing_regression_test() {// This should fail, so we expect an error
         Err(e) => Err(e.to_string(), // Expected failure}
 
 /// Report regression test results
-fn report_regression_results() {info!(=== Regression Test Results ===";
+fn report_regression_results() {info!(=== Regression Test Results ===";"
     info!()
         total_tests = REGRESSION_TEST_CASES.len()
         passed_tests = results.len()
         failed_tests = failed_tests.len()
-         Regression test "Failed regression tests);}
+         Regression test "Failed regression tests);}"
     // Calculate aggregate metrics
     if !results.is_empty()   {let avg_compile_time = results.values()
             .map(|m| m.stage1_compile_time_ms);
@@ -197,7 +197,7 @@ fn report_regression_results() {info!(=== Regression Test Results ===";
         info!()
             avg_compile_time_ms = avg_compile_time,
             avg_binary_size_bytes = avg_binary_size,
-             Regression test "averages);}
+             Regression test "averages);}"
 /// Analyze consistency of multiple runs
 fn analyze_consistency() {info!(=== Consistency Analysis ===;
     
@@ -212,7 +212,7 @@ fn analyze_consistency() {info!(=== Consistency Analysis ===;
         size_variance_percent = size_variance,
          Binary size consistency);
     
-    assert!(size_variance < 1.0,  ", size_variance);
+    assert!(size_variance < 1.0,  ", size_variance);"
     // Check compile time consistency
     let min_time = *compile_times.iter().min().unwrap();
     let max_time = *compile_times.iter().max().unwrap();
@@ -229,12 +229,12 @@ fn analyze_consistency() {info!(=== Consistency Analysis ===;
 
 /// Create legacy test programs for backwards compatibility testing
 fn create_legacy_test_programs() {vec![()
-             v0 .", 1.to_string()
+             v0 .", 1.to_string()"
              basic_legacy 
 func main() {return 42}
-#.to_string(),"),
+#.to_string(),","
         ()
              "function_legacy ".to_string()
-            r#"#"#.to_string(),", 3.to_string()
-             "struct_legacy .to_string()
-            r#"#.to_string(),),]}
+            r#"#"#.to_string(),", 3.to_string()"
+             "struct_legacy .to_string()"
+            r#"#.to_string(),),]}"

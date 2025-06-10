@@ -19,7 +19,7 @@ fn test_slice_ffi_basic_operations() {// common::tracing::init_tracing!()
     cursed_slice_set_length(&mut header, 3)
     
     // Fill with test data
-    unsafe {let data = [10i32, 20, 30]
+    unsafe {let data = [10i32, 20, 30}
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             header.ptr as *mut u8,
@@ -51,7 +51,7 @@ fn test_slice_ffi_copy_operations() {// common::tracing::init_tracing!()
     
     // Set up source data
     cursed_slice_set_length(&mut src, 5)
-    unsafe {let data = [1i32, 2, 3, 4, 5]
+    unsafe {let data = [1i32, 2, 3, 4, 5}
         std::ptr::copy_nonoverlapping()
             data.as_ptr() as *const u8,
             src.ptr as *mut u8,
@@ -64,7 +64,7 @@ fn test_slice_ffi_copy_operations() {// common::tracing::init_tracing!()
     
     // Verify copied data
     unsafe {let dst_data = std::slice::from_raw_parts(dst.ptr as *const i32, 3)
-        assert_eq!(dst_data, &[2, 3, 4])}
+        assert_eq!(dst_data, &[2, 3, 4})}
     
     // Clean up
     cursed_slice_deallocate(&mut src, 4, runtime_ptr)
@@ -92,7 +92,7 @@ fn test_slice_ffi_fill_operations() {// common::tracing::init_tracing!()
     
     // Verify filled data
     unsafe {let data = std::slice::from_raw_parts(header.ptr as *const i32, 3)
-        assert_eq!(data, &[42, 42, 42])}
+        assert_eq!(data, &[42, 42, 42})}
     
     // Clean up
     cursed_slice_deallocate(&mut header, 4, runtime_ptr)}
@@ -207,7 +207,7 @@ fn test_slice_ffi_multiple_slices() {// common::tracing::init_tracing!()
     assert!(slice2.ptr.is_null()
     assert!(slice3.ptr.is_null();
 
-#[test]
+#[test}
 fn test_slice_ffi_concurrent_access() {// common::tracing::init_tracing!()
     common::tracing::setup()
     

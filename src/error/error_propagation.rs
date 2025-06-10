@@ -1,4 +1,5 @@
-use crate::error::{Error, SourceLocation};
+use crate::error::Error;
+use crate::debug::source_location::SourceLocation;
 use std::fmt;
 use std::error::Error as StdError;
 
@@ -267,8 +268,8 @@ impl Error {
         Error::ErrorPropagation {
             message: format!("Type mismatch in error propagation: expected '{}', found '{}'", 
                            expected, actual),
-            line: Some(location.line),
-            column: Some(location.column),
+            line: Some(location.line as usize),
+            column: Some(location.column as usize),
         }
     }
     
@@ -279,8 +280,8 @@ impl Error {
     ) -> Self {
         Error::ErrorPropagation {
             message,
-            line: Some(location.line),
-            column: Some(location.column),
+            line: Some(location.line as usize),
+            column: Some(location.column as usize),
         }
     }
 }
@@ -323,26 +324,38 @@ impl ErrorPropagationUtils {
     /// Get the source location from an error if available
     pub fn extract_source_location(error: &Error) -> Option<SourceLocation> {
         match error {
-            Error::TemplateError { source_location, .. } => source_location.clone(),
-            Error::Panic { source_location, .. } => source_location.clone(),
-            Error::Recovery { source_location, .. } => source_location.clone(),
+            Error::TemplateError { source_location, .. } => source_location.as_ref().map(|loc| loc.clone().into()),
+            Error::Panic { source_location, .. } => source_location.as_ref().map(|loc| loc.clone().into()),
+            Error::Recovery { source_location, .. } => source_location.as_ref().map(|loc| loc.clone().into()),
             Error::ErrorPropagation { line, column, .. } => {
                 if let (Some(line), Some(column)) = (line, column) {
-                    Some(SourceLocation::new(*line, *column))
+                    Some(SourceLocation::new(
+                        std::path::PathBuf::from("<unknown>"),
+                        *line as u32,
+                        *column as u32,
+                    ))
                 } else {
                     None
                 }
             },
             Error::ParseError { line, column, .. } => {
                 if let (Some(line), Some(column)) = (line, column) {
-                    Some(SourceLocation::new(*line, *column))
+                    Some(SourceLocation::new(
+                        std::path::PathBuf::from("<unknown>"),
+                        *line as u32,
+                        *column as u32,
+                    ))
                 } else {
                     None
                 }
             },
             Error::CodeGeneration { line, column, .. } => {
                 if let (Some(line), Some(column)) = (line, column) {
-                    Some(SourceLocation::new(*line, *column))
+                    Some(SourceLocation::new(
+                        std::path::PathBuf::from("<unknown>"),
+                        *line as u32,
+                        *column as u32,
+                    ))
                 } else {
                     None
                 }
@@ -382,21 +395,33 @@ macro_rules! propagation_error {
     ($inner:expr, $line:expr, $column:expr) => {
         ErrorPropagationError::new(
             $inner,
-            SourceLocation::new($line, $column),
+            SourceLocation::new(
+                std::path::PathBuf::from("<unknown>"),
+                $line as u32,
+                $column as u32,
+            ),
         )
     };
     
     ($inner:expr, $line:expr, $column:expr, $context:expr) => {
         ErrorPropagationError::new(
             $inner,
-            SourceLocation::new($line, $column),
+            SourceLocation::new(
+                std::path::PathBuf::from("<unknown>"),
+                $line as u32,
+                $column as u32,
+            ),
         ).with_additional_context($context.to_string())
     };
     
     ($inner:expr, $line:expr, $column:expr, $func:expr, $type:expr) => {
         ErrorPropagationError::with_context(
             $inner,
-            SourceLocation::new($line, $column),
+            SourceLocation::new(
+                std::path::PathBuf::from("<unknown>"),
+                $line as u32,
+                $column as u32,
+            ),
             Some($func.to_string()),
             Some($type.to_string()),
         )
@@ -410,7 +435,11 @@ mod tests {
     #[test]
     fn test_error_propagation_error_creation() {
         let inner = Error::Runtime("Test error".to_string());
-        let location = SourceLocation::new(1, 5);
+        let location = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            1,
+            5,
+        );
         let error = ErrorPropagationError::new(inner, location);
         
         assert_eq!(error.propagation_site.line, 1);
@@ -421,8 +450,16 @@ mod tests {
     #[test]
     fn test_error_propagation_chain() {
         let inner = Error::Runtime("Test error".to_string());
-        let location1 = SourceLocation::new(1, 5);
-        let location2 = SourceLocation::new(2, 10);
+        let location1 = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            1,
+            5,
+        );
+        let location2 = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            2,
+            10,
+        );
         
         let error = ErrorPropagationError::new(inner, location1)
             .add_propagation_site(location2);
@@ -433,7 +470,11 @@ mod tests {
     
     #[test]
     fn test_propagation_type_mismatch_error() {
-        let location = SourceLocation::new(1, 5);
+        let location = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            1,
+            5,
+        );
         let error = PropagationTypeMismatchError::new(
             "Result<i32, String>".to_string(),
             "Option<i32>".to_string(),
@@ -446,7 +487,11 @@ mod tests {
     
     #[test]
     fn test_propagation_context_error() {
-        let location = SourceLocation::new(1, 5);
+        let location = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            1,
+            5,
+        );
         let error = PropagationContextError::new(
             "Cannot propagate in global scope".to_string(),
             location,
@@ -499,8 +544,16 @@ mod tests {
     #[test]
     fn test_propagation_stack_trace() {
         let inner = Error::Runtime("Test error".to_string());
-        let location1 = SourceLocation::new(1, 5);
-        let location2 = SourceLocation::new(2, 10);
+        let location1 = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            1,
+            5,
+        );
+        let location2 = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            2,
+            10,
+        );
         
         let error = ErrorPropagationError::new(inner, location1)
             .add_propagation_site(location2)
@@ -515,7 +568,11 @@ mod tests {
     #[test]
     fn test_error_display() {
         let inner = Error::Runtime("Original error".to_string());
-        let location = SourceLocation::new(1, 5);
+        let location = SourceLocation::new(
+            std::path::PathBuf::from("<test>"),
+            1,
+            5,
+        );
         let error = ErrorPropagationError::with_context(
             inner,
             location,

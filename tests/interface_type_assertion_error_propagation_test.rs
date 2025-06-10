@@ -33,7 +33,7 @@ mod tests   {// Import the common module for test utilities
         
         // Create a new LLVM context
         let context = Context::create()
-    let context = Box::leak(Box::new(context);
+    let context = Box::leak(Box::new(context)
         let module = context.create_module(test_module)
         let builder = context.create_builder()
         
@@ -42,7 +42,7 @@ mod tests   {// Import the common module for test utilities
         
         // Create a test function to contain our code
         let void_type = context.void_type()
-        let fn_type = void_type.fn_type(&[], false)
+        let fn_type = void_type.fn_type(&[}, false)
         let function = codegen.as_ref().unwrap().get_module().add_function(test_function, context.i32_type().into(), None)
         let basic_block = context.i32_type().const_int(0, false).into()
         codegen.as_ref().unwrap().builder().name()
@@ -79,7 +79,7 @@ mod tests   {// Import the common module for test utilities
         
         // Create a new LLVM context
         let context = Context::create()
-    let context = Box::leak(Box::new(context);
+    let context = Box::leak(Box::new(context)
         let module = context.create_module(test_module)
         let builder = context.create_builder()
         

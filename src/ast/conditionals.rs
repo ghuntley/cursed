@@ -480,12 +480,12 @@ impl Statement for CaseStatement {
 pub fn if_stmt(condition: Box<dyn Expression>, consequence: BlockStatement) -> IfStatement {
     IfStatement::simple(condition, consequence)
 }
-
-pub fn while_stmt(condition: Box<dyn Expression>, body: BlockStatement) -> WhileStatement {
+    
+    pub fn while_stmt(condition: Box<dyn Expression>, body: BlockStatement) -> WhileStatement {
     WhileStatement::while_loop(condition, body)
 }
-
-pub fn for_stmt(
+    
+    pub fn for_stmt(
     init: Option<Box<dyn Statement>>,
     condition: Option<Box<dyn Expression>>,
     post: Option<Box<dyn Statement>>,

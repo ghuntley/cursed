@@ -368,7 +368,7 @@ impl Error {
             Error::ErrorPropagation { line, .. } |
             Error::ParseError { line, .. } |
             Error::CodeGeneration { line, .. } => *line,
-            _ => self.get_source_location().map(|loc| loc.line),
+            _ => self.get_source_location().map(|loc| loc.line as usize),
         }
     }
 
@@ -378,7 +378,7 @@ impl Error {
             Error::ErrorPropagation { column, .. } |
             Error::ParseError { column, .. } |
             Error::CodeGeneration { column, .. } => *column,
-            _ => self.get_source_location().map(|loc| loc.column),
+            _ => self.get_source_location().map(|loc| loc.column as usize),
         }
     }
 }

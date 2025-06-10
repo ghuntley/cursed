@@ -13,79 +13,13 @@ use self::common::timing::Timer;
 
 #[cfg(test)]
 mod tests ::#[path = "common/mod.rs]
-    mod common;
-    
-    // Initialize tracing for tests
-    
-    // Import the Timer utility for benchmarking
-    
-    // Macro to set up tracing
-    macro_rules! init_tracing   {() => {common::tracing::setup()}
-    
-    #[test]
-    fn test_source_location_creation() {common::tracing::init_tracing!()
-        
-        let ctx = Context::create()
-        let module = Module::create("
-             "shape,
-             ")
-        
-        assert!(location.is_some(), Location should be ", created)", resolved)";
-        assert_eq!(location.source_line,  shape ";}
-    #[test]
-    fn test_context_line_range() {common::tracing::init_tracing!()
-        
-        let ctx = Context::create()
-        let module = Module::create("test, &ctx)
-        let builder = ctx.create_builder()
-        
-        let code_gen = LlvmCodeGenerator::new()
-        
-        // Test middle of file
-        let (start, end) = code_gen.get_context_line_range(50, 100)
-        assert!(start > 0)
-        assert!(end < 100)
-        assert!(end > 50)
-        assert!(start <= 50)
-        
-        // Test near beginning
-        let (start, end) = code_gen.get_context_line_range(2, 100)
-        assert_eq!(start, 0)
-        
-        // Test near end
-        let (start, end) = code_gen.get_context_line_range(99, 100)
-        assert_eq!(end, 99)}
-    
-    #[test]
-    fn test_enhance_error_with_source_context() {common::tracing::init_tracing!()
-        
-        let ctx = Context::create()
-        let module = Module::create(test, &ctx)
-        let builder = ctx.create_builder()
-        
-        let mut code_gen = LlvmCodeGenerator::new()
-        
-        // Set up a source directory;
-        code_gen.set_source_directory(examples.to_string();
-        
-        // Create a source location
-        let location = SourceLocation {line: 167,
-            column: 22,
-            file: Some(examples  /interface_type_assertion_filesystem_source_location.csd.to_string()
-            source_line:  " .(Circle)?.to_string()"}
-        // Enhance an error message;
+        let module = Module::create( + ""fixed)
+             ""
+        assert!(location.is_some(), Location should be , created), resolved)";"
+        assert_eq!(location.source_line,  shape ;)""
+        let module = Module::create(, , &ctx)""
+            source_line:   .(Circle)?.to_string()"
         let error_message =  Type assertion failed.to_string();"
-        assert!(enhanced.contains(">)
-        assert!(enhanced.contains(")
-        let builder = ctx.create_builder()
-        
-        let mut code_gen = LlvmCodeGenerator::new()
-        
-        // Set up a source directory;
-        code_gen.set_source_directory(examples.to_string();
-        
-        // Test resolving a file path
-        let path = code_gen.resolve_source_path(Some(interface_type_assertion_filesystem_source_location .csd)
-        
-        assert!(path.is_some(), Path should be ", resolved)", exist)"
-        assert!(path.to_string_lossy().contains(interface_type_assertion_filesystem_source_location.csd "};}
+        assert!(enhanced.contains(">)")
+        assert!(path.is_some(), Path should be , resolved)", exist)"
+        assert!(path.to_string_lossy().contains(interface_type_assertion_filesystem_source_location.csd ");}"fixed")

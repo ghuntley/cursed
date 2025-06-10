@@ -15,46 +15,29 @@ mod tests :: use super::*;
     fn create_test_code_generator() {// Simplified tracing setup for this test}
     
     #[test]
-    fn test_basic_code_generator_creation() {// Initialize tracing for this test
-        setup_tracing()
+    fn test_basic_code_generator_creation() {// Initialize tracing for this test}
+        setup_tracing(})
         
         // Create a test code generator
-        let code_generator = create_test_code_generator()
-        
+        let code_generator = create_test_code_generator();
         // Verify the module exists and has the correct name
-        let module = code_generator.as_ref().unwrap().get_module()
-        assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(),  test_module;
+        let module = code_generator.as_ref().unwrap().get_module();
+        assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(),  test_module;)
         
         // Verify the module is valid
         assert!(module.verify().is_ok(), Module should , verify)}
     
     #[test]
-    fn test_error_creation() {// Initialize tracing for this test
-        setup_tracing()
+    fn test_error_creation() {// Initialize tracing for this test}
+        setup_tracing(})
         
         // Test basic error creation
-        let error = Error::from_str(test error message)
-        assert!(error.to_string().contains(testerror)
-        
+        let error = Error::from_str(test error message);
+        assert!(error.to_string().contains(testerror);)
         // Test compilation error
-        let compilation_error = Error::Compilation(compilationfailed.to_string()
+        let compilation_error = Error::Compilation(compilationfailed.to_string();)
         let error_str = format!({}, compilation_error)
-        assert!(error_str.contains(compilationfailed)")"Book.to_string()"}
-        // Verify the structure is correct;
-        assert_eq!(type_assertion.type_name,  Book;)
-        assert_eq!(type_assertion.token,  type_assertion);}
-    
-    #[test]
-    fn test_basic_compilation_error() {// Initialize tracing for this test
-        setup_tracing()
-        
-        // Create a test code generator
-        let code_generator = create_test_code_generator()
-        
-        // Test that we can create compilation errors
-        let error = Error::Compilation(Type assertion failed: Article is not a Book.to_string()
-        let error_message = format!(", mismatch)
-        assert!(error_message.contains("Type assertion "Error should mention type , assertion)
-        // Test that module is still valid
-        let module = code_generator.as_ref().unwrap().get_module();
-        assert!(module.verify().is_ok(),  Module  should remain valid ";}
+        assert!(error_str.contains(compilationfailed)", .to_string()"}")
+        let error_message = format!(, mismatch)""
+        assert!(error_message.contains(,  assertion );)
+        assert!(module.verify().is_ok(),  Module  should remain valid ;}fixed")

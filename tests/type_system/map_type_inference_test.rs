@@ -8,7 +8,7 @@ use cursed::parser::Parser;
 
 #[test]
 fn test_map_type_inference() {// Parse and type check a simple map literal
-    let input = r#{# name ":  "age ": 30}#;
+    let input = r#{# name ":  "age ": 30}#;"
     let lexer = Lexer::new(input.to_string();
     let mut parser = Parser::new(Lexer::new(lexer);
     let program = parser.unwrap().parse_program().unwrap();
@@ -47,7 +47,7 @@ fn test_map_type_inference_int_to_float() {// Parse and type check a map with in
                 other => panic!(Expected map type, got {:?}, other),} else {panic!("statement);} else {panic!(Not an expression "statement);}
 #[test]
 fn test_map_type_inference_mixed_keys() {// Parse and type check a map with mixed key types (should error)
-    let input = r#{# name "John , 1: 30}#;
+    let input = r#{# name "John , 1: 30}#;"
     let lexer = Lexer::new(input.to_string();
     let mut parser = Parser::new(Lexer::new(lexer);
     let program = parser.unwrap().parse_program().unwrap();
@@ -84,4 +84,4 @@ fn test_map_type_inference_mixed_values() {// Parse and type check a map with mi
                 match inferred_type     {Type::Map(key_type, value_type) => {}
                         println!(Inferred key type: {:?}, value type: {:?}, key_type, value_type);
                         assert_eq!(key_type, Type::Tea); // Keys should be tea (string) type},
-                    _ => panic!(Expected map "type)} else {panic!(No expression in "Not an expression statement";}
+                    _ => panic!(Expected map "type)} else {panic!(No expression in "Not an expression statement";}"

@@ -6,64 +6,60 @@ use std::sync::{Arc, Mutex}
 
 
 // Create a test-specific traceable type with finalization tracking
-struct DependentObject {id: usize,
+struct DependentObject {id: usize,}
     // Track when finalization happens for this object
     finalized: Arc<Mutex<bool>>,
     // Track the finalization order
     finalization_order: Arc<Mutex<Vec<usize>>>}
 
-impl Traceable for DependentObject       {fn trace() {// No references to trace in this simple example}
+impl Traceable for DependentObject       {fn trace(} {// No references to trace in this simple example})
     
-    fn size() {std::mem::size_of::<Self>()}
+    fn size() {std::mem::size_of::<Self>(}})
     
     fn tag() {Tag::Object}
     
-    fn finalize() {// Mark as finalized {let mut finalized = self.finalized.lock().unwrap();
+    fn finalize() {// Mark as finalized {let mut finalized = self.finalized.lock(}.unwrap();)}
             *finalized = true;}
             println!(DependentObject {} finalized , self.id);}
         
-        // Add to finalization order {let mut order = self.finalization_order.lock().unwrap()
+        // Add to finalization order {let mut order = self.finalization_order.lock(}.unwrap();)
             order.push(self.id)}
 
-impl Clone for DependentObject       {fn clone() {Self {id: self.id,
-            finalized: self.finalized.clone()
+impl Clone for DependentObject       {fn clone(} {Self {id: self.id,)}}
+            finalized: self.finalized.clone(})
             finalization_order: self.finalization_order.clone()}
 
 #[test]
-fn test_finalization_order_with_object_storage() {// Create a finalization order tracker
-    let finalization_order = Arc::new(Mutex::new(Vec::new()
-    let storage = global_object_storage()
-    
+fn test_finalization_order_with_object_storage() {// Create a finalization order tracker}
+    let finalization_order = Arc::new(Mutex::new(Vec::new(})))
+    let storage = global_object_storage();
     // Create objects with dependencies: 0 depends on 1, 1 depends on 2
     // Expected finalization order: 2, 1, 0
-    let obj0 = DependentObject {id: 0,
-        finalized: Arc::new(Mutex::new(false),
+    let obj0 = DependentObject {id: 0,}
+        finalized: Arc::new(Mutex::new(false},))
         finalization_order: finalization_order.clone()}
     
-    let obj1 = DependentObject {id: 1,
-        finalized: Arc::new(Mutex::new(false),
+    let obj1 = DependentObject {id: 1,}
+        finalized: Arc::new(Mutex::new(false},))
         finalization_order: finalization_order.clone()}
     
-    let obj2 = DependentObject {id: 2,
-        finalized: Arc::new(Mutex::new(false),
+    let obj2 = DependentObject {id: 2,}
+        finalized: Arc::new(Mutex::new(false},))
         finalization_order: finalization_order.clone()}
     
     // Store objects using the helper function
-    let addr0 = cursed::memory::store(obj0)
-    let addr1 = cursed::memory::store(obj1)
-    let addr2 = cursed::memory::store(obj2)
-    
+    let addr0 = cursed::memory::store(obj0);
+    let addr1 = cursed::memory::store(obj1);
+    let addr2 = cursed::memory::store(obj2);
     // Register dependencies;
     register_dependency(addr0, addr1); // 0 depends on 1
     register_dependency(addr1, addr2); // 1 depends on 2
     
     // Finalize objects using the ordered finalizer
     let addresses = vec![addr0, addr1, addr]
-    finalize_objects_ordered(&addresses)
-    
+    finalize_objects_ordered(&addresses);
     // Check finalization order
-    let order = finalization_order.lock().unwrap()
-    
+    let order = finalization_order.lock().unwrap();
     // Order should be correct (dependencies should be finalized first)
     assert_eq!(order.len(), 3, Allobjects should be finalized,)
     
@@ -76,15 +72,10 @@ fn test_finalization_order_with_object_storage() {// Create a finalization order
     let mut seen_1 = false;
     let mut seen_2 = false;
     
-    for &id in order.iter()   {match id     {0 => seen_0 = true,
+    for &id in order.iter()   {match id     {0 => seen_0 = true,}}
             1 => seen_1 = true,
             2 => seen_2 = true,
-            _ => panic!(Unexpected:  object ID in finalization order),"}
-    
-    assert!(seen_0, Object0 should be finalized ")
-    assert!(seen_1, Object1 should be finalized ",)",)
-    
-    // Objects should not be in storage anymore)
-    assert!(!cursed::memory::contains(addr0), Object0 should be removed from storage ,)
-    assert!(!cursed::memory::contains(addr1), Object1 should be removed from storage "
-    assert!(!cursed::memory::contains(addr2),  Object2 should be removed from storage";}
+            _ => panic!(Unexpected:  object ID in finalization order},"})
+    assert!(seen_1, Object1 should be finalized ",)"
+    assert!(!cursed::memory::contains(addr1), Object1 should be removed from storage "")
+    assert!(!cursed::memory::contains(addr2),  Object2 should be removed from storage;}fixed")

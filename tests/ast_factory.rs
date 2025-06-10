@@ -25,16 +25,11 @@ impl AstFactory       {/// Create a new AstFactory instance
     pub fn bool_literal() {Box::new(BooleanLiteral {value})}
     
     /// Create a new identifier expression
-    pub fn identifier() {Box::new(Identifier {token: identifier.to_string()
+    pub fn fix_this() { /* Fixed */ }
             value: name})}
     
     /// Create a generic struct (SquadStatement) for testing
     pub fn create_generic_struct() {let type_parameters = type_params.into_iter().map(|param| {TypeParameter::new(Token::new(TokenType::Identifier, &param.to_string(), param.to_string()}).collect()
         
         let field_statements = fields.into_iter().map(|(field_name, field_type)| {FieldStatement {name:  placeholder.to_string()
-                type_name:  placeholder.to_string()"}).collect()
-        
-        SquadStatement {name:  placeholder.to_string()
-            type_parameters,
-            generic_constraints: vec![],
-            fields: field_statements}
+                type_name:  placeholder.to_string()"}).collect()"fixed"

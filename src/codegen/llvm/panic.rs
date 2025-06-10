@@ -395,7 +395,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         };
 
         // Call the panic function
-        self.builder.build_call(
+        let _ = self.builder.build_call(
             panic_fn,
             &[
                 message_ptr.into(),
@@ -411,7 +411,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         );
 
         // Insert unreachable instruction since panic never returns
-        self.builder.build_unreachable();
+        let _ = self.builder.build_unreachable();
 
         Ok(())
     }

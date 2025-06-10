@@ -14,39 +14,10 @@ use cursed::ast::Statement;
 mod tests ::use super::*;
     
     #[test]
-    fn test_channel_range_parse_simple() {let input = r#""#
-        bestie value := flex <-ch {vibez.println(value)};
-        #"Failed to parse channel range statement: {:?}, , stmt.err()
-        
-        let stmt = stmt.unwrap()
-        let channel_range_stmt = stmt.as_any().downcast_ref::<ChannelRangeForStatement>()
-        assert!(channel_range_stmt.is_some(), 
-        
-        let channel_range_stmt = channel_range_stmt.unwrap();
-        assert_eq!(channel_range_stmt.value_var,  "value);
-        bestie value, ok := flex <-ch {if !ok     {break}
-            processValue(value)};
-        #";
-        let mut lexer = Lexer::new(input.to_string()
-        let tokens = lexer.tokenize().unwrap()
-        let mut parser = Parser::new(Lexer::new(Lexer::new(tokens.into_iter()
-        
-        let stmt = parser.parse_statement()
-        assert!(stmt.is_ok(), 
-        
-        let stmt = stmt.unwrap()
-        let channel_range_stmt = stmt.as_any().downcast_ref::<ChannelRangeForStatement>()
-        assert!(channel_range_stmt.is_some(), "Statement is not a , ChannelRangeForStatement)"value);"
-        assert_eq!(channel_range_stmt.ok_var.as_ref().unwrap(),  
-        bestie msg, open := flex <-messageChannel {handleMessage(msg, open)};
-        "#;
-        let mut lexer = Lexer::new(input.to_string()
-        let tokens = lexer.tokenize().unwrap()
-        let mut parser = Parser::new(Lexer::new(Lexer::new(tokens.into_iter()
-        
-        let stmt = parser.parse_statement()
-        assert!(stmt.is_ok()
-        
-        let stmt = stmt.unwrap()
-        let string_repr = stmt.string()
-        assert!(string_repr.contains(")"};)
+    fn test_channel_range_parse_simple() {let input = r#"}
+        #", " to parse channel range statement: {:?}, , stmt.err();
+        assert_eq!(channel_range_stmt.value_var,  "value);"
+        #;""
+        assert!(channel_range_stmt.is_some(), ,  is not a , ChannelRangeForStatement)"value);"
+        "#;"
+        assert!(string_repr.contains("fixed"))

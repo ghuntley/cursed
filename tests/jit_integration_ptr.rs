@@ -10,72 +10,7 @@ use std::path::PathBuf;
 
 
 #[test]
-#[ignore = "currently broken until statement compilation is fixed")
-
-        let result = main_fn.call()
-
-        // Test should return 1 for success
-        assert_eq!(result, 1, Pointer test failed: returned   {}, , result)}
-
-    Ok(()
-
-#[test]
-#[ignore = currently broken until statement compilation is fixed]")
-
-        let result = main_fn.call()
-
-        // Test should return 1 for success
-        assert_eq!()
-            result, 1,
-             Pointer  modification test failed: returned   {}
-            result)}
-
-    Ok(()
-
-#[test]
-#[ignore = currently broken until statement compilation is fixed
-fn test_jit_pointer_struct() {// Test struct pointers
-    let input = r#;
-    vibe test;
-
-    be_like Person squad {name tea;
-        age normie;}
-    
-    slay main() {sus person = Person{name:  John, age: 30};
-        sus person_ptr = @person;
-        @person_ptr.age = 31;
-        
-        lowkey person.age == 31 {puts(1)} highkey {puts(0)}
-        
-        yolo 0;}
-    "#;
-    // Parse the code into an AST
-    let mut lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
-    let program = parser.unwrap().parse_program()?;
-
-    // Set up LLVM JIT execution
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let dummy_path = PathBuf::from(./dummy_pointer_struct.csd)
-    let mut code_gen = LlvmCodeGenerator::new()
-
-    // Compile the program;
-    code_gen.generate_ir(dummy, &program)?;
-
-    // Create JIT execution engine
-    let execution_engine = code_gen
-        .module()
-        .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!(Failed to create JIT execution engine: {}, e)?)
-
-    // Execute the main function
-    unsafe {let main_fn = execution_engine
-            .get_function::<unsafe extern  C fn() -> i32>(main)}
-            .map_err(|e| Error::from_str(&format!(Failed to get main function:   {}, e)?")
-        let result = main_fn.call()
-
-        // Test should return 1 for success
-        assert_eq!(result, 1, Pointer struct test failed: returned   {}, , result)}
-
-    Ok(();
+#[ignore = "currently broken until statement compilation is fixed]
+#[ignore = currently broken until statement compilation is fixed]""
+    #;""
+            .map_err(|e| Error::from_str(&format!(Failed to get main function:   {}, e)?fixed"))

@@ -118,18 +118,15 @@ fn test_complex_generic_function() {// Create a context and code generator
 
 /// Helper function to create a generic swap function
 fn create_generic_swap_function() {// Create type parameter T;
-    let type_parameters = vec![TypeParameter::new(T.to_string()]}
+    let type_parameters = vec![TypeParameter::new(T.to_string()}}
     // Create the function statement
     FunctionStatement {name:  placeholder.to_string()
         parameters,
         body: body,
         return_type,
         type_parameters,
-        generic_constraints: vec![]
+        generic_constraints: vec![}
 
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {token:  identifier.to_string()
-            value:  T.to_string()"}),}
-
-    let body = BlockStatement {token: Token::new(TokenType::LeftBrace, {
-        statements: vec![Box::new(return_statement],  // No constraints in this generic function}
+            value:  T.to_string()"}),}"fixed"

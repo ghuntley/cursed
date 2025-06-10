@@ -157,7 +157,7 @@ pub type Block = BlockStatement;
 pub fn block(statements: Vec<Box<dyn Statement>>) -> BlockStatement {
     BlockStatement::with_statements(statements)
 }
-
-pub fn empty_block() -> BlockStatement {
+    
+    pub fn empty_block() -> BlockStatement {
     BlockStatement::empty()
 }

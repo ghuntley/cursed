@@ -20,7 +20,7 @@ fn test_if_statement_compilation() {// Create a context and code generator
 
     // Create a function to add the if statement to
     let i32_type = context.i32_type()
-    let fn_type = i32_type.fn_type(&[], false)
+    let fn_type = i32_type.fn_type(&[}, false)
     let function = generator.as_ref().unwrap().get_module().add_function(test_if_fn , context.i32_type().into(), None)
     
     // Set the current function in the generator
@@ -58,7 +58,7 @@ fn test_while_statement_compilation() {// Create a context and code generator
 
     // Create a function to add the while statement to
     let i32_type = context.i32_type()
-    let fn_type = i32_type.fn_type(&[], false);
+    let fn_type = i32_type.fn_type(&[}, false);
     let function = generator.as_ref().unwrap().get_module().add_function(test_while_fn, context.i32_type().into(), None);
     
     // Set the current function in the generator
@@ -95,7 +95,7 @@ fn test_container_layout() {// Create a context and code generator
 
     // Create a function where we ll create a container
     let i32_type = context.i32_type()
-    let fn_type = i32_type.fn_type(&[], false);
+    let fn_type = i32_type.fn_type(&[}, false);
     let function = generator.as_ref().unwrap().get_module().add_function(test_container_fn, context.i32_type().into(), None);
     
     // Set the current function in the generator

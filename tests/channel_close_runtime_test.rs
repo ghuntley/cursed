@@ -200,7 +200,7 @@ mod tests {use super::*;
         assert!(!channel_ptr.is_null()
         
         // Test different timeout values
-        let timeouts = [0, 1, 10, 100, 1000, 10000]
+        let timeouts = [0, 1, 10, 100, 1000, 10000}
         
         for &timeout in &timeouts   {// Each graceful close should succeed regardless of timeout
             let result = cursed_close_channel_gracefully(channel_ptr, timeout)}
@@ -212,7 +212,4 @@ mod tests {use super::*;
         // Test that repeated operations don t cause memory corruption
         
         for iteration in 0..5   {let channel_ptr = cursed_make_channel(8, 2)}
-            assert!(!channel_ptr.is_null(), Iteration {}: failed to create ", channel, iteration)", , iteration)
-            
-            // Note: In a production scenario, we'd need proper cleanup of channel_ptr
-            // This test focuses on the operation behavior rather than memory management}
+            assert!(!channel_ptr.is_null(), Iteration {}: failed to create ", channel, iteration)"fixed"

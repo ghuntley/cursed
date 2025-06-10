@@ -3,7 +3,8 @@
 /// Provides rich error messages with source locations, stack traces,
 /// code snippet extraction, and integration with panic system and question mark operator.
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error::Error as CursedError;
+use crate::error::SourceLocation;
 use crate::runtime::debug_info::{EnhancedStackTrace, EnhancedStackFrame, DebugInfo};
 use crate::runtime::debug_manager::DebugManager;
 use crate::debug::enhanced_debug::{EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata};
@@ -127,18 +128,23 @@ impl DebugContext {
         // Try to get source location from the error
         let source_location = match &self.error {
             CursedError::ParseError { line, column, .. } => {
-                line.and_then(|l| column.map(|c| SourceLocation::new(l, c)))
+                line.and_then(|l| column.map(|c| SourceLocation {
+                    line: l,
+                    column: c,
+                    file: Some("<unknown>".to_string()),
+                }))
             }
             CursedError::Runtime { .. } => {
                 // Try to get from stack trace
                 self.stack_trace.as_ref()
                     .and_then(|trace| trace.top_frame())
-                    .map(|frame| SourceLocation::new(
-                        frame.debug_info.line as usize,
-                        frame.debug_info.column as usize
-                    ).with_file(&frame.debug_info.file_path.to_string_lossy()))
+                    .map(|frame| SourceLocation {
+                        line: frame.debug_info.line as usize,
+                        column: frame.debug_info.column as usize,
+                        file: Some(frame.debug_info.file_path.to_string_lossy().to_string()),
+                    })
             }
-            CursedError::Panic { source_location: Some(loc), .. } => Some(loc.clone()),
+            CursedError::Panic { source_location: Some(loc), .. } => Some(loc.clone().into()),
             _ => None,
         };
 
@@ -343,17 +349,22 @@ impl DebugContext {
         // Check the main error first
         match &self.error {
             CursedError::ParseError { line, column, .. } => {
-                line.and_then(|l| column.map(|c| SourceLocation::new(l, c)))
+                line.and_then(|l| column.map(|c| SourceLocation {
+                    line: l,
+                    column: c,
+                    file: Some("<unknown>".to_string()),
+                }))
             }
-            CursedError::Panic { source_location: Some(loc), .. } => Some(loc.clone()),
+            CursedError::Panic { source_location: Some(loc), .. } => Some(loc.clone().into()),
             _ => {
                 // Check stack trace
                 self.stack_trace.as_ref()
                     .and_then(|trace| trace.top_frame())
-                    .map(|frame| SourceLocation::new(
-                        frame.debug_info.line as usize,
-                        frame.debug_info.column as usize
-                    ).with_file(&frame.debug_info.file_path.to_string_lossy()))
+                    .map(|frame| SourceLocation {
+                        line: frame.debug_info.line as usize,
+                        column: frame.debug_info.column as usize,
+                        file: Some(frame.debug_info.file_path.to_string_lossy().to_string()),
+                    })
             }
         }
     }

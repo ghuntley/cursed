@@ -1,4 +1,5 @@
-use crate::error::{Error, SourceLocation};
+use crate::error::Error;
+use crate::error::SourceLocation as ErrorSourceLocation;
 use crate::error::error_propagation::ErrorPropagationError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -37,7 +38,7 @@ pub struct ErrorPropagationRuntime {
 #[derive(Debug, Clone)]
 pub struct PropagationFrame {
     /// Source location of the propagation
-    pub location: SourceLocation,
+    pub location: ErrorSourceLocation,
     
     /// Function context
     pub function_name: Option<String>,
@@ -176,7 +177,7 @@ impl ErrorPropagationRuntime {
     pub fn propagate_error(
         &mut self,
         error: Error,
-        location: SourceLocation,
+        location: ErrorSourceLocation,
         function_context: Option<String>,
     ) -> Result<(), ErrorPropagationError> {
         let start_time = Instant::now();
@@ -216,7 +217,7 @@ impl ErrorPropagationRuntime {
                 
                 Err(ErrorPropagationError::with_context(
                     handler_error,
-                    location,
+                    location.into(),
                     function_context,
                     None,
                 ))
@@ -249,17 +250,17 @@ impl ErrorPropagationRuntime {
     }
     
     /// Check if propagation depth is within limits
-    fn check_propagation_depth(&self, location: &SourceLocation) -> Result<(), ErrorPropagationError> {
+    fn check_propagation_depth(&self, location: &ErrorSourceLocation) -> Result<(), ErrorPropagationError> {
         if self.propagation_stack.len() >= self.config.max_propagation_depth {
             return Err(ErrorPropagationError::new(
                 Error::ErrorPropagation {
                     message: format!("Propagation depth limit exceeded: {} (max: {})",
                                    self.propagation_stack.len() + 1,
                                    self.config.max_propagation_depth),
-                    line: Some(location.line),
-                    column: Some(location.column),
+                    line: Some(location.line as usize),
+                    column: Some(location.column as usize),
                 },
-                location.clone(),
+                location.clone().into(),
             ));
         }
         
@@ -272,7 +273,7 @@ impl ErrorPropagationRuntime {
         let mut state_map = self.thread_local_state.write()
             .map_err(|_| ErrorPropagationError::new(
                 Error::Runtime("Failed to acquire thread state lock".to_string()),
-                SourceLocation::new(0, 0),
+                ErrorSourceLocation::new(0, 0).into(),
             ))?;
         
         let state = state_map.entry(thread_id).or_insert_with(|| ThreadLocalState {
@@ -363,7 +364,7 @@ impl ErrorPropagationRuntime {
     }
     
     /// Check if location is in tail position
-    fn is_tail_position(&self, _location: &SourceLocation) -> bool {
+    fn is_tail_position(&self, _location: &ErrorSourceLocation) -> bool {
         // Simplified implementation - would use AST analysis in practice
         false
     }
@@ -536,7 +537,7 @@ mod tests {
     
     #[test]
     fn test_propagation_frame() {
-        let location = SourceLocation::new(1, 5);
+        let location = ErrorSourceLocation::new(1, 5);
         let frame = PropagationFrame {
             location: location.clone(),
             function_name: Some("test_function".to_string()),
@@ -562,7 +563,7 @@ mod tests {
     fn test_default_error_handler() {
         let handler = DefaultErrorHandler::new();
         let error = Error::Runtime("Test error".to_string());
-        let location = SourceLocation::new(1, 5);
+        let location = ErrorSourceLocation::new(1, 5);
         let frame = PropagationFrame {
             location,
             function_name: None,
@@ -605,7 +606,7 @@ mod tests {
         assert_eq!(runtime.get_propagation_depth(), 0);
         
         // Simulate adding frames
-        let location = SourceLocation::new(1, 5);
+        let location = ErrorSourceLocation::new(1, 5);
         let frame = PropagationFrame {
             location,
             function_name: None,

@@ -126,7 +126,7 @@ impl Program {
             imports: Vec::new(),
         }
     }
-
+    
     pub fn with_package(package_name: String) -> Self {
         Self {
             statements: Vec::new(),
@@ -134,11 +134,11 @@ impl Program {
             imports: Vec::new(),
         }
     }
-
+    
     pub fn add_statement(&mut self, statement: Box<dyn Statement>) {
         self.statements.push(statement);
     }
-
+    
     pub fn add_import(&mut self, import: ImportStatement) {
         self.imports.push(import);
     }
@@ -225,7 +225,7 @@ impl ImportStatement {
             alias: None,
         }
     }
-
+    
     pub fn with_alias(token: Token, path: String, alias: String) -> Self {
         Self {
             token,

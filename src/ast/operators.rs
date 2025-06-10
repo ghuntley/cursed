@@ -389,11 +389,11 @@ impl Expression for TypeConversionExpression {
 pub fn binary_expr(left: Box<dyn Expression>, op: &str, right: Box<dyn Expression>) -> BinaryExpression {
     BinaryExpression::new(op.to_string(), left, op.to_string(), right)
 }
-
-pub fn unary_expr(op: &str, operand: Box<dyn Expression>) -> UnaryExpression {
+    
+    pub fn unary_expr(op: &str, operand: Box<dyn Expression>) -> UnaryExpression {
     UnaryExpression::new(op.to_string(), op.to_string(), operand)
 }
-
-pub fn assign_expr(name: Box<dyn Expression>, value: Box<dyn Expression>) -> AssignmentExpression {
+    
+    pub fn assign_expr(name: Box<dyn Expression>, value: Box<dyn Expression>) -> AssignmentExpression {
     AssignmentExpression::new("=".to_string(), name, value)
 }

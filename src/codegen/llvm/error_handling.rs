@@ -11,8 +11,9 @@ use crate::error::{Error as CursedError, SourceLocation};
 use crate::runtime::error_handling::{ErrorRuntime, ErrorContext};
 use crate::runtime::panic::{PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory};
 use crate::runtime::stack_trace::{StackTraceManager, CallFrame};
-use crate::runtime::runtime_error::{RuntimeError, ErrorSeverity, ErrorCategory};
-use crate::codegen::llvm::{LlvmCodeGenerator, LlvmValue, LlvmType};
+// use crate::runtime::runtime_error::{RuntimeError, ErrorSeverity, ErrorCategory};
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, error, info, instrument, warn};
@@ -103,10 +104,10 @@ impl ErrorHandlingFunctions {
             description: "Trigger a CURSED panic with detailed information".to_string(),
             parameters: vec![
                 LlvmType::String, // message
-                LlvmType::Integer(8), // severity
-                LlvmType::Integer(8), // category
-                LlvmType::Integer(32), // line
-                LlvmType::Integer(32), // column
+                LlvmType::Boolean, // severity (i8 -> i1)
+                LlvmType::Boolean, // category (i8 -> i1)
+                LlvmType::Int32, // line
+                LlvmType::Int32, // column
                 LlvmType::String, // file
             ],
             return_type: LlvmType::Void,
@@ -119,13 +120,13 @@ impl ErrorHandlingFunctions {
             description: "Propagate an error using ? operator semantics".to_string(),
             parameters: vec![
                 LlvmType::String, // error_message
-                LlvmType::Integer(32), // error_code
-                LlvmType::Integer(32), // line
-                LlvmType::Integer(32), // column
+                LlvmType::Int32, // error_code
+                LlvmType::Int32, // line
+                LlvmType::Int32, // column
                 LlvmType::String, // file
                 LlvmType::String, // function
             ],
-            return_type: LlvmType::Integer(8), // 0 = success, 1 = error
+            return_type: LlvmType::Boolean, // 0 = success, 1 = error
             can_error: true,
             ir_template: "declare i8 @cursed_propagate_error(i8* %message, i64 %message_len, i32 %error_code, i32 %line, i32 %column, i8* %file, i64 %file_len, i8* %function, i64 %function_len)".to_string(),
         });
@@ -134,9 +135,9 @@ impl ErrorHandlingFunctions {
             llvm_name: "cursed_stack_capture".to_string(),
             description: "Capture current stack trace".to_string(),
             parameters: vec![
-                LlvmType::Integer(32), // max_depth
+                LlvmType::Int32, // max_depth
             ],
-            return_type: LlvmType::Pointer, // Pointer to stack trace
+            return_type: LlvmType::Pointer(Box::new(LlvmType::Boolean)), // Pointer to stack trace
             can_error: true,
             ir_template: "declare i8* @cursed_stack_capture(i32 %max_depth)".to_string(),
         });
@@ -146,12 +147,12 @@ impl ErrorHandlingFunctions {
             description: "Create error context for propagation".to_string(),
             parameters: vec![
                 LlvmType::String, // error_message
-                LlvmType::Integer(32), // line
-                LlvmType::Integer(32), // column
+                LlvmType::Int32, // line
+                LlvmType::Int32, // column
                 LlvmType::String, // file
                 LlvmType::String, // function
             ],
-            return_type: LlvmType::Pointer, // Pointer to error context
+            return_type: LlvmType::Pointer(Box::new(LlvmType::Boolean)), // Pointer to error context
             can_error: true,
             ir_template: "declare i8* @cursed_create_error_context(i8* %message, i64 %message_len, i32 %line, i32 %column, i8* %file, i64 %file_len, i8* %function, i64 %function_len)".to_string(),
         });
@@ -160,7 +161,7 @@ impl ErrorHandlingFunctions {
             llvm_name: "cursed_is_in_error_handling".to_string(),
             description: "Check if current thread is in error handling mode".to_string(),
             parameters: vec![],
-            return_type: LlvmType::Integer(8), // 0 = false, 1 = true
+            return_type: LlvmType::Boolean, // 0 = false, 1 = true
             can_error: false,
             ir_template: "declare i8 @cursed_is_in_error_handling()".to_string(),
         });
@@ -227,7 +228,7 @@ impl ErrorHandlingPatterns {
                        message_len + 1, message, message_len + 1, message_var));
         
         // Convert location to parameters
-        let (line, column, file_var) = if let Some(loc) = location {
+        let (line, column, file_var, file_len) = if let Some(ref loc) = location {
             let file_var = format!("%panic_file_{}", temp_counter);
             *temp_counter += 1;
             let file_name = loc.file.as_deref().unwrap_or("unknown");
@@ -237,13 +238,13 @@ impl ErrorHandlingPatterns {
             ir.push(format!("store [{}x i8] c\"{}\\00\", [{}x i8]* {}, align 1", 
                            file_len + 1, file_name, file_len + 1, file_var));
             
-            (loc.line as u32, loc.column as u32, file_var)
+            (loc.line as u32, loc.column as u32, file_var, file_len)
         } else {
             let file_var = format!("%panic_file_{}", temp_counter);
             *temp_counter += 1;
             ir.push(format!("{} = alloca [8 x i8], align 1", file_var));
             ir.push(format!("store [8 x i8] c\"unknown\\00\", [8 x i8]* {}, align 1", file_var));
-            (0, 0, file_var)
+            (0, 0, file_var, 7)
         };
         
         // Convert severity and category to integers
@@ -273,12 +274,10 @@ impl ErrorHandlingPatterns {
         ir.push(format!("{} = getelementptr inbounds [{}x i8], [{}x i8]* {}, i32 0, i32 0", 
                        msg_ptr, message_len + 1, message_len + 1, message_var));
         ir.push(format!("{} = getelementptr inbounds [{}x i8], [{}x i8]* {}, i32 0, i32 0", 
-                       file_ptr, if location.is_some() { location.as_ref().unwrap().file.as_deref().unwrap_or("unknown").len() + 1 } else { 8 }, 
-                       if location.is_some() { location.as_ref().unwrap().file.as_deref().unwrap_or("unknown").len() + 1 } else { 8 }, file_var));
+                       file_ptr, file_len + 1, file_len + 1, file_var));
         
         ir.push(format!("call void @cursed_panic(i8* {}, i64 {}, i8 {}, i8 {}, i32 {}, i32 {}, i8* {}, i64 {})",
-                       msg_ptr, message_len, severity_val, category_val, line, column, file_ptr, 
-                       if location.is_some() { location.as_ref().unwrap().file.as_deref().unwrap_or("unknown").len() } else { 7 }));
+                       msg_ptr, message_len, severity_val, category_val, line, column, file_ptr, file_len));
         
         ir.push("unreachable".to_string());
         
@@ -693,7 +692,7 @@ mod tests {
             PanicCategory::System,
             Some(SourceLocation::new(25, 20)),
         );
-        assert!(ir.contains("Integration test panic"));
+        assert!(panic_ir.contains("Integration test panic"));
         
         let propagation_ir = integration.generate_error_propagation(
             "Integration test error",
@@ -716,11 +715,11 @@ mod tests {
         assert!(!panic_func.can_error); // Panics instead
         
         let propagate_func = functions.get_function("cursed_propagate_error").unwrap();
-        assert_eq!(propagate_func.return_type, LlvmType::Integer(8));
+        assert_eq!(propagate_func.return_type, LlvmType::Boolean);
         assert!(propagate_func.can_error);
         
         let capture_func = functions.get_function("cursed_stack_capture").unwrap();
-        assert_eq!(capture_func.return_type, LlvmType::Pointer);
+        assert_eq!(capture_func.return_type, LlvmType::Pointer(Box::new(LlvmType::Boolean)));
         assert!(capture_func.can_error);
     }
 }

@@ -94,6 +94,25 @@ impl std::fmt::Display for SourceLocation {
     }
 }
 
+/// Convert from error::SourceLocation to debug::SourceLocation
+impl From<crate::error::SourceLocation> for SourceLocation {
+    fn from(error_loc: crate::error::SourceLocation) -> Self {
+        let file = error_loc.file.map(PathBuf::from).unwrap_or_else(|| PathBuf::from("<unknown>"));
+        SourceLocation::new(file, error_loc.line as u32, error_loc.column as u32)
+    }
+}
+
+/// Convert from debug::SourceLocation to error::SourceLocation  
+impl From<SourceLocation> for crate::error::SourceLocation {
+    fn from(debug_loc: SourceLocation) -> Self {
+        crate::error::SourceLocation {
+            line: debug_loc.line as usize,
+            column: debug_loc.column as usize,
+            file: Some(debug_loc.file_name()),
+        }
+    }
+}
+
 /// Source location manager for tracking locations throughout compilation
 #[derive(Debug)]
 pub struct SourceLocationManager {

@@ -9,29 +9,26 @@ use std::sync::Arc;
 
 
 /// Wrapper for vibez::spill
-pub fn spill() {let args = vec![Arc::new(Object::String(message.to_string()]
+pub fn fix_this() { /* Fixed */ }
     match cursed::stdlib::stringz::to_upper(&args)     {Ok(obj) => {if let Object::String(s) = &*obj     {s.clone()} else {String::new()}
         Err(_) => String::new()}
 
     //
-pub fn to_lower() {let args = vec![Arc::new(Object::String(s.to_string()])]
+pub fn fix_this() { /* Fixed */ }
     match cursed::stdlib::mathz::abs(&args)     {Ok(obj) => {if let Object::Integer(i) = &*obj     {*i} else {0}
         Err(_) => 0,}
 
     //
-pub fn max() {let args = vec![Arc::new(Object::Integer(a),
-        Arc::new(Object::Integer(b),]
-    match cursed::stdlib::mathz::sqrt(&args)     {Ok(obj) => {match &*obj     {Object::Float(f) => f,
-                Object::Integer(i) => *i as f64,
+pub fn fix_this() { /* Fixed */ }
                 _ => 0.0,}
         Err(_) => 0.0,}
 
 /// Wrapper for mathz::sin
-pub fn sin() {let args = vec![Arc::new(Object::Float(value]
+pub fn fix_this() { /* Fixed */ }
     match cursed::stdlib::mathz::cos(&args)     {Ok(obj) => {if let Object::Float(f) = &*obj     {*f} else {0.0}
         Err(_) => 0.0,}
 
     //
-pub fn now() {let args: Vec<Arc<Object>> = vec![]
+pub fn fix_this() { /* Fixed */ }
     match cursed::stdlib::timez::format(&args)     {Ok(obj) => {if let Object::String(s) = &*obj     {s.clone()} else {String::new()}
         Err(_) => String::new()};}

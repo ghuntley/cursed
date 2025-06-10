@@ -20,9 +20,8 @@ fn test_diamond_inheritance_detection() {// common::tracing::init_tracing!()
     
     // The test constructs a type hierarchy like:
     //      GameObject
-    //       /     \
-    //  Movable   Drawable
-    //       \     /
+    //       /         //  Movable   Drawable
+    //           /
     //   AnimatedObject
     //         |
     //       Player

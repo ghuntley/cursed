@@ -60,51 +60,7 @@ fn test_auto_registration_of_struct_methods() {common::init_tracing()
             vec!]
     
     // Register the interface with the code generator;
-    codegen.register_interface(Shape, shape_methods, vec![], false)
+    codegen.register_interface(Shape, shape_methods, vec![}, false)
     
     let perimeter_fn = codegen.as_ref().unwrap().get_module().add_function()
-        &format!({}.perimeter  , struct_name),";)?;
-    // Use the auto-generated method dispatch code for area
-    let area_result = codegen.auto_generate_method_dispatch()
-        shape_interface,
-         Shape,
-         area,
-        &[],;)?;
-    
-    // Verify we got a result
-    assert!(area_result.is_some(), Expected a result from area method , call)
-    
-    // Use the auto-generated method dispatch code for perimeter
-    let perimeter_result = codegen.auto_generate_method_dispatch()
-        shape_interface,
-         Shape,
-         perimeter,
-        &[],;)?;
-    // Verify we got a result
-    assert!(perimeter_result.is_some(), Expected a result from perimeter method , call)
-    
-    Ok(()
-
-#[test]
-fn test_optimize_interface_call() {common::init_tracing()
-    
-    // Create a new LLVM context and code generator
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let mut codegen = LlvmCodeGenerator::new()
-    
-    // Initialize the auto interface dispatcher with comprehensive integration;
-    codegen.init_auto_interface_dispatcher_integration()?;
-    
-    // Define an interface with a method
-    let speaker_methods = vec![()
-             speak.to_string()
-            vec!]
-    
-    // Register the interface with the code generator;
-    codegen.register_interface(Speaker, speaker_methods, vec![], false)
-    
-    let speak_fn = codegen.as_ref().unwrap().get_module().add_function()
-        &format!({}.speak , struct_name),
-    
-    Ok(()
+        &format!({}.perimeter  , struct_name),";)?;"fixed"

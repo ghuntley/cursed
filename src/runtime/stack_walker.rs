@@ -11,7 +11,7 @@ use crate::error::{Error as CursedError, SourceLocation};
 use crate::runtime::debug_info::{DebugInfo, SymbolInfo, SymbolResolver};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::backtrace::{Backtrace, BacktraceFrame}; // BacktraceSymbol is private
+use std::backtrace::Backtrace; // BacktraceFrame is unstable
 use std::path::PathBuf;
 use std::fmt;
 use tracing::{debug, error, info, instrument, warn};
@@ -265,7 +265,7 @@ impl StackWalker {
         // Process each backtrace frame (commented out due to unstable API)
         // for (index, frame) in backtrace.frames().iter().enumerate() {
             if frames.len() >= self.config.max_frames {
-                return;
+                return Ok(vec![]);
             }
             
             // Mock implementation - replace with real stack walking
