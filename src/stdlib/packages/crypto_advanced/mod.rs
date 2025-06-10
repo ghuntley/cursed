@@ -5,6 +5,7 @@
 /// Think authenticated encryption but make it Gen Z bestie!
 
 // Core symmetric encryption implementations
+pub mod errors;
 pub mod aes_gcm;
 pub mod chacha20_poly1305;
 pub mod xchacha20_poly1305;
@@ -19,6 +20,7 @@ pub mod memory_protection;
 pub mod security_analysis;
 
 // Re-export main types for convenience
+pub use errors::*;
 pub use aes_gcm::{
     AesGcm256, AesGcm192, AesGcm128, AesGcmCipher, AesGcmKey, AesGcmNonce,
     AesGcmResult, AesGcmError, AES_GCM_KEY_SIZE_256, AES_GCM_NONCE_SIZE
@@ -32,7 +34,7 @@ pub use xchacha20_poly1305::{
     XChaCha20Error, XCHACHA20_KEY_SIZE, XCHACHA20_NONCE_SIZE
 };
 pub use symmetric_cipher::{
-    SymmetricCipher, CipherResult, CipherError, CipherType,
+    SymmetricCipher, CipherType,
     EncryptionContext, DecryptionContext, CipherCapabilities
 };
 pub use authenticated_encryption::{
@@ -64,9 +66,9 @@ static CIPHER_REGISTRY: std::sync::LazyLock<Arc<std::sync::RwLock<CipherRegistry
     std::sync::LazyLock::new(|| Arc::new(std::sync::RwLock::new(CipherRegistry::new())));
 
 /// fr fr Cipher registry for managing symmetric ciphers
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct CipherRegistry {
-    ciphers: HashMap<String, Box<dyn SymmetricCipher + Send + Sync>>,
+    ciphers: HashMap<String, Arc<dyn SymmetricCipher + Send + Sync>>,
 }
 
 impl CipherRegistry {
@@ -82,12 +84,12 @@ impl CipherRegistry {
     where
         T: SymmetricCipher + Send + Sync + 'static,
     {
-        self.ciphers.insert(name, Box::new(cipher));
+        self.ciphers.insert(name, Arc::new(cipher));
     }
 
     /// slay Get a cipher by name
-    pub fn get_cipher(&self, name: &str) -> Option<&(dyn SymmetricCipher + Send + Sync)> {
-        self.ciphers.get(name).map(|c| c.as_ref())
+    pub fn get_cipher(&self, name: &str) -> Option<Arc<dyn SymmetricCipher + Send + Sync>> {
+        self.ciphers.get(name).cloned()
     }
 
     /// slay List all available ciphers
@@ -97,7 +99,7 @@ impl CipherRegistry {
 }
 
 /// slay Register a cipher globally
-pub fn register_cipher<T>(name: &str, cipher: T) -> CipherResult<()>
+pub fn register_cipher<T>(name: &str, cipher: T) -> Result<(), CipherError>
 where
     T: SymmetricCipher + Send + Sync + 'static,
 {
@@ -109,18 +111,11 @@ where
 }
 
 /// slay Get a cipher by name from global registry
-pub fn get_cipher(name: &str) -> CipherResult<Arc<dyn SymmetricCipher + Send + Sync>> {
+pub fn get_cipher(name: &str) -> Result<Arc<dyn SymmetricCipher + Send + Sync>, CipherError> {
     let registry = CIPHER_REGISTRY.read()
         .map_err(|_| CipherError::Internal("Failed to acquire cipher registry lock".to_string()))?;
     
     registry.get_cipher(name)
-        .map(|cipher| {
-            // Create a new Arc from the boxed trait object
-            unsafe {
-                let ptr = cipher as *const (dyn SymmetricCipher + Send + Sync);
-                Arc::from_raw(ptr)
-            }
-        })
         .ok_or_else(|| CipherError::UnsupportedCipher(format!("Cipher '{}' not found", name)))
 }
 
@@ -138,13 +133,13 @@ pub mod utils {
     /// slay Quick AES-256-GCM encryption (recommended default)
     pub fn quick_encrypt(key: &[u8], plaintext: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let cipher = AesGcm256::new(key)?;
-        cipher.encrypt(plaintext)
+        cipher.encrypt(plaintext).map_err(|e| AdvancedCryptoError::EncryptionFailed(e.to_string()))
     }
     
     /// slay Quick AES-256-GCM decryption
     pub fn quick_decrypt(key: &[u8], ciphertext: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let cipher = AesGcm256::new(key)?;
-        cipher.decrypt(ciphertext)
+        cipher.decrypt(ciphertext).map_err(|e| AdvancedCryptoError::DecryptionFailed(e.to_string()))
     }
 }
 

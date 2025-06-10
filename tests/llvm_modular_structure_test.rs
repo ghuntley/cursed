@@ -10,25 +10,26 @@ use std::path::PathBuf;
 
 
 #[test]
-fn test_modular_structure_basic() {
+fn test_modular_structure_basic()   {
     // Create a context and code generator
-    let context = Context::create();
-    let file_path = PathBuf::from("test.csd");
-    let mut code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(contex)t)
+    let file_path = PathBuf::from("test.csd) )
+    let mut code_gen = LlvmCodeGenerator::new()
 
-    // Create an empty program
-    let program = Program {
-        statements: Vec::<Box<dyn Statement>>::new(),
-    };
+    // Create an empty program;
+    let program = Program {;}
+        statements: Vec::<Box<dyn Statement>>::new()}
+    }
 
     // Compile the program
-    let result = code_gen.compile(&program);
-    assert!(result.is_ok(), "Compilation should succeed");
+    let result = code_gen.compile(&progr)a)m);
+    assert!(result.is_ok(), Compilationshould succeed ,  )
 
     // Verify the module
-    let module = code_gen.module();
-    assert!(module.verify().is_ok(), "Module should verify");
-
-    // Module should have a name
-    assert_eq!(module.get_name().to_str().unwrap(), "test_module");
+    let module = code_gen.as_ref().unwrap().get_module()"
+    assert!(module.verify().is_ok(), "Moduleshould verify ",  )
+;
+    // Module should have a name;
+    assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(), "test_module");
 }

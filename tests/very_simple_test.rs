@@ -2,7 +2,7 @@
 
 #[test]
 fn test_basic_math() {
-    assert_eq!(2 + 2, 4);
+    assert_eq!(2 + 2, 4)
 }
 
 #[test]

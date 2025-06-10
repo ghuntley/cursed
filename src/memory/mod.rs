@@ -40,6 +40,22 @@ pub mod simple_production_gc;
 pub mod real_allocator;
 pub mod pressure_detection;
 
+// Adaptive GC system
+pub mod adaptive_gc;
+
+// Real heap management with proper memory algorithms
+pub mod real_heap_manager;
+
+// Enhanced garbage collector with real heap integration
+pub mod enhanced_gc;
+
+// Integration example demonstrating real heap usage
+pub mod integration_example;
+
+// Test module for real heap management
+#[cfg(test)]
+pub mod test_real_heap;
+
 // Re-export main types for convenience
 pub use gc::{GarbageCollector, Gc, WeakGc, CollectionStats, GcStats};
 pub use object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, ObjectRegistry, SharedObjectRegistry};
@@ -65,6 +81,22 @@ pub use production_gc::{ProductionGarbageCollector, ProductionGcConfig, Producti
 pub use simple_production_gc::{SimpleProductionGarbageCollector, SimpleProductionGcConfig, SimpleProductionStats};
 pub use real_allocator::{RealMemoryAllocator, RealAllocatorConfig, RealAllocatorStats, AllocationStrategy as RealAllocationStrategy};
 pub use pressure_detection::{MemoryPressureDetector, PressureDetectionConfig, PressureLevel, SystemMemoryInfo};
+
+// Re-export adaptive GC types
+pub use adaptive_gc::{
+    AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveGcStats, AdaptiveStrategy, 
+    BehaviorPattern, AdaptiveThresholds, PerformanceMetrics, TargetMetrics
+};
+
+// Re-export real heap management types
+pub use real_heap_manager::{
+    RealHeapManager, RealHeapConfig, RealHeapStatistics, RealHeapBlock
+};
+
+// Re-export enhanced GC types
+pub use enhanced_gc::{
+    EnhancedGarbageCollector, EnhancedGcStats
+};
 
 /// Core trait for objects that can be traced during garbage collection
 /// 

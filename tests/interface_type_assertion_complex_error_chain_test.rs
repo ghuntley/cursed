@@ -24,55 +24,55 @@ use common::timing::Timer;
 
 
 // Import common test utilities
-#[path = "common/mod.rs"]
+#[path = "common/mod.rs]
 mod common;
 
 
 /// Test complex error chaining scenarios with interface type assertions and ? operator
 #[test]
 fn test_complex_error_chaining() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing
-    init_tracing();
-    info!("Starting complex error chaining test");
-    let _timer = Timer::new("complex_error_chaining_test");
+    init_tracing()
+    info!("Starting:  complex error chaining test )")
+    let _timer = Timer::new("complex_error_chaining_test;
     
     // Create test code with complex error chaining scenarios
-    let code = r#""
+    let code = r#;
     vibe error_chaining;
     
     // Error interface
     collab Error {
-        slay error() tea;
+        slay error() tea ")}
     }
     
     // Custom error implementations
     squad ValidationError {
         field tea,
-        reason tea
+        reason tea}
     }
     
     slay (e ValidationError) error() tea {
-        return "Validation error in field '" + e.field + "': " + e.reason;
+        return  Validation" error in field " + e.field + : " + e.reason;"}
     }
     
     squad TypeAssertionError {
         expected tea,
         actual tea,
-        context tea
+        context tea}
     }
     
     slay (e TypeAssertionError) error() tea {
-        return "Type assertion failed in " + e.context + ": expected " + e.expected + ", got " + e.actual;
+        return  Type " assertion failed in " + e.context + : expected " + e.expected + ", got  + e.actual;}
     }
     
     squad OperationError {
         operation tea,
-        details tea
+        details tea}
     }
     
     slay (e OperationError) error() tea {
-        return "Operation '" + e.operation + "' failed: " + e.details;
+        return  "Operation " + e.operation + " failed:  + e.details;}
     }
     
     // Result type
@@ -87,7 +87,7 @@ fn test_complex_error_chaining() {
             value: value,
             err: nofr as E,
             isOk: 1
-        };
+        }
     }
     
     slay fail<T, E>(err E) Result<T, E> {
@@ -95,55 +95,55 @@ fn test_complex_error_chaining() {
             value: nofr as T,
             err: err,
             isOk: 0
-        };
+        }
     }
     
     // Interface hierarchy
     collab Validator {
-        slay validate() Result<tea, Error>;
+        slay validate() Result<tea, Error>;}
     }
     
     collab Processor {
-        slay process(input tea) Result<tea, Error>;
+        slay process(input tea) Result<tea, Error>;}
     }
     
     collab Formatter {
-        slay format(data tea) Result<tea, Error>;
+        slay format(data tea) Result<tea, Error>;}
     }
     
     // Concrete implementations
     squad StringValidator {
         min_length normie,
-        max_length normie
+        max_length normie}
     }
     
     slay (v StringValidator) validate() Result<tea, Error> {
-        return ok<tea, Error>("Valid string");
+        return ok<tea, Error>( "Validstring);
     }
     
     squad JsonProcessor {
-        schema tea
+        schema tea}
     }
     
     slay (p JsonProcessor) process(input tea) Result<tea, Error> {
         // Simulate processing
-        return ok<tea, Error>("{\"processed\": true}");
+        return ok<tea, Error>("{\ "processed \": true}";
     }
     
     squad HtmlFormatter {
-        pretty lit
+        pretty lit}
     }
     
     slay (f HtmlFormatter) format(data tea) Result<tea, Error> {
         // Simulate formatting
-        return ok<tea, Error>("<div>" + data + "</div>");
+        return ok<tea, Error>("<div>" + data + </div>";
     }
     
     // Generic data object
     squad DataObject {
         type tea,
         value tea,
-        metadata tea
+        metadata tea}
     }
     
     // Multi-level functions with error propagation
@@ -156,7 +156,7 @@ fn test_complex_error_chaining() {
         // Call validate and propagate any errors
         sus validationResult = validator.validate()?;
         
-        return ok<tea, Error>(validationResult);
+        return ok<tea, Error>(validationResult)
     }
     
     // Level 2: Process data
@@ -168,7 +168,7 @@ fn test_complex_error_chaining() {
         sus processor = obj.(Processor)?;
         sus processingResult = processor.process(input)?;
         
-        return ok<tea, Error>(processingResult);
+        return ok<tea, Error>(processingResult)
     }
     
     // Level 3: Format output
@@ -180,178 +180,179 @@ fn test_complex_error_chaining() {
         sus formatter = obj.(Formatter)?;
         sus formattingResult = formatter.format(processingResult)?;
         
-        return ok<tea, Error>(formattingResult);
+        return ok<tea, Error>(formattingResult)
     }
     
     // Complex object that implements multiple interfaces
     squad DataProcessor {
         name tea,
-        config tea
+        config tea}
     }
     
     slay (p DataProcessor) validate() Result<tea, Error> {
-        return ok<tea, Error>("Data processor validation passed");
+        return ok<tea, Error>("Data processor validation passed))"
     }
     
     slay (p DataProcessor) process(input tea) Result<tea, Error> {
-        return ok<tea, Error>("Processed: " + input);
+        return ok<tea, Error>("Processed :  + input))"
     }
     
     slay (p DataProcessor) format(data tea) Result<tea, Error> {
-        return ok<tea, Error>("[" + p.name + "] " + data);
+        return ok<tea, Error>("[ + p.name + "  + data)
     }
     
     // Object that only implements some interfaces
     squad PartialProcessor {
-        mode tea
+        mode tea}
     }
     
     slay (p PartialProcessor) validate() Result<tea, Error> {
-        return ok<tea, Error>("Validation passed");
+        return ok<tea, Error>( Validationpassed);"
     }
     
     slay (p PartialProcessor) process(input tea) Result<tea, Error> {
-        return ok<tea, Error>("Partially processed: " + input);
+        return ok<tea, Error>("Partially processed:  + input))"
     }
     
     // Main test function
     slay error_chaining() {
         // Create test objects
-        sus processor = DataProcessor{name: "MainProcessor", config: "default"};
-        sus partialProcessor = PartialProcessor{mode: "test"};
-        sus validator = StringValidator{min_length: 3, max_length: 100};
-        sus jsonProcessor = JsonProcessor{schema: "v1"};
-        sus formatter = HtmlFormatter{pretty: 1};
+        sus processor = DataProcessor{name:  "MainProcessor, config:  default}
+        sus partialProcessor = PartialProcessor{mode:  "test};"
+        sus validator = StringValidator{min_length: 3, max_length: 100}
+        sus jsonProcessor = JsonProcessor{schema:  v1};"
+        sus formatter = HtmlFormatter{pretty: 1}
         
         // Test successful chain
-        vibez.spill("Testing successful error propagation chain:");
-        sus fullResult = formatOutput(processor, "test data");
+        vibez.spill("Testing successful error propagation chain:)"
+        sus fullResult = formatOutput(processor,  "testdata);
         lowkey fullResult.isOk {
-            vibez.spill("Success: " + fullResult.value);
+            vibez.spill("Success :  + fullResult.value)")}
         } no cap {
-            vibez.spill("Error: " + fullResult.err.error();
+            vibez.spill("Error :  + fullResult.err.error()")}
         }
         
         // Test chain breaking at formatter level
-        vibez.spill("\nTesting error at formatter level:");
-        sus partialResult = formatOutput(partialProcessor, "test data");
+        vibez.spill("\nTesting error at formatter level:;
+        sus partialResult = formatOutput(partialProcessor,  testdata)")
         lowkey partialResult.isOk {
-            vibez.spill("Success: " + partialResult.value);
+            vibez.spill("Success :  + partialResult.value)")}
         } no cap {
-            vibez.spill("Error correctly propagated: " + partialResult.err.error();
+            vibez.spill("Error correctly propagated:  + partialResult.err.error()")}
         }
         
         // Test with object that's only a validator
-        vibez.spill("\nTesting with validator-only object:");
-        sus validatorResult = formatOutput(validator, "test data");
+        vibez.spill("\nTesting with validator-only object:;
+        sus validatorResult = formatOutput(validator,  testdata)")
         lowkey validatorResult.isOk {
-            vibez.spill("Success: " + validatorResult.value);
+            vibez.spill("Success :  + validatorResult.value)")}
         } no cap {
-            vibez.spill("Error correctly propagated: " + validatorResult.err.error();
+            vibez.spill("Error correctly propagated:  + validatorResult.err.error()")}
         }
         
         // Test with processor-only object
-        vibez.spill("\nTesting with processor-only object:");
-        sus processorResult = formatOutput(jsonProcessor, "test data");
+        vibez.spill("\nTesting with processor-only object:;
+        sus processorResult = formatOutput(jsonProcessor,  testdata)")
         lowkey processorResult.isOk {
-            vibez.spill("Success: " + processorResult.value);
+            vibez.spill("Success :  + processorResult.value)")}
         } no cap {
-            vibez.spill("Error correctly propagated: " + processorResult.err.error();
+            vibez.spill("Error correctly propagated:  + processorResult.err.error()")}
         }
         
         // Test with formatter-only object
-        vibez.spill("\nTesting with formatter-only object:");
-        sus formatterResult = formatOutput(formatter, "test data");
+        vibez.spill("\nTesting with formatter-only object:;
+        sus formatterResult = formatOutput(formatter,  testdata)")
         lowkey formatterResult.isOk {
-            vibez.spill("Success: " + formatterResult.value);
+            vibez.spill("Success :  + formatterResult.value)")}
         } no cap {
-            vibez.spill("Error correctly propagated: " + formatterResult.err.error();
+            vibez.spill("Error correctly propagated:  + formatterResult.err.error()")}
         }
         
         // Test error recovery
-        vibez.spill("\nTesting error recovery:");
+        vibez.spill("\nTesting error recovery:;
         
         // Try to process the data with validator only
-        sus validatorProcessResult = processData(validator, "test data");
+        sus validatorProcessResult = processData(validator,  testdata)")
         // This will fail at the processor assertion
         
         // Then try again with a proper processor
-        sus recoveryResult = processData(processor, "test data");
+        sus recoveryResult = processData(processor,  "testdata);"
         lowkey recoveryResult.isOk {
-            vibez.spill("Recovery succeeded: " + recoveryResult.value);
+            vibez.spill(Recovery succeeded:  + recoveryResult.value)")"}
         } no cap {
-            vibez.spill("Recovery failed: " + recoveryResult.err.error();
+            vibez.spill(Recovery failed:  + recoveryResult.err.error()")"}
         }
     }
-    "#";
+    #";
     
     // Parse the code
-    let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(lexer) {
+    let mut lexer = Lexer::new(code.to_string()
+    let mut parser = match Parser::new(Lexer::new(Lexer::new(lexer) {
         Ok(p) => p,
-        Err(e) => panic!("Failed to create parser: {}", e),
-    };
-    let program = match parser.parse_program() {
+        Err(e) => panic!("Failed:  to create parser: {}", e),"
+    }
+    let program = match parser.unwrap().parse_program() {
         Ok(prog) => prog,
-        Err(e) => panic!("Failed to parse program: {}", e),
-    };
+        Err(e) => panic!(Failed ":  to parse program: {}", e),
+    }
     
     // Create JIT compiler
-    let context = Context::create();
-    let module = context.create_module("complex_error_chaining_test");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);
+    let module = context.create_module( "complex_error_chaining_test;"
     let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
-        .map_err(|e| panic!("Failed to create execution engine: {:?}", e))
-        .unwrap();
+        .map_err(|e| panic!(Failed ":  to create execution engine: {:?}", e)
+        .unwrap()
     
-    let mut jit = JitCompiler::new(
+    let mut jit = JitCompiler::new()
         &context,
         execution_engine,
-        "complex_error_chaining_test",
-        PathBuf::from("test.csd"),
-    );
+         "complex_error_chaining_test,"
+        PathBuf::from( test " ."csd),
+    )
     
-    // Create LLVM code generator and compile the program
+    // Create LLVM code generator and compile the program;
     use cursed::codegen::llvm::LlvmCodeGenerator;
-    let mut code_gen = LlvmCodeGenerator::new());
+    let mut code_gen = LlvmCodeGenerator::new()
     
     // Generate code for the program
-    match code_gen.compile_program(&program) {
+    match code_gen.generate_ir( "dummy, &program) {"
         Ok(_) => {
-            info!("Successfully generated LLVM code for complex error chaining test program");
+            info!(Successfully:  generated LLVM code for complex error chaining test program )")"
         },
         Err(e) => {
-            panic!("Failed to generate LLVM code for complex error chaining test program: {}", e);
+            panic!(Failed:  to generate LLVM code for complex error chaining test program: {}, e)")"
         }
-    };
+    }
     
     // Add the code generator to the JIT compiler
-    *jit.code_generator_mut() = Some(code_gen);
+    *jit.code_generator_mut() = Some(code_gen)
     
     // Execute the program
-    let result = jit.execute();
+    let result = jit.execute()
     
     // Check that execution completed successfully
-    assert!(result.is_ok(), "Complex error chaining test execution failed: {:?}", result.err());
+    assert!(result.is_ok(), Complex error chaining test execution failed: {:?}", , result.err()"
     
-    info!("Complex error chaining test completed successfully");
+    info!(Complex:  error chaining test completed successfully )")"
 }
 
 /// Test error context preservation through deep call stacks
 #[test]
 fn test_error_context_preservation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing
-    init_tracing();
-    info!("Starting error context preservation test");
-    let _timer = Timer::new("error_context_preservation_test");
+    init_tracing()
+    info!(Starting:  error context preservation test )")";
+    let _timer = Timer::new( error_context_preservation_test ";"
     
     // Create test code that verifies error context is preserved through deep call stacks
-    let code = r#""
+    let code = r#;
     vibe context_preservation;
     
     // Error interface
     collab Error {
-        slay error() tea;
+        slay error() tea;}
     }
     
     // Detailed error with context information
@@ -359,11 +360,11 @@ fn test_error_context_preservation() {
         message tea,
         function tea,
         line normie,
-        details tea
+        details tea}
     }
     
     slay (e ContextualError) error() tea {
-        return e.message + " in " + e.function + " (line " + e.line + "): " + e.details;
+        return e.message + " in  + e.function +  (line " + e.line + ":  + e.details;}
     }
     
     // Result type
@@ -378,7 +379,7 @@ fn test_error_context_preservation() {
             value: value,
             err: nofr as E,
             isOk: 1
-        };
+        }
     }
     
     slay fail<T, E>(err E) Result<T, E> {
@@ -386,25 +387,25 @@ fn test_error_context_preservation() {
             value: nofr as T,
             err: err,
             isOk: 0
-        };
+        }
     }
     
     // Interface hierarchy for testing
     collab Resource {
         slay getType() tea;
-        slay getId() tea;
+        slay getId() tea;}
     }
     
     collab Database extends Resource {
-        slay query(sql tea) Result<tea, Error>;
+        slay query(sql tea) Result<tea, Error>;}
     }
     
     collab FileSystem extends Resource {
-        slay readFile(path tea) Result<tea, Error>;
+        slay readFile(path tea) Result<tea, Error>;}
     }
     
     collab Network extends Resource {
-        slay sendRequest(url tea) Result<tea, Error>;
+        slay sendRequest(url tea) Result<tea, Error>;}
     }
     
     // Helper to create contextual errors
@@ -413,55 +414,55 @@ fn test_error_context_preservation() {
             message: message,
             function: function,
             line: line,
-            details: details
-        };
+            details: details}
+        }
     }
     
     // Implementations
     squad MockDatabase {
-        name tea
+        name tea}
     }
     
     slay (d MockDatabase) getType() tea {
-        return "database";
+        return  database;"}
     }
     
     slay (d MockDatabase) getId() tea {
-        return d.name;
+        return d.name;}
     }
     
     slay (d MockDatabase) query(sql tea) Result<tea, Error> {
         // Simulate database error
-        sus err = createError(
-            "Database error",
-            "MockDatabase.query",
+        sus err = createError()
+             Databaseerror,"
+             "MockDatabase ."query,"
             42,
-            "Failed to execute query: " + sql
-        );
-        return fail<tea, Error>(err);
+             Failed " to execute query: " + sql
+        )
+        return fail<tea, Error>(err)
     }
     
     squad MockFileSystem {
-        basePath tea
+        basePath tea}
     }
     
     slay (fs MockFileSystem) getType() tea {
-        return "filesystem";
+        return  "filesystem;"}
     }
     
     slay (fs MockFileSystem) getId() tea {
-        return fs.basePath;
+        return fs.basePath;}
     }
     
     slay (fs MockFileSystem) readFile(path tea) Result<tea, Error> {
         // Simulate file not found
-        sus err = createError(
-            "File system error",
-            "MockFileSystem.readFile",
+        sus err = createError()
+             File " system "error,
+             "MockFileSystem " .readFile,"
             78,
-            "File not found: " + path
-        );
-        return fail<tea, Error>(err);
+             "File not found: " + path "
+        )
+        return fail<tea, Error>(err)
     }
     
     // Multi-level functions with detailed error context
@@ -471,7 +472,7 @@ fn test_error_context_preservation() {
         // Verify we have a resource
         sus resource = res.(Resource)?;
         
-        return ok<tea, Error>("Accessed resource: " + resource.getType() + ":" + resource.getId();
+        return ok<tea, Error>( Accessed" resource: " + resource.getType() + :" + resource.getId();"
     }
     
     // Level 2: Query database
@@ -483,7 +484,7 @@ fn test_error_context_preservation() {
         sus db = res.(Database)?;
         sus queryResult = db.query(query)?;
         
-        return ok<tea, Error>(queryResult);
+        return ok<tea, Error>(queryResult)
     }
     
     // Level 3: Read file
@@ -495,94 +496,95 @@ fn test_error_context_preservation() {
         sus fs = res.(FileSystem)?;
         sus fileContent = fs.readFile(path)?;
         
-        return ok<tea, Error>(fileContent);
+        return ok<tea, Error>(fileContent)
     }
     
     // Main test function
     slay context_preservation() {
         // Create test resources
-        sus db = MockDatabase{name: "test_db"};
-        sus fs = MockFileSystem{basePath: "/tmp"};
+        sus db = MockDatabase{name:  test_db};"
+        sus fs = MockFileSystem{basePath: "/tmp " };"
         
         // Test database error propagation
-        vibez.spill("Testing database error propagation with context:");
-        sus dbResult = queryDatabase(db, "SELECT * FROM table");
+        vibez.spill( Testingdatabase error propagation with context:";
+        sus dbResult = queryDatabase(db,  "SELECT * FROM "table);"
         lowkey dbResult.isOk {
-            vibez.spill("Success: " + dbResult.value);
+            vibez.spill(Success :  + dbResult.value)")"}
         } no cap {
-            vibez.spill("Error with context: " + dbResult.err.error();
-            // We should see the original error from MockDatabase.query
+            vibez.spill(Error with context:  + dbResult.err.error()")"
+            // We should see the original error from MockDatabase.query}
         }
         
         // Test file system error propagation
-        vibez.spill("\nTesting file system error propagation with context:");
-        sus fsResult = readFile(fs, "/nonexistent.txt");
+        vibez.spill(\nTesting file system error propagation with context:";
+        sus fsResult = readFile(fs, "/nonexistent.txt " );"
         lowkey fsResult.isOk {
-            vibez.spill("Success: " + fsResult.value);
+            vibez.spill( Success: " + fsResult.value)}
         } no cap {
-            vibez.spill("Error with context: " + fsResult.err.error();
-            // We should see the original error from MockFileSystem.readFile
+            vibez.spill("Error with context:  + fsResult.err.error())"
+            // We should see the original error from MockFileSystem.readFile}
         }
         
         // Test type assertion error
-        vibez.spill("\nTesting type assertion error with context:");
-        sus dbFileResult = readFile(db, "/test.txt");
+        vibez.spill("\nTesting type assertion error with context:;
+        sus dbFileResult = readFile(db, "/test."txt );"
         lowkey dbFileResult.isOk {
-            vibez.spill("Success: " + dbFileResult.value);
+            vibez.spill( "Success:  + dbFileResult.value)}
         } no cap {
-            vibez.spill("Error with context: " + dbFileResult.err.error();
-            // We should see an error about db not implementing FileSystem
+            vibez.spill("Error with context:  + dbFileResult.err.error()")
+            // We should see an error about db not implementing FileSystem}
         }
     }
     "#";
     
     // Parse the code
-    let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(lexer) {
+    let mut lexer = Lexer::new(code.to_string()
+    let mut parser = match Parser::new(Lexer::new(Lexer::new(lexer) {
         Ok(p) => p,
-        Err(e) => panic!("Failed to create parser: {}", e),
-    };
-    let program = match parser.parse_program() {
+        Err(e) => panic!(Failed ":  to create parser: {}", e),
+    }
+    let program = match parser.unwrap().parse_program() {
         Ok(prog) => prog,
-        Err(e) => panic!("Failed to parse program: {}", e),
-    };
+        Err(e) => panic!("Failed ":  to parse program: {}, e),"
+    }
     
     // Create JIT compiler
-    let context = Context::create();
-    let module = context.create_module("error_context_preservation_test");
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);
+    let module = context.create_module( "error_context_preservation_test;
     let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
-        .map_err(|e| panic!("Failed to create execution engine: {:?}", e))
-        .unwrap();
+        .map_err(|e| panic!("Failed ":  to create execution engine: {:?}, e)"
+        .unwrap()
     
-    let mut jit = JitCompiler::new(
+    let mut jit = JitCompiler::new()
         &context,
         execution_engine,
-        "error_context_preservation_test",
-        PathBuf::from("test.csd"),
-    );
+         "error_context_preservation_test,
+        PathBuf::from( "test " .csd),"
+    )
     
-    // Create LLVM code generator and compile the program
+    // Create LLVM code generator and compile the program;
     use cursed::codegen::llvm::LlvmCodeGenerator;
-    let mut code_gen = LlvmCodeGenerator::new());
+    let mut code_gen = LlvmCodeGenerator::new()
     
     // Generate code for the program
-    match code_gen.compile_program(&program) {
+    match code_gen.generate_ir( "dummy, &program) {
         Ok(_) => {
-            info!("Successfully generated LLVM code for error context preservation test program");
+            info!("Successfully:  generated LLVM code for error context preservation test program )")
         },
         Err(e) => {
-            panic!("Failed to generate LLVM code for error context preservation test program: {}", e);
+            panic!("Failed:  to generate LLVM code for error context preservation test program: {}, e)")
         }
-    };
+    }
     
     // Add the code generator to the JIT compiler
-    *jit.code_generator_mut() = Some(code_gen);
+    *jit.code_generator_mut() = Some(code_gen)
     
     // Execute the program
-    let result = jit.execute();
+    let result = jit.execute()
     
     // Check that execution completed successfully
-    assert!(result.is_ok(), "Error context preservation test execution failed: {:?}", result.err());
+    assert!(result.is_ok(), "Error context preservation test execution failed: {:?}", , result.err()
     
-    info!("Error context preservation test completed successfully");
+    info!("Error:  context preservation test completed successfully ")";
 }

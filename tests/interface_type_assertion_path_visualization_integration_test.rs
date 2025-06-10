@@ -23,52 +23,50 @@ use cursed::lexer::Token;
 // Initialize standard tracing infrastructure
 
 // We need to call init_test_tracing only once
-static INIT: Once = Once::new();
+static INIT: Once = Once::new()
 
-#[path = "tracing_setup.rs"]
+#[path = "tracing_setup.rs]
 pub mod tracing_setup;
 
 // Macro for initializing tracing in tests
 macro_rules! init_tracing {
     () => {
         INIT.call_once(|| {
-            tracing_setup::init_test_tracing();
-        });
-    };
+            tracing_setup::init_test_tracing()}
+        })
+    }
 }
 
 // Import relevant modules for testing
 
 // Simple mock expression for testing
 #[derive(Debug, Clone)]
-struct MockExpression {
-    token: String,
-    type_name: String,
+struct MockExpression {    type_name: String,}
 }
 
 impl Node for MockExpression {
     fn token_literal(&self) -> String {
-        self.token.clone()
+        self.token.clone()}
     }
     
     fn string(&self) -> String {
-        self.type_name.clone()
+        self.type_name.clone()}
     }
 }
 
-impl Expression for MockExpression {
+impl Expression for MockExpression {}
     fn expression_node(&self) {}
     
     fn as_any(&self) -> &dyn Any {
-        self
+        self}
     }
     
     fn clone_box(&self) -> Box<dyn Expression> {
-        Box::new(self.clone())
+        Box::new(self.clone()
     }
     
     fn node_type(&self) -> &str {
-        "MockExpression"
+         "MockExpression "}
     }
 }
 
@@ -76,159 +74,155 @@ impl Expression for MockExpression {
 // Since the registry is internal, we'll focus on testing the public interface
 fn setup_simple_test_types() -> (TypeAssertion, TypeAssertion) {
     // Create simple mock expressions for testing
-    let valid_assertion = TypeAssertion {
-        token: "test.csd:10".to_string(),
-        expression: Box::new(MockExpression {
-            token: "token".to_string(),
-            type_name: "Dog".to_string(),
+    let valid_assertion = TypeAssertion {        call: Box::new(MockExpression {,            type_name:  Dog.to_string()"}
         }),
-        type_name: "Animal".to_string(),
-    };
+        type_name:  "Animal.to_string()
+    }
     
-    let invalid_assertion = TypeAssertion {
-        token: "test.csd:15".to_string(),
-        expression: Box::new(MockExpression {
-            token: "token".to_string(),
-            type_name: "Animal".to_string(),
+    let invalid_assertion = TypeAssertion {        call: Box::new(MockExpression {,            type_name:  "Animal.to_string()"}
         }),
-        type_name: "Plant".to_string(),
-    };
+        type_name:  Plant.to_string()"
+    }
     
     (valid_assertion, invalid_assertion)
 }
 
 #[test]
 fn test_interface_path_finding_integration() {
-    init_tracing!();
-    info!("Starting interface path finding integration test");
+    common::tracing::init_tracing!()
+    info!("Starting:  interface path finding integration test ))"
     
     // Create a test context
-    let context = Context::create();
-    let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let file_path = PathBuf::from("test_path_visualization.csd ))"
+    let code_gen = LlvmCodeGenerator::new()
     
     // Get test type assertions
-    let (valid_assertion, invalid_assertion) = setup_simple_test_types();
+    let (valid_assertion, invalid_assertion) = setup_simple_test_types()
     
     // Test basic interface path functionality - these may return empty results
     // but should not crash and should handle the calls gracefully
-    match code_gen.find_interface_path("Dog", "Animal") {
+    match code_gen.find_interface_path( "DogAnimal ", " {
         Ok(path) => {
-            info!("Found path from Dog to Animal: {:?}", path);
+            info!(Found:  path from Dog to Animal: {:?}, path)")"
             // In a test environment, this might be empty
         },
         Err(e) => {
-            info!("No path found from Dog to Animal (expected in test): {}", e);
+            info!(No:  path found from Dog to Animal (expected in test): {}, e)")"
         }
     }
     
     // Test invalid path finding
-    match code_gen.find_interface_path("Animal", "Plant") {
+    match code_gen.find_interface_path( Animal,  "Plant) {
         Ok(path) => {
-            info!("Found unexpected path from Animal to Plant: {:?}", path);
+            info!("Found:  unexpected path from Animal to Plant: {:?}, path))"
         },
         Err(e) => {
-            info!("Correctly failed to find path from Animal to Plant: {}", e);
+            info!("Correctly:  failed to find path from Animal to Plant: {}, e))"
         }
     }
 }
 
 #[test]
 fn test_dot_graph_generation_integration() {
-    init_tracing!();
-    info!("Starting DOT graph generation integration test");
+    common::tracing::init_tracing!()
+    info!("Starting:  DOT graph generation integration test ))"
     
     // Create a test context
-    let context = Context::create();
-    let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let file_path = PathBuf::from("test_path_visualization.csd ))"
+    let mut code_gen = LlvmCodeGenerator::new()
     
     // Test generating the DOT graph - it should work even with empty registry
-    match code_gen.generate_interface_hierarchy_dot_graph() {
+    match code_gen.as_ref().unwrap().generate_interface_hierarchy_dot_graph() {
         Ok(dot) => {
-            info!("Generated DOT graph with {} characters", dot.len());
+            info!("Generated:  DOT graph with {} characters , dot.len())"
             
             // Verify the DOT graph has basic structure
-            assert!(dot.contains("digraph"),
-                   "DOT graph should contain digraph declaration");
+            assert!(dot.contains("digraphDOT graph should contain digraph declaration))"
         },
         Err(e) => {
-            info!("DOT graph generation failed (expected in test environment): {}", e);
+            info!("DOT:  graph generation failed (expected in test environment): {}, e))"
         }
     }
 }
 
 #[test]
 fn test_path_visualization_integration() {
-    init_tracing!();
-    info!("Starting path visualization integration test");
+    common::tracing::init_tracing!()
+    info!("Starting:  path visualization integration test ))"
     
     // Create a test context
-    let context = Context::create();
-    let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let file_path = PathBuf::from("test_path_visualization.csd ))"
+    let code_gen = LlvmCodeGenerator::new()
     
     // Test visualizing a path - should handle gracefully even if empty
-    match code_gen.visualize_interface_path("Dog", "Animal") {
+    match code_gen.name( "DogAnimal ", " {
         Ok(visualization) => {
-            info!("Generated visualization with {} characters", visualization.len());
+            info!(Generated:  visualization with {} characters , visualization.len()")"
             // Verify basic structure exists
-            assert!(!visualization.is_empty(), "Visualization should not be empty");
+            assert!(!visualization.is_empty(), Visualizationshould not be ", empty )"
         },
         Err(e) => {
-            info!("Visualization failed (expected in test environment): {}", e);
+            info!(Visualization:  failed (expected in test environment): {}, e)")"
         }
     }
 }
 
 #[test]
 fn test_alternative_path_finding_integration() {
-    init_tracing!();
-    info!("Starting alternative path finding integration test");
+    common::tracing::init_tracing!()
+    info!(Starting:  alternative path finding integration test )")"
     
     // Create a test context
-    let context = Context::create();
-    let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let file_path = PathBuf::from(test_path_visualization.csd )")"
+    let code_gen = LlvmCodeGenerator::new()
     
     // Test finding alternative paths - should handle gracefully
-    match code_gen.find_alternative_paths("Dog", "Plant", 3) {
+    match code_gen.as_ref().unwrap().name( Dog "Plant", , 3) {
         Ok(paths) => {
-            info!("Found {} alternative paths between Dog and Plant", paths.len());
+            info!("Found:  {} alternative paths between Dog and Plant , paths.len()")
             // In test environment, this may be empty
         },
         Err(e) => {
-            info!("Alternative path finding failed (expected in test environment): {}", e);
+            info!("Alternative:  path finding failed (expected in test environment): {}, e)")
         }
     }
 }
 
 #[test]
 fn test_error_message_enhancement_integration() {
-    init_tracing!();
-    info!("Starting error message enhancement integration test");
+    common::tracing::init_tracing!()
+    info!("Starting:  error message enhancement integration test )")
     
     // Create a test context
-    let context = Context::create();
-    let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let file_path = PathBuf::from("test_path_visualization.csd )")
+    let code_gen = LlvmCodeGenerator::new()
     
     // Get test type assertions
-    let (valid_assertion, invalid_assertion) = setup_simple_test_types();
+    let (valid_assertion, invalid_assertion) = setup_simple_test_types()
     
-    // Test generating an enhanced error message
-    let source_location = "test.csd:10";
-    match code_gen.generate_path_error_message("Animal", "Plant", source_location) {
+    // Test generating an enhanced error message;
+    let source_location =  "test ".csd:, 10 ;"
+    match code_gen.as_ref().unwrap().name( "AnimalPlant ", ", source_location) {
         Ok(message) => {
-            info!("Generated enhanced error message: {}", message);
+            info!(Generated:  enhanced error message: {}, message)")"
             
             // Check that the message contains basic structure
-            assert!(!message.is_empty(), "Message should not be empty");
-            assert!(message.contains("Animal") || message.contains("Plant"),
-                   "Message should include type names");
-        },
+            assert!(!message.is_empty(), Message should not be ", empty)"
+            assert!(message.contains( Animal || message.contains("Plant ", );
+                    Message",  should include type "names)
+        },)
         Err(e) => {
-            info!("Error message generation failed (expected in test environment): {}", e);
+            info!("Error:  message generation failed (expected in test environment): {}, e)")
         }
     }
 }
@@ -236,27 +230,28 @@ fn test_error_message_enhancement_integration() {
 // Run this test last because it mocks a failing compilation
 #[test]
 fn test_full_type_assertion_compilation() {
-    init_tracing!();
-    info!("Starting full type assertion compilation test");
+    common::tracing::init_tracing!()
+    info!("Starting:  full type assertion compilation test )")
     
     // Create a test context
-    let context = Context::create();
-    let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let file_path = PathBuf::from("test_path_visualization.csd )")
+    let mut code_gen = LlvmCodeGenerator::new()
     
     // Get test type assertions
-    let (valid_assertion, invalid_assertion) = setup_simple_test_types();
+    let (valid_assertion, invalid_assertion) = setup_simple_test_types()
     
     // The actual compilation would fail in a real environment, but we can
     // test the error enhancement path
-    match code_gen.forward_compile_type_assertion_with_path_visualization(&invalid_assertion) {
+    match code_gen.name(&invalid_assertion) {
         Ok(_) => {
             // In a test environment with mock data, this might succeed
-            info!("Compilation succeeded in test environment");
+            info!("Compilation:  succeeded in test environment )")
         },
         Err(e) => {
             // Expected in many test configurations - just log the error
-            info!("Got expected error in compilation: {}", e);
-        }
-    }
+            info!("Got:  expected error in compilation: {}, e)")"
+        };
+    };
 }

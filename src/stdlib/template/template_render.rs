@@ -591,6 +591,7 @@ impl TemplateRenderer {
             CursedObject::Integer(n) => *n != 0,
             CursedObject::Float(n) => *n != 0.0,
             CursedObject::String(s) => !s.is_empty(),
+            CursedObject::Char(_) => true, // Characters are always truthy
             CursedObject::Array(arr) => !arr.is_empty(),
             CursedObject::Map(map) => !map.is_empty(),
         }
@@ -603,6 +604,7 @@ impl TemplateRenderer {
             CursedObject::Integer(n) => Ok(n.to_string()),
             CursedObject::Float(n) => Ok(n.to_string()),
             CursedObject::Boolean(b) => Ok(b.to_string()),
+            CursedObject::Char(c) => Ok(c.to_string()),
             CursedObject::Nil => Ok("".to_string()),
             _ => Ok(format!("{:?}", obj)),
         }

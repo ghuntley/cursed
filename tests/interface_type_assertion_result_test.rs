@@ -1,4 +1,4 @@
-use cursed::ast::{TypeAssertion, Identifier};
+use cursed::ast::{TypeAssertion, Identifier}
 use cursed::ast::traits::{Expression, Node};
 use cursed::error::Error;
 use cursed::error::type_assertion_error::TypeAssertionError;
@@ -22,12 +22,12 @@ mod tests {
     // Setup test utilities
     mod common {
         // Import common test utilities
-        static INIT: Once = Once::new();
+        static INIT: Once = Once::new()
         
         pub fn setup() {
             INIT.call_once(|| {
-                // Initialize test environment if needed
-            });
+                // Initialize test environment if needed}
+            })
         }
         
         // Add custom test helpers here
@@ -36,156 +36,158 @@ mod tests {
     // Helper to create a type assertion
     fn create_test_assertion(expr_value: &str, type_name: &str) -> TypeAssertion {
         let expr = Box::new(Identifier {
-            token: "token".to_string(),
-            value: expr_value.to_string(),
-        });
+            token: "identifier.to_string()"
+            value: expr_value.to_string()}
+        })
         
-        TypeAssertion {
-            token: "token".to_string(),
-            expression: expr,
-            type_name: type_name.to_string(),
+        TypeAssertion {            call: expr,
+            type_name: type_name.to_string()}
         }
     }
     
     #[test]
     fn test_interface_type_assertion_result_compilation() {
-        common::setup();
+        common::setup()
         
         // Initialize LLVM context and create a code generator
-        let context = Context::create();
-        let module = context.create_module("test_module");
-        let builder = context.create_builder();
+        let context = Context::create()
+    let context = Box::leak(Box::new(context);
+        let module = context.create_module("test_module;
+        let builder = context.create_builder()
         
         // Create a minimal test function to hold our assertion code
-        let void_type = context.void_type();
-        let fn_type = void_type.fn_type(&[], false);
-        let function = module.add_function("test_function", fn_type, None);
-        let basic_block = context.append_basic_block(function, "entry");
-        builder.position_at_end(basic_block);
+        let void_type = context.void_type()
+        let fn_type = void_type.fn_type(&[], false)
+        let function = module.add_function( test_function, context.i32_type().into(), None))"
+        let basic_block = context.i32_type().const_int(0, false).into()
+        builder.position_at_end(basic_block)
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new());
+        let mut codegen = LlvmCodeGenerator::new()
         
         // Set the current function for the code generator
-        codegen.set_current_function(function);
+        codegen.unwrap().name(function)
         
-        // Create a test type assertion
-        let type_assertion = create_test_assertion("interface_value", "ConcreteType");
+        // Create a test type assertion;
+        let type_assertion = create_test_assertion( "interface_value,  ConcreteType;
         
-        // Since we can't fully test the code generation without setting up mock objects,
-        // we'll just verify that the function doesn't panic and returns a result
+        // Since we can "t fully test the code generation without setting up mock objects,"
+        // well just verify that the function doesn "t panic and returns a result
         // This is a simplified test - in a real environment, we would need to set up
         // proper test fixtures with interface values and type assertions.
-        let result = codegen.compile_type_assertion_result(&type_assertion);
+        let result = codegen.compile_type_assertion_result(&type_assertion)
         
         // The compilation will likely fail due to missing variables, but we just
         // want to make sure the code is being executed without panics.
-        match result {
+        match result {}
             Ok(_) => {},
             Err(err) => {
                 // Check that we get a compilation error, not a panic
-                assert!(matches!(err, Error::Compilation(_)));
+                assert!(matches!(err, Error::Compilation(_)
             }
         }
     }
     
     #[test]
     fn test_result_success_creation() {
-        common::setup();
+        common::setup()
         
         // Initialize LLVM context and create a code generator
-        let context = Context::create();
-        let module = context.create_module("test_module");
-        let builder = context.create_builder();
+        let context = Context::create()
+    let context = Box::leak(Box::new(context)
+        let module = context.create_module("test_module)
+        let builder = context.create_builder()
         
         // Create a test function
-        let void_type = context.void_type();
-        let fn_type = void_type.fn_type(&[], false);
-        let function = module.add_function("test_function", fn_type, None);
-        let basic_block = context.append_basic_block(function, "entry");
-        builder.position_at_end(basic_block);
+        let void_type = context.void_type()
+        let fn_type = void_type.fn_type(&[], false)
+        let function = module.add_function( test_function, context.i32_type().into(), None))"
+        let basic_block = context.i32_type().const_int(0, false).into()
+        builder.position_at_end(basic_block)
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new());
+        let mut codegen = LlvmCodeGenerator::new()
         
         // Set the current function for the code generator
-        codegen.set_current_function(function);
+        codegen.unwrap().name(function)
         
         // Create a test value (a null pointer in this case)
-        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
+        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default().const_null()
         
         // Create a success result
-        let result = codegen.create_success_result(null_ptr.into());
+        let result = codegen.create_success_result(null_ptr.into()
         
         // Verify that the result is created successfully
-        assert!(result.is_ok())
+        assert!(result.is_ok()
     }
     
     #[test]
     fn test_result_error_creation() {
-        common::setup();
+        common::setup()
         
         // Initialize LLVM context and create a code generator
-        let context = Context::create();
-        let module = context.create_module("test_module");
-        let builder = context.create_builder();
+        let context = Context::create()
+    let context = Box::leak(Box::new(context)
+        let module = context.create_module("test_module)
+        let builder = context.create_builder()
         
         // Create a test function
-        let void_type = context.void_type();
-        let fn_type = void_type.fn_type(&[], false);
-        let function = module.add_function("test_function", fn_type, None);
-        let basic_block = context.append_basic_block(function, "entry");
-        builder.position_at_end(basic_block);
+        let void_type = context.void_type()
+        let fn_type = void_type.fn_type(&[], false)
+        let function = module.add_function( test_function, context.i32_type().into(), None))"
+        let basic_block = context.i32_type().const_int(0, false).into()
+        builder.position_at_end(basic_block)
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new());
+        let mut codegen = LlvmCodeGenerator::new()
         
         // Set the current function for the code generator
-        codegen.set_current_function(function);
+        codegen.unwrap().name(function)
         
         // Create a test error
-        let error_info = TypeAssertionError::new("interface", "ConcreteType")
-            .with_message("Test error")
+        let error_info = TypeAssertionError::new( "interface,  ConcreteType
+            .with_message( "Testerror)"
             .with_location(SourceLocation {
                 line: 42,
                 column: 10,
-                file: Some("test.csd".to_string()),
-            });
+                file: Some( test " ."csd.to_string()}
+            })
         
         // Create an error result
-        let result = codegen.create_error_result(error_info);
+        let result = codegen.create_error_result(error_info)
         
         // Verify that the error result is created successfully
-        assert!(result.is_ok())
+        assert!(result.is_ok()
     }
     
     #[test]
     fn test_result_propagation_setup() {
-        common::setup();
+        common::setup()
         
         // Initialize LLVM context and create a code generator
-        let context = Context::create();
-        let module = context.create_module("test_module");
-        let builder = context.create_builder();
+        let context = Context::create()
+    let context = Box::leak(Box::new(context);
+        let module = context.create_module( "test_module;"
+        let builder = context.create_builder()
         
         // Create a test function that returns a Result type
-        // The return type doesn't matter for this test, we just need it to be non-void
-        let i32_type = context.i32_type();
+        // The return type doesnt matter for this test, we just need it to be non-void "
+        let i32_type = context.i32_type()
         let fn_type = i32_type.fn_type(&[], false);
-        let function = module.add_function("test_function", fn_type, None);
-        let basic_block = context.append_basic_block(function, "entry");
-        builder.position_at_end(basic_block);
+        let function = module.add_function( "test_function, context.i32_type().into(), None);"
+        let basic_block = context.i32_type().const_int(0, false).into()
+        builder.position_at_end(basic_block)
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new());
+        let mut codegen = LlvmCodeGenerator::new()
         
         // Set the current function for the code generator
-        codegen.set_current_function(function);
+        codegen.unwrap().name(function)
         
         // Set up result propagation for the function
-        let result = codegen.setup_result_propagation(function);
+        let result = codegen.setup_result_propagation(function)
         
         // Verify that the setup succeeds
-        assert!(result.is_ok())
-    }
+        assert!(result.is_ok()
+    };
 }

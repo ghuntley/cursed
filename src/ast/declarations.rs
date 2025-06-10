@@ -289,23 +289,41 @@ impl Node for TypeParameter {
 /// Generic constraint specification
 #[derive(Debug, Clone)]
 pub struct GenericConstraint {
-    pub type_param: String,
-    pub constraints: Vec<String>,
+    /// Name of the constraint (e.g., "Clone", "Debug", "Comparable")
+    pub constraint_name: String,
+    /// Type parameters bound by this constraint
+    pub type_parameters: Vec<String>,
+    /// Additional constraint bounds
+    pub bounds: Vec<String>,
 }
 
 impl GenericConstraint {
-    pub fn new(type_param: String, constraints: Vec<String>) -> Self {
-        Self { type_param, constraints }
+    /// Create a new generic constraint
+    pub fn new(constraint_name: String, type_parameters: Vec<String>) -> Self {
+        Self {
+            constraint_name,
+            type_parameters,
+            bounds: Vec::new(),
+        }
+    }
+
+    /// Create constraint with bounds
+    pub fn with_bounds(constraint_name: String, type_parameters: Vec<String>, bounds: Vec<String>) -> Self {
+        Self {
+            constraint_name,
+            type_parameters,
+            bounds,
+        }
     }
 }
 
 impl Node for GenericConstraint {
     fn string(&self) -> String {
-        format!("{}: {}", self.type_param, self.constraints.join(" + "))
+        format!("{}: {}", self.type_parameters.join(", "), self.constraint_name)
     }
 
     fn token_literal(&self) -> String {
-        self.type_param.clone()
+        self.constraint_name.clone()
     }
 }
 

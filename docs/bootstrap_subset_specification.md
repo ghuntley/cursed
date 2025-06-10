@@ -122,9 +122,13 @@ The following features are **not** included in the bootstrap subset:
 - Struct definitions (`squad`)
 - Interface definitions (`collab`)
 - Type aliases
-- Generic types and type parameters
+- Basic generic types and type parameters (simplified constraints only)
 - Method definitions
 - Pointer types and operations
+
+**Note**: Full generic constraint system and advanced features like higher-kinded types
+are available in the complete compiler but simplified for bootstrap phase. See the
+[Generics Guide](generics_guide.md) for complete generic programming capabilities.
 
 ### Concurrency
 - Goroutines (`stan` keyword)

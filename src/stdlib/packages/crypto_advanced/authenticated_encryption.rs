@@ -1,24 +1,15 @@
-//! Authenticated encryption utilities
-//! 
-//! Provides authenticated encryption/decryption operations for the CURSED stdlib.
+/// fr fr Authenticated encryption stub
+use super::errors::*;
 
-use crate::stdlib::value::Value;
-use crate::error::CursedError;
-
-/// Generic authenticated encryption function
-pub fn aead_encrypt(_args: Vec<Value>) -> Result<Value, CursedError> {
-    // TODO: Implement generic AEAD encryption
-    Err(CursedError::NotImplemented("AEAD encryption not yet implemented".to_string()))
+pub trait AuthenticatedEncryption {
+    fn encrypt_with_auth(&self, plaintext: &[u8]) -> AdvancedCryptoResult<Vec<u8>>;
+    fn decrypt_with_auth(&self, ciphertext: &[u8]) -> AdvancedCryptoResult<Vec<u8>>;
 }
 
-/// Generic authenticated decryption function
-pub fn aead_decrypt(_args: Vec<Value>) -> Result<Value, CursedError> {
-    // TODO: Implement generic AEAD decryption
-    Err(CursedError::NotImplemented("AEAD decryption not yet implemented".to_string()))
-}
+#[derive(Debug, Clone)]
+pub struct AuthenticationTag(pub Vec<u8>);
 
-/// Generate random nonce for AEAD operations
-pub fn generate_nonce(_args: Vec<Value>) -> Result<Value, CursedError> {
-    // TODO: Implement nonce generation
-    Err(CursedError::NotImplemented("Nonce generation not yet implemented".to_string()))
-}
+pub type EncryptionResult<T> = Result<T, AdvancedCryptoError>;
+pub type DecryptionResult<T> = Result<T, AdvancedCryptoError>;
+pub type AuthenticationError = AdvancedCryptoError;
+pub type TagMismatchError = AdvancedCryptoError;

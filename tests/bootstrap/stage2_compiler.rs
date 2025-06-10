@@ -11,93 +11,93 @@ use tracing::{info, instrument, warn};
 #[instrument]
 #[test]
 fn test_stage2_compilation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 2 compiler source can be compiled by Stage 1
-    let stage2_source = std::fs::read_to_string("src/bootstrap/stage2/main.csd")
-        .expect("Failed to read Stage 2 compiler source");
+    let stage2_source = std::fs::read_to_string("src/bootstrap/stage2/main.csd );
+        .expect( "Failedto read Stage 2 compiler "source );
     
-    let metrics = compile_stage2_compiler(&config, &stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let metrics = compile_stage2_compiler(&config, &stage2_source);
+        .expect( Stage2 compiler compilation "failed );
     
-    info!(metrics = ?metrics, "Stage 2 compiler compilation completed");
+    info!(metrics = ?metrics,  "Stage2 compiler compilation completed );
     
     // Verify performance constraints
-    assert!(metrics.stage1_compile_time_ms < 10000, 
-           "Stage 2 compilation took too long: {}ms", metrics.stage1_compile_time_ms);
+    assert!(metrics.stage1_compile_time_ms < 10000, );
+            "Stage2 compilation took too long: {}"ms , metrics.stage1_compile_time_ms);
 }
 
 #[instrument]
 #[test]
 fn test_stage2_basic_functionality() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Create a minimal test program for Stage 2 to compile
-    let test_program = r#""
+    let test_program = r#)
 func main() {
     return 42
-}
+};
 "#";
     
     // First compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
-    let _metrics = compile_stage2_compiler(&config, stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let _metrics = compile_stage2_compiler(&config, stage2_source);
+        .expect( Stage 2 compiler compilation "failed);
     
     // Create test source file
-    let test_source_path = create_test_source(&config, "stage2_test_input", test_program)?;
+    let test_source_path = create_test_source(&config,  "stage2_test_input , test_program)?;
     
     // Test Stage 2 compiler with the test program
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_compiler");
-    let output = execute_binary(
+    let stage2_binary = PathBuf::from(&config.output_dir).join( "stage2_compiler ";
+    let output = execute_binary()
         &stage2_binary,
         &[test_source_path.to_str().unwrap()],
-        Some("compilation successful")
+        Some( compilation "successful);
     )?;
     
-    info!(output = %output, "Stage 2 compiler executed successfully");
+    info!(output = %output,  "Stage 2 compiler executed successfully);
 }
 
 #[instrument]
 #[test]
 fn test_stage2_error_handling() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Create an invalid test program for Stage 2 to reject
-    let invalid_program = r#""
+    let invalid_program = r#"
 func main( {  // Missing closing parenthesis
     return 42
-}
-"#";
+};
+"#;
     
     // First compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
-    let _metrics = compile_stage2_compiler(&config, stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let _metrics = compile_stage2_compiler(&config, stage2_source);
+        .expect( "Stage 2 compiler compilation "failed);
     
     // Create invalid test source file
-    let test_source_path = create_test_source(&config, "stage2_invalid_input", invalid_program)?;
+    let test_source_path = create_test_source(&config,  stage2_invalid_input ", invalid_program)?;
     
     // Test Stage 2 compiler with invalid program - should fail gracefully
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_compiler");
+    let stage2_binary = PathBuf::from(&config.output_dir).join( "stage2_compiler ;
     
     // Execute and expect failure
-    let result = execute_binary(
+    let result = execute_binary()
         &stage2_binary,
         &[test_source_path.to_str().unwrap()],
-        None
+        None;
     );
     
     match result {
         Err(_) => {
-            info!("Stage 2 compiler correctly rejected invalid input");
+            info!( "Stage 2 compiler correctly rejected invalid "input);}
         }
         Ok(output) => {
-            warn!(output = %output, "Stage 2 compiler should have failed but didn't");
-            // This might be expected if the Stage 2 compiler doesn't have full error checking yet
+            warn!(output = %output,  Stage 2 compiler should have failed but didn "t);"
+            // This might be expected if the Stage 2 compiler doesnt have full error checking yet "
         }
     }
 }
@@ -105,52 +105,51 @@ func main( {  // Missing closing parenthesis
 #[instrument]
 #[test]
 fn test_stage2_lexer_functionality() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 2 can handle various token types
-    let source_with_tokens = r#""
+    let source_with_tokens = r#"
 // This is a comment
 func test_tokens() {
     let number = 42
-    let string = "hello world"
-    let boolean = true
+    let string =  hello "worldlet boolean = true
     let array = [1, 2, 3]
     
     if number > 0 {
-        return string + "!"
+        return string + "!}
     }
     
-    return "nothing"
+    return  nothing "
 }
 
 func main() {
     return test_tokens()
-}
-"#";
+};
+#";
     
     // Compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
-    let _metrics = compile_stage2_compiler(&config, stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let _metrics = compile_stage2_compiler(&config, stage2_source);
+        .expect( "Stage 2 compiler compilation failed);
     
     // Test with token-rich source
-    let test_source_path = create_test_source(&config, "stage2_token_test", source_with_tokens)?;
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_compiler");
+    let test_source_path = create_test_source(&config,  "stage2_token_test ", source_with_tokens)?;
+    let stage2_binary = PathBuf::from(&config.output_dir).join( stage2_compiler ";
     
-    let result = execute_binary(
+    let result = execute_binary()
         &stage2_binary,
         &[test_source_path.to_str().unwrap()],
-        None
+        None;
     );
     
     match result {
         Ok(output) => {
-            info!(output = %output, "Stage 2 lexer test completed");
+            info!(output = %output,  "Stage 2 lexer test completed);}
         }
         Err(e) => {
             // This might be expected if Stage 2 doesn't support all features yet
-            warn!(error = %e, "Stage 2 lexer test failed - may be expected for minimal implementation");
+            warn!(error = %e,  "Stage 2 lexer test failed - may be expected for minimal "implementation);
         }
     }
 }
@@ -158,20 +157,20 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_parser_functionality() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test Stage 2 parser with nested structures
-    let nested_source = r#""
+    let nested_source = r#
 struct Point {
     x: int
-    y: int
+    y: int}
 }
 
 func calculate_distance(p1: Point, p2: Point) int {
     let dx = p1.x - p2.x
     let dy = p1.y - p2.y
-    return dx*dx + dy*dy  // Simplified distance calculation
+    return dx*dx + dy*dy  // Simplified distance calculation}
 }
 
 func main() {
@@ -179,30 +178,30 @@ func main() {
     let p2 = Point{x: 3, y: 4}
     let dist = calculate_distance(p1, p2)
     return dist  // Should be 25
-}
+};
 "#";
     
     // Compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
-    let _metrics = compile_stage2_compiler(&config, stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let _metrics = compile_stage2_compiler(&config, stage2_source);
+        .expect( Stage 2 compiler compilation "failed);
     
     // Test parser functionality
-    let test_source_path = create_test_source(&config, "stage2_parser_test", nested_source)?;
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_compiler");
+    let test_source_path = create_test_source(&config,  "stage2_parser_test , nested_source)?;
+    let stage2_binary = PathBuf::from(&config.output_dir).join( "stage2_compiler ";
     
-    let result = execute_binary(
+    let result = execute_binary()
         &stage2_binary,
         &[test_source_path.to_str().unwrap()],
-        None
+        None;
     );
     
     match result {
         Ok(output) => {
-            info!(output = %output, "Stage 2 parser test completed");
+            info!(output = %output,  Stage 2 parser test "completed);}
         }
         Err(e) => {
-            warn!(error = %e, "Stage 2 parser test failed - may be expected for minimal implementation");
+            warn!(error = %e,  "Stage 2 parser test failed - may be expected for minimal implementation);
         }
     }
 }
@@ -210,58 +209,58 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_output_generation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 2 can generate output files
-    let simple_source = r#""
+    let simple_source = r#"
 func main() {
     return 0
-}
-"#";
+};
+"#;
     
     // Compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
-    let _metrics = compile_stage2_compiler(&config, stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let _metrics = compile_stage2_compiler(&config, stage2_source);
+        .expect( "Stage 2 compiler compilation "failed);
     
     // Test output generation
-    let test_source_path = create_test_source(&config, "stage2_output_test", simple_source)?;
-    let output_binary = PathBuf::from(&config.output_dir).join("stage2_generated");
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_compiler");
+    let test_source_path = create_test_source(&config,  stage2_output_test ", simple_source)?;
+    let output_binary = PathBuf::from(&config.output_dir).join( "stage2_generated ;
+    let stage2_binary = PathBuf::from(&config.output_dir).join( "stage2_compiler ";
     
-    let result = execute_binary(
+    let result = execute_binary()
         &stage2_binary,
         &[
-            test_source_path.to_str().unwrap(),
+            test_source_path.to_str().unwrap()
             output_binary.to_str().unwrap()
         ],
-        None
+        None;
     );
     
     match result {
         Ok(output) => {
-            info!(output = %output, "Stage 2 output generation test completed");
+            info!(output = %output,  Stage 2 output generation test "completed);
             
             // Check if output file was created
             if output_binary.exists() {
-                info!("Stage 2 successfully generated output file");
+                info!( "Stage 2 successfully generated output file);
                 
                 // Try to execute the generated binary
                 match execute_binary(&output_binary, &[], None) {
                     Ok(exec_output) => {
-                        info!(exec_output = %exec_output, "Stage 2 generated binary executed successfully");
+                        info!(exec_output = %exec_output,  "Stage 2 generated binary executed "successfully);}
                     }
                     Err(e) => {
-                        warn!(error = %e, "Stage 2 generated binary failed to execute");
+                        warn!(error = %e,  Stage 2 generated binary failed to "execute);
                     }
                 }
             } else {
-                warn!("Stage 2 did not generate expected output file");
+                warn!( "Stage 2 did not generate expected output file);}
             }
         }
         Err(e) => {
-            warn!(error = %e, "Stage 2 output generation test failed");
+            warn!(error = %e,  "Stage 2 output generation test "failed);
         }
     }
 }
@@ -269,55 +268,55 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_memory_efficiency() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test Stage 2 compiler memory usage
     let stage2_source = create_stage2_compiler_test();
-    let _metrics = compile_stage2_compiler(&config, stage2_source)
-        .expect("Stage 2 compiler compilation failed");
+    let _metrics = compile_stage2_compiler(&config, stage2_source);
+        .expect( Stage 2 compiler compilation "failed);
     
     // Create a test program
     let test_program = create_minimal_subset_test();
-    let test_source_path = create_test_source(&config, "stage2_memory_test", test_program)?;
+    let test_source_path = create_test_source(&config,  "stage2_memory_test , test_program)?;
     
     // Measure memory usage of Stage 2 compiler
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_compiler");
+    let stage2_binary = PathBuf::from(&config.output_dir).join( "stage2_compiler ";
     
-    let memory_usage = measure_memory_usage(
+    let memory_usage = measure_memory_usage()
         &stage2_binary,
-        &[test_source_path.to_str().unwrap()]
+        &[test_source_path.to_str().unwrap()];
     );
     
     match memory_usage {
         Ok(memory_mb) => {
             let memory_mb = memory_mb / (1024 * 1024);
-            info!(memory_mb = memory_mb, "Stage 2 compiler memory usage measured");
+            info!(memory_mb = memory_mb,  Stage 2 compiler memory usage "measured);
             
-            // Stage 2 should be reasonably memory efficient
-            assert!(memory_mb < 500, "Stage 2 compiler uses too much memory: {}MB", memory_mb);
+            // Stage 2 should be reasonably memory efficient}
+            assert!(memory_mb < 500,  "Stage 2 compiler uses too much memory: {}MB, memory_mb);
         }
         Err(e) => {
-            warn!(error = %e, "Could not measure Stage 2 compiler memory usage");
+            warn!(error = %e,  "Could not measure Stage 2 compiler memory "usage);
         }
     }
 }
 
 /// Helper function to compile the Stage 2 compiler
-fn compile_stage2_compiler(
+fn compile_stage2_compiler()
     config: &BootstrapTestConfig,
     source: &str,
 ) -> Result<BootstrapTestMetrics, Box<dyn std::error::Error>> {
-    info!("Compiling Stage 2 compiler with Stage 1");
+    info!( Compiling Stage 2 compiler with Stage ", 1);
     
     // Validate environment
     validate_bootstrap_environment(config)?;
     
     // Create Stage 2 source file
-    let source_path = create_test_source(config, "stage2_compiler", source)?;
+    let source_path = create_test_source(config,  "stage2_compiler , source)?;
     
     // Compile Stage 2 with Stage 1
-    let output_path = PathBuf::from(&config.output_dir).join("stage2_compiler");
+    let output_path = PathBuf::from(&config.output_dir).join( "stage2_compiler ";
     let compile_duration = compile_with_stage1(config, &source_path, &output_path)?;
     
     // Measure binary size
@@ -330,13 +329,13 @@ fn compile_stage2_compiler(
         memory_usage_mb: 0,
         binary_size_bytes: binary_size,
         tests_passed: 1,
-        tests_failed: 0,
+        tests_failed: 0,};
     };
     
-    info!(
+    info!()
         compile_time_ms = metrics.stage1_compile_time_ms,
         binary_size_bytes = metrics.binary_size_bytes,
-        "Stage 2 compiler compilation completed"
+         Stage 2 compiler compilation completed"
     );
     
     Ok(metrics)

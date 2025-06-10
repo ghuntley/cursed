@@ -34,6 +34,9 @@ pub mod lsp;
 // Development tools
 pub mod tools;
 
+// Type system
+pub mod type_system;
+
 // Re-export commonly used types for convenience
 pub use error::{Error, SourceLocation};
 

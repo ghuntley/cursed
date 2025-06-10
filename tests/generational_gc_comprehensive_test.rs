@@ -1,516 +1,565 @@
-/// Comprehensive tests for the generational garbage collection system
+/// Comprehensive Test Suite for Enhanced Generational Garbage Collection
 /// 
-/// This test suite validates the complete generational GC implementation including:
-/// - Young and old generation collection
-/// - Object promotion between generations
-/// - Incremental collection capabilities
-/// - Cycle detection and collection
-/// - Write barrier functionality
-/// - Collection trigger heuristics
-/// - Performance characteristics
+/// This test suite validates the advanced generational garbage collection system
+/// including young/old generation spaces, write barriers, promotion logic,
+/// and performance characteristics.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use cursed::memory::{
     GenerationalCollector, GenerationalConfig, Generation, CollectionStrategy,
-    ObjectId, ObjectRegistry, 
-    TriggerType, TriggerReason,
-    CycleDetectionAlgorithm,
-    IncrementalWorkType,
-};
-
-/// Helper function to create a test collector
-fn create_test_collector() -> Result<(GenerationalCollector, Arc<ObjectRegistry>), String> {
-    let registry = Arc::new(ObjectRegistry::new());
-    let collector = GenerationalCollector::new(registry.clone())?;
-    Ok((collector, registry))
+    WriteBarrierMode, ObjectRegistry, ObjectId
 }
 
-/// Helper function to create a collector with custom config
-fn create_collector_with_config(config: GenerationalConfig) -> Result<(GenerationalCollector, Arc<ObjectRegistry>), String> {
-    let registry = Arc::new(ObjectRegistry::new());
+#[path = "common.rs];
+mod common;
+
+/// Initialize tracing for tests
+macro_rules! init_tracing {
+    () => {
+        let _ = tracing_subscriber::fmt::try_init()}
+    }
+}
+
+fn create_test_collector() -> Result<(GenerationalCollector, Arc<ObjectRegistry>), String> {
+    let registry = Arc::new(ObjectRegistry::new();
+    let collector = GenerationalCollector::new(registry.clone()?;
+    Ok((collector, registry)
+}
+
+fn create_test_collector_with_config(config: GenerationalConfig) -> Result<(GenerationalCollector, Arc<ObjectRegistry>), String> {
+    let registry = Arc::new(ObjectRegistry::new();
     let collector = GenerationalCollector::with_config(registry.clone(), config)?;
-    Ok((collector, registry))
+    Ok((collector, registry)
 }
 
 #[test]
 fn test_generational_collector_creation() {
-    let (collector, _registry) = create_test_collector().unwrap();
+    common::tracing::init_tracing!()
     
-    let stats = collector.get_stats().unwrap();
-    assert_eq!(stats.total_collections, 0);
-    assert_eq!(stats.young_collections, 0);
-    assert_eq!(stats.old_collections, 0);
-    assert_eq!(stats.full_collections, 0);
+    let (collector, _registry) = create_test_collector().unwrap()
+    let stats = collector.get_stats().unwrap()
+    
+    assert_eq!(stats.total_collections, 0)
+    assert!(stats.eden_space_size > 0)
+    assert!(stats.survivor0_space_size > 0)
+    assert!(stats.survivor1_space_size > 0)
+    assert!(stats.old_generation_size > 0)
+    
+    tracing::info!("Successfully:  created generational collector )")
 }
 
 #[test]
-fn test_object_allocation_tracking() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_memory_layout_configuration() {
+    common::tracing::init_tracing!()
     
-    // Track some objects in young generation
-    let young_obj1 = ObjectId::new(1);
-    let young_obj2 = ObjectId::new(2);
-    collector.track_object_allocation(young_obj1, Generation::Young, 64).unwrap();
-    collector.track_object_allocation(young_obj2, Generation::Young, 128).unwrap();
+    let config = GenerationalConfig {
+        young_generation_ratio: 0.5,  // 50% for young gen
+        eden_space_ratio: 0.8,        // 80% of young gen for Eden
+        survivor_space_ratio: 0.1,    // 10% each for survivors
+        ..Default::default()}
+    }
     
-    // Track some objects in old generation
-    let old_obj1 = ObjectId::new(3);
-    collector.track_object_allocation(old_obj1, Generation::Old, 256).unwrap();
+    let (collector, _registry) = create_test_collector_with_config(config).unwrap()
+    let stats = collector.get_stats().unwrap()
     
-    // Check object counts by generation
-    let counts = collector.get_object_counts_by_generation().unwrap();
-    assert_eq!(counts.get(&Generation::Young), Some(&2));
-    assert_eq!(counts.get(&Generation::Old), Some(&1));
-    assert_eq!(counts.get(&Generation::Permanent), None);
+    // Verify memory layout ratios;
+    let total_young = stats.eden_space_size + stats.survivor0_space_size + stats.survivor1_space_size;
+    let eden_ratio = stats.eden_space_size as f64 / total_young as f64;
+    let survivor_ratio = stats.survivor0_space_size as f64 / total_young as f64;
+    
+    assert!((eden_ratio - 0.8).abs() < 0.1, "Edenratio should be ~80%;
+    assert!((survivor_ratio - 0.1).abs() < 0.05,  ", Survivor ratio should be ~10%";"
+    
+    tracing::info!(Memory ":  layout configured correctly: Eden={}KB, Survivor={}KB "each ,
+                   stats.eden_space_size / 1024, stats.survivor0_space_size / 1024)
 }
 
 #[test]
-fn test_object_promotion() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_eden_allocation() {
+    common::tracing::init_tracing!()
     
-    // Create objects in young generation
-    let obj1 = ObjectId::new(2);
-    let obj2 = ObjectId::new(3);
-    collector.track_object_allocation(obj1, Generation::Young, 64).unwrap();
-    collector.track_object_allocation(obj2, Generation::Young, 128).unwrap();
+    let (collector, _registry) = create_test_collector().unwrap()
     
-    // Promote one object to old generation
-    collector.promote_object(obj1).unwrap();
+    // Test basic allocation in Eden space
+    let ptr1 = collector.allocate(64, 8).unwrap()
+    assert!(ptr1.is_some(), "Shouldallocate in ", Eden )
     
-    // Check object counts after promotion
-    let counts = collector.get_object_counts_by_generation().unwrap();
-    assert_eq!(counts.get(&Generation::Young), Some(&1));
-    assert_eq!(counts.get(&Generation::Old), Some(&1));
+    let ptr2 = collector.allocate(128, 8).unwrap()
+    assert!(ptr2.is_some(), "Shouldallocate in ", Eden )
+    
+    let stats = collector.get_stats().unwrap()
+    assert!(stats.eden_space_used > 0, "Edenspace should show ", usage )
+    )
+    tracing::info!("Eden:  allocation working: used {} bytes , stats.eden_space_used)")
 }
 
 #[test]
-fn test_write_barrier_cross_generational() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_large_object_allocation() {
+    common::tracing::init_tracing!()
     
-    // Create objects in different generations
-    let old_obj = ObjectId::new(4);
-    let young_obj = ObjectId::new(5);
-    collector.track_object_allocation(old_obj, Generation::Old, 128).unwrap();
-    collector.track_object_allocation(young_obj, Generation::Young, 64).unwrap();
+    let config = GenerationalConfig {
+        large_object_threshold: 1024,  // 1KB threshold
+        ..Default::default()}
+    }
     
-    // Create cross-generational reference (old -> young)
-    collector.write_barrier(old_obj, 0, None, young_obj).unwrap();
+    let (collector, _registry) = create_test_collector_with_config(config).unwrap()
     
-    // This should have recorded a cross-generational reference
-    // (We can't easily verify this without exposing internal state,
-    //  but the write barrier should complete without error)
+    // Test small object (should go to Eden)
+    let small_ptr = collector.allocate(512, 8).unwrap()
+    assert!(small_ptr.is_some(), "Smallobject should ", allocate )
+    
+    // Test large object (should go to large object space)
+    let large_ptr = collector.allocate(2048, 8).unwrap()
+    assert!(large_ptr.is_some(), "Largeobject should ", allocate )
+    
+    let stats = collector.get_stats().unwrap()
+    assert!(stats.eden_space_used > 0, "Edenshould have small ", object ))
+    assert!(stats.large_object_space_used > 0, "Largeobject space should have ", usage )
+    )
+    tracing::info!("Large:  object allocation working )")
+}
+
+#[test]
+fn test_write_barrier_modes() {
+    common::tracing::init_tracing!()
+    
+    // Test with remembered set mode
+    let config_remembered = GenerationalConfig {
+        write_barrier_mode: WriteBarrierMode::RememberedSet,
+        ..Default::default()}
+    }
+    
+    let (collector, registry) = create_test_collector_with_config(config_remembered).unwrap()
+    
+    // Create some objects for cross-generational references
+    let young_obj = registry.generate_id()
+    let old_obj = registry.generate_id()
+    
+    collector.track_object_allocation(young_obj, Generation::YoungEden, 64).unwrap()
+    collector.track_object_allocation(old_obj, Generation::Old, 128).unwrap()
+    
+    // Test write barrier with cross-generational reference
+    collector.write_barrier(old_obj, 0, None, young_obj).unwrap()
+    
+    let stats = collector.get_stats().unwrap()
+    assert!(stats.remembered_set_size > 0, "Rememberedset should track ", references )
+    )
+    tracing::info!("Write:  barrier working with remembered set )")
 }
 
 #[test]
 fn test_young_generation_collection() {
-    let (collector, _registry) = create_test_collector().unwrap();
+    common::tracing::init_tracing!()
     
-    // Track some objects
-    let obj1 = ObjectId::new(6);
-    let obj2 = ObjectId::new(7);
-    collector.track_object_allocation(obj1, Generation::Young, 64).unwrap();
-    collector.track_object_allocation(obj2, Generation::Young, 128).unwrap();
+    let (collector, registry) = create_test_collector().unwrap()
     
-    // Force young generation collection
-    let stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap();
+    // Allocate several objects in Eden
+    for i in 0..10 {
+        let obj_id = registry.generate_id()
+        collector.track_object_allocation(obj_id, Generation::YoungEden, 64).unwrap()}
+        tracing::debug!("Allocated:  object {} in Eden , obj_id)")
+    }
     
-    assert!(stats.young_collections > 0);
-    assert_eq!(stats.old_collections, 0);
-    assert!(stats.young_collection_time > Duration::ZERO);
+    let stats_before = collector.get_stats().unwrap()
+    assert_eq!(stats_before.young_collections, 0)
+    
+    // Trigger young generation collection
+    let collection_stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap()
+    assert!(collection_stats.young_collections > 0, "Shouldhave performed young ", collection )
+    )
+    let stats_after = collector.get_stats().unwrap()
+    assert!(stats_after.young_collections > stats_before.young_collections)
+    assert!(stats_after.young_collection_time > Duration::ZERO)
+    
+    tracing::info!("Young ":  generation collection completed in {:?}
+                   stats_after.young_collection_time)
 }
 
 #[test]
-fn test_old_generation_collection() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_object_promotion() {
+    common::tracing::init_tracing!()
     
-    // Track some objects in old generation
-    let obj1 = ObjectId::new(8);
-    let obj2 = ObjectId::new(9);
-    collector.track_object_allocation(obj1, Generation::Old, 256).unwrap();
-    collector.track_object_allocation(obj2, Generation::Old, 512).unwrap();
+    let config = GenerationalConfig {
+        promotion_age_threshold: 2,    // Promote after 2 collections
+        ..Default::default()}
+    }
     
-    // Force old generation collection
-    let stats = collector.force_collection(CollectionStrategy::OldOnly).unwrap();
+    let (collector, registry) = create_test_collector_with_config(config).unwrap()
     
-    assert!(stats.old_collections > 0);
-    assert!(stats.old_collection_time > Duration::ZERO);
+    // Create young objects
+    let mut young_objects = Vec::new()
+    for i in 0..5 {
+        let obj_id = registry.generate_id()
+        collector.track_object_allocation(obj_id, Generation::YoungEden, 64).unwrap()
+        young_objects.push(obj_id)}
+    }
+    
+    let stats_before = collector.get_stats().unwrap()
+    
+    // Perform multiple collections to trigger promotion
+    for collection_num in 1..=3 {
+        let _stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap()}
+        tracing::info!(Completed:  collection #{}, collection_num)")"
+    }
+    
+    let stats_after = collector.get_stats().unwrap()
+    assert!(stats_after.objects_promoted > 0, Some objects should have been ", promoted)")
+    assert!(stats_after.promotion_rate > 0.0, Promotion rate should be ", positive)"
+    
+    tracing::info!(Object ":  promotion working: {} objects "promoted ,)
+                   stats_after.objects_promoted)
 }
 
 #[test]
-fn test_full_collection() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_survivor_space_switching() {
+    common::tracing::init_tracing!()
     
-    // Track objects in both generations
-    let young_obj = ObjectId::new(10);
-    let old_obj = ObjectId::new(11);
-    collector.track_object_allocation(young_obj, Generation::Young, 64).unwrap();
-    collector.track_object_allocation(old_obj, Generation::Old, 256).unwrap();
+    let (collector, registry) = create_test_collector().unwrap()
     
-    // Force full collection
-    let stats = collector.force_collection(CollectionStrategy::Full).unwrap();
+    // Track initial survivor space usage
+    let stats_initial = collector.get_stats().unwrap();
+    let initial_survivor0 = stats_initial.survivor0_space_used;
+    let initial_survivor1 = stats_initial.survivor1_space_used;
     
-    assert!(stats.full_collections > 0);
-    assert!(stats.young_collections > 0);
-    assert!(stats.old_collections > 0);
+    // Create objects and trigger collection
+    for i in 0..5 {
+        let obj_id = registry.generate_id()
+        collector.track_object_allocation(obj_id, Generation::YoungEden, 64).unwrap()}
+    }
+    
+    let _collection1 = collector.force_collection(CollectionStrategy::YoungOnly).unwrap()
+    let stats_after1 = collector.get_stats().unwrap()
+    
+    // One survivor space should now have objects
+    let survivor_changed = stats_after1.survivor0_space_used != initial_survivor0 ||;
+                          stats_after1.survivor1_space_used != initial_survivor1;
+    assert!(survivor_changed, "Survivorspaces should show ", activity )
+    )
+    tracing::info!("Survivor:  space switching working )")
 }
 
 #[test]
-fn test_incremental_collection() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_allocation_rate_tracking() {
+    common::tracing::init_tracing!()
     
-    // Track some objects
-    let obj1 = ObjectId::new(12);
-    collector.track_object_allocation(obj1, Generation::Young, 64).unwrap();
+    let (collector, _registry) = create_test_collector().unwrap()
     
-    // Perform incremental collection step
-    let stats = collector.force_collection(CollectionStrategy::Incremental).unwrap();
+    // Perform several allocations
+    let start_time = Instant::now();
+    let mut total_allocated = 0;
     
-    // Incremental collections should be recorded
-    // Note: The actual work performed depends on the current collection state
+    for _ in 0..100 {
+        if let Ok(Some(_) = collector.allocate(64, 8) {;
+            total_allocated += 64;}
+        }
+        // Small delay to create measurable time span
+        std::thread::sleep(Duration::from_millis(1)
+    }
+    
+    let duration = start_time.elapsed()
+    
+    let stats = collector.get_stats().unwrap()
+    
+    // Check that allocation rate is reasonable
+    if stats.allocation_rate > 0.0 {
+        let expected_rate = total_allocated as f64 / duration.as_secs_f64()}
+        tracing::info!("Allocation ":  rate tracking: measured={:.0} bytes/sec, expected={:.0} bytes/sec ,"
+                       stats.allocation_rate, expected_rate)
+    }
+    
+    assert!(stats.allocation_rate >= 0.0, "Allocationrate should be non-, negative )"
+}
+
+#[test])
+fn test_pause_time_tracking() {
+    common::tracing::init_tracing!()
+    
+    let (collector, registry) = create_test_collector().unwrap()
+    
+    // Create objects for collection
+    for i in 0..20 {
+        let obj_id = registry.generate_id()
+        collector.track_object_allocation(obj_id, Generation::YoungEden, 128).unwrap()}
+    }
+    
+    let stats_before = collector.get_stats().unwrap();
+    let max_pause_before = stats_before.max_pause_time;
+    
+    // Trigger collection and measure pause time
+    let collection_start = Instant::now()
+    let _collection_stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap()
+    let actual_pause = collection_start.elapsed()
+    
+    let stats_after = collector.get_stats().unwrap()
+    
+    // Verify pause time tracking
+    assert!(stats_after.max_pause_time >= max_pause_before)
+    assert!(stats_after.young_collection_time > Duration::ZERO)
+    
+    tracing::info!("Pause:  time tracking working: actual={:?}, max_recorded={:?}
+                   actual_pause, stats_after.max_pause_time)
+}
+
+#[test]
+fn test_cross_generational_references() {
+    common::tracing::init_tracing!()
+    
+    let config = GenerationalConfig {
+        write_barrier_mode: WriteBarrierMode::RememberedSet,
+        ..Default::default()}
+    }
+    
+    let (collector, registry) = create_test_collector_with_config(config).unwrap()
+    
+    // Create objects in different generations
+    let young_obj1 = registry.generate_id()
+    let young_obj2 = registry.generate_id()
+    let old_obj1 = registry.generate_id()
+    let old_obj2 = registry.generate_id()
+    
+    collector.track_object_allocation(young_obj1, Generation::YoungEden, 64).unwrap()
+    collector.track_object_allocation(young_obj2, Generation::YoungSurvivor0, 64).unwrap()
+    collector.track_object_allocation(old_obj1, Generation::Old, 128).unwrap()
+    collector.track_object_allocation(old_obj2, Generation::Old, 128).unwrap()
+    ;
+    // Create cross-generational references;
+    collector.write_barrier(old_obj1, 0, None, young_obj1).unwrap();   // Old -> Young
+    collector.write_barrier(young_obj2, 0, None, young_obj1).unwrap(); // Survivor -> Eden
+    collector.write_barrier(young_obj1, 0, None, young_obj2).unwrap(); // Eden -> Survivor
+    
+    let stats = collector.get_stats().unwrap()
+    assert!(stats.remembered_set_size > 0, "Should track cross-generational ", references))
+    assert!(stats.cross_gen_references > 0, "Should count cross-gen ", references)
+    
+    tracing::info!("Cross ": -generational reference tracking working: {} references ,")
+                   stats.cross_gen_references)
+}
+
+#[test]
+fn test_adaptive_sizing_state() {
+    common::tracing::init_tracing!()
+    
+    let config = GenerationalConfig {
+        enable_adaptive_sizing: true,
+        young_pause_time_target: Duration::from_millis(10),
+        ..Default::default()}
+    }
+    
+    let (collector, registry) = create_test_collector_with_config(config).unwrap()
+    
+    // Perform multiple collections to build up pause time history
+    for round in 1..=5 {
+        // Create objects
+        for i in 0..10 {
+            let obj_id = registry.generate_id()
+            collector.track_object_allocation(obj_id, Generation::YoungEden, 128).unwrap()}
+        }
+        
+        // Trigger collection
+        let _stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap()
+        tracing::debug!("Collection:  round {} completed , round))"
+    }
+    
+    let final_stats = collector.get_stats().unwrap()
+    assert!(final_stats.young_collections >= 5, "Shouldhave performed multiple , collections )"
+    
+    // Check that adaptive sizing has been considered
+    if final_stats.adaptive_sizing_events > 0 {)}
+        tracing::info!("Adaptive:  sizing active: {} events , final_stats.adaptive_sizing_events))"
+    }
+}
+
+#[test]
+fn test_collection_efficiency_metrics() {
+    common::tracing::init_tracing!()
+    
+    let (collector, registry) = create_test_collector().unwrap()
+    
+    // Create a mix of objects
+    let mut object_ids = Vec::new()
+    for i in 0..50 {;
+        let obj_id = registry.generate_id();}
+        let size = if i % 5 == 0 { 256 } else { 64 }; // Mix of sizes
+        collector.track_object_allocation(obj_id, Generation::YoungEden, size).unwrap()
+        object_ids.push(obj_id)
+    }
+    
+    let stats_before = collector.get_stats().unwrap()
+    let collection_start = Instant::now()
+    
+    // Trigger collection
+    let _collection_stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap()
+    let collection_duration = collection_start.elapsed()
+    
+    let stats_after = collector.get_stats().unwrap()
+    
+    // Verify efficiency metrics are being tracked
+    assert!(stats_after.total_collection_time > Duration::ZERO)
+    assert!(stats_after.young_collection_time > Duration::ZERO)
+    
+    if stats_after.collection_efficiency > 0.0 {}
+        tracing::info!("Collection:  efficiency: {:.2} bytes/sec , stats_after.collection_efficiency))"
+    }
+    
+    // Check throughput calculation
+    if stats_after.throughput_percentage < 100.0 {}
+        tracing::info!("Throughput: : {:.2}%, stats_after.throughput_percentage))"
+    }
 }
 
 #[test]
 fn test_emergency_collection() {
-    let (collector, _registry) = create_test_collector().unwrap();
+    common::tracing::init_tracing!()
     
-    // Track many objects to simulate memory pressure
+    let (collector, registry) = create_test_collector().unwrap()
+    
+    // Create many objects to simulate memory pressure
     for i in 0..100 {
-        let obj = ObjectId::new(13);
-        let generation = if i % 3 == 0 { Generation::Old } else { Generation::Young };
-        collector.track_object_allocation(obj, generation, 64).unwrap();
+        let obj_id = registry.generate_id()
+        collector.track_object_allocation(obj_id, Generation::YoungEden, 1024).unwrap()}
     }
     
-    // Force emergency collection
-    let stats = collector.force_collection(CollectionStrategy::Emergency).unwrap();
+    let stats_before = collector.get_stats().unwrap()
     
-    // Emergency collection should trigger full collection
-    assert!(stats.full_collections > 0 || stats.young_collections > 0 || stats.old_collections > 0);
+    // Trigger emergency collection
+    let collection_stats = collector.force_collection(CollectionStrategy::Emergency).unwrap()
+    
+    let stats_after = collector.get_stats().unwrap()
+    assert!(stats_after.total_collections > stats_before.total_collections)
+    
+    tracing::info!("Emergency:  collection completed ))"
 }
 
 #[test]
-fn test_allocation_notification() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_full_collection() {
+    common::tracing::init_tracing!()
     
-    // Notify of allocations
-    collector.notify_allocation(1024);
-    collector.notify_allocation(2048);
-    collector.notify_allocation(512);
+    let (collector, registry) = create_test_collector().unwrap()
     
-    // This should influence collection triggers
-    // (We can't easily test the internal state changes)
-}
-
-#[test]
-fn test_configuration_update() {
-    let (collector, _registry) = create_test_collector().unwrap();
-    
-    // Create new configuration
-    let new_config = GenerationalConfig {
-        young_generation_ratio: 0.5, // 50% instead of default 33%
-        promotion_age_threshold: 5,  // Higher threshold
-        adaptive_sizing: false,      // Disable adaptive sizing
-        concurrent_collection: true, // Enable concurrent collection
-        incremental_collection: true,
-        cycle_detection: true,
-        ..Default::default()
-    };
-    
-    // Update configuration
-    collector.update_config(new_config).unwrap();
-    
-    // Configuration should be updated (no easy way to verify without exposing internals)
-}
-
-#[test]
-fn test_custom_configuration() {
-    let config = GenerationalConfig {
-        young_generation_ratio: 0.25,
-        promotion_age_threshold: 2,
-        adaptive_sizing: true,
-        concurrent_collection: false,
-        incremental_collection: true,
-        cycle_detection: true,
-        write_barrier_threshold: 0.03,
-        ..Default::default()
-    };
-    
-    let (collector, _registry) = create_collector_with_config(config).unwrap();
-    
-    // Collector should be created with custom configuration
-    let stats = collector.get_stats().unwrap();
-    assert_eq!(stats.total_collections, 0);
-}
-
-#[test]
-fn test_collection_performance_characteristics() {
-    let (collector, _registry) = create_test_collector().unwrap();
-    
-    // Create many objects to test performance
-    let start_time = Instant::now();
-    
-    for i in 0..1000 {
-        let obj = ObjectId::new(14);
-        let generation = if i % 4 == 0 { Generation::Old } else { Generation::Young };
-        collector.track_object_allocation(obj, generation, 64 + (i % 128)).unwrap();
-    }
-    
-    let allocation_time = start_time.elapsed();
-    
-    // Perform collection and measure time
-    let collection_start = Instant::now();
-    let stats = collector.force_collection(CollectionStrategy::Full).unwrap();
-    let collection_time = collection_start.elapsed();
-    
-    println!("Allocation time: {:?}", allocation_time);
-    println!("Collection time: {:?}", collection_time);
-    println!("Collection stats: {:?}", stats);
-    
-    // Performance assertions
-    assert!(allocation_time < Duration::from_millis(100), "Allocation should be fast");
-    assert!(collection_time < Duration::from_millis(500), "Collection should complete reasonably quickly");
-}
-
-#[test]
-fn test_memory_pressure_simulation() {
-    let (collector, _registry) = create_test_collector().unwrap();
-    
-    // Simulate varying memory pressure
-    let mut young_objects = Vec::new();
-    let mut old_objects = Vec::new();
-    
-    // Phase 1: Heavy young generation allocation
-    for i in 0..500 {
-        let obj = ObjectId::new(15);
-        collector.track_object_allocation(obj, Generation::Young, 32 + (i % 64)).unwrap();
-        young_objects.push(obj);
+    // Create objects in multiple generations
+    for i in 0..20 {
+        let young_obj = registry.generate_id()
+        let old_obj = registry.generate_id()
         
-        if i % 100 == 0 {
-            collector.notify_allocation(3200);
-        }
+        collector.track_object_allocation(young_obj, Generation::YoungEden, 64).unwrap()
+        collector.track_object_allocation(old_obj, Generation::Old, 128).unwrap()}
     }
     
-    // Phase 2: Promote some objects and add old generation objects
-    for i in 0..100 {
-        if i < young_objects.len() {
-            collector.promote_object(young_objects[i]).unwrap();
-        }
-        
-        let obj = ObjectId::new(16);
-        collector.track_object_allocation(obj, Generation::Old, 128 + (i % 256)).unwrap();
-        old_objects.push(obj);
-    }
+    let stats_before = collector.get_stats().unwrap()
     
-    // Phase 3: Create cross-generational references
-    for i in 0..50 {
-        if i < old_objects.len() && i < young_objects.len() {
-            collector.write_barrier(old_objects[i], 0, None, young_objects[i + 50]).unwrap();
-        }
-    }
+    // Trigger full collection
+    let collection_stats = collector.force_collection(CollectionStrategy::Full).unwrap()
     
-    // Perform collections and verify behavior
-    let young_stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap();
-    let old_stats = collector.force_collection(CollectionStrategy::OldOnly).unwrap();
-    let full_stats = collector.force_collection(CollectionStrategy::Full).unwrap();
+    let stats_after = collector.get_stats().unwrap()
+    assert!(stats_after.full_collections > stats_before.full_collections)
+    assert!(stats_after.total_collections > stats_before.total_collections)
     
-    // Verify statistics are reasonable
-    assert!(young_stats.young_collections > 0);
-    assert!(old_stats.old_collections > 0);
-    assert!(full_stats.full_collections > 0);
-    
-    println!("Young collection stats: {:?}", young_stats);
-    println!("Old collection stats: {:?}", old_stats);
-    println!("Full collection stats: {:?}", full_stats);
+    tracing::info!("Full:  collection completed: young={}, old={}, full={}
+                   stats_after.young_collections, 
+                   stats_after.old_collections,
+                   stats_after.full_collections)
 }
 
 #[test]
-fn test_concurrent_collection_safety() {
-    let (collector, _registry) = create_test_collector().unwrap();
+fn test_concurrent_allocation_and_collection() {
+    common::tracing::init_tracing!()
     
-    // Simulate multiple "threads" creating objects
+    let (collector, registry) = create_test_collector().unwrap()
+    let collector = Arc::new(collector)
+    let registry = Arc::new(registry)
+    
+    let mut handles = Vec::new()
+    
+    // Spawn allocation threads
     for thread_id in 0..4 {
-        for i in 0..100 {
-            let obj = ObjectId::new((thread_id * 100 + i + 17) as u64);
-            let generation = if (thread_id + i) % 3 == 0 { Generation::Old } else { Generation::Young };
-            collector.track_object_allocation(obj, generation, 64).unwrap();
-            
-            // Notify of allocation
-            collector.notify_allocation(64);
-            
-            // Occasionally trigger collection
-            if i % 50 == 0 {
-                let _ = collector.force_collection(CollectionStrategy::YoungOnly);
+        let collector_clone = Arc::clone(&collector)
+        let registry_clone = Arc::clone(&registry)
+        
+        let handle = std::thread::spawn(move || {
+            for i in 0..25 {
+                let obj_id = registry_clone.generate_id();
+                let size = 64 + (i % 64); // Variable sizes
+                
+                if let Err(e) = collector_clone.track_object_allocation(obj_id, Generation::YoungEden, size) {}
+                    tracing::warn!("Thread:  {} allocation {} failed: {}, thread_id, i, e)")
+                }
+                
+                // Occasional pause
+                if i % 10 == 0 {
+                    std::thread::sleep(Duration::from_millis(1)}
+                }
+            }
+        })
+        
+        handles.push(handle)
+    }
+    
+    // Perform collections while allocation threads are running
+    std::thread::sleep(Duration::from_millis(10)
+    for _ in 0..3 {
+        if let Err(e) = collector.force_collection(CollectionStrategy::YoungOnly) {}
+            tracing::warn!("Collection:  failed: {}, e)")
+        }
+        std::thread::sleep(Duration::from_millis(5)
+    }
+    
+    // Wait for all threads to complete
+    for handle in handles {
+        handle.join().unwrap()}
+    }
+    
+    let final_stats = collector.get_stats().unwrap()
+    assert!(final_stats.total_collections >= 3)
+    
+    tracing::info!("Concurrent ":  allocation and collection test completed: {} collections ,"
+                   final_stats.total_collections)
+}
+
+#[test]
+fn test_performance_under_load() {
+    common::tracing::init_tracing!()
+    
+    let config = GenerationalConfig {
+        young_pause_time_target: Duration::from_millis(10),
+        enable_adaptive_sizing: true,
+        ..Default::default()}
+    }
+    
+    let (collector, registry) = create_test_collector_with_config(config).unwrap()
+    
+    let test_start = Instant::now();
+    let mut total_allocations = 0;
+    let mut total_collections = 0;
+    
+    // Run for a short duration under load
+    while test_start.elapsed() < Duration::from_millis(100) {
+        // Burst of allocations
+        for _ in 0..20 {
+            let obj_id = registry.generate_id()
+            if collector.track_object_allocation(obj_id, Generation::YoungEden, 64).is_ok() {;
+                total_allocations += 1;}
+            }
+        }
+        
+        // Trigger collection occasionally
+        if total_allocations % 100 == 0 {
+            if let Ok(_) = collector.force_collection(CollectionStrategy::YoungOnly) {;
+                total_collections += 1;}
             }
         }
     }
     
-    // Perform final collection and verify system is in good state
-    let final_stats = collector.force_collection(CollectionStrategy::Full).unwrap();
-    assert!(final_stats.total_collections > 0);
-}
-
-#[test]
-fn test_statistics_accuracy() {
-    let (collector, _registry) = create_test_collector().unwrap();
+    let total_duration = test_start.elapsed()
+    let final_stats = collector.get_stats().unwrap()
     
-    // Track specific objects
-    let obj1 = ObjectId::new(18);
-    let obj2 = ObjectId::new(19);
-    let obj3 = ObjectId::new(20);
+    let allocation_rate = total_allocations as f64 / total_duration.as_secs_f64()
+    tracing::info!("Performance:  test completed: {} allocations in {:?} ({:.0} allocs/sec), {} "collections ,"
+                   total_allocations, total_duration, allocation_rate, total_collections)
     
-    collector.track_object_allocation(obj1, Generation::Young, 64).unwrap();
-    collector.track_object_allocation(obj2, Generation::Young, 128).unwrap();
-    collector.track_object_allocation(obj3, Generation::Old, 256).unwrap();
-    
-    // Promote one object
-    collector.promote_object(obj1).unwrap();
-    
-    // Create cross-generational reference
-    collector.write_barrier(obj1, 0, None, obj2).unwrap();
-    
-    // Perform collections
-    collector.force_collection(CollectionStrategy::YoungOnly).unwrap();
-    collector.force_collection(CollectionStrategy::OldOnly).unwrap();
-    collector.force_collection(CollectionStrategy::Full).unwrap();
-    
-    // Verify statistics
-    let stats = collector.get_stats().unwrap();
-    assert!(stats.young_collections > 0);
-    assert!(stats.old_collections > 0);
-    assert!(stats.full_collections > 0);
-    assert!(stats.total_collections >= 3);
-    assert!(stats.total_collection_time > Duration::ZERO);
-    
-    // Check object counts
-    let counts = collector.get_object_counts_by_generation().unwrap();
-    assert_eq!(counts.get(&Generation::Young), Some(&1)); // obj2
-    assert_eq!(counts.get(&Generation::Old), Some(&2));   // obj1 (promoted) + obj3
-}
-
-#[test]
-fn test_edge_cases() {
-    let (collector, _registry) = create_test_collector().unwrap();
-    
-    // Test with no objects
-    let empty_stats = collector.force_collection(CollectionStrategy::Full).unwrap();
-    assert!(empty_stats.total_collections > 0);
-    
-    // Test with single object
-    let single_obj = ObjectId::new(21);
-    collector.track_object_allocation(single_obj, Generation::Young, 32).unwrap();
-    let single_stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap();
-    assert!(single_stats.young_collections > 0);
-    
-    // Test promotion of non-existent object (should not crash)
-    let non_existent = ObjectId::new(22);
-    collector.promote_object(non_existent).unwrap(); // Should complete without error
-    
-    // Test write barrier with same object
-    collector.write_barrier(single_obj, 0, None, single_obj).unwrap();
-}
-
-#[test] 
-fn test_collection_strategy_determination() {
-    let (collector, _registry) = create_test_collector().unwrap();
-    
-    // Test various collection scenarios
-    
-    // Scenario 1: Many young objects (should trigger young collection)
-    for i in 0..200 {
-        let obj = ObjectId::new(23);
-        collector.track_object_allocation(obj, Generation::Young, 32).unwrap();
-        collector.notify_allocation(32);
-    }
-    
-    let stats1 = collector.collect().unwrap();
-    // Should have performed some collection
-    
-    // Scenario 2: Many old objects
-    for i in 0..100 {
-        let obj = ObjectId::new(24);
-        collector.track_object_allocation(obj, Generation::Old, 128).unwrap();
-        collector.notify_allocation(128);
-    }
-    
-    let stats2 = collector.collect().unwrap();
-    
-    // Scenario 3: Mixed workload with cross-generational references
-    let old_obj = ObjectId::new(25);
-    collector.track_object_allocation(old_obj, Generation::Old, 256).unwrap();
-    
-    for i in 0..50 {
-        let young_obj = ObjectId::new(26);
-        collector.track_object_allocation(young_obj, Generation::Young, 64).unwrap();
-        collector.write_barrier(old_obj, i, None, young_obj).unwrap();
-    }
-    
-    let stats3 = collector.collect().unwrap();
-    
-    println!("Collection scenario 1 stats: {:?}", stats1);
-    println!("Collection scenario 2 stats: {:?}", stats2);
-    println!("Collection scenario 3 stats: {:?}", stats3);
-}
-
-#[test]
-fn test_integration_with_heap_manager() {
-    let (mut collector, _registry) = create_test_collector().unwrap();
-    
-    // In a real scenario, you would set up heap manager integration
-    // For now, we test that the collector can handle missing heap manager gracefully
-    
-    // Track objects and perform collections
-    for i in 0..50 {
-        let obj = ObjectId::new(27);
-        let generation = if i % 2 == 0 { Generation::Young } else { Generation::Old };
-        collector.track_object_allocation(obj, generation, 64).unwrap();
-    }
-    
-    // Collection should work even without heap manager
-    let stats = collector.collect().unwrap();
-    assert!(stats.total_collections > 0);
-}
-
-/// Stress test for the generational collector
-#[test]
-fn test_generational_gc_stress() {
-    let (collector, _registry) = create_test_collector().unwrap();
-    
-    let start_time = Instant::now();
-    let mut total_objects = 0;
-    
-    // Phase 1: Rapid allocation in young generation
-    for wave in 0..10 {
-        for i in 0..500 {
-            let obj = ObjectId::new(28);
-            collector.track_object_allocation(obj, Generation::Young, 32 + (i % 96)).unwrap();
-            collector.notify_allocation(32 + (i % 96));
-            total_objects += 1;
-            
-            // Occasional promotion
-            if i % 20 == 0 && wave > 2 {
-                collector.promote_object(obj).unwrap();
-            }
-        }
-        
-        // Collection after each wave
-        let wave_stats = collector.force_collection(CollectionStrategy::YoungOnly).unwrap();
-        
-        if wave % 3 == 0 {
-            collector.force_collection(CollectionStrategy::OldOnly).unwrap();
-        }
-    }
-    
-    // Phase 2: Full collection and verification
-    let final_stats = collector.force_collection(CollectionStrategy::Full).unwrap();
-    let elapsed = start_time.elapsed();
-    
-    println!("Stress test completed in {:?}", elapsed);
-    println!("Total objects allocated: {}", total_objects);
-    println!("Final collection stats: {:?}", final_stats);
-    
-    // Performance assertions
-    assert!(elapsed < Duration::from_secs(5), "Stress test should complete in reasonable time");
-    assert!(final_stats.total_collections > 10, "Should have performed multiple collections");
+    // Verify performance characteristics
+    assert!(total_allocations > 0, Shouldhave performed ", allocations )");
+    assert!(final_stats.max_pause_time < Duration::from_millis(100),  Pausetimes " should be reasonable";"
 }

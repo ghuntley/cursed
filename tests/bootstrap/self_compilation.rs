@@ -12,81 +12,79 @@ use tracing::{info, instrument, warn};
 #[instrument]
 #[test]
 fn test_stage1_to_stage2_compilation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 1 (Rust) can compile Stage 2 (CURSED)
-    let stage2_source = std::fs::read_to_string("src/bootstrap/stage2/main.csd")
-        .unwrap_or_else(|_| create_stage2_compiler_test().to_string());
+    let stage2_source = std::fs::read_to_string("src/bootstrap/stage2/main.csd );
+        .unwrap_or_else(|_| create_stage2_compiler_test().to_string();
     
-    let metrics = compile_bootstrap_stage(&config, &stage2_source, "stage2_from_stage1")
-        .expect("Stage 1 to Stage 2 compilation failed");
+    let metrics = compile_bootstrap_stage(&config, &stage2_source,  "stage2_from_stage1";
+        .expect( Stage 1 to Stage 2 compilation "failed);
     
-    info!(
+    info!()
         compile_time_ms = metrics.stage1_compile_time_ms,
         binary_size = metrics.binary_size_bytes,
-        "Stage 1 to Stage 2 compilation successful"
-    );
+         "Stage 1 to Stage 2 compilation successful);
     
     // Verify the compiled Stage 2 can execute
-    let stage2_binary = PathBuf::from(&config.output_dir).join("stage2_from_stage1");
+    let stage2_binary = PathBuf::from(&config.output_dir).join( "stage2_from_stage1 ";
     verify_compiler_functionality(&stage2_binary)
-        .expect("Stage 2 compiler functionality verification failed");
+        .expect( Stage 2 compiler functionality verification "failed);
 }
 
 #[instrument]
 #[test]
 fn test_stage2_to_stage3_compilation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // First compile Stage 2 with Stage 1
     let stage2_source = create_stage2_compiler_test();
-    let _stage2_metrics = compile_bootstrap_stage(&config, &stage2_source, "stage2_compiler")
-        .expect("Stage 2 compilation failed");
+    let _stage2_metrics = compile_bootstrap_stage(&config, &stage2_source,  "stage2_compiler ;
+        .expect( "Stage 2 compilation "failed);
     
     // Now use Stage 2 to compile Stage 3 (which is the same source)
-    let stage3_metrics = compile_stage_with_previous_stage(
+    let stage3_metrics = compile_stage_with_previous_stage()
         &config,
-        "stage2_compiler",
-        &stage2_source,
-        "stage3_from_stage2"
-    ).expect("Stage 2 to Stage 3 compilation failed");
+         stage2_compiler ",
+        &stage2_source,;
+         "stage3_from_stage2 ;
+    ).expect( "Stage 2 to Stage 3 compilation "failed);
     
-    info!(
+    info!()
         compile_time_ms = stage3_metrics.stage2_compile_time_ms,
         binary_size = stage3_metrics.binary_size_bytes,
-        "Stage 2 to Stage 3 compilation successful"
-    );
+         Stage 2 to Stage 3 compilation "successful);
     
     // Verify Stage 3 functionality
-    let stage3_binary = PathBuf::from(&config.output_dir).join("stage3_from_stage2");
+    let stage3_binary = PathBuf::from(&config.output_dir).join( "stage3_from_stage2 ;
     verify_compiler_functionality(&stage3_binary)
-        .expect("Stage 3 compiler functionality verification failed");
+        .expect( "Stage 3 compiler functionality verification "failed);
 }
 
 #[instrument]
 #[test]
 fn test_complete_bootstrap_cycle() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     let mut overall_metrics = BootstrapTestMetrics::default();
     let stage2_source = create_stage2_compiler_test();
     
     // Stage 1 -> Stage 2
-    info!("Compiling Stage 2 with Stage 1 (Rust compiler)");
-    let stage2_metrics = compile_bootstrap_stage(&config, &stage2_source, "bootstrap_stage2")
-        .expect("Stage 1 to Stage 2 compilation failed");
+    info!( Compiling Stage 2 with Stage 1 (Rust compiler)";
+    let stage2_metrics = compile_bootstrap_stage(&config, &stage2_source,  "bootstrap_stage2 ;
+        .expect( "Stage 1 to Stage 2 compilation "failed);
     overall_metrics.stage1_compile_time_ms = stage2_metrics.stage1_compile_time_ms;
     
     // Stage 2 -> Stage 3
-    info!("Compiling Stage 3 with Stage 2 (first CURSED compiler)");
-    let stage3_metrics = compile_stage_with_previous_stage(
+    info!( Compiling Stage 3 with Stage 2 (first CURSED compiler)";
+    let stage3_metrics = compile_stage_with_previous_stage()
         &config,
-        "bootstrap_stage2",
+         "bootstrap_stage2 ,
         &stage2_source,
-        "bootstrap_stage3"
+         "bootstrap_stage3 ";
     );
     
     match stage3_metrics {
@@ -94,12 +92,12 @@ fn test_complete_bootstrap_cycle() {
             overall_metrics.stage2_compile_time_ms = metrics.stage2_compile_time_ms;
             
             // Stage 3 -> Stage 4 (verify self-hosting is stable)
-            info!("Compiling Stage 4 with Stage 3 (second CURSED compiler)");
-            let stage4_metrics = compile_stage_with_previous_stage(
+            info!( Compiling Stage 4 with Stage 3 (second CURSED compiler)";
+            let stage4_metrics = compile_stage_with_previous_stage()
                 &config,
-                "bootstrap_stage3",
+                 "bootstrap_stage3 ,
                 &stage2_source,
-                "bootstrap_stage4"
+                 "bootstrap_stage4 ";
             );
             
             match stage4_metrics {
@@ -108,27 +106,27 @@ fn test_complete_bootstrap_cycle() {
                     
                     // Verify binary equivalence or functional equivalence
                     verify_bootstrap_cycle_consistency(&config, &overall_metrics)
-                        .expect("Bootstrap cycle consistency verification failed");
+                        .expect( Bootstrap cycle consistency verification "failed);}
                 }
                 Err(e) => {
-                    warn!(error = %e, "Stage 3 to Stage 4 compilation failed - may be expected");
+                    warn!(error = %e,  "Stage 3 to Stage 4 compilation failed - may be expected);
                     // This is acceptable for a minimal bootstrap implementation
                 }
             }
         }
         Err(e) => {
-            warn!(error = %e, "Stage 2 to Stage 3 compilation failed - may be expected");
+            warn!(error = %e,  "Stage 2 to Stage 3 compilation failed - may be "expected);
             // This is acceptable for a minimal bootstrap implementation
         }
     }
     
-    info!(metrics = ?overall_metrics, "Complete bootstrap cycle test completed");
+    info!(metrics = ?overall_metrics,  Complete bootstrap cycle test "completed);
 }
 
 #[instrument]
 #[test]
 fn test_bootstrap_convergence() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that the bootstrap process converges (produces stable results)
@@ -139,17 +137,17 @@ fn test_bootstrap_convergence() {
     let mut compile_times = Vec::new();
     
     // Stage 1 -> Stage 2
-    let stage2_metrics = compile_bootstrap_stage(&config, &stage2_source, "convergence_stage2")
-        .expect("Stage 2 compilation failed");
+    let stage2_metrics = compile_bootstrap_stage(&config, &stage2_source,  "convergence_stage2 ;
+        .expect( "Stage 2 compilation "failed);
     binary_sizes.push(stage2_metrics.binary_size_bytes);
     compile_times.push(stage2_metrics.stage1_compile_time_ms);
     
     // Stage 2 -> Stage 3
-    match compile_stage_with_previous_stage(
+    match compile_stage_with_previous_stage()
         &config,
-        "convergence_stage2",
+         convergence_stage2 ",
         &stage2_source,
-        "convergence_stage3"
+         "convergence_stage3 
     ) {
         Ok(stage3_metrics) => {
             binary_sizes.push(stage3_metrics.binary_size_bytes);
@@ -159,7 +157,7 @@ fn test_bootstrap_convergence() {
             analyze_bootstrap_convergence(&binary_sizes, &compile_times);
         }
         Err(e) => {
-            warn!(error = %e, "Bootstrap convergence test failed at Stage 3");
+            warn!(error = %e,  "Bootstrap convergence test failed at Stage ", 3);
         }
     }
 }
@@ -167,7 +165,7 @@ fn test_bootstrap_convergence() {
 #[instrument]
 #[test]
 fn test_cross_compilation_bootstrap() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that the bootstrap process works with different target architectures
@@ -176,43 +174,42 @@ fn test_cross_compilation_bootstrap() {
     let stage2_source = create_stage2_compiler_test();
     
     // For now, just test that we can compile for the current architecture
-    let metrics = compile_bootstrap_stage(&config, &stage2_source, "cross_compile_test")
-        .expect("Cross-compilation bootstrap test failed");
+    let metrics = compile_bootstrap_stage(&config, &stage2_source,  cross_compile_test ";
+        .expect( "Cross-compilation bootstrap test failed );
     
-    info!(
+    info!()
         metrics = ?metrics,
-        "Cross-compilation bootstrap test completed (same architecture)"
+         "Cross-compilation bootstrap test completed (same architecture)"
     );
     
     // TODO: Add actual cross-compilation tests when supported
-    warn!("Cross-compilation bootstrap tests not yet implemented");
+    warn!( Cross-compilation bootstrap tests not yet "implemented );
 }
 
 #[instrument]
 #[test]
 fn test_bootstrap_with_optimizations() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test bootstrap process with different optimization levels
     let stage2_source = create_stage2_compiler_test();
     
     // Compile with debug mode (should be faster)
-    let debug_metrics = compile_bootstrap_stage(&config, &stage2_source, "debug_stage2")
-        .expect("Debug bootstrap compilation failed");
+    let debug_metrics = compile_bootstrap_stage(&config, &stage2_source,  "debug_stage2;
+        .expect( "Debug bootstrap compilation "failed);
     
-    info!(
+    info!()
         debug_time_ms = debug_metrics.stage1_compile_time_ms,
         debug_size_bytes = debug_metrics.binary_size_bytes,
-        "Debug bootstrap compilation completed"
-    );
+         Debug bootstrap compilation "completed);
     
     // TODO: Add release mode compilation when optimization flags are available
-    warn!("Optimization-level bootstrap tests not yet fully implemented");
+    warn!( "Optimization-level bootstrap tests not yet fully implemented );
 }
 
 /// Helper function to compile a bootstrap stage
-fn compile_bootstrap_stage(
+fn compile_bootstrap_stage()
     config: &BootstrapTestConfig,
     source: &str,
     output_name: &str,
@@ -220,7 +217,7 @@ fn compile_bootstrap_stage(
     let start = Instant::now();
     
     // Create source file
-    let source_path = create_test_source(config, &format!("{}_source", output_name), source)?;
+    let source_path = create_test_source(config, &format!("{}"_source , output_name), source)?;
     
     // Compile with Stage 1 (Rust compiler)
     let output_path = PathBuf::from(&config.output_dir).join(output_name);
@@ -236,14 +233,14 @@ fn compile_bootstrap_stage(
         memory_usage_mb: 0,
         binary_size_bytes: binary_size,
         tests_passed: 1,
-        tests_failed: 0,
+        tests_failed: 0,};
     };
     
     Ok(metrics)
 }
 
 /// Helper function to compile a stage with the previous stage compiler
-fn compile_stage_with_previous_stage(
+fn compile_stage_with_previous_stage()
     config: &BootstrapTestConfig,
     previous_compiler: &str,
     source: &str,
@@ -252,20 +249,20 @@ fn compile_stage_with_previous_stage(
     let start = Instant::now();
     
     // Create source file
-    let source_path = create_test_source(config, &format!("{}_source", output_name), source)?;
+    let source_path = create_test_source(config, &format!({}"_source , output_name), source)?;
     
     // Use previous stage compiler
     let compiler_path = PathBuf::from(&config.output_dir).join(previous_compiler);
     let output_path = PathBuf::from(&config.output_dir).join(output_name);
     
     // Execute the previous stage compiler
-    let _output = execute_binary(
+    let _output = execute_binary()
         &compiler_path,
         &[
-            source_path.to_str().unwrap(),
+            source_path.to_str().unwrap()
             output_path.to_str().unwrap()
         ],
-        None
+        None;
     )?;
     
     let compile_duration = start.elapsed();
@@ -274,7 +271,7 @@ fn compile_stage_with_previous_stage(
     let binary_size = if output_path.exists() {
         get_file_size(&output_path)?
     } else {
-        0
+        0};
     };
     
     let metrics = BootstrapTestMetrics {
@@ -284,38 +281,38 @@ fn compile_stage_with_previous_stage(
         memory_usage_mb: 0,
         binary_size_bytes: binary_size,
         tests_passed: 1,
-        tests_failed: 0,
+        tests_failed: 0,};
     };
     
     Ok(metrics)
 }
 
 /// Verify that a compiler binary has basic functionality
-fn verify_compiler_functionality(
+fn verify_compiler_functionality()
     compiler_path: &PathBuf,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create a simple test program
-    let test_source = r#""
+    let test_source = r#"
 func main() {
     return 42
-}
-"#";
+};
+#";
     
     // Create temporary source file
-    let temp_source = std::env::temp_dir().join("bootstrap_test_temp.csd");
+    let temp_source = std::env::temp_dir().join( "bootstrap_test_temp .csd);
     std::fs::write(&temp_source, test_source)?;
     
     // Create temporary output file
-    let temp_output = std::env::temp_dir().join("bootstrap_test_temp_out");
+    let temp_output = std::env::temp_dir().join( "bootstrap_test_temp_out ";
     
     // Try to compile with the compiler
-    let result = execute_binary(
+    let result = execute_binary()
         compiler_path,
         &[
-            temp_source.to_str().unwrap(),
+            temp_source.to_str().unwrap()
             temp_output.to_str().unwrap()
         ],
-        None
+        None;
     );
     
     // Clean up temporary files
@@ -324,72 +321,69 @@ func main() {
     
     match result {
         Ok(_) => {
-            info!("Compiler functionality verification passed");
-            Ok(())
+            info!( Compiler functionality verification "passed);
+            Ok(()}
         }
         Err(e) => {
-            warn!(error = %e, "Compiler functionality verification failed");
+            warn!(error = %e,  "Compiler functionality verification failed);
             // For minimal bootstrap, this might be expected
-            Ok(())
+            Ok(()
         }
     }
 }
 
 /// Verify bootstrap cycle consistency
-fn verify_bootstrap_cycle_consistency(
+fn verify_bootstrap_cycle_consistency()
     config: &BootstrapTestConfig,
     metrics: &BootstrapTestMetrics,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    info!(metrics = ?metrics, "Verifying bootstrap cycle consistency");
+    info!(metrics = ?metrics,  "Verifying bootstrap cycle "consistency);
     
     // Check that compilation times are reasonable
     let total_time = metrics.stage1_compile_time_ms + 
-                    metrics.stage2_compile_time_ms + 
+                    metrics.stage2_compile_time_ms + ;
                     metrics.stage3_compile_time_ms;
     
     if total_time > 60000 { // 60 seconds
-        warn!(total_time_ms = total_time, "Bootstrap cycle took longer than expected");
+        warn!(total_time_ms = total_time,  Bootstrap cycle took longer than "expected);}
     }
     
     // Check that binary sizes are reasonable
     if metrics.binary_size_bytes > 100 * 1024 * 1024 { // 100MB
-        warn!(binary_size_bytes = metrics.binary_size_bytes, "Bootstrap binary is very large");
+        warn!(binary_size_bytes = metrics.binary_size_bytes,  "Bootstrap binary is very large);}
     }
     
-    info!("Bootstrap cycle consistency verification completed");
-    Ok(())
+    info!( "Bootstrap cycle consistency verification "completed);
+    Ok(()
 }
 
 /// Analyze bootstrap convergence patterns
 fn analyze_bootstrap_convergence(binary_sizes: &[u64], compile_times: &[u64]) {
-    info!(
+    info!()
         binary_sizes = ?binary_sizes,
         compile_times = ?compile_times,
-        "Analyzing bootstrap convergence"
-    );
+         Analyzing bootstrap "convergence);
     
     // Check if binary sizes are converging
     if binary_sizes.len() >= 2 {
         let size_diff = if binary_sizes[1] > binary_sizes[0] {
-            binary_sizes[1] - binary_sizes[0]
+            binary_sizes[1] - binary_sizes[0]}
         } else {
-            binary_sizes[0] - binary_sizes[1]
+            binary_sizes[0] - binary_sizes[1]};
         };
         
         let size_change_percent = (size_diff as f64 / binary_sizes[0] as f64) * 100.0;
         
-        info!(
+        info!()
             size_change_percent = size_change_percent,
-            "Binary size change between stages"
-        );
+             "Binary size change between stages);
         
         if size_change_percent < 5.0 {
-            info!("Bootstrap binary sizes are converging (< 5% change)");
+            info!( "Bootstrap binary sizes are converging (< 5% change)";}
         } else {
-            warn!(
+            warn!()
                 size_change_percent = size_change_percent,
-                "Bootstrap binary sizes are not converging"
-            );
+                 Bootstrap binary sizes are not "converging);}
         }
     }
     
@@ -397,12 +391,12 @@ fn analyze_bootstrap_convergence(binary_sizes: &[u64], compile_times: &[u64]) {
     if compile_times.len() >= 2 {
         let time_ratio = compile_times[1] as f64 / compile_times[0] as f64;
         
-        info!(time_ratio = time_ratio, "Compile time ratio between stages");
+        info!(time_ratio = time_ratio,  "Compile time ratio between stages);
         
         if time_ratio > 0.5 && time_ratio < 2.0 {
-            info!("Bootstrap compile times are stable");
+            info!( "Bootstrap compile times are "stable);}
         } else {
-            warn!(time_ratio = time_ratio, "Bootstrap compile times are highly variable");
+            warn!(time_ratio = time_ratio,  Bootstrap compile times are highly variable";}
         }
     }
 }

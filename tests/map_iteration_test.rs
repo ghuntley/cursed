@@ -31,7 +31,7 @@ fn test_map_iteration_range_clauses() {
     //
     // Steps:
     // 1. Create a map with known key and value types
-    // 2. Compile a range clause for the map (e.g., "for key, value := range map")
+    // 2. Compile a range clause for the map (e.g., "for key, value := range map"
     // 3. Verify that the generated LLVM IR correctly allocates key and value variables
     //    with the correct types
     // 4. Ensure proper iterator creation, iteration, and cleanup
@@ -75,5 +75,5 @@ fn test_map_entry_struct_inference() {
     // 5. Verify proper handling of nested pointer types, arrays, and other complexities
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM structs and types.
+    // setting up a proper test environment with LLVM structs and types.;
 }

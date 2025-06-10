@@ -7,7 +7,7 @@ use cursed::error::Error;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, info, trace, warn}
 
 // # Interface Type Registry with Assertions Test
 //
@@ -16,88 +16,88 @@ use tracing::{debug, error, info, trace, warn};
 
 
 // Import common test utilities for setting up tracing
-#[path = "tracing_setup.rs"]
+#[path = "tracing_setup.rs];
 mod tracing_setup;
 
 /// Test type assertion with enhanced error reporting
 #[test]
 fn test_type_assertion_with_enhanced_error_reporting() {
-    // init_tracing!();
-    tracing_setup::init_test_tracing();
-    info!(test_case = "type_assertion_with_enhanced_error_reporting", "Starting test");
+    // common::tracing::init_tracing!()
+    tracing_setup::init_test_tracing()
+    info!(test_case =  "type_assertion_with_enhanced_error_reportingStarting ", test);"
     
     // Set debug mode to verbose for maximum error information
-    env::set_var("CURSED_TYPE_DEBUG", "verbose");
+    env::set_var("CURSED_TYPE_DEBUG,  verbose;
     
-    let source = r#""
+    let source = r#;
         vibe main;
         
         tea Drawable {
-            bruh Draw() void;
+            bruh Draw() void;}
         }
         
         tea Textual {
-            bruh GetText() tea;
+            bruh GetText() tea;}
         }
         
         struct Circle struct {
-            sus radius thicc;
+            sus radius thicc;}
         }
         
         struct TextBox struct {
-            sus text tea;
+            sus text tea;}
         }
         
         bruh (c Circle) Draw() void {
-            // Drawing implementation
+            // Drawing implementation}
         }
         
         bruh (t TextBox) GetText() tea {
-            return t.text;
+            return t.text;}
         }
         
-        slay main() void {
-            sus circle Circle = Circle{radius: 5.0};
-            sus textBox TextBox = TextBox{text: "Hello"};
+        slay main() void {}
+            sus circle Circle = Circle{radius: 5.0})
+            sus textBox TextBox = TextBox{text:  "Hello};"
             
             sus drawable Drawable = circle;
             sus textual Textual = textBox;
             
             // Successful assertion
-            sus backToCircle, ok1 = drawable.(Circle);
-            debug("Assertion 1 result: %v", ok1);
+            sus backToCircle, ok1 = drawable.(Circle)
+            debug(Assertion 1 result: %v, ok1)")"
             
             // Failed assertion with enhanced error reporting
             captcha {
-                sus wrongTextBox, ok2 = drawable.(TextBox);
-                debug("Assertion 2 result: %v", ok2);
+                sus wrongTextBox, ok2 = drawable.(TextBox)
+                debug(Assertion 2 result: %v, ok2)")"
                 if ok2 {
-                    poppin();
+                    poppin()}
                 }
             } drip (e) {
-                debug("Expected error occurred: %s", e.message);
-            };
+                debug(Expected error occurred: %s, e.message)")"
+            }
             
             // Try another failed assertion with different types
             captcha {
-                sus wrongCircle, ok3 = textual.(Circle);
-                debug("Assertion 3 result: %v", ok3);
+                sus wrongCircle, ok3 = textual.(Circle)
+                debug(Assertion 3 result: %v, ok3)")"
                 if ok3 {
-                    poppin();
+                    poppin()}
                 }
             } drip (e) {
-                debug("Expected error occurred: %s", e.message);
-            };
+                debug(Expected error occurred: %s, e.message)")"
+            }
         }
-    "#";
+    #";
     
     match compile_and_run(source) {
         Ok(_) => {
-            info!(test_result = "success", "Test passed: enhanced error reporting worked");
+            info!(test_result =  "success,  Test " passed: enhanced error reporting "worked)
         },
         Err(e) => {
-            error!(error = ?e, "Test failed unexpectedly");
-            panic!("Test failed: {:?}", e);
+            error!(error = ?e,  Test " failed "unexpectedly);
+            panic!("Test:  failed: {:?}, e)")
         }
     }
 }
@@ -105,30 +105,31 @@ fn test_type_assertion_with_enhanced_error_reporting() {
 /// Helper function to compile and run CURSED code
 fn compile_and_run(source: &str) -> Result<(), Error> {
     // Parse the source code
-    let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(lexer)?;
-    let program = parser.parse_program()?;
+    let mut lexer = Lexer::new(source.to_string();
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
+    let program = parser.unwrap().parse_program()?;
     
     // Set up the LLVM code generator
-    let context = Context::create();
-    let dummy_path = PathBuf::from("test.csd");
-    let mut code_generator = LlvmCodeGenerator::new();
+    let context = Context::create()
+    let context = Box::leak(Box::new(context)
+    let dummy_path = PathBuf::from("test .csd)")
+    let mut code_generator = LlvmCodeGenerator::new()
     
-    // Generate LLVM IR code
-    code_generator.compile_program(&program)?;
+    // Generate LLVM IR code;
+    code_generator.generate_ir( "dummy, &program)?;"
     
     // Create JIT execution engine  
     let execution_engine = code_generator
         .module()
         .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
+        .map_err(|e| Error::from_str(&format!(Failed to create JIT execution engine: {}, e)?")"
     
     // Try to find and execute the main function
-    if let Ok(main_function) = unsafe { execution_engine.get_function::<unsafe extern "C" fn() -> i32>("main") } {
+    if let Ok(main_function) = unsafe { execution_engine.get_function::<unsafe extern  C fn() -> i32>( "main) } {
         unsafe {
-            let _result = main_function.call();
+            let _result = main_function.call()}
         }
     }
     
-    Ok(())
+    Ok(();
 }

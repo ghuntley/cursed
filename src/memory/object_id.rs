@@ -259,6 +259,20 @@ impl ObjectRegistry {
         }
     }
     
+    /// Check if an object is marked as reachable
+    pub fn is_marked(&self, id: ObjectId) -> Result<bool, String> {
+        match self.objects.read() {
+            Ok(objects) => {
+                if let Some(metadata) = objects.get(&id) {
+                    Ok(metadata.is_marked())
+                } else {
+                    Ok(false) // Object doesn't exist, so it's not marked
+                }
+            }
+            Err(_) => Err("Failed to acquire read lock on object registry".to_string())
+        }
+    }
+    
     /// Get all unmarked objects (for sweep phase)
     pub fn get_unmarked_objects(&self) -> Result<Vec<ObjectId>, String> {
         match self.objects.read() {

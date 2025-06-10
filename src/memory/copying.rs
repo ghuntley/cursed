@@ -948,13 +948,6 @@ impl CopyingCollector {
     
     /// Update references within a specific object
     fn update_references_in_object(&self, object_id: ObjectId, object_ptr: NonNull<u8>) -> Result<(), String> {
-        // This is a placeholder for reference updating logic
-        // In a real implementation, this would:
-        // 1. Get object metadata to determine its type and layout
-        // 2. Scan the object's memory for ObjectId fields
-        // 3. For each ObjectId found, check if it's in the forwarding table
-        // 4. If found, update the reference to point to the new object
-        
         let forwarding_table = self.forwarding_table.read()
             .map_err(|_| "Failed to acquire read lock on forwarding table")?;
         
@@ -962,7 +955,33 @@ impl CopyingCollector {
         if let Some(metadata) = self.object_registry.get(object_id)? {
             debug!("Updating references in {} object of size {}", metadata.type_name, metadata.size);
             
-            // For demonstration, we'll show how this would work conceptually:
+            // Conservative approach: scan the object memory for potential ObjectId values
+            let object_size = metadata.size();
+            let object_slice = unsafe {
+                std::slice::from_raw_parts_mut(object_ptr.as_ptr(), object_size)
+            };
+            
+            // Scan for ObjectId-sized values (8 bytes) aligned on 8-byte boundaries
+            let mut offset = 0;
+            while offset + 8 <= object_size {
+                if offset % 8 == 0 { // Ensure proper alignment
+                    let potential_id_bytes = &mut object_slice[offset..offset + 8];
+                    let potential_id = u64::from_le_bytes(potential_id_bytes.try_into().unwrap());
+                    let potential_object_id = ObjectId::from_raw(potential_id);
+                    
+                    // Check if this looks like a valid ObjectId and is in the forwarding table
+                    if !potential_object_id.is_null() {
+                        if let Some(&forwarded_id) = forwarding_table.get(&potential_object_id) {
+                            // Update the reference to point to the new object
+                            let new_id_bytes = forwarded_id.as_u64().to_le_bytes();
+                            potential_id_bytes.copy_from_slice(&new_id_bytes);
+                            debug!("Updated reference from {} to {} at offset {}", 
+                                   potential_object_id, forwarded_id, offset);
+                        }
+                    }
+                }
+                offset += 8; // Move to next potential ObjectId location
+            }
             // 1. Cast pointer to the object's actual type
             // 2. Access fields that contain ObjectId references
             // 3. Update those references using the forwarding table

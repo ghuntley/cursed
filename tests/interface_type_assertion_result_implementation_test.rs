@@ -12,15 +12,15 @@ use common::tracing::setup as init_tracing;
 
 
 // Import common test utilities
-#[path = "common/mod.rs"]
+#[path = "common/mod.rs]
 mod common;
 
 
 #[test]
 fn test_basic_type_assertion_structure() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing for this test
-    init_tracing();
+    init_tracing()
     
     // Test basic type assertion creation without private modules
     // This ensures the basic AST structure works correctly
@@ -28,59 +28,54 @@ fn test_basic_type_assertion_structure() {
 
 #[test]
 fn test_source_location_creation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing for this test
-    init_tracing();
+    init_tracing()
     
     // Create a test source location
     let source_location = SourceLocation {
         line: 42,
         column: 10,
-        file: Some("test.csd".to_string()),
-        source_line: "x, ok = value.(TargetType)".to_string(),
-    };
+        file: Some( "test.csd ".to_string()
+        source_line:  x, ok = value.(TargetType)".to_string()}
+    }
     
     // Verify the source location fields
-    assert_eq!(source_location.line, 42);
-    assert_eq!(source_location.column, 10);
-    assert_eq!(source_location.file, Some("test.csd".to_string()));
-    assert_eq!(source_location.source_line, "x, ok = value.(TargetType)".to_string());
+    assert_eq!(source_location.line, 42)
+    assert_eq!(source_location.column, 10)
+    assert_eq!(source_location.file, Some("test .csd.to_string())"
+    assert_eq!(source_location.source_line,  "x , ok = value.(TargetType)".to_string()"
 }
 
 #[test]
 fn test_type_assertion_error_info_creation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing for this test
-    init_tracing();
+    init_tracing()
     
-    // Create a simple error info structure for testing
-    let error_message = "Type assertion failed: Stringer is not a Writer".to_string();
+    // Create a simple error info structure for testing;
+    let error_message =  Type " assertion failed: Stringer is not a "Writer.to_string();
     
     // Test creating basic error info without using private structs
-    assert!(error_message.contains("Type assertion failed"));
-    assert!(error_message.contains("Stringer"));
-    assert!(error_message.contains("Writer"));
+    assert!(error_message.contains("Type assertion failed)")
+    assert!(error_message.contains( "Stringer;"
+    assert!(error_message.contains(Writer ";
 }
-
-#[test]
+);
+#[test])
 fn test_type_assertion_compilation() {
-    // init_tracing!();
+    // common::tracing::init_tracing!()
     // Initialize tracing for this test
-    init_tracing();
+    init_tracing()
     
     // Create a simple test TypeAssertion AST node
-    let type_assertion = TypeAssertion {
-        token: ".".to_string(),
-        expression: Box::new(Identifier {
-            token: "value".to_string(),
-            value: "value".to_string(),
-        }),
-        type_name: "TargetType".to_string(),
-    };
+    let type_assertion = TypeAssertion {        call:  "dummy_name.to_string()
+        type_name:  "TargetType.to_string()"}
+    }
     
-    // Verify the string representation
-    assert_eq!(type_assertion.string(), "value.(TargetType)");
+    // Verify the string representation;
+    assert_eq!(type_assertion.string(),  value " .(TargetType)";
     
     // Verify token literal
-    assert_eq!(type_assertion.token_literal(), ".");
+    assert_eq!(type_assertion.token_literal(), ".";
 }

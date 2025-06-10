@@ -278,6 +278,40 @@ impl<T> Clone for ChannelReceiver<T> {
     }
 }
 
+impl<T> ChannelSender<T> {
+    /// Get a reference to the channel data (weak reference)
+    pub fn channel(&self) -> &Weak<Mutex<ChannelData<T>>> {
+        &self.channel
+    }
+    
+    /// Get a reference to the condition variable
+    pub fn condvar(&self) -> &Arc<Condvar> {
+        &self.condvar
+    }
+    
+    /// Get a reference to the operation count
+    pub fn operation_count(&self) -> &AtomicUsize {
+        unsafe { &*self.operation_count }
+    }
+}
+
+impl<T> ChannelReceiver<T> {
+    /// Get a reference to the channel data (weak reference)
+    pub fn channel(&self) -> &Weak<Mutex<ChannelData<T>>> {
+        &self.channel
+    }
+    
+    /// Get a reference to the condition variable
+    pub fn condvar(&self) -> &Arc<Condvar> {
+        &self.condvar
+    }
+    
+    /// Get a reference to the operation count
+    pub fn operation_count(&self) -> &AtomicUsize {
+        unsafe { &*self.operation_count }
+    }
+}
+
 /// Create a new unbuffered channel (synchronous)
 pub fn channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
     let ch = Channel::new(0);

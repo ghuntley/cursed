@@ -175,6 +175,46 @@ impl GarbageCollector {
     pub fn new() -> Self {
         Self::with_config(GcConfig::default(), HeapConfig::default())
     }
+
+    /// Check if an object at the given pointer is marked as alive
+    pub fn is_marked(&self, ptr: *const u8) -> bool {
+        if ptr.is_null() {
+            return false;
+        }
+        
+        // Try to find the object ID for this pointer through the heap manager
+        match self.find_object_id_for_pointer(ptr) {
+            Some(object_id) => {
+                // Check if the object is marked in the registry
+                self.object_registry.is_marked(object_id).unwrap_or(false)
+            }
+            None => {
+                // If we can't find the object ID, it's not a valid managed object
+                debug!("Pointer {:p} not found in managed heap", ptr);
+                false
+            }
+        }
+    }
+    
+    /// Find the ObjectId for a given pointer by searching the heap
+    fn find_object_id_for_pointer(&self, ptr: *const u8) -> Option<ObjectId> {
+        // Get all allocation info from heap manager
+        if let Ok(heap) = self.heap_manager.read() {
+            if let Ok(allocation_map) = heap.get_allocation_map() {
+                // Find which allocation contains this pointer
+                for (object_id, allocation_info) in allocation_map.iter() {
+                    let start_ptr = allocation_info.ptr.as_ptr() as *const u8;
+                    let end_ptr = unsafe { start_ptr.add(allocation_info.size) };
+                    
+                    // Check if pointer is within this allocation
+                    if ptr >= start_ptr && ptr < end_ptr {
+                        return Some(*object_id);
+                    }
+                }
+            }
+        }
+        None
+    }
     
     /// Create a new garbage collector with custom configuration
     #[instrument]
@@ -595,7 +635,7 @@ impl GarbageCollector {
             // Calculate effectiveness score (bytes reclaimed per millisecond)
             let bytes_reclaimed = match stats {
                 AlgorithmStats::MarkSweep(s) => s.bytes_reclaimed as u64,
-                AlgorithmStats::Incremental(_) => 0, // TODO: Add bytes to incremental stats
+                AlgorithmStats::Incremental(s) => s.bytes_reclaimed,
                 AlgorithmStats::Copying(s) => s.bytes_reclaimed as u64,
                 AlgorithmStats::CycleDetection(s) => {
                     // Estimate bytes reclaimed from objects in cycles
@@ -625,7 +665,7 @@ impl GarbageCollector {
     fn extract_collection_metrics(&self, stats: &AlgorithmStats) -> (usize, usize) {
         match stats {
             AlgorithmStats::MarkSweep(s) => (s.objects_swept, s.bytes_reclaimed),
-            AlgorithmStats::Incremental(_) => (0, 0), // TODO: Add metrics to incremental stats
+            AlgorithmStats::Incremental(s) => (s.objects_swept as usize, s.bytes_reclaimed as usize),
             AlgorithmStats::Copying(s) => (s.objects_copied, s.bytes_copied),
             AlgorithmStats::CycleDetection(s) => {
                 // Use objects in cycles and estimate bytes

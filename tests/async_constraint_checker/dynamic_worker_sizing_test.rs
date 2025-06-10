@@ -4,12 +4,12 @@ use cursed::core::type_checker::Type;
 use std::sync::Arc;
 
 
-#[path = "../common.rs"]
+#[path = "../common.rs ]
 mod common;
 
 #[test]
 fn test_dynamic_worker_sizing() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -18,11 +18,11 @@ fn test_dynamic_worker_sizing() {
     let registry_arc = Arc::new(registry);
     
     // Create a checker with custom worker configuration
-    let checker = AsyncConstraintChecker::with_worker_config(
+    let checker = AsyncConstraintChecker::with_worker_config()
         registry_arc,
         2, // min_workers
         6, // max_workers
-        0.5, // scaling_factor
+        0.5, // scaling_factor;
     );
     
     // Verify the configuration was applied correctly
@@ -33,11 +33,11 @@ fn test_dynamic_worker_sizing() {
     
     // Create constraints to check
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string()),
-        (Type::Tea, "Comparable".to_string()),
-        (Type::Thicc, "Numeric".to_string()),
-        (Type::Lit, "Comparable".to_string()),
-    ];
+        (Type::Normie,  "Numeric ".to_string()
+        (Type::Tea,  Comparable ".to_string()
+        (Type::Thicc,  "Numeric .to_string()
+        (Type::Lit,  "Comparable ".to_string();
+   ] ];
     
     // Check constraints and verify results
     let results = checker.check_constraints_parallel(constraints);
@@ -45,7 +45,7 @@ fn test_dynamic_worker_sizing() {
     
     // All of these should be true
     for result in &results {
-        assert_eq!(*result, Ok(true));
+        assert_eq!(result, Ok(true);}
     }
     
     // Check that stats were updated
@@ -59,7 +59,7 @@ fn test_dynamic_worker_sizing() {
 
 #[test]
 fn test_extension_trait_with_worker_config() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -67,23 +67,23 @@ fn test_extension_trait_with_worker_config() {
     
     // Use the extension trait to create a custom worker configuration
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string()),
-        (Type::Tea, "Comparable".to_string()),
-        (Type::Thicc, "Numeric".to_string()),
-        (Type::Lit, "Comparable".to_string()),
-    ];
+        (Type::Normie,  Numeric ".to_string()
+        (Type::Tea,  "Comparable .to_string()
+        (Type::Thicc,  "Numeric ".to_string()
+        (Type::Lit,  Comparable ".to_string();
+   ] ];
     
     // Test the check_constraints_with_config method
-    let results = registry.check_constraints_with_config(
-        constraints.clone(),
+    let results = registry.check_constraints_with_config()
+        constraints.clone()
         1,  // min_workers
         4,  // max_workers
-        0.8 // scaling_factor
+        0.8 // scaling_factor;
     );
     
     assert_eq!(results.len(), 4);
     for result in &results {
-        assert_eq!(*result, Ok(true));
+        assert_eq!(result, Ok(true);}
     }
     
     // Test the with_worker_config method
@@ -92,7 +92,7 @@ fn test_extension_trait_with_worker_config() {
     
     assert_eq!(results.len(), 4);
     for result in &results {
-        assert_eq!(*result, Ok(true));
+        assert_eq!(result, Ok(true);}
     }
     
     // Get and verify stats
@@ -104,7 +104,7 @@ fn test_extension_trait_with_worker_config() {
 
 #[test]
 fn test_cpu_detection_and_scaling() {
-    // init_tracing!();
+    // common::tracing::init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -124,11 +124,11 @@ fn test_cpu_detection_and_scaling() {
     
     // Create constraints to check
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string()),
-        (Type::Tea, "Comparable".to_string()),
-        (Type::Thicc, "Numeric".to_string()),
-        (Type::Lit, "Comparable".to_string()),
-    ];
+        (Type::Normie,  "Numeric .to_string()
+        (Type::Tea,  "Comparable ".to_string()
+        (Type::Thicc,  Numeric ".to_string()
+        (Type::Lit,  "Comparable ".to_string();
+   ] ];
     
     // Check constraints
     let results = checker.check_constraints_parallel(constraints);
@@ -136,7 +136,7 @@ fn test_cpu_detection_and_scaling() {
     
     // All of these should be true
     for result in &results {
-        assert_eq!(*result, Ok(true));
+        assert_eq!(result, Ok(true);}
     }
     
     // Check that optimal workers was calculated

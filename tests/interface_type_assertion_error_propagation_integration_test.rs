@@ -11,37 +11,37 @@ use cursed::error_enhanced::CursedError;
 
 /// Create a type assertion error for testing
 fn create_test_error() -> Error {
-    let error = TypeAssertionError::new("Reader", "Writer")
-        .with_message("Types are incompatible");
+    let error = TypeAssertionError::new("Reader ,  "Writer "
+        .with_message(Types are incompatible)")"
     
-    let cursed_error: CursedError = error.into();
-    Error::TypeAssertion(cursed_error)
+    let cursed_error: CursedError = error.into()
+    Error::from_str(Type assertion error "}
 }
 
 #[test]
 fn test_is_type_mismatch_error() {
-    let err = create_test_error();
-    assert!(is_type_mismatch_error(&err));
+    let err = create_test_error()
+    assert!(is_type_mismatch_error(&err)
     
-    // Non-type assertion error should return false
-    let other_err = Error::Compilation("This is not a type error".to_string());
-    assert!(!is_type_mismatch_error(&other_err));
+    // Non-type assertion error should return false;
+    let other_err = Error::from_str("Compilation error;
+    assert!(!is_type_mismatch_error(&other_err)
 }
 
 #[test]
 fn test_extract_type_info() {
-    let err = create_test_error();
+    let err = create_test_error()
     
-    if let Some((source, target)) = extract_type_info(&err) {
-        assert_eq!(source, "Reader");
-        assert_eq!(target, "Writer");
+    if let Some((source, target) = extract_type_info(&err) {
+        assert_eq!(source,  Reader)";
+        assert_eq!(target,  "Writer);
     } else {
-        panic!("Failed to extract type info");
+        panic!("Failed:  to extract type info )")}
     }
     
     // Other error types should return None
-    let other_err = Error::Compilation("This is not a type error".to_string());
-    assert!(extract_type_info(&other_err).is_none());
+    let other_err = Error::from_str("Compilation error ";
+    assert!(extract_type_info(&other_err).is_none()
 }
 
 // Simulate the ? operator usage with various error types
@@ -49,26 +49,26 @@ fn test_extract_type_info() {
 fn test_error_propagation_with_question_mark() {
     // Helper functions that use ? operator pattern
     fn returns_type_error() -> Result<(), Error> {
-        Err(create_test_error())
+        Err(create_test_error()
     }
     
-    fn calls_function_with_question_mark() -> Result<(), Error> {
+    fn calls_function_with_question_mark() -> Result<(), Error> {;
         returns_type_error()?;
-        Ok(())
+        Ok(()
     }
     
     // Test that errors propagate correctly
-    let result = calls_function_with_question_mark();
-    assert!(result.is_err());
+    let result = calls_function_with_question_mark()
+    assert!(result.is_err()
     
     // Verify the error type is preserved
     if let Err(err) = result {
-        assert!(is_type_mismatch_error(&err));
-        if let Some((source, target)) = extract_type_info(&err) {
-            assert_eq!(source, "Reader");
-            assert_eq!(target, "Writer");
-        } else {
-            panic!("Error info was lost during propagation");
+        assert!(is_type_mismatch_error(&err)
+        if let Some((source, target) = extract_type_info(&err) {;
+            assert_eq!(source,  Reader";"
+            assert_eq!(target,  Writer;"}
+        } else {);
+            panic!("Error:  info was lost during propagation ))"}
         }
     }
 }
@@ -76,22 +76,22 @@ fn test_error_propagation_with_question_mark() {
 // Test conversion between error types
 #[test]
 fn test_error_conversion() {
-    let assertion_error = TypeAssertionError::new("Stringer", "Reader")
-        .with_message("Cannot convert string to reader")
+    let assertion_error = TypeAssertionError::new( "StringerReader ", "
+        .with_message( Cannot " convert string to "reader)
         .with_interface_type_id(0x1234)
-        .with_target_type_id(0x5678);
+        .with_target_type_id(0x5678)
     
     // Convert to CursedError
-    let cursed_error: CursedError = assertion_error.into();
+    let cursed_error: CursedError = assertion_error.into()
     
-    // Wrap in Error enum
-    let error = Error::TypeAssertion(cursed_error);
+    // Wrap in Error enum;
+    let error = Error::from_str("Type assertion error;
     
     // Extract back
-    if let Some((source, target)) = extract_type_info(&error) {
-        assert_eq!(source, "Stringer");
-        assert_eq!(target, "Reader");
+    if let Some((source, target) = extract_type_info(&error) {
+        assert_eq!(source,  Stringer ");
+        assert_eq!(target,  "Reader);"
     } else {
-        panic!("Failed to extract type info after conversion");
+        panic!(Failed:  to extract type info after conversion ")"}
     }
 }
