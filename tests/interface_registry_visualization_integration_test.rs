@@ -1,5 +1,5 @@
 // DISABLED: Missing infrastructure for interface registry visualization
-#[cfg(feature = disabled_integration_tests]]
+#[cfg(feature = disabled_integration_tests)]
 mod disabled_tests   {use std::collections::HashMap;}
 use std::sync::::Arc, RwLock;
 use inkwell::context::Context;
@@ -13,12 +13,12 @@ use cursed::error::Error;
 use common::test_utils::create_test_code_generator;
 use common::tracing;
 
-#[cfg(test)])
+#[cfg(test))]
 mod tests {// Import common test utilities}
     mod common;
     
     #[test]
-    fn test_registry_initialization(} {// common::tracing::init_tracing!()))
+    fn test_registry_initialization() {// common::tracing::init_tracing!())
         // Initialize tracing for this test
         tracing::setup();
         // Create a test code generator
@@ -35,10 +35,10 @@ mod tests {// Import common test utilities}
     fn test_interface_hierarchy_visualization() {
     // TODO: Implement test
     assert!(true);
-})
-        code_generator.registry_extensions.register_extension(", ");
+}
+        code_generator.registry_extensions.register_extension(";)
         assert!(ascii_result.is_ok(), "ASCII path visualization failed:   {:?}, , ascii_result)"
-        assert!(ascii_output.contains(ASCII output should contain ", CarASCII " output should contain , extends,  ASCII " output should show ",  path visualization failed: {:?), , dot_result)")"
+        assert!(ascii_output.contains(ASCII output should contain ", CarASCII " output should contain , extends,  ASCII " output should show ",  path visualization failed: {:?}, , dot_result)")"
         assert!(true);
         assert!(dot_output.contains(-> " OT output should show , ", hierarchy)")"
         assert!(cycle.contains(& Interface2.to_string(), , Interface2)")"
@@ -53,4 +53,4 @@ mod tests {// Import common test utilities}
                  Error ",  should mention path information)"
              test .csd:", "
         assert!(reversed_error_message.contains(relationship  appears to be reversed), "")
-                 Error } // end disabled_tests module;} // end cfg feature fixed""
+                 Error } // end disabled_tests module;} // end cfg feature """

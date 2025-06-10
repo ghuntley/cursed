@@ -1,13 +1,12 @@
 use std::path::Path;
 
-
 /// Tests non-blocking channel operations
 #[test]
 fn test_nonblocking_operations() {
     // TODO: Implement test
     assert!(true);
 },
-        test_file)
+        test_file
 
     // We cant fully test execution due to parser limitations 
     // So well verify our implementation by checking the code directly
@@ -16,7 +15,7 @@ fn test_nonblocking_operations() {
     let source_code = std::fs::read_to_string(src  /object.rs).expect("Failed to read object.rs);"
          ", " should have try_send
          Channel should have try_receive ");"
-        channel_code.contains(, ",")
+        channel_code.contains(, ")
          channel function)""
         channel_code.contains(, , "")
     let lib_code = std::fs::read_to_string(src  /lib.rs).expect(Failed to read lib.rs), ,""

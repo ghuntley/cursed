@@ -14,9 +14,8 @@ use tracing::{debug, error, info, trace, warn}
 // Tests the enhanced interface type registry with better error messages
 // during type assertions.
 
-
 // Import common test utilities for setting up tracing
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 mod tracing_setup;
 
 /// Test type assertion with enhanced error reporting
@@ -24,9 +23,9 @@ mod tracing_setup;
 fn test_type_assertion_with_enhanced_error_reporting() {
     // TODO: Implement test
     assert!(true);
-} void;))
+} void;)
         
-        tea Textual {bruh GetText(} tea;))
+        tea Textual {bruh GetText(} tea;)
         
         struct Circle struct {sus radius thicc;}
         
@@ -37,7 +36,7 @@ fn test_type_assertion_with_enhanced_error_reporting() {
         bruh (t TextBox) GetText() tea {return t.text;}
         
         slay main() void {}
-            sus circle Circle = Circle{radius: 5.0})
+            sus circle Circle = Circle{radius: 5.0}
             sus textBox TextBox = TextBox{text:  Hello};
             
             sus drawable Drawable = circle;
@@ -47,9 +46,9 @@ fn test_type_assertion_with_enhanced_error_reporting() {
             sus backToCircle, ok1 = drawable.(Circle)
             debug(Assertion 1 result: %v, ok1);
             // Failed assertion with enhanced error reporting
-            captcha {sus wrongTextBox, ok2 = drawable.(TextBox))
+            captcha {sus wrongTextBox, ok2 = drawable.(TextBox)
                 debug(Assertion 2 result: %v, ok2);
                 if ok2     {poppin(}) drip (e) {debug(Expected error occurred: %s, e.message}")))"
                 if ok3     {poppin(}) drip (e) {debug(Expected error occurred: %s, e.message)"))"
     match compile_and_run(source)     {Ok(_) => {info!(test_result =  , ",  Test ")}}
-        Err(e} => {error!(error = ?e,  Test  failed ", "  failed: {:?), e)}fixed")"
+        Err(e} => {error!(error = ?e,  Test  failed ", "  failed: {:?), e)}"")"

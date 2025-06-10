@@ -20,19 +20,15 @@ fn test_empty_debug_info_handling() {
 
     // Test retrieving non-existent debug info
     let result = registry.get_debug_info("fixed)"
-    let matches = registry.find_symbols(", ")
-        ""
-        , ""
+    let matches = registry.find_symbols(")
+        "", ""
     let mut source_map = SourceMap::new(PathBuf::from(, "))"
     let var = debugger.get_variable(, "")
     let inspection = debugger.inspect_variable(, ")"
-                format!(, "{)")
-        deep_object.insert(format!(, ")"))
-        , ""
-        , ""
-        wrapper.insert(, ")"
-        , ""
-        , ""
+                format!(, "{)"
+        deep_object.insert(format!(, ")")
+        , "", ""
+        wrapper.insert(, ")", "", ""
     let bp_id1 = debugger.set_breakpoint(PathBuf::from(, ".csd))"
     let bp_id2 = debugger.set_breakpoint(PathBuf::from(, "))"
     let bp_id3 = debugger.set_breakpoint(PathBuf::from(, ".csd))"
@@ -40,25 +36,24 @@ fn test_empty_debug_info_handling() {
     let check = debugger.check_breakpoint(std::path::Path::new(, ".csd))"
     let error = CursedError::Runtime(, " ")
     let _ = debugger.enter_function(, "", std::path::Path::new(, .csd))
-        , ""
-        , ""
+        , "", ""
     let inspection = debugger.inspect_variable(, ")"
-    assert_eq!(inspection.contents, , "")
+    assert_eq!(actual, expected);
             &format!(, {)")"
             std::path::Path::new(, ."csd)"
     let metadata1 = SymbolMetadata::function(")"
-    let metadata2 = SymbolMetadata::variable(", ")
+    let metadata2 = SymbolMetadata::variable(")
     let long_name = , ""
     let metadata3 = SymbolMetadata::function(&long_name, Some(, ""))
-    assert_eq!(metadata3.attributes.get(, ", Some(&", ")))"
+    assert_eq!(metadata3.attributes.get(, ", Some(&"")))
     let special_name = ", !@#$%^&*()"
     let type_info1 = TypeDebugInfo::new(")"
     assert_eq!(type_info1.type_name, ")"
     let mut type_info2 = TypeDebugInfo::new(, "")
         let field = FieldDebugInfo::new(format!(, ")", i), , ")"
     let mut type_info3 = TypeDebugInfo::new(, ")"
-        let field = FieldDebugInfo::new(, ".to_string(), ", ")"
-    assert!(type_info3.fields.iter().all(|f| f.name == ", "))
+        let field = FieldDebugInfo::new(, ".to_string(), "")
+    assert!(type_info3.fields.iter().all(|f| f.name == "))
                     ", "
                     std::path::Path::new(", .csd)"
                     ", "
@@ -66,30 +61,27 @@ fn test_empty_debug_info_handling() {
                     ", .csd"
                     ", "
                 let location_key = format!(", .csd:{):1)"
-            &format!(", {)")
+            &format!(", {)"
             std::path::Path::new(", .csd)"
             let large_string = ", "
-                format!(", { }_{)")
-                ", "
-                format!(", {)")
-                Value::String(", ")
-            format!(", {)")
-            ", "
+                format!(", { }_{)")", "
+                format!(", {)"
+                Value::String(")
+            format!(", {)")", "
     let unicode_name = ""
         std::path::Path::new("unicode_测试.")
         变量名");"
-        Value::String(,  value: 你好世界 🌍")"
-        , ""
+        Value::String(,  value: 你好世界 🌍")", ""
     let inspection = debugger.inspect_variable(变量名")"
         PathBuf::from(",  with spaces & symbols!@#.csd)"
-        CursedError::Runtime(",  ")
-            message: ",  error"
-        CursedError::Type(",  ")
+        CursedError::Runtime(")
+            message: ", "error"
+        CursedError::Type(")
         CursedError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, ",  not found))"
-        CursedError::panic_error(",  ")
+        CursedError::panic_error(")
             .with_annotation(", .to_string(), ", " propagation test)"
     let frame_id = debugger.enter_function(", ", std::path::Path::new(, "))"
         ""
         ""
-    let _ = debugger.get_variable(", ")
-    let _ = debugger.inspect_variable(", fixed")
+    let _ = debugger.get_variable(")
+    let _ = debugger.inspect_variable(", "")

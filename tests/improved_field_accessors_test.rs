@@ -15,8 +15,7 @@ use
 // This module tests the ImprovedFieldAccessors implementation which provides
 // better error handling for LLVM operations.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 #[test]
@@ -25,7 +24,7 @@ fn test_improved_field_accessors() {
     assert!(true);
 }
         
-        // common::tracing::init_tracing!())
+        // common::tracing::init_tracing!()
     // Initialize tracing for test debugging
     common::tracing::setup();
     // Create a context
@@ -33,10 +32,10 @@ fn test_improved_field_accessors() {
     let mut code_gen = LlvmCodeGenerator::new();
     // Create a simple struct with a couple of fields
     }
-    let struct_name  =  Identifier   {token:  identifier .to_string())
+    let struct_name  =  Identifier   {token:  identifier .to_string()
             value:  ".to_string()}"
-    let fields = vec![FieldDefinition {name:  placeholder.to_string()placeholder.to_string(],", ";
+    let fields = vec![FieldDefinition {name:  placeholder.to_string()placeholder.to_string(],", ";)
     let setter_y = code_gen.as_ref().unwrap().get_module().get_function(Point_set_y)x getter not , created)""
     assert!(getter_y.is_some(), "")
     assert!(setter_x.is_some(), ,  setter not , created)""
-    println!(fixed")"
+    println!("")"

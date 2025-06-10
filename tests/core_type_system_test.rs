@@ -11,9 +11,9 @@ mod core_type_system_tests ::use super::*;
     // Helper struct to implement the GenericTypeChecker trait for testing
     struct TestTypeChecker;
 
-    impl GenericTypeChecker for TestTypeChecker       {fn check_generic_type(} {// Simple implementation for tests}}
-            match generic_type       {Type::TypeParam(name} => {if type_params.contains(name}     {Ok((} else {)))))
-                        Err(Error::from_str(&format!(Unknown type parameter: {), name)}
+    impl GenericTypeChecker for TestTypeChecker       {fn check_generic_type(} {// Simple implementation for tests}})
+            match generic_type       {Type::TypeParam(name} => {if type_params.contains(name}     {Ok((} else {))))
+                        Err(Error::from_str(&format!(Unknown type parameter: {), name)})
 
                 _ => Ok((),})
 
@@ -21,10 +21,10 @@ mod core_type_system_tests ::use super::*;
     // TODO: Implement test
     assert!(true);
 }
-            match generic_type       {Type::Struct(_, type_params) | Type::Unknown // Was Interface(_, type_params) => {if type_params.len() != type_args.len()     {Err(Error::from_str(&format!())))))
+            match generic_type       {Type::Struct(_, type_params) | Type::Unknown // Was Interface(_, type_params) => {if type_params.len() != type_args.len()     {Err(Error::from_str(&format!()))))
                              Type  argument count mismatch: expected {}, got {}
                             type_params.len();
-                            type_args.len()} else {Ok(()))
+                            type_args.len()} else {Ok(())
                 _ => Ok((),})
 
     #[test]
@@ -32,11 +32,11 @@ mod core_type_system_tests ::use super::*;
     // TODO: Implement test
     assert!(true);
 }
-        let instantiator = GenericInstantiator::new())
+        let instantiator = GenericInstantiator::new()
         
         // Create test expressions
-        let ident = Box::new(Identifier {token:  identifier, .to_string()))
+        let ident = Box::new(Identifier {token:  identifier, .to_string())
             value:  "normie.to_string();"
-        assert_eq!(expr2.token_literal(), ", ")
+        assert_eq!(expr2.token_literal(), ")
              , tea)")"
             , [5]normie};}""

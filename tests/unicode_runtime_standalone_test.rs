@@ -14,9 +14,9 @@ extern C   :: fn cursed_unicode_is_uppercase() {
     // TODO: Implement test
     assert!(true);
 }}}
-            assert_eq!(cursed_unicode_is_lowercase(, 1", " as c_int), A  as c_int), ", ")
+            assert_eq!(cursed_unicode_is_lowercase(, 1", " as c_int), A  as c_int), "
     fn test_unicode_to_string() {
     // TODO: Implement test
     assert!(true);
 }
-            assert_eq!(rust_str,  A ;);fixed""
+            assert_eq!(rust_str,  A ;);

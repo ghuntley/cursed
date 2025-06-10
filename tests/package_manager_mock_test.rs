@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use tempfile::TempDir;
 use serde_json;
 
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 /// Mock package registry for testing
@@ -16,7 +16,7 @@ pub struct MockPackageRegistry {packages: HashMap<String, Vec<MockPackageEntry>>
     network_error_simulation: bool,
     slow_response_simulation: bool}
 
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 pub struct MockPackageEntry {pub metadata: PackageMetadata}
     pub download_url: String,
     pub checksum: String,
@@ -45,7 +45,7 @@ impl MockPackageRegistry     {pub fn new(} {let mut registry = Self {packages: H
     let conflict1 = registry.get_package(conflict -test-, 1 , Some(", 1.0.", conflict-test-, 2 , Some()))
     assert_eq!(conflict1.name.get(shared -dependency), Some(&", 1.0.", shared-dependency), Some(&))
         let _package = registry.get_package(test-package , version)"}"
-    assert!(duration.as_millis() < 50, , fast)]""
+    assert!(duration.as_millis() < 50, , fast)""
     let _timer = common::timing::Timer::new(, "")
     let config = PackageManagerConfig {registry_url:  https  ://test-registry.cache,"}"
-    let install_result = package_manager.install_package(test " , Some("fixed"))"
+    let install_result = package_manager.install_package(test " , Some("""))"

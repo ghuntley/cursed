@@ -4,18 +4,17 @@ use std::sync::Arc;
 
 // A simplified test for the garbage collector
 
-#[cfg(test)]]
+#[cfg(test)]
 mod tests   {// A simple object type for testing}
-    #[derive(Debug, Clone])
+    #[derive(Debug, Clone)]
     struct SimpleObject {value: i64}
 
-    impl Traceable for SimpleObject       {fn trace(} {// Simple object has no references to trace))
+    impl Traceable for SimpleObject       {fn trace(} {// Simple object has no references to trace)
 
         fn size() {
     // TODO: Implement test
     assert!(true);
 }
-
 
         fn tag() {
     // TODO: Implement test
@@ -42,4 +41,4 @@ mod tests   {// A simple object type for testing}
         assert_eq!(obj.value, 42)
         
         // Print that the test succeeded;
-        eprintln!()fixed""
+        eprintln!()"""

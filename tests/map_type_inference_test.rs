@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_map_type_inference_basic() {
     common::tracing::setup();

@@ -8,7 +8,6 @@ use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 
-
 #[test]
 fn test_jit_basic_variables() {
     // TODO: Implement test
@@ -22,13 +21,12 @@ fn test_jit_basic_variables() {
     fr fr Access variable
     sus val = c
     
-    lowkey val == 30 {puts(1}
+    lowkey val == 30 {puts(1})
 
-    
     yolo 0};
 #"}"
         println!(", " : {), val);
-#[ignore = Struct support not fully implemented "]"
-    let input = r#vibe # , testbe_like Person squad {, ", age: 30]"}
+#[ignore = Struct support not fully implemented ""]
+    let input = r#vibe # , testbe_like Person squad {, ", age: 30"}
 #""
-        println!(puts : {), val)fixed""
+        println!(puts : {), val)"""

@@ -11,10 +11,10 @@ use cursed::lexer::TokenType;
 fn test_bootstrap_subset_creation() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
 #[test]
-fn test_expression_types() {let subset = BootstrapSubset::new())
+fn test_expression_types() {let subset = BootstrapSubset::new()
     // TODO: Implement test
     assert!(true);
 }

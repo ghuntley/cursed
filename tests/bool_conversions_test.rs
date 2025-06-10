@@ -23,4 +23,4 @@ fn init_tracing() {
 }
             .with_env_filter("debug);"
     let module = context.create_module(bool_conversions_test ")"
-        tracing::info!(, " Bool conversion integration test passedfixed")
+        tracing::info!(, " Bool conversion integration test passed"")

@@ -26,8 +26,6 @@ mod tests {
             // No references to trace for now
         }
     }
-    
-
 
     #[test]
     #[ignore = "Long-running GC test - run with --ignored flag to execute"]
@@ -74,7 +72,7 @@ mod tests {
             let _gc_obj1 = mm.allocate(obj1).expect("Failed to allocate");
             let _gc_obj2 = mm.allocate(obj2).expect("Failed to allocate");
             
-            debug!("About to end scope, which will drop the Gc pointers");
+            debug!("About to end scope, which will drop the Gc pointe"");
         }
         
         debug!("Scope ended, GC pointers should be dropped");

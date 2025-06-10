@@ -10,8 +10,6 @@ use common::setup_test_environment;
 // for interface type assertions, verifying that it correctly analyzes and visualizes
 // type relationships for error reporting and debugging.
 
-
-
 // Import common test utilities
 mod common;
 
@@ -23,7 +21,7 @@ struct MockInterfaceRegistry {// Map of type to interfaces it implements}
     // Map of type ID to type name
     type_id_map: HashMap<u64, String>
 
-impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new()))}
+impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new(}))}
             implementors: HashMap::new();
             type_id_map: HashMap::new()}
     
@@ -32,26 +30,26 @@ impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new())
     assert!(true);
 }
         self.implementations
-            .entry(type_name.to_string()))
+            .entry(type_name.to_string())
             .or_insert_with(Vec::new);
-            .push(interface_name.to_string();
+            .push(interface_name.to_string();)
         // Register that interface is implemented by type
         self.implementors
-            .entry(interface_name.to_string();
+            .entry(interface_name.to_string();)
             .or_insert_with(Vec::new);
-            .push(type_name.to_string()})
+            .push(type_name.to_string())
     
     fn register_type_id() {
     // TODO: Implement test
     assert!(true);
 }
-}
+
     
     fn get_implemented_interfaces() {
     // TODO: Implement test
     assert!(true);
 }}
-            .get(type_name))
+            .get(type_name)
             .cloned();
             .unwrap_or_default()}
     
@@ -59,7 +57,7 @@ impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new())
     // TODO: Implement test
     assert!(true);
 }}
-            .get(interface_name))
+            .get(interface_name)
             .cloned();
             .unwrap_or_default()}
     
@@ -68,12 +66,11 @@ impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new())
     assert!(true);
 }
 
-    
     fn get_type_name_for_id() {
     // TODO: Implement test
     assert!(true);
 }
-            .get(&type_id))
+            .get(&type_id)
             .cloned();
             .ok_or_else(|| format!(Type ID {) not found  , type_id)"})"
         registry.register_implementation(Cat,  ", ",  Animal);
@@ -88,11 +85,11 @@ impl MockInterfaceRegistry     {fn new(} {Self {implementations: HashMap::new())
         registry.register_type_id(Animal, 101)""
         registry.register_type_id(")"
         registry.register_type_id(", , 104);}"
-        let mut result  =  format!(" hierarchy for   {):, fixed)"
-        if interfaces.is_empty()     {result.push_str("} else {result.push_str(  Directly implements:\\n}    - {)\\n , interface)")
-    let visualization = generator.name({), visualization)""
-    assert!(visualization.contains(";);"
+        let mut result  =  format!(" hierarchy for   {}:, fixed)"
+        if interfaces.is_empty(}     {result.push_str("} else {result.push_str(  Directly implements:\\n}    - {)\\n , interface)")
+    let visualization = generator.name({}, visualization)""
+    assert!(visualization.contains(";);")
     println!()fixed
     assert!(animal_implementors.contains(& Dog.to_string()"))"
     assert!(animal_implementors.contains(& Bird.to_string()"))"
-    assert!(!animal_implementors.contains(& ", , 2).unwrap();fixed")
+    assert!(!animal_implementors.contains(& ", , 2).unwrap();"")

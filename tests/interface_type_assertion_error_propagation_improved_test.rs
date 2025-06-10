@@ -14,12 +14,9 @@ use tracing::{debug, info, warn}
 
 // Integration tests for the improved error propagation in interface type assertions
 
-
-
 // Import common test utilities
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
-
 
 #[test]
 fn test_improved_error_propagation_registration() {
@@ -32,10 +29,10 @@ fn test_generate_type_assertion_error() {
     // TODO: Implement test
     assert!(true);
 }
-        module: inkwell::module::Module<ctx>,", " MockGenerator<ctx> {fn new(} {))
+        module: inkwell::module::Module<ctx>,", " MockGenerator<ctx> {fn new(} {)
     impl<ctx> ImprovedTypeAssertion<ctx> for MockGenerator<"ctx>   {"}
     impl<, " InterfaceTypeAssertion<ctx> for MockGenerator<"
-        fn extract_interface_type_id(} {, " InterfaceTypeAssertionPathVisualization<"ctx> for MockGenerator<ctx>   {,  interface hierarchy "}")))
+        fn extract_interface_type_id(} {, " InterfaceTypeAssertionPathVisualization<"ctx> for MockGenerator<ctx>   {,  interface hierarchy "}"))
          ", "
         Some(,  error " to generate error)".csd:42:, 10)""
     assert!(error.message.contains(,  inheritance path exists)" interface hierarchy visualization)"
@@ -46,12 +43,12 @@ fn test_generate_type_assertion_error() {
     // TODO: Implement test
     assert!(true);
 }
-        fn visualize_interface_hierarchy(} {Ok(", .to_string()")))
+        fn visualize_interface_hierarchy(} {Ok(", .to_string()"))
         fn detect_reversed_inheritance_enhanced() {
     // TODO: Implement test
     assert!(true);
-}",  G {A -> B;).to_string()")))
+}",  G {A -> B;).to_string()"))
             .expect(Failed to get recovery ")"
             .expect(Should have recovery hint)""
-            .expect(Failed to get recovery , "";")"
+            .expect(Failed to get recovery , "";)
         assert!(hint.contains(reversed);",  asserting TypeB ")

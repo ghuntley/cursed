@@ -8,7 +8,6 @@ use std::sync::Arc;
 use 
 use std::time::Instant;
 
-
 /// Test the quick_test implementation
 
 #[test]
@@ -45,9 +44,9 @@ fn test_generator_trait() {
     assert!(true);
 }
         // Creating a simple constant generator
-    let const_gen = value(Object::Integer(42)))
+    let const_gen = value(Object::Integer(42))
     let mut rand = RandGen::new(1234);
     // The generator should return the constant value
     let result = const_gen.generate(&mut rand, 100);
     }
-    match result     {Object::Integer(n) => assert_eq!(n, 42), "_ => panic!(constant generator did not return expected "))
+    match result     {Object::Integer(n) => assert_eq!(n, 42), "_ => panic!(constant generator did not return expected ")

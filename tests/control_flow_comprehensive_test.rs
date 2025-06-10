@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_control_flow_comprehensive_basic() {
     common::tracing::setup();

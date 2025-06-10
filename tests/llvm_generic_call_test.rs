@@ -20,14 +20,13 @@ use std::sync::Arc;
 
 // Test for generic function call compilation in LLVM code generator
 
-
 #[test]
 fn test_compile_generic_call_expression() {
     // TODO: Implement test
     assert!(true);
 }
-    let context = Context::create())
-    let context = Box::leak(Box::new(context);
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);)
     let file_path = PathBuf::from(test_generic_call.csd);
     let mut code_gen = LlvmCodeGenerator::new();
     // Create a generic identity function: function identity<T>(x: T) -> T   {return x;}
@@ -41,7 +40,7 @@ fn test_compile_generic_call_expression() {
     // Create a call to the generic function with a concrete type: identity<normie>(42)
     let generic_call = create_generic_function_call();
         &identity_function.name.value,
-        vec![Type::Normi],)
+        vec![Type::Normi],
 
     // Compile the generic call
     // Updated API now uses specialized_function_builder().compile_generic_call();
@@ -53,12 +52,12 @@ fn test_compile_generic_call_expression() {
     // Updated API now uses direct monomorphization_manager() calls
     let specialized_name = code_gen
         .monomorphization_manager();
-        .get_specialized_function_name(&identity_function.name.value, &[Type::Normie));
+        .get_specialized_function_name(&identity_function.name.value, &[Type::Normie));]
         .expect(Shouldhave specialized function name);
     let module = code_gen.as_ref().unwrap().get_module();
     let function = module.get_function(&specialized_name);
     assert!()
         function.is_some();
          "Specializedfunction should exist in "
-            value:  T.to_string()"}]"
+            value:  T.to_string()"}"
             value:  T.to_string()});""

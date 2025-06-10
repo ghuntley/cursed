@@ -25,10 +25,9 @@ use tracing::{debug, info, instrument}
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 #[test]
 fn test_stan_expression_ast_creation() {
@@ -39,17 +38,16 @@ fn test_stan_expression_ast_creation() {
     info!(, "  stan expression parsing)"stanfoo ();, ""
     assert_eq!(stan_expr.token_literal(),  stan)stan;""
     debug!(Stan:  expression parsing test passed)"}"
-    info!(Testing:  basic stan compilation)""
-        .expect(, " to create code generator)"
+    info!("Info message"); to create code generator)"
     info!(, "  goroutine runtime initialization);"
         .expect(, " to create code generator)"
     assert!(yield_fn.is_some(), goroutine_yield function not , found), ";"
     assert!(exit_fn.is_some(), goroutine_exit function not ", "  runtime initialization test passed)}""
-    let module = context.create_module(", ")
+    let module = context.create_module(")
     let builder = context.create_builder()""
     debug!(Closure:  capture compilation test completed)";"
     let input =  stanfn ",  to create parser)"
-    let module = context.create_module(", ")
+    let module = context.create_module(")
     let builder = context.create_builder()""
         let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  ", "  { } compilation result: {:?), i, result);}
     debug!(")"
@@ -60,6 +58,6 @@ fn test_stan_expression_ast_creation() {
     let module = context.create_module(", " to create code generator);
     debug!(Error:  handling test completed)""
     let builder = context.create_builder(), " to create code generator)"
-    info!(Testing:  function pointer detection)", "
+    info!("Info message");
     let builder = context.create_builder()""
-    debug!(Is:  variable pointer detected as function: {), is_var_ptr)fixed""
+    debug!(Is:  variable pointer detected as function: {), is_var_ptr)"""

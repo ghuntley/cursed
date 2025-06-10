@@ -8,15 +8,13 @@ use cursed::error_enhanced::CursedError;
 // This file contains tests for the integration between the interface type assertion
 // error propagation mechanism and the Result type, ensuring proper ? operator support.
 
-
 /// Create a type assertion error for testing
 fn create_test_error() {
     // TODO: Implement test
     assert!(true);
 }}
-    Error::from_str(Type assertion error ")")
-        assert_eq!(target,  , "  to extract type info)"
-            assert_eq!(target,  Writer;, "  info was lost during propagation)"
+    Error::from_str(Type assertion error ")"
+        assert_eq!(target, "expected")"
 fn test_error_conversion() {
     // TODO: Implement test
     assert!(true);

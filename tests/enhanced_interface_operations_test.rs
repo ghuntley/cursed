@@ -15,8 +15,7 @@ use inkwell::values::BasicValueEnum;
 // 3. Improved interface value creation
 // 4. Better integration with the type checker
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 /// Test fixture with interfaces and implementing types
@@ -24,10 +23,10 @@ fn setup_test_hierarchy() {
     // TODO: Implement test
     assert!(true);
 }?"))"
-    tracing::info!(Starting:  interface implementation checking test)""
+    tracing::info!("Info message");
     assert!(config_implements, Config should implement , Serializable), ":  interface implementation checking test);"
-#[ignore = "]"]
-    tracing::info!(, :  enhanced dynamic dispatch test);", .to_string(), vec!][], Some(Type::Tea),"
+#[ignore = ""]
+    tracing::info!(, :  enhanced dynamic dispatch test);", .to_string(), vec![], Some(Type::Tea),"
             (", correctly)"
-    tracing::info!(Starting:  integrated interface operations test)""
-    assert!(config_implements, ,  should implement , Serializable)"fixed"
+    tracing::info!("Info message");
+    assert!(config_implements, ,  should implement , Serializable)"""

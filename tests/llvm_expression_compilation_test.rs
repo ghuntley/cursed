@@ -15,7 +15,7 @@ use cursed::ast::{expressions::{Literal, LiteralValue},}
     traits::Expression,;
 use std::collections::HashMap;
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Test compilation of literal expressions

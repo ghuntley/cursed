@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_jit_pointer_basic() {
     common::tracing::setup();

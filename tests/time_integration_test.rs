@@ -163,7 +163,7 @@ fn test_stopwatch_functionality() {
 fn test_benchmarking() {
     use std::thread;
     
-    let result = benchmark("sleep_test", 3, || {
+    let result = benchmark("sleep_test", 3, || {)
         thread::sleep(std::time::Duration::from_millis(10));
     }).unwrap();
     

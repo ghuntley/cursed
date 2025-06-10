@@ -7,7 +7,6 @@ use cursed::error::Error;
 // This module tests the enhanced implementation of interface registry extension checking
 // with proper error handling and consistent error propagation throughout the implementation.
 
-
 mod common;
 
 /// Test basic extension relationship checking using the registry directly

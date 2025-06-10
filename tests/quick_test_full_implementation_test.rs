@@ -4,23 +4,22 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-
 /// Test new functionality added to complete the quick_test implementation
 
 // Temporarily disabled while API is upgraded
-#[cfg(not(test])
+#[cfg(not(test)])
 mod tests   :: #[test]
 fn test_state_machine_implementation() {
     // TODO: Implement test
     assert!(true);
 }),
-        Box::new(|_: &Rc<RefCell<i64>>| true) // No precondition)
+        Box::new(|_: &Rc<RefCell<i64>>| true) // No precondition
     
     // Add reset action
     machine.add_action(reset , )
-        Box::new(move |state: &Rc<RefCell<i64>>| {*state.borrow_mut() = 0;))
+        Box::new(move |state: &Rc<RefCell<i64>>| {*state.borrow_mut() = 0;)
             true // Action was successful}),
-        Box::new(|_: &Rc<RefCell<i64>>| true) // No precondition)
+        Box::new(|_: &Rc<RefCell<i64>>| true) // No precondition
     
     // Run the state machine
     let config = Config::default();
@@ -47,9 +46,8 @@ fn test_for_all_implementation() {
     
     // Test the property
     let config = Config   {max_count: 100}
-        ..Config::default(}
+        ..Config::default(})
 
-    
     // Since were using null placeholders, this won t actually test anything
     // but it demonstrates that the function exists with the right signature
     let result = for_all(generator_obj, property_obj, &config);
@@ -64,11 +62,11 @@ fn test_complex_generators() {
     let mut rand = Rand::new(42); // Fixed seed for reproducibility
     
     // Generate some complex numbers and check they have real and imaginary parts
-    for _ in 0..10   {let value = complex_gen.generate(&mut rand, 100))
+    for _ in 0..10   {let value = complex_gen.generate(&mut rand, 100)
         if let Object::HashMap(map) = value     {;}
             assert!(map.contains_key(real);)
             assert!(map.contains_key(imag); else {panic!("Generated:  value is not a complex number)' is not , alphanumeric , c)} else {panic!(Generated:  value is not a string)))"
-            for elem in arr   {if let Object::Integer(i} = elem     {assert!(i >= 0 && i <= 100}; else {panic!(Generated:  array element is not an integer}} else {panic!(")"))))
-                if let Object::Integer(i) = val     {assert!(i >= 0 && i <= 100}; else {panic!(Generated:  map value is not an integer}} else {panic!(, "  value is not a map)")))
+            for elem in arr   {if let Object::Integer(i} = elem     {assert!(i >= 0 && i <= 100}; else {panic!(Generated:  array element is not an integer}} else {panic!(")")))
+                if let Object::Integer(i) = val     {assert!(i >= 0 && i <= 100}; else {panic!(Generated:  map value is not an integer}} else {panic!(, "  value is not a map)"))
             assert!(matches!(map[age, Object::Integer(_), ", Object::Boolean(_];) else {}"))
             panic!(Generated:  value is not a struct ")"

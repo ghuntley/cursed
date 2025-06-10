@@ -18,9 +18,8 @@ use std::path::PathBuf;
 
 // Tests for function return type inference in the LLVM code generator
 
-
 #[test]
-fn test_function_return_type_inference_int(} {
+fn test_function_return_type_inference_int() {
     // TODO: Implement test
     assert!(true);}
             value:  test_fn.to_string()""
@@ -28,4 +27,4 @@ fn test_function_return_type_inference_int(} {
     println!(fixed)
         if return_type.is_int_type()     {integer ", };"
         else {"})"
-    if verification.is_err()           {println!(Expected verification error due to type mismatch (will be fixed with full implementation}:     {:?), verification.err()"};}"))
+    if verification.is_err()           {println!(Expected verification error due to type mismatch (will be fixed with full implementation}:     {:?), verification.err()"};}")

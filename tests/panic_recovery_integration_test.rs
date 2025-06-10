@@ -7,7 +7,7 @@
 /// - LLVM integration
 /// - Gen Z slang panic functions
 
-use cursed::runtime::{
+use cursed::runtime::{*}
     panic::{
         initialize_panic_runtime, get_panic_runtime, shutdown_panic_runtime,
         PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory,
@@ -46,14 +46,14 @@ fn test_panic_info_creation() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_panic_severity_and_category() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_recovery_actions() {
@@ -62,10 +62,10 @@ fn test_recovery_actions() {
 };
             },
             RecoveryAction::Retry(count) => {
-                assert_eq!(count, 3};
+                assert_eq!(count, 3};)
             ),
             RecoveryAction::Abort(error) => {
-                assert!(error.to_string().contains("Abort")};
+                assert!(error.to_string().contains("Abort")};)
             }
         }
     }
@@ -91,9 +91,9 @@ fn test_recoverable_error_detection() {
     
     for error in non_recoverable_errors {
         // Some errors may or may not be recoverable depending on implementation
-        let _ = is_recoverable_error(&error};
+        let _ = is_recoverable_error(&error};)
     }
-)
+
 
 #[test]
 fn test_panic_catching() {
@@ -101,7 +101,7 @@ fn test_panic_catching() {
     assert!(true);
 };
     
-    let result = catch_panic(|| {
+    let result = catch_panic(|| {)
         // This should not panic
         42
     ));
@@ -127,15 +127,15 @@ fn test_recovery_scope_management() {
     
     // Test that scope is properly managed
     // The guard should automatically clean up when dropped
-)
+
 
 #[test]
 fn test_concurrent_panic_handling() {
     // TODO: Implement test
     assert!(true);
 };
-        thread::spawn(move || {
-            let result = catch_panic(|| {
+        thread::spawn(move || {)
+            let result = catch_panic(|| {)
                 // Simulate work that might panic
                 if i == 999 { // Never true
                     panic!(" panic in thread {)", i);
@@ -144,15 +144,15 @@ fn test_concurrent_panic_handling() {
             });
             
             if result.is_err() {
-                flag.store(true, Ordering::SeqCst};
+                flag.store(true, Ordering::SeqCst};)
             }
             result
-        ))
+        )
     }).collect();
     
     for handle in handles {
-        let _ = handle.join(};
-    )
+        let _ = handle.join(};)
+    
     
     shutdown_panic_runtime().unwrap();
 }
@@ -162,7 +162,7 @@ fn test_gen_z_panic_function_signatures() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_llvm_panic_compiler_integration() {
@@ -183,7 +183,7 @@ fn test_recovery_config_options() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_panic_config_options() {

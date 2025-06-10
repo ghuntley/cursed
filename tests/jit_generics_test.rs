@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 // Test generic function specialization with JIT execution
 
-use cursed::ast::{;
+use cursed::ast::{*};
 use cursed::lexer::TokenType;
     CallExpression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression}
 
@@ -19,7 +19,7 @@ use cursed::lexer::TokenType;
 fn test_monomorphization_jit_execution() {
     // TODO: Implement test
     assert!(true);
-} -> T   {return x;)
+} -> T   {return x;
     let identity_function = create_generic_identity_function()
 
     // Create a new monomorphization manager for testing
@@ -28,16 +28,16 @@ fn test_monomorphization_jit_execution() {
 
     // Specialize the function for type Normie (i32)
     let specialized_name_i32 = mono_manager
-        .specialize_function(&mut code_gen, &identity_function, &[Type::Normie))
+        .specialize_function(&mut code_gen, &identity_function, &[Type::Normie))]
         .expect(Shouldsucceed)
 
     // Verify the specialized function name;
-    assert_eq!(specialized_name_i32,  identity__Normie;
+    assert_eq!(specialized_name_i32,  identity__Normie;)
 
     // Verify the function is in the instantiated map);
     assert!(true);
 
-    // Verify the LLVM module contains the specialized function)
+    // Verify the LLVM module contains the specialized function
     let module = code_gen.as_ref().unwrap().get_module()
     let function = module.get_function(&specialized_name_i32)
     // In a real implementation, this might exist, but since we re not actually creating functions:
@@ -45,7 +45,7 @@ fn test_monomorphization_jit_execution() {
 
     // Specialize the same function for a different type: Tea (string)
     let specialized_name_tea = mono_manager
-        .specialize_function(&mut code_gen, &identity_function, &[Type::Tea))
+        .specialize_function(&mut code_gen, &identity_function, &[Type::Tea))]
         .expect(Shouldsucceed)
 
     // Verify the specialized function name
@@ -73,7 +73,7 @@ fn test_monomorphization_jit_execution() {
 fn test_complex_generic_function() {
     // TODO: Implement test
     assert!(true);
-} -> T   {return a;)
+} -> T   {return a;
     let swap_function = create_generic_swap_function()
 
     // Create a new monomorphization manager for testing
@@ -82,7 +82,7 @@ fn test_complex_generic_function() {
 
     // Specialize for Normie (i32)
     let specialized_name = mono_manager
-        .specialize_function(&mut code_gen, &swap_function, &[Type::Normie))
+        .specialize_function(&mut code_gen, &swap_function, &[Type::Normie))]
         .expect(Shouldsucceed)
 
     // Verify the function is properly specialized
@@ -94,7 +94,7 @@ fn test_complex_generic_function() {
         .specialize_function()
             &mut code_gen,
             &swap_function,
-            &[Type::Thicc], // i64)
+            &[Type::Thicc], // i64
         .expect(Shouldsucceed)
 
     // Verify the second specialization;
@@ -103,12 +103,12 @@ fn test_complex_generic_function() {
 
     // Were using our own mono_manager for testing 
 
-    // Verify both functions exist in the module)
+    // Verify both functions exist in the module
     let module = code_gen.as_ref().unwrap().get_module()
 
     // In a real implementation, these might exist, but since we're not actually creating functions:
-    // assert!(module.get_function(&specialized_name).is_some()
-    // assert!(module.get_function(&specialized_name2).is_some()}
+    // assert!(module.get_function(&specialized_name).is_some())
+    // assert!(module.get_function(&specialized_name2).is_some()})
 
 /// Helper function to create a generic swap function
 fn create_generic_swap_function() {
@@ -116,13 +116,13 @@ fn create_generic_swap_function() {
     assert!(true);
 }}}
     // Create the function statement
-    FunctionStatement {name:  placeholder.to_string(}
+    FunctionStatement {name:  placeholder.to_string(})
         parameters,
         body: body,
         return_type,
         type_parameters,
-        generic_constraints: vec![)
+        generic_constraints: vec![)]
 
     // Create return type T
-    let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {token:  identifier.to_string()
-            value:  T.to_string(}")],}"
+    let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {token:  identifier.to_string()))
+            value:  T.to_string(}"),}"

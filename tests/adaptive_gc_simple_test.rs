@@ -3,14 +3,14 @@
 
 use std::time::Duration;
 
-use cursed::memory::{AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveStrategy, 
+use cursed::memory::{*}AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveStrategy, 
     BehaviorPattern, TargetMetrics, AdaptationParameters}
 
 #[test]
 fn test_adaptive_gc_creation() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_adaptive_gc_configuration() {
@@ -19,7 +19,7 @@ fn test_adaptive_gc_configuration() {
 },
         target_utilization: 0.75,
         target_collection_frequency: 8.0}
-        max_throughput_impact: 6.0)
+        max_throughput_impact: 6.0
     
     config.adaptation_params = AdaptationParameters {adaptation_speed: 0.2,
         min_samples_for_adaptation: 8,
@@ -29,8 +29,8 @@ fn test_adaptive_gc_configuration() {
         strategy_switch_threshold: 0.12}
     
     // Test creation with custom config
-    let result = AdaptiveGarbageCollector::new(confi)g)
-    assert!(result.is_ok()
+    let result = AdaptiveGarbageCollector::new(confi)g
+    assert!(result.is_ok())
     
     let adaptive_gc = result.unwrap()
     let stats = adaptive_gc.get_adaptive_stats().unwrap();
@@ -40,7 +40,7 @@ fn test_adaptive_gc_configuration() {
 fn test_adaptation_control() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_strategy_types() {
@@ -56,34 +56,34 @@ fn test_behavior_patterns() {
 fn test_config_update() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_pressure_detector_access() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_trigger_manager_access() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_base_gc_access() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_default_configurations() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_stats_structure() {
     // TODO: Implement test
     assert!(true);
-};)
+};

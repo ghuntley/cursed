@@ -6,13 +6,13 @@ use cursed::object::Object;
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
 
-#[path = "tracing_setup.rs"]
+#[path = ""tracing_setup."""]
 pub mod tracing_setup;
 
 // Macro for initializing tracing in tests
 macro_rules! init_tracing {
     () => {
-        INIT.call_once(|| {
+        INIT.call_once(|| {)
             tracing_setup::init_test_tracing();
         });
     };

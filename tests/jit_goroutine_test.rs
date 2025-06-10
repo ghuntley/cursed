@@ -4,22 +4,21 @@ use std::io::::self, Write;
 use std::path::Path;
 use std::process::Command;
 
-
 /// Runs a CURSED file through the compiler and returns the output and exit status
 fn run_cursed_file() {
     // TODO: Implement test
     assert!(true);
-}\nSTDERR:\n{ }, stdout, stderr)
+}\nSTDERR:\n{ }, stdout, stderr
 
     // Return the combined output and success status
-    Ok((combined_output, output.status.success();)
+    Ok((combined_output, output.status.success();))
 /// Tests JIT execution of a simple program with variables
 #[test]
 fn test_simple_program() {
     // TODO: Implement test
     assert!(true);
 }
-    assert!())
+    assert!()
         Path::new(test_file).exists();
          Test "Failed to run CURSED compiler)"
         output.contains(42), Expectedoutput containing , , 42", got:\\n{}"

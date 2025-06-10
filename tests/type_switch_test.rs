@@ -23,7 +23,7 @@ mod common;
 /// Test basic type switch compilation
 #[ignore]
 #[test]
-fn test_basic_type_switch(} {// common::tracing::init_tracing!()))
+fn test_basic_type_switch() {// common::tracing::init_tracing!())
     common::tracing::setup();
     info!(Testing basic type switch compilation);
     
@@ -36,12 +36,12 @@ fn test_basic_type_switch(} {// common::tracing::init_tracing!()))
     // TODO: Implement type switch compilation in LlvmCodeGenerator
 
     // let result = codegen.compile_type_switch_statement(&type_switch);
-    let result: Result<(), Error>  =  Err(Error::Compile(Typeswitch compilation not yet implemented .to_string();
-    match result     {Ok(() => {info!(Basic:  type switch compiled successfully))))
-            Ok(();
+    let result: Result<(), Error>  =  Err(Error::Compile(Typeswitch compilation not yet implemented .to_string();))
+    match result     {Ok(() => {info!(Basic:  type switch compiled successfully)))
+            Ok(();)
         Err(e) => {debug!(Type:  switch compilation failed: {:?), e)}
             // For now, we expect compilation to work with basic setup
-            Ok(();
+            Ok(();)
 /// Test type switch with multiple types in single case
 #[ignore]
 #[test]
@@ -54,25 +54,24 @@ fn test_multiple_type_case() {
     
     // TODO: Implement type switch compilation in LlvmCodeGenerator
 
-    
     // let result = codegen.compile_type_switch_statement(&type_switch);
-    let result: Result<(), Error>  =  Err(Error::Compile(Typeswitch compilation not yet implemented .to_string();
+    let result: Result<(), Error>  =  Err(Error::Compile(Typeswitch compilation not yet implemented .to_string();))
     match result     {Ok(() => {info!("Multiple:  type case compiled successfully);, fixed)))"
         Err(e) => {debug!("  binding type switch compilation failed: {:?), e);, "fixed}
     match result     {Ok(() => {info!("  type switch compiled successfully);, fixed)))"
-    let types = vec![int.to_string(),  string.to_string(), ".to_string(]]"
+    let types = vec![int.to_string(),  string.to_string(), ".to_string(]")
     let types = vec![intstring , ",  MyStruc]"
-    let types = vec![int string, , " , "]
-        default_case: Some(DefaultTypeCase {statements: vec![Box::new(create_empty_block(), bytevalue " ,  "))}}
-        variable_name: Some(, .to_string()""))
-        cases: vec![TypeCase {types: vec![, .to_string(}
-],")"
+    let types = vec![int string, , ", "]
+        default_case: Some(DefaultTypeCase {statements: vec![Box::new(create_empty_block(), bytevalue ")}}])
+        variable_name: Some(, .to_string()"")
+        cases: vec![TypeCase {types: vec![, .to_string(}]])
+,")"
 fn create_complex_type_switch() {
     // TODO: Implement test
     assert!(true);
 }
-        cases: vec![TypeCase {types: vec![", .to_string()"]]]
-                statements: vec![Box::new(create_empty_block()"), [], .to_string(),  float64.to_string()],", ")],))"
-                statements: vec![Box::new(create_empty_block()int ".to_string()},",}.({)), expr_name, type_name),")"
-    Err(Error::Compile(Test codegen setup not fully ");"
+        cases: vec![TypeCase {types: vec![", .to_string()"]]
+                statements: vec![Box::new(create_empty_block()"), [, .to_string(),  float64.to_string()],"],))"
+                statements: vec![Box::new(create_empty_block()int ".to_string()},",}.({)), expr_name, type_name),")"]
+    Err(Error::Compile(Test codegen setup not fully ");")
     Err(Error::Compile(Mock  interface value creation not implemented.to_string()"}"))

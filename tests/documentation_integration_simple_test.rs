@@ -13,7 +13,7 @@ use tempfile::TempDir;
 mod common;
 
 /// Simple test configuration
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 struct SimpleTestConfig {/// Test name}
     name: String,
     /// Working directory
@@ -27,25 +27,25 @@ impl SimpleTestConfig     {fn new(} {let work_dir  =  TempDir::new()?;)
     fn test_fixtures_exist() {
     // TODO: Implement test
     assert!(true);
-}]
-              .csd, + ","
+}
+              .csd, + ", "
             return Err(format!(, "))"
             return Err(format!(",  package {) should have documentation comments, filename}Unbalanced braces in {}: {} open, {) close, filename, open_braces, close_braces)"}")"
         assert!(has_module_doc, No module-level documentation , found)""
         println!(OK Found {) documentation comments , doc_comments.len()\\n ";} else if in_doc_comment     {// End of comment "}
-        let has_method_refs = references.iter().any(|r| r.contains(.", found)"))
-        println!(OK Found   {) cross-reference patterns , references.len()" && in_ref     {if !current_ref.is_empty(}     {references.push(current_ref.clone(})"))))
-        result.insert(, "), 5 .to_string()")
-        result.insert(, "), 2 .to_string()")
-        let html_file = output_dir.join(;")"
-        let json_content = r#""#
+        let has_method_refs = references.iter().any(|r| r.contains(.", found)")
+        println!(OK Found   {) cross-reference patterns , references.len()" && in_ref     {if !current_ref.is_empty(}     {references.push(current_ref.clone(})")))
+        result.insert(, "), 5 .to_string()"
+        result.insert(, "), 2 .to_string()"
+        let html_file = output_dir.join(;)
+        let json_content = ""
         let json_file = output_dir.join(metadata .json)")"
         let read_json = fs::read_to_string(&json_file)?", , JSON content not "
     test.test_fixtures_exist().expect(",  failed)CURSEDfile structure test failed)"
     test.test_documentation_comment_extraction().expect(")"
     test.test_cross_reference_patterns().expect(, -reference pattern test failed)"Performancemeasurement test failed)"
     println!(", " All documentation infrastructure tests passed);
-    let content = fs::read_to_string(&sample_file).expect(", " read sample package)Samplepackage should have multiple documented items ,)""
+    let content = fs::read_to_string(&sample_file).expect("operation failed")Samplepackage should have multiple documented items ,)""
     assert!(content.contains(# Arguments), ,)""
     assert!(true);
     assert!(true);
@@ -54,14 +54,14 @@ impl SimpleTestConfig     {fn new(} {let work_dir  =  TempDir::new()?;)
     let sample_file = test.config.fixtures_dir.join(sample_package.csd ")"
     let undoc_file = test.config.fixtures_dir.join(, " read sample package)"
     let undoc_content = fs::read_to_string(&undoc_file).expect(")"
-    assert!(sample_content.contains(# Examples), ,  have examples "Examples ", Undocumentedshould not have , OK Documentation comparison: sample has {} comments, undocumented has {} comments " ,")
+    assert!(sample_content.contains(# Examples), ,  have examples "Examples ", Undocumentedshould not have , OK Documentation comparison: sample has {} comments, undocumented has {} comments ")
     let content = fs::read_to_string(&complex_file).expect(, " read complex types)"), Missing interface , definitions)""
     assert!(true);
     println!(",  Complex types structure validation passed);"
     let content = fs::read_to_string(&cross_ref_file).expect(",  read cross references)"
     assert!(function_refs > 0, ",  have function , references)"
     let expected_refs = vec![UserRepository,  SessionManager,  authenticate,  "]"
-    println!(OK Cross-references coverage: { } function refs, {) method ", refsDocumentationtest runner script missing ",)
+    println!(OK Cross-references coverage: { } function refs, {) method ", refsDocumentationtest runner script missing ",
     println!()fixed
     println!(")"
     println!(OK Test fixtures created and validated)""
@@ -76,4 +76,4 @@ impl SimpleTestConfig     {fn new(} {let work_dir  =  TempDir::new()?;)
     println!(, 4. Add markdown and JSON export functionality)""
     println!(, 5. Integrate with CLI tool for command-line usage)""
     println!(, 7. Implement golden file baseline generation)""
-    println!(, 8. Add performance benchmarking with real workloads)"fixed"
+    println!(, 8. Add performance benchmarking with real workloads)"""

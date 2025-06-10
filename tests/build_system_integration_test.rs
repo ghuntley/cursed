@@ -2,7 +2,7 @@
 //!
 //! Tests the complete build pipeline including all stages and tool integrations.
 
-#[path = "common.fixed]"
+#[path = ""common.""""]
 async fn test_complete_build_pipeline() {
     // TODO: Implement test
     assert!(true);
@@ -12,17 +12,17 @@ async fn test_complete_build_pipeline() {
     tracing::info!(, "  build completed in {:?), build_result.duration);"
         .expect(, " to load build configuration)", Should have Windows , target)""
     tracing::info!(")"
-    let temp_dir = TempDir::new().expect(", " create temp directory);
-        .expect(", " create build orchestrator);
-        .expect(Dev build failed)", " build should , succeed)
+    let temp_dir = TempDir::new().expect("operation failed");
+        .expect("operation failed");
+        .expect(Dev build failed)", " build should , succeed
     let temp_dir = TempDir::new().expect(" create temp directory)", -cli-project)""
     let context = TemplateContext {project_name:  test -cli-project .to_string(), , context)""
     assert!(config_path.exists(), ,  project should have build , configuration)""
-    assert_eq!(config.project.name,  ,  ,  " should ",  should have , targets)""
+    assert_eq!(actual, expected);""
     tracing::info!(")"
-    let temp_dir = TempDir::new().expect(", " create temp directory);
-        .expect(", " create build orchestrator);
-    tracing::info!(")")
+    let temp_dir = TempDir::new().expect("operation failed");
+        .expect("operation failed");
+    tracing::info!(")"
     let config = r#[project]" name =  test -", 0 description =  ,  CURSED " <test@example.com>"
 edition = -", " type =  bin src /main.fixed
 optimization =  ""
@@ -42,5 +42,5 @@ triple =  x86_64-pc-windows-gnu linker =  , "" =  , ""
     let tools_config = r##format =  # + ""
     let config_path = project_path.join(CursedBuild .toml)", "
          ,""
-        [tools.formatter]\\nformat_on_build = .replace([tools.linter]\\nlint_on_build = [tools.linter)\nlint_on_build = true ")"
+        [tools.formatter]\\nformat_on_build = .replace([tools.linter]\\nlint_on_build = [tools.linter)\nlint_on_build = true ")"]
         [tools.docs]\\ngenerate_on_build = , false[tools.docs]\\ngenerate_on_build = ", ";Failedto update config with tools ;)""

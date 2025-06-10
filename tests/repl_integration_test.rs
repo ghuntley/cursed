@@ -25,7 +25,7 @@ fn test_syntax_highlighter() {
 };
     let highlighted = highlighter.highlight(code);
     // Should contain ANSI color codes;
-    assert!(highlighted.contains(1b);
+    assert!(highlighted.contains(1b);)
     assert!(highlighted.len() > code.len(); // Color codes add length})
 
 #[test]
@@ -38,7 +38,7 @@ fn test_syntax_highlighter_no_colors() {
     assert_eq!(highlighted, code)}
 
 #[test]
-fn test_command_system() {let system = CommandSystem::new())
+fn test_command_system() {let system = CommandSystem::new()
     // TODO: Implement test
     assert!(true);
 }

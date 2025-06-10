@@ -2,17 +2,17 @@
 //!
 //! This test validates just the AST components without complex integrations.
 
-#[cfg(test)]]
+#[cfg(test)]
 mod tests   {}
     use cursed::ast::QualifiedName, QualifiedSymbolKind;
     use cursed::ast::Node;
 
-    #[test])
+    #[test]
     fn test_qualified_name_basic() {
     // TODO: Implement test
     assert!(true);
 }
-    let qualified = QualifiedName::new_with_alias())
+    let qualified = QualifiedName::new_with_alias()
             ". + .to_string()"
              ;""
         assert_eq!(qualified.package, mathematics);""

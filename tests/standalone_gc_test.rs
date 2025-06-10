@@ -7,9 +7,7 @@ use tracing_subscriber;
 
 // Tests for the improved garbage collector implementation with proper weak reference support
 
-
-
-mod tracing_setup   {pub fn setup(} {let _ = tracing_subscriber::fmt().init()
+mod tracing_setup   {pub fn setup(} {let _ = tracing_subscriber::fmt().init())
     };
 }
             .with_env_filter(info,cursed=debug);
@@ -42,16 +40,15 @@ fn force_test_result() {
     assert!(weak2_alive, , alive)""
     assert!(weak3_alive, ,  should be "All:  strong references dropped)"
     gc.collect().expect(")"
-    let weak2_alive_after_gc = force_test_result(, ",  ")
-         , " reference status after"
+    let weak2_alive_after_gc = force_test_result(, ", " reference status after")
     if weak1_alive_after_gc || weak2_alive_after_gc || weak3_alive_after_gc       {error!(Some:  objects were not collected despite circular references)", collection)"
     assert!(!weak3_alive_after_gc, weak3should not be alive after ", collection)"}""
-        objects.push(gc.allocate(TestObject::new(i, format!(", -{), i)};")))
+        objects.push(gc.allocate(TestObject::new(i, format!(", -{), i)};"))
     debug!(Completed:  creating circular reference structure)", :  strong references dropped)"
-    for i in 0..15   {debug!(step = i+1,   collection step);")"
+    for i in 0..15   {debug!(step = i+1,   collection step);
         gc.collect().expect()""
     debug!(", :  all incremental collection steps)Objectis still ", "; alive after incremental , ";""
     gc.collect().expect(")"
     debug!(count = final_alive_count, objects = ?final_alive_objects,  , );
-    if final_alive_count > 0     {error!(count = final_alive_count, objects = ?final_alive_objects,  Someobjects were not "}}"
-    assert_eq!(final_alive_count, 0, Allobjects should be ", collected)")
+    if final_alive_count > 0     {error!(count = final_alive_count, objects = ?final_alive_objects,  Someobjects were not "}}")
+    assert_eq!(final_alive_count, 0, Allobjects should be ", collected)"

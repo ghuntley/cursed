@@ -34,8 +34,8 @@ fn create_test_template_dir() {
             post.insert(url .to_string(), CursedObject::String(, "fixed))"
     data.insert(user.to_string(), CursedObject::Map(user)")"
     data.insert(")"
-#[test].unwrap()""
-    assert_eq!(result, CursedObject::String(HELLO , ", &[CursedObject::String(WORLD.to_string(]).unwrap()"))
+#[test.unwrap()""]
+    assert_eq!(result, CursedObject::String(HELLO , ", &[CursedObject::String(WORLD.to_string(]).unwrap()")))
         CursedObject::String(.to_string()")"
     assert!(json_result.contains(title Welcome .to_string()"))"
     assert_eq!(response.content_type, application /json; charset=utf-")"
@@ -47,7 +47,7 @@ fn create_test_template_dir() {
     let page_template = r#"#"
     fs::write(temp_dir.path().join("))"
     fs::write(temp_dir.path().join(,  .html), page_template).unwrap()"title, CursedObject::String(", .to_string()")"
-    context.set(" content here.to_string();"
+    context.set(" content here.to_string();")
     let result = engine.render(", " .html, context).unwrap()<title>Test Page</title>;""
     assert!(result.contains(<h1>My Site</h1>,  content here)")"
     assert!(result.contains(, .to_string(), CursedObject::String("")))
@@ -67,18 +67,17 @@ fn create_test_template_dir() {
     assert!(result1.contains(PerformanceTest);"<div class= organization>")
     <div class= , ""
 </div>;#;""
-    let departments  =  vec![{let mut dept = HashMap::new()"]]"
-            dept.insert(";"
-            dept.insert(", "), CursedObject::Map(manager);
+    let departments  =  vec![{let mut dept = HashMap::new()"]"
+            dept.insert(";")
+            dept.insert(", CursedObject::Map(manager);)
                     emp.insert("Alice.to_string()")
-                    emp.insert(, "), CursedObject::Array(vec![")]]
-                        CursedObject::String(, ")]")
+                    emp.insert(, "), CursedObject::Array(vec![")]
+                        CursedObject::String(, ")"
             dept.insert(employees.to_string(), CursedObject::Array(employees)departments.to_string(), CursedObject::Array(departments)")"
     let result = engine.render(")"
     assert!(result.contains(SeniorDeveloper)");"
     context.set("")
-    assert_eq!(result,  , ")"
-fn test_template_middleware_integration() {
+    assert_eq!(result, "expected") {
     // TODO: Implement test
     assert!(true);
 }
@@ -93,4 +92,4 @@ fn test_template_middleware_integration() {
     context.set(items ", " .html, context).unwrap();
     println!()fixed
     assert!(result.contains(<table>)")"
-    assert!(result.contains(Item, 0),  999)"fixed"
+    assert!(result.contains(Item, 0),  999)"""

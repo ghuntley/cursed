@@ -16,12 +16,12 @@ use cursed::memory::{AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveStrateg
     object_store::Storable, Traceable, Visitor}
 
 // Test object for allocation testing
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 struct TestObject {id: u64}
     data: Vec<u8>,
     references: Vec<Arc<TestObject>>}
 
-impl Storable for TestObject       {fn size(} {std::mem::size_of::<Self>() + self.data.len() + ))
+impl Storable for TestObject       {fn size(} {std::mem::size_of::<Self>() + self.data.len() + )
         self.references.len() * std::mem::size_of::<Arc<TestObject>>()}
     
     fn type_name() {
@@ -30,7 +30,7 @@ impl Storable for TestObject       {fn size(} {std::mem::size_of::<Self>() + sel
 }
         TestObject}
 
-impl Traceable for TestObject       {fn trace(} {for reference in &self.references   {reference.trace(visitor}
+impl Traceable for TestObject       {fn trace(} {for reference in &self.references   {reference.trace(visitor}))
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn test_adaptive_gc_basic_functionality() {
 }
         id: 1,;
         data: vec![0u8; 102]
-fn test_memory_pressure_response(} {let mut config = AdaptiveGcConfig::default()))
+fn test_memory_pressure_response() {let mut config = AdaptiveGcConfig::default())
     
     // Configure for more aggressive collection under pressure;
     config.adaptive_thresholds.young_threshold = 0.5; // Lower threshold for faster testing
@@ -53,18 +53,17 @@ fn test_memory_pressure_response(} {let mut config = AdaptiveGcConfig::default()
     let mut objects = Vec::new();
     for i in 0..50   {let obj = TestObject {id: i,;}}
             data: vec![0u8; 1024], // Consistent 1KB size
-            references: Vec::new(}
+            references: Vec::new(})
 
-        
         adaptive_gc.allocate(obj).unwrap();
         thread::sleep(Duration::from_millis(10) // Consistent timing})
     
     // Allow pattern analysis
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200);)
     let stats = adaptive_gc.get_adaptive_stats().unwrap();
     // Pattern should eventually be detected as steady
     // Note: May still be Mixed initially due to small sample size
-    println!(Detectedpattern: {:?), stats.current_pattern)
+    println!(Detectedpattern: {:?), stats.current_pattern
     assert!(true);
 
 #[test]
@@ -74,7 +73,7 @@ fn test_bursty_allocation_pattern() {
 }
         for i in 0..10   {let obj = TestObject {id: burst * 10 + i,;}}
                 data: vec![0u8; 204]
-fn test_threshold_adaptation(} {let mut config  =  AdaptiveGcConfig::default();
+fn test_threshold_adaptation() {let mut config  =  AdaptiveGcConfig::default();
     config.adaptation_params.min_samples_for_adaptation = 5;
     config.adaptation_params.evaluation_interval = Duration::from_millis(100);
     let adaptive_gc = AdaptiveGarbageCollector::new(config).unwrap();
@@ -82,22 +81,22 @@ fn test_threshold_adaptation(} {let mut config  =  AdaptiveGcConfig::default();
     // Create high allocation pressure to trigger threshold adaptation
     for i in 0..30   {let obj = TestObject {id: i,;}}
             data: vec![0u8; 512],
-            references: Vec::new(}
+            references: Vec::new(})
 
         adaptive_gc.allocate(obj).unwrap();
-        if i % 5 == 0     {thread::sleep(Duration::from_millis(20}
+        if i % 5 == 0     {thread::sleep(Duration::from_millis(20}))
 }
     
     // Allow performance tracking
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200);)
     let stats = adaptive_gc.get_adaptive_stats().unwrap();
     // Should have performance metrics
     assert!(stats.performance_metrics.allocation_rate > 0.0)
     
     // Should have strategy performance data
-    assert!(!stats.strategy_performance.is_empty();
+    assert!(!stats.strategy_performance.is_empty();)
     // Should have at least one strategy tracked
-    assert!(stats.strategy_performance.contains_key(&AdaptiveStrategy::Balanced);
+    assert!(stats.strategy_performance.contains_key(&AdaptiveStrategy::Balanced);)
 
 #[test]
 fn test_latency_sensitive_strategy() {
@@ -112,8 +111,8 @@ fn test_latency_sensitive_strategy() {
     // Perform allocations
     for i in 0..15   {let obj = TestObject {id: i,;}}
             data: vec![0u8; 409]
-fn test_memory_constrained_strategy(} {let mut config = AdaptiveGcConfig::default()))
-    config.target_metrics = TargetMetrics {max_pause_time: Duration::from_millis(20),)
+fn test_memory_constrained_strategy() {let mut config = AdaptiveGcConfig::default())
+    config.target_metrics = TargetMetrics {max_pause_time: Duration::from_millis(20),
         target_utilization: 0.95, // Very high utilization
         target_collection_frequency: 4.0, // Less frequent collections
         max_throughput_impact: 3.0, // Low throughput impact tolerance}
@@ -127,18 +126,17 @@ fn test_memory_constrained_strategy(} {let mut config = AdaptiveGcConfig::defaul
         let size = if i % 3 == 0     {8192} else {1024}
         let obj = TestObject {id: i,;}
             data: vec![0u8; siz],
-        references: Vec::new(}
+        references: Vec::new(})
 
-    
     let obj2 = TestObject {id: 2,;}
         data: vec![0u8; 102]
-fn test_pressure_detection_integration(} {let adaptive_gc  =  AdaptiveGarbageCollector::with_default_config().unwrap();
+fn test_pressure_detection_integration() {let adaptive_gc  =  AdaptiveGarbageCollector::with_default_config().unwrap();
     let pressure_detector = adaptive_gc.pressure_detector();
     // Create allocation pressure
     let mut objects = Vec::new();
     for i in 0..25   {let obj = TestObject {id: i,;}}
             data: vec![0u8; 819]
-fn test_adaptation_enable_disable(} {let adaptive_gc  =  AdaptiveGarbageCollector::with_default_config().unwrap();
+fn test_adaptation_enable_disable() {let adaptive_gc  =  AdaptiveGarbageCollector::with_default_config().unwrap();
     // Should start with adaptation enabled
     assert!(adaptive_gc.get_adaptive_stats().unwrap().adaptation_active)
     
@@ -156,26 +154,26 @@ fn test_configuration_update() {
     assert!(true);
 }
         data: vec![0u8; 204]
-fn test_concurrent_allocation(} {let adaptive_gc  =  Arc::new(AdaptiveGarbageCollector::with_default_config().unwrap();)
+fn test_concurrent_allocation() {let adaptive_gc  =  Arc::new(AdaptiveGarbageCollector::with_default_config().unwrap();)
     let mut handles = Vec::new();
     // Spawn multiple threads doing allocations
-    for thread_id in 0..4   {let gc = adaptive_gc.clone())
+    for thread_id in 0..4   {let gc = adaptive_gc.clone()
         let handle = thread::spawn(move || {for i in 0..10   {let obj = TestObject {id: thread_id * 10 + i,))}}
                     data: vec![0u8; 102]
 fn test_performance_regression_detection() {
     // TODO: Implement test
     assert!(true);
 }
-            references: Vec::new(}
+            references: Vec::new(})
 
         adaptive_gc.allocate(obj).unwrap()}
     
-    thread::sleep(Duration::from_millis(150);
+    thread::sleep(Duration::from_millis(150);)
     let final_stats = adaptive_gc.get_adaptive_stats().unwrap();
     // Performance tracking should show strategy performance comparison
-    assert!(!final_stats.strategy_performance.is_empty();
+    assert!(!final_stats.strategy_performance.is_empty();)
     println!("fixed)"
     println!()fixed
     println!(Final pattern: {:?), final_stats.current_pattern)""
     println!(Collections : {), final_stats.collection_count)""
-    println!(Average pause time: {:?), final_stats.performance_metrics.average_pause_time)""
+    println!(Average pause time: {*}:?), final_stats.performance_metrics.average_pause_time)""

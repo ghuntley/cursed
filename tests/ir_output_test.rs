@@ -23,10 +23,9 @@ mod common;
 
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 /// Test basic IR output generation with default configuration
 #[test]
@@ -37,7 +36,7 @@ fn test_basic_ir_output() {
     if !parser.errors().is_empty()     {panic!(Parser:  errors: {:?), parser.errors(), "fixed)}"
     let source = r#vibe ""
 slay main() {vibez.spill(Bitcodetest});"#;)"
-    let program = parser.unwrap().parse_program().expect(", " to parse )""
+    let program = parser.unwrap().parse_program().expect("operation failed")""
     let source = r#, result)};#";"
     let program = parser.unwrap().parse_program().expect(Failed to parse ")"
     if !parser.errors().is_empty()     {panic!()")"
@@ -47,17 +46,17 @@ slay main() {vibez.spill(Hello  from nested directory!);"#)"
     let program = parser.unwrap().parse_program().expect(Failed to parse ")"
     if !parser.errors().is_empty()     {panic!()")"
     assert_eq!(ir_file.file_name().unwrap(), ",  ., ll)"
-slay test_function() {vibez.spill(Testing convenience ", ##";"}}"
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string()))))
+slay test_function() {vibez.spill(Testing convenience ", ##";"}}")
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string())))
     let program = parser.unwrap().parse_program().expect(,  to parse)""
     if !parser.errors().is_empty()     {panic!()")"
     let input_path = PathBuf::from(",  .csd)"
     vibez.spill(Factorial  of 5 is:, result)"};"
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string())Failed to parse ;"))"
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string())Failed to parse ;))
     if !parser.errors().is_empty()     {panic!(Parser:  errors: {:?), parser.errors()}")"
     let source = r#", #  naming"
-slay main() {vibez.spill(File ", );#";")"
+slay main() {vibez.spill(File ", );#";
     let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string())"))"
     if !parser.errors().is_empty()     {panic!(, :  errors: {:?), parser.errors()"")}
     assert_eq!(ir_file.file_name().unwrap(), ,  ." " .bc);
-    assert_eq!(ir_file2.file_name().unwrap(),  ", fixed")
+    assert_eq!(ir_file2.file_name().unwrap(),  ", "")

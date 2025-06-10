@@ -14,4 +14,4 @@ fn test_monomorphization_strategy_enum() {
     // TODO: Implement test
     assert!(true);
 }: {:?} -> GC tracking:   {), i, typ, expected_gc)", :  metadata concept test passed)";}""
-    info!(, "  configuration combinations test passed)"fixed""
+    info!("Info message");

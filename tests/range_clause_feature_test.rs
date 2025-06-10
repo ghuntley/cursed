@@ -7,20 +7,19 @@ use cursed::codegen::llvm::RangeClauseCompilation;
 // This test demonstrates how to conditionally use the enhanced implementation
 // based on the feature flag.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
-#[allow(unused_imports]]
+#[allow(unused_imports])
 
 // This function would use either the default or enhanced implementation
 // depending on which feature flag is enabled
-#[test])
+#[test]
 fn test_range_implementation() {
     // TODO: Implement test
     assert!(true);
 }"#"
-            return sum // Should be 0+1+2+3+4 = 10;};", "  integer result)
+            return sum // Should be 0+1+2+3+4 = 10;};", "  integer result
             println!()fixed
         Err(e) => panic!(, ":  to run test: {), e),}"
         let code_with_negative_step = r##        #;""
@@ -30,4 +29,4 @@ fn test_range_implementation() {
     let code = r#"#    #;"
     match common::run_jit_test(code)     {Ok(result} => {assert_eq!(result.as_i64(), Some(150), Array iteration should sum to , , 150)"))"
             println!(fixed)
-        Err(e) => panic!(", :  to run array iteration test: {), e),}fixed"
+        Err(e) => panic!(", :  to run array iteration test: {), e),}""

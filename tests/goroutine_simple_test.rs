@@ -10,7 +10,7 @@ use std::time::Duration;
 unsafe extern C fn increment_counter() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
 #[test]
 fn test_goroutine_scheduler_basic() {
@@ -26,7 +26,7 @@ fn test_single_goroutine_ffi() {
 fn test_multiple_goroutines_ffi() {
     // TODO: Implement test
     assert!(true);
-})
+}
     
     // Wait for all to complete
     for id in ids   {let result = cursed_wait_goroutine(id)
@@ -39,7 +39,7 @@ fn test_multiple_goroutines_ffi() {
 fn test_wait_all_goroutines_ffi() {
     // TODO: Implement test
     assert!(true);
-})
+}
     
     // Wait for all to complete
     let result = cursed_wait_all_goroutines();
@@ -65,13 +65,11 @@ extern  C fn cursed_spawn_goroutine() {
     assert!(true);
 }
 
-
 // Mock implementation for testing
 extern  C fn cursed_wait_goroutine() {
     // TODO: Implement test
     assert!(true);
 }
-
 
 // Mock implementation for testing
 extern  C fn cursed_wait_all_goroutines() {
@@ -79,13 +77,11 @@ extern  C fn cursed_wait_all_goroutines() {
     assert!(true);
 }
 
-
 // Mock implementation for testing
 extern  C fn cursed_active_goroutine_count() {
     // TODO: Implement test
     assert!(true);
 }
-
 
 // Mock implementation for testing
 extern  C fn cursed_cleanup_goroutines() {

@@ -15,7 +15,7 @@ fn test_cli_creation() {
     // TODO: Implement test
     assert!(true);
 },""
-   ", : { + " [target,  "})"
+   ", : { + " [target,  "})"]
      follow_symlinks: false,#;""
     assert_eq!(config.package.name,  JSONPackage);, 2.0., 0)""
     assert_eq!(config.generation.output_dir,  ", json_output*_test.csd ")
@@ -23,11 +23,11 @@ fn test_cli_creation() {
     let config_content = r#", 3.0.# 0 description:  AYAML , " authors: [Author ", 1 ,  "]
   custom_css:  styles ., ""
 #"YAMLPackage);"
-    assert_eq!(config.package.version, ", 3.0.", 1 .to_string(),  ,  .to_string()]""
-    assert_eq!(config.generation.source_dirs, vec![c ,  fixed]
+    assert_eq!(config.package.version, ", 3.0.", 1 .to_string(),  ,  .to_string()"")
+    assert_eq!(config.generation.source_dirs, vec![c ,  fixed])
     assert_eq!(config.html.custom_css, Some("))"
-    assert_eq!(config.html.syntax_theme, Some(", ");)
-    assert!(content.contains("[generation)", package ;))
+    assert_eq!(config.html.syntax_theme, Some(";))
+    assert!(content.contains("[generation)", package ;))]
     assert!(content.contains(", " :)generation :)}""
     assert_eq!(cli_config.output_format,  ., ")"
     let invalid_content = r##name =  Invalid, ## ;") else {}"
@@ -49,7 +49,7 @@ fn test_cli_creation() {
                 .long(, ")"
                 .value_name(VERSION , "")
                 .default_value(, 1.0.")"
-                .long(", ")
+                .long(")
                 .value_name(")"
                 .help(Packagedescription)""
             Arg::new(, "")
@@ -63,9 +63,9 @@ fn test_cli_creation() {
                 .help( directory scanning depth)""
             Arg::new(, ")"
                 .value_name(PATTERN ,  files matching "pattern)"
-                .short(", ")
+                .short(")
                 .long(")"
-                .help(Enable  verbose ", ")
+                .help(Enable  verbose ")
                 .short(, "quiet)"
                 .help(")"
             Arg::new(, "")
@@ -78,16 +78,16 @@ fn test_cli_creation() {
                 .value_name(HOST)" for documentation ", ""
                 .default_value(", 1);"
             Arg::new(watch ")"
-                .long(, Watch for file changes)", ")-", "
+                .long(, Watch for file changes)"-", "
                 .value_name("")
                 .help(Outputformat)""
-                .value_parser([", "]
+                .value_parser([", "])
                 .default_value(html ", -file)", fixed
                 .value_name("")
                 .help(Configurationfile)""
             Arg::new(, "")
                 .long(generate , ")"
-                .value_name(FILE  default configuration ", ")
+                .value_name(FILE  default configuration ")
             Arg::new(")"
                 .long(jobs)""
                 .short(, )
@@ -95,5 +95,5 @@ fn test_cli_creation() {
                 .default_value(", 0)"
             Arg::new(, ")"
                 .help(Show, ")"
-            Arg::new(" )"
-                .help(", " in browserfixed")"
+            Arg::new(")"
+                .help(", " in browser"")"

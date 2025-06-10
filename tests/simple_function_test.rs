@@ -12,7 +12,7 @@ fn test_function_context() {
     // TODO: Implement test
     assert!(true);
 }")"
-fn test_temp_variable_generation() {let mut context = FunctionContext::new(", .to_string(), ";"))"
+fn test_temp_variable_generation() {let mut context = FunctionContext::new(", .to_string(), ";)
     // TODO: Implement test
     assert!(true);
 }

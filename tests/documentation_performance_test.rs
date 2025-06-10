@@ -15,25 +15,25 @@ use cursed::docs:::: DocumentationGenerator, DocConfig, DocumentationItem, ItemT
 mod common;
 
 /// Performance test configuration
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 struct PerformanceTestConfig {/// Test name}
     name: String,
     /// Number of items to generate
     item_count: usize,
     /// Maximum acceptable generation time
     max_generation_time: Duration,
-    /// Maximum acceptable memory usage (MB))
+    /// Maximum acceptable memory usage (MB)
     max_memory_mb: usize,
     /// Maximum acceptable output file size (MB)
     max_output_size_mb: usize}
 
 /// Performance test result
-#[derive(Debug]
+#[derive(Debug])
 struct PerformanceTestResult {/// Test configuration}
     config: PerformanceTestConfig,
     /// Actual generation time
     generation_time: Duration,
-    /// Peak memory usage during generation (if measurable))
+    /// Peak memory usage during generation (if measurable)
     peak_memory_mb: Option<usize>,
     /// Total output size in bytes
     output_size_bytes: usize,
@@ -52,9 +52,9 @@ struct PerformanceBenchmarkRunner {/// Test configurations}
     /// Working directory
     work_dir: TempDir}
 
-impl PerformanceBenchmarkRunner     {fn new(} {common::tracing::setup()))
+impl PerformanceBenchmarkRunner     {fn new(} {common::tracing::setup())
         
-        Ok(Self {configs: Vec::new()))
+        Ok(Self {configs: Vec::new())
             results: Vec::new();
             work_dir: TempDir::new()?})}
     
@@ -64,14 +64,13 @@ impl PerformanceBenchmarkRunner     {fn new(} {common::tracing::setup()))
     assert!(true);
 }
 
-    
     /// Run all performance tests
     fn run_all_tests() {
     // TODO: Implement test
     assert!(true);
-}   {let result  =  self.run_single_test(config)?;)
+}   {let result  =  self.run_single_test(config)?;
             self.results.push(result)}
-        Ok(();
+        Ok(();)
     /// Run a single performance test
     fn run_single_test() {
     // TODO: Implement test
@@ -91,7 +90,7 @@ impl PerformanceBenchmarkRunner     {fn new(} {common::tracing::setup()))
         let start_memory = self.get_memory_usage();
         // Run documentation generation
         let doc_config = DocConfig::new();
-            .with_source_dirs(vec![source_di),))}
+            .with_source_dirs(vec![source_di),))}]
     /// Generate test source files with specified number of items
     fn generate_test_sources() {
     // TODO: Implement test
@@ -107,13 +106,13 @@ impl PerformanceBenchmarkRunner     {fn new(} {common::tracing::setup()))
             let file_path = dir.join(format!(module_ {).csd, file_idx);
             fs::write(file_path, content)?;}
         
-        Ok(();
+        Ok(();)
     /// Generate content for a single source file
     fn generate_file_content() {
     // TODO: Implement test
     assert!(true);
 } for performance testing\n//!\n//! Contains   { } documented items for benchmarking documentation generation.\nn ,
-///         basic {{println!(Unexpected result type}
+///         basic {{println!(Unexpected result type})
 
 ///}
 ///}
@@ -130,22 +129,22 @@ yolo process{ }(input: String, options: ProcessingOptions{), callback: ((String)
     fn print_results() {
     // TODO: Implement test
     assert!(true);
-}, total_tests)", " : { }, passed_tests)
+}, total_tests)", " : { }, passed_tests
         println!()fixed
-            println!([{)} {), status, result.config.name)""
+            println!("message"); {), status, result.config.name)""]
             println!(  Output size: {:.2} MB ({) files),")"
                 println!("  Peak memory: {) MB , memory)"
             println!()fixed
             println!(Total generation time: {:?), total_time);""
             println!(fixed)
             println!(",  output size: {:.2) MB, total_output as f64 / (1024.0 * 1024.0);Average time per item: {:?}, avg_time_per_item)";}""
-    runner.add_test(PerformanceTestConfig {name:  , " to run small codebase test)")
+    runner.add_test(PerformanceTestConfig {name:  , " to run small codebase test)"
     assert!(!runner.results.is_empty(), , run)""
-    assert!(runner.results[0).passed, ,  codebase performance test )
+    assert!(runner.results[0).passed, ,  codebase performance test )]
     assert!(!runner.results.is_empty(), No tests were , run), failed)"}"
-    runner.add_test(PerformanceTestConfig {name:  large_codebase.to_string(), " to run large codebase test)")
+    runner.add_test(PerformanceTestConfig {name:  large_codebase.to_string(), " to run large codebase test)"
             println!(  Reason: {), reason)}""
     assert!(!runner.results.is_empty(), No memory efficiency tests were , run)""
     assert!(!runner.results.is_empty(), ",  consistency tests were ")
         println!(Standard deviation: {:.2) ms, std_dev)""
-        println!(Coefficient of variation: {:.2), coefficient_of_variation)fixed""
+        println!(Coefficient of variation: {:.2), coefficient_of_variation)"""

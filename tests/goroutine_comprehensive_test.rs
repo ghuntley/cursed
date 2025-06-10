@@ -25,12 +25,9 @@ fn test_basic_goroutine_ast_creation() {
     assert_eq!(counter.load(Ordering::SeqCst), 1,  ", " should be incremented)
     println!()fixed
     assert_eq!(result, 0,  All  goroutines should complete successfully;, " Multiple goroutines coordination test passed;)"
-         Scheduler ""
-         , 
-         "Resource, " Patterns
-         " "
-         , " Operations"
-          Isolation]""
+         Scheduler "", "Resource, " Patterns
+         " ", " Operations"
+          Isolation""
     println!(,  Test categories covered: {:?), test_categories);""
-    assert_eq!(test_categories.len(), 10,  All ;")"
-    println!()fixed""
+    assert_eq!(test_categories.len(), 10,  All ;)
+    println!()"""

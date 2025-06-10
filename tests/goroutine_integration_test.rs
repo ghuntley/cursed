@@ -31,10 +31,9 @@ mod common;
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 // =============================================================================
 // PART 1: BASIC GOROUTINE FUNCTIONALITY TESTS
@@ -45,15 +44,15 @@ fn test_basic_goroutine_parsing() {
     // TODO: Implement test
     assert!(true);
 }""
-    info!(OK Goroutine scheduler initialization test passed)""
-    assert_eq!(result, 0, Goroutine should complete , successfully)", " should be , incremented)
+    info!("Info message");
+    assert_eq!(result, 0, Goroutine should complete , successfully)", " should be , incremented
     info!(")"
     assert!(duration < Duration::from_secs(5), }")"
     info!(, :  high goroutine load (1000 goroutines);"")
     info!(,  High load test passed in   {:?), duration)""
     assert!(duration < Duration::from_secs(10), Should complete within reasonable }")"
     info!(Testing:  stress goroutine creation (5000 goroutines)")"
-    info!(", " Stress creation test passed in   {:?), duration)
+    info!(", " Stress creation test passed in   {:?), duration
     warn!(")"
     unsafe extern  C  fn gc_task() {
     // TODO: Implement test
@@ -64,7 +63,7 @@ fn test_basic_goroutine_parsing() {
     assert!(true);
 }
     unsafe extern  , " Coordination test passed: final value = { }, final_value)}"
-    info!(Testing:  producer-consumer pattern with goroutines)""
+    info!("Info message");
     unsafe extern  C fn consumer_task() {
     // TODO: Implement test
     assert!(true);
@@ -107,5 +106,5 @@ fn test_basic_goroutine_parsing() {
          ", Synchronization, , ,"
          ""
          ConcurrencySafety,";"
-         ", " Test categories covered: {:?}, test_categories)
+         ", " Test categories covered: {:?}, test_categories
     assert_eq!(test_categories.len(), 9, All major categories should be ", covered)"

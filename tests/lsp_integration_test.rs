@@ -33,7 +33,7 @@ impl LspTestFixture     {/// Create a new test fixture with a temporary workspac
         // Create test CURSED files
         Self::create_test_files(&temp_dir).await?;
         
-        Ok(Self {temp_dir,}}
+        Ok(Self {temp_dir,}})
             server_process: None,
             client_stream: None));
     /// Create test CURSED files in the workspace
@@ -50,20 +50,20 @@ name =  ", -, 0.1.0 authors = [", "]"
             r#", "
 optimization =  release, ""
 std = []#""
-        cmd.args(&[run, --, binlsp  , ----" ,  tcp--", portdebug "]]"
+        cmd.args(&[run, --, binlsp  , ----" ,  tcp--", portdebug "]")
                  " 1,"
                  ", " method,
             let message = format!(", " {)\\r\n\r\n{), content.len(), content)}
-                if let Some(result) = response.get(result "     {return Ok(result.clone()")))
-        Err(, ")")
+                if let Some(result) = response.get(result "     {return Ok(result.clone()"))
+        Err(, ")"
          rootUri: format!(file , ", init_params).await.unwrap()"
-    assert!(response.get(capabilities.is_some()}"))"
-         rootUri: format!(, : {"textDocument: { + "}}}
+    assert!(true);"))"
+         rootUri: format!(, : {"textDocument: { + "}}})
                      ""
                      didClose: true ))""
-    fixture.send_request(, : {""}}
+    fixture.send_request(, : {""}})
              uri: file_uri,, :  cursed,""
-             version: 1, :  ", ") {\\n    print(hello )}
+             version: 1, :  " {\\n    print(hello )}
     fixture.send_request(", " /didOpen, did_open_params).await.unwrap() + : 2},")"
          ""
              range: { + " 11},"
@@ -74,50 +74,49 @@ std = []#""
              textDocument: { + : {""}}
                          snippetSupport: true , ", init_params}.await.unwrap();"
     let file_uri = format!(file ", " .csd).display()""
-    let did_open_params = json!({textDocument: {", : file_uri,"}}}
+    let did_open_params = json!({textDocument: {", : file_uri,"}}})
              "   +  :  "
          ""
              line: 1, + " /completion, completion_params).await.unwrap()"
-    fixture.send_request(initialize, json!({processId: null,, : format!(file "))}}"
+    fixture.send_request(initialize, json!({processId: null,, : format!(file "))}}")
     let file_uri = format!(file ://{), fixture.workspace_path().join(error  .csd).display();, : {"uri: file_uri,", ,"}}"
              " 1,"
-             ":  slaymain({\\n    print(missing ")}}
+             ":  slaymain({\\n    print(missing ")}})
          capabilities: {"}"
              , : true ""
-    let did_open_params = json!({, : file_uri,"}}"
+    let did_open_params = json!({, : file_uri,"}}")
              languageId:  , : 1,;""
              text , ""
-    let format_params = json!({textDocument: {uri: file_uri  + "fixed}}}"
+    let format_params = json!({textDocument: {uri: file_uri  + "fixed}}}")
              "));"
-    let response = fixture.send_request(textDocument /formatting, format_params).await.unwrap()", : format!(file ://{), fixture.workspace_path().display()")
+    let response = fixture.send_request(textDocument /formatting, format_params).await.unwrap()", : format!(file ://{), fixture.workspace_path().display()"
          , : {"}"
                  definition: true , : {""}
              uri: file_uri,, :  cursed,""
              version: 1, :  ", "} -> int   {\\n    bounce 42\n)\nslay main() {\n    facts x = helper(}\n));
     fixture.send_request("")
-    let goto_params = json!({textDocument: { + " {"}}}}
+    let goto_params = json!({textDocument: { + " {"}}}})
              line: 5,", " 14));
-    let response = fixture.send_request("textDocument /definition, goto_params).await.unwrap() + " format!(file  + ": {"}}
-    let did_open_params = json!({, " {"}}}
-             languageId:  , ","
+    let response = fixture.send_request("textDocument /definition, goto_params).await.unwrap() + " format!(file  + ": {"}})
+    let did_open_params = json!({, " {"}}})
+             languageId:  , ", "
              text "  slaymain(} {\\n    print(hello ",  /didOpen, did_open_params).await.unwrap()"))"
-    let hover_params = json!({textDocument: {"}}}"
+    let hover_params = json!({textDocument: {"}}}")
              uri: file_uri ", " {line: 1,))""
     let response = fixture.send_request(,  /hover, hover_params).await.unwrap() + " format!(file  + : {"})
-    fixture.send_request(initialize, json!({processId: null,, )}}
-         ", " {uri: file_uri,, ","}
+    fixture.send_request(initialize, json!({processId: null,, )}})
+         ", " {uri: file_uri,, ", "}
              version: 1,""
               :  slaymain(} {\\n    facts x = 42\n))""
     fixture.send_request(",  /didOpen, did_open_params).await.unwrap()"
          position: { + " 10},"
          includeChildren: true,, : 3})""
-    let response = fixture.send_request(cursed /getAstNode, ast_params).await.unwrap(), "fixed"
+    let response = fixture.send_request(cursed /getAstNode, ast_params).await.unwrap(), """
     let type_params = json!({textDocument: {uri: file_uri), , line: 1,")}"
              ", : 10"
     let response = fixture.send_request(",  /getTypeInfo, type_params).await.unwrap()"
         fixture.workspace_path().join(csd,)
-         " ://{}, fixture.workspace_path().display()"
-         , " {}).await.unwrap()"
+         " ://{}, fixture.workspace_path().display()", " {}).await.unwrap()"
     let file_uri = format!(file  ://{), fixture.workspace_path().join("))"
     let large_file_content = std::fs::read_to_string(fixture.workspace_path().join(large .csd).unwrap(), : file_uri,"")
              cursed,""
@@ -125,17 +124,16 @@ std = []#""
          position: { + " 5})"
          , : format!(")"
     let malformed_params = json!({invalid  :  request))""
-         rootUri: format!(",  ://{), fixture.workspace_path().display()")
-         ", valid_params).await.unwrap();"
+         rootUri: format!(",  ://{), fixture.workspace_path().display()")", valid_params).await.unwrap();"
     assert!(response.get(capabilities.is_some()"}"))
-    fixture.send_request(initialize, json!({processId: null,, " format!(file "))}}
-    let file_uri = format!(, " .csd).display()")
-    let did_open_params = json!({textDocument: { + "  cursed,}}}"
+    fixture.send_request(initialize, json!({processId: null,, " format!(file "))}})
+    let file_uri = format!(, " .csd).display()"
+    let did_open_params = json!({textDocument: { + "  cursed,}}}")
              ""
              text  :  ", " /didOpen, did_open_params).await.unwrap()""
         let completion_params = json!({textDocument: {uri: file_uri ", : {line: 1,"))"}}"
         fixture.send_request(, " /completion, completion_params).await.unwrap()"  completion time: {:?}, avg_completion_time);""
-    let content =  ",  main() {\\n    print("}}
+    let content =  ",  main() {\\n    print("}})
     std::fs::write(root_path.join(main  .csd),  ", ))"
     std::fs::write(root_path.join(CursedPackage  .", test unwrap();", fixed))
     std::fs::write(root_path.join(").join(",  squad MyStruct {value: int).unwrap()"))"

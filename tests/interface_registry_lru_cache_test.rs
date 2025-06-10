@@ -11,14 +11,13 @@ use std::time::Instant;
 // These tests validate the functionality of the LRU (Least Recently Used) caching
 // mechanism for interface implementation checks.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
-#[path =  "tracing_setup.]"
-            assert_eq!(result, Some(expected), ", ");
-        Type::Extra,],  "Comparable, Some(false);"
-    assert_eq!(cache.lookup(&types[9),  "))"
+#[path = " "tracing_setup.""]
+            assert_eq!(result, Some(expected), ";)
+        Type::Extra,,  "Comparable, Some(false);"
+    assert_eq!(cache.lookup(&types[9),  "))"]
     assert_eq!(cache.lookup(&new_type,  Comparable, Some(true);}"))"
                          Comparable => true,",  cache hits: {}, hits);"
     println!(")"

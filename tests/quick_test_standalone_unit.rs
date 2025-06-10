@@ -4,14 +4,14 @@ use cursed::stdlib::quick_test;
 
 // Unit tests for the quick_test module
 
-#[cfg(test)]]
+#[cfg(test)]
 mod tests {}
     use super::*;
 
-    #[test])
-    fn test_int_range(} { }
+    #[test]
+    fn test_int_range() { 
         // Test that int_range generates values within the specified range
-        for _ in 0..100 {}
+        for _ in 0..100 {
             let val = quick_test::int_range(-10, 10);
             assert!(val >= -10 && val <= 10);}
     }

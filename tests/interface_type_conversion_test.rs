@@ -6,8 +6,7 @@ use crate::common;
 // This module tests the ability to assert that an interface value is of a specific
 // concrete type and to convert an interface value back to a concrete type.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 // Use init_tracing from common module
@@ -35,7 +34,7 @@ fn test_basic_interface_type_assertion() {
             lowkey ok     {return person.name}
             
             return  type  assertion failed}""
-    match common::run_jit_test(code)     {Ok(result} => {assert_eq!(result.as_string(), Some(", ");)))
+    match common::run_jit_test(code)     {Ok(result} => {assert_eq!(result.as_string(), Some(";)))
     let code = r#"        // Define "
                 return  should  not happen}, " failed as "}#    #""
     match common::run_jit_test(code)     {Ok(result} => {assert_eq!(result.as_string(), Some("),)))"
@@ -52,4 +51,4 @@ fn test_basic_interface_type_assertion() {
     let code = r#"        // Define "
         slay (d DataProcessor) process(data tea) tea {return  Processed  :  + }""
             return  nil or wrong "    ",  or wrong type.to_string()},""
-        Err(e) => panic!(:  failed: {), e),fixed""
+        Err(e) => panic!(:  failed: {), e),"""

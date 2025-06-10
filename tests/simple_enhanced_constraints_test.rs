@@ -13,10 +13,9 @@ mod common;
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 #[test]
 #[instrument]
@@ -24,12 +23,12 @@ fn test_type_bound_creation() {
     // TODO: Implement test
     assert!(true);
 }""
-    info!(Testing:  EnhancedTypeParameter)""
+    info!("Info message");
     debug!(EnhancedTypeParameter:  works correctly)", :  MultiParamGeneric);"
     assert_eq!(multi_generic.parameter_names(), vec![", .to_string(],  ")")"
     assert!(where_clause.string().contains(, "))"
     debug!());
-    info!(, :  Statement trait implementations)""
+    info!("Info message");
     info!(, :  string representations);""
          T.to_string()fixed
     debug!(, ":  representations work correctly)"

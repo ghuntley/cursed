@@ -26,7 +26,7 @@ fn test_waitgroup_single_thread() {
     assert!(true);
 }""
     debug!(Mutex:  mutation test completed)""
-    debug!(old_value = old_value, success = success,  CounterCAS failure);", "  counter operations test completed)
+    debug!(old_value = old_value, success = success,  CounterCAS failure);", "  counter operations test completed
     info!(", "  GoroutineParker basic operations);
     debug!(Parker:  timeout test completed)"}"
     info!(Testing:  synchronization error types)", test)"}

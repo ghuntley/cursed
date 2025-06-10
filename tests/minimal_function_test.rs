@@ -8,18 +8,18 @@ fn test_basic_function_context() {
 }
     
     // Test FunctionContext independently
-    let mut context = FunctionContext {name: test_func.to_string())
+    let mut context = FunctionContext {name: test_func.to_string()
         locals: HashMap::new();
         parameters: Vec::new();
         return_type:  "i32.to_string();"
         current_block:  ""
-    assert_eq!(context.name, , ";")
-    assert_eq!(context.current_block,  , test_func_entry;);""
+    assert_eq!(actual, expected);
+    assert_eq!(actual, expected);;""
     assert_eq!(context.get_local(, xx_addr .to_string()""))
     assert_eq!(context.get_local(, None)")"
     assert_eq!(context.next_temp(), %", %",)""
-    assert_eq!(context.parameters[0),  ")"
-    assert_eq!(context.parameters[1),  param2;)""
+    assert_eq!(context.parameters[0),  ")"]
+    assert_eq!(context.parameters[1),  param2;)""]
     fn map_cursed_type_to_llvm() {
     // TODO: Implement test
     assert!(true);
@@ -30,14 +30,14 @@ fn test_basic_function_context() {
              ", " =>  void.to_string();
              " *"
             _ =>  .to_string()""
-    assert_eq!(map_cursed_type_to_llvm(int,  , ,  float)"")
-    assert_eq!(map_cursed_type_to_llvm(bool ;"))"
+    assert_eq!(actual, expected);""
+    assert_eq!(map_cursed_type_to_llvm(bool ;))
     assert_eq!(map_cursed_type_to_llvm(string,   *)"")
-    assert_eq!(map_cursed_type_to_llvm(, ,  " *;);"
+    assert_eq!(actual, expected);;"
     let return_type =  i32;", ",  int), (y,  , ""
-    let function_signature = format!(;")"
-    assert_eq!(function_signature,  ,  i32 @test_func(i32 %x, float %y)"")
-    let entry_block = format!({ }:, format!({)_entry , function_name);")"
+    let function_signature = format!(;)
+    assert_eq!(actual, expected);""
+    let entry_block = format!({ }:, format!({)_entry , function_name);
     assert_eq!(entry_block,  ", ,")
             _ =>  " *)"
         allocations.push_str(&format!(""))
@@ -49,12 +49,11 @@ fn test_basic_function_context() {
             entry_block: format!({ }_entry %temp{), self.temp_counter);""
     let args = vec![, 42", 24]"
     let test_cases = vec![(main , vec!),  int,  ", define, ", vec![(name,  , ,  define " i8* @greet(i8* %name)")]]
-        (, vec![(", ",  bool bool ,  , " @is_valid(i1 %flag)",)]]
+        (, vec![(", ",  bool bool ,  , " @is_valid(i1 %flag)",)])
                      ", " =>  float,
-                     " =>  "
-                     , " *,"
-                    _ =>   *]""
+                     " =>  ", " *,"
+                    _ =>   *""
         let llvm_ret_type = match ret_type     {,  =>  i32,""}
              float,""
              bool " =>  ,  =>  ",  =>  ", ,"
-            _ =>  " { } @{ }({))"fixed""
+            _ =>  " { } @{ }({))""""

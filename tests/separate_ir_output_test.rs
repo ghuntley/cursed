@@ -17,10 +17,9 @@ mod common;
 
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 /// Test basic separate compilation IR output
 #[test]
@@ -42,4 +41,4 @@ fn test_basic_separate_ir_output() {
          , ;}""
         linked_subdir:  linked.to_string()}""
          "}"
-        package_subdir:  ", fixed"
+        package_subdir:  ", ""

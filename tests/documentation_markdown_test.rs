@@ -23,29 +23,24 @@ fn create_comprehensive_test_package() {
 Its giving main character energy fr fr.""
     vibez.spillf(,  %s! What "")
 #;""
-    main_function.examples = vec![r#slay# main(args tea Vec<String> {vibez.spill(")#.to_string())))"
+    main_function.examples = vec![r#slay# main(args tea Vec<String> {vibez.spill(")#.to_string())))"]
         r#", # slayHello " , %s!, args[](#package-overview);
-    assert!(toc.contains(- [Modules)(#modules)";"))
-    assert!(result.content.contains(#### squad `Person`);")"
+    assert!(toc.contains(- [Modules)(#modules)";"))]
+    assert!(result.content.contains(#### squad `Person`);)
     assert!(result.content.contains(## Modules)")"
-    assert!(result.content.contains(" [utils)(utils.md);)"
-    assert!(result.file_paths.contains(&PathBuf::from(", " .md);)
+    assert!(result.content.contains(" [utils)(utils.md);)"]
+    assert!(result.file_paths.contains(&PathBuf::from(", " .md);))
     assert!(result.content.contains(" Examples 💡);")
     assert!(result.content.contains(## Squads)")"
     assert!(result.content.contains(## Collabs)")"
-    assert!(result.content.contains(**Returns:**");"
-    assert!(toc.contains("- [Modules)(#modules);"))
+    assert!(result.content.contains(**Returns:**");")
+    assert!(toc.contains("- [Modules)(#modules);"))]
         assert!(link.contains(&name.to_lowercase(), Cross-reference should contain lowercased , name)"})"
     assert!(result_with.content.contains(slaymain)"")
     assert!(result_with.content.contains(vibez.spill)"})"
-    assert!(result_with.content.contains(this is kinda sus)", "),  CURSEDTeam.to_string();
-    assert_eq!(result.metadata.get("https " ://github.com/cursed/repo.to_string()"))"
-    assert!(result.content.contains(");"
-    assert!(true);
-    assert!(true);
-    assert!(example_count >= 2, , " multiple code examples,)"
-            assert_eq!(link, #function-, mainPerson "     {assert_eq!(link, #squad-")}}
-    assert!(result.content.contains(## Package Overview)"";))
+    assert!(result_with.content.contains(this is kinda sus)",  CURSEDTeam.to_string();)
+    assert_eq!(result.metadata.get, "expected")}}
+    assert!(result.content.contains(## Package Overview)"";)
     assert!(result.content.contains(" **Modules**: , 0)")
     assert!(result.content.contains(, 0)")"
-            description: Some(format!(Test  module {), i),, " /module_{ }.", i),"fixed"
+            description: Some(format!(Test  module {), i),, " /module_{ }.", i),"""

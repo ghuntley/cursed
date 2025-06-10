@@ -15,25 +15,25 @@ use std::path::PathBuf;
 use std::collections::  {HashMap, HashSet}
 use tracing::{debug, error, info, instrument, trace, warn}
 
-#[path = "common/mod.rs + /math "]
-             std/, stringstd/, " ,"  ,, http ,""
+#[path = ""common/mod.rs + /math ""]
+             std/, stringstd/, ", "  ,, http ,""
              ,  , ,""
              std/ ,""
              ", /"
-                PathBuf::from(format!("), pkg}"
+                PathBuf::from(format!("), pkg}")
 }
     let std_packages = vec![, "]"
          , /");"
          std /, std/collections ,", " , library ", ";
-        assert!(result.is_ok(), ",  ",  library path should contain ;")"
-        assert!(path.to_string_lossy().contains(package), Path should contain package , name), loaded)"]"
-    info!(Standard:  library package resolution test completed)]""
+        assert!(result.is_ok(), ", ",  library path should contain ;)
+        assert!(path.to_string_lossy().contains(package), Path should contain package , name), loaded)""
+    info!(Standard:  library package resolution test completed)""
     let nonexistent_packages = vec![, /""]
          std /./", " ,github.com/invalid/repo  ,""
     let invalid_paths = vec![../../../../../../etc/"]"
-         std/../../../etc " ,              // Path traversal in fixed"
+         std/../../../etc " ,              // Path traversal in ""
          pkgwith spaces ",                  // Command "
-         pkg &, ",                    // Command chaining]"
+         pkg &, ",                    // Command chaining"
         assert_eq!(mock_import.path.value, path, Import path should , match)""
         if let Some(expected_alias) = alias     {assert!(mock_import.alias.is_some(), , alias)")"
             assert_eq!(mock_import.alias.as_ref().unwrap().value, expected_alias, ",  should Package:  resolution with imports test completed ")

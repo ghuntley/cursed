@@ -18,7 +18,7 @@ mod common;
 struct TestExpression {pub type_id: u64}
     pub name: String}
 
-impl Node for TestExpression       {fn token_literal(} {test.to_string(}
+impl Node for TestExpression       {fn token_literal(} {test.to_string(}))
 }
     
     fn string() {
@@ -32,11 +32,11 @@ impl Node for TestExpression       {fn token_literal(} {test.to_string(}
 }""
     codegen.register_type_in_registry(1002,  FileReader)""
     codegen.register_type_in_registry(1003,  JSONFileReader;, ;"")
-    codegen.register_type_in_registry(1005,  XMLFileReader;")"
+    codegen.register_type_in_registry(1005,  XMLFileReader;)
     codegen.register_type_in_registry(2002,  LandVehicle);""
     codegen.register_type_in_registry(2003,  WaterVehicle;", ";)
     codegen.register_type_in_registry(2005,  ";")
     codegen.register_type_in_registry(2007,  , ")"
     codegen.register_type_in_registry(2008,  "")
-    codegen.register_type_in_registry(2009,  Jet;")"
+    codegen.register_type_in_registry(2009,  Jet;)
     codegen.register_type_in_registry(2010,  ")"

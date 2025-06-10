@@ -9,7 +9,7 @@
 //! - Complex error chain interactions
 
 use cursed::error::{Error as CursedError, SourceLocation};
-use cursed::runtime::error_handling::{
+use cursed::runtime::error_handling::{*}
     ErrorRuntime, ErrorContext, ErrorPropagationConfig, ErrorHandlingStatistics,
     initialize_error_runtime, get_error_runtime, shutdown_error_runtime
 };
@@ -21,7 +21,7 @@ use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, AtomicBool, AtomicUsize, Ordering};
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 macro_rules! init_tracing {
@@ -39,11 +39,11 @@ fn test_nested_error_propagation() {
     let runtime = get_error_runtime().expect("Runtime should be available");
     
     // Create a deeply nested error scenario
-    let error = CursedError::Runtime("test error".to_string());
+    let error = CursedError::Runtime("test "error".to_string());
     let location = Some(SourceLocation::new(1, 1).with_file("test.csd"));
     let result = runtime.propagate_error(error, location, Some("nested test".to_string()));
     
-    assert!(result.is_err(), "Error propagation should return an error");
+    assert!(result.is_err(), "Error propagation should return an "error");
     
     shutdown_error_runtime().expect("Failed to shutdown error runtime");
 }
@@ -59,12 +59,12 @@ fn test_boundary_error_propagation() {
     // Test with empty error message
     let error = CursedError::Runtime("boundary".to_string());
     let result = runtime.propagate_error(error, None, None);
-    assert!(result.is_err(), "Boundary error propagation should return error");
+    assert!(result.is_err(), "Boundary error propagation should return "error");
     
     // Test with maximum depth
     let error = CursedError::Runtime("depth test".to_string());
     let result = runtime.propagate_error(error, None, None);
-    assert!(result.is_err(), "Deep error propagation should return error");
+    assert!(result.is_err(), "Deep error propagation should return "error");
     
     shutdown_error_runtime().expect("Failed to shutdown error runtime");
 }
@@ -123,11 +123,11 @@ fn test_concurrent_error_propagation() {
     // Spawn multiple threads that propagate errors concurrently
     for i in 0..10 {
         let runtime_clone = Arc::clone(&runtime_arc);
-        let handle = thread::spawn(move || {
+        let handle = thread::spawn(move || {)
             for j in 0..100 {
                 let error = CursedError::Runtime(format!("concurrent mutation test T{} I{}", i, j));
                 let location = Some(SourceLocation::new(i, j).with_file("concurrent.csd"));
-                let _ = runtime_clone.propagate_error(
+                let _ = runtime_clone.propagate_error()
                     error, 
                     location, 
                     Some(format!("thread {} iteration {}", i, j))
@@ -153,18 +153,13 @@ fn test_international_error_messages() {
     initialize_error_runtime().expect("Failed to initialize error runtime");
     let runtime = get_error_runtime().expect("Runtime should be available");
     
-    let test_messages = vec![
-        "错误信息 (Chinese error message)",
-        "エラーメッセージ (Japanese error message)",
-        "сообщение об ошибке (Russian error message)",
-        "🚨 Emoji error message 🔥",
-        "Mixed: 错误 エラー ошибка 🚨",
-        "Unicode escapes: \u{1F4A9}\u{1F525}\u{1F92F}",
-    ];
+    let test_messages = vec![]
+        "错误信息 (Chinese error message)", "エラーメッセージ (Japanese error message)", "сообщение об ошибке (Russian error message)", "🚨 Emoji error message 🔥", "Mixed: 错误 エラー ошибка 🚨", "Unicode escapes: \u{1F4A9}\u{1F525}\u{1F92F}",
+    ;
     
     for (i, message) in test_messages.iter().enumerate() {
         let error = CursedError::Runtime(message.to_string());
-        let location = Some(SourceLocation::new(i, i)
+        let location = Some(SourceLocation::new(i, i))
             .with_file(&format!("international_{}.csd", i)));
         let result = runtime.propagate_error(error, location, Some(format!("intl test {}", i)));
         
@@ -185,7 +180,7 @@ fn test_error_propagation_after_shutdown() {
     // First propagate a normal error
     let error1 = CursedError::Runtime("before shutdown".to_string());
     let result1 = runtime.propagate_error(error1, None, None);
-    assert!(result1.is_err(), "Error propagation before shutdown should return error");
+    assert!(result1.is_err(), "Error propagation before shutdown should return "error");
     
     // Shutdown the runtime
     shutdown_error_runtime().expect("Failed to shutdown error runtime");
@@ -238,7 +233,7 @@ fn test_error_context_metadata() {
     let result = runtime.propagate_error(error, location, Some("metadata context".to_string()));
     
     // Test metadata handling
-    assert!(result.is_err(), "Error propagation should return error");
+    assert!(result.is_err(), "Error propagation should return "error");
     let display_string = format!("{}", result.unwrap_err());
     assert!(display_string.contains("metadata test"), "Error should contain metadata context");
     
@@ -284,7 +279,7 @@ fn test_error_storage_conflicts() {
         let runtime_clone = Arc::clone(&runtime_arc);
         let map_clone = conflict_map.clone();
         
-        let handle = thread::spawn(move || {
+        let handle = thread::spawn(move || {)
             for j in 0..50 {
                 {
                     let mut map = map_clone.lock().unwrap();
@@ -345,16 +340,16 @@ fn test_error_context_lifecycle() {
     let runtime = get_error_runtime().expect("Runtime should be available");
     
     // Create a context and then try to use it after potential cleanup
-    let error1 = CursedError::Runtime("lifecycle error".to_string());
+    let error1 = CursedError::Runtime("lifecycle "error".to_string());
     let result1 = runtime.propagate_error(error1, None, None);
-    assert!(result1.is_err(), "Initial error propagation should return error");
+    assert!(result1.is_err(), "Initial error propagation should return "error");
     
     // Force some cleanup scenarios
     thread::sleep(Duration::from_millis(10));
     
     let error2 = CursedError::Runtime(format!("lifecycle test {}", 2));
     let result2 = runtime.propagate_error(error2, None, None);
-    assert!(result2.is_err(), "Error propagation after potential cleanup should return error");
+    assert!(result2.is_err(), "Error propagation after potential cleanup should return "error");
     
     shutdown_error_runtime().expect("Failed to shutdown error runtime");
 }
@@ -378,7 +373,7 @@ fn test_complex_error_chains() {
                 _ => CursedError::Runtime(format!("default context error {}", depth)),
             };
             
-            let location = Some(SourceLocation::new(depth, variant)
+            let location = Some(SourceLocation::new(depth, variant))
                 .with_file(&format!("chain_{}_{}.csd", depth, variant)));
             let context = Some(format!("chain depth {} variant {}", depth, variant));
             

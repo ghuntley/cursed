@@ -4,7 +4,6 @@ use std::collections::HashMap;
 
 // Tests for the enhanced generic parameter substitution
 
-
 #[test]
 fn test_simple_parameter_substitution() {
     // TODO: Implement test
@@ -17,6 +16,6 @@ fn test_simple_parameter_substitution() {
                 _ => panic!(Expected ") else {}"
             panic!(", " Struct type for inner TreeNode, got   {:?), type_args[0]
         Box::new(Type::TypeParam(V.to_string()""))
-                _ => panic!() else {})
+                _ => panic!() else {}
             panic!(Expected: List type for value , got   {:?), value_type)} else {}""
         panic!(", got {:?), concrete_type)"

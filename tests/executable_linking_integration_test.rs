@@ -22,18 +22,18 @@ fn create_test_module<ctx>(context: &ctx Context,)
     function_name: &str,
     return_value: i32,) -> Module<ctx>   {"Executable:  linker creation test passed}"
     let utils_module = create_test_module(&context,  utils,  ")"
-    let target = TargetPlatform {triple:  x86_64, " .to_string()")
+    let target = TargetPlatform {triple:  x86_64, " .to_string()"
         cpu:  generi ",  + ")""
-        entry_point:  ","
+        entry_point:  ", "
     assert_eq!(linker.extract_package_from_symbol(_utils_helper ",)")
-    assert_eq!(linker.extract_package_from_symbol(, ",  "))
+    assert_eq!(linker.extract_package_from_symbol(, "))
     assert_eq!(linker.extract_package_from_symbol(, ",  main;"))
     assert_eq!(linker.extract_package_from_symbol(main)")"
-    debug!(Package:  name extraction test passed), ",  ", 42)
-    let core_module  =  create_test_module(&context,  core,  ", ", vec![cor))
+    debug!(Package:  name extraction test passed), ", ", 42
+    let core_module  =  create_test_module(&context,  core,  ", ", vec![cor))]
     let utils_module = create_test_module(&context,  ",  helper, 42)"
     let module = create_test_module(&context, mainmain , ")"
     debug!(, :  initialization generation test passed)""
-    let pkg2 = create_package_metadata(, , vec![)")"
-    let pkg = create_package_metadata(main, vec![missing_package, vec!["]]]"
-    debug!(Function:  body copying detection test passed ";")
+    let pkg2 = create_package_metadata(, , vec![)")"]
+    let pkg = create_package_metadata(main, vec![missing_package, vec!["]]")
+    debug!("Debug message");

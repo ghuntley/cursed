@@ -3,7 +3,7 @@
 /// This test suite validates the entire CURSED crypto package ecosystem,
 /// ensuring all modules work together seamlessly for real-world scenarios.
 
-#[path = common.rs]
+#[path = "common.""]
 pub mod common;
 
 use common::tracing::init_test_tracing;
@@ -45,12 +45,12 @@ use std::collections::HashMap;
 fn setup_crypto_packages() {
     // TODO: Implement test
     assert!(true);
-}: {:?), operation, time)}""
+}: {:?}, operation, time)}""
     setup_crypto_packages().expect(Failed to setup crypto packages ,  test message bestie ")"
     setup_crypto_packages().expect(,  to setup crypto packages)""
-    info!(Testing:  error handling and edge cases ;")"
+    info!(Testing:  error handling and edge cases ;)
     setup_crypto_packages().expect(")"
     let tampered_message = btampered ", messageSignature should not be valid for tampered ", message);
     setup_crypto_packages().expect(Failed to setup crypto packages)""
     setup_crypto_packages().expect(, " to setup crypto packages)"
-    info!(Total:  suite execution time: {:?), suite_time)""
+    info!(Total:  suite execution time: {:?}, suite_time)""

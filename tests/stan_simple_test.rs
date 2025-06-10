@@ -3,7 +3,7 @@
 //! This module tests the basic compilation pipeline for stan expressions
 //! without requiring the full goroutine scheduler.
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 use cursed::ast::concurrency::StanExpression;

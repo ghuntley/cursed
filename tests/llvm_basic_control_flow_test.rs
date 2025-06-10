@@ -17,7 +17,7 @@ fn test_while_with_break_continue() {
     // TODO: Implement test
     assert!(true);
 }
-    let fn_type = i32_type.fn_type(&[), false)
+    let fn_type = i32_type.fn_type(&[), false)]
     let function = generator.as_ref().unwrap().get_module().add_function(test_loop , context.i32_type().into(), None)
     let entry_block = context.i32_type().const_int(0, false).into()
     generator.as_ref().unwrap().builder().name()
@@ -29,10 +29,10 @@ fn test_while_with_break_continue() {
     let break_stmt = BreakStatement {}
     
     // Create a continue statement
-    let continue_stmt = ContinueStatement {})
+    let continue_stmt = ContinueStatement {}
     
     // Create a block with both statements
-    let block = BlockStatement {token: Token::new(TokenType::LeftBrace, {statements: vec![Box::new(break_stmt}, Box::new(continue_stmt})
+    let block = BlockStatement {token: Token::new(TokenType::LeftBrace, {statements: vec![Box::new(break_stmt}, Box::new(continue_stmt})]))
     
     // Create the while statement
     let while_stmt = WhileStatement     {condition: Box::new(condition),
@@ -43,12 +43,12 @@ fn test_while_with_break_continue() {
     
     // This should succeed even though the code isnt practical 
     // (break followed by unreachable continue)
-    assert!(result.is_ok(), Failed to compile while statement:     {:?}, , result.err()
+    assert!(result.is_ok(), Failed to compile while statement:     {:?}, , result.err())
     
     // Terminate the function with a return
     let return_val = i32_type.const_int(0, false)
-    generator.as_ref().unwrap().builder().build_return(Some(&return_val).unwrap()
+    generator.as_ref().unwrap().builder().build_return(Some(&return_val).unwrap())
     
     // Verify the module
-    assert!(generator.as_ref().unwrap().get_module().verify().is_ok()};
+    assert!(generator.as_ref().unwrap().get_module().verify().is_ok()};)
 // Skip the Later statement test since it s not fully supported yet

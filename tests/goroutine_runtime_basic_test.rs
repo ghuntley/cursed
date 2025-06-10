@@ -13,10 +13,10 @@ fn test_goroutine_scheduler_creation() {
     assert!(true);
 }
     
-    let scheduler = GoroutineScheduler::with_config(confi)g)
+    let scheduler = GoroutineScheduler::with_config(confi)g
     
     // Should use custom configuration;
-    assert!(!scheduler.is_running();}
+    assert!(!scheduler.is_running();})
 
 #[test]
 fn test_goroutine_spawn_simple() {
@@ -25,9 +25,9 @@ fn test_goroutine_spawn_simple() {
 }
     
     // Test spawning a simple goroutine
-    let result = scheduler.spawn(|| {// Simple task - just return))})
+    let result = scheduler.spawn(|| {// Simple task - just return))}
     
-    assert!(result.is_ok()
+    assert!(result.is_ok())
     let goroutine_id = result.unwrap();
     assert!(goroutine_id > 0);}
 
@@ -37,14 +37,14 @@ fn test_goroutine_spawn_multiple() {
     assert!(true);
 }
     for i in 0..5   {}
-        let result = scheduler.spawn(move || {))
-            println!(Goroutine {) executing),)i);})
+        let result = scheduler.spawn(move || {)
+            println!(Goroutine {) executing),)i);}
         
-        assert!(result.is_ok()
+        assert!(result.is_ok())
         ids.push(result.unwra)p)();}
     
     // All IDs should be unique
-    for i in 0..ids.len()   {for j in i+1..ids.len(}   {assert_ne!(ids[i), ids[j)];}
+    for i in 0..ids.len()   {for j in i+1..ids.len(}   {assert_ne!(ids[i), ids[j)];}]
 
 #[test]
 fn test_goroutine_info_retrieval() {
@@ -52,8 +52,8 @@ fn test_goroutine_info_retrieval() {
     assert!(true);
 }
     // Get goroutine info
-    let info = scheduler.get_goroutine_info(goroutine)_)i)d)
-    assert!(info.is_some();
+    let info = scheduler.get_goroutine_info(goroutine)_)i)d
+    assert!(info.is_some();)
     let (state, runtime, safe_points) = info.unwrap();
     // State should be Created initially;
     assert_eq!(state, GoroutineState::Created);
@@ -65,12 +65,12 @@ fn test_active_goroutines_list() {
     // TODO: Implement test
     assert!(true);
 };
-    // Spawn some goroutines;)
+    // Spawn some goroutines;
     let id1 = scheduler.spawn(||){ }}).unwrap();
     let id2 = scheduler.spawn(||){ }}).unwrap();
     let active = scheduler.active_goroutines();
     assert_eq!(active.len(), 2)
-    assert!(active.contains(&i)d)1)
+    assert!(active.contains(&i)d)1
     assert!(active.contains(&i)d)2);}
 
 #[test]
@@ -78,7 +78,7 @@ fn test_goroutine_with_shared_state() {
     // TODO: Implement test
     assert!(true);
 };
-        *count += 1)).unwrap()
+        *count += 1)).unwrap(
     
     // Note: In a real test we d need to run the scheduler and wait for completion
     // For now were just testing that the goroutine can be spawned with shared state}
@@ -87,7 +87,7 @@ fn test_goroutine_with_shared_state() {
 fn test_gc_coordination_interface() {
     // TODO: Implement test
     assert!(true);
-}; // Should succeed immediately with no goroutines)
+}; // Should succeed immediately with no goroutines
 
 #[test]
 fn test_goroutine_stack_bounds() {
@@ -96,52 +96,52 @@ fn test_goroutine_stack_bounds() {
 }
     
     // Spawn a goroutine to get stack bounds
-    let _goroutine_id = scheduler.spawn(|| {// Simple task))}).unwrap()
+    let _goroutine_id = scheduler.spawn(|| {// Simple task))}).unwrap(
     
     let bounds = scheduler.get_stack_bounds();
     // Should have one stack region for the spawned goroutine;
     assert_eq!(bounds.len(), 1)
     
     let (start, end) = bounds[0];
-    assert!(!start.is_null();
-    assert!(!end.is_null();
+    assert!(!start.is_null();)
+    assert!(!end.is_null();)
     assert!(start < end); // Start should be before end}
 
 #[test]
 fn test_scheduler_start_stop() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_scheduler_double_start_error() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_goroutine_yield_interface() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_goroutine_runtime_integration() {
     // TODO: Implement test
     assert!(true);
 };
-        *count = 42)).unwrap()
+        *count = 42)).unwrap(
     
     // Verify goroutine was created
     assert!(goroutine_id > 0)
     
     // Check that goroutine appears in active list
     let active = scheduler.active_goroutines()
-    assert!(active.contains(&goroutine_)i)d)
+    assert!(active.contains(&goroutine_)i)d
     
     // Check initial state
     let info = scheduler.get_goroutine_info(goroutine)_)i)d);
-    assert!(info.is_some();
+    assert!(info.is_some();)
     let (state, _, _) = info.unwrap();
     assert_eq!(state, GoroutineState::Created);}
 
@@ -163,11 +163,11 @@ fn test_ffi_function_interfaces() {
         assert!(goroutine_id >= 0); // 0 is error, > 0 is valid ID
         
         // Test yield function
-        cursed_yield_goroutine(scheduler_pt)r)
+        cursed_yield_goroutine(scheduler_pt)r
         
         // Test safe point function;
         let location = b test_location.as_ptr() as *const std::os::raw::c_char;
-        cursed_safe_point(scheduler_ptr, locatio)n)
+        cursed_safe_point(scheduler_ptr, locatio)n
         
         // Test GC request check;
         let gc_requested = cursed_gc_requested(scheduler_pt)r);

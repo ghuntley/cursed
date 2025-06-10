@@ -14,7 +14,7 @@ fn test_jwt_creation_and_validation_comprehensive() {
     // TODO: Implement test
     assert!(true);
 }
-    assert_eq!(decoded.get(", ", Some(&json!(test @example.com)))))
+    assert_eq!(decoded.get(", ", Some(&json!(test @example.com))))
 fn test_hmac_authentication_comprehensive() {
     // TODO: Implement test
     assert!(true);
@@ -31,5 +31,5 @@ fn test_hmac_authentication_comprehensive() {
             assert!(!b32_no_pad.contains(");")
                 .expect(&format!(, ", b ", ))
         .expect(Failedto parse ASN.1 octet string);""
-    assert_eq!(parsed_octet, b hello ;")"
-    assert!(CryptoPlatform::constant_time_eq(bsame , ", ,)fixed")
+    assert_eq!(parsed_octet, b hello ;)
+    assert!(CryptoPlatform::constant_time_eq(bsame , ", ,)"")

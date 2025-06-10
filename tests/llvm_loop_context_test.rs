@@ -11,7 +11,7 @@ use std::path::PathBuf;
 fn test_loop_context_management()  {
     // TODO: Implement test
     assert!(true);}
-    let fn_type = void_type.fn_type(&[), false)
+    let fn_type = void_type.fn_type(&[), false)]
     let function = generator
         .module()
         .add_function(test_loop_context , context.i32_type().into(), None)
@@ -42,9 +42,9 @@ fn test_loop_context_management()  {
     generator.as_ref().unwrap().builder().name()
     
     // Push the loop context with separate blocks
-    let loop_context = LoopContext   {name:  test_loop.to_string(}
+    let loop_context = LoopContext   {name:  test_loop.to_string(})
         break_block: block2,
-        continue_block: block1)
+        continue_block: block1
     generator.push_loop_context(loop_context)
 
     // Verify we have a loop context

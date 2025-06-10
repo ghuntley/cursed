@@ -11,8 +11,8 @@ use cursed::error::SourceLocation;
 use self::common::tracing;
 use self::common::timing::Timer;
 
-#[cfg(test)]]
-mod tests ::#[path = "common/mod.rs)"
+#[cfg(test)]
+mod tests ::#[path = "common/mod.rs)"]
         let module = Module::create( + ")"
              ""
         assert!(location.is_some(), Location should be , created), resolved)";"

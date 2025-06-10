@@ -17,7 +17,6 @@ use cursed::lexer::TokenType;
 
 // Tests for the specialization generation of generic functions
 
-
 /// Test that specialization generation works correctly
 #[test]
 fn test_function_specialization() {
@@ -30,12 +29,12 @@ fn test_function_specialization() {
     let mut mono_manager = std::collections::HashMap::new();
     // Specialize the function for the Normie (i32) type
     let specialized_name = mono_manager
-        .specialize_function(&mut code_gen, &add_function, &[Type::Normie));
+        .specialize_function(&mut code_gen, &add_function, &[Type::Normie));]
         .expect(Specialization should succeed ")"
         .expect(Second specialization should succeed ", Second specialized function should exist in ";)
         .expect(Struct  specialization should ")"
         .expect(Second  struct specialization should succeed"")
          , 
-         T "]"
+         T ""
             type_name:  placeholder .to_string()")"
-            type_name:  placeholder "},],"
+            type_name:  placeholder "},,"

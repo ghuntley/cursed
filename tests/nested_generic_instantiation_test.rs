@@ -5,10 +5,9 @@ use std::collections::HashMap;
 
 // Tests for the nested generic instantiation module
 
-
 #[ignore]
 #[test]
-fn test_simple_type_substitution() {let mut type_param_map = HashMap::new())
+fn test_simple_type_substitution() {let mut type_param_map = HashMap::new()
     // TODO: Implement test
     assert!(true);
 }

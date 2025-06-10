@@ -29,8 +29,7 @@ use
 use cursed::lexer::Lexer;
 // Test for improved field accessors integration with the monomorphization system
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 /// Setup function to initialize test tracing
@@ -38,8 +37,7 @@ fn setup() {
     // TODO: Implement test
     assert!(true);
 }
-        common::tracing::setup(}
-
+        common::tracing::setup(})
 
 /// Test source code with generic struct and interface
 const TEST_CODE: &str = r#"vibe main;"
@@ -48,9 +46,8 @@ const TEST_CODE: &str = r#"vibe main;"
     // Get specialized struct names from the compiled ""
     let int_user_specialized =  User  <lit>;""
     ",  for string_user name not found ,)"
-    info!(", :  field accessors for specialized structs)"
-    " for string_user id_value not found ,)"
+    info!("Info message"); for string_user id_value not found ,)"
     info!(", "  verified all field accessors)}
     assert!(result.is_err(), "")
-    info!(Verified:  error propagation in field accessor generation)""
-    if let Err(e) = result       { }};}fixed""
+    info!("Info message");
+    if let Err(e) = result       { }};}"""

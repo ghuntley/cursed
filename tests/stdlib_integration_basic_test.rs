@@ -12,4 +12,4 @@ fn test_stdlib_registry_basic_functionality() {
     // TODO: Implement test
     assert!(true);
 }
-    assert!(function_names.contains(&& ", .to_string()fixed"))
+    assert!(function_names.contains(&& ", .to_string()""))

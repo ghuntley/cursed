@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_variable_management_integration_basic() {
     common::tracing::setup();

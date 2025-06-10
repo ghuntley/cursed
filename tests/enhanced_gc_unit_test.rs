@@ -12,22 +12,21 @@ use std::time::::Duration, Instant;
 use std::thread;
 use tracing::{info, debug, error, warn}
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Test object for heap management validation
-#[derive(Debug, Clone]]
+#[derive(Debug, Clone])
 struct HeapTestObject {id: u32}
     data: Vec<u8>,
     refs: Vec<Arc<Mutex<HeapTestObject>>>}
 
-impl HeapTestObject     {fn new(} {Self {id,}}}
-            data: vec![0u8; siz)
-    fn test_memory_fragmentation_handling(} {
+impl HeapTestObject     {fn new(} {Self {id,}}})
+            data: vec![0u8; siz)]
+    fn test_memory_fragmentation_handling() {
     // TODO: Implement test
     assert!(true);}, e),, "  fragmentation handling test passed)";}
-        info!(")"
-        info!(, "  GC configuration);"GC:  configuration test passed);}""
+        info!("Info message");  GC configuration);"GC:  configuration test passed);}""
         debug!(", :  memory pressure: {:?), pressure);"
         info!(", :  metrics test passed);"
         info!(", :  statistics test passed);"

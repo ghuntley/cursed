@@ -8,8 +8,7 @@ use cursed::error::Error;
 use cursed::object::Object as CursedObject;
 // use cursed::object::ObjectRef; // Not available, using Object instead
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 // Initialize tracing setup for tests

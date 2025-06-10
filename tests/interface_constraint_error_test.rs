@@ -11,19 +11,17 @@ use cursed::error_enhanced::ErrorKind;
 // This module tests the enhanced error messages generated
 // when type constraints are not satisfied.
 
-
 // Init tracing once
 static INIT: Once = Once::new();
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 pub mod tracing_setup;
 
 // Macro for initializing tracing in tests
 macro_rules! init_tracing {
     () => {
-        INIT.call_once(|| {tracing_setup::init_test_tracing(
+        INIT.call_once(|| {tracing_setup::init_test_tracing())
     };
 })}
-
 
 // Import required test utilities
 
@@ -32,14 +30,13 @@ macro_rules! init_tracing {
 fn test_constraint_error() {
     // TODO: Implement test
     assert!(true);
-})
+}
     
     // Check for parser errors
-    
-    
+
     // Run the program with default JIT options
     let options = JitOptions::default();
-        .with_main_args(vec![](items [)T) []T {return items  // Simplified for testing})
+        .with_main_args(vec![](items [)T) []T {return items  // Simplified for testing})]
         
         // Main function that will trigger a constraint error
         slay main() tea   {}

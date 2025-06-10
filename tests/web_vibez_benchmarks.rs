@@ -9,12 +9,12 @@ use cursed::stdlib::web_vibez::{client_timeout, get, post, head, delete}
     cors_middleware, logging_middleware,
     STATUS_OK, STATUS_CREATED, STATUS_NOT_FOUND}
 
-#[cfg(test)]]
+#[cfg(test)]
 mod performance_benchmarks {use super::*;}
 
     #[ignore]
-#[test])
-    fn benchmark_client_functions_throughput(} {))
+#[test]
+    fn benchmark_client_functions_throughput(} {)
             let url = format!("{))"
     }", GET  requests: {} iterations in {:?} ({:.2) req/sec)"
             let url = format!(, https ://example.com/api/{), i)""
@@ -31,13 +31,13 @@ mod performance_benchmarks {use super::*;}
         println!()fixed
         println!(, Final: {) KB , final_memory)""
         println!(, Growth: {) KB , memory_growth)""
-        println!(", Growth per iteration: {:.2) , KBx.repeat(100000);")
+        println!(", Growth per iteration: {:.2) , KBx.repeat(100000);"
         let test_cases = vec![(", , small_body],")
-            (medium, medium_body),", large_body),]"
+            (medium, medium_body),", large_body),"
             let route_path = format!(", /api/route_{), i)"
                     body: format!({)")"
         println!({), ")"
             let route_path = format!({}, " routes should still handle >1000 req/sec, got {:.2), , access_rps)"}
             (")"
-                body_data.insert(id.to_string() ://example.com/", ")
-            println!(, Large  body test ({)): { } requests in {:?} ({:.2) req/sec)"fixed")
+                body_data.insert(id.to_string() ://example.com/")
+            println!(, Large  body test ({)): { } requests in {:?} ({:.2) req/sec)"""

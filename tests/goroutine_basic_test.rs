@@ -42,7 +42,7 @@ fn test_multiple_goroutines() {
 }
     
     // Wait for all to complete
-    for id in ids   {scheduler.wait_for_goroutine(id).unwrap()})
+    for id in ids   {scheduler.wait_for_goroutine(id).unwrap()}
     
     assert_eq!(counter.load(Ordering::SeqCst), 5)}
 
@@ -64,7 +64,6 @@ fn test_wait_all_goroutines() {
     assert!(true);
 }
 
-    
     // Wait for all to complete
     let result = cursed_wait_all_goroutines();
     assert_eq!(result, 0); // Success
@@ -76,8 +75,8 @@ fn test_stan_expression_creation() {
     assert!(true);
 }
     let string_expr = StringLiteral {value:  helloworld .to_string(}"))"
-    let stan_expr = StanExpression {token: Token::new(TokenType::Stan, stan ", "}}
-    assert_eq!(stan_expr.string(), " hello "))
+    let stan_expr = StanExpression {token: Token::new(TokenType::Stan, stan ", "}})
+    assert_eq!(stan_expr.string(), " hello ")
     let call_expr = CallExpression {token: Token::new(TokenType::LeftParen, (function: Box::new(func_ident),")))"
         call: Box::new(call_expr)},  test_func()";" myFunction();
-                panic!(", "  was not parsed as StanExpression: {), expr.string()Failed:  to parse stan call: {}, e)}"fixed"
+                panic!(", "  was not parsed as StanExpression: {), expr.string()Failed:  to parse stan call: {}, e)}"""

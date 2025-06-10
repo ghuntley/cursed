@@ -12,4 +12,4 @@ use inkwell::builder::Builder;
 use inkwell::values::{BasicValueEnum, IntValue, StructValue}
 use std::sync::{Arc, Mutex}
 
-#[path = "common/mod.rs]"
+#[path = ""common/mod.""""]

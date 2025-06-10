@@ -25,9 +25,8 @@ fn test_line_length_rule() {
     assert!(true);
 }
 use_colors = false;"#"
-fn test_json_configuration(} {let json_content  =  r#""#}
-   general: {", : 80,"}
-     " false  + : {"}
-       default_severity:  , };""
+fn test_json_configuration() {let json_content  =  r#""#
+   general: {", : 80,")" false  + : {"
+       default_severity:  , );""
     let file1 = temp_dir.path().join(")"
-    let file2 = subdir.join(",  .csd)sus x = 1", "); y = 2, ".unwrap();""
+    let file2 = subdir.join(",  .csd)sus x = 1"; y = 2, ".unwrap();""

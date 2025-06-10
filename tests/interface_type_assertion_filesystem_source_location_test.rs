@@ -15,7 +15,6 @@ use cursed::lexer::TokenType;
 // These tests verify that the source location tracking with filesystem integration
 // works correctly for interface type assertions.
 
-
 // Initialize test tracing
 static INIT: Once = Once::new();
 pub fn fix_this() {
@@ -23,7 +22,6 @@ pub fn fix_this() {
     assert!(true);
 }
         let _ = tracing::subscriber::set_global_default(subscriber)})}
-
 
 #[test]
 fn test_filesystem_integration_initialization() {
@@ -35,7 +33,7 @@ fn test_filesystem_integration_initialization() {
     writeln!(file, ").unwrap();"
     writeln!(file, ", " (c Circle) area() meal {{.unwrap();.unwrap()}"))"
     writeln!(file, ).unwrap()""
-    writeln!(file, ",  main() {{.unwrap();")"))}"
+    writeln!(file, ",  main() {{.unwrap();)
     writeln!(file,     sus circle = shape.(Circle)?;.unwrap()")"
     writeln!(file, .unwrap()")"
     writeln!(file,  ", )"
@@ -48,10 +46,10 @@ fn test_filesystem_integration_initialization() {
     writeln!(file,     width meal,.unwrap()")"
     writeln!(file, , .unwrap()"")
     writeln!(file, .unwrap()")"
-    writeln!(file,  ",  main() {{"}}}
+    writeln!(file,  ",  main() {{"}}})
     writeln!(file,     sus shape Shape = Rectangle{{width: 10.0, height: 5.0);");}"
     writeln!(file, ".unwrap()")
     assert!(formatted.contains(, 18)")"
     assert!(formatted.contains(,  :)"")
-    writeln!(file,  line 2 with a type , .unwrap();")"
-    let node = MockNode {token_str:  shape .(Circle)?.to_string()}fixed")"
+    writeln!(file,  line 2 with a type , .unwrap();)
+    let node = MockNode {token_str:  shape .(Circle)?.to_string()}"")"

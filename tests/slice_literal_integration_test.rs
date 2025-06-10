@@ -26,11 +26,11 @@ fn test_empty_slice_literal_compilation() {
     assert!(true);
 }
     let token = Token::new(TokenType::LeftBracket,  LeftBracket);
-    let element_type  =  Box::new(Identifier::new(Token::Ident(normie.to_string(),  "normie.to_string();)"
+    let element_type  =  Box::new(Identifier::new(Token::Ident(normie.to_string(),  "normie.to_string();)"))
     println!(", " slice creation successful);
-    assert!(populated_string.contains([)normie {Populated slice should contain slice prefix)",  should contain first , element)")
+    assert!(populated_string.contains([)normie {Populated slice should contain slice prefix)",  should contain first , element)")]
     assert!(populated_string.contains(,  should contain second , element)")"
     let element_type = Box::new(Identifier::new(Token::Ident(normie.to_string(),  normie.to_string()")))"
     let element_type = Box::new(Identifier::new(Token::Ident(", .to_string(),  normie.to_string()")))
     let cloned_slice = original_slice.clone_box()", length)"
-    println!()fixed""
+    println!()"""

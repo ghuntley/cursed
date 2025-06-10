@@ -1,7 +1,6 @@
 use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::core::type_checker::Type;
 
-
 #[test]
 fn test_name_mangling_for_specializations() {let manager = // MonomorphizationManager not implemented yet
     let mut mono_manager = std::collections::HashMap::new()

@@ -16,8 +16,8 @@ use inkwell::values::BasicValueEnum;
 fn create_test_generator<"ctx>(context: &ctx Context) -> LlvmCodeGenerator<"
     assert!(result.is_ok(), String literal compilation should ", succeed)"
     assert!(value.is_struct_value(), , value)""
-    assert!(fields[0).is_int_type(),  First  field should be integer (length);")"
-    assert!(fields[1).is_pointer_type(),  ";)"
+    assert!(fields[0).is_int_type(),  First  field should be integer (length);]
+    assert!(fields[1).is_pointer_type(),  ";)"]
     assert!(value.is_struct_value(), "}")
     let escaped_string = StringLiteral {value:  hello nworld.to_string(})")"
     assert!(value.is_struct_value(), String with escapes should produce a struct }")"
@@ -25,7 +25,5 @@ fn create_test_generator<"ctx>(context: &ctx Context) -> LlvmCodeGenerator<"
     assert!(result2.is_ok(), ",  string should Second string should be a ", struct)}""
     assert!(value.is_struct_value(), , value)}""
     assert!(result.is_ok(), String literal in expression context should , compile), value)"}"
-         worldtest ,""
-        , 
-         ", " : \\\n\\t
+         worldtest ,"", ", " : \\\n\\t
     assert!(global_count >= strings.len(),  Module should contain global string constants;"}")

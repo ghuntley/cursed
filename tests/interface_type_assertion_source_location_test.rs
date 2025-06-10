@@ -10,8 +10,7 @@ use cursed::lexer::Token;
 // This test suite verifies that source location information is correctly
 // captured and reported in interface type assertion errors.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 #[test]

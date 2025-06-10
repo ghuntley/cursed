@@ -10,10 +10,10 @@ use cursed::lexer::Lexer;
 use cursed::ast::channel_range::  :: ChannelRangeForStatement, ChannelRangeClause;
 use cursed::ast::Statement;
 
-#[cfg(test)]]
+#[cfg(test)]
 mod tests ::use super::*;
     
-    #[test])
+    #[test]
     fn test_channel_range_parse_simple() {
     // TODO: Implement test
     assert!(true);

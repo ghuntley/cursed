@@ -7,7 +7,6 @@ use cursed::ast::{Expression, Node}
 // These tests verify that the RangeExpression struct correctly implements
 // the Node trait, ensuring it can be properly used in the AST.
 
-
 #[test]
 fn test_range_expression_node_implementation() {
     // TODO: Implement test
