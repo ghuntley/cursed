@@ -471,6 +471,101 @@ impl Statement for AssignmentStatement {
     }
 }
 
+/// Panic statement for error throwing (yeet_error message)
+#[derive(Debug, Clone)]
+pub struct PanicStatement {
+    pub token: String,
+    pub message: Box<dyn Expression>,
+}
+
+impl PanicStatement {
+    pub fn new(token: String, message: Box<dyn Expression>) -> Self {
+        Self { token, message }
+    }
+}
+
+impl Node for PanicStatement {
+    fn string(&self) -> String {
+        format!("yeet_error {}", self.message.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for PanicStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(PanicStatement {
+            token: self.token.clone(),
+            message: self.message.clone_box(),
+        })
+    }
+}
+
+/// Recovery statement for error catching (catch { ... })
+#[derive(Debug, Clone)]
+pub struct RecoveryStatement {
+    pub token: String,
+    pub protected_block: Box<dyn Statement>,
+    pub recovery_block: Option<Box<dyn Statement>>,
+    pub error_variable: Option<Identifier>,
+}
+
+impl RecoveryStatement {
+    pub fn new(token: String, protected_block: Box<dyn Statement>) -> Self {
+        Self {
+            token,
+            protected_block,
+            recovery_block: None,
+            error_variable: None,
+        }
+    }
+    
+    pub fn with_recovery(mut self, recovery_block: Box<dyn Statement>) -> Self {
+        self.recovery_block = Some(recovery_block);
+        self
+    }
+    
+    pub fn with_error_var(mut self, error_variable: Identifier) -> Self {
+        self.error_variable = Some(error_variable);
+        self
+    }
+}
+
+impl Node for RecoveryStatement {
+    fn string(&self) -> String {
+        let mut result = format!("catch {{ {} }}", self.protected_block.string());
+        if let Some(recovery) = &self.recovery_block {
+            result.push_str(&format!(" recover {{ {} }}", recovery.string()));
+        }
+        result
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for RecoveryStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(RecoveryStatement {
+            token: self.token.clone(),
+            protected_block: self.protected_block.clone_box(),
+            recovery_block: self.recovery_block.as_ref().map(|r| r.clone_box()),
+            error_variable: self.error_variable.clone(),
+        })
+    }
+}
+
 /// Helper functions for creating statement nodes
 pub fn let_stmt(name: &str, value: Option<Box<dyn Expression>>) -> LetStatement {
     LetStatement::new(
@@ -486,6 +581,14 @@ pub fn return_stmt(value: Option<Box<dyn Expression>>) -> ReturnStatement {
 
 pub fn expr_stmt(expression: Box<dyn Expression>) -> ExpressionStatement {
     ExpressionStatement::from_expr(expression)
+}
+
+pub fn panic_stmt(message: Box<dyn Expression>) -> PanicStatement {
+    PanicStatement::new("yeet_error".to_string(), message)
+}
+
+pub fn recovery_stmt(protected_block: Box<dyn Statement>) -> RecoveryStatement {
+    RecoveryStatement::new("catch".to_string(), protected_block)
 }
 
 // Control flow statements module

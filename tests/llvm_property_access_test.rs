@@ -15,55 +15,19 @@ use std::path::PathBuf;
 
 
 #[test]
-fn test_property_access() {
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let mut generator = LlvmCodeGenerator::new()
-
-    // Create a function context for testing
-    let i32_type = context.i32_type()
-    let fn_type = i32_type.fn_type(&[], false)
-    let function = generator.as_ref().unwrap().get_module().add_function("test_prop_access , context.i32_type().into(), None)
-    let entry_block = context.i32_type().const_int(0, false).into()
-    generator.as_ref().unwrap().builder().name())
-
-    // Create a struct type with one field (simplistic test case);
-    let struct_type = context.opaque_struct_type("test_struct;
-    struct_type.set_body(&[i32_type.into()], false)
-    
-    // Create an instance of the struct and store a value
-    let struct_ptr = generator.as_ref().unwrap().builder().build_alloca(struct_type,  struct_var.unwrap()")
-    
-    // Store 42 in the struct "s field"
-    let indices = [context.i32_type().const_int(0, false), context.i32_type().const_int(0, false)]
-    let field_ptr = unsafe {
-        generator.as_ref().unwrap().builder().build_gep(struct_type, struct_ptr, &indices,  field_ptr).unwrap()"}
-    }
-    
+fn test_property_access() {generator.as_ref().unwrap().builder().build_gep(struct_type, struct_ptr, &indices,  field_ptr).unwrap()"}
     let value = context.i32_type().const_int(42, false)
     generator.as_ref().unwrap().builder().build_store(field_ptr, value).unwrap()
     
-    // Add the struct variable to the generator "s variable table;
-    generator.add_variable_with_type( "test_obj, struct_ptr, struct_type.into().unwrap();"
-    
-    // Create expression to access test_obj.value
-    let object_ident = Identifier {
-            token:  identifier.to_string()"
-            value:  "test_obj.to_string()}
-        }
-    
-    let dot_expr = DotExpression {        object: Box::new(object_ident),
-        property:  "value ".to_string()}
-    }
-    
+    // Add the struct variable to the generator s variable table;
+    generator.add_variable_with_type(test_obj, struct_ptr, struct_type.into().unwrap();"value ".to_string()}
     // Test the property access
     let result = generator.compile_property_access(&dot_expr)
-    assert!(result.is_ok(), "Failedto compile property access: {:?}, result.err()
+    assert!(result.is_ok(), Failedto compile property access: {:?}, result.err()
     
     // Verify the result is 42
     let value = result.unwrap();
-    assert!(value.is_int_value(),  ", Result should be an integer ";"
+    assert!(value.is_int_value(),  , Result should be an integer;
     
     let int_value = value.into_int_value()
-    assert_eq!(int_value.get_zero_extended_constant().unwrap(), 42);
-}
+    assert_eq!(int_value.get_zero_extended_constant().unwrap(), 42);}

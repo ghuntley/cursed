@@ -24,11 +24,18 @@ pub enum TokenType {
     VibeCheck,  // switch
     Mood,       // case
     Basic,      // default
+    YeetError,  // panic (throw error)
+    Catch,      // catch/recover
     Normie,     // int
     Tea,        // string
     Cap,        // bool
     NoCap,      // nil/null
     MainCharacter, // main function
+    
+    // Additional tokens for type system and control flow
+    Arrow,      // ->
+    Match,      // match keyword (alternative to vibe_check)
+    If,         // if keyword (alternative to lowkey)
     
     // Identifiers and literals
     Identifier,
@@ -277,6 +284,14 @@ impl Lexer {
                     Ok(Token {
                         token_type: TokenType::MinusAssign,
                         literal: "-=".to_string(),
+                        location,
+                    })
+                } else if self.peek_char() == '>' {
+                    self.advance();
+                    self.advance();
+                    Ok(Token {
+                        token_type: TokenType::Arrow,
+                        literal: "->".to_string(),
                         location,
                     })
                 } else {
@@ -579,6 +594,8 @@ impl Lexer {
             "vibe_check" => TokenType::VibeCheck,
             "mood" => TokenType::Mood,
             "basic" => TokenType::Basic,
+            "yeet_error" => TokenType::YeetError,
+            "catch" => TokenType::Catch,
             "normie" => TokenType::Normie,
             "tea" => TokenType::Tea,
             "cap" => TokenType::Cap,

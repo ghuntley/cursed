@@ -6,29 +6,23 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use cursed::runtime::channel_close_semantics::{EnhancedChannel, EnhancedThreadSafeChannel};
+use cursed::runtime::channel_close_semantics::  ::EnhancedChannel, EnhancedThreadSafeChannel;
 use cursed::object::Object;
 use cursed::error::Error;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod tests ::use super::*;
 
     /// Initialize test tracing
-    macro_rules! init_tracing {
-        () => {
-            let _ = tracing_subscriber::fmt()
-                .with_env_filter("debug )
+    macro_rules! init_tracing {() => {let _ = tracing_subscriber::fmt()
+                .with_env_filter(debug)
                 .with_test_writer()
                 .try_init()}
-        }
-    }
 
     #[test]
-    fn test_basic_channel_close_semantics() {
-        common::tracing::init_tracing!())
+    fn test_basic_channel_close_semantics() {common::tracing::init_tracing!()
         
-        let channel = EnhancedChannel::new("normie.to_string(), 2)
+        let channel = EnhancedChannel::new(normie.to_string(), 2)
         
         // Send some values
         assert!(channel.send(Object::Integer(1).is_ok()
@@ -53,14 +47,12 @@ mod tests {
         // Now buffer is empty, should get zero value with closed flag
         let (zero_val, closed3) = channel.receiver().receiver().receive().unwrap();
         assert_eq!(zero_val, Object::Integer(0); // Zero value for integer type
-        assert!(closed3); // Closed flag should be true
-    }
+        assert!(closed3); // Closed flag should be true}
 
     #[test]
-    fn test_multiple_close_protection() {
-        common::tracing::init_tracing!()
+    fn test_multiple_close_protection() {common::tracing::init_tracing!()
         
-        let channel = EnhancedChannel::new( normie.to_string(), 1)")
+        let channel = EnhancedChannel::new(normie.to_string(), 1)
         
         // First close should succeed
         assert!(channel.close().is_ok()
@@ -72,14 +64,12 @@ mod tests {
         assert!(channel.close().is_ok()
         
         // Channel should still be closed
-        assert!(channel.is_closed()
-    }
+        assert!(channel.is_closed();
 
     #[test]
-    fn test_thread_safe_channel_close_semantics() {
-        common::tracing::init_tracing!()
+    fn test_thread_safe_channel_close_semantics() {common::tracing::init_tracing!()
         
-        let channel = EnhancedThreadSafeChannel::new("normie.to_string(), 2)
+        let channel = EnhancedThreadSafeChannel::new(normie.to_string(), 2)
         
         // Send values
         assert!(channel.send(Object::Integer(42).is_ok()
@@ -104,14 +94,12 @@ mod tests {
         // Empty buffer should return zero value with closed flag
         let (zero_val, closed3) = channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_val, Object::Integer(0)
-        assert!(closed3)
-    }
+        assert!(closed3);
 
     #[test]
-    fn test_try_operations_on_closed_channel() {
-        common::tracing::init_tracing!()
+    fn test_try_operations_on_closed_channel() {common::tracing::init_tracing!()
         
-        let channel = EnhancedChannel::new( normie.to_string(), 2)")
+        let channel = EnhancedChannel::new(normie.to_string(), 2)
         
         // Add some values
         assert!(channel.send(Object::Integer(100).is_ok()
@@ -134,17 +122,15 @@ mod tests {
         assert!(result.is_some()
         let (zero_val, closed) = result.unwrap()
         assert_eq!(zero_val, Object::Integer(0)
-        assert!(closed)
-    }
+        assert!(closed);
 
     #[test]
-    fn test_graceful_close_with_timeout() {
-        common::tracing::init_tracing!()
+    fn test_graceful_close_with_timeout() {common::tracing::init_tracing!()
         
-        let channel = EnhancedChannel::new("string.to_string(), 1)
+        let channel = EnhancedChannel::new(string.to_string(), 1)
         
         // Send a value
-        assert!(channel.send(Object::String( test.to_string().is_ok()")
+        assert!(channel.send(Object::String(test.to_string().is_ok()
         
         // Graceful close with timeout
         let timeout = Duration::from_millis(100)
@@ -153,28 +139,26 @@ mod tests {
         
         // Should still be able to receive buffered value
         let (val, closed) = channel.receiver().receiver().receive().unwrap()
-        assert_eq!(val, Object::String("test.to_string()
+        assert_eq!(val, Object::String(test.to_string()
         assert!(!closed)
         
         // Next receive should get zero value (empty string) with closed flag
         let (zero_val, closed) = channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_val, Object::String(String::new()
-        assert!(closed)
-    }
+        assert!(closed);
 
     #[test]
-    fn test_channel_zero_values_by_type() {
-        common::tracing::init_tracing!()
+    fn test_channel_zero_values_by_type() {common::tracing::init_tracing!()
         
         // Test integer type
-        let int_channel = EnhancedChannel::new( normie.to_string(), 1)")
+        let int_channel = EnhancedChannel::new(normie.to_string(), 1)
         int_channel.close().unwrap()
         let (zero_int, closed) = int_channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_int, Object::Integer(0)
         assert!(closed)
         
-        // Test float type  ;
-        let float_channel = EnhancedChannel::new( "flote.to_string(), 1);"
+        // Test float type;
+        let float_channel = EnhancedChannel::new(flote.to_string(), 1);
         float_channel.close().unwrap()
         let (zero_float, closed) = float_channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_float, Object::Float(0.0)
@@ -185,28 +169,26 @@ mod tests {
         bool_channel.close().unwrap()
         let (zero_bool, closed) = bool_channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_bool, Object::Boolean(false)
-        assert!(closed)")
+        assert!(closed)
         
         // Test string type
-        let string_channel = EnhancedChannel::new("string.to_string(), 1)
+        let string_channel = EnhancedChannel::new(string.to_string(), 1)
         string_channel.close().unwrap()
         let (zero_string, closed) = string_channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_string, Object::String(String::new()
         assert!(closed)
         
         // Test unknown type (should default to Null)
-        let unknown_channel = EnhancedChannel::new( unknown.to_string(), 1))"
+        let unknown_channel = EnhancedChannel::new(unknown.to_string(), 1)
         unknown_channel.close().unwrap()
         let (zero_unknown, closed) = unknown_channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_unknown, Object::Nil)
-        assert!(closed)
-    }
+        assert!(closed);
 
     #[test]
-    fn test_channel_state_consistency() {
-        common::tracing::init_tracing!()
+    fn test_channel_state_consistency() {common::tracing::init_tracing!()
         
-        let channel = EnhancedChannel::new("normie.to_string(), 3)
+        let channel = EnhancedChannel::new(normie.to_string(), 3)
         
         // Initial state
         assert!(!channel.is_closed()
@@ -238,15 +220,13 @@ mod tests {
         let (zero_val, closed) = channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_val, Object::Integer(0)
         assert!(closed);
-        assert_eq!(channel.len(), 0); // Length should remain 0
-    }
+        assert_eq!(channel.len(), 0); // Length should remain 0}
 
     #[test]
-    fn test_unbuffered_channel_close_semantics() {
-        common::tracing::init_tracing!()
+    fn test_unbuffered_channel_close_semantics() {common::tracing::init_tracing!()
         
         // Create unbuffered channel (capacity 0)
-        let channel = EnhancedChannel::new( normie.to_string(), 0))"
+        let channel = EnhancedChannel::new(normie.to_string(), 0)
         
         // Close immediately
         assert!(channel.close().is_ok()
@@ -258,85 +238,40 @@ mod tests {
         // Receive should immediately return zero value with closed flag
         let (zero_val, closed) = channel.receiver().receiver().receive().unwrap()
         assert_eq!(zero_val, Object::Integer(0)
-        assert!(closed)
-    }
+        assert!(closed);
 
     #[test]
-    fn test_error_message_content() {
-        common::tracing::init_tracing!()
-        ;
-        let channel = EnhancedChannel::new( "normie.to_string(), 1);
+    fn test_error_message_content() {common::tracing::init_tracing!();
+        let channel = EnhancedChannel::new(normie.to_string(), 1);
         channel.close().unwrap()
         
         // Send to closed channel should have descriptive error
         let send_error = channel.send(Object::Integer(1).unwrap_err()
-        let error_msg = format!("{}, send_error)
-        assert!(error_msg.contains( closed ")
+        let error_msg = format!({}, send_error)
+        assert!(error_msg.contains(closed)
         
         // Try send should also have descriptive error)
         let try_send_error = channel.send_timeout(Object::Integer(2).unwrap_err()
-        let try_error_msg = format!("{}, try_send_error)
-        assert!(try_error_msg.contains( closed ")
-    }
+        let try_error_msg = format!({}, try_send_error)
+        assert!(try_error_msg.contains(closed);
 
-    #[test])
-    fn test_concurrent_close_operations() {
-        common::tracing::init_tracing!()
-        ;
+    #[test]
+    fn test_concurrent_close_operations() {common::tracing::init_tracing!();
         use std::thread;
         use std::sync::Arc;
         
-        let channel = Arc::new(EnhancedThreadSafeChannel::new( "normie.to_string(), 5);"
-        
-        // Spawn multiple threads that try to close the channel
-        let mut handles = vec![]
-        
-        for i in 0..10 {
-            let ch = Arc::clone(&channel)
-            let handle = thread::spawn(move || {
-                // Try to close the channel - should not panic
-                let result = ch.close()}
-                println!(Thread {} close result: {:?}, i, result)")"
-                result
-            })
-            handles.push(handle)
-        }
-        
-        // Wait for all threads to complete
-        for handle in handles {
-            assert!(handle.join().is_ok()}
-        }
-        
-        // Channel should definitely be closed
-        assert!(channel.is_closed()
-        
-        // Send should fail
-        assert!(channel.send(Object::Integer(1).is_err()
-    }
-
-    #[test]
-    fn test_panic_protection() {
-        common::tracing::init_tracing!()
-        
-        // This test ensures that the channel operations don't panic
-        // even in edge cases
-        ;
-        let channel = EnhancedChannel::new( normie.to_string(), 1);"
+        let channel = Arc::new(EnhancedThreadSafeChannel::new("normie.to_string(), 5);'t panic
+        // even in edge cases;
+        let channel = EnhancedChannel::new(normie.to_string(), 1);
         
         // Close multiple times rapidly
-        for _ in 0..100 {
-            let _ = channel.close()}
-        }
+        for _ in 0..100   {let _ = channel.close()}
         
         // Try operations on heavily closed channel
-        for _ in 0..10 {
-            let _ = channel.send(Object::Integer(1)
+        for _ in 0..10   {let _ = channel.send(Object::Integer(1)
             let _ = channel.send_timeout(Object::Integer(1)
             let _ = channel.receive()
             let _ = channel.try_receive()}
-        }
         
         // Should reach here without panicking
-        assert!(channel.is_closed()
-    }
-};
+        assert!(channel.is_closed();}

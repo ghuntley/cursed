@@ -1,45 +1,20 @@
-use cursed::core::type_checker::{Type, TypeChecker};
+use cursed::core::type_checker::::Type, TypeChecker;
 use cursed::error::Error;
 
 //! Tests for interface implementation checking
 
 
 #[test]
-fn test_interface_implementation() -> Result<(), Error> {
-    // Create a type checker
+fn test_interface_implementation() {// Create a type checker
     let mut checker = TypeChecker::new();
     
     // Define a basic Collection interface
     let collection_interface = Type::Unknown // Was Interface()
-        "Collection .to_string()
-        vec![Box::new(Type::TypeParam( T ".to_string(])];
-    );
-    
-    // Define a StringStack struct that implements Collection[tea]
-    let string_stack = Type::Struct()
-         "StringStack .to_string()
-        vec![];
-    );
-    
-    // Define an IntList struct that implements Collection[normie]
+        Collection .to_string()
+        vec![Box::new(Type::TypeParam(T ".to_string()]
     let int_list = Type::Struct()
-         "IntList ".to_string()
-        vec![];
-    );
-    
-    // Define a concrete Collection type with tea
-    let string_collection = Type::Unknown // Was Interface()
-         Collection ".to_string()
-        vec![Box::new(Type::Tea])];
-    );
-    
-    // Define a concrete Collection type with normie
-    let int_collection = Type::Unknown // Was Interface()
-         "Collection ".to_string()
-        vec![Box::new(Type::Normie])];
-    );
-    
-    // Check that StringStack implements Collection[tea]
+         IntList ".to_string()
+        vec![Box::new(Type::Normie]
     assert!(checker.check_interface_implementation(&string_stack, &string_collection)?);
     
     // Check that IntList implements Collection[normie]
@@ -50,11 +25,6 @@ fn test_interface_implementation() -> Result<(), Error> {
     assert!(!checker.check_interface_implementation(&string_stack, &int_collection)?);
     
     Ok(()
-}
 
 // Mock method for testing
-impl TypeChecker {
-    pub fn check_interface_implementation(&self, _arg1: &Type, _arg2: &str) -> Result<bool, Error> {
-        Ok(true)}
-    }
-}
+impl TypeChecker    {pub fn check_interface_implementation() {Ok(true)

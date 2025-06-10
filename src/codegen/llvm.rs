@@ -4,6 +4,7 @@ use crate::debug::{DebugConfig, SourceLocation};
 use std::path::PathBuf;
 
 pub mod debug_integration;
+pub mod debug;
 pub mod web_vibez_integration;
 pub mod stdlib_registry;
 pub mod function_compilation;
@@ -15,8 +16,13 @@ pub mod channels;
 pub mod bool_conversions;
 pub mod goroutine;
 pub mod gc_integration;
+pub mod panic;
+pub mod debug_info;
+pub mod error_propagation;
+// pub mod question_mark;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
+pub use debug::{CursedDebugBuilder, LlvmDebugConfig};
 pub use web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
 pub use stdlib_registry::{StdlibRegistry, StdlibLlvmIntegration, StdlibFunction};
 pub use function_compilation::{FunctionCompilation, FunctionContext};
@@ -28,6 +34,10 @@ pub use control_flow::{ControlFlowCompilation, LlvmControlFlowCompiler, ControlF
 pub use channels::{LlvmChannelCompiler, ChannelExpressionCompiler, CompiledChannelType, ChannelOperation};
 pub use goroutine::{GoroutineCompiler, generate_loop_yield_point};
 pub use gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
+pub use panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
+pub use debug_info::{LlvmDebugGenerator, LlvmDebugIntegration, LlvmDebugManager};
+pub use error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};
+// pub use question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime};
 
 // Temporary dummy types to help tests compile
 pub struct DummyModule {
@@ -57,6 +67,15 @@ impl DummyModule {
     /// Add global variable (stub for bool conversion tests)
     pub fn add_global(&self, _type: impl std::fmt::Debug, _linkage: Option<()>, _name: &str) -> DummyValue {
         DummyValue::new()
+    }
+}
+
+pub struct DummyContext {
+}
+
+impl DummyContext {
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
@@ -144,7 +163,14 @@ impl LlvmCodeGenerator {
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
             debug_generator: LlvmDebugCodeGenerator::new(DebugConfig::default()),
+
             module_name: None,
+
+            context: DummyContext::new(),
+
+            module: DummyModule::new(),
+
+            current_function: None,
             web_vibez_integration: None,
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("default_module".to_string()),
@@ -155,7 +181,14 @@ impl LlvmCodeGenerator {
     pub fn new_with_debug(debug_config: DebugConfig) -> Result<Self, Error> {
         Ok(Self {
             debug_generator: LlvmDebugCodeGenerator::new(debug_config),
+
             module_name: None,
+
+            context: DummyContext::new(),
+
+            module: DummyModule::new(),
+
+            current_function: None,
             web_vibez_integration: None,
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("debug_module".to_string()),
@@ -192,7 +225,7 @@ impl LlvmCodeGenerator {
         self.debug_generator.initialize_debug_info(source_file.clone(), "CURSED Compiler v1.0".to_string())?;
         
         // Generate a sample module with debug info
-        let main_location = SourceLocation::new(source_file.clone(), 1, 1);
+        let main_location = SourceLocation::new(1, 1).with_file(&source_file.to_string_lossy());
         let functions = Vec::from([("main".to_string(), main_location)]);
         
         let module_name = source_file.file_stem()
@@ -323,6 +356,50 @@ impl LlvmCodeGenerator {
         self.type_context.get_errors()
     }
     
+    /// Compile a statement to LLVM IR
+    pub fn compile_statement(&mut self, stmt: &dyn crate::ast::traits::Statement) -> Result<(), Error> {
+        use crate::ast::statements::{PanicStatement, RecoveryStatement};
+        use crate::runtime::panic::{PanicSeverity, PanicCategory};
+        
+        // Try to downcast to specific statement types
+        if let Some(panic_stmt) = stmt.as_any().downcast_ref::<PanicStatement>() {
+            return self.compile_panic_statement(panic_stmt);
+        }
+        
+        if let Some(recovery_stmt) = stmt.as_any().downcast_ref::<RecoveryStatement>() {
+            return self.compile_recovery_statement(recovery_stmt);
+        }
+        
+        // Fallback for other statement types (to be implemented)
+        Ok(())
+    }
+    
+    /// Compile a panic statement (yeet_error)
+    fn compile_panic_statement(&mut self, _stmt: &crate::ast::statements::PanicStatement) -> Result<(), Error> {
+        // Stub implementation for now
+        // In full implementation, this would:
+        // 1. Evaluate the message expression
+        // 2. Generate LLVM call to cursed_panic FFI function
+        // 3. Insert unreachable instruction since panic never returns
+        Ok(())
+    }
+    
+    /// Compile a recovery statement (catch)
+    fn compile_recovery_statement(&mut self, _stmt: &crate::ast::statements::RecoveryStatement) -> Result<(), Error> {
+        // Stub implementation for now
+        // In full implementation, this would:
+        // 1. Set up exception handling blocks
+        // 2. Compile protected block with panic checking
+        // 3. Generate recovery handler code if present
+        // 4. Integrate with runtime panic system
+        Ok(())
+    }
+    
+    /// Helper to get dummy context for panic generator
+    fn dummy_context(&self) -> crate::codegen::llvm::DummyContext {
+        crate::codegen::llvm::DummyContext::new()
+    }
+
     /// Compile a basic expression (stub implementation)
     pub fn compile_basic_expression(&self, _expr: &dyn std::fmt::Debug) -> Result<LlvmValue, Error> {
         Ok(LlvmValue::new("stub_expression_value"))

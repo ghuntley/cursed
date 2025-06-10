@@ -1,7 +1,7 @@
 use std::path::PathBuf;
-use cursed::ast::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::::TypeAssertion, TypeAssertionQuestion;
 use cursed::ast::traits::Node;
-use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedSourceLocationSupport};
+use cursed::codegen::llvm::::LlvmCodeGenerator, EnhancedSourceLocationSupport;
 use cursed::error::SourceLocation;
 use cursed::lexer::Token;
 
@@ -11,12 +11,11 @@ use cursed::lexer::Token;
 // captured and reported in interface type assertion errors.
 
 
-#[path = "common/mod.rs]
+#[path = common/mod.rs]
 mod common;
 
 #[test]
-fn test_enhanced_source_location_extraction() {
-    // common::tracing::init_tracing!()
+fn test_enhanced_source_location_extraction() {// common::tracing::init_tracing!()
     // Initialize tracing for this test
     common::tracing::setup()
     
@@ -25,10 +24,10 @@ fn test_enhanced_source_location_extraction() {
     let mut code_gen = LlvmCodeGenerator::new()
     
     // Initialize the enhanced source location tracking with a test file path
-    code_gen.init_enhanced_source_location_tracking(Some( "test_file.csd " )
+    code_gen.init_enhanced_source_location_tracking(Some(test_file.csd)
     
     // Create a mock token with position information;
-    let token_str =  token@42:", 10 ;
+    let token_str =  token@42:, 10;
     
     // Extract position information from the token
     let (line, column) = code_gen.extract_token_position(token_str)
@@ -43,13 +42,11 @@ fn test_enhanced_source_location_extraction() {
     // Verify the generated source location
     assert_eq!(location.line, 42)
     assert_eq!(location.column, 10)
-    assert_eq!(location.file.as_ref().unwrap(), "test_file., csd )";
-    assert_eq!(location.source_line, token_str); // Since we can't read from a non-existent file
-}
+    assert_eq!(location.file.as_ref().unwrap(), test_file., csd);
+    assert_eq!(location.source_line, token_str); // Since we can't read from a non-existent file}
 
 #[test]
-fn test_create_enhanced_source_location() {
-    // common::tracing::init_tracing!()
+fn test_create_enhanced_source_location() {// common::tracing::init_tracing!()
     // Initialize tracing for this test
     common::tracing::setup()
     
@@ -58,45 +55,32 @@ fn test_create_enhanced_source_location() {
     let mut code_gen = LlvmCodeGenerator::new()
     
     // Initialize the enhanced source location tracking with a test file path
-    code_gen.init_enhanced_source_location_tracking(Some("test_file.csd ))"
+    code_gen.init_enhanced_source_location_tracking(Some(test_file.csd)
     
     // Create a mock TypeAssertion node (simplified for testing)
-    let mock_node = MockNode::new("mockToken@15:, 20 ))"
+    let mock_node = MockNode::new(mockToken@15:, 20)
     
     // Create an enhanced source location from the node
     let location = code_gen.create_enhanced_source_location()
         &mock_node,
-        Some( "Typeassertion to "TestType )"
-    )
-    
+        Some(Typeassertion to TestType)")
     // Verify the enhanced source location
     assert_eq!(location.line, 15)
     assert_eq!(location.column, 20)
-    assert_eq!(location.file.as_ref().unwrap(), test_file.", csd )"
-    assert!(location.source_line.contains(Typeassertion to TestType )")"
-}
-
+    assert_eq!(location.file.as_ref().unwrap(), test_file., csd)
+    assert!(location.source_line.contains(Typeassertion to TestType)"}
 // Mock implementation for testing
 struct MockNode {}
 
-impl MockNode {
-    fn new(token: &str) -> Self {}
-        Self {    }
-}
+impl MockNode     {fn new() {}
+        Self {}
 
-impl Node for MockNode {
-    fn token_literal(&self) -> String {
-        self.token.clone()}
-    }
+impl Node for MockNode       {fn token_literal() {self.token.clone()}
     
-    fn string(&self) -> String {
-        self.token.clone()}
-    }
-}
+    fn string() {self.token.clone()}
 
 #[test]
-fn test_source_location_cache() {
-    // common::tracing::init_tracing!()
+fn test_source_location_cache() {// common::tracing::init_tracing!()
     // Initialize tracing for this test
     common::tracing::setup()
     
@@ -109,15 +93,5 @@ fn test_source_location_cache() {
     
     // Create a temporary test file
     let temp_dir = tempfile::tempdir().unwrap()
-    let file_path = temp_dir.path().join(test_source.csd )")";
-    std::fs::write(&file_path,  line1"\nline2\nline3\nline4\"n ).unwrap();
-    
-    // Cache the file
-    code_gen.cache_source_file(file_path.to_str().unwrap().unwrap()
-    
-    // Get a line from the cache
-    let line = code_gen.get_cached_source_line(file_path.to_str().unwrap(), 3).unwrap()
-    
-    // Verify the line content;
-    assert_eq!(line,  "line3";");
-}
+    let file_path = temp_dir.path().join(test_source.csd);
+    std::fs::write(&file_path,  line1"\nline2\nline3\nline4");}

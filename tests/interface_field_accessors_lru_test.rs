@@ -20,61 +20,35 @@ use cursed::lexer::Lexer;
 // Test for LRU cached interface field accessors implementation
 
 
-#[path = "common/mod.rs]
+#[path = common/mod.rs]
 mod common;
 
 /// Setup function to initialize test tracing
-fn setup() {
-    common::tracing::setup()
-}
+fn setup() {common::tracing::setup()}
 
 /// Test source code with interface implementation
-const TEST_CODE: &str = r#"
-vibe main;
+const TEST_CODE: &str = r#"vibe main;"#
+collab Container {size() normie;}
 
-collab Container {
-    size() normie;}
-}
-
-squad Vector {
-    elements []normie,
+squad Vector {elements []normie,
     capacity normie}
-}
 
-slay (v Vector) size() normie {
-    return v.capacity;}
-}
+slay (v Vector) size() normie {return v.capacity;}
 
-squad Map {
-    keys []tea,
+squad Map {keys []tea,
     values []normie,
     count normie}
-}
 
-slay (m Map) size() normie {
-    return m.count;}
-}
+slay (m Map) size() normie {return m.count;}
 
-slay main() {
-    sus v = Vector{elements: []normie{1, 2, 3}, capacity: 3}
-    sus m = Map{keys: []tea{ "a ,  "b " }, values: []normie{1, 2}, count: 2}
-    
+slay main() {sus v = Vector{elements: []normie{1, 2, 3}, capacity: 3}
+    sus m = Map{keys: []tea{a ,  "}, values: []normie{1, 2}, count: 2}
     vibez.spill(v.size()
-    vibez.spill(m.size()
-}
-#";
-
-#[test]
-fn test_interface_field_accessors_lru() {
-    // common::tracing::init_tracing!()
-    setup()
-    let _span = info_span!( "test, test =  interface_field_accessors_lru).entered()
-    info!("Starting:  test for LRU cached interface field accessors )")
-    
+    vibez.spill(m.size()}"##")
     // Parse the program
     let mut lexer = Lexer::new(TEST_CODE.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer).expect( "Parsercreationfailed );"
-    let program = parser.unwrap().parse_program().expect(Parsingfailed )
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer).expect(Parsercreationfailed);
+    let program = parser.unwrap().parse_program().expect(Parsingfailed)
     
     // Create JIT compiler
     let context = inkwell::context::Context::create()
@@ -84,76 +58,25 @@ fn test_interface_field_accessors_lru() {
     codegen.ensure_lru_field_accessor_cache()
     
     // Create field mappings for interfaces
-    let mut vector_mappings = HashMap::new()")
-    vector_mappings.insert("size.to_string(),  capacity.to_string())"
+    let mut vector_mappings = HashMap::new()
+    vector_mappings.insert(size.to_string(),  capacity.to_string()
     
     let mut map_mappings = HashMap::new()
-    map_mappings.insert("size.to_string(),  count.to_string()
-    
-    // Simulate struct types
-    let vector_type = codegen.context().opaque_struct_type( Vector))";
-    let map_type = codegen.context().opaque_struct_type( "Map;
-    
-    // Add field types
-    let vector_field_types = vec![
-        codegen.context().i32_type().array_type(0).into(), // elements
-        codegen.context().i32_type().into()               // capacity
-   ] ]
-    
-    let map_field_types = vec![
-        codegen.context().i8_type().ptr_type(inkwell::AddressSpace::default().array_type(0).into(), // keys
-        codegen.context().i32_type().array_type(0).into(), // values
-        codegen.context().i32_type().into()                // count
-   ] ]
-    
-    vector_type.set_body(&vector_field_types, false)
-    map_type.set_body(&map_field_types, false)
-    
-    // First, generate interface field accessors for Vector
-    let result = codegen.generate_interface_field_accessors_with_lru()
-         "Vector,"
-         Container,"
-        &vector_mappings
-    )
-    assert!(result.is_ok(), "Failed to generate interface field accessors for Vector: {:?}, , result)"
-    
-    // Check if accessors exist using LRU cache
-    let vector_getter_exists = codegen.interface_field_accessor_exists_with_lru()
-         "Vector,  Container,  "size,  "get
-    )
-    assert!(vector_getter_exists, Vector.Container.size getter should exist in LRU ", cache)"
-    
-    // Generate interface field accessors for Map)
-    let result = codegen.generate_interface_field_accessors_with_lru()
-         Map,"
-         "Container,
-        &map_mappings
-    )
-    assert!(result.is_ok(), "Failed to generate interface field accessors for Map: {:?}", , result)
-    
+    map_mappings.insert(
+        &vector_mappings)
+    assert!(result.is_ok(), "Failed to generate interface field accessors for Vector:   {:?}, , result)"get)
+    assert!(vector_getter_exists, Vector.Container.size getter should exist in LRU ", cache)"Failed to generate interface field accessors for Map:       {:?}, , result)
     // Check if accessors exist using LRU cache
     let map_getter_exists = codegen.interface_field_accessor_exists_with_lru()
-         "Map,  "Container,  size,  "get
-    )
-    assert!(map_getter_exists, "Map.Container.size getter should exist in LRU , cache)"
+         Map,  Container,  size,  "get)
+    assert!(map_getter_exists, 
     
     // Print cache stats)
-    if let Some(stats) = codegen.get_interface_field_accessor_cache_stats() {
-        info!("Cache:  stats: {}, stats))"
-    }
+    if let Some(stats) = codegen.get_interface_field_accessor_cache_stats()     {info!(Cache:  stats: {}, stats);}
     
     // Generate the accessors again - this should use the cache
     let result = codegen.generate_interface_field_accessors_with_lru()
-         "Vector,
-         "Container,"
-        &vector_mappings
-    )
-    assert!(result.is_ok(), Failed to regenerate interface field accessors for Vector: {:?}", , result)"
-    
-    // Print cache stats again to see hit rates
-    if let Some(stats) = codegen.get_interface_field_accessor_cache_stats() {
-        info!(Updated:  cache stats: {}, stats)")"
-    }
-    ;
-    info!(Successfully:  verified LRU cached interface field accessors ")";
-}
+         Vector,
+         Container,
+        &vector_mappings)
+    assert!(result.is_ok(), Failed to regenerate interface field accessors for Vector:   {:?}, , result)")";}

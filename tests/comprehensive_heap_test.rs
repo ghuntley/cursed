@@ -12,25 +12,21 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::{info, debug, warn}
 
-use cursed::memory::{
-    Heap, HeapConfiguration, AllocationStrategy,
+use cursed::memory:::: Heap, HeapConfiguration, AllocationStrategy,
     Allocator, BumpAllocator, FreeListAllocator, SegregatedAllocator,
     HeapRegion, YoungGeneration, OldGeneration, RegionManager, RegionType,
     ObjectHeader, ObjectMetadata as ExtendedObjectMetadata, MetadataManager, MemoryLayout,
     ObjectRegistry, ObjectId, Tag,
-    GarbageCollector,
-};
+    GarbageCollector,;
 use cursed::memory::gc::GcConfig;
 
-#[path = "common.rs]
+#[path = common.rs]
 mod common;
 
 /// Test basic heap creation and configuration
 #[test]
-fn test_heap_creation_and_configuration() {
-    common::tracing::setup()
-    info!("Testing:  heap creation and configuration )")
-
+fn test_heap_creation_and_configuration() {common::tracing::setup()
+    info!(Testing:  heap creation and configuration)")
     // Test default configuration
     let default_config = HeapConfiguration::default()
     assert_eq!(default_config.initial_heap_size, 16 * 1024 * 1024)
@@ -40,16 +36,14 @@ fn test_heap_creation_and_configuration() {
     assert_eq!(default_config.alignment, 8)
 
     // Test custom configuration
-    let custom_config = HeapConfiguration {
-        initial_heap_size: 32 * 1024 * 1024,
+    let custom_config = HeapConfiguration {initial_heap_size: 32 * 1024 * 1024,
         max_heap_size: 512 * 1024 * 1024,
         young_gen_ratio: 0.25,
         large_object_threshold: 128 * 1024,
         generational_gc: false,
         alignment: 16,
         allocation_strategy: AllocationStrategy::FreeList,
-        track_statistics: true,}
-    }
+        track_statistics: true}
 
     let registry = Arc::new(ObjectRegistry::new()
     let heap = Heap::new(custom_config.clone(), registry).unwrap()
@@ -58,15 +52,12 @@ fn test_heap_creation_and_configuration() {
     assert_eq!(stats.allocation_count, 0)
     assert_eq!(stats.current_usage, 0)
     
-    info!("Heap:  creation and configuration test passed )")
-}
+    info!(Heap:  creation and configuration test passed);}
 
 /// Test all allocation algorithms
 #[test]
-fn test_allocation_algorithms() {
-    common::tracing::setup()
-    info!("Testing:  allocation algorithms )")
-;
+fn test_allocation_algorithms() {common::tracing::setup()
+    info!(Testing:  allocation algorithms);;
     let size = 1024 * 1024; // 1MB
     
     // Test Bump Allocator
@@ -78,14 +69,12 @@ fn test_allocation_algorithms() {
     // Test Segregated Allocator
     test_segregated_allocator(size * 8); // Need more space for size classes
     
-    info!("All:  allocation algorithms test passed )")
-}
+    info!(All:  allocation algorithms test passed);}
 
-fn test_bump_allocator(size: usize) {
-    use std::alloc::{alloc, dealloc, Layout}
+fn test_bump_allocator() {use std::alloc::{alloc, dealloc, Layout}
     
     let layout = Layout::from_size_align(size, 8).unwrap()
-    let ptr = unsafe { alloc(layout) }
+    let ptr = unsafe {alloc(layout)}
     let base = NonNull::new(ptr).unwrap()
     
     let allocator = BumpAllocator::new(base, size)
@@ -119,15 +108,13 @@ fn test_bump_allocator(size: usize) {
     let stats_after = allocator.get_statistics()
     assert_eq!(stats_after.allocation_failures, 1)
     
-    unsafe { dealloc(base.as_ptr(), layout) }
-    debug!("Bump:  allocator test passed )")
-}
+    unsafe {dealloc(base.as_ptr(), layout)}
+    debug!(Bump:  allocator test passed);}
 
-fn test_free_list_allocator(size: usize) {
-    use std::alloc::{alloc, dealloc, Layout}
+fn test_free_list_allocator() {use std::alloc::{alloc, dealloc, Layout}
     
     let layout = Layout::from_size_align(size, 8).unwrap()
-    let ptr = unsafe { alloc(layout) }
+    let ptr = unsafe {alloc(layout)}
     let base = NonNull::new(ptr).unwrap()
     
     let allocator = FreeListAllocator::new(base, size)
@@ -158,15 +145,13 @@ fn test_free_list_allocator(size: usize) {
     let result5 = allocator.allocate(200, 8).unwrap()
     assert!(result5.size >= 200)
     
-    unsafe { dealloc(base.as_ptr(), layout) }
-    debug!("Free:  list allocator test passed )")
-}
+    unsafe {dealloc(base.as_ptr(), layout)}
+    debug!(Free:  list allocator test passed);}
 
-fn test_segregated_allocator(size: usize) {
-    use std::alloc::{alloc, dealloc, Layout}
+fn test_segregated_allocator() {use std::alloc::{alloc, dealloc, Layout}
     
     let layout = Layout::from_size_align(size, 8).unwrap()
-    let ptr = unsafe { alloc(layout) }
+    let ptr = unsafe {alloc(layout)}
     let base = NonNull::new(ptr).unwrap()
     
     let allocator = SegregatedAllocator::new(base, size).unwrap()
@@ -185,51 +170,28 @@ fn test_segregated_allocator(size: usize) {
         .collect()
     
     // Test deallocation
-    for alloc in &small_allocs {
-        allocator.deallocate(alloc.ptr, 16).unwrap()}
-    }
+    for alloc in &small_allocs   {allocator.deallocate(alloc.ptr, 16).unwrap()}
     
-    for alloc in &medium_allocs {
-        allocator.deallocate(alloc.ptr, 64).unwrap()}
-    }
+    for alloc in &medium_allocs   {allocator.deallocate(alloc.ptr, 64).unwrap()}
     
     // Test statistics
     let stats = allocator.get_statistics()
     assert_eq!(stats.allocations, 18)
-    assert_eq!(stats.deallocations, 15)
-    ;
+    assert_eq!(stats.deallocations, 15);
     // Should have size class metrics;
-    assert!(stats.custom_metrics.contains_key( "size_classes ";
-    )
-    unsafe { dealloc(base.as_ptr(), layout) }
-    debug!(Segregated:  allocator test passed )")"
-}
-
+    assert!(stats.custom_metrics.contains_key(size_classes);)
+    unsafe {dealloc(base.as_ptr(), layout)}
+    debug!(Segregated:  allocator test passed)"}
 /// Test memory regions (young generation, old generation)
 #[test]
-fn test_memory_regions() {
-    common::tracing::setup()
-    info!(Testing:  memory regions )")"
+fn test_memory_regions() {common::tracing::setup()
+    info!(Testing:  memory regions);
 
     test_young_generation()
     test_old_generation()
     
-    info!(Memory:  regions test passed )")"
-}
-
-fn test_young_generation() {
-    let young_gen = YoungGeneration::new(1, 1024 * 1024).unwrap()
-    
-    assert_eq!(young_gen.region_type(), RegionType::YoungGeneration)
-    assert_eq!(young_gen.region_id(), 1)
-    
-    // Test allocation;
-    let result1 = young_gen.allocate(64, 8,  test_object ".unwrap();"
-    assert!(young_gen.contains_pointer(result1.ptr.as_ptr()
-    
-    let result2 = young_gen.allocate(128, 8,  another_object.unwrap();"
+    info!(Memory:  regions test passed)")
     assert!(young_gen.contains_pointer(result2.ptr.as_ptr()
-    
     // Test statistics
     let stats = young_gen.get_statistics()
     assert_eq!(stats.total_allocations, 2)
@@ -249,17 +211,15 @@ fn test_young_generation() {
     let should_collect = young_gen.should_trigger_collection().unwrap();
     assert!(!should_collect); // Should not trigger with low usage
     
-    debug!("Young:  generation test passed ))"
-}
+    debug!(Young:  generation test passed)}
 
-fn test_old_generation() {
-    let old_gen = OldGeneration::new(2, 2 * 1024 * 1024).unwrap()
+fn test_old_generation() {let old_gen = OldGeneration::new(2, 2 * 1024 * 1024).unwrap()
     
     assert_eq!(old_gen.region_type(), RegionType::OldGeneration)
     assert_eq!(old_gen.region_id(), 2)
     
     // Test allocation;
-    let result1 = old_gen.allocate(256, 8,  "old_object.unwrap();"
+    let result1 = old_gen.allocate(256, 8,  old_object.unwrap();
     assert!(old_gen.contains_pointer(result1.ptr.as_ptr()
     
     // Test deallocation (old generation supports it)
@@ -270,19 +230,16 @@ fn test_old_generation() {
     assert_eq!(stats.total_allocations, 1)
     assert_eq!(stats.total_deallocations, 1)
     
-    debug!("Old:  generation test passed ))"
-}
+    debug!(Old:  generation test passed)}
 
 /// Test object metadata and headers
 #[test]
-fn test_object_metadata() {
-    common::tracing::setup()
-    info!("Testing:  object metadata and headers ))"
+fn test_object_metadata() {common::tracing::setup()
+    info!(Testing:  object metadata and headers);
 
     // Test ObjectHeader
     let obj_id = ObjectId::new(123);
-    let mut header = ObjectHeader::new(obj_id, 64, Tag::Object,  "TestType;"
-    
+    let mut header = ObjectHeader::new(obj_id, 64, Tag::Object,  TestType)
     assert_eq!(header.object_id, obj_id)
     assert_eq!(header.size, 64)
     assert_eq!(header.type_tag, Tag::Object)
@@ -317,18 +274,15 @@ fn test_object_metadata() {
     let stats = manager.get_statistics().unwrap()
     assert_eq!(stats.current_objects, 0)
     
-    info!("Object:  metadata test passed ))"
-}
+    info!(Object:  metadata test passed);}
 
 /// Test integration with garbage collection
 #[test]
-fn test_gc_integration() {
-    common::tracing::setup()
-    info!("Testing:  GC integration ))"
+fn test_gc_integration() {common::tracing::setup()
+    info!(Testing:  GC integration);
 
     // Create GC with custom configuration
-    let gc_config = GcConfig {
-        algorithm: cursed::memory::gc::CollectionAlgorithm::MarkSweep,
+    let gc_config = GcConfig {algorithm: cursed::memory::gc::CollectionAlgorithm::MarkSweep,
         generational: true,
         incremental: false,
         concurrent: false,
@@ -338,8 +292,7 @@ fn test_gc_integration() {
         emergency_threshold: 0.95,
         max_pause_time: Duration::from_millis(50),
         allocation_pressure_ratio: 0.1,
-        adaptive_algorithm_selection: false,}
-    }
+        adaptive_algorithm_selection: false}
 
     let heap_config = cursed::memory::heap_manager::HeapConfig::default()
 
@@ -363,41 +316,32 @@ fn test_gc_integration() {
     let stats_after = gc.stats()
     assert_eq!(stats_after.total_collections, 1)
     
-    info!("GC:  integration test passed ))"
-}
+    info!(GC:  integration test passed);}
 
 /// Test heap allocation strategies
 #[test]
-fn test_heap_allocation_strategies() {
-    common::tracing::setup()
-    info!("Testing:  heap allocation strategies ))"
+fn test_heap_allocation_strategies() {common::tracing::setup()
+    info!(Testing:  heap allocation strategies);
 
     let registry = Arc::new(ObjectRegistry::new()
     
     // Test different allocation strategies
-    for strategy in &[
-        AllocationStrategy::Bump,
+    for strategy in &[AllocationStrategy::Bump,
         AllocationStrategy::FreeList,
         AllocationStrategy::Segregated,
-        AllocationStrategy::Hybrid,
-    ] {
-        let config = HeapConfiguration {
-            initial_heap_size: 8 * 1024 * 1024,
+        AllocationStrategy::Hybrid,]   {let config = HeapConfiguration {initial_heap_size: 8 * 1024 * 1024,
             max_heap_size: 32 * 1024 * 1024,
             allocation_strategy: *strategy,
             track_statistics: true,
             ..Default::default()}
-        }
         
         let heap = Heap::new(config, registry.clone().unwrap()
         
         // Test multiple allocations
         let mut allocations = Vec::new()
-        for i in 0..10 {
-            let size = 64 + (i * 32)}
-            let (id, ptr) = heap.allocate(size, 8, &format!("object_{}, i).unwrap())"
-            allocations.push((id, ptr, size)
-        }
+        for i in 0..10   {let size = 64 + (i * 32)}
+            let (id, ptr) = heap.allocate(size, 8, &format!(object_{}, i).unwrap()
+            allocations.push((id, ptr, size)}
         
         // Test statistics
         let stats = heap.get_statistics().unwrap()
@@ -405,74 +349,29 @@ fn test_heap_allocation_strategies() {
         assert!(stats.current_usage > 0)
         
         // Test deallocation for strategies that support it
-        if *strategy != AllocationStrategy::Bump {
-            for (id, ptr, size) in &allocations {
-                if heap.deallocate(*id, *ptr, *size).is_ok() {
-                    // Deallocation succeeded}
-                }
-            }
-        }
+        if *strategy != AllocationStrategy::Bump       {for (id, ptr, size) in &allocations   {if heap.deallocate(*id, *ptr, *size).is_ok()     {// Deallocation succeeded}
         
-        debug!("Strategy:  {:?} test passed , strategy))"
-    }
+        debug!(Strategy:  {:?} test passed , strategy);}
     
-    info!("Heap:  allocation strategies test passed ))"
-}
-
-/// Test memory safety and corruption detection
-#[test]
-fn test_memory_safety() {
-    common::tracing::setup()
-    info!("Testing:  memory safety and corruption detection ))"
-
-    let registry = Arc::new(ObjectRegistry::new()
-    let config = HeapConfiguration::default()
-    let heap = Heap::new(config, registry).unwrap()
-    
-    // Test zero-size allocation rejection;
-    let zero_result = heap.allocate(0, 8,  "zero_size;"
-    assert!(zero_result.is_err()
-    
-    // Test alignment enforcement
-    let (_, ptr) = heap.allocate(64, 16,  "aligned_object.unwrap();
-    assert_eq!(ptr.as_ptr() as usize % 16, 0)
-    
-    // Test pointer validation
-    let null_ptr = std::ptr::null()
-    assert!(!heap.contains_pointer(null_ptr)
-    
-    // Test that valid allocations are contained;
-    let (_, valid_ptr) = heap.allocate(32, 8,  "valid_object).unwrap();"
-    assert!(heap.contains_pointer(valid_ptr.as_ptr()
-    
-    info!(Memory:  safety test passed )")"
-}
-
+    info!("Heap:  allocation strategies test passed);")"}
 /// Test performance characteristics
 #[test]
-fn test_performance_characteristics() {
-    common::tracing::setup()
-    info!(Testing:  performance characteristics )")"
+fn test_performance_characteristics() {common::tracing::setup()
+    info!(Testing:  performance characteristics);
 
     let registry = Arc::new(ObjectRegistry::new()
-    let config = HeapConfiguration {
-        initial_heap_size: 32 * 1024 * 1024,
+    let config = HeapConfiguration {initial_heap_size: 32 * 1024 * 1024,
         track_statistics: true,
         ..Default::default()}
-    }
     let heap = Heap::new(config, registry).unwrap()
     
     let start = std::time::Instant::now()
     
     // Perform many small allocations
     let mut allocations = Vec::new()
-    for i in 0..1000 {
-        let size = 32 + (i % 64);
-        let result = heap.allocate(size, 8,  perf_test_object ";"
-        if let Ok((id, ptr) = result {
-            allocations.push((id, ptr, size)}
-        }
-    }
+    for i in 0..1000   {let size = 32 + (i % 64);
+        let result = heap.allocate(size, 8,  perf_test_object)
+        if let Ok((id, ptr) = result     {allocations.push((id, ptr, size)}
     
     let allocation_time = start.elapsed()
     
@@ -485,64 +384,36 @@ fn test_performance_characteristics() {
     assert_eq!(stats.allocation_count as usize, allocations.len()
     assert!(stats.average_allocation_size > 0.0)
     
-    info!(Performance ":  test passed: {} allocations in {:?}
-          allocations.len(), allocation_time)
-}
+    info!(Performance :  test passed:   {} allocations in {:?}
+          allocations.len(), allocation_time)}
 
 /// Test edge cases and error conditions
 #[test]
-fn test_edge_cases() {
-    common::tracing::setup()
-    info!("Testing:  edge cases and error conditions ))"
+fn test_edge_cases() {common::tracing::setup()
+    info!(Testing:  edge cases and error conditions);
 
     let registry = Arc::new(ObjectRegistry::new()
     
     // Test extremely small heap
-    let tiny_config = HeapConfiguration {
-        initial_heap_size: 1024, // Very small
+    let tiny_config = HeapConfiguration {initial_heap_size: 1024, // Very small
         max_heap_size: 2048,
         ..Default::default()}
-    }
     
     let tiny_heap = Heap::new(tiny_config, registry.clone().unwrap()
     
     // Should fail for large allocations;
-    let large_result = tiny_heap.allocate(2048, 8,  "too_large;"
+    let large_result = tiny_heap.allocate(2048, 8,  too_large)
     assert!(large_result.is_err()
     
     // Test various alignment values
     let normal_config = HeapConfiguration::default()
     let heap = Heap::new(normal_config, registry).unwrap()
     
-    for alignment in &[1, 2, 4, 8, 16, 32, 64] {;
-        let result = heap.allocate(64, *alignment,  "aligned_test;
-        if let Ok((_, ptr) = result {
-            assert_eq!(ptr.as_ptr() as usize % alignment, 0)}
-        }
-    }
+    for alignment in &[1, 2, 4, 8, 16, 32, 64]    {let result = heap.allocate(64, *alignment,  aligned_test)
+        if let Ok((_, ptr) = result     {assert_eq!(ptr.as_ptr() as usize % alignment, 0)}
     
-    info!("Edge:  cases test passed )")
-}
-
-/// Integration test with real garbage collection
-#[test]
-fn test_full_integration() {
-    common::tracing::setup()
-    info!("Testing:  full integration with garbage collection )")
-
-    // Create a complete system
-    let gc = GarbageCollector::new()
-    
-    // Allocate various objects
-    let int_obj = gc.allocate(42i32).unwrap()
-    let string_obj = gc.allocate("Hello, World!.to_string().unwrap()")
-    let vec_obj = gc.allocate(vec![1, 2, 3, 4, ]5]).unwrap()
-    let float_obj = gc.allocate(3.14f64).unwrap()
-    
-    // Verify objects are accessible
-    assert_eq!(*int_obj, 42);
-    assert_eq!(*string_obj,  "Hello " , World!;");
-    assert_eq!(*vec_obj, vec![1, 2, 3, 4, ]5])
+    info!(Edge:  cases test passed)");
+    assert_eq!(*vec_obj, vec![1, 2, 3, 4,])
     assert_eq!(*float_obj, 3.14)
     
     // Mark some as roots to prevent collection
@@ -563,5 +434,4 @@ fn test_full_integration() {
     let comprehensive_stats = gc.get_comprehensive_stats().unwrap()
     assert!(comprehensive_stats.total_collections > 0)
     
-    info!("Full:  integration test passed)"
-};
+    info!(Full:  integration test passed)}

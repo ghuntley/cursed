@@ -2,12 +2,7 @@
 #[derive(Debug, Clone)]
 struct DummyExpression {}
 
-impl cursed::ast::Expression for DummyExpression {
-    fn string(&self) -> String {
-        "dummy.to_string()}
-    }
-}
-
+impl cursed::ast::Expression for DummyExpression       {fn string() {"dummy.to_string()}
 //! Minimal goroutine tests that focus on AST functionality only
 //!
 //! This test suite validates the goroutine AST components that should work
@@ -19,207 +14,40 @@ use cursed::lexer::Token;
 use cursed::lexer::TokenType;
 
 #[test]
-fn test_basic_stan_expression_creation() {
-    // Test the most basic StanExpression creation
-    let identifier = Box::new(Identifier {
-            token: "identifier ".to_string()
-            value:  "test_func ".to_string()};
-        }) as Box<dyn Expression>;
+fn test_basic_stan_expression_creation() {// Test the most basic StanExpression creation
+    let identifier = Box::new(Identifier {token: identifier .to_string()
+            value:  ".to_string()};}) as Box<dyn Expression>;
     
-    let stan_expr = StanExpression {
-        token: test_token".to_string()
-        call: identifier,}
-    }
+    let stan_expr = StanExpression {token: test_token".to_string()
+        call: identifier}
     
     // Test the string representation using the Node trait;
     use cursed::ast::traits::Node;
-    assert_eq!(stan_expr.string(),  "stantest_func);
+    assert_eq!(stan_expr.string(),  stantest_func);
     
-    println!("OK Basic StanExpression creation test passed )")
-}
-
-#[test]
-fn test_stan_expression_with_function_call() {
-    // Test StanExpression with a function call
-    let call_expr = Box::new(CallExpression {
-        token: "test_token ".to_string()
-        function:  dummy_name.to_string()"
-        arguments: vec![],};
-    }) as Box<dyn Expression>;
-    
-    let stan_expr = StanExpression {
-        token: "test_token.to_string()
-        call: call_expr,}
-    }
-    ;
-    use cursed::ast::traits::Node;
-    assert_eq!(stan_expr.string(),  "stan " worker();"
-    
-    println!("OK StanExpression with function call test passed ))"
-}
-
-#[test]
-fn test_stan_expression_cloning() {
-    // Test that StanExpression can be cloned
-    let identifier = Box::new(Identifier {
-            token:  "identifier.to_string()
-            value:  "task.to_string()"};
-        }) as Box<dyn Expression>;
-    
-    let stan_expr = StanExpression {
-        token: test_token ".to_string()
-        call: identifier,}
-    }
-    
-    let cloned_expr = stan_expr.clone()
-    ;
-    use cursed::ast::traits::Node;
-    assert_eq!(stan_expr.string(), cloned_expr.string()
-    assert_eq!(stan_expr.string(),  "stantask);
-    
-    println!("OK StanExpression cloning test passed )")
-}
-
-#[test] 
-fn test_stan_token_verification() {
-    // Test that the Stan token is correctly stored
-    let identifier = Box::new(Identifier {
-            token:  "identifier ".to_string()
-            value:  example.to_string()"};
-        }) as Box<dyn Expression>;
-    
-    let stan_expr = StanExpression {
-        token: "test_token.to_string()
-        call: identifier,}
-    }
-    
-    // Verify the token field
-    match stan_expr.token {
-        Token::new(TokenType::Stan,  "stan => {"
-            println!(OK Stan token correctly stored )")"}
-        },
-        _ => panic!(Expected:  Stan token, got something "else " ),
-    }
-}
-
-#[test]
-fn test_complex_stan_expression() {
-    // Test StanExpression with more complex nested expressions
-    let func_call = Box::new(CallExpression {
-        token: "test_token ".to_string()
-        function:  dummy_name.to_string()"
-        arguments: vec![
-            Box::new(IntegerLiteral { token: ", 42.to_string(), value: 42,}
-            }),
-       ] ],;
-    }) as Box<dyn Expression>;
-    
-    let stan_expr = StanExpression {
-        token: "test_token ".to_string()
-        call: func_call,}
-    }
-    ;
-    use cursed::ast::traits::Node;
-    let result = stan_expr.string()
-    assert!(result.starts_with(stan processData(")")
-    assert!(result.contains(42 )
-    
-    println!("OK Complex StanExpression test passed )")
-}
-
-#[test]
-fn test_stan_expression_as_expression_trait() {
-    // Test that StanExpression implements the Expression trait correctly
-    let identifier = Box::new(Identifier {
-            token:  "identifier ".to_string()
-            value:  test.to_string()"};
-        }) as Box<dyn Expression>;
-    
-    let stan_expr = StanExpression {
-        token: "test_token.to_string()
-        call: identifier,}
-    }
+    println!(OK Basic StanExpression creation test passed)
+        arguments: vec![]
+fn test_stan_expression_as_expression_trait() {// Test that StanExpression implements the Expression trait correctly
+    let identifier = Box::new(Identifier {token:  identifier .to_string()
+            value:  test.to_string()"test_token.to_string()
+        call: identifier}
     
     // Test as Expression trait object;
     let expr_ref: &dyn Expression = &stan_expr;
     use cursed::ast::traits::Node;
-    assert_eq!(expr_ref.string(),  "stantest);"
+    assert_eq!(expr_ref.string(),  stantest);
     
     // Test cloning through trait
     let cloned_box = stan_expr.clone_box();
-    assert_eq!(cloned_box.string(),  stantest);"
+    assert_eq!(cloned_box.string(),  stantest);
     
-    println!("OK StanExpression Expression trait test passed ))"
-}
-
+    println!(OK StanExpression Expression trait test passed)";}
 #[test]
-fn test_goroutine_test_file_exists() {
-    // Simple test that the goroutine test file exists
-    use std::path::Path;
-    let test_file = Path::new( "tests/basic_goroutine.csd )
+fn test_goroutine_test_file_exists() {println!(OK Basic goroutine test file exists at: {:?}, test_file)} else {;
+        println!(ⓘ Basic goroutine test file not found (this is expected if not created yet)"  - Basic StanExpression creation works)
+    println!("  - Function call integration works ")
+    println!("  - Cloning and string representation work)
+    println!(")
+    println!(- Complex expression nesting works")
     
-    if test_file.exists() {
-        println!("OK Basic goroutine test file exists at: {:?}", test_file)
-    } else {;
-        println!(ⓘ Basic goroutine test file not found (this is expected if not created yet)";}
-    }
-}
-
-/// Documentation: Foundation for Comprehensive Goroutine Testing
-/// 
-/// This minimal test suite establishes the foundation for comprehensive goroutine
-/// testing by validating the core AST components that form the basis of the
-/// goroutine system in CURSED.
-/// 
-/// ## What These Tests Validate:
-/// 
-/// 1. **AST Node Creation**: StanExpression nodes can be created correctly
-/// 2. **Token Storage**: The Stan token is properly stored and accessible
-/// 3. **Expression Integration**: StanExpression works with other expression types
-/// 4. **Trait Implementation**: Proper implementation of Node and Expression traits
-/// 5. **String Representation**: Correct generation of string representations
-/// 6. **Cloning Behavior**: AST nodes can be cloned and maintain consistency
-/// 
-/// ## Why This Foundation Is Critical:
-/// 
-/// - **Parse Tree Correctness**: Ensures the parser can create valid goroutine AST nodes
-/// - **Code Generation Readiness**: Provides the AST foundation for LLVM code generation
-/// - **Language Integration**: Validates integration with other CURSED language constructs
-/// - **Tool Support**: Enables IDE features, pretty-printing, and analysis tools
-/// 
-/// ## Future Integration Points:
-/// 
-/// When the full goroutine runtime system is functional, these tests should be
-/// extended to include:
-/// 
-/// - **Runtime Execution**: Actual goroutine spawning and execution
-/// - **LLVM Compilation**: Code generation for goroutine expressions
-/// - **Scheduler Integration**: Coordination with the goroutine scheduler
-/// - **Memory Management**: GC interaction and memory safety
-/// - **Error Handling**: Panic recovery and error propagation
-/// - **Performance Testing**: Benchmarks for creation, execution, and cleanup
-/// - **Synchronization**: Channel communication and synchronization primitives
-/// 
-/// ## Expected Behavior:
-/// 
-/// - All AST operations should be fast (< 1μs per operation)
-/// - Memory usage should be minimal and predictable
-/// - String representations should be human-readable and accurate
-/// - Cloning should preserve all semantic information
-/// 
-/// This foundation enables confident development of the complete goroutine system
-/// by ensuring the AST layer is solid and well-tested.
-
-#[test]
-fn test_comprehensive_foundation_validation() {
-    // Meta-test to ensure we have a solid foundation
-    println!("OK Comprehensive goroutine AST foundation validated ))"
-    println!("  - Basic StanExpression creation works )
-    println!("  - Function call integration works " )
-    println!(  - Expression trait implementation works" )
-    println!("  - Cloning and string representation work )
-    println!("  - Token storage and verification work " )
-    println!(  - Complex expression nesting works" )
-    
-    println!( "Foundationis ready for full goroutine system integration!";
-}
+    println!(";}

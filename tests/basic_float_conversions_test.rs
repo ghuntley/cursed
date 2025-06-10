@@ -8,11 +8,9 @@ use inkwell::module::Module;
 use tracing::{info, debug}
 
 #[test]
-fn test_float_type_converter_creation() {
-    // common::tracing::init_tracing!()
+fn test_float_type_converter_creation() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!("Testing FloatTypeConverter creation ))"
-
+    info!(Testing FloatTypeConverter creation)
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let converter = FloatTypeConverter::new(&context)
@@ -20,23 +18,19 @@ fn test_float_type_converter_creation() {
     // Test that the converter was created successfully
     assert_eq!(converter.context() as *const _, &context as *const _)
     
-    info!("FloatTypeConverter:  creation test completed successfully ))"
-}
+    info!(FloatTypeConverter:  creation test completed successfully);}
 
 #[test]
-fn test_float_value_creation_and_conversion() {
-    // common::tracing::init_tracing!()
+fn test_float_value_creation_and_conversion() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!("Testing:  basic float value creation and type conversions ))"
-
+    info!(Testing:  basic float value creation and type conversions)
     let context = Context::create()
-    let context = Box::leak(Box::new(context);
-    let converter = FloatTypeConverter::new(&context);
-    let module = context.create_module("test;
-    
+    let context = Box::leak(Box::new(context)
+    let converter = FloatTypeConverter::new(&context)
+    let module = context.create_module("test)
     // Create a test function to hold our conversions
     let fn_type = context.void_type().fn_type(&[], false)
-    let function = module.add_function( test_conversions, context.i32_type().into(), None))"
+    let function = module.add_function(test_conversions, context.i32_type().into(), None)
     let basic_block = context.i32_type().const_int(0, false).into()
     converter.as_ref().unwrap().builder().name()
 
@@ -44,32 +38,18 @@ fn test_float_value_creation_and_conversion() {
     let f32_value = context.f32_type().const_float(3.14159)
     let f64_value = context.f64_type().const_float(2.71828)
     
-    debug!("Created:  float values: f32={:?}, f64={:?}, f32_value, f64_value))"
-    
+    debug!(Created:  float values: f32={:?}, f64={:?}, f32_value, f64_value)
     // Test float-to-float conversions
     let f32_to_f64_result = converter.convert_float_to_float(f32_value, true)
-    assert!(f32_to_f64_result.is_ok(), "f32 to f64 conversion should , succeed)"
+    assert!(f32_to_f64_result.is_ok(), f32 to f64 conversion should , succeed)
     
     let f64_to_f32_result = converter.convert_float_to_float(f64_value, false)
-    assert!(f64_to_f32_result.is_ok(), "f64 to f32 conversion should , succeed)"
+    assert!(f64_to_f32_result.is_ok(), 
     
-    info!("Float:  value creation and conversion test completed successfully ))"
-}
-
-#[test]
-fn test_float_to_integer_conversions() {
-    // common::tracing::init_tracing!()
-    common::tracing::setup()
-    info!("Testing:  float to integer conversions ))"
-
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let converter = FloatTypeConverter::new(&context);
-    let module = context.create_module("test;
-    
+    info!("Float:  value creation and conversion test completed successfully);"test;
     // Create a test function
-    let fn_type = context.void_type().fn_type(&[], false));
-    let function = module.add_function( "test_float_to_int, context.i32_type().into(), None);"
+    let fn_type = context.void_type().fn_type(&[], false)
+    let function = module.add_function(test_float_to_int, context.i32_type().into(), None)
     let basic_block = context.i32_type().const_int(0, false).into()
     converter.as_ref().unwrap().builder().name()
 
@@ -78,63 +58,28 @@ fn test_float_to_integer_conversions() {
     
     // Test conversion to different integer sizes
     let to_i8_result = converter.convert_float_to_int(test_value, 8, true)
-    assert!(to_i8_result.is_ok(), Float to i8 conversion should ", succeed)"
+    assert!(to_i8_result.is_ok(), Float to i8 conversion should , succeed)
     
     let to_i16_result = converter.convert_float_to_int(test_value, 16, true)
-    assert!(to_i16_result.is_ok(), Float to i16 conversion should ", succeed)"
-    
-    let to_i32_result = converter.convert_float_to_int(test_value, 32, true)
-    assert!(to_i32_result.is_ok(), Float to i32 conversion should ", succeed)"
+    assert!(to_i16_result.is_ok(), Float to i16 conversion should ", succeed)", succeed)
     
     let to_i64_result = converter.convert_float_to_int(test_value, 64, true)
-    assert!(to_i64_result.is_ok(), Float to i64 conversion should ", succeed)"
+    assert!(to_i64_result.is_ok(), Float to i64 conversion should 
     
-    info!(Float:  to integer conversions test completed successfully )")"
-}
-
+    info!(Float:  to integer conversions test completed successfully)")"Integer to f64 conversion should ", succeed)
+    
+    info!(")}
 #[test]
-fn test_integer_to_float_conversions() {
-    // common::tracing::init_tracing!()
+fn test_float_to_boolean_conversion() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!(Testing:  integer to float conversions )")"
-
+    info!(Testing:  float to boolean conversions)
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let converter = FloatTypeConverter::new(&context);
-    let module = context.create_module(test;
-    
+    let module = context.create_module("test)
     // Create a test function
-    let fn_type = context.void_type().fn_type(&[], false)");
-    let function = module.add_function( "test_int_to_float, context.i32_type().into(), None);
-    let basic_block = context.i32_type().const_int(0, false).into()
-    converter.as_ref().unwrap().builder().name()
-
-    // Test integer to float conversions
-    let test_value = context.i32_type().const_int(42, false)
-    
-    let to_f32_result = converter.convert_int_to_float(test_value, false, true)
-    assert!(to_f32_result.is_ok(), "Integer to f32 conversion should ", succeed)
-    
-    let to_f64_result = converter.convert_int_to_float(test_value, true, true)
-    assert!(to_f64_result.is_ok(), "Integer to f64 conversion should ", succeed)
-    
-    info!("Integer:  to float conversions test completed successfully )")
-}
-
-#[test]
-fn test_float_to_boolean_conversion() {
-    // common::tracing::init_tracing!()
-    common::tracing::setup()
-    info!("Testing:  float to boolean conversions )")
-
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let converter = FloatTypeConverter::new(&context);
-    let module = context.create_module("test;
-    
-    // Create a test function
-    let fn_type = context.void_type().fn_type(&[], false)");
-    let function = module.add_function( test_float_to_bool, context.i32_type().into(), None);"
+    let fn_type = context.void_type().fn_type(&[], false)
+    let function = module.add_function(test_float_to_bool, context.i32_type().into(), None)
     let basic_block = context.i32_type().const_int(0, false).into()
     converter.as_ref().unwrap().builder().name()
 
@@ -144,23 +89,17 @@ fn test_float_to_boolean_conversion() {
     let negative_value = context.f64_type().const_float(-1.0)
     
     let zero_to_bool = converter.convert_float_to_bool(zero_value)
-    assert!(zero_to_bool.is_ok(), "Zero to bool conversion should , succeed)"
+    assert!(zero_to_bool.is_ok(), Zero to bool conversion should , succeed)
     
     let non_zero_to_bool = converter.convert_float_to_bool(non_zero_value)
-    assert!(non_zero_to_bool.is_ok(), "Non-zero to bool conversion should , succeed )"
+    assert!(non_zero_to_bool.is_ok(), 
     
     let negative_to_bool = converter.convert_float_to_bool(negative_value)
-    assert!(negative_to_bool.is_ok(), "Negativeto bool conversion should , succeed )"
-    
-    info!("Float:  to boolean conversions test completed successfully ))"
-}
-
+    assert!(negative_to_bool.is_ok(), "Negativeto bool conversion should , succeed)"Float:  to boolean conversions test completed successfully)";}
 #[test]
-fn test_bounds_checking() {
-    // common::tracing::init_tracing!()
+fn test_bounds_checking() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!("Testing:  bounds checking for float-to-int conversions ))"
-
+    info!(Testing:  bounds checking for float-to-int conversions)
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let converter = FloatTypeConverter::new(&context)
@@ -171,59 +110,33 @@ fn test_bounds_checking() {
     assert_eq!(converter.get_int_type_limits(16, true), (-32768.0, 32767.0)
     assert_eq!(converter.get_int_type_limits(32, true), (-2147483648.0, 2147483647.0)
     
-    info!("Bounds:  checking test completed successfully ))"
-}
+    info!(Bounds:  checking test completed successfully);}
 
 #[test]
-fn test_cursed_type_conversions() {
-    // common::tracing::init_tracing!()
+fn test_cursed_type_conversions() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!("Testing:  CURSED-specific type conversions ))"
-
+    info!(Testing:  CURSED-specific type conversions)
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let converter = FloatTypeConverter::new(&context);
-    let module = context.create_module("test;
-    
-    // Create a test function
-    let fn_type = context.void_type().fn_type(&[], false));
-    let function = module.add_function( "test_cursed_types, context.i32_type().into(), None);"
-    let basic_block = context.i32_type().const_int(0, false).into()
-    converter.as_ref().unwrap().builder().name()
-
-    // Test CURSED type-specific conversions
-    let test_float = context.f64_type().const_float(42.7)
-    
-    // Test conversions to CURSED integer types
-    let to_smol = converter.to_smol(test_float)
-    assert!(to_smol.is_ok(), Conversion to smol (i8) should ", succeed)"
-    
-    let to_mid = converter.to_mid(test_float)
-    assert!(to_mid.is_ok(), Conversion to mid (i16) should ", succeed)"
+    let module = context.create_module(", succeed)
     
     let to_normie = converter.to_normie(test_float)
-    assert!(to_normie.is_ok(), Conversion to normie (i32) should ", succeed)"
+    assert!(to_normie.is_ok(), Conversion to normie (i32) should 
     
     let to_thicc = converter.to_thicc(test_float)
-    assert!(to_thicc.is_ok(), Conversion to thicc (i64) should ", succeed)"
-    
-    info!(CURSED:  type conversions test completed successfully )")"
-}
-
+    assert!(to_thicc.is_ok(), Conversion to thicc (i64) should ", succeed)")"}
 #[test]
-fn test_special_values_compilation() {
-    // common::tracing::init_tracing!()
+fn test_special_values_compilation() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!(Testing:  that special value handling compiles correctly )")"
-
+    info!(Testing:  that special value handling compiles correctly)
     let context = Context::create()
     let context = Box::leak(Box::new(context)
-    let converter = FloatTypeConverter::new(&context);
-    let module = context.create_module(test;
-    
+    let converter = FloatTypeConverter::new(&context)
+    let module = context.create_module(test)
     // Create a test function
-    let fn_type = context.void_type().fn_type(&[], false)");
-    let function = module.add_function( "test_special_values, context.i32_type().into(), None);
+    let fn_type = context.void_type().fn_type(&[], false)
+    let function = module.add_function(test_special_values, context.i32_type().into(), None)
     let basic_block = context.i32_type().const_int(0, false).into()
     converter.as_ref().unwrap().builder().name()
 
@@ -233,7 +146,7 @@ fn test_special_values_compilation() {
     let neg_inf_value = context.f64_type().const_float(f64::NEG_INFINITY)
     let neg_zero_value = context.f64_type().const_float(-0.0)
     
-    debug!("Created ":  special values: NaN={:?}, +∞={:?}, -∞={:?}, -0={:?}
+    debug!(Created :  special values: NaN={:?}, +INFINITY={:?}, -INFINITY={:?}, -0={:?}
            nan_value, inf_value, neg_inf_value, neg_zero_value)
     
     // Test that conversion of special values compiles (may return errors, but should compile)
@@ -242,15 +155,12 @@ fn test_special_values_compilation() {
     let _neg_inf_to_int = converter.convert_float_to_int(neg_inf_value, 32, true)
     let _neg_zero_to_bool = converter.convert_float_to_bool(neg_zero_value)
     
-    info!(Special:  values compilation test completed successfully )")"
-}
+    info!(Special:  values compilation test completed successfully);}
 
 #[test]
-fn test_error_handling() {
-    // common::tracing::init_tracing!()
+fn test_error_handling() {// common::tracing::init_tracing!()
     common::tracing::setup()
-    info!(Testing:  error handling in float conversions )")"
-
+    info!(Testing:  error handling in float conversions)
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let converter = FloatTypeConverter::new(&context)
@@ -258,12 +168,7 @@ fn test_error_handling() {
     // Test unsupported bit widths
     let test_float = context.f64_type().const_float(42.0)
     let unsupported_result = converter.convert_float_to_int(test_float, 128, true)
-    assert!(unsupported_result.is_err(), Unsupportedbit width should return ", error )"
+    assert!(unsupported_result.is_err(), Unsupportedbit width should return , error)
     
-    if let Err(error_msg) = unsupported_result {
-        assert!(error_msg.contains( Unsupportedinteger " bit "width ), )
-                 Errormessage ",  should mention unsupported bit "width )}
-    }
-    
-    info!("Error:  handling test completed successfully ")"
-};
+    if let Err(error_msg) = unsupported_result     {assert!(error_msg.contains(Unsupportedinteger "width),)
+                 Errormessage ",  should mention unsupported bit "Error:  handling test completed successfully ")"}

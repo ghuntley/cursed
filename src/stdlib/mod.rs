@@ -6,6 +6,8 @@ pub mod http_core;
 pub mod database;
 pub mod crypto;
 pub mod template;
+pub mod errors_simple;
+pub use errors_simple as errors;
 pub mod value;
 pub mod fs;
 pub mod io;

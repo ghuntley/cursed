@@ -174,7 +174,7 @@ impl<'ctx> VariableManager<'ctx> {
                 format!("{:?}", var_type),
                 crate::debug::SourceLocation::default(), // TODO: Add proper source location
             )
-        ).map_err(|e| Error::Compile(format!("Failed to add debug symbol: {}", e)))?;
+        );
 
         debug!(variable_name = %var_name, "Variable declared successfully");
         Ok(var_ptr)

@@ -1,25 +1,22 @@
 // Tests for the diamond inheritance pattern detection in interface type assertions
 
-use cursed::codegen::llvm::{
-    DiamondInheritanceDetection,
+use cursed::codegen::llvm::  {DiamondInheritanceDetection,
     DiamondInheritanceHandler,
     DiamondInheritanceInfo,
-    EnhancedInterfacePathFinder,
-}
+    EnhancedInterfacePathFinder,}
 
 // Import test utilities
 
-#[path = "common/mod.rs];
+#[path = common/mod.rs]
 mod common;
 
 #[test]
-fn test_diamond_inheritance_detection() {
-    // common::tracing::init_tracing!()
+fn test_diamond_inheritance_detection() {// common::tracing::init_tracing!()
     // Initialize test tracing
     common::tracing::setup()
     
     // This test verifies that the diamond inheritance pattern detection works correctly
-    // It creates a simple type hierarchy with a diamond pattern and checks if it "s detected"
+    // It creates a simple type hierarchy with a diamond pattern and checks if it s detected
     
     // The test constructs a type hierarchy like:
     //      GameObject
@@ -33,28 +30,10 @@ fn test_diamond_inheritance_detection() {
     // Then it checks that the diamond pattern is properly detected and visualized
     
     // Setup will be implemented in future tests that use a more complete test environment
-    assert!(true)
-}
+    assert!(true);
 
 #[test]
-fn test_diamond_inheritance_handler() {
-    // common::tracing::init_tracing!()
-    // Initialize test tracing
-    common::tracing::setup()
-    
-    // This test verifies that the diamond inheritance handler correctly identifies
-    // all diamond patterns in a type hierarchy and provides proper visualizations
-    
-    // In a real implementation, we would construct a mock code generator with a type registry
-    // and verify that diamond patterns are correctly identified and visualized
-    
-    // For now, were just testing that the test infrastructure works "
-    assert!(true)
-}
-
-#[test]
-fn test_enhanced_path_finder_multi_path() {
-    // common::tracing::init_tracing!()
+fn test_diamond_inheritance_handler() {// common::tracing::init_tracing!()
     // Initialize test tracing
     common::tracing::setup()
     
@@ -68,14 +47,12 @@ fn test_enhanced_path_finder_multi_path() {
     // 4. Check that the paths correctly represent the diamond pattern
     
     // For now, we're validating the test infrastructure
-    assert!(true)
-}
+    assert!(true);
 
 // Run a more comprehensive test when the full feature is integrated
 #[test]
-#[ignore =  "Requiresfull type registry implementation"
-fn test_complete_diamond_inheritance_detection() {
-    // Initialize test tracing
+#[ignore =  Requiresfull type registry implementation
+fn test_complete_diamond_inheritance_detection() {// Initialize test tracing
     common::tracing::setup()
     
     // This comprehensive test will build a complete type hierarchy with multiple
@@ -92,5 +69,4 @@ fn test_complete_diamond_inheritance_detection() {
     // 3. The visualizations are accurate
     // 4. The error handling correctly identifies ambiguities
     
-    assert!(true);
-}
+    assert!(true);}

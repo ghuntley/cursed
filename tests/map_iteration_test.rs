@@ -4,8 +4,7 @@
 // implementation in `src/codegen/llvm/map_iteration_improvements.rs`.
 
 #[test]
-fn test_map_iteration_type_determination() {
-    // Test plan for map key/value type determination
+fn test_map_iteration_type_determination() {// Test plan for map key/value type determination
     //
     // This test would verify that the map iteration implementation correctly
     // determines key and value types from map structures.
@@ -19,19 +18,17 @@ fn test_map_iteration_type_determination() {
     // 6. Test proper handling of generic map types with type parameters
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM context and values.
-}
+    // setting up a proper test environment with LLVM context and values.}
 
 #[test]
-fn test_map_iteration_range_clauses() {
-    // Test plan for range clause compilation with maps
+fn test_map_iteration_range_clauses() {// Test plan for range clause compilation with maps
     //
     // This test would verify that the range clause implementation correctly
     // compiles map iterations with proper type determination.
     //
     // Steps:
     // 1. Create a map with known key and value types
-    // 2. Compile a range clause for the map (e.g., "for key, value := range map"
+    // 2. Compile a range clause for the map (e.g., for key, value := range map
     // 3. Verify that the generated LLVM IR correctly allocates key and value variables
     //    with the correct types
     // 4. Ensure proper iterator creation, iteration, and cleanup
@@ -39,15 +36,13 @@ fn test_map_iteration_range_clauses() {
     // 6. Test error handling for nil maps and other edge cases
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM context and code generation.
-}
+    // setting up a proper test environment with LLVM context and code generation.}
 
 #[test]
-fn test_map_type_inference() {
-    // Test plan for map type inference from generic parameters
+fn test_map_type_inference() {// Test plan for map type inference from generic parameters
     //
     // This test would verify that the implementation correctly extracts type
-    // information from generic map type parameters (e.g., Map<KeyType,ValueType>).
+    // information from generic map type parameters (e.g., Map<KeyType,ValueType>.
     //
     // Steps:
     // 1. Create map types with various generic parameters
@@ -57,12 +52,10 @@ fn test_map_type_inference() {
     // 5. Test handling of unknown type names and fallback mechanisms
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM types.
-}
+    // setting up a proper test environment with LLVM types.}
 
 #[test]
-fn test_map_entry_struct_inference() {
-    // Test plan for map entry struct inference
+fn test_map_entry_struct_inference() {// Test plan for map entry struct inference
     //
     // This test would verify that the implementation correctly infers key and value
     // types from map entry structs when generic parameters are not available.
@@ -75,5 +68,4 @@ fn test_map_entry_struct_inference() {
     // 5. Verify proper handling of nested pointer types, arrays, and other complexities
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM structs and types.;
-}
+    // setting up a proper test environment with LLVM structs and types.;}

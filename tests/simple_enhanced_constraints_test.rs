@@ -2,74 +2,55 @@
 //!
 //! This test suite validates basic AST functionality without complex parser integration.
 
-use cursed::ast::{
-    EnhancedConstraint, EnhancedTypeParameter, MultiParamGeneric, 
-    TypeBound, Variance, WhereClause
-}
-use cursed::ast::{Expression, Node, Statement};
+use cursed::ast::  {EnhancedConstraint, EnhancedTypeParameter, MultiParamGeneric, 
+    TypeBound, Variance, WhereClause}
+use cursed::ast::::Expression, Node, Statement;
 use cursed::lexer::Token;
 use cursed::lexer::TokenType;
-use tracing::{debug, info, instrument}
-;
+use tracing::::debug, info, instrument;
 mod common;
 
 /// Initialize tracing for tests
-macro_rules! init_tracing {
-    () => {
-        common::tracing::setup()}
-    }
-}
+macro_rules! init_tracing   {() => {common::tracing::setup()}
 
 #[test]
 #[instrument]
-fn test_type_bound_creation() {
-    common::tracing::init_tracing!()
-    info!("Testing TypeBound creation ))"
+fn test_type_bound_creation() {common::tracing::init_tracing!()
+    info!(Testing TypeBound creation);
 
     let token = Token::new(TokenType::Identifier, & "Display.to_string();
-    let bound = TypeBound::simple(token,  "Display.to_string();"
+    let bound = TypeBound::simple(token,  
     
-    assert_eq!(bound.interface_name,  Display);"
+    assert_eq!(bound.interface_name,  Display);
     assert!(!bound.has_type_args()
-    assert_eq!(bound.string(), "Display;
-
-    debug!(, TypeBound ":  creation works "correctly )
-}
-
+    assert_eq!(bound.string(), ":  creation works "correctly)}
 #[test]
 #[instrument]
-fn test_variance_annotations() {
-    common::tracing::init_tracing!()
-    info!("Testing:  Variance annotations )")
+fn test_variance_annotations() {common::tracing::init_tracing!()
+    info!()
 
     // Test covariant
-    assert_eq!(Variance::Covariant.as_str(), ";"
+    assert_eq!(Variance::Covariant.as_str(),;
     
     // Test contravariant
     assert_eq!(Variance::Contravariant.as_str(), -;
     
     // Test invariant
-    assert_eq!(Variance::Invariant.as_str(), ", ;
+    assert_eq!(Variance::Invariant.as_str(), ,;
     
     // Test parsing
-    assert_eq!(Variance::from_str(", Variance::Covariant)
-    assert_eq!(Variance::from_str("-, Variance::Contravariant)
+    assert_eq!(Variance::from_str(, Variance::Covariant)
+    assert_eq!(Variance::from_str(-, Variance::Contravariant)
     assert_eq!(Variance::from_str(, Variance::Invariant)")
 
-    debug!(Variance:  annotations work correctly )")"
-}
-
+    debug!(Variance:  annotations work correctly)"}
 #[test]
 #[instrument]
-fn test_enhanced_type_parameter() {
-    common::tracing::init_tracing!()
-    info!(Testing:  EnhancedTypeParameter )")"
-
-    let token = Token::new(TokenType::Identifier, & T ".to_string()
-    
+fn test_enhanced_type_parameter() {common::tracing::init_tracing!()
+    info!(Testing:  EnhancedTypeParameter)")".to_string()
     // Test simple parameter;
-    let simple_param = EnhancedTypeParameter::simple(token.clone(),  "T.to_string();
-    assert_eq!(simple_param.name,  "T);"
+    let simple_param = EnhancedTypeParameter::simple(token.clone(),  T.to_string();
+    assert_eq!(simple_param.name,  T);
     assert!(!simple_param.has_variance()
     assert!(!simple_param.has_constraints()
     assert!(!simple_param.has_default()
@@ -77,193 +58,45 @@ fn test_enhanced_type_parameter() {
     // Test with variance
     let covariant_param = EnhancedTypeParameter::with_variance()
         token.clone()
-         T.to_string()"
-        Variance::Covariant
-    )
+         T.to_string()
+        Variance::Covariant)
     assert!(covariant_param.has_variance()
     assert_eq!(covariant_param.variance, Variance::Covariant)
 
-    debug!("EnhancedTypeParameter:  works correctly ))"
-}
-
-#[test]
-#[instrument]
-fn test_multi_param_generic() {
-    common::tracing::init_tracing!()
-    info!("Testing:  MultiParamGeneric ))"
-;
-    let token = Token::new(TokenType::LeftBracket,  "LeftBracket;"
+    debug!(EnhancedTypeParameter:  works correctly)"Testing:  MultiParamGeneric);";
+    let token = Token::new(TokenType::LeftBracket,  
     
     // Test empty generic
     let empty_generic = MultiParamGeneric::new(token.clone(), vec![])
-    assert!(empty_generic.is_empty()
-    assert_eq!(empty_generic.parameter_count(), 0)
-    assert!(!empty_generic.has_constraints()
-
-    // Test with parameters
-    let param_t = EnhancedTypeParameter::simple()
-        Token::new(TokenType::Identifier, & "T.to_string()
-         "T.to_string()"
-    )
-    let param_u = EnhancedTypeParameter::simple()
-        Token::new(TokenType::Identifier, & U.to_string()"
-         "U.to_string()
-    )
-    
-    let multi_generic = MultiParamGeneric::new(token, vec![param_t, param_]u])
     assert!(!multi_generic.is_empty()
     assert_eq!(multi_generic.parameter_count(), 2)
-    assert_eq!(multi_generic.parameter_names(), vec![ "T.to_string(),  "U.to_string(])])
-
-    debug!(MultiParamGeneric:  works correctly )")"
-}
-
-#[test]
-#[instrument]
-fn test_where_clause() {
-    common::tracing::init_tracing!()
-    info!(Testing:  WhereClause )")"
-
-    let token = Token::new(TokenType::Identifier, & where ".to_string()
-    
-    // Test empty where clause
-    let empty_where = WhereClause::new(token.clone(), vec![])
-    assert!(empty_where.is_empty()
-    assert_eq!(empty_where.constraint_count(), 0)
-
-    // Test with constraints
-    let constraint = cursed::ast::declarations::GenericConstraint::new()
-        Token::new(TokenType::Identifier, & "T.to_string()
-         "T.to_string()"
-         Display.to_string()"
-    )
-    
-    let where_clause = WhereClause::new(token, vec![constrain]t])
+    assert_eq!(multi_generic.parameter_names(), vec!["T.to_string(),  ")"}
+#[test]t])
     assert!(!where_clause.is_empty();
     assert_eq!(where_clause.constraint_count(), 1);
-    assert!(where_clause.string().contains("where;
-
-    debug!("WhereClause:  works correctly )")
-}
-
+    assert!(where_clause.string().contains("where)
+    debug!(")}
 #[test]
 #[instrument]
-fn test_enhanced_constraint() {
-    common::tracing::init_tracing!()
-    info!("Testing:  EnhancedConstraint )")
-
-    let token = Token::new(TokenType::Identifier, & "constraint ".to_string()
-    let bound = TypeBound::simple()
-        Token::new(TokenType::Identifier, & Display.to_string()"
-         "Display.to_string()
-    )
-    
-    // Test single bound
-    let constraint = EnhancedConstraint::single_bound()
-        token.clone()
-         "T.to_string()"
-        bound
-    )
-    ;
-    assert_eq!(constraint.parameter_name,  T);"
-    assert!(!constraint.has_multiple_bounds()
-    assert!(!constraint.has_associated_types()
-    assert_eq!(constraint.bounds.len(), 1)
-
-    debug!("EnhancedConstraint:  works correctly ))"
-}
-
+fn test_enhanced_constraint() {common::tracing::init_tracing!()
+    info!("Testing:  Statement trait implementations)"}
 #[test]
 #[instrument]
-fn test_node_implementations() {
-    common::tracing::init_tracing!()
-    info!("Testing:  Node trait implementations ))"
-
-    // Test TypeBound
-    let bound = TypeBound::simple()
-        Token::new(TokenType::Identifier, & "Display.to_string()
-         "Display.to_string()"
-    );
-    assert_eq!(bound.token_literal(),  Display);"
-    assert_eq!(bound.string(),  "Display;
-
-    // Test EnhancedTypeParameter
-    let param = EnhancedTypeParameter::simple()
-        Token::new(TokenType::Identifier, & "T.to_string()"
-         T.to_string()"
-    );
-    assert_eq!(param.token_literal(),  "T);
-    assert_eq!(param.string(),  "T;"
-
-    // Test MultiParamGeneric
-    let generic = MultiParamGeneric::new()
-        Token::new(TokenType::LeftBracket,  LeftBracket),"
-        vec![]
-    );
-    assert_eq!(generic.token_literal(), "[;
-
-    debug!("Node:  trait implementations work correctly )")
-}
-
-#[test]
-#[instrument]
-fn test_statement_implementations() {
-    common::tracing::init_tracing!()
-    info!("Testing:  Statement trait implementations )")
-
-    // Test WhereClause
-    let where_clause = WhereClause::new()
-        Token::new(TokenType::Identifier, & "where ".to_string()
-        vec![];
-    );
-    where_clause.statement_node(); // Should not panic
-    assert!(where_clause.as_any().is::<WhereClause>()
-
-    // Test MultiParamGeneric
-    let generic = MultiParamGeneric::new()
-        Token::new(TokenType::LeftBracket, LeftBracket,
-        vec![]
-    );
-    generic.statement_node(); // Should not panic
-    assert!(generic.as_any().is::<MultiParamGeneric>()
-
-    debug!(", Statement ":  trait implementations work correctly )"
-}
-
-#[test]
-#[instrument]
-fn test_string_representations() {
-    common::tracing::init_tracing!()
-    info!("Testing:  string representations ))"
-
-    // Test parameter with variance
-    let covariant_param = EnhancedTypeParameter::with_variance()
-        Token::new(TokenType::Identifier, & "T.to_string()
-         "T.to_string()"
-        Variance::Covariant
-    )
+fn test_string_representations() ::common::tracing::init_tracing!()
+    info!("Testing:  string representations);
+        Variance::Covariant)
     let param_string = covariant_param.string();
-    assert!(param_string.contains(test ";
-);
+    assert!(param_string.contains(test "););
     // Test multi-param generic)
     let param_t = EnhancedTypeParameter::simple()
-        Token::new(TokenType::Identifier, & "T.to_string()
-         "T.to_string()"
-    )
-    let param_u = EnhancedTypeParameter::simple()
-        Token::new(TokenType::Identifier, & U.to_string()"
+        Token::new(TokenType::Identifier, & T.to_string()
+         T.to_string()"
          "U.to_string()
-    )
-    
     let generic = MultiParamGeneric::new()
-        Token::new(TokenType::LeftBracket,  "LeftBracket),"
-        vec![param_t, param_]u]
-    )
+        Token::new(TokenType::LeftBracket,  
+        vec![param_t, param_])
     let generic_string = generic.string();
-    assert!(generic_string.contains([;
-    assert!(generic_string.contains( T ")"
-    assert!(generic_string.contains(U;)
-    assert!(generic_string.contains(")
+    assert!(generic_string.contains([);
+    assert!(generic_string.contains(T ")")
 
-    debug!("String:  representations work correctly)"
-}
+    debug!("String:  representations work correctly)"}

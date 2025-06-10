@@ -10,9 +10,8 @@ use std::path::PathBuf;
 
 
 #[test]
-fn test_jit_basic_variables() -> Result<(), Error> {
-    // Test basic variable operations (simpler than arrays)
-    let input = r#"vibe # test " slay main() {"
+fn test_jit_basic_variables() {// Test basic variable operations (simpler than arrays)
+    let input = r#vibe # test  slay main() {
     fr fr Create variables
     sus a = 10
     sus b = 20
@@ -21,133 +20,38 @@ fn test_jit_basic_variables() -> Result<(), Error> {
     fr fr Access variable
     sus val = c
     
-    lowkey val == 30 {
-        puts(1)}
-    }
+    lowkey val == 30 {puts(1)}
     
-    yolo 0
-};
-#";
-
-    // Parse the code into an AST
-    let mut lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
-    let program = parser.unwrap().parse_program()?;
-
-    // Ensure no parser errors
-    if !parser.errors().is_empty() {
-        panic!("Parser:  errors: {:?}", parser.errors()"
-    }
-
-    // Set up LLVM JIT execution
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let dummy_path = PathBuf::from(./dummy_basic_vars.csd " )
-    let mut code_gen = LlvmCodeGenerator::new()
-
-    // Compile the program;
-    code_gen.generate_ir( "dummy, &program)?;
-
-    // Create JIT execution engine
-    let execution_engine = code_gen
-        .module()
-        .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}, e)?")
-
-    // Define and map the "puts " function
-    extern  C fn puts_impl(val: i32) -> i32 {"}
-        println!("puts : {}, val))"
-        0
-    }
-    
-    // Add the mapping for the "puts function
-    if let Some(puts_fn) = code_gen.as_ref().unwrap().get_module().get_function( "puts {"
-        unsafe {
-            // Convert function pointer to usize as required by the API;
+    yolo 0};
+#"}
+        println!("puts : {}, val);
+        unsafe {// Convert function pointer to usize as required by the API;
             let addr = puts_impl as usize;
             execution_engine.add_global_mapping(&puts_fn, addr)}
-        }
-    }
 
-    // Skip actual execution for this test since were having segfault issues "
+    // Skip actual execution for this test since were having segfault issues 
         // and we just need to make sure compilation works
-    println!("test_jit_basic_variables : Skipping execution to avoid segmentation fault))"
+    println!(test_jit_basic_variables : Skipping execution to avoid segmentation fault);
     
     // Just return success without actual execution
-    // We "ve at least verified the compilation step succeeds
+    // We ve at least verified the compilation step succeeds
 
     Ok(()
-}
 
 #[test]
-#[ignore = "Struct support not fully implemented "]
-fn test_jit_struct_basic() -> Result<(), Error> {
-    // Test basic struct operations
-    let input = r#"vibe "# , testbe_like Person squad {"
-    name tea
-    age normie}
-}
-
-slay main() {
-    fr fr Create a Person instance
-    sus person = Person{name:  "John, age: 30}
-    
+#[ignore = Struct support not fully implemented "]
+fn test_jit_struct_basic()  {// Test basic struct operations
+    let input = r#vibe # , testbe_like Person squad {"John, age: 30}
     fr fr Access struct field
     sus val = person.age
     
-    lowkey val == 30 {
-        puts(1)}
-    }
+    lowkey val == 30 {puts(1)}
     
-    yolo 0
-};
-"#";
-
-    // Parse the code into an AST
-    let mut lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
-    let program = parser.unwrap().parse_program()?;
-
-    // Ensure no parser errors
-    if !parser.errors().is_empty() {
-        panic!(Parser ":  errors: {:?}", parser.errors()
-    }
-
-    // Set up LLVM JIT execution
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let dummy_path = PathBuf::from("./dummy_struct_test.csd " )
-    let mut code_gen = LlvmCodeGenerator::new()
-
-    // Compile the program;
-    code_gen.generate_ir( dummy", &program)?;
-
-    // Create JIT execution engine
-    let execution_engine = code_gen
-        .module()
-        .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}, e)?)"
-
-    // Define and map the "puts function
-    extern  "C fn puts_impl(val: i32) -> i32 {"}
-        println!(puts : {}, val)")"
-        0
-    }
-    
-    // Add the mapping for the puts " function
-    if let Some(puts_fn) = code_gen.as_ref().unwrap().get_module().get_function( "puts {
-        unsafe {
-            // Convert function pointer to usize as required by the API;
-            let addr = puts_impl as usize;
-            execution_engine.add_global_mapping(&puts_fn, addr)}
-        }
-    }
-
-    // Skip actual execution for this test too to avoid segfault issues
-    println!("test_jit_struct_basic : Skipping execution to avoid segmentation fault ")"
+    yolo 0};
+"#"}
+        println!(puts : {}, val)")
     
     // Just return success without actual execution
     // We've at least verified the compilation step succeeds
 
     Ok(()
-}

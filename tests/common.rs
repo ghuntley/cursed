@@ -1,4 +1,4 @@
-/// Common test utilities for enhanced GC tests
+/// Common test utilities for tests
 /// 
 /// This module provides shared testing infrastructure used across multiple test suites.
 
@@ -8,7 +8,7 @@ use std::sync::Once;
 pub mod tracing {
     use std::sync::Once;
     
-    static INIT: Once = Once::new()
+    static INIT: Once = Once::new();
     
     /// Set up tracing for tests
     pub fn setup() {
@@ -16,8 +16,8 @@ pub mod tracing {
             tracing_subscriber::fmt()
                 .with_max_level(tracing::Level::DEBUG)
                 .with_test_writer()
-                .init()}
-        })
+                .init();
+        });
     }
 }
 
@@ -29,22 +29,22 @@ pub mod timing {
     /// Simple timer that logs elapsed time when dropped
     pub struct Timer {
         start: Instant,
-        name: String,}
+        name: String,
     }
     
     impl Timer {
         pub fn new(name: &str) -> Self {
             Self {
-                start: Instant::now()
-                name: name.to_string()}
+                start: Instant::now(),
+                name: name.to_string(),
             }
         }
     }
     
     impl Drop for Timer {
         fn drop(&mut self) {
-            let elapsed = self.start.elapsed()}
-            info!("Operation {}" took {:?}", self.name, elapsed)
+            let elapsed = self.start.elapsed();
+            info!("Operation {} took {:?}", self.name, elapsed);
         }
     }
 }
@@ -53,6 +53,6 @@ pub mod timing {
 #[macro_export]
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup()}
-    }
-};
+        common::tracing::setup();
+    };
+}
