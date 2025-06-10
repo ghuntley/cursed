@@ -1,0 +1,1053 @@
+/// Comprehensive Tests for Core GC Components
+/// 
+/// This test suite validates all Week 1 core components of the garbage collection system:
+/// 1. Object Identification System
+/// 2. Heap Manager
+/// 3. Object Store
+/// 4. Enhanced Gc<T> Smart Pointer
+/// 5. Root Set Management
+/// 
+/// These tests ensure memory safety, thread safety, and proper integration
+/// between all components of the garbage collection system.
+
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use tracing_test::traced_test;
+
+use cursed::memory::{
+    GarbageCollector, Gc, WeakGc, 
+    ObjectId, ObjectIdGenerator, ObjectRegistry, ObjectMetadata,
+    HeapManager, HeapConfig, HeapStats,
+    ObjectStore, ObjectHandle, Storable,
+    RootSetManager, RootType, RootSetStats,
+    Traceable, Visitor, Tag
+};
+
+// Test object implementations
+#[derive(Debug, Clone)]
+struct SimpleTestObject {
+    value: i32,
+    name: String,
+}
+
+impl Traceable for SimpleTestObject {
+    fn trace(&self, _visitor: &mut dyn Visitor) {
+        // No references to trace in this simple object
+    }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
+}
+
+// SimpleTestObject automatically implements Storable via the blanket impl
+
+#[derive(Debug)]
+struct ComplexTestObject {
+    id: u64,
+    children: Vec<Gc<SimpleTestObject>>,
+    parent: Option<WeakGc<ComplexTestObject>>,
+}
+
+impl Traceable for ComplexTestObject {
+    fn trace(&self, visitor: &mut dyn Visitor) {
+        for child in &self.children {
+            visitor.visit(child.as_ref());
+        }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
+        // Note: Don't trace weak references to avoid cycles
+    }
+}
+
+// ComplexTestObject automatically implements Storable via the blanket impl
+
+/// Test Object Identification System
+mod object_id_tests {
+    use super::*;
+
+    #[test]
+    #[traced_test]
+    fn test_object_id_generation() {
+        let generator = ObjectIdGenerator::new();
+        
+        let id1 = generator.next();
+        let id2 = generator.next();
+        let id3 = generator.next();
+        
+        assert_ne!(id1, id2);
+        assert_ne!(id2, id3);
+        assert_ne!(id1, id3);
+        
+        // IDs should be sequential
+        assert!(id1.as_u64() < id2.as_u64());
+        assert!(id2.as_u64() < id3.as_u64());
+        
+        // Null ID checks
+        let null_id = ObjectId::null();
+        assert!(null_id.is_null());
+        assert!(!id1.is_null());
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_concurrent_id_generation() {
+        let generator = Arc::new(ObjectIdGenerator::new());
+        let mut handles = vec![];
+        let ids = Arc::new(Mutex::new(Vec::new()));
+        
+        // Generate IDs from multiple threads
+        for _ in 0..8 {
+            let gen = generator.clone();
+            let ids_ref = ids.clone();
+            
+            handles.push(thread::spawn(move || {
+                let mut local_ids = vec![];
+                for _ in 0..125 {
+                    local_ids.push(gen.next());
+                }
+                
+                let mut global_ids = ids_ref.lock().unwrap();
+                global_ids.extend(local_ids);
+            }));
+        }
+        
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        
+        let final_ids = ids.lock().unwrap();
+        assert_eq!(final_ids.len(), 1000);
+        
+        // Verify all IDs are unique
+        let mut sorted_ids: Vec<u64> = final_ids.iter().map(|id| id.as_u64()).collect();
+        sorted_ids.sort();
+        
+        for i in 1..sorted_ids.len() {
+            assert!(sorted_ids[i-1] < sorted_ids[i], "Found duplicate ID");
+        }
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_metadata() {
+        let id = ObjectId::new(42);
+        let mut metadata = ObjectMetadata::new(id, 128, "TestObject".to_string());
+        
+        assert_eq!(metadata.id, id);
+        assert_eq!(metadata.size, 128);
+        assert_eq!(metadata.type_name, "TestObject");
+        assert!(!metadata.is_marked());
+        assert_eq!(metadata.ref_count, 0);
+        
+        // Test marking
+        metadata.mark();
+        assert!(metadata.is_marked());
+        
+        metadata.unmark();
+        assert!(!metadata.is_marked());
+        
+        // Test reference counting
+        metadata.inc_ref();
+        assert_eq!(metadata.ref_count, 1);
+        
+        metadata.inc_ref();
+        assert_eq!(metadata.ref_count, 2);
+        
+        metadata.dec_ref();
+        assert_eq!(metadata.ref_count, 1);
+        
+        metadata.dec_ref();
+        assert_eq!(metadata.ref_count, 0);
+        
+        // Decrementing when already at 0 should not underflow
+        metadata.dec_ref();
+        assert_eq!(metadata.ref_count, 0);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_registry() {
+        let registry = ObjectRegistry::new();
+        
+        let id1 = ObjectId::new(1);
+        let id2 = ObjectId::new(2);
+        let id3 = ObjectId::new(3);
+        
+        let meta1 = ObjectMetadata::new(id1, 64, "Object1".to_string());
+        let meta2 = ObjectMetadata::new(id2, 128, "Object2".to_string());
+        let meta3 = ObjectMetadata::new(id3, 256, "Object3".to_string());
+        
+        // Register objects
+        assert!(registry.register(meta1).is_ok());
+        assert!(registry.register(meta2).is_ok());
+        assert!(registry.register(meta3).is_ok());
+        
+        // Verify registration
+        assert_eq!(registry.object_count().unwrap(), 3);
+        assert_eq!(registry.total_memory_usage().unwrap(), 448);
+        
+        // Test retrieval
+        let retrieved = registry.get(id2).unwrap().unwrap();
+        assert_eq!(retrieved.type_name, "Object2");
+        assert_eq!(retrieved.size, 128);
+        
+        // Test marking
+        assert!(registry.mark_object(id1).unwrap());
+        assert!(registry.mark_object(id3).unwrap());
+        
+        let unmarked = registry.get_unmarked_objects().unwrap();
+        assert_eq!(unmarked.len(), 1);
+        assert_eq!(unmarked[0], id2);
+        
+        // Test unmark all
+        assert!(registry.unmark_all().is_ok());
+        let unmarked = registry.get_unmarked_objects().unwrap();
+        assert_eq!(unmarked.len(), 3);
+        
+        // Test unregistration
+        let removed = registry.unregister(id2).unwrap().unwrap();
+        assert_eq!(removed.type_name, "Object2");
+        assert_eq!(registry.object_count().unwrap(), 2);
+        
+        // Attempting to register duplicate should fail
+        let duplicate_meta = ObjectMetadata::new(id1, 32, "Duplicate".to_string());
+        assert!(registry.register(duplicate_meta).is_err());
+    }
+}
+
+/// Test Heap Manager
+mod heap_manager_tests {
+    use super::*;
+
+    #[test]
+    #[traced_test]
+    fn test_heap_manager_basic_allocation() {
+        let config = HeapConfig::default();
+        let registry = Arc::new(ObjectRegistry::new());
+        let heap = HeapManager::new(config, registry);
+        
+        // Test basic allocation
+        let (id1, ptr1) = heap.allocate::<u64>(8, "u64").unwrap();
+        let (id2, ptr2) = heap.allocate::<u32>(4, "u32").unwrap();
+        
+        assert_ne!(id1, id2);
+        assert_ne!(ptr1.as_ptr(), ptr2.as_ptr());
+        
+        // Verify pointers are valid
+        assert!(heap.is_valid_pointer(ptr1.as_ptr()));
+        assert!(heap.is_valid_pointer(ptr2.as_ptr()));
+        
+        // Verify allocation tracking
+        assert!(heap.get_allocation_info(id1).unwrap().is_some());
+        assert!(heap.get_allocation_info(id2).unwrap().is_some());
+        
+        let stats = heap.get_stats().unwrap();
+        assert_eq!(stats.active_objects, 2);
+        assert!(stats.total_used >= 12); // At least 8 + 4 bytes
+        assert_eq!(stats.total_blocks, 1); // Should fit in one block
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_heap_manager_large_allocation() {
+        let mut config = HeapConfig::default();
+        config.default_block_size = 1024; // Small default blocks
+        
+        let registry = Arc::new(ObjectRegistry::new());
+        let heap = HeapManager::new(config, registry);
+        
+        // Allocate something larger than default block size
+        let large_size = 2048;
+        let (id, ptr) = heap.allocate::<[u8; 2048]>(large_size, "large_array").unwrap();
+        
+        assert!(heap.get_allocation_info(id).unwrap().is_some());
+        assert!(heap.is_valid_pointer(ptr.as_ptr()));
+        
+        let stats = heap.get_stats().unwrap();
+        assert!(stats.total_capacity >= large_size);
+        assert_eq!(stats.active_objects, 1);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_heap_manager_deallocation() {
+        let config = HeapConfig::default();
+        let registry = Arc::new(ObjectRegistry::new());
+        let heap = HeapManager::new(config, registry);
+        
+        let (id, _ptr) = heap.allocate::<u64>(8, "u64").unwrap();
+        
+        // Verify allocation exists
+        assert!(heap.get_allocation_info(id).unwrap().is_some());
+        
+        let stats_before = heap.get_stats().unwrap();
+        assert_eq!(stats_before.active_objects, 1);
+        
+        // Deallocate
+        heap.deallocate(id).unwrap();
+        
+        // Verify deallocation
+        assert!(heap.get_allocation_info(id).unwrap().is_none());
+        
+        let stats_after = heap.get_stats().unwrap();
+        assert_eq!(stats_after.active_objects, 0);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_heap_manager_fragmentation() {
+        let config = HeapConfig::default();
+        let registry = Arc::new(ObjectRegistry::new());
+        let heap = HeapManager::new(config, registry);
+        
+        // Allocate several objects to create fragmentation
+        let mut allocations = vec![];
+        for i in 0..10 {
+            let (id, _ptr) = heap.allocate::<[u8; 64]>(64, &format!("object_{}", i)).unwrap();
+            allocations.push(id);
+        }
+        
+        // Deallocate every other object
+        for i in (0..allocations.len()).step_by(2) {
+            heap.deallocate(allocations[i]).unwrap();
+        }
+        
+        let stats = heap.get_stats().unwrap();
+        assert_eq!(stats.active_objects, 5); // Half deallocated
+        
+        // There should be some fragmentation now
+        println!("Fragmentation ratio: {:.2}%", stats.fragmentation_ratio * 100.0);
+    }
+}
+
+/// Test Object Store
+mod object_store_tests {
+    use super::*;
+
+    fn create_test_store() -> Arc<ObjectStore> {
+        let config = HeapConfig::default();
+        let registry = Arc::new(ObjectRegistry::new());
+        let heap = Arc::new(std::sync::RwLock::new(HeapManager::new(config, registry.clone())));
+        ObjectStore::new(heap, registry)
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_store_basic_operations() {
+        let store = create_test_store();
+        
+        let test_obj = SimpleTestObject {
+            value: 42,
+            name: "test_object".to_string(),
+        };
+        
+        // Store object
+        let handle = store.store(test_obj).unwrap();
+        
+        // Verify object can be accessed
+        let obj_ref = handle.get().unwrap();
+        assert_eq!(obj_ref.value, 42);
+        assert_eq!(obj_ref.name, "test_object");
+        
+        // Verify handle is valid
+        assert!(handle.is_valid());
+        
+        let object_id = handle.object_id();
+        assert!(!object_id.is_null());
+        
+        // Get another handle to the same object
+        let handle2: ObjectHandle<SimpleTestObject> = store.get_handle(object_id).unwrap();
+        assert_eq!(handle.object_id(), handle2.object_id());
+        assert_eq!(handle.get().unwrap().value, handle2.get().unwrap().value);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_store_root_management() {
+        let store = create_test_store();
+        
+        let test_obj = SimpleTestObject {
+            value: 100,
+            name: "root_object".to_string(),
+        };
+        
+        let handle = store.store(test_obj).unwrap();
+        let object_id = handle.object_id();
+        
+        // Mark as root
+        handle.mark_as_root().unwrap();
+        
+        let roots = store.get_root_objects().unwrap();
+        assert!(roots.contains(&object_id));
+        
+        // Unmark as root
+        handle.unmark_as_root().unwrap();
+        
+        let roots = store.get_root_objects().unwrap();
+        assert!(!roots.contains(&object_id));
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_store_reference_counting() {
+        let store = create_test_store();
+        
+        let test_obj = SimpleTestObject {
+            value: 200,
+            name: "ref_counted_object".to_string(),
+        };
+        
+        let handle = store.store(test_obj).unwrap();
+        let object_id = handle.object_id();
+        
+        // Initial reference count should be 0 (handle doesn't count itself)
+        assert_eq!(store.get_ref_count(object_id).unwrap(), 0);
+        
+        // Increment reference count
+        store.inc_ref(object_id).unwrap();
+        assert_eq!(store.get_ref_count(object_id).unwrap(), 1);
+        
+        store.inc_ref(object_id).unwrap();
+        assert_eq!(store.get_ref_count(object_id).unwrap(), 2);
+        
+        // Decrement reference count
+        store.dec_ref(object_id).unwrap();
+        assert_eq!(store.get_ref_count(object_id).unwrap(), 1);
+        
+        store.dec_ref(object_id).unwrap();
+        assert_eq!(store.get_ref_count(object_id).unwrap(), 0);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_store_stats() {
+        let store = create_test_store();
+        
+        let obj1 = SimpleTestObject { value: 1, name: "obj1".to_string() };
+        let obj2 = SimpleTestObject { value: 2, name: "obj2".to_string() };
+        let obj3 = SimpleTestObject { value: 3, name: "obj3".to_string() };
+        
+        let handle1 = store.store(obj1).unwrap();
+        let handle2 = store.store(obj2).unwrap();
+        let handle3 = store.store(obj3).unwrap();
+        
+        handle1.mark_as_root().unwrap();
+        handle2.mark_as_root().unwrap();
+        
+        let stats = store.get_stats().unwrap();
+        assert_eq!(stats.total_objects, 3);
+        assert_eq!(stats.root_objects, 2);
+        assert!(stats.total_size > 0);
+        
+        // Should have SimpleTestObject entries in type counts
+        let type_name = std::any::type_name::<SimpleTestObject>();
+        assert!(stats.type_counts.contains_key(type_name));
+        assert_eq!(stats.type_counts[type_name], 3);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_object_store_removal() {
+        let store = create_test_store();
+        
+        let test_obj = SimpleTestObject {
+            value: 999,
+            name: "removable_object".to_string(),
+        };
+        
+        let handle = store.store(test_obj).unwrap();
+        let object_id = handle.object_id();
+        
+        assert!(handle.is_valid());
+        
+        // Remove the object
+        store.remove_object(object_id).unwrap();
+        
+        // Handle should no longer be valid
+        assert!(!handle.is_valid());
+        assert!(handle.get().is_none());
+        
+        // Should not be able to get new handles
+        assert!(store.get_handle::<SimpleTestObject>(object_id).is_none());
+    }
+}
+
+/// Test Enhanced Gc<T> Smart Pointer
+mod gc_smart_pointer_tests {
+    use super::*;
+
+    #[test]
+    #[traced_test]
+    fn test_gc_basic_allocation() {
+        let gc = GarbageCollector::new();
+        
+        let test_obj = SimpleTestObject {
+            value: 123,
+            name: "gc_test".to_string(),
+        };
+        
+        let gc_ptr = gc.allocate(test_obj).unwrap();
+        
+        // Test dereferencing
+        assert_eq!(gc_ptr.value, 123);
+        assert_eq!(gc_ptr.name, "gc_test");
+        
+        // Test validity
+        assert!(gc_ptr.is_valid());
+        assert!(!gc_ptr.object_id().is_null());
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_gc_cloning() {
+        let gc = GarbageCollector::new();
+        
+        let test_obj = SimpleTestObject {
+            value: 456,
+            name: "cloned_object".to_string(),
+        };
+        
+        let gc_ptr1 = gc.allocate(test_obj).unwrap();
+        let gc_ptr2 = gc_ptr1.clone();
+        
+        // Both pointers should point to the same object
+        assert_eq!(gc_ptr1.object_id(), gc_ptr2.object_id());
+        assert_eq!(gc_ptr1.value, gc_ptr2.value);
+        assert_eq!(gc_ptr1.name, gc_ptr2.name);
+        
+        // Both should be valid
+        assert!(gc_ptr1.is_valid());
+        assert!(gc_ptr2.is_valid());
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_gc_weak_references() {
+        let gc = GarbageCollector::new();
+        
+        let test_obj = SimpleTestObject {
+            value: 789,
+            name: "weak_test".to_string(),
+        };
+        
+        let gc_ptr = gc.allocate(test_obj).unwrap();
+        let weak_ptr = gc_ptr.downgrade();
+        
+        // Weak pointer should be valid while strong pointer exists
+        assert!(weak_ptr.is_valid());
+        assert_eq!(weak_ptr.object_id(), gc_ptr.object_id());
+        
+        // Should be able to upgrade weak to strong
+        let upgraded = weak_ptr.upgrade().unwrap();
+        assert_eq!(upgraded.object_id(), gc_ptr.object_id());
+        assert_eq!(upgraded.value, 789);
+        
+        // Drop the original strong pointer
+        drop(gc_ptr);
+        drop(upgraded);
+        
+        // Note: In a real GC, the weak pointer might still be valid until
+        // the next collection cycle. This is implementation-dependent.
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_gc_root_management() {
+        let gc = GarbageCollector::new();
+        
+        let test_obj = SimpleTestObject {
+            value: 555,
+            name: "root_test".to_string(),
+        };
+        
+        let gc_ptr = gc.allocate(test_obj).unwrap();
+        
+        // Mark as root
+        gc_ptr.mark_as_root().unwrap();
+        
+        // Verify it's in the root set
+        let object_store = gc.object_store();
+        let roots = object_store.get_root_objects().unwrap();
+        assert!(roots.contains(&gc_ptr.object_id()));
+        
+        // Unmark as root
+        gc_ptr.unmark_as_root().unwrap();
+        
+        let roots = object_store.get_root_objects().unwrap();
+        assert!(!roots.contains(&gc_ptr.object_id()));
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_gc_collection_cycle() {
+        let gc = GarbageCollector::new();
+        
+        // Create several objects
+        let mut objects = vec![];
+        for i in 0..10 {
+            let obj = SimpleTestObject {
+                value: i,
+                name: format!("object_{}", i),
+            };
+            let gc_ptr = gc.allocate(obj).unwrap();
+            
+            // Mark every other object as root
+            if i % 2 == 0 {
+                gc_ptr.mark_as_root().unwrap();
+            }
+            
+            objects.push(gc_ptr);
+        }
+        
+        let stats_before = gc.get_stats().unwrap();
+        assert_eq!(stats_before.current_objects, 10);
+        
+        // Drop non-root objects
+        for i in (1..objects.len()).step_by(2) {
+            drop(objects.swap_remove(i - (i / 2))); // Adjust index for removed elements
+        }
+        
+        // Trigger collection
+        let collection_stats = gc.collect().unwrap();
+        
+        let stats_after = gc.get_stats().unwrap();
+        
+        println!("Collection stats: {:?}", collection_stats);
+        println!("GC stats before: {:?}", stats_before);
+        println!("GC stats after: {:?}", stats_after);
+        
+        // Root objects should still be valid
+        for obj in &objects {
+            assert!(obj.is_valid());
+        }
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_gc_complex_object_relationships() {
+        let gc = GarbageCollector::new();
+        
+        // Create some simple objects first
+        let child1 = SimpleTestObject { value: 1, name: "child1".to_string() };
+        let child2 = SimpleTestObject { value: 2, name: "child2".to_string() };
+        
+        let gc_child1 = gc.allocate(child1).unwrap();
+        let gc_child2 = gc.allocate(child2).unwrap();
+        
+        // Create a complex object with references
+        let complex_obj = ComplexTestObject {
+            id: 100,
+            children: vec![gc_child1.clone(), gc_child2.clone()],
+            parent: None,
+        };
+        
+        let gc_complex = gc.allocate(complex_obj).unwrap();
+        
+        // Verify relationships
+        assert_eq!(gc_complex.children.len(), 2);
+        assert_eq!(gc_complex.children[0].value, 1);
+        assert_eq!(gc_complex.children[1].value, 2);
+        
+        // Mark complex object as root
+        gc_complex.mark_as_root().unwrap();
+        
+        // All objects should be reachable through the complex object
+        let stats = gc.get_stats().unwrap();
+        assert_eq!(stats.current_objects, 3);
+    }
+}
+
+/// Test Root Set Management
+mod root_set_tests {
+    use super::*;
+
+    #[test]
+    #[traced_test]
+    fn test_root_set_manager_basic_operations() {
+        let manager = RootSetManager::new();
+        
+        let obj1 = ObjectId::new(1);
+        let obj2 = ObjectId::new(2);
+        let obj3 = ObjectId::new(3);
+        
+        // Add different types of roots
+        manager.add_global_root(obj1, Some("global_object".to_string())).unwrap();
+        manager.add_stack_root(obj2, Some("stack_object".to_string())).unwrap();
+        manager.add_jit_root(obj3, Some("jit_object".to_string())).unwrap();
+        
+        // Verify roots are registered
+        assert!(manager.is_root(obj1));
+        assert!(manager.is_root(obj2));
+        assert!(manager.is_root(obj3));
+        
+        // Check all roots
+        let all_roots = manager.get_all_roots().unwrap();
+        assert_eq!(all_roots.len(), 3);
+        assert!(all_roots.contains(&obj1));
+        assert!(all_roots.contains(&obj2));
+        assert!(all_roots.contains(&obj3));
+        
+        // Remove roots
+        assert!(manager.remove_global_root(obj1).unwrap());
+        assert!(!manager.is_root(obj1));
+        
+        assert!(manager.remove_stack_root(obj2).unwrap());
+        assert!(!manager.is_root(obj2));
+        
+        assert!(manager.remove_jit_root(obj3).unwrap());
+        assert!(!manager.is_root(obj3));
+        
+        let all_roots = manager.get_all_roots().unwrap();
+        assert_eq!(all_roots.len(), 0);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_root_set_goroutine_management() {
+        let manager = RootSetManager::new();
+        
+        let goroutine_id = 42;
+        let obj1 = ObjectId::new(1);
+        let obj2 = ObjectId::new(2);
+        let obj3 = ObjectId::new(3);
+        
+        // Add goroutine roots
+        manager.add_goroutine_root(goroutine_id, obj1, Some("gor_obj1".to_string())).unwrap();
+        manager.add_goroutine_root(goroutine_id, obj2, Some("gor_obj2".to_string())).unwrap();
+        manager.add_goroutine_root(goroutine_id, obj3, Some("gor_obj3".to_string())).unwrap();
+        
+        // Verify all are rooted
+        assert!(manager.is_root(obj1));
+        assert!(manager.is_root(obj2));
+        assert!(manager.is_root(obj3));
+        
+        let stats = manager.get_stats().unwrap();
+        assert_eq!(stats.goroutine_roots, 3);
+        assert_eq!(stats.active_goroutines, 1);
+        
+        // Remove individual root
+        assert!(manager.remove_goroutine_root(goroutine_id, obj2).unwrap());
+        assert!(!manager.is_root(obj2));
+        assert!(manager.is_root(obj1));
+        assert!(manager.is_root(obj3));
+        
+        // Clear all goroutine roots
+        let cleared = manager.clear_goroutine_roots(goroutine_id).unwrap();
+        assert_eq!(cleared, 2); // obj1 and obj3
+        assert!(!manager.is_root(obj1));
+        assert!(!manager.is_root(obj3));
+        
+        let stats = manager.get_stats().unwrap();
+        assert_eq!(stats.goroutine_roots, 0);
+        assert_eq!(stats.active_goroutines, 0);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_root_set_external_roots() {
+        let manager = RootSetManager::new();
+        
+        let obj1 = ObjectId::new(100);
+        let obj2 = ObjectId::new(200);
+        
+        // Add external roots (from C code, etc.)
+        manager.add_external_root(obj1, Some("C_object_1".to_string())).unwrap();
+        manager.add_external_root(obj2, Some("C_object_2".to_string())).unwrap();
+        
+        assert!(manager.is_root(obj1));
+        assert!(manager.is_root(obj2));
+        
+        let stats = manager.get_stats().unwrap();
+        assert_eq!(stats.external_roots, 2);
+        
+        // Remove external roots
+        assert!(manager.remove_external_root(obj1).unwrap());
+        assert!(!manager.is_root(obj1));
+        assert!(manager.is_root(obj2));
+        
+        let stats = manager.get_stats().unwrap();
+        assert_eq!(stats.external_roots, 1);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_root_set_pinned_roots() {
+        let manager = RootSetManager::new();
+        
+        let obj1 = ObjectId::new(500);
+        let obj2 = ObjectId::new(600);
+        
+        // Add pinned roots
+        manager.add_pinned_root(obj1, Some("pinned_1".to_string())).unwrap();
+        manager.add_pinned_root(obj2, Some("pinned_2".to_string())).unwrap();
+        
+        assert!(manager.is_root(obj1));
+        assert!(manager.is_root(obj2));
+        
+        let all_roots = manager.get_all_roots().unwrap();
+        assert!(all_roots.contains(&obj1));
+        assert!(all_roots.contains(&obj2));
+        
+        // Remove pinned roots
+        assert!(manager.remove_pinned_root(obj1).unwrap());
+        assert!(!manager.is_root(obj1));
+        assert!(manager.is_root(obj2));
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_root_set_concurrent_access() {
+        let manager = Arc::new(RootSetManager::new());
+        let mut handles = vec![];
+        
+        // Spawn threads that add/remove roots concurrently
+        for thread_id in 0..8 {
+            let mgr = manager.clone();
+            handles.push(thread::spawn(move || {
+                for i in 0..25 {
+                    let obj_id = ObjectId::new((thread_id * 25 + i) as u64 + 1);
+                    
+                    // Add various types of roots
+                    match i % 4 {
+                        0 => mgr.add_global_root(obj_id, Some(format!("global_{}", i))).unwrap(),
+                        1 => mgr.add_stack_root(obj_id, Some(format!("stack_{}", i))).unwrap(),
+                        2 => mgr.add_jit_root(obj_id, Some(format!("jit_{}", i))).unwrap(),
+                        3 => mgr.add_external_root(obj_id, Some(format!("external_{}", i))).unwrap(),
+                        _ => unreachable!(),
+                    }
+                    
+                    // Verify it's rooted
+                    assert!(mgr.is_root(obj_id));
+                    
+                    // Small delay to increase contention
+                    thread::sleep(Duration::from_micros(10));
+                    
+                    // Remove the root
+                    let removed = match i % 4 {
+                        0 => mgr.remove_global_root(obj_id).unwrap(),
+                        1 => mgr.remove_stack_root(obj_id).unwrap(),
+                        2 => mgr.remove_jit_root(obj_id).unwrap(),
+                        3 => mgr.remove_external_root(obj_id).unwrap(),
+                        _ => unreachable!(),
+                    };
+                    
+                    assert!(removed);
+                    assert!(!mgr.is_root(obj_id));
+                }
+            }));
+        }
+        
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        
+        // All roots should be cleaned up
+        let stats = manager.get_stats().unwrap();
+        assert_eq!(stats.total_roots, 0);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_root_set_comprehensive_stats() {
+        let manager = RootSetManager::new();
+        
+        // Add various types of roots
+        for i in 0..5 {
+            manager.add_global_root(ObjectId::new(i), Some(format!("global_{}", i))).unwrap();
+        }
+        
+        for i in 10..13 {
+            manager.add_jit_root(ObjectId::new(i), Some(format!("jit_{}", i))).unwrap();
+        }
+        
+        for i in 20..24 {
+            manager.add_external_root(ObjectId::new(i), Some(format!("external_{}", i))).unwrap();
+        }
+        
+        for i in 30..35 {
+            manager.add_stack_root(ObjectId::new(i), Some(format!("stack_{}", i))).unwrap();
+        }
+        
+        for goroutine_id in 100..103 {
+            for i in 0..3 {
+                let obj_id = ObjectId::new(goroutine_id * 10 + i);
+                manager.add_goroutine_root(goroutine_id, obj_id, Some(format!("gor_{}_{}", goroutine_id, i))).unwrap();
+            }
+        }
+        
+        let stats = manager.get_stats().unwrap();
+        assert_eq!(stats.global_roots, 5);
+        assert_eq!(stats.jit_roots, 3);
+        assert_eq!(stats.external_roots, 4);
+        assert_eq!(stats.thread_roots, 5); // Stack roots
+        assert_eq!(stats.goroutine_roots, 9); // 3 goroutines * 3 objects each
+        assert_eq!(stats.active_goroutines, 3);
+        assert_eq!(stats.active_threads, 1); // Current thread
+        assert_eq!(stats.total_roots, 26);
+        
+        println!("Root set stats: {}", stats);
+    }
+}
+
+/// Integration Tests
+mod integration_tests {
+    use super::*;
+
+    #[test]
+    #[traced_test]
+    fn test_full_gc_system_integration() {
+        // Create a complete GC system with all components
+        let gc = GarbageCollector::new();
+        
+        // Allocate various objects
+        let simple1 = SimpleTestObject { value: 1, name: "simple1".to_string() };
+        let simple2 = SimpleTestObject { value: 2, name: "simple2".to_string() };
+        let simple3 = SimpleTestObject { value: 3, name: "simple3".to_string() };
+        
+        let gc_simple1 = gc.allocate(simple1).unwrap();
+        let gc_simple2 = gc.allocate(simple2).unwrap();
+        let gc_simple3 = gc.allocate(simple3).unwrap();
+        
+        // Create complex object with references
+        let complex = ComplexTestObject {
+            id: 999,
+            children: vec![gc_simple1.clone(), gc_simple2.clone()],
+            parent: None,
+        };
+        
+        let gc_complex = gc.allocate(complex).unwrap();
+        
+        // Mark complex object as root (this should keep children alive)
+        gc_complex.mark_as_root().unwrap();
+        
+        // Drop direct references to children
+        drop(gc_simple1);
+        drop(gc_simple2);
+        // Keep gc_simple3 but don't root it
+        
+        let stats_before = gc.get_stats().unwrap();
+        println!("Stats before collection: {}", stats_before);
+        
+        // Trigger garbage collection
+        let collection_stats = gc.collect().unwrap();
+        println!("Collection stats: {:?}", collection_stats);
+        
+        let stats_after = gc.get_stats().unwrap();
+        println!("Stats after collection: {}", stats_after);
+        
+        // Complex object and its children should still be alive
+        assert!(gc_complex.is_valid());
+        assert_eq!(gc_complex.children.len(), 2);
+        assert!(gc_complex.children[0].is_valid());
+        assert!(gc_complex.children[1].is_valid());
+        
+        // gc_simple3 should be collected since it's not rooted or referenced
+        assert!(!gc_simple3.is_valid());
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_memory_pressure_simulation() {
+        let gc = GarbageCollector::new();
+        let mut objects = vec![];
+        
+        // Allocate many objects to simulate memory pressure
+        for i in 0..100 {
+            let obj = SimpleTestObject {
+                value: i,
+                name: format!("pressure_object_{}", i),
+            };
+            
+            let gc_ptr = gc.allocate(obj).unwrap();
+            
+            // Keep every 10th object as root
+            if i % 10 == 0 {
+                gc_ptr.mark_as_root().unwrap();
+                objects.push(gc_ptr);
+            }
+            // Let other objects become unreachable
+        }
+        
+        let stats_before = gc.get_stats().unwrap();
+        println!("Before pressure collection: {}", stats_before);
+        
+        // Check if collector thinks it should run
+        let should_collect = gc.should_collect();
+        println!("Should collect: {}", should_collect);
+        
+        // Force collection
+        let collection_stats = gc.collect().unwrap();
+        println!("Pressure collection stats: {:?}", collection_stats);
+        
+        let stats_after = gc.get_stats().unwrap();
+        println!("After pressure collection: {}", stats_after);
+        
+        // Root objects should still be valid
+        for obj in &objects {
+            assert!(obj.is_valid());
+        }
+        
+        // Should have collected most objects
+        assert!(collection_stats.objects_collected > 0);
+        assert!(stats_after.current_objects <= stats_before.current_objects);
+    }
+    
+    #[test]
+    #[traced_test]
+    fn test_cross_component_consistency() {
+        // Test that all components maintain consistent state
+        let gc = GarbageCollector::new();
+        let object_store = gc.object_store();
+        
+        // Allocate some objects
+        let mut allocated_objects = vec![];
+        for i in 0..10 {
+            let obj = SimpleTestObject {
+                value: i,
+                name: format!("consistency_test_{}", i),
+            };
+            
+            let gc_ptr = gc.allocate(obj).unwrap();
+            allocated_objects.push(gc_ptr);
+        }
+        
+        // Verify consistency between components
+        let gc_stats = gc.get_stats().unwrap();
+        let store_stats = object_store.get_stats().unwrap();
+        
+        assert_eq!(gc_stats.current_objects, store_stats.total_objects);
+        assert_eq!(gc_stats.current_objects, allocated_objects.len());
+        
+        // Mark some objects as roots
+        for (i, obj) in allocated_objects.iter().enumerate() {
+            if i % 3 == 0 {
+                obj.mark_as_root().unwrap();
+            }
+        }
+        
+        let store_stats_after_rooting = object_store.get_stats().unwrap();
+        let expected_roots = allocated_objects.len() / 3 + if allocated_objects.len() % 3 != 0 { 1 } else { 0 };
+        assert_eq!(store_stats_after_rooting.root_objects, expected_roots);
+        
+        // Drop some objects
+        let drop_count = allocated_objects.len() / 2;
+        for _ in 0..drop_count {
+            allocated_objects.pop();
+        }
+        
+        // Trigger collection
+        let collection_stats = gc.collect().unwrap();
+        println!("Consistency collection stats: {:?}", collection_stats);
+        
+        // Verify remaining objects are still valid
+        for obj in &allocated_objects {
+            // Objects should be valid if they're rooted
+            let is_rooted = object_store.get_root_objects().unwrap().contains(&obj.object_id());
+            if is_rooted {
+                assert!(obj.is_valid());
+            }
+        }
+    }
+}

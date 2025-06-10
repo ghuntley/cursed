@@ -19,11 +19,15 @@ pub enum Type {
     Array(Box<Type>, usize),
     Slice(Box<Type>),
     Map(Box<Type>, Box<Type>),
+    Struct(String, Vec<Box<Type>>), // name, type parameters
+    
+    // Generic types
+    TypeParam(String), // type parameter
     
     // Special types
     Nil,
     Unknown,
-    Custom(String), // For backward compatibility with Type::Struct usage
+    Custom(String), // For backward compatibility
 }
 
 pub struct TypeChecker {

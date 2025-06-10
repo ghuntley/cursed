@@ -61,6 +61,7 @@ impl LlvmType {
 }
 
 /// Expression compilation context
+#[derive(Debug)]
 pub struct ExpressionContext {
     pub variable_map: HashMap<String, LlvmValue>,
     pub function_map: HashMap<String, LlvmValue>,

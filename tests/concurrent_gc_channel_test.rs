@@ -62,7 +62,7 @@ fn test_channel_with_concurrent_gc() {
     init_tracing();
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a concurrent garbage collector with a custom configuration
     let config = ConcurrentGcConfig {
@@ -97,7 +97,7 @@ fn test_channel_with_concurrent_gc() {
             // Convert TestData to ThreadSafeObject::Integer
             let value = obj.inner().unwrap().get_value();
             let thread_safe_obj = ThreadSafeObject::Integer(value as i64);
-            let obj_gc = concurrent_gc.allocate(thread_safe_obj);
+            let obj_gc = concurrent_gc.allocate(thread_safe_obj).expect("Failed to allocate");
             match channel.channel_send(obj_gc) {
                 Ok(_) => {
                     println!("Sent object {} to channel", i);
@@ -172,7 +172,7 @@ fn test_concurrent_channel_operations() {
     init_tracing();
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a concurrent garbage collector
     let config = ConcurrentGcConfig {
@@ -210,7 +210,7 @@ fn test_concurrent_channel_operations() {
                     // Convert TestData to ThreadSafeObject::Integer
                     let value = data.inner().unwrap().get_value();
                     let thread_safe_obj = ThreadSafeObject::Integer(value as i64);
-                    let obj_gc = concurrent_gc_clone.allocate(thread_safe_obj);
+                    let obj_gc = concurrent_gc_clone.allocate(thread_safe_obj).expect("Failed to allocate");
                     match channel.channel_send(obj_gc) {
                         Ok(_) => {
                             println!("Thread {} sent value {}", thread_id, value);

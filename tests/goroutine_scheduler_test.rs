@@ -367,7 +367,7 @@ fn test_memory_intensive_goroutines() {
     assert!(stats.avg_execution_time.load(Ordering::Relaxed) > 0);
     
     // Trigger GC to clean up any remaining references
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     info!("Memory intensive goroutines test passed");
 }

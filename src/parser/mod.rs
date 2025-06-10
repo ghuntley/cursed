@@ -16,18 +16,20 @@ use std::collections::VecDeque;
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Precedence {
     Lowest = 1,
-    Equals = 2,      // ==, !=
-    LessGreater = 3, // > or <
-    Sum = 4,         // +, -
-    Product = 5,     // *, /, %
-    Prefix = 6,      // -x, !x
-    Call = 7,        // myFunction(x)
-    Index = 8,       // array[index]
+    Channel = 2,     // <-
+    Equals = 3,      // ==, !=
+    LessGreater = 4, // > or <
+    Sum = 5,         // +, -
+    Product = 6,     // *, /, %
+    Prefix = 7,      // -x, !x
+    Call = 8,        // myFunction(x)
+    Index = 9,       // array[index]
 }
 
 impl From<&TokenType> for Precedence {
     fn from(token_type: &TokenType) -> Self {
         match token_type {
+            TokenType::LeftArrow => Precedence::Channel,
             TokenType::Equal | TokenType::NotEqual => Precedence::Equals,
             TokenType::LessThan | TokenType::LessThanEqual |
             TokenType::GreaterThan | TokenType::GreaterThanEqual => Precedence::LessGreater,

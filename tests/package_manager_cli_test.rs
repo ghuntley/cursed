@@ -1,6 +1,6 @@
 /// CLI integration tests for CURSED package manager
 use cursed::package_manager::cli::{PackageManagerCli, Commands};
-use clap::Parser;
+use clap::{Parser, CommandFactory};
 use std::process::{Command, Stdio};
 use tempfile::TempDir;
 use serde_json;

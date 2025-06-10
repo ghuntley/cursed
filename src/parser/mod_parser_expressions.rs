@@ -45,6 +45,10 @@ impl Parser {
                     self.advance_token()?;
                     left = self.parse_dot_expression(left)?;
                 }
+                TokenType::LeftArrow => {
+                    self.advance_token()?;
+                    left = self.parse_channel_send(left)?;
+                }
                 _ => return Ok(left),
             }
         }
@@ -66,6 +70,9 @@ impl Parser {
             TokenType::LeftBracket => self.parse_array_literal(),
             TokenType::LeftBrace => self.parse_hash_literal(),
             TokenType::Slay => self.parse_function_literal(),
+            TokenType::LeftArrow => self.parse_channel_receive(),
+            TokenType::Stan => self.parse_goroutine_spawn(),
+            TokenType::Dm => self.parse_channel_type(),
             _ => Err(Error::Parse(format!(
                 "No prefix parse function for {:?} found at line {} column {}",
                 self.current_token.token_type,
@@ -353,5 +360,52 @@ impl Parser {
         
         self.expect_token(end_token)?;
         Ok(args)
+    }
+    
+    /// Parse channel receive expression (<-channel)
+    fn parse_channel_receive(&mut self) -> Result<Box<dyn Expression>, Error> {
+        use crate::ast::expressions::ChannelReceive;
+        
+        let token = self.current_token.literal.clone();
+        self.advance_token()?;
+        let channel = self.parse_expression_with_precedence(Precedence::Prefix)?;
+        
+        Ok(Box::new(ChannelReceive::new(token, channel)))
+    }
+    
+    /// Parse channel send expression (channel <- value)
+    fn parse_channel_send(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        use crate::ast::expressions::ChannelSend;
+        
+        let token = self.current_token.literal.clone();
+        let precedence = self.current_precedence();
+        self.advance_token()?;
+        let value = self.parse_expression_with_precedence(precedence)?;
+        
+        Ok(Box::new(ChannelSend::new(token, left, value)))
+    }
+    
+    /// Parse goroutine spawn expression (stan function_call)
+    fn parse_goroutine_spawn(&mut self) -> Result<Box<dyn Expression>, Error> {
+        use crate::ast::expressions::GoroutineSpawn;
+        
+        let token = self.current_token.literal.clone();
+        self.advance_token()?;
+        let function_call = self.parse_expression_with_precedence(Precedence::Prefix)?;
+        
+        Ok(Box::new(GoroutineSpawn::new(token, function_call)))
+    }
+    
+    /// Parse channel type expression (dm Type)
+    fn parse_channel_type(&mut self) -> Result<Box<dyn Expression>, Error> {
+        use crate::ast::types::ChannelTypeExpression;
+        
+        let token = self.current_token.literal.clone();
+        self.advance_token()?;
+        
+        // Parse the element type
+        let element_type = self.parse_expression_with_precedence(Precedence::Prefix)?;
+        
+        Ok(Box::new(ChannelTypeExpression::new(token, element_type)))
     }
 }

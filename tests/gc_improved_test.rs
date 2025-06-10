@@ -1,5 +1,5 @@
 use std::sync::{Arc, RwLock, Mutex};
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
@@ -71,7 +71,10 @@ impl Traceable for CircularNode {
                 // Use the object ID for the visitor to detect cycles
                 visitor.visit_ptr(next.id(), Tag::Object);
                 trace!("Next reference visit completed");
-            } else {
+            }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {} else {
                 trace!(id = self.id, "CircularNode has no next references");
             }
         } else {
@@ -107,7 +110,7 @@ fn test_circular_references_simplified() {
     info!("Starting circular references test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!(garbage_collector = ?gc, "Created garbage collector");
     
     // Allocate two nodes
@@ -176,8 +179,8 @@ fn test_circular_references_simplified() {
     
     // Force a garbage collection
     info!("Starting garbage collection");
-    debug!("Calling gc.collect_garbage()");
-    gc.collect_garbage();
+    debug!("Calling gc.collect().expect("Failed to collect garbage")");
+    gc.collect().expect("Failed to collect garbage");
     debug!("Garbage collection completed");
     
     // Give GC a moment to finish any background work
@@ -226,7 +229,7 @@ fn test_multiple_circular_references() {
     info!("Starting multiple circular references test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a more complex structure with multiple circular references
@@ -297,7 +300,7 @@ fn test_multiple_circular_references() {
     
     // Force a garbage collection
     info!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     debug!("Garbage collection completed");
     
     // Give GC a moment to finish any background work
@@ -353,7 +356,7 @@ fn test_incremental_gc_with_circular_refs() {
     info!("Starting incremental GC with circular references test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     let mut nodes = Vec::<Gc<CircularNode>>::new();
@@ -419,7 +422,7 @@ fn test_incremental_gc_with_circular_refs() {
     info!("Starting incremental garbage collection");
     for i in 0..5 {
         debug!(collection_number = i + 1, "Running collection");
-        gc.collect_garbage();
+        gc.collect().expect("Failed to collect garbage");
         // Give GC a moment to process between collections
         std::thread::sleep(std::time::Duration::from_millis(10));
     }

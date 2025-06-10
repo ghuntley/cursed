@@ -25,7 +25,7 @@ fn test_get_mock() {
     ]).unwrap();
     
     match &*result {
-        Object::HashTable(response) => {
+        Object::Map(response) => {
             // Verify response structure
             assert!(response.contains_key("status"));
             assert!(response.contains_key("body"));
@@ -45,7 +45,7 @@ fn test_get_mock() {
             
             // Verify headers is a hash table
             match &response["headers"] {
-                Object::HashTable(_) => {},
+                Object::Map(_) => {},
                 _ => panic!("Headers is not a hash table"),
             }
         },
@@ -63,12 +63,12 @@ fn test_post_mock() {
     // Test with mock mode
     let result = post(&[
         Arc::new(Object::String("https://example.com/api".to_string())),
-        Arc::new(Object::HashTable(body)),
+        Arc::new(Object::Map(body)),
         Arc::new(Object::Boolean(true)), // Use mock mode
     ]).unwrap();
     
     match &*result {
-        Object::HashTable(response) => {
+        Object::Map(response) => {
             // Verify response structure
             assert!(response.contains_key("status"));
             assert!(response.contains_key("body"));
@@ -93,7 +93,7 @@ fn test_head_mock() {
     ]).unwrap();
     
     match &*result {
-        Object::HashTable(response) => {
+        Object::Map(response) => {
             // Verify response structure
             assert!(response.contains_key("status"));
             assert!(response.contains_key("headers"));
@@ -118,7 +118,7 @@ fn test_delete_mock() {
     ]).unwrap();
     
     match &*result {
-        Object::HashTable(response) => {
+        Object::Map(response) => {
             // Verify response structure
             assert!(response.contains_key("status"));
             

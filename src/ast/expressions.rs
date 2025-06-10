@@ -358,3 +358,202 @@ impl Expression for TypeAssertionQuestion {
         })
     }
 }
+
+/// Channel send operation AST node (ch <- value)
+/// 
+/// Represents sending a value to a channel in CURSED language.
+/// Syntax: `channel_expression <- value_expression`
+#[derive(Debug)]
+pub struct ChannelSend {
+    pub token: String,
+    pub channel: Box<dyn Expression>,
+    pub value: Box<dyn Expression>,
+}
+
+impl ChannelSend {
+    pub fn new(token: String, channel: Box<dyn Expression>, value: Box<dyn Expression>) -> Self {
+        Self { token, channel, value }
+    }
+}
+
+impl Node for ChannelSend {
+    fn string(&self) -> String {
+        format!("{} <- {}", self.channel.string(), self.value.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Clone for ChannelSend {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+            channel: self.channel.clone_box(),
+            value: self.value.clone_box(),
+        }
+    }
+}
+
+impl Expression for ChannelSend {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
+    }
+}
+
+/// Channel receive operation AST node (<-ch)
+/// 
+/// Represents receiving a value from a channel in CURSED language.
+/// Syntax: `<-channel_expression` or `value := <-channel_expression`
+#[derive(Debug)]
+pub struct ChannelReceive {
+    pub token: String,
+    pub channel: Box<dyn Expression>,
+}
+
+impl ChannelReceive {
+    pub fn new(token: String, channel: Box<dyn Expression>) -> Self {
+        Self { token, channel }
+    }
+}
+
+impl Node for ChannelReceive {
+    fn string(&self) -> String {
+        format!("<-{}", self.channel.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Clone for ChannelReceive {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+            channel: self.channel.clone_box(),
+        }
+    }
+}
+
+impl Expression for ChannelReceive {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
+    }
+}
+
+/// Channel creation AST node
+/// 
+/// Represents creating a new channel in CURSED language.
+/// Can be buffered or unbuffered channels.
+#[derive(Debug)]
+pub struct ChannelCreation {
+    pub token: String,
+    pub element_type: Box<dyn Expression>,
+    pub buffer_size: Option<Box<dyn Expression>>,
+}
+
+impl ChannelCreation {
+    pub fn new(token: String, element_type: Box<dyn Expression>) -> Self {
+        Self { 
+            token,
+            element_type,
+            buffer_size: None,
+        }
+    }
+    
+    pub fn with_buffer(token: String, element_type: Box<dyn Expression>, buffer_size: Box<dyn Expression>) -> Self {
+        Self { 
+            token,
+            element_type,
+            buffer_size: Some(buffer_size),
+        }
+    }
+}
+
+impl Node for ChannelCreation {
+    fn string(&self) -> String {
+        match &self.buffer_size {
+            Some(size) => format!("make(dm {}, {})", self.element_type.string(), size.string()),
+            None => format!("make(dm {})", self.element_type.string()),
+        }
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Clone for ChannelCreation {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+            element_type: self.element_type.clone_box(),
+            buffer_size: self.buffer_size.as_ref().map(|s| s.clone_box()),
+        }
+    }
+}
+
+impl Expression for ChannelCreation {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
+    }
+}
+
+/// Goroutine spawn AST node (stan function_call())
+/// 
+/// Represents spawning a goroutine in CURSED language.
+/// Syntax: `stan function_call()` or `stan { block }`
+#[derive(Debug)]
+pub struct GoroutineSpawn {
+    pub token: String,
+    pub function_call: Box<dyn Expression>,
+}
+
+impl GoroutineSpawn {
+    pub fn new(token: String, function_call: Box<dyn Expression>) -> Self {
+        Self { token, function_call }
+    }
+}
+
+impl Node for GoroutineSpawn {
+    fn string(&self) -> String {
+        format!("stan {}", self.function_call.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Clone for GoroutineSpawn {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+            function_call: self.function_call.clone_box(),
+        }
+    }
+}
+
+impl Expression for GoroutineSpawn {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
+    }
+}

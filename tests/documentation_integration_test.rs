@@ -43,7 +43,7 @@ impl TestConfig {
     fn new() -> std::io::Result<Self> {
         let work_dir = TempDir::new()?;
         let output_dir = work_dir.path().join("docs");
-        let fixtures_dir = work_dir.path().join("fixtures");
+        let fixtures_dir = work_dir.path().join("fixtures ");
         
         fs::create_dir_all(&output_dir)?;
         fs::create_dir_all(&fixtures_dir)?;
@@ -233,7 +233,7 @@ squad HttpError {
 }
 "#";
         
-        let path = self.config.fixtures_dir.join("sample_package.csd");
+        let path = self.config.fixtures_dir.join("sample_package.csd ");
         fs::write(path, content)?;
         Ok(())
     }
@@ -271,7 +271,7 @@ collab Queryable {
 }
 "#";
         
-        let path = self.config.fixtures_dir.join("undocumented_package.csd");
+        let path = self.config.fixtures_dir.join("undocumented_package.csd ");
         fs::write(path, content)?;
         Ok(())
     }
@@ -480,7 +480,7 @@ collab Storage[K, V] {
 }
 "#";
         
-        let path = self.config.fixtures_dir.join("complex_types.csd");
+        let path = self.config.fixtures_dir.join("complex_types.csd ");
         fs::write(path, content)?;
         Ok(())
     }
@@ -680,7 +680,7 @@ squad User {
 }
 "#";
         
-        let path = self.config.fixtures_dir.join("cross_references.csd");
+        let path = self.config.fixtures_dir.join("cross_references.csd ");
         fs::write(path, content)?;
         Ok(())
     }
@@ -721,7 +721,7 @@ squad StringUtils {
 /// 
 /// ```cursed
 /// facts result = format_string("Hello {}", ["World"])
-/// // result: "Hello World"
+/// // result: "Hello World "
 /// ```
 yolo format_string(template: String, args: String[]) -> String {
     "formatted"
@@ -738,7 +738,7 @@ yolo validate_email(email: String) -> Bool {
     true
 }
 "#";
-        fs::write(pkg1_dir.join("main.csd"), pkg1_content)?;
+        fs::write(pkg1_dir.join("main.csd "), pkg1_content)?;
         
         // Package 2: String processing (depends on package1)
         let pkg2_content = r#""
@@ -814,7 +814,7 @@ yolo format_email(email: String) -> String? {
     }
 }
 "#";
-        fs::write(pkg2_dir.join("main.csd"), pkg2_content)?;
+        fs::write(pkg2_dir.join("main.csd "), pkg2_content)?;
         
         Ok(())
     }
@@ -823,8 +823,8 @@ yolo format_email(email: String) -> String? {
 #[test]
 fn test_complete_documentation_workflow() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // Test complete workflow from source to documentation
     let start_time = Instant::now();
@@ -832,36 +832,36 @@ fn test_complete_documentation_workflow() {
     let config = DocConfig::new()
         .with_source_dirs(vec![test.config.fixtures_dir.clone()])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("test_package".to_string())
+        .with_package_name("test_package ".to_string())
         .with_include_private(true);
     
     let mut generator = DocumentationGenerator::new(config);
-    let result = generator.generate().expect("Documentation generation failed");
+    let result = generator.generate().expect("Documentation generation failed ");
     
     let generation_time = start_time.elapsed();
     assert!(generation_time < test.config.max_generation_time, 
            "Documentation generation took too long: {:?}", generation_time);
     
     // Verify HTML files were generated
-    let index_path = test.config.output_dir.join("index.html");
-    assert!(index_path.exists(), "index.html was not generated");
+    let index_path = test.config.output_dir.join("index.html ");
+    assert!(index_path.exists(), "index.html was not generated ");
     
-    let index_content = fs::read_to_string(&index_path).expect("Failed to read index.html");
-    assert!(index_content.contains("CURSED Documentation"), "Invalid index.html content");
-    assert!(index_content.contains("HttpClient"), "Missing documented types");
+    let index_content = fs::read_to_string(&index_path).expect("Failed to read index.html ");
+    assert!(index_content.contains("CURSED Documentation "), "Invalid index.html content ");
+    assert!(index_content.contains("HttpClient"), "Missing documented types ");
     
     // Verify navigation and search functionality
-    assert!(index_content.contains("nav-section"), "Missing navigation");
-    assert!(test.config.output_dir.join("search.js").exists(), "Missing search functionality");
+    assert!(index_content.contains("nav-section "), "Missing navigation ");
+    assert!(test.config.output_dir.join("search.js ").exists(), "Missing search functionality ");
     
-    println!("✓ Complete documentation workflow test passed in {:?}", generation_time);
+    println!(" Complete documentation workflow test passed in {:?}", generation_time);
 }
 
 #[test]
 fn test_multi_package_documentation() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // Test multi-package project documentation
     let pkg1_dir = test.config.fixtures_dir.join("package1");
@@ -873,171 +873,171 @@ fn test_multi_package_documentation() {
         .with_package_name("multi_package_project".to_string());
     
     let mut generator = DocumentationGenerator::new(config);
-    let result = generator.generate().expect("Multi-package documentation failed");
+    let result = generator.generate().expect("Multi-package documentation failed ");
     
     // Verify cross-package references
-    let index_content = fs::read_to_string(test.config.output_dir.join("index.html"))
-        .expect("Failed to read index.html");
+    let index_content = fs::read_to_string(test.config.output_dir.join("index.html "))
+        .expect("Failed to read index.html ");
     
-    assert!(index_content.contains("StringUtils"), "Missing package1 content");
-    assert!(index_content.contains("StringProcessor"), "Missing package2 content");
+    assert!(index_content.contains("StringUtils"), "Missing package1 content ");
+    assert!(index_content.contains("StringProcessor"), "Missing package2 content ");
     
     // Check for cross-package links (if implemented)
     // Note: This depends on cross-reference resolution implementation
     
-    println!("✓ Multi-package documentation test passed");
+    println!(" Multi-package documentation test passed ");
 }
 
 #[test]
 fn test_cross_reference_resolution() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     let config = DocConfig::new()
-        .with_source_dirs(vec![test.config.fixtures_dir.join("cross_references.csd")])
+        .with_source_dirs(vec![test.config.fixtures_dir.join("cross_references.csd ")])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("cross_ref_test".to_string());
+        .with_package_name("cross_ref_test ".to_string());
     
     let mut generator = DocumentationGenerator::new(config);
-    let result = generator.generate().expect("Cross-reference documentation failed");
+    let result = generator.generate().expect("Cross-reference documentation failed ");
     
     // Read generated documentation
-    let index_content = fs::read_to_string(test.config.output_dir.join("index.html"))
-        .expect("Failed to read index.html");
+    let index_content = fs::read_to_string(test.config.output_dir.join("index.html "))
+        .expect("Failed to read index.html ");
     
     // Verify cross-references are present in documentation
-    assert!(index_content.contains("AuthService"), "Missing AuthService");
-    assert!(index_content.contains("UserRepository"), "Missing UserRepository");
-    assert!(index_content.contains("SessionManager"), "Missing SessionManager");
+    assert!(index_content.contains("AuthService"), "Missing AuthService ");
+    assert!(index_content.contains("UserRepository"), "Missing UserRepository ");
+    assert!(index_content.contains("SessionManager"), "Missing SessionManager ");
     
     // Test for proper linking (implementation-dependent)
     // This would verify that [AuthService] references become proper HTML links
     
-    println!("✓ Cross-reference resolution test passed");
+    println!(" Cross-reference resolution test passed ");
 }
 
 #[test]
 fn test_documentation_validation_and_completeness() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // Test well-documented package
     let documented_config = DocConfig::new()
-        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd")])
+        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd ")])
         .with_output_dir(test.config.output_dir.join("documented"))
-        .with_package_name("documented_package".to_string());
+        .with_package_name("documented_package ".to_string());
     
     let mut documented_generator = DocumentationGenerator::new(documented_config);
     let documented_result = documented_generator.generate()
-        .expect("Well-documented package generation failed");
+        .expect("Well-documented package generation failed ");
     
     // Test undocumented package
     let undocumented_config = DocConfig::new()
-        .with_source_dirs(vec![test.config.fixtures_dir.join("undocumented_package.csd")])
+        .with_source_dirs(vec![test.config.fixtures_dir.join("undocumented_package.csd ")])
         .with_output_dir(test.config.output_dir.join("undocumented"))
-        .with_package_name("undocumented_package".to_string());
+        .with_package_name("undocumented_package ".to_string());
     
     let mut undocumented_generator = DocumentationGenerator::new(undocumented_config);
     let undocumented_result = undocumented_generator.generate()
-        .expect("Undocumented package generation failed");
+        .expect("Undocumented package generation failed ");
     
     // Compare documentation completeness
-    let documented_html = fs::read_to_string(test.config.output_dir.join("documented/index.html"))
-        .expect("Failed to read documented index.html");
-    let undocumented_html = fs::read_to_string(test.config.output_dir.join("undocumented/index.html"))
-        .expect("Failed to read undocumented index.html");
+    let documented_html = fs::read_to_string(test.config.output_dir.join("documented/index.html "))
+        .expect("Failed to read documented index.html ");
+    let undocumented_html = fs::read_to_string(test.config.output_dir.join("undocumented/index.html "))
+        .expect("Failed to read undocumented index.html ");
     
     // Documented package should have more content
     assert!(documented_html.len() > undocumented_html.len(), 
-           "Documented package should generate more content");
+           "Documented package should generate more content ");
     
     // Documented package should have examples and detailed descriptions
-    assert!(documented_html.contains("Examples"), "Missing examples in documented package");
-    assert!(documented_html.contains("Arguments"), "Missing argument documentation");
+    assert!(documented_html.contains("Examples"), "Missing examples in documented package ");
+    assert!(documented_html.contains("Arguments"), "Missing argument documentation ");
     
-    println!("✓ Documentation validation and completeness test passed");
+    println!(" Documentation validation and completeness test passed ");
 }
 
 #[test]
 fn test_html_generation_validity() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     let config = DocConfig::new()
-        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd")])
+        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd ")])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("html_test".to_string());
+        .with_package_name("html_test ".to_string());
     
     let mut generator = DocumentationGenerator::new(config);
-    let result = generator.generate().expect("HTML generation failed");
+    let result = generator.generate().expect("HTML generation failed ");
     
     // Verify HTML file structure
-    let html_files = vec!["index.html", "search.html"];
+    let html_files = vec!["index.html ", "search.html "];
     
     for file in html_files {
         let path = test.config.output_dir.join(file);
-        assert!(path.exists(), "{} was not generated", file);
+        assert!(path.exists(), "{} was not generated ", file);
         
         let content = fs::read_to_string(&path)
             .expect(&format!("Failed to read {}", file));
         
         // Basic HTML validation
-        assert!(content.contains("<!DOCTYPE html>"), "{} missing DOCTYPE", file);
-        assert!(content.contains("<html"), "{} missing html tag", file);
-        assert!(content.contains("<head>"), "{} missing head", file);
-        assert!(content.contains("<body>"), "{} missing body", file);
-        assert!(content.contains("</html>"), "{} missing closing html tag", file);
+        assert!(content.contains("<!DOCTYPE html>"), "{} missing DOCTYPE ", file);
+        assert!(content.contains("<html "), "{} missing html tag ", file);
+        assert!(content.contains("<head>"), "{} missing head ", file);
+        assert!(content.contains("<body>"), "{} missing body ", file);
+        assert!(content.contains("</html>"), "{} missing closing html tag ", file);
         
         // Check for proper encoding
-        assert!(content.contains("utf-8"), "{} missing UTF-8 encoding", file);
+        assert!(content.contains("utf-8"), "{} missing UTF-8 encoding ", file);
         
         // Verify CSS and JS resources
-        if file == "index.html" {
-            assert!(content.contains(".css"), "Missing CSS references");
-            assert!(content.contains(".js"), "Missing JS references");
+        if file == "index.html " {
+            assert!(content.contains(".css "), "Missing CSS references ");
+            assert!(content.contains(".js "), "Missing JS references ");
         }
     }
     
-    println!("✓ HTML generation validity test passed");
+    println!(" HTML generation validity test passed ");
 }
 
 #[test]
 fn test_markdown_generation() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // This test assumes markdown generation capability
     // May need to be implemented in the documentation system
     
     let config = DocConfig::new()
-        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd")])
+        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd ")])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("markdown_test".to_string())
+        .with_package_name("markdown_test ".to_string())
         .with_output_format("markdown".to_string()); // Assuming this option exists
     
     // This may fail if markdown output is not implemented
     match DocumentationGenerator::new(config).generate() {
         Ok(result) => {
             // Verify markdown files were generated
-            let readme_path = test.config.output_dir.join("README.md");
+            let readme_path = test.config.output_dir.join("README.md ");
             if readme_path.exists() {
                 let content = fs::read_to_string(&readme_path)
-                    .expect("Failed to read README.md");
+                    .expect("Failed to read README.md ");
                 
-                assert!(content.contains("# "), "Missing markdown headers");
-                assert!(content.contains("HttpClient"), "Missing documented content");
+                assert!(content.contains("# "), "Missing markdown headers ");
+                assert!(content.contains("HttpClient"), "Missing documented content ");
                 
-                println!("✓ Markdown generation test passed");
+                println!(" Markdown generation test passed ");
             } else {
-                println!("⚠ Markdown generation not implemented yet");
+                println!(" Markdown generation not implemented yet ");
             }
         }
         Err(_) => {
-            println!("⚠ Markdown generation not implemented yet");
+            println!(" Markdown generation not implemented yet ");
         }
     }
 }
@@ -1045,39 +1045,39 @@ fn test_markdown_generation() {
 #[test]
 fn test_json_export() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // This test assumes JSON export capability
     let config = DocConfig::new()
-        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd")])
+        .with_source_dirs(vec![test.config.fixtures_dir.join("sample_package.csd ")])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("json_test".to_string())
-        .with_output_format("json".to_string()); // Assuming this option exists
+        .with_package_name("json_test ".to_string())
+        .with_output_format("json ".to_string()); // Assuming this option exists
     
     // This may fail if JSON output is not implemented
     match DocumentationGenerator::new(config).generate() {
         Ok(result) => {
-            let json_path = test.config.output_dir.join("documentation.json");
+            let json_path = test.config.output_dir.join("documentation.json ");
             if json_path.exists() {
                 let content = fs::read_to_string(&json_path)
-                    .expect("Failed to read documentation.json");
+                    .expect("Failed to read documentation.json ");
                 
                 let json: Value = serde_json::from_str(&content)
-                    .expect("Invalid JSON format");
+                    .expect("Invalid JSON format ");
                 
                 // Verify JSON structure
-                assert!(json.is_object(), "JSON should be an object");
-                assert!(json.get("package").is_some(), "Missing package information");
-                assert!(json.get("items").is_some(), "Missing documentation items");
+                assert!(json.is_object(), "JSON should be an object ");
+                assert!(json.get("package ").is_some(), "Missing package information ");
+                assert!(json.get("items ").is_some(), "Missing documentation items ");
                 
-                println!("✓ JSON export test passed");
+                println!(" JSON export test passed ");
             } else {
-                println!("⚠ JSON export not implemented yet");
+                println!(" JSON export not implemented yet ");
             }
         }
         Err(_) => {
-            println!("⚠ JSON export not implemented yet");
+            println!(" JSON export not implemented yet ");
         }
     }
 }
@@ -1085,16 +1085,16 @@ fn test_json_export() {
 #[test]
 fn test_cli_tool_processing() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // Test CLI tool with directory processing
     let output = Command::new("cargo")
         .args(&[
-            "run", "--bin", "cursed_doc", "--",
-            "--source", &test.config.fixtures_dir.to_string_lossy(),
-            "--output", &test.config.output_dir.to_string_lossy(),
-            "--package", "cli_test"
+            "run", "--bin ", "cursed_doc", "--",
+            "--source ", &test.config.fixtures_dir.to_string_lossy(),
+            "--output ", &test.config.output_dir.to_string_lossy(),
+            "--package ", "cli_test "
         ])
         .output();
     
@@ -1104,13 +1104,13 @@ fn test_cli_tool_processing() {
                    "CLI tool failed: {}", String::from_utf8_lossy(&result.stderr));
             
             // Verify CLI generated documentation
-            assert!(test.config.output_dir.join("index.html").exists(), 
-                   "CLI tool did not generate index.html");
+            assert!(test.config.output_dir.join("index.html ").exists(), 
+                   "CLI tool did not generate index.html ");
             
-            println!("✓ CLI tool processing test passed");
+            println!(" CLI tool processing test passed ");
         }
         Err(e) => {
-            println!("⚠ CLI tool test skipped (binary not available): {}", e);
+            println!(" CLI tool test skipped (binary not available): {}", e);
         }
     }
 }
@@ -1118,7 +1118,7 @@ fn test_cli_tool_processing() {
 #[test]
 fn test_error_handling_malformed_docs() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
     
     // Create malformed documentation content
     let malformed_content = r#""
@@ -1135,13 +1135,13 @@ yolo bad_function(param1: InvalidType) -> {
     // Missing return type and body
 "#";
     
-    let malformed_path = test.config.fixtures_dir.join("malformed.csd");
-    fs::write(&malformed_path, malformed_content).expect("Failed to write malformed file");
+    let malformed_path = test.config.fixtures_dir.join("malformed.csd ");
+    fs::write(&malformed_path, malformed_content).expect("Failed to write malformed file ");
     
     let config = DocConfig::new()
         .with_source_dirs(vec![malformed_path])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("malformed_test".to_string());
+        .with_package_name("malformed_test ".to_string());
     
     let mut generator = DocumentationGenerator::new(config);
     
@@ -1149,13 +1149,13 @@ yolo bad_function(param1: InvalidType) -> {
     match generator.generate() {
         Ok(result) => {
             // Should generate something even with malformed input
-            println!("✓ Error handling test passed (graceful handling)");
+            println!(" Error handling test passed (graceful handling)");
         }
         Err(error) => {
             // Should provide helpful error message
             let error_msg = format!("{:?}", error);
-            assert!(!error_msg.is_empty(), "Error message should not be empty");
-            println!("✓ Error handling test passed (proper error reporting)");
+            assert!(!error_msg.is_empty(), "Error message should not be empty ");
+            println!(" Error handling test passed (proper error reporting)");
         }
     }
 }
@@ -1163,11 +1163,11 @@ yolo bad_function(param1: InvalidType) -> {
 #[test]
 fn test_performance_large_codebase() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
     
     // Generate large codebase for performance testing
     let large_dir = test.config.fixtures_dir.join("large_codebase");
-    fs::create_dir_all(&large_dir).expect("Failed to create large codebase directory");
+    fs::create_dir_all(&large_dir).expect("Failed to create large codebase directory ");
     
     // Generate multiple files with comprehensive documentation
     for i in 0..10 {
@@ -1186,7 +1186,7 @@ fn test_performance_large_codebase() {
 /// 
 /// ```cursed
 /// facts service = new Service{}()
-/// facts result = service.process_data("test")
+/// facts result = service.process_data("test ")
 /// ```
 squad Service{} {{
     /// Configuration for service {}
@@ -1220,8 +1220,8 @@ squad ServiceState{} {{
 }}
 "#, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i)";
 
-        let file_path = large_dir.join(format!("module_{}.csd", i));
-        fs::write(file_path, content).expect("Failed to write large module file");
+        let file_path = large_dir.join(format!("module_{}.csd ", i));
+        fs::write(file_path, content).expect("Failed to write large module file ");
     }
     
     // Test documentation generation performance
@@ -1230,10 +1230,10 @@ squad ServiceState{} {{
     let config = DocConfig::new()
         .with_source_dirs(vec![large_dir])
         .with_output_dir(test.config.output_dir.clone())
-        .with_package_name("large_codebase_test".to_string());
+        .with_package_name("large_codebase_test ".to_string());
     
     let mut generator = DocumentationGenerator::new(config);
-    let result = generator.generate().expect("Large codebase documentation failed");
+    let result = generator.generate().expect("Large codebase documentation failed ");
     
     let generation_time = start_time.elapsed();
     
@@ -1242,23 +1242,23 @@ squad ServiceState{} {{
            "Documentation generation took too long: {:?}", generation_time);
     
     // Verify output file size is reasonable
-    let index_path = test.config.output_dir.join("index.html");
-    let index_size = fs::metadata(&index_path).expect("Failed to get file metadata").len();
+    let index_path = test.config.output_dir.join("index.html ");
+    let index_size = fs::metadata(&index_path).expect("Failed to get file metadata ").len();
     assert!(index_size < test.config.max_file_size as u64, 
-           "Generated file too large: {} bytes", index_size);
+           "Generated file too large: {} bytes ", index_size);
     
-    println!("✓ Performance test passed: generated docs for large codebase in {:?}", generation_time);
+    println!("Performance test passed: generated docs for large codebase in {:?}", generation_time);
 }
 
 #[test]
 fn test_documentation_coverage_analysis() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // Test coverage analysis on different packages
-    let well_documented = test.config.fixtures_dir.join("sample_package.csd");
-    let poorly_documented = test.config.fixtures_dir.join("undocumented_package.csd");
+    let well_documented = test.config.fixtures_dir.join("sample_package.csd ");
+    let poorly_documented = test.config.fixtures_dir.join("undocumented_package.csd ");
     
     // Analyze well-documented package
     let config1 = DocConfig::new()
@@ -1267,7 +1267,7 @@ fn test_documentation_coverage_analysis() {
         .with_package_name("well_documented".to_string());
     
     let mut generator1 = DocumentationGenerator::new(config1);
-    let result1 = generator1.generate().expect("Well-documented package failed");
+    let result1 = generator1.generate().expect("Well-documented package failed ");
     
     // Analyze poorly documented package  
     let config2 = DocConfig::new()
@@ -1276,12 +1276,12 @@ fn test_documentation_coverage_analysis() {
         .with_package_name("poorly_documented".to_string());
     
     let mut generator2 = DocumentationGenerator::new(config2);
-    let result2 = generator2.generate().expect("Poorly documented package failed");
+    let result2 = generator2.generate().expect("Poorly documented package failed ");
     
     // Compare coverage (this would require coverage analysis in the generator)
     // For now, just verify both completed successfully
     
-    println!("✓ Documentation coverage analysis test passed");
+    println!("Documentation coverage analysis test passed ");
 }
 
 /// Golden file testing infrastructure
@@ -1296,9 +1296,9 @@ impl GoldenFileTest {
     fn new(test_name: &str, fixtures_dir: &Path, output_dir: &Path) -> Self {
         Self {
             test_name: test_name.to_string(),
-            source_file: fixtures_dir.join(format!("{}.csd", test_name)),
-            expected_output: fixtures_dir.join(format!("{}_expected.html", test_name)),
-            actual_output: output_dir.join("index.html"),
+            source_file: fixtures_dir.join(format!("{}.csd ", test_name)),
+            expected_output: fixtures_dir.join(format!("{}_expected.html ", test_name)),
+            actual_output: output_dir.join("index.html "),
         }
     }
     
@@ -1332,13 +1332,13 @@ impl GoldenFileTest {
 #[test]
 fn test_golden_file_comparison() {
     // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
+    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test ");
+    test.setup_fixtures().expect("Failed to set up fixtures ");
     
     // Create expected output files for golden testing
     // In a real implementation, these would be pre-generated known-good outputs
     
-    let test_cases = vec!["sample_package", "undocumented_package", "complex_types"];
+    let test_cases = vec!["sample_package ", "undocumented_package ", "complex_types"];
     
     for test_case in test_cases {
         let golden_test = GoldenFileTest::new(
@@ -1348,45 +1348,13 @@ fn test_golden_file_comparison() {
         );
         
         match golden_test.run() {
-            Ok(()) => println!("✓ Golden file test passed: {}", test_case),
+            Ok(()) => println!("Golden file test passed: {}", test_case),
             Err(e) => {
                 // For now, just log that golden files aren't set up yet
-                println!("⚠ Golden file test not ready: {} ({})", test_case, e);
+                println!("Golden file test not ready: {} ({})", test_case, e);
             }
         }
     }
 }
 
-/// Performance benchmark for documentation generation
-#[test]
-fn test_documentation_generation_benchmarks() {
-    // init_tracing!();
-    let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
-    test.setup_fixtures().expect("Failed to set up fixtures");
-    
-    let benchmarks = vec![
-        ("small", test.config.fixtures_dir.join("sample_package.csd")),
-        ("medium", test.config.fixtures_dir.join("complex_types.csd")),
-        ("cross_ref", test.config.fixtures_dir.join("cross_references.csd")),
-    ];
-    
-    for (name, source) in benchmarks {
-        let start_time = Instant::now();
-        
-        let config = DocConfig::new()
-            .with_source_dirs(vec![source])
-            .with_output_dir(test.config.output_dir.join(name))
-            .with_package_name(format!("benchmark_{}", name));
-        
-        let mut generator = DocumentationGenerator::new(config);
-        let result = generator.generate()
-            .expect(&format!("Benchmark {} failed", name));
-        
-        let duration = start_time.elapsed();
-        println!("📊 Benchmark {}: {:?}", name, duration);
-        
-        // Assert reasonable performance
-        assert!(duration < Duration::from_secs(10), 
-               "Benchmark {} took too long: {:?}", name, duration);
-    }
-}
+

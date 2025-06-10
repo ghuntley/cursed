@@ -74,7 +74,7 @@ fn test_goroutine_registration() {
     init_tracing!();
     let _timer = Timer::new("goroutine_registration");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_gc = GoroutineGarbageCollector::new(gc);
 
     // Test registration
@@ -104,7 +104,7 @@ fn test_goroutine_local_roots() {
     init_tracing!();
     let _timer = Timer::new("goroutine_local_roots");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_gc = GoroutineGarbageCollector::new(gc.clone());
 
     // Register a goroutine
@@ -112,7 +112,7 @@ fn test_goroutine_local_roots() {
 
     // Allocate a test object
     let obj = TestObject { id: 1, value: 42, references: vec![] };
-    let gc_obj = gc.allocate(obj);
+    let gc_obj = gc.allocate(obj).expect("Failed to allocate");
     let obj_ptr = gc_obj.ptr();
 
     // Add as goroutine-local root
@@ -139,7 +139,7 @@ fn test_safe_point_coordination() {
     init_tracing!();
     let _timer = Timer::new("safe_point_coordination");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_gc = GoroutineGarbageCollector::new(gc);
 
     let coordinator = &goroutine_gc.safe_point_coordinator;
@@ -167,7 +167,7 @@ fn test_concurrent_goroutines_with_gc() {
     init_tracing!();
     let _timer = Timer::new("concurrent_goroutines_with_gc");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -278,7 +278,7 @@ fn test_memory_leak_prevention() {
     init_tracing!();
     let _timer = Timer::new("memory_leak_prevention");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -301,7 +301,7 @@ fn test_memory_leak_prevention() {
                 references: vec![],
             };
             
-            let _gc_obj = gc.allocate(obj);
+            let _gc_obj = gc.allocate(obj).expect("Failed to allocate");
             counter.fetch_add(1, Ordering::SeqCst);
             
             // Safe point after allocation
@@ -373,7 +373,7 @@ fn test_stress_many_short_lived_goroutines() {
     init_tracing!();
     let _timer = Timer::new("stress_many_short_lived_goroutines");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -397,7 +397,7 @@ fn test_stress_many_short_lived_goroutines() {
                 references: vec![],
             };
             
-            let gc_obj = gc.allocate(obj);
+            let gc_obj = gc.allocate(obj).expect("Failed to allocate");
             let obj_ptr = gc_obj.ptr();
             
             // Briefly add and remove as root
@@ -477,7 +477,7 @@ fn test_gc_goroutine_race_conditions() {
     init_tracing!();
     let _timer = Timer::new("gc_goroutine_race_conditions");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -506,7 +506,7 @@ fn test_gc_goroutine_race_conditions() {
                 value: 42,
                 references: vec![],
             };
-            let gc_obj = gc_clone.allocate(obj);
+            let gc_obj = gc_clone.allocate(obj).expect("Failed to allocate");
             let obj_ptr = gc_obj.ptr();
             
             // Add as root
@@ -572,7 +572,7 @@ fn test_conservative_stack_scanning() {
     init_tracing!();
     let _timer = Timer::new("conservative_stack_scanning");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_gc = GoroutineGarbageCollector::new(gc.clone());
 
     // Create a test object that we'll put on the stack
@@ -581,7 +581,7 @@ fn test_conservative_stack_scanning() {
         value: 99,
         references: vec![],
     };
-    let gc_obj = gc.allocate(obj);
+    let gc_obj = gc.allocate(obj).expect("Failed to allocate");
     let obj_ptr = gc_obj.ptr();
 
     // Register a goroutine
@@ -620,7 +620,7 @@ fn test_incremental_collection_with_goroutines() {
     init_tracing!();
     let _timer = Timer::new("incremental_collection_with_goroutines");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Configure for incremental collection
     let mut config = cursed::memory::GoroutineGcConfig::default();
@@ -640,7 +640,7 @@ fn test_incremental_collection_with_goroutines() {
                 value: j as i32,
                 references: vec![],
             };
-            let gc_obj = gc.allocate(obj);
+            let gc_obj = gc.allocate(obj).expect("Failed to allocate");
             let obj_ptr = gc_obj.ptr();
             goroutine_gc.add_goroutine_root(i, obj_ptr);
         }

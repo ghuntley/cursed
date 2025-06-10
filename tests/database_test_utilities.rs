@@ -14,7 +14,7 @@ use cursed::stdlib::packages::{
         DatabaseError, ConnectionConfig, DatabaseConnection, Transaction,
         DatabaseResult as DbResult
     },
-    db_sql::{SqlValue, SqlType, SqlQueryBuilder},
+    {SqlValue, SqlType, SqlQueryBuilder},
     db_pool::{ConnectionPool, PoolConfig},
 };
 use std::collections::HashMap;
@@ -22,6 +22,7 @@ use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
 use std::path::PathBuf;
 use tokio;
+use rand::{thread_rng, Rng};
 
 /// fr fr Test configuration and environment management
 pub mod test_config {
@@ -37,6 +38,29 @@ pub mod test_config {
         pub test_data_dir: PathBuf,
         pub cleanup_on_drop: bool,
         pub log_level: String,
+
+        async fn prepare(&mut self, _sql: &str) -> DbResult<Box<dyn PreparedStatement>> {
+            todo!("Mock prepare not implemented")
+        }
+
+        async fn ping(&mut self) -> DbResult<()> {
+            Ok(())
+        }
+
+        fn connection_info(&self) -> ConnectionInfo {
+            ConnectionInfo {
+                driver_name: "mock".to_string(),
+                database_name: Some("mock_db".to_string()),
+                host: Some("localhost".to_string()),
+                port: Some(5432),
+                username: Some("mock_user".to_string()),
+                ssl_mode: None,
+                connection_timeout: Some(30),
+                query_timeout: Some(30),
+                max_connections: Some(1),
+                is_pooled: false,
+            }
+        }
     }
 
     impl Default for TestConfig {
@@ -159,7 +183,7 @@ pub mod fixtures {
             email: SafeEmail().fake(),
             first_name: FirstName().fake(),
             last_name: LastName().fake(),
-            age: (18..80).fake(),
+            age: thread_rng().gen_range(18..80),
             is_active: (i % 4) != 0, // 75% active
         }).collect()
     }
@@ -177,7 +201,7 @@ pub mod fixtures {
                         title: format!("Test Post {} by {}", i + 1, user.username),
                         content: format!("This is test content for post {} by {}. It contains multiple sentences to simulate real content.", i + 1, user.username),
                         is_published: (i % 3) != 0, // 66% published
-                        view_count: (0..1000).fake(),
+                        view_count: thread_rng().gen_range(0..1000),
                     });
                 }
             }
@@ -317,7 +341,7 @@ pub mod fixtures {
             for statement in schema_sql.split(';') {
                 let statement = statement.trim();
                 if !statement.is_empty() {
-                    connection.execute(statement, vec![]).await?;
+                    connection.execute(statement, &[]).await?;
                 }
             }
 
@@ -328,17 +352,21 @@ pub mod fixtures {
             let insert_sql = "INSERT INTO users (username, email, first_name, last_name, age, is_active) VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
             
             for user in users {
-                let result = self.connection.query(insert_sql, vec![
-                    SqlValue::Text(user.username.clone()),
-                    SqlValue::Text(user.email.clone()),
-                    SqlValue::Text(user.first_name.clone()),
-                    SqlValue::Text(user.last_name.clone()),
-                    SqlValue::Integer(user.age as i64),
-                    SqlValue::Boolean(user.is_active),
-                ]).await?;
+                let params = vec![
+                SqlValue::Text(user.username.clone()),
+                SqlValue::Text(user.email.clone()),
+                SqlValue::Text(user.first_name.clone()),
+                SqlValue::Text(user.last_name.clone()),
+                SqlValue::Integer(user.age as i64),
+                SqlValue::Boolean(user.is_active),
+                ];
+                let result = self.connection.query(insert_sql, &sql_values_to_parameters(&params)).await?;
 
-                if result.row_count() > 0 {
-                    user.id = Some(result.rows()[0].get_i64("id")?);
+                if result.row_count().unwrap_or(0) > 0 {
+                    let mut result = result;
+                    if let Some(row) = result.next()? {
+                        user.id = Some(row.get_i64("id")?);
+                    }
                 }
             }
 
@@ -349,15 +377,15 @@ pub mod fixtures {
             let insert_sql = "INSERT INTO posts (user_id, title, content, is_published, view_count) VALUES (?, ?, ?, ?, ?) RETURNING id";
             
             for post in posts {
-                let result = self.connection.query(insert_sql, vec![
+                let result = self.connection.query(insert_sql, &sql_values_to_parameters(&vec![
                     SqlValue::Integer(post.user_id),
                     SqlValue::Text(post.title.clone()),
                     SqlValue::Text(post.content.clone()),
                     SqlValue::Boolean(post.is_published),
                     SqlValue::Integer(post.view_count as i64),
-                ]).await?;
+                ])).await?;
 
-                if result.row_count() > 0 {
+                if result.row_count().unwrap_or(0) > 0 {
                     post.id = Some(result.rows()[0].get_i64("id")?);
                 }
             }
@@ -369,14 +397,14 @@ pub mod fixtures {
             let insert_sql = "INSERT INTO comments (post_id, user_id, content, is_approved) VALUES (?, ?, ?, ?) RETURNING id";
             
             for comment in comments {
-                let result = self.connection.query(insert_sql, vec![
+                let result = self.connection.query(insert_sql, &sql_values_to_parameters(&vec![
                     SqlValue::Integer(comment.post_id),
                     SqlValue::Integer(comment.user_id),
                     SqlValue::Text(comment.content.clone()),
                     SqlValue::Boolean(comment.is_approved),
-                ]).await?;
+                ])).await?;
 
-                if result.row_count() > 0 {
+                if result.row_count().unwrap_or(0) > 0 {
                     comment.id = Some(result.rows()[0].get_i64("id")?);
                 }
             }
@@ -393,7 +421,7 @@ pub mod fixtures {
             ];
 
             for sql in &cleanup_sql {
-                self.connection.execute(sql, vec![]).await?;
+                self.connection.execute(sql, &[]).await?;
             }
 
             Ok(())
@@ -417,6 +445,7 @@ pub mod mocks {
     use std::sync::{Arc, Mutex};
 
     /// Mock database connection for unit testing
+    #[derive(Debug)]
     pub struct MockConnection {
         id: String,
         connected: bool,
@@ -533,7 +562,7 @@ pub mod mocks {
 
         async fn begin_transaction(&mut self) -> DbResult<Transaction> {
             self.queries.lock().unwrap().push("BEGIN TRANSACTION".to_string());
-            Ok(Transaction::new())
+            Ok(Transaction::new("mock_connection", TransactionOptions::default()))
         }
 
         async fn close(&mut self) -> DbResult<()> {
@@ -837,6 +866,31 @@ pub mod performance {
 pub mod error_simulation {
     use super::*;
 
+        use cursed::stdlib::db_core::{QueryError, ExecuteResult, Parameter, ParameterDirection, TransactionOptions, ConnectionInfo};
+    use cursed::stdlib::packages::{SqliteDriver, PostgreSqlDriver, MySqlDriver, DatabaseError};
+    use cursed::stdlib::packages::db_sql::SqlValue;
+    
+    /// Convert SqlValue to Parameter
+    fn sql_value_to_parameter(value: &SqlValue) -> Parameter {
+        Parameter {
+            name: None,
+            value: match value {
+                SqlValue::Null => "null".to_string(),
+                SqlValue::Boolean(b) => b.to_string(),
+                SqlValue::Integer(i) => i.to_string(),
+                SqlValue::Text(s) => s.clone(),
+                _ => format!("{:?}", value),
+            },
+            type_hint: None,
+            direction: ParameterDirection::In,
+        }
+    }
+    
+    /// Convert Vec<SqlValue> to Vec<Parameter>
+    fn sql_values_to_parameters(values: &[SqlValue]) -> Vec<Parameter> {
+        values.iter().map(sql_value_to_parameter).collect()
+    }
+    
     /// Error injection utility for testing error handling
     pub struct ErrorInjector {
         error_probability: f64,
@@ -926,14 +980,14 @@ pub mod error_simulation {
 
     pub fn create_syntax_error() -> DatabaseError {
         DatabaseError::query(
-            db_core::QueryError::SyntaxError,
+            QueryError::SyntaxError,
             "Simulated SQL syntax error"
         )
     }
 
     pub fn create_constraint_error() -> DatabaseError {
         DatabaseError::query(
-            db_core::QueryError::ConstraintViolation,
+            QueryError::ConstraintViolation,
             "Simulated constraint violation"
         )
     }
@@ -995,7 +1049,7 @@ pub mod integration {
             println!("🗃️ Running SQLite test: {}", test_name);
             
             let config = ConnectionConfig::new("sqlite", self.config.sqlite_test_db.to_str().unwrap());
-            match db_sql::SqliteDriver::new().connect(config).await {
+            match SqliteDriver::new().connect(config).await {
                 Ok(connection) => {
                     match test_fn(Box::new(connection)).await {
                         Ok(()) => println!("✅ SQLite test passed"),
@@ -1016,7 +1070,7 @@ pub mod integration {
             if let Some(url) = &self.config.postgres_url {
                 match ConnectionConfig::from_string(url) {
                     Ok(config) => {
-                        match db_sql::PostgreSqlDriver::new().connect(config).await {
+                        match PostgreSqlDriver::new().connect(config).await {
                             Ok(connection) => {
                                 match test_fn(Box::new(connection)).await {
                                     Ok(()) => println!("✅ PostgreSQL test passed"),
@@ -1041,7 +1095,7 @@ pub mod integration {
             if let Some(url) = &self.config.mysql_url {
                 match ConnectionConfig::from_string(url) {
                     Ok(config) => {
-                        match db_sql::MySqlDriver::new().connect(config).await {
+                        match MySqlDriver::new().connect(config).await {
                             Ok(connection) => {
                                 match test_fn(Box::new(connection)).await {
                                     Ok(()) => println!("✅ MySQL test passed"),

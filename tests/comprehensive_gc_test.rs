@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, ThreadSafeGc};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
@@ -44,6 +44,9 @@ impl Traceable for CircularNode {
             // Visit the next object in the circular chain
             visitor.visit_ptr(next.id(), Tag::Object);
         }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
     }
     
     fn size(&self) -> usize {
@@ -81,6 +84,9 @@ impl Traceable for ThreadSafeCircularNode {
             // Visit the next object in the circular chain
             visitor.visit_ptr(next.id(), Tag::Object);
         }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
     }
     
     fn size(&self) -> usize {
@@ -107,9 +113,9 @@ fn test_circular_reference_collection() {
     debug!("Created garbage collector");
     
     // Create a circular reference with 3 nodes
-    let node1 = gc.allocate(CircularNode::new(1);
-    let node2 = gc.allocate(CircularNode::new(2);
-    let node3 = gc.allocate(CircularNode::new(3);
+    let node1 = gc.allocate(CircularNode::new(1)).expect("Failed to allocate");
+    let node2 = gc.allocate(CircularNode::new(2)).expect("Failed to allocate");
+    let node3 = gc.allocate(CircularNode::new(3)).expect("Failed to allocate");
     debug!("Created three nodes for circular reference");
     
     // Set up the circular chain: 1 -> 2 -> 3 -> 1
@@ -135,7 +141,7 @@ fn test_circular_reference_collection() {
     
     // Force garbage collection
     info!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Get stats after collection - allow time for stats to refresh
     std::thread::sleep(std::time::Duration::from_millis(10));
@@ -199,7 +205,7 @@ fn test_thread_safe_circular_reference_collection() {
     
     // Force garbage collection
     info!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Get stats after collection - allow time for stats to refresh
     std::thread::sleep(std::time::Duration::from_millis(10));
@@ -239,9 +245,9 @@ fn test_weak_reference_cycle_breaking() {
     debug!("Created garbage collector");
     
     // Create a circular reference with 3 nodes, but one link is weak
-    let node1 = gc.allocate(CircularNode::new(1);
-    let node2 = gc.allocate(CircularNode::new(2);
-    let node3 = gc.allocate(CircularNode::new(3);
+    let node1 = gc.allocate(CircularNode::new(1).expect("Failed to allocate");
+    let node2 = gc.allocate(CircularNode::new(2).expect("Failed to allocate");
+    let node3 = gc.allocate(CircularNode::new(3).expect("Failed to allocate");
     debug!("Created three nodes with one weak link");
     
     // Set up the chain: 1 -> 2 -> 3 with a weak link back from 3 to 1
@@ -271,7 +277,7 @@ fn test_weak_reference_cycle_breaking() {
     
     // Force garbage collection
     info!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Get stats after collection - allow time for stats to refresh
     std::thread::sleep(std::time::Duration::from_millis(10));
@@ -300,7 +306,7 @@ fn test_weak_reference_cycle_breaking() {
     
     // Force garbage collection again
     info!("Running final garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // No objects should remain - allow time for stats to refresh
     std::thread::sleep(std::time::Duration::from_millis(10));
@@ -397,7 +403,7 @@ fn test_multithreaded_gc_stress() {
             for i in 0..5 {
                 thread::sleep(Duration::from_millis(50)));
                 debug!(iteration = i+1, "Background GC running collection");
-                thread_gc.collect_garbage();
+                thread_gc.collect().expect("Failed to collect garbage");
             }
             debug!("Background GC thread completed");
         })
@@ -415,7 +421,7 @@ fn test_multithreaded_gc_stress() {
     
     // Final GC to clean up all objects
     info!("Running final cleanup GC");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Drop all retained objects
     debug!("Dropping all retained objects");
@@ -423,7 +429,7 @@ fn test_multithreaded_gc_stress() {
     
     // Run one final collection
     info!("Running one final collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Check that all objects were properly tracked and can be collected
     let final_stats = gc.stats();

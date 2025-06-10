@@ -8,7 +8,7 @@ use tracing_subscriber;
 
 #[cfg(test)]
 mod tests {
-    
+    use super::*;
     
     mod tracing_setup {
         pub fn setup() {
@@ -37,15 +37,10 @@ mod tests {
                 trace!(id = self.id, "TestObject has no next references");
             }
         }
-        
-        fn size(&self) -> usize {
-            std::mem::size_of::<TestObject>()
-        }
-        
-        fn tag(&self) -> Tag {
-            Tag::Object
-        }
     }
+
+    unsafe impl Send for TestObject {}
+    unsafe impl Sync for TestObject {}
     
     #[test]
     fn test_basic_allocation() {
@@ -65,11 +60,11 @@ mod tests {
             let obj = gc.allocate(TestObject {
                 id: 1,
                 next: None,
-            });
+            }).expect("Failed to allocate");
             debug!(object = ?obj, "Successfully allocated object");
             
             // Check object state
-            if let Some(inner) = obj.inner() {
+            if let Some(inner) = obj.as_ref() {
                 debug!(id = inner.id, "Object has ID");
                 assert_eq!(inner.id, 1, "Object id should be 1");
             } else {
@@ -79,10 +74,10 @@ mod tests {
             
             // Run GC while object is in scope
             info!("Running GC with object in scope");
-            gc.collect_garbage();
+            gc.collect().expect("Failed to collect garbage");
             
             // Object should still be alive
-            let is_alive = obj.inner().is_some();
+            let is_alive = obj.as_ref().is_some();
             if !is_alive {
                 error!("Object should still be alive but was collected");
             }
@@ -97,7 +92,7 @@ mod tests {
         
         // Run GC to collect the now-unreferenced object
         info!("Running GC after object out of scope");
-        gc.collect_garbage();
+        gc.collect().expect("Failed to collect garbage");
         
         // Check final GC stats - allow time for stats to refresh
         thread::sleep(Duration::from_millis(10));

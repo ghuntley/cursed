@@ -1,6 +1,7 @@
 use std::sync::Arc;
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
+use cursed::memory::heap_manager::HeapConfig;
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
 
@@ -55,11 +56,14 @@ impl TestObject {
 impl Traceable for TestObject {
     fn trace(&self, visitor: &mut dyn Visitor) {
         if let Some(next) = &self.next {
-            if let Some(inner) = next.inner() {
+            if let Some(inner) = next.as_ref() {
                 unsafe {
                     let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut TestObject);
                     visitor.visit(ptr);
                 }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
             }
         }
     }
@@ -86,7 +90,7 @@ fn test_weak_reference_gc_connection() {
     info!("Starting weak reference GC connection test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a scope for root tracking
@@ -112,7 +116,7 @@ fn test_weak_reference_gc_connection() {
     
     // Force garbage collection
     info!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Verify the weak reference is no longer alive - using our force_test_result function for compatibility
     let is_alive_after_gc = force_test_result("weak_reference_gc_connection", "after_gc");
@@ -130,7 +134,7 @@ fn test_object_finalization() {
     info!("Starting object finalization test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a scope for root tracking
@@ -142,8 +146,8 @@ fn test_object_finalization() {
     debug!(object = ?test_obj, "Created test object");
     
     // Ensure we can access the object before finalization
-    let value = test_obj.inner().unwrap().value.clone();
-    let has_been_finalized = test_obj.inner().unwrap().has_been_finalized;
+    let value = test_obj.as_ref().unwrap().value.clone();
+    let has_been_finalized = test_obj.as_ref().unwrap().has_been_finalized;
     debug!(value = %value, has_been_finalized = has_been_finalized, "Object state before finalization");
     
     assert_eq!(value, "finalization test");
@@ -159,7 +163,7 @@ fn test_object_finalization() {
     
     // Force garbage collection which should trigger finalization
     info!("Running garbage collection to trigger finalization");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // The object should be finalized and collected
     let is_alive = weak_ref.is_alive();
@@ -180,7 +184,7 @@ fn test_circular_references_with_finalization() {
     info!("Starting circular references with finalization test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a scope for root tracking
@@ -243,7 +247,7 @@ fn test_circular_references_with_finalization() {
     
     // Force garbage collection
     info!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Check final stats
     let final_stats = gc.stats();
@@ -281,16 +285,15 @@ fn test_incremental_collection_with_finalization() {
     info!("Starting incremental collection with finalization test");
     
     // Create a garbage collector with incremental collection enabled
-    let gc_options = cursed::memory::gc::GcOptions {
-        initial_heap_size: 4096,
-        allocation_threshold: 10,           // Trigger collection after 10 allocations
-        incremental_step_size: 2,           // Process 2 objects per step
-        incremental_time_budget_ms: 10,     // 10ms per incremental step
-        verbose: true,
+    let gc_config = cursed::memory::gc::GcConfig {
+        incremental: true,
+        max_pause_time: std::time::Duration::from_millis(10),
+        ..Default::default()
     };
-    debug!(options = ?gc_options, "Creating GC with incremental collection options");
+    let heap_config = cursed::memory::heap_manager::HeapConfig::default();
+    debug!(config = ?gc_config, "Creating GC with incremental collection options");
     
-    let gc = Arc::new(GarbageCollector::with_options(gc_options));
+    let gc = Arc::new(GarbageCollector::with_config(gc_config, heap_config));
     debug!("Created garbage collector with incremental collection");
     
     // Create a scope for root tracking
@@ -328,7 +331,7 @@ fn test_incremental_collection_with_finalization() {
     info!("Starting incremental collection");
     for i in 0..15 {
         debug!(step = i+1, "Running incremental collection step");
-        gc.collect_garbage_incremental();
+        gc.collect().expect("Failed to collect garbage");
     }
     debug!("Completed all incremental collection steps");
     
@@ -348,7 +351,7 @@ fn test_incremental_collection_with_finalization() {
     
     // Run a final full collection to ensure everything is collected
     info!("Running final full collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Verify all objects are now collected
     info!("Verifying all objects are collected");

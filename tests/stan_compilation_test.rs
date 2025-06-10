@@ -39,8 +39,8 @@ fn test_stan_expression_ast_creation() {
     
     // Create the stan expression
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: Box::new(func_ident),
+        token: "stan".to_string(),
+        call: Box::new(func_ident),
     };
     
     // Test the AST node interface
@@ -56,11 +56,11 @@ fn test_stan_expression_parsing() {
     info!("Testing stan expression parsing");
     
     let input = "stan foo()";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     // Parse the expression
-    let expr = parser.parse_expression(cursed::parser::Precedence::Lowest)
+    let expr = parser.parse_expression()
         .expect("Failed to parse stan expression");
     
     // Verify it's a StanExpression
@@ -94,12 +94,12 @@ fn test_stan_compilation_basic() {
     
     // Create the stan expression
     let stan_expr = StanExpression {
-        token: Token::new(TokenType::Stan, "stan"),
-        expression: Box::new(func_ident),
+        token: "stan".to_string(),
+        call: Box::new(func_ident),
     };
     
     // Test compilation
-    let result = codegen.compile_stan_expression(&stan_expr);
+    let result = codegen.compile_expression(&stan_expr);
     
     // Should complete without error (even if the function doesn't exist)
     // The error handling is part of the runtime system

@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::{Arc, Mutex};
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, ThreadSafeTraceable};
 use tracing::{debug, error, info, instrument, trace, warn};
 
@@ -40,11 +40,14 @@ impl CircularNode {
 impl Traceable for CircularNode {
     fn trace(&self, visitor: &mut dyn Visitor) {
         if let Some(next) = &self.next {
-            if let Some(inner) = next.inner() {
+            if let Some(inner) = next.as_ref() {
                 unsafe {
                     let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CircularNode);
                     visitor.visit(ptr);
                 }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
             }
         }
     }
@@ -70,7 +73,7 @@ fn test_circular_references() {
     warn!("Skipping full test due to known issues with circular reference collection");
     
     // Create a simplified version that just checks basic allocation and dropping
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Allocate a single object without circular references
     // Create a basic CircularNode instead of a ThreadSafeTraceable version
@@ -81,7 +84,7 @@ fn test_circular_references() {
     drop(node);
     
     // Force a garbage collection to verify it completes without errors
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // The test passes if it doesn't crash or hang
     info!("Test simplified and passed successfully");
@@ -93,7 +96,7 @@ fn test_weak_references() {
     tracing_setup::init_test_tracing();
     info!("Starting weak references test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a scope to test object cleanup
     {
@@ -115,7 +118,7 @@ fn test_weak_references() {
         
         // Force a garbage collection
         debug!("Running garbage collection");
-        gc.collect_garbage();
+        gc.collect().expect("Failed to collect garbage");
         
         // Skip the collection checks due to test environment limitations
         info!("Test completed successfully");
@@ -139,7 +142,7 @@ fn test_no_memory_leaks() {
     warn!("Skipping full test due to known issues with circular reference collection");
     
     // Create a simplified version that just allocates and drops a single object
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Just allocate and drop a single object to make sure the test doesn't hang
     // Create a basic CircularNode instead of a ThreadSafeTraceable version
@@ -152,7 +155,7 @@ fn test_no_memory_leaks() {
     
     // Force a collection to verify it completes
     debug!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Skip assertions for now since the full GC is not implemented
     info!("Test simplified and passed successfully");

@@ -28,7 +28,7 @@ fn test_channel_scheduler_creation() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = ChannelScheduler::new(goroutine_scheduler, gc);
     
@@ -45,7 +45,7 @@ fn test_blocking_channel_operations_integration() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler.clone(), gc));
     
@@ -128,7 +128,7 @@ fn test_goroutine_parking_unparking() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler.clone(), gc));
     
@@ -186,7 +186,7 @@ fn test_channel_wait_queues() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler, gc));
     
@@ -272,7 +272,7 @@ fn test_channel_operation_cancellation() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler.clone(), gc));
     
@@ -326,7 +326,7 @@ fn test_channel_scheduler_performance() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler, gc));
     
@@ -417,7 +417,7 @@ fn test_fair_scheduling_for_channel_operations() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let config = ThreadPoolConfig {
         min_threads: 2,
         max_threads: 4,
@@ -501,7 +501,7 @@ fn test_channel_scheduler_cleanup_and_optimization() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler, gc));
     
@@ -573,7 +573,7 @@ fn test_integration_with_goroutine_lifecycle() {
     // init_tracing!();
     common::tracing::setup();
     
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let goroutine_scheduler = Arc::new(GoroutineScheduler::with_defaults(gc.clone()));
     let channel_scheduler = Arc::new(ChannelScheduler::new(goroutine_scheduler.clone(), gc));
     
