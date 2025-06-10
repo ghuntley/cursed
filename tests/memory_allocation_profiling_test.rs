@@ -21,6 +21,9 @@ impl Traceable for GcString {
     fn trace(&self, _visitor: &mut dyn Visitor) {
         // Strings don't contain references to other GC objects
     }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
     
     fn size(&self) -> usize {
         std::mem::size_of::<Self>() + self.0.capacity()
@@ -38,6 +41,9 @@ impl Traceable for GcVecU8 {
     fn trace(&self, _visitor: &mut dyn Visitor) {
         // Vec<u8> doesn't contain references to other GC objects
     }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
     
     fn size(&self) -> usize {
         std::mem::size_of::<Self>() + self.0.capacity()
@@ -55,6 +61,9 @@ impl Traceable for GcVecInt {
     fn trace(&self, _visitor: &mut dyn Visitor) {
         // Vec<i32> doesn't contain references to other GC objects
     }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
     
     fn size(&self) -> usize {
         std::mem::size_of::<Self>() + (self.0.capacity() * std::mem::size_of::<i32>())
@@ -85,6 +94,9 @@ fn test_memory_profiling_basic() {
         fn trace(&self, _visitor: &mut dyn Visitor) {
             // No references to trace
         }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
         
         fn size(&self) -> usize {
             std::mem::size_of::<Self>() + self.data.capacity()
@@ -105,7 +117,7 @@ fn test_memory_profiling_basic() {
         
         // Allocate in different patterns
         if i % 2 == 0 {
-            let _ = gc.allocate(obj);
+            let _ = gc.allocate(obj).expect("Failed to allocate");
         } else {
             let _ = gc.allocate_thread_safe(obj);
         }
@@ -151,14 +163,14 @@ fn test_memory_profiling_patterns() {
     let create_string_pattern = || {
         for _ in 0..20 {
             let s = GcString("x".repeat(100));
-            let _ = gc.allocate(s);
+            let _ = gc.allocate(s).expect("Failed to allocate");
         }
     };
     
     let create_vector_pattern = || {
         for i in 0..15 {
             let v = GcVecU8(vec![0; i * 10]);
-            let _ = gc.allocate(v);
+            let _ = gc.allocate(v).expect("Failed to allocate");
         }
     };
     
@@ -203,7 +215,7 @@ fn test_memory_hot_paths() {
     fn hot_allocation_path(gc: &GarbageCollector) {
         for i in 0..50 {
             let data = GcVecU8(vec![i as u8; 64]); // Small allocations, but many of them
-            let _ = gc.allocate(data);
+            let _ = gc.allocate(data).expect("Failed to allocate");
         }
     }
     
@@ -249,8 +261,8 @@ fn test_optimize_allocation_pattern() {
         for i in 0..30 {
             // This allocates a new string for each iteration
             let s = GcString(format!("Item {}", i));
-            let gc_s = gc.allocate(s);
-            if let Some(inner) = gc_s.inner() {
+            let gc_s = gc.allocate(s).expect("Failed to allocate");
+            if let Some(inner) = gc_s.as_ref() {
                 result.push(inner.0.clone());
             }
         }
@@ -272,7 +284,7 @@ fn test_optimize_allocation_pattern() {
             
             // Clone only when we need to store it
             let gc_s = gc.allocate(GcString(buffer.clone()));
-            if let Some(inner) = gc_s.inner() {
+            if let Some(inner) = gc_s.as_ref() {
                 result.push(inner.0.clone());
             }
         }

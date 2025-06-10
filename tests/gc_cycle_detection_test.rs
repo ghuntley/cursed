@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
 use tracing::{debug, error, info, instrument, trace, warn};
 
@@ -36,11 +36,14 @@ impl CyclicNode {
 impl Traceable for CyclicNode {
     fn trace(&self, visitor: &mut dyn Visitor) {
         if let Some(next) = &self.next {
-            if let Some(inner) = next.inner() {
+            if let Some(inner) = next.as_ref() {
                 unsafe {
                     let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CyclicNode);
                     visitor.visit(ptr);
                 }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
             }
         }
     }
@@ -64,7 +67,7 @@ fn test_cycle_detection() {
     tracing_setup::init_test_tracing();
     info!("Starting cycle detection test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a scope for root tracking
     let _scope_guard = with_gc_scope(gc.clone());
@@ -101,7 +104,7 @@ fn test_cycle_detection() {
     drop(node3);
     
     // Force garbage collection
-    // TODO: gc.collect_garbage();
+    // TODO: gc.collect().expect("Failed to collect garbage");
     
     // In a fully working implementation, the weak references would be usable
     // to check collection status, but in this implementation they lose their
@@ -125,7 +128,7 @@ fn test_incremental_collection() {
     tracing_setup::init_test_tracing();
     info!("Starting incremental collection test");
     // Create a garbage collector with incremental collection enabled
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a scope for root tracking
     let _scope_guard = with_gc_scope(gc.clone());
@@ -159,7 +162,7 @@ fn test_incremental_collection() {
     
     // Trigger several incremental collections
     for _ in 0..5 {
-        // TODO: gc.collect_garbage();
+        // TODO: gc.collect().expect("Failed to collect garbage");
     }
     
     // Check that some of the weak refs are now dead
@@ -175,7 +178,7 @@ fn test_incremental_collection() {
     
     // Now do a full collection to clean up everything
     info!("Performing full garbage collection");
-    // TODO: gc.collect_garbage();
+    // TODO: gc.collect().expect("Failed to collect garbage");
     
     // Check final stats
     let final_stats = // TODO: gc.stats();

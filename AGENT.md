@@ -25,6 +25,7 @@ The Nix environment has linking issues with mold and missing libraries that affe
 - **Library building works** with the configured `.cargo/config.toml` 
 - **Test compilation fixed** - All tests now compile successfully (`cargo check --tests` passes)
 - **Test linking COMPLETELY FIXED** - Mold linker successfully overridden using environment variables
+- **SQLite dependency FIXED** - SQLite3 libraries added to environment and build configuration
 - **Working Solution**: `./fix_linking.sh` script + `LIBRARY_PATH` + `RUSTFLAGS` environment variables override mold
 - **Makefile Updated**: All major targets (build, test, lint) now use the linking fix automatically
 
@@ -116,6 +117,7 @@ Some complex integration tests have compilation errors due to:
 - libz: `/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib`
 - libtinfo: `/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib`
 - libxml2: `/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib`
+- libsqlite3: `/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib`
 
 ## Goroutine-Aware Garbage Collection Implementation
 

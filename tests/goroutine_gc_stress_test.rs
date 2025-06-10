@@ -68,7 +68,7 @@ fn test_massive_concurrent_goroutines() {
     init_tracing!();
     let _timer = Timer::new("massive_concurrent_goroutines");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -98,7 +98,7 @@ fn test_massive_concurrent_goroutines() {
                     children: vec![],
                 };
                 
-                let gc_obj = gc.allocate(obj);
+                let gc_obj = gc.allocate(obj).expect("Failed to allocate");
                 let obj_ptr = Arc::as_ptr(&gc_obj.gc) as usize;
                 
                 // Briefly add as root
@@ -201,7 +201,7 @@ fn test_memory_pressure_scenarios() {
     init_tracing!();
     let _timer = Timer::new("memory_pressure_scenarios");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -233,7 +233,7 @@ fn test_memory_pressure_scenarios() {
                 children: vec![],
             };
             
-            let gc_obj = gc.allocate(obj);
+            let gc_obj = gc.allocate(obj).expect("Failed to allocate");
             let obj_ptr = Arc::as_ptr(&gc_obj.gc) as usize;
             
             goroutine_gc.add_goroutine_root(*goroutine_id as u64, obj_ptr);
@@ -358,7 +358,7 @@ fn test_circular_references_with_goroutines() {
     init_tracing!();
     let _timer = Timer::new("circular_references_with_goroutines");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -396,7 +396,7 @@ fn test_circular_references_with_goroutines() {
                     children: vec![],
                 };
                 
-                let gc_obj = gc.allocate(obj);
+                let gc_obj = gc.allocate(obj).expect("Failed to allocate");
                 let obj_ptr = Arc::as_ptr(&gc_obj.gc) as usize;
                 goroutine_gc.add_goroutine_root(*goroutine_id as u64, obj_ptr);
                 
@@ -498,7 +498,7 @@ fn test_sustained_load_performance() {
     init_tracing!();
     let _timer = Timer::new("sustained_load_performance");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -551,7 +551,7 @@ fn test_sustained_load_performance() {
                         children: vec![],
                     };
                     
-                    let gc_obj = gc.allocate(obj);
+                    let gc_obj = gc.allocate(obj).expect("Failed to allocate");
                     let obj_ptr = Arc::as_ptr(&gc_obj.gc) as usize;
                     goroutine_gc.add_goroutine_root(*worker_id as u64, obj_ptr);
                     
@@ -701,7 +701,7 @@ fn test_goroutine_termination_during_gc() {
     init_tracing!();
     let _timer = Timer::new("goroutine_termination_during_gc");
 
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     let scheduler = get_global_scheduler();
     let goroutine_gc = Arc::new(GoroutineGarbageCollector::new(gc.clone()));
 
@@ -723,7 +723,7 @@ fn test_goroutine_termination_during_gc() {
             children: vec![],
         };
         
-        let gc_obj = gc.allocate(obj);
+        let gc_obj = gc.allocate(obj).expect("Failed to allocate");
         let obj_ptr = Arc::as_ptr(&gc_obj.gc) as usize;
         goroutine_gc.add_goroutine_root(*goroutine_id as u64, obj_ptr);
         

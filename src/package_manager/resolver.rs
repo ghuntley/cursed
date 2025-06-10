@@ -1,9 +1,19 @@
 use crate::package_manager::{PackageManagerError, metadata::PackageMetadata, registry::PackageInfo};
 use serde::{Deserialize, Serialize};
 
+/// Dependency resolver statistics
+#[derive(Debug, Default)]
+pub struct ResolverStats {
+    pub resolved_count: usize,
+    pub cached_count: usize,
+    pub failed_count: usize,
+    pub cache_size: usize,
+}
+
 /// Dependency resolver
 #[derive(Debug)]
 pub struct DependencyResolver {
+    stats: ResolverStats,
 }
 
 /// Resolved dependency information
@@ -16,7 +26,14 @@ pub struct ResolvedDependency {
 
 impl DependencyResolver {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            stats: ResolverStats::default(),
+        }
+    }
+    
+    /// Get resolver statistics
+    pub fn get_stats(&self) -> &ResolverStats {
+        &self.stats
     }
 
     pub async fn resolve_dependencies(&self, package: &PackageInfo) -> Result<Vec<PackageMetadata>, PackageManagerError> {

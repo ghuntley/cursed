@@ -7,7 +7,7 @@ use cursed::error::Error;
 fn test_preprocessor_functionality() {
     // Test generic struct declaration
     let input = "be_like Box[T] squad { value normie }";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     let mut preprocessor = Preprocessor::new(&mut lexer);
     
     // Process tokens
@@ -29,7 +29,7 @@ fn test_preprocessor_functionality() {
     
     // Test generic function declaration
     let input = "slay foo[T](x normie) T { yolo x }";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     let mut preprocessor = Preprocessor::new(&mut lexer);
     
     // Process tokens
@@ -51,7 +51,7 @@ fn test_preprocessor_functionality() {
     
     // Test generic function call
     let input = "foo[normie](42)";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     let mut preprocessor = Preprocessor::new(&mut lexer);
     
     // Process tokens
@@ -73,7 +73,7 @@ fn test_preprocessor_functionality() {
     
     // Test malformed generic syntax - This is the one part that should legitimately fail
     let input = "be_like Box[T squad { value normie }"; // Missing closing bracket
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     let mut preprocessor = Preprocessor::new(&mut lexer);
     
     // Process tokens should return an error
@@ -85,7 +85,7 @@ fn test_preprocessor_functionality() {
 fn test_nested_generics() {
     // Test nested generic types
     let input = "be_like Pair[K, V[T]] squad { first K, second V[T] }";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     
     // Create and run the preprocessor
     let mut preprocessor = Preprocessor::new(&mut lexer);

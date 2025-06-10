@@ -13,6 +13,14 @@ impl SliceLiteral {
     pub fn new(token: String, elements: Vec<Box<dyn Expression>>) -> Self {
         Self { token, elements }
     }
+    
+    pub fn len(&self) -> usize {
+        self.elements.len()
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        self.elements.is_empty()
+    }
 }
 
 impl Node for SliceLiteral {

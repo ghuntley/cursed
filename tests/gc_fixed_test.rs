@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
 use tracing::{debug, error, info, instrument, trace, warn};
 
@@ -26,7 +26,7 @@ impl CircularNode {
     }
     
     fn set_next(&mut self, next: Gc<CircularNode>) {
-        let next_id = next.inner().map(|n| n.id).unwrap_or(0);
+        let next_id = next.as_ref().map(|n| n.id).unwrap_or(0);
         debug!(node_id = self.id, next_id = next_id, "Setting next reference");
         self.next = Some(next);
     }
@@ -37,7 +37,7 @@ impl Traceable for CircularNode {
         trace!(node_id = self.id, "Tracing CircularNode");
         if let Some(next) = &self.next {
             trace!(node_id = self.id, "Node has next reference to trace");
-            if let Some(inner) = next.inner() {
+            if let Some(inner) = next.as_ref() {
                 trace!("Got inner pointer for next reference");
                 unsafe {
                     let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CircularNode);
@@ -45,6 +45,9 @@ impl Traceable for CircularNode {
                     visitor.visit(ptr);
                     trace!("Visit completed for next reference");
                 }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
             } else {
                 warn!(node_id = self.id, "Could not get inner pointer for next reference");
             }
@@ -70,7 +73,7 @@ fn test_circular_references_with_scope() {
     info!("STARTING CIRCULAR REFERENCES TEST WITH SCOPE");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a new root scope
@@ -132,8 +135,8 @@ fn test_circular_references_with_scope() {
     
     // Force a garbage collection
     info!("STARTING GARBAGE COLLECTION");
-    debug!("Calling gc.collect_garbage()");
-    gc.collect_garbage();
+    debug!("Calling gc.collect().expect("Failed to collect garbage")");
+    gc.collect().expect("Failed to collect garbage");
     debug!("Garbage collection completed");
     
     // Get final stats - they should show fewer objects after GC
@@ -166,7 +169,7 @@ fn test_complex_object_graph() {
     info!("STARTING COMPLEX OBJECT GRAPH TEST");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a new root scope
@@ -208,7 +211,7 @@ fn test_complex_object_graph() {
     
     // Force garbage collection
     info!("RUNNING GARBAGE COLLECTION");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Check weak references - they should all be dead
     // DISABLED FOR NOW: We will revisit this when we implement the full GC algorithm

@@ -68,6 +68,10 @@ pub enum TokenType {
     ModuloAssign,
     ShortVarDecl,  // :=
     
+    // Channel operators
+    LeftArrow,     // <-
+    Dm,            // dm (channel type)
+    
     // Delimiters
     LeftParen,
     RightParen,
@@ -92,6 +96,12 @@ pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
     pub location: SourceLocation,
+}
+
+impl TokenType {
+    // Convenience aliases for common token types
+    pub const LBracket: TokenType = TokenType::LeftBracket;
+    pub const RBracket: TokenType = TokenType::RightBracket;
 }
 
 impl Token {
@@ -385,6 +395,14 @@ impl Lexer {
                         literal: "<<".to_string(),
                         location,
                     })
+                } else if self.peek_char() == '-' {
+                    self.advance();
+                    self.advance();
+                    Ok(Token {
+                        token_type: TokenType::LeftArrow,
+                        literal: "<-".to_string(),
+                        location,
+                    })
                 } else {
                     self.advance();
                     Ok(Token {
@@ -566,6 +584,7 @@ impl Lexer {
             "cap" => TokenType::Cap,
             "no_cap" => TokenType::NoCap,
             "main_character" => TokenType::MainCharacter,
+            "dm" => TokenType::Dm,
             "true" | "false" => TokenType::Boolean,
             _ => TokenType::Identifier,
         };

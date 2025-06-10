@@ -1,5 +1,5 @@
 use std::sync::{Arc, RwLock, Mutex};
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::gc::{GarbageCollector, GcStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
 use tracing::{debug, error, info, trace, warn};
 use std::time::{Duration, Instant};
@@ -253,8 +253,8 @@ fn test_simple_circular_reference() {
     debug!("Created garbage collector");
     
     // Create two nodes with a circular reference
-    let node1 = gc.allocate(test_objects::GraphNode::new(1, "Node 1");
-    let node2 = gc.allocate(test_objects::GraphNode::new(2, "Node 2");
+    let node1 = gc.allocate(test_objects::GraphNode::new(1, "Node 1").expect("Failed to allocate");
+    let node2 = gc.allocate(test_objects::GraphNode::new(2, "Node 2").expect("Failed to allocate");
     
     debug!("Allocated two nodes");
     
@@ -284,7 +284,7 @@ fn test_simple_circular_reference() {
     
     // Force garbage collection
     debug!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Check weak references
     let node1_alive = weak1.upgrade().is_some());
@@ -323,10 +323,10 @@ fn test_complex_circular_reference_graph() {
     // ↑      ↓       ↙
     // └──────Node D ←┘
     
-    let node_a = gc.allocate(test_objects::GraphNode::new(1, "Node A");
-    let node_b = gc.allocate(test_objects::GraphNode::new(2, "Node B");
-    let node_c = gc.allocate(test_objects::GraphNode::new(3, "Node C");
-    let node_d = gc.allocate(test_objects::GraphNode::new(4, "Node D");
+    let node_a = gc.allocate(test_objects::GraphNode::new(1, "Node A").expect("Failed to allocate");
+    let node_b = gc.allocate(test_objects::GraphNode::new(2, "Node B").expect("Failed to allocate");
+    let node_c = gc.allocate(test_objects::GraphNode::new(3, "Node C").expect("Failed to allocate");
+    let node_d = gc.allocate(test_objects::GraphNode::new(4, "Node D").expect("Failed to allocate");
     
     debug!("Allocated four nodes");
     
@@ -373,7 +373,7 @@ fn test_complex_circular_reference_graph() {
     
     // Force garbage collection
     debug!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Give GC some time to complete background work
     std::thread::sleep(std::time::Duration::from_millis(100);
@@ -408,11 +408,11 @@ fn test_tree_with_parent_child_circular_references() {
     let gc = Arc::new(GarbageCollector::new();
     
     // Create a tree structure with parent-child circular references
-    let root = gc.allocate(test_objects::TreeNode::new(1, "Root");
-    let child1 = gc.allocate(test_objects::TreeNode::new(2, "Child 1");
-    let child2 = gc.allocate(test_objects::TreeNode::new(3, "Child 2");
-    let grandchild1 = gc.allocate(test_objects::TreeNode::new(4, "Grandchild 1");
-    let grandchild2 = gc.allocate(test_objects::TreeNode::new(5, "Grandchild 2");
+    let root = gc.allocate(test_objects::TreeNode::new(1, "Root").expect("Failed to allocate");
+    let child1 = gc.allocate(test_objects::TreeNode::new(2, "Child 1").expect("Failed to allocate");
+    let child2 = gc.allocate(test_objects::TreeNode::new(3, "Child 2").expect("Failed to allocate");
+    let grandchild1 = gc.allocate(test_objects::TreeNode::new(4, "Grandchild 1").expect("Failed to allocate");
+    let grandchild2 = gc.allocate(test_objects::TreeNode::new(5, "Grandchild 2").expect("Failed to allocate");
     
     debug!("Allocated five tree nodes");
     
@@ -497,7 +497,7 @@ fn test_tree_with_parent_child_circular_references() {
     
     // Force garbage collection
     debug!("Running garbage collection");
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Give GC some time to complete background work
     std::thread::sleep(std::time::Duration::from_millis(100);

@@ -36,7 +36,7 @@ pub use ffi::{SqliteFFI, SqliteHandle, SqliteStmtHandle, SqliteBackupHandle};
 pub use config::{SqliteConfig, SqliteConnectionString, SqliteFlags, SqliteJournalMode, SqliteSynchronous};
 pub use pragmas::{SqlitePragma, PragmaValue, SqlitePragmaManager};
 pub use backup::{SqliteBackup, BackupProgress, BackupOptions};
-pub use extension::{SqliteExtension, SqliteFunction, SqliteCollation, SqliteVirtualTable};
+pub use extension::{SqliteExtension, SqliteExtensionManager, SqliteFunction, SqliteCollation, SqliteVirtualTable};
 pub use error::{SqliteError, SqliteErrorCode, SqliteResult};
 pub use utils::{SqliteUtils, SqliteVersion, SqliteFeatures};
 

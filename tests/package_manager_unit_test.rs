@@ -144,7 +144,8 @@ async fn test_dependency_resolver_basic() {
     let mut resolver = DependencyResolver::new();
     let package = PackageMetadata::default();
     
-    let result = resolver.resolve_dependencies(&package).await;
+    let package_info = package.to_package_info();
+    let result = resolver.resolve_dependencies(&package_info).await;
     assert!(result.is_ok());
     
     let resolved = result.unwrap();
@@ -243,7 +244,7 @@ fn test_package_metadata_circular_dependency_check() {
 fn test_package_cache_stats() {
     let temp_dir = TempDir::new().unwrap();
     let cache = PackageCache::new(temp_dir.path().to_path_buf(), 1024 * 1024).unwrap();
-    let stats = cache.get_stats();
+    let stats = cache.get_stats().unwrap();
     
     assert_eq!(stats.total_packages, 0);
     assert_eq!(stats.total_size, 0);

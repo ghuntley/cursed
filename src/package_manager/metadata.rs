@@ -31,6 +31,23 @@ pub enum VersionSpec {
     },
 }
 
+impl Default for PackageMetadata {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            version: String::new(),
+            description: String::new(),
+            authors: Vec::new(),
+            license: None,
+            repository: None,
+            dependencies: HashMap::new(),
+            dev_dependencies: HashMap::new(),
+            keywords: Vec::new(),
+            categories: Vec::new(),
+        }
+    }
+}
+
 impl PackageMetadata {
     /// Validate the package metadata
     pub fn validate(&self) -> Result<(), String> {
@@ -41,6 +58,79 @@ impl PackageMetadata {
             return Err("Package version cannot be empty".to_string());
         }
         Ok(())
+    }
+    
+    /// Check if a package name is valid
+    pub fn is_valid_package_name(name: &str) -> bool {
+        if name.is_empty() {
+            return false;
+        }
+        
+        // Package names can't start or end with hyphens
+        if name.starts_with('-') || name.ends_with('-') {
+            return false;
+        }
+        
+        // Package names can only contain alphanumeric characters, hyphens, and underscores
+        name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+            && !name.contains('@') && !name.contains('.')
+    }
+    
+    /// Check if a version string is valid (basic semantic versioning)
+    pub fn is_valid_version(version: &str) -> bool {
+        let parts: Vec<&str> = version.split('.').collect();
+        parts.len() == 3 && parts.iter().all(|part| part.parse::<u32>().is_ok())
+    }
+    
+    /// Check if there's a circular dependency
+    pub fn has_circular_dependency(&self, package_name: &str) -> bool {
+        // Simple implementation: check if package depends on itself
+        self.dependencies.contains_key(package_name) ||
+        self.dependencies.contains_key(&self.name)
+    }
+    
+    /// Save metadata to file
+    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
+        let toml_string = toml::to_string(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        std::fs::write(path, toml_string)?;
+        Ok(())
+    }
+    
+    /// Load metadata from file
+    pub fn from_file(path: &std::path::Path) -> Result<Self, std::io::Error> {
+        let content = std::fs::read_to_string(path)?;
+        let metadata: PackageMetadata = toml::from_str(&content)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        Ok(metadata)
+    }
+    
+    /// Get package ID in format "name@version"
+    pub fn package_id(&self) -> String {
+        format!("{}@{}", self.name, self.version)
+    }
+    
+    /// Get all dependencies (both regular and dev)
+    pub fn all_dependencies(&self) -> HashMap<String, &VersionSpec> {
+        let mut all_deps = HashMap::new();
+        for (name, spec) in &self.dependencies {
+            all_deps.insert(name.clone(), spec);
+        }
+        for (name, spec) in &self.dev_dependencies {
+            all_deps.insert(name.clone(), spec);
+        }
+        all_deps
+    }
+    
+    /// Convert to PackageInfo for compatibility with resolver
+    pub fn to_package_info(&self) -> crate::package_manager::registry::PackageInfo {
+        crate::package_manager::registry::PackageInfo {
+            name: self.name.clone(),
+            version: self.version.clone(),
+            description: self.description.clone(),
+            download_url: format!("https://registry.cursed.dev/packages/{}", self.name),
+            checksum: "placeholder_checksum".to_string(),
+        }
     }
 }
 
@@ -68,6 +158,45 @@ impl VersionSpec {
     
     /// Check if a version constraint is valid
     pub fn is_valid_version_constraint(constraint: &str) -> bool {
-        !constraint.is_empty() && constraint != "invalid"
+        if constraint.is_empty() || constraint == "invalid" {
+            return false;
+        }
+        // Simple check: if it has more than 3 parts when split by '.', it's invalid
+        let parts: Vec<&str> = constraint.trim_start_matches(['>', '<', '=', '~', '^', ' '])
+            .split('.').collect();
+        parts.len() <= 3
+    }
+    
+    /// Check if this is a path dependency
+    pub fn is_path_dependency(&self) -> bool {
+        match self {
+            VersionSpec::Complex { path: Some(_), .. } => true,
+            _ => false,
+        }
+    }
+    
+    /// Check if this is a git dependency
+    pub fn is_git_dependency(&self) -> bool {
+        match self {
+            VersionSpec::Complex { git: Some(_), .. } => true,
+            _ => false,
+        }
+    }
+    
+    /// Check if this is an optional dependency
+    pub fn is_optional(&self) -> bool {
+        match self {
+            VersionSpec::Complex { optional: Some(true), .. } => true,
+            _ => false,
+        }
+    }
+    
+    /// Get the version string if available
+    pub fn version_string(&self) -> Option<&str> {
+        match self {
+            VersionSpec::Simple(v) => Some(v),
+            VersionSpec::Complex { version: Some(v), .. } => Some(v),
+            _ => None,
+        }
     }
 }

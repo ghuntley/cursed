@@ -40,11 +40,14 @@ impl TestObject {
 impl Traceable for TestObject {
     fn trace(&self, visitor: &mut dyn Visitor) {
         if let Some(next) = &self.next {
-            if let Some(inner) = next.inner() {
+            if let Some(inner) = next.as_ref() {
                 unsafe {
                     let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut TestObject);
                     visitor.visit(ptr);
                 }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
             }
         }
     }
@@ -104,7 +107,7 @@ fn test_weak_reference_is_alive() {
     
     // Create an object wrapped in ThreadSafeTraceable using the helper method
     let thread_safe_obj = TestObject::new_thread_safe(2);
-    let obj = gc.allocate(thread_safe_obj);
+    let obj = gc.allocate(thread_safe_obj).expect("Failed to allocate");
     debug!(id = 2, "Allocated test object");
     
     // Create a weak reference

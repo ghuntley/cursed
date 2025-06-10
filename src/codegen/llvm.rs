@@ -11,6 +11,7 @@ pub mod expression_compiler;
 pub mod variable_management;
 pub mod type_system;
 pub mod control_flow;
+pub mod channels;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
 pub use web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
@@ -20,6 +21,7 @@ pub use expression_compiler::{LlvmExpressionCompiler, LlvmType, LlvmValue, Expre
 pub use variable_management::{VariableManager, VariableHandling};
 pub use type_system::{LlvmTypeRegistry, TypeCompilationContext, CompiledStructType, CompiledInterfaceType, TypeCastingOperations};
 pub use control_flow::{ControlFlowCompilation, LlvmControlFlowCompiler, ControlFlowContext, LoopContext};
+pub use channels::{LlvmChannelCompiler, ChannelExpressionCompiler, CompiledChannelType, ChannelOperation};
 
 // Temporary dummy types to help tests compile
 pub struct DummyModule {

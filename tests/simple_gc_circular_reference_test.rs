@@ -37,12 +37,15 @@ impl Traceable for CircNode {
         let refs = self.references.read().unwrap();
         for ref_opt in refs.iter() {
             if let Some(node_ref) = ref_opt {
-                if let Some(inner) = node_ref.inner() {
+                if let Some(inner) = node_ref.as_ref() {
                     // Create a pointer that the visitor can track
                     unsafe {
                         let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CircNode);
                         visitor.visit(ptr);
                     }
+
+unsafe impl Send for TestObject {}
+unsafe impl Sync for TestObject {}
                 }
             }
         }
@@ -66,7 +69,7 @@ impl Traceable for CircNode {
 #[test]
 fn test_simple_circular_reference_collection() {
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create two nodes with a circular reference
     let node1 = gc.allocate(CircNode::new(1));
@@ -93,14 +96,14 @@ fn test_simple_circular_reference_collection() {
     drop(node2);
     
     // Force a full garbage collection cycle
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Give the GC a chance to run its collection cycle fully
     // In some implementations, GC might run incrementally or in background
     std::thread::sleep(std::time::Duration::from_millis(50));
     
     // Force another collection to be sure
-    gc.collect_garbage();
+    gc.collect().expect("Failed to collect garbage");
     
     // Verify final stats show fewer objects
     let final_stats = gc.stats();

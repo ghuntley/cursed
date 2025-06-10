@@ -91,7 +91,7 @@ fn test_concurrent_gc_basic() {
     // Allocate some objects
     let mut objects = Vec::new();
     for i in 0..50 {
-        let obj = concurrent_gc.allocate(TestObject::new(i);
+        let obj = concurrent_gc.allocate(TestObject::new(i).expect("Failed to allocate");
         objects.push(obj);
     }
     
@@ -161,7 +161,7 @@ fn test_concurrent_gc_stress() {
     common::tracing::setup();
     
     // Create a garbage collector with a low threshold to trigger frequent collections
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     let config = ConcurrentGcConfig {
         collection_interval_ms: 50,    // Very frequent collections

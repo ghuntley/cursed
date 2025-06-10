@@ -16,6 +16,32 @@ pub struct CacheStats {
     pub total_size: usize,
     pub hit_count: usize,
     pub miss_count: usize,
+    pub max_size: usize,
+}
+
+impl CacheStats {
+    /// Format size in human-readable format
+    pub fn format_size(size: usize) -> String {
+        const UNITS: &[&str] = &["B", "KB", "MB", "GB"];
+        let mut size = size as f64;
+        let mut unit_index = 0;
+        
+        while size >= 1024.0 && unit_index < UNITS.len() - 1 {
+            size /= 1024.0;
+            unit_index += 1;
+        }
+        
+        format!("{:.1} {}", size, UNITS[unit_index])
+    }
+    
+    /// Calculate cache usage percentage
+    pub fn usage_percentage(&self) -> f64 {
+        if self.max_size == 0 {
+            0.0
+        } else {
+            (self.total_size as f64 / self.max_size as f64) * 100.0
+        }
+    }
 }
 
 impl PackageCache {
@@ -55,6 +81,12 @@ impl PackageCache {
             total_size: 0,
             hit_count: 0,
             miss_count: 0,
+            max_size: self.max_size,
         })
+    }
+    
+    /// Alias for stats() method for consistency
+    pub fn get_stats(&self) -> Result<CacheStats, PackageManagerError> {
+        self.stats()
     }
 }

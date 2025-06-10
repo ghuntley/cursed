@@ -222,9 +222,9 @@ fn test_integration_with_gc() {
     };
     
     // Allocate objects in the GC
-    let gc_obj1 = gc.allocate(obj1);
-    let gc_obj2 = gc.allocate(obj2);
-    let gc_obj3 = gc.allocate(obj3);
+    let gc_obj1 = gc.allocate(obj1).expect("Failed to allocate");
+    let gc_obj2 = gc.allocate(obj2).expect("Failed to allocate");
+    let gc_obj3 = gc.allocate(obj3).expect("Failed to allocate");
     
     // Get object addresses
     let addr1 = gc_obj1.as_ptr() as usize;

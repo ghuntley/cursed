@@ -387,8 +387,8 @@ mod tests {
         let generator = crate::codegen::llvm::LlvmCodeGenerator::new().unwrap();
         
         let params = vec![
-            Parameter::new("x".to_string(), Some("int".to_string())),
-            Parameter::new("y".to_string(), Some("float".to_string())),
+            Parameter::new("x".to_string(), "int".to_string()),
+            Parameter::new("y".to_string(), "float".to_string()),
         ];
         
         let func_type = generator.generate_function_type(&params, None);
@@ -400,8 +400,8 @@ mod tests {
         let generator = crate::codegen::llvm::LlvmCodeGenerator::new().unwrap();
         
         let params = vec![
-            Parameter::new("x".to_string(), Some("int".to_string())),
-            Parameter::new("name".to_string(), Some("string".to_string())),
+            Parameter::new("x".to_string(), "int".to_string()),
+            Parameter::new("name".to_string(), "string".to_string()),
         ];
         
         let args = generator.generate_function_arguments(&params);
@@ -415,7 +415,7 @@ mod tests {
         // Create a simple function: slay main() { }
         let func = FunctionStatement::new(
             "slay".to_string(),
-            Identifier::new("main".to_string()),
+            Identifier::new("main".to_string(), "main".to_string()),
             vec![],
             None,
             BlockStatement::new("main_block".to_string(), vec![]),
