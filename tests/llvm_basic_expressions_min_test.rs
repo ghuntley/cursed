@@ -17,7 +17,7 @@ fn test_integer_literal_expression() {let context = Context::create()
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type()
-    let fn_type = i32_type.fn_type(&[], false)
+    let fn_type = i32_type.fn_type(&[}, false)
     let function = generator.as_ref().unwrap().get_module().add_function(test_int , context.i32_type().into(), None)
     let entry_block = context.i32_type().const_int(0, false).into()
     generator.as_ref().unwrap().builder().name()

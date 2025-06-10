@@ -25,7 +25,7 @@ mod goroutine_implementation_tests {use super::*;
             // Return the value that was added
             Ok(Arc::new(ThreadSafeObject::Integer(self.value)
 
-    #[test]
+    #[test}
     fn test_launch_goroutine_fn() {// Create a shared vector to store results
         let results = Arc::new(Mutex::new(Vec::new()
         let results_clone = Arc::clone(&results)

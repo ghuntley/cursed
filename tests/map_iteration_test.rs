@@ -10,7 +10,7 @@ fn test_map_iteration_type_determination() {// Test plan for map key/value type 
     // determines key and value types from map structures.
     //
     // Steps:
-    // 1. Create a map with known key and value types (e.g., tea[tea]thicc)
+    // 1. Create a map with known key and value types (e.g., tea[tea}thicc)
     // 2. Call determine_map_key_type and determine_map_value_type
     // 3. Verify that the returned types match the expected types (tea for keys, thicc for values)
     // 4. Test with various map types (string keys with int values, int keys with struct values, etc.)

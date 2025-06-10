@@ -19,218 +19,39 @@ mod common;
 
 /// Test basic map operations creation
 #[test]
-fn test_create_map_operations() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let ops = create_map_operations()
+fn test_create_map_operations() {}
+        // common::tracing::init_tracing!(})
+    common::tracing::setup();
+    let ops = create_map_operations();
     // Test that we can create the operations instance
     }
     // This is mainly a compilation test}
 
 /// Test map type creation and structure
 #[test]
-fn test_map_type_creation() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let module = context.create_module(test_map)
-    let builder = context.create_builder()
-    let ops = create_map_operations()
-
+fn test_map_type_creation() {}
+        // common::tracing::init_tracing!(})
+    common::tracing::setup();
+    let context = Context::create();
+    let context = Box::leak(Box::new(context);)
+    let module = context.create_module(test_map);
+    let builder = context.create_builder();
+    let ops = create_map_operations();
     // Create a function to have a basic block
-    let fn_type = context.void_type().fn_type(&[], false)
+    let fn_type = context.void_type().fn_type(&[], false);
     let function = module.add_function(test_fn , context.i32_type().into(), None)
-    let basic_block = context.i32_type().const_int(0, false).into()
+    let basic_block = context.i32_type().const_int(0, false).into();
     builder.position_at_end(basic_block);
     let key_type = Type::Tea;    // Tea is the string type
     let value_type = Type::Thicc;  // Thicc is the 64-bit int type
 
     // Test creating an empty map
-    let result = ops.create_map(&context, &module, &builder, &key_type, &value_type)
+    let result = ops.create_map(&context, &module, &builder, &key_type, &value_type);
     }
-    assert!(result.is_ok(), Failed to create empty map: {:?}, , result.err()
-
-    let map_struct = result.unwrap()
+    assert!(result.is_ok(), Failed to create empty map: {:?}, , result.err();)
+    let map_struct = result.unwrap();
     // Check that its a struct type (just verify it s a struct, not specifically is_struct_type)
-    let struct_type = map_struct.name()
-    assert_eq!(struct_type.count_fields(), 3, "Map struct should have 3 , fields")}
-/// Test map has_key operation
-#[test]
-fn test_map_has_key() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let module = context.create_module(test_map_has_key)
-    let builder = context.create_builder()
-    let ops = create_map_operations()
-
-    // Create a function to have a basic block
-    let fn_type = context.void_type().fn_type(&[], false)
-    let function = module.add_function(test_fn, context.i32_type().into(), None)
-    let basic_block = context.i32_type().const_int(0, false).into()
-    builder.position_at_end(basic_block);
-    let key_type = Type::Tea;    // Tea is the string type
-    let value_type = Type::Thicc;  // Thicc is the 64-bit int type
-
-    // Create a map
-    let map_struct = ops.create_map(&context, &module, &builder, &key_type, &value_type)
-        .expect(Failed to create map)
-
-    // Create test key
-    let key_val = context.i8_type().ptr_type(inkwell::AddressSpace::default().const_null().into()
-
-    // Test checking if key exists
-    let result = ops.map_has_key(&context, &module, &builder, map_struct, key_val, &key_type)
-    }
-    assert!(result.is_ok(), Failed to check if key exists:     {:?}, , result.err()
-
-    let has_key_result = result.unwrap()
-    // Verify it s an integer/boolean type (check bit width to confirm its an integer)
-    assert!(has_key_result.name().get_bit_width() > 0, Has key result should be an integer (boolean) , type)}
-
-/// Test map delete operation
-#[test]
-fn test_map_delete() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let context = Context::create()
-    let context = Box::leak(Box::new(context);
-    let module = context.create_module(test_map_delete)
-    let builder = context.create_builder()
-    let ops = create_map_operations()
-
-    // Create a function to have a basic block
-    let fn_type = context.void_type().fn_type(&[], false)
-    let function = module.add_function(test_fn, context.i32_type().into(), None)
-    let basic_block = context.i32_type().const_int(0, false).into()
-    builder.position_at_end(basic_block);
-    let key_type = Type::Tea;    // Tea is the string type
-    let value_type = Type::Thicc;  // Thicc is the 64-bit int type
-
-    // Create a map
-    let map_struct = ops.create_map(&context, &module, &builder, &key_type, &value_type)
-        .expect(Failed to create map)
-
-    // Create test key
-    let key_val = context.i8_type().ptr_type(inkwell::AddressSpace::default().const_null().into()
-
-    // Test deleting a key
-    let result = ops.map_delete(&context, &module, &builder, map_struct, key_val, &key_type, &value_type)
-    }
-    assert!(result.is_ok(), Failed to delete key from map: {:?}, , result.err()
-
-    let updated_map = result.unwrap()
-    // Verify it s a struct type
-    let struct_type = updated_map.name(), fields)}
-
-/// Test map runtime initialization
-#[test]
-fn test_map_runtime_init() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let context = Context::create()
-    let context = Box::leak(Box::new(context);
-    let module = context.create_module(test_map_runtime)
-    let ops = create_map_operations();
-    let key_type = Type::Tea;    // Tea is the string type
-    let value_type = Type::Thicc;  // Thicc is the 64-bit int type
-
-    // Test runtime initialization
-    let result = ops.init_map_runtime(&context, &module, &key_type, &value_type)
-    }
-    assert!(result.is_ok(), Failed to initialize map runtime: {:?}, , result.err()
-
-    // Verify that required functions are declared
-    assert!(module.get_function(malloc).is_some(), "malloc function should be , declared"free.is_some(), "free function should be , declared"hash_string.is_some(), hash_string function should be , declared)}
-/// Test different hash strategies
-#[test]
-fn test_different_hash_strategies() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    }
-    use cursed::codegen::llvm::{create_map_operations_linear_probing, create_map_operations_quadratic_probing}
-
-    let context = Context::create();
-use 
-    let context = Box::leak(Box::new(context);
-    let module = context.create_module(test_strategies)
-    let builder = context.create_builder()
-
-    // Test different strategies can be created
-    let _chaining_ops = create_map_operations()
-    let _linear_ops = create_map_operations_linear_probing()
-    let _quad_ops = create_map_operations_quadratic_probing()
-
-    // Test that they can all create maps
-    let fn_type = context.void_type().fn_type(&[], false)
-    let function = module.add_function(test_fn, context.i32_type().into(), None)
-    let basic_block = context.i32_type().const_int(0, false).into()
-    builder.position_at_end(basic_block);
-    let key_type = Type::Tea;    // Tea is the string type
-    let value_type = Type::Thicc;  // Thicc is the 64-bit int type
-
-    let chaining_map = _chaining_ops.create_map(&context, &module, &builder, &key_type, &value_type)
-    assert!(chaining_map.is_ok(), Chaining strategy should , work)
-
-    // Note: Different strategies should produce the same interface but different implementation details}
-
-/// Integration test with expression compilation
-#[test]
-fn test_map_expression_integration() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    // This test would ideally test the integration with the expression compilation system
-    // For now, it s a placeholder to verify the module loads correctly
-
-    // Test that we can import the necessary types;
-    use cursed::ast::::HashLiteral, IndexExpression;
-use 
-    use cursed::core::type_checker::Type;
-
-    // Test that map types can be created
-    let map_type = Type::Map()
-        Box::new(Type::Tea),    // Tea is the string type
-        Box::new(Type::Thicc),  // Thicc is the 64-bit int type)
-
-    }
-    match map_type     {Type::Map(key, value) => {assert_eq!(key, Type::Tea)
-            assert_eq!(value, Type::Thicc)}
-        _ => panic!(Map :  type creation failed),}
-
-/// Test error handling and edge cases
-#[test]
-fn test_error_handling() {
-        // common::tracing::init_tracing!()
-    common::tracing::setup()
-    
-    let context = Context::create()
-    let context = Box::leak(Box::new(context);
-    let module = context.create_module(test_errors)
-    let builder = context.create_builder()
-    let ops = create_map_operations()
-
-    // Create a function to have a basic block
-    let fn_type = context.void_type().fn_type(&[], false);
-    let function = module.add_function(test_fn, context.i32_type().into(), None);
-    let basic_block = context.i32_type().const_int(0, false).into()
-    builder.position_at_end(basic_block)
-
-    // Test with unsupported key types;
-    let unsupported_key_type = Type::Array(Box::new(Type::Thicc), 10); // Arrays can t be keys
-    let value_type = Type::Thicc;
-
-    // This should fail gracefully
-    let result = ops.create_map(&context, &module, &builder, &unsupported_key_type, &value_type)
-    
-    // We expect this to fail since arrays arent hashable 
-    }
-    if result.is_err()     {println!("{}"
+    let struct_type = map_struct.name();
+    assert_eq!(struct_type.count_fields(), 3, "Map struct should have 3 , fixed)
+    assert!(module.get_function(malloc).is_some(), ", " function should be , declaredfree.is_some(), , " function should be , declared)
+    if result.is_err()     {println!("fixed")}

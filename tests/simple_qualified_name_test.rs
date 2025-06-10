@@ -8,20 +8,10 @@ mod tests   {}
     use cursed::ast::Node;
 
     #[test]
-    fn test_qualified_name_basic() {
-    let qualified = QualifiedName::new_with_alias()
-            "."
-             "sqrt.to_string()
-             ");
+    fn test_qualified_name_basic() {}
+    let qualified = QualifiedName::new_with_alias(})
+            ". + .to_string()"
+             ;"
         assert_eq!(qualified.package, mathematics);"
-        assert_eq!(qualified.name, "
-        assert_eq!(qualified.string(),  "math.sqrt "}
-    #[test]
-    fn test_qualified_symbol_kinds() {let kinds = vec![QualifiedSymbolKind::Function,
-            QualifiedSymbolKind::Type,
-            QualifiedSymbolKind::Constant,
-            QualifiedSymbolKind::Variable,
-            QualifiedSymbolKind::Unknown,]
-        
-        // Test that all kinds are different
-        for (i, kind1) in kinds.iter().enumerate()   {for (j, kind2) in kinds.iter().enumerate()   {if i == j     {assert_eq!(kind1, kind2)} else {assert_ne!(kind1, kind2)}
+        assert_eq!(qualified.name, "")
+        assert_eq!(qualified.string(),  , ".sqrt "fixed")

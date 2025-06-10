@@ -78,6 +78,7 @@ impl Parser {
         self.next_token()?;
 
         // Create enhanced question mark expression
+        let location = question_token.location.clone();
         let enhanced_expr = EnhancedQuestionMarkExpression::new(
             left_expr,
             question_token.location,
@@ -86,7 +87,7 @@ impl Parser {
         );
 
         debug!(
-            location = ?question_token.location,
+            location = ?location,
             function_context = ?enhanced_expr.function_context,
             "Parsed enhanced question mark expression"
         );
@@ -217,16 +218,16 @@ impl Parser {
 
     /// Get expected return type for current function
     fn get_expected_return_type(&self) -> Option<String> {
-        Some(self.get_current_function_return_type().to_string())
+        Some(self.get_current_function_return_type())
     }
 
     /// Get current function return type
-    fn get_current_function_return_type(&self) -> &str {
+    fn get_current_function_return_type(&self) -> String {
         // This would be populated by function parsing - using method call
         self.function_return_types()
             .last()
-            .map(|s| s.as_str())
-            .unwrap_or("()")
+            .cloned()
+            .unwrap_or("()".to_string())
     }
 
     /// Infer the type of an expression for propagation validation
@@ -564,7 +565,7 @@ impl crate::ast::traits::Node for EnhancedQuestionMarkExpression {
 
 impl fmt::Display for EnhancedQuestionMarkExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}?", self.inner_expression)
+        write!(f, "{:?}?", self.inner_expression)
     }
 }
 
@@ -591,7 +592,7 @@ impl crate::ast::traits::Node for TypedErrorPropagation {
 
 impl fmt::Display for TypedErrorPropagation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}? : {} -> {}", self.inner_expression, self.expression_type, self.return_type)
+        write!(f, "{:?}? : {} -> {}", self.inner_expression, self.expression_type, self.return_type)
     }
 }
 
@@ -602,7 +603,7 @@ pub mod error_recovery {
     /// Check if an expression can recover from errors
     pub fn can_recover_from_error(expr: &dyn Expression) -> bool {
         // Check if the expression has error recovery mechanisms
-        let expr_str = expr.to_string();
+        let expr_str = format!("{:?}", expr);
         expr_str.contains("unwrap_or") || 
         expr_str.contains("unwrap_or_else") ||
         expr_str.contains("try")
@@ -630,7 +631,7 @@ pub mod error_recovery {
     /// Validate error propagation chain
     pub fn validate_propagation_chain(chain: &[Box<dyn Expression>]) -> Result<(), CursedError> {
         for (i, expr) in chain.iter().enumerate() {
-            if expr.to_string().contains("?") && i == chain.len() - 1 {
+            if format!("{:?}", expr).contains("?") && i == chain.len() - 1 {
                 return Err(CursedError::Parse(
                     "Error propagation at end of chain should be handled".to_string()
                 ));
@@ -646,7 +647,7 @@ mod tests {
 
     #[test]
     fn test_propagatable_type_checking() {
-        let parser = Parser::new(crate::lexer::Lexer::new("").unwrap()).unwrap();
+        let parser = Parser::new(crate::lexer::Lexer::new("".to_string())).unwrap();
         
         assert!(parser.is_propagatable_type("Result<i32, String>"));
         assert!(parser.is_propagatable_type("Option<String>"));
@@ -660,7 +661,7 @@ mod tests {
 
     #[test]
     fn test_expression_type_inference() {
-        let parser = Parser::new(crate::lexer::Lexer::new("").unwrap()).unwrap();
+        let parser = Parser::new(crate::lexer::Lexer::new("".to_string())).unwrap();
         
         // This would need mock expressions for testing
         // let result_expr = create_mock_result_expression();

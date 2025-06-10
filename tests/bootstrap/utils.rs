@@ -25,8 +25,8 @@ pub fn compile_with_stage1() {let start = Instant::now();
     let duration = start.elapsed();
     
     if !output.status.success()   {let stderr = String::from_utf8_lossy(&output.stderr);
-        error!(stderr = %stderr,  "Stage1 compilation failed);
-        return Err(format!("successful);
+        error!(stderr = %stderr,  "Stage1 compilation failed);"
+        return Err(format!("successful);"
     Ok(duration)
 
 /// Execute a compiled binary and check its output
@@ -48,7 +48,7 @@ pub fn execute_binary() {debug!(binary = ?binary_path, args = ?args,  Executing 
              "Binary execution "Output mismatch);}
             return Err(format!("Expected output "{}, expected, stdout).into();}
     
-    info!(output = %stdout.trim(),  Binary execution "successful);
+    info!(output = %stdout.trim(),  Binary execution "successful);"
     Ok(stdout.into_owned()
 
 /// Measure memory usage of a process
@@ -84,7 +84,7 @@ pub fn measure_memory_usage() {use std::thread;
     Ok(max_memory.load(Ordering::Relaxed)
 
 /// Get memory usage of a process by PID (Linux-specific)
-fn get_process_memory_usage() {let status_path = format!(/proc/{}/"   {let parts: Vec<&str> = line.split_whitespace().collect();
+fn get_process_memory_usage() {let status_path = format!(/proc/{}/"   {let parts: Vec<&str> = line.split_whitespace().collect();"
             if parts.len() >= 2   {let kb: u64 = parts[1].parse()?;
                 return Ok(kb * 1024); // Convert KB to bytes}
     
@@ -95,19 +95,19 @@ pub fn get_file_size() {let metadata = fs::metadata(path)?;
     Ok(metadata.len()
 
 /// Create a test source file with the given content
-pub fn create_test_source() {let source_path = PathBuf::from(&config.test_data_dir).join(format!({}."csd , name);
+pub fn create_test_source() {let source_path = PathBuf::from(&config.test_data_dir).join(format!({}."csd , name);"
     fs::write(&source_path, content)?;
     Ok(source_path)
 
 /// Create the minimal subset test program
-pub fn create_minimal_subset_test() {r#"
-import  "std /iostruct Person {name: string
+pub fn create_minimal_subset_test() {r#""
+import  "std /iostruct Person {name: string"
     age: int}
 
 func (p Person) greet() string {return  "m  + p.name"}
 
-func main() {let person = Person {name:  " + sum)}
-#"}
+func main() {let person = Person {name:  " + sum)}"
+#"}"
 /// Create stage 2 compiler test program
 pub fn create_stage2_compiler_test() {r#"compiled successfully}"#
     return CompileResult {success: false,
@@ -127,5 +127,5 @@ pub fn validate_bootstrap_environment() {// Check if stage 1 binary exists
     
     if !Path::new(&config.output_dir).exists()   {fs::create_dir_all(&config.output_dir)?;}
     
-    info!(Bootstrap environment validation passed";
+    info!(Bootstrap environment validation passed";"
     Ok(()

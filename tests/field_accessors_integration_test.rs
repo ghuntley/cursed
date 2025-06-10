@@ -17,35 +17,20 @@ use std::time::Instant;
 // mod common; // Disabled due to file conflict
 
 #[test]
-fn test_field_accessors_integration() {:?}, result.err()
-    
+fn test_field_accessors_integration() {:?}, result.err();
     // Verify the field accessors were created
-    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Normie_Tea_get_x.is_some();
-             x " getter not "Point_Normie_Tea_set_x.is_some()"
-             x "found);
-    assert!(code_gen.as_ref().unwrap().get_module().get_function("Point_Normie_Tea_get_name.is_some()" getter not "found);
-    assert!(code_gen.as_ref().unwrap().get_module().get_function("
-             name " setter not "specialization);"
-    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Thicc_Lit_set_x.is_some()"x setter not found for second "specialization);"
-             "name getter not found for second "
-    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Thicc_Lit_set_name.is_some()"
-             "specialization);
-    
-    // Test LRU caching by regenerating first struct
-    let start = Instant::now()
-    let cache_result = code_gen.generate_specialized_struct_with_accessors()
-        &generic_struct,
-        specialized_name,
-        &type_args,)
-    let cache_time = start.elapsed()
-    
-    assert!(cache_result.is_ok(), Failed to regenerate specialized struct with accessors:   {:?}, , cache_result.err()
-    println!(Cache regeneration took: {:?}, cache_time);"T.to_string()"
-                value:  T.to_string()"U.to_string()
-                name:  "U.to_string()
-                constraints: Vec::new()},],
-        generic_constraints: Vec::new()
-        fields: vec![FieldStatement {name:  "placeholder.to_string()
-                type_name:  "},
-            FieldStatement {name:  placeholder.to_string()"
-                type_name:  "},],};}
+    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Normie_Tea_get_x.is_some();))
+             x " getter not , .is_some()"
+             x , ";"
+    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Normie_Tea_get_name.is_some()" getter not ", ;"))
+    assert!(code_gen.as_ref().unwrap().get_module().get_function("))
+             name " setter not ", ;"
+    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Thicc_Lit_set_x.is_some(),  setter not found for second "specialization); + " getter not found for second ")
+    assert!(code_gen.as_ref().unwrap().get_module().get_function(Point_Thicc_Lit_set_name.is_some() + fixed))
+    println!(Cache regeneration took: {:?}, cache_time);"T.to_string();
+                value:  T.to_string()", ".to_string();
+                name:  "U.to_string()"
+        fields: vec![FieldStatement {name:  , ".to_string(}")]
+                type_name:  ],""
+            FieldStatement {name:  placeholder.to_string(}")
+                type_name:  "},},};}"fixed"

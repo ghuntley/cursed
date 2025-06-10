@@ -14,16 +14,16 @@ fn test_map_type_inference_unit() {// Create a TypeChecker instance
     let mut type_checker = TypeChecker::new();
     
     // Create a simple hash literal with string keys and integer values
-    // {name : 1,  age ": 30}
+    // {name : 1,  age ": 30}"
     let mut pairs = Vec::new();
     
     // Create  name  key
-    let name_key = StringLiteral {value:  ".to_string()};};
+    let name_key = StringLiteral {value:  ".to_string()};};"
     // Create 1 value
     let name_value = IntegerLiteral {value: 1};};
     
     // Create  age  key
-    let age_key = StringLiteral {value:  "age .to_string()};};
+    let age_key = StringLiteral {value:  "age .to_string()};};"
     // Create 30 value
     let age_value = IntegerLiteral {value: 30};};
     
@@ -32,7 +32,7 @@ fn test_map_type_inference_unit() {// Create a TypeChecker instance
     pairs.push((Box::new(age_key) as Box<dyn Expression>, Box::new(age_value) as Box<dyn Expression>;
     
     // Create the hash literal
-    let hash_literal = HashLiteral {token: Token::new(TokenType::LeftBrace, {".to_string()
+    let hash_literal = HashLiteral {token: Token::new(TokenType::LeftBrace, {".to_string()"
         pairs,};};
     
     // Infer the type using our type checker

@@ -230,11 +230,11 @@ impl Default for SelfIdentifier {
 pub fn ident(name: &str) -> Identifier {
     Identifier::from_name(name)
 }
-
-pub fn type_ident(name: &str) -> TypeIdentifier {
+    
+    pub fn type_ident(name: &str) -> TypeIdentifier {
     TypeIdentifier::new(name.to_string(), name.to_string())
 }
-
-pub fn qualified(package: &str, name: &str) -> QualifiedName {
+    
+    pub fn qualified(package: &str, name: &str) -> QualifiedName {
     QualifiedName::new(package.to_string(), name.to_string(), QualifiedSymbolKind::Type)
 }

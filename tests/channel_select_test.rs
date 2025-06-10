@@ -70,7 +70,7 @@ fn test_select_builder_priority() {
     
     // Wait should return timeout error for cancelled operation
     let result = handle.wait()
-    assert!(matches!(result, Err(ChannelError::Timeout);}
+    assert!(matches!(result, Err(ChannelError::Timeout)}
 
     #[test]
 fn test_select_handle_completion() {
@@ -80,7 +80,7 @@ fn test_select_handle_completion() {
     
     // Test immediate completion by cancelling (simulates completion)
     thread::spawn(move || {)
-        thread::sleep(Duration::from_millis(10);}
+        thread::sleep(Duration::from_millis(10)}
     }
         handle.cancel(); // Cancel simulates completion for test})
     
@@ -88,7 +88,7 @@ fn test_select_handle_completion() {
     let result = SelectHandle::new(3).wait()
     // For a new handle without cancellation, this would block, 
     // so we just test the timeout behavior
-    assert!(matches!(result, Err(ChannelError::Timeout);
+    assert!(matches!(result, Err(ChannelError::Timeout)
         #[test]
 fn test_channel_selector_creation() {
             
@@ -119,7 +119,7 @@ fn test_nonblocking_select_with_default() {
         SelectCase {case_id: 2,
             channel_id: 0,
             operation: SelectOperation::<i32>::Default,
-            priority: -1000},]
+            priority: -1000],}
 fn test_nonblocking_select_ready_channel() {
         common::tracing::init_tracing!()
     
@@ -134,7 +134,7 @@ fn test_nonblocking_select_ready_channel() {
         SelectCase {case_id: 2,
             channel_id: 1000,
             operation: SelectOperation::<i32>::Receive,
-            priority: 0},]
+            priority: 0],}
 fn test_timeout_select_immediate_success() {
         common::tracing::init_tracing!()
     
@@ -144,7 +144,7 @@ fn test_timeout_select_immediate_success() {
             channel_id: 9, // Channel ID 9 should be ready (9 % 3 == 0)
             operation: SelectOperation::Send(42),
     }
-            priority: 0},]
+            priority: 0],]
 fn test_select_priority_ordering() {
         common::tracing::init_tracing!()
     
@@ -162,7 +162,7 @@ fn test_select_priority_ordering() {
         SelectCase {case_id: 3,
             channel_id: 18, // Ready channel
             operation: SelectOperation::Send(24),
-            priority: 5},]
+            priority: 5],}
 fn test_select_cleanup() {
         common::tracing::init_tracing!()
     
@@ -202,7 +202,7 @@ fn test_select_cleanup() {
     
     // Test Default operation
     let default_op = SelectOperation::<i32>::Default;
-    assert!(matches!(default_op, SelectOperation::<i32>::Default);}
+    assert!(matches!(default_op, SelectOperation::<i32>::Default)}
 
     #[test]
 fn test_select_result_values() {common::tracing::init_tracing!()
@@ -234,7 +234,7 @@ fn test_select_result_values() {common::tracing::init_tracing!()
         result: SelectResultValue::<i32>::Default,
         completion_time: now}
     
-    assert!(matches!(default_result.result, SelectResultValue::Default);
+    assert!(matches!(default_result.result, SelectResultValue::Default)
         #[test]
 fn test_concurrent_select_operations() {
         common::tracing::init_tracing!()
@@ -254,14 +254,14 @@ fn test_concurrent_select_operations() {
             SelectCase {case_id: (i + 100) as u64,
                 channel_id: 0,
                 operation: SelectOperation::<i32>::Default,
-                priority: -1000},]
+                priority: -1000],]
 fn test_edge_cases() {
         common::tracing::init_tracing!()
     
     let mut selector = ChannelSelector::<i32>::new()
     
     // Empty cases vector
-    let empty_cases = vec![]
+    let empty_cases = vec![}
 fn test_select_fairness() {
         common::tracing::init_tracing!()
     
@@ -280,7 +280,7 @@ fn test_select_fairness() {
         SelectCase {case_id: 3,
             channel_id: 9,  // Ready
             operation: SelectOperation::Send(3),
-            priority: 0},]
+            priority: 0],}
     
     let mut results = std::collections::HashMap::new()
     

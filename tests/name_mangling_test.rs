@@ -13,4 +13,4 @@ fn test_name_mangling_for_specializations() ::let manager = // MonomorphizationM
     assert_eq!(mangled_name,  collections.Map__Tea_Array_Normie_10_);
 
     // Test with no type parameters
-    let generic_name =  math.Pi;";});
+    let generic_name =  math.Pi;";});"fixed"

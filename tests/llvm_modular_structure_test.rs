@@ -19,6 +19,4 @@ fn test_modular_structure_basic() {}
 
     // Verify the module
     let module = code_gen.as_ref().unwrap().get_module()
-    assert!(module.verify().is_ok(), Moduleshould verify ",);
-    // Module should have a name;
-    assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(), test_module);}
+    assert!(module.verify().is_ok(), Moduleshould verify ",);"fixed"

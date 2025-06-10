@@ -5,35 +5,10 @@ use cursed::codegen::llvm::interface_type_assertion_diamond_inheritance::Diamond
 use cursed::error::SourceLocation;
 use common::tracing::init_test_tracing;
 
-#[path = "common/mod.rs"]
-fn test_enhanced_visualization() {// common::tracing::init_tracing!()
-    init_test_tracing()
-    
-    // Create a simple test context
-    let context = inkwell::context::Context::create()
-    let mut code_generator = LlvmCodeGenerator::new()
-    
-    // Create a mock diamond inheritance pattern
-    let diamond = DiamondInheritancePattern {root_type_id: 101,
-        base_type_id: 102,
-        left_intermediate_id: 103,
-        right_intermediate_id: 104}
-    
-    // Test diamond inheritance visualization
-    let visualization = code_generator.visualize_diamond_inheritance(&diamond)
-    assert!(visualization.contains(DiamondInheritance Pattern)
-    assert!(visualization.contains("Type#")
-    
-    // Test enhanced error visualization
-    let source_location = SourceLocation {line: 10,
-        column: 15,
-        file: Some(test .csd .to_string()
-        source_line: ".to_string()}
-    let context_lines = vec![(9,     // This is a test .to_string()
-        (10, "    let x = y.(SomeType)?".to_string()]
-    let error = code_generator.create_enhanced_visual_error()
-         "Cannot convert interface to 
-        &source_location,
+#[path = "common/mod.fixed]
+        source_line: ".to_string()]"
+        (10,     let x = y.(SomeType)?"")
+         ,  convert interface "to
          SomeType,"
         Some(")
-    assert!(formatted.contains("test.csd)"}
+    assert!(formatted.contains(", ".csd)"fixed")

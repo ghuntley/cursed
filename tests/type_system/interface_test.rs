@@ -11,9 +11,9 @@ fn test_interface_implementation() {// Create a type checker
     // Define a basic Collection interface
     let collection_interface = Type::Unknown // Was Interface()
         Collection .to_string()
-        vec![Box::new(Type::TypeParam(T ".to_string()]
+        vec![Box::new(Type::TypeParam(T ".to_string()]"
     let int_list = Type::Struct()
-         IntList ".to_string()
+         IntList ".to_string()"
         vec![Box::new(Type::Normie]
     assert!(checker.check_interface_implementation(&string_stack, &string_collection)?);
     

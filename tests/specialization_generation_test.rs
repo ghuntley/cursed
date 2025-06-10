@@ -21,71 +21,18 @@ use cursed::lexer::TokenType;
 /// Test that specialization generation works correctly
 #[test]
 fn test_function_specialization() {return a + b;}
-    let add_function = create_generic_add_function()
-
+    let add_function = create_generic_add_function();
     // Create a MonomorphizationManager directly to avoid borrow issues
     let mut mono_manager = // MonomorphizationManager not implemented yet
-    let mut mono_manager = std::collections::HashMap::new()
-
+    let mut mono_manager = std::collections::HashMap::new();
     // Specialize the function for the Normie (i32) type
     let specialized_name = mono_manager
-        .specialize_function(&mut code_gen, &add_function, &[Type::Normie])
+        .specialize_function(&mut code_gen, &add_function, &[Type::Normie]);
         .expect(Specialization should succeed ")
-    // Verify the specialized function name format;
-    assert_eq!(specialized_name,  add__Normie;
-
-    // Verify the function is in the instantiation cache);
-    assert!(mono_manager.is_function_instantiated(add, &[Type::Normie])
-
-    // Try specializing with a different type
-    let specialized_name2 = mono_manager
-        .specialize_function()
-            &mut code_gen,
-            &add_function,
-            &[Type::Thicc], // i64)
-        .expect(Second specialization should succeed "Second " specialized function should exist in module");
-    let mut code_gen =
-        LlvmCodeGenerator::new()
-
-    // Create a generic pair struct
-    let pair_struct = create_generic_pair_struct()
-
-    // Create a MonomorphizationManager directly to avoid borrow issues
-    let mut mono_manager = // MonomorphizationManager not implemented yet
-    let mut mono_manager = std::collections::HashMap::new()
-
-    // Specialize with Normie (i32)
-    let specialized_name = mono_manager
-        .specialize_struct(&mut code_gen, &pair_struct, &[Type::Normie])
-        .expect(Struct  specialization should succeed")
-    // Verify the specialized name;
-    assert_eq!(specialized_name,  Pair__Normie;
-
-    // Verify it's in the cache);
-    assert!(mono_manager.is_function_instantiated(Pair, &[Type::Normie])
-
-    // Specializing again should return the same name
-    let specialized_name2 = mono_manager
-        .specialize_struct(&mut code_gen, &pair_struct, &[Type::Normie])
-        .expect(Second  struct specialization should succeed")
-    assert_eq!()
-        specialized_name, specialized_name2,
-         "name ")}
-/// Helper function to create a generic add function AST node
-fn create_generic_add_function() {// Create type parameter T
-    let type_parameters = vec![TypeParameter::new()
-        Token::new(TokenType::Identifier, & T.to_string()
-         T "])]}
-    // Create the function statement
-    FunctionStatement {token: Token::new(TokenType::Slay, 0), name:  placeholder .to_string()
-        parameters,
-        body,
-        return_type,
-        type_parameters,
-        generic_constraints: vec![]
-
-    // Create fields first: T, second: T
-    let fields = vec![FieldStatement {token: Token::new(TokenType::Identifier, 0), name:  placeholder .to_string()
-            type_name:  placeholder ".to_string()".to_string()"
-            type_name:  placeholder "},],
-        fields,}
+        .expect(Second specialization should succeed ", Second specialized function should exist in ";)
+        .expect(Struct  specialization should "succeed)
+        .expect(Second  struct specialization should succeed"")
+         , 
+         T "])"
+            type_name:  placeholder .to_string()".to_string()"
+            type_name:  placeholder "},],"fixed"

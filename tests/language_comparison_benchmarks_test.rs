@@ -15,7 +15,7 @@ fn test_binary_trees_benchmark() {// common::tracing::init_tracing!()
     
     let algorithm = language_comparison::Algorithm::BinaryTrees;
     let languages = vec![language_comparison::Language::Cursed,
-        language_comparison::Language::Rust,]
+        language_comparison::Language::Rust,}
 fn test_language_comparison_suite() {// common::tracing::init_tracing!()
     // Initialize tracing
     tracing_setup::init_test_tracing()

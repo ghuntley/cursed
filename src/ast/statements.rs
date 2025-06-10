@@ -111,6 +111,7 @@ impl FactsStatement {
     }
 }
 
+
 impl Node for FactsStatement {
     fn string(&self) -> String {
         let mut result = format!("facts {}", self.name.string());
@@ -127,6 +128,7 @@ impl Node for FactsStatement {
         self.token.clone()
     }
 }
+
 
 impl Statement for FactsStatement {
     fn as_any(&self) -> &dyn Any {
@@ -170,6 +172,7 @@ impl ReturnStatement {
     }
 }
 
+
 impl Node for ReturnStatement {
     fn string(&self) -> String {
         if let Some(rv) = &self.return_value {
@@ -183,6 +186,7 @@ impl Node for ReturnStatement {
         self.token.clone()
     }
 }
+
 
 impl Statement for ReturnStatement {
     fn as_any(&self) -> &dyn Any {
@@ -215,6 +219,7 @@ impl ExpressionStatement {
     }
 }
 
+
 impl Node for ExpressionStatement {
     fn string(&self) -> String {
         self.expression.string()
@@ -224,6 +229,7 @@ impl Node for ExpressionStatement {
         self.token.clone()
     }
 }
+
 
 impl Statement for ExpressionStatement {
     fn as_any(&self) -> &dyn Any {
@@ -261,6 +267,7 @@ impl BreakStatement {
     }
 }
 
+
 impl Node for BreakStatement {
     fn string(&self) -> String {
         if let Some(label) = &self.label {
@@ -275,6 +282,7 @@ impl Node for BreakStatement {
     }
 }
 
+
 impl Statement for BreakStatement {
     fn as_any(&self) -> &dyn Any {
         self
@@ -284,6 +292,7 @@ impl Statement for BreakStatement {
         Box::new(self.clone())
     }
 }
+
 
 impl Default for BreakStatement {
     fn default() -> Self {
@@ -328,6 +337,7 @@ impl Node for ContinueStatement {
     }
 }
 
+
 impl Statement for ContinueStatement {
     fn as_any(&self) -> &dyn Any {
         self
@@ -337,6 +347,7 @@ impl Statement for ContinueStatement {
         Box::new(self.clone())
     }
 }
+
 
 impl Default for ContinueStatement {
     fn default() -> Self {
@@ -373,6 +384,7 @@ impl Node for DeferStatement {
         self.token.clone()
     }
 }
+
 
 impl Statement for DeferStatement {
     fn as_any(&self) -> &dyn Any {
@@ -420,6 +432,7 @@ impl Node for PrintStatement {
     }
 }
 
+
 impl Statement for PrintStatement {
     fn as_any(&self) -> &dyn Any {
         self
@@ -457,6 +470,7 @@ impl Node for AssignmentStatement {
     }
 }
 
+
 impl Statement for AssignmentStatement {
     fn as_any(&self) -> &dyn Any {
         self
@@ -493,6 +507,7 @@ impl Node for PanicStatement {
         self.token.clone()
     }
 }
+
 
 impl Statement for PanicStatement {
     fn as_any(&self) -> &dyn Any {
@@ -537,6 +552,7 @@ impl RecoveryStatement {
     }
 }
 
+
 impl Node for RecoveryStatement {
     fn string(&self) -> String {
         let mut result = format!("catch {{ {} }}", self.protected_block.string());
@@ -550,6 +566,7 @@ impl Node for RecoveryStatement {
         self.token.clone()
     }
 }
+
 
 impl Statement for RecoveryStatement {
     fn as_any(&self) -> &dyn Any {

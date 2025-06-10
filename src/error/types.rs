@@ -3,7 +3,8 @@
 //! This module provides a comprehensive error type system with categorization,
 //! severity levels, and error chain management.
 
-use crate::error::{CursedError, SourceLocation};
+use crate::error::CursedError;
+use crate::debug::source_location::SourceLocation;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -356,7 +357,11 @@ impl ParseError {
         Self::new(
             "PARSE_SYNTAX_ERROR".to_string(),
             message.to_string(),
-        ).with_location(SourceLocation::new(line, column))
+        ).with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
     }
 
     pub fn unexpected_token(expected: &str, found: &str, line: usize, column: usize) -> Self {
@@ -364,7 +369,11 @@ impl ParseError {
             "PARSE_UNEXPECTED_TOKEN".to_string(),
             format!("Unexpected token"),
         )
-        .with_location(SourceLocation::new(line, column))
+        .with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
         .with_expected(expected.to_string())
         .with_found(found.to_string())
     }
@@ -374,7 +383,11 @@ impl ParseError {
             "PARSE_UNCLOSED_DELIMITER".to_string(),
             format!("Unclosed delimiter: {}", delimiter),
         )
-        .with_location(SourceLocation::new(line, column))
+        .with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
         .with_suggestion(format!("Add closing {}", delimiter))
     }
 }
@@ -408,8 +421,8 @@ impl CursedErrorTrait for ParseError {
         if let Some(loc) = &self.source_location {
             CursedError::parse_error_with_location(
                 self.message.clone(),
-                loc.line,
-                loc.column,
+                loc.line as usize,
+                loc.column as usize,
             )
         } else {
             CursedError::Parse(self.message.clone())
@@ -477,28 +490,44 @@ impl RuntimeError {
         Self::new(
             "RUNTIME_DIVISION_BY_ZERO".to_string(),
             "Division by zero".to_string(),
-        ).with_location(SourceLocation::new(line, column))
+        ).with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
     }
 
     pub fn null_pointer_access(line: usize, column: usize) -> Self {
         Self::new(
             "RUNTIME_NULL_POINTER".to_string(),
             "Null pointer access".to_string(),
-        ).with_location(SourceLocation::new(line, column))
+        ).with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
     }
 
     pub fn index_out_of_bounds(index: usize, length: usize, line: usize, column: usize) -> Self {
         Self::new(
             "RUNTIME_INDEX_OUT_OF_BOUNDS".to_string(),
             format!("Index {} out of bounds for length {}", index, length),
-        ).with_location(SourceLocation::new(line, column))
+        ).with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
     }
 
     pub fn type_assertion_failed(expected: &str, actual: &str, line: usize, column: usize) -> Self {
         Self::new(
             "RUNTIME_TYPE_ASSERTION_FAILED".to_string(),
             format!("Type assertion failed: expected {}, got {}", expected, actual),
-        ).with_location(SourceLocation::new(line, column))
+        ).with_location(SourceLocation::new(
+            std::path::PathBuf::from("<unknown>"),
+            line as u32,
+            column as u32,
+        ))
     }
 }
 

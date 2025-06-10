@@ -24,4 +24,4 @@ mod tests ::#[test]
         
         // Check if it's a DotExpression first
         if let Some(dot_expr) = call_expr_any.downcast_ref::<DotExpression>()     {println!(Found DotExpression: {}.{}, dot_expr.object.string(), dot_expr.property);
-            assert_eq!(dot_expr.object.string(),  "vibez;"} else {panic!("Expression:  is not a DotExpression)"}
+            assert_eq!(dot_expr.object.string(),  "vibez;"} else {panic!(", ":  is not a DotExpression)"fixed"

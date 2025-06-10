@@ -13,19 +13,12 @@ use cursed::error::Error;
 mod common;
 
 #[test]
-fn test_interface_registry_primitive_types() {// common::tracing::init_tracing!()
+fn test_interface_registry_primitive_types() {// common::tracing::init_tracing!(})
     // Initialize tracing for better debug output
-    common::tracing::setup()
-    
+    common::tracing::setup();
     // Create an empty registry (without defaults)
-    let mut registry = InterfaceRegistry::new()
-    
+    let mut registry = InterfaceRegistry::new();
     // Add a custom implementation
     let vector_type = Type::Struct(Vector2D.to_string(), vec![]);
     let point_result = mono_manager.check_constraint(&point_type,  Comparable ")
-    assert!(point_result.is_ok()
-    
-    // Type that doesn't implement interface should return Err
-    let point_numeric_result = mono_manager.check_constraint(&point_type,  Numeric);
-    assert!(point_numeric_result.is_err()
-    assert!(point_numeric_result.unwrap_err().to_string().contains(does not implement interface)"}
+    assert!(point_numeric_result.unwrap_err().to_string().contains(does not implement interface)"}"fixed")

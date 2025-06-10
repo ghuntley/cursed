@@ -65,7 +65,7 @@ fn test_concurrent_gc_basic() {// common::tracing::init_tracing!()
         objects.push(obj)}
     
     // Create some links between objects to form chains
-    for i in 0..objects.len()-1   {objects[i].inner().unwrap().set_next(objects[i+1].clone()}
+    for i in 0..objects.len()-1   {objects[i].inner().unwrap().set_next(objects[i+1}.clone()}
     
     // Create a cycle to test cycle collection
     objects.last().unwrap().inner().unwrap().set_next(objects[0].clone()
@@ -187,4 +187,4 @@ fn test_concurrent_gc_stress() {// common::tracing::init_tracing!()
     
     // Check GC statistics
     let stats = concurrent_gc.stats()
-    println!(Final GC Stats after stress test: {:?}, stats);";}
+    println!(Final GC Stats after stress test: {:?}, stats);";}"fixed"

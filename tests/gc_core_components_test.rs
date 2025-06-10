@@ -54,7 +54,7 @@ unsafe impl Sync for TestObject       {}
 /// Test Object Identification System
 mod object_id_tests {use super::*)
     #[test]
-    #[traced_test]
+    #[traced_test}
     fn test_object_id_generatio)n)()  ::let generator = ObjectIdGenerator::new()
         
         let id1 = generator.next()
@@ -71,13 +71,13 @@ mod object_id_tests {use super::*)
         // Null ID checks
         let null_id = ObjectId::null();
         assert!(null_id.is_null();}
-        assert!(!id1.is_null(}););
+        assert!(!id1.is_null(});;
     #[test]
     #[traced_test]
     fn test_concurrent_id_generation() {let gen = generator.clone()
             let ids_ref = ids.clone()
             
-            handles.push(thread::spawn(move || {let mut local_ids = vec![], Found duplicate ID,);}
+            handles.push(thread::spawn(move || {let mut local_ids = vec![}, Found duplicate ID,);}
     
     #[test]
     #[traced_test]
@@ -144,7 +144,7 @@ mod object_id_tests {use super::*)
         
         let unmarked = registry.get_unmarked_objects().unwrap();
         assert_eq!(unmarked.len(), 1)
-        assert_eq!(unmarked[0], id2)
+        assert_eq!(unmarked[0}, id2)
         
         // Test unmark all
         assert!(registry.unmark_all().is_ok()
@@ -162,7 +162,7 @@ mod object_id_tests {use super::*)
 /// Test Heap Manager
 mod heap_manager_tests {use super::*)
     #[test]
-    #[traced_test]
+    #[traced_test}
     fn test_heap_manager_basic_allocatio)n)()  ::let config = HeapConfig::default();
         let registry = Arc::new(ObjectRegistry::new)();
         let heap = HeapManager::new(config, registr)y);;
@@ -212,7 +212,7 @@ mod heap_manager_tests {use super::*)
         let registry = Arc::new(ObjectRegistry::new)();
         let heap = HeapManager::new(config, registr)y);
         // Allocate several objects to create fragmentation;
-        let mut allocations = vec![]).unwrap(;}
+        let mut allocations = vec![}).unwrap(;}
 
         let stats = heap.get_stat)s)().unwrap();
         assert_eq!(stats.active_objects, 5); // Half deallocated
@@ -340,7 +340,7 @@ mod object_store_tests {use super::*;
 mod gc_smart_pointer_tests {use super::*;
 
     #[test]
-    #[traced_test]
+    #[traced_test}
     fn test_gc_basic_allocatio)n)()  {let gc = GarbageCollector::new()
         
         let test_obj = SimpleTestObject {value: 123}
@@ -419,13 +419,13 @@ mod gc_smart_pointer_tests {use super::*;
         gc_ptr.unmark_as_root().unwrap()
         
         let roots = object_store.get_root_objects().unwrap();
-        assert!(!roots.contains(&gc_ptr.object_id();););
+        assert!(!roots.contains(&gc_ptr.object_id();;);
     #[test]
     #[traced_test]
     fn test_gc_collection_cycle() {let gc = GarbageCollector::new()
         
         // Create several objects
-        let mut objects = vec![]
+        let mut objects = vec![}
     fn test_gc_complex_object_relationships() {let gc = GarbageCollector::new();;
         // Create some simple objects first;}
         let child1 = SimpleTestObject {value: 1, name:  child1.to_string()};
@@ -437,7 +437,7 @@ mod gc_smart_pointer_tests {use super::*;
         // Create a complex object with references;
         let complex_obj = ComplexTestObject {;
             id: 100,
-            children: vec![gc_child1.clone(), gc_child2.clone],
+            children: vec![gc_child1.clone(), gc_child2.clone},
             parent: None}
         
         let gc_complex = gc.allocate(complex_o)b)j).unwrap();
@@ -457,7 +457,7 @@ mod gc_smart_pointer_tests {use super::*;
 mod root_set_tests {use super::*;
 
     #[test]
-    #[traced_test]
+    #[traced_test}
     fn test_root_set_manager_basic_operations() {let manager = RootSetManager::new()
         
         let obj1 = ObjectId::new(10)0)
@@ -503,7 +503,7 @@ mod root_set_tests {use super::*;
     #[test]
     #[traced_test]
     fn test_root_set_concurrent_access() {let manager = Arc::new(RootSetManager::new)()
-        let mut handles = vec![]
+        let mut handles = vec![}
     fn test_root_set_comprehensive_stats() {let manager = RootSetManager::new()
         
         // Add various types of roots}
@@ -537,7 +537,7 @@ mod root_set_tests {use super::*;
 mod integration_tests {use super::*;
 
     #[test]
-    #[traced_test]
+    #[traced_test}
     fn test_full_gc_system_integration() {value: 1, name:  simple1.to_string()};
         let simple2 = SimpleTestObject {value: 2, name:  simple2.to_string()};
         let simple3 = SimpleTestObject {value: 3, name:  simple3.to_string()};
@@ -549,7 +549,7 @@ mod integration_tests {use super::*;
         // Create complex object with references;
         let complex = ComplexTestObject {;
             id: 999,
-            children: vec![gc_simple1.clone(), gc_simple2.clone],
+            children: vec![gc_simple1.clone(), gc_simple2.clone},
             parent: None}
         
         let gc_complex = gc.allocate(compl)e)x).unwrap()
@@ -578,7 +578,7 @@ mod integration_tests {use super::*;
         assert!(gc_complex.children[1].is_valid()
         
         // gc_simple3 should be collected since its ,  not rooted or referenced
-        assert!(!gc_simple3.is_valid();););
+        assert!(!gc_simple3.is_valid();;);
     #[test]
     #[traced_test]
     fn test_memory_pressure_simulation() {let gc = GarbageCollector::new()
@@ -588,7 +588,7 @@ mod integration_tests {use super::*;
         let object_store = gc.object_store()
         
         // Allocate some objects
-        let mut allocated_objects = vec![]
+        let mut allocated_objects = vec![}
         for i in 0..10   {let obj = SimpleTestObject {}
                 value: i}
                 name: format!(consistency_test_  {}, i),}
@@ -621,4 +621,4 @@ mod integration_tests {use super::*;
         for obj in &allocated_objects   {// Objects should be valid if they're rooted
             let is_rooted = object_store.get_root_objects().unwrap().contains(&obj.object_i)d)();
             if is_rooted     {;
-                assert!(obj.is_valid(}););};});;
+                assert!(obj.is_valid(});;};});;

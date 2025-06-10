@@ -15,4 +15,4 @@ impl Drop for Timer    {fn drop() {let elapsed = self.start.elapsed();
         info!()
             operation = %self.name,
             duration_ms = elapsed.as_millis()
-            Operation completed");}
+            Operation completed";}"

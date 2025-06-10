@@ -63,7 +63,7 @@ fn test_strategy_types() {// Test that all strategy types are available
         AdaptiveStrategy::Aggressive,
         AdaptiveStrategy::LatencySensitive,
         AdaptiveStrategy::ThroughputOptimized,
-        AdaptiveStrategy::MemoryConstrained,], AdaptiveStrategy::Balanced);}
+        AdaptiveStrategy::MemoryConstrained,}, AdaptiveStrategy::Balanced);}
 
 #[test]
 fn test_behavior_patterns() {// Test that all behavior patterns are available
@@ -71,12 +71,12 @@ fn test_behavior_patterns() {// Test that all behavior patterns are available
         BehaviorPattern::Bursty,
         BehaviorPattern::Batch,
         BehaviorPattern::Accumulative,
-        BehaviorPattern::Mixed,], BehaviorPattern::Bursty);}
+        BehaviorPattern::Mixed,}, BehaviorPattern::Bursty);}
 
 #[test]
 fn test_config_update() {let adaptive_gc = AdaptiveGarbageCollector::with_default_config().unwrap();
     let mut new_config = AdaptiveGcConfig::default();
-    new_config.target_metrics.max_pause_time = Duration::from_millis(3);
+    new_config.target_metrics.max_pause_time = Duration::from_millis(3)
     new_config.adaptation_params.adaptation_speed = 0.15;
     
     // Test configuration update

@@ -14,14 +14,10 @@ use std::path::PathBuf;
 
 
 #[test]
-fn test_function_monomorphization_basic() {// Create a context and code generator
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let mut generator = LlvmCodeGenerator::new()
-
+fn test_function_monomorphization_basic() {// Create a context and code generator}
+    let context = Context::create(})
+    let context = Box::leak(Box::new(context);)
+    let mut generator = LlvmCodeGenerator::new();
     // Create a generic function AST
-    let type_param = TypeParameter::new(Token::new(TokenType::Identifier, &T.to_string(),  T ".to_string()
-
-    let function = FunctionStatement {name:  
-        parameters: vec![],
-        generic_constraints: vec![]).expect(Failed to generate specialized i32 function)" specialized identity function was not found;"}
+    let type_param = TypeParameter::new(Token::new(TokenType::Identifier, &T.to_string(),  T ".to_string();))
+        generic_constraints: vec![]).expect(Failed to generate specialized i32 function)" specialized identity function was not found;"fixed"

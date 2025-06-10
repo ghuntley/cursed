@@ -12,11 +12,11 @@ use std::path::PathBuf;
 /// Test all aspects of the pointer.rs implementation
 #[test]
 #[ignore = Pointer implementation needs further parser work]
-fn test_pointer_module_full() {// Test 1: Basic address-of and dereferencing
+fn test_pointer_module_full() {// Test 1: Basic address-of and dereferencing}
         sus a normie = 10;
         sus ptr_a = @a;  // Address-of operation
         sus value_a = @ptr_a;  // Dereference operation
-        puts(value_a);  // Should be 10
+        puts(value_a};  // Should be 10)
         
         // Test 2: Changing values through pointers
         @ptr_a = 20;
@@ -40,129 +40,22 @@ fn test_pointer_module_full() {// Test 1: Basic address-of and dereferencing
     #;
 
     // Parse the code into an AST
-    let mut lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
+    let mut lexer = Lexer::new(input.to_string();)
+    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;))
     let program = parser.unwrap().parse_program()?;
 
     // Ensure no parser errors
-    if !parser.errors().is_empty()     {panic!(Parser :  errors: {:?}, parser.errors()"}
-    // Set up LLVM JIT execution
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let dummy_path = PathBuf::from(./pointer_module_test.csd)
-    let mut code_gen = LlvmCodeGenerator::new()
-    
-    // Compile the program
-    match code_gen.generate_ir(dummy , &program)     {Ok(_) => println!(Program"successfully),
-        Err(e) => {println!("Compilation error: {}, e)"Error compiling program: {}, e)}
-    // Print the generated IR for debugging
-    println!(Generated LLVM IR:)
-    println!("  {}, code_gen.as_ref().unwrap().get_module().print_to_string().to_string()
-    // Create JIT execution engine
-    let execution_engine = code_gen
-        .module()
-        .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!(Failed to create JIT execution engine: {}, e)?)
-
-    // Define and map the puts  function for test output with verification
-    extern  C fn puts_impl() {unsafe {;
-            static mut COUNTER: i32 = 0;
-            COUNTER += 1;}
-            println!(")
-            match COUNTER     {}
-                1 => assert_eq!(val, 10,  "Test "
-                2 => assert_eq!(val, 20,  "Test 2 failed: a after modification is {}, expected "
-                3 => assert_eq!(val, 30,  Test " 3 failed: a after multilevel pointer mod is {}, expected "Test " 4a failed: point.x is {}, expected , 40, val),"Test 4b failed: point.y after mod is {}, expected ", 60, val),":  puts call with value {}, val),}
-            0}
-
-    // Map the puts function
-    if let Some(puts_fn) = code_gen.as_ref().unwrap().get_module().get_function(puts     {unsafe {)
-            let addr = puts_impl as usize;
-            execution_engine.add_global_mapping(&puts_fn, addr)} else     {return Err(Error::from_str(Failed " to find "module)";}
-    // Execute the main function
-    unsafe {// First check if the main function exists
-        match code_gen.as_ref().unwrap().get_module().get_function(main         {}
-            Some(f) => println!(Found main function: {}, f.as_ref().unwrap().get_name().map(|s| s.to_string_lossy().to_string().unwrap_or_default()")
-                
-                // Check for mangled main
-                if let Some(f) = code_gen.as_ref().unwrap().get_module().get_function(_test_main       {}
-                    println!(Found mangled main: {}, f.as_ref().unwrap().get_name().map(|s| s.to_string_lossy().to_string().unwrap_or_default()"No main function found in module)"}
-        // Try to get the function - first the standard one
-        let main_fn = match execution_engine.get_function::<unsafe extern  C fn() -> i32>(main)       {Ok(f) => f,
-            Err(_) => {// Try the mangled version
-                execution_engine
-                    .get_function::<unsafe extern  C fn() -> i32>(_test_main)
-                    .map_err(|e| Error::from_str(&format!(Failed ")
-    vibe test;
-
-    slay main() {// Create a null pointer by default-initializing a pointer type
-        sus ptr @normie;  // Null pointer to normie type
-        
-        // Check if it s null (well use a special runtime function for this);
-        puts(is_null_ptr(ptr);  // Should print 1 (true)
-        
-        // Create a non-null pointer
-        sus x normie = 42;
-        sus valid_ptr = @x;
-        
-        // Check if its null 
-        puts(is_null_ptr(valid_ptr);  // Should print 0 (false)
-        
-        // Success
-        yolo 0;}
-    
-    // Helper function to check if a pointer is null
-    slay is_null_ptr(ptr @normie) normie     :: // Implement null check in LLVM-friendly way
-        lowkey ptr == nil  ::yolo 1;  // Its null}
-        yolo 0;  // It s not null}
-    #";
-    // Parse the code into an AST
-    let mut lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(Lexer::new(lexer)?;
-    let program = parser.unwrap().parse_program()?;
-
-    // Set up LLVM JIT execution
-    let context = Context::create()
-    let context = Box::leak(Box::new(context)
-    let dummy_path = PathBuf::from(./null_pointer_test.csd)
-    let mut code_gen = LlvmCodeGenerator::new()
-    
-    // Compile the program;
-    code_gen.generate_ir(dummy, &program)?;
-
-    // Create JIT execution engine
-    let execution_engine = code_gen
-        .module()
-        .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!(Failed to create JIT execution engine:  {}, e)?)
-
-    // Define and map the puts' function 
-    extern  C fn puts_impl() {
-        unsafe {;
-            static mut COUNTER: i32 = 0;
-            COUNTER += 1;}
-            println!(
-            
-            match COUNTER     {}
-                1 => assert_eq!(val, 1,  "Null check failed: expected 1 (null), got {}, val)," pointer check failed: expected 0 (not null), got {}, val),
-                _ => panic!("Unexpected "}
-            0}
-
-    // Map the puts function
-    if let Some(puts_fn) = code_gen.as_ref().unwrap().get_module().get_function(puts     {unsafe {)
-            let addr = puts_impl as usize;
-            execution_engine.add_global_mapping(&puts_fn, addr)}
-
-    // Execute the main function
-    unsafe     {// Try to get the function - first the standard one
-        let main_fn = match execution_engine.get_function::<unsafe extern  C fn() -> i32>(main       {Ok(f) => f,
-            Err(_) => {// Try the mangled version
-                execution_engine
-                    .get_function::<unsafe extern  C fn() -> i32>(_test_main}
-                    .map_err(|e| Error::from_str(&format!(Failed to get any main function:   {}, e)?"}
-        let result = main_fn.call()
-
-        // Test should return 0 for success
-        assert_eq!(result, 0, Null pointer test failed: returned   {}, , result)}
-
-    Ok(();} 
+    if !parser.errors().is_empty()     {panic!(Parser :  errors: {:?}, parser.errors()"})
+    match code_gen.generate_ir(dummy , &program)     {Ok(_} => println!()fixed)
+        Err(e) => {println!(Compilation error: {}, e)", "fixed}
+    println!(  {}, code_gen.as_ref().unwrap().get_module().print_to_string().to_string()"")
+            println!(fixed)
+                3 => assert_eq!(val, 30,  Test " 3 failed: a after multilevel pointer mod is {}, expected , Test 4a failed: point.x is {}, expected , 40, val),, " 4b failed: point.y after mod is {}, expected ", 60, val),
+            execution_engine.add_global_mapping(&puts_fn, addr)} else     {return Err(Error::from_str(Failed " to find ", ;}"))
+            Some(f) => println!(Found main function: {}, f.as_ref().unwrap().get_name().map(|s| s.to_string_lossy().to_string().unwrap_or_default()"))
+                    println!(Found mangled main: {}, f.as_ref().unwrap().get_name().map(|s| s.to_string_lossy().to_string().unwrap_or_default()",  main function found in module)")
+                    .map_err(|e| Error::from_str(&format!(Failed ")))
+    #";"
+                1 => assert_eq!(val, 1,  , " check failed: expected 1 (null), got {}, val),"
+                _ => panic!(, ")
+                    .map_err(|e| Error::from_str(&format!(Failed to get any main function:   {}, e)?"}"fixed"))

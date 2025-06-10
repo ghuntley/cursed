@@ -37,7 +37,7 @@ impl LlvmDebugCodeGenerator {
     ) -> Result<String, Error> {
         debug!(function = %name, location = ?location, "Beginning function with debug info");
         
-        self.debug_manager.begin_function(name.clone(), location.clone())?;
+        self.debug_manager.begin_function(name.clone(), location.clone().into())?;
         self.current_function = Some(name.clone());
         
         // Generate LLVM IR with debug metadata
@@ -54,7 +54,7 @@ impl LlvmDebugCodeGenerator {
         ir.push_str(&format!(
             "  call void @llvm.dbg.declare(metadata i8* null, metadata !{}, metadata !DIExpression()){}",
             self.get_next_metadata_id() + 1,
-            self.debug_manager.generate_debug_location(&location)
+            self.debug_manager.generate_debug_location(&location.clone().into())
         ));
         ir.push('\n');
         
@@ -83,14 +83,14 @@ impl LlvmDebugCodeGenerator {
     ) -> Result<String, Error> {
         debug!(name = %name, type_name = %type_name, location = ?location, "Generating variable with debug");
         
-        self.debug_manager.add_variable(name.clone(), type_name.clone(), location.clone())?;
+        self.debug_manager.add_variable(name.clone(), type_name.clone(), location.clone().into())?;
         
         // Generate LLVM IR for variable with debug metadata
         let mut ir = String::new();
         
         // Allocate the variable
         ir.push_str(&format!("  %{} = alloca i32", name));
-        ir.push_str(&self.debug_manager.generate_debug_location(&location));
+        ir.push_str(&self.debug_manager.generate_debug_location(&location.clone().into()));
         ir.push('\n');
         
         // Add debug declare intrinsic
@@ -98,7 +98,7 @@ impl LlvmDebugCodeGenerator {
             "  call void @llvm.dbg.declare(metadata i32* %{}, metadata !{}, metadata !DIExpression()){}",
             name,
             self.get_next_metadata_id(),
-            self.debug_manager.generate_debug_location(&location)
+            self.debug_manager.generate_debug_location(&location.clone().into())
         ));
         ir.push('\n');
         
@@ -118,7 +118,7 @@ impl LlvmDebugCodeGenerator {
         // Generate store instruction with debug location
         let mut ir = String::new();
         ir.push_str(&format!("  store i32 {}, i32* %{}", value, variable));
-        ir.push_str(&self.debug_manager.generate_debug_location(&location));
+        ir.push_str(&self.debug_manager.generate_debug_location(&location.clone().into()));
         ir.push('\n');
         
         Ok(ir)
@@ -138,7 +138,7 @@ impl LlvmDebugCodeGenerator {
         let mut ir = String::new();
         let args_str = args.join(", ");
         ir.push_str(&format!("  call i32 @{}({})", function, args_str));
-        ir.push_str(&self.debug_manager.generate_debug_location(&location));
+        ir.push_str(&self.debug_manager.generate_debug_location(&location.clone().into()));
         ir.push('\n');
         
         Ok(ir)
@@ -159,7 +159,7 @@ impl LlvmDebugCodeGenerator {
         } else {
             ir.push_str("  ret void");
         }
-        ir.push_str(&self.debug_manager.generate_debug_location(&location));
+        ir.push_str(&self.debug_manager.generate_debug_location(&location.clone().into()));
         ir.push('\n');
         
         Ok(ir)
@@ -192,7 +192,7 @@ impl LlvmDebugCodeGenerator {
 
     /// Set current source location for subsequent operations
     pub fn set_current_location(&mut self, location: SourceLocation) {
-        self.debug_manager.set_current_location(location);
+        self.debug_manager.set_current_location(location.into());
     }
 
     /// Get current source location
@@ -298,7 +298,7 @@ impl LlvmDebugCodeGenerator {
     }
 
     /// Get debug configuration
-    pub fn debug_config(&self) -> &DebugConfig {
+    pub fn debug_config(&self) -> DebugConfig {
         self.debug_manager.config()
     }
 
@@ -343,7 +343,7 @@ mod tests {
         let mut generator = LlvmDebugCodeGenerator::new(DebugConfig::default());
         let location = SourceLocation::new(10, 1).with_file("test.csd");
         
-        let result = generator.begin_function_with_debug("test_func".to_string(), location);
+        let result = generator.begin_function_with_debug("test_func".to_string(), location.into());
         assert!(result.is_ok());
         
         let ir = result.unwrap();
@@ -396,7 +396,7 @@ mod tests {
             "Test".to_string(),
         ).unwrap();
         
-        let functions = Vec::from([("main".to_string(), location)]);
+        let functions = Vec::from([("main".to_string(), location.into())]);
         let module = generator.generate_module_with_debug("test_module".to_string(), functions).unwrap();
         
         assert!(module.contains("ModuleID"));
@@ -414,7 +414,7 @@ mod tests {
         assert!(!generator.debug_enabled());
         
         let location = SourceLocation::new(10, 1).with_file("test.csd");
-        let result = generator.begin_function_with_debug("test".to_string(), location);
+        let result = generator.begin_function_with_debug("test".to_string(), location.into());
         
         // Should still work but without debug information
         assert!(result.is_ok());

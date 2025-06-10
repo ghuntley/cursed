@@ -284,11 +284,11 @@ pub type NormieType = TypeExpression;
 pub fn normie_type() -> TypeExpression {
     TypeExpression::new("normie".to_string(), "normie".to_string())
 }
-
-pub fn tea_type() -> TypeExpression {
+    
+    pub fn tea_type() -> TypeExpression {
     TypeExpression::new("tea".to_string(), "tea".to_string())
 }
-
-pub fn based_type() -> TypeExpression {
+    
+    pub fn based_type() -> TypeExpression {
     TypeExpression::new("based".to_string(), "based".to_string())
 }

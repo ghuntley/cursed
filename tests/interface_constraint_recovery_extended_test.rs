@@ -72,7 +72,7 @@ fn test_integrated_constraint_recovery() {// common::tracing::init_tracing!()
     registry.populate_with_defaults()
     
     // Create a custom vector type that should implement Numeric
-    let vector_type = Type::Struct(Vector3D.to_string(), vec![])
+    let vector_type = Type::Struct(Vector3D.to_string(), vec![})
     
     // Check constraint with recovery
     let result = registry.check_constraint_with_recovery(&vector_type,  Numeric)

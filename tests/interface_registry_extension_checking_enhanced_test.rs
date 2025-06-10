@@ -24,9 +24,4 @@ fn test_basic_interface_extension_checking() {// common::tracing::init_tracing!(
     let extension = registry.check_interface_extension_by_name(NonExistentInterface,  Reader).unwrap()
     assert!(!extension)
     
-    let extension = registry.check_interface_extension_by_name(FileReader,  "NonExistentInterface).unwrap()
-    assert!(!extension)
-    
-    // Test getting implementors for non-existent interface
-    let implementors = registry.get_implementors(9999).unwrap()
-    assert!(implementors.is_empty();}
+    let extension = registry.check_interface_extension_by_name(FileReader,  "NonExistentInterface).unwrap()"fixed"

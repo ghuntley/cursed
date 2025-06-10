@@ -18,7 +18,9 @@ pub mod goroutine;
 pub mod gc_integration;
 pub mod panic;
 pub mod debug_info;
-pub mod error_propagation;
+pub mod error_handling;
+// pub mod error_propagation;  // Temporarily disabled due to extensive API mismatches
+// pub mod error_propagation;  // Temporarily disabled due to API mismatches
 // pub mod question_mark;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
@@ -36,7 +38,7 @@ pub use goroutine::{GoroutineCompiler, generate_loop_yield_point};
 pub use gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
 pub use panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
 pub use debug_info::{LlvmDebugGenerator, LlvmDebugIntegration, LlvmDebugManager};
-pub use error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};
+// pub use error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};  // Temporarily disabled
 // pub use question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime};
 
 // Temporary dummy types to help tests compile
@@ -163,14 +165,7 @@ impl LlvmCodeGenerator {
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
             debug_generator: LlvmDebugCodeGenerator::new(DebugConfig::default()),
-
             module_name: None,
-
-            context: DummyContext::new(),
-
-            module: DummyModule::new(),
-
-            current_function: None,
             web_vibez_integration: None,
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("default_module".to_string()),
@@ -181,14 +176,7 @@ impl LlvmCodeGenerator {
     pub fn new_with_debug(debug_config: DebugConfig) -> Result<Self, Error> {
         Ok(Self {
             debug_generator: LlvmDebugCodeGenerator::new(debug_config),
-
             module_name: None,
-
-            context: DummyContext::new(),
-
-            module: DummyModule::new(),
-
-            current_function: None,
             web_vibez_integration: None,
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("debug_module".to_string()),
@@ -225,7 +213,7 @@ impl LlvmCodeGenerator {
         self.debug_generator.initialize_debug_info(source_file.clone(), "CURSED Compiler v1.0".to_string())?;
         
         // Generate a sample module with debug info
-        let main_location = SourceLocation::new(1, 1).with_file(&source_file.to_string_lossy());
+        let main_location = SourceLocation::new(source_file.clone(), 1, 1);
         let functions = Vec::from([("main".to_string(), main_location)]);
         
         let module_name = source_file.file_stem()
@@ -244,7 +232,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Get debug configuration
-    pub fn debug_config(&self) -> &DebugConfig {
+    pub fn debug_config(&self) -> DebugConfig {
         self.debug_generator.debug_config()
     }
     
@@ -564,5 +552,129 @@ impl LlvmCodeGenerator {
 impl Default for LlvmCodeGenerator {
     fn default() -> Self {
         Self::new().unwrap()
+    }
+}
+
+// Import the error handling compiler trait
+use crate::codegen::llvm::error_handling::ErrorHandlingCompiler;
+use crate::runtime::panic::{PanicSeverity, PanicCategory};
+
+impl<'ctx> ErrorHandlingCompiler<'ctx> for LlvmCodeGenerator {
+    fn compile_panic_statement(
+        &mut self,
+        message: &str,
+        severity: PanicSeverity,
+        category: PanicCategory,
+        location: Option<crate::error::SourceLocation>,
+    ) -> Result<(), crate::error::Error> {
+        // For now, just log that we're compiling a panic statement
+        // This is a placeholder that can be enhanced with actual LLVM IR generation
+        tracing::info!(
+            message = message,
+            severity = ?severity,
+            category = ?category,
+            location = ?location,
+            "Compiling panic statement"
+        );
+        
+        // TODO: Generate actual LLVM IR for panic using ErrorHandlingIntegration
+        Ok(())
+    }
+
+    fn compile_recovery_block<F>(
+        &mut self,
+        protected_operation: F,
+        _recovery_handler: Option<F>,
+        _location: Option<crate::error::SourceLocation>,
+    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error>
+    where
+        F: FnOnce(&mut Self) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error>,
+    {
+        // For now, just execute the protected operation
+        // TODO: Add proper recovery block generation
+        protected_operation(self)
+    }
+
+    fn compile_error_propagation(
+        &mut self,
+        result_value: crate::codegen::llvm::expression_compiler::LlvmValue,
+        result_type: crate::codegen::llvm::expression_compiler::LlvmType,
+        location: Option<crate::error::SourceLocation>,
+        function_name: Option<String>,
+    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+        // For now, just return the result value unchanged
+        // TODO: Generate actual error propagation LLVM IR
+        tracing::info!(
+            result_type = ?result_type,
+            location = ?location,
+            function_name = ?function_name,
+            "Compiling error propagation"
+        );
+        
+        Ok(result_value)
+    }
+
+    fn generate_error_check(
+        &mut self,
+        value: crate::codegen::llvm::expression_compiler::LlvmValue,
+        value_type: crate::codegen::llvm::expression_compiler::LlvmType,
+    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+        // For now, just return a boolean indicating success
+        // TODO: Generate actual error checking LLVM IR
+        tracing::info!(
+            value_type = ?value_type,
+            "Generating error check"
+        );
+        
+        // Return a placeholder boolean value
+        Ok(crate::codegen::llvm::expression_compiler::LlvmValue {
+            value_type: crate::codegen::llvm::expression_compiler::LlvmType::Boolean,
+            llvm_name: "%error_check_result".to_string(),
+            is_constant: false,
+        })
+    }
+
+    fn generate_stack_trace_capture(
+        &mut self,
+        max_depth: Option<usize>,
+    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+        // For now, return a placeholder pointer value
+        // TODO: Generate actual stack trace capture LLVM IR
+        tracing::info!(
+            max_depth = ?max_depth,
+            "Generating stack trace capture"
+        );
+        
+        Ok(crate::codegen::llvm::expression_compiler::LlvmValue {
+            value_type: crate::codegen::llvm::expression_compiler::LlvmType::Pointer(
+                Box::new(crate::codegen::llvm::expression_compiler::LlvmType::Boolean)
+            ),
+            llvm_name: "%stack_trace_ptr".to_string(),
+            is_constant: false,
+        })
+    }
+
+    fn generate_error_context(
+        &mut self,
+        error_message: &str,
+        location: Option<crate::error::SourceLocation>,
+        function_name: Option<String>,
+    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+        // For now, return a placeholder pointer value
+        // TODO: Generate actual error context creation LLVM IR
+        tracing::info!(
+            error_message = error_message,
+            location = ?location,
+            function_name = ?function_name,
+            "Generating error context"
+        );
+        
+        Ok(crate::codegen::llvm::expression_compiler::LlvmValue {
+            value_type: crate::codegen::llvm::expression_compiler::LlvmType::Pointer(
+                Box::new(crate::codegen::llvm::expression_compiler::LlvmType::Boolean)
+            ),
+            llvm_name: "%error_context_ptr".to_string(),
+            is_constant: false,
+        })
     }
 }

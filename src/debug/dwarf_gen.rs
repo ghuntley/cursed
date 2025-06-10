@@ -1,5 +1,5 @@
 /// DWARF debug information generation for LLVM
-use crate::debug::{DebugSymbol, DebugSymbolType, SourceLocation};
+use crate::debug::{debug_symbols::{DebugSymbol, DebugSymbolType}, SourceLocation};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, warn};

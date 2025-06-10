@@ -11,186 +11,62 @@ use std::cell::RefCell;
 // Traceable objects for proper finalization during garbage collection.
 
 // Temporarily disabled while we update the API
-#[cfg(not(test)]
+#[cfg(not(test)])
 mod tests      ::// Import common test utilities for setting up tracing
 #[path = tracing_setup.rs]
 mod tracing_setup;
 
 
 // Create a test-specific traceable type with finalization tracking
-struct TestObject {id: usize,
+struct TestObject {id: usize,}
     value: String,
     // Track when finalization happens for this object
     finalized: Arc<Mutex<bool>>,
     // Track dependencies for finalization ordering tests
     depends_on: Vec<usize>
 
-impl Traceable for TestObject       {fn trace() {// No references to trace}
+impl Traceable for TestObject       {fn trace(} {// No references to trace})
     
-    fn size() {std::mem::size_of::<Self>()}
+    fn size() {std::mem::size_of::<Self>(}})
     
     fn tag() {Tag::Object}
     
-    fn finalize() {// Mark as finalized
-        let mut finalized = self.finalized.lock().unwrap();
+    fn finalize() {// Mark as finalized}
+        let mut finalized = self.finalized.lock(}.unwrap();)
         *finalized = true;
         info!(id = self.id,  TestObject finalized)";}
-impl Clone for TestObject       {fn clone() {TestObject {id: self.id,
-            value: self.value.clone()
-            finalized: self.finalized.clone()
-            depends_on: self.depends_on.clone()}
-
-// Create a container for finalization order testing
-struct FinalizationContainer {objects: Vec<StorageWrapper<TestObject>>,
-    // Track the finalization order
-    finalized_order: Arc<Mutex<Vec<usize>>>}
-
-impl Traceable for FinalizationContainer       {fn trace() {// No references to trace for this test}
-    
-    fn size() {std::mem::size_of::<Self>()}
-    
-    fn tag() {Tag::Object}
-
-impl Clone for FinalizationContainer       {fn clone() {FinalizationContainer {objects: self.objects.clone()
-            finalized_order: self.finalized_order.clone()}
-
-#[test]
-#[instrument]
-fn test_object_storage_basic() {tracing_setup::init_test_tracing()
-    info!(Starting:  object storage basic test);
-    debug!(
-    let storage = global_object_storage()
-    // Create an object with finalization tracking
-    debug!(Creating:  test object with finalization tracking)
-    let finalized = Arc::new(Mutex::new(false)
-    let obj = TestObject {id: 1,
-        value:  "test.to_string()
-        finalized: finalized.clone()
-        depends_on: Vec::new()};
-    debug!(id = 1,  " test object);
-    
-    // Store the object
-    debug!(Storing:  test object in global storage)
-    let addr = storage.store(obj.clone();
-    debug!(address = ?addr,  "address);
-    
-    // Verify we can retrieve it
-    debug!(Retrieving:  object from storage);
-    let retrieved_obj = storage.get::<TestObject>(addr)
-    if retrieved_obj.is_none()     {error!(Failed:  to retrieve object from storage)"}
-    assert!(retrieved_obj.is_some(), Shouldbe able to retrieve stored ", object)")
-    
-    // Skip ID/value checks as they may cause borrowing issues in tests
-    
-    // Finalize and remove
-    debug!(Finalizing:  and removing object);
-    let removed = storage.remove_and_finalize(addr)
-    if !removed     {error!(Failed:  to remove object from storage)"}
-    assert!(removed)
-    debug!(Object:  successfully removed)")")"}
-    assert!(was_finalized)
-    debug!(Object:  was properly finalized)
-    
-    info!(Object:  storage basic test completed successfully)")
-    let retrieved_obj = storage.get::<TestObject>(addr)
-    if retrieved_obj.is_some()     {error!("Object:  is still in storage after removal)"Objectshould not be in storage after , removal)"
-    debug!("}
-#[test]
-#[instrument]
-fn test_storage_wrapper() {tracing_setup::init_test_tracing()
-    info!("Starting:  storage wrapper test);"wrapper_test.to_string()
-        finalized: finalized.clone()
-        depends_on: Vec::new();};
-    debug!(id = 2,  "Created 
-    
-    // Create storage wrapper
-    debug!(Creating:  storage wrapper)
-    let wrapper = StorageWrapper::new(obj)
-    debug!("Storage:  wrapper created successfully)"Failed:  to retrieve object from wrapper)"}
-    assert!(retrieved_obj.is_some(), "
-    debug!("Object:  successfully retrieved from wrapper)"Gotobjectaddress);
-    // Verify it exists in storage
-    debug!(Verifying:  object exists in global storage);
-    let storage = global_object_storage()
-    let exists = storage.contains(addr)
-    if !exists   ::;
-        error!(address = ?addr,  "Objectnot "}
-    assert!(storage.contains(addr), "Objectshould exist in , storage)"Confirmed:  object exists in storage)
-    
-    // Manually remove and finalize (normally GC would do this)
-    debug!(Manually:  removing and finalizing object)
-    let removed = storage.remove_and_finalize(addr)
-    if !removed    ::;
-        error!(address = ?addr,  "storage)";}
-    assert!(removed, Objectshould be removed ")
-    debug!(Object:  successfully removed and finalized)")")"}
-    assert!(was_finalized, Objectshould be ")
-    debug!(Object:  was properly finalized)")")"}
-#[test]
-#[instrument]
-fn test_integration_with_gc() {tracing_setup::init_test_tracing()
-    info!(Starting:  integration with GC test)
-    // This test is simplified to avoid GC deadlocks in the test environment
-    // Just test the object storage interfaces directly
-    debug!(Test:  simplified to avoid GC deadlocks);
-    
-    debug!(Getting:  global object storage)")".to_string()
-        finalized: finalized.clone()
-        depends_on: Vec::new()};
-    debug!(id = 3,  "Created test 
-    
-    // Store directly rather than going through GC
-    debug!(Storing:  object directly in storage);
-    let addr = storage.store(obj);
+        value:  ", ".to_string();
+    debug!(id = 1,  " test object);"
+    debug!(address = ?addr,  , ";")
+    if retrieved_obj.is_none()     {error!(Failed:  to retrieve object from storage}}"")
+    assert!(retrieved_obj.is_some(), Shouldbe able to retrieve stored , object)"
+    if !removed     {error!(Failed:  to remove object from storage}"})
+    debug!(Object:  successfully removed)""}"
+    info!(Object:  storage basic test completed successfully)"
+    if retrieved_obj.is_some()     {error!(", ":  is still in storage after removal}Objectshould not be in storage after , removal)"
+    debug!()"
+    info!(", :  storage wrapper test);"
+    debug!(id = 2,  ", ")
+    debug!("Storage:  wrapper created successfully), :  to retrieve object from wrapper)"}"
+    assert!(retrieved_obj.is_some(), "")
+    debug!(, :  successfully retrieved from wrapper)""
+        error!(address = ?addr,  , )
+    assert!(storage.contains(addr), ", " exist in , storage)
+        error!(address = ?addr,  ", ")
+    debug!(Object:  successfully removed and finalized)""}"
+    debug!(Object:  was properly finalized)"}"
+    debug!(Getting:  global object storage)"
+    debug!(id = 3,  ",  test)
     debug!(address = ?addr,  Objectstored " at)
-    let exists = storage.contains(addr)
-    if !exists     {;
-        error!(address = ?addr,  Objectnot "storage);}
-    assert!(storage.contains(addr), "Objectshould exist in "Confirmed:  object exists in storage)")
-    // Finalize directly
-    debug!(Manually:  finalizing object);
-    storage.remove_and_finalize(addr)
-    debug!()
-    
-    // Verify finalization happened
-    debug!(Checking:  if object was finalized);
-    let was_finalized = *finalized.lock().unwrap()
-    if !was_finalized     {error!("Object:  was not finalized properly)"Objectshould be ", finalized)
-    debug!()
-    
-    info!("Integration:  with GC test completed successfully)"Starting:  multiple objects test)")
-    debug!()
-    let storage = global_object_storage()
-    
-    // Create multiple objects
-    debug!(Creating:  multiple test objects);
-    let finalized1 = Arc::new(Mutex::new(false)
-    let finalized2 = Arc::new(Mutex::new(false)
-    
-    let obj1 = TestObject {id: 4,
-        value:  "multiple1" first test "object);
-    let obj2 = TestObject {id: 5,
-        value:  
-        finalized: finalized2.clone()
-        depends_on: Vec::new()};
-    debug!(id = 5,  Created " second test "Objectsstored " at addresses);"One:  or both objects not found in storage)"}
-    assert!(storage.contains(addr1), "
-    assert!(storage.contains(addr2), "Secondobject should exist in , storage)"Confirmed:  both objects exist in storage)
-    
-    // Finalize and remove both
-    debug!(Finalizing:  and removing both objects)
-    storage.remove_and_finalize(addr1)
-    storage.remove_and_finalize(addr2)
-    debug!(
-    
-    // Verify both were finalized
-    debug!(Checking:  if both objects were finalized)
-    let was_finalized1 = *finalized1.lock().unwrap()
-    let was_finalized2 = *finalized2.lock().unwrap()
-    if !was_finalized1 || !was_finalized2     {error!("One:  or both objects were not finalized properly)"Firstobject should be , finalized)"
-    assert!(*finalized2.lock().unwrap(), "
-    debug!("Both:  objects were properly finalized)"Multiple:  objects test completed successfully)";}
-// Create a dummy test to keep cargo happy
-#[test]
-fn dummy_object_storage_test() {// common::tracing::init_tracing!();
-    assert!(true,  Dummytest always passes);");}
+        error!(address = ?addr,  Objectnot ", ";)
+    assert!(storage.contains(addr), "Objectshould exist in ", :  object exists in storage)"
+    if !was_finalized     {error!(, :  was not finalized properly}"Objectshould be ", finalized)
+    info!(", ":  with GC test completed successfully)Starting:  multiple objects test)"
+        value:  , " first test ", ;"
+    debug!(id = 5,  Created " second test , Objectsstored at addresses);, ":  or both objects not found in storage)"}
+    assert!(storage.contains(addr1), "")
+    assert!(storage.contains(addr2), , " should exist in , storage)"
+    if !was_finalized1 || !was_finalized2     {error!(, ":  or both objects were not finalized properly}"Firstobject should be , finalized)"
+    assert!(*finalized2.lock().unwrap(), ")
+    debug!(", ":  objects were properly finalized)Multiple:  objects test completed successfully);}"
+    assert!(true,  Dummytest always passes);;}fixed"

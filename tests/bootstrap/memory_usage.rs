@@ -40,7 +40,7 @@ fn test_compilation_memory_usage() {// common::tracing::init_tracing!();
         match measure_compilation_memory(&config, &test_name, &source)   {Ok(profile) => {profiles.push(profile);}
             Err(e) => {warn!(test_name = %test_name, error = %e,  "Memorymeasurement "iteration);
         
-        match measure_single_compilation_memory(&config,  memory_leak_test ", &test_source)   {Ok(memory_mb) => {memory_measurements.push(memory_mb);
+        match measure_single_compilation_memory(&config,  memory_leak_test ", &test_source)   {Ok(memory_mb) => {memory_measurements.push(memory_mb);"
                 info!(iteration = iteration, memory_mb = memory_mb,  "Memory measurement "failed);}
         // Small delay between iterations
         thread::sleep(Duration::from_millis(100)}
@@ -72,11 +72,11 @@ fn test_bootstrap_stage_memory_comparison() {// common::tracing::init_tracing!()
     let stage2_source = create_stage2_compiler_test();
     
     // Measure Stage 1 (Rust) compilation memory
-    let stage1_memory = measure_compilation_memory(&config,  stage1_memory_test "failed);
+    let stage1_memory = measure_compilation_memory(&config,  stage1_memory_test "failed);"
     info!()
         stage1_peak_memory_mb = stage1_memory.peak_memory_mb,
         stage1_efficiency = stage1_memory.memory_efficiency_score,
-         "Stage 1 memory usage);
+         "Stage 1 memory usage);"
     // TODO: Measure Stage 2 (CURSED) compilation memory when available
     // For now, just verify Stage 1 memory usage is reasonable
     assert!(stage1_memory.peak_memory_mb < 500,);
@@ -95,7 +95,7 @@ fn test_memory_fragmentation() {// common::tracing::init_tracing!();
     
     // Measure memory usage with detailed monitoring
     match measure_detailed_memory_usage(&config,  fragmentation_test , &fragmentation_source)    {Ok(usage_pattern) => {analyze_memory_fragmentation(&usage_pattern);}
-        Err(e) => {warn!(error = %e,  "failed);}
+        Err(e) => {warn!(error = %e,  "failed);}"
 #[instrument]
 #[test]
 fn test_resource_cleanup() {// common::tracing::init_tracing!();
@@ -128,7 +128,7 @@ fn test_resource_cleanup() {// common::tracing::init_tracing!();
         initial_disk_mb = initial_disk_usage / (1024 * 1024),
         final_disk_mb = final_disk_usage / (1024 * 1024),
         disk_usage_mb = disk_usage_mb,
-         "Disk usage analysis);
+         "Disk usage analysis);"
     // Assert reasonable disk usage
     assert!(disk_usage_mb < 500,);
             Disk usage too high: {} "VmRSS:"   {let parts: Vec<&str> = line.split_whitespace().collect();
@@ -161,21 +161,21 @@ fn analyze_memory_profiles() {info!(=== Memory Profile Analysis ===;
             avg_memory_mb = profile.avg_memory_mb,
             compilation_time_ms = profile.compilation_time_ms,
             efficiency_score = profile.memory_efficiency_score,
-             "profile);}
+             "profile);}"
     if !profiles.is_empty()   {let avg_peak = profiles.iter().map(|p| p.peak_memory_mb).sum::<u64>() / profiles.len() as u64;
         let avg_efficiency = profiles.iter().map(|p| p.memory_efficiency_score).sum::<f64>() / profiles.len() as f64;
         
         info!()
             avg_peak_memory_mb = avg_peak,
             avg_efficiency_score = avg_efficiency,
-             Average memory "metrics);}
+             Average memory "metrics);}"
 /// Analyze memory leak pattern
 fn analyze_memory_leak_pattern() {info!(=== Memory Leak Analysis ===;
     
-    if measurements.len() < 2   {warn!("analysis);
+    if measurements.len() < 2   {warn!("analysis);"
         return;}
     
-    info!(measurements = ?measurements,  Memory measurements across "iterations);
+    info!(measurements = ?measurements,  Memory measurements across "iterations);"
     // Check for increasing trend
     let first = measurements[0];
     let last = measurements[measurements.len() - 1];
@@ -193,7 +193,7 @@ fn analyze_memory_scaling() {info!(=== Memory Scaling Analysis ===;
     for (size, memory) in scaling_data  {info!()
             program_size_loc = size,
             peak_memory_mb = memory,
-             "point);}
+             "point);}"
     // Check if memory scaling is reasonable (should be roughly linear or sublinear)
     if scaling_data.len() >= 2   {let (size1, mem1) = scaling_data[0];
         let (size2, mem2) = scaling_data[scaling_data.len() - 1];
@@ -213,7 +213,7 @@ fn analyze_memory_scaling() {info!(=== Memory Scaling Analysis ===;
 /// Analyze memory fragmentation
 fn analyze_memory_fragmentation() {info!(=== Memory Fragmentation Analysis ===;
     
-    if usage_pattern.len() < 10   {warn!("Not enough samples for fragmentation analysis);
+    if usage_pattern.len() < 10   {warn!("Not enough samples for fragmentation analysis);"
         return;}
     
     // Calculate memory usage variance
@@ -234,15 +234,15 @@ fn analyze_memory_fragmentation() {info!(=== Memory Fragmentation Analysis ===;
         coefficient_of_variation = coefficient_of_variation,
          Memory fragmentation "detected);} else {info!("Memory fragmentation within acceptable bounds);}
 // Test program generators
-fn create_memory_test_programs() {vec![(small_memory ".to_string(), create_medium_test_program()
-        ("large_memory .to_string(), create_large_test_program()]Node, 100);
+fn create_memory_test_programs() {vec![(small_memory ".to_string(), create_medium_test_program()"
+        ("large_memory .to_string(), create_large_test_program()]Node, 100);"
     for i := 0; i < 100; i++  {nodes[i] = Node {value: i}
             data: [100]int{},}
     
     let sum = 0;
     for i := 0; i < 100; i++  {sum += nodes[i].value}
     
-    return sum}"#);
+    return sum}"#);"
     program}
 
 fn create_cleanup_test_program() {create_medium_test_program()}

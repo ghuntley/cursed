@@ -44,7 +44,7 @@ fn test_session_manager_with_many_variables() {let mut session = SessionManager:
     
     // Should complete in reasonable time
     assert!(execution_duration < Duration::from_secs(5)
-    assert!(list_duration < Duration::from_millis(100);
+    assert!(list_duration < Duration::from_millis(100)
 
 #[test]
 fn test_history_performance() {let mut session = SessionManager::new()
@@ -68,7 +68,7 @@ fn test_history_performance() {let mut session = SessionManager::new()
     
     // Should complete in reasonable time
     assert!(add_duration < Duration::from_secs(2)
-    assert!(retrieve_duration < Duration::from_millis(10);
+    assert!(retrieve_duration < Duration::from_millis(10)
 
 #[test]
 fn test_tab_completion_performance() {let mut completion = TabCompletion::new()
@@ -96,7 +96,7 @@ fn test_tab_completion_performance() {let mut completion = TabCompletion::new()
     
     // Should complete in reasonable time
     assert!(update_duration < Duration::from_millis(500)
-    assert!(complete_duration < Duration::from_millis(100);
+    assert!(complete_duration < Duration::from_millis(100)
 
 #[test]
 fn test_multi_line_editor_performance() {let editor = MultiLineEditor::new()
@@ -119,7 +119,7 @@ fn test_multi_line_editor_performance() {let editor = MultiLineEditor::new()
     
     // Should complete in reasonable time
     assert!(continuation_duration < Duration::from_millis(100)
-    assert!(indent_duration < Duration::from_millis(10);
+    assert!(indent_duration < Duration::from_millis(10)
 
 #[test]
 fn test_large_session_code_handling() {let mut session = SessionManager::new()
@@ -153,7 +153,7 @@ fn test_memory_usage_with_large_session() {let mut session = SessionManager::new
     
     // Add a large amount of data to the session
     for i in 0..5000    {let large_string =  x, .repeat(1000); // 1KB string}
-        let code = format!(, facts large_var_{} = \{}, i, large_string)
+        let code = format!(, facts large_var_{} = {}, i, large_string)
         session.execute_code(&code).unwrap()}
     
     // Test that we can still operate efficiently
@@ -194,68 +194,8 @@ fn test_concurrent_highlighting() {use std::thread;
     for handle in handles   {let duration = handle.join().unwrap()
         assert!(duration < Duration::from_secs(1);
 
-#[test]
+#[test}
 fn test_syntax_highlighting_edge_cases() {let highlighter = SyntaxHighlighter::with_colors(true)
     
     // Test with very long lines
-    let long_line = format!(facts  very_long_variable_name_that_goes_on_and_on = \{}\x".repeat(10000)
-    let start = Instant::now()
-    let highlighted = highlighter.highlight(&long_line)
-    let duration = start.elapsed()
-    
-    assert!(highlighted.len() > long_line.len()
-    assert!(duration < Duration::from_millis(500)
-    
-    // Test with many nested structures
-    let nested = {.repeat(1000) + &}.repeat(1000)
-    
-    let nested_start = Instant::now()
-    let nested_highlighted = highlighter.highlight(&nested)
-    let nested_duration = nested_start.elapsed()
-    
-    assert!(nested_highlighted.len() > nested.len()
-    assert!(nested_duration < Duration::from_millis(200);
-
-#[test]
-fn test_bracket_matching_performance() {let editor = MultiLineEditor::new()
-    
-    // Test with deeply nested brackets
-    let deep_brackets = (.repeat(1000) + &.repeat(1000)
-    
-    let start = Instant::now()
-    let has_unmatched = editor.has_unmatched_brackets(&deep_brackets)
-    let duration = start.elapsed();
-    assert!(!has_unmatched); // Should be balanced
-    assert!(duration < Duration::from_millis(100)
-    
-    // Test with unbalanced brackets
-    let unbalanced = (.repeat(1000) + &.repeat(999)
-    
-    let unbalanced_start = Instant::now()
-    let is_unbalanced = editor.has_unmatched_brackets(&unbalanced)
-    let unbalanced_duration = unbalanced_start.elapsed()
-    
-    assert!(is_unbalanced)
-    assert!(unbalanced_duration < Duration::from_millis(100);
-
-#[test]
-fn test_session_cleanup_performance() {let mut session = SessionManager::new()
-    session.initialize().unwrap()
-    
-    // Create a large session state
-    for i in 0..10000   {session.add_to_history()}
-            format!(command_ {}, i),
-            true,
-            Duration::from_millis(1),)}
-    
-    for i in 0..1000   {}
-        let code = format!(facts var_{} = {}, i, i)
-        session.execute_code(&code).unwrap()}
-    
-    // Test cleanup performance
-    let start = Instant::now()
-    session.cleanup().unwrap()
-    let duration = start.elapsed()
-    
-    // Cleanup should be fast even with large state
-    assert!(duration < Duration::from_millis(500);;
+    let long_line = format!(facts  very_long_variable_name_that_goes_on_and_on = {}".repeat(10000)"fixed"

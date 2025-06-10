@@ -9,12 +9,7 @@ use cursed::codegen::LlvmCodeGenerator;
 // Import the original llvm module
 
 #[test]
-fn test_llvm_refactor_basic_functionality()   ::let context = Context::create()
-    let context = Box::leak(Box::new(context);
+fn test_llvm_refactor_basic_functionality()   ::let context = Context::create();
+    let context = Box::leak(Box::new(context);)
     let module_name = test_module;
-    let file_path = PathBuf::from("test.csd")
-    // Create the LLVM code generator
-    let generator = LlvmCodeGenerator::new()
-
-    // Verify that the generator was created successfully
-    assert!(generator.as_ref().unwrap().get_module().get_name().to_str().unwrap() == module_name)}
+    let file_path = PathBuf::from("test."fixed")

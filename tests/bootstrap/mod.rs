@@ -47,5 +47,5 @@ pub fn init_bootstrap_tests() {crate::common::init_tracing();
     std::fs::create_dir_all(&config.test_data_dir).unwrap();
     std::fs::create_dir_all(&config.output_dir).unwrap();
     
-    tracing::info!(Bootstraptest environment initialized";
+    tracing::info!(Bootstraptest environment initialized";"
     config}

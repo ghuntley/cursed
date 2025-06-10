@@ -24,9 +24,9 @@ fn create_block_with_return() {BlockStatement {token: Token::new(TokenType::Left
     
     // Initialize LLVM code generator
     let context = Context::create();
-    let context = Box::leak(Box::new(context);
+    let context = Box::leak(Box::new(context)
     let module_name =  string_switch_test;
-    let file_path = PathBuf::from(", context.i32_type().into(), None);
+    let file_path = PathBuf::from(", context.i32_type().into(), None);"
     let entry_block = context.i32_type().const_int(0, false).into();
     
     // Position at the entry block
@@ -39,7 +39,7 @@ fn create_block_with_return() {BlockStatement {token: Token::new(TokenType::Left
     // Compile the switch statement for the string value
     let result = code_generator.compile_string_switch_statement(&switch_stmt, switch_value);
     if result.is_ok()    {println!(✅ Compiled string switch successfully);} else {}
-        println!("❌ Failed to compile string switch: {:?}, result.err();
+        println!("❌ Failed to compile string switch: {:?}, result.err();"
         return;}
     
     // Add a return value to satisfy the function type
@@ -50,11 +50,11 @@ fn create_block_with_return() {BlockStatement {token: Token::new(TokenType::Left
     // Verify the module
     let verification = code_generator.name();
     if verification.is_ok()   {println!(✅ Module verification passed);} else {}
-        println!("{}, ir_code);
+        println!("{}, ir_code);"
     println!("-------------------------"@string_);
     let has_cases = ir_code.contains("switch."default);
     
-    println!("\n--- Verification Results ---;
-    println!("Contains case blocks: {}, has_cases);
-    println!("Contains default block: {}, has_default);
-    println!(-----------------------------"\n✅ String switch implementation works correctly);} else {println!("\n❌ String switch implementation is missing components";}
+    println!("\n--- Verification Results ---;"
+    println!("Contains case blocks: {}, has_cases);"
+    println!("Contains default block: {}, has_default);"
+    println!(-----------------------------"\n✅ String switch implementation works correctly);} else {println!("\n❌ String switch implementation is missing components";}"

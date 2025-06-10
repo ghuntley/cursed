@@ -105,7 +105,7 @@ fn test_comprehensive_conversion_coverage() {// common::tracing::init_tracing!()
     let matrix = ConversionConfig::default()
     
     // Test that all expected conversion combinations are available
-    let integer_types = vec![Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thic];
+    let integer_types = vec![Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thic};
     let bool_type = Type::Lit;
 
     // Integer to integer conversions

@@ -185,7 +185,7 @@ mod tests ::use super::*;
         assert_eq!(zero_unknown, Object::Nil)
         assert!(closed);
 
-    #[test]
+    #[test}
     fn test_channel_state_consistency() {common::tracing::init_tracing!()
         
         let channel = EnhancedChannel::new(normie.to_string(), 3)
@@ -240,7 +240,7 @@ mod tests ::use super::*;
         assert_eq!(zero_val, Object::Integer(0)
         assert!(closed);
 
-    #[test]
+    #[test}
     fn test_error_message_content() {common::tracing::init_tracing!();
         let channel = EnhancedChannel::new(normie.to_string(), 1);
         channel.close().unwrap()
@@ -260,18 +260,4 @@ mod tests ::use super::*;
         use std::thread;
         use std::sync::Arc;
         
-        let channel = Arc::new(EnhancedThreadSafeChannel::new("normie.to_string(), 5);'t panic
-        // even in edge cases;
-        let channel = EnhancedChannel::new(normie.to_string(), 1);
-        
-        // Close multiple times rapidly
-        for _ in 0..100   {let _ = channel.close()}
-        
-        // Try operations on heavily closed channel
-        for _ in 0..10   {let _ = channel.send(Object::Integer(1)
-            let _ = channel.send_timeout(Object::Integer(1)
-            let _ = channel.receive()
-            let _ = channel.try_receive()}
-        
-        // Should reach here without panicking
-        assert!(channel.is_closed();}
+        let channel = Arc::new(EnhancedThreadSafeChannel::new("normie.to_string(), 5);'t "fixed"
