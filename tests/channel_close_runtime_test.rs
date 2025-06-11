@@ -3,11 +3,7 @@
 //! This test suite verifies the FFI boundary functions for channel operations
 //! including proper error code handling and panic protection.
 
-use std::ffi::c_void;
 use std::sync::Arc;
-
-use cursed::runtime::channels::runtime::{cursed_make_channel, cursed_send_to_channel, cursed_receive_from_channel, cursed_close_channel};
-use cursed::object::{Object, Value};
 
 #[cfg(test)]
 mod tests {

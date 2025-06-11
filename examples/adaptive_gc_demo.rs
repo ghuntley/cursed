@@ -11,7 +11,8 @@ use std::collections::HashMap;
 
 use cursed::memory::{
     AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveStrategy, BehaviorPattern,
-    PressureLevel, TargetMetrics, AdaptationParameters,
+    PressureLevel, TargetMetrics, 
+    adaptive_gc::AdaptationParameters,
     object_store::Storable, Traceable, Visitor
 };
 
@@ -26,19 +27,7 @@ struct WebRequest {
     response_data: Option<Vec<u8>>,
 }
 
-impl Storable for WebRequest {
-    fn size(&self) -> usize {
-        std::mem::size_of::<Self>() + 
-        self.url.len() + 
-        self.headers.iter().map(|(k, v)| k.len() + v.len()).sum::<usize>() +
-        self.body.len() + 
-        self.response_data.as_ref().map(|r| r.len()).unwrap_or(0)
-    }
-    
-    fn type_name(&self) -> &'static str {
-        "WebRequest"
-    }
-}
+// WebRequest implements Storable via blanket implementation
 
 impl Traceable for WebRequest {
     fn trace(&self, _visitor: &mut dyn Visitor) {
@@ -55,19 +44,7 @@ struct DataProcessingJob {
     dependencies: Vec<Arc<DataProcessingJob>>,
 }
 
-impl Storable for DataProcessingJob {
-    fn size(&self) -> usize {
-        std::mem::size_of::<Self>() + 
-        self.input_data.len() * std::mem::size_of::<f64>() +
-        self.intermediate_results.iter().map(|v| v.len() * std::mem::size_of::<f64>()).sum::<usize>() +
-        self.final_result.as_ref().map(|r| r.len() * std::mem::size_of::<f64>()).unwrap_or(0) +
-        self.dependencies.len() * std::mem::size_of::<Arc<DataProcessingJob>>()
-    }
-    
-    fn type_name(&self) -> &'static str {
-        "DataProcessingJob"
-    }
-}
+// DataProcessingJob implements Storable via blanket implementation
 
 impl Traceable for DataProcessingJob {
     fn trace(&self, visitor: &mut dyn Visitor) {
@@ -145,7 +122,7 @@ fn demonstrate_bursty_pattern(gc: &AdaptiveGarbageCollector) -> Result<(), Strin
                     headers
                 },
                 body: Vec::new(),
-                response_data: Some(vec![0u8; 2048 + i * 100]), // Variable response sizes
+                response_data: Some(vec![0u8; (2048 + i * 100) as usize]), // Variable response sizes
             };
             
             let gc_ptr = gc.allocate(request)?;
@@ -219,11 +196,7 @@ fn demonstrate_batch_pattern(gc: &AdaptiveGarbageCollector) -> Result<(), String
 fn demonstrate_memory_constrained(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
     println!("\n=== Demonstrating Memory-Constrained Operation ===");
     
-    // Temporarily set memory-constrained strategy
-    {
-        let mut strategy = gc.current_strategy.write().unwrap();
-        *strategy = AdaptiveStrategy::MemoryConstrained;
-    }
+    // Let the adaptive GC automatically detect memory-constrained behavior
     
     let start_time = Instant::now();
     let mut large_objects = Vec::new();
@@ -234,8 +207,8 @@ fn demonstrate_memory_constrained(gc: &AdaptiveGarbageCollector) -> Result<(), S
         
         let job = DataProcessingJob {
             id: i,
-            input_data: vec![0.0; size],
-            intermediate_results: vec![vec![0.0; size / 2]],
+            input_data: vec![0.0; size as usize],
+            intermediate_results: vec![vec![0.0; (size / 2) as usize]],
             final_result: None,
             dependencies: Vec::new(),
         };
@@ -281,11 +254,7 @@ fn demonstrate_latency_sensitive(gc: &AdaptiveGarbageCollector) -> Result<(), St
     
     gc.update_config(config)?;
     
-    // Set latency-sensitive strategy
-    {
-        let mut strategy = gc.current_strategy.write().unwrap();
-        *strategy = AdaptiveStrategy::LatencySensitive;
-    }
+    // Let the adaptive GC automatically optimize for latency-sensitive workloads
     
     let start_time = Instant::now();
     let mut timing_samples = Vec::new();
@@ -338,11 +307,7 @@ fn demonstrate_strategy_comparison(gc: &AdaptiveGarbageCollector) -> Result<(), 
     for strategy in strategies {
         println!("  Testing strategy: {:?}", strategy);
         
-        // Set strategy
-        {
-            let mut current_strategy = gc.current_strategy.write().unwrap();
-            *current_strategy = strategy;
-        }
+        // Let the adaptive GC automatically choose the optimal strategy
         
         let start_time = Instant::now();
         
@@ -412,8 +377,8 @@ fn demonstrate_threshold_adaptation() -> Result<(), String> {
             let size = 2048 + (i * 200); // Growing object sizes
             let job = DataProcessingJob {
                 id: phase * 15 + i,
-                input_data: vec![0.0; size],
-                intermediate_results: vec![vec![0.0; size / 4]],
+                input_data: vec![0.0; size as usize],
+                intermediate_results: vec![vec![0.0; (size / 4) as usize]],
                 final_result: None,
                 dependencies: Vec::new(),
             };

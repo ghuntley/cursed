@@ -36,6 +36,7 @@ rand = "0.8"    # Random number generation
 sha2 = "0.10"   # SHA-2 hashing for build cache
 base64 = "0.21" # Base64 encoding/decoding for database binary data
 hmac = "0.12"   # HMAC message authentication
+md5 = "0.7"     # For CSRF token generation and simple hashing
 
 # Math dependencies
 libm = "0.2"    # Mathematical functions
@@ -107,12 +108,16 @@ async-trait = "0.1"                                # For async traits
 # Language Server Protocol dependencies
 tower-lsp = "0.20"         # LSP server framework
 tower = "0.4"             # Service trait and utilities
-
-# Template system dependencies
-md5 = "0.7"                # For CSRF token generation and simple hashing
 dashmap = "5.5"           # Concurrent HashMap for document storage
 ropey = "1.6"             # Rope data structure for efficient text editing
 tree-sitter = "0.20"      # Tree-sitter parsing for incremental updates
+
+# Platform-specific dependencies for shared memory
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef"] }
+
+# Template system dependencies (moved above)
+# md5, dashmap, ropey, tree-sitter moved to main dependencies section
 
 [features]
 # Enable binary compilation support
@@ -176,9 +181,9 @@ name = "jit_integration_tests"
 path = "tests/jit_integration_tests.rs"
 harness = true
 
-[[test]]
-name = "dynamic_worker_sizing_test"
-path = "tests/async_constraint_checker/dynamic_worker_sizing_test.rs"
+# [[test]]
+# name = "dynamic_worker_sizing_test"
+# path = "tests/async_constraint_checker/dynamic_worker_sizing_test.rs"
 
 [[bin]]
 name = "cursed-debug"

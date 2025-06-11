@@ -19,6 +19,7 @@ pub mod env;
 pub mod testing;
 pub mod process;
 pub mod sync;
+pub mod ipc;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -392,6 +393,61 @@ pub use sync::{
     
     // Global thread pool management
     init_global_thread_pool, shutdown_global_thread_pool, get_thread_pool_utilization,
+};
+
+// Inter-Process Communication re-exports - Comprehensive IPC support
+pub use ipc::{
+    // Error handling system
+    IpcError, IpcResult, communication_error as ipc_communication_error, security_error, resource_error, timeout_error as ipc_timeout_error,
+    invalid_operation, permission_denied as ipc_permission_denied, resource_exhausted, connection_failed,
+    
+    // Core IPC types and traits
+    ProcessId, IpcHandle, IpcPermissions, IpcMode, IpcTimeout, IpcConfig, IpcStatistics,
+    SharedMemoryId, MessageQueueId, SemaphoreId, PipeId, ResourceLimits as IpcResourceLimits,
+    IpcChannel, IpcReader, IpcWriter, IpcBidirectional, Synchronizable, Lockable, 
+    Waitable, Signalable, Serializable, Deserializable, IpcResource,
+    
+    // Shared Memory operations
+    SharedMemory as IpcSharedMemory, SharedMemoryConfig, SharedMemoryRegion, SharedMemoryAccess,
+    create_shared_memory, open_shared_memory, remove_shared_memory,
+    
+    // Named Pipes operations
+    NamedPipe as IpcNamedPipe, AnonymousPipe, PipeConfig, PipeMode, PipeEnd,
+    create_pipe as ipc_create_pipe, create_named_pipe, open_pipe, connect_pipe,
+    
+    // Message Queue operations
+    MessageQueue as IpcMessageQueue, Message, MessageType, MessagePriority, MessageConfig,
+    create_message_queue, open_message_queue, remove_message_queue,
+    send_message, receive_message, peek_message,
+    
+    // Semaphore operations
+    Semaphore as IpcSemaphore, SemaphoreConfig, SemaphoreValue, SemaphorePermissions,
+    create_semaphore, open_semaphore, remove_semaphore,
+    acquire_semaphore, release_semaphore, try_acquire_semaphore,
+    
+    // Signal handling
+    SignalHandler, Signal as IpcSignal, SignalAction, SignalMask, SignalConfig,
+    send_signal, block_signal, unblock_signal, ignore_signal as ipc_ignore_signal,
+    register_signal_handler, unregister_signal_handler, wait_for_signal, signal_pending,
+    
+    // Domain Socket operations
+    DomainSocket, UnixSocket, SocketConfig, SocketType, SocketAddress,
+    create_socket, bind_socket, listen_socket, accept_connection, connect_socket,
+    
+    // Remote Procedure Call infrastructure
+    RpcClient, RpcServer, RpcConfig, RpcMethod, RpcRequest, RpcResponse,
+    RpcError, RpcHandler, RpcRegistry, RpcTransport,
+    create_rpc_server, create_rpc_client, register_rpc_method, call_remote_method,
+    
+    // Security and permissions management
+    IpcSecurityContext, SecurityPolicy, AccessControl, Permission,
+    Credential, AuthenticationMethod, AuthorizationResult,
+    create_security_context, validate_permissions, check_access,
+    encrypt_ipc_data, decrypt_ipc_data, generate_ipc_token,
+    
+    // Module management
+    initialize as initialize_ipc, shutdown as shutdown_ipc, get_ipc_statistics,
+    ResourceContentionStats, IpcPerformanceMetrics,
 };
 
 pub use dot_registry::DOT_REGISTRY;
