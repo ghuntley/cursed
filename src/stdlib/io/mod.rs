@@ -11,7 +11,7 @@
 /// 
 /// ## Basic I/O
 /// ```rust
-/// use cursed::stdlib::io::{println, read_line};
+/// use crate::stdlib::io::{println, read_line};
 /// 
 /// println("Hello, World!")?;
 /// let name = read_line()?;
@@ -20,7 +20,7 @@
 /// 
 /// ## Interactive prompts
 /// ```rust
-/// use cursed::stdlib::io::{prompt, confirm, select};
+/// use crate::stdlib::io::{prompt, confirm, select};
 /// 
 /// let name = prompt("Enter your name: ")?;
 /// let proceed = confirm("Do you want to continue?")?;
@@ -31,7 +31,7 @@
 /// 
 /// ## Buffered I/O
 /// ```rust
-/// use cursed::stdlib::io::{buffered_stdin, buffered_stdout};
+/// use crate::stdlib::io::{buffered_stdin, buffered_stdout};
 /// 
 /// let mut reader = buffered_stdin();
 /// let mut writer = buffered_stdout();

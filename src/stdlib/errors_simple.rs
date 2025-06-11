@@ -3,7 +3,10 @@
 //! This module provides basic error constructors and utilities that integrate
 //! with the CURSED error handling system without type conflicts.
 
-use crate::error::{CursedError, SourceLocation};
+use crate::error::SourceLocation;
+
+// Re-export CursedError for use by other stdlib modules
+pub use crate::error::CursedError;
 use crate::error::types::{
     ErrorManager, ErrorManagerConfig, ErrorCategory, ErrorSeverity
 };

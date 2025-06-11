@@ -13,7 +13,7 @@ use super::error::{EnvError, EnvResult, not_found_error, invalid_value_error};
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env;
+/// use crate::stdlib::env::parse_env;
 /// 
 /// let port: u16 = parse_env("PORT")?;
 /// let debug: bool = parse_env("DEBUG")?;
@@ -42,7 +42,7 @@ where
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_with_default;
+/// use crate::stdlib::env::parse_env_with_default;
 /// 
 /// let port: u16 = parse_env_with_default("PORT", 8080)?;
 /// let timeout: u64 = parse_env_with_default("TIMEOUT", 30)?;
@@ -66,7 +66,7 @@ where
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_path_env;
+/// use crate::stdlib::env::get_path_env;
 /// 
 /// if let Some(paths) = get_path_env("PATH") {
 ///     for path in paths {
@@ -93,7 +93,7 @@ pub fn get_path_env(key: &str) -> Option<Vec<PathBuf>> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_int_env;
+/// use crate::stdlib::env::get_int_env;
 /// 
 /// let max_connections = get_int_env("MAX_CONNECTIONS")?;
 /// ```
@@ -107,7 +107,7 @@ pub fn get_int_env(key: &str) -> EnvResult<i64> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_float_env;
+/// use crate::stdlib::env::get_float_env;
 /// 
 /// let cpu_threshold = get_float_env("CPU_THRESHOLD")?;
 /// ```
@@ -123,7 +123,7 @@ pub fn get_float_env(key: &str) -> EnvResult<f64> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_bool_env;
+/// use crate::stdlib::env::get_bool_env;
 /// 
 /// let debug_mode = get_bool_env("DEBUG")?;
 /// let enable_logging = get_bool_env("ENABLE_LOGGING")?;
@@ -149,7 +149,7 @@ pub fn get_bool_env(key: &str) -> EnvResult<bool> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_numeric_env;
+/// use crate::stdlib::env::get_numeric_env;
 /// 
 /// let port: u16 = get_numeric_env("PORT", 1, 65535)?;
 /// let percentage: f64 = get_numeric_env("CPU_LIMIT", 0.0, 100.0)?;
@@ -179,7 +179,7 @@ where
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_list;
+/// use crate::stdlib::env::parse_env_list;
 /// 
 /// // ALLOWED_HOSTS=localhost,127.0.0.1,example.com
 /// let hosts = parse_env_list("ALLOWED_HOSTS")?;
@@ -202,7 +202,7 @@ pub fn parse_env_list(key: &str) -> EnvResult<Vec<String>> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_colon_list;
+/// use crate::stdlib::env::parse_env_colon_list;
 /// 
 /// // LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
 /// let paths = parse_env_colon_list("LD_LIBRARY_PATH")?;
@@ -225,7 +225,7 @@ pub fn parse_env_colon_list(key: &str) -> EnvResult<Vec<String>> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_semicolon_list;
+/// use crate::stdlib::env::parse_env_semicolon_list;
 /// 
 /// // PATH=C:\Program Files;C:\Windows\System32
 /// let paths = parse_env_semicolon_list("PATH")?;
@@ -248,7 +248,7 @@ pub fn parse_env_semicolon_list(key: &str) -> EnvResult<Vec<String>> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_path_list;
+/// use crate::stdlib::env::parse_env_path_list;
 /// 
 /// let library_paths = parse_env_path_list("LD_LIBRARY_PATH")?;
 /// ```
@@ -271,7 +271,7 @@ pub fn parse_env_path_list(key: &str) -> EnvResult<Vec<String>> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_config;
+/// use crate::stdlib::env::parse_env_config;
 /// 
 /// // DATABASE_CONFIG=host=localhost,port=5432,user=admin
 /// let config = parse_env_config("DATABASE_CONFIG", ",")?;
@@ -308,7 +308,7 @@ pub fn parse_env_config(key: &str, separator: &str) -> EnvResult<std::collection
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_duration;
+/// use crate::stdlib::env::parse_env_duration;
 /// 
 /// // TIMEOUT=30s or TIMEOUT=5m or TIMEOUT=2h
 /// let timeout = parse_env_duration("TIMEOUT")?;
@@ -361,7 +361,7 @@ pub fn parse_env_duration(key: &str) -> EnvResult<std::time::Duration> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::parse_env_memory_size;
+/// use crate::stdlib::env::parse_env_memory_size;
 /// 
 /// // MAX_MEMORY=512MB or MAX_MEMORY=2GB
 /// let max_memory = parse_env_memory_size("MAX_MEMORY")?;

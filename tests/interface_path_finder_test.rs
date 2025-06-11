@@ -1,14 +1,16 @@
 use std::collections::HashSet;
-use 
 use inkwell::context::Context;
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use 
 use cursed::error::Error;
 
 #[cfg(test)]
-mod tests {}
+mod tests {
     use super::*;
-use 
 
     #[test]
-    #[ignore = "Interface path finder functionality not fully implemented";
+    #[ignore = "Interface path finder functionality not fully implemented"]
+    fn test_interface_path_finder_placeholder() {
+        // This test is ignored until the interface path finder is fully implemented
+        assert!(true, "Interface path finder test placeholder");
+    }
+}

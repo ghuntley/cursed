@@ -53,8 +53,8 @@ where
     }
 
     /// Insert an element into the set
-    pub fn insert(&mut self, value: T) -> bool {
-        self.inner.insert(value)
+    pub fn insert(&mut self, value: T) -> CollectionsResult<bool> {
+        Ok(self.inner.insert(value))
     }
 
     /// Remove an element from the set
@@ -72,6 +72,10 @@ where
         self.inner.len()
     }
 
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
+    }
     /// Check if the set is empty
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
@@ -209,8 +213,8 @@ where
     }
 
     /// Insert an element into the set
-    pub fn insert(&mut self, value: T) -> bool {
-        self.inner.insert(value)
+    pub fn insert(&mut self, value: T) -> CollectionsResult<bool> {
+        Ok(self.inner.insert(value))
     }
 
     /// Remove an element from the set
@@ -228,6 +232,10 @@ where
         self.inner.len()
     }
 
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
+    }
     /// Check if the set is empty
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
@@ -753,9 +761,9 @@ mod tests {
         assert!(set.is_empty());
         assert_eq!(set.len(), 0);
         
-        assert!(set.insert("hello".to_string()));
-        assert!(!set.insert("hello".to_string())); // Already exists
-        assert!(set.insert("world".to_string()));
+        assert!(set.insert("hello".to_string()).unwrap());
+        assert!(!set.insert("hello".to_string()).unwrap()); // Already exists
+        assert!(set.insert("world".to_string()).unwrap());
         
         assert_eq!(set.len(), 2);
         assert!(!set.is_empty());

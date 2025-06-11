@@ -28,7 +28,7 @@ pub use discovery::{
 };
 pub use executor::{
     TestExecutor, TestExecutorConfig, TestResult, TestStatus, TestFailure,
-    ExecutionContext, TestTimeout, ParallelExecutor
+    ExecutionContext, TestTimeout, ParallelExecutor, SequentialExecutor
 };
 
 // Test runner and reporting
@@ -91,7 +91,7 @@ pub use macros::{
 };
 
 // Error handling for testing framework
-use crate::error::CursedError;
+use crate::stdlib::errors_simple::CursedError;
 
 /// Result type for testing operations
 pub type TestFrameworkResult<T> = Result<T, CursedError>;

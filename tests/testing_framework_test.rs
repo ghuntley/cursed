@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 use std::collections::HashMap;
-use crate::stdlib::testing::*;
+use cursed::stdlib::testing::*;
 
 #[test]
 fn test_basic_assertions() {
@@ -154,13 +154,12 @@ fn test_panic_assertions() {
     
     let no_panic_result = assert_panic(|| {
         // Function that doesn't panic
-        42
     });
     assert!(no_panic_result.is_err());
     
     // Test no panic assertion
     let no_panic_result2 = assert_no_panic(|| {
-        42
+        // Function that doesn't panic
     });
     assert!(no_panic_result2.is_ok());
     
@@ -232,7 +231,7 @@ fn test_test_discovery() {
         name: "test_example".to_string(),
         file_path: std::path::PathBuf::from("test_file.csd"),
         line_number: 10,
-        metadata: super::discovery::TestMetadata {
+        metadata: cursed::stdlib::testing::discovery::TestMetadata {
             ignore: false,
             should_panic: false,
             timeout: None,
@@ -264,14 +263,14 @@ fn test_test_executor() {
         fail_fast: false,
     };
     
-    let executor = crate::stdlib::testing::executor::SequentialExecutor::with_config(config);
+    let executor = cursed::stdlib::testing::executor::SequentialExecutor::with_config(config);
     
     // Create a simple test that should pass
     let passing_test = TestInfo {
         name: "test_pass".to_string(),
         file_path: std::path::PathBuf::from("test.csd"),
         line_number: 1,
-        metadata: super::discovery::TestMetadata::default(),
+        metadata: cursed::stdlib::testing::discovery::TestMetadata::default(),
         module: "test".to_string(),
         discovered_at: std::time::SystemTime::now(),
     };
@@ -284,7 +283,7 @@ fn test_test_executor() {
         name: "test_fail".to_string(),
         file_path: std::path::PathBuf::from("test.csd"),
         line_number: 2,
-        metadata: super::discovery::TestMetadata::default(),
+        metadata: cursed::stdlib::testing::discovery::TestMetadata::default(),
         module: "test".to_string(),
         discovered_at: std::time::SystemTime::now(),
     };
@@ -296,14 +295,14 @@ fn test_test_executor() {
 #[test]
 fn test_test_runner() {
     let config = TestRunnerConfig {
-        execution_mode: crate::stdlib::testing::framework::TestExecutionMode::Sequential,
+        execution_mode: cursed::stdlib::testing::framework::TestExecutionMode::Sequential,
         fail_fast: false,
         verbose: false,
         show_timing: true,
     };
     
     let runner = TestRunner::with_config(config);
-    let executor = crate::stdlib::testing::executor::SequentialExecutor::new();
+    let executor = cursed::stdlib::testing::executor::SequentialExecutor::new();
     
     // Create test suite
     let tests = vec![
@@ -311,7 +310,7 @@ fn test_test_runner() {
             name: "test_1".to_string(),
             file_path: std::path::PathBuf::from("test.csd"),
             line_number: 1,
-            metadata: super::discovery::TestMetadata::default(),
+            metadata: cursed::stdlib::testing::discovery::TestMetadata::default(),
             module: "test".to_string(),
             discovered_at: std::time::SystemTime::now(),
         },
@@ -319,7 +318,7 @@ fn test_test_runner() {
             name: "test_2".to_string(),
             file_path: std::path::PathBuf::from("test.csd"),
             line_number: 10,
-            metadata: super::discovery::TestMetadata::default(),
+            metadata: cursed::stdlib::testing::discovery::TestMetadata::default(),
             module: "test".to_string(),
             discovered_at: std::time::SystemTime::now(),
         },
@@ -430,7 +429,7 @@ fn create_mock_runner_result() -> RunnerResult {
                 name: "test_success".to_string(),
                 file_path: std::path::PathBuf::from("test.csd"),
                 line_number: 1,
-                metadata: super::discovery::TestMetadata::default(),
+                metadata: cursed::stdlib::testing::discovery::TestMetadata::default(),
                 module: "test".to_string(),
                 discovered_at: std::time::SystemTime::now(),
             },
@@ -446,7 +445,7 @@ fn create_mock_runner_result() -> RunnerResult {
                 name: "test_failure".to_string(),
                 file_path: std::path::PathBuf::from("test.csd"),
                 line_number: 10,
-                metadata: super::discovery::TestMetadata::default(),
+                metadata: cursed::stdlib::testing::discovery::TestMetadata::default(),
                 module: "test".to_string(),
                 discovered_at: std::time::SystemTime::now(),
             },
@@ -473,7 +472,7 @@ fn test_timeout_handling() {
 
 #[test]
 fn test_ignore_conditions() {
-    let context = super::attributes::IgnoreContext {
+    let context = cursed::stdlib::testing::attributes::IgnoreContext {
         platform: Some("linux".to_string()),
         features: vec!["experimental".to_string()],
         env_vars: {
@@ -484,16 +483,16 @@ fn test_ignore_conditions() {
         custom_data: HashMap::new(),
     };
     
-    let platform_condition = super::attributes::IgnoreCondition::Platform("linux".to_string());
+    let platform_condition = cursed::stdlib::testing::attributes::IgnoreCondition::Platform("linux".to_string());
     assert!(platform_condition.matches(&context));
     
-    let env_condition = super::attributes::IgnoreCondition::EnvVar("CI".to_string(), Some("true".to_string()));
+    let env_condition = cursed::stdlib::testing::attributes::IgnoreCondition::EnvVar("CI".to_string(), Some("true".to_string()));
     assert!(env_condition.matches(&context));
     
-    let feature_condition = super::attributes::IgnoreCondition::Feature("experimental".to_string());
+    let feature_condition = cursed::stdlib::testing::attributes::IgnoreCondition::Feature("experimental".to_string());
     assert!(feature_condition.matches(&context));
     
-    let wrong_platform = super::attributes::IgnoreCondition::Platform("windows".to_string());
+    let wrong_platform = cursed::stdlib::testing::attributes::IgnoreCondition::Platform("windows".to_string());
     assert!(!wrong_platform.matches(&context));
 }
 

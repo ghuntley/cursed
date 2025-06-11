@@ -26,10 +26,10 @@ fn test_hash_set_creation_and_basic_operations() {
     assert!(set_with_capacity.is_empty());
     
     // Test insertion
-    assert!(set.insert(1));  // First insertion returns true
-    assert!(!set.insert(1)); // Duplicate insertion returns false
-    assert!(set.insert(2));
-    assert!(set.insert(3));
+    assert!(set.insert(1).unwrap());  // First insertion returns true
+    assert!(!set.insert(1).unwrap()); // Duplicate insertion returns false
+    assert!(set.insert(2).unwrap());
+    assert!(set.insert(3).unwrap());
     
     assert_eq!(set.len(), 3);
     assert!(!set.is_empty());
@@ -252,7 +252,7 @@ fn test_tree_set_string_ordering() {
     ]);
     
     // Test that duplicates are not added
-    assert!(!set.insert("apple".to_string()));
+    assert_eq!(set.insert("apple".to_string()).unwrap(), false);
     assert_eq!(set.len(), 5);
 }
 
@@ -620,7 +620,7 @@ fn test_hash_set_performance_characteristics() {
     // Test insertion performance with large dataset
     let large_n = 10000;
     for i in 0..large_n {
-        assert!(set.insert(i));
+        assert!(set.insert(i).unwrap());
     }
     assert_eq!(set.len(), large_n);
     
@@ -631,7 +631,7 @@ fn test_hash_set_performance_characteristics() {
     
     // Test that duplicates don't increase size
     for i in 0..large_n {
-        assert!(!set.insert(i)); // Should all return false
+        assert!(!set.insert(i).unwrap()); // Should all return false
     }
     assert_eq!(set.len(), large_n);
     

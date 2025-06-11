@@ -153,8 +153,8 @@ fn test_stack_iterators() {
     stack.push_many(vec![1, 2, 3, 4, 5]);
     
     // Test iterator (top to bottom)
-    let items: Vec<&i32> = stack.iter().collect();
-    assert_eq!(items, vec![&5, &4, &3, &2, &1]);
+    let items: Vec<i32> = stack.iter().cloned().collect();
+    assert_eq!(items, vec![5, 4, 3, 2, 1]);
     
     // Test into_iter
     let items: Vec<i32> = stack.into_iter().collect();
@@ -229,8 +229,8 @@ fn test_fixed_stack_iterator() {
     let mut stack = FixedStack::new(10).unwrap();
     stack.push_many(vec![1, 2, 3, 4, 5]).unwrap();
     
-    let items: Vec<&i32> = stack.iter().collect();
-    assert_eq!(items, vec![&5, &4, &3, &2, &1]);
+    let items: Vec<i32> = stack.iter().cloned().collect();
+    assert_eq!(items, vec![5, 4, 3, 2, 1]);
 }
 
 // ==================== ThreadSafeStack Tests ====================
@@ -475,8 +475,8 @@ fn test_stack_with_min_bulk_operations() {
     assert_eq!(stack.min(), Some(&2));
     
     // Test iterator
-    let items: Vec<&i32> = stack.iter().collect();
-    assert_eq!(items, vec![&8, &2, &5]);
+    let items: Vec<i32> = stack.iter().cloned().collect();
+    assert_eq!(items, vec![8, 2, 5]);
 }
 
 #[test]

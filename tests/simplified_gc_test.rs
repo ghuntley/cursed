@@ -1,5 +1,5 @@
 use cursed::memory::gc::GarbageCollector;
-use cursed::memory::{Tag, Traceable, Visitor};
+use cursed::memory::{Traceable, Visitor};
 use std::sync::Arc;
 
 // A simplified test for the garbage collector
@@ -17,14 +17,6 @@ mod tests {
     impl Traceable for SimpleObject {
         fn trace(&self, _visitor: &mut dyn Visitor) {
             // Simple object has no references to trace
-        }
-
-        fn size(&self) -> usize {
-            std::mem::size_of::<Self>()
-        }
-
-        fn tag(&self) -> Tag {
-            Tag::Object
         }
     }
 

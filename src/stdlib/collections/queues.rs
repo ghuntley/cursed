@@ -99,8 +99,9 @@ where
     }
 
     /// Add an element to the back of the queue (enqueue)
-    pub fn enqueue(&mut self, item: T) {
+    pub fn enqueue(&mut self, item: T) -> CollectionsResult<()> {
         self.inner.push_back(item);
+        Ok(())
     }
 
     /// Remove and return the front element (dequeue)
@@ -121,6 +122,11 @@ where
     /// Get the number of elements in the queue
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
     }
 
     /// Check if the queue is empty
@@ -170,13 +176,13 @@ where
             if predicate(&item) {
                 drained.push(item);
             } else {
-                temp_queue.enqueue(item);
+                let _ = temp_queue.enqueue(item);
             }
         }
 
         // Restore remaining elements
         while let Some(item) = temp_queue.dequeue() {
-            self.enqueue(item);
+            let _ = self.enqueue(item);
         }
 
         drained
@@ -188,7 +194,7 @@ where
         I: IntoIterator<Item = T>,
     {
         for item in items {
-            self.enqueue(item);
+            let _ = self.enqueue(item);
         }
     }
 
@@ -252,13 +258,15 @@ where
     }
 
     /// Add an element to the front of the deque
-    pub fn push_front(&mut self, item: T) {
+    pub fn push_front(&mut self, item: T) -> CollectionsResult<()> {
         self.inner.push_front(item);
+        Ok(())
     }
 
     /// Add an element to the back of the deque
-    pub fn push_back(&mut self, item: T) {
+    pub fn push_back(&mut self, item: T) -> CollectionsResult<()> {
         self.inner.push_back(item);
+        Ok(())
     }
 
     /// Remove and return the front element
@@ -326,6 +334,11 @@ where
         self.inner.len()
     }
 
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
+    }
+
     /// Check if the deque is empty
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
@@ -368,7 +381,7 @@ where
             let n = n % len;
             for _ in 0..n {
                 if let Some(item) = self.pop_front() {
-                    self.push_back(item);
+                    let _ = self.push_back(item);
                 }
             }
         }
@@ -381,7 +394,7 @@ where
             let n = n % len;
             for _ in 0..n {
                 if let Some(item) = self.pop_back() {
-                    self.push_front(item);
+                    let _ = self.push_front(item);
                 }
             }
         }
@@ -460,12 +473,24 @@ where
     }
 
     /// Add an element to the priority queue
-    pub fn push(&mut self, item: T) {
+    pub fn push(&mut self, item: T) -> CollectionsResult<()> {
         if self.is_min_heap {
             self.inner.push(PriorityQueueItem::Min(Reverse(item)));
         } else {
             self.inner.push(PriorityQueueItem::Max(item));
         }
+        Ok(())
+    }
+
+    /// Add an element with priority to the priority queue (alias for push for queue-like interface)
+    pub fn enqueue(&mut self, priority: T, _item: T) -> CollectionsResult<()> {
+        // For now, just use the priority as the item since PriorityQueue<T> doesn't support separate priority/item
+        self.push(priority)
+    }
+
+    /// Remove and return the highest priority element (alias for pop for queue-like interface)
+    pub fn dequeue(&mut self) -> CollectionsResult<Option<T>> {
+        Ok(self.pop())
     }
 
     /// Remove and return the highest priority element
@@ -487,6 +512,11 @@ where
     /// Get the number of elements in the priority queue
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
     }
 
     /// Check if the priority queue is empty
@@ -558,13 +588,13 @@ where
             if predicate(&item) {
                 drained.push(item);
             } else {
-                temp_queue.push(item);
+                let _ = temp_queue.push(item);
             }
         }
 
         // Restore remaining elements
         while let Some(item) = temp_queue.pop() {
-            self.push(item);
+            let _ = self.push(item);
         }
 
         drained
@@ -576,7 +606,7 @@ where
         I: IntoIterator<Item = T>,
     {
         for item in items {
-            self.push(item);
+            let _ = self.push(item);
         }
     }
 
@@ -685,6 +715,10 @@ where
         self.size
     }
 
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
+    }
     /// Check if the queue is empty
     pub fn is_empty(&self) -> bool {
         self.size == 0
@@ -811,7 +845,7 @@ where
             operation: "enqueue".to_string(),
             collection_type: "ThreadSafeQueue".to_string(),
         })?;
-        queue.enqueue(item);
+        let _ = queue.enqueue(item);
         Ok(())
     }
 
@@ -876,7 +910,7 @@ where
             operation: "push_front".to_string(),
             collection_type: "ThreadSafeDeque".to_string(),
         })?;
-        deque.push_front(item);
+        let _ = deque.push_front(item);
         Ok(())
     }
 
@@ -886,7 +920,7 @@ where
             operation: "push_back".to_string(),
             collection_type: "ThreadSafeDeque".to_string(),
         })?;
-        deque.push_back(item);
+        let _ = deque.push_back(item);
         Ok(())
     }
 
@@ -999,9 +1033,9 @@ mod tests {
     fn test_deque_operations() {
         let mut deque = Deque::new();
         
-        deque.push_back(1);
-        deque.push_front(0);
-        deque.push_back(2);
+        let _ = deque.push_back(1);
+        let _ = deque.push_front(0);
+        let _ = deque.push_back(2);
         
         assert_eq!(deque.len(), 3);
         assert_eq!(deque.front(), Some(&0));

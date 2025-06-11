@@ -15,7 +15,7 @@ use super::error::{EnvError, EnvResult, expansion_error};
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::{set_env, expand_env_vars};
+/// use crate::stdlib::env::{set_env, expand_env_vars};
 /// 
 /// set_env("USER", "alice")?;
 /// set_env("HOME", "/home/alice")?;
@@ -33,7 +33,7 @@ pub fn expand_env_vars(input: &str) -> EnvResult<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::expand_env_vars_with_defaults;
+/// use crate::stdlib::env::expand_env_vars_with_defaults;
 /// use std::collections::HashMap;
 /// 
 /// let mut defaults = HashMap::new();
@@ -56,7 +56,7 @@ pub fn expand_env_vars_with_defaults(
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::has_env_vars;
+/// use crate::stdlib::env::has_env_vars;
 /// 
 /// assert!(has_env_vars("Path: $HOME/documents"));
 /// assert!(has_env_vars("User: ${USER}"));
@@ -73,7 +73,7 @@ pub fn has_env_vars(input: &str) -> bool {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::validate_env_syntax;
+/// use crate::stdlib::env::validate_env_syntax;
 /// 
 /// assert!(validate_env_syntax("${HOME}/docs").is_ok());
 /// assert!(validate_env_syntax("${INVALID").is_err()); // Missing }
@@ -131,7 +131,7 @@ pub fn validate_env_syntax(input: &str) -> EnvResult<()> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::extract_env_vars;
+/// use crate::stdlib::env::extract_env_vars;
 /// 
 /// let vars = extract_env_vars("${USER} works in ${HOME}/projects")?;
 /// assert!(vars.contains(&"USER".to_string()));
@@ -191,7 +191,7 @@ pub fn extract_env_vars(input: &str) -> EnvResult<Vec<String>> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::substitute_env_vars;
+/// use crate::stdlib::env::substitute_env_vars;
 /// use std::collections::HashMap;
 /// 
 /// let mut replacements = HashMap::new();
@@ -318,7 +318,7 @@ fn consume_simple_variable(chars: &mut std::iter::Peekable<std::str::Chars>) -> 
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::escape_env_value;
+/// use crate::stdlib::env::escape_env_value;
 /// 
 /// let escaped = escape_env_value("Value with $ and {}")?;
 /// // Result: "Value with \\$ and \\{\\}"
@@ -341,7 +341,7 @@ pub fn escape_env_value(value: &str) -> String {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::unescape_env_value;
+/// use crate::stdlib::env::unescape_env_value;
 /// 
 /// let unescaped = unescape_env_value("Value with \\$ and \\{\\}")?;
 /// // Result: "Value with $ and {}"

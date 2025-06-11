@@ -1,7 +1,7 @@
 /// Process-specific error types and error handling utilities
 use std::fmt;
 use std::io;
-use crate::error::CursedError;
+use crate::stdlib::errors_simple::CursedError;
 
 /// Process-specific error types
 #[derive(Debug, Clone, PartialEq)]
