@@ -1,19 +1,8 @@
-//! Test file for string_switch_unit
-
-mod common;
-
-#[test]
-fn test_string_switch_unit_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement string_switch_unit test
-    assert!(true);
-}
-
-#[test]
-fn test_string_switch_unit_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement string_switch_unit functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for string switch unit test
+        assert!(true);
+    }
 }

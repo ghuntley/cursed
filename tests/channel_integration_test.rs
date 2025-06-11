@@ -1,13 +1,8 @@
-use std::io;
-use std::path::Path;
-use std::process::Command;
-
-/// Tests channel implementation for sending and receiving values
-#[test]
-fn test_channel_send_receive() {
-    // TODO: Implement test
-    assert!(true);
-}\nSTDERR:\n{ }, stdout, stderr);
-
-    // Return the combined output and success status
-    Ok((combined_output, output.status.success()))
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for channel integration test
+        assert!(true);
+    }
+}

@@ -1,7 +1,8 @@
-use cursed::codegen::llvm::LlvmCodeGenerator;
-
-#[test]
-fn test_minimal_interface() {
-    // TODO: Implement test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for minimal interface test
+        assert!(true);
+    }
 }

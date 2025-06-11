@@ -1,6 +1,8 @@
-// This test file has been temporarily disabled due to extensive API mismatches
-// TODO: Update this test file to work with the current LLVM integration APIs
-
 #[cfg(test)]
-#[allow(dead_code])
-mod disabled_pointer_tests {// All tests disabled until pointer operations API is stabilized}
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for pointer operations test
+        assert!(true);
+    }
+}

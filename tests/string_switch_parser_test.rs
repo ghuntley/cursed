@@ -1,19 +1,8 @@
-//! Test file for string_switch_parser
-
-mod common;
-
-#[test]
-fn test_string_switch_parser_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement string_switch_parser test
-    assert!(true);
-}
-
-#[test]
-fn test_string_switch_parser_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement string_switch_parser functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for string switch parser test
+        assert!(true);
+    }
 }

@@ -1,8 +1,11 @@
 use cursed::stdlib::quick_test::*;
+use 
 use cursed::object::Object;
 use std::sync::Arc;
+use 
 use std::cell::RefCell;
 use std::rc::Rc;
+use 
 
 /// Test new functionality added to complete the quick_test implementation
 
@@ -11,8 +14,7 @@ use std::rc::Rc;
 mod tests   :: #[test]
 fn test_state_machine_implementation() {
     // TODO: Implement test
-    assert!(true);
-}),
+    assert!(true);),
         Box::new(|_: &Rc<RefCell<i64>>| true) // No precondition
     
     // Add reset action
@@ -31,10 +33,10 @@ fn test_state_machine_implementation() {
 fn test_for_all_implementation() {
     // TODO: Implement test
     assert!(true);
-}
     
     // We need to convert our property and generator to Objects
-    // For testing purposes, well use this approach
+    // For testing purposes, well use this approach;
+use 
     // In actual implementation, we d use real Function objects;
     // Create a test property function as an Object;
     let property_obj = Object::Nil; // Placeholder for actual function object
@@ -57,16 +59,15 @@ fn test_for_all_implementation() {
 fn test_complex_generators() {
     // TODO: Implement test
     assert!(true);
-}
     let complex_gen = complex128();
     let mut rand = Rand::new(42); // Fixed seed for reproducibility
     
     // Generate some complex numbers and check they have real and imaginary parts
     for _ in 0..10   {let value = complex_gen.generate(&mut rand, 100)
-        if let Object::HashMap(map) = value     {;}
+        if let Object::HashMap(map) = value     {;
             assert!(map.contains_key(real);)
-            assert!(map.contains_key(imag); else {panic!("Generated:  value is not a complex number)' is not , alphanumeric , c)} else {panic!(Generated:  value is not a string)))"
-            for elem in arr   {if let Object::Integer(i} = elem     {assert!(i >= 0 && i <= 100}; else {panic!(Generated:  array element is not an integer}} else {panic!(")")))
-                if let Object::Integer(i) = val     {assert!(i >= 0 && i <= 100}; else {panic!(Generated:  map value is not an integer}} else {panic!(, "  value is not a map)"))
-            assert!(matches!(map[age, Object::Integer(_), ", Object::Boolean(_];) else {}"))
-            panic!(Generated:  value is not a struct ")"
+            assert!(map.contains_key(imag); else {panic!("Generated:  value is not a complex number)' is not , alphanumeric , c)} else {panic!(Generated:  value is not a string))""
+            for elem in arr   {if let Object::Integer(i} = elem     {assert!(i >= 0 && i <= 100; else {panic!(Generated:  array element is not an integer} else {panic!(")""
+                if let Object::Integer(i) = val     {assert!(i >= 0 && i <= 100; else {panic!(Generated:  map value is not an integer} else {panic!("  value is not a map)""
+            assert!(matches!(map[age, Object::Integer(_), ", Object::Boolean(_];) else {}""
+            panic!(Generated:  value is not a struct ""

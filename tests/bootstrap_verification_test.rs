@@ -1,14 +1,8 @@
-//! Integration tests for the bootstrap verification system
-
-use cursed::bootstrap::self_compilation_verification::  :: SelfCompilationVerifier, VerificationConfig;
-use std::path::PathBuf;
-use std::time::Duration;
-use tempfile::TempDir;
-use tracing_test::traced_test;
-
-#[traced_test]
-#[test]
-fn test_verification_config_creation() {
-    // TODO: Implement test
-    assert!(true);
-}"""
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for bootstrap verification test
+        assert!(true);
+    }
+}

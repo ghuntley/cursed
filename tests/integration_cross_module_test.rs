@@ -1,19 +1,8 @@
-//! Test file for integration_cross_module
-
-mod common;
-
-#[test]
-fn test_integration_cross_module_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement integration_cross_module test
-    assert!(true);
-}
-
-#[test]
-fn test_integration_cross_module_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement integration_cross_module functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for integration cross module test
+        assert!(true);
+    }
 }

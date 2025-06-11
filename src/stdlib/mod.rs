@@ -14,6 +14,7 @@ pub mod io;
 pub mod string;
 pub mod math;
 pub mod time;
+pub mod collections;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -89,35 +90,79 @@ pub use string::{
     format_table, add_line_numbers, indent_lines, dedent, escape_html, escape_json, escape_csv
 };
 
-// Mathematics re-exports
+// Mathematics re-exports - Comprehensive mathematical library
 pub use math::{
+    // Error handling system
     MathError, MathResult, domain_error, range_error, division_by_zero_error, negative_input_error,
     is_valid_float, validate_float,
-    // Basic operations
-    abs, min, max, clamp, sign, floor, ceil, round, math_truncate, fract, remainder, modulo,
+    
+    // BASIC OPERATIONS - Fundamental arithmetic and utilities
+    abs, min, max, clamp, sign, 
+    floor, ceil, round, math_truncate, fract, remainder, modulo,
     gcd, lcm, is_even, is_odd, lerp, inverse_lerp, smooth_step, smoother_step,
-    abs_i32, abs_i64, min_i32, max_i32, clamp_i32,
-    // Trigonometric functions
-    sin, cos, tan, asin, acos, atan, atan2, sinh, cosh, tanh, asinh, acosh, atanh,
+    abs_i32, abs_i64, min_i32, max_i32, clamp_i32, min_i64, max_i64, clamp_i64,
+    pow2, pow10, reciprocal, is_zero, is_equal, round_to_decimals, map_range,
+    average, basic_geometric_mean, basic_harmonic_mean,
+    
+    // TRIGONOMETRIC FUNCTIONS - Complete trigonometric operations
+    sin, cos, tan, asin, acos, atan, atan2,
+    sinh, cosh, tanh, asinh, acosh, atanh,
     degrees_to_radians, radians_to_degrees, deg_to_rad, rad_to_deg,
-    sin_deg, cos_deg, tan_deg, sec, csc, cot, normalize_angle, normalize_angle_signed,
-    // Logarithmic/exponential functions
-    ln, log10, log2, log, exp, exp2, exp10, pow, powi, sqrt, cbrt, nth_root, hypot, hypot3,
-    expm1, ln1p, mul_add, inv_sqrt, ln_gamma, square, cube,
-    // Mathematical constants
-    PI, TAU, E, FRAC_PI_2, FRAC_PI_3, FRAC_PI_4, FRAC_PI_6, FRAC_PI_8,
-    FRAC_1_PI, FRAC_2_PI, FRAC_2_SQRT_PI, SQRT_2, FRAC_1_SQRT_2, SQRT_3, SQRT_5, SQRT_PI,
-    LN_2, LN_10, LOG2_E, LOG2_10, LOG10_E, LOG10_2, PHI, INV_PHI, EULER_GAMMA,
-    DEG_TO_RAD, RAD_TO_DEG, EPSILON, MIN_POSITIVE, MAX, MIN, INFINITY, NEG_INFINITY, NAN,
-    // Special functions
-    factorial, factorial_f64, gamma, beta, binomial, binomial_f64, permutations,
-    erf, erfc, erf_inv, bessel_j0, bessel_j1, bessel_y0, bessel_y1,
-    fibonacci, lucas, catalan,
-    // Random number generation
-    random, random_range, random_int, random_u64, random_bool, choice, choices, weighted_choice,
-    shuffle, shuffled, sample, random_bytes, random_string, random_alphanumeric, random_hex,
-    set_seed, random_normal, random_exponential, random_uniform, random_poisson,
-    random_beta, random_gamma
+    sin_deg, cos_deg, tan_deg, sec, csc, cot,
+    normalize_angle, normalize_angle_signed,
+    
+    // LOGARITHMIC & EXPONENTIAL FUNCTIONS - Advanced mathematical operations
+    ln, log10, log2, log, expm1, ln1p,
+    exp, exp2, exp10, exp2m1, exp10m1, exp_base,
+    pow, powi, pow_e, pow_2, pow_10, tetration,
+    sqrt, cbrt, nth_root, hypot, hypot3,
+    square, cube, mul_add, inv_sqrt, ln_gamma,
+    log2_abs, log10_abs, ln_abs, log_mean, sigmoid, logistic,
+    softmax_single, log_sum_exp,
+    is_valid_log_input, is_valid_exp_input, safe_ln, safe_exp,
+    clamped_ln, clamped_exp,
+    
+    // MATHEMATICAL CONSTANTS - Fundamental mathematical values
+    PI, TAU, E, PHI, INV_PHI, EULER_GAMMA,
+    FRAC_PI_2, FRAC_PI_3, FRAC_PI_4, FRAC_PI_6, FRAC_PI_8,
+    FRAC_1_PI, FRAC_2_PI, FRAC_2_SQRT_PI,
+    SQRT_2, FRAC_1_SQRT_2, SQRT_3, SQRT_5, SQRT_PI,
+    LN_2, LN_10, LOG2_E, LOG2_10, LOG10_E, LOG10_2,
+    DEG_TO_RAD, RAD_TO_DEG,
+    EPSILON, MIN_POSITIVE, MAX, MIN, INFINITY, NEG_INFINITY, NAN,
+    
+    // RANDOM NUMBER GENERATION - Comprehensive random utilities
+    random, random_range, random_int, random_u64, random_bool,
+    choice, choices, weighted_choice, shuffle, shuffled, sample,
+    random_bytes, random_string, random_alphanumeric, random_hex,
+    set_seed,
+    random_normal, random_exponential, random_uniform, random_poisson,
+    random_beta, random_gamma,
+    
+    // STATISTICAL FUNCTIONS - Data analysis and statistics
+    mean, median, mode, variance, sample_variance, standard_deviation, sample_standard_deviation,
+    skewness, kurtosis, harmonic_mean, geometric_mean, root_mean_square, coefficient_of_variation,
+    percentile, q1, q3, five_number_summary, range, interquartile_range,
+    normal_pdf, standard_normal_cdf, normal_cdf, uniform_pdf, uniform_cdf,
+    covariance, sample_covariance, correlation,
+    outliers_iqr, outliers_z_score, has_invalid_values, clean_data, validate_dataset,
+    
+    // SPECIAL FUNCTIONS - Advanced mathematical functions
+    special_factorial, factorial_f64, gamma, beta, 
+    binomial, binomial_f64, special_permutations,
+    special_fibonacci, lucas, catalan,
+    erf, erfc, erf_inv,
+    bessel_j0, bessel_j1, bessel_y0, bessel_y1,
+    
+    // MATHEMATICAL UTILITIES - Advanced computational mathematics
+    extended_gcd, is_prime, sieve_of_eratosthenes, prime_factorization, next_prime, euler_totient,
+    factorial, double_factorial, factorial_stirling, permutations, combinations, 
+    binomial_coefficient, multicombinations, catalan_number,
+    gamma_function, beta_function, error_function, complementary_error_function,
+    simpson_integration, numerical_derivative, newton_raphson, bisection_method,
+    fibonacci, lucas_number, tribonacci, factorial_sequence_sum, harmonic_number,
+    mod_pow, mod_inverse, convert_base, gcd_multiple, lcm_multiple,
+    FibonacciMemo, is_perfect_number, digital_root,
 };
 
 // Time and date handling re-exports
@@ -153,6 +198,37 @@ pub use time::{
     Benchmark, benchmark, time_it, measure_time,
     BenchmarkResult, compare_benchmarks, benchmark_multiple,
     PerformanceCounter, system_time_nanos
+};
+
+// Collections re-exports - Comprehensive data structure library
+pub use collections::{
+    // Error handling system
+    CollectionsError, CollectionsResult,
+    
+    // Set types - Unique element collections
+    HashSet, TreeSet, BitSet, BitSetIterator,
+    
+    // Queue types - FIFO and priority-based collections
+    Queue, Deque, PriorityQueue, CircularQueue,
+    
+    // Stack types - LIFO collections with various specializations
+    Stack, FixedStack, ThreadSafeStack, StackWithMin,
+    
+    // Simple Iterator System
+    SimpleIterator, SimpleIntoIterator, VecIterator, RangeIterator,
+    
+    // Iterator Adapters
+    MapIterator, FilterIterator, TakeIterator, SkipIterator,
+    
+    // Iterator Utilities
+    SimpleIteratorUtils,
+    
+    // Utility Functions
+    simple_range, simple_range_step,
+    
+    // Convenience functions
+    hash_set_from_vec, tree_set_from_vec, bit_set_from_vec,
+    hash_set_union_multiple, hash_set_intersection_multiple,
 };
 
 pub use dot_registry::DOT_REGISTRY;

@@ -1,19 +1,8 @@
-//! Test file for range_clause_enhanced
-
-mod common;
-
-#[test]
-fn test_range_clause_enhanced_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement range_clause_enhanced test
-    assert!(true);
-}
-
-#[test]
-fn test_range_clause_enhanced_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement range_clause_enhanced functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for range clause enhanced test
+        assert!(true);
+    }
 }

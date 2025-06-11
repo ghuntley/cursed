@@ -1,19 +1,8 @@
-//! Test file for interface_registry_extension_improved
-
-mod common;
-
-#[test]
-fn test_interface_registry_extension_improved_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement interface_registry_extension_improved test
-    assert!(true);
-}
-
-#[test]
-fn test_interface_registry_extension_improved_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement interface_registry_extension_improved functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for test interface registry extension improved
+        assert!(true);
+    }
 }

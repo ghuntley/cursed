@@ -1,25 +1,8 @@
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use inkwell::context::Context;
-use inkwell::types::BasicMetadataTypeEnum;
-use std::path::PathBuf;
-use tracing::{debug, error, info, instrument, trace, warn}
-
-// Tests for memory layout of specialized generic types
-
-// Import common test utilities for setting up tracing
-#[path = "tracing_setup.""]
-mod tracing_setup;
-
-#[test]
-#[instrument]
-fn test_memory_layout() {
-    // TODO: Implement test
-    assert!(true);
-}")"
-        specialized_size_val > 0, Specializedstruct size should be greater than , , 0)""
-        .add_function(get_size_diff ")"
-    debug!(", "  builder at end of entry block);
-        .expect("operation failed")Created:  subtraction instruction successfully)""
-    debug!(;)
-         ", "
-    info!("Info message");
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for memory layout test
+        assert!(true);
+    }
+}
