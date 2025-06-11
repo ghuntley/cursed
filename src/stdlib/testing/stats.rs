@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use crate::error::CursedError;
+use crate::stdlib::errors_simple::CursedError;
 use super::{TestError, TestFrameworkResult};
 
 /// Test execution timing information

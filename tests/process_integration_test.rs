@@ -8,7 +8,7 @@ pub mod common;
 
 #[test]
 fn test_basic_process_spawn() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // Test basic process spawning
     let config = ProcessConfig::new("echo")
@@ -23,7 +23,7 @@ fn test_basic_process_spawn() {
 
 #[test]
 fn test_process_with_arguments() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let config = ProcessConfig::new("echo")
         .args(["arg1", "arg2", "arg3"])
@@ -37,7 +37,7 @@ fn test_process_with_arguments() {
 
 #[test]
 fn test_process_environment_variables() {
-    common::init_tracing!();
+    common::init_tracing();
     
     #[cfg(unix)]
     let config = ProcessConfig::new("env")
@@ -57,7 +57,7 @@ fn test_process_environment_variables() {
 
 #[test]
 fn test_process_working_directory() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let temp_dir = std::env::temp_dir();
     
@@ -79,7 +79,7 @@ fn test_process_working_directory() {
 
 #[test]
 fn test_run_command() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let output = run_command("echo test_output").expect("Failed to run command");
     
@@ -90,7 +90,7 @@ fn test_run_command() {
 
 #[test]
 fn test_run_command_with_timeout() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // Test successful command within timeout
     let output = run_command_timeout("echo quick", Duration::from_secs(5))
@@ -108,7 +108,7 @@ fn test_run_command_with_timeout() {
 
 #[test]
 fn test_command_exists() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // Test existing command
     #[cfg(unix)]
@@ -123,7 +123,7 @@ fn test_command_exists() {
 
 #[test]
 fn test_which_command() {
-    common::init_tracing!();
+    common::init_tracing();
     
     #[cfg(unix)]
     {
@@ -143,7 +143,7 @@ fn test_which_command() {
 
 #[test]
 fn test_current_process_info() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let current_pid = get_current_pid();
     assert!(current_pid > 0);
@@ -155,7 +155,7 @@ fn test_current_process_info() {
 
 #[test]
 fn test_process_running_check() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let current_pid = get_current_pid();
     assert!(is_process_running(current_pid));
@@ -166,7 +166,7 @@ fn test_process_running_check() {
 
 #[test]
 fn test_process_list() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let process_list = get_process_list().expect("Failed to get process list");
     assert!(!process_list.is_empty());
@@ -179,7 +179,7 @@ fn test_process_list() {
 
 #[test]
 fn test_find_processes_by_name() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // This test might be platform-dependent
     #[cfg(unix)]
@@ -199,7 +199,7 @@ fn test_find_processes_by_name() {
 
 #[test]
 fn test_process_memory_info() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let current_pid = get_current_pid();
     
@@ -212,7 +212,7 @@ fn test_process_memory_info() {
 
 #[test]
 fn test_process_communication_basic() {
-    common::init_tracing!();
+    common::init_tracing();
     
     #[cfg(unix)]
     let config = ProcessConfig::new("cat")
@@ -256,7 +256,7 @@ fn test_process_communication_basic() {
 
 #[test]
 fn test_send_and_receive() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let input = b"test input\n";
     let timeout = Duration::from_secs(5);
@@ -277,7 +277,7 @@ fn test_send_and_receive() {
 
 #[test]
 fn test_process_monitoring_basic() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let current_pid = get_current_pid();
     
@@ -293,7 +293,7 @@ fn test_process_monitoring_basic() {
 
 #[test]
 fn test_process_monitor() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let config = HealthCheckConfig::default();
     let monitor = create_process_monitor();
@@ -317,7 +317,7 @@ fn test_process_monitor() {
 
 #[test]
 fn test_monitor_process_once() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let current_pid = get_current_pid();
     let thresholds = ResourceThresholds::default();
@@ -331,7 +331,7 @@ fn test_monitor_process_once() {
 
 #[test]
 fn test_system_resource_summary() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let summary = get_system_resource_summary()
         .expect("Failed to get system resource summary");
@@ -348,7 +348,7 @@ fn test_system_resource_summary() {
 
 #[test]
 fn test_platform_detection() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let platform = get_platform_name();
     assert!(!platform.is_empty());
@@ -374,7 +374,7 @@ fn test_platform_detection() {
 
 #[test]
 fn test_current_user_info() {
-    common::init_tracing!();
+    common::init_tracing();
     
     if let Ok(user_info) = PlatformUtils::get_current_user() {
         assert!(!user_info.username.is_empty());
@@ -389,7 +389,7 @@ fn test_current_user_info() {
 
 #[test]
 fn test_privilege_detection() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // This should work on all platforms
     let is_elevated = PlatformUtils::is_elevated();
@@ -401,7 +401,7 @@ fn test_privilege_detection() {
 
 #[test]
 fn test_error_handling() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // Test invalid command
     let config = ProcessConfig::new("nonexistent_command_xyz")
@@ -425,7 +425,7 @@ fn test_error_handling() {
 
 #[test]
 fn test_process_lifecycle() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // Spawn a long-running process
     #[cfg(unix)]
@@ -456,7 +456,7 @@ fn test_process_lifecycle() {
 
 #[test]
 fn test_concurrent_processes() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let mut handles = Vec::new();
     
@@ -483,7 +483,7 @@ fn test_concurrent_processes() {
 #[cfg(unix)]
 #[test]
 fn test_signal_handling() {
-    common::init_tracing!();
+    common::init_tracing();
     
     // Spawn a long-running process
     let config = ProcessConfig::new("sleep")
@@ -508,7 +508,7 @@ fn test_signal_handling() {
 
 #[test]
 fn test_resource_thresholds() {
-    common::init_tracing!();
+    common::init_tracing();
     
     let thresholds = ResourceThresholds {
         max_cpu_percent: 50.0,

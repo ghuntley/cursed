@@ -57,8 +57,9 @@ impl<T> Stack<T> {
     }
 
     /// Push an element onto the stack
-    pub fn push(&mut self, item: T) {
+    pub fn push(&mut self, item: T) -> CollectionsResult<()> {
         self.inner.push(item);
+        Ok(())
     }
 
     /// Pop an element from the stack
@@ -79,6 +80,11 @@ impl<T> Stack<T> {
     /// Get the number of elements in the stack
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
     }
 
     /// Check if the stack is empty
@@ -107,11 +113,12 @@ impl<T> Stack<T> {
     }
 
     /// Push multiple elements onto the stack
-    pub fn push_many<I>(&mut self, items: I) 
+    pub fn push_many<I>(&mut self, items: I) -> CollectionsResult<()>
     where
         I: IntoIterator<Item = T>,
     {
         self.inner.extend(items);
+        Ok(())
     }
 
     /// Pop multiple elements from the stack
@@ -156,7 +163,7 @@ impl<T> Stack<T> {
     {
         if let Some(top) = self.peek() {
             let item = top.clone();
-            self.push(item);
+            let _ = self.push(item);
             Ok(())
         } else {
             Err(CollectionsError::IndexOutOfBounds { index: 0, size: 0 })
@@ -266,6 +273,10 @@ impl<T> FixedStack<T> {
         self.data.len()
     }
 
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
+    }
     /// Check if the stack is empty
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
@@ -558,6 +569,10 @@ where
         self.main_stack.len()
     }
 
+    /// Alias for len() for compatibility
+    pub fn size(&self) -> usize {
+        self.len()
+    }
     /// Check if the stack is empty
     pub fn is_empty(&self) -> bool {
         self.main_stack.is_empty()
@@ -586,7 +601,7 @@ where
         I: IntoIterator<Item = T>,
     {
         for item in items {
-            self.push(item);
+            let _ = self.push(item);
         }
     }
 

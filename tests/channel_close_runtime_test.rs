@@ -15,10 +15,7 @@ mod tests {
     use super::*;
 
     /// Initialize test tracing
-    macro_rules! init_tracing {() => {let _ = tracing_subscriber::fmt()
-                .with_env_filter(debug)
-                .with_test_writer()
-                .try_init(})
+    /// Initialize test tracing - use common::init_tracing() instead
 
     #[test]
     fn test_channel_create_and_close_ffi() {
@@ -71,14 +68,18 @@ mod tests {
     assert!(true);
         
         // Test different timeout values
-        let timeouts = [0, 1, 10, 100, 1000, 10000]
+        let timeouts = [0, 1, 10, 100, 1000, 10000];
         
-        for &timeout in &timeouts   {// Each graceful close should succeed regardless of timeout
-            let result = cursed_close_channel_gracefully(channel_ptr, timeout)}
-            assert_eq!(result, 0,  Failedwith timeout: {}, timeout)}
+        for &timeout in &timeouts {
+            // Each graceful close should succeed regardless of timeout
+            let result = cursed_close_channel_gracefully(channel_ptr, timeout);
+            assert_eq!(result, 0, "Failed with timeout: {}", timeout);
+        }
+    }
 
     #[test]
     fn test_memory_safety_with_repeated_operations() {
-    // TODO: Implement test
-    assert!(true);
-            assert!(!channel_ptr.is_null(), Iteration {}: failed to create ""
+        // TODO: Implement test
+        assert!(true);
+    }
+}

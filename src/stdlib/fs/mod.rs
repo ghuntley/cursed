@@ -12,7 +12,7 @@
 //! ## Basic File Operations
 //! 
 //! ```rust
-//! use cursed::stdlib::fs;
+//! use crate::stdlib::fs;
 //! 
 //! // Read a file
 //! let content = fs::read_file("example.txt")?;
@@ -27,7 +27,7 @@
 //! ## Directory Operations
 //! 
 //! ```rust
-//! use cursed::stdlib::fs;
+//! use crate::stdlib::fs;
 //! 
 //! // Create a directory
 //! fs::create_dir("new_folder")?;
@@ -45,7 +45,7 @@
 //! ## Path Utilities
 //! 
 //! ```rust
-//! use cursed::stdlib::fs;
+//! use crate::stdlib::fs;
 //! 
 //! // Join path components
 //! let path = fs::join_path(vec!["home".to_string(), "user".to_string(), "file.txt".to_string()]);

@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
-use crate::error::CursedError;
+use crate::stdlib::errors_simple::CursedError;
 use crate::stdlib::value::Value;
 use super::{TestError, assertion_error};
 

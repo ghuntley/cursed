@@ -12,7 +12,7 @@ use super::error::{EnvError, EnvResult, not_found_error, validate_env_key, valid
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_env;
+/// use crate::stdlib::env::get_env;
 /// 
 /// if let Some(path) = get_env("PATH") {
 ///     println!("PATH is set to: {}", path);
@@ -30,7 +30,7 @@ pub fn get_env(key: &str) -> Option<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::set_env;
+/// use crate::stdlib::env::set_env;
 /// 
 /// set_env("MY_VAR", "my_value")?;
 /// ```
@@ -48,7 +48,7 @@ pub fn set_env(key: &str, value: &str) -> EnvResult<()> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::remove_env;
+/// use crate::stdlib::env::remove_env;
 /// 
 /// remove_env("TEMP_VAR")?;
 /// ```
@@ -66,7 +66,7 @@ pub fn remove_env(key: &str) -> EnvResult<()> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_all_env;
+/// use crate::stdlib::env::get_all_env;
 /// 
 /// let env_vars = get_all_env();
 /// for (key, value) in env_vars {
@@ -89,7 +89,7 @@ pub fn get_all_env() -> HashMap<String, String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::env_exists;
+/// use crate::stdlib::env::env_exists;
 /// 
 /// if env_exists("HOME") {
 ///     println!("HOME environment variable is set");
@@ -106,7 +106,7 @@ pub fn env_exists(key: &str) -> bool {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_env_with_default;
+/// use crate::stdlib::env::get_env_with_default;
 /// 
 /// let editor = get_env_with_default("EDITOR", "nano");
 /// println!("Using editor: {}", editor);
@@ -122,7 +122,7 @@ pub fn get_env_with_default(key: &str, default: &str) -> String {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::clear_all_env;
+/// use crate::stdlib::env::clear_all_env;
 /// 
 /// // Only use in testing scenarios
 /// clear_all_env()?;
@@ -143,7 +143,7 @@ pub fn clear_all_env() -> EnvResult<()> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_env_keys;
+/// use crate::stdlib::env::get_env_keys;
 /// 
 /// let keys = get_env_keys();
 /// println!("Environment variables: {:?}", keys);
@@ -158,7 +158,7 @@ pub fn get_env_keys() -> Vec<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_env_values;
+/// use crate::stdlib::env::get_env_values;
 /// 
 /// let values = get_env_values();
 /// println!("Total values: {}", values.len());
@@ -173,7 +173,7 @@ pub fn get_env_values() -> Vec<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_current_dir;
+/// use crate::stdlib::env::get_current_dir;
 /// 
 /// if let Some(dir) = get_current_dir() {
 ///     println!("Current directory: {}", dir);
@@ -191,7 +191,7 @@ pub fn get_current_dir() -> Option<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_home_dir;
+/// use crate::stdlib::env::get_home_dir;
 /// 
 /// if let Some(home) = get_home_dir() {
 ///     println!("Home directory: {}", home);
@@ -220,7 +220,7 @@ pub fn get_home_dir() -> Option<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_temp_dir;
+/// use crate::stdlib::env::get_temp_dir;
 /// 
 /// if let Some(temp) = get_temp_dir() {
 ///     println!("Temp directory: {}", temp);
@@ -247,7 +247,7 @@ pub fn get_temp_dir() -> Option<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_path_separator;
+/// use crate::stdlib::env::get_path_separator;
 /// 
 /// let separator = get_path_separator();
 /// println!("Path separator: {}", separator);
@@ -270,7 +270,7 @@ pub fn get_path_separator() -> &'static str {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::is_case_sensitive_env;
+/// use crate::stdlib::env::is_case_sensitive_env;
 /// 
 /// if is_case_sensitive_env() {
 ///     println!("Environment variables are case-sensitive");
@@ -294,7 +294,7 @@ pub fn is_case_sensitive_env() -> bool {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_env_case_insensitive;
+/// use crate::stdlib::env::get_env_case_insensitive;
 /// 
 /// // Will find "PATH", "Path", or "path" on Windows
 /// if let Some(path) = get_env_case_insensitive("path") {
@@ -330,7 +330,7 @@ pub fn get_env_case_insensitive(key: &str) -> Option<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_username;
+/// use crate::stdlib::env::get_username;
 /// 
 /// if let Some(user) = get_username() {
 ///     println!("Current user: {}", user);
@@ -354,7 +354,7 @@ pub fn get_username() -> Option<String> {
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::env::get_hostname;
+/// use crate::stdlib::env::get_hostname;
 /// 
 /// if let Some(hostname) = get_hostname() {
 ///     println!("Hostname: {}", hostname);

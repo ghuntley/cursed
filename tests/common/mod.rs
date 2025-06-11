@@ -6,13 +6,8 @@ pub fn init_tracing() {
     tracing::setup();
 }
 
-/// Macro for easy tracing initialization
-#[macro_export]
-macro_rules! init_tracing {
-    () => {
-        $crate::common::init_tracing();
-    };
-}
+/// Macro for easy tracing initialization - using function call instead
+/// Note: Use common::init_tracing() directly to avoid macro conflicts
 
 pub mod timing {
     use std::time::Instant;

@@ -23,7 +23,7 @@ use crate::stdlib::math::{MathError, MathResult, validate_float, domain_error, P
 /// 
 /// # Examples
 /// ```
-/// use cursed::stdlib::math::sin;
+/// use crate::stdlib::math::sin;
 /// assert_eq!(sin(0.0).unwrap(), 0.0);
 /// assert!((sin(PI / 2.0).unwrap() - 1.0).abs() < 1e-10);
 /// ```

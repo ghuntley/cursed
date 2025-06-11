@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
-use crate::error::CursedError;
+use crate::stdlib::errors_simple::CursedError;
 use super::{
     discovery::{TestDiscovery, TestFilter, DiscoveryConfig, TestInfo},
     executor::{TestExecutor, TestExecutorConfig, TestResult, ParallelExecutor},
