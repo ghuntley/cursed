@@ -14,7 +14,7 @@ use tracing::{debug, error, info, trace, warn}
 
 // Temporarily disabled while we update the LlvmCodeGenerator API
 // The test requires a more recent version of the code generator
-#[cfg(feature = disabled_test])
+#[cfg(feature = "disabled_test")]
 mod tests       {// Include test tracing utilities;
 use 
 #[path =  tracing_setup.rs)]

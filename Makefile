@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -1840,3 +1840,103 @@ collections-integration-help:
 	@echo "  make collections-integration-test-performance"
 	@echo "  make collections-full-test"
 	@echo "  make collections-demo-run"
+
+# Testing Framework - Comprehensive unit testing for CURSED
+testing-framework-test:
+	@echo "🧪 Running testing framework tests..."
+	./fix_linking.sh devenv shell cargo test --test testing_framework_test
+
+testing-framework-demo:
+	@echo "🎯 Running testing framework demo..."
+	@echo "Compiling and running CURSED testing framework demo..."
+	@if [ -f "examples/testing_framework_demo.csd" ]; then \
+		echo "Demo file found: examples/testing_framework_demo.csd"; \
+		echo "This would normally compile and run the CURSED demo"; \
+		echo "For now, showing the demo content:"; \
+		head -50 examples/testing_framework_demo.csd; \
+	else \
+		echo "Demo file not found"; \
+	fi
+
+testing-framework-runner-demo:
+	@echo "🏃 Running test runner demo..."
+	@echo "Compiling and running CURSED test runner demo..."
+	@if [ -f "examples/test_runner_example.csd" ]; then \
+		echo "Test runner demo found: examples/test_runner_example.csd"; \
+		echo "This would normally compile and run the CURSED test runner"; \
+		echo "For now, showing the demo content:"; \
+		head -30 examples/test_runner_example.csd; \
+	else \
+		echo "Test runner demo file not found"; \
+	fi
+
+testing-framework-integration:
+	@echo "🔧 Testing framework integration test..."
+	./fix_linking.sh devenv shell cargo test --lib stdlib::testing
+
+testing-framework-assertions:
+	@echo "✅ Testing assertion framework..."
+	./fix_linking.sh devenv shell cargo test --lib stdlib::testing::assertions
+
+testing-framework-discovery:
+	@echo "🔍 Testing test discovery..."
+	./fix_linking.sh devenv shell cargo test --lib stdlib::testing::discovery
+
+testing-framework-execution:
+	@echo "⚡ Testing test execution..."
+	./fix_linking.sh devenv shell cargo test --lib stdlib::testing::executor
+
+testing-framework-reporting:
+	@echo "📊 Testing report generation..."
+	./fix_linking.sh devenv shell cargo test --lib stdlib::testing::reporting
+
+testing-framework-stats:
+	@echo "📈 Testing statistics collection..."
+	./fix_linking.sh devenv shell cargo test --lib stdlib::testing::stats
+
+testing-framework-all:
+	@echo "🧪 Running all testing framework tests..."
+	$(MAKE) testing-framework-test
+	$(MAKE) testing-framework-integration
+	$(MAKE) testing-framework-assertions
+	$(MAKE) testing-framework-discovery
+	$(MAKE) testing-framework-execution
+	$(MAKE) testing-framework-reporting
+	$(MAKE) testing-framework-stats
+
+testing-framework-coverage:
+	@echo "📊 Generating testing framework coverage report..."
+	cargo tarpaulin --out Html --output-dir coverage_reports/testing_framework --include-tests --exclude-files "target/*" --timeout 300 --features default -- --test testing_framework_test
+
+testing-framework-docs:
+	@echo "📚 Opening testing framework documentation..."
+	@if [ -f "docs/testing_framework.md" ]; then \
+		echo "Testing framework documentation:"; \
+		echo "File: docs/testing_framework.md"; \
+		echo "Open this file in your preferred markdown viewer"; \
+	else \
+		echo "Documentation not found"; \
+	fi
+
+testing-framework-help:
+	@echo "🔧 Testing Framework Help:"
+	@echo ""
+	@echo "Available testing framework commands:"
+	@echo "  testing-framework-test       - Run framework tests"
+	@echo "  testing-framework-demo       - Run testing demo"
+	@echo "  testing-framework-runner-demo - Run test runner demo"
+	@echo "  testing-framework-integration - Test framework integration"
+	@echo "  testing-framework-assertions - Test assertion framework"
+	@echo "  testing-framework-discovery  - Test test discovery"
+	@echo "  testing-framework-execution  - Test test execution"
+	@echo "  testing-framework-reporting  - Test report generation"
+	@echo "  testing-framework-stats      - Test statistics collection"
+	@echo "  testing-framework-all        - Run all framework tests"
+	@echo "  testing-framework-coverage   - Generate coverage report"
+	@echo "  testing-framework-docs       - Open documentation"
+	@echo "  testing-framework-help       - Show this help"
+	@echo ""
+	@echo "Example usage:"
+	@echo "  make testing-framework-demo    # Run framework demo"
+	@echo "  make testing-framework-test    # Run framework tests"
+	@echo "  make testing-framework-all     # Run comprehensive tests"

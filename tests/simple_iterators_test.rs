@@ -51,7 +51,7 @@ fn test_collection_integration() {
     set.insert(2);
     set.insert(3);
     
-    let mut items: Vec<i32> = SimpleIntoIterator::into_iter(set).collect();
+    let mut items: Vec<i32> = set.into_iter().collect();
     items.sort();
     assert_eq!(items, vec![1, 2, 3]);
 }

@@ -3,7 +3,7 @@ use
 use cursed::stdlib::quick_test;
 
 // Temporarily disabled while API is upgraded
-#[cfg(not(test)])
+#[cfg(not(test))]
 mod tests     {#[test]
 fn test_basic_generators() {
     // TODO: Implement test

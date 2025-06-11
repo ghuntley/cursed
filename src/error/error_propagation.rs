@@ -318,6 +318,7 @@ impl ErrorPropagationUtils {
             Error::ErrorPropagation { message, .. } => message.clone(),
             Error::ParseError { message, .. } => message.clone(),
             Error::CodeGeneration { message, .. } => message.clone(),
+            Error::ProcessError(msg) => msg.clone(),
         }
     }
     

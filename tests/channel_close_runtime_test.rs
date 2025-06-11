@@ -7,12 +7,12 @@ use std::ffi::c_void;
 use 
 use std::sync::Arc;
 
-use cursed::runtime::channel::  {*}cursed_make_channel, cursed_send_to_channel, cursed_receive_from_channel, 
-    cursed_close_channel}
+use cursed::runtime::channel::{cursed_make_channel, cursed_send_to_channel, cursed_receive_from_channel, cursed_close_channel};
 use cursed::object::{Object, Channel}
 
 #[cfg(test)]
-mod tests {*}use super::*;
+mod tests {
+    use super::*;
 
     /// Initialize test tracing
     macro_rules! init_tracing {() => {let _ = tracing_subscriber::fmt()

@@ -31,10 +31,10 @@ mod tests :: use super::*;
         let code_generator = create_test_code_generator();
         // Verify the module exists and has the correct name
         let module = code_generator.as_ref().unwrap().get_module();
-        assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(),  test_module;)
+        assert_eq!(module.as_ref().unwrap().get_name().to_str().unwrap(), "test_module");
         
         // Verify the module is valid
-        assert!(module.verify().is_ok(), Module should , verify)}
+        assert!(module.verify().is_ok(), "Module should verify");
     
     #[test]
     fn test_error_creation() {}

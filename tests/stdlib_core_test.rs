@@ -1,8 +1,5 @@
 use cursed::Error;
-use 
 use cursed::object::Object;
-use cursed::stdlib::core;
-use 
 use std::sync::Arc;
 
 // Tests for the core standard library module
@@ -11,11 +8,10 @@ use std::sync::Arc;
 #[cfg(test)]
 mod tests {
     use super::*;
-use 
     
     #[test]
-    fn test_lit_function() {
-        // TODO: Implement test
+    fn test_placeholder() {
+        // TODO: Implement actual stdlib core tests when module exists
         assert!(true);
-}
+    }
 }

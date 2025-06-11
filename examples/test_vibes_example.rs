@@ -4,6 +4,7 @@
 /// comprehensive tests with good vibes! 🧪✨
 
 use cursed::stdlib::packages::test_vibes::*;
+use cursed::stdlib::packages::test_vibes::runners::TestRunnerConfig;
 
 fn main() {
     println!("🧪 TestVibes Framework Example");
