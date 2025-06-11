@@ -3,7 +3,7 @@ use cursed::core::async_constraint_checker::{AsyncConstraintChecker, AsyncConstr
 use cursed::core::type_checker::Type;
 use std::sync::Arc;
 
-#[path = "../common.rs"]
+#[path = "../common/mod.rs"]
 mod common;
 
 #[test]

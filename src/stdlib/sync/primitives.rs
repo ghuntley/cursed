@@ -1,0 +1,1222 @@
+/// Core synchronization primitives for CURSED
+/// 
+/// This module provides thread-safe synchronization primitives including:
+/// - Thread spawning and management
+/// - Mutexes and RwLocks
+/// - Atomic operations
+/// - Barriers and condition variables
+/// - Semaphores
+
+use crate::stdlib::sync::error::{SyncError, SyncResult, thread_error, lock_error, timeout_error};
+use std::sync::{
+    Arc, Mutex as StdMutex, RwLock as StdRwLock, Condvar as StdCondvar, Barrier as StdBarrier,
+    atomic::{AtomicBool as StdAtomicBool, AtomicI32 as StdAtomicI32, AtomicI64 as StdAtomicI64, 
+             AtomicUsize as StdAtomicUsize, AtomicPtr as StdAtomicPtr, Ordering as StdOrdering},
+    Once as StdOnce, OnceLock as StdOnceLock,
+};
+use std::thread::{self, ThreadId as StdThreadId, JoinHandle as StdJoinHandle};
+use std::time::{Duration, Instant};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, fence};
+
+// Global statistics for monitoring
+static ACTIVE_THREAD_COUNT: StdAtomicUsize = StdAtomicUsize::new(0);
+static LOCK_CONTENTION_COUNT: AtomicU64 = AtomicU64::new(0);
+static TOTAL_WAIT_TIME_NANOS: AtomicU64 = AtomicU64::new(0);
+
+//==============================================================================
+// Thread Management
+//==============================================================================
+
+/// Thread identifier
+pub type ThreadId = StdThreadId;
+
+/// Thread handle for managing spawned threads
+pub struct Thread {
+    id: ThreadId,
+    name: Option<String>,
+    handle: Option<StdJoinHandle<()>>,
+}
+
+impl Thread {
+    /// Get the thread ID
+    pub fn id(&self) -> ThreadId {
+        self.id
+    }
+
+    /// Get the thread name
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    /// Check if the thread has finished
+    pub fn is_finished(&self) -> bool {
+        self.handle.as_ref().map_or(true, |h| h.is_finished())
+    }
+}
+
+/// Join handle for waiting on thread completion
+pub struct JoinHandle<T> {
+    handle: StdJoinHandle<T>,
+    thread_id: ThreadId,
+}
+
+impl<T> JoinHandle<T> {
+    /// Wait for the thread to complete and return its result
+    pub fn join(self) -> SyncResult<T> {
+        ACTIVE_THREAD_COUNT.fetch_sub(1, StdOrdering::Relaxed);
+        self.handle.join().map_err(|_| thread_error("Thread panicked"))
+    }
+
+    /// Get the thread ID
+    pub fn thread_id(&self) -> ThreadId {
+        self.thread_id
+    }
+
+    /// Check if the thread has finished
+    pub fn is_finished(&self) -> bool {
+        self.handle.is_finished()
+    }
+}
+
+/// Builder for configuring thread spawning
+pub struct ThreadBuilder {
+    name: Option<String>,
+    stack_size: Option<usize>,
+}
+
+impl ThreadBuilder {
+    /// Create a new thread builder
+    pub fn new() -> Self {
+        Self {
+            name: None,
+            stack_size: None,
+        }
+    }
+
+    /// Set the thread name
+    pub fn name(mut self, name: String) -> Self {
+        self.name = Some(name);
+        self
+    }
+
+    /// Set the stack size
+    pub fn stack_size(mut self, size: usize) -> Self {
+        self.stack_size = Some(size);
+        self
+    }
+
+    /// Spawn a thread with the configured settings
+    pub fn spawn<F, T>(self, f: F) -> SyncResult<JoinHandle<T>>
+    where
+        F: FnOnce() -> T + Send + 'static,
+        T: Send + 'static,
+    {
+        let mut builder = thread::Builder::new();
+        
+        if let Some(name) = self.name {
+            builder = builder.name(name);
+        }
+        
+        if let Some(size) = self.stack_size {
+            builder = builder.stack_size(size);
+        }
+
+        let handle = builder.spawn(f)
+            .map_err(|e| thread_error(&format!("Failed to spawn thread: {}", e)))?;
+        
+        let thread_id = handle.thread().id();
+        ACTIVE_THREAD_COUNT.fetch_add(1, StdOrdering::Relaxed);
+
+        Ok(JoinHandle { handle, thread_id })
+    }
+}
+
+impl Default for ThreadBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Spawn a new thread
+pub fn spawn<F, T>(f: F) -> SyncResult<JoinHandle<T>>
+where
+    F: FnOnce() -> T + Send + 'static,
+    T: Send + 'static,
+{
+    ThreadBuilder::new().spawn(f)
+}
+
+/// Spawn a named thread
+pub fn spawn_named<F, T>(name: &str, f: F) -> SyncResult<JoinHandle<T>>
+where
+    F: FnOnce() -> T + Send + 'static,
+    T: Send + 'static,
+{
+    ThreadBuilder::new().name(name.to_string()).spawn(f)
+}
+
+/// Get the current thread ID
+pub fn current_thread_id() -> ThreadId {
+    thread::current().id()
+}
+
+/// Get the current thread name
+pub fn current_thread_name() -> Option<String> {
+    thread::current().name().map(|s| s.to_string())
+}
+
+/// Sleep for the specified duration
+pub fn sleep(duration: Duration) {
+    thread::sleep(duration);
+}
+
+/// Yield execution to other threads
+pub fn yield_now() {
+    thread::yield_now();
+}
+
+/// Park the current thread
+pub fn park() {
+    thread::park();
+}
+
+/// Park the current thread with a timeout
+pub fn park_timeout(timeout: Duration) {
+    thread::park_timeout(timeout);
+}
+
+/// Unpark a thread
+pub fn unpark(thread: &Thread) {
+    if let Some(handle) = &thread.handle {
+        handle.thread().unpark();
+    }
+}
+
+//==============================================================================
+// Mutex
+//==============================================================================
+
+/// A mutual exclusion primitive useful for protecting shared data
+pub struct Mutex<T> {
+    inner: StdMutex<T>,
+    name: Option<String>,
+}
+
+impl<T> Mutex<T> {
+    /// Create a new mutex
+    pub fn new(data: T) -> Self {
+        Self {
+            inner: StdMutex::new(data),
+            name: None,
+        }
+    }
+
+    /// Create a new named mutex for debugging
+    pub fn named(data: T, name: &str) -> Self {
+        Self {
+            inner: StdMutex::new(data),
+            name: Some(name.to_string()),
+        }
+    }
+
+    /// Lock the mutex, blocking until available
+    pub fn lock(&self) -> SyncResult<MutexGuard<T>> {
+        let start = Instant::now();
+        
+        match self.inner.lock() {
+            Ok(guard) => {
+                let wait_time = start.elapsed();
+                if wait_time > Duration::from_millis(1) {
+                    LOCK_CONTENTION_COUNT.fetch_add(1, StdOrdering::Relaxed);
+                    TOTAL_WAIT_TIME_NANOS.fetch_add(wait_time.as_nanos() as u64, StdOrdering::Relaxed);
+                }
+                Ok(MutexGuard { guard })
+            }
+            Err(_) => Err(lock_error("mutex", "lock"))
+        }
+    }
+
+    /// Try to lock the mutex without blocking
+    pub fn try_lock(&self) -> SyncResult<MutexGuard<T>> {
+        match self.inner.try_lock() {
+            Ok(guard) => Ok(MutexGuard { guard }),
+            Err(_) => Err(lock_error("mutex", "try_lock"))
+        }
+    }
+
+    /// Get the name of the mutex
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+}
+
+/// A guard that provides access to the data protected by a Mutex
+pub struct MutexGuard<'a, T> {
+    guard: std::sync::MutexGuard<'a, T>,
+}
+
+impl<'a, T> std::ops::Deref for MutexGuard<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.guard
+    }
+}
+
+impl<'a, T> std::ops::DerefMut for MutexGuard<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut *self.guard
+    }
+}
+
+//==============================================================================
+// RwLock
+//==============================================================================
+
+/// A reader-writer lock
+pub struct RwLock<T> {
+    inner: StdRwLock<T>,
+    name: Option<String>,
+}
+
+impl<T> RwLock<T> {
+    /// Create a new RwLock
+    pub fn new(data: T) -> Self {
+        Self {
+            inner: StdRwLock::new(data),
+            name: None,
+        }
+    }
+
+    /// Create a new named RwLock for debugging
+    pub fn named(data: T, name: &str) -> Self {
+        Self {
+            inner: StdRwLock::new(data),
+            name: Some(name.to_string()),
+        }
+    }
+
+    /// Acquire a read lock
+    pub fn read(&self) -> SyncResult<RwLockReadGuard<T>> {
+        let start = Instant::now();
+        
+        match self.inner.read() {
+            Ok(guard) => {
+                let wait_time = start.elapsed();
+                if wait_time > Duration::from_millis(1) {
+                    LOCK_CONTENTION_COUNT.fetch_add(1, StdOrdering::Relaxed);
+                    TOTAL_WAIT_TIME_NANOS.fetch_add(wait_time.as_nanos() as u64, StdOrdering::Relaxed);
+                }
+                Ok(RwLockReadGuard { guard })
+            }
+            Err(_) => Err(lock_error("rwlock", "read"))
+        }
+    }
+
+    /// Try to acquire a read lock without blocking
+    pub fn try_read(&self) -> SyncResult<RwLockReadGuard<T>> {
+        match self.inner.try_read() {
+            Ok(guard) => Ok(RwLockReadGuard { guard }),
+            Err(_) => Err(lock_error("rwlock", "try_read"))
+        }
+    }
+
+    /// Acquire a write lock
+    pub fn write(&self) -> SyncResult<RwLockWriteGuard<T>> {
+        let start = Instant::now();
+        
+        match self.inner.write() {
+            Ok(guard) => {
+                let wait_time = start.elapsed();
+                if wait_time > Duration::from_millis(1) {
+                    LOCK_CONTENTION_COUNT.fetch_add(1, StdOrdering::Relaxed);
+                    TOTAL_WAIT_TIME_NANOS.fetch_add(wait_time.as_nanos() as u64, StdOrdering::Relaxed);
+                }
+                Ok(RwLockWriteGuard { guard })
+            }
+            Err(_) => Err(lock_error("rwlock", "write"))
+        }
+    }
+
+    /// Try to acquire a write lock without blocking
+    pub fn try_write(&self) -> SyncResult<RwLockWriteGuard<T>> {
+        match self.inner.try_write() {
+            Ok(guard) => Ok(RwLockWriteGuard { guard }),
+            Err(_) => Err(lock_error("rwlock", "try_write"))
+        }
+    }
+
+    /// Get the name of the RwLock
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+}
+
+/// Read guard for RwLock
+pub struct RwLockReadGuard<'a, T> {
+    guard: std::sync::RwLockReadGuard<'a, T>,
+}
+
+impl<'a, T> std::ops::Deref for RwLockReadGuard<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.guard
+    }
+}
+
+/// Write guard for RwLock  
+pub struct RwLockWriteGuard<'a, T> {
+    guard: std::sync::RwLockWriteGuard<'a, T>,
+}
+
+impl<'a, T> std::ops::Deref for RwLockWriteGuard<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.guard
+    }
+}
+
+impl<'a, T> std::ops::DerefMut for RwLockWriteGuard<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut *self.guard
+    }
+}
+
+//==============================================================================
+// Atomic Operations
+//==============================================================================
+
+pub use std::sync::atomic::Ordering;
+
+/// Atomic boolean
+pub struct AtomicBool {
+    inner: StdAtomicBool,
+}
+
+impl AtomicBool {
+    /// Create a new atomic boolean
+    pub fn new(value: bool) -> Self {
+        Self { inner: StdAtomicBool::new(value) }
+    }
+
+    /// Load the value
+    pub fn load(&self, ordering: Ordering) -> bool {
+        self.inner.load(ordering)
+    }
+
+    /// Store a value
+    pub fn store(&self, value: bool, ordering: Ordering) {
+        self.inner.store(value, ordering)
+    }
+
+    /// Swap values
+    pub fn swap(&self, value: bool, ordering: Ordering) -> bool {
+        self.inner.swap(value, ordering)
+    }
+
+    /// Compare and swap
+    pub fn compare_and_swap(&self, current: bool, new: bool, ordering: Ordering) -> bool {
+        self.inner.compare_and_swap(current, new, ordering)
+    }
+
+    /// Fetch and update with boolean AND
+    pub fn fetch_and(&self, value: bool, ordering: Ordering) -> bool {
+        self.inner.fetch_and(value, ordering)
+    }
+
+    /// Fetch and update with boolean OR
+    pub fn fetch_or(&self, value: bool, ordering: Ordering) -> bool {
+        self.inner.fetch_or(value, ordering)
+    }
+
+    /// Fetch and update with boolean XOR
+    pub fn fetch_xor(&self, value: bool, ordering: Ordering) -> bool {
+        self.inner.fetch_xor(value, ordering)
+    }
+}
+
+/// Atomic 32-bit integer
+pub struct AtomicI32 {
+    inner: StdAtomicI32,
+}
+
+impl AtomicI32 {
+    /// Create a new atomic i32
+    pub fn new(value: i32) -> Self {
+        Self { inner: StdAtomicI32::new(value) }
+    }
+
+    /// Load the value
+    pub fn load(&self, ordering: Ordering) -> i32 {
+        self.inner.load(ordering)
+    }
+
+    /// Store a value
+    pub fn store(&self, value: i32, ordering: Ordering) {
+        self.inner.store(value, ordering)
+    }
+
+    /// Swap values
+    pub fn swap(&self, value: i32, ordering: Ordering) -> i32 {
+        self.inner.swap(value, ordering)
+    }
+
+    /// Compare and swap
+    pub fn compare_and_swap(&self, current: i32, new: i32, ordering: Ordering) -> i32 {
+        self.inner.compare_and_swap(current, new, ordering)
+    }
+
+    /// Fetch and add
+    pub fn fetch_add(&self, value: i32, ordering: Ordering) -> i32 {
+        self.inner.fetch_add(value, ordering)
+    }
+
+    /// Fetch and subtract
+    pub fn fetch_sub(&self, value: i32, ordering: Ordering) -> i32 {
+        self.inner.fetch_sub(value, ordering)
+    }
+
+    /// Fetch and bitwise AND
+    pub fn fetch_and(&self, value: i32, ordering: Ordering) -> i32 {
+        self.inner.fetch_and(value, ordering)
+    }
+
+    /// Fetch and bitwise OR
+    pub fn fetch_or(&self, value: i32, ordering: Ordering) -> i32 {
+        self.inner.fetch_or(value, ordering)
+    }
+
+    /// Fetch and bitwise XOR
+    pub fn fetch_xor(&self, value: i32, ordering: Ordering) -> i32 {
+        self.inner.fetch_xor(value, ordering)
+    }
+
+    /// Increment by 1 and return previous value
+    pub fn fetch_increment(&self) -> i32 {
+        self.fetch_add(1, Ordering::SeqCst)
+    }
+
+    /// Decrement by 1 and return previous value  
+    pub fn fetch_decrement(&self) -> i32 {
+        self.fetch_sub(1, Ordering::SeqCst)
+    }
+}
+
+/// Atomic 64-bit integer
+pub struct AtomicI64 {
+    inner: StdAtomicI64,
+}
+
+impl AtomicI64 {
+    /// Create a new atomic i64
+    pub fn new(value: i64) -> Self {
+        Self { inner: StdAtomicI64::new(value) }
+    }
+
+    /// Load the value
+    pub fn load(&self, ordering: Ordering) -> i64 {
+        self.inner.load(ordering)
+    }
+
+    /// Store a value
+    pub fn store(&self, value: i64, ordering: Ordering) {
+        self.inner.store(value, ordering)
+    }
+
+    /// Swap values
+    pub fn swap(&self, value: i64, ordering: Ordering) -> i64 {
+        self.inner.swap(value, ordering)
+    }
+
+    /// Compare and swap
+    pub fn compare_and_swap(&self, current: i64, new: i64, ordering: Ordering) -> i64 {
+        self.inner.compare_and_swap(current, new, ordering)
+    }
+
+    /// Fetch and add
+    pub fn fetch_add(&self, value: i64, ordering: Ordering) -> i64 {
+        self.inner.fetch_add(value, ordering)
+    }
+
+    /// Fetch and subtract
+    pub fn fetch_sub(&self, value: i64, ordering: Ordering) -> i64 {
+        self.inner.fetch_sub(value, ordering)
+    }
+
+    /// Fetch and bitwise AND
+    pub fn fetch_and(&self, value: i64, ordering: Ordering) -> i64 {
+        self.inner.fetch_and(value, ordering)
+    }
+
+    /// Fetch and bitwise OR
+    pub fn fetch_or(&self, value: i64, ordering: Ordering) -> i64 {
+        self.inner.fetch_or(value, ordering)
+    }
+
+    /// Fetch and bitwise XOR
+    pub fn fetch_xor(&self, value: i64, ordering: Ordering) -> i64 {
+        self.inner.fetch_xor(value, ordering)
+    }
+
+    /// Increment by 1 and return previous value
+    pub fn fetch_increment(&self) -> i64 {
+        self.fetch_add(1, Ordering::SeqCst)
+    }
+
+    /// Decrement by 1 and return previous value
+    pub fn fetch_decrement(&self) -> i64 {
+        self.fetch_sub(1, Ordering::SeqCst)
+    }
+}
+
+/// Atomic usize
+pub struct AtomicUsize {
+    inner: StdAtomicUsize,
+}
+
+impl AtomicUsize {
+    /// Create a new atomic usize
+    pub fn new(value: usize) -> Self {
+        Self { inner: StdAtomicUsize::new(value) }
+    }
+
+    /// Load the value
+    pub fn load(&self, ordering: Ordering) -> usize {
+        self.inner.load(ordering)
+    }
+
+    /// Store a value
+    pub fn store(&self, value: usize, ordering: Ordering) {
+        self.inner.store(value, ordering)
+    }
+
+    /// Swap values
+    pub fn swap(&self, value: usize, ordering: Ordering) -> usize {
+        self.inner.swap(value, ordering)
+    }
+
+    /// Compare and swap
+    pub fn compare_and_swap(&self, current: usize, new: usize, ordering: Ordering) -> usize {
+        self.inner.compare_and_swap(current, new, ordering)
+    }
+
+    /// Fetch and add
+    pub fn fetch_add(&self, value: usize, ordering: Ordering) -> usize {
+        self.inner.fetch_add(value, ordering)
+    }
+
+    /// Fetch and subtract
+    pub fn fetch_sub(&self, value: usize, ordering: Ordering) -> usize {
+        self.inner.fetch_sub(value, ordering)
+    }
+
+    /// Fetch and bitwise AND
+    pub fn fetch_and(&self, value: usize, ordering: Ordering) -> usize {
+        self.inner.fetch_and(value, ordering)
+    }
+
+    /// Fetch and bitwise OR
+    pub fn fetch_or(&self, value: usize, ordering: Ordering) -> usize {
+        self.inner.fetch_or(value, ordering)
+    }
+
+    /// Fetch and bitwise XOR
+    pub fn fetch_xor(&self, value: usize, ordering: Ordering) -> usize {
+        self.inner.fetch_xor(value, ordering)
+    }
+
+    /// Increment by 1 and return previous value
+    pub fn fetch_increment(&self) -> usize {
+        self.fetch_add(1, Ordering::SeqCst)
+    }
+
+    /// Decrement by 1 and return previous value
+    pub fn fetch_decrement(&self) -> usize {
+        self.fetch_sub(1, Ordering::SeqCst)
+    }
+}
+
+/// Atomic pointer
+pub struct AtomicPtr<T> {
+    inner: StdAtomicPtr<T>,
+}
+
+impl<T> AtomicPtr<T> {
+    /// Create a new atomic pointer
+    pub fn new(ptr: *mut T) -> Self {
+        Self { inner: StdAtomicPtr::new(ptr) }
+    }
+
+    /// Load the pointer
+    pub fn load(&self, ordering: Ordering) -> *mut T {
+        self.inner.load(ordering)
+    }
+
+    /// Store a pointer
+    pub fn store(&self, ptr: *mut T, ordering: Ordering) {
+        self.inner.store(ptr, ordering)
+    }
+
+    /// Swap pointers
+    pub fn swap(&self, ptr: *mut T, ordering: Ordering) -> *mut T {
+        self.inner.swap(ptr, ordering)
+    }
+
+    /// Compare and swap
+    pub fn compare_and_swap(&self, current: *mut T, new: *mut T, ordering: Ordering) -> *mut T {
+        self.inner.compare_and_swap(current, new, ordering)
+    }
+}
+
+/// Memory fence
+pub fn memory_fence(ordering: Ordering) {
+    std::sync::atomic::fence(ordering);
+}
+
+/// Compiler fence
+pub fn compiler_fence(ordering: Ordering) {
+    std::sync::atomic::compiler_fence(ordering);
+}
+
+//==============================================================================
+// Condition Variable
+//==============================================================================
+
+/// A condition variable
+pub struct CondVar {
+    inner: StdCondvar,
+    name: Option<String>,
+}
+
+impl CondVar {
+    /// Create a new condition variable
+    pub fn new() -> Self {
+        Self {
+            inner: StdCondvar::new(),
+            name: None,
+        }
+    }
+
+    /// Create a new named condition variable
+    pub fn named(name: &str) -> Self {
+        Self {
+            inner: StdCondvar::new(),
+            name: Some(name.to_string()),
+        }
+    }
+
+    /// Wait on the condition variable
+    pub fn wait<'a, T>(&self, guard: MutexGuard<'a, T>) -> SyncResult<MutexGuard<'a, T>> {
+        match self.inner.wait(guard.guard) {
+            Ok(new_guard) => Ok(MutexGuard { guard: new_guard }),
+            Err(_) => Err(lock_error("condvar", "wait"))
+        }
+    }
+
+    /// Wait on the condition variable with a timeout
+    pub fn wait_timeout<'a, T>(&self, guard: MutexGuard<'a, T>, timeout: Duration) -> SyncResult<(MutexGuard<'a, T>, bool)> {
+        match self.inner.wait_timeout(guard.guard, timeout) {
+            Ok((new_guard, wait_result)) => Ok((MutexGuard { guard: new_guard }, wait_result.timed_out())),
+            Err(_) => Err(timeout_error("condvar wait", timeout))
+        }
+    }
+
+    /// Notify one waiting thread
+    pub fn notify_one(&self) {
+        self.inner.notify_one();
+    }
+
+    /// Notify all waiting threads
+    pub fn notify_all(&self) {
+        self.inner.notify_all();
+    }
+
+    /// Get the name of the condition variable
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+}
+
+impl Default for CondVar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+//==============================================================================
+// Barrier
+//==============================================================================
+
+/// A barrier for synchronizing multiple threads
+pub struct Barrier {
+    inner: StdBarrier,
+    name: Option<String>,
+}
+
+impl Barrier {
+    /// Create a new barrier
+    pub fn new(n: usize) -> Self {
+        Self {
+            inner: StdBarrier::new(n),
+            name: None,
+        }
+    }
+
+    /// Create a new named barrier
+    pub fn named(n: usize, name: &str) -> Self {
+        Self {
+            inner: StdBarrier::new(n),
+            name: Some(name.to_string()),
+        }
+    }
+
+    /// Wait at the barrier
+    pub fn wait(&self) -> BarrierWaitResult {
+        BarrierWaitResult {
+            result: self.inner.wait(),
+        }
+    }
+
+    /// Get the name of the barrier
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+}
+
+/// Result of waiting at a barrier
+pub struct BarrierWaitResult {
+    result: std::sync::BarrierWaitResult,
+}
+
+impl BarrierWaitResult {
+    /// Returns true if this thread was the last to reach the barrier
+    pub fn is_leader(&self) -> bool {
+        self.result.is_leader()
+    }
+}
+
+//==============================================================================
+// Semaphore
+//==============================================================================
+
+/// A counting semaphore
+pub struct Semaphore {
+    permits: Arc<AtomicUsize>,
+    waiters: Arc<StdCondvar>,
+    mutex: Arc<StdMutex<()>>,
+    name: Option<String>,
+}
+
+impl Semaphore {
+    /// Create a new semaphore with the given number of permits
+    pub fn new(permits: usize) -> Self {
+        Self {
+            permits: Arc::new(AtomicUsize::new(permits)),
+            waiters: Arc::new(StdCondvar::new()),
+            mutex: Arc::new(StdMutex::new(())),
+            name: None,
+        }
+    }
+
+    /// Create a new named semaphore
+    pub fn named(permits: usize, name: &str) -> Self {
+        Self {
+            permits: Arc::new(AtomicUsize::new(permits)),
+            waiters: Arc::new(StdCondvar::new()),
+            mutex: Arc::new(StdMutex::new(())),
+            name: Some(name.to_string()),
+        }
+    }
+
+    /// Acquire a permit
+    pub fn acquire(&self) -> SyncResult<SemaphoreGuard> {
+        loop {
+            let current = self.permits.load(Ordering::Acquire);
+            if current > 0 {
+                if self.permits.compare_and_swap(current, current - 1, Ordering::Release) == current {
+                    return Ok(SemaphoreGuard {
+                        semaphore: self,
+                    });
+                }
+            } else {
+                // Wait for permits to become available
+                let _guard = self.mutex.lock().map_err(|_| lock_error("semaphore", "acquire"))?;
+                let _guard = self.waiters.wait(_guard).map_err(|_| lock_error("semaphore", "wait"))?;
+            }
+        }
+    }
+
+    /// Try to acquire a permit without blocking
+    pub fn try_acquire(&self) -> SyncResult<Option<SemaphoreGuard>> {
+        let current = self.permits.load(Ordering::Acquire);
+        if current > 0 {
+            if self.permits.compare_and_swap(current, current - 1, Ordering::Release) == current {
+                return Ok(Some(SemaphoreGuard {
+                    semaphore: self,
+                }));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Acquire a permit with a timeout
+    pub fn acquire_timeout(&self, timeout: Duration) -> SyncResult<Option<SemaphoreGuard>> {
+        let start = Instant::now();
+        
+        loop {
+            let current = self.permits.load(Ordering::Acquire);
+            if current > 0 {
+                if self.permits.compare_and_swap(current, current - 1, Ordering::Release) == current {
+                    return Ok(Some(SemaphoreGuard {
+                        semaphore: self,
+                    }));
+                }
+            } else {
+                if start.elapsed() >= timeout {
+                    return Ok(None);
+                }
+                
+                // Wait with timeout
+                let guard = self.mutex.lock().map_err(|_| lock_error("semaphore", "acquire_timeout"))?;
+                let remaining = timeout.saturating_sub(start.elapsed());
+                let _ = self.waiters.wait_timeout(guard, remaining).map_err(|_| timeout_error("semaphore acquire", timeout))?;
+            }
+        }
+    }
+
+    /// Release a permit
+    fn release(&self) {
+        self.permits.fetch_add(1, Ordering::Release);
+        self.waiters.notify_one();
+    }
+
+    /// Get available permits
+    pub fn available_permits(&self) -> usize {
+        self.permits.load(Ordering::Acquire)
+    }
+
+    /// Get the name of the semaphore
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+}
+
+/// RAII guard for semaphore permits
+pub struct SemaphoreGuard<'a> {
+    semaphore: &'a Semaphore,
+}
+
+impl<'a> Drop for SemaphoreGuard<'a> {
+    fn drop(&mut self) {
+        self.semaphore.release();
+    }
+}
+
+//==============================================================================
+// Once and Lazy Initialization
+//==============================================================================
+
+/// A synchronization primitive which can be used to run one-time initialization
+pub struct Once {
+    inner: StdOnce,
+}
+
+impl Once {
+    /// Create a new Once
+    pub const fn new() -> Self {
+        Self {
+            inner: StdOnce::new(),
+        }
+    }
+
+    /// Perform initialization exactly once
+    pub fn call_once<F>(&self, f: F)
+    where
+        F: FnOnce(),
+    {
+        self.inner.call_once(f);
+    }
+
+    /// Check if initialization has been completed
+    pub fn is_completed(&self) -> bool {
+        self.inner.is_completed()
+    }
+}
+
+/// A thread-safe cell which can be written to only once
+pub struct OnceCell<T> {
+    inner: StdOnceLock<T>,
+}
+
+impl<T> OnceCell<T> {
+    /// Create a new empty OnceCell
+    pub const fn new() -> Self {
+        Self {
+            inner: StdOnceLock::new(),
+        }
+    }
+
+    /// Get the value, initializing it if necessary
+    pub fn get_or_init<F>(&self, f: F) -> &T
+    where
+        F: FnOnce() -> T,
+    {
+        self.inner.get_or_init(f)
+    }
+
+    /// Try to get the value without initializing
+    pub fn get(&self) -> Option<&T> {
+        self.inner.get()
+    }
+
+    /// Set the value if it hasn't been set already
+    pub fn set(&self, value: T) -> Result<(), T> {
+        self.inner.set(value)
+    }
+}
+
+impl<T> Default for OnceCell<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// A value which is initialized on the first access
+pub struct Lazy<T> {
+    cell: OnceCell<T>,
+    init: fn() -> T,
+}
+
+impl<T> Lazy<T> {
+    /// Create a new lazy value
+    pub const fn new(init: fn() -> T) -> Self {
+        Self {
+            cell: OnceCell::new(),
+            init,
+        }
+    }
+
+    /// Get the value, initializing if necessary
+    pub fn get(&self) -> &T {
+        self.cell.get_or_init(self.init)
+    }
+}
+
+impl<T> std::ops::Deref for Lazy<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.get()
+    }
+}
+
+//==============================================================================
+// Statistics and Monitoring
+//==============================================================================
+
+/// Get the number of active threads
+pub fn get_active_thread_count() -> usize {
+    ACTIVE_THREAD_COUNT.load(StdOrdering::Relaxed)
+}
+
+/// Get lock contention statistics
+pub fn get_lock_contention_stats() -> crate::stdlib::sync::LockContentionStats {
+    let contentions = LOCK_CONTENTION_COUNT.load(StdOrdering::Relaxed);
+    let total_wait_time = TOTAL_WAIT_TIME_NANOS.load(StdOrdering::Relaxed);
+    
+    let avg_wait_time = if contentions > 0 {
+        total_wait_time / contentions
+    } else {
+        0
+    };
+
+    crate::stdlib::sync::LockContentionStats {
+        mutex_contentions: contentions,
+        rwlock_contentions: contentions, // Simplified for now
+        average_wait_time_nanos: avg_wait_time,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_thread_spawn() {
+        let handle = spawn(|| 42).unwrap();
+        let result = handle.join().unwrap();
+        assert_eq!(result, 42);
+    }
+
+    #[test]
+    fn test_named_thread() {
+        let handle = spawn_named("test-thread", || {
+            current_thread_name().unwrap_or_default()
+        }).unwrap();
+        let name = handle.join().unwrap();
+        assert_eq!(name, "test-thread");
+    }
+
+    #[test]
+    fn test_mutex() {
+        let mutex = Mutex::new(42);
+        {
+            let guard = mutex.lock().unwrap();
+            assert_eq!(*guard, 42);
+        }
+        
+        {
+            let mut guard = mutex.lock().unwrap();
+            *guard = 100;
+        }
+        
+        let guard = mutex.lock().unwrap();
+        assert_eq!(*guard, 100);
+    }
+
+    #[test]
+    fn test_rwlock() {
+        let rwlock = RwLock::new(42);
+        
+        // Multiple readers
+        let guard1 = rwlock.read().unwrap();
+        let guard2 = rwlock.read().unwrap();
+        assert_eq!(*guard1, 42);
+        assert_eq!(*guard2, 42);
+        drop(guard1);
+        drop(guard2);
+        
+        // Single writer
+        {
+            let mut guard = rwlock.write().unwrap();
+            *guard = 100;
+        }
+        
+        let guard = rwlock.read().unwrap();
+        assert_eq!(*guard, 100);
+    }
+
+    #[test]
+    fn test_atomic_bool() {
+        let atomic = AtomicBool::new(false);
+        assert_eq!(atomic.load(Ordering::SeqCst), false);
+        
+        atomic.store(true, Ordering::SeqCst);
+        assert_eq!(atomic.load(Ordering::SeqCst), true);
+        
+        let old = atomic.swap(false, Ordering::SeqCst);
+        assert_eq!(old, true);
+        assert_eq!(atomic.load(Ordering::SeqCst), false);
+    }
+
+    #[test]
+    fn test_atomic_i32() {
+        let atomic = AtomicI32::new(42);
+        assert_eq!(atomic.load(Ordering::SeqCst), 42);
+        
+        let old = atomic.fetch_add(10, Ordering::SeqCst);
+        assert_eq!(old, 42);
+        assert_eq!(atomic.load(Ordering::SeqCst), 52);
+        
+        let old = atomic.fetch_increment();
+        assert_eq!(old, 52);
+        assert_eq!(atomic.load(Ordering::SeqCst), 53);
+    }
+
+    #[test]
+    fn test_semaphore() {
+        let semaphore = Semaphore::new(2);
+        assert_eq!(semaphore.available_permits(), 2);
+        
+        let _guard1 = semaphore.acquire().unwrap();
+        assert_eq!(semaphore.available_permits(), 1);
+        
+        let _guard2 = semaphore.acquire().unwrap();
+        assert_eq!(semaphore.available_permits(), 0);
+        
+        // Should not be able to acquire without blocking
+        assert!(semaphore.try_acquire().unwrap().is_none());
+        
+        drop(_guard1);
+        assert_eq!(semaphore.available_permits(), 1);
+    }
+
+    #[test]
+    fn test_barrier() {
+        use std::sync::Arc;
+        use std::thread;
+        
+        let barrier = Arc::new(Barrier::new(3));
+        let mut handles = vec![];
+        
+        for i in 0..3 {
+            let barrier_clone = barrier.clone();
+            let handle = thread::spawn(move || {
+                // Do some work
+                thread::sleep(Duration::from_millis(i * 10));
+                // Wait at barrier
+                barrier_clone.wait()
+            });
+            handles.push(handle);
+        }
+        
+        let mut leader_count = 0;
+        for handle in handles {
+            let result = handle.join().unwrap();
+            if result.is_leader() {
+                leader_count += 1;
+            }
+        }
+        
+        assert_eq!(leader_count, 1);
+    }
+
+    #[test]
+    fn test_once() {
+        use std::sync::Arc;
+        use std::thread;
+        
+        static mut COUNTER: i32 = 0;
+        let once = Arc::new(Once::new());
+        let mut handles = vec![];
+        
+        for _ in 0..10 {
+            let once_clone = once.clone();
+            let handle = thread::spawn(move || {
+                once_clone.call_once(|| {
+                    unsafe {
+                        COUNTER += 1;
+                    }
+                });
+            });
+            handles.push(handle);
+        }
+        
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        
+        assert!(once.is_completed());
+        unsafe {
+            assert_eq!(COUNTER, 1);
+        }
+    }
+
+    #[test]
+    fn test_once_cell() {
+        let cell = OnceCell::new();
+        assert!(cell.get().is_none());
+        
+        let value = cell.get_or_init(|| 42);
+        assert_eq!(*value, 42);
+        
+        let value2 = cell.get().unwrap();
+        assert_eq!(*value2, 42);
+        
+        // Should not be able to set again
+        assert!(cell.set(100).is_err());
+    }
+}

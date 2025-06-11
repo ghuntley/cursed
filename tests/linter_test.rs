@@ -4,7 +4,7 @@
 
 use cursed::tools::{CursedLinter, LinterConfig};
 
-mod common;
+// Remove common module import to fix ambiguity
 
 #[cfg(test)]
 mod tests {

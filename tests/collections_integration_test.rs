@@ -584,7 +584,7 @@ mod integration_tests {
         let mut errors_encountered = Vec::new();
         
         // Test BitSet errors
-        let bit_set = BitSet::new(10);
+        let mut bit_set = BitSet::new(10);
         if let Err(e) = bit_set.set(15) {
             errors_encountered.push(format!("BitSet: {}", e));
         }
@@ -606,7 +606,7 @@ mod integration_tests {
         }
         
         // Test empty collection errors
-        let mut empty_queue = Queue::new();
+        let mut empty_queue: Queue<i32> = Queue::new();
         if empty_queue.dequeue().is_none() {
             errors_encountered.push("EmptyQueue error".to_string());
         }
