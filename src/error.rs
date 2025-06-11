@@ -64,6 +64,8 @@ pub enum Error {
         line: Option<usize>,
         column: Option<usize>,
     },
+    /// Process management errors
+    ProcessError(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -110,6 +112,7 @@ impl Clone for Error {
                 line: *line,
                 column: *column,
             },
+            Error::ProcessError(msg) => Error::ProcessError(msg.clone()),
         }
     }
 }
@@ -178,6 +181,7 @@ impl fmt::Display for Error {
                 }
                 write!(f, ": {}", message)
             }
+            Error::ProcessError(msg) => write!(f, "Process error: {}", msg),
         }
     }
 }
@@ -380,6 +384,11 @@ impl Error {
             Error::CodeGeneration { column, .. } => *column,
             _ => self.get_source_location().map(|loc| loc.column as usize),
         }
+    }
+
+    /// Create a process error
+    pub fn process_error(message: String) -> Self {
+        Error::ProcessError(message)
     }
 }
 

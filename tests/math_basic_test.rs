@@ -9,7 +9,6 @@ use cursed::stdlib::math::{MathError, MathResult};
 #[cfg(test)]
 mod tests {
     use super::*;
-use 
     use std::f64;
 
     #[test]
@@ -83,6 +82,7 @@ use
         match result.unwrap_err() {
             MathError::InvalidInput { function, .. } => {
                 assert_eq!(function, "clamp");
+            }
             _ => panic!("Expected InvalidInput error"),
         }
     }
@@ -90,13 +90,13 @@ use
     #[test]
     fn test_error_handling() {
         
-        // Test error messages contain proper context
-        match clamp(-1.0, 0.0, 10.0) {
+        // Test error messages contain proper context (invalid clamp with min > max)
+        match clamp(5.0, 10.0, 0.0) {
             Err(e) => {
                 let clamp_msg = format!("{}", e);
                 assert!(clamp_msg.contains("clamp"));
             }
-            Ok(_) => panic!("Expected error for invalid clamp"),
+            Ok(_) => panic!("Expected error for invalid clamp where min > max"),
         }
         
         // Test division by zero error

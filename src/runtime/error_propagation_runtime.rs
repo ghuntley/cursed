@@ -360,6 +360,7 @@ impl ErrorPropagationRuntime {
             Error::ErrorPropagation { .. } => "ErrorPropagation".to_string(),
             Error::ParseError { .. } => "ParseError".to_string(),
             Error::CodeGeneration { .. } => "CodeGeneration".to_string(),
+            Error::ProcessError(_) => "ProcessError".to_string(),
         }
     }
     

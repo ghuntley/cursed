@@ -15,6 +15,9 @@ pub mod string;
 pub mod math;
 pub mod time;
 pub mod collections;
+pub mod env;
+pub mod testing;
+pub mod process;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -229,6 +232,117 @@ pub use collections::{
     // Convenience functions
     hash_set_from_vec, tree_set_from_vec, bit_set_from_vec,
     hash_set_union_multiple, hash_set_intersection_multiple,
+};
+
+// Environment variables re-exports - Comprehensive environment handling
+pub use env::{
+    // Error handling system
+    EnvError, EnvResult, env_error, not_found_error, invalid_value_error, permission_error,
+    
+    // Core environment operations
+    get_env, set_env, remove_env, get_all_env, env_exists,
+    get_env_with_default, clear_all_env, get_env_keys, get_env_values,
+    get_current_dir, get_home_dir, get_temp_dir, get_username, get_hostname,
+    
+    // Platform utilities
+    get_path_separator, is_case_sensitive_env, get_env_case_insensitive,
+    
+    // Type parsing and conversion
+    parse_env, parse_env_with_default, get_path_env, get_numeric_env,
+    get_bool_env, get_float_env, get_int_env, parse_env_list,
+    parse_env_colon_list, parse_env_semicolon_list, parse_env_path_list,
+    parse_env_config, parse_env_duration, parse_env_memory_size,
+    
+    // Environment variable expansion
+    expand_env_vars, expand_env_vars_with_defaults, has_env_vars,
+    validate_env_syntax, extract_env_vars, substitute_env_vars,
+    escape_env_value, unescape_env_value,
+};
+
+// Testing framework re-exports - Comprehensive unit testing
+pub use testing::{
+    // Core testing infrastructure
+    TestFramework, TestFrameworkConfig, TestExecutionMode, TestFilterMode,
+    
+    // Test discovery and execution
+    TestDiscovery, TestFilter, DiscoveryConfig, TestInfo, TestMetadata,
+    TestExecutor, TestExecutorConfig, TestResult, TestStatus, TestFailure,
+    ExecutionContext, TestTimeout, ParallelExecutor,
+    
+    // Test runner and reporting
+    TestRunner, TestRunnerConfig, RunnerResult, TestSuite, TestSuiteResult,
+    TestReporter, ReportFormat, ReportConfig, TestReport, SummaryReport,
+    ConsoleReporter, JsonReporter, XmlReporter, HtmlReporter,
+    
+    // Statistics and performance measurement
+    TestStatistics, TestTiming, PerformanceStats, TestMetrics,
+    ExecutionStats, MemoryStats, TestBenchmark,
+    
+    // Assertion framework - All assertion functions
+    assert_true, assert_false, assert_eq, assert_ne, assert_null, assert_not_null,
+    assert_greater, assert_greater_equal, assert_less, assert_less_equal,
+    assert_close_to, assert_between, assert_positive, assert_negative, assert_zero,
+    assert_contains, assert_not_contains, assert_starts_with, assert_ends_with,
+    assert_matches_regex, assert_empty_string, assert_length,
+    assert_empty, assert_not_empty, assert_contains_element, assert_not_contains_element,
+    assert_has_length, assert_all_true, assert_any_true, assert_none_true,
+    assert_error, assert_no_error, assert_error_type, assert_error_message,
+    assert_panic, assert_no_panic,
+    assert_eventually, assert_within_timeout, assert_file_exists, assert_file_content,
+    AssertionResult, AssertionError, AssertionContext,
+    
+    // Test attributes and metadata
+    TestAttribute, TestAttributes, TestIgnore, TestExpectedPanic,
+    parse_test_attributes, validate_test_attributes,
+    
+    // Test macros and code generation
+    test_function, ignore_test, should_panic_test, timeout_test,
+    setup_function, teardown_function, test_suite_macro,
+    
+    // Error handling for testing framework
+    TestError, TestFrameworkResult,
+    discovery_error, execution_error, assertion_error, timeout_error,
+    config_error, report_error, framework_error
+};
+
+// Process management re-exports - Comprehensive system process control
+pub use process::{
+    // Error handling system
+    ProcessError, ProcessResult, process_not_found, permission_denied, invalid_state,
+    execution_failed, timeout_error as process_timeout_error, invalid_arguments, environment_error,
+    communication_error, system_error as process_system_error,
+    
+    // Core process management
+    ProcessConfig, ProcessIo, ProcessOutput, Process, spawn_process, run_command,
+    run_command_timeout, command_exists, which,
+    
+    // Process information and system utilities
+    ProcessInfo, ProcessStatus, MemoryInfo, CpuInfo, ProcessListEntry,
+    get_current_pid, get_parent_pid, is_process_running, get_process_info,
+    get_process_memory, get_process_cpu, get_process_list, find_processes_by_name,
+    get_process_tree, get_load_average, get_cpu_count, get_system_uptime,
+    
+    // Process control and signal handling
+    Signal, Priority, ProcessControl, send_signal_to_pid, kill_process, terminate_process,
+    kill_process_graceful, set_process_priority, get_process_priority, wait_for_process,
+    stop_process, continue_process, kill_processes_by_name, terminate_processes_by_name,
+    kill_process_tree, terminate_process_tree, setup_signal_handler, ignore_signal,
+    reset_signal_handler,
+    
+    // Process communication and IPC
+    ProcessChannels, ProcessCommunication, NamedPipe, SharedMemory, MessageQueue,
+    IpcType, CommunicationConfig, create_process_communication, create_pipe,
+    execute_with_communication, send_and_receive, create_daemon, monitor_process_output,
+    
+    // Process monitoring and health checks
+    HealthStatus, ResourceThresholds, HealthCheckConfig, PerformanceMetrics,
+    PerformanceHistory, ProcessMonitor, MonitoredProcess, ProcessWatchdog,
+    collect_performance_metrics, create_process_monitor, monitor_process_once,
+    get_system_resource_summary,
+    
+    // Platform-specific utilities
+    PlatformUtils, PlatformProcessInfo, PlatformFeature, UserInfo, FileDescriptorInfo,
+    ResourceLimits, ResourceType, get_platform_name, supports_feature,
 };
 
 pub use dot_registry::DOT_REGISTRY;
