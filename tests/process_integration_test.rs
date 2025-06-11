@@ -3,8 +3,7 @@ use cursed::stdlib::process::*;
 use std::time::Duration;
 use std::thread;
 
-#[path = "common.rs"]
-// pub mod common;
+mod common;
 
 #[test]
 fn test_basic_process_spawn() {

@@ -808,13 +808,13 @@ mod tests {
         assert!(cell.is_set());
         assert_eq!(cell.get(), Some(42));
         
-        let result = cell.with(|value| *value * 2);
+        let result = cell.with(|value| *value * 2).unwrap();
         assert_eq!(result, Some(84));
         
         cell.with_mut(|value| *value += 10);
         assert_eq!(cell.get(), Some(52));
         
-        let removed = cell.remove();
+        let removed = cell.remove().unwrap();
         assert_eq!(removed, Some(52));
         assert!(!cell.is_set());
     }
@@ -830,13 +830,13 @@ mod tests {
         assert!(value.is_set());
         assert_eq!(value.get(), Some(42));
         
-        let default_value = value.get_or_insert(100);
+        let default_value = value.get_or_insert(100).unwrap();
         assert_eq!(default_value, 42); // Should return existing value
         
-        let removed = value.remove();
+        let removed = value.remove().unwrap();
         assert_eq!(removed, Some(42));
         
-        let new_default = value.get_or_insert(100);
+        let new_default = value.get_or_insert(100).unwrap();
         assert_eq!(new_default, 100); // Should return new default
     }
 
