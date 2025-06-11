@@ -78,7 +78,8 @@ impl Parser {
             TokenType::String => self.parse_string_literal(),
             TokenType::Boolean => self.parse_boolean_literal(),
             TokenType::NoCap => self.parse_nil_literal(),
-            TokenType::Not | TokenType::Minus | TokenType::BitwiseNot => self.parse_unary_expression(),
+            TokenType::Not | TokenType::Minus | TokenType::Plus | 
+            TokenType::Multiply | TokenType::Divide | TokenType::BitwiseNot => self.parse_unary_expression(),
             TokenType::LeftParen => self.parse_grouped_expression(),
             TokenType::LeftBracket => self.parse_array_literal(),
             TokenType::LeftBrace => self.parse_hash_literal(),
