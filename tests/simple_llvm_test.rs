@@ -1,9 +1,8 @@
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use inkwell::context::Context;
-use std::path::PathBuf;
-
-#[test]
-fn test_simple_module_creation() {
-    // TODO: Implement test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for simple llvm test
+        assert!(true);
+    }
 }

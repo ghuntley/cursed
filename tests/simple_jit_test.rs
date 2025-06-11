@@ -1,7 +1,8 @@
-use cursed::codegen::llvm::LlvmCodeGenerator;
-
-#[test]
-fn test_simple_jit() {
-    // TODO: Implement test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for simple jit test
+        assert!(true);
+    }
 }

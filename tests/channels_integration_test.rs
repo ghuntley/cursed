@@ -1,19 +1,8 @@
-//! Test file for channels_integration
-
-mod common;
-
-#[test]
-fn test_channels_integration_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement channels_integration test
-    assert!(true);
-}
-
-#[test]
-fn test_channels_integration_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement channels_integration functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for channels integration test
+        assert!(true);
+    }
 }

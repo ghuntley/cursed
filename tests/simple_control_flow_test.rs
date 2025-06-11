@@ -1,19 +1,8 @@
-//! Test file for simple_control_flow
-
-mod common;
-
-#[test]
-fn test_simple_control_flow_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement simple_control_flow test
-    assert!(true);
-}
-
-#[test]
-fn test_simple_control_flow_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement simple_control_flow functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for simple control flow test
+        assert!(true);
+    }
 }

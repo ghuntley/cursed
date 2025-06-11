@@ -1,19 +1,8 @@
-//! Test file for nil_operations
-
-mod common;
-
-#[test]
-fn test_nil_operations_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement nil_operations test
-    assert!(true);
-}
-
-#[test]
-fn test_nil_operations_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement nil_operations functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for nil operations test
+        assert!(true);
+    }
 }

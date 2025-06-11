@@ -1,19 +1,8 @@
-//! Test file for qualified_name
-
-mod common;
-
-#[test]
-fn test_qualified_name_basic() {
-    common::tracing::setup();
-    
-    // TODO: Implement qualified_name test
-    assert!(true);
-}
-
-#[test]
-fn test_qualified_name_functionality() {
-    common::tracing::setup();
-    
-    // TODO: Implement qualified_name functionality test
-    assert!(true);
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn minimal_test() {
+        // TODO: Implement proper test for qualified name test
+        assert!(true);
+    }
 }

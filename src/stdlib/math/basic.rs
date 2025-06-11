@@ -224,3 +224,287 @@ pub fn clamp_i32(value: i32, min_val: i32, max_val: i32) -> MathResult<i32> {
     
     Ok(value.clamp(min_val, max_val))
 }
+
+/// Integer minimum for i64
+pub fn min_i64(a: i64, b: i64) -> i64 {
+    a.min(b)
+}
+
+/// Integer maximum for i64
+pub fn max_i64(a: i64, b: i64) -> i64 {
+    a.max(b)
+}
+
+/// Integer clamp for i64
+pub fn clamp_i64(value: i64, min_val: i64, max_val: i64) -> MathResult<i64> {
+    if min_val > max_val {
+        return Err(MathError::InvalidInput {
+            function: "clamp_i64".to_string(),
+            parameter: "min > max".to_string(),
+            value: min_val as f64,
+        });
+    }
+    
+    Ok(value.clamp(min_val, max_val))
+}
+
+/// Computes the nth power of 2 (2^n)
+pub fn pow2(n: u32) -> MathResult<f64> {
+    if n > 1023 {
+        return Err(MathError::Overflow {
+            function: "pow2".to_string(),
+            value: n as f64,
+        });
+    }
+    
+    Ok(2.0_f64.powi(n as i32))
+}
+
+/// Computes the nth power of 10 (10^n)
+pub fn pow10(n: i32) -> MathResult<f64> {
+    if n > 308 {
+        return Err(MathError::Overflow {
+            function: "pow10".to_string(),
+            value: n as f64,
+        });
+    }
+    if n < -324 {
+        return Err(MathError::Underflow {
+            function: "pow10".to_string(),
+            value: n as f64,
+        });
+    }
+    
+    Ok(10.0_f64.powi(n))
+}
+
+/// Computes x raised to the power of y (x^y)
+pub fn pow(x: f64, y: f64) -> MathResult<f64> {
+    validate_float("pow", "x", x)?;
+    validate_float("pow", "y", y)?;
+    
+    // Handle special cases
+    if x == 0.0 && y < 0.0 {
+        return Err(MathError::DivisionByZero {
+            function: "pow".to_string(),
+        });
+    }
+    
+    if x < 0.0 && y.fract() != 0.0 {
+        return Err(MathError::DomainError {
+            function: "pow".to_string(),
+            value: x,
+            message: "negative base with non-integer exponent".to_string(),
+        });
+    }
+    
+    let result = x.powf(y);
+    
+    if !result.is_finite() && x.is_finite() && y.is_finite() {
+        if result.is_infinite() {
+            return Err(MathError::Overflow {
+                function: "pow".to_string(),
+                value: x,
+            });
+        } else {
+            return Err(MathError::ComputationError {
+                function: "pow".to_string(),
+                message: "computation resulted in invalid value".to_string(),
+            });
+        }
+    }
+    
+    Ok(result)
+}
+
+/// Computes the square root of a number
+pub fn sqrt(x: f64) -> MathResult<f64> {
+    validate_float("sqrt", "x", x)?;
+    
+    if x < 0.0 {
+        return Err(negative_input_error("sqrt", x));
+    }
+    
+    Ok(x.sqrt())
+}
+
+/// Computes the cube root of a number
+pub fn cbrt(x: f64) -> MathResult<f64> {
+    validate_float("cbrt", "x", x)?;
+    Ok(x.cbrt())
+}
+
+/// Computes the nth root of a number
+pub fn nth_root(x: f64, n: f64) -> MathResult<f64> {
+    validate_float("nth_root", "x", x)?;
+    validate_float("nth_root", "n", n)?;
+    
+    if n == 0.0 {
+        return Err(division_by_zero_error("nth_root"));
+    }
+    
+    if x < 0.0 && n.fract() != 0.0 {
+        return Err(MathError::DomainError {
+            function: "nth_root".to_string(),
+            value: x,
+            message: "negative number with non-integer root".to_string(),
+        });
+    }
+    
+    let result = x.powf(1.0 / n);
+    
+    if !result.is_finite() && x.is_finite() && n.is_finite() {
+        return Err(MathError::ComputationError {
+            function: "nth_root".to_string(),
+            message: "computation resulted in invalid value".to_string(),
+        });
+    }
+    
+    Ok(result)
+}
+
+/// Computes the hypotenuse (sqrt(x^2 + y^2))
+pub fn hypot(x: f64, y: f64) -> MathResult<f64> {
+    validate_float("hypot", "x", x)?;
+    validate_float("hypot", "y", y)?;
+    
+    Ok(x.hypot(y))
+}
+
+/// Computes the multiplicative inverse (1/x)
+pub fn reciprocal(x: f64) -> MathResult<f64> {
+    validate_float("reciprocal", "x", x)?;
+    
+    if x == 0.0 {
+        return Err(division_by_zero_error("reciprocal"));
+    }
+    
+    Ok(1.0 / x)
+}
+
+/// Computes the square of a number (x^2)
+pub fn square(x: f64) -> MathResult<f64> {
+    validate_float("square", "x", x)?;
+    
+    let result = x * x;
+    
+    if !result.is_finite() && x.is_finite() {
+        return Err(MathError::Overflow {
+            function: "square".to_string(),
+            value: x,
+        });
+    }
+    
+    Ok(result)
+}
+
+/// Computes the cube of a number (x^3)
+pub fn cube(x: f64) -> MathResult<f64> {
+    validate_float("cube", "x", x)?;
+    
+    let result = x * x * x;
+    
+    if !result.is_finite() && x.is_finite() {
+        return Err(MathError::Overflow {
+            function: "cube".to_string(),
+            value: x,
+        });
+    }
+    
+    Ok(result)
+}
+
+/// Checks if a number is close to zero within epsilon
+pub fn is_zero(x: f64, epsilon: f64) -> MathResult<bool> {
+    validate_float("is_zero", "x", x)?;
+    validate_float("is_zero", "epsilon", epsilon)?;
+    
+    if epsilon < 0.0 {
+        return Err(negative_input_error("is_zero", epsilon));
+    }
+    
+    Ok(x.abs() <= epsilon)
+}
+
+/// Checks if two numbers are approximately equal within epsilon
+pub fn is_equal(a: f64, b: f64, epsilon: f64) -> MathResult<bool> {
+    validate_float("is_equal", "a", a)?;
+    validate_float("is_equal", "b", b)?;
+    validate_float("is_equal", "epsilon", epsilon)?;
+    
+    if epsilon < 0.0 {
+        return Err(negative_input_error("is_equal", epsilon));
+    }
+    
+    Ok((a - b).abs() <= epsilon)
+}
+
+/// Rounds to a specified number of decimal places
+pub fn round_to_decimals(x: f64, decimals: u32) -> MathResult<f64> {
+    validate_float("round_to_decimals", "x", x)?;
+    
+    if decimals > 15 {
+        return Err(MathError::InvalidInput {
+            function: "round_to_decimals".to_string(),
+            parameter: "decimals".to_string(),
+            value: decimals as f64,
+        });
+    }
+    
+    let multiplier = pow10(decimals as i32)?;
+    Ok((x * multiplier).round() / multiplier)
+}
+
+/// Maps a value from one range to another
+pub fn map_range(value: f64, from_min: f64, from_max: f64, to_min: f64, to_max: f64) -> MathResult<f64> {
+    validate_float("map_range", "value", value)?;
+    validate_float("map_range", "from_min", from_min)?;
+    validate_float("map_range", "from_max", from_max)?;
+    validate_float("map_range", "to_min", to_min)?;
+    validate_float("map_range", "to_max", to_max)?;
+    
+    if (from_max - from_min).abs() < f64::EPSILON {
+        return Err(division_by_zero_error("map_range"));
+    }
+    
+    let normalized = (value - from_min) / (from_max - from_min);
+    Ok(to_min + normalized * (to_max - to_min))
+}
+
+/// Calculates the average of two numbers
+pub fn average(a: f64, b: f64) -> MathResult<f64> {
+    validate_float("average", "a", a)?;
+    validate_float("average", "b", b)?;
+    
+    Ok((a + b) / 2.0)
+}
+
+/// Calculates the geometric mean of two positive numbers
+pub fn geometric_mean(a: f64, b: f64) -> MathResult<f64> {
+    validate_float("geometric_mean", "a", a)?;
+    validate_float("geometric_mean", "b", b)?;
+    
+    if a < 0.0 {
+        return Err(negative_input_error("geometric_mean", a));
+    }
+    if b < 0.0 {
+        return Err(negative_input_error("geometric_mean", b));
+    }
+    
+    Ok((a * b).sqrt())
+}
+
+/// Calculates the harmonic mean of two positive numbers
+pub fn harmonic_mean(a: f64, b: f64) -> MathResult<f64> {
+    validate_float("harmonic_mean", "a", a)?;
+    validate_float("harmonic_mean", "b", b)?;
+    
+    if a <= 0.0 {
+        return Err(negative_input_error("harmonic_mean", a));
+    }
+    if b <= 0.0 {
+        return Err(negative_input_error("harmonic_mean", b));
+    }
+    
+    Ok(2.0 / (1.0 / a + 1.0 / b))
+}

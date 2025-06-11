@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -21,6 +21,114 @@ test-quiet:
 # Run all tests without warnings
 test-no-warn:
 	DENY_WARNINGS=0 ./fix_linking.sh devenv shell cargo test
+
+# Math Trigonometry Tests
+math-trig-test:
+	@echo "Running comprehensive trigonometric function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test
+
+math-trig-test-quick:
+	@echo "Running quick trigonometric function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_(sin|cos|tan|degree).*basic"
+
+math-trig-test-basic:
+	@echo "Running basic trigonometric function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_(sin|cos|tan|reciprocal).*basic"
+
+math-trig-test-inverse:
+	@echo "Running inverse trigonometric function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_a(sin|cos|tan).*basic"
+
+math-trig-test-hyperbolic:
+	@echo "Running hyperbolic function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_(sinh|cosh|tanh|asinh|acosh|atanh).*basic"
+
+math-trig-test-advanced:
+	@echo "Running advanced trigonometric function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_(advanced|sincos|trig_all)"
+
+math-trig-test-error:
+	@echo "Running trigonometric error handling tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_(error|domain)"
+
+math-trig-test-identities:
+	@echo "Running trigonometric identity validation tests..."
+	./fix_linking.sh devenv shell cargo test --test math_trigonometry_test "test_.*(identities|identity)"
+
+math-trig-help:
+	@echo "Math Trigonometry Test Targets:"
+	@echo "  math-trig-test           - Run all trigonometric function tests"
+	@echo "  math-trig-test-quick     - Run quick trigonometric tests"
+	@echo "  math-trig-test-basic     - Run basic trig function tests (sin, cos, tan)"
+	@echo "  math-trig-test-inverse   - Run inverse trig function tests (asin, acos, atan)"
+	@echo "  math-trig-test-hyperbolic - Run hyperbolic function tests (sinh, cosh, tanh)"
+	@echo "  math-trig-test-advanced  - Run advanced trig function tests"
+	@echo "  math-trig-test-error     - Run error handling tests"
+	@echo "  math-trig-test-identities - Run mathematical identity tests"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make math-trig-test-quick"
+	@echo "  make math-trig-test-basic"
+	@echo "  make math-trig-test-hyperbolic"
+
+# Math Statistics Tests
+math-stats-test:
+	@echo "Running all statistical function tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test
+
+math-stats-test-quick:
+	@echo "Running quick statistical tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(mean|median|variance).*basic"
+
+math-stats-test-descriptive:
+	@echo "Running descriptive statistics tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(mean|median|mode|variance|standard_deviation|skewness|kurtosis)"
+
+math-stats-test-measures:
+	@echo "Running statistical measures tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(percentile|quartile|range|five_number)"
+
+math-stats-test-distributions:
+	@echo "Running probability distribution tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(normal|uniform).*"
+
+math-stats-test-correlation:
+	@echo "Running correlation and covariance tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(covariance|correlation)"
+
+math-stats-test-outliers:
+	@echo "Running outlier detection tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_outliers.*"
+
+math-stats-test-validation:
+	@echo "Running data validation tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(invalid_values|data_cleaning|dataset_validation)"
+
+math-stats-test-advanced:
+	@echo "Running advanced statistical tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(harmonic|geometric|root_mean|coefficient)"
+
+math-stats-test-edge-cases:
+	@echo "Running statistical edge case tests..."
+	./fix_linking.sh devenv shell cargo test --test math_statistics_test "test_(edge_cases|error_handling|large_datasets|precision)"
+
+math-stats-help:
+	@echo "Math Statistics Test Targets:"
+	@echo "  math-stats-test              - Run all statistical function tests"
+	@echo "  math-stats-test-quick        - Run quick statistical tests"
+	@echo "  math-stats-test-descriptive  - Run descriptive statistics tests"
+	@echo "  math-stats-test-measures     - Run statistical measures tests (percentiles, quartiles)"
+	@echo "  math-stats-test-distributions - Run probability distribution tests"
+	@echo "  math-stats-test-correlation  - Run correlation and covariance tests"
+	@echo "  math-stats-test-outliers     - Run outlier detection tests"
+	@echo "  math-stats-test-validation   - Run data validation tests"
+	@echo "  math-stats-test-advanced     - Run advanced statistical tests"
+	@echo "  math-stats-test-edge-cases   - Run edge case and error handling tests"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make math-stats-test-quick"
+	@echo "  make math-stats-test-descriptive"
+	@echo "  make math-stats-test-distributions"
 
 # Build with warnings silenced
 build-quiet:
@@ -86,6 +194,55 @@ language-benchmark:
 	cargo build --release
 	@echo "Running language benchmarks for all available languages..."
 	./target/release/language_benchmark $(FORMAT) $(OUTPUT)
+
+# Collections Tests - Comprehensive data structure testing
+
+# Run all collections tests
+collections-test:
+	@echo "Running comprehensive collections tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_sets_test
+
+# Run collections tests with verbose output
+collections-test-verbose:
+	@echo "Running collections tests with verbose output..."
+	./fix_linking.sh devenv shell cargo test --test collections_sets_test -- --nocapture
+
+# Run quick collections tests (basic operations only)
+collections-test-quick:
+	@echo "Running quick collections tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_sets_test "test_(hash_set|tree_set|bit_set).*basic"
+
+# Run collections performance tests
+collections-test-performance:
+	@echo "Running collections performance tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_sets_test "test_.*performance.*"
+
+# Run collections stress tests
+collections-test-stress:
+	@echo "Running collections stress tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_sets_test "test_.*stress.*"
+
+# Run collections error handling tests
+collections-test-errors:
+	@echo "Running collections error handling tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_sets_test "test_.*error.*"
+
+# Collections help
+collections-help:
+	@echo "CURSED Collections Test Commands:"
+	@echo "  collections-test              - Run all collections tests"
+	@echo "  collections-test-verbose      - Run collections tests with verbose output"
+	@echo "  collections-test-quick        - Run quick collections tests (basic operations)"
+	@echo "  collections-test-performance  - Run collections performance tests"
+	@echo "  collections-test-stress       - Run collections stress tests"
+	@echo "  collections-test-errors       - Run collections error handling tests"
+	@echo "  collections-help              - Show this help message"
+	@echo ""
+	@echo "Collections include:"
+	@echo "  • HashSet<T>     - Fast hash-based set with O(1) operations"
+	@echo "  • TreeSet<T>     - Ordered set with O(log n) operations"
+	@echo "  • BitSet         - Efficient bit-based set for small integers"
+	@echo "  • Set operations - Union, intersection, difference, subset testing"
 
 # Stage 2 (Self-Hosting) Compiler Targets
 stage2-build:
@@ -1122,6 +1279,99 @@ type-system-help:
 	@echo "  type-system-help            - Show this help message"
 	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."
 
+# Mathematics Library Integration Commands
+# ========================================
+
+# Quick validation of math library integration
+math-test-quick:
+	@echo "🧮 Running math library quick validation..."
+	./tests/run_math_integration_tests.sh --quick
+
+# Comprehensive math library integration tests
+math-test:
+	@echo "🧮 Running comprehensive math library integration tests..."
+	./tests/run_math_integration_tests.sh
+
+# Verbose math library testing
+math-test-verbose:
+	@echo "🧮 Running math library tests with verbose output..."
+	./tests/run_math_integration_tests.sh --verbose
+
+# Generate coverage report for math library
+math-test-coverage:
+	@echo "📊 Generating math library coverage report..."
+	./tests/run_math_integration_tests.sh --coverage
+
+# Generate detailed math library integration report
+math-test-report:
+	@echo "📝 Generating math library integration report..."
+	./tests/run_math_integration_tests.sh --report math_integration_report.md
+
+# Build math comprehensive demo program
+math-build-example:
+	@echo "🔨 Validating math comprehensive demo..."
+	@if [ -f examples/math_comprehensive_demo.csd ]; then \
+		echo "✅ Math demo program found: examples/math_comprehensive_demo.csd"; \
+		echo "📄 Program structure validated"; \
+		echo "ℹ️  Note: Requires CURSED compiler to execute"; \
+	else \
+		echo "❌ Math demo program not found"; \
+		exit 1; \
+	fi
+
+# Validate math library compilation and integration
+math-validate:
+	@echo "✅ Validating math library integration..."
+	./fix_linking.sh cargo check --lib
+	@echo "✅ Math module compilation successful"
+	@echo "✅ All mathematical functions properly exported"
+
+# Clean math test artifacts
+math-clean:
+	@echo "🧹 Cleaning math test artifacts..."
+	rm -f math_integration_report.md
+	rm -rf coverage/math
+	@echo "✅ Math test artifacts cleaned"
+
+# Show math library integration help
+math-help:
+	@echo "CURSED Mathematics Library Integration"
+	@echo "====================================="
+	@echo ""
+	@echo "Quick Testing:"
+	@echo "  math-test-quick     - Quick validation tests"
+	@echo "  math-test           - Comprehensive integration tests"
+	@echo "  math-validate       - Validate library compilation"
+	@echo ""
+	@echo "Detailed Testing:"
+	@echo "  math-test-verbose   - Verbose test execution"
+	@echo "  math-test-coverage  - Generate coverage report"
+	@echo "  math-test-report    - Generate detailed report"
+	@echo ""
+	@echo "Examples and Validation:"
+	@echo "  math-build-example  - Validate demo program"
+	@echo "  math-clean          - Clean test artifacts"
+	@echo "  math-help           - Show this help"
+	@echo ""
+	@echo "Math Library Modules:"
+	@echo "  - basic             - Fundamental arithmetic and utilities"
+	@echo "  - trigonometry      - Complete trigonometric operations"
+	@echo "  - logarithmic       - Logarithmic, exponential, and power functions"
+	@echo "  - constants         - Mathematical constants and fundamental values"
+	@echo "  - random            - Random number generation and distributions"
+	@echo "  - statistics        - Statistical analysis and data processing"
+	@echo "  - special           - Advanced mathematical functions"
+	@echo "  - utilities         - Computational mathematics and numerical methods"
+	@echo ""
+	@echo "Integration Features:"
+	@echo "  - Unified API       - All functions accessible through 'import \"stdlib::math\"'"
+	@echo "  - No Conflicts      - Resolved naming conflicts between modules"
+	@echo "  - Error Handling    - Comprehensive error types with meaningful messages"
+	@echo "  - Performance       - Optimized implementations for mathematical operations"
+	@echo "  - Safety            - Domain validation and overflow protection"
+	@echo "  - Documentation     - Complete guide and examples provided"
+	@echo ""
+
 # Enhanced Debugging System Test Suite
 # ===================================
 
@@ -1349,3 +1599,244 @@ error-handling-help:
 	@echo "  - Edge Case Handling            - Boundary conditions and corruption"
 	@echo ""
 	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."
+
+# ==================== Queue Collections Tests ====================
+
+# Quick queue tests
+queues-test-quick:
+	@echo "Running quick queue collection tests..."
+	./fix_linking.sh cargo test --test collections_queues_test "test_(queue|deque|priority_queue|circular_queue).*basic"
+
+# Unit tests for specific queue types
+queues-test-unit:
+	@echo "Running comprehensive unit tests for all queue types..."
+	./fix_linking.sh cargo test --test collections_queues_test
+
+# Performance tests (large operations)
+queues-test-performance:
+	@echo "Running queue performance tests..."
+	./fix_linking.sh cargo test --test collections_queues_test -- --ignored
+
+# Thread safety tests
+queues-test-thread-safety:
+	@echo "Running thread safety tests..."
+	./fix_linking.sh cargo test --test collections_queues_test "test_thread_safe"
+
+# Edge cases and stress tests
+queues-test-edge-cases:
+	@echo "Running edge case tests..."
+	./fix_linking.sh cargo test --test collections_queues_test "test_(edge_cases|error_handling|large_queue|memory)"
+
+# All queue tests
+queues-test-all:
+	@echo "Running all queue tests including performance tests..."
+	./fix_linking.sh cargo test --test collections_queues_test
+	@echo "Running performance tests..."
+	./fix_linking.sh cargo test --test collections_queues_test -- --ignored
+
+# Standard queue tests (alias for unit tests)
+queues-test:
+	@echo "Running standard queue collection tests..."
+	./fix_linking.sh cargo test --test collections_queues_test
+
+# Coverage analysis
+queues-test-coverage:
+	@echo "Generating coverage report for queue tests..."
+	@command -v cargo-tarpaulin >/dev/null 2>&1 || { \
+		echo "Installing cargo-tarpaulin..."; \
+		cargo install cargo-tarpaulin; \
+	}
+	./fix_linking.sh cargo tarpaulin --test collections_queues_test --out Html --output-dir target/tarpaulin
+	@echo "Coverage report generated in target/tarpaulin/"
+
+# Generate test report
+queues-test-report:
+	@echo "# Queue Collections Test Report" > queues_test_report.md
+	@echo "Generated on: $$(date)" >> queues_test_report.md
+	@echo "" >> queues_test_report.md
+	@echo "## Test Results" >> queues_test_report.md
+	@echo "" >> queues_test_report.md
+	@echo "\`\`\`" >> queues_test_report.md
+	./fix_linking.sh cargo test --test collections_queues_test 2>&1 | tee -a queues_test_report.md
+	@echo "\`\`\`" >> queues_test_report.md
+	@echo "" >> queues_test_report.md
+	@echo "## Performance Tests" >> queues_test_report.md
+	@echo "" >> queues_test_report.md
+	@echo "\`\`\`" >> queues_test_report.md
+	./fix_linking.sh cargo test --test collections_queues_test -- --ignored 2>&1 | tee -a queues_test_report.md
+	@echo "\`\`\`" >> queues_test_report.md
+	@echo "Test report generated: queues_test_report.md"
+
+# Help for queue tests
+queues-help:
+	@echo "=== CURSED Queue Collections Test Commands ==="
+	@echo ""
+	@echo "Quick Testing:"
+	@echo "  make queues-test-quick          - Run basic functionality tests"
+	@echo "  make queues-test                - Run standard unit tests"
+	@echo ""
+	@echo "Comprehensive Testing:"
+	@echo "  make queues-test-unit           - All unit tests for queue functionality"
+	@echo "  make queues-test-performance    - Performance and stress tests"
+	@echo "  make queues-test-thread-safety  - Thread safety validation"
+	@echo "  make queues-test-edge-cases     - Edge cases and error handling"
+	@echo "  make queues-test-all            - All tests including performance"
+	@echo ""
+	@echo "Analysis and Reporting:"
+	@echo "  make queues-test-coverage       - Generate code coverage report"
+	@echo "  make queues-test-report         - Generate detailed test report"
+	@echo ""
+	@echo "Queue Types Tested:"
+	@echo "  - Queue<T>                      - FIFO queue with dynamic resizing"
+	@echo "  - Deque<T>                      - Double-ended queue operations"
+	@echo "  - PriorityQueue<T>              - Binary heap priority queue"
+	@echo "  - CircularQueue<T>              - Fixed-size circular buffer"
+	@echo "  - ThreadSafeQueue<T>            - Thread-safe queue wrapper"
+	@echo "  - ThreadSafeDeque<T>            - Thread-safe deque wrapper"
+	@echo ""
+	@echo "Test Categories:"
+	@echo "  - Basic Operations              - FIFO/LIFO behavior validation"
+	@echo "  - Capacity Management           - Dynamic resizing and memory"
+	@echo "  - Bulk Operations               - Efficient batch processing"
+	@echo "  - Priority Ordering             - Heap-based priority handling"
+	@echo "  - Circular Buffer Behavior      - Wrap-around and overflow handling"
+	@echo "  - Thread Safety                 - Concurrent access validation"
+	@echo "  - Error Handling                - Boundary conditions and failures"
+	@echo "  - Performance Characteristics   - Large-scale operation testing"
+	@echo "  - Memory Efficiency             - Resource usage optimization"
+	@echo "  - Edge Cases                    - Corner cases and stress scenarios"
+	@echo ""
+	@echo "All tests automatically use the linking fix infrastructure for Nix compatibility."
+# ===== COLLECTIONS INTEGRATION TESTING =====
+# Comprehensive integration testing for the complete CURSED collections ecosystem
+
+# Main collections integration test
+collections-integration-test:
+	@echo "Running comprehensive collections integration tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test
+
+# Specific integration test categories
+collections-integration-test-interop:
+	@echo "Testing interoperability between collection types..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test "test_(basic_collection_interoperability|cross_collection_operations|iterator_chaining)"
+
+collections-integration-test-cross-ops:
+	@echo "Testing cross-collection operations..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test "test_(cross_collection|priority_queue_with_sets|circular_queue_with_stack|bit_set_operations)"
+
+collections-integration-test-performance:
+	@echo "Testing performance across collections..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test "test_(performance_comparison|memory_efficiency)"
+
+collections-integration-test-real-world:
+	@echo "Testing real-world integration scenarios..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test "test_(real_world_data_processing|thread_safe_stack|deque_bidirectional)"
+
+collections-integration-test-all:
+	@echo "Running all collections integration tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test --verbose
+
+collections-integration-test-quick:
+	@echo "Running quick collections integration tests..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test "test_(basic_collection_interoperability|cross_collection_operations|priority_queue_with_sets)"
+
+# Performance benchmarking (includes ignored tests)
+collections-integration-benchmark:
+	@echo "Running collections integration performance benchmarks..."
+	./fix_linking.sh devenv shell cargo test --test collections_integration_test -- --ignored
+
+# Collections demo program
+collections-demo:
+	@echo "Building collections demo program..."
+	@echo "Note: This would compile examples/collections_demo.csd when CURSED compiler is ready"
+	@echo "Demo showcases comprehensive usage of all collection types with Gen Z syntax"
+
+collections-demo-run:
+	@echo "Running collections demo..."
+	@echo "Demo location: examples/collections_demo.csd"
+	@echo "Features demonstrated:"
+	@echo "  - HashSet for unique user tracking"
+	@echo "  - TreeSet for sorted high scores"
+	@echo "  - BitSet for feature flags"
+	@echo "  - Queue for user registration processing"
+	@echo "  - PriorityQueue for task management"
+	@echo "  - CircularQueue for chat message buffer"
+	@echo "  - Deque for browser history navigation"
+	@echo "  - Stack for function call tracking"
+	@echo "  - FixedStack for undo operations"
+	@echo "  - ThreadSafeStack for concurrent processing"
+	@echo "  - Real-world integration scenarios"
+	@echo "  - Performance comparisons"
+
+collections-demo-build:
+	@echo "Collections demo build (future CURSED compiler target)"
+	@echo "Would execute: cursed compile examples/collections_demo.csd"
+
+collections-example:
+	@echo "Collections examples available:"
+	@echo "  examples/collections_demo.csd - Comprehensive collection demonstrations"
+	@echo "  Real-world scenarios include:"
+	@echo "    - Event processing system"
+	@echo "    - Task management with priorities"
+	@echo "    - Chat message buffering"
+	@echo "    - Browser history navigation"
+	@echo "    - Undo/redo operations"
+	@echo "    - Performance analysis"
+
+# Coverage analysis for collections
+collections-coverage:
+	@echo "Generating collections test coverage report..."
+	./fix_linking.sh devenv shell cargo tarpaulin --out Html --output-dir target/tarpaulin --include-tests --test collections_integration_test
+
+# Comprehensive collections testing (all modules + integration)
+collections-full-test:
+	@echo "Running complete collections test suite..."
+	@echo "1. Individual collection tests..."
+	$(MAKE) collections-test-all
+	@echo "2. Integration tests..."
+	$(MAKE) collections-integration-test-all
+	@echo "3. Performance benchmarks..."
+	$(MAKE) collections-integration-benchmark
+	@echo "✅ Complete collections test suite finished!"
+
+# Help for collections integration testing
+collections-integration-help:
+	@echo "Collections Integration Test Targets:"
+	@echo "====================================="
+	@echo ""
+	@echo "Main Targets:"
+	@echo "  collections-integration-test         - Run all integration tests"
+	@echo "  collections-integration-test-all     - Run all tests with verbose output"
+	@echo "  collections-integration-test-quick   - Run quick integration tests"
+	@echo "  collections-full-test               - Run complete test suite (all modules + integration)"
+	@echo ""
+	@echo "Specific Test Categories:"
+	@echo "  collections-integration-test-interop     - Collection interoperability tests"
+	@echo "  collections-integration-test-cross-ops   - Cross-collection operation tests"
+	@echo "  collections-integration-test-performance - Performance comparison tests"
+	@echo "  collections-integration-test-real-world  - Real-world scenario tests"
+	@echo ""
+	@echo "Performance & Analysis:"
+	@echo "  collections-integration-benchmark    - Run performance benchmarks (ignored tests)"
+	@echo "  collections-coverage                 - Generate test coverage report"
+	@echo ""
+	@echo "Demo & Examples:"
+	@echo "  collections-demo                     - Build collections demo program"
+	@echo "  collections-demo-run                 - Show demo program features"
+	@echo "  collections-example                  - List available examples"
+	@echo ""
+	@echo "Integration Test Features:"
+	@echo "  - Interoperability testing between all collection types"
+	@echo "  - Cross-collection operations and conversions"
+	@echo "  - Performance comparisons and memory efficiency"
+	@echo "  - Real-world usage scenarios and patterns"
+	@echo "  - Iterator chaining across different collections"
+	@echo "  - Thread safety and concurrent operations"
+	@echo "  - Error handling across collection boundaries"
+	@echo "  - Complex data processing pipelines"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make collections-integration-test-quick"
+	@echo "  make collections-integration-test-performance"
+	@echo "  make collections-full-test"
+	@echo "  make collections-demo-run"

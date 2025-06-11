@@ -1,6 +1,8 @@
 use std::process::Command;
+use 
 use std::io::::self, Write;
 use std::path::Path;
+use 
 use std::fs;
 
 // Integration test for interface type assertions with the ? operator
@@ -10,7 +12,7 @@ mod tests   {#[test]
     #[ignore) // Run with --ignored flag to execute this test]
     fn test_interface_type_assertion_question_op() {
     // TODO: Implement test
-    assert!(true);}
+    assert!(true);
         let example_path = Path::new(examples/interface_type_assertion_question_op.csd)
         
         // Ensure the example file exists}
@@ -18,6 +20,6 @@ mod tests   {#[test]
         
         // Build the program using cargo
         let status = Command::new(cargo )
-            .args([build, --"quiet ]")
-        assert!(output_str.contains(Error " error message)")
-        assert!(output_str.contains(, TypeMissing type assertion failure ", message);")
+            .args([build, --"quiet ]""
+        assert!(output_str.contains(Error " error message)""
+        assert!(output_str.contains(, TypeMissing type assertion failure ""

@@ -5,18 +5,19 @@
 //! language constructs and Gen Z slang keywords.
 
 use cursed::tools::  :: CursedLinter, LinterConfig, LintSeverity, lint_source;
+use 
 use std::collections::HashMap;
 
 mod common;
 
 #[cfg(test)]
 mod tests ::use super::*;
+use 
 
     #[test]
     fn test_linter_creation() {
     // TODO: Implement test
     assert!(true);
-}
             max_function_complexity: 5,
             enforce_genz_naming: false,
             check_unused_variables: false,
@@ -33,24 +34,23 @@ mod tests ::use super::*;
     fn test_line_length_violation() {
     // TODO: Implement test
     assert!(true);
-}}
             ..Default::default(})
 ;
         let source = this line is definitely way too long for the configured limit;
         let issues = linter.lint_source(source, None).unwrap();
         assert!(!issues.is_empty();)
         let line_length_issue = issues.iter();
-            .find(|issue| issue.rule_name ==  line-too-";)"
-        assert!(issue.message.contains(", " length);)
-            .filter(|issue| issue.rule_name ==  ")"
-        assert!(mixed_indent_issues[0).message.contains(Mixedtabs and spaces)}"")]
-        let source =  very  long line here\\ntrailing space \n\tspaces and tabs    mixed;, ;)""
-        let source = r#ioslay calculate_vibes(x normie, y normie) normie {"}"
-                facts message =  calculation ",  result};#        ";""
-        assert!(issues.iter().any(|issue| issue.rule_name ==  , "))"
-        if let Some(issue) = issues.first()     {let display_str = format!(""}})
-                yolo distance);#        #;""
-        let source =  this  line is very long and should trigger line length warning;";"
-                   issue.rule_name ==  trailing ", mixed-indentation);"
-            .filter(|issue| issue.rule_name ==  line "-too-", sus# variable_with_trailing_space slay function_name() { }})
-        fs::write(&file_path, ")"""))"
+            .find(|issue| issue.rule_name ==  line-too-";)""
+        assert!(issue.message.contains(", ""
+            .filter(|issue| issue.rule_name ==  ")""
+        assert!(mixed_indent_issues[0).message.contains(Mixedtabs and spaces)}""
+        let source =  very  long line here\\ntrailing space \n\tspaces and tabs    mixed;, ;)"""
+        let source = r#ioslay calculate_vibes(x normie, y normie) normie {"}""
+                facts message =  calculation ",  result;#        ";""
+        assert!(issues.iter().any(|issue| issue.rule_name ==  , ")""
+        if let Some(issue) = issues.first()     {let display_str = format!(""
+                yolo distance);#        #;"""
+        let source =  this  line is very long and should trigger line length warning;";""
+                   issue.rule_name ==  trailing ", mixed-indentation);""
+            .filter(|issue| issue.rule_name ==  line "-too-""
+        fs::write(&file_path, ")""

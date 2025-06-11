@@ -191,3 +191,267 @@ pub const MIN_10_EXP: i32 = f64::MIN_10_EXP;
 
 /// Radix (base) of the internal representation
 pub const RADIX: u32 = f64::RADIX;
+
+// =============================================================================
+// COMMON FRACTIONS
+// =============================================================================
+
+/// 1/3 - One third
+pub const ONE_THIRD: f64 = 1.0 / 3.0;
+
+/// 2/3 - Two thirds
+pub const TWO_THIRDS: f64 = 2.0 / 3.0;
+
+/// 1/6 - One sixth
+pub const ONE_SIXTH: f64 = 1.0 / 6.0;
+
+/// 5/6 - Five sixths
+pub const FIVE_SIXTHS: f64 = 5.0 / 6.0;
+
+/// 1/7 - One seventh
+pub const ONE_SEVENTH: f64 = 1.0 / 7.0;
+
+/// 1/9 - One ninth
+pub const ONE_NINTH: f64 = 1.0 / 9.0;
+
+/// 1/12 - One twelfth
+pub const ONE_TWELFTH: f64 = 1.0 / 12.0;
+
+/// 3/4 - Three quarters
+pub const THREE_QUARTERS: f64 = 3.0 / 4.0;
+
+/// 5/8 - Five eighths
+pub const FIVE_EIGHTHS: f64 = 5.0 / 8.0;
+
+/// 7/8 - Seven eighths
+pub const SEVEN_EIGHTHS: f64 = 7.0 / 8.0;
+
+// =============================================================================
+// UNIT CONVERSION CONSTANTS
+// =============================================================================
+
+/// Inches to centimeters
+pub const INCH_TO_CM: f64 = 2.54;
+
+/// Centimeters to inches
+pub const CM_TO_INCH: f64 = 1.0 / INCH_TO_CM;
+
+/// Feet to meters
+pub const FOOT_TO_METER: f64 = 0.3048;
+
+/// Meters to feet
+pub const METER_TO_FOOT: f64 = 1.0 / FOOT_TO_METER;
+
+/// Miles to kilometers
+pub const MILE_TO_KM: f64 = 1.609344;
+
+/// Kilometers to miles
+pub const KM_TO_MILE: f64 = 1.0 / MILE_TO_KM;
+
+/// Pounds to kilograms
+pub const POUND_TO_KG: f64 = 0.45359237;
+
+/// Kilograms to pounds
+pub const KG_TO_POUND: f64 = 1.0 / POUND_TO_KG;
+
+/// Fahrenheit to Celsius conversion offset
+pub const FAHRENHEIT_OFFSET: f64 = 32.0;
+
+/// Fahrenheit to Celsius conversion factor
+pub const FAHRENHEIT_SCALE: f64 = 5.0 / 9.0;
+
+/// Celsius to Fahrenheit conversion factor
+pub const CELSIUS_SCALE: f64 = 9.0 / 5.0;
+
+/// Atmospheric pressure at sea level (Pa)
+pub const ATM_PRESSURE: f64 = 101325.0;
+
+/// Standard acceleration due to gravity (m/s²)
+pub const STANDARD_GRAVITY: f64 = 9.80665;
+
+// =============================================================================
+// ORGANIZED CONSTANT COLLECTIONS
+// =============================================================================
+
+/// Array of fundamental mathematical constants
+pub const FUNDAMENTAL_CONSTANTS: [(&str, f64); 6] = [
+    ("PI", PI),
+    ("E", E),
+    ("TAU", TAU),
+    ("PHI", PHI),
+    ("EULER_GAMMA", EULER_GAMMA),
+    ("SQRT_2", SQRT_2),
+];
+
+/// Array of physical constants with their units
+pub const PHYSICAL_CONSTANTS: [(&str, f64, &str); 12] = [
+    ("SPEED_OF_LIGHT", SPEED_OF_LIGHT, "m/s"),
+    ("PLANCK", PLANCK, "J⋅s"),
+    ("HBAR", HBAR, "J⋅s"),
+    ("AVOGADRO", AVOGADRO, "mol⁻¹"),
+    ("BOLTZMANN", BOLTZMANN, "J/K"),
+    ("GAS_CONSTANT", GAS_CONSTANT, "J/(mol⋅K)"),
+    ("GRAVITATIONAL", GRAVITATIONAL, "m³/(kg⋅s²)"),
+    ("ELEMENTARY_CHARGE", ELEMENTARY_CHARGE, "C"),
+    ("ELECTRON_MASS", ELECTRON_MASS, "kg"),
+    ("PROTON_MASS", PROTON_MASS, "kg"),
+    ("FINE_STRUCTURE", FINE_STRUCTURE, "dimensionless"),
+    ("STANDARD_GRAVITY", STANDARD_GRAVITY, "m/s²"),
+];
+
+/// Array of common fractions
+pub const COMMON_FRACTIONS: [(&str, f64); 10] = [
+    ("1/3", ONE_THIRD),
+    ("2/3", TWO_THIRDS),
+    ("1/6", ONE_SIXTH),
+    ("5/6", FIVE_SIXTHS),
+    ("1/7", ONE_SEVENTH),
+    ("1/9", ONE_NINTH),
+    ("1/12", ONE_TWELFTH),
+    ("3/4", THREE_QUARTERS),
+    ("5/8", FIVE_EIGHTHS),
+    ("7/8", SEVEN_EIGHTHS),
+];
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+/// Check if a value is approximately equal to a mathematical constant
+/// 
+/// # Arguments
+/// * `value` - The value to check
+/// * `constant` - The constant to compare against
+/// * `tolerance` - The tolerance for comparison (default: EPSILON * 10.0)
+/// 
+/// # Returns
+/// True if the value is within tolerance of the constant
+pub fn is_close_to_constant(value: f64, constant: f64, tolerance: Option<f64>) -> bool {
+    let tol = tolerance.unwrap_or(EPSILON * 10.0);
+    (value - constant).abs() < tol
+}
+
+/// Check if a value is approximately π
+pub fn is_approximately_pi(value: f64) -> bool {
+    is_close_to_constant(value, PI, Some(1e-4))
+}
+
+/// Check if a value is approximately e
+pub fn is_approximately_e(value: f64) -> bool {
+    is_close_to_constant(value, E, Some(1e-4))
+}
+
+/// Check if a value is approximately the golden ratio φ
+pub fn is_approximately_phi(value: f64) -> bool {
+    is_close_to_constant(value, PHI, Some(1e-4))
+}
+
+/// Find the closest mathematical constant to a given value
+/// 
+/// # Arguments
+/// * `value` - The value to find the closest constant for
+/// 
+/// # Returns
+/// Option containing (name, constant_value, difference) of the closest constant
+pub fn find_closest_constant(value: f64) -> Option<(&'static str, f64, f64)> {
+    let mut closest: Option<(&str, f64, f64)> = None;
+    let mut min_diff = f64::INFINITY;
+    
+    for &(name, constant) in &FUNDAMENTAL_CONSTANTS {
+        let diff = (value - constant).abs();
+        if diff < min_diff {
+            min_diff = diff;
+            closest = Some((name, constant, diff));
+        }
+    }
+    
+    closest
+}
+
+// Note: angle conversion functions are available in the trigonometry module
+// as degrees_to_radians() and radians_to_degrees()
+
+/// Convert Fahrenheit to Celsius
+pub fn fahrenheit_to_celsius(fahrenheit: f64) -> f64 {
+    (fahrenheit - FAHRENHEIT_OFFSET) * FAHRENHEIT_SCALE
+}
+
+/// Convert Celsius to Fahrenheit
+pub fn celsius_to_fahrenheit(celsius: f64) -> f64 {
+    celsius * CELSIUS_SCALE + FAHRENHEIT_OFFSET
+}
+
+/// Convert inches to centimeters
+pub fn inches_to_cm(inches: f64) -> f64 {
+    inches * INCH_TO_CM
+}
+
+/// Convert centimeters to inches
+pub fn cm_to_inches(cm: f64) -> f64 {
+    cm * CM_TO_INCH
+}
+
+/// Convert miles to kilometers
+pub fn miles_to_km(miles: f64) -> f64 {
+    miles * MILE_TO_KM
+}
+
+/// Convert kilometers to miles
+pub fn km_to_miles(km: f64) -> f64 {
+    km * KM_TO_MILE
+}
+
+/// Convert pounds to kilograms
+pub fn pounds_to_kg(pounds: f64) -> f64 {
+    pounds * POUND_TO_KG
+}
+
+/// Convert kilograms to pounds
+pub fn kg_to_pounds(kg: f64) -> f64 {
+    kg * KG_TO_POUND
+}
+
+/// Get all fundamental constants as a formatted string
+pub fn list_fundamental_constants() -> String {
+    let mut result = String::from("Fundamental Mathematical Constants:\n");
+    for &(name, value) in &FUNDAMENTAL_CONSTANTS {
+        result.push_str(&format!("  {} = {:.15}\n", name, value));
+    }
+    result
+}
+
+/// Get all physical constants as a formatted string with units
+pub fn list_physical_constants() -> String {
+    let mut result = String::from("Physical Constants:\n");
+    for &(name, value, unit) in &PHYSICAL_CONSTANTS {
+        result.push_str(&format!("  {} = {:.6e} {}\n", name, value, unit));
+    }
+    result
+}
+
+/// Validate that a calculated value matches a known constant within tolerance
+/// 
+/// # Arguments
+/// * `calculated` - The calculated value
+/// * `expected_constant` - The expected constant
+/// * `tolerance` - The acceptable tolerance
+/// * `description` - Description of what was calculated
+/// 
+/// # Returns
+/// Result indicating if the validation passed
+pub fn validate_constant_calculation(
+    calculated: f64, 
+    expected_constant: f64, 
+    tolerance: f64,
+    description: &str
+) -> Result<(), String> {
+    let diff = (calculated - expected_constant).abs();
+    if diff <= tolerance {
+        Ok(())
+    } else {
+        Err(format!(
+            "Validation failed for {}: calculated={:.15}, expected={:.15}, difference={:.2e}, tolerance={:.2e}",
+            description, calculated, expected_constant, diff, tolerance
+        ))
+    }
+}

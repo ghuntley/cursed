@@ -1,12 +1,14 @@
 use std::collections::HashSet;
+use 
 use inkwell::context::Context;
 use cursed::codegen::llvm::LlvmCodeGenerator;
+use 
 use cursed::error::Error;
 
-#[path = ""common/mod."""]
+#[cfg(test)]
+mod tests {}
+    use super::*;
+use 
 
-#[cfg(test""])
-
-    #[ignore = , " finder functionality not fully implemented " finder functionality not fully implemented ""]
-    #[ignore = ""]
-    #[ignore = ", " finder functionality not fully implemented ")"]
+    #[test]
+    #[ignore = "Interface path finder functionality not fully implemented";
