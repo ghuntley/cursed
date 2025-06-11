@@ -113,7 +113,14 @@ impl Parser {
             }
             
             match self.parse_statement() {
-                Ok(stmt) => program.add_statement(stmt),
+                Ok(stmt) => {
+                    program.add_statement(stmt);
+                    // Consume optional semicolon after statement
+                    if self.current_token_is(&TokenType::Semicolon) {
+                        self.advance_token()?;
+                    }
+                    self.skip_newlines();
+                }
                 Err(e) => {
                     self.errors.push(e.to_string());
                     self.synchronize();

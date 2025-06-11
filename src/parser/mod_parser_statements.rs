@@ -119,13 +119,13 @@ impl Parser {
             loop {
                 let param_name = self.expect_token(TokenType::Identifier)?.literal;
                 
-                // Parameter type is required
+                // Parameter type is optional for now (simplified parsing)
                 let param_type = if self.current_token_is(&TokenType::Identifier) {
                     let type_name = self.current_token.literal.clone();
                     self.advance_token()?;
                     type_name
                 } else {
-                    return Err(Error::Parse("Expected parameter type".to_string()));
+                    "".to_string() // Inferred type
                 };
                 
                 parameters.push(Parameter::new(param_name, param_type));
@@ -588,6 +588,11 @@ impl Parser {
                 break;
             }
             statements.push(self.parse_statement()?);
+            // Consume optional semicolon after statement
+            if self.current_token_is(&TokenType::Semicolon) {
+                self.advance_token()?;
+            }
+            self.skip_newlines();
         }
         
         self.expect_token(TokenType::RightBrace)?;
