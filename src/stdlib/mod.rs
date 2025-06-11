@@ -18,6 +18,7 @@ pub mod collections;
 pub mod env;
 pub mod testing;
 pub mod process;
+pub mod sync;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -343,6 +344,54 @@ pub use process::{
     // Platform-specific utilities
     PlatformUtils, PlatformProcessInfo, PlatformFeature, UserInfo, FileDescriptorInfo,
     ResourceLimits, ResourceType, get_platform_name, supports_feature,
+};
+
+// Threading and synchronization re-exports - Comprehensive concurrency support
+pub use sync::{
+    // Error handling system
+    SyncError, SyncResult, thread_error, lock_error, timeout_error as sync_timeout_error, deadlock_error,
+    
+    // Core threading primitives
+    Thread, ThreadId, ThreadBuilder, JoinHandle,
+    spawn, spawn_named, current_thread_id, current_thread_name, 
+    sleep as thread_sleep, yield_now, park, unpark,
+    
+    // Synchronization primitives
+    Mutex, RwLock, Semaphore, Barrier, CondVar,
+    MutexGuard, RwLockReadGuard, RwLockWriteGuard,
+    
+    // Atomic operations
+    AtomicBool, AtomicI32, AtomicI64, AtomicUsize, AtomicPtr,
+    Ordering, memory_fence, compiler_fence,
+    
+    // Once and lazy initialization
+    Once, OnceCell, Lazy,
+    
+    // Concurrent collections
+    ConcurrentHashMap, ConcurrentVec, ConcurrentQueue, ConcurrentStack,
+    ChannelSender, ChannelReceiver, channel, bounded_channel, unbounded_channel,
+    select_channel, try_select_channel, ChannelError,
+    LockFreeStack, LockFreeQueue, AtomicCounter,
+    
+    // Parallel processing
+    ThreadPool, ThreadPoolBuilder, ThreadPoolConfig,
+    WorkStealingPool, TaskQueue, Task, TaskResult,
+    ParallelIterator, par_map, par_filter, par_reduce, par_for_each,
+    RayonCompat, parallel_sort, parallel_search,
+    SchedulerPolicy, LoadBalancer,
+    
+    // Thread-local storage
+    ThreadLocal, ThreadLocalKey, ThreadLocalCell, ThreadLocalValue,
+    with_thread_local, thread_local_get, thread_local_set, thread_local_remove,
+    TlsKey, create_thread_local_key,
+    cleanup_current_thread, cleanup_thread_local_storage, get_thread_local_statistics,
+    
+    // Module management
+    init_sync_module, cleanup_sync_module, get_sync_statistics,
+    SyncStatistics, LockContentionStats, ChannelStatistics, ThreadLocalStatistics,
+    
+    // Global thread pool management
+    init_global_thread_pool, shutdown_global_thread_pool, get_thread_pool_utilization,
 };
 
 pub use dot_registry::DOT_REGISTRY;

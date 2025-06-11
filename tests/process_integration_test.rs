@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::thread;
 
 #[path = "common.rs"]
-pub mod common;
+// pub mod common;
 
 #[test]
 fn test_basic_process_spawn() {
