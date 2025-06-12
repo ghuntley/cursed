@@ -19,6 +19,9 @@ pub mod handlers;
 pub mod route_matcher;
 pub mod middleware_chain;
 pub mod error_handling;
+pub mod config;
+pub mod health;
+pub mod client;
 
 // Re-export main types for easy access
 pub use router::{Router, Route, RouteGroup, RoutePriority};
@@ -32,6 +35,9 @@ pub use handlers::{RequestHandler, RouteHandler, HandlerResult};
 pub use route_matcher::{RouteMatcher, RoutePattern, PathSegment, WildcardType};
 pub use middleware_chain::{ChainBuilder, MiddlewareOrdering, ChainExecution};
 pub use error_handling::{RouterError, MiddlewareError, HandlerError};
+pub use config::WebVibezConfig;
+pub use health::{HealthChecker, HealthResult, HealthStatus, HealthCheck};
+pub use client::{HttpClient, HttpError, HttpResponse, RequestBuilder, Cookie, ConnectionPool};
 
 /// HTTP methods supported by the router
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -110,41 +116,4 @@ impl std::fmt::Display for StatusCode {
     }
 }
 
-/// Configuration for the web_vibez framework
-#[derive(Debug, Clone)]
-pub struct WebVibezConfig {
-    /// Maximum number of routes to cache in route matcher
-    pub max_route_cache: usize,
-    /// Enable route debugging information
-    pub debug_routes: bool,
-    /// Maximum middleware chain depth
-    pub max_middleware_depth: usize,
-    /// Request timeout in milliseconds
-    pub request_timeout_ms: u64,
-    /// Maximum request body size in bytes
-    pub max_request_body_size: usize,
-    /// Enable request/response logging
-    pub enable_logging: bool,
-    /// Rate limiting configuration
-    pub rate_limit_requests_per_minute: Option<u32>,
-    /// CORS configuration
-    pub cors_allowed_origins: Vec<String>,
-    /// Static file serving configuration
-    pub static_file_root: Option<String>,
-}
 
-impl Default for WebVibezConfig {
-    fn default() -> Self {
-        Self {
-            max_route_cache: 1000,
-            debug_routes: false,
-            max_middleware_depth: 20,
-            request_timeout_ms: 30000,
-            max_request_body_size: 10 * 1024 * 1024, // 10MB
-            enable_logging: true,
-            rate_limit_requests_per_minute: Some(1000),
-            cors_allowed_origins: Vec::from(["*".to_string()]),
-            static_file_root: Some("./static".to_string()),
-        }
-    }
-}

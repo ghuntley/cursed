@@ -1,6 +1,7 @@
 /// Security utilities for input validation, XSS protection, and more
 use std::collections::HashMap;
 use std::fmt;
+use regex::Regex;
 
 /// Input sanitizer for cleaning user input
 pub struct InputSanitizer {
@@ -324,6 +325,7 @@ impl Default for XssProtector {
 /// Input validation utilities
 pub struct InputValidator {
     rules: HashMap<String, ValidationRule>,
+    compiled_patterns: HashMap<String, Regex>,
 }
 
 #[derive(Debug, Clone)]
@@ -354,6 +356,7 @@ impl InputValidator {
     pub fn new() -> Self {
         Self {
             rules: HashMap::new(),
+            compiled_patterns: HashMap::new(),
         }
     }
 
@@ -409,7 +412,47 @@ impl InputValidator {
         });
 
         rule.pattern = Some(pattern.to_string());
+
+        // Pre-compile regex patterns for better performance and early error detection
+        if let Err(_) = self.compile_pattern(pattern) {
+            // Log warning but don't fail - will be handled during validation
+            eprintln!("Warning: Invalid regex pattern '{}' for field '{}'", pattern, field);
+        }
+
         self
+    }
+
+    /// Compile and cache a regex pattern
+    fn compile_pattern(&mut self, pattern: &str) -> Result<&Regex, String> {
+        if let Some(compiled) = self.compiled_patterns.get(pattern) {
+            return Ok(compiled);
+        }
+
+        // Handle built-in patterns
+        let regex_pattern = match pattern {
+            "email" => r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+            "url" => r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^\s]*)?$",
+            "phone" => r"^\+?[\d\s\-\(\)]{10,}$",
+            "numeric" => r"^\d+$",
+            "alphanumeric" => r"^[a-zA-Z0-9]+$",
+            "alpha" => r"^[a-zA-Z]+$",
+            "password_strong" => r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
+            "ipv4" => r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+            "credit_card" => r"^\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}$",
+            "postal_code" => r"^[A-Z0-9\s\-]{3,10}$",
+            "hex_color" => r"^#[0-9A-Fa-f]{6}$",
+            "username" => r"^[a-zA-Z0-9_]{3,20}$",
+            "slug" => r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            _ => pattern, // Use as-is for custom regex patterns
+        };
+
+        match Regex::new(regex_pattern) {
+            Ok(compiled_regex) => {
+                self.compiled_patterns.insert(pattern.to_string(), compiled_regex);
+                Ok(self.compiled_patterns.get(pattern).unwrap())
+            }
+            Err(e) => Err(format!("Invalid regex pattern '{}': {}", pattern, e)),
+        }
     }
 
     /// Validate input data
@@ -461,8 +504,14 @@ impl InputValidator {
         }
     }
 
-    /// Simple pattern matching (basic implementation)
+    /// Pattern matching with regex support
     fn matches_pattern(&self, value: &str, pattern: &str) -> bool {
+        // Try to get compiled regex pattern
+        if let Some(regex) = self.compiled_patterns.get(pattern) {
+            return regex.is_match(value);
+        }
+
+        // Fallback to basic pattern matching for backwards compatibility
         match pattern {
             "email" => {
                 let sanitizer = InputSanitizer::new();
@@ -475,8 +524,66 @@ impl InputValidator {
             "numeric" => value.chars().all(|c| c.is_ascii_digit()),
             "alphanumeric" => value.chars().all(|c| c.is_alphanumeric()),
             "alpha" => value.chars().all(|c| c.is_alphabetic()),
-            _ => true, // TODO: Implement regex matching when available
+            _ => {
+                // Try to compile pattern on-demand for custom regex
+                match Regex::new(pattern) {
+                    Ok(regex) => regex.is_match(value),
+                    Err(_) => {
+                        // Invalid regex pattern - log warning and fail validation
+                        eprintln!("Warning: Invalid regex pattern '{}' used in validation", pattern);
+                        false
+                    }
+                }
+            }
         }
+    }
+
+    /// Validate a single value against a pattern with detailed error information
+    pub fn validate_pattern(&mut self, value: &str, pattern: &str) -> Result<bool, String> {
+        // Compile pattern first to catch regex errors
+        match self.compile_pattern(pattern) {
+            Ok(regex) => Ok(regex.is_match(value)),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Get list of available built-in patterns
+    pub fn get_builtin_patterns() -> Vec<(&'static str, &'static str)> {
+        vec![
+            ("email", "Valid email address"),
+            ("url", "Valid HTTP/HTTPS URL"),
+            ("phone", "Phone number with optional country code"),
+            ("numeric", "Numbers only"),
+            ("alphanumeric", "Letters and numbers only"),
+            ("alpha", "Letters only"),
+            ("password_strong", "Strong password (8+ chars, mixed case, number, special char)"),
+            ("ipv4", "IPv4 address"),
+            ("credit_card", "Credit card number (with optional separators)"),
+            ("postal_code", "Postal/ZIP code"),
+            ("hex_color", "Hexadecimal color code"),
+            ("username", "Username (3-20 chars, letters, numbers, underscore)"),
+            ("slug", "URL slug (lowercase letters, numbers, hyphens)"),
+        ]
+    }
+
+    /// Test a pattern against sample values for validation
+    pub fn test_pattern(&mut self, pattern: &str, test_values: &[(&str, bool)]) -> Result<Vec<String>, String> {
+        let mut results = Vec::new();
+        
+        // Compile the pattern first
+        self.compile_pattern(pattern)?;
+        
+        for (value, expected) in test_values {
+            let actual = self.matches_pattern(value, pattern);
+            if actual != *expected {
+                results.push(format!(
+                    "Pattern '{}' failed for value '{}': expected {}, got {}",
+                    pattern, value, expected, actual
+                ));
+            }
+        }
+        
+        Ok(results)
     }
 }
 
@@ -575,5 +682,73 @@ mod tests {
         let errors = result.unwrap_err();
         assert_eq!(errors.len(), 1);
         assert_eq!(errors[0].field, "name");
+    }
+
+    #[test]
+    fn test_regex_patterns() {
+        let mut validator = InputValidator::new();
+
+        // Test built-in patterns
+        assert!(validator.validate_pattern("user@example.com", "email").unwrap());
+        assert!(!validator.validate_pattern("invalid-email", "email").unwrap());
+        
+        assert!(validator.validate_pattern("https://example.com", "url").unwrap());
+        assert!(!validator.validate_pattern("not-a-url", "url").unwrap());
+        
+        assert!(validator.validate_pattern("Password123!", "password_strong").unwrap());
+        assert!(!validator.validate_pattern("weak", "password_strong").unwrap());
+        
+        assert!(validator.validate_pattern("192.168.1.1", "ipv4").unwrap());
+        assert!(!validator.validate_pattern("999.999.999.999", "ipv4").unwrap());
+        
+        assert!(validator.validate_pattern("john_doe", "username").unwrap());
+        assert!(!validator.validate_pattern("jo", "username").unwrap()); // Too short
+        
+        assert!(validator.validate_pattern("#FF5733", "hex_color").unwrap());
+        assert!(!validator.validate_pattern("#GG5733", "hex_color").unwrap()); // Invalid hex
+        
+        // Test custom regex patterns
+        assert!(validator.validate_pattern("ABC123", r"^[A-Z]{3}\d{3}$").unwrap());
+        assert!(!validator.validate_pattern("abc123", r"^[A-Z]{3}\d{3}$").unwrap());
+        
+        // Test invalid regex
+        let result = validator.validate_pattern("test", r"[invalid regex(");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid regex pattern"));
+    }
+
+    #[test]
+    fn test_pattern_testing() {
+        let mut validator = InputValidator::new();
+        
+        let test_cases = [
+            ("valid@email.com", true),
+            ("invalid.email", false),
+            ("another@test.org", true),
+        ];
+        
+        let results = validator.test_pattern("email", &test_cases).unwrap();
+        assert!(results.is_empty(), "All test cases should pass");
+        
+        // Test with failing cases
+        let failing_cases = [
+            ("valid@email.com", false), // This should fail the test
+        ];
+        
+        let results = validator.test_pattern("email", &failing_cases).unwrap();
+        assert!(!results.is_empty(), "Should have failing test cases");
+    }
+
+    #[test]
+    fn test_builtin_pattern_list() {
+        let patterns = InputValidator::get_builtin_patterns();
+        assert!(!patterns.is_empty());
+        
+        // Check that key patterns are included
+        let pattern_names: Vec<&str> = patterns.iter().map(|(name, _)| *name).collect();
+        assert!(pattern_names.contains(&"email"));
+        assert!(pattern_names.contains(&"password_strong"));
+        assert!(pattern_names.contains(&"ipv4"));
+        assert!(pattern_names.contains(&"credit_card"));
     }
 }

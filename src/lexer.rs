@@ -146,6 +146,23 @@ impl Lexer {
         }
     }
     
+    /// Tokenize the entire input and return all tokens
+    pub fn tokenize(&mut self) -> Result<Vec<Token>, Error> {
+        let mut tokens = Vec::new();
+        
+        loop {
+            let token = self.next_token()?;
+            let is_eof = token.token_type == TokenType::Eof;
+            tokens.push(token);
+            
+            if is_eof {
+                break;
+            }
+        }
+        
+        Ok(tokens)
+    }
+    
     pub fn next_token(&mut self) -> Result<Token, Error> {
         // Skip whitespace
         while self.position < self.input.len() {

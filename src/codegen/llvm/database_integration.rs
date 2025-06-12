@@ -173,11 +173,13 @@ impl<'ctx> DatabaseLlvmRegistry<'ctx> {
     /// Register all database functions with LLVM module
     pub fn register_database_functions(&mut self) -> Result<(), String> {
         // Get all registered database functions
-        let function_names = self.integration.registry().list_functions();
-        
+        let function_names: Vec<String> = self.integration.registry().list_functions().into_iter().map(|s| s.to_string()).collect();
+
         for function_name in function_names {
-            if let Some(function) = self.integration.registry().get_function(function_name) {
-                self.register_llvm_function(function)?;
+            if let Some(function) = self.integration.registry().get_function(&function_name) {
+                // Clone the function to avoid borrowing issues
+                let function_clone = function.clone();
+                self.register_llvm_function(&function_clone)?;
             }
         }
         
@@ -236,7 +238,7 @@ impl<'ctx> DatabaseLlvmRegistry<'ctx> {
         use crate::stdlib::database::llvm_integration::ReturnType;
         
         match return_type {
-            ReturnType::Void => Ok(self.context.void_type().into()),
+            ReturnType::Void => Ok(self.context.i8_type().into()), // Use i8 instead of void for BasicTypeEnum
             ReturnType::String => Ok(self.context.i8_type().ptr_type(AddressSpace::default()).into()),
             ReturnType::Integer => Ok(self.context.i64_type().into()),
             ReturnType::Boolean => Ok(self.context.bool_type().into()),

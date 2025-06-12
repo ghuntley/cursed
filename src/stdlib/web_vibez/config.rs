@@ -2,8 +2,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebVibezConfig {
     pub server: ServerConfig,
     pub security: SecurityConfig,
@@ -15,7 +16,7 @@ pub struct WebVibezConfig {
     pub development: DevelopmentConfig,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
@@ -27,7 +28,7 @@ pub struct ServerConfig {
     pub max_body_size: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityConfig {
     pub csrf_secret: String,
     pub session_secret: String,
@@ -39,7 +40,7 @@ pub struct SecurityConfig {
     pub enable_secure_headers: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceConfig {
     pub enable_compression: bool,
     pub compression_level: u8,
@@ -51,7 +52,7 @@ pub struct PerformanceConfig {
     pub cache_max_age: Duration,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionConfig {
     pub cookie_name: String,
     pub max_age: Duration,
@@ -62,7 +63,7 @@ pub struct SessionConfig {
     pub cleanup_interval: Duration,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateConfig {
     pub template_dir: PathBuf,
     pub cache_templates: bool,
@@ -71,7 +72,7 @@ pub struct TemplateConfig {
     pub custom_filters: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StaticFileConfig {
     pub static_dir: PathBuf,
     pub enable_caching: bool,
@@ -82,7 +83,7 @@ pub struct StaticFileConfig {
     pub allowed_extensions: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoggingConfig {
     pub enable_request_logging: bool,
     pub enable_response_logging: bool,
@@ -93,7 +94,7 @@ pub struct LoggingConfig {
     pub error_log_path: Option<PathBuf>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DevelopmentConfig {
     pub enable_hot_reload: bool,
     pub enable_debug_mode: bool,
@@ -103,14 +104,14 @@ pub struct DevelopmentConfig {
     pub debug_endpoint: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SameSitePolicy {
     Strict,
     Lax,
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SessionStoreType {
     Memory,
     File(PathBuf),
@@ -118,7 +119,7 @@ pub enum SessionStoreType {
     Database(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogLevel {
     Error,
     Warn,
@@ -127,7 +128,7 @@ pub enum LogLevel {
     Trace,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogFormat {
     Common,
     Combined,
@@ -284,16 +285,158 @@ impl WebVibezConfig {
 
     /// Parse configuration from TOML string
     pub fn from_toml(toml_str: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        // TODO: Implement TOML parsing when CURSED has TOML support
-        // For now, return default configuration
-        Ok(Self::default())
+        // Parse the TOML string into a toml::Value first for custom handling
+        let toml_value: toml::Value = toml::from_str(toml_str)?;
+        
+        // Convert the toml::Value into our config struct with custom deserializer
+        let mut config = Self::default();
+        
+        if let toml::Value::Table(table) = toml_value {
+            // Parse server config
+            if let Some(server_table) = table.get("server").and_then(|v| v.as_table()) {
+                config.server = parse_server_config(server_table)?;
+            }
+            
+            // Parse security config
+            if let Some(security_table) = table.get("security").and_then(|v| v.as_table()) {
+                config.security = parse_security_config(security_table)?;
+            }
+            
+            // Parse performance config
+            if let Some(performance_table) = table.get("performance").and_then(|v| v.as_table()) {
+                config.performance = parse_performance_config(performance_table)?;
+            }
+            
+            // Parse session config
+            if let Some(session_table) = table.get("session").and_then(|v| v.as_table()) {
+                config.session = parse_session_config(session_table)?;
+            }
+            
+            // Parse template config
+            if let Some(template_table) = table.get("template").and_then(|v| v.as_table()) {
+                config.template = parse_template_config(template_table)?;
+            }
+            
+            // Parse static files config
+            if let Some(static_table) = table.get("static_files").and_then(|v| v.as_table()) {
+                config.static_files = parse_static_file_config(static_table)?;
+            }
+            
+            // Parse logging config
+            if let Some(logging_table) = table.get("logging").and_then(|v| v.as_table()) {
+                config.logging = parse_logging_config(logging_table)?;
+            }
+            
+            // Parse development config
+            if let Some(dev_table) = table.get("development").and_then(|v| v.as_table()) {
+                config.development = parse_development_config(dev_table)?;
+            }
+        }
+        
+        Ok(config)
     }
 
     /// Convert configuration to TOML string
     pub fn to_toml(&self) -> String {
-        // TODO: Implement TOML serialization when CURSED has TOML support
-        // For now, return empty string
-        String::new()
+        let mut toml_string = String::new();
+        
+        // Server section
+        toml_string.push_str("[server]\n");
+        toml_string.push_str(&format!("host = \"{}\"\n", self.server.host));
+        toml_string.push_str(&format!("port = {}\n", self.server.port));
+        toml_string.push_str(&format!("max_connections = {}\n", self.server.max_connections));
+        toml_string.push_str(&format!("request_timeout = {}\n", self.server.request_timeout.as_secs()));
+        toml_string.push_str(&format!("keep_alive_timeout = {}\n", self.server.keep_alive_timeout.as_secs()));
+        toml_string.push_str(&format!("header_timeout = {}\n", self.server.header_timeout.as_secs()));
+        toml_string.push_str(&format!("max_header_size = {}\n", self.server.max_header_size));
+        toml_string.push_str(&format!("max_body_size = {}\n", self.server.max_body_size));
+        toml_string.push_str("\n");
+        
+        // Security section
+        toml_string.push_str("[security]\n");
+        toml_string.push_str(&format!("csrf_secret = \"{}\"\n", self.security.csrf_secret));
+        toml_string.push_str(&format!("session_secret = \"{}\"\n", self.security.session_secret));
+        toml_string.push_str(&format!("enable_xss_protection = {}\n", self.security.enable_xss_protection));
+        toml_string.push_str(&format!("enable_csrf_protection = {}\n", self.security.enable_csrf_protection));
+        toml_string.push_str(&format!("allowed_origins = {:?}\n", self.security.allowed_origins));
+        if let Some(ref csp) = self.security.content_security_policy {
+            toml_string.push_str(&format!("content_security_policy = \"{}\"\n", csp));
+        }
+        if let Some(hsts) = self.security.hsts_max_age {
+            toml_string.push_str(&format!("hsts_max_age = {}\n", hsts));
+        }
+        toml_string.push_str(&format!("enable_secure_headers = {}\n", self.security.enable_secure_headers));
+        toml_string.push_str("\n");
+        
+        // Performance section
+        toml_string.push_str("[performance]\n");
+        toml_string.push_str(&format!("enable_compression = {}\n", self.performance.enable_compression));
+        toml_string.push_str(&format!("compression_level = {}\n", self.performance.compression_level));
+        toml_string.push_str(&format!("compression_threshold = {}\n", self.performance.compression_threshold));
+        toml_string.push_str(&format!("connection_pool_size = {}\n", self.performance.connection_pool_size));
+        toml_string.push_str(&format!("keep_alive_connections = {}\n", self.performance.keep_alive_connections));
+        toml_string.push_str(&format!("enable_http2 = {}\n", self.performance.enable_http2));
+        toml_string.push_str(&format!("enable_caching = {}\n", self.performance.enable_caching));
+        toml_string.push_str(&format!("cache_max_age = {}\n", self.performance.cache_max_age.as_secs()));
+        toml_string.push_str("\n");
+        
+        // Session section
+        toml_string.push_str("[session]\n");
+        toml_string.push_str(&format!("cookie_name = \"{}\"\n", self.session.cookie_name));
+        toml_string.push_str(&format!("max_age = {}\n", self.session.max_age.as_secs()));
+        toml_string.push_str(&format!("secure = {}\n", self.session.secure));
+        toml_string.push_str(&format!("http_only = {}\n", self.session.http_only));
+        toml_string.push_str(&format!("same_site = \"{:?}\"\n", self.session.same_site));
+        toml_string.push_str(&format!("store_type = \"{:?}\"\n", self.session.store_type));
+        toml_string.push_str(&format!("cleanup_interval = {}\n", self.session.cleanup_interval.as_secs()));
+        toml_string.push_str("\n");
+        
+        // Template section
+        toml_string.push_str("[template]\n");
+        toml_string.push_str(&format!("template_dir = \"{}\"\n", self.template.template_dir.display()));
+        toml_string.push_str(&format!("cache_templates = {}\n", self.template.cache_templates));
+        toml_string.push_str(&format!("auto_reload = {}\n", self.template.auto_reload));
+        toml_string.push_str(&format!("template_extension = \"{}\"\n", self.template.template_extension));
+        toml_string.push_str("\n");
+        
+        // Static files section
+        toml_string.push_str("[static_files]\n");
+        toml_string.push_str(&format!("static_dir = \"{}\"\n", self.static_files.static_dir.display()));
+        toml_string.push_str(&format!("enable_caching = {}\n", self.static_files.enable_caching));
+        toml_string.push_str(&format!("cache_max_age = {}\n", self.static_files.cache_max_age.as_secs()));
+        toml_string.push_str(&format!("enable_compression = {}\n", self.static_files.enable_compression));
+        toml_string.push_str(&format!("enable_etag = {}\n", self.static_files.enable_etag));
+        toml_string.push_str(&format!("enable_last_modified = {}\n", self.static_files.enable_last_modified));
+        toml_string.push_str(&format!("allowed_extensions = {:?}\n", self.static_files.allowed_extensions));
+        toml_string.push_str("\n");
+        
+        // Logging section
+        toml_string.push_str("[logging]\n");
+        toml_string.push_str(&format!("enable_request_logging = {}\n", self.logging.enable_request_logging));
+        toml_string.push_str(&format!("enable_response_logging = {}\n", self.logging.enable_response_logging));
+        toml_string.push_str(&format!("enable_error_logging = {}\n", self.logging.enable_error_logging));
+        toml_string.push_str(&format!("log_level = \"{:?}\"\n", self.logging.log_level));
+        toml_string.push_str(&format!("log_format = \"{:?}\"\n", self.logging.log_format));
+        if let Some(ref path) = self.logging.access_log_path {
+            toml_string.push_str(&format!("access_log_path = \"{}\"\n", path.display()));
+        }
+        if let Some(ref path) = self.logging.error_log_path {
+            toml_string.push_str(&format!("error_log_path = \"{}\"\n", path.display()));
+        }
+        toml_string.push_str("\n");
+        
+        // Development section
+        toml_string.push_str("[development]\n");
+        toml_string.push_str(&format!("enable_hot_reload = {}\n", self.development.enable_hot_reload));
+        toml_string.push_str(&format!("enable_debug_mode = {}\n", self.development.enable_debug_mode));
+        toml_string.push_str(&format!("enable_metrics = {}\n", self.development.enable_metrics));
+        toml_string.push_str(&format!("metrics_endpoint = \"{}\"\n", self.development.metrics_endpoint));
+        toml_string.push_str(&format!("health_check_endpoint = \"{}\"\n", self.development.health_check_endpoint));
+        if let Some(ref endpoint) = self.development.debug_endpoint {
+            toml_string.push_str(&format!("debug_endpoint = \"{}\"\n", endpoint));
+        }
+        
+        toml_string
     }
 
     /// Validate configuration
@@ -325,7 +468,7 @@ impl WebVibezConfig {
     pub fn production() -> Self {
         let mut config = Self::default();
         config.server.host = "0.0.0.0".to_string();
-        config.security.secure = true;
+        config.security.enable_secure_headers = true;
         config.development.enable_debug_mode = false;
         config.development.enable_hot_reload = false;
         config.template.auto_reload = false;
@@ -345,4 +488,275 @@ impl WebVibezConfig {
         config.logging.log_level = LogLevel::Debug;
         config
     }
+}
+
+// Helper functions for parsing TOML sections
+fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> Result<ServerConfig, Box<dyn std::error::Error>> {
+    let mut config = ServerConfig::default();
+    
+    if let Some(host) = table.get("host").and_then(|v| v.as_str()) {
+        config.host = host.to_string();
+    }
+    if let Some(port) = table.get("port").and_then(|v| v.as_integer()) {
+        config.port = port as u16;
+    }
+    if let Some(max_conn) = table.get("max_connections").and_then(|v| v.as_integer()) {
+        config.max_connections = max_conn as usize;
+    }
+    if let Some(timeout) = table.get("request_timeout").and_then(|v| v.as_integer()) {
+        config.request_timeout = Duration::from_secs(timeout as u64);
+    }
+    if let Some(timeout) = table.get("keep_alive_timeout").and_then(|v| v.as_integer()) {
+        config.keep_alive_timeout = Duration::from_secs(timeout as u64);
+    }
+    if let Some(timeout) = table.get("header_timeout").and_then(|v| v.as_integer()) {
+        config.header_timeout = Duration::from_secs(timeout as u64);
+    }
+    if let Some(size) = table.get("max_header_size").and_then(|v| v.as_integer()) {
+        config.max_header_size = size as usize;
+    }
+    if let Some(size) = table.get("max_body_size").and_then(|v| v.as_integer()) {
+        config.max_body_size = size as usize;
+    }
+    
+    Ok(config)
+}
+
+fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> Result<SecurityConfig, Box<dyn std::error::Error>> {
+    let mut config = SecurityConfig::default();
+    
+    if let Some(secret) = table.get("csrf_secret").and_then(|v| v.as_str()) {
+        config.csrf_secret = secret.to_string();
+    }
+    if let Some(secret) = table.get("session_secret").and_then(|v| v.as_str()) {
+        config.session_secret = secret.to_string();
+    }
+    if let Some(enable) = table.get("enable_xss_protection").and_then(|v| v.as_bool()) {
+        config.enable_xss_protection = enable;
+    }
+    if let Some(enable) = table.get("enable_csrf_protection").and_then(|v| v.as_bool()) {
+        config.enable_csrf_protection = enable;
+    }
+    if let Some(origins) = table.get("allowed_origins").and_then(|v| v.as_array()) {
+        config.allowed_origins = origins.iter()
+            .filter_map(|v| v.as_str())
+            .map(|s| s.to_string())
+            .collect();
+    }
+    if let Some(csp) = table.get("content_security_policy").and_then(|v| v.as_str()) {
+        config.content_security_policy = Some(csp.to_string());
+    }
+    if let Some(hsts) = table.get("hsts_max_age").and_then(|v| v.as_integer()) {
+        config.hsts_max_age = Some(hsts as u64);
+    }
+    if let Some(enable) = table.get("enable_secure_headers").and_then(|v| v.as_bool()) {
+        config.enable_secure_headers = enable;
+    }
+    
+    Ok(config)
+}
+
+fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> Result<PerformanceConfig, Box<dyn std::error::Error>> {
+    let mut config = PerformanceConfig::default();
+    
+    if let Some(enable) = table.get("enable_compression").and_then(|v| v.as_bool()) {
+        config.enable_compression = enable;
+    }
+    if let Some(level) = table.get("compression_level").and_then(|v| v.as_integer()) {
+        config.compression_level = level as u8;
+    }
+    if let Some(threshold) = table.get("compression_threshold").and_then(|v| v.as_integer()) {
+        config.compression_threshold = threshold as usize;
+    }
+    if let Some(pool_size) = table.get("connection_pool_size").and_then(|v| v.as_integer()) {
+        config.connection_pool_size = pool_size as usize;
+    }
+    if let Some(keep_alive) = table.get("keep_alive_connections").and_then(|v| v.as_integer()) {
+        config.keep_alive_connections = keep_alive as usize;
+    }
+    if let Some(enable) = table.get("enable_http2").and_then(|v| v.as_bool()) {
+        config.enable_http2 = enable;
+    }
+    if let Some(enable) = table.get("enable_caching").and_then(|v| v.as_bool()) {
+        config.enable_caching = enable;
+    }
+    if let Some(max_age) = table.get("cache_max_age").and_then(|v| v.as_integer()) {
+        config.cache_max_age = Duration::from_secs(max_age as u64);
+    }
+    
+    Ok(config)
+}
+
+fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> Result<SessionConfig, Box<dyn std::error::Error>> {
+    let mut config = SessionConfig::default();
+    
+    if let Some(name) = table.get("cookie_name").and_then(|v| v.as_str()) {
+        config.cookie_name = name.to_string();
+    }
+    if let Some(max_age) = table.get("max_age").and_then(|v| v.as_integer()) {
+        config.max_age = Duration::from_secs(max_age as u64);
+    }
+    if let Some(secure) = table.get("secure").and_then(|v| v.as_bool()) {
+        config.secure = secure;
+    }
+    if let Some(http_only) = table.get("http_only").and_then(|v| v.as_bool()) {
+        config.http_only = http_only;
+    }
+    if let Some(same_site) = table.get("same_site").and_then(|v| v.as_str()) {
+        config.same_site = match same_site {
+            "Strict" => SameSitePolicy::Strict,
+            "Lax" => SameSitePolicy::Lax,
+            "None" => SameSitePolicy::None,
+            _ => SameSitePolicy::Lax,
+        };
+    }
+    if let Some(store_type) = table.get("store_type").and_then(|v| v.as_str()) {
+        config.store_type = match store_type {
+            "Memory" => SessionStoreType::Memory,
+            s if s.starts_with("File(") => {
+                let path = s.trim_start_matches("File(").trim_end_matches(")");
+                SessionStoreType::File(PathBuf::from(path))
+            }
+            s if s.starts_with("Redis(") => {
+                let conn = s.trim_start_matches("Redis(").trim_end_matches(")");
+                SessionStoreType::Redis(conn.to_string())
+            }
+            s if s.starts_with("Database(") => {
+                let conn = s.trim_start_matches("Database(").trim_end_matches(")");
+                SessionStoreType::Database(conn.to_string())
+            }
+            _ => SessionStoreType::Memory,
+        };
+    }
+    if let Some(interval) = table.get("cleanup_interval").and_then(|v| v.as_integer()) {
+        config.cleanup_interval = Duration::from_secs(interval as u64);
+    }
+    
+    Ok(config)
+}
+
+fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> Result<TemplateConfig, Box<dyn std::error::Error>> {
+    let mut config = TemplateConfig::default();
+    
+    if let Some(dir) = table.get("template_dir").and_then(|v| v.as_str()) {
+        config.template_dir = PathBuf::from(dir);
+    }
+    if let Some(cache) = table.get("cache_templates").and_then(|v| v.as_bool()) {
+        config.cache_templates = cache;
+    }
+    if let Some(auto_reload) = table.get("auto_reload").and_then(|v| v.as_bool()) {
+        config.auto_reload = auto_reload;
+    }
+    if let Some(ext) = table.get("template_extension").and_then(|v| v.as_str()) {
+        config.template_extension = ext.to_string();
+    }
+    if let Some(filters) = table.get("custom_filters").and_then(|v| v.as_table()) {
+        for (key, value) in filters {
+            if let Some(filter_value) = value.as_str() {
+                config.custom_filters.insert(key.clone(), filter_value.to_string());
+            }
+        }
+    }
+    
+    Ok(config)
+}
+
+fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> Result<StaticFileConfig, Box<dyn std::error::Error>> {
+    let mut config = StaticFileConfig::default();
+    
+    if let Some(dir) = table.get("static_dir").and_then(|v| v.as_str()) {
+        config.static_dir = PathBuf::from(dir);
+    }
+    if let Some(enable) = table.get("enable_caching").and_then(|v| v.as_bool()) {
+        config.enable_caching = enable;
+    }
+    if let Some(max_age) = table.get("cache_max_age").and_then(|v| v.as_integer()) {
+        config.cache_max_age = Duration::from_secs(max_age as u64);
+    }
+    if let Some(enable) = table.get("enable_compression").and_then(|v| v.as_bool()) {
+        config.enable_compression = enable;
+    }
+    if let Some(enable) = table.get("enable_etag").and_then(|v| v.as_bool()) {
+        config.enable_etag = enable;
+    }
+    if let Some(enable) = table.get("enable_last_modified").and_then(|v| v.as_bool()) {
+        config.enable_last_modified = enable;
+    }
+    if let Some(extensions) = table.get("allowed_extensions").and_then(|v| v.as_array()) {
+        config.allowed_extensions = extensions.iter()
+            .filter_map(|v| v.as_str())
+            .map(|s| s.to_string())
+            .collect();
+    }
+    
+    Ok(config)
+}
+
+fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<LoggingConfig, Box<dyn std::error::Error>> {
+    let mut config = LoggingConfig::default();
+    
+    if let Some(enable) = table.get("enable_request_logging").and_then(|v| v.as_bool()) {
+        config.enable_request_logging = enable;
+    }
+    if let Some(enable) = table.get("enable_response_logging").and_then(|v| v.as_bool()) {
+        config.enable_response_logging = enable;
+    }
+    if let Some(enable) = table.get("enable_error_logging").and_then(|v| v.as_bool()) {
+        config.enable_error_logging = enable;
+    }
+    if let Some(level) = table.get("log_level").and_then(|v| v.as_str()) {
+        config.log_level = match level {
+            "Error" => LogLevel::Error,
+            "Warn" => LogLevel::Warn,
+            "Info" => LogLevel::Info,
+            "Debug" => LogLevel::Debug,
+            "Trace" => LogLevel::Trace,
+            _ => LogLevel::Info,
+        };
+    }
+    if let Some(format) = table.get("log_format").and_then(|v| v.as_str()) {
+        config.log_format = match format {
+            "Common" => LogFormat::Common,
+            "Combined" => LogFormat::Combined,
+            "Json" => LogFormat::Json,
+            s if s.starts_with("Custom(") => {
+                let custom = s.trim_start_matches("Custom(").trim_end_matches(")");
+                LogFormat::Custom(custom.to_string())
+            }
+            _ => LogFormat::Combined,
+        };
+    }
+    if let Some(path) = table.get("access_log_path").and_then(|v| v.as_str()) {
+        config.access_log_path = Some(PathBuf::from(path));
+    }
+    if let Some(path) = table.get("error_log_path").and_then(|v| v.as_str()) {
+        config.error_log_path = Some(PathBuf::from(path));
+    }
+    
+    Ok(config)
+}
+
+fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> Result<DevelopmentConfig, Box<dyn std::error::Error>> {
+    let mut config = DevelopmentConfig::default();
+    
+    if let Some(enable) = table.get("enable_hot_reload").and_then(|v| v.as_bool()) {
+        config.enable_hot_reload = enable;
+    }
+    if let Some(enable) = table.get("enable_debug_mode").and_then(|v| v.as_bool()) {
+        config.enable_debug_mode = enable;
+    }
+    if let Some(enable) = table.get("enable_metrics").and_then(|v| v.as_bool()) {
+        config.enable_metrics = enable;
+    }
+    if let Some(endpoint) = table.get("metrics_endpoint").and_then(|v| v.as_str()) {
+        config.metrics_endpoint = endpoint.to_string();
+    }
+    if let Some(endpoint) = table.get("health_check_endpoint").and_then(|v| v.as_str()) {
+        config.health_check_endpoint = endpoint.to_string();
+    }
+    if let Some(endpoint) = table.get("debug_endpoint").and_then(|v| v.as_str()) {
+        config.debug_endpoint = Some(endpoint.to_string());
+    }
+    
+    Ok(config)
 }

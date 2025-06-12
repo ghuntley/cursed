@@ -100,6 +100,8 @@ impl DatabaseFunctionRegistry {
 pub struct DatabaseFunction {
     /// fr fr Function name
     pub name: String,
+    /// fr fr LLVM function name
+    pub llvm_name: String,
     /// fr fr Function signature
     pub signature: FunctionSignature,
     /// fr fr Function implementation type
@@ -115,6 +117,8 @@ pub struct FunctionSignature {
     pub return_type: ReturnType,
     /// fr fr Whether function can fail
     pub can_fail: bool,
+    /// fr fr Whether function has variadic parameters
+    pub is_variadic: bool,
 }
 
 /// fr fr Parameter types for database functions
@@ -201,10 +205,12 @@ impl DatabaseLLVMIntegrationImpl {
             "sql_slay_open".to_string(),
             DatabaseFunction {
                 name: "sql_slay_open".to_string(),
+                llvm_name: "cursed_db_open".to_string(),
                 signature: FunctionSignature {
                     parameters: Vec::from([ParameterType::String, ParameterType::String]),
                     return_type: ReturnType::Connection,
                     can_fail: true,
+                    is_variadic: false,
                 },
                 implementation: FunctionImplementation::Native("cursed_db_open".to_string()),
             },
@@ -215,10 +221,12 @@ impl DatabaseLLVMIntegrationImpl {
             "sql_slay_query".to_string(),
             DatabaseFunction {
                 name: "sql_slay_query".to_string(),
+                llvm_name: "cursed_db_query".to_string(),
                 signature: FunctionSignature {
                     parameters: Vec::from([ParameterType::Connection, ParameterType::String]),
                     return_type: ReturnType::QueryResult,
                     can_fail: true,
+                    is_variadic: false,
                 },
                 implementation: FunctionImplementation::Native("cursed_db_query".to_string()),
             },
@@ -229,10 +237,12 @@ impl DatabaseLLVMIntegrationImpl {
             "sql_slay_exec".to_string(),
             DatabaseFunction {
                 name: "sql_slay_exec".to_string(),
+                llvm_name: "cursed_db_exec".to_string(),
                 signature: FunctionSignature {
                     parameters: Vec::from([ParameterType::Connection, ParameterType::String]),
                     return_type: ReturnType::ExecuteResult,
                     can_fail: true,
+                    is_variadic: false,
                 },
                 implementation: FunctionImplementation::Native("cursed_db_exec".to_string()),
             },
@@ -243,10 +253,12 @@ impl DatabaseLLVMIntegrationImpl {
             "sql_slay_begin".to_string(),
             DatabaseFunction {
                 name: "sql_slay_begin".to_string(),
+                llvm_name: "cursed_db_begin_transaction".to_string(),
                 signature: FunctionSignature {
                     parameters: Vec::from([ParameterType::Connection]),
                     return_type: ReturnType::Transaction,
                     can_fail: true,
+                    is_variadic: false,
                 },
                 implementation: FunctionImplementation::Native("cursed_db_begin".to_string()),
             },
@@ -256,10 +268,12 @@ impl DatabaseLLVMIntegrationImpl {
             "sql_slay_commit".to_string(),
             DatabaseFunction {
                 name: "sql_slay_commit".to_string(),
+                llvm_name: "cursed_db_commit".to_string(),
                 signature: FunctionSignature {
                     parameters: Vec::from([ParameterType::Transaction]),
                     return_type: ReturnType::Void,
                     can_fail: true,
+                    is_variadic: false,
                 },
                 implementation: FunctionImplementation::Native("cursed_db_commit".to_string()),
             },
@@ -269,10 +283,12 @@ impl DatabaseLLVMIntegrationImpl {
             "sql_slay_rollback".to_string(),
             DatabaseFunction {
                 name: "sql_slay_rollback".to_string(),
+                llvm_name: "cursed_db_rollback".to_string(),
                 signature: FunctionSignature {
                     parameters: Vec::from([ParameterType::Transaction]),
                     return_type: ReturnType::Void,
                     can_fail: true,
+                    is_variadic: false,
                 },
                 implementation: FunctionImplementation::Native("cursed_db_rollback".to_string()),
             },

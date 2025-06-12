@@ -71,10 +71,62 @@ pub use debug_runtime::{
 pub use error_propagation::{
     ErrorPropagationOperator, PropagationError, NoneError, ErrorPropagationContext,
     ErrorContextStack, PropagationStatistics, PropagationConfig, PropagationResult,
-    helpers
+    helpers,
+    cursed_question_mark_operator, cursed_enhanced_question_mark, cursed_check_result,
+    cursed_check_option, cursed_error_propagation_check
+};
+pub use error_propagation_runtime::{
+    cursed_error_propagation, cursed_error_propagation_init, cursed_error_propagation_cleanup,
+    cursed_error_propagation_panic, cursed_record_error_context
 };
 pub use error_context::{
     ErrorContextManager, EnhancedErrorContext, FunctionCallContext, FunctionCallStack,
     SourceInfo, SourceLocationMapper, ErrorContextRegistry, ErrorChainTracker,
     ErrorChain, ErrorContextInfo, ErrorReport, ContextManagerConfig
 };
+
+/// Main runtime system that aggregates all runtime components
+pub struct Runtime {
+    pub goroutine_scheduler: Option<GoroutineScheduler>,
+    pub panic_runtime: Option<std::sync::Arc<PanicRuntime>>,
+    pub error_runtime: Option<std::sync::Arc<ErrorRuntime>>,
+    pub stack_trace_manager: Option<StackTraceManager>,
+    pub debug_manager: Option<DebugManager>,
+}
+
+impl Runtime {
+    /// Create a new runtime system
+    pub fn new() -> Self {
+        Self {
+            goroutine_scheduler: None,
+            panic_runtime: None,
+            error_runtime: None,
+            stack_trace_manager: None,
+            debug_manager: None,
+        }
+    }
+    
+    /// Initialize all runtime components
+    pub fn initialize(&mut self) -> Result<(), crate::error::Error> {
+        // Initialize panic runtime
+        initialize_panic_runtime();
+        if let Some(runtime) = get_panic_runtime() {
+            self.panic_runtime = Some(runtime.clone());
+        }
+        
+        // Initialize error runtime
+        initialize_error_runtime();
+        if let Some(runtime) = get_error_runtime() {
+            self.error_runtime = Some(runtime.clone());
+        }
+        
+        // Initialize other components as needed
+        Ok(())
+    }
+}
+
+impl Default for Runtime {
+    fn default() -> Self {
+        Self::new()
+    }
+}

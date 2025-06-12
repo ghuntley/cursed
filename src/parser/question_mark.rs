@@ -48,20 +48,22 @@ impl Parser {
     /// 
     /// This maintains compatibility with the existing ErrorPropagation type
     /// while we transition to the new QuestionMarkExpression.
-    pub fn parse_error_propagation(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, crate::error::Error> {
+    pub fn parse_error_propagation(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
         if !self.current_token_is(&TokenType::Question) {
-            return Err(crate::error::Error::Parse(format!("Expected '?', got {:?}", self.current_token.token_type)));
+            return Err(CursedError::parse_error_with_location(
+                format!("Expected '?' token, found {:?}", self.current_token.token_type),
+                self.current_token.location.line,
+                self.current_token.location.column,
+            ));
         }
 
         let question_token = self.current_token.clone();
         
-        // Move past the '?' token
-        self.lexer.next_token();
+        // Move past the '?' token using parser's advance method
+        self.advance_token()?;
         
-        // Create the error propagation expression
-        let error_prop = ErrorPropagation::new(
-            left,
-        );
+        // Create the error propagation expression with location info
+        let error_prop = ErrorPropagation::new(left);
         
         Ok(Box::new(error_prop))
     }
@@ -145,7 +147,7 @@ impl Parser {
     }
     
     /// Parse chained question marks (expr??.foo?)
-    pub fn parse_chained_question_marks(&mut self, mut expr: Box<dyn Expression>) -> Result<Box<dyn Expression>, crate::error::Error> {
+    pub fn parse_chained_question_marks(&mut self, mut expr: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
         while self.is_question_mark() {
             expr = self.parse_question_mark_expression(expr)?;
         }
@@ -211,7 +213,8 @@ mod tests {
         
         let var_expr = Identifier::new("result".to_string(), "result".to_string());
         
-        parser.advance_token().unwrap(); // Move to first token
+        // The parser should already be positioned to parse the first token
+        // which in this case should be "result", so we advance to get to "?"
         parser.advance_token().unwrap(); // Move to '?' token
         
         let result = parser.parse_error_propagation(Box::new(var_expr));

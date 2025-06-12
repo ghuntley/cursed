@@ -1,6 +1,48 @@
 /// HTTP client functionality for making requests
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use reqwest;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use std::str::FromStr;
+use chrono::{DateTime, Utc, TimeZone};
+use httpdate;
+use url::Url;
+use urlencoding;
+
+/// Parse HTTP date format (RFC 7231)
+/// Supports formats: RFC 1123, RFC 850, and ANSI C's asctime()
+fn parse_http_date(date_str: &str) -> Option<u64> {
+    // Try parsing with httpdate crate first (most efficient)
+    if let Ok(system_time) = httpdate::parse_http_date(date_str) {
+        return system_time.duration_since(UNIX_EPOCH).ok().map(|d| d.as_secs());
+    }
+    
+    // Fall back to chrono parsing for additional formats
+    let formats = [
+        "%a, %d %b %Y %H:%M:%S GMT",         // RFC 1123: "Sun, 06 Nov 1994 08:49:37 GMT"
+        "%A, %d-%b-%y %H:%M:%S GMT",         // RFC 850: "Sunday, 06-Nov-94 08:49:37 GMT"  
+        "%a %b  %d %H:%M:%S %Y",             // asctime(): "Sun Nov  6 08:49:37 1994"
+        "%a %b %d %H:%M:%S %Y",              // asctime() variant: "Sun Nov 6 08:49:37 1994"
+        "%Y-%m-%d %H:%M:%S UTC",             // ISO-like format: "1994-11-06 08:49:37 UTC"
+        "%Y-%m-%dT%H:%M:%SZ",                // ISO 8601: "1994-11-06T08:49:37Z"
+        "%Y-%m-%dT%H:%M:%S%.fZ",             // ISO 8601 with fractional seconds
+    ];
+    
+    for format in &formats {
+        if let Ok(parsed) = DateTime::parse_from_str(date_str, format) {
+            return Some(parsed.timestamp() as u64);
+        }
+        
+        // Try parsing as UTC
+        if let Ok(parsed) = chrono::NaiveDateTime::parse_from_str(date_str, format) {
+            return Some(parsed.and_utc().timestamp() as u64);
+        }
+    }
+    
+    None
+}
+
+
 
 /// HTTP client for making requests
 pub struct HttpClient {
@@ -103,7 +145,18 @@ impl HttpClient {
             if url.starts_with("http://") || url.starts_with("https://") {
                 url.to_string()
             } else {
-                format!("{}/{}", base_url.trim_end_matches('/'), url.trim_start_matches('/'))
+                // Use proper URL joining
+                if let Ok(base) = Url::parse(base_url) {
+                    if let Ok(joined) = base.join(url) {
+                        joined.to_string()
+                    } else {
+                        // Fallback to simple concatenation
+                        format!("{}/{}", base_url.trim_end_matches('/'), url.trim_start_matches('/'))
+                    }
+                } else {
+                    // Invalid base URL, use as-is
+                    format!("{}/{}", base_url.trim_end_matches('/'), url.trim_start_matches('/'))
+                }
             }
         } else {
             url.to_string()
@@ -158,11 +211,12 @@ impl RequestBuilder {
 
     /// Set request body (raw bytes)
     pub fn body(mut self, body: Vec<u8>) -> Self {
+        let body_len = body.len();
         self.body = Some(body);
         if !self.headers.contains_key("Content-Type") {
             self.headers.insert("Content-Type".to_string(), "application/octet-stream".to_string());
         }
-        self.headers.insert("Content-Length".to_string(), body.len().to_string());
+        self.headers.insert("Content-Length".to_string(), body_len.to_string());
         self
     }
 
@@ -213,9 +267,95 @@ impl RequestBuilder {
 
     /// Execute the request
     pub fn send(self) -> Result<HttpResponse, HttpError> {
-        // In a real implementation, this would make the actual HTTP request
-        // For now, we'll simulate a response based on the request
-        self.simulate_request()
+        // Use async runtime to execute the HTTP request
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| HttpError::Other(format!("Failed to create async runtime: {}", e)))?;
+        
+        runtime.block_on(self.send_async())
+    }
+
+    /// Execute the request asynchronously
+    async fn send_async(self) -> Result<HttpResponse, HttpError> {
+        // Validate URL
+        Url::parse(&self.url)
+            .map_err(|_| HttpError::InvalidUrl(self.url.clone()))?;
+        
+        let client = reqwest::Client::builder()
+            .timeout(self.timeout)
+            .redirect(if self.follow_redirects {
+                reqwest::redirect::Policy::limited(self.max_redirects)
+            } else {
+                reqwest::redirect::Policy::none()
+            })
+            .build()
+            .map_err(|e| HttpError::NetworkError(format!("Failed to build client: {}", e)))?;
+
+        let method = reqwest::Method::from_str(&self.method)
+            .map_err(|e| HttpError::Other(format!("Invalid HTTP method: {}", e)))?;
+
+        let mut request_builder = client.request(method, &self.url);
+
+        // Add headers
+        let mut header_map = HeaderMap::new();
+        for (key, value) in &self.headers {
+            let header_name = HeaderName::from_str(key)
+                .map_err(|_| HttpError::Other(format!("Invalid header name: {}", key)))?;
+            let header_value = HeaderValue::from_str(value)
+                .map_err(|_| HttpError::Other(format!("Invalid header value: {}", value)))?;
+            header_map.insert(header_name, header_value);
+        }
+        request_builder = request_builder.headers(header_map);
+
+        // Add body if present
+        if let Some(body) = self.body {
+            request_builder = request_builder.body(body);
+        }
+
+        // Send the request
+        let start_time = SystemTime::now();
+        let response = request_builder.send().await
+            .map_err(|e| {
+                if e.is_timeout() {
+                    HttpError::TimeoutError
+                } else if e.is_connect() {
+                    HttpError::ConnectionError(format!("Connection failed: {}", e))
+                } else if e.is_request() {
+                    HttpError::RequestError(format!("Request failed: {}", e))
+                } else if e.is_decode() {
+                    HttpError::ResponseError(format!("Response decode failed: {}", e))
+                } else if e.is_redirect() {
+                    HttpError::TooManyRedirects
+                } else if e.to_string().contains("tls") || e.to_string().contains("ssl") {
+                    HttpError::TlsError(format!("TLS/SSL error: {}", e))
+                } else {
+                    HttpError::NetworkError(format!("Request failed: {}", e))
+                }
+            })?;
+
+        let request_duration = start_time.elapsed().unwrap_or_default();
+        let status = response.status().as_u16();
+        let url = response.url().to_string();
+
+        // Extract headers
+        let mut response_headers = HashMap::new();
+        for (name, value) in response.headers() {
+            if let Ok(value_str) = value.to_str() {
+                response_headers.insert(name.to_string(), value_str.to_string());
+            }
+        }
+
+        // Get response body
+        let body = response.bytes().await
+            .map_err(|e| HttpError::ResponseError(format!("Failed to read response body: {}", e)))?
+            .to_vec();
+
+        Ok(HttpResponse {
+            status,
+            headers: response_headers,
+            body,
+            url,
+            request_duration,
+        })
     }
 
     /// Encode form data as URL-encoded string
@@ -227,43 +367,7 @@ impl RequestBuilder {
             .join("&")
     }
 
-    /// Simulate HTTP request (placeholder implementation)
-    fn simulate_request(self) -> Result<HttpResponse, HttpError> {
-        // Simulate network delay
-        std::thread::sleep(Duration::from_millis(10));
 
-        // Create simulated response based on request
-        let status = if self.url.contains("error") {
-            500
-        } else if self.url.contains("notfound") {
-            404
-        } else {
-            200
-        };
-
-        let mut response_headers = HashMap::new();
-        response_headers.insert("Content-Type".to_string(), "application/json".to_string());
-        response_headers.insert("Server".to_string(), "CURSED-WebVibez-Mock".to_string());
-
-        let body = if status == 200 {
-            format!(
-                r#"{{"method":"{}","url":"{}","status":"success"}}"#,
-                self.method, self.url
-            )
-        } else {
-            format!(r#"{{"error":"HTTP {} Error","status":"error"}}"#, status)
-        };
-
-        response_headers.insert("Content-Length".to_string(), body.len().to_string());
-
-        Ok(HttpResponse {
-            status,
-            headers: response_headers,
-            body: body.into_bytes(),
-            url: self.url,
-            request_duration: Duration::from_millis(10),
-        })
-    }
 }
 
 /// HTTP response
@@ -367,6 +471,10 @@ pub enum HttpError {
     InvalidJson,
     TooManyRedirects,
     AuthenticationFailed,
+    TlsError(String),
+    ConnectionError(String),
+    RequestError(String),
+    ResponseError(String),
     Other(String),
 }
 
@@ -380,6 +488,10 @@ impl std::fmt::Display for HttpError {
             HttpError::InvalidJson => write!(f, "Invalid JSON response"),
             HttpError::TooManyRedirects => write!(f, "Too many redirects"),
             HttpError::AuthenticationFailed => write!(f, "Authentication failed"),
+            HttpError::TlsError(msg) => write!(f, "TLS/SSL error: {}", msg),
+            HttpError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
+            HttpError::RequestError(msg) => write!(f, "Request error: {}", msg),
+            HttpError::ResponseError(msg) => write!(f, "Response error: {}", msg),
             HttpError::Other(msg) => write!(f, "HTTP error: {}", msg),
         }
     }
@@ -438,8 +550,7 @@ impl Cookie {
                     "path" => cookie.path = Some(value.trim().to_string()),
                     "max-age" => cookie.max_age = value.trim().parse().ok(),
                     "expires" => {
-                        // TODO: Parse HTTP date format
-                        cookie.expires = Some(0);
+                        cookie.expires = parse_http_date(value.trim());
                     }
                     _ => {}
                 }
@@ -561,18 +672,9 @@ pub struct PoolStats {
     pub idle_timeout_seconds: u64,
 }
 
-/// Simple URL encoding
+/// URL encoding using the urlencoding crate
 fn url_encode(input: &str) -> String {
-    input
-        .chars()
-        .map(|c| {
-            if c.is_alphanumeric() || "-_.~".contains(c) {
-                c.to_string()
-            } else {
-                format!("%{:02X}", c as u8)
-            }
-        })
-        .collect()
+    urlencoding::encode(input).to_string()
 }
 
 /// Simple base64 encoding
@@ -707,22 +809,30 @@ mod tests {
     }
 
     #[test]
-    fn test_simulated_request() {
+    fn test_request_validation() {
         let client = HttpClient::new();
         
-        // Test successful request
-        let response = client.get("https://api.example.com/users").send().unwrap();
-        assert!(response.is_success());
-        assert_eq!(response.status, 200);
-
-        // Test error request
-        let error_response = client.get("https://api.example.com/error").send().unwrap();
-        assert!(error_response.is_server_error());
-        assert_eq!(error_response.status, 500);
-
-        // Test 404 request
-        let not_found = client.get("https://api.example.com/notfound").send().unwrap();
-        assert!(not_found.is_client_error());
-        assert_eq!(not_found.status, 404);
+        // Test URL validation - invalid URLs should be caught before network calls
+        let invalid_request = client.get("not-a-valid-url").send();
+        assert!(invalid_request.is_err());
+        
+        // Test request building with invalid header names
+        let mut headers = HashMap::new();
+        headers.insert("Invalid\nHeader".to_string(), "value".to_string());
+        
+        let invalid_header_request = client.get("https://httpbin.org/get")
+            .headers(headers)
+            .send();
+        assert!(invalid_header_request.is_err());
+        
+        // Test that valid request building works (we won't send it)
+        let valid_request_builder = client.get("https://httpbin.org/get")
+            .header("Content-Type".to_string(), "application/json".to_string())
+            .json(r#"{"test": "data"}"#);
+        
+        // Verify the request builder has correct properties
+        assert_eq!(valid_request_builder.method, "GET");
+        assert!(valid_request_builder.url.contains("httpbin.org"));
+        assert!(valid_request_builder.headers.contains_key("Content-Type"));
     }
 }

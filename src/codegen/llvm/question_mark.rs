@@ -56,13 +56,14 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
         let value_temp = self.next_temp_name();
         let error_temp = self.next_temp_name();
         
-        // Compile the inner expression
-        let inner_expr_ir = self.compile_expression_to_ir(expr.expression.as_ref())?;
+        // Compile the inner expression using the expression compiler
+        let inner_expr_ir = self.compile_expression_to_string(expr.expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
         
         // Extract is_ok flag from Result
         let extract_is_ok = format!(
             "{} = extractvalue {} {}, 0  ; Extract is_ok flag",
-            is_ok_temp, self.get_result_type(), inner_expr_ir
+            is_ok_temp, self.get_result_type("i32", "String"), inner_expr_ir
         );
         
         // Create basic blocks for control flow
@@ -79,7 +80,7 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
         // Success block: extract value
         let success_ir = format!(
             "{}:\n  {} = extractvalue {} {}, 1  ; Extract success value\n  br label %{}",
-            success_block, value_temp, self.get_result_type(), inner_expr_ir, merge_block
+            success_block, value_temp, self.get_result_type("i32", "String"), inner_expr_ir, merge_block
         );
         
         // Error block: extract error and return
@@ -87,15 +88,15 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
             "{}:\n  {} = extractvalue {} {}, 1  ; Extract error value\n  {} = call {} @cursed_propagate_result_error({} {}, i32 {}, i32 {})\n  ret {} {}",
             error_block,
             error_temp,
-            self.get_result_type(),
+            self.get_result_type("i32", "String"),
             inner_expr_ir,
             result_temp,
-            self.get_result_type(),
+            self.get_result_type("i32", "String"),
             self.get_error_type(),
             error_temp,
             expr.location().0,
             expr.location().1,
-            self.get_result_type(),
+            self.get_result_type("i32", "String"),
             result_temp
         );
         
@@ -121,13 +122,14 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
         let value_temp = self.next_temp_name();
         let none_result_temp = self.next_temp_name();
         
-        // Compile the inner expression
-        let inner_expr_ir = self.compile_expression_to_ir(expr.expression.as_ref())?;
+        // Compile the inner expression using the expression compiler
+        let inner_expr_ir = self.compile_expression_to_string(expr.expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
         
         // Extract is_some flag from Option
         let extract_is_some = format!(
             "{} = extractvalue {} {}, 0  ; Extract is_some flag",
-            is_some_temp, self.get_option_type(), inner_expr_ir
+            is_some_temp, self.get_option_type("i32"), inner_expr_ir
         );
         
         // Create basic blocks for control flow
@@ -144,7 +146,7 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
         // Some block: extract value
         let some_ir = format!(
             "{}:\n  {} = extractvalue {} {}, 1  ; Extract some value\n  br label %{}",
-            some_block, value_temp, self.get_option_type(), inner_expr_ir, merge_block
+            some_block, value_temp, self.get_option_type("i32"), inner_expr_ir, merge_block
         );
         
         // None block: create None result and return
@@ -152,10 +154,10 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
             "{}:\n  {} = call {} @cursed_propagate_option_none(i32 {}, i32 {})\n  ret {} {}",
             none_block,
             none_result_temp,
-            self.get_option_type(),
+            self.get_option_type("i32"),
             expr.location().0,
             expr.location().1,
-            self.get_option_type(),
+            self.get_option_type("i32"),
             none_result_temp
         );
         
@@ -176,7 +178,8 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
         debug!("Generating error propagation runtime call");
         
         // Determine expression type
-        let expr_type = self.infer_expression_type(expr.expression.as_ref())?;
+        let expr_type = self.infer_expression_type_string(expr.expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
         
         if expr_type.starts_with("Result<") {
             self.compile_result_question_mark(expr)
@@ -238,72 +241,11 @@ impl ErrorPropagationRuntime {
     }
 }
 
-/// Helper implementations for LlvmCodeGenerator
-impl LlvmCodeGenerator {
-    /// Compile expression to LLVM IR string
-    fn compile_expression_to_ir(&mut self, expr: &dyn Expression) -> Result<String, CursedError> {
-        // This would integrate with the main expression compiler
-        // For now, return a placeholder
-        Ok("%expr_result".to_string())
-    }
-    
-    /// Get next temporary ID (placeholder counter)
-    pub fn next_temp_counter(&mut self) -> usize {
-        static mut TEMP_COUNTER: usize = 0;
-        unsafe {
-            TEMP_COUNTER += 1;
-            TEMP_COUNTER
-        }
-    }
-    
-    /// Get next block ID (placeholder counter)
-    pub fn next_block_counter(&mut self) -> usize {
-        static mut BLOCK_COUNTER: usize = 0;
-        unsafe {
-            BLOCK_COUNTER += 1;
-            BLOCK_COUNTER
-        }
-    }
-    
-    /// Infer expression type
-    fn infer_expression_type(&self, expr: &dyn Expression) -> Result<String, CursedError> {
-        // This would use the type system to infer the expression type
-        // For now, return a placeholder
-        Ok("Result<i32, String>".to_string())
-    }
-    
-    /// Get next temporary name
-    fn next_temp_name(&mut self) -> String {
-        let counter = self.next_temp_counter();
-        format!("%tmp_{}", counter)
-    }
-    
-    /// Get next block name
-    fn next_block_name(&mut self, prefix: &str) -> String {
-        let counter = self.next_block_counter();
-        format!("{}_{}", prefix, counter)
-    }
-    
-    /// Get Result type string
-    fn get_result_type(&self) -> String {
-        "{ i1, i64 }".to_string() // Simplified Result<i64, Error> representation
-    }
-    
-    /// Get Option type string
-    fn get_option_type(&self) -> String {
-        "{ i1, i64 }".to_string() // Simplified Option<i64> representation
-    }
-    
-    /// Get error type string
-    fn get_error_type(&self) -> String {
-        "i8*".to_string() // Simplified error representation
-    }
-}
+/// Helper implementations for LlvmCodeGenerator - now implemented in main module
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::debug::SourceLocation;
 
     #[test]
     fn test_error_propagation_runtime_creation() {
@@ -325,9 +267,8 @@ mod tests {
 
     #[test]
     fn test_error_context_creation() {
-        use crate::error::SourceLocation as ErrorSourceLocation;
         let context = ErrorContext {
-            location: ErrorSourceLocation::new(10, 5),
+            location: SourceLocation::new(10, 5),
             function_name: Some("test_function".to_string()),
             error_type: "String".to_string(),
         };
