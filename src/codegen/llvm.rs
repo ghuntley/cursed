@@ -19,9 +19,8 @@ pub mod gc_integration;
 pub mod panic;
 pub mod debug_info;
 pub mod error_handling;
-// pub mod error_propagation;  // Temporarily disabled due to extensive API mismatches
-// pub mod error_propagation;  // Temporarily disabled due to API mismatches
-// pub mod question_mark;
+pub mod error_propagation;
+pub mod question_mark;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
 pub use debug::{CursedDebugBuilder, LlvmDebugConfig};
@@ -38,8 +37,8 @@ pub use goroutine::{GoroutineCompiler, generate_loop_yield_point};
 pub use gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
 pub use panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
 pub use debug_info::{LlvmDebugGenerator, LlvmDebugIntegration, LlvmDebugManager};
-// pub use error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};  // Temporarily disabled
-// pub use question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime};
+pub use error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};
+pub use question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime};
 
 // Temporary dummy types to help tests compile
 pub struct DummyModule {

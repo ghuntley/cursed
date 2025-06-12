@@ -83,6 +83,8 @@ pub enum SqliteErrorCode {
     BackupFailed,
     ExtensionError,
     ConfigurationError,
+    ConnectionError,
+    ExecutionError,
 }
 
 impl SqliteErrorCode {
@@ -167,6 +169,8 @@ impl SqliteErrorCode {
             SqliteErrorCode::BackupFailed => "Database backup operation failed",
             SqliteErrorCode::ExtensionError => "SQLite extension error",
             SqliteErrorCode::ConfigurationError => "Configuration error",
+            SqliteErrorCode::ConnectionError => "Connection error",
+            SqliteErrorCode::ExecutionError => "Execution error",
         }
     }
 
@@ -310,6 +314,16 @@ impl SqliteError {
     /// slay Create connection closed error
     pub fn connection_closed() -> Self {
         Self::new(SqliteErrorCode::ConnectionClosed, "Database connection is closed")
+    }
+
+    /// slay Create connection error
+    pub fn connection(message: &str) -> Self {
+        Self::new(SqliteErrorCode::ConnectionError, message)
+    }
+
+    /// slay Create execution error  
+    pub fn execution(message: &str) -> Self {
+        Self::new(SqliteErrorCode::ExecutionError, message)
     }
 
     /// slay Create statement not prepared error

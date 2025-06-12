@@ -18,39 +18,60 @@ use crate::ast::traits::TypeParameter;
 use crate::error::Error;
 use std::collections::HashMap;
 
-// Basic type system modules (advanced modules disabled for simplified AST)
-// pub mod constraint_resolver;  // Disabled: requires expanded Type enum
-pub mod generic_instantiator;     // Keep: works with simplified generics
-pub mod type_inference;           // Keep: basic type inference
-// pub mod associated_types;      // Disabled: requires expanded Type enum
-// pub mod higher_kinded_types;   // Disabled: requires expanded Type enum  
-// pub mod variance;              // Disabled: requires expanded Type enum
-// pub mod generic_optimization;  // Disabled: requires expanded Type enum
+// Progressive re-enabling of advanced type system modules
+pub mod constraint_resolver;      // Re-enabled: constraint resolution system
+pub mod generic_instantiator;     // Keep: works with sophisticated generics
+pub mod type_inference;           // Keep: enhanced type inference
+// TODO: Re-enable after fixing Type enum compatibility
+// pub mod associated_types;         // Disabled: Type enum mismatch
+// pub mod higher_kinded_types;      // Disabled: Type enum mismatch  
+// pub mod variance;                 // Disabled: Type enum mismatch
+// pub mod generic_optimization;     // Disabled: Type enum mismatch
 
-// Re-export core types for convenience (simplified for basic AST compatibility)
+// Re-export core types for convenience (progressive re-enabling)
 pub use generic_instantiator::{
     GenericInstantiator, InstanceCache, TypeSubstitution, MethodDispatcher
 };
 pub use type_inference::{
     TypeInference, InferenceContext, BidirectionalChecker, ExpressionInferrer
 };
+pub use constraint_resolver::{
+    ConstraintResolver, ConstraintSolution, ConstraintViolation, ViolationReason
+};
+// TODO: Re-enable these exports after fixing Type enum compatibility
+// pub use associated_types::{
+//     AssociatedTypeResolver, AssociatedTypeBinding, TypeProjection
+// };
+// pub use higher_kinded_types::{
+//     HigherKindedTypeChecker, TypeConstructor, KindChecker
+// };
+// pub use variance::{
+//     VarianceAnalyzer, TypeVariance, VarianceContext
+// };
+// pub use generic_optimization::{
+//     GenericOptimizer, OptimizationStrategy, PerformanceMetrics
+// };
 
-// Advanced features disabled for simplified AST compatibility:
-// - ConstraintResolver: requires expanded Type enum with Function, Array, etc.
-// - AssociatedTypeResolver: requires AssociatedTypeProjection variants
-// - HigherKindedTypeChecker: requires TypeConstructor and expanded constraints
-// - VarianceAnalyzer: requires full type variance analysis
-// - GenericOptimizer: requires complex type introspection
-
-/// Central type system coordinator (simplified for basic AST compatibility)
+/// Central type system coordinator (progressively enhanced with working modules)
 #[derive(Debug)]
 pub struct TypeSystem {
     /// Generic instantiator for type parameter substitution
     generic_instantiator: GenericInstantiator,
     /// Type inference engine for automatic type deduction
     type_inference: TypeInference,
+    /// Constraint resolver for type constraint satisfaction
+    constraint_resolver: ConstraintResolver,
     /// Global type environment
     type_environment: TypeEnvironment,
+    // TODO: Re-enable after fixing Type enum compatibility
+    // /// Associated type resolver for type projections
+    // associated_type_resolver: AssociatedTypeResolver,
+    // /// Higher-kinded type checker
+    // higher_kinded_checker: HigherKindedTypeChecker,
+    // /// Variance analyzer for type variance checking
+    // variance_analyzer: VarianceAnalyzer,
+    // /// Generic optimizer for performance improvements
+    // generic_optimizer: GenericOptimizer,
 }
 
 /// Global type environment tracking basic types (simplified for AST compatibility)
@@ -171,7 +192,13 @@ impl TypeSystem {
         Self {
             generic_instantiator: GenericInstantiator::new(),
             type_inference: TypeInference::new(),
+            constraint_resolver: ConstraintResolver::new(),
             type_environment: TypeEnvironment::new(),
+            // TODO: Re-enable after fixing Type enum compatibility
+            // associated_type_resolver: AssociatedTypeResolver::new(),
+            // higher_kinded_checker: HigherKindedTypeChecker::new(),
+            // variance_analyzer: VarianceAnalyzer::new(),
+            // generic_optimizer: GenericOptimizer::new(),
         }
     }
 
@@ -211,11 +238,10 @@ impl TypeSystem {
             return Err(Error::Type(format!("Type '{}' already defined", type_def.name)));
         }
 
-        // Constraint validation disabled for simplified AST compatibility
-        // TODO: Re-enable when constraint system is expanded
-        // for constraint in &type_def.constraints {
-        //     self.constraint_resolver.validate_constraint(constraint, &self.type_environment)?;
-        // }
+        // Re-enabled constraint validation with constraint resolver
+        for constraint in &type_def.constraints {
+            self.constraint_resolver.validate_constraint(constraint, &self.type_environment)?;
+        }
 
         self.type_environment.type_definitions.insert(type_def.name.clone(), type_def);
         Ok(())
@@ -243,15 +269,14 @@ impl TypeSystem {
         self.type_inference.infer_expression(expression, context, &self.type_environment)
     }
 
-    /// Check if a type satisfies constraints (simplified for basic AST compatibility)
+    /// Check if a type satisfies constraints (re-enabled with full constraint resolution)
     pub fn check_constraints(
         &self,
-        _type_expr: &TypeExpression,
-        _constraints: &[GenericConstraint],
+        type_expr: &TypeExpression,
+        constraints: &[GenericConstraint],
     ) -> Result<bool, Error> {
-        // Constraint checking disabled for simplified AST compatibility
-        // TODO: Re-enable when constraint system is expanded
-        Ok(true) // Accept all constraints for now
+        // Use the constraint resolver to check satisfaction
+        self.constraint_resolver.check_satisfaction(type_expr, constraints, &self.type_environment)
     }
 
     /// Get type definition by name
@@ -268,6 +293,59 @@ impl TypeSystem {
     pub fn type_environment_mut(&mut self) -> &mut TypeEnvironment {
         &mut self.type_environment
     }
+
+    /// Get access to the constraint resolver
+    pub fn constraint_resolver(&self) -> &ConstraintResolver {
+        &self.constraint_resolver
+    }
+
+    /// Get mutable access to the constraint resolver
+    pub fn constraint_resolver_mut(&mut self) -> &mut ConstraintResolver {
+        &mut self.constraint_resolver
+    }
+
+    // TODO: Re-enable these methods after fixing Type enum compatibility
+    // /// Get access to the associated type resolver
+    // pub fn associated_type_resolver(&self) -> &AssociatedTypeResolver {
+    //     &self.associated_type_resolver
+    // }
+
+    // /// Get access to the higher-kinded type checker
+    // pub fn higher_kinded_checker(&self) -> &HigherKindedTypeChecker {
+    //     &self.higher_kinded_checker
+    // }
+
+    // /// Get access to the variance analyzer
+    // pub fn variance_analyzer(&self) -> &VarianceAnalyzer {
+    //     &self.variance_analyzer
+    // }
+
+    // /// Get access to the generic optimizer
+    // pub fn generic_optimizer(&self) -> &GenericOptimizer {
+    //     &self.generic_optimizer
+    // }
+
+    /// Resolve constraints for a given context
+    pub fn resolve_constraints(
+        &mut self,
+        context: &ConstraintContext,
+    ) -> Result<ConstraintSolution, Error> {
+        self.constraint_resolver.resolve_constraints(context, &self.type_environment)
+    }
+
+    /// Validate a constraint
+    pub fn validate_constraint(
+        &self,
+        constraint: &GenericConstraint,
+    ) -> Result<bool, Error> {
+        self.constraint_resolver.validate_constraint(constraint, &self.type_environment)
+    }
+
+    // TODO: Re-enable after fixing Type enum compatibility
+    // /// Optimize generic instantiations
+    // pub fn optimize_generics(&mut self) -> Result<(), Error> {
+    //     self.generic_optimizer.optimize_instantiations(&mut self.type_environment)
+    // }
 }
 
 impl TypeEnvironment {

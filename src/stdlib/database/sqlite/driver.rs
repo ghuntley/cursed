@@ -9,9 +9,10 @@ use std::collections::HashMap;
 use std::time::{SystemTime, Duration};
 use super::{
     SqliteError, SqliteResult, SqliteConfig, SqliteConnectionString,
-    SqliteConnection, SqliteStats, SqliteVersion, SqliteFeatures,
+    SqliteStats, SqliteVersion, SqliteFeatures,
     init_sqlite, is_sqlite_initialized
 };
+use super::real_connection::RealSqliteConnection;
 use super::super::{
     Driver, DriverConn, DatabaseError, DatabaseErrorKind,
     SqlIsolationLevel, VibeContext
@@ -180,7 +181,7 @@ pub struct SqliteDriver {
     /// fr fr Global driver statistics
     stats: Arc<RwLock<SqliteStats>>,
     /// fr fr Active connections registry
-    connections: Arc<Mutex<HashMap<String, Arc<SqliteConnection>>>>,
+    connections: Arc<Mutex<HashMap<String, Arc<RealSqliteConnection>>>>,
     /// fr fr Driver configuration
     config: Arc<RwLock<SqliteConfig>>,
     /// fr fr Driver initialization timestamp
@@ -286,7 +287,7 @@ impl SqliteDriver {
     }
 
     /// slay Register connection
-    pub fn register_connection(&self, connection_id: String, connection: Arc<SqliteConnection>) -> SqliteResult<()> {
+    pub fn register_connection(&self, connection_id: String, connection: Arc<RealSqliteConnection>) -> SqliteResult<()> {
         let mut connections = self.connections.lock()
             .map_err(|_| SqliteError::internal("Failed to acquire connections lock"))?;
         connections.insert(connection_id, connection);
@@ -315,7 +316,7 @@ impl SqliteDriver {
     }
 
     /// slay Get connection by ID
-    pub fn get_connection(&self, connection_id: &str) -> SqliteResult<Option<Arc<SqliteConnection>>> {
+    pub fn get_connection(&self, connection_id: &str) -> SqliteResult<Option<Arc<RealSqliteConnection>>> {
         let connections = self.connections.lock()
             .map_err(|_| SqliteError::internal("Failed to acquire connections lock"))?;
         Ok(connections.get(connection_id).cloned())
@@ -373,7 +374,7 @@ impl SqliteDriver {
     pub fn open_with_config(&self, config: SqliteConfig) -> SqliteResult<Box<dyn DriverConn>> {
         config.validate()?;
         
-        let connection = SqliteConnection::new(config)?;
+        let connection = RealSqliteConnection::new(config)?;
         let connection_arc = Arc::new(connection);
         let connection_id = uuid::Uuid::new_v4().to_string();
         
@@ -483,7 +484,7 @@ impl Default for DriverHealthStatus {
 /// fr fr Managed SQLite connection that handles cleanup
 #[derive(Debug)]
 struct ManagedSqliteConnection {
-    connection: Arc<SqliteConnection>,
+    connection: Arc<RealSqliteConnection>,
     connection_id: String,
     driver: Arc<SqliteDriver>,
 }

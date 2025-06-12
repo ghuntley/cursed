@@ -27,6 +27,8 @@ pub enum DatabaseErrorKind {
     ConstraintError,
     /// Data type conversion or scanning errors
     ScanError,
+    /// Type conversion errors
+    ConversionError,
     /// Serialization/deserialization errors
     SerializationError,
     /// Connection pool related errors
@@ -103,6 +105,7 @@ impl Display for DatabaseErrorKind {
             DatabaseErrorKind::TypeMismatch => write!(f, "TypeMismatch"),
             DatabaseErrorKind::SchemaError => write!(f, "SchemaError"),
             DatabaseErrorKind::SqlError => write!(f, "SqlError"),
+            DatabaseErrorKind::ConversionError => write!(f, "ConversionError"),
         }
     }
 }
@@ -441,6 +444,7 @@ impl From<DatabaseError> for CursedError {
             DatabaseErrorKind::TypeMismatch => "DB_TYPE_MISMATCH",
             DatabaseErrorKind::SchemaError => "DB_SCHEMA_ERROR",
             DatabaseErrorKind::SqlError => "DB_SQL_ERROR",
+            DatabaseErrorKind::ConversionError => "DB_CONVERSION_ERROR",
         };
 
         CursedError::Repl(format!("{}: {}", error_code, err.message))

@@ -96,6 +96,9 @@ handlebars = "4.4"      # Template engine for HTML generation
 semver = "1.0"          # Semantic version parsing and comparison
 url = "2.4"             # URL parsing and manipulation
 
+# Database driver dependencies
+rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite
+
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
 

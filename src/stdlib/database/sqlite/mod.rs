@@ -17,6 +17,7 @@
 
 pub mod driver;
 pub mod connection;
+pub mod real_connection;
 pub mod statement;
 pub mod transaction;
 pub mod ffi;

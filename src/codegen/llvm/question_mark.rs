@@ -1,397 +1,338 @@
-use crate::ast::expressions::{QuestionMarkExpression, ErrorPropagation};
+/// LLVM compilation for the question mark operator (?)
+/// 
+/// This module provides LLVM code generation for the `?` operator,
+/// supporting both Result<T, E> and Option<T> types with proper
+/// error propagation and early returns.
+
+use crate::ast::expressions::QuestionMarkExpression;
 use crate::ast::traits::Expression;
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::error::{CursedError, ErrorPropagationError};
-use crate::runtime::panic_recovery::PanicRecoveryRuntime;
-use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue, StructValue};
-use inkwell::types::{BasicTypeEnum, StructType};
-use inkwell::basic_block::BasicBlock;
-use inkwell::{IntPredicate, AddressSpace};
+use crate::error::{CursedError, SourceLocation};
+use crate::runtime::error_propagation::ErrorPropagationOperator;
 use std::collections::HashMap;
+use tracing::{debug, error, info, instrument, warn};
 
-/// LLVM code generation support for the question mark operator (`?`)
-/// 
-/// The question mark operator in CURSED provides automatic error propagation.
-/// This trait implements the LLVM IR generation for:
-/// - Error checking and early return logic
-/// - Result unwrapping for success cases
-/// - Integration with panic/recovery system
-/// - Memory-safe error value handling
-
+/// Question mark operator compiler for LLVM
 pub trait QuestionMarkCompiler {
-    /// Compile a question mark expression to LLVM IR
-    fn compile_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<BasicValueEnum<'static>, CursedError>;
+    /// Compile question mark expression for Result types
+    fn compile_result_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
     
-    /// Compile error propagation expression (backward compatibility)
-    fn compile_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<BasicValueEnum<'static>, CursedError>;
+    /// Compile question mark expression for Option types
+    fn compile_option_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
     
-    /// Generate error checking logic for a value
-    fn generate_error_check(&mut self, value: BasicValueEnum<'static>) -> Result<(BasicValueEnum<'static>, BasicBlock<'static>), CursedError>;
-    
-    /// Generate early return for error cases
-    fn generate_early_return(&mut self, error_value: BasicValueEnum<'static>) -> Result<(), CursedError>;
-    
-    /// Unwrap success value from Result-like structure
-    fn unwrap_success_value(&mut self, result_value: BasicValueEnum<'static>) -> Result<BasicValueEnum<'static>, CursedError>;
-    
-    /// Create Result-like structure (value, is_error)
-    fn create_result_struct(&mut self, value: BasicValueEnum<'static>, is_error: bool) -> Result<BasicValueEnum<'static>, CursedError>;
-    
-    /// Check if a value represents an error
-    fn is_error_value(&mut self, value: BasicValueEnum<'static>) -> Result<BasicValueEnum<'static>, CursedError>;
+    /// Generate error propagation runtime call
+    fn generate_error_propagation_call(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
+}
+
+/// Error propagation runtime integration
+pub struct ErrorPropagationRuntime {
+    /// Runtime operator instances
+    operators: HashMap<String, ErrorPropagationOperator>,
+    /// Generated function declarations
+    function_declarations: Vec<String>,
+    /// Error context tracking
+    error_contexts: Vec<ErrorContext>,
+}
+
+/// Error context for propagation
+#[derive(Debug, Clone)]
+pub struct ErrorContext {
+    /// Source location
+    pub location: SourceLocation,
+    /// Function context
+    pub function_name: Option<String>,
+    /// Error type information
+    pub error_type: String,
 }
 
 impl QuestionMarkCompiler for LlvmCodeGenerator {
-    fn compile_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<BasicValueEnum<'static>, CursedError> {
-        // Compile the inner expression first
-        let inner_value = self.compile_expression(expr.inner_expression())?;
+    #[instrument(skip(self, expr))]
+    fn compile_result_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError> {
+        debug!("Compiling Result question mark operator");
         
-        // Generate error checking logic
-        let (success_value, error_block) = self.generate_error_check(inner_value)?;
+        // Generate temporary values
+        let result_temp = self.next_temp_name();
+        let is_ok_temp = self.next_temp_name();
+        let value_temp = self.next_temp_name();
+        let error_temp = self.next_temp_name();
         
-        // Get current function and create blocks
-        let current_function = self.current_function()
-            .ok_or_else(|| CursedError::CodeGeneration {
-                message: "Question mark operator used outside function".to_string(),
-                line: Some(expr.line),
-                column: Some(expr.column),
-            })?;
-        
-        let success_block = self.get_context().append_basic_block(current_function, "question_success");
-        let continue_block = self.get_context().append_basic_block(current_function, "question_continue");
-        
-        // Check if the value is an error
-        let is_error = self.is_error_value(inner_value)?;
-        
-        // Branch based on error status
-        self.builder.build_conditional_branch(
-            is_error.into_int_value(),
-            error_block,
-            success_block,
-        ).map_err(|e| CursedError::CodeGeneration {
-            message: format!("Failed to build conditional branch for question mark: {}", e),
-            line: Some(expr.line),
-            column: Some(expr.column),
-        })?;
-        
-        // Error block: generate early return
-        self.builder.position_at_end(error_block);
-        self.generate_early_return(inner_value)?;
-        
-        // Success block: unwrap and continue
-        self.builder.position_at_end(success_block);
-        let unwrapped_value = self.unwrap_success_value(inner_value)?;
-        self.builder.build_unconditional_branch(continue_block).map_err(|e| CursedError::CodeGeneration {
-            message: format!("Failed to build branch to continue block: {}", e),
-            line: Some(expr.line),
-            column: Some(expr.column),
-        })?;
-        
-        // Continue block: phi node for the result
-        self.builder.position_at_end(continue_block);
-        let phi = self.builder.build_phi(unwrapped_value.get_type(), "question_result")
-            .map_err(|e| CursedError::CodeGeneration {
-                message: format!("Failed to build phi node for question mark result: {}", e),
-                line: Some(expr.line),
-                column: Some(expr.column),
-            })?;
-        
-        phi.add_incoming(&[(&unwrapped_value, success_block)]);
-        
-        Ok(phi.as_basic_value())
-    }
-    
-    fn compile_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<BasicValueEnum<'static>, CursedError> {
         // Compile the inner expression
-        let inner_value = self.compile_expression(&*expr.expression)?;
+        let inner_expr_ir = self.compile_expression_to_ir(expr.expression.as_ref())?;
         
-        // Create a QuestionMarkExpression for consistency
-        let question_expr = QuestionMarkExpression::new(
-            expr.expression.clone_box(),
-            1, // Default line
-            1, // Default column
+        // Extract is_ok flag from Result
+        let extract_is_ok = format!(
+            "{} = extractvalue {} {}, 0  ; Extract is_ok flag",
+            is_ok_temp, self.get_result_type(), inner_expr_ir
         );
         
-        self.compile_question_mark(&question_expr)
+        // Create basic blocks for control flow
+        let success_block = self.next_block_name("result_success");
+        let error_block = self.next_block_name("result_error");
+        let merge_block = self.next_block_name("result_merge");
+        
+        // Branch based on is_ok flag
+        let branch_ir = format!(
+            "br i1 {}, label %{}, label %{}",
+            is_ok_temp, success_block, error_block
+        );
+        
+        // Success block: extract value
+        let success_ir = format!(
+            "{}:\n  {} = extractvalue {} {}, 1  ; Extract success value\n  br label %{}",
+            success_block, value_temp, self.get_result_type(), inner_expr_ir, merge_block
+        );
+        
+        // Error block: extract error and return
+        let error_ir = format!(
+            "{}:\n  {} = extractvalue {} {}, 1  ; Extract error value\n  {} = call {} @cursed_propagate_result_error({} {}, i32 {}, i32 {})\n  ret {} {}",
+            error_block,
+            error_temp,
+            self.get_result_type(),
+            inner_expr_ir,
+            result_temp,
+            self.get_result_type(),
+            self.get_error_type(),
+            error_temp,
+            expr.location().0,
+            expr.location().1,
+            self.get_result_type(),
+            result_temp
+        );
+        
+        // Merge block
+        let merge_ir = format!("{}:", merge_block);
+        
+        // Combine all IR
+        let complete_ir = format!(
+            "  {}\n  {}\n{}\n{}\n{}",
+            extract_is_ok, branch_ir, success_ir, error_ir, merge_ir
+        );
+        
+        Ok(format!("{}\n{}", inner_expr_ir, complete_ir))
     }
     
-    fn generate_error_check(&mut self, value: BasicValueEnum<'static>) -> Result<(BasicValueEnum<'static>, BasicBlock<'static>), CursedError> {
-        let current_function = self.current_function()
-            .ok_or_else(|| CursedError::CodeGeneration {
-                message: "Error check generated outside function".to_string(),
-                line: None,
-                column: None,
-            })?;
+    #[instrument(skip(self, expr))]
+    fn compile_option_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError> {
+        debug!("Compiling Option question mark operator");
         
-        let error_block = self.context.append_basic_block(current_function, "error_block");
+        // Generate temporary values
+        let option_temp = self.next_temp_name();
+        let is_some_temp = self.next_temp_name();
+        let value_temp = self.next_temp_name();
+        let none_result_temp = self.next_temp_name();
         
-        Ok((value, error_block))
+        // Compile the inner expression
+        let inner_expr_ir = self.compile_expression_to_ir(expr.expression.as_ref())?;
+        
+        // Extract is_some flag from Option
+        let extract_is_some = format!(
+            "{} = extractvalue {} {}, 0  ; Extract is_some flag",
+            is_some_temp, self.get_option_type(), inner_expr_ir
+        );
+        
+        // Create basic blocks for control flow
+        let some_block = self.next_block_name("option_some");
+        let none_block = self.next_block_name("option_none");
+        let merge_block = self.next_block_name("option_merge");
+        
+        // Branch based on is_some flag
+        let branch_ir = format!(
+            "br i1 {}, label %{}, label %{}",
+            is_some_temp, some_block, none_block
+        );
+        
+        // Some block: extract value
+        let some_ir = format!(
+            "{}:\n  {} = extractvalue {} {}, 1  ; Extract some value\n  br label %{}",
+            some_block, value_temp, self.get_option_type(), inner_expr_ir, merge_block
+        );
+        
+        // None block: create None result and return
+        let none_ir = format!(
+            "{}:\n  {} = call {} @cursed_propagate_option_none(i32 {}, i32 {})\n  ret {} {}",
+            none_block,
+            none_result_temp,
+            self.get_option_type(),
+            expr.location().0,
+            expr.location().1,
+            self.get_option_type(),
+            none_result_temp
+        );
+        
+        // Merge block
+        let merge_ir = format!("{}:", merge_block);
+        
+        // Combine all IR
+        let complete_ir = format!(
+            "  {}\n  {}\n{}\n{}\n{}",
+            extract_is_some, branch_ir, some_ir, none_ir, merge_ir
+        );
+        
+        Ok(format!("{}\n{}", inner_expr_ir, complete_ir))
     }
     
-    fn generate_early_return(&mut self, error_value: BasicValueEnum<'static>) -> Result<(), CursedError> {
-        // For now, just return the error value
-        // In a complete implementation, this would:
-        // 1. Propagate the error up the call stack
-        // 2. Perform any necessary cleanup
-        // 3. Return from the current function with the error
+    #[instrument(skip(self, expr))]
+    fn generate_error_propagation_call(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError> {
+        debug!("Generating error propagation runtime call");
         
-        match error_value {
-            BasicValueEnum::PointerValue(ptr) => {
-                self.builder.build_return(Some(&ptr)).map_err(|e| CursedError::CodeGeneration {
-                    message: format!("Failed to build error return: {}", e),
-                    line: None,
-                    column: None,
-                })?;
-            },
-            BasicValueEnum::IntValue(int) => {
-                self.builder.build_return(Some(&int)).map_err(|e| CursedError::CodeGeneration {
-                    message: format!("Failed to build error return: {}", e),
-                    line: None,
-                    column: None,
-                })?;
-            },
-            BasicValueEnum::StructValue(struct_val) => {
-                self.builder.build_return(Some(&struct_val)).map_err(|e| CursedError::CodeGeneration {
-                    message: format!("Failed to build error return: {}", e),
-                    line: None,
-                    column: None,
-                })?;
-            },
-            _ => {
-                // For other types, return void
-                self.builder.build_return(None).map_err(|e| CursedError::CodeGeneration {
-                    message: format!("Failed to build void error return: {}", e),
-                    line: None,
-                    column: None,
-                })?;
-            }
-        }
+        // Determine expression type
+        let expr_type = self.infer_expression_type(expr.expression.as_ref())?;
         
-        Ok(())
-    }
-    
-    fn unwrap_success_value(&mut self, result_value: BasicValueEnum<'static>) -> Result<BasicValueEnum<'static>, CursedError> {
-        // For now, assume the result_value is a struct with (value, is_error) fields
-        // In a complete implementation, this would extract the success value
-        // from a Result-like structure
-        
-        match result_value {
-            BasicValueEnum::StructValue(struct_val) => {
-                // Extract the first field (the actual value)
-                let value_ptr = self.builder.build_extract_value(struct_val, 0, "success_value")
-                    .map_err(|e| CursedError::CodeGeneration {
-                        message: format!("Failed to extract success value: {}", e),
-                        line: None,
-                        column: None,
-                    })?;
-                Ok(value_ptr)
-            },
-            _ => {
-                // For non-struct values, return as-is
-                Ok(result_value)
-            }
-        }
-    }
-    
-    fn create_result_struct(&mut self, value: BasicValueEnum<'static>, is_error: bool) -> Result<BasicValueEnum<'static>, CursedError> {
-        // Create a Result-like struct with (value, is_error) fields
-        let bool_type = self.context.bool_type();
-        let struct_type = self.context.struct_type(&[value.get_type(), bool_type.into()], false);
-        
-        let result_struct = struct_type.get_undef();
-        
-        // Set the value field
-        let with_value = self.builder.build_insert_value(result_struct, value, 0, "with_value")
-            .map_err(|e| CursedError::CodeGeneration {
-                message: format!("Failed to insert value into result struct: {}", e),
-                line: None,
-                column: None,
-            })?;
-        
-        // Set the is_error field
-        let error_flag = bool_type.const_int(if is_error { 1 } else { 0 }, false);
-        let complete_struct = self.builder.build_insert_value(with_value, error_flag, 1, "with_error_flag")
-            .map_err(|e| CursedError::CodeGeneration {
-                message: format!("Failed to insert error flag into result struct: {}", e),
-                line: None,
-                column: None,
-            })?;
-        
-        Ok(complete_struct)
-    }
-    
-    fn is_error_value(&mut self, value: BasicValueEnum<'static>) -> Result<BasicValueEnum<'static>, CursedError> {
-        // Check if a value represents an error
-        // For now, this is a simplified implementation
-        // In practice, this would check Result-like structures or error codes
-        
-        match value {
-            BasicValueEnum::StructValue(struct_val) => {
-                // Extract the is_error field (assumed to be at index 1)
-                let is_error = self.builder.build_extract_value(struct_val, 1, "is_error")
-                    .map_err(|e| CursedError::CodeGeneration {
-                        message: format!("Failed to extract error flag: {}", e),
-                        line: None,
-                        column: None,
-                    })?;
-                Ok(is_error)
-            },
-            BasicValueEnum::PointerValue(ptr) => {
-                // Check if pointer is null (simple error condition)
-                let null_ptr = ptr.get_type().const_null();
-                let is_null = self.builder.build_int_compare(
-                    IntPredicate::EQ,
-                    ptr.into_int_value(),
-                    null_ptr.into_int_value(),
-                    "is_null_error"
-                ).map_err(|e| CursedError::CodeGeneration {
-                    message: format!("Failed to build null pointer check: {}", e),
-                    line: None,
-                    column: None,
-                })?;
-                Ok(is_null.into())
-            },
-            _ => {
-                // For other types, assume no error
-                let bool_type = self.context.bool_type();
-                Ok(bool_type.const_int(0, false).into())
-            }
+        if expr_type.starts_with("Result<") {
+            self.compile_result_question_mark(expr)
+        } else if expr_type.starts_with("Option<") {
+            self.compile_option_question_mark(expr)
+        } else {
+            Err(CursedError::CodeGeneration {
+                message: format!("Cannot apply '?' operator to type: {}", expr_type),
+                line: Some(expr.location().0),
+                column: Some(expr.location().1),
+            })
         }
     }
-}
-
-/// Helper implementation for the main LlvmCodeGenerator
-impl LlvmCodeGenerator {
-    /// Get the current function being compiled
-    fn current_function(&self) -> Option<FunctionValue<'static>> {
-        self.builder.get_insert_block()?.get_parent()
-    }
-    
-    /// Compile any expression (placeholder - would delegate to actual expression compiler)
-    fn compile_expression(&mut self, expr: &dyn Expression) -> Result<BasicValueEnum<'static>, CursedError> {
-        // This is a placeholder - in the real implementation, this would
-        // delegate to the appropriate expression compilation method
-        
-        // For now, return a dummy i32 value
-        let i32_type = self.context.i32_type();
-        Ok(i32_type.const_int(42, false).into())
-    }
-}
-
-/// Runtime support for error propagation
-pub struct ErrorPropagationRuntime {
-    /// Stack of error handlers for nested error propagation
-    error_handlers: Vec<Box<dyn Fn(CursedError) -> Result<(), CursedError>>>,
-    
-    /// Statistics for error propagation performance
-    propagation_count: usize,
-    successful_unwraps: usize,
 }
 
 impl ErrorPropagationRuntime {
-    /// Create a new error propagation runtime
+    /// Create new error propagation runtime
     pub fn new() -> Self {
         Self {
-            error_handlers: Vec::new(),
-            propagation_count: 0,
-            successful_unwraps: 0,
+            operators: HashMap::new(),
+            function_declarations: Vec::new(),
+            error_contexts: Vec::new(),
         }
     }
     
-    /// Register an error handler for the current scope
-    pub fn push_error_handler<F>(&mut self, handler: F) 
-    where F: Fn(CursedError) -> Result<(), CursedError> + 'static {
-        self.error_handlers.push(Box::new(handler));
-    }
-    
-    /// Remove the current error handler
-    pub fn pop_error_handler(&mut self) -> Option<Box<dyn Fn(CursedError) -> Result<(), CursedError>>> {
-        self.error_handlers.pop()
-    }
-    
-    /// Propagate an error through the handler stack
-    pub fn propagate_error(&mut self, error: CursedError) -> Result<(), CursedError> {
-        self.propagation_count += 1;
+    /// Initialize runtime function declarations
+    pub fn initialize_runtime_functions(&mut self) -> Vec<String> {
+        let mut declarations = Vec::new();
         
-        if let Some(handler) = self.error_handlers.last() {
-            handler(error)
-        } else {
-            Err(error)
-        }
+        // Result error propagation function
+        declarations.push(
+            "declare {} @cursed_propagate_result_error({} %error, i32 %line, i32 %column)"
+                .replace("{}", "%result_type")
+        );
+        
+        // Option none propagation function
+        declarations.push(
+            "declare {} @cursed_propagate_option_none(i32 %line, i32 %column)"
+                .replace("{}", "%option_type")
+        );
+        
+        // Error context recording function
+        declarations.push(
+            "declare void @cursed_record_error_context(i32 %line, i32 %column, i8* %function_name)".to_string()
+        );
+        
+        self.function_declarations.extend(declarations.clone());
+        declarations
     }
     
-    /// Record a successful unwrap
-    pub fn record_successful_unwrap(&mut self) {
-        self.successful_unwraps += 1;
+    /// Add error context
+    pub fn add_error_context(&mut self, context: ErrorContext) {
+        self.error_contexts.push(context);
     }
     
-    /// Get runtime statistics
-    pub fn get_stats(&self) -> (usize, usize) {
-        (self.propagation_count, self.successful_unwraps)
+    /// Get function declarations
+    pub fn get_function_declarations(&self) -> &[String] {
+        &self.function_declarations
     }
 }
 
-impl Default for ErrorPropagationRuntime {
-    fn default() -> Self {
-        Self::new()
+/// Helper implementations for LlvmCodeGenerator
+impl LlvmCodeGenerator {
+    /// Compile expression to LLVM IR string
+    fn compile_expression_to_ir(&mut self, expr: &dyn Expression) -> Result<String, CursedError> {
+        // This would integrate with the main expression compiler
+        // For now, return a placeholder
+        Ok("%expr_result".to_string())
+    }
+    
+    /// Get next temporary ID (placeholder counter)
+    pub fn next_temp_counter(&mut self) -> usize {
+        static mut TEMP_COUNTER: usize = 0;
+        unsafe {
+            TEMP_COUNTER += 1;
+            TEMP_COUNTER
+        }
+    }
+    
+    /// Get next block ID (placeholder counter)
+    pub fn next_block_counter(&mut self) -> usize {
+        static mut BLOCK_COUNTER: usize = 0;
+        unsafe {
+            BLOCK_COUNTER += 1;
+            BLOCK_COUNTER
+        }
+    }
+    
+    /// Infer expression type
+    fn infer_expression_type(&self, expr: &dyn Expression) -> Result<String, CursedError> {
+        // This would use the type system to infer the expression type
+        // For now, return a placeholder
+        Ok("Result<i32, String>".to_string())
+    }
+    
+    /// Get next temporary name
+    fn next_temp_name(&mut self) -> String {
+        let counter = self.next_temp_counter();
+        format!("%tmp_{}", counter)
+    }
+    
+    /// Get next block name
+    fn next_block_name(&mut self, prefix: &str) -> String {
+        let counter = self.next_block_counter();
+        format!("{}_{}", prefix, counter)
+    }
+    
+    /// Get Result type string
+    fn get_result_type(&self) -> String {
+        "{ i1, i64 }".to_string() // Simplified Result<i64, Error> representation
+    }
+    
+    /// Get Option type string
+    fn get_option_type(&self) -> String {
+        "{ i1, i64 }".to_string() // Simplified Option<i64> representation
+    }
+    
+    /// Get error type string
+    fn get_error_type(&self) -> String {
+        "i8*".to_string() // Simplified error representation
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::identifiers::Identifier;
-    use crate::ast::traits::{Node, Expression};
-    use inkwell::context::Context;
+    use crate::debug::SourceLocation;
 
     #[test]
-    fn test_error_propagation_runtime() {
+    fn test_error_propagation_runtime_creation() {
+        let runtime = ErrorPropagationRuntime::new();
+        assert!(runtime.operators.is_empty());
+        assert!(runtime.function_declarations.is_empty());
+    }
+
+    #[test]
+    fn test_runtime_function_initialization() {
         let mut runtime = ErrorPropagationRuntime::new();
+        let declarations = runtime.initialize_runtime_functions();
         
-        // Test adding error handler
-        runtime.push_error_handler(|_| Ok(()));
-        assert_eq!(runtime.error_handlers.len(), 1);
-        
-        // Test removing error handler
-        let handler = runtime.pop_error_handler();
-        assert!(handler.is_some());
-        assert_eq!(runtime.error_handlers.len(), 0);
+        assert_eq!(declarations.len(), 3);
+        assert!(declarations[0].contains("cursed_propagate_result_error"));
+        assert!(declarations[1].contains("cursed_propagate_option_none"));
+        assert!(declarations[2].contains("cursed_record_error_context"));
     }
-    
+
     #[test]
-    fn test_error_propagation_stats() {
-        let mut runtime = ErrorPropagationRuntime::new();
-        
-        runtime.record_successful_unwrap();
-        runtime.record_successful_unwrap();
-        
-        let (propagations, unwraps) = runtime.get_stats();
-        assert_eq!(propagations, 0);
-        assert_eq!(unwraps, 2);
-    }
-    
-    #[test]
-    fn test_question_mark_expression_creation() {
-        let var_expr = crate::ast::identifiers::Identifier::new("test".to_string(), "test".to_string());
-        let question_expr = QuestionMarkExpression::new(
-            Box::new(var_expr),
-            1,
-            5
-        );
-        
-        assert_eq!(question_expr.line, 1);
-        assert_eq!(question_expr.column, 5);
-    }
-    
-    #[test]
-    fn test_create_result_struct_concept() {
-        let context = Context::create();
-        
-        // Test the concept of creating result structures
-        let i32_type = context.i32_type();
-        let bool_type = context.bool_type();
-        let struct_type = context.struct_type(&[i32_type.into(), bool_type.into()], false);
-        
-        assert_eq!(struct_type.count_fields(), 2);
+    fn test_error_context_creation() {
+        let context = ErrorContext {
+            location: SourceLocation::new(10, 5),
+            function_name: Some("test_function".to_string()),
+            error_type: "String".to_string(),
+        };
+
+        assert_eq!(context.location.line, 10);
+        assert_eq!(context.location.column, 5);
+        assert_eq!(context.function_name, Some("test_function".to_string()));
     }
 }
