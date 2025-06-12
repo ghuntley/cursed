@@ -7,7 +7,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::types::{Type, TypeParameter};
+use crate::ast::types::Type;
+use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 
 /// Represents the kind of a type (e.g., *, * -> *, * -> * -> *)
@@ -84,10 +85,10 @@ impl Kind {
                         )))
                     }
                 } else {
-                    Err(CursedError::type_error("Cannot apply kind with no parameters"))
+                    Err(CursedError::type_error("Cannot apply kind with no parameters".to_string()))
                 }
             }
-            Kind::Star => Err(CursedError::type_error("Cannot apply concrete type")),
+            Kind::Star => Err(CursedError::type_error("Cannot apply concrete type".to_string())),
         }
     }
 }
@@ -233,20 +234,10 @@ impl HigherKindedTypeRegistry {
             }
 
             // Generic types depend on their constructor
-            Type::Generic { name, type_args } => {
+            Type::Generic(name) => {
                 if let Some(constructor) = self.get_type_constructor(name)? {
-                    if type_args.len() == constructor.kind.arity() {
-                        // Fully applied type constructor has kind *
-                        Ok(Kind::Star)
-                    } else if type_args.len() < constructor.kind.arity() {
-                        // Partially applied type constructor
-                        self.compute_partial_application_kind(&constructor.kind, type_args.len())
-                    } else {
-                        Err(CursedError::type_error(format!(
-                            "Too many type arguments for constructor {}: expected {}, got {}",
-                            name, constructor.kind.arity(), type_args.len()
-                        )))
-                    }
+                    // For simplified Generic variant, assume it's a fully applied type
+                    Ok(Kind::Star)
                 } else {
                     // Unknown type constructor, assume it's a type parameter with kind *
                     Ok(Kind::Star)
@@ -263,7 +254,7 @@ impl HigherKindedTypeRegistry {
             Type::Tuple(_) => Ok(Kind::Star),
 
             // Interface types have kind *
-            Type::Interface { .. } => Ok(Kind::Star),
+            Type::Interface(_) => Ok(Kind::Star),
 
             // Channel types have kind *
             Type::Channel(_) => Ok(Kind::Star),
@@ -276,6 +267,30 @@ impl HigherKindedTypeRegistry {
 
             // Any type has kind *
             Type::Any => Ok(Kind::Star),
+
+            // Struct types have kind *
+            Type::Struct(_) => Ok(Kind::Star),
+
+            // Primitive types have kind *
+            Type::Primitive(_) => Ok(Kind::Star),
+
+            // Map types have kind *
+            Type::Map(_, _) => Ok(Kind::Star),
+
+            // Type parameters have kind *
+            Type::Parameter(_) => Ok(Kind::Star),
+
+            // Type constructors have their defined kinds
+            Type::Constructor { name, arity: _ } => {
+                if let Some(constructor) = self.get_type_constructor(name)? {
+                    Ok(constructor.kind.clone())
+                } else {
+                    Ok(Kind::Star)
+                }
+            }
+
+            // Type applications have kind *
+            Type::Application { .. } => Ok(Kind::Star),
         }
     }
 
@@ -297,7 +312,7 @@ impl HigherKindedTypeRegistry {
                     }
                 }
                 Kind::Star => {
-                    return Err(CursedError::type_error("Cannot apply arguments to concrete type"));
+                    return Err(CursedError::type_error("Cannot apply arguments to concrete type".to_string()));
                 }
             }
         }
@@ -338,7 +353,7 @@ impl HigherKindedTypeRegistry {
     fn validate_type_constructor(&self, constructor: &TypeConstructor) -> Result<(), CursedError> {
         // Validate name
         if constructor.name.is_empty() {
-            return Err(CursedError::type_error("Type constructor name cannot be empty"));
+            return Err(CursedError::type_error("Type constructor name cannot be empty".to_string()));
         }
 
         // Validate that the kind matches the number of type parameters
@@ -490,10 +505,8 @@ impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     fn apply_type_constructor(&self, constructor_name: &str, type_args: &[Type]) -> Result<Type, CursedError> {
         if let Some(constructor) = self.get_type_constructor(constructor_name)? {
             if type_args.len() == constructor.type_parameters.len() {
-                Ok(Type::Generic {
-                    name: constructor_name.to_string(),
-                    type_args: type_args.to_vec(),
-                })
+                // For simplified Generic variant, just use the constructor name
+                Ok(Type::Generic(constructor_name.to_string()))
             } else {
                 Err(CursedError::type_error(format!(
                     "Type constructor {} expects {} arguments, got {}",
@@ -516,7 +529,7 @@ impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     #[instrument(skip(self))]
     fn get_constructor_name(&self, type_ref: &Type) -> Option<String> {
         match type_ref {
-            Type::Generic { name, .. } => Some(name.clone()),
+            Type::Generic(name) => Some(name.clone()),
             _ => None,
         }
     }
@@ -576,10 +589,7 @@ mod tests {
         assert_eq!(int_kind, Kind::Star);
 
         // Test with a built-in type constructor
-        let option_type = Type::Generic {
-            name: "Option".to_string(),
-            type_args: vec![Type::Integer],
-        };
+        let option_type = Type::Generic("Option".to_string());
         let option_kind = registry.infer_kind(&option_type).unwrap();
         assert_eq!(option_kind, Kind::Star);
     }

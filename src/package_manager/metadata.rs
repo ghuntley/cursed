@@ -130,6 +130,34 @@ impl PackageMetadata {
             description: self.description.clone(),
             download_url: format!("https://registry.cursed.dev/packages/{}", self.name),
             checksum: "placeholder_checksum".to_string(),
+            size: None,
+            published_at: None,
+            authors: Some(self.authors.clone()),
+            license: self.license.clone(),
+            repository: self.repository.clone(),
+            keywords: Some(self.keywords.clone()),
+        }
+    }
+}
+
+impl std::fmt::Display for VersionSpec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VersionSpec::Simple(version) => write!(f, "{}", version),
+            VersionSpec::Complex { version: Some(v), .. } => write!(f, "{}", v),
+            VersionSpec::Complex { git: Some(git), branch: Some(branch), .. } => {
+                write!(f, "git+{}#{}", git, branch)
+            },
+            VersionSpec::Complex { git: Some(git), tag: Some(tag), .. } => {
+                write!(f, "git+{}#{}", git, tag)
+            },
+            VersionSpec::Complex { git: Some(git), .. } => {
+                write!(f, "git+{}", git)
+            },
+            VersionSpec::Complex { path: Some(path), .. } => {
+                write!(f, "path:{}", path)
+            },
+            _ => write!(f, "*"),
         }
     }
 }

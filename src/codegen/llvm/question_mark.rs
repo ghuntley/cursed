@@ -325,8 +325,9 @@ mod tests {
 
     #[test]
     fn test_error_context_creation() {
+        use crate::error::SourceLocation as ErrorSourceLocation;
         let context = ErrorContext {
-            location: SourceLocation::new(10, 5),
+            location: ErrorSourceLocation::new(10, 5),
             function_name: Some("test_function".to_string()),
             error_type: "String".to_string(),
         };

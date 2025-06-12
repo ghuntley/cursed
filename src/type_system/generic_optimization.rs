@@ -7,11 +7,12 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::types::{Type, TypeParameter};
+use crate::ast::types::Type;
+use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 
 /// Strategy for handling generic instantiation
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum InstantiationStrategy {
     /// Generate specialized code for each type combination (monomorphization)
     Monomorphization,
@@ -465,6 +466,31 @@ impl GenericOptimizer {
         debug!("Cleared all optimization data");
         Ok(())
     }
+
+    /// Optimize generic instantiations in the type environment
+    #[instrument(skip(self, _type_environment))]
+    pub fn optimize_instantiations(&self, _type_environment: &mut crate::type_system::TypeEnvironment) -> Result<(), CursedError> {
+        // For now, this is a placeholder that analyzes existing usage data
+        // and could trigger optimizations based on patterns
+        
+        let usage_stats = self.usage_stats.read()
+            .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
+        
+        // Count total functions that could benefit from optimization
+        let mut optimization_candidates = 0;
+        
+        for (function_name, usage_info) in usage_stats.iter() {
+            if usage_info.total_calls > 100 && usage_info.instantiations.len() < 5 {
+                optimization_candidates += 1;
+                debug!("Function {} is a candidate for monomorphization", function_name);
+            } else if usage_info.instantiations.len() > 10 {
+                debug!("Function {} should use dynamic dispatch", function_name);
+            }
+        }
+        
+        info!("Found {} optimization candidates", optimization_candidates);
+        Ok(())
+    }
 }
 
 /// Statistics about the optimization system
@@ -621,7 +647,7 @@ impl MemoryLayoutOptimizer {
                 }
                 Ok((total_size, max_alignment))
             }
-            Type::Generic { .. } => Ok((8, 8)), // Pointer to generic data
+            Type::Generic(_) => Ok((8, 8)), // Pointer to generic data
             _ => Ok((8, 8)), // Default pointer size
         }
     }

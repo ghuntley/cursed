@@ -287,7 +287,7 @@ impl Node for TypeParameter {
 }
 
 /// Generic constraint specification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GenericConstraint {
     /// Name of the constraint (e.g., "Clone", "Debug", "Comparable")
     pub constraint_name: String,
@@ -394,3 +394,5 @@ pub type StructDeclaration = SquadStatement;
 
 /// Interface declaration alias
 pub type InterfaceDeclaration = CollabStatement;
+
+

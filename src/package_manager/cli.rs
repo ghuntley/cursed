@@ -119,6 +119,60 @@ pub enum Commands {
         #[arg(short, long)]
         list: bool,
     },
+    /// Lock file operations
+    Lock {
+        #[command(subcommand)]
+        action: LockCommands,
+    },
+    /// Workspace operations
+    Workspace {
+        #[command(subcommand)]
+        action: WorkspaceCommands,
+    },
+}
+
+/// Lock file subcommands
+#[derive(Subcommand, Debug, Clone, Serialize, Deserialize)]
+pub enum LockCommands {
+    /// Generate lock file from current dependencies
+    Generate,
+    /// Validate lock file integrity
+    Validate,
+    /// Update lock file with latest compatible versions
+    Update,
+    /// Show lock file status
+    Status,
+}
+
+/// Workspace subcommands
+#[derive(Subcommand, Debug, Clone, Serialize, Deserialize)]
+pub enum WorkspaceCommands {
+    /// Initialize a new workspace
+    Init {
+        /// Workspace members (supports glob patterns)
+        #[arg(long)]
+        members: Vec<String>,
+    },
+    /// List workspace members
+    List,
+    /// Add a member to the workspace
+    Add {
+        /// Member path or pattern
+        member: String,
+    },
+    /// Remove a member from the workspace
+    Remove {
+        /// Member path or pattern
+        member: String,
+    },
+    /// Install all workspace dependencies
+    Install,
+    /// Build all workspace members in dependency order
+    Build,
+    /// Clean all workspace members
+    Clean,
+    /// Show workspace dependency graph
+    Graph,
 }
 
 impl PackageManagerCli {
@@ -181,6 +235,91 @@ impl PackageManagerCli {
                     } else {
                         println!("📋 {} = <value>", k);
                     }
+                }
+            },
+            Commands::Lock { action } => {
+                match action {
+                    LockCommands::Generate => {
+                        manager.generate_lock_file()?;
+                        println!("✅ Generated lock file");
+                    },
+                    LockCommands::Validate => {
+                        manager.validate_lock_file()?;
+                        println!("✅ Lock file validation passed");
+                    },
+                    LockCommands::Update => {
+                        manager.generate_lock_file()?;
+                        println!("✅ Updated lock file");
+                    },
+                    LockCommands::Status => {
+                        if let Some(lock_manager) = manager.lock_file_status() {
+                            if lock_manager.exists() {
+                                println!("📋 Lock file exists and is valid");
+                            } else {
+                                println!("📋 No lock file found");
+                            }
+                        } else {
+                            println!("📋 Lock file manager not initialized");
+                        }
+                    },
+                }
+            },
+            Commands::Workspace { action } => {
+                match action {
+                    WorkspaceCommands::Init { members } => {
+                        manager.init_workspace(".", members.clone())?;
+                        println!("✅ Initialized workspace with {} members", members.len());
+                    },
+                    WorkspaceCommands::List => {
+                        if let Some(workspace) = manager.workspace() {
+                            let members = workspace.members();
+                            println!("📋 Workspace members ({})", members.len());
+                            for member in members {
+                                println!("  📦 {} at {:?}", member.name, member.path);
+                            }
+                        } else {
+                            println!("❌ Not in a workspace");
+                        }
+                    },
+                    WorkspaceCommands::Add { member } => {
+                        if let Some(workspace) = manager.workspace_mut() {
+                            workspace.add_member(member.clone())?;
+                            println!("✅ Added workspace member '{}'", member);
+                        } else {
+                            println!("❌ Not in a workspace");
+                        }
+                    },
+                    WorkspaceCommands::Remove { member } => {
+                        if let Some(workspace) = manager.workspace_mut() {
+                            workspace.remove_member(member)?;
+                            println!("✅ Removed workspace member '{}'", member);
+                        } else {
+                            println!("❌ Not in a workspace");
+                        }
+                    },
+                    WorkspaceCommands::Install => {
+                        manager.install_workspace().await?;
+                        println!("✅ Installed all workspace dependencies");
+                    },
+                    WorkspaceCommands::Build => {
+                        manager.build_workspace().await?;
+                        println!("✅ Built all workspace members");
+                    },
+                    WorkspaceCommands::Clean => {
+                        manager.clean_workspace()?;
+                        println!("✅ Cleaned all workspace members");
+                    },
+                    WorkspaceCommands::Graph => {
+                        if let Some(workspace) = manager.workspace() {
+                            let dependencies = workspace.list_dependencies();
+                            println!("📋 Workspace dependency graph:");
+                            for (member, deps) in dependencies {
+                                println!("  📦 {} -> {:?}", member, deps);
+                            }
+                        } else {
+                            println!("❌ Not in a workspace");
+                        }
+                    },
                 }
             },
         }

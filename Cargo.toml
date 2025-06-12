@@ -43,6 +43,9 @@ libm = "0.2"    # Mathematical functions
 rand_chacha = "0.3"  # ChaCha random number generator
 rand_distr = "0.4"   # Random number distributions
 
+# File system dependencies
+fs2 = "0.4"     # File locking support
+
 # Regex support
 regex = "1.10"  # Regular expression support
 
@@ -95,12 +98,17 @@ handlebars = "4.4"      # Template engine for HTML generation
 # Package management dependencies (simplified for now)
 semver = "1.0"          # Semantic version parsing and comparison
 url = "2.4"             # URL parsing and manipulation
+reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls"], default-features = false }  # HTTP client for package registry
+bytes = "1.5"           # Byte manipulation for package data
 
 # Database driver dependencies
 rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
+
+# Progress bars and terminal UI
+indicatif = "0.17"           # Progress bars for long-running operations
 
 # Missing dependencies for web_vibez
 uuid = { version = "1.0", features = ["v4", "serde"] }      # For request IDs
