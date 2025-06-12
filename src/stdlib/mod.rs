@@ -408,7 +408,7 @@ pub use ipc::{
     Waitable, Signalable, Serializable, Deserializable, IpcResource,
     
     // Shared Memory operations
-    SharedMemory as IpcSharedMemory, SharedMemoryConfig, SharedMemoryRegion, SharedMemoryAccess,
+    SharedMemory as IpcSharedMemory, SharedMemoryConfig, SharedMemoryAccess,
     create_shared_memory, open_shared_memory, remove_shared_memory,
     
     // Named Pipes operations
