@@ -16,6 +16,7 @@
 /// - Thread-safe operations with proper connection management
 
 pub mod driver;
+pub mod simple_driver;
 pub mod connection;
 pub mod statement;
 pub mod transaction;

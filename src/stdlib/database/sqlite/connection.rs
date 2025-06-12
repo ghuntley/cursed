@@ -5,9 +5,12 @@
 
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
-use super::{SqliteError, SqliteResult, SqliteConfig, SqliteStats};
-use super::ffi::{SqliteFFI, SqliteHandle};
-use super::super::{DriverConn, DatabaseError, SqlValue, TxOptions};
+use rusqlite::{Connection, Statement, Transaction, OpenFlags, params};
+use super::{SqliteError, SqliteResult, SqliteConfig, SqliteStats, SqliteFFI};
+use super::super::{DriverConn, DatabaseError, SqlValue, TxOptions, DriverStmt, DriverTx};
+use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
+use super::statement::SqliteStatement;
+use super::transaction::SqliteTransaction;
 
 /// fr fr Connection state tracking
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,7 +34,7 @@ pub struct SqliteConnectionInfo {
 /// fr fr SQLite connection implementation
 #[derive(Debug)]
 pub struct SqliteConnection {
-    handle: Arc<Mutex<Option<SqliteHandle>>>,
+    handle: Arc<Mutex<Option<Connection>>>,
     config: SqliteConfig,
     info: SqliteConnectionInfo,
     stats: Arc<Mutex<SqliteStats>>,
@@ -40,7 +43,13 @@ pub struct SqliteConnection {
 impl SqliteConnection {
     /// slay Create new SQLite connection
     pub fn new(config: SqliteConfig) -> SqliteResult<Self> {
-        let handle = SqliteFFI::open(&config.database_path, config.open_flags)?;
+        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE 
+            | OpenFlags::SQLITE_OPEN_CREATE
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        
+        let handle = Connection::open_with_flags(&config.database_path, flags)
+            .map_err(|e| SqliteError::connection(&format!("Failed to open SQLite database: {}", e)))?;
         
         let info = SqliteConnectionInfo {
             database_path: config.database_path.clone(),
@@ -67,12 +76,15 @@ impl SqliteConnection {
     fn initialize_connection(&self) -> SqliteResult<()> {
         let statements = self.config.initialization_sql();
         
-        for statement in statements {
-            // Execute each PRAGMA statement
-            // This would use the FFI to execute the statements
-            // For now, we'll just validate they're not empty
-            if statement.trim().is_empty() {
-                continue;
+        let handle = self.handle.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            for statement in statements {
+                if statement.trim().is_empty() {
+                    continue;
+                }
+                
+                conn.execute(&statement, [])
+                    .map_err(|e| SqliteError::execution(&format!("Failed to execute initialization SQL '{}': {}", statement, e)))?;
             }
         }
 
@@ -149,9 +161,9 @@ impl DriverConn for SqliteConnection {
                 "Failed to acquire connection lock"
             ))?;
         
-        if let Some(h) = handle.take() {
-            SqliteFFI::close(&h)
-                .map_err(|e| e.to_database_error())
+        if let Some(_h) = handle.take() {
+            // rusqlite::Connection automatically closes when dropped
+            Ok(())
         } else {
             Ok(()) // Already closed
         }
