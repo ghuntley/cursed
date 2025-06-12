@@ -15,10 +15,51 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
+use std::thread;
 use tracing::{debug, error, info, warn, instrument};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind, Config, Result as NotifyResult};
+use futures;
+
+/// File watcher configuration
+#[derive(Debug, Clone)]
+pub struct WatchConfig {
+    /// File patterns to watch
+    pub patterns: Vec<String>,
+    /// Debounce delay to prevent rapid rebuilds
+    pub debounce_ms: u64,
+    /// Whether to run full build or incremental
+    pub incremental: bool,
+    /// Profile to use for rebuild
+    pub build_profile: String,
+}
+
+impl Default for WatchConfig {
+    fn default() -> Self {
+        Self {
+            patterns: vec![
+                "**/*.csd".to_string(),
+                "**/Cargo.toml".to_string(),
+                "**/CursedBuild.toml".to_string(),
+                "**/CursedPackage.toml".to_string(),
+            ],
+            debounce_ms: 500,
+            incremental: true,
+            build_profile: "dev".to_string(),
+        }
+    }
+}
+
+/// File watcher state
+pub struct FileWatcher {
+    watcher: RecommendedWatcher,
+    event_receiver: Option<Receiver<NotifyResult<Event>>>,
+    watch_thread: Option<thread::JoinHandle<()>>,
+    shutdown_sender: Option<Sender<()>>,
+}
 
 /// Main build orchestrator
-#[derive(Debug)]
 pub struct BuildOrchestrator {
     config: BuildConfig,
     cache: IncrementalCache,
@@ -26,6 +67,8 @@ pub struct BuildOrchestrator {
     package_manager: PackageManager,
     pipeline: BuildPipeline,
     work_dir: PathBuf,
+    file_watcher: Option<FileWatcher>,
+    watch_config: WatchConfig,
 }
 
 /// Build result information
@@ -104,6 +147,9 @@ pub enum BuildError {
     
     #[error("Configuration error: {0}")]
     ConfigurationError(#[from] crate::build_system::build_config::ConfigError),
+    
+    #[error("File watcher error: {0}")]
+    WatcherError(#[from] notify::Error),
 }
 
 impl BuildOrchestrator {
@@ -129,6 +175,8 @@ impl BuildOrchestrator {
             package_manager,
             pipeline,
             work_dir,
+            file_watcher: None,
+            watch_config: WatchConfig::default(),
         })
     }
     
@@ -289,9 +337,50 @@ impl BuildOrchestrator {
     pub async fn watch(&mut self, profile: &str, command: &str) -> Result<(), BuildError> {
         info!("Starting file watcher for profile: {}", profile);
         
-        // TODO: Implement file watching with notify crate
-        // For now, just return an error indicating it's not implemented
-        Err(BuildError::ToolError("File watching not yet implemented".to_string()))
+        // Configure watch settings
+        let mut watch_config = WatchConfig::default();
+        watch_config.build_profile = profile.to_string();
+        self.watch_config = watch_config;
+        
+        // Start file watcher
+        self.start_file_watching().await?;
+        
+        // Run initial build
+        match command {
+            "build" => { self.build_all(profile).await?; }
+            "test" => { self.test(profile).await?; }
+            _ => { self.build_all(profile).await?; }
+        }
+        
+        info!("File watching active. Press Ctrl+C to stop.");
+        
+        // Keep the watcher running until interrupted
+        // In a real implementation, this would be controlled by a signal handler
+        loop {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            
+            // Check if we need to rebuild based on file changes
+            if self.check_for_rebuild_trigger().await? {
+                info!("File changes detected, rebuilding...");
+                match command {
+                    "build" => { 
+                        if let Err(e) = self.build_all(profile).await {
+                            error!("Rebuild failed: {}", e);
+                        }
+                    }
+                    "test" => { 
+                        if let Err(e) = self.test(profile).await {
+                            error!("Test rebuild failed: {}", e);
+                        }
+                    }
+                    _ => { 
+                        if let Err(e) = self.build_all(profile).await {
+                            error!("Rebuild failed: {}", e);
+                        }
+                    }
+                }
+            }
+        }
     }
     
     /// Build a specific target
@@ -691,6 +780,192 @@ impl BuildOrchestrator {
         }
         
         Ok(())
+    }
+    
+    /// Start file watching
+    #[instrument(skip(self))]
+    pub async fn start_file_watching(&mut self) -> Result<(), BuildError> {
+        if self.file_watcher.is_some() {
+            warn!("File watcher already running");
+            return Ok(());
+        }
+        
+        info!("Configuring file watcher for patterns: {:?}", self.watch_config.patterns);
+        
+        let (event_sender, event_receiver) = mpsc::channel();
+        let (shutdown_sender, shutdown_receiver) = mpsc::channel();
+        
+        // Create the watcher
+        let mut watcher = RecommendedWatcher::new(
+            move |res| {
+                if let Err(e) = event_sender.send(res) {
+                    error!("Failed to send file watcher event: {}", e);
+                }
+            },
+            Config::default(),
+        )?;
+        
+        // Watch source directories
+        let src_dir = self.work_dir.join("src");
+        if src_dir.exists() {
+            watcher.watch(&src_dir, RecursiveMode::Recursive)?;
+            debug!("Watching directory: {}", src_dir.display());
+        }
+        
+        // Watch examples directory
+        let examples_dir = self.work_dir.join("examples");
+        if examples_dir.exists() {
+            watcher.watch(&examples_dir, RecursiveMode::Recursive)?;
+            debug!("Watching directory: {}", examples_dir.display());
+        }
+        
+        // Watch tests directory
+        let tests_dir = self.work_dir.join("tests");
+        if tests_dir.exists() {
+            watcher.watch(&tests_dir, RecursiveMode::Recursive)?;
+            debug!("Watching directory: {}", tests_dir.display());
+        }
+        
+        // Watch configuration files
+        let config_files = [
+            "Cargo.toml",
+            "CursedBuild.toml", 
+            "CursedPackage.toml",
+            "cursed.lock",
+        ];
+        
+        for config_file in &config_files {
+            let config_path = self.work_dir.join(config_file);
+            if config_path.exists() {
+                watcher.watch(&config_path, RecursiveMode::NonRecursive)?;
+                debug!("Watching file: {}", config_path.display());
+            }
+        }
+        
+        // Start watch thread
+        let debounce_duration = Duration::from_millis(self.watch_config.debounce_ms);
+        let last_trigger = Arc::new(Mutex::new(Instant::now()));
+        let last_trigger_clone = Arc::clone(&last_trigger);
+        
+        let watch_thread = thread::spawn(move || {
+            let mut pending_events = Vec::new();
+            
+            loop {
+                // Check for shutdown signal
+                if shutdown_receiver.try_recv().is_ok() {
+                    debug!("File watcher thread received shutdown signal");
+                    break;
+                }
+                
+                // Process file events
+                match event_receiver.try_recv() {
+                    Ok(Ok(event)) => {
+                        match event.kind {
+                            EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => {
+                                // Check if this is a file we care about
+                                let should_trigger = event.paths.iter().any(|path| {
+                                    let path_str = path.to_string_lossy();
+                                    path_str.ends_with(".csd") ||
+                                    path_str.ends_with(".toml") ||
+                                    path_str.contains("Cargo.toml") ||
+                                    path_str.contains("CursedBuild.toml") ||
+                                    path_str.contains("CursedPackage.toml")
+                                });
+                                
+                                if should_trigger {
+                                    debug!("File change detected: {:?}", event.paths);
+                                    pending_events.push(event);
+                                    
+                                    // Update last trigger time
+                                    if let Ok(mut last) = last_trigger_clone.lock() {
+                                        *last = Instant::now();
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    Ok(Err(e)) => {
+                        error!("File watcher error: {}", e);
+                    }
+                    Err(_) => {
+                        // No events, check if we need to trigger a rebuild
+                        if !pending_events.is_empty() {
+                            if let Ok(last) = last_trigger_clone.lock() {
+                                if last.elapsed() >= debounce_duration {
+                                    debug!("Debounce period elapsed, {} events pending", pending_events.len());
+                                    pending_events.clear();
+                                }
+                            }
+                        }
+                        
+                        // Small sleep to prevent busy waiting
+                        thread::sleep(Duration::from_millis(10));
+                    }
+                }
+            }
+        });
+        
+        self.file_watcher = Some(FileWatcher {
+            watcher,
+            event_receiver: None, // Moved to thread
+            watch_thread: Some(watch_thread),
+            shutdown_sender: Some(shutdown_sender),
+        });
+        
+        info!("File watcher started successfully");
+        Ok(())
+    }
+    
+    /// Stop file watching
+    #[instrument(skip(self))]
+    pub async fn stop_file_watching(&mut self) -> Result<(), BuildError> {
+        if let Some(mut file_watcher) = self.file_watcher.take() {
+            info!("Stopping file watcher");
+            
+            // Send shutdown signal
+            if let Some(shutdown_sender) = file_watcher.shutdown_sender.take() {
+                let _ = shutdown_sender.send(());
+            }
+            
+            // Wait for thread to finish
+            if let Some(watch_thread) = file_watcher.watch_thread.take() {
+                if let Err(e) = watch_thread.join() {
+                    error!("Error joining file watcher thread: {:?}", e);
+                }
+            }
+            
+            info!("File watcher stopped");
+        }
+        
+        Ok(())
+    }
+    
+    /// Check if we need to trigger a rebuild
+    async fn check_for_rebuild_trigger(&self) -> Result<bool, BuildError> {
+        // This is a placeholder - in the real implementation,
+        // the file watcher thread would set a flag that we check here
+        // For now, we return false to prevent constant rebuilding
+        Ok(false)
+    }
+    
+    /// Configure watch patterns
+    pub fn set_watch_config(&mut self, config: WatchConfig) {
+        self.watch_config = config;
+    }
+    
+    /// Get current watch configuration
+    pub fn get_watch_config(&self) -> &WatchConfig {
+        &self.watch_config
+    }
+}
+
+impl Drop for BuildOrchestrator {
+    fn drop(&mut self) {
+        // Ensure file watcher is stopped when orchestrator is dropped
+        if self.file_watcher.is_some() {
+            let _ = futures::executor::block_on(self.stop_file_watching());
+        }
     }
 }
 

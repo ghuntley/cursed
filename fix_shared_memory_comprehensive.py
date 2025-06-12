@@ -1,4 +1,9 @@
-/// Comprehensive tests for shared memory IPC implementation
+#!/usr/bin/env python3
+
+def fix_shared_memory_test():
+    """Completely rewrite the shared memory test to match the actual API."""
+    
+    content = '''/// Comprehensive tests for shared memory IPC implementation
 use cursed::stdlib::ipc::shared_memory::*;
 use cursed::stdlib::ipc::{IpcPermissions, IpcResult, IpcError};
 use cursed::stdlib::ipc::types::IpcHandleType;
@@ -313,3 +318,12 @@ fn test_shared_memory_lifecycle() {
     
     assert!(config.name == "test_lifecycle");
 }
+'''
+    
+    with open('tests/shared_memory_test.rs', 'w') as f:
+        f.write(content)
+    
+    print("Completely rewrote shared_memory_test.rs to match actual API")
+
+if __name__ == "__main__":
+    fix_shared_memory_test()

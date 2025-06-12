@@ -10,6 +10,7 @@ pub mod project_template;
 pub mod incremental_cache;
 pub mod dependency_resolver;
 pub mod package_integration;
+pub mod file_watcher;
 
 // Re-export main types
 pub use build_config::{
@@ -29,4 +30,8 @@ pub use dependency_resolver::{DependencyResolver, DependencyGraph, VersionConstr
 pub use package_integration::{
     PackageIntegration, PackageIntegrationConfig, CompilationContext, 
     IntegratedBuildResult, PackageAwareCompiler
+};
+pub use file_watcher::{
+    FileWatcher, WatchConfig, FileWatchEvent, WatchedPath, DebounceManager,
+    EventFilter, WatchStatistics, FileWatcherBuilder
 };
