@@ -123,9 +123,13 @@ fn test_workspace_member_discovery() {
         version = "1.0.0"
         description = "Member 1"
         authors = ["Test"]
+        keywords = []
+        categories = []
         
         [dependencies]
-        external-dep = "1.0.0"
+        external-dep = { Simple = "1.0.0" }
+        
+        [dev_dependencies]
     "#).unwrap();
     
     std::fs::write(member2_dir.join("CursedPackage.toml"), r#"
@@ -135,8 +139,10 @@ fn test_workspace_member_discovery() {
         authors = ["Test"]
         
         [dependencies]
-        member1 = "1.0.0"
-        another-dep = "2.0.0"
+        member1 = { Simple = "1.0.0" }
+        another-dep = { Simple = "2.0.0" }
+        
+        [dev_dependencies]
     "#).unwrap();
     
     // Create workspace with glob pattern
@@ -174,6 +180,12 @@ fn test_workspace_exclude_patterns() {
             version = "1.0.0"
             description = "Test member"
             authors = ["Test"]
+            keywords = []
+            categories = []
+            
+            [dependencies]
+            
+            [dev_dependencies]
         "#, name)).unwrap();
     }
     
@@ -203,12 +215,43 @@ fn test_workspace_build_order_simple() {
     let temp_dir = TempDir::new().unwrap();
     let workspace_root = temp_dir.path();
     
+    // Create member directories
+    let member1_dir = workspace_root.join("member1");
+    let member2_dir = workspace_root.join("member2");
+    std::fs::create_dir_all(&member1_dir).unwrap();
+    std::fs::create_dir_all(&member2_dir).unwrap();
+    
+    // Create package files - member2 depends on member1
+    std::fs::write(member1_dir.join("CursedPackage.toml"), r#"
+        name = "member1"
+        version = "1.0.0"
+        description = "Member 1"
+        authors = ["Test"]
+        keywords = []
+        categories = []
+        
+        [dependencies]
+        
+        [dev_dependencies]
+    "#).unwrap();
+    
+    std::fs::write(member2_dir.join("CursedPackage.toml"), r#"
+        name = "member2"
+        version = "1.0.0"
+        description = "Member 2"
+        authors = ["Test"]
+        keywords = []
+        categories = []
+        
+        [dependencies]
+        member1 = { Simple = "1.0.0" }
+        
+        [dev_dependencies]
+    "#).unwrap();
+    
     // Create workspace with dependencies: member2 -> member1
     let members = vec!["member1".to_string(), "member2".to_string()];
-    let mut workspace = WorkspaceManager::init_workspace(workspace_root, members).unwrap();
-    
-    // Note: Direct member manipulation not available in public API
-    // This test would need the workspace to be properly configured with actual package files
+    let workspace = WorkspaceManager::init_workspace(workspace_root, members).unwrap();
     
     let build_order = workspace.get_build_order().unwrap();
     assert_eq!(build_order.len(), 2);
@@ -221,37 +264,75 @@ fn test_workspace_build_order_complex() {
     let temp_dir = TempDir::new().unwrap();
     let workspace_root = temp_dir.path();
     
-    let members = vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()];
-    let mut workspace = WorkspaceManager::init_workspace(workspace_root, members).unwrap();
+    // Create member directories
+    for name in ["a", "b", "c", "d"] {
+        let dir = workspace_root.join(name);
+        std::fs::create_dir_all(&dir).unwrap();
+    }
     
     // Create dependency graph: d -> c -> a, d -> b -> a
-    // Note: workspace.members is private, test disabled
-    //     workspace.members = vec![
-    //         WorkspaceMember {
-    //             name: "a".to_string(),
-    //             path: workspace_root.join("a"),
-    //             metadata: create_test_metadata("a", "1.0.0"),
-    //             local_dependencies: Vec::new(), // No dependencies
-    //         },
-    //         WorkspaceMember {
-    //             name: "b".to_string(),
-    //             path: workspace_root.join("b"),
-    //             metadata: create_test_metadata("b", "1.0.0"),
-    //             local_dependencies: vec!["a".to_string()],
-    //         },
-    //         WorkspaceMember {
-    //             name: "c".to_string(),
-    //             path: workspace_root.join("c"),
-    //             metadata: create_test_metadata("c", "1.0.0"),
-    //             local_dependencies: vec!["a".to_string()],
-    //         },
-    //         WorkspaceMember {
-    //             name: "d".to_string(),
-    //             path: workspace_root.join("d"),
-    //             metadata: create_test_metadata("d", "1.0.0"),
-    //             local_dependencies: vec!["b".to_string(), "c".to_string()],
-    //         },
-    //     ];
+    // Package "a" has no dependencies
+    std::fs::write(workspace_root.join("a").join("CursedPackage.toml"), r#"
+        name = "a"
+        version = "1.0.0"
+        description = "Package A"
+        authors = ["Test"]
+        keywords = []
+        categories = []
+        
+        [dependencies]
+        
+        [dev_dependencies]
+    "#).unwrap();
+    
+    // Package "b" depends on "a"
+    std::fs::write(workspace_root.join("b").join("CursedPackage.toml"), r#"
+        name = "b"
+        version = "1.0.0"
+        description = "Package B"
+        authors = ["Test"]
+        keywords = []
+        categories = []
+        
+        [dependencies]
+        a = { Simple = "1.0.0" }
+        
+        [dev_dependencies]
+    "#).unwrap();
+    
+    // Package "c" depends on "a"
+    std::fs::write(workspace_root.join("c").join("CursedPackage.toml"), r#"
+        name = "c"
+        version = "1.0.0"
+        description = "Package C"
+        authors = ["Test"]
+        keywords = []
+        categories = []
+        
+        [dependencies]
+        a = { Simple = "1.0.0" }
+        
+        [dev_dependencies]
+    "#).unwrap();
+    
+    // Package "d" depends on "b" and "c"
+    std::fs::write(workspace_root.join("d").join("CursedPackage.toml"), r#"
+        name = "d"
+        version = "1.0.0"
+        description = "Package D"
+        authors = ["Test"]
+        keywords = []
+        categories = []
+        
+        [dependencies]
+        b = { Simple = "1.0.0" }
+        c = { Simple = "1.0.0" }
+        
+        [dev_dependencies]
+    "#).unwrap();
+    
+    let members = vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()];
+    let workspace = WorkspaceManager::init_workspace(workspace_root, members).unwrap();
     
     let build_order = workspace.get_build_order().unwrap();
     assert_eq!(build_order.len(), 4);
@@ -505,8 +586,8 @@ fn test_workspace_config_serialization() {
         exclude: vec!["old-*".to_string()],
         dependencies: {
             let mut deps = HashMap::new();
-            deps.insert("common-lib".to_string(), cursed::package_manager::VersionSpec::Simple("1.0.0".to_string()));
-            deps.insert("utils".to_string(), cursed::package_manager::VersionSpec::Simple("^2.0".to_string()));
+            deps.insert("common-lib".to_string(), "1.0.0".to_string());
+            deps.insert("utils".to_string(), "^2.0".to_string());
             deps
         },
         default_members: vec!["package1".to_string()],

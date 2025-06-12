@@ -933,7 +933,8 @@ mod tests {
 
     #[test]
     fn test_api_functions() {
-        let pem_data = "-----BEGIN CERTIFICATE-----\nMIIC...dummy...\n-----END CERTIFICATE-----";
+        // Use a valid base64 encoded dummy certificate
+        let pem_data = "-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\n-----END CERTIFICATE-----";
         let result = parse_certificate_pem(Vec::from([Value::String(pem_data.to_string())]));
         assert!(result.is_ok());
         

@@ -27,9 +27,16 @@ pub use certificates::{
 };
 
 // Re-export package types for integration
-// TODO: Re-enable when crypto packages are fully implemented
-// pub use crate::stdlib::packages::crypto_asymmetric::*;
-// pub use crate::stdlib::packages::crypto_pki::*;
+pub use crate::stdlib::packages::crypto_asymmetric::*;
+pub use crate::stdlib::packages::crypto_pki::*;
+pub use crate::stdlib::packages::crypto_advanced::*;
+pub use crate::stdlib::packages::crypto_hash_advanced::*;
+pub use crate::stdlib::packages::crypto_kdf::*;
+pub use crate::stdlib::packages::crypto_random::*;
+pub use crate::stdlib::packages::crypto_signatures::*;
+pub use crate::stdlib::packages::crypto_zk::*;
+pub use crate::stdlib::packages::crypto_pqc::*;
+pub use crate::stdlib::packages::crypto_protocols::*;
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
@@ -37,15 +44,46 @@ use std::collections::HashMap;
 
 /// fr fr Initialize the crypto module
 pub fn init_crypto() -> Result<(), CursedError> {
-    // TODO: Re-enable when crypto packages are properly implemented
     // Initialize crypto packages
-    // if let Err(e) = crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric() {
-    //     return Err(CursedError::Runtime(format!("Failed to initialize asymmetric crypto: {}", e)));
-    // }
-    // 
-    // if let Err(e) = crate::stdlib::packages::crypto_pki::init_crypto_pki() {
-    //     return Err(CursedError::Runtime(format!("Failed to initialize PKI: {}", e)));
-    // }
+    if let Err(e) = crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric() {
+        return Err(CursedError::Runtime(format!("Failed to initialize asymmetric crypto: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_pki::init_crypto_pki() {
+        return Err(CursedError::Runtime(format!("Failed to initialize PKI: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_advanced::init_crypto_advanced() {
+        return Err(CursedError::Runtime(format!("Failed to initialize advanced crypto: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced() {
+        return Err(CursedError::Runtime(format!("Failed to initialize advanced hashing: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_kdf::init_crypto_kdf() {
+        return Err(CursedError::Runtime(format!("Failed to initialize key derivation: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_random::init_crypto_random() {
+        return Err(CursedError::Runtime(format!("Failed to initialize secure random: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_signatures::init_crypto_signatures() {
+        return Err(CursedError::Runtime(format!("Failed to initialize digital signatures: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_zk::init_crypto_zk() {
+        return Err(CursedError::Runtime(format!("Failed to initialize zero-knowledge proofs: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_pqc::init_crypto_pqc() {
+        return Err(CursedError::Runtime(format!("Failed to initialize post-quantum crypto: {}", e)));
+    }
+    
+    if let Err(e) = crate::stdlib::packages::crypto_protocols::init_crypto_protocols() {
+        return Err(CursedError::Runtime(format!("Failed to initialize crypto protocols: {}", e)));
+    }
     
     println!("🔐 Comprehensive crypto module initialized - maximum security activated bestie!");
     Ok(())
