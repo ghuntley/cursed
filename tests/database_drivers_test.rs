@@ -83,7 +83,7 @@ fn test_sqlite_insert_and_query() {
     // Insert data
     let insert_result = conn.execute(
         "INSERT INTO users (name) VALUES (?)", 
-        &[SqlValue::Text("Alice".to_string())]
+        &[SqlValue::String("Alice".to_string())]
     );
     assert!(insert_result.is_ok(), "Failed to insert: {:?}", insert_result.err());
     
@@ -96,17 +96,17 @@ fn test_sqlite_insert_and_query() {
     assert!(query_result.is_ok(), "Failed to query: {:?}", query_result.err());
     
     let query_result = query_result.unwrap();
-    assert_eq!(query_result.columns.len(), 2);
-    assert_eq!(query_result.columns[0], "id");
-    assert_eq!(query_result.columns[1], "name");
+    assert_eq!(query_result.column_names.len(), 2);
+    assert_eq!(query_result.column_names[0], "id");
+    assert_eq!(query_result.column_names[1], "name");
     assert_eq!(query_result.rows.len(), 1);
     
     // Check the data
     let row = &query_result.rows[0];
     assert_eq!(row.len(), 2);
     match &row[1] {
-        SqlValue::Text(name) => assert_eq!(name, "Alice"),
-        _ => panic!("Expected text value for name"),
+        SqlValue::String(name) => assert_eq!(name, "Alice"),
+        _ => panic!("Expected string value for name"),
     }
 }
 
@@ -174,10 +174,9 @@ fn test_sqlite_connection_metadata() {
     let conn = RealSqliteConnection::new(config).expect("Failed to create connection");
     
     let metadata = conn.metadata();
-    assert!(!metadata.connection_id.is_empty());
-    assert_eq!(metadata.driver_name, "SQLite");
     assert!(!metadata.database_name.is_empty());
-    assert!(!metadata.is_read_only);
+    assert!(!metadata.server_version.is_empty());
+    assert!(!metadata.username.is_empty());
 }
 
 #[test]
