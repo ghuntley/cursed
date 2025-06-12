@@ -255,20 +255,26 @@ pub fn set_process_priority(pid: u32, priority: Priority) -> ProcessResult<()> {
 pub fn get_process_priority(pid: u32) -> ProcessResult<i32> {
     #[cfg(unix)]
     {
-        // Reset errno before calling getpriority
-        unsafe { *libc::__errno_location() = 0; }
+        // Clear errno before the call since getpriority can return -1 legitimately
+        let errno_ptr = unsafe { libc::__errno_location() };
+        unsafe { *errno_ptr = 0; }
         
         let priority = unsafe { libc::getpriority(libc::PRIO_PROCESS, pid) };
-        let errno = unsafe { *libc::__errno_location() };
+        let errno = unsafe { *errno_ptr };
         
+        // getpriority returns the priority value (can be negative), or -1 on error
+        // We need to check errno to distinguish between -1 as a valid priority and error
         if errno == 0 {
             Ok(priority)
         } else {
             match errno {
                 libc::ESRCH => Err(ProcessError::ProcessNotFound(pid)),
+                libc::EPERM => Err(ProcessError::PermissionDenied(
+                    format!("Cannot get priority for process {}", pid)
+                )),
                 _ => Err(ProcessError::SystemError(
                     errno,
-                    format!("Failed to get priority for process {}", pid)
+                    format!("Failed to get priority for process {}: errno {}", pid, errno)
                 )),
             }
         }

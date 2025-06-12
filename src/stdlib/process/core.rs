@@ -237,33 +237,37 @@ impl Process {
         Ok(self.child.wait()?)
     }
 
-    /// Wait for process with timeout
+    /// Wait for process with timeout using cross-platform implementation
     pub fn wait_timeout(&mut self, timeout: Duration) -> ProcessResult<Option<ExitStatus>> {
-        // This is a simplified implementation - in practice you'd use platform-specific APIs
         use std::thread;
         use std::sync::mpsc;
+        use std::time::Instant;
         
-        let (tx, rx) = mpsc::channel::<Option<ExitStatus>>();
-        let child_id = self.child.id();
+        let start_time = Instant::now();
         
-        thread::spawn(move || {
-            // In a real implementation, this would properly wait for the process
-            thread::sleep(timeout);
-            let _ = tx.send(None);
-        });
-        
-        match self.child.try_wait()? {
-            Some(status) => Ok(Some(status)),
-            None => {
-                match rx.recv_timeout(timeout) {
-                    Ok(_) => Ok(None), // Timeout
-                    Err(_) => {
-                        // Check once more
-                        Ok(self.child.try_wait()?)
-                    }
-                }
-            }
+        // Check if already finished
+        if let Some(status) = self.child.try_wait()? {
+            return Ok(Some(status));
         }
+        
+        // Use a polling approach with exponential backoff
+        let mut sleep_duration = Duration::from_millis(10);
+        
+        while start_time.elapsed() < timeout {
+            if let Some(status) = self.child.try_wait()? {
+                return Ok(Some(status));
+            }
+            
+            // Sleep with exponential backoff, capped at 100ms
+            thread::sleep(sleep_duration);
+            sleep_duration = std::cmp::min(
+                sleep_duration * 2, 
+                Duration::from_millis(100)
+            );
+        }
+        
+        // Timeout reached
+        Ok(None)
     }
 
     /// Kill the process

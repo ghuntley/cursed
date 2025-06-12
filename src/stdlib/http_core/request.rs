@@ -317,8 +317,25 @@ impl Request {
                 self.body = RequestBody::Form(form_data);
             }
             "multipart/form-data" => {
-                // TODO: Implement multipart parsing
-                self.body = RequestBody::Text(body_content);
+                // Extract boundary from Content-Type header
+                if let Some(content_type_header) = self.headers.get("Content-Type") {
+                    if let Some(boundary) = Self::extract_boundary(content_type_header) {
+                        // Use the form_data MultipartData for parsing
+                        let mut parser = crate::stdlib::http_core::form_data::MultipartData::new(boundary);
+                        match parser.parse(body_content.as_bytes()) {
+                            Ok(_) => {
+                                self.body = RequestBody::Form(parser.into_form_data());
+                            }
+                            Err(e) => {
+                                return Err(HttpError::FormDataError(format!("Multipart parse error: {}", e)));
+                            }
+                        }
+                    } else {
+                        return Err(HttpError::FormDataError("Missing boundary in Content-Type".to_string()));
+                    }
+                } else {
+                    return Err(HttpError::FormDataError("Missing Content-Type header".to_string()));
+                }
             }
             _ => {
                 // Try to detect if it's binary or text
@@ -457,6 +474,25 @@ impl Request {
     /// Get request duration since creation
     pub fn duration(&self) -> Duration {
         self.timestamp.elapsed()
+    }
+
+    /// Extract boundary from Content-Type header
+    fn extract_boundary(content_type: &str) -> Option<String> {
+        // Look for boundary parameter in Content-Type header
+        // Example: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+        for part in content_type.split(';') {
+            let part = part.trim();
+            if part.starts_with("boundary=") {
+                let boundary = &part[9..]; // Skip "boundary="
+                // Remove quotes if present
+                if boundary.starts_with('"') && boundary.ends_with('"') {
+                    return Some(boundary[1..boundary.len() - 1].to_string());
+                } else {
+                    return Some(boundary.to_string());
+                }
+            }
+        }
+        None
     }
 }
 

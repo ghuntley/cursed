@@ -86,7 +86,7 @@ pub use traits::{
 
 // Shared Memory operations
 pub use shared_memory::{
-    SharedMemory, SharedMemoryConfig, SharedMemoryRegion, SharedMemoryAccess,
+    SharedMemory, SharedMemoryConfig, SharedMemoryAccess,
     create_shared_memory, open_shared_memory, remove_shared_memory,
     SharedMemoryIterator, SharedMemoryView, MemoryMapping, MemoryProtection
 };
@@ -208,10 +208,70 @@ pub fn get_ipc_statistics() -> IpcStatistics {
 
 /// Set up resource monitoring for IPC operations
 fn setup_resource_monitoring() -> IpcResult<()> {
-    // Set up memory usage monitoring
-    // Set up connection count monitoring
-    // Set up performance metric collection
-    // This is a placeholder - actual implementation would use platform-specific APIs
+    #[cfg(unix)]
+    {
+        // Set up memory usage monitoring using /proc filesystem
+        if std::path::Path::new("/proc/self/status").exists() {
+            // Initialize memory monitoring
+            std::thread::spawn(|| {
+                loop {
+                    if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+                        // Parse VmSize, VmRSS for memory usage tracking
+                        for line in status.lines() {
+                            if line.starts_with("VmRSS:") {
+                                // Update global memory usage statistics
+                                if let Some(kb_str) = line.split_whitespace().nth(1) {
+                                    if let Ok(kb) = kb_str.parse::<usize>() {
+                                        RESOURCE_MONITOR.lock().unwrap().update_memory_usage(kb * 1024);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    std::thread::sleep(std::time::Duration::from_secs(10));
+                }
+            });
+        }
+        
+        // Set up file descriptor monitoring
+        std::thread::spawn(|| {
+            loop {
+                if let Ok(fd_count) = std::fs::read_dir("/proc/self/fd") {
+                    let count = fd_count.count();
+                    RESOURCE_MONITOR.lock().unwrap().update_fd_count(count);
+                }
+                std::thread::sleep(std::time::Duration::from_secs(5));
+            }
+        });
+    }
+    
+    #[cfg(windows)]
+    {
+        // Set up basic memory monitoring for Windows
+        // Note: More detailed monitoring would require additional Windows API dependencies
+        std::thread::spawn(|| {
+            loop {
+                // For now, use a placeholder that would be filled with proper Windows APIs
+                // in a production implementation with appropriate dependencies
+                RESOURCE_MONITOR.lock().unwrap().update_memory_usage(0);
+                
+                std::thread::sleep(std::time::Duration::from_secs(10));
+            }
+        });
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        // macOS specific monitoring using task_info
+        std::thread::spawn(|| {
+            loop {
+                // Use mach system calls for memory monitoring
+                // This would require additional dependencies for full implementation
+                std::thread::sleep(std::time::Duration::from_secs(10));
+            }
+        });
+    }
+    
     Ok(())
 }
 
@@ -271,8 +331,16 @@ fn get_performance_metrics() -> IpcPerformanceMetrics {
 }
 
 fn get_average_wait_time() -> u64 {
-    // Placeholder - would calculate actual average wait time
-    0
+    RESOURCE_MONITOR.lock()
+        .map(|monitor| {
+            let total_waits = monitor.semaphore_waits + monitor.pipe_blocks + monitor.queue_blocks;
+            if total_waits > 0 {
+                monitor.total_wait_time_nanos / total_waits
+            } else {
+                0
+            }
+        })
+        .unwrap_or(0)
 }
 
 /// Resource contention statistics
@@ -294,6 +362,68 @@ pub struct IpcPerformanceMetrics {
     pub rpc_call_rate: f64,             // RPC calls per second
     pub signal_handling_time: u64,      // average signal handling time in nanos
 }
+
+// Internal resource monitoring structure
+#[derive(Debug, Clone)]
+struct ResourceMonitor {
+    memory_usage_bytes: usize,
+    fd_count: usize,
+    semaphore_waits: u64,
+    pipe_blocks: u64,
+    queue_blocks: u64,
+    total_wait_time_nanos: u64,
+    last_update: SystemTime,
+}
+
+impl ResourceMonitor {
+    fn new() -> Self {
+        Self {
+            memory_usage_bytes: 0,
+            fd_count: 0,
+            semaphore_waits: 0,
+            pipe_blocks: 0,
+            queue_blocks: 0,
+            total_wait_time_nanos: 0,
+            last_update: SystemTime::now(),
+        }
+    }
+    
+    fn update_memory_usage(&mut self, bytes: usize) {
+        self.memory_usage_bytes = bytes;
+        self.last_update = SystemTime::now();
+    }
+    
+    fn update_fd_count(&mut self, count: usize) {
+        self.fd_count = count;
+        self.last_update = SystemTime::now();
+    }
+    
+    fn record_wait(&mut self, wait_type: WaitType, duration_nanos: u64) {
+        match wait_type {
+            WaitType::Semaphore => self.semaphore_waits += 1,
+            WaitType::Pipe => self.pipe_blocks += 1,
+            WaitType::Queue => self.queue_blocks += 1,
+        }
+        self.total_wait_time_nanos += duration_nanos;
+        self.last_update = SystemTime::now();
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum WaitType {
+    Semaphore,
+    Pipe,
+    Queue,
+}
+
+// Global resource monitor instance
+lazy_static::lazy_static! {
+    static ref RESOURCE_MONITOR: Arc<Mutex<ResourceMonitor>> = 
+        Arc::new(Mutex::new(ResourceMonitor::new()));
+}
+
+use std::time::SystemTime;
+use std::sync::{Arc, Mutex};
 
 #[cfg(test)]
 mod tests {

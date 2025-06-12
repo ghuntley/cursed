@@ -99,6 +99,9 @@ tempfile = "3.8"  # Temporary directories for testing
 pulldown-cmark = "0.9"  # Markdown parsing and HTML generation
 handlebars = "4.4"      # Template engine for HTML generation
 
+# IPC dependencies
+uuid = { version = "1.6", features = ["v4", "serde"] }  # For generating unique IDs in RPC
+
 # Package management dependencies (simplified for now)
 semver = "1.0"          # Semantic version parsing and comparison
 url = "2.4"             # URL parsing and manipulation
@@ -117,8 +120,7 @@ base64ct = "=1.6.0"     # Base64 encoding (force specific version)
 rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite
 redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis for session store
 
-# Missing dependencies for web_vibez
-uuid = { version = "1.0", features = ["v4", "serde"] }      # For request IDs
+# Missing dependencies for web_vibez (uuid already defined above)
 urlencoding = "2.1"                                # For URL encoding/decoding
 httpdate = "1.0"                                   # For HTTP date formatting  
 async-trait = "0.1"                                # For async traits
@@ -132,7 +134,8 @@ tree-sitter = "0.20"      # Tree-sitter parsing for incremental updates
 
 # Platform-specific dependencies for shared memory
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef"] }
+winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef", "processthreadsapi", "psapi", "tlhelp32"] }
+windows-sys = { version = "0.52", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_Threading"] }
 
 # Template system dependencies (moved above)
 # md5, dashmap, ropey, tree-sitter moved to main dependencies section

@@ -1,4 +1,25 @@
 /// Platform-specific process management utilities
+/// 
+/// Process management is crucial for system integration in modern applications.
+/// This module provides cross-platform process management capabilities that allow
+/// CURSED programs to:
+/// 
+/// - Spawn and control external processes
+/// - Monitor system resources and performance
+/// - Implement process-based communication patterns
+/// - Build system administration and automation tools
+/// - Create microservice architectures with process isolation
+/// - Implement distributed computing patterns
+/// 
+/// Key capabilities:
+/// - Cross-platform process spawning and management
+/// - Real-time process monitoring and health checks
+/// - Resource usage tracking (CPU, memory, I/O)
+/// - Signal handling and process control
+/// - Platform-specific optimizations (Linux cgroups, Windows services, etc.)
+/// 
+/// This enables CURSED to be used for system programming, DevOps tooling,
+/// container orchestration, and building robust distributed systems.
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -147,9 +168,25 @@ pub mod unix {
     
     /// Get file descriptor flags
     fn get_fd_flags(pid: u32, fd: u32) -> ProcessResult<u32> {
-        // This would require parsing /proc/[pid]/fdinfo/[fd]
-        // For now, return 0 as a placeholder
-        Ok(0)
+        let fdinfo_path = format!("/proc/{}/fdinfo/{}", pid, fd);
+        let content = fs::read_to_string(&fdinfo_path)
+            .map_err(|_| ProcessError::ProcessNotFound(pid))?;
+        
+        let mut flags = 0u32;
+        
+        for line in content.lines() {
+            if line.starts_with("flags:") {
+                if let Some(flags_str) = line.split_whitespace().nth(1) {
+                    // Parse octal flags (e.g., "02000002")
+                    if let Ok(parsed_flags) = u32::from_str_radix(flags_str, 8) {
+                        flags = parsed_flags;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        Ok(flags)
     }
     
     /// Create daemon process on Unix
@@ -372,16 +409,64 @@ pub mod linux {
     
     /// Set process CPU affinity
     pub fn set_cpu_affinity(pid: u32, cpu_mask: u64) -> ProcessResult<()> {
-        // This would use sched_setaffinity system call
-        // For now, return success as a placeholder
-        Ok(())
+        use std::mem;
+        
+        // Create CPU set from mask
+        let mut cpu_set: libc::cpu_set_t = unsafe { mem::zeroed() };
+        
+        for cpu in 0..64 {
+            if (cpu_mask & (1 << cpu)) != 0 {
+                unsafe { libc::CPU_SET(cpu, &mut cpu_set); }
+            }
+        }
+        
+        let result = unsafe {
+            libc::sched_setaffinity(
+                pid as libc::pid_t,
+                mem::size_of::<libc::cpu_set_t>(),
+                &cpu_set
+            )
+        };
+        
+        if result == 0 {
+            Ok(())
+        } else {
+            Err(ProcessError::SystemError(
+                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
+                "Failed to set CPU affinity".to_string()
+            ))
+        }
     }
     
     /// Get process CPU affinity
     pub fn get_cpu_affinity(pid: u32) -> ProcessResult<u64> {
-        // This would use sched_getaffinity system call
-        // For now, return all CPUs as a placeholder
-        Ok(u64::MAX)
+        use std::mem;
+        
+        let mut cpu_set: libc::cpu_set_t = unsafe { mem::zeroed() };
+        
+        let result = unsafe {
+            libc::sched_getaffinity(
+                pid as libc::pid_t,
+                mem::size_of::<libc::cpu_set_t>(),
+                &mut cpu_set
+            )
+        };
+        
+        if result != 0 {
+            return Err(ProcessError::SystemError(
+                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
+                "Failed to get CPU affinity".to_string()
+            ));
+        }
+        
+        let mut mask = 0u64;
+        for cpu in 0..64 {
+            if unsafe { libc::CPU_ISSET(cpu, &cpu_set) } {
+                mask |= 1 << cpu;
+            }
+        }
+        
+        Ok(mask)
     }
 }
 
@@ -527,23 +612,6 @@ pub struct MachPortInfo {
 impl PlatformUtils {
     /// Get platform-specific process information
     pub fn get_platform_info(pid: u32) -> ProcessResult<PlatformProcessInfo> {
-        #[cfg(windows)]
-        {
-            Ok(PlatformProcessInfo::Windows {
-                command_line: windows::get_process_command_line(pid)?,
-                environment: windows::get_process_environment(pid)?,
-            })
-        }
-        
-        #[cfg(unix)]
-        {
-            return Ok(PlatformProcessInfo::Unix {
-                command_line: unix::get_process_command_line(pid)?,
-                environment: unix::get_process_environment(pid)?,
-                file_descriptors: unix::get_process_file_descriptors(pid)?,
-            });
-        }
-        
         #[cfg(target_os = "linux")]
         {
             let cgroups = linux::get_process_cgroup(pid)?;
@@ -569,7 +637,24 @@ impl PlatformUtils {
             })
         }
         
-        #[cfg(not(any(windows, unix, target_os = "linux", target_os = "macos")))]
+        #[cfg(all(unix, not(target_os = "linux"), not(target_os = "macos")))]
+        {
+            Ok(PlatformProcessInfo::Unix {
+                command_line: unix::get_process_command_line(pid)?,
+                environment: unix::get_process_environment(pid)?,
+                file_descriptors: unix::get_process_file_descriptors(pid)?,
+            })
+        }
+        
+        #[cfg(windows)]
+        {
+            Ok(PlatformProcessInfo::Windows {
+                command_line: windows::get_process_command_line(pid)?,
+                environment: windows::get_process_environment(pid)?,
+            })
+        }
+        
+        #[cfg(not(any(windows, unix)))]
         {
             Err(ProcessError::PlatformError("Unsupported platform".to_string()))
         }
