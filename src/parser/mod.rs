@@ -58,7 +58,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    /// Create a new parser instance
+    /// Create a new parser from lexer (main constructor)
     pub fn new(mut lexer: Lexer) -> Result<Self, Error> {
         let current_token = lexer.next_token()?;
         let peek_token = lexer.next_token()?;
@@ -81,6 +81,19 @@ impl Parser {
                 TokenType::Yolo,      // return
             ],
         })
+    }
+    
+    /// Parse from tokens (convenience method for tests)
+    pub fn from_tokens(tokens: Vec<Token>) -> Result<Self, Error> {
+        // Create a dummy lexer from tokens
+        let input = tokens.iter().map(|t| t.literal.clone()).collect::<Vec<_>>().join(" ");
+        let mut lexer = Lexer::new(input);
+        Self::new(lexer)
+    }
+    
+    /// Convenience method for tests - alias for parse_program
+    pub fn parse(&mut self) -> Result<Program, Error> {
+        self.parse_program()
     }
     
     /// Parse a complete CURSED program

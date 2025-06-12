@@ -23,11 +23,14 @@ pub trait ErrorPropagationCompiler {
     /// Compile question mark expression
     fn compile_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
     
-    /// Compile enhanced question mark expression
+    /// Compile enhanced question mark expression  
     fn compile_enhanced_question_mark(&mut self, expr: &EnhancedQuestionMarkExpression) -> Result<String, CursedError>;
     
     /// Compile typed error propagation
     fn compile_typed_error_propagation(&mut self, expr: &TypedErrorPropagation) -> Result<String, CursedError>;
+    
+    /// Compile basic error propagation expression
+    fn compile_error_propagation_expression(&mut self, expr: &ErrorPropagation) -> Result<String, CursedError>;
     
     /// Generate Result error checking
     fn generate_result_check(&mut self, result_expr: &str) -> Result<ErrorCheckResult, CursedError>;
@@ -49,7 +52,8 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         
         // Generate IR for the question mark operation
         let temp_name = format!("%q_mark_{}", self.next_temp_id());
-        let inner_expr = self.compile_expression_to_string(expr.expression.as_ref())?;
+        let inner_expr = self.compile_expression_to_string(expr.expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
         
         // Generate basic error checking IR
         let ir = format!(
@@ -69,7 +73,8 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         
         // Generate IR for enhanced question mark with context
         let temp_name = format!("%enhanced_q_mark_{}", self.next_temp_id());
-        let inner_expr = self.compile_expression_to_string(expr.inner_expression.as_ref())?;
+        let inner_expr = self.compile_expression_to_string(expr.inner_expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
         
         let ir = format!(
             "  {} = call i8* @cursed_enhanced_question_mark(i8* {}, i32 {}, i32 {}, i8* {})",
@@ -89,14 +94,15 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         
         // Generate IR for typed error propagation
         let temp_name = format!("%typed_propagation_{}", self.next_temp_id());
-        let inner_expr = self.compile_expression_to_string(expr.inner_expression.as_ref())?;
+        let inner_expr = self.compile_expression_to_string(expr.inner_expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
         
         let ir = format!(
             "  {} = call i8* @cursed_typed_error_propagation(i8* {}, i8* {}, i8* {})",
             temp_name,
             inner_expr,
-            self.get_type_string(&expr.expression_type),
-            self.get_type_string(&expr.return_type)
+            self.get_type_string_simple(&expr.expression_type),
+            self.get_type_string_simple(&expr.return_type)
         );
         
         Ok(format!("{}\n{}", inner_expr, ir))
@@ -167,33 +173,30 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         
         Ok(ir)
     }
+
+    #[instrument(skip(self, expr))]
+    fn compile_error_propagation_expression(&mut self, expr: &ErrorPropagation) -> Result<String, CursedError> {
+        debug!("Compiling basic error propagation expression");
+        
+        // Generate IR for basic error propagation
+        let temp_name = format!("%error_prop_{}", self.next_temp_id());
+        let inner_expr = self.compile_expression_to_string(expr.expression.as_ref())
+            .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
+        
+        // Use default location since ErrorPropagation doesn't have location info
+        let ir = format!(
+            "  {} = call i8* @cursed_error_propagation(i8* {}, i32 {}, i32 {})",
+            temp_name,
+            inner_expr,
+            1, // default line
+            1  // default column
+        );
+        
+        Ok(format!("{}\n{}", inner_expr, ir))
+    }
 }
 
-/// Helper methods for LlvmCodeGenerator
-impl LlvmCodeGenerator {
-    /// Compile expression to string representation
-    fn compile_expression_to_string(&mut self, expr: &dyn Expression) -> Result<String, CursedError> {
-        // Simplified implementation - return temporary variable
-        let temp_id = self.next_temp_id();
-        Ok(format!("%expr_{}", temp_id))
-    }
-    
-    /// Get next temporary ID
-    fn next_temp_id(&mut self) -> usize {
-        // This would be part of the LlvmCodeGenerator state
-        static mut COUNTER: usize = 0;
-        unsafe {
-            COUNTER += 1;
-            COUNTER
-        }
-    }
-    
-    /// Get type string representation
-    fn get_type_string(&self, type_name: &str) -> String {
-        format!("getelementptr inbounds ([{} x i8], [{}* x i8]* @type_str, i32 0, i32 0)", 
-                type_name.len() + 1, type_name.len() + 1)
-    }
-}
+/// Helper methods for LlvmCodeGenerator - now implemented in main module
 
 /// Result of error checking (simplified)
 #[derive(Debug)]
@@ -219,7 +222,7 @@ pub struct PropagationContext {
     pub expected_return_type: Option<String>,
 }
 
-/// FFI functions for runtime integration
+// FFI functions for runtime integration
 extern "C" {
     /// Record error propagation context in runtime
     fn cursed_record_error_context(line: i32, column: i32, function_name: *const i8);

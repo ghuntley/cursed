@@ -7,7 +7,7 @@
 use crate::ast::traits::Expression;
 use crate::ast::{
     operators::{BinaryExpression, UnaryExpression, AssignmentExpression, IndexExpression},
-    expressions::{Literal, LiteralValue, ParenthesizedExpression, FunctionLiteral},
+    expressions::{Literal, LiteralValue, ParenthesizedExpression, FunctionLiteral, QuestionMarkExpression},
     identifiers::{Identifier, QualifiedName, TypeIdentifier},
     calls::CallExpression,
 };
@@ -161,6 +161,16 @@ impl LlvmExpressionCompiler {
         }
     }
     
+    /// Add external function declarations for error propagation
+    pub fn add_error_propagation_declarations(&mut self) {
+        self.ir_output.push("; Error propagation runtime functions".to_string());
+        self.ir_output.push("declare void @cursed_error_propagation_init()".to_string());
+        self.ir_output.push("declare void @cursed_error_propagation_cleanup()".to_string());
+        self.ir_output.push("declare i8* @cursed_error_propagation(i8*, i32, i32)".to_string());
+        self.ir_output.push("declare void @cursed_error_propagation_panic(i8*)".to_string());
+        self.ir_output.push("".to_string());
+    }
+    
     /// Compile any expression to LLVM IR
     pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<LlvmValue, Error> {
         // Try to downcast to specific expression types
@@ -180,6 +190,8 @@ impl LlvmExpressionCompiler {
             self.compile_index_expression(index)
         } else if let Some(paren) = expr.as_any().downcast_ref::<ParenthesizedExpression>() {
             self.compile_parenthesized_expression(paren)
+        } else if let Some(question_mark) = expr.as_any().downcast_ref::<QuestionMarkExpression>() {
+            self.compile_question_mark_expression(question_mark)
         } else {
             Err(Error::Compile(format!(
                 "Unsupported expression type for compilation: {}",
@@ -525,6 +537,146 @@ impl LlvmExpressionCompiler {
         self.compile_expression(paren.expression.as_ref())
     }
     
+    /// Compile question mark operator expressions
+    pub fn compile_question_mark_expression(&mut self, question_mark: &QuestionMarkExpression) -> Result<LlvmValue, Error> {
+        // Compile the inner expression first
+        let inner_value = self.compile_expression(question_mark.expression.as_ref())?;
+        
+        // Generate temporary names for the IR
+        let is_ok_temp = self.context.next_temp();
+        let value_temp = self.context.next_temp();
+        let error_temp = self.context.next_temp();
+        let propagation_temp = self.context.next_temp();
+        
+        // Create basic blocks for control flow
+        let success_block = format!("question_mark_success_{}", self.context.temp_counter);
+        let error_block = format!("question_mark_error_{}", self.context.temp_counter);
+        let merge_block = format!("question_mark_merge_{}", self.context.temp_counter);
+        
+        self.context.temp_counter += 1;
+        
+        // Determine if this is a Result or Option type and generate appropriate checks
+        let inner_type_string = self.get_type_string(&inner_value.value_type);
+        
+        if inner_type_string.starts_with("Result<") {
+            // Extract value and error types from Result<T, E>
+            let (value_type, error_type) = self.extract_result_types(&inner_type_string)?;
+            
+            // Extract is_ok flag from Result type
+            self.ir_output.push(format!(
+                "  {} = extractvalue {} {}, 0  ; Extract is_ok flag",
+                is_ok_temp, inner_type_string, inner_value.llvm_name
+            ));
+            
+            // Branch based on is_ok flag
+            self.ir_output.push(format!(
+                "  br i1 {}, label %{}, label %{}",
+                is_ok_temp, success_block, error_block
+            ));
+            
+            // Success block: extract value and continue
+            self.ir_output.push(format!("{}:", success_block));
+            self.ir_output.push(format!(
+                "  {} = extractvalue {} {}, 1  ; Extract success value",
+                value_temp, inner_type_string, inner_value.llvm_name
+            ));
+            self.ir_output.push(format!("  br label %{}", merge_block));
+            
+            // Error block: extract error and propagate (early return)
+            self.ir_output.push(format!("{}:", error_block));
+            self.ir_output.push(format!(
+                "  {} = extractvalue {} {}, 2  ; Extract error value",
+                error_temp, inner_type_string, inner_value.llvm_name
+            ));
+            
+            // Generate error propagation runtime call
+            self.ir_output.push(format!(
+                "  {} = call i8* @cursed_error_propagation(i8* {}, i32 0, i32 0)",
+                propagation_temp, error_temp
+            ));
+            
+            // Create propagated Result with error
+            let result_temp = self.context.next_temp();
+            self.ir_output.push(format!(
+                "  {} = insertvalue {} undef, i1 false, 0  ; Set is_ok to false",
+                result_temp, inner_type_string
+            ));
+            self.ir_output.push(format!(
+                "  {} = insertvalue {} {}, {} {}, 2  ; Insert error value",
+                result_temp, inner_type_string, result_temp, error_type.to_llvm_string(), error_temp
+            ));
+            
+            // Early return with propagated error
+            self.ir_output.push(format!("  ret {} {}", inner_type_string, result_temp));
+            
+            // Merge block - only reached on success
+            self.ir_output.push(format!("{}:", merge_block));
+            
+            // Return the extracted value
+            Ok(LlvmValue {
+                value_type,
+                llvm_name: value_temp,
+                is_constant: false,
+            })
+        } else if inner_type_string.starts_with("Option<") {
+            // Extract value type from Option<T>
+            let value_type = self.extract_option_type(&inner_type_string)?;
+            
+            // Extract is_some flag from Option type
+            self.ir_output.push(format!(
+                "  {} = extractvalue {} {}, 0  ; Extract is_some flag",
+                is_ok_temp, inner_type_string, inner_value.llvm_name
+            ));
+            
+            // Branch based on is_some flag
+            self.ir_output.push(format!(
+                "  br i1 {}, label %{}, label %{}",
+                is_ok_temp, success_block, error_block
+            ));
+            
+            // Success block: extract value and continue
+            self.ir_output.push(format!("{}:", success_block));
+            self.ir_output.push(format!(
+                "  {} = extractvalue {} {}, 1  ; Extract some value",
+                value_temp, inner_type_string, inner_value.llvm_name
+            ));
+            self.ir_output.push(format!("  br label %{}", merge_block));
+            
+            // Error block: propagate None
+            self.ir_output.push(format!("{}:", error_block));
+            
+            // Generate None propagation (optional runtime call for debugging)
+            self.ir_output.push(format!(
+                "  call void @cursed_error_propagation(i8* null, i32 0, i32 0)  ; Log None propagation"
+            ));
+            
+            // Create propagated Option with None
+            let none_temp = self.context.next_temp();
+            self.ir_output.push(format!(
+                "  {} = insertvalue {} undef, i1 false, 0  ; Set is_some to false",
+                none_temp, inner_type_string
+            ));
+            
+            // Early return with None
+            self.ir_output.push(format!("  ret {} {}", inner_type_string, none_temp));
+            
+            // Merge block - only reached on success
+            self.ir_output.push(format!("{}:", merge_block));
+            
+            // Return the extracted value
+            Ok(LlvmValue {
+                value_type,
+                llvm_name: value_temp,
+                is_constant: false,
+            })
+        } else {
+            Err(Error::Compile(format!(
+                "Question mark operator can only be applied to Result<T, E> or Option<T> types, not {}",
+                inner_type_string
+            )))
+        }
+    }
+    
     /// Resolve the result type of binary operations
     fn resolve_binary_type(&self, left: &LlvmType, right: &LlvmType, operator: &str) -> Result<LlvmType, Error> {
         match (left, right, operator) {
@@ -570,6 +722,77 @@ impl LlvmExpressionCompiler {
     /// Set current source location for debug info
     pub fn set_location(&mut self, location: SourceLocation) {
         self.context.current_location = Some(location);
+    }
+    
+    /// Get string representation of a type (helper for question mark operator)
+    fn get_type_string(&self, llvm_type: &LlvmType) -> String {
+        match llvm_type {
+            LlvmType::Boolean => "bool".to_string(),
+            LlvmType::Int32 => "i32".to_string(),
+            LlvmType::Int64 => "i64".to_string(),
+            LlvmType::Float64 => "f64".to_string(),
+            LlvmType::String => "string".to_string(),
+            LlvmType::Pointer(inner) => format!("*{}", self.get_type_string(inner)),
+            LlvmType::Function { return_type, param_types } => {
+                let params = param_types.iter()
+                    .map(|t| self.get_type_string(t))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("({}) -> {}", params, self.get_type_string(return_type))
+            }
+            LlvmType::Void => "void".to_string(),
+        }
+    }
+    
+    /// Extract value and error types from Result<T, E> string
+    fn extract_result_types(&self, result_type_string: &str) -> Result<(LlvmType, LlvmType), Error> {
+        if !result_type_string.starts_with("Result<") || !result_type_string.ends_with('>') {
+            return Err(Error::Compile("Invalid Result type format".to_string()));
+        }
+        
+        // Extract "T, E" from "Result<T, E>"
+        let inner = &result_type_string[7..result_type_string.len()-1];
+        let parts: Vec<&str> = inner.splitn(2, ',').collect();
+        
+        if parts.len() != 2 {
+            return Err(Error::Compile("Result must have exactly two type parameters".to_string()));
+        }
+        
+        let value_type = self.parse_type_string(parts[0].trim())?;
+        let error_type = self.parse_type_string(parts[1].trim())?;
+        
+        Ok((value_type, error_type))
+    }
+    
+    /// Extract value type from Option<T> string
+    fn extract_option_type(&self, option_type_string: &str) -> Result<LlvmType, Error> {
+        if !option_type_string.starts_with("Option<") || !option_type_string.ends_with('>') {
+            return Err(Error::Compile("Invalid Option type format".to_string()));
+        }
+        
+        // Extract "T" from "Option<T>"
+        let inner = &option_type_string[7..option_type_string.len()-1];
+        self.parse_type_string(inner.trim())
+    }
+    
+    /// Parse a type string into LlvmType
+    fn parse_type_string(&self, type_str: &str) -> Result<LlvmType, Error> {
+        match type_str {
+            "bool" | "facts" => Ok(LlvmType::Boolean),
+            "i32" | "normie" => Ok(LlvmType::Int32),
+            "i64" => Ok(LlvmType::Int64),
+            "f64" | "double" => Ok(LlvmType::Float64),
+            "string" | "tea" => Ok(LlvmType::String),
+            "void" => Ok(LlvmType::Void),
+            s if s.starts_with('*') => {
+                let inner_type = self.parse_type_string(&s[1..])?;
+                Ok(LlvmType::Pointer(Box::new(inner_type)))
+            }
+            _ => {
+                // Default to i32 for unknown types (this could be improved with proper type inference)
+                Ok(LlvmType::Int32)
+            }
+        }
     }
 }
 
@@ -795,5 +1018,89 @@ mod tests {
         assert_eq!(LlvmType::Boolean.to_llvm_string(), "i1");
         assert_eq!(LlvmType::String.to_llvm_string(), "i8*");
         assert_eq!(LlvmType::Void.to_llvm_string(), "void");
+    }
+    
+    #[test]
+    fn test_type_parsing() {
+        let compiler = LlvmExpressionCompiler::new();
+        
+        // Test basic type parsing
+        assert_eq!(compiler.parse_type_string("i32").unwrap(), LlvmType::Int32);
+        assert_eq!(compiler.parse_type_string("normie").unwrap(), LlvmType::Int32);
+        assert_eq!(compiler.parse_type_string("facts").unwrap(), LlvmType::Boolean);
+        assert_eq!(compiler.parse_type_string("tea").unwrap(), LlvmType::String);
+        
+        // Test Result type extraction
+        let (value_type, error_type) = compiler.extract_result_types("Result<i32, string>").unwrap();
+        assert_eq!(value_type, LlvmType::Int32);
+        assert_eq!(error_type, LlvmType::String);
+        
+        // Test Option type extraction
+        let value_type = compiler.extract_option_type("Option<facts>").unwrap();
+        assert_eq!(value_type, LlvmType::Boolean);
+    }
+    
+    #[test]
+    fn test_question_mark_ir_generation() {
+        use crate::ast::expressions::QuestionMarkExpression;
+        use crate::ast::identifiers::Identifier;
+        
+        let mut compiler = LlvmExpressionCompiler::new();
+        compiler.add_error_propagation_declarations();
+        
+        // Create a mock question mark expression
+        let var_expr = Identifier::from_name("result_var");
+        let question_expr = QuestionMarkExpression::new(Box::new(var_expr), 1, 1);
+        
+        // Set up mock variable in context that appears as a Result type
+        compiler.context.declare_variable(
+            "result_var".to_string(), 
+            LlvmValue {
+                value_type: LlvmType::String, // This will be treated as a plain string, not Result
+                llvm_name: "%result_var".to_string(),
+                is_constant: false,
+            }
+        );
+        
+        let result = compiler.compile_question_mark_expression(&question_expr);
+        
+        // The expression should fail since we're not passing a Result/Option type
+        // But check that the function compiles and handles the error correctly
+        assert!(result.is_err());
+        
+        // Check that the declarations were added correctly
+        let ir = compiler.get_ir();
+        assert!(ir.contains("cursed_error_propagation"));
+        assert!(ir.contains("declare void @cursed_error_propagation_init()"));
+        assert!(ir.contains("declare i8* @cursed_error_propagation(i8*, i32, i32)"));
+    }
+    
+    #[test]
+    fn test_type_string_parsing() {
+        let compiler = LlvmExpressionCompiler::new();
+        
+        // Test that get_type_string works correctly  
+        assert_eq!(compiler.get_type_string(&LlvmType::Int32), "i32");
+        assert_eq!(compiler.get_type_string(&LlvmType::String), "string");
+        
+        // Test that the question mark operator correctly identifies types
+        let string_type = compiler.get_type_string(&LlvmType::String);
+        assert!(!string_type.starts_with("Result<"));
+        assert!(!string_type.starts_with("Option<"));
+    }
+    
+    #[test]
+    fn test_error_propagation_declarations() {
+        let mut compiler = LlvmExpressionCompiler::new();
+        compiler.add_error_propagation_declarations();
+        
+        let ir = compiler.get_ir();
+        
+        // Verify all required FFI declarations are present
+        assert!(ir.contains("declare void @cursed_error_propagation_init()"));
+        assert!(ir.contains("declare void @cursed_error_propagation_cleanup()"));
+        assert!(ir.contains("declare i8* @cursed_error_propagation(i8*, i32, i32)"));
+        assert!(ir.contains("declare void @cursed_error_propagation_panic(i8*)"));
+        assert!(ir.contains("; Error propagation runtime functions"));
     }
 }

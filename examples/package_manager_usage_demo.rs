@@ -63,13 +63,13 @@ async fn demo_basic_package_management() -> Result<(), Box<dyn std::error::Error
         authors: vec!["Developer <dev@example.com>".to_string()],
         dependencies: {
             let mut deps = HashMap::new();
-            deps.insert("json-parser".to_string(), "2.1.0".to_string());
-            deps.insert("http-client".to_string(), "1.5.0".to_string());
+            deps.insert("json-parser".to_string(), VersionSpec::Simple("2.1.0".to_string()));
+            deps.insert("http-client".to_string(), VersionSpec::Simple("1.5.0".to_string()));
             deps
         },
         dev_dependencies: {
             let mut dev_deps = HashMap::new();
-            dev_deps.insert("test-framework".to_string(), "3.0.0".to_string());
+            dev_deps.insert("test-framework".to_string(), VersionSpec::Simple("3.0.0".to_string()));
             dev_deps
         },
         repository: Some("https://github.com/user/my-awesome-package".to_string()),

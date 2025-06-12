@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help error-propagation-test error-propagation-test-integration error-propagation-test-compilation error-propagation-test-examples error-propagation-test-all error-propagation-test-quick error-propagation-test-coverage error-propagation-test-report error-propagation-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -1992,3 +1992,71 @@ package-installer-help:
 	@echo "  make package-installer-test-quick     # Run quick validation tests"
 	@echo "  make package-installer-test-coverage  # Run tests with coverage"
 	@echo "  make package-installer-test-report    # Generate test reports"
+
+# Error Propagation Tests (? operator)
+error-propagation-test:
+	@echo "🔄 Running error propagation tests..."
+	./tests/run_error_propagation_tests.sh --test all
+
+error-propagation-test-integration:
+	@echo "🔄 Running error propagation integration tests..."
+	./tests/run_error_propagation_tests.sh --test integration
+
+error-propagation-test-llvm:
+	@echo "🔄 Running error propagation LLVM IR generation tests..."
+	./tests/run_error_propagation_tests.sh --test llvm
+
+error-propagation-test-runtime:
+	@echo "🔄 Running error propagation runtime execution tests..."
+	./tests/run_error_propagation_tests.sh --test runtime
+
+error-propagation-test-performance:
+	@echo "🔄 Running error propagation performance benchmarks..."
+	./tests/run_error_propagation_tests.sh --performance
+
+error-propagation-test-all:
+	@echo "🔄 Running comprehensive error propagation tests..."
+	./tests/run_error_propagation_tests.sh
+
+error-propagation-test-quick:
+	@echo "🔄 Running quick error propagation validation..."
+	./tests/run_error_propagation_tests.sh --quick
+
+error-propagation-test-coverage:
+	@echo "🔄 Generating error propagation coverage report..."
+	./tests/run_error_propagation_tests.sh --coverage
+
+error-propagation-test-report:
+	@echo "🔄 Generating error propagation test report..."
+	./tests/run_error_propagation_tests.sh --report error_propagation_report.md
+
+error-propagation-help:
+	@echo "🔄 Error Propagation Test Help:"
+	@echo ""
+	@echo "Available error propagation test commands:"
+	@echo "  error-propagation-test             - Run all error propagation tests"
+	@echo "  error-propagation-test-integration - Run integration tests only"
+	@echo "  error-propagation-test-llvm        - Run LLVM IR generation tests only"
+	@echo "  error-propagation-test-runtime     - Run runtime execution tests only"
+	@echo "  error-propagation-test-performance - Run performance benchmarks"
+	@echo "  error-propagation-test-all         - Run comprehensive test suite"
+	@echo "  error-propagation-test-quick       - Run quick validation tests"
+	@echo "  error-propagation-test-coverage    - Generate coverage report"
+	@echo "  error-propagation-test-report      - Generate detailed test report"
+	@echo "  error-propagation-help             - Show this help"
+	@echo ""
+	@echo "Test coverage includes:"
+	@echo "  • ? operator parsing and AST generation"
+	@echo "  • Result<T, E> and Option<T> error propagation"
+	@echo "  • Chained ? operator expressions (a?.b?.c?)"
+	@echo "  • LLVM IR generation and optimization"
+	@echo "  • Runtime execution and performance"
+	@echo "  • Memory safety and resource cleanup"
+	@echo "  • Concurrent error propagation"
+	@echo "  • Type system integration"
+	@echo ""
+	@echo "Example usage:"
+	@echo "  make error-propagation-test-quick      # Quick validation"
+	@echo "  make error-propagation-test-integration # Integration tests"
+	@echo "  make error-propagation-test-runtime    # Runtime execution tests"
+	@echo "  make error-propagation-test-all        # Comprehensive testing"

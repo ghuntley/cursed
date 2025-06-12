@@ -250,33 +250,55 @@ impl ResponseCompressor {
         self.simple_decompress(data)
     }
 
-    /// Simple compression algorithm (placeholder)
+    /// LZ77-inspired compression algorithm
     fn simple_compress(&self, data: &[u8]) -> Vec<u8> {
+        if data.is_empty() {
+            return Vec::new();
+        }
+
         let mut compressed = Vec::new();
         let mut i = 0;
+        let window_size = 256.min(data.len());
 
         while i < data.len() {
-            let byte = data[i];
-            let mut count = 1;
+            let mut best_length = 0;
+            let mut best_distance = 0;
 
-            // Count consecutive identical bytes
-            while i + count < data.len() && data[i + count] == byte && count < 255 {
-                count += 1;
+            // Look for matches in the sliding window
+            let search_start = if i >= window_size { i - window_size } else { 0 };
+            
+            for j in search_start..i {
+                let mut length = 0;
+                
+                // Find longest matching sequence
+                while i + length < data.len() 
+                    && j + length < i 
+                    && data[j + length] == data[i + length] 
+                    && length < 255 {
+                    length += 1;
+                }
+                
+                if length > best_length && length >= 3 {
+                    best_length = length;
+                    best_distance = i - j;
+                }
             }
 
-            if count > 3 {
-                // Use run-length encoding for repeated bytes
-                compressed.push(0xff); // Escape byte
-                compressed.push(count as u8);
-                compressed.push(byte);
-                i += count;
+            if best_length >= 3 {
+                // Encode as (distance, length) pair
+                compressed.push(0x00); // Marker for compressed data
+                compressed.push(best_distance as u8);
+                compressed.push(best_length as u8);
+                i += best_length;
             } else {
-                // Store byte as-is
-                if byte == 0xff {
-                    compressed.push(0xff);
-                    compressed.push(0x00); // Escape for literal 0xff
+                // Literal byte
+                let byte = data[i];
+                if byte == 0x00 {
+                    compressed.push(0x00);
+                    compressed.push(0xff); // Escape for literal 0x00
+                } else {
+                    compressed.push(byte);
                 }
-                compressed.push(byte);
                 i += 1;
             }
         }
@@ -284,27 +306,42 @@ impl ResponseCompressor {
         compressed
     }
 
-    /// Simple decompression algorithm (placeholder)
+    /// LZ77-inspired decompression algorithm  
     fn simple_decompress(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
         let mut decompressed = Vec::new();
         let mut i = 0;
 
         while i < data.len() {
-            if data[i] == 0xff && i + 1 < data.len() {
-                if data[i + 1] == 0x00 {
-                    // Escaped 0xff
-                    decompressed.push(0xff);
+            if data[i] == 0x00 {
+                if i + 1 < data.len() && data[i + 1] == 0xff {
+                    // Literal 0x00
+                    decompressed.push(0x00);
                     i += 2;
                 } else if i + 2 < data.len() {
-                    // Run-length encoded sequence
-                    let count = data[i + 1] as usize;
-                    let byte = data[i + 2];
-                    decompressed.extend(std::iter::repeat(byte).take(count));
+                    // Compressed data: (distance, length)
+                    let distance = data[i + 1] as usize;
+                    let length = data[i + 2] as usize;
+                    
+                    if distance == 0 || length == 0 {
+                        return Err(CompressionError::InvalidData);
+                    }
+                    
+                    if decompressed.len() < distance {
+                        return Err(CompressionError::InvalidData);
+                    }
+                    
+                    // Copy data from earlier in the output
+                    let start_pos = decompressed.len() - distance;
+                    for j in 0..length {
+                        let byte = decompressed[start_pos + (j % distance)];
+                        decompressed.push(byte);
+                    }
                     i += 3;
                 } else {
                     return Err(CompressionError::InvalidData);
                 }
             } else {
+                // Literal byte
                 decompressed.push(data[i]);
                 i += 1;
             }
