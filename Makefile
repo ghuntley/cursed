@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -1940,3 +1940,55 @@ testing-framework-help:
 	@echo "  make testing-framework-demo    # Run framework demo"
 	@echo "  make testing-framework-test    # Run framework tests"
 	@echo "  make testing-framework-all     # Run comprehensive tests"
+
+# Package Installation System Tests
+package-installer-test:
+	@echo "Running package installer tests..."
+	./fix_linking.sh devenv shell cargo test --test package_installer_test
+
+package-installer-test-integration:
+	@echo "Running package installer integration tests..."
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_complete_package_lifecycle
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_basic_package_installation
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_package_upgrade
+
+package-installer-test-scripts:
+	@echo "Running package installer script tests..."
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_script_execution
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_dangerous_script_rejection
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_script_timeout
+
+package-installer-test-database:
+	@echo "Running package database tests..."
+	./fix_linking.sh devenv shell cargo test --test package_database_test
+
+package-installer-test-all:
+	@echo "Running all package installer tests..."
+	./fix_linking.sh devenv shell cargo test --test package_installer_test
+	./fix_linking.sh devenv shell cargo test --test package_database_test
+
+package-installer-test-quick:
+	@echo "Running quick package installer tests..."
+	./fix_linking.sh devenv shell cargo test --test package_installer_test test_basic_package_installation
+	./fix_linking.sh devenv shell cargo test --test package_database_test test_add_and_get_package
+
+package-installer-test-coverage:
+	@echo "Running package installer tests with coverage..."
+	./fix_linking.sh devenv shell cargo tarpaulin --tests --test package_installer_test --test package_database_test --out Xml --output-dir ./target/tarpaulin
+
+package-installer-test-report:
+	@echo "Generating package installer test report..."
+	./fix_linking.sh devenv shell cargo test --test package_installer_test -- --format=json > package_installer_test_report.json || true
+	./fix_linking.sh devenv shell cargo test --test package_database_test -- --format=json > package_database_test_report.json || true
+	@echo "Test reports generated: package_installer_test_report.json, package_database_test_report.json"
+
+package-installer-help:
+	@echo "Package Installer System Test Commands:"
+	@echo "  make package-installer-test            # Run all package installer tests"
+	@echo "  make package-installer-test-integration # Run integration tests"
+	@echo "  make package-installer-test-scripts   # Run script execution tests"
+	@echo "  make package-installer-test-database  # Run database tests"
+	@echo "  make package-installer-test-all       # Run comprehensive tests"
+	@echo "  make package-installer-test-quick     # Run quick validation tests"
+	@echo "  make package-installer-test-coverage  # Run tests with coverage"
+	@echo "  make package-installer-test-report    # Generate test reports"

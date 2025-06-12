@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -18,7 +19,12 @@ pub mod cache;
 pub mod resolver;
 pub mod cli;
 pub mod lockfile;
+pub mod lock_file;
 pub mod workspace;
+pub mod downloader;
+pub mod installer;
+pub mod database;
+pub mod scripts;
 
 // Re-export commonly used types
 pub use metadata::{PackageMetadata, VersionSpec};
@@ -27,7 +33,12 @@ pub use cache::{PackageCache, CacheStats};
 pub use resolver::{DependencyResolver, ResolvedDependency};
 pub use cli::{PackageManagerCli, Commands};
 pub use lockfile::{LockFile, LockFileManager, LockedPackage, PackageSource};
+pub use lock_file::{LockFileManager as NewLockFileManager, ValidationResult, LockFileExportFormat};
 pub use workspace::{WorkspaceManager, WorkspaceConfig, WorkspaceMember};
+pub use downloader::{PackageDownloader, DownloadConfig, DownloadedPackage, DownloadStats};
+pub use installer::{PackageInstaller, InstallerConfig, InstallationContext, FileOperation};
+pub use database::{PackageDatabase, SharedPackageDatabase, InstalledPackage, DatabaseStatistics};
+pub use scripts::{ScriptExecutor, InstallScript, ScriptContext, ScriptInterpreter, ScriptResult};
 
 
 
@@ -39,6 +50,7 @@ pub struct PackageManager {
     registry: Arc<Mutex<PackageRegistry>>,
     cache: PackageCache,
     resolver: DependencyResolver,
+    downloader: PackageDownloader,
     config: PackageManagerConfig,
     lock_file_manager: Option<LockFileManager>,
     workspace_manager: Option<WorkspaceManager>,
@@ -121,6 +133,9 @@ pub enum PackageManagerError {
     
     #[error("Workspace error: {0}")]
     Workspace(#[from] workspace::WorkspaceError),
+    
+    #[error("Unsupported version: {version}")]
+    UnsupportedVersion { version: String },
 }
 
 impl PackageManager {
@@ -129,6 +144,15 @@ impl PackageManager {
         let registry = Arc::new(Mutex::new(PackageRegistry::new(config.registry_url.clone())?));
         let cache = PackageCache::new(config.cache_dir.clone(), config.max_cache_size)?;
         let resolver = DependencyResolver::new();
+        
+        // Initialize downloader with temp directory in cache
+        let download_config = DownloadConfig {
+            temp_dir: config.cache_dir.join("downloads"),
+            max_concurrent: config.parallel_downloads,
+            timeout: Duration::from_secs(config.timeout_seconds),
+            ..Default::default()
+        };
+        let downloader = PackageDownloader::with_config(download_config)?;
         
         // Try to discover workspace
         let workspace_manager = WorkspaceManager::discover(&config.workspace_dir)
@@ -147,6 +171,7 @@ impl PackageManager {
             registry,
             cache,
             resolver,
+            downloader,
             config,
             lock_file_manager,
             workspace_manager,
@@ -262,18 +287,55 @@ impl PackageManager {
             return Ok(cached);
         }
         
-        // Download from registry
-        let package_data = {
+        // Download package using the downloader with progress tracking
+        let downloaded_package = {
             let mut registry = self.registry.lock().map_err(|_| PackageManagerError::RegistryError {
                 message: "Failed to lock registry".to_string(),
             })?;
-            registry.download_package(&package.name, &package.version).await?
+            
+            // Create progress callback for console output
+            let progress_callback = Box::new(|progress: &crate::package_manager::downloader::DownloadProgress| {
+                if progress.downloaded_bytes % (1024 * 1024) == 0 || progress.downloaded_bytes == progress.total_bytes {
+                    tracing::info!(
+                        downloaded = progress.downloaded_bytes,
+                        total = progress.total_bytes,
+                        rate = format!("{:.1} KB/s", progress.transfer_rate / 1024.0),
+                        "Download progress"
+                    );
+                }
+            });
+            
+            self.downloader.download_package(
+                &mut *registry,
+                &package.name,
+                &package.version,
+                None, // Don't extract yet, just download
+                Some(progress_callback),
+            ).await?
+        };
+        
+        // Convert downloaded package to PackageData for cache storage
+        let package_data = PackageData {
+            content: std::fs::read(&downloaded_package.archive_path)
+                .map_err(|e| PackageManagerError::FileSystemError {
+                    path: downloaded_package.archive_path.clone(),
+                    error: format!("Failed to read downloaded package: {}", e),
+                })?,
+            checksum: downloaded_package.checksum,
+            size: downloaded_package.size,
+            verified: true,
         };
         
         // Store in cache
         self.cache.store_package(package, &package_data)?;
         
-        tracing::info!(package = package.name, version = package.version, "Package installed successfully");
+        tracing::info!(
+            package = package.name, 
+            version = package.version,
+            size = package_data.size,
+            duration_ms = downloaded_package.download_time.as_millis(),
+            "Package installed successfully"
+        );
         Ok(package.clone())
     }
     

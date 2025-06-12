@@ -422,10 +422,11 @@ async fn handle_get_command(
     }
     
     let progress = ProgressReporter::new("Installing package", None);
+    progress.set_message(&format!("Installing {}", package_name));
     
     match manager.install_package(&package_name, final_version).await {
         Ok(packages) => {
-            progress.finish_with_message("Installation completed");
+            progress.finish_with_message(&format!("Successfully installed {} package(s)", packages.len()));
             
             match config.output_format {
                 OutputFormat::Json => {
@@ -784,31 +785,50 @@ async fn handle_resolve_command(
         println!("🔍 Resolving dependency graph");
     }
     
-    // For now, show example dependency resolution
-    // In real implementation, would use the resolver to analyze dependencies
+    // Use real dependency resolution
+    let project_name = package.unwrap_or(&"current-project".to_string()).clone();
+    
+    // Try to load project metadata
+    let metadata_result = if std::path::Path::new("CursedPackage.toml").exists() {
+        std::fs::read_to_string("CursedPackage.toml")
+            .and_then(|content| toml::from_str::<crate::package_manager::PackageMetadata>(&content)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e)))
+    } else {
+        Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No CursedPackage.toml found"))
+    };
     
     match format.as_str() {
         "json" => {
+            let (dependencies, resolved) = match &metadata_result {
+                Ok(metadata) => (metadata.dependencies.clone(), true),
+                Err(_) => (std::collections::HashMap::new(), false),
+            };
+            
             let output = serde_json::json!({
-                "name": package.unwrap_or(&"current-project".to_string()),
-                "dependencies": {
-                    "cursed-http": "1.0.0",
-                    "cursed-json": "2.1.0"
-                },
-                "resolved": true
+                "name": project_name,
+                "dependencies": dependencies,
+                "resolved": resolved
             });
             println!("{}", serde_json::to_string_pretty(&output)?);
         }
         "dot" => {
             println!("digraph dependencies {{");
-            println!("  \"{}\" -> \"cursed-http@1.0.0\";", package.unwrap_or(&"current-project".to_string()));
-            println!("  \"{}\" -> \"cursed-json@2.1.0\";", package.unwrap_or(&"current-project".to_string()));
+            if let Ok(metadata) = metadata_result {
+                for (dep_name, dep_version) in metadata.dependencies {
+                    println!("  \"{}\" -> \"{}@{}\";", project_name, dep_name, dep_version);
+                }
+            }
             println!("}}");
         }
         _ => {
-            println!("📊 Dependency tree for {}:", package.unwrap_or(&"current project".to_string()));
-            println!("├── cursed-http v1.0.0");
-            println!("└── cursed-json v2.1.0");
+            println!("📊 Dependency tree for {}:", project_name);
+            if let Ok(metadata) = metadata_result {
+                for (dep_name, dep_version) in metadata.dependencies {
+                    println!("├── {} v{}", dep_name, dep_version);
+                }
+            } else {
+                println!("└── (no dependencies - no CursedPackage.toml found)");
+            }
         }
     }
     
@@ -836,8 +856,11 @@ async fn handle_check_command(
     
     let progress = ProgressReporter::new("Checking packages", None);
     
-    // In real implementation, would perform actual checks
-    let issues_found = false;
+    // Perform actual dependency checks
+    let issues_found = match manager.validate_lock_file() {
+        Ok(_) => false,
+        Err(_) => true,
+    };
     
     progress.finish_with_message("Check completed");
     
@@ -933,24 +956,61 @@ async fn handle_info_command(
         println!("📋 Getting package information for '{}'", package);
     }
     
-    // In real implementation, would fetch package info from registry
+    // Try to fetch real package info from registry
+    let progress = ProgressReporter::new("Fetching package info", None);
+    
+    let package_info = match manager.search_packages(package, Some(1)).await {
+        Ok(mut packages) if !packages.is_empty() => Some(packages.remove(0)),
+        _ => None,
+    };
+    
+    progress.finish_with_message("Package info fetched");
+    
     match config.output_format {
         OutputFormat::Json => {
-            let output = serde_json::json!({
-                "name": package,
-                "version": version.unwrap_or(&"latest".to_string()),
-                "description": "Package information",
-                "available": true
-            });
+            let output = if let Some(ref info) = package_info {
+                serde_json::json!({
+                    "name": info.name,
+                    "version": version.unwrap_or(&info.version),
+                    "description": info.description,
+                    "available": true,
+                    "authors": info.authors,
+                    "dependencies": info.dependencies,
+                    "repository": info.repository,
+                    "license": info.license
+                })
+            } else {
+                serde_json::json!({
+                    "name": package,
+                    "version": version.unwrap_or(&"unknown".to_string()),
+                    "description": "Package not found in registry",
+                    "available": false
+                })
+            };
             println!("{}", serde_json::to_string_pretty(&output)?);
         }
         _ => {
-            println!("📦 Package: {}", package);
-            if let Some(ver) = version {
-                println!("   Version: {}", ver);
+            if let Some(info) = package_info {
+                println!("📦 Package: {}", info.name);
+                println!("   Version: {}", version.unwrap_or(&info.version));
+                println!("   Description: {}", info.description);
+                println!("   Authors: {}", info.authors.join(", "));
+                if let Some(repo) = &info.repository {
+                    println!("   Repository: {}", repo);
+                }
+                if let Some(license) = &info.license {
+                    println!("   License: {}", license);
+                }
+                println!("   Dependencies: {}", info.dependencies.len());
+                println!("   Status: Available in registry");
+            } else {
+                println!("📦 Package: {}", package);
+                if let Some(ver) = version {
+                    println!("   Version: {}", ver);
+                }
+                println!("   Status: Not found in registry");
+                println!("   Description: Package not available");
             }
-            println!("   Status: Available in registry");
-            println!("   Description: A CURSED package");
         }
     }
     
