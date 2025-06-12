@@ -237,7 +237,7 @@ impl Expression for ChannelTypeExpression {
 }
 
 /// Interface type for type assertions
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InterfaceType {
     pub name: String,
     pub methods: Vec<String>,
@@ -253,7 +253,7 @@ impl InterfaceType {
 }
 
 /// Struct type for type assertions
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub name: String,
     pub fields: Vec<String>,
@@ -269,12 +269,54 @@ impl StructType {
 }
 
 /// Generic type enum (simplified for basic AST compatibility)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Interface(InterfaceType),
     Struct(StructType),
     Primitive(String),
     Generic(String),
+    /// Integer type (normie)
+    Integer,
+    /// String type (tea)
+    String,
+    /// Boolean type (based)
+    Boolean,
+    /// Float type (facts)
+    Float,
+    /// Character type 
+    Character,
+    /// Nil type (empty)
+    Nil,
+    /// Any type (universal)
+    Any,
+    /// Array type [T]
+    Array(Box<Type>),
+    /// Map type tea[K]V
+    Map(Box<Type>, Box<Type>),
+    /// Channel type dm T
+    Channel(Box<Type>),
+    /// Function type (params) -> return_type
+    Function(Vec<Type>, Box<Type>),
+    /// Tuple type (T1, T2, ...)
+    Tuple(Vec<Type>),
+    /// Associated type projection (e.g., Iterator::Item)
+    AssociatedTypeProjection {
+        base_type: Box<Type>,
+        interface_name: String,
+        associated_type_name: String,
+    },
+    /// Type parameter
+    Parameter(String),
+    /// Higher-kinded type constructor
+    Constructor {
+        name: String,
+        arity: usize,
+    },
+    /// Type application (constructor applied to arguments)
+    Application {
+        constructor: Box<Type>,
+        arguments: Vec<Type>,
+    },
 }
 
 /// Built-in type aliases for normie integers

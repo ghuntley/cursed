@@ -7,7 +7,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::types::{Type, TypeParameter};
+use crate::ast::types::Type;
+use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 
 /// Represents the variance of a type parameter
@@ -190,18 +191,14 @@ impl VarianceRegistry {
             (Type::Nil, _) => Ok(true), // Nil is a subtype of all reference types
             
             // Generic type relationships
-            (Type::Generic { name: sub_name, type_args: sub_args },
-             Type::Generic { name: super_name, type_args: super_args }) => {
-                if sub_name == super_name && sub_args.len() == super_args.len() {
-                    self.check_generic_subtyping(sub_name, sub_args, super_args)
-                } else {
-                    Ok(false)
-                }
+            (Type::Generic(sub_name), Type::Generic(super_name)) => {
+                // For simplified Generic variant, check name equality
+                Ok(sub_name == super_name)
             }
 
             // Function type relationships
-            (Type::Function { params: sub_params, return_type: sub_return },
-             Type::Function { params: super_params, return_type: super_return }) => {
+            (Type::Function(sub_params, sub_return),
+             Type::Function(super_params, super_return)) => {
                 self.check_function_subtyping(sub_params, sub_return, super_params, super_return)
             }
 
@@ -227,9 +224,9 @@ impl VarianceRegistry {
             }
 
             // Interface type relationships
-            (Type::Interface { name: sub_name, .. }, Type::Interface { name: super_name, .. }) => {
+            (Type::Interface(sub_interface), Type::Interface(super_interface)) => {
                 // For now, interface subtyping is nominal (by name)
-                Ok(sub_name == super_name)
+                Ok(sub_interface.name == super_interface.name)
             }
 
             // Channel type relationships
@@ -424,19 +421,12 @@ impl VarianceAnalyzer {
     #[instrument(skip(self))]
     fn visit_type(&mut self, type_ref: &Type, context_variance: Variance) -> Result<(), CursedError> {
         match type_ref {
-            Type::Generic { name, type_args } => {
+            Type::Generic(name) => {
                 // This is a type parameter usage
-                if type_args.is_empty() {
-                    self.record_parameter_usage(name, context_variance, VarianceSource::Annotation);
-                } else {
-                    // This is a generic type application
-                    for arg in type_args {
-                        self.visit_type(arg, context_variance)?;
-                    }
-                }
+                self.record_parameter_usage(name, context_variance, VarianceSource::Annotation);
             }
 
-            Type::Function { params, return_type } => {
+            Type::Function(params, return_type) => {
                 // Function parameters are contravariant
                 for param in params {
                     self.visit_type(param, context_variance.invert())?;
@@ -475,6 +465,32 @@ impl VarianceAnalyzer {
             // Concrete types don't affect variance
             Type::Integer | Type::Float | Type::String | Type::Boolean | 
             Type::Character | Type::Nil | Type::Any => {}
+
+            // Struct types don't affect variance (usually)
+            Type::Struct(_) => {}
+
+            // Primitive types don't affect variance
+            Type::Primitive(_) => {}
+
+            // Map types - visit both key and value types
+            Type::Map(key_type, value_type) => {
+                self.visit_type(key_type, context_variance)?;
+                self.visit_type(value_type, context_variance)?;
+            }
+
+            // Type parameters - record usage
+            Type::Parameter(name) => {
+                self.record_parameter_usage(name, context_variance, VarianceSource::Annotation);
+            }
+
+            // Type constructors and applications
+            Type::Constructor { .. } => {}
+            Type::Application { constructor, arguments } => {
+                self.visit_type(constructor, context_variance)?;
+                for arg in arguments {
+                    self.visit_type(arg, context_variance)?;
+                }
+            }
         }
 
         Ok(())
@@ -639,10 +655,7 @@ mod tests {
         let mut analyzer = VarianceAnalyzer::new();
         
         // Test analyzing a simple generic type
-        let array_type = Type::Array(Box::new(Type::Generic {
-            name: "T".to_string(),
-            type_args: vec![],
-        }));
+        let array_type = Type::Array(Box::new(Type::Generic("T".to_string())));
         
         let variances = analyzer.analyze_type(&array_type).unwrap();
         assert_eq!(variances.len(), 1);

@@ -17,16 +17,16 @@ use crate::ast::declarations::{GenericConstraint, FunctionStatement};
 use crate::ast::traits::TypeParameter;
 use crate::error::Error;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-// Progressive re-enabling of advanced type system modules
+// Progressive re-enabling of advanced type system modules - ALL RE-ENABLED ✅
 pub mod constraint_resolver;      // Re-enabled: constraint resolution system
 pub mod generic_instantiator;     // Keep: works with sophisticated generics
 pub mod type_inference;           // Keep: enhanced type inference
-// TODO: Re-enable after fixing Type enum compatibility
-// pub mod associated_types;         // Disabled: Type enum mismatch
-// pub mod higher_kinded_types;      // Disabled: Type enum mismatch  
-// pub mod variance;                 // Disabled: Type enum mismatch
-// pub mod generic_optimization;     // Disabled: Type enum mismatch
+pub mod associated_types;         // Re-enabled: Type enum compatibility fixed ✅
+pub mod higher_kinded_types;      // Re-enabled: Type enum compatibility fixed ✅
+pub mod variance;                 // Re-enabled: Type enum compatibility fixed ✅
+pub mod generic_optimization;     // Re-enabled: Type enum compatibility fixed ✅
 
 // Re-export core types for convenience (progressive re-enabling)
 pub use generic_instantiator::{
@@ -38,19 +38,18 @@ pub use type_inference::{
 pub use constraint_resolver::{
     ConstraintResolver, ConstraintSolution, ConstraintViolation, ViolationReason
 };
-// TODO: Re-enable these exports after fixing Type enum compatibility
-// pub use associated_types::{
-//     AssociatedTypeResolver, AssociatedTypeBinding, TypeProjection
-// };
-// pub use higher_kinded_types::{
-//     HigherKindedTypeChecker, TypeConstructor, KindChecker
-// };
-// pub use variance::{
-//     VarianceAnalyzer, TypeVariance, VarianceContext
-// };
-// pub use generic_optimization::{
-//     GenericOptimizer, OptimizationStrategy, PerformanceMetrics
-// };
+pub use associated_types::{
+    AssociatedTypeRegistry, AssociatedType, AssociatedTypeProjection, AssociatedTypeHandler
+};
+pub use higher_kinded_types::{
+    HigherKindedTypeRegistry, TypeConstructor, HigherKindedTypeHandler, Kind
+};
+pub use variance::{
+    VarianceRegistry, TypeParameterVariance, VarianceHandler, Variance
+};
+pub use generic_optimization::{
+    GenericOptimizer, OptimizationStatistics, GenericCodeOptimizer, InstantiationStrategy
+};
 
 /// Central type system coordinator (progressively enhanced with working modules)
 #[derive(Debug)]
@@ -63,15 +62,14 @@ pub struct TypeSystem {
     constraint_resolver: ConstraintResolver,
     /// Global type environment
     type_environment: TypeEnvironment,
-    // TODO: Re-enable after fixing Type enum compatibility
-    // /// Associated type resolver for type projections
-    // associated_type_resolver: AssociatedTypeResolver,
-    // /// Higher-kinded type checker
-    // higher_kinded_checker: HigherKindedTypeChecker,
-    // /// Variance analyzer for type variance checking
-    // variance_analyzer: VarianceAnalyzer,
-    // /// Generic optimizer for performance improvements
-    // generic_optimizer: GenericOptimizer,
+    /// Associated type registry for type projections
+    associated_type_registry: AssociatedTypeRegistry,
+    /// Higher-kinded type registry
+    higher_kinded_registry: HigherKindedTypeRegistry,
+    /// Variance registry for type variance checking
+    variance_registry: VarianceRegistry,
+    /// Generic optimizer for performance improvements
+    generic_optimizer: GenericOptimizer,
 }
 
 /// Global type environment tracking basic types (simplified for AST compatibility)
@@ -189,16 +187,16 @@ pub enum ConstraintStatus {
 impl TypeSystem {
     /// Create a new type system instance
     pub fn new() -> Self {
+        let constraint_resolver = Arc::new(ConstraintResolver::new());
         Self {
             generic_instantiator: GenericInstantiator::new(),
             type_inference: TypeInference::new(),
             constraint_resolver: ConstraintResolver::new(),
             type_environment: TypeEnvironment::new(),
-            // TODO: Re-enable after fixing Type enum compatibility
-            // associated_type_resolver: AssociatedTypeResolver::new(),
-            // higher_kinded_checker: HigherKindedTypeChecker::new(),
-            // variance_analyzer: VarianceAnalyzer::new(),
-            // generic_optimizer: GenericOptimizer::new(),
+            associated_type_registry: AssociatedTypeRegistry::new(constraint_resolver.clone()),
+            higher_kinded_registry: HigherKindedTypeRegistry::new(),
+            variance_registry: VarianceRegistry::new(),
+            generic_optimizer: GenericOptimizer::new(),
         }
     }
 
@@ -304,26 +302,25 @@ impl TypeSystem {
         &mut self.constraint_resolver
     }
 
-    // TODO: Re-enable these methods after fixing Type enum compatibility
-    // /// Get access to the associated type resolver
-    // pub fn associated_type_resolver(&self) -> &AssociatedTypeResolver {
-    //     &self.associated_type_resolver
-    // }
+    /// Get access to the associated type registry
+    pub fn associated_type_registry(&self) -> &AssociatedTypeRegistry {
+        &self.associated_type_registry
+    }
 
-    // /// Get access to the higher-kinded type checker
-    // pub fn higher_kinded_checker(&self) -> &HigherKindedTypeChecker {
-    //     &self.higher_kinded_checker
-    // }
+    /// Get access to the higher-kinded type registry
+    pub fn higher_kinded_registry(&self) -> &HigherKindedTypeRegistry {
+        &self.higher_kinded_registry
+    }
 
-    // /// Get access to the variance analyzer
-    // pub fn variance_analyzer(&self) -> &VarianceAnalyzer {
-    //     &self.variance_analyzer
-    // }
+    /// Get access to the variance registry
+    pub fn variance_registry(&self) -> &VarianceRegistry {
+        &self.variance_registry
+    }
 
-    // /// Get access to the generic optimizer
-    // pub fn generic_optimizer(&self) -> &GenericOptimizer {
-    //     &self.generic_optimizer
-    // }
+    /// Get access to the generic optimizer
+    pub fn generic_optimizer(&self) -> &GenericOptimizer {
+        &self.generic_optimizer
+    }
 
     /// Resolve constraints for a given context
     pub fn resolve_constraints(
@@ -341,11 +338,10 @@ impl TypeSystem {
         self.constraint_resolver.validate_constraint(constraint, &self.type_environment)
     }
 
-    // TODO: Re-enable after fixing Type enum compatibility
-    // /// Optimize generic instantiations
-    // pub fn optimize_generics(&mut self) -> Result<(), Error> {
-    //     self.generic_optimizer.optimize_instantiations(&mut self.type_environment)
-    // }
+    /// Optimize generic instantiations
+    pub fn optimize_generics(&mut self) -> Result<(), Error> {
+        self.generic_optimizer.optimize_instantiations(&mut self.type_environment)
+    }
 }
 
 impl TypeEnvironment {

@@ -7,9 +7,11 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::types::{Type, TypeParameter, GenericConstraint};
+use crate::ast::types::Type;
+use crate::ast::traits::TypeParameter;
+use crate::ast::declarations::GenericConstraint;
 use crate::error::CursedError;
-use crate::type_system::constraint_system::{ConstraintSystem, TypeConstraint};
+use crate::type_system::constraint_resolver::ConstraintResolver;
 
 /// Represents an associated type definition within an interface
 #[derive(Debug, Clone, PartialEq)]
@@ -42,19 +44,19 @@ pub struct AssociatedTypeRegistry {
     interface_associated_types: RwLock<HashMap<String, Vec<AssociatedType>>>,
     /// Cache of resolved projections
     projection_cache: RwLock<HashMap<AssociatedTypeProjection, Type>>,
-    /// Constraint system for validation
-    constraint_system: Arc<ConstraintSystem>,
+    /// Constraint resolver for validation
+    constraint_resolver: Arc<ConstraintResolver>,
 }
 
 impl AssociatedTypeRegistry {
     /// Create a new associated type registry
     #[instrument]
-    pub fn new(constraint_system: Arc<ConstraintSystem>) -> Self {
+    pub fn new(constraint_resolver: Arc<ConstraintResolver>) -> Self {
         debug!("Creating new AssociatedTypeRegistry");
         Self {
             interface_associated_types: RwLock::new(HashMap::new()),
             projection_cache: RwLock::new(HashMap::new()),
-            constraint_system,
+            constraint_resolver,
         }
     }
 
@@ -149,7 +151,7 @@ impl AssociatedTypeRegistry {
     fn validate_associated_type(&self, assoc_type: &AssociatedType) -> Result<(), CursedError> {
         // Validate name
         if assoc_type.name.is_empty() {
-            return Err(CursedError::type_error("Associated type name cannot be empty"));
+            return Err(CursedError::type_error("Associated type name cannot be empty".to_string()));
         }
 
         // Validate constraints
@@ -177,20 +179,12 @@ impl AssociatedTypeRegistry {
     fn validate_default_type(&self, assoc_type: &AssociatedType, default_type: &Type) -> Result<(), CursedError> {
         // Check that the default type satisfies all constraints
         for constraint in &assoc_type.constraints {
-            match constraint {
-                GenericConstraint::InterfaceConstraint { interface_name, .. } => {
-                    // Verify that the default type implements the required interface
-                    if !self.type_implements_interface(default_type, interface_name)? {
-                        return Err(CursedError::type_error(format!(
-                            "Default type {:?} does not implement required interface {}",
-                            default_type, interface_name
-                        )));
-                    }
-                }
-                GenericConstraint::TypeConstraint { .. } => {
-                    // Validate type constraints
-                    // TODO: Implement specific type constraint validation
-                }
+            // Verify that the default type implements the required constraint
+            if !self.type_implements_interface(default_type, &constraint.constraint_name)? {
+                return Err(CursedError::type_error(format!(
+                    "Default type {:?} does not implement required constraint {}",
+                    default_type, constraint.constraint_name
+                )));
             }
         }
         Ok(())
@@ -341,11 +335,11 @@ pub mod utils {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::type_system::constraint_system::ConstraintSystem;
+    use crate::type_system::constraint_resolver::ConstraintResolver;
 
     fn create_test_registry() -> AssociatedTypeRegistry {
-        let constraint_system = Arc::new(ConstraintSystem::new());
-        AssociatedTypeRegistry::new(constraint_system)
+        let constraint_resolver = Arc::new(ConstraintResolver::new());
+        AssociatedTypeRegistry::new(constraint_resolver)
     }
 
     #[test]
