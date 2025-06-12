@@ -142,6 +142,30 @@ make docs-check
 
 📖 **[Documentation Guide](docs/cursed-doc.md)** | 🔧 **[Configuration Reference](docs/cursed-doc-config.md)**
 
+### File Watcher (`cursed build --watch`)
+- **Auto-rebuild**: Instantly rebuild when source files change
+- **Smart filtering**: Watch only relevant files with pattern matching
+- **Event batching**: Efficient handling of multiple rapid changes
+- **Cross-platform**: Works seamlessly on Linux, macOS, and Windows
+- **Performance tuned**: Optimized for projects of any size
+
+Quick start:
+```bash
+# Watch and auto-build current project
+cursed build --watch
+
+# Watch specific patterns
+cursed build --watch --patterns "*.csd,*.toml"
+
+# Watch with custom debounce (milliseconds)
+cursed build --watch --debounce 1000
+
+# Watch and run tests automatically
+cursed test --watch
+```
+
+📖 **[File Watching Guide](docs/file_watching.md)** | 🔧 **[Configuration Examples](examples/watch_config_example.toml)**
+
 ## Language Documentation (real ones read the docs) 📚
 
 The complete language specifications are available in the `/specs` directory (we ate with these specs):

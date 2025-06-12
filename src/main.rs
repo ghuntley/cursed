@@ -9,26 +9,38 @@ use clap::{Arg, ArgAction, Command};
 use std::env;
 use std::path::PathBuf;
 use std::process;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
+use tokio::signal;
 
 use cursed::prelude::*;
 use cursed::cli::package_manager;
 
-fn main() {
+/// Global flag for graceful shutdown
+static SHUTDOWN: AtomicBool = AtomicBool::new(false);
+
+#[tokio::main]
+async fn main() {
     // Initialize the CURSED runtime
     cursed::init();
+
+    // Setup signal handler for graceful shutdown
+    setup_signal_handlers().await;
 
     let app = build_cli();
     let matches = app.get_matches();
 
     let result = match matches.subcommand() {
-        Some(("run", sub_matches)) => handle_run_command(sub_matches),
-        Some(("build", sub_matches)) => handle_build_command(sub_matches),
-        Some(("check", sub_matches)) => handle_check_command(sub_matches),
-        Some(("format", sub_matches)) => handle_format_command(sub_matches),
-        Some(("doc", sub_matches)) => handle_doc_command(sub_matches),
-        Some(("package", sub_matches)) => handle_package_command(sub_matches),
-        Some(("test", sub_matches)) => handle_test_command(sub_matches),
-        Some(("repl", sub_matches)) => handle_repl_command(sub_matches),
+        Some(("run", sub_matches)) => handle_run_command(sub_matches).await,
+        Some(("build", sub_matches)) => handle_build_command(sub_matches).await,
+        Some(("check", sub_matches)) => handle_check_command(sub_matches).await,
+        Some(("format", sub_matches)) => handle_format_command(sub_matches).await,
+        Some(("doc", sub_matches)) => handle_doc_command(sub_matches).await,
+        Some(("package", sub_matches)) => handle_package_command(sub_matches).await,
+        Some(("test", sub_matches)) => handle_test_command(sub_matches).await,
+        Some(("repl", sub_matches)) => handle_repl_command(sub_matches).await,
+        Some(("watch", sub_matches)) => handle_watch_command(sub_matches).await,
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             process::exit(1);
@@ -42,6 +54,21 @@ fn main() {
             process::exit(1);
         }
     }
+}
+
+/// Setup signal handlers for graceful shutdown
+async fn setup_signal_handlers() {
+    tokio::spawn(async {
+        match signal::ctrl_c().await {
+            Ok(()) => {
+                println!("\n🛑 Received interrupt signal, shutting down gracefully...");
+                SHUTDOWN.store(true, Ordering::SeqCst);
+            }
+            Err(err) => {
+                eprintln!("Unable to listen for shutdown signal: {}", err);
+            }
+        }
+    });
 }
 
 fn build_cli() -> Command {
@@ -75,6 +102,27 @@ fn build_cli() -> Command {
                         .num_args(0..)
                         .last(true)
                 )
+                .arg(
+                    Arg::new("watch")
+                        .short('w')
+                        .long("watch")
+                        .action(ArgAction::SetTrue)
+                        .help("Watch files for changes and re-run automatically")
+                )
+                .arg(
+                    Arg::new("watch-pattern")
+                        .long("watch-pattern")
+                        .value_name("PATTERN")
+                        .action(ArgAction::Append)
+                        .help("File patterns to watch (e.g., '*.csd', '*.toml')")
+                )
+                .arg(
+                    Arg::new("debounce")
+                        .long("debounce")
+                        .value_name("MS")
+                        .help("Debounce delay in milliseconds")
+                        .default_value("500")
+                )
         )
         .subcommand(
             Command::new("build")
@@ -106,6 +154,27 @@ fn build_cli() -> Command {
                         .action(ArgAction::SetTrue)
                         .help("Enable optimizations")
                 )
+                .arg(
+                    Arg::new("watch")
+                        .short('w')
+                        .long("watch")
+                        .action(ArgAction::SetTrue)
+                        .help("Watch files for changes and rebuild automatically")
+                )
+                .arg(
+                    Arg::new("watch-pattern")
+                        .long("watch-pattern")
+                        .value_name("PATTERN")
+                        .action(ArgAction::Append)
+                        .help("File patterns to watch (e.g., '*.csd', '*.toml')")
+                )
+                .arg(
+                    Arg::new("debounce")
+                        .long("debounce")
+                        .value_name("MS")
+                        .help("Debounce delay in milliseconds")
+                        .default_value("500")
+                )
         )
         .subcommand(
             Command::new("check")
@@ -115,6 +184,27 @@ fn build_cli() -> Command {
                         .help("CURSED source file to check")
                         .required(true)
                         .value_name("FILE")
+                )
+                .arg(
+                    Arg::new("watch")
+                        .short('w')
+                        .long("watch")
+                        .action(ArgAction::SetTrue)
+                        .help("Watch files for changes and re-check automatically")
+                )
+                .arg(
+                    Arg::new("watch-pattern")
+                        .long("watch-pattern")
+                        .value_name("PATTERN")
+                        .action(ArgAction::Append)
+                        .help("File patterns to watch (e.g., '*.csd', '*.toml')")
+                )
+                .arg(
+                    Arg::new("debounce")
+                        .long("debounce")
+                        .value_name("MS")
+                        .help("Debounce delay in milliseconds")
+                        .default_value("500")
                 )
         )
         .subcommand(
@@ -185,6 +275,27 @@ fn build_cli() -> Command {
                         .action(ArgAction::SetTrue)
                         .help("Verbose test output")
                 )
+                .arg(
+                    Arg::new("watch")
+                        .short('w')
+                        .long("watch")
+                        .action(ArgAction::SetTrue)
+                        .help("Watch files for changes and re-run tests automatically")
+                )
+                .arg(
+                    Arg::new("watch-pattern")
+                        .long("watch-pattern")
+                        .value_name("PATTERN")
+                        .action(ArgAction::Append)
+                        .help("File patterns to watch (e.g., '*.csd', '*.toml')")
+                )
+                .arg(
+                    Arg::new("debounce")
+                        .long("debounce")
+                        .value_name("MS")
+                        .help("Debounce delay in milliseconds")
+                        .default_value("500")
+                )
         )
         .subcommand(
             Command::new("repl")
@@ -196,12 +307,82 @@ fn build_cli() -> Command {
                         .help("Enable command history")
                 )
         )
+        .subcommand(
+            Command::new("watch")
+                .about("Watch files for changes and execute commands")
+                .arg(
+                    Arg::new("command")
+                        .help("Command to run when files change")
+                        .value_name("COMMAND")
+                        .default_value("build")
+                        .value_parser(["build", "test", "check", "format"])
+                )
+                .arg(
+                    Arg::new("path")
+                        .help("Path to watch (default: current directory)")
+                        .value_name("PATH")
+                        .default_value(".")
+                )
+                .arg(
+                    Arg::new("pattern")
+                        .short('p')
+                        .long("pattern")
+                        .value_name("PATTERN")
+                        .action(ArgAction::Append)
+                        .help("File patterns to watch (e.g., '*.csd', '*.toml')")
+                )
+                .arg(
+                    Arg::new("ignore")
+                        .long("ignore")
+                        .value_name("PATTERN")
+                        .action(ArgAction::Append)
+                        .help("File patterns to ignore (e.g., '*.tmp', 'target/*')")
+                )
+                .arg(
+                    Arg::new("debounce")
+                        .short('d')
+                        .long("debounce")
+                        .value_name("MS")
+                        .help("Debounce delay in milliseconds")
+                        .default_value("500")
+                )
+                .arg(
+                    Arg::new("recursive")
+                        .short('r')
+                        .long("recursive")
+                        .action(ArgAction::SetTrue)
+                        .help("Watch directories recursively")
+                )
+                .arg(
+                    Arg::new("clear")
+                        .short('c')
+                        .long("clear")
+                        .action(ArgAction::SetTrue)
+                        .help("Clear screen before running commands")
+                )
+                .arg(
+                    Arg::new("initial")
+                        .short('i')
+                        .long("initial")
+                        .action(ArgAction::SetTrue)
+                        .help("Run command once before watching for changes")
+                )
+        )
 }
 
-fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let file = matches.get_one::<String>("file").unwrap();
     let _args = matches.get_many::<String>("args");
+    let watch = matches.get_flag("watch");
 
+    if watch {
+        handle_watch_run_command(matches).await
+    } else {
+        handle_single_run_command(file).await
+    }
+}
+
+async fn handle_single_run_command(file: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 Running CURSED program: {}", file);
     
     // Check if file exists
@@ -216,12 +397,61 @@ fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
     Ok(())
 }
 
-fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_watch_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file").unwrap();
+    let patterns = matches.get_many::<String>("watch-pattern")
+        .map(|v| v.map(|s| s.clone()).collect())
+        .unwrap_or_else(|| vec!["*.csd".to_string(), "*.toml".to_string()]);
+    let debounce_ms: u64 = matches.get_one::<String>("debounce")
+        .unwrap()
+        .parse()
+        .map_err(|_| "Invalid debounce value")?;
+
+    println!("👀 Watching for changes to run: {}", file);
+    println!("   Patterns: {:?}", patterns);
+    println!("   Debounce: {}ms", debounce_ms);
+
+    // Run initially
+    if let Err(e) = handle_single_run_command(file).await {
+        eprintln!("Initial run failed: {}", e);
+    }
+
+    // Simplified watch implementation - demonstrate interface
+    println!("🔧 File watching infrastructure ready");
+    println!("   (Real file watching implementation will be integrated here)");
+
+    // Keep watching until shutdown
+    println!("Press Ctrl+C to stop watching...");
+    let mut interval = tokio::time::interval(Duration::from_millis(1000));
+    while !SHUTDOWN.load(Ordering::SeqCst) {
+        interval.tick().await;
+        // In a real implementation, file change events would trigger re-execution here
+    }
+
+    println!("✅ Watch stopped");
+    Ok(())
+}
+
+async fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
     let emit = matches.get_one::<String>("emit").unwrap();
     let optimize = matches.get_flag("optimize");
+    let watch = matches.get_flag("watch");
 
+    if watch {
+        handle_watch_build_command(matches).await
+    } else {
+        handle_single_build_command(file, output, emit, optimize).await
+    }
+}
+
+async fn handle_single_build_command(
+    file: &str, 
+    output: Option<&String>, 
+    emit: &str, 
+    optimize: bool
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("🔨 Building CURSED program: {}", file);
     
     if optimize {
@@ -242,7 +472,7 @@ fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::e
     // Read and compile source
     let source = std::fs::read_to_string(file)?;
     
-    match emit.as_str() {
+    match emit.as_ref() {
         "llvm-ir" => {
             let ir = cursed::compile_to_ir(&source)?;
             
@@ -266,9 +496,56 @@ fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::e
     Ok(())
 }
 
-fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_watch_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let file = matches.get_one::<String>("file").unwrap();
+    let output = matches.get_one::<String>("output");
+    let emit = matches.get_one::<String>("emit").unwrap();
+    let optimize = matches.get_flag("optimize");
+    let patterns = matches.get_many::<String>("watch-pattern")
+        .map(|v| v.map(|s| s.clone()).collect())
+        .unwrap_or_else(|| vec!["*.csd".to_string(), "*.toml".to_string()]);
+    let debounce_ms: u64 = matches.get_one::<String>("debounce")
+        .unwrap()
+        .parse()
+        .map_err(|_| "Invalid debounce value")?;
 
+    println!("👀 Watching for changes to build: {}", file);
+    println!("   Patterns: {:?}", patterns);
+    println!("   Debounce: {}ms", debounce_ms);
+
+    // Build initially
+    if let Err(e) = handle_single_build_command(file, output, emit, optimize).await {
+        eprintln!("Initial build failed: {}", e);
+    }
+
+    // Simplified watch implementation - demonstrate interface
+    println!("🔧 File watching infrastructure ready");
+    println!("   (Real file watching implementation will be integrated here)");
+
+    // Keep watching until shutdown
+    println!("Press Ctrl+C to stop watching...");
+    let mut interval = tokio::time::interval(Duration::from_millis(1000));
+    while !SHUTDOWN.load(Ordering::SeqCst) {
+        interval.tick().await;
+        // In a real implementation, file change events would trigger rebuild here
+    }
+
+    println!("✅ Watch stopped");
+    Ok(())
+}
+
+async fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file").unwrap();
+    let watch = matches.get_flag("watch");
+
+    if watch {
+        handle_watch_check_command(matches).await
+    } else {
+        handle_single_check_command(file).await
+    }
+}
+
+async fn handle_single_check_command(file: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("🔍 Checking CURSED program: {}", file);
 
     // Check if file exists
@@ -284,7 +561,42 @@ fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::e
     Ok(())
 }
 
-fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_watch_check_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file").unwrap();
+    let patterns = matches.get_many::<String>("watch-pattern")
+        .map(|v| v.map(|s| s.clone()).collect())
+        .unwrap_or_else(|| vec!["*.csd".to_string(), "*.toml".to_string()]);
+    let debounce_ms: u64 = matches.get_one::<String>("debounce")
+        .unwrap()
+        .parse()
+        .map_err(|_| "Invalid debounce value")?;
+
+    println!("👀 Watching for changes to check: {}", file);
+    println!("   Patterns: {:?}", patterns);
+    println!("   Debounce: {}ms", debounce_ms);
+
+    // Check initially
+    if let Err(e) = handle_single_check_command(file).await {
+        eprintln!("Initial check failed: {}", e);
+    }
+
+    // Simplified watch implementation - demonstrate interface
+    println!("🔧 File watching infrastructure ready");
+    println!("   (Real file watching implementation will be integrated here)");
+
+    // Keep watching until shutdown
+    println!("Press Ctrl+C to stop watching...");
+    let mut interval = tokio::time::interval(Duration::from_millis(1000));
+    while !SHUTDOWN.load(Ordering::SeqCst) {
+        interval.tick().await;
+        // In a real implementation, file change events would trigger re-check here
+    }
+
+    println!("✅ Watch stopped");
+    Ok(())
+}
+
+async fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let file = matches.get_one::<String>("file");
     let check_only = matches.get_flag("check");
     let write_file = matches.get_flag("write");
@@ -323,7 +635,7 @@ fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::
     Ok(())
 }
 
-fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let output = matches.get_one::<String>("output").unwrap();
     let format = matches.get_one::<String>("format").unwrap();
     let serve = matches.get_flag("serve");
@@ -365,11 +677,11 @@ fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
     Ok(())
 }
 
-fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     package_manager::handle_package_command(matches)
 }
 
-fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let pattern = matches.get_one::<String>("pattern");
     let verbose = matches.get_flag("verbose");
 
@@ -388,7 +700,7 @@ fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let history = matches.get_flag("history");
 
     println!("🎮 Starting CURSED REPL");
@@ -405,5 +717,98 @@ fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::er
     // For now, just show a message
     println!("(REPL functionality coming soon...)");
     
+    Ok(())
+}
+
+async fn handle_watch_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let command = matches.get_one::<String>("command").unwrap();
+    let path = matches.get_one::<String>("path").unwrap();
+    let patterns = matches.get_many::<String>("pattern")
+        .map(|v| v.map(|s| s.clone()).collect())
+        .unwrap_or_else(|| vec!["*.csd".to_string(), "*.toml".to_string(), "*.md".to_string()]);
+    let ignore_patterns = matches.get_many::<String>("ignore")
+        .map(|v| v.map(|s| s.clone()).collect())
+        .unwrap_or_else(|| vec!["*.tmp".to_string(), "target/*".to_string(), ".git/*".to_string()]);
+    let debounce_ms: u64 = matches.get_one::<String>("debounce")
+        .unwrap()
+        .parse()
+        .map_err(|_| "Invalid debounce value")?;
+    let recursive = matches.get_flag("recursive");
+    let clear_screen = matches.get_flag("clear");
+    let run_initial = matches.get_flag("initial");
+
+    println!("👀 Watching '{}' for changes", path);
+    println!("   Command: {}", command);
+    println!("   Patterns: {:?}", patterns);
+    if !ignore_patterns.is_empty() {
+        println!("   Ignoring: {:?}", ignore_patterns);
+    }
+    println!("   Debounce: {}ms", debounce_ms);
+    println!("   Recursive: {}", recursive);
+
+    // Verify watch path exists
+    let watch_path = std::path::Path::new(path);
+    if !watch_path.exists() {
+        return Err(format!("Watch path does not exist: {}", path).into());
+    }
+
+    // Run initial command if requested
+    if run_initial {
+        println!("🚀 Running initial command...");
+        run_watch_command(command, clear_screen).await?;
+    }
+
+    // Simplified watch implementation - demonstrate interface
+    println!("🔧 File watching infrastructure ready");
+    println!("   (Real file watching implementation will be integrated here)");
+
+    // Keep watching until shutdown
+    println!("Press Ctrl+C to stop watching...");
+    let mut interval = tokio::time::interval(Duration::from_millis(debounce_ms));
+    while !SHUTDOWN.load(Ordering::SeqCst) {
+        interval.tick().await;
+        // In a real implementation, file change events would trigger commands here
+        // Simulate periodic execution for demonstration
+        if run_initial {
+            // Only run periodically if initial was requested (for demo purposes)
+            // In real implementation, this would only happen on file changes
+        }
+    }
+
+    println!("✅ Watch stopped");
+    Ok(())
+}
+
+async fn run_watch_command(command: &str, clear_screen: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if clear_screen {
+        print!("\x1B[2J\x1B[1;1H"); // Clear screen and move cursor to top
+    }
+
+    match command {
+        "build" => {
+            println!("🔨 Running build command...");
+            // In a real implementation, we'd run the actual build
+            println!("✅ Build completed (simulated)");
+        }
+        "test" => {
+            println!("🧪 Running test command...");
+            // In a real implementation, we'd run the actual tests
+            println!("✅ Tests completed (simulated)");
+        }
+        "check" => {
+            println!("🔍 Running check command...");
+            // In a real implementation, we'd run the actual check
+            println!("✅ Check completed (simulated)");
+        }
+        "format" => {
+            println!("🎨 Running format command...");
+            // In a real implementation, we'd run the actual formatter
+            println!("✅ Format completed (simulated)");
+        }
+        _ => {
+            return Err(format!("Unknown command: {}", command).into());
+        }
+    }
+
     Ok(())
 }

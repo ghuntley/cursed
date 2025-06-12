@@ -8,6 +8,7 @@ use cursed::build_system::{
     BuildConfig, BuildOrchestrator, TemplateManager, TemplateContext, 
     ProjectType, TemplateCategory, PipelineResult
 };
+use cursed::build_system::build_orchestrator::WatchConfig;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -97,6 +98,10 @@ enum Commands {
         /// Use quick build (skip formatting and linting)
         #[arg(long)]
         quick: bool,
+        
+        /// Watch for file changes and rebuild automatically
+        #[arg(short, long)]
+        watch: bool,
     },
     
     /// Run the project
@@ -130,6 +135,10 @@ enum Commands {
         /// Number of test threads
         #[arg(long)]
         test_threads: Option<usize>,
+        
+        /// Watch for file changes and rerun tests automatically
+        #[arg(short, long)]
+        watch: bool,
     },
     
     /// Clean build artifacts
@@ -230,9 +239,21 @@ enum Commands {
         #[arg(short, long, default_value = "build")]
         command: String,
         
-        /// Delay before rebuilding (ms)
+        /// Delay before rebuilding (ms) 
         #[arg(long, default_value = "500")]
         delay: u64,
+        
+        /// File patterns to watch (default: **/*.csd)
+        #[arg(long)]
+        patterns: Vec<String>,
+        
+        /// Patterns to ignore
+        #[arg(long)]
+        ignore: Vec<String>,
+        
+        /// Debounce delay for file events (ms)
+        #[arg(long, default_value = "100")]
+        debounce: u64,
     },
     
     /// Benchmark the project
@@ -344,9 +365,14 @@ async fn run_command(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             init_project(&name, template_name, target, variables).await
         }
         
-        Commands::Build { target, release, all_features, no_default_features, features, force, no_parallel, quick } => {
+        Commands::Build { target, release, all_features, no_default_features, features, force, no_parallel, quick, watch } => {
             let profile = if release { "release" } else { &cli.profile };
-            build_project(profile, target, all_features, no_default_features, features, force, !no_parallel, quick).await
+            
+            if watch {
+                watch_build_project(profile, target, all_features, no_default_features, features, force, !no_parallel, quick).await
+            } else {
+                build_project(profile, target, all_features, no_default_features, features, force, !no_parallel, quick).await
+            }
         }
         
         Commands::Run { args, release, bin } => {
@@ -354,9 +380,14 @@ async fn run_command(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             run_project(profile, bin, args, cli.jobs).await
         }
         
-        Commands::Test { test_name, release, ignored, test_threads } => {
+        Commands::Test { test_name, release, ignored, test_threads, watch } => {
             let profile = if release { "release" } else { &cli.profile };
-            test_project(profile, test_name, ignored, test_threads).await
+            
+            if watch {
+                watch_test_project(profile, test_name, ignored, test_threads).await
+            } else {
+                test_project(profile, test_name, ignored, test_threads).await
+            }
         }
         
         Commands::Clean { all } => {
@@ -391,8 +422,8 @@ async fn run_command(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             show_project_info(deps, config, &format).await
         }
         
-        Commands::Watch { command, delay } => {
-            watch_project(&command, delay).await
+        Commands::Watch { command, delay, patterns, ignore, debounce } => {
+            watch_project(&command, delay, patterns, ignore, debounce).await
         }
         
         Commands::Bench { bench_name, save_baseline, baseline } => {
@@ -876,12 +907,238 @@ async fn show_project_info(
     Ok(())
 }
 
-async fn watch_project(command: &str, _delay: u64) -> Result<(), Box<dyn std::error::Error>> {
+async fn watch_project(
+    command: &str, 
+    delay: u64,
+    patterns: Vec<String>, 
+    ignore: Vec<String>,
+    debounce: u64,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::time::Duration;
+    use tokio::signal;
+    
     println!("👀 Watching for changes...");
     println!("Will run '{}' on file changes", command);
+    println!("Debounce delay: {}ms, rebuild delay: {}ms", debounce, delay);
     
-    // TODO: Implement file watching
-    println!("File watching not yet implemented");
+    let work_dir = std::env::current_dir()?;
+    let config_path = work_dir.join("CursedBuild.toml");
+    
+    if !config_path.exists() {
+        return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
+    }
+    
+    let config = BuildConfig::load_from_file(&config_path)?;
+    let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
+    
+    // Setup watch patterns - default to CURSED source files if none specified
+    let watch_patterns = if patterns.is_empty() {
+        vec!["**/*.csd".to_string(), "src/**/*.rs".to_string()]
+    } else {
+        patterns
+    };
+    
+    // Setup ignore patterns - add common ones
+    let mut ignore_patterns = ignore;
+    ignore_patterns.extend([
+        "target/**".to_string(),
+        ".git/**".to_string(),
+        "**/.DS_Store".to_string(),
+        "**/Thumbs.db".to_string(),
+    ]);
+    
+    // Setup signal handling for graceful shutdown
+    let ctrl_c = signal::ctrl_c();
+    tokio::pin!(ctrl_c);
+    
+    println!("Watching patterns: {:?}", watch_patterns);
+    if !ignore_patterns.is_empty() {
+        println!("Ignoring patterns: {:?}", ignore_patterns);
+    }
+    println!("Press Ctrl+C to stop watching...");
+    println!();
+    
+    // Configure watch settings
+    let watch_config = WatchConfig {
+        patterns: watch_patterns,
+        debounce_ms: debounce,
+        incremental: true,
+        build_profile: "dev".to_string(),
+    };
+    orchestrator.set_watch_config(watch_config);
+    
+    // Start file watching with orchestrator
+    let watch_result = orchestrator.watch("dev", command);
+    
+    tokio::select! {
+        result = watch_result => {
+            match result {
+                Ok(_) => println!("👀 File watching completed"),
+                Err(e) => {
+                    error!("File watching failed: {}", e);
+                    return Err(e.into());
+                }
+            }
+        }
+        _ = &mut ctrl_c => {
+            println!();
+            println!("🛑 Stopping file watcher...");
+            println!("👋 File watching stopped");
+        }
+    }
+    
+    Ok(())
+}
+
+async fn watch_build_project(
+    profile: &str,
+    targets: Vec<String>,
+    _all_features: bool,
+    _no_default_features: bool,
+    _features: Vec<String>,
+    force: bool,
+    parallel: bool,
+    quick: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::time::Duration;
+    use tokio::signal;
+    
+    println!("👀 Watching for changes to rebuild project...");
+    println!("Profile: {}, Quick: {}, Force: {}, Parallel: {}", profile, quick, force, parallel);
+    
+    let work_dir = std::env::current_dir()?;
+    let config_path = work_dir.join("CursedBuild.toml");
+    
+    if !config_path.exists() {
+        return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
+    }
+    
+    let config = BuildConfig::load_from_file(&config_path)?;
+    let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
+    
+    // Setup signal handling for graceful shutdown
+    let ctrl_c = signal::ctrl_c();
+    tokio::pin!(ctrl_c);
+    
+    let watch_patterns = vec!["**/*.csd".to_string(), "src/**/*.rs".to_string()];
+    let ignore_patterns = vec![
+        "target/**".to_string(),
+        ".git/**".to_string(),
+        "**/.DS_Store".to_string(),
+        "**/Thumbs.db".to_string(),
+    ];
+    
+    println!("Watching for changes to CURSED and Rust source files...");
+    println!("Press Ctrl+C to stop watching...");
+    println!();
+    
+    // Build command with parameters
+    let build_command = if quick {
+        "quick-build"
+    } else if !targets.is_empty() {
+        "build-targets"
+    } else {
+        "build"
+    };
+    
+    // Configure watch settings
+    let watch_config = WatchConfig {
+        patterns: watch_patterns,
+        debounce_ms: 100,
+        incremental: !force,
+        build_profile: profile.to_string(),
+    };
+    orchestrator.set_watch_config(watch_config);
+    
+    // Start file watching with orchestrator
+    let watch_result = orchestrator.watch(profile, build_command);
+    
+    tokio::select! {
+        result = watch_result => {
+            match result {
+                Ok(_) => println!("👀 Build watching completed"),
+                Err(e) => {
+                    error!("Build watching failed: {}", e);
+                    return Err(e.into());
+                }
+            }
+        }
+        _ = &mut ctrl_c => {
+            println!();
+            println!("🛑 Stopping build watcher...");
+            println!("👋 Build watching stopped");
+        }
+    }
+    
+    Ok(())
+}
+
+async fn watch_test_project(
+    profile: &str,
+    _test_name: Vec<String>,
+    _ignored: bool,
+    _test_threads: Option<usize>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::time::Duration;
+    use tokio::signal;
+    
+    println!("👀 Watching for changes to rerun tests...");
+    println!("Profile: {}", profile);
+    
+    let work_dir = std::env::current_dir()?;
+    let config_path = work_dir.join("CursedBuild.toml");
+    
+    if !config_path.exists() {
+        return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
+    }
+    
+    let config = BuildConfig::load_from_file(&config_path)?;
+    let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
+    
+    // Setup signal handling for graceful shutdown
+    let ctrl_c = signal::ctrl_c();
+    tokio::pin!(ctrl_c);
+    
+    let watch_patterns = vec!["**/*.csd".to_string(), "src/**/*.rs".to_string(), "tests/**/*.rs".to_string()];
+    let ignore_patterns = vec![
+        "target/**".to_string(),
+        ".git/**".to_string(),
+        "**/.DS_Store".to_string(),
+        "**/Thumbs.db".to_string(),
+    ];
+    
+    println!("Watching for changes to source and test files...");
+    println!("Press Ctrl+C to stop watching...");
+    println!();
+    
+    // Configure watch settings
+    let watch_config = WatchConfig {
+        patterns: watch_patterns,
+        debounce_ms: 100,
+        incremental: true,
+        build_profile: profile.to_string(),
+    };
+    orchestrator.set_watch_config(watch_config);
+    
+    // Start file watching with orchestrator
+    let watch_result = orchestrator.watch(profile, "test");
+    
+    tokio::select! {
+        result = watch_result => {
+            match result {
+                Ok(_) => println!("👀 Test watching completed"),
+                Err(e) => {
+                    error!("Test watching failed: {}", e);
+                    return Err(e.into());
+                }
+            }
+        }
+        _ = &mut ctrl_c => {
+            println!();
+            println!("🛑 Stopping test watcher...");
+            println!("👋 Test watching stopped");
+        }
+    }
     
     Ok(())
 }
