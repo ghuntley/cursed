@@ -331,7 +331,7 @@ impl BuildOrchestrator {
         info!("Resolving dependencies");
         
         // Use dependency resolver to create dependency graph
-        let graph = self.dependency_resolver.resolve(&self.config.dependencies)
+        let graph = self.dependency_resolver.resolve(&self.config.dependencies).await
             .map_err(|e| BuildError::DependencyError(e.to_string()))?;
         
         // Download and install packages through package manager

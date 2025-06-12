@@ -21,6 +21,7 @@ pub mod debug_info;
 pub mod error_handling;
 pub mod error_propagation;
 pub mod question_mark;
+pub mod package_integration;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
 pub use debug::{CursedDebugBuilder, LlvmDebugConfig};
@@ -39,6 +40,10 @@ pub use panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
 pub use debug_info::{LlvmDebugGenerator, LlvmDebugIntegration, LlvmDebugManager};
 pub use error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};
 pub use question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime};
+pub use package_integration::{
+    LlvmPackageContext, LlvmPackageConfig, LlvmPackageError, 
+    LlvmPackageIntegration, CompiledPackageModule, LlvmPackageStats
+};
 
 // Temporary dummy types to help tests compile
 pub struct DummyModule {
@@ -158,6 +163,7 @@ pub struct LlvmCodeGenerator {
     expression_compiler: LlvmExpressionCompiler,
     type_context: TypeCompilationContext,
     gc_integration: Option<LlvmGcIntegration>,
+    package_context: Option<LlvmPackageContext>,
 }
 
 impl LlvmCodeGenerator {
@@ -169,6 +175,7 @@ impl LlvmCodeGenerator {
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("default_module".to_string()),
             gc_integration: None,
+            package_context: None,
         })
     }
     
@@ -180,6 +187,7 @@ impl LlvmCodeGenerator {
             expression_compiler: LlvmExpressionCompiler::new(),
             type_context: TypeCompilationContext::new("debug_module".to_string()),
             gc_integration: None,
+            package_context: None,
         })
     }
     
@@ -544,6 +552,83 @@ impl LlvmCodeGenerator {
     pub fn set_gc_write_barriers_enabled(&mut self, enabled: bool) {
         if let Some(ref mut gc) = self.gc_integration {
             gc.set_write_barriers_enabled(enabled);
+        }
+    }
+    
+    // Package Integration Methods
+    
+    /// Initialize package integration with package manager
+    pub fn initialize_package_integration(
+        &mut self,
+        package_manager: std::sync::Arc<std::sync::Mutex<crate::package_manager::PackageManager>>,
+        config: LlvmPackageConfig,
+    ) -> Result<(), Error> {
+        let context = LlvmPackageContext::new(package_manager, config)
+            .map_err(|e| Error::from_str(&format!("Failed to initialize package integration: {}", e)))?;
+        self.package_context = Some(context);
+        Ok(())
+    }
+    
+    /// Compile source with automatic package resolution
+    pub async fn compile_with_packages(
+        &mut self,
+        source: &str,
+        source_file: Option<&std::path::Path>,
+    ) -> Result<String, Error> {
+        if let Some(ref mut context) = self.package_context {
+            context.compile_with_packages(source, source_file).await
+                .map_err(|e| Error::from_str(&format!("Package compilation failed: {}", e)))
+        } else {
+            // Fall back to regular compilation without packages
+            self.generate_ir(source)
+        }
+    }
+    
+    /// Resolve a specific package import for manual use
+    pub async fn resolve_single_package_import(&mut self, import_path: &str) -> Result<CompiledPackageModule, Error> {
+        if let Some(ref mut context) = self.package_context {
+            context.resolve_package_import(import_path).await
+                .map_err(|e| Error::from_str(&format!("Failed to resolve package import: {}", e)))
+        } else {
+            Err(Error::from_str("Package integration not initialized"))
+        }
+    }
+    
+    /// Check if a package symbol is available
+    pub fn has_package_symbol(&self, symbol_name: &str) -> bool {
+        if let Some(ref context) = self.package_context {
+            context.has_package_symbol(symbol_name)
+        } else {
+            false
+        }
+    }
+    
+    /// Get all available package symbols
+    pub fn get_package_symbols(&self) -> Vec<String> {
+        if let Some(ref context) = self.package_context {
+            context.get_package_symbols()
+        } else {
+            Vec::new()
+        }
+    }
+    
+    /// Get package integration statistics
+    pub fn get_package_stats(&self) -> Option<LlvmPackageStats> {
+        self.package_context.as_ref().map(|context| context.get_stats())
+    }
+    
+    /// Check if package integration is enabled
+    pub fn package_integration_enabled(&self) -> bool {
+        self.package_context.is_some()
+    }
+    
+    /// Install a package for compilation
+    pub async fn install_package(&mut self, package_name: &str) -> Result<crate::package_manager::PackageMetadata, Error> {
+        if let Some(ref mut context) = self.package_context {
+            context.install_package(package_name).await
+                .map_err(|e| Error::from_str(&format!("Failed to install package: {}", e)))
+        } else {
+            Err(Error::from_str("Package integration not initialized"))
         }
     }
 }

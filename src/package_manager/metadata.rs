@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use sha2::{Sha256, Digest};
 
 /// Package metadata from CursedPackage.toml
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -129,7 +130,7 @@ impl PackageMetadata {
             version: self.version.clone(),
             description: self.description.clone(),
             download_url: format!("https://registry.cursed.dev/packages/{}", self.name),
-            checksum: "placeholder_checksum".to_string(),
+            checksum: self.calculate_metadata_checksum(),
             size: None,
             published_at: None,
             authors: Some(self.authors.clone()),
@@ -137,6 +138,62 @@ impl PackageMetadata {
             repository: self.repository.clone(),
             keywords: Some(self.keywords.clone()),
         }
+    }
+    
+    /// Calculate checksum for the package metadata
+    pub fn calculate_metadata_checksum(&self) -> String {
+        use sha2::{Sha256, Digest};
+        
+        let mut hasher = Sha256::new();
+        
+        // Hash package metadata in a deterministic order
+        hasher.update(self.name.as_bytes());
+        hasher.update(self.version.as_bytes());
+        hasher.update(self.description.as_bytes());
+        
+        // Hash authors
+        for author in &self.authors {
+            hasher.update(author.as_bytes());
+        }
+        
+        // Hash dependencies in sorted order for determinism
+        let mut dep_keys: Vec<_> = self.dependencies.keys().collect();
+        dep_keys.sort();
+        for key in dep_keys {
+            hasher.update(key.as_bytes());
+            hasher.update(self.dependencies[key].to_string().as_bytes());
+        }
+        
+        // Hash dev dependencies in sorted order
+        let mut dev_dep_keys: Vec<_> = self.dev_dependencies.keys().collect();
+        dev_dep_keys.sort();
+        for key in dev_dep_keys {
+            hasher.update(key.as_bytes());
+            hasher.update(self.dev_dependencies[key].to_string().as_bytes());
+        }
+        
+        // Hash optional fields
+        if let Some(repo) = &self.repository {
+            hasher.update(repo.as_bytes());
+        }
+        if let Some(license) = &self.license {
+            hasher.update(license.as_bytes());
+        }
+        
+        // Hash keywords and categories in sorted order
+        let mut sorted_keywords = self.keywords.clone();
+        sorted_keywords.sort();
+        for keyword in sorted_keywords {
+            hasher.update(keyword.as_bytes());
+        }
+        
+        let mut sorted_categories = self.categories.clone();
+        sorted_categories.sort();
+        for category in sorted_categories {
+            hasher.update(category.as_bytes());
+        }
+        
+        format!("sha256:{:x}", hasher.finalize())
     }
 }
 

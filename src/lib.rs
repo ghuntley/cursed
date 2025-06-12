@@ -6,6 +6,7 @@
 // Core modules
 pub mod error;
 pub mod package_manager;
+pub mod imports;
 pub mod ast;
 pub mod lexer;
 pub mod parser;
@@ -23,6 +24,12 @@ pub use runtime::{
 
 pub use error::debug_context::{
     DebugContext, DebugContextBuilder, DebugResult, IntoDebugContext, ErrorSeverity
+};
+
+// Re-export import system
+pub use imports::{
+    ImportManager, ImportResolver, ImportError, ResolvedImport, LoadedModule,
+    ImportResolverConfig, ImportSource, ModuleLoader, PackageImportResolver
 };
 
 // Re-export enhanced debugging system
@@ -82,95 +89,109 @@ pub fn init() {
 
 /// Compile and execute CURSED source code
 pub fn run(source: &str) -> Result<(), Error> {
-    tracing::info!("Running CURSED source code");
+    run_with_packages(source, None)
+}
+
+/// Compile and execute CURSED source code with package management
+pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<(), Error> {
+    tracing::info!("Running CURSED source code with package management");
     
-    // Create lexer and parser
-    let lexer = crate::lexer::Lexer::new(source.to_string());
-    let mut parser = crate::parser::Parser::new(lexer)?;
+    // Use enhanced LLVM package integration
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| Error::Io(e.into()))?;
     
-    // Parse source code into AST
-    let program = parser.parse_program()?;
-    
-    // Type check the program with enhanced type system
-    let mut type_checker = crate::core::type_checker::TypeChecker::new();
-    if let Err(e) = type_checker.check_program(&program) {
-        tracing::warn!("Type checking failed: {}, continuing with compilation", e);
-    }
-    
-    // Generate LLVM IR
-    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-    let ir = codegen.generate_ir(source)?;
-    
-    tracing::debug!("Generated LLVM IR:\n{}", ir);
-    
-    // For now, we just compile - actual execution would require LLVM JIT
-    tracing::info!("CURSED compilation completed successfully");
-    Ok(())
+    rt.block_on(async {
+        // Create package manager and LLVM code generator with package integration
+        let package_manager_config = crate::package_manager::PackageManagerConfig::default();
+        let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
+            crate::package_manager::PackageManager::new(package_manager_config)
+                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+        ));
+        
+        let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        
+        codegen.initialize_package_integration(package_manager, package_config)?;
+        
+        // Compile with automatic package resolution
+        let _ir = codegen.compile_with_packages(source, source_file).await?;
+        
+        tracing::info!("CURSED compilation with LLVM package integration completed successfully");
+        Ok(())
+    })
 }
 
 /// Compile CURSED source file
 pub fn run_file(path: &str) -> Result<(), Error> {
     let source = std::fs::read_to_string(path)
         .map_err(|e| Error::Io(e.into()))?;
-    run(&source)
+    run_with_packages(&source, Some(std::path::Path::new(path)))
 }
 
 /// Compile CURSED source to LLVM IR
 pub fn compile_to_ir(source: &str) -> Result<String, Error> {
-    tracing::info!("Compiling CURSED source to LLVM IR");
+    compile_to_ir_with_packages(source, None)
+}
+
+/// Compile CURSED source to LLVM IR with package management
+pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<String, Error> {
+    tracing::info!("Compiling CURSED source to LLVM IR with package management");
     
-    // Create lexer and parser
-    let lexer = crate::lexer::Lexer::new(source.to_string());
-    let mut parser = crate::parser::Parser::new(lexer)?;
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| Error::Io(e.into()))?;
     
-    // Parse source code into AST
-    let program = parser.parse_program()?;
-    
-    // Type check the program with enhanced type system
-    let mut type_checker = crate::core::type_checker::TypeChecker::new();
-    if let Err(e) = type_checker.check_program(&program) {
-        tracing::warn!("Type checking failed: {}, continuing with compilation", e);
-    }
-    
-    // Generate LLVM IR
-    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-    
-    // Try to compile the parsed program
-    if let Err(e) = codegen.compile(&program) {
-        tracing::warn!("Program compilation failed: {}, falling back to basic IR", e);
-    }
-    
-    let ir = codegen.generate_ir(source)?;
-    
-    tracing::debug!("Generated LLVM IR:\n{}", ir);
-    Ok(ir)
+    rt.block_on(async {
+        // Create enhanced LLVM package integration
+        let package_manager_config = crate::package_manager::PackageManagerConfig::default();
+        let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
+            crate::package_manager::PackageManager::new(package_manager_config)
+                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+        ));
+        
+        let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        
+        codegen.initialize_package_integration(package_manager, package_config)?;
+        
+        // Compile with automatic package resolution and return IR
+        let ir = codegen.compile_with_packages(source, source_file).await?;
+        
+        tracing::debug!("Generated LLVM IR with package integration:\n{}", ir);
+        Ok(ir)
+    })
 }
 
 /// Check CURSED source for errors without executing
 pub fn check(source: &str) -> Result<(), Error> {
-    tracing::info!("Checking CURSED source for errors");
+    check_with_packages(source, None)
+}
+
+/// Check CURSED source for errors with package management
+pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<(), Error> {
+    tracing::info!("Checking CURSED source for errors with package management");
     
-    // Create lexer and parser
-    let lexer = crate::lexer::Lexer::new(source.to_string());
-    let mut parser = crate::parser::Parser::new(lexer)?;
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| Error::Io(e.into()))?;
     
-    // Parse source code into AST
-    let program = parser.parse_program()?;
-    
-    // Check for parse errors
-    let errors = parser.errors();
-    if !errors.is_empty() {
-        return Err(Error::Parse(format!("Parse errors: {}", errors.join(", "))));
-    }
-    
-    // Type check the program with enhanced type system
-    let mut type_checker = crate::core::type_checker::TypeChecker::new();
-    if let Err(e) = type_checker.check_program(&program) {
-        tracing::warn!("Type checking failed: {}, continuing with compilation", e);
-    }
-    
-    tracing::info!("CURSED source check completed successfully");
-    Ok(())
+    rt.block_on(async {
+        // Create enhanced LLVM package integration for checking
+        let package_manager_config = crate::package_manager::PackageManagerConfig::default();
+        let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
+            crate::package_manager::PackageManager::new(package_manager_config)
+                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+        ));
+        
+        let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        
+        codegen.initialize_package_integration(package_manager, package_config)?;
+        
+        // Compile to check for errors (but don't use the result)
+        let _ir = codegen.compile_with_packages(source, source_file).await?;
+        
+        tracing::info!("CURSED source check with LLVM package integration completed successfully");
+        Ok(())
+    })
 }
 
 /// Format CURSED source code

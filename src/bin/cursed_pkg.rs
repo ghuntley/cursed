@@ -37,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             PackageManagerError::UrlParse(_) => 18,
             PackageManagerError::LockFile(_) => 19,
             PackageManagerError::Workspace(_) => 20,
+            PackageManagerError::UnsupportedVersion { .. } => 21,
         };
         
         std::process::exit(exit_code);

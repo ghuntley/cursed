@@ -9,6 +9,7 @@ pub mod build_pipeline;
 pub mod project_template;
 pub mod incremental_cache;
 pub mod dependency_resolver;
+pub mod package_integration;
 
 // Re-export main types
 pub use build_config::{
@@ -25,3 +26,7 @@ pub use build_pipeline::{
 pub use project_template::{ProjectTemplate, TemplateManager, TemplateContext, TemplateCategory};
 pub use incremental_cache::{IncrementalCache, CacheEntry, CacheManager};
 pub use dependency_resolver::{DependencyResolver, DependencyGraph, VersionConstraintResolver};
+pub use package_integration::{
+    PackageIntegration, PackageIntegrationConfig, CompilationContext, 
+    IntegratedBuildResult, PackageAwareCompiler
+};

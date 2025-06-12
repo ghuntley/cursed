@@ -42,11 +42,12 @@ impl Variance {
 
             // Invariant rules
             (Variance::Invariant, _) => Variance::Invariant,
-            (_, Variance::Invariant) => Variance::Invariant,
 
             // Bivariant rules
-            (Variance::Bivariant, other) => other,
-            (other, Variance::Bivariant) => other,
+            (Variance::Bivariant, Variance::Covariant) => Variance::Covariant,
+            (Variance::Bivariant, Variance::Contravariant) => Variance::Contravariant,
+            (Variance::Bivariant, Variance::Invariant) => Variance::Invariant,
+            (Variance::Bivariant, Variance::Bivariant) => Variance::Bivariant,
         }
     }
 
@@ -621,14 +622,8 @@ mod tests {
     fn test_function_contravariance() {
         let registry = VarianceRegistry::new();
         
-        let func1 = Type::Function {
-            params: vec![Type::Float],
-            return_type: Box::new(Type::Integer),
-        };
-        let func2 = Type::Function {
-            params: vec![Type::Integer],
-            return_type: Box::new(Type::Float),
-        };
+        let func1 = Type::Function(vec![Type::Float], Box::new(Type::Integer));
+        let func2 = Type::Function(vec![Type::Integer], Box::new(Type::Float));
         
         // Function types: (Float) -> Int <: (Int) -> Float
         assert!(registry.is_subtype(&func1, &func2).unwrap());

@@ -1,8 +1,12 @@
 /// Simple CURSED Package Manager Binary
 use std::path::PathBuf;
+use cursed::package_manager::{PackageManager, PackageManagerConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tracing for logging
+    tracing_subscriber::fmt::init();
+    
     println!("🚀 CURSED Package Manager");
     
     // Parse command line arguments
@@ -32,6 +36,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             handle_search(&args[2]).await?;
         }
+        "list" => {
+            handle_list().await?;
+        }
+        "clean" => {
+            handle_clean().await?;
+        }
         "help" | "--help" | "-h" => {
             print_help();
         }
@@ -53,6 +63,8 @@ fn print_help() {
     println!("  init <name>     Initialize a new CURSED package");
     println!("  install <pkg>   Install a package");
     println!("  search <query>  Search for packages");
+    println!("  list            List installed packages");
+    println!("  clean           Clean package cache");
     println!("  help            Show this help message");
 }
 
@@ -92,17 +104,39 @@ authors = ["Your Name <your.email@example.com>"]
 async fn handle_install(package_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("📦 Installing package: {}", package_name);
     
-    // Mock installation process
+    // Create package manager with default configuration
+    let config = PackageManagerConfig::default();
+    let mut manager = PackageManager::new(config)?;
+    
+    // Parse package name and version
+    let (name, version) = if let Some(at_pos) = package_name.rfind('@') {
+        let name = &package_name[..at_pos];
+        let version = &package_name[at_pos + 1..];
+        (name, Some(version))
+    } else {
+        (package_name, None)
+    };
+    
     println!("🔍 Searching for package in registry...");
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     
-    println!("📥 Downloading package...");
-    tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-    
-    println!("⚙️  Installing dependencies...");
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-    
-    println!("✅ Package '{}' installed successfully!", package_name);
+    match manager.install_package(name, version).await {
+        Ok(packages) => {
+            println!("✅ Successfully installed {} package(s):", packages.len());
+            for pkg in packages {
+                println!("  📦 {} v{} - {}", pkg.name, pkg.version, pkg.description);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to install package: {}", e);
+            // Fall back to mock behavior for demo purposes
+            println!("🔄 Falling back to mock installation...");
+            println!("📥 Downloading package...");
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+            println!("⚙️  Installing dependencies...");
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+            println!("✅ Package '{}' installed successfully! (mock)", package_name);
+        }
+    }
     
     Ok(())
 }
@@ -110,21 +144,86 @@ async fn handle_install(package_name: &str) -> Result<(), Box<dyn std::error::Er
 async fn handle_search(query: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("🔍 Searching for packages matching: {}", query);
     
-    // Mock search process
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    // Create package manager with default configuration
+    let config = PackageManagerConfig::default();
+    let mut manager = PackageManager::new(config)?;
     
-    println!("📦 Found packages:");
+    match manager.search_packages(query, Some(10)).await {
+        Ok(packages) => {
+            if packages.is_empty() {
+                println!("📦 No packages found matching '{}'", query);
+            } else {
+                println!("📦 Found {} package(s):", packages.len());
+                for pkg in packages {
+                    println!("  {} v{} - {}", pkg.name, pkg.version, pkg.description);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Search failed: {}", e);
+            // Fall back to mock search
+            println!("🔄 Falling back to mock search...");
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+            
+            println!("📦 Found packages:");
+            
+            // Mock search results
+            let mock_results = vec![
+                ("json", "1.0.0", "JSON parsing and generation for CURSED"),
+                ("http", "2.1.0", "HTTP client and server for CURSED"),
+                ("crypto", "1.5.2", "Cryptographic functions for CURSED"),
+            ];
+            
+            for (name, version, desc) in mock_results {
+                if name.contains(query) || desc.to_lowercase().contains(&query.to_ascii_lowercase()) {
+                    println!("  {} {} - {}", name, version, desc);
+                }
+            }
+        }
+    }
     
-    // Mock search results
-    let mock_results = vec![
-        ("json", "1.0.0", "JSON parsing and generation for CURSED"),
-        ("http", "2.1.0", "HTTP client and server for CURSED"),
-        ("crypto", "1.5.2", "Cryptographic functions for CURSED"),
-    ];
+    Ok(())
+}
+
+async fn handle_list() -> Result<(), Box<dyn std::error::Error>> {
+    println!("📋 Listing installed packages");
     
-    for (name, version, desc) in mock_results {
-        if name.contains(query) || desc.to_lowercase().contains(&query.to_ascii_lowercase()) {
-            println!("  {} {} - {}", name, version, desc);
+    // Create package manager with default configuration
+    let config = PackageManagerConfig::default();
+    let manager = PackageManager::new(config)?;
+    
+    match manager.list_installed() {
+        Ok(packages) => {
+            if packages.is_empty() {
+                println!("📦 No packages installed");
+            } else {
+                println!("📦 Installed packages ({}):", packages.len());
+                for pkg in packages {
+                    println!("  {} v{} - {}", pkg.name, pkg.version, pkg.description);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to list packages: {}", e);
+        }
+    }
+    
+    Ok(())
+}
+
+async fn handle_clean() -> Result<(), Box<dyn std::error::Error>> {
+    println!("🧹 Cleaning package cache");
+    
+    // Create package manager with default configuration
+    let config = PackageManagerConfig::default();
+    let mut manager = PackageManager::new(config)?;
+    
+    match manager.clean_cache() {
+        Ok(_) => {
+            println!("✅ Package cache cleaned successfully");
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to clean cache: {}", e);
         }
     }
     
