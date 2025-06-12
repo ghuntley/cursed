@@ -47,9 +47,9 @@ fn test_simple_utilities() {
 #[test]
 fn test_collection_integration() {
     let mut set = HashSet::new();
-    set.insert(1);
-    set.insert(2);
-    set.insert(3);
+    let _ = set.insert(1);
+    let _ = set.insert(2);
+    let _ = set.insert(3);
     
     // Iterator not yet implemented for HashSet, using contains instead
     assert!(set.contains(&1));

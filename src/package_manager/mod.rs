@@ -508,6 +508,16 @@ impl PackageManager {
     pub fn lock_file_status(&self) -> Option<&LockFileManager> {
         self.lock_file_manager.as_ref()
     }
+    
+    /// Get cache statistics  
+    pub fn get_cache_stats(&self) -> Result<cache::CacheStats, PackageManagerError> {
+        self.cache.stats()
+    }
+    
+    /// Get configuration
+    pub fn get_config(&self) -> &PackageManagerConfig {
+        &self.config
+    }
 }
 
 impl Default for PackageManagerConfig {

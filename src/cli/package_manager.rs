@@ -642,11 +642,42 @@ async fn handle_update_command(
             progress.finish_with_message("Registry updated");
             
             if dry_run {
-                println!("🔍 Would update the following packages:");
-                // In a real implementation, we'd compare current vs available versions
-                println!("  • cursed-json: current → latest");
-                println!("  • cursed-http: current → latest");
-            } else {
+            println!("🔍 Would update the following packages:");
+            
+            // Get currently installed packages
+            let installed_packages = match manager.list_installed() {
+                    Ok(packages) => packages,
+            Err(_) => Vec::new(),
+        };
+        
+        if installed_packages.is_empty() {
+            println!("  No packages currently installed");
+        } else {
+            // For each installed package, check if updates are available
+            for installed_pkg in &installed_packages {
+                // Try to search for the latest version in registry
+                match manager.search_packages(&installed_pkg.name, Some(1)).await {
+                    Ok(mut search_results) if !search_results.is_empty() => {
+                        let latest_pkg = search_results.remove(0);
+                        if latest_pkg.version != installed_pkg.version {
+                            println!("  • {}: {} → {}", 
+                                   installed_pkg.name,
+                                   installed_pkg.version,
+                                   latest_pkg.version);
+                        }
+                    }
+                    _ => {
+                        // Package not found in registry or no newer version
+                        if config.verbose {
+                            println!("  • {}: {} (no updates available)", 
+                                   installed_pkg.name,
+                                   installed_pkg.version);
+                        }
+                    }
+                }
+            }
+        }
+    } else {
                 match config.output_format {
                     OutputFormat::Json => {
                         let output = serde_json::json!({
@@ -911,26 +942,63 @@ async fn handle_clean_command(
     
     if dry_run {
         println!("🔍 Would clean the following:");
-        println!("  • Package cache (estimated: 150MB)");
-        println!("  • Temporary files (estimated: 25MB)");
+        
+        // Calculate actual cache sizes
+        let cache_stats = match manager.get_cache_stats() {
+            Ok(stats) => Some(stats),
+            Err(_) => None,
+        };
+        
+        if let Some(stats) = cache_stats {
+            let package_cache_size = crate::package_manager::cache::CacheStats::format_size(stats.total_size);
+            println!("  • Package cache: {}", package_cache_size);
+        } else {
+            println!("  • Package cache: (unknown size)");
+        }
+        
+        // Calculate temp directory size
+        let temp_dir = manager.get_config().cache_dir.join("temp");
+        let temp_size = calculate_directory_size(&temp_dir);
+        println!("  • Temporary files: {}", crate::package_manager::cache::CacheStats::format_size(temp_size));
+        
         if clean_all {
-            println!("  • Registry index (estimated: 5MB)");
+            // Calculate registry index size
+            let index_path = manager.get_config().cache_dir.join("index.json");
+            let index_size = if index_path.exists() {
+                std::fs::metadata(&index_path).map(|m| m.len() as usize).unwrap_or(0)
+            } else {
+                0
+            };
+            println!("  • Registry index: {}", crate::package_manager::cache::CacheStats::format_size(index_size));
         }
     } else {
+        let cache_stats_before = manager.get_cache_stats().ok();
+            let size_before = cache_stats_before.as_ref().map(|s| s.total_size).unwrap_or(0);
+        
         match manager.clean_cache() {
-            Ok(_) => {
-                match config.output_format {
-                    OutputFormat::Json => {
-                        let output = serde_json::json!({
-                            "status": "success",
-                            "cleaned": "cache",
-                            "all": clean_all
+        Ok(_) => {
+        let cache_stats_after = manager.get_cache_stats().ok();
+        let size_after = cache_stats_after.as_ref().map(|s| s.total_size).unwrap_or(0);
+        let freed_space = size_before.saturating_sub(size_after);
+        
+        match config.output_format {
+        OutputFormat::Json => {
+            let output = serde_json::json!({
+            "status": "success",
+            "cleaned": "cache",
+                "all": clean_all,
+                    "freed_bytes": freed_space,
+                        "freed_formatted": crate::package_manager::cache::CacheStats::format_size(freed_space)
                         });
                         println!("{}", serde_json::to_string_pretty(&output)?);
                     }
                     _ => {
                         println!("✅ Package cache cleaned successfully");
-                        println!("   Freed approximately 175MB of disk space");
+                        if freed_space > 0 {
+                            println!("   Freed {}", crate::package_manager::cache::CacheStats::format_size(freed_space));
+                        } else {
+                            println!("   No space was freed (cache was already clean)");
+                        }
                     }
                 }
             }
@@ -1062,5 +1130,33 @@ fn truncate(s: &str, max_len: usize) -> String {
         s.to_string()
     } else {
         format!("{}...", &s[..max_len.saturating_sub(3)])
+    }
+}
+
+/// Calculate the total size of a directory and its contents
+fn calculate_directory_size(path: &std::path::Path) -> usize {
+    fn dir_size_recursive(path: &std::path::Path) -> u64 {
+        let mut size = 0u64;
+        
+        if let Ok(entries) = std::fs::read_dir(path) {
+            for entry in entries.flatten() {
+                let entry_path = entry.path();
+                if entry_path.is_dir() {
+                    size += dir_size_recursive(&entry_path);
+                } else if entry_path.is_file() {
+                    if let Ok(metadata) = entry.metadata() {
+                        size += metadata.len();
+                    }
+                }
+            }
+        }
+        
+        size
+    }
+    
+    if path.exists() && path.is_dir() {
+        dir_size_recursive(path) as usize
+    } else {
+        0
     }
 }
