@@ -8,6 +8,11 @@ use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
 use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
 use crate::stdlib::web_vibez::error_handling::MiddlewareError;
 
+// Re-export timeout middleware
+pub use crate::stdlib::web_vibez::timeout_middleware::{
+    TimeoutMiddleware, TimeoutConfig, TimeoutError, TimeoutResult, TimeoutStatistics
+};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

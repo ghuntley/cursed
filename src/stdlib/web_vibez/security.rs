@@ -382,7 +382,8 @@ impl InputValidator {
 
     /// Add length validation rule
     pub fn length(&mut self, field: &str, min: Option<usize>, max: Option<usize>) -> &mut Self {
-        let rule = self.rules.get_mut(field).unwrap_or_else(|| {
+        // Get or create the validation rule for this field
+        if !self.rules.contains_key(field) {
             self.rules.insert(field.to_string(), ValidationRule {
                 required: false,
                 min_length: None,
@@ -390,9 +391,10 @@ impl InputValidator {
                 pattern: None,
                 custom_validator: None,
             });
-            self.rules.get_mut(field).unwrap()
-        });
-
+        }
+        
+        // Safe to unwrap because we just ensured the key exists
+        let rule = self.rules.get_mut(field).unwrap();
         rule.min_length = min;
         rule.max_length = max;
         self
@@ -400,7 +402,8 @@ impl InputValidator {
 
     /// Add pattern validation rule
     pub fn pattern(&mut self, field: &str, pattern: &str) -> &mut Self {
-        let rule = self.rules.get_mut(field).unwrap_or_else(|| {
+        // Get or create the validation rule for this field
+        if !self.rules.contains_key(field) {
             self.rules.insert(field.to_string(), ValidationRule {
                 required: false,
                 min_length: None,
@@ -408,15 +411,16 @@ impl InputValidator {
                 pattern: None,
                 custom_validator: None,
             });
-            self.rules.get_mut(field).unwrap()
-        });
-
+        }
+        
+        // Safe to unwrap because we just ensured the key exists
+        let rule = self.rules.get_mut(field).unwrap();
         rule.pattern = Some(pattern.to_string());
 
         // Pre-compile regex patterns for better performance and early error detection
-        if let Err(_) = self.compile_pattern(pattern) {
+        if let Err(e) = self.compile_pattern(pattern) {
             // Log warning but don't fail - will be handled during validation
-            eprintln!("Warning: Invalid regex pattern '{}' for field '{}'", pattern, field);
+            eprintln!("Warning: Failed to compile regex pattern '{}' for field '{}': {}", pattern, field, e);
         }
 
         self
@@ -428,7 +432,7 @@ impl InputValidator {
             return Ok(compiled);
         }
 
-        // Handle built-in patterns
+        // Handle built-in patterns with improved regex patterns
         let regex_pattern = match pattern {
             "email" => r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
             "url" => r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^\s]*)?$",
@@ -446,9 +450,11 @@ impl InputValidator {
             _ => pattern, // Use as-is for custom regex patterns
         };
 
+        // Validate and compile the regex pattern
         match Regex::new(regex_pattern) {
             Ok(compiled_regex) => {
                 self.compiled_patterns.insert(pattern.to_string(), compiled_regex);
+                // Safe to unwrap because we just inserted it
                 Ok(self.compiled_patterns.get(pattern).unwrap())
             }
             Err(e) => Err(format!("Invalid regex pattern '{}': {}", pattern, e)),
@@ -506,12 +512,12 @@ impl InputValidator {
 
     /// Pattern matching with regex support
     fn matches_pattern(&self, value: &str, pattern: &str) -> bool {
-        // Try to get compiled regex pattern
+        // Try to get compiled regex pattern first
         if let Some(regex) = self.compiled_patterns.get(pattern) {
             return regex.is_match(value);
         }
 
-        // Fallback to basic pattern matching for backwards compatibility
+        // Fallback to basic pattern matching for built-in patterns
         match pattern {
             "email" => {
                 let sanitizer = InputSanitizer::new();
@@ -524,13 +530,44 @@ impl InputValidator {
             "numeric" => value.chars().all(|c| c.is_ascii_digit()),
             "alphanumeric" => value.chars().all(|c| c.is_alphanumeric()),
             "alpha" => value.chars().all(|c| c.is_alphabetic()),
+            "phone" => {
+                // Basic phone validation - at least 10 digits with optional formatting
+                let digit_count = value.chars().filter(|c| c.is_ascii_digit()).count();
+                digit_count >= 10 && value.len() >= 10
+            }
+            "password_strong" => {
+                // Strong password: 8+ chars, mixed case, number, special char
+                value.len() >= 8 
+                    && value.chars().any(|c| c.is_lowercase())
+                    && value.chars().any(|c| c.is_uppercase())
+                    && value.chars().any(|c| c.is_ascii_digit())
+                    && value.chars().any(|c| "@$!%*?&".contains(c))
+            }
+            "ipv4" => {
+                // Basic IPv4 validation
+                let parts: Vec<&str> = value.split('.').collect();
+                parts.len() == 4 && parts.iter().all(|part| {
+                    part.parse::<u8>().is_ok()
+                })
+            }
+            "hex_color" => {
+                // Hex color validation #RRGGBB
+                value.len() == 7 
+                    && value.starts_with('#')
+                    && value[1..].chars().all(|c| c.is_ascii_hexdigit())
+            }
+            "username" => {
+                // Username: 3-20 chars, letters, numbers, underscore
+                value.len() >= 3 && value.len() <= 20
+                    && value.chars().all(|c| c.is_alphanumeric() || c == '_')
+            }
             _ => {
                 // Try to compile pattern on-demand for custom regex
                 match Regex::new(pattern) {
                     Ok(regex) => regex.is_match(value),
-                    Err(_) => {
+                    Err(e) => {
                         // Invalid regex pattern - log warning and fail validation
-                        eprintln!("Warning: Invalid regex pattern '{}' used in validation", pattern);
+                        eprintln!("Warning: Invalid regex pattern '{}' used in validation: {}", pattern, e);
                         false
                     }
                 }

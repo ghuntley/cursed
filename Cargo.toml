@@ -115,6 +115,7 @@ base64ct = "=1.6.0"     # Base64 encoding (force specific version)
 
 # Database driver dependencies
 rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis for session store
 
 # Missing dependencies for web_vibez
 uuid = { version = "1.0", features = ["v4", "serde"] }      # For request IDs
