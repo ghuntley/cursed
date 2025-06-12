@@ -48,7 +48,7 @@ async fn test_package_manager_lock_file_integration() {
             authors: vec!["Test Author".to_string()],
             dependencies: {
                 let mut deps = HashMap::new();
-                deps.insert("test-package-1".to_string(), "1.0.0".to_string());
+                deps.insert("test-package-1".to_string(), VersionSpec::Simple("1.0.0".to_string()));
                 deps
             },
             dev_dependencies: HashMap::new(),

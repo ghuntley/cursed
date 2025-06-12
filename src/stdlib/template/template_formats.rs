@@ -1,5 +1,6 @@
 /// Template Format Support - Various output formats for CURSED templates
 use std::collections::HashMap;
+use std::path::Path;
 use tracing::{debug, instrument, warn};
 use serde_json::{Map, Value as JsonValue};
 
@@ -27,6 +28,12 @@ pub enum TemplateFormat {
     Email,
     /// Configuration file formats
     Config(ConfigFormat),
+    /// Document templates
+    Document(DocumentFormat),
+    /// API specification formats
+    Api(ApiFormat),
+    /// Build system formats
+    Build(BuildFormat),
 }
 
 /// Configuration file formats
@@ -44,17 +51,116 @@ pub enum ConfigFormat {
     Dockerfile,
     /// Nginx configuration
     Nginx,
+    /// Apache configuration
+    Apache,
+    /// Kubernetes YAML
+    Kubernetes,
+    /// Docker Compose
+    DockerCompose,
+}
+
+/// Document template formats
+#[derive(Debug, Clone)]
+pub enum DocumentFormat {
+    /// README file
+    Readme,
+    /// License file
+    License,
+    /// Changelog
+    Changelog,
+    /// Code documentation
+    CodeDoc,
+    /// API documentation
+    ApiDoc,
+    /// Project documentation
+    ProjectDoc,
+    /// Release notes
+    ReleaseNotes,
+}
+
+/// API specification formats
+#[derive(Debug, Clone)]
+pub enum ApiFormat {
+    /// OpenAPI/Swagger specification
+    OpenApi,
+    /// GraphQL schema
+    GraphQL,
+    /// Protocol Buffers
+    Protobuf,
+    /// JSON Schema
+    JsonSchema,
+    /// WSDL
+    Wsdl,
+    /// AsyncAPI
+    AsyncApi,
+}
+
+/// Build system formats
+#[derive(Debug, Clone)]
+pub enum BuildFormat {
+    /// Makefile
+    Makefile,
+    /// Cargo build script
+    BuildRs,
+    /// CMake
+    CMake,
+    /// Gradle
+    Gradle,
+    /// Maven POM
+    Maven,
+    /// Package.json
+    PackageJson,
+    /// GitHub Actions
+    GitHubActions,
+    /// CI/CD configuration
+    CiCd,
 }
 
 /// Template format renderer
 pub struct TemplateFormatRenderer {
     format: TemplateFormat,
+    options: FormatOptions,
+}
+
+/// Format rendering options
+#[derive(Debug, Clone)]
+pub struct FormatOptions {
+    /// Pretty print output
+    pub pretty: bool,
+    /// Indent size for pretty printing
+    pub indent_size: usize,
+    /// Include format validation
+    pub validate: bool,
+    /// Auto-escape content
+    pub auto_escape: bool,
+    /// Custom format options
+    pub custom: HashMap<String, String>,
+}
+
+impl Default for FormatOptions {
+    fn default() -> Self {
+        Self {
+            pretty: true,
+            indent_size: 2,
+            validate: true,
+            auto_escape: true,
+            custom: HashMap::new(),
+        }
+    }
 }
 
 impl TemplateFormatRenderer {
     /// Create a new format renderer
     pub fn new(format: TemplateFormat) -> Self {
-        Self { format }
+        Self { 
+            format,
+            options: FormatOptions::default(),
+        }
+    }
+
+    /// Create a new format renderer with options
+    pub fn with_options(format: TemplateFormat, options: FormatOptions) -> Self {
+        Self { format, options }
     }
 
     /// Render data in the specified format
@@ -72,6 +178,9 @@ impl TemplateFormatRenderer {
             TemplateFormat::Csv => self.render_csv(data),
             TemplateFormat::Email => self.render_email(data),
             TemplateFormat::Config(config_format) => self.render_config(data, config_format),
+            TemplateFormat::Document(doc_format) => self.render_document(data, doc_format),
+            TemplateFormat::Api(api_format) => self.render_api(data, api_format),
+            TemplateFormat::Build(build_format) => self.render_build(data, build_format),
         }
     }
 
@@ -380,6 +489,9 @@ impl TemplateFormatRenderer {
             ConfigFormat::Shell => self.render_shell(data),
             ConfigFormat::Dockerfile => self.render_dockerfile(data),
             ConfigFormat::Nginx => self.render_nginx(data),
+            ConfigFormat::Apache => self.render_apache(data),
+            ConfigFormat::Kubernetes => self.render_kubernetes(data),
+            ConfigFormat::DockerCompose => self.render_docker_compose(data),
         }
     }
 
@@ -614,6 +726,345 @@ impl TemplateFormatRenderer {
         }
     }
 
+    /// Render as Apache configuration
+    fn render_apache(&self, data: &CursedObject) -> Result<String, CursedError> {
+        match data {
+            CursedObject::Map(map) => {
+                let mut apache = String::new();
+
+                for (directive, value) in map {
+                    match directive.as_str() {
+                        "virtualhost" => {
+                            if let CursedObject::Map(vhost_config) = value {
+                                if let Some(addr) = vhost_config.get("address") {
+                                    let addr_str = self.render_text(addr)?;
+                                    apache.push_str(&format!("<VirtualHost {}>\n", addr_str));
+                                    
+                                    for (vhost_directive, vhost_value) in vhost_config {
+                                        if vhost_directive != "address" {
+                                            let value_str = self.render_text(vhost_value)?;
+                                            apache.push_str(&format!("    {} {}\n", vhost_directive, value_str));
+                                        }
+                                    }
+                                    apache.push_str("</VirtualHost>\n\n");
+                                }
+                            }
+                        }
+                        "directory" => {
+                            if let CursedObject::Map(dir_config) = value {
+                                if let Some(path) = dir_config.get("path") {
+                                    let path_str = self.render_text(path)?;
+                                    apache.push_str(&format!("<Directory {}>\n", path_str));
+                                    
+                                    for (dir_directive, dir_value) in dir_config {
+                                        if dir_directive != "path" {
+                                            let value_str = self.render_text(dir_value)?;
+                                            apache.push_str(&format!("    {} {}\n", dir_directive, value_str));
+                                        }
+                                    }
+                                    apache.push_str("</Directory>\n\n");
+                                }
+                            }
+                        }
+                        _ => {
+                            let value_str = self.render_text(value)?;
+                            apache.push_str(&format!("{} {}\n", directive, value_str));
+                        }
+                    }
+                }
+
+                Ok(apache)
+            }
+            _ => Err(CursedError::TemplateError {
+                message: "Apache format requires a map".to_string(),
+                source_location: None,
+            }),
+        }
+    }
+
+    /// Render as Kubernetes YAML
+    fn render_kubernetes(&self, data: &CursedObject) -> Result<String, CursedError> {
+        match data {
+            CursedObject::Map(map) => {
+                let mut k8s = String::from("apiVersion: v1\n");
+                
+                if let Some(kind) = map.get("kind") {
+                    let kind_str = self.render_text(kind)?;
+                    k8s.push_str(&format!("kind: {}\n", kind_str));
+                }
+
+                k8s.push_str("metadata:\n");
+                if let Some(metadata) = map.get("metadata") {
+                    let metadata_yaml = self.render_kubernetes_object(metadata, 1)?;
+                    k8s.push_str(&metadata_yaml);
+                }
+
+                if let Some(spec) = map.get("spec") {
+                    k8s.push_str("spec:\n");
+                    let spec_yaml = self.render_kubernetes_object(spec, 1)?;
+                    k8s.push_str(&spec_yaml);
+                }
+
+                Ok(k8s)
+            }
+            _ => self.render_yaml(data)
+        }
+    }
+
+    /// Render Docker Compose
+    fn render_docker_compose(&self, data: &CursedObject) -> Result<String, CursedError> {
+        match data {
+            CursedObject::Map(map) => {
+                let mut compose = String::from("version: '3.8'\n\n");
+                
+                if let Some(services) = map.get("services") {
+                    compose.push_str("services:\n");
+                    if let CursedObject::Map(service_map) = services {
+                        for (service_name, service_config) in service_map {
+                            compose.push_str(&format!("  {}:\n", service_name));
+                            let service_yaml = self.render_kubernetes_object(service_config, 2)?;
+                            compose.push_str(&service_yaml);
+                        }
+                    }
+                }
+
+                if let Some(volumes) = map.get("volumes") {
+                    compose.push_str("\nvolumes:\n");
+                    let volumes_yaml = self.render_kubernetes_object(volumes, 1)?;
+                    compose.push_str(&volumes_yaml);
+                }
+
+                if let Some(networks) = map.get("networks") {
+                    compose.push_str("\nnetworks:\n");
+                    let networks_yaml = self.render_kubernetes_object(networks, 1)?;
+                    compose.push_str(&networks_yaml);
+                }
+
+                Ok(compose)
+            }
+            _ => self.render_yaml(data)
+        }
+    }
+
+    /// Render document templates
+    fn render_document(&self, data: &CursedObject, format: &DocumentFormat) -> Result<String, CursedError> {
+        match format {
+            DocumentFormat::Readme => self.render_readme(data),
+            DocumentFormat::License => self.render_license(data),
+            DocumentFormat::Changelog => self.render_changelog(data),
+            DocumentFormat::CodeDoc => self.render_code_doc(data),
+            DocumentFormat::ApiDoc => self.render_api_doc(data),
+            DocumentFormat::ProjectDoc => self.render_project_doc(data),
+            DocumentFormat::ReleaseNotes => self.render_release_notes(data),
+        }
+    }
+
+    /// Render API specifications
+    fn render_api(&self, data: &CursedObject, format: &ApiFormat) -> Result<String, CursedError> {
+        match format {
+            ApiFormat::OpenApi => self.render_openapi(data),
+            ApiFormat::GraphQL => self.render_graphql(data),
+            ApiFormat::Protobuf => self.render_protobuf(data),
+            ApiFormat::JsonSchema => self.render_json_schema(data),
+            ApiFormat::Wsdl => self.render_wsdl(data),
+            ApiFormat::AsyncApi => self.render_asyncapi(data),
+        }
+    }
+
+    /// Render build system files
+    fn render_build(&self, data: &CursedObject, format: &BuildFormat) -> Result<String, CursedError> {
+        match format {
+            BuildFormat::Makefile => self.render_makefile(data),
+            BuildFormat::BuildRs => self.render_build_rs(data),
+            BuildFormat::CMake => self.render_cmake(data),
+            BuildFormat::Gradle => self.render_gradle(data),
+            BuildFormat::Maven => self.render_maven(data),
+            BuildFormat::PackageJson => self.render_package_json(data),
+            BuildFormat::GitHubActions => self.render_github_actions(data),
+            BuildFormat::CiCd => self.render_ci_cd(data),
+        }
+    }
+
+    /// Render README file
+    fn render_readme(&self, data: &CursedObject) -> Result<String, CursedError> {
+        match data {
+            CursedObject::Map(map) => {
+                let mut readme = String::new();
+                
+                if let Some(title) = map.get("title") {
+                    let title_str = self.render_text(title)?;
+                    readme.push_str(&format!("# {}\n\n", title_str));
+                }
+
+                if let Some(description) = map.get("description") {
+                    let desc_str = self.render_text(description)?;
+                    readme.push_str(&format!("{}\n\n", desc_str));
+                }
+
+                if let Some(installation) = map.get("installation") {
+                    readme.push_str("## Installation\n\n");
+                    let install_str = self.render_text(installation)?;
+                    readme.push_str(&format!("{}\n\n", install_str));
+                }
+
+                if let Some(usage) = map.get("usage") {
+                    readme.push_str("## Usage\n\n");
+                    let usage_str = self.render_text(usage)?;
+                    readme.push_str(&format!("{}\n\n", usage_str));
+                }
+
+                if let Some(license) = map.get("license") {
+                    readme.push_str("## License\n\n");
+                    let license_str = self.render_text(license)?;
+                    readme.push_str(&format!("{}\n\n", license_str));
+                }
+
+                Ok(readme)
+            }
+            _ => self.render_markdown(data)
+        }
+    }
+
+    /// Render OpenAPI specification
+    fn render_openapi(&self, data: &CursedObject) -> Result<String, CursedError> {
+        match data {
+            CursedObject::Map(map) => {
+                let mut openapi = String::from("openapi: 3.0.0\n");
+                
+                if let Some(info) = map.get("info") {
+                    openapi.push_str("info:\n");
+                    let info_yaml = self.render_kubernetes_object(info, 1)?;
+                    openapi.push_str(&info_yaml);
+                }
+
+                if let Some(paths) = map.get("paths") {
+                    openapi.push_str("paths:\n");
+                    let paths_yaml = self.render_kubernetes_object(paths, 1)?;
+                    openapi.push_str(&paths_yaml);
+                }
+
+                Ok(openapi)
+            }
+            _ => self.render_yaml(data)
+        }
+    }
+
+    /// Render Makefile
+    fn render_makefile(&self, data: &CursedObject) -> Result<String, CursedError> {
+        match data {
+            CursedObject::Map(map) => {
+                let mut makefile = String::new();
+                
+                for (target, config) in map {
+                    match config {
+                        CursedObject::Map(target_config) => {
+                            // Add dependencies if specified
+                            if let Some(deps) = target_config.get("dependencies") {
+                                let deps_str = self.render_text(deps)?;
+                                makefile.push_str(&format!("{}: {}\n", target, deps_str));
+                            } else {
+                                makefile.push_str(&format!("{}:\n", target));
+                            }
+
+                            // Add commands
+                            if let Some(commands) = target_config.get("commands") {
+                                match commands {
+                                    CursedObject::Array(cmd_array) => {
+                                        for cmd in cmd_array {
+                                            let cmd_str = self.render_text(cmd)?;
+                                            makefile.push_str(&format!("\t{}\n", cmd_str));
+                                        }
+                                    }
+                                    _ => {
+                                        let cmd_str = self.render_text(commands)?;
+                                        makefile.push_str(&format!("\t{}\n", cmd_str));
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            makefile.push_str(&format!("{}:\n", target));
+                            let cmd_str = self.render_text(config)?;
+                            makefile.push_str(&format!("\t{}\n", cmd_str));
+                        }
+                    }
+                    makefile.push('\n');
+                }
+
+                Ok(makefile)
+            }
+            _ => Err(CursedError::TemplateError {
+                message: "Makefile format requires a map".to_string(),
+                source_location: None,
+            }),
+        }
+    }
+
+    // Utility methods for the new formats
+    fn render_kubernetes_object(&self, obj: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+        let indent = "  ".repeat(indent_level);
+        let mut result = String::new();
+
+        match obj {
+            CursedObject::Map(map) => {
+                for (key, value) in map {
+                    match value {
+                        CursedObject::Map(_) => {
+                            result.push_str(&format!("{}{}:\n", indent, key));
+                            result.push_str(&self.render_kubernetes_object(value, indent_level + 1)?);
+                        }
+                        CursedObject::Array(arr) => {
+                            result.push_str(&format!("{}{}:\n", indent, key));
+                            for item in arr {
+                                result.push_str(&format!("{}- ", "  ".repeat(indent_level)));
+                                match item {
+                                    CursedObject::Map(_) => {
+                                        result.push('\n');
+                                        result.push_str(&self.render_kubernetes_object(item, indent_level + 1)?);
+                                    }
+                                    _ => {
+                                        let item_str = self.render_text(item)?;
+                                        result.push_str(&format!("{}\n", item_str));
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            let value_str = self.render_text(value)?;
+                            result.push_str(&format!("{}{}: {}\n", indent, key, value_str));
+                        }
+                    }
+                }
+            }
+            _ => {
+                let value_str = self.render_text(obj)?;
+                result.push_str(&format!("{}{}\n", indent, value_str));
+            }
+        }
+
+        Ok(result)
+    }
+
+    // Placeholder implementations for the remaining formats
+    fn render_license(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_text(data) }
+    fn render_changelog(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_markdown(data) }
+    fn render_code_doc(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_markdown(data) }
+    fn render_api_doc(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_markdown(data) }
+    fn render_project_doc(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_markdown(data) }
+    fn render_release_notes(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_markdown(data) }
+    fn render_graphql(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_text(data) }
+    fn render_protobuf(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_text(data) }
+    fn render_json_schema(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_json(data) }
+    fn render_wsdl(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_xml(data) }
+    fn render_asyncapi(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_yaml(data) }
+    fn render_build_rs(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_text(data) }
+    fn render_cmake(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_text(data) }
+    fn render_gradle(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_text(data) }
+    fn render_maven(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_xml(data) }
+    fn render_package_json(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_json(data) }
+    fn render_github_actions(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_yaml(data) }
+    fn render_ci_cd(&self, data: &CursedObject) -> Result<String, CursedError> { self.render_yaml(data) }
+
     /// Helper methods for escaping and conversion
     fn escape_html(&self, s: &str) -> String {
         s.replace('&', "&amp;")
@@ -688,6 +1139,265 @@ impl TemplateFormatRenderer {
     fn cursed_to_csv_value(&self, obj: &CursedObject) -> Result<String, CursedError> {
         let text = self.render_text(obj)?;
         Ok(self.escape_csv(&text))
+    }
+
+    /// Get Content-Type header for the format
+    pub fn content_type(&self) -> &'static str {
+        match &self.format {
+            TemplateFormat::Text => "text/plain",
+            TemplateFormat::Html => "text/html",
+            TemplateFormat::Json => "application/json",
+            TemplateFormat::Yaml => "application/x-yaml",
+            TemplateFormat::Xml => "application/xml",
+            TemplateFormat::Markdown => "text/markdown",
+            TemplateFormat::Csv => "text/csv",
+            TemplateFormat::Email => "message/rfc822",
+            TemplateFormat::Config(config_format) => match config_format {
+                ConfigFormat::Toml => "application/toml",
+                ConfigFormat::Ini => "text/plain",
+                ConfigFormat::Env => "text/plain",
+                ConfigFormat::Shell => "application/x-sh",
+                ConfigFormat::Dockerfile => "text/plain",
+                ConfigFormat::Nginx => "text/plain",
+                ConfigFormat::Apache => "text/plain",
+                ConfigFormat::Kubernetes => "application/x-yaml",
+                ConfigFormat::DockerCompose => "application/x-yaml",
+            },
+            TemplateFormat::Document(_) => "text/markdown",
+            TemplateFormat::Api(api_format) => match api_format {
+                ApiFormat::OpenApi => "application/x-yaml",
+                ApiFormat::GraphQL => "application/graphql",
+                ApiFormat::Protobuf => "application/x-protobuf",
+                ApiFormat::JsonSchema => "application/schema+json",
+                ApiFormat::Wsdl => "application/wsdl+xml",
+                ApiFormat::AsyncApi => "application/x-yaml",
+            },
+            TemplateFormat::Build(_) => "text/plain",
+        }
+    }
+
+    /// Validate rendered output for the format
+    pub fn validate(&self, content: &str) -> Result<(), CursedError> {
+        if !self.options.validate {
+            return Ok(());
+        }
+
+        match &self.format {
+            TemplateFormat::Json => {
+                serde_json::from_str::<JsonValue>(content)
+                    .map_err(|e| CursedError::TemplateError {
+                        message: format!("Invalid JSON: {}", e),
+                        source_location: None,
+                    })?;
+            }
+            TemplateFormat::Yaml => {
+                serde_yaml::from_str::<JsonValue>(content)
+                    .map_err(|e| CursedError::TemplateError {
+                        message: format!("Invalid YAML: {}", e),
+                        source_location: None,
+                    })?;
+            }
+            TemplateFormat::Xml => {
+                // Basic XML validation - just check for well-formed structure
+                if !self.is_well_formed_xml(content) {
+                    return Err(CursedError::TemplateError {
+                        message: "Invalid XML structure".to_string(),
+                        source_location: None,
+                    });
+                }
+            }
+            _ => {} // No validation for other formats yet
+        }
+        Ok(())
+    }
+
+    /// Basic XML well-formedness check
+    fn is_well_formed_xml(&self, content: &str) -> bool {
+        let mut stack = Vec::new();
+        let mut in_tag = false;
+        let mut tag_name = String::new();
+        let mut is_closing = false;
+        
+        for ch in content.chars() {
+            match ch {
+                '<' => {
+                    in_tag = true;
+                    tag_name.clear();
+                    is_closing = false;
+                }
+                '>' => {
+                    if in_tag && !tag_name.is_empty() {
+                        if is_closing {
+                            if let Some(last_tag) = stack.pop() {
+                                if last_tag != tag_name {
+                                    return false;
+                                }
+                            } else {
+                                return false;
+                            }
+                        } else if !tag_name.ends_with('/') {
+                            stack.push(tag_name.clone());
+                        }
+                    }
+                    in_tag = false;
+                }
+                '/' if in_tag && tag_name.is_empty() => {
+                    is_closing = true;
+                }
+                _ if in_tag => {
+                    if ch.is_alphanumeric() || ch == '_' || ch == '-' {
+                        tag_name.push(ch);
+                    }
+                }
+                _ => {}
+            }
+        }
+        
+        stack.is_empty()
+    }
+}
+
+/// Format detection utilities
+pub struct FormatDetector;
+
+impl FormatDetector {
+    /// Detect format from file extension
+    pub fn from_extension(path: &str) -> Option<TemplateFormat> {
+        let path = Path::new(path);
+        let extension = path.extension()?.to_str()?.to_lowercase();
+        
+        match extension.as_str() {
+            "txt" => Some(TemplateFormat::Text),
+            "html" | "htm" => Some(TemplateFormat::Html),
+            "json" => Some(TemplateFormat::Json),
+            "yaml" | "yml" => Some(TemplateFormat::Yaml),
+            "xml" => Some(TemplateFormat::Xml),
+            "md" | "markdown" => Some(TemplateFormat::Markdown),
+            "csv" => Some(TemplateFormat::Csv),
+            "toml" => Some(TemplateFormat::Config(ConfigFormat::Toml)),
+            "ini" => Some(TemplateFormat::Config(ConfigFormat::Ini)),
+            "env" => Some(TemplateFormat::Config(ConfigFormat::Env)),
+            "sh" | "bash" => Some(TemplateFormat::Config(ConfigFormat::Shell)),
+            "dockerfile" => Some(TemplateFormat::Config(ConfigFormat::Dockerfile)),
+            "conf" => Some(TemplateFormat::Config(ConfigFormat::Nginx)),
+            "graphql" | "gql" => Some(TemplateFormat::Api(ApiFormat::GraphQL)),
+            "proto" => Some(TemplateFormat::Api(ApiFormat::Protobuf)),
+            "makefile" | "mk" => Some(TemplateFormat::Build(BuildFormat::Makefile)),
+            "rs" if path.file_name().unwrap_or_default() == "build.rs" => {
+                Some(TemplateFormat::Build(BuildFormat::BuildRs))
+            },
+            _ => {
+                // Check by filename
+                if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                    match filename.to_lowercase().as_str() {
+                        "makefile" => Some(TemplateFormat::Build(BuildFormat::Makefile)),
+                        "dockerfile" => Some(TemplateFormat::Config(ConfigFormat::Dockerfile)),
+                        "docker-compose.yml" | "docker-compose.yaml" => {
+                            Some(TemplateFormat::Config(ConfigFormat::DockerCompose))
+                        },
+                        "readme.md" | "readme" => Some(TemplateFormat::Document(DocumentFormat::Readme)),
+                        "license" | "license.txt" => Some(TemplateFormat::Document(DocumentFormat::License)),
+                        "changelog.md" | "changelog" => Some(TemplateFormat::Document(DocumentFormat::Changelog)),
+                        "package.json" => Some(TemplateFormat::Build(BuildFormat::PackageJson)),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    /// Detect format from content analysis
+    pub fn from_content(content: &str) -> Option<TemplateFormat> {
+        let trimmed = content.trim();
+        
+        // Check for JSON
+        if (trimmed.starts_with('{') && trimmed.ends_with('}')) ||
+           (trimmed.starts_with('[') && trimmed.ends_with(']')) {
+            if serde_json::from_str::<JsonValue>(content).is_ok() {
+                return Some(TemplateFormat::Json);
+            }
+        }
+        
+        // Check for XML
+        if trimmed.starts_with("<?xml") || 
+           (trimmed.starts_with('<') && trimmed.ends_with('>')) {
+            return Some(TemplateFormat::Xml);
+        }
+        
+        // Check for HTML
+        if trimmed.contains("<!DOCTYPE html") || 
+           trimmed.contains("<html") ||
+           trimmed.contains("<head>") ||
+           trimmed.contains("<body>") {
+            return Some(TemplateFormat::Html);
+        }
+        
+        // Check for YAML
+        if content.lines().any(|line| {
+            let line = line.trim();
+            line.contains(':') && !line.starts_with('#') && 
+            !line.contains('=') && !line.contains('<')
+        }) {
+            return Some(TemplateFormat::Yaml);
+        }
+        
+        // Check for specific formats by content patterns
+        if content.lines().any(|line| line.trim().starts_with("FROM ")) {
+            return Some(TemplateFormat::Config(ConfigFormat::Dockerfile));
+        }
+        
+        if content.lines().any(|line| line.trim().starts_with("server {")) {
+            return Some(TemplateFormat::Config(ConfigFormat::Nginx));
+        }
+        
+        if content.contains("openapi:") || content.contains("swagger:") {
+            return Some(TemplateFormat::Api(ApiFormat::OpenApi));
+        }
+        
+        if content.contains("type Query") || content.contains("type Mutation") {
+            return Some(TemplateFormat::Api(ApiFormat::GraphQL));
+        }
+        
+        None
+    }
+}
+
+/// Format conversion utilities
+pub struct FormatConverter;
+
+impl FormatConverter {
+    /// Convert between formats
+    pub fn convert(
+        content: &str,
+        from: TemplateFormat,
+        to: TemplateFormat,
+        data: &CursedObject,
+    ) -> Result<String, CursedError> {
+        // For now, just re-render with the target format
+        let renderer = TemplateFormatRenderer::new(to);
+        renderer.render(data)
+    }
+
+    /// Compose multiple templates
+    pub fn compose(
+        templates: &[(TemplateFormat, &CursedObject)],
+        separator: &str,
+    ) -> Result<String, CursedError> {
+        let mut result = String::new();
+        
+        for (i, (format, data)) in templates.iter().enumerate() {
+            if i > 0 {
+                result.push_str(separator);
+            }
+            
+            let renderer = TemplateFormatRenderer::new(format.clone());
+            let rendered = renderer.render(data)?;
+            result.push_str(&rendered);
+        }
+        
+        Ok(result)
     }
 }
 
@@ -797,5 +1507,196 @@ mod tests {
         
         assert!(result.contains("&lt;script&gt;"));
         assert!(!result.contains("<script>"));
+    }
+
+    #[test]
+    fn test_readme_rendering() {
+        let renderer = TemplateFormatRenderer::new(
+            TemplateFormat::Document(DocumentFormat::Readme)
+        );
+        
+        let mut map = HashMap::new();
+        map.insert("title".to_string(), CursedObject::String("My Project".to_string()));
+        map.insert("description".to_string(), CursedObject::String("A great project".to_string()));
+        map.insert("installation".to_string(), CursedObject::String("npm install".to_string()));
+        
+        let data = CursedObject::Map(map);
+        let result = renderer.render(&data).unwrap();
+        
+        assert!(result.contains("# My Project"));
+        assert!(result.contains("A great project"));
+        assert!(result.contains("## Installation"));
+        assert!(result.contains("npm install"));
+    }
+
+    #[test]
+    fn test_makefile_rendering() {
+        let renderer = TemplateFormatRenderer::new(
+            TemplateFormat::Build(BuildFormat::Makefile)
+        );
+        
+        let mut build_config = HashMap::new();
+        build_config.insert("dependencies".to_string(), CursedObject::String("clean".to_string()));
+        
+        let commands = vec![
+            CursedObject::String("cargo build".to_string()),
+            CursedObject::String("strip target/release/myapp".to_string()),
+        ];
+        build_config.insert("commands".to_string(), CursedObject::Array(commands));
+        
+        let mut map = HashMap::new();
+        map.insert("build".to_string(), CursedObject::Map(build_config));
+        
+        let data = CursedObject::Map(map);
+        let result = renderer.render(&data).unwrap();
+        
+        assert!(result.contains("build: clean"));
+        assert!(result.contains("\tcargo build"));
+        assert!(result.contains("\tstrip target/release/myapp"));
+    }
+
+    #[test]
+    fn test_kubernetes_rendering() {
+        let renderer = TemplateFormatRenderer::new(
+            TemplateFormat::Config(ConfigFormat::Kubernetes)
+        );
+        
+        let mut metadata = HashMap::new();
+        metadata.insert("name".to_string(), CursedObject::String("my-app".to_string()));
+        metadata.insert("namespace".to_string(), CursedObject::String("default".to_string()));
+        
+        let mut spec = HashMap::new();
+        spec.insert("replicas".to_string(), CursedObject::Integer(3));
+        
+        let mut map = HashMap::new();
+        map.insert("kind".to_string(), CursedObject::String("Deployment".to_string()));
+        map.insert("metadata".to_string(), CursedObject::Map(metadata));
+        map.insert("spec".to_string(), CursedObject::Map(spec));
+        
+        let data = CursedObject::Map(map);
+        let result = renderer.render(&data).unwrap();
+        
+        assert!(result.contains("apiVersion: v1"));
+        assert!(result.contains("kind: Deployment"));
+        assert!(result.contains("name: my-app"));
+        assert!(result.contains("replicas: 3"));
+    }
+
+    #[test]
+    fn test_openapi_rendering() {
+        let renderer = TemplateFormatRenderer::new(
+            TemplateFormat::Api(ApiFormat::OpenApi)
+        );
+        
+        let mut info = HashMap::new();
+        info.insert("title".to_string(), CursedObject::String("My API".to_string()));
+        info.insert("version".to_string(), CursedObject::String("1.0.0".to_string()));
+        
+        let mut paths = HashMap::new();
+        let mut get_users = HashMap::new();
+        get_users.insert("summary".to_string(), CursedObject::String("Get users".to_string()));
+        paths.insert("/users".to_string(), CursedObject::Map(get_users));
+        
+        let mut map = HashMap::new();
+        map.insert("info".to_string(), CursedObject::Map(info));
+        map.insert("paths".to_string(), CursedObject::Map(paths));
+        
+        let data = CursedObject::Map(map);
+        let result = renderer.render(&data).unwrap();
+        
+        assert!(result.contains("openapi: 3.0.0"));
+        assert!(result.contains("title: My API"));
+        assert!(result.contains("version: 1.0.0"));
+    }
+
+    #[test]
+    fn test_format_detection_from_extension() {
+        assert!(matches!(
+            FormatDetector::from_extension("file.json"),
+            Some(TemplateFormat::Json)
+        ));
+        
+        assert!(matches!(
+            FormatDetector::from_extension("file.yaml"),
+            Some(TemplateFormat::Yaml)
+        ));
+        
+        assert!(matches!(
+            FormatDetector::from_extension("Makefile"),
+            Some(TemplateFormat::Build(BuildFormat::Makefile))
+        ));
+        
+        assert!(matches!(
+            FormatDetector::from_extension("README.md"),
+            Some(TemplateFormat::Document(DocumentFormat::Readme))
+        ));
+    }
+
+    #[test]
+    fn test_format_detection_from_content() {
+        assert!(matches!(
+            FormatDetector::from_content(r#"{"key": "value"}"#),
+            Some(TemplateFormat::Json)
+        ));
+        
+        assert!(matches!(
+            FormatDetector::from_content("<?xml version=\"1.0\"?><root></root>"),
+            Some(TemplateFormat::Xml)
+        ));
+        
+        assert!(matches!(
+            FormatDetector::from_content("FROM ubuntu:20.04\nRUN apt-get update"),
+            Some(TemplateFormat::Config(ConfigFormat::Dockerfile))
+        ));
+        
+        assert!(matches!(
+            FormatDetector::from_content("server {\n  listen 80;\n}"),
+            Some(TemplateFormat::Config(ConfigFormat::Nginx))
+        ));
+    }
+
+    #[test]
+    fn test_content_type_headers() {
+        let json_renderer = TemplateFormatRenderer::new(TemplateFormat::Json);
+        assert_eq!(json_renderer.content_type(), "application/json");
+        
+        let html_renderer = TemplateFormatRenderer::new(TemplateFormat::Html);
+        assert_eq!(html_renderer.content_type(), "text/html");
+        
+        let yaml_renderer = TemplateFormatRenderer::new(TemplateFormat::Yaml);
+        assert_eq!(yaml_renderer.content_type(), "application/x-yaml");
+    }
+
+    #[test]
+    fn test_format_validation() {
+        let json_renderer = TemplateFormatRenderer::new(TemplateFormat::Json);
+        
+        // Valid JSON should pass
+        assert!(json_renderer.validate(r#"{"valid": true}"#).is_ok());
+        
+        // Invalid JSON should fail
+        assert!(json_renderer.validate(r#"{"invalid": }"#).is_err());
+    }
+
+    #[test]
+    fn test_template_composition() {
+        let mut map1 = HashMap::new();
+        map1.insert("section".to_string(), CursedObject::String("Header".to_string()));
+        
+        let mut map2 = HashMap::new();
+        map2.insert("section".to_string(), CursedObject::String("Body".to_string()));
+        
+        let obj1 = CursedObject::Map(map1);
+        let obj2 = CursedObject::Map(map2);
+        
+        let templates = vec![
+            (TemplateFormat::Text, &obj1),
+            (TemplateFormat::Text, &obj2),
+        ];
+        
+        let result = FormatConverter::compose(&templates, "\n---\n").unwrap();
+        assert!(result.contains("Header"));
+        assert!(result.contains("Body"));
+        assert!(result.contains("---"));
     }
 }
