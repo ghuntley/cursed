@@ -1,5 +1,5 @@
 use cursed::ast::expressions::question_mark::QuestionMarkExpression;
-use cursed::ast::expressions::Expression;
+use cursed::ast::Expression;
 use cursed::codegen::llvm::LlvmCodeGeneratorReal;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
@@ -358,12 +358,11 @@ fn compile_and_analyze(test_name: &str, code: &str) -> Result<CompilationAnalysi
     let builder = context.create_builder();
     let runtime = Arc::new(Runtime::new());
 
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder, runtime);
+    let mut codegen = LlvmCodeGeneratorReal::new(&context, module, builder, runtime)?;
 
     // Parse the code
-    let mut lexer = Lexer::new(code);
-    let tokens = lexer.tokenize()?;
-    let mut parser = Parser::new(tokens);
+    let mut lexer = Lexer::new(code.to_string());
+    let mut parser = Parser::new(lexer)?;
     let ast = parser.parse()?;
 
     // Count ? operators in the AST
