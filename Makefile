@@ -2060,3 +2060,23 @@ error-propagation-help:
 	@echo "  make error-propagation-test-integration # Integration tests"
 	@echo "  make error-propagation-test-runtime    # Runtime execution tests"
 	@echo "  make error-propagation-test-all        # Comprehensive testing"
+
+# Template Cache Testing Commands
+template-cache-test:
+	$(LINK_FIX) cargo test --test template_cache_comprehensive_test
+
+template-cache-test-unit:
+	$(LINK_FIX) cargo test --lib template_cache
+
+template-cache-test-all: template-cache-test template-cache-test-unit
+
+# Template cache performance tests (ignored by default)
+template-cache-test-performance:
+	$(LINK_FIX) cargo test --test template_cache_comprehensive_test test_parallel_cache_operations --release
+
+template-cache-help:
+	@echo "Template Cache Testing Commands:"
+	@echo "  template-cache-test                - Run comprehensive cache tests"
+	@echo "  template-cache-test-unit          - Run unit tests for cache module"
+	@echo "  template-cache-test-all           - Run all cache tests"
+	@echo "  template-cache-test-performance   - Run performance tests"

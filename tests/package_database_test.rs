@@ -12,7 +12,7 @@ use tempfile::TempDir;
 use chrono::Utc;
 
 use cursed::package_manager::{
-    PackageDatabase, SharedPackageDatabase, InstalledPackage, PackageMetadata, FileOperation,
+    PackageDatabase, SharedPackageDatabase, InstalledPackage, PackageMetadata, FileOperation, VersionSpec,
     installer::FileOperationType,
     database::{DatabaseError, InstallAction, PackageDependency, InstallationHistory, DatabaseStatistics},
 };
@@ -83,11 +83,11 @@ impl DatabaseTestFixture {
         let mut dev_dependencies = HashMap::new();
         
         for (dep_name, dep_version) in deps {
-            dependencies.insert(dep_name.to_string(), dep_version.to_string());
+            dependencies.insert(dep_name.to_string(), VersionSpec::Simple(dep_version.to_string()));
         }
         
         // Add some dev dependencies for testing
-        dev_dependencies.insert("test-utils".to_string(), "^1.0.0".to_string());
+        dev_dependencies.insert("test-utils".to_string(), VersionSpec::Simple("^1.0.0".to_string()));
         
         let metadata = PackageMetadata {
             name: name.to_string(),

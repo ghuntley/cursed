@@ -1754,7 +1754,7 @@ mod tests {
         session.set("test".to_string(), SessionValue::String("value".to_string()));
 
         let serialized = session.serialize();
-        let deserialized = Session::deserialize(&serialized).unwrap();
+        let mut deserialized = Session::deserialize(&serialized).unwrap();
 
         assert_eq!(session.id, deserialized.id);
         assert_eq!(
@@ -1805,9 +1805,11 @@ mod tests {
             same_site: SameSitePolicy::Lax,
             store_type: SessionStoreType::Memory,
             cleanup_interval: Duration::from_secs(300),
+            database_timeout: Duration::from_secs(30),
+            session_timeout: Duration::from_secs(1800),
         };
 
-        let mut manager = SessionManager::new(config);
+        let mut manager = SessionManager::new(config).unwrap();
         
         // Create session
         let session = manager.create_session().unwrap();
@@ -1834,9 +1836,11 @@ mod tests {
             same_site: SameSitePolicy::Lax,
             store_type: SessionStoreType::Memory,
             cleanup_interval: Duration::from_secs(300),
+            database_timeout: Duration::from_secs(30),
+            session_timeout: Duration::from_secs(1800),
         };
 
-        let manager = SessionManager::new(config);
+        let manager = SessionManager::new(config).unwrap();
         
         let cookie_header = "cursed_session=abc123; other_cookie=value";
         let session_id = manager.parse_session_id_from_cookie(cookie_header);
@@ -1945,7 +1949,7 @@ mod tests {
 
     #[test]
     fn test_database_session_store() {
-        let mut store = DatabaseSessionStore::new("test_sessions.db".to_string());
+        let mut store = DatabaseSessionStore::new("test_sessions.db".to_string()).unwrap();
         let session = Session::new();
 
         // Save session
@@ -1966,7 +1970,7 @@ mod tests {
 
     #[test]
     fn test_database_session_expiry_cleanup() {
-        let mut store = DatabaseSessionStore::new("test_sessions_cleanup.db".to_string());
+        let mut store = DatabaseSessionStore::new("test_sessions_cleanup.db".to_string()).unwrap();
         let mut session1 = Session::new();
         let mut session2 = Session::new();
         
@@ -1990,7 +1994,7 @@ mod tests {
 
     #[test]
     fn test_database_session_data_persistence() {
-        let mut store = DatabaseSessionStore::new("test_sessions_data.db".to_string());
+        let mut store = DatabaseSessionStore::new("test_sessions_data.db".to_string()).unwrap();
         let mut session = Session::new();
         
         // Add some session data
@@ -2000,7 +2004,7 @@ mod tests {
         
         // Save and reload
         store.save(&session).unwrap();
-        let loaded = store.load(&session.id).unwrap().unwrap();
+        let mut loaded = store.load(&session.id).unwrap().unwrap();
         
         // Verify data persistence
         assert_eq!(loaded.get("user_id").unwrap().as_string(), Some("12345"));
@@ -2011,9 +2015,9 @@ mod tests {
     #[test]
     fn test_database_connection_string_parsing() {
         // Test SQLite variations
-        let store1 = DatabaseSessionStore::new("sqlite://test.db".to_string());
-        let store2 = DatabaseSessionStore::new("test.sqlite".to_string());
-        let store3 = DatabaseSessionStore::new("test.sqlite3".to_string());
+        let store1 = DatabaseSessionStore::new("sqlite://test.db".to_string()).unwrap();
+        let store2 = DatabaseSessionStore::new("test.sqlite".to_string()).unwrap();
+        let store3 = DatabaseSessionStore::new("test.sqlite3".to_string()).unwrap();
         
         // These should not panic when creating connection
         let _db1 = store1.ensure_connection();
@@ -2023,10 +2027,9 @@ mod tests {
 
     #[test]
     fn test_database_session_error_handling() {
-        let store = DatabaseSessionStore::new("".to_string()); // Invalid connection string
+        let result = DatabaseSessionStore::new("".to_string()); // Invalid connection string
         
-        // Should handle gracefully
-        let result = store.db_select("nonexistent");
+        // Should handle gracefully - constructor should fail
         assert!(result.is_err());
     }
 
@@ -2035,7 +2038,7 @@ mod tests {
         use std::thread;
         use std::sync::Arc;
         
-        let store = Arc::new(DatabaseSessionStore::new("test_concurrent.db".to_string()));
+        let store = Arc::new(DatabaseSessionStore::new("test_concurrent.db".to_string()).unwrap());
         let mut handles = vec![];
         
         // Spawn multiple threads accessing the same store
@@ -2062,7 +2065,7 @@ mod tests {
 
     #[test]
     fn test_database_table_initialization() {
-        let store = DatabaseSessionStore::new("test_init.db".to_string());
+        let store = DatabaseSessionStore::new("test_init.db".to_string()).unwrap();
         
         // Ensure connection initializes table
         let _db = store.ensure_connection().unwrap();
@@ -2082,9 +2085,11 @@ mod tests {
             same_site: SameSitePolicy::Lax,
             store_type: SessionStoreType::Redis("redis://127.0.0.1:6379/1".to_string()),
             cleanup_interval: Duration::from_secs(300),
+            database_timeout: Duration::from_secs(30),
+            session_timeout: Duration::from_secs(1800),
         };
 
-        let mut manager = SessionManager::new(config);
+        let mut manager = SessionManager::new(config).unwrap();
         
         // Test if Redis is available - if not, skip test
         let test_store = RedisSessionStore::new("redis://127.0.0.1:6379/1".to_string());
@@ -2120,9 +2125,11 @@ mod tests {
             same_site: SameSitePolicy::Lax,
             store_type: SessionStoreType::Database("sqlite://sessions.db".to_string()),
             cleanup_interval: Duration::from_secs(300),
+            database_timeout: Duration::from_secs(30),
+            session_timeout: Duration::from_secs(1800),
         };
 
-        let mut manager = SessionManager::new(config);
+        let mut manager = SessionManager::new(config).unwrap();
         
         // Create session
         let session = manager.create_session().unwrap();
