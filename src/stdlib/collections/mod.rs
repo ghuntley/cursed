@@ -11,12 +11,14 @@ pub mod sets;
 pub mod queues;
 pub mod stacks;
 pub mod iterators_simple;
+pub mod advanced;
 
 // Re-export all public types and functions for easy access
 pub use sets::*;
 pub use queues::*;
 pub use stacks::*;
 pub use iterators_simple::*;
+pub use advanced::*;
 
 // Collections result type
 pub type CollectionsResult<T> = Result<T, CollectionsError>;
@@ -32,6 +34,7 @@ pub enum CollectionsError {
     OperationNotSupported { operation: String, collection_type: String },
     InsufficientMemory { requested: usize },
     InvalidBitIndex { index: usize, max_bits: usize },
+    InvalidOperation { operation: String, reason: String },
 }
 
 impl std::fmt::Display for CollectionsError {
@@ -60,6 +63,9 @@ impl std::fmt::Display for CollectionsError {
             }
             CollectionsError::InvalidBitIndex { index, max_bits } => {
                 write!(f, "Bit index {} out of bounds (max: {})", index, max_bits)
+            }
+            CollectionsError::InvalidOperation { operation, reason } => {
+                write!(f, "Invalid operation '{}': {}", operation, reason)
             }
         }
     }

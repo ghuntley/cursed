@@ -15,7 +15,10 @@ pub mod rsa;
 pub mod ecc;
 pub mod x25519;
 pub mod key_exchange;
+pub mod key_agreement;
 pub mod asymmetric;
+pub mod key_validation;
+pub mod hardware_acceleration;
 
 // Core functionality exports
 pub use key_generator::{KeyGenerator, AsymmetricAlgorithm, GeneratedKeyPair, KeyGeneratorError};
@@ -43,11 +46,23 @@ pub use key_exchange::{
     dh_key_exchange, dh_generate_keypair, x448_key_exchange, x448_generate_keypair,
     validate_key_exchange_params, list_key_exchange_algorithms, derive_key_from_shared_secret
 };
+pub use key_agreement::{
+    KeyAgreementAlgorithm, KeyAgreementResult, key_agreement,
+    ecdh_p256_agreement, ecdh_p384_agreement, ecdh_p521_agreement,
+    x25519_agreement, x448_agreement, rsa_oaep_agreement,
+    validate_key_agreement_params, list_key_agreement_algorithms,
+    derive_key_from_shared_secret as derive_key_agreement
+};
 pub use key_generator::{generate_asymmetric_keypair, list_asymmetric_algorithms};
 pub use asymmetric::{
     AsymmetricCrypto, generate_asymmetric_keypair as generate_keypair_unified,
     asymmetric_sign, asymmetric_verify, asymmetric_key_exchange,
     get_asymmetric_algorithms, get_asymmetric_capabilities
+};
+pub use key_validation::{validate_key, validate_key_pair, validate_key_strength};
+pub use hardware_acceleration::{
+    check_hardware_support, has_cpu_feature, get_available_hsms, refresh_hardware_detection,
+    get_hardware_detector
 };
 
 use crate::error::CursedError;

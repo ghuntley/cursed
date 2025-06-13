@@ -209,12 +209,36 @@ impl ProcessIo {
             ProcessIo::Null => Ok(Stdio::null()),
             ProcessIo::File(path) => {
                 let file = File::open(path)?;
-                Ok(file.into())
+                Ok(Stdio::from(file))
             }
-            ProcessIo::Custom(stdio) => {
-                // Note: Can't clone Stdio, so this is a simplified approach
+            ProcessIo::Custom(_) => {
+                // Stdio cannot be cloned, so default to inherit
                 Ok(Stdio::inherit())
             }
+        }
+    }
+
+    /// Create ProcessIo from file for writing
+    pub fn write_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        Ok(ProcessIo::File(path.as_ref().to_path_buf()))
+    }
+
+    /// Create ProcessIo from file for reading
+    pub fn read_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        Ok(ProcessIo::File(path.as_ref().to_path_buf()))
+    }
+
+    /// Convert to stdio for output (create or truncate file)
+    pub fn to_output_stdio(&self) -> io::Result<Stdio> {
+        match self {
+            ProcessIo::Inherit => Ok(Stdio::inherit()),
+            ProcessIo::Pipe => Ok(Stdio::piped()),
+            ProcessIo::Null => Ok(Stdio::null()),
+            ProcessIo::File(path) => {
+                let file = File::create(path)?;
+                Ok(Stdio::from(file))
+            }
+            ProcessIo::Custom(_) => Ok(Stdio::inherit()),
         }
     }
 }
@@ -274,6 +298,10 @@ pub struct Process {
     start_time: Instant,
     /// Output buffers (if capturing)
     output_buffer: Arc<Mutex<(Vec<u8>, Vec<u8>)>>,
+    /// Background threads for output capture
+    output_threads: Vec<thread::JoinHandle<()>>,
+    /// Process monitoring enabled
+    monitoring_enabled: bool,
 }
 
 impl Process {
@@ -380,12 +408,114 @@ impl Process {
             Err(e) => Err(io_error("is_running", &format!("{:?}", e.kind()), &e.to_string())),
         }
     }
+
+    /// Start background output capture threads
+    fn start_output_capture(&mut self) -> ProcessResult<()> {
+        // Don't start capture if not using pipes
+        if !matches!(self.config.stdout, ProcessIo::Pipe) && 
+           !matches!(self.config.stderr, ProcessIo::Pipe) {
+            return Ok(());
+        }
+
+        let buffer = Arc::clone(&self.output_buffer);
+        
+        // Capture stdout in background thread
+        if matches!(self.config.stdout, ProcessIo::Pipe) {
+            if let Some(stdout) = self.child.stdout.take() {
+                let buffer_clone = Arc::clone(&buffer);
+                let handle = thread::spawn(move || {
+                    let mut reader = BufReader::new(stdout);
+                    let mut line = String::new();
+                    while reader.read_line(&mut line).unwrap_or(0) > 0 {
+                        if let Ok(mut buf) = buffer_clone.lock() {
+                            buf.0.extend_from_slice(line.as_bytes());
+                        }
+                        line.clear();
+                    }
+                });
+                self.output_threads.push(handle);
+            }
+        }
+
+        // Capture stderr in background thread
+        if matches!(self.config.stderr, ProcessIo::Pipe) {
+            if let Some(stderr) = self.child.stderr.take() {
+                let buffer_clone = Arc::clone(&buffer);
+                let handle = thread::spawn(move || {
+                    let mut reader = BufReader::new(stderr);
+                    let mut line = String::new();
+                    while reader.read_line(&mut line).unwrap_or(0) > 0 {
+                        if let Ok(mut buf) = buffer_clone.lock() {
+                            buf.1.extend_from_slice(line.as_bytes());
+                        }
+                        line.clear();
+                    }
+                });
+                self.output_threads.push(handle);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get captured output
+    pub fn get_output(&self) -> ProcessResult<(Vec<u8>, Vec<u8>)> {
+        if let Ok(buffer) = self.output_buffer.lock() {
+            Ok(buffer.clone())
+        } else {
+            Err(io_error("get_output", "LockError", "Failed to lock output buffer"))
+        }
+    }
+
+    /// Enable process monitoring
+    pub fn enable_monitoring(&mut self) {
+        self.monitoring_enabled = true;
+    }
+
+    /// Check if monitoring is enabled
+    pub fn is_monitoring_enabled(&self) -> bool {
+        self.monitoring_enabled
+    }
+
+    /// Send a signal to the process (Unix only)
+    #[cfg(unix)]
+    pub fn send_signal(&self, signal: i32) -> ProcessResult<()> {
+        use crate::stdlib::process::control::send_signal_to_pid;
+        send_signal_to_pid(self.id(), signal)
+    }
+
+    /// Terminate process gracefully
+    pub fn terminate(&mut self) -> ProcessResult<()> {
+        #[cfg(unix)]
+        {
+            self.send_signal(15)?; // SIGTERM
+            
+            // Wait briefly for graceful termination
+            if let Ok(Some(_)) = self.wait_timeout(Duration::from_secs(5)) {
+                return Ok(());
+            }
+            
+            // Force kill if still running
+            self.kill()
+        }
+
+        #[cfg(windows)]
+        {
+            // On Windows, just kill the process
+            self.kill()
+        }
+    }
 }
 
 impl Drop for Process {
     fn drop(&mut self) {
-        // Attempt to kill the process if it's still running
-        let _ = self.child.kill();
+        // Attempt to terminate the process gracefully
+        let _ = self.terminate();
+        
+        // Wait for output threads to finish
+        while let Some(handle) = self.output_threads.pop() {
+            let _ = handle.join();
+        }
     }
 }
 
@@ -413,10 +543,10 @@ pub fn spawn_process(config: ProcessConfig) -> ProcessResult<Process> {
     command.stdin(config.stdin.to_stdio().map_err(|e| {
         io_error("configure_stdin", &format!("{:?}", e.kind()), &e.to_string())
     })?);
-    command.stdout(config.stdout.to_stdio().map_err(|e| {
+    command.stdout(config.stdout.to_output_stdio().map_err(|e| {
         io_error("configure_stdout", &format!("{:?}", e.kind()), &e.to_string())
     })?);
-    command.stderr(config.stderr.to_stdio().map_err(|e| {
+    command.stderr(config.stderr.to_output_stdio().map_err(|e| {
         io_error("configure_stderr", &format!("{:?}", e.kind()), &e.to_string())
     })?);
 
@@ -438,12 +568,19 @@ pub fn spawn_process(config: ProcessConfig) -> ProcessResult<Process> {
     let child = command.spawn()
         .map_err(|e| execution_failed(&config.command, &e.to_string()))?;
 
-    Ok(Process {
+    let mut process = Process {
         config,
         child,
         start_time: Instant::now(),
         output_buffer: Arc::new(Mutex::new((Vec::new(), Vec::new()))),
-    })
+        output_threads: Vec::new(),
+        monitoring_enabled: false,
+    };
+
+    // Start background output capture if stdout/stderr are piped
+    process.start_output_capture()?;
+
+    Ok(process)
 }
 
 /// Run a command and wait for completion

@@ -100,10 +100,12 @@ pub struct PerformanceMetrics {
 pub struct PerformanceHistory {
     /// Process ID
     pub pid: u32,
-    /// Historical metrics
-    metrics: Vec<PerformanceMetrics>,
-    /// Maximum history size
-    max_size: usize,
+    /// Maximum number of samples to keep
+    pub max_samples: usize,
+    /// Historical metrics samples
+    pub samples: Vec<PerformanceMetrics>,
+    /// Creation time
+    pub created_at: SystemTime,
 }
 
 /// Process monitor for tracking multiple processes
@@ -1071,4 +1073,413 @@ pub fn get_system_resource_summary() -> ProcessResult<HashMap<String, u64>> {
     }
     
     Ok(summary)
+}
+
+impl PerformanceHistory {
+    /// Create a new performance history tracker
+    pub fn new(pid: u32, max_samples: usize) -> Self {
+        Self {
+            pid,
+            max_samples,
+            samples: Vec::new(),
+            created_at: SystemTime::now(),
+        }
+    }
+
+    /// Add a new performance sample
+    pub fn add_sample(&mut self, metrics: PerformanceMetrics) {
+        self.samples.push(metrics);
+        
+        // Keep only the most recent samples
+        if self.samples.len() > self.max_samples {
+            self.samples.remove(0);
+        }
+    }
+
+    /// Get the latest performance metrics
+    pub fn latest(&self) -> Option<&PerformanceMetrics> {
+        self.samples.last()
+    }
+
+    /// Get average CPU usage over the history
+    pub fn average_cpu_usage(&self) -> f64 {
+        if self.samples.is_empty() {
+            return 0.0;
+        }
+        
+        let sum: f64 = self.samples.iter().map(|s| s.cpu_percent).sum();
+        sum / self.samples.len() as f64
+    }
+
+    /// Get average memory usage over the history
+    pub fn average_memory_usage(&self) -> u64 {
+        if self.samples.is_empty() {
+            return 0;
+        }
+        
+        let sum: u64 = self.samples.iter().map(|s| s.memory_bytes).sum();
+        sum / self.samples.len() as u64
+    }
+
+    /// Get peak memory usage
+    pub fn peak_memory_usage(&self) -> u64 {
+        self.samples.iter().map(|s| s.memory_bytes).max().unwrap_or(0)
+    }
+
+    /// Get peak CPU usage
+    pub fn peak_cpu_usage(&self) -> f64 {
+        self.samples.iter().map(|s| s.cpu_percent).fold(0.0, f64::max)
+    }
+
+    /// Check if performance is trending upward (degrading)
+    pub fn is_degrading(&self, threshold: f64) -> bool {
+        if self.samples.len() < 3 {
+            return false;
+        }
+        
+        let recent_avg = self.samples.iter().rev().take(3)
+            .map(|s| s.cpu_percent).sum::<f64>() / 3.0;
+        let older_avg = self.samples.iter().rev().skip(3).take(3)
+            .map(|s| s.cpu_percent).sum::<f64>() / 3.0;
+        
+        recent_avg > older_avg + threshold
+    }
+
+    /// Get samples within a time range
+    pub fn samples_in_range(&self, start: SystemTime, end: SystemTime) -> Vec<&PerformanceMetrics> {
+        self.samples.iter()
+            .filter(|s| s.timestamp >= start && s.timestamp <= end)
+            .collect()
+    }
+
+    /// Clear all samples
+    pub fn clear(&mut self) {
+        self.samples.clear();
+    }
+
+    /// Get total tracking duration
+    pub fn tracking_duration(&self) -> Duration {
+        self.created_at.elapsed().unwrap_or(Duration::from_secs(0))
+    }
+}
+
+impl MonitoredProcess {
+    /// Create a new monitored process
+    pub fn new(info: ProcessInfo, config: &HealthCheckConfig) -> Self {
+        Self {
+            info,
+            health_status: HealthStatus::Unknown,
+            performance_history: PerformanceHistory::new(info.pid, 100), // Keep 100 samples
+            last_check: SystemTime::now(),
+            failure_count: 0,
+            success_count: 0,
+            monitor_start_time: SystemTime::now(),
+        }
+    }
+
+    /// Update process information and check health
+    pub fn update(&mut self, config: &HealthCheckConfig) -> ProcessResult<()> {
+        // Get fresh process information
+        self.info = super::info::get_process_info(self.info.pid)?;
+        
+        // Create performance metrics
+        let metrics = PerformanceMetrics {
+            pid: self.info.pid,
+            timestamp: SystemTime::now(),
+            cpu_percent: self.info.cpu.cpu_percent,
+            memory_bytes: self.info.memory.resident_size,
+            virtual_memory_bytes: self.info.memory.virtual_size,
+            file_descriptors: self.info.fd_count,
+            threads: self.info.threads,
+            uptime: self.info.uptime,
+            io_read_bytes: 0, // Would need platform-specific implementation
+            io_write_bytes: 0, // Would need platform-specific implementation
+        };
+        
+        // Add to performance history
+        self.performance_history.add_sample(metrics);
+        
+        // Check health against thresholds
+        let previous_status = self.health_status.clone();
+        self.health_status = self.check_health(config);
+        
+        // Update failure/success counts
+        match self.health_status {
+            HealthStatus::Healthy => {
+                self.success_count += 1;
+                self.failure_count = 0;
+            }
+            HealthStatus::Failed | HealthStatus::Critical | HealthStatus::Unresponsive => {
+                self.failure_count += 1;
+                self.success_count = 0;
+            }
+            _ => {}
+        }
+        
+        self.last_check = SystemTime::now();
+        Ok(())
+    }
+
+    /// Check process health against thresholds
+    fn check_health(&self, config: &HealthCheckConfig) -> HealthStatus {
+        let latest = match self.performance_history.latest() {
+            Some(metrics) => metrics,
+            None => return HealthStatus::Unknown,
+        };
+
+        // Check if process is still running
+        if !super::info::is_process_running(self.info.pid) {
+            return HealthStatus::Failed;
+        }
+
+        // Check CPU usage
+        if latest.cpu_percent > config.thresholds.max_cpu_percent {
+            return HealthStatus::Critical;
+        }
+
+        // Check memory usage
+        if latest.memory_bytes > config.thresholds.max_memory_bytes {
+            return HealthStatus::Critical;
+        }
+
+        // Check file descriptors
+        if latest.file_descriptors > config.thresholds.max_file_descriptors {
+            return HealthStatus::Warning;
+        }
+
+        // Check thread count
+        if latest.threads > config.thresholds.max_threads {
+            return HealthStatus::Warning;
+        }
+
+        // Check execution time limit
+        if let Some(max_time) = config.thresholds.max_execution_time {
+            if latest.uptime > max_time {
+                return HealthStatus::Warning;
+            }
+        }
+
+        // Check for performance degradation
+        if self.performance_history.is_degrading(10.0) { // 10% CPU increase threshold
+            return HealthStatus::Warning;
+        }
+
+        HealthStatus::Healthy
+    }
+
+    /// Get monitoring duration
+    pub fn monitoring_duration(&self) -> Duration {
+        self.monitor_start_time.elapsed().unwrap_or(Duration::from_secs(0))
+    }
+
+    /// Check if process needs attention
+    pub fn needs_attention(&self, config: &HealthCheckConfig) -> bool {
+        match self.health_status {
+            HealthStatus::Failed => self.failure_count >= config.failure_threshold,
+            HealthStatus::Critical => self.failure_count >= 1,
+            HealthStatus::Unresponsive => self.failure_count >= 1,
+            _ => false,
+        }
+    }
+}
+
+impl ProcessMonitor {
+    /// Create a new process monitor
+    pub fn new(config: HealthCheckConfig) -> Self {
+        Self {
+            processes: Arc::new(RwLock::new(HashMap::new())),
+            config,
+            monitor_thread: None,
+            active: Arc::new(Mutex::new(false)),
+        }
+    }
+
+    /// Add a process to monitor
+    pub fn add_process(&self, pid: u32) -> ProcessResult<()> {
+        let info = super::info::get_process_info(pid)?;
+        let monitored_process = MonitoredProcess::new(info, &self.config);
+        
+        if let Ok(mut processes) = self.processes.write() {
+            processes.insert(pid, monitored_process);
+        }
+        
+        Ok(())
+    }
+
+    /// Remove a process from monitoring
+    pub fn remove_process(&self, pid: u32) -> bool {
+        if let Ok(mut processes) = self.processes.write() {
+            processes.remove(&pid).is_some()
+        } else {
+            false
+        }
+    }
+
+    /// Start monitoring
+    pub fn start(&mut self) -> ProcessResult<()> {
+        if let Ok(mut active) = self.active.lock() {
+            if *active {
+                return Ok(()); // Already running
+            }
+            *active = true;
+        }
+
+        let processes = Arc::clone(&self.processes);
+        let config = self.config.clone();
+        let active = Arc::clone(&self.active);
+
+        let handle = thread::spawn(move || {
+            while *active.lock().unwrap_or(&mut false) {
+                // Update all monitored processes
+                if let Ok(mut procs) = processes.write() {
+                    let mut to_remove = Vec::new();
+                    
+                    for (pid, process) in procs.iter_mut() {
+                        match process.update(&config) {
+                            Ok(()) => {
+                                // Log health status changes
+                                if process.needs_attention(&config) {
+                                    log::warn!("Process {} needs attention: {:?}", pid, process.health_status);
+                                }
+                            }
+                            Err(_) => {
+                                // Process probably died, mark for removal
+                                to_remove.push(*pid);
+                            }
+                        }
+                    }
+                    
+                    // Remove dead processes
+                    for pid in to_remove {
+                        procs.remove(&pid);
+                    }
+                }
+                
+                thread::sleep(config.check_interval);
+            }
+        });
+
+        self.monitor_thread = Some(handle);
+        Ok(())
+    }
+
+    /// Stop monitoring
+    pub fn stop(&mut self) {
+        if let Ok(mut active) = self.active.lock() {
+            *active = false;
+        }
+
+        if let Some(handle) = self.monitor_thread.take() {
+            let _ = handle.join();
+        }
+    }
+
+    /// Get status of all monitored processes
+    pub fn get_status(&self) -> HashMap<u32, (HealthStatus, SystemTime)> {
+        let mut status = HashMap::new();
+        
+        if let Ok(processes) = self.processes.read() {
+            for (pid, process) in processes.iter() {
+                status.insert(*pid, (process.health_status.clone(), process.last_check));
+            }
+        }
+        
+        status
+    }
+
+    /// Get detailed process information
+    pub fn get_process_details(&self, pid: u32) -> Option<MonitoredProcess> {
+        if let Ok(processes) = self.processes.read() {
+            processes.get(&pid).cloned()
+        } else {
+            None
+        }
+    }
+
+    /// Get processes by health status
+    pub fn get_processes_by_status(&self, status: HealthStatus) -> Vec<u32> {
+        let mut result = Vec::new();
+        
+        if let Ok(processes) = self.processes.read() {
+            for (pid, process) in processes.iter() {
+                if process.health_status == status {
+                    result.push(*pid);
+                }
+            }
+        }
+        
+        result
+    }
+
+    /// Get unhealthy processes
+    pub fn get_unhealthy_processes(&self) -> Vec<u32> {
+        let mut result = Vec::new();
+        
+        if let Ok(processes) = self.processes.read() {
+            for (pid, process) in processes.iter() {
+                match process.health_status {
+                    HealthStatus::Failed | HealthStatus::Critical | HealthStatus::Unresponsive => {
+                        result.push(*pid);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        
+        result
+    }
+}
+
+impl Drop for ProcessMonitor {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+
+impl Default for ResourceThresholds {
+    fn default() -> Self {
+        Self {
+            max_cpu_percent: 80.0,
+            max_memory_bytes: 1024 * 1024 * 1024, // 1GB
+            max_file_descriptors: 1000,
+            max_threads: 100,
+            max_execution_time: None,
+        }
+    }
+}
+
+impl Default for HealthCheckConfig {
+    fn default() -> Self {
+        Self {
+            check_interval: Duration::from_secs(30),
+            thresholds: ResourceThresholds::default(),
+            failure_threshold: 3,
+            success_threshold: 2,
+            check_responsiveness: true,
+            responsiveness_timeout: Duration::from_secs(5),
+        }
+    }
+}
+
+/// Create a simple process monitor with default configuration
+pub fn create_process_monitor() -> ProcessMonitor {
+    ProcessMonitor::new(HealthCheckConfig::default())
+}
+
+/// Monitor a single process and return its current metrics
+pub fn monitor_process_once(pid: u32) -> ProcessResult<PerformanceMetrics> {
+    let info = super::info::get_process_info(pid)?;
+    
+    Ok(PerformanceMetrics {
+        pid,
+        timestamp: SystemTime::now(),
+        cpu_percent: info.cpu.cpu_percent,
+        memory_bytes: info.memory.resident_size,
+        virtual_memory_bytes: info.memory.virtual_size,
+        file_descriptors: info.fd_count,
+        threads: info.threads,
+        uptime: info.uptime,
+        io_read_bytes: 0, // Platform-specific implementation needed
+        io_write_bytes: 0, // Platform-specific implementation needed
+    })
 }

@@ -326,6 +326,13 @@ impl TemplateCache {
     pub async fn get(&self, key: &str) -> Option<CacheEntryType> {
         debug!(key = key, "Multi-level cache lookup");
         
+        // Check if file has been modified before returning cached entry
+        if self.is_file_modified(key).await {
+            debug!(key = key, "Template file has been modified, invalidating cache");
+            self.invalidate(key).await;
+            return None;
+        }
+        
         let entries = self.entries.read().await;
         let entry = entries.get(key)?;
         
@@ -871,13 +878,95 @@ impl TemplateCache {
 
     /// Refresh file-based templates
     async fn refresh_file_based_templates(&self) {
+        use std::fs;
+        use std::path::Path;
+        
         if let Ok(watchers) = self.file_watchers.read() {
-            for (template_name, _timestamp) in watchers.iter() {
-                // In a real implementation, you'd check file modification times
-                // and reload changed templates
-                debug!("Checking template for refresh: {}", template_name);
+            for (template_name, cached_timestamp) in watchers.iter() {
+                // Check file modification time
+                let template_path = Path::new("templates").join(template_name);
+                
+                match fs::metadata(&template_path) {
+                    Ok(metadata) => {
+                        if let Ok(modified_time) = metadata.modified() {
+                            // If file has been modified since cache, invalidate
+                            if modified_time > *cached_timestamp {
+                                debug!("Template '{}' has been modified, invalidating cache", template_name);
+                                
+                                // Remove from cache
+                                if let Ok(mut cache) = self.cache.write() {
+                                    cache.remove(template_name);
+                                }
+                                
+                                // Update timestamp in watcher
+                                drop(watchers);
+                                if let Ok(mut watchers_mut) = self.file_watchers.write() {
+                                    watchers_mut.insert(template_name.clone(), modified_time);
+                                }
+                                break;
+                            } else {
+                                debug!("Template '{}' is up to date", template_name);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Failed to check metadata for template '{}': {}", template_name, e);
+                        // If file doesn't exist, remove from cache and watchers
+                        if let Ok(mut cache) = self.cache.write() {
+                            cache.remove(template_name);
+                        }
+                        drop(watchers);
+                        if let Ok(mut watchers_mut) = self.file_watchers.write() {
+                            watchers_mut.remove(template_name);
+                        }
+                        break;
+                    }
+                }
             }
         }
+    }
+
+    /// Check if a template file has been modified since caching
+    async fn is_file_modified(&self, template_name: &str) -> bool {
+        use std::fs;
+        use std::path::Path;
+        
+        // Check file watchers for cached timestamp
+        if let Ok(watchers) = self.file_watchers.read() {
+            if let Some(cached_timestamp) = watchers.get(template_name) {
+                let template_path = Path::new("templates").join(template_name);
+                
+                match fs::metadata(&template_path) {
+                    Ok(metadata) => {
+                        if let Ok(modified_time) = metadata.modified() {
+                            return modified_time > *cached_timestamp;
+                        }
+                    }
+                    Err(_) => {
+                        // File doesn't exist or can't be accessed
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        // If no cached timestamp, consider it modified
+        false
+    }
+
+    /// Invalidate a cached template entry
+    async fn invalidate(&self, template_name: &str) {
+        // Remove from cache
+        let mut entries = self.entries.write().await;
+        entries.remove(template_name);
+        drop(entries);
+        
+        // Remove from file watchers
+        if let Ok(mut watchers) = self.file_watchers.write() {
+            watchers.remove(template_name);
+        }
+        
+        debug!("Invalidated cache entry for template: {}", template_name);
     }
 
     /// Start background cleanup task (legacy compatibility)

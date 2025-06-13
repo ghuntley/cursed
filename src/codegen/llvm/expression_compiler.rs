@@ -55,6 +55,31 @@ impl LlvmValue {
     pub fn into_int_value(&self) -> Self {
         self.clone()
     }
+
+    /// Convenience constructors for common types
+    pub fn string() -> Self {
+        Self {
+            value_type: LlvmType::String,
+            llvm_name: "%string_temp".to_string(),
+            is_constant: false,
+        }
+    }
+
+    pub fn array() -> Self {
+        Self {
+            value_type: LlvmType::Array,
+            llvm_name: "%array_temp".to_string(),
+            is_constant: false,
+        }
+    }
+
+    pub fn object() -> Self {
+        Self {
+            value_type: LlvmType::Object,
+            llvm_name: "%object_temp".to_string(),
+            is_constant: false,
+        }
+    }
 }
 
 /// LLVM type system mapping
@@ -66,6 +91,8 @@ pub enum LlvmType {
     Boolean,
     String,
     Void,
+    Array,
+    Object,
     Pointer(Box<LlvmType>),
     Function {
         return_type: Box<LlvmType>,
@@ -82,6 +109,8 @@ impl LlvmType {
             LlvmType::Boolean => "i1".to_string(),
             LlvmType::String => "i8*".to_string(),
             LlvmType::Void => "void".to_string(),
+            LlvmType::Array => "i8*".to_string(), // Arrays are represented as opaque pointers
+            LlvmType::Object => "i8*".to_string(), // Objects are represented as opaque pointers
             LlvmType::Pointer(inner) => format!("{}*", inner.to_llvm_string()),
             LlvmType::Function { return_type, param_types } => {
                 let params: Vec<String> = param_types.iter()

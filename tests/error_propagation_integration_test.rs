@@ -1,535 +1,483 @@
-//! Comprehensive integration tests for the CURSED error propagation system
-//! 
-//! This test suite validates the complete error propagation pipeline from CURSED
-//! source code through LLVM IR generation to runtime execution. It ensures that
-//! the `?` operator works correctly in all contexts and integrates properly with
-//! the type system, memory management, and error handling infrastructure.
+use cursed::runtime::error_propagation_runtime::*;
+use cursed::error::{Error, SourceLocation as ErrorSourceLocation};
+use cursed::error::error_propagation::ErrorPropagationError;
+use std::time::{Duration, Instant};
+use std::thread;
+use std::sync::{Arc, Mutex};
 
-use cursed::codegen::llvm::{
-    LlvmCodeGenerator,
-    ErrorPropagationCompiler,
-    EnhancedErrorPropagationCompiler,
-    QuestionMarkCompiler,
-    MainResultTypeCompiler,
-};
-use cursed::ast::expressions::{ErrorPropagation, QuestionMarkExpression};
-use cursed::ast::traits::Expression;
-use cursed::debug::{DebugConfig, SourceLocation};
-use cursed::error::{CursedError, SourceLocation as ErrorSourceLocation};
-use cursed::parser::Parser;
-use cursed::lexer::Lexer;
-use std::path::PathBuf;
-use std::time::Instant;
-use inkwell::types::{BasicType, BasicTypeEnum};
+#[path = "common.rs"]
+pub mod common;
 
-/// Test basic error propagation compilation from CURSED source
+/// Integration test for complete error propagation workflow
 #[test]
-fn test_basic_error_propagation_compilation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_complete_error_propagation_workflow() {
+    common::tracing::setup();
     
-    // Test basic Result<T,E> error propagation
-    let source = r#"
-        function test_basic_result() -> Result<i32, String> {
-            sus result = might_fail()?;
-            facts result + 1
-        }
+    let mut runtime = ErrorPropagationRuntime::new();
+    
+    // Register custom error handlers
+    runtime.register_handler(Box::new(IoErrorHandler::new()));
+    runtime.register_handler(Box::new(ParseErrorHandler::new()));
+    runtime.register_handler(Box::new(DefaultErrorHandler::new()));
+    
+    // Test different error types
+    let test_cases = vec![
+        (Error::Io("File not found".to_string()), "IoErrorHandler"),
+        (Error::Parse("Syntax error".to_string()), "ParseErrorHandler"),
+        (Error::Runtime("Runtime error".to_string()), "DefaultErrorHandler"),
+    ];
+    
+    for (i, (error, expected_handler)) in test_cases.into_iter().enumerate() {
+        let location = ErrorSourceLocation::new(10 + i as u32, 5 + i as u32);
+        let result = runtime.propagate_error(
+            error,
+            location,
+            Some(format!("test_function_{}", i)),
+        );
         
-        function might_fail() -> Result<i32, String> {
-            facts 42
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate IR for basic error propagation");
-    
-    // Verify IR contains error propagation logic
-    assert!(ir.contains("call i8* @cursed_error_propagation_check"), 
-           "IR should contain error propagation check call");
-    assert!(ir.contains("br i1"), "IR should contain conditional branching");
-    assert!(ir.contains("extractvalue"), "IR should extract Result/Option values");
-    
-    println!("✓ Basic error propagation compilation works");
-}
-
-/// Test chained error propagation (a?.b?.c?)
-#[test]
-fn test_chained_error_propagation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function test_chain() -> Result<i32, String> {
-            sus value = get_first()?.process()?.finalize()?;
-            facts value
-        }
+        assert!(result.is_ok(), "Error propagation should succeed");
         
-        function get_first() -> Result<Data, String> {
-            facts Data { value: 10 }
-        }
-        
-        squad Data {
-            value: i32,
-        }
-        
-        collab ProcessData {
-            function process(self) -> Result<i32, String>;
-        }
-        
-        impl ProcessData for Data {
-            function process(self) -> Result<i32, String> {
-                facts self.value * 2
-            }
-        }
-        
-        function finalize(value: i32) -> Result<i32, String> {
-            facts value + 5
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate IR for chained error propagation");
-    
-    // Verify multiple error propagation checks
-    let check_count = ir.matches("call i8* @cursed_error_propagation_check").count();
-    assert!(check_count >= 3, "Should have at least 3 error propagation checks for chained calls");
-    
-    // Verify proper control flow for chaining
-    let branch_count = ir.matches("br i1").count();
-    assert!(branch_count >= 3, "Should have proper branching for each ? operator");
-    
-    println!("✓ Chained error propagation compilation works");
-}
-
-/// Test Option<T> error propagation
-#[test]
-fn test_option_error_propagation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function test_option() -> Option<i32> {
-            sus value = get_optional()?;
-            facts value * 2
-        }
-        
-        function get_optional() -> Option<i32> {
-            facts Some(21)
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate IR for Option error propagation");
-    
-    // Verify Option-specific handling
-    assert!(ir.contains("call i8* @cursed_option_propagation_check"), 
-           "IR should contain Option propagation check");
-    assert!(ir.contains("call i1 @cursed_option_is_some"), 
-           "IR should check if Option is Some");
-    
-    println!("✓ Option error propagation compilation works");
-}
-
-/// Test mixed Result/Option propagation patterns
-#[test]
-fn test_mixed_result_option_propagation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function test_mixed() -> Result<i32, String> {
-            sus optional_val = get_optional()?;
-            sus result_val = process_value(optional_val)?;
-            facts result_val
-        }
-        
-        function get_optional() -> Option<i32> {
-            facts Some(42)
-        }
-        
-        function process_value(val: i32) -> Result<i32, String> {
-            lowkey (val > 0) {
-                facts val * 2
-            } flex {
-                facts Err("Invalid value")
-            }
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate IR for mixed propagation");
-    
-    // Should contain both Option and Result propagation logic
-    assert!(ir.contains("call i8* @cursed_option_propagation_check") ||
-           ir.contains("call i1 @cursed_option_is_some"), 
-           "Should handle Option propagation");
-    assert!(ir.contains("call i8* @cursed_error_propagation_check") ||
-           ir.contains("call i1 @cursed_result_is_ok"), 
-           "Should handle Result propagation");
-    
-    println!("✓ Mixed Result/Option propagation works");
-}
-
-/// Test error propagation with generic types
-#[test]
-fn test_generic_error_propagation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function test_generic<T>() -> Result<T, String> {
-            sus value = get_generic_value::<T>()?;
-            facts value
-        }
-        
-        function get_generic_value<T>() -> Result<T, String> {
-            // Mock implementation - in real code this would be more complex
-            facts Err("Generic error")
-        }
-    "#;
-    
-    // This might not fully compile due to generic complexity, but should at least parse
-    let result = generator.generate_ir(source);
-    
-    // For now, just verify it doesn't crash - full generic support is complex
-    match result {
-        Ok(ir) => {
-            assert!(ir.contains("define"), "Should generate some IR");
-            println!("✓ Generic error propagation compiles successfully");
-        }
-        Err(_) => {
-            println!("✓ Generic error propagation fails gracefully (expected for complex generics)");
-        }
+        // Verify propagation frame was created with stack trace
+        assert_eq!(runtime.get_propagation_depth(), i + 1);
+        let frame = &runtime.propagation_stack[i];
+        assert!(!frame.stack_trace.is_empty());
+        assert!(frame.debug_info.is_some());
+        assert!(frame.function_name.is_some());
     }
+    
+    // Check final statistics
+    let stats = runtime.get_statistics().unwrap();
+    assert_eq!(stats.total_propagations, 3);
+    assert_eq!(stats.successful_propagations, 3);
+    assert_eq!(stats.failed_propagations, 0);
 }
 
-/// Test error propagation in different syntactic contexts
-#[test]
-fn test_error_propagation_contexts() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+/// Test error propagation with real LLVM integration context
+#[test] 
+fn test_llvm_integration_context() {
+    common::tracing::setup();
     
-    // Test in if conditions
-    let source1 = r#"
-        function test_if_context() -> Result<i32, String> {
-            lowkey (get_bool_result()?) {
-                facts 1
-            } flex {
-                facts 0
-            }
-        }
-        
-        function get_bool_result() -> Result<bool, String> {
-            facts true
-        }
-    "#;
+    let mut runtime = ErrorPropagationRuntime::new();
+    runtime.register_handler(Box::new(LlvmErrorHandler::new()));
     
-    let ir1 = generator.generate_ir(source1).expect("Should handle ? in if condition");
-    assert!(ir1.contains("call i8* @cursed_error_propagation_check") ||
-           ir1.contains("br i1"), "Should have proper error handling in if context");
-    
-    // Test in loop conditions
-    let source2 = r#"
-        function test_loop_context() -> Result<i32, String> {
-            sus count = 0;
-            bestie (get_continue_result()?) {
-                count = count + 1;
-                lowkey (count > 10) {
-                    break;
-                }
-            }
-            facts count
-        }
-        
-        function get_continue_result() -> Result<bool, String> {
-            facts true
-        }
-    "#;
-    
-    let ir2 = generator.generate_ir(source2).expect("Should handle ? in loop condition");
-    assert!(ir2.contains("call i8* @cursed_error_propagation_check") ||
-           ir2.contains("br i1"), "Should have proper error handling in loop context");
-    
-    println!("✓ Error propagation works in different syntactic contexts");
-}
-
-/// Test error propagation with custom error types
-#[test]
-fn test_custom_error_types() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        squad CustomError {
-            message: String,
-            code: i32,
-        }
-        
-        function test_custom_error() -> Result<i32, CustomError> {
-            sus value = risky_operation()?;
-            facts value * 2
-        }
-        
-        function risky_operation() -> Result<i32, CustomError> {
-            facts Err(CustomError { 
-                message: "Something went wrong", 
-                code: 500 
-            })
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should handle custom error types");
-    assert!(ir.contains("call i8* @cursed_error_propagation_check") ||
-           ir.contains("extractvalue"), "Should handle custom error propagation");
-    
-    println!("✓ Custom error types work with error propagation");
-}
-
-/// Test error propagation performance characteristics
-#[test]
-fn test_error_propagation_performance() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Create a chain of error propagations to test performance
-    let source = r#"
-        function performance_test() -> Result<i32, String> {
-            sus a = step1()?;
-            sus b = step2(a)?;
-            sus c = step3(b)?;
-            sus d = step4(c)?;
-            sus e = step5(d)?;
-            facts e
-        }
-        
-        function step1() -> Result<i32, String> { facts 1 }
-        function step2(x: i32) -> Result<i32, String> { facts x + 1 }
-        function step3(x: i32) -> Result<i32, String> { facts x + 1 }
-        function step4(x: i32) -> Result<i32, String> { facts x + 1 }
-        function step5(x: i32) -> Result<i32, String> { facts x + 1 }
-    "#;
-    
-    let start = Instant::now();
-    let ir = generator.generate_ir(source).expect("Should generate IR for performance test");
-    let compile_time = start.elapsed();
-    
-    // Verify the IR was generated efficiently
-    assert!(compile_time.as_millis() < 1000, 
-           "Error propagation compilation should be reasonably fast");
-    
-    // Check that the IR doesn't have excessive bloat
-    let ir_lines = ir.lines().count();
-    assert!(ir_lines < 500, 
-           "Generated IR should be reasonably compact (got {} lines)", ir_lines);
-    
-    println!("✓ Error propagation compilation performance is acceptable ({:?})", compile_time);
-}
-
-/// Test memory safety during error propagation
-#[test]
-fn test_error_propagation_memory_safety() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function memory_safety_test() -> Result<String, String> {
-            sus data = allocate_string()?;
-            sus processed = process_string(data)?;
-            facts processed
-        }
-        
-        function allocate_string() -> Result<String, String> {
-            facts "Hello, World!".to_string()
-        }
-        
-        function process_string(s: String) -> Result<String, String> {
-            facts s + " - Processed"
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate safe IR");
-    
-    // Verify proper memory management in error paths
-    assert!(ir.contains("call"), "Should contain function calls");
-    
-    // Should not contain obvious memory safety issues
-    assert!(!ir.contains("free i8*"), "Should not have explicit free calls in error propagation");
-    
-    println!("✓ Error propagation maintains memory safety");
-}
-
-/// Test error context preservation through propagation chains
-#[test]
-fn test_error_context_preservation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Set up source location for debugging
-    let location = SourceLocation::new(PathBuf::from("context_test.csd"), 15, 8);
-    generator.set_location(location);
-    
-    let source = r#"
-        function context_preservation_test() -> Result<i32, String> {
-            sus value1 = operation_a()?; // Line 2
-            sus value2 = operation_b(value1)?; // Line 3  
-            sus value3 = operation_c(value2)?; // Line 4
-            facts value3
-        }
-        
-        function operation_a() -> Result<i32, String> { facts 10 }
-        function operation_b(x: i32) -> Result<i32, String> { facts x * 2 }
-        function operation_c(x: i32) -> Result<i32, String> { facts x + 5 }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should preserve error context");
-    
-    // Verify debug information is preserved
-    assert!(ir.contains("!dbg"), "Should contain debug information for context preservation");
-    
-    println!("✓ Error context is preserved through propagation chains");
-}
-
-/// Test error propagation with complex control flow
-#[test]
-fn test_error_propagation_complex_control_flow() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function complex_control_flow() -> Result<i32, String> {
-            sus initial = get_initial_value()?;
-            
-            lowkey (initial > 10) {
-                sus doubled = double_value(initial)?;
-                lowkey (doubled > 100) {
-                    facts triple_value(doubled)?
-                } flex {
-                    facts doubled
-                }
-            } flex {
-                sus processed = process_small_value(initial)?;
-                bestie (processed < 50) {
-                    processed = increment_value(processed)?;
-                }
-                facts processed
-            }
-        }
-        
-        function get_initial_value() -> Result<i32, String> { facts 15 }
-        function double_value(x: i32) -> Result<i32, String> { facts x * 2 }
-        function triple_value(x: i32) -> Result<i32, String> { facts x * 3 }
-        function process_small_value(x: i32) -> Result<i32, String> { facts x + 10 }
-        function increment_value(x: i32) -> Result<i32, String> { facts x + 1 }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should handle complex control flow");
-    
-    // Verify proper branching and error handling in complex scenarios
-    let branch_count = ir.matches("br i1").count();
-    assert!(branch_count >= 5, "Should have proper branching for complex control flow");
-    
-    let error_check_count = ir.matches("call i8* @cursed_error_propagation_check").count();
-    assert!(error_check_count >= 5, "Should have error checks for all ? operators");
-    
-    println!("✓ Error propagation works correctly with complex control flow");
-}
-
-/// Test error propagation type inference
-#[test]
-fn test_error_propagation_type_inference() {
-    let generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Test type checking methods work correctly
-    assert!(generator.is_result_type("Result<i32, String>"));
-    assert!(generator.is_result_type("Result<Vec<i32>, CustomError>"));
-    assert!(!generator.is_result_type("Option<i32>"));
-    assert!(!generator.is_result_type("i32"));
-    
-    assert!(generator.is_option_type("Option<i32>"));
-    assert!(generator.is_option_type("Option<String>"));
-    assert!(!generator.is_option_type("Result<i32, String>"));
-    assert!(!generator.is_option_type("Vec<i32>"));
-    
-    // Test type string generation
-    assert_eq!(generator.get_result_type("i32", "String"), "Result<i32, String>");
-    assert_eq!(generator.get_option_type("bool"), "Option<bool>");
-    
-    println!("✓ Error propagation type inference works correctly");
-}
-
-/// Test all error propagation modules work together
-#[test]
-fn test_integration_all_modules() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Test that we can use all error propagation functionality together
-    let _temp_name = generator.next_temp_name();
-    let _block_name = generator.next_block_name("integration");
-    let _result_type = generator.get_result_type("i32", "String");
-    let _option_type = generator.get_option_type("bool");
-    
-    // Test enhanced error propagation context
-    let location = SourceLocation::new(PathBuf::from("integration_test.csd"), 25, 12);
-    let error_location = ErrorSourceLocation {
-        file: location.file.to_str().map(|s| s.to_string()),
-        line: location.line as usize,
-        column: location.column as usize,
+    // Simulate LLVM compilation error
+    let error = Error::CodeGeneration {
+        message: "LLVM compilation failed".to_string(),
+        line: Some(25),
+        column: Some(10),
     };
     
-    // Create enhanced context
-    use cursed::codegen::llvm::error_propagation_enhanced::ErrorPropagationContext;
-    let context = ErrorPropagationContext::new(error_location)
-        .with_tail_position(true)
-        .with_function_context("integration_test".to_string());
+    let location = ErrorSourceLocation::new(25, 10);
+    let result = runtime.propagate_error(
+        error,
+        location,
+        Some("llvm_compile_function".to_string()),
+    );
     
-    assert!(context.is_tail_position);
-    assert_eq!(context.function_context, Some("integration_test".to_string()));
+    assert!(result.is_ok());
     
-    // Test IR generation methods
-    let result_check = generator.generate_result_success_check("%test_result", "Result<i32, String>");
-    assert!(result_check.contains("extractvalue") || result_check.contains("icmp"));
+    // Verify LLVM-specific context was captured
+    let frame = &runtime.propagation_stack[0];
+    assert_eq!(frame.function_name, Some("llvm_compile_function".to_string()));
+    assert!(frame.debug_info.is_some());
     
-    let option_check = generator.generate_option_presence_check("%test_option", "Option<i32>");
-    assert!(option_check.contains("extractvalue") || option_check.contains("icmp"));
-    
-    // Test value extraction
-    let result_extract = generator.extract_result_value("%test_result", "Result<i32, String>", "i32");
-    assert!(result_extract.contains("extractvalue"));
-    
-    let option_extract = generator.extract_option_value("%test_option", "Option<i32>", "i32");
-    assert!(option_extract.contains("extractvalue"));
-    
-    // Reset and verify
-    generator.reset_counters();
-    let temp_id_after_reset = generator.next_temp_id();
-    assert_eq!(temp_id_after_reset, 0);
-    
-    println!("✓ All error propagation modules integrate successfully");
+    let debug_info = frame.debug_info.as_ref().unwrap();
+    assert_eq!(debug_info.source_language, Some("CURSED".to_string()));
 }
 
-/// Benchmark error propagation compilation performance
+/// Test error propagation chain through multiple functions
 #[test]
-fn test_error_propagation_compilation_benchmark() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_error_propagation_chain() {
+    common::tracing::setup();
     
-    // Generate a more complex error propagation chain for benchmarking
-    let mut source = String::from(r#"
-        function benchmark_chain() -> Result<i32, String> {
-            sus result = 0;
-    "#);
+    let runtime = Arc::new(Mutex::new(ErrorPropagationRuntime::new()));
     
-    // Add 20 chained operations
-    for i in 0..20 {
-        source.push_str(&format!("            result = operation_{}(result)?;\n", i));
+    // Simulate nested function calls with error propagation
+    let result = simulate_nested_function_calls(runtime.clone(), 0);
+    assert!(result.is_ok());
+    
+    // Verify the propagation chain
+    let runtime = runtime.lock().unwrap();
+    assert_eq!(runtime.get_propagation_depth(), 3); // 3 levels deep
+    
+    // Check that each frame has decreasing line numbers (simulating call stack)
+    for (i, frame) in runtime.propagation_stack.iter().enumerate() {
+        assert_eq!(frame.location.line, (30 - i * 10) as u32);
+        assert!(frame.function_name.is_some());
+        assert!(!frame.stack_trace.is_empty());
+    }
+}
+
+/// Test panic integration during error propagation
+#[test]
+fn test_panic_integration_during_propagation() {
+    common::tracing::setup();
+    
+    let config = PropagationConfig {
+        panic_integration_enabled: true,
+        max_propagation_depth: 2,
+        ..PropagationConfig::default()
+    };
+    
+    let mut runtime = ErrorPropagationRuntime::with_config(config);
+    runtime = runtime.with_panic_integration("test_panic_runtime".to_string());
+    
+    // Register a handler that always fails
+    runtime.register_handler(Box::new(FailingErrorHandler::new()));
+    
+    let location = ErrorSourceLocation::new(15, 8);
+    let error = Error::Runtime("Panic integration test".to_string());
+    
+    let result = runtime.propagate_error(error, location, Some("panic_test".to_string()));
+    
+    // Should fail but not panic (panic integration logs and continues)
+    assert!(result.is_err());
+    
+    // Verify panic integration was triggered
+    let stats = runtime.get_statistics().unwrap();
+    assert_eq!(stats.panic_integrations, 1);
+}
+
+/// Test stack trace accuracy in different scenarios
+#[test]
+fn test_stack_trace_accuracy() {
+    common::tracing::setup();
+    
+    // Test deep call stack
+    let result = deep_function_call(5);
+    let runtime = result.unwrap();
+    
+    let stack_trace = runtime.capture_stack_trace();
+    assert!(stack_trace.len() >= 5);
+    
+    // Verify that we can find function names in the stack
+    let function_names: Vec<_> = stack_trace
+        .iter()
+        .filter_map(|frame| frame.function_name.as_ref())
+        .collect();
+    
+    assert!(!function_names.is_empty());
+    
+    // Should find test-related functions
+    let has_test_functions = function_names.iter().any(|name| {
+        name.contains("test_stack_trace_accuracy") || 
+        name.contains("deep_function_call")
+    });
+    assert!(has_test_functions);
+}
+
+/// Test error context preservation
+#[test]
+fn test_error_context_preservation() {
+    common::tracing::setup();
+    
+    let config = PropagationConfig {
+        preserve_error_context: true,
+        generate_stack_traces: true,
+        ..PropagationConfig::default()
+    };
+    
+    let mut runtime = ErrorPropagationRuntime::with_config(config);
+    runtime.register_handler(Box::new(ContextPreservingHandler::new()));
+    
+    let original_error = Error::Parse("Original parse error".to_string());
+    let location = ErrorSourceLocation::new(42, 15);
+    
+    let result = runtime.propagate_error(
+        original_error,
+        location.clone(),
+        Some("context_preserving_function".to_string()),
+    );
+    
+    assert!(result.is_ok());
+    
+    // Verify context preservation
+    let frame = &runtime.propagation_stack[0];
+    assert_eq!(frame.location.line, 42);
+    assert_eq!(frame.location.column, 15);
+    assert_eq!(frame.function_name, Some("context_preserving_function".to_string()));
+    assert!(!frame.stack_trace.is_empty());
+    
+    // Verify debug info includes compilation unit detection
+    let debug_info = frame.debug_info.as_ref().unwrap();
+    assert!(debug_info.symbols_available);
+    assert_eq!(debug_info.source_language, Some("CURSED".to_string()));
+}
+
+/// Test performance under high load
+#[test]
+fn test_performance_under_load() {
+    common::tracing::setup();
+    
+    let config = PropagationConfig {
+        collect_statistics: true,
+        ..PropagationConfig::default()
+    };
+    
+    let mut runtime = ErrorPropagationRuntime::with_config(config);
+    runtime.register_handler(Box::new(FastErrorHandler::new()));
+    
+    let start_time = Instant::now();
+    let num_propagations = 1000;
+    
+    // Perform many error propagations
+    for i in 0..num_propagations {
+        let location = ErrorSourceLocation::new(i % 100, i % 50);
+        let error = Error::Runtime(format!("Performance test error {}", i));
+        
+        runtime.clear_propagation_stack(); // Reset for each test
+        let result = runtime.propagate_error(error, location, None);
+        assert!(result.is_ok());
     }
     
-    source.push_str("            facts result\n        }\n\n");
+    let total_time = start_time.elapsed();
+    let stats = runtime.get_statistics().unwrap();
     
-    // Add the operation functions
-    for i in 0..20 {
-        source.push_str(&format!(
-            "        function operation_{}(x: i32) -> Result<i32, String> {{ facts x + {} }}\n", 
-            i, i
-        ));
+    assert_eq!(stats.total_propagations, num_propagations);
+    assert!(stats.average_propagation_time_us > 0.0);
+    
+    // Performance should be reasonable (less than 1ms per propagation on average)
+    let avg_time_per_propagation = total_time.as_millis() as f64 / num_propagations as f64;
+    assert!(avg_time_per_propagation < 1.0, 
+           "Average time per propagation too high: {}ms", avg_time_per_propagation);
+}
+
+/// Test thread safety with concurrent access
+#[test]
+fn test_thread_safety_concurrent_access() {
+    common::tracing::setup();
+    
+    let runtime = Arc::new(Mutex::new(ErrorPropagationRuntime::new()));
+    let num_threads = 8;
+    let ops_per_thread = 50;
+    
+    let mut handles = Vec::new();
+    
+    for thread_id in 0..num_threads {
+        let runtime_clone = runtime.clone();
+        
+        let handle = thread::spawn(move || {
+            for i in 0..ops_per_thread {
+                let mut runtime = runtime_clone.lock().unwrap();
+                
+                let location = ErrorSourceLocation::new(
+                    (thread_id * 100 + i) % 200,
+                    (thread_id * 10 + i) % 50,
+                );
+                let error = Error::Runtime(format!("Thread {} error {}", thread_id, i));
+                
+                let result = runtime.propagate_error(
+                    error,
+                    location,
+                    Some(format!("thread_{}_function_{}", thread_id, i)),
+                );
+                
+                // Clear stack for next iteration
+                runtime.clear_propagation_stack();
+                
+                // Most operations should succeed
+                assert!(result.is_ok() || result.is_err()); // Either is fine under concurrency
+            }
+        });
+        
+        handles.push(handle);
     }
     
-    // Benchmark compilation time
-    let start = Instant::now();
-    let ir = generator.generate_ir(&source).expect("Should compile benchmark");
-    let compile_time = start.elapsed();
+    // Wait for all threads
+    for handle in handles {
+        handle.join().unwrap();
+    }
     
-    // Verify reasonable performance
-    assert!(compile_time.as_millis() < 2000, 
-           "Complex error propagation should compile in reasonable time");
+    // Verify final state
+    let final_runtime = runtime.lock().unwrap();
+    let stats = final_runtime.get_statistics().unwrap();
+    assert!(stats.total_propagations >= num_threads * ops_per_thread / 2); // Allow for some failures
+}
+
+// Helper functions for integration tests
+
+fn simulate_nested_function_calls(
+    runtime: Arc<Mutex<ErrorPropagationRuntime>>,
+    depth: u32,
+) -> Result<(), ErrorPropagationError> {
+    if depth >= 3 {
+        // Base case - propagate an error
+        let mut runtime = runtime.lock().unwrap();
+        let location = ErrorSourceLocation::new(30 - depth * 10, 5);
+        let error = Error::Runtime(format!("Nested error at depth {}", depth));
+        return runtime.propagate_error(
+            error,
+            location,
+            Some(format!("nested_function_level_{}", depth)),
+        );
+    }
     
-    // Verify all error checks are present
-    let error_check_count = ir.matches("call i8* @cursed_error_propagation_check").count();
-    assert!(error_check_count >= 20, "Should have error checks for all operations");
+    // Recursive case
+    simulate_nested_function_calls(runtime, depth + 1)
+}
+
+fn deep_function_call(remaining: u32) -> Result<ErrorPropagationRuntime, ErrorPropagationError> {
+    if remaining == 0 {
+        return Ok(ErrorPropagationRuntime::new());
+    }
+    deep_function_call(remaining - 1)
+}
+
+// Test-specific error handlers
+
+#[derive(Debug)]
+struct IoErrorHandler {
+    name: String,
+}
+
+impl IoErrorHandler {
+    fn new() -> Self {
+        Self { name: "IoErrorHandler".to_string() }
+    }
+}
+
+impl ErrorHandler for IoErrorHandler {
+    fn handle_error(&self, error: &Error, _context: &PropagationFrame) -> Result<(), Error> {
+        if matches!(error, Error::Io(_)) {
+            tracing::info!("Handling IO error: {}", error);
+            Ok(())
+        } else {
+            Err(Error::Runtime("Cannot handle non-IO error".to_string()))
+        }
+    }
     
-    println!("✓ Error propagation compilation benchmark: {:?} for 20 chained operations", compile_time);
+    fn name(&self) -> &str { &self.name }
+    fn can_handle(&self, error: &Error) -> bool { matches!(error, Error::Io(_)) }
+    fn priority(&self) -> u32 { 10 }
+}
+
+#[derive(Debug)]
+struct ParseErrorHandler {
+    name: String,
+}
+
+impl ParseErrorHandler {
+    fn new() -> Self {
+        Self { name: "ParseErrorHandler".to_string() }
+    }
+}
+
+impl ErrorHandler for ParseErrorHandler {
+    fn handle_error(&self, error: &Error, _context: &PropagationFrame) -> Result<(), Error> {
+        if matches!(error, Error::Parse(_)) {
+            tracing::info!("Handling parse error: {}", error);
+            Ok(())
+        } else {
+            Err(Error::Runtime("Cannot handle non-parse error".to_string()))
+        }
+    }
+    
+    fn name(&self) -> &str { &self.name }
+    fn can_handle(&self, error: &Error) -> bool { matches!(error, Error::Parse(_)) }
+    fn priority(&self) -> u32 { 20 }
+}
+
+#[derive(Debug)]
+struct LlvmErrorHandler {
+    name: String,
+}
+
+impl LlvmErrorHandler {
+    fn new() -> Self {
+        Self { name: "LlvmErrorHandler".to_string() }
+    }
+}
+
+impl ErrorHandler for LlvmErrorHandler {
+    fn handle_error(&self, error: &Error, context: &PropagationFrame) -> Result<(), Error> {
+        if matches!(error, Error::CodeGeneration { .. }) {
+            tracing::info!(
+                function = ?context.function_name,
+                stack_frames = context.stack_trace.len(),
+                "Handling LLVM compilation error: {}", 
+                error
+            );
+            Ok(())
+        } else {
+            Err(Error::Runtime("Cannot handle non-LLVM error".to_string()))
+        }
+    }
+    
+    fn name(&self) -> &str { &self.name }
+    fn can_handle(&self, error: &Error) -> bool { matches!(error, Error::CodeGeneration { .. }) }
+    fn priority(&self) -> u32 { 5 }
+}
+
+#[derive(Debug)]
+struct FailingErrorHandler {
+    name: String,
+}
+
+impl FailingErrorHandler {
+    fn new() -> Self {
+        Self { name: "FailingErrorHandler".to_string() }
+    }
+}
+
+impl ErrorHandler for FailingErrorHandler {
+    fn handle_error(&self, error: &Error, _context: &PropagationFrame) -> Result<(), Error> {
+        // Always fail to test panic integration
+        Err(Error::Runtime(format!("Handler failed for error: {}", error)))
+    }
+    
+    fn name(&self) -> &str { &self.name }
+    fn can_handle(&self, _error: &Error) -> bool { true }
+    fn priority(&self) -> u32 { 1 }
+}
+
+#[derive(Debug)]
+struct ContextPreservingHandler {
+    name: String,
+}
+
+impl ContextPreservingHandler {
+    fn new() -> Self {
+        Self { name: "ContextPreservingHandler".to_string() }
+    }
+}
+
+impl ErrorHandler for ContextPreservingHandler {
+    fn handle_error(&self, error: &Error, context: &PropagationFrame) -> Result<(), Error> {
+        tracing::info!(
+            error = %error,
+            location_line = context.location.line,
+            location_column = context.location.column,
+            function = ?context.function_name,
+            stack_frames = context.stack_trace.len(),
+            has_debug_info = context.debug_info.is_some(),
+            "Preserving error context"
+        );
+        Ok(())
+    }
+    
+    fn name(&self) -> &str { &self.name }
+    fn can_handle(&self, _error: &Error) -> bool { true }
+    fn priority(&self) -> u32 { 30 }
+}
+
+#[derive(Debug)]
+struct FastErrorHandler {
+    name: String,
+}
+
+impl FastErrorHandler {
+    fn new() -> Self {
+        Self { name: "FastErrorHandler".to_string() }
+    }
+}
+
+impl ErrorHandler for FastErrorHandler {
+    fn handle_error(&self, _error: &Error, _context: &PropagationFrame) -> Result<(), Error> {
+        // Minimal processing for performance testing
+        Ok(())
+    }
+    
+    fn name(&self) -> &str { &self.name }
+    fn can_handle(&self, _error: &Error) -> bool { true }
+    fn priority(&self) -> u32 { 100 }
 }

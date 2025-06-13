@@ -95,6 +95,7 @@ pub mod http;
 pub mod websocket;
 pub mod protocols;
 pub mod utils;
+pub mod http2;
 
 // Re-export main types and functions for easy access
 pub use error::{NetError, NetResult, connection_error, timeout_error, dns_error, protocol_error};

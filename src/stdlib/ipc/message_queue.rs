@@ -1,84 +1,36 @@
-/// Message queue implementation for CURSED IPC
-/// 
-/// This module provides comprehensive message queue functionality for inter-process
-/// communication, including creation, message passing, and synchronization features.
-/// 
-/// # Why Message Queues are Critical for Distributed Systems
-/// 
-/// Message queues provide:
-/// - Asynchronous communication between processes
-/// - Message ordering and delivery guarantees
-/// - Buffering and flow control for uneven load patterns
-/// - Priority-based message scheduling
-/// - Persistent message storage options
-/// 
-/// In distributed systems, message queues enable:
-/// - Decoupling of services with reliable message delivery
-/// - Event-driven architectures with publish-subscribe patterns
-/// - Load balancing across multiple consumers
-/// - Dead letter queues for error handling
-/// - Transaction support for message processing
-
-use std::collections::{HashMap, VecDeque};
-use std::sync::{Arc, Mutex, RwLock, Condvar};
-use std::time::{Duration, SystemTime, Instant};
-use std::thread;
-use crate::stdlib::ipc::{
-    IpcResult, IpcError, IpcHandle, IpcPermissions, IpcConfig,
-    resource_error, timeout_error, permission_denied, resource_exhausted
-};
-use crate::stdlib::ipc::types::IpcHandleType;
-use crate::stdlib::ipc::error::{
-    message_queue_error, communication_error_detailed, system_error
-};
-
-/// Message queue handle
-#[derive(Debug)]
-pub struct MessageQueue {
-    handle: IpcHandle,
-    config: MessageQueueConfig,
-    inner: Arc<MessageQueueInner>,
-    state: MessageQueueState,
-    statistics: Arc<Mutex<MessageQueueStatistics>>,
-}
+/// Simple message queue implementation for CURSED IPC
+use std::collections::VecDeque;
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write, BufWriter, Seek, SeekFrom};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, Duration};
+use crate::stdlib::ipc::error::{IpcError, IpcResult};
+use serde::{Serialize, Deserialize};
 
 /// Message queue configuration
 #[derive(Debug, Clone)]
-pub struct MessageQueueConfig {
+pub struct QueueConfig {
     pub name: String,
-    pub max_messages: usize,
+    pub max_size: usize,
     pub max_message_size: usize,
-    pub permissions: IpcPermissions,
-    pub message_ordering: MessageOrdering,
-    pub persistence: PersistenceMode,
-    pub timeout: Duration,
-    pub enable_priority: bool,
-    pub enable_transactions: bool,
-    pub enable_dead_letter: bool,
-    pub dead_letter_max_retries: u32,
-    pub compression: CompressionMode,
+    pub persistent: bool,
+    pub permissions: u32,
 }
 
-impl MessageQueueConfig {
+impl QueueConfig {
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            max_messages: 1000,
-            max_message_size: 65536, // 64KB
-            permissions: IpcPermissions::read_write(),
-            message_ordering: MessageOrdering::Fifo,
-            persistence: PersistenceMode::InMemory,
-            timeout: Duration::from_secs(30),
-            enable_priority: false,
-            enable_transactions: false,
-            enable_dead_letter: false,
-            dead_letter_max_retries: 3,
-            compression: CompressionMode::None,
+            max_size: 100,
+            max_message_size: 8192,
+            persistent: true,
+            permissions: 0o600,
         }
     }
 
-    pub fn with_max_messages(mut self, max: usize) -> Self {
-        self.max_messages = max;
+    pub fn with_max_size(mut self, size: usize) -> Self {
+        self.max_size = size;
         self
     }
 
@@ -87,795 +39,418 @@ impl MessageQueueConfig {
         self
     }
 
-    pub fn with_priority(mut self) -> Self {
-        self.enable_priority = true;
-        self.message_ordering = MessageOrdering::Priority;
+    pub fn in_memory(mut self) -> Self {
+        self.persistent = false;
         self
     }
 
-    pub fn with_persistence(mut self, mode: PersistenceMode) -> Self {
-        self.persistence = mode;
-        self
-    }
-
-    pub fn with_dead_letter(mut self, max_retries: u32) -> Self {
-        self.enable_dead_letter = true;
-        self.dead_letter_max_retries = max_retries;
-        self
-    }
-
-    pub fn with_compression(mut self, compression: CompressionMode) -> Self {
-        self.compression = compression;
-        self
-    }
-
-    pub fn with_timeout(mut self, timeout: Duration) -> Self {
-        self.timeout = timeout;
+    pub fn with_permissions(mut self, permissions: u32) -> Self {
+        self.permissions = permissions;
         self
     }
 }
 
-/// Message ordering strategies
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MessageOrdering {
-    /// First In, First Out (default)
-    Fifo,
-    /// Last In, First Out
-    Lifo,
-    /// Priority-based ordering
-    Priority,
-    /// Random order
-    Random,
+/// Message type enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum MessageType {
+    Text,
+    Binary,
+    Json,
+    Command,
+    Event,
+    Response,
 }
 
-/// Message persistence mode
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PersistenceMode {
-    /// Messages stored only in memory
-    InMemory,
-    /// Messages persisted to disk
-    Persistent,
-    /// Durable messages (fsync after write)
-    Durable,
-}
-
-/// Message compression mode
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CompressionMode {
-    /// No compression
-    None,
-    /// Fast compression (LZ4-style)
-    Fast,
-    /// Best compression (zlib-style)
-    Best,
-    /// Adaptive compression based on content
-    Adaptive,
-}
-
-/// Message structure
-#[derive(Debug, Clone)]
+/// Message in the queue
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    /// Unique message ID
-    pub id: String,
-    /// Message type/topic
-    pub message_type: MessageType,
-    /// Message priority (higher = more important)
-    pub priority: MessagePriority,
-    /// Message payload
-    pub payload: Vec<u8>,
-    /// Message headers/metadata
-    pub headers: HashMap<String, String>,
-    /// Message creation timestamp
-    pub created_at: SystemTime,
-    /// Message expiration time
-    pub expires_at: Option<SystemTime>,
-    /// Number of delivery attempts
-    pub delivery_attempts: u32,
-    /// Maximum delivery attempts
-    pub max_attempts: u32,
-    /// Original message ID (for retry tracking)
-    pub original_id: Option<String>,
+    pub id: u64,
+    pub msg_type: MessageType,
+    pub data: Vec<u8>,
+    pub timestamp: u64,
+    pub priority: u8,
+    pub sender: Option<String>,
+    pub reply_to: Option<u64>,
 }
 
 impl Message {
-    /// Create a new message
-    pub fn new<T: AsRef<[u8]>>(message_type: MessageType, payload: T) -> Self {
+    /// Create a new text message
+    pub fn new_text(data: &str) -> Self {
         Self {
             id: generate_message_id(),
-            message_type,
-            priority: MessagePriority::Normal,
-            payload: payload.as_ref().to_vec(),
-            headers: HashMap::new(),
-            created_at: SystemTime::now(),
-            expires_at: None,
-            delivery_attempts: 0,
-            max_attempts: 3,
-            original_id: None,
+            msg_type: MessageType::Text,
+            data: data.as_bytes().to_vec(),
+            timestamp: timestamp_now(),
+            priority: 50, // Default priority
+            sender: None,
+            reply_to: None,
         }
     }
 
-    /// Set message priority
-    pub fn with_priority(mut self, priority: MessagePriority) -> Self {
+    /// Create a new binary message
+    pub fn new_binary(data: &[u8]) -> Self {
+        Self {
+            id: generate_message_id(),
+            msg_type: MessageType::Binary,
+            data: data.to_vec(),
+            timestamp: timestamp_now(),
+            priority: 50,
+            sender: None,
+            reply_to: None,
+        }
+    }
+
+    /// Create a new JSON message
+    pub fn new_json(data: &str) -> IpcResult<Self> {
+        // Validate JSON
+        serde_json::from_str::<serde_json::Value>(data)
+            .map_err(|e| IpcError::InvalidInput(format!("Invalid JSON: {}", e)))?;
+        
+        Ok(Self {
+            id: generate_message_id(),
+            msg_type: MessageType::Json,
+            data: data.as_bytes().to_vec(),
+            timestamp: timestamp_now(),
+            priority: 50,
+            sender: None,
+            reply_to: None,
+        })
+    }
+
+    /// Set message priority (0-255, higher = more important)
+    pub fn with_priority(mut self, priority: u8) -> Self {
         self.priority = priority;
         self
     }
 
-    /// Set message expiration
-    pub fn with_expiration(mut self, duration: Duration) -> Self {
-        self.expires_at = Some(SystemTime::now() + duration);
+    /// Set sender identifier
+    pub fn with_sender(mut self, sender: &str) -> Self {
+        self.sender = Some(sender.to_string());
         self
     }
 
-    /// Add message header
-    pub fn with_header(mut self, key: &str, value: &str) -> Self {
-        self.headers.insert(key.to_string(), value.to_string());
+    /// Set reply-to message ID
+    pub fn in_reply_to(mut self, message_id: u64) -> Self {
+        self.reply_to = Some(message_id);
         self
     }
 
-    /// Set maximum delivery attempts
-    pub fn with_max_attempts(mut self, max: u32) -> Self {
-        self.max_attempts = max;
-        self
+    /// Get message data as string
+    pub fn as_string(&self) -> IpcResult<String> {
+        String::from_utf8(self.data.clone())
+            .map_err(|e| IpcError::InvalidInput(format!("Invalid UTF-8: {}", e)))
     }
 
-    /// Check if message has expired
-    pub fn is_expired(&self) -> bool {
-        if let Some(expires_at) = self.expires_at {
-            SystemTime::now() > expires_at
-        } else {
-            false
-        }
+    /// Get message data as bytes
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.data
     }
 
-    /// Check if message has exceeded retry limit
-    pub fn is_retry_exhausted(&self) -> bool {
-        self.delivery_attempts >= self.max_attempts
+    /// Get message size in bytes
+    pub fn size(&self) -> usize {
+        self.data.len()
     }
 
-    /// Get message age
-    pub fn age(&self) -> Duration {
-        self.created_at.elapsed().unwrap_or(Duration::from_secs(0))
-    }
-
-    /// Get payload as string
-    pub fn payload_as_string(&self) -> Result<String, std::string::FromUtf8Error> {
-        String::from_utf8(self.payload.clone())
-    }
-
-    /// Get payload size
-    pub fn payload_size(&self) -> usize {
-        self.payload.len()
-    }
-
-    /// Clone message for retry
-    pub fn clone_for_retry(&self) -> Self {
-        let mut retry_msg = self.clone();
-        retry_msg.id = generate_message_id();
-        retry_msg.delivery_attempts += 1;
-        retry_msg.original_id = Some(self.id.clone());
-        retry_msg.created_at = SystemTime::now();
-        retry_msg
+    /// Check if message is expired (older than duration)
+    pub fn is_expired(&self, max_age: Duration) -> bool {
+        let now = timestamp_now();
+        let age = Duration::from_secs(now.saturating_sub(self.timestamp));
+        age > max_age
     }
 }
 
-/// Message type/topic identifier
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum MessageType {
-    /// Arbitrary string topic
-    Topic(String),
-    /// Broadcast message
-    Broadcast,
-    /// Request message
-    Request,
-    /// Response message
-    Response,
-    /// Event notification
-    Event,
-    /// System message
-    System,
-    /// Error message
-    Error,
-}
-
-impl MessageType {
-    pub fn topic(topic: &str) -> Self {
-        MessageType::Topic(topic.to_string())
-    }
-}
-
-/// Message priority levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum MessagePriority {
-    /// Low priority (background tasks)
-    Low = 1,
-    /// Normal priority (default)
-    Normal = 5,
-    /// High priority (important operations)
-    High = 8,
-    /// Critical priority (urgent system messages)
-    Critical = 10,
-}
-
-impl MessagePriority {
-    pub fn value(&self) -> u8 {
-        *self as u8
-    }
-}
-
-/// Message queue state
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MessageQueueState {
-    Created,
-    Active,
-    Suspended,
-    Draining,
-    Closed,
-    Error,
-}
-
-/// Internal message queue implementation
-#[derive(Debug)]
-struct MessageQueueInner {
-    config: MessageQueueConfig,
-    messages: Mutex<VecDeque<Message>>,
-    dead_letter_queue: Mutex<VecDeque<Message>>,
-    subscribers: RwLock<HashMap<String, Vec<Box<dyn MessageHandler + Send + Sync>>>>,
-    condition: Condvar,
-    message_count: Mutex<usize>,
-    total_size: Mutex<usize>,
-}
-
-impl MessageQueueInner {
-    fn new(config: MessageQueueConfig) -> Self {
-        Self {
-            config,
-            messages: Mutex::new(VecDeque::new()),
-            dead_letter_queue: Mutex::new(VecDeque::new()),
-            subscribers: RwLock::new(HashMap::new()),
-            condition: Condvar::new(),
-            message_count: Mutex::new(0),
-            total_size: Mutex::new(0),
-        }
-    }
-
-    fn send_message(&self, mut message: Message) -> IpcResult<()> {
-        // Check message size
-        if message.payload.len() > self.config.max_message_size {
-            return Err(resource_error(&format!(
-                "Message size {} exceeds maximum {}",
-                message.payload.len(),
-                self.config.max_message_size
-            )));
-        }
-
-        // Check if queue is full
-        let mut messages = self.messages.lock().unwrap();
-        let mut count = self.message_count.lock().unwrap();
-        
-        if *count >= self.config.max_messages {
-            return Err(resource_exhausted(
-                "message_queue",
-                "send",
-                *count as u64,
-                self.config.max_messages as u64
-            ));
-        }
-
-        // Apply compression if enabled
-        if self.config.compression != CompressionMode::None {
-            message = self.compress_message(message)?;
-        }
-
-        // Insert message based on ordering strategy
-        match self.config.message_ordering {
-            MessageOrdering::Fifo => messages.push_back(message),
-            MessageOrdering::Lifo => messages.push_front(message),
-            MessageOrdering::Priority => {
-                // Insert in priority order
-                let pos = messages.iter().position(|m| m.priority < message.priority)
-                    .unwrap_or(messages.len());
-                messages.insert(pos, message);
-            }
-            MessageOrdering::Random => {
-                use std::collections::hash_map::DefaultHasher;
-                use std::hash::{Hash, Hasher};
-                
-                let mut hasher = DefaultHasher::new();
-                message.id.hash(&mut hasher);
-                let pos = (hasher.finish() as usize) % (messages.len() + 1);
-                messages.insert(pos, message);
-            }
-        }
-
-        *count += 1;
-        let mut total_size = self.total_size.lock().unwrap();
-        *total_size += message.payload.len();
-
-        // Notify waiting receivers
-        self.condition.notify_one();
-
-        Ok(())
-    }
-
-    fn receive_message(&self, timeout: Option<Duration>) -> IpcResult<Option<Message>> {
-        let start_time = Instant::now();
-        let mut messages = self.messages.lock().unwrap();
-
-        loop {
-            // Check for available messages
-            if let Some(mut message) = messages.pop_front() {
-                let mut count = self.message_count.lock().unwrap();
-                *count -= 1;
-                
-                let mut total_size = self.total_size.lock().unwrap();
-                *total_size -= message.payload.len();
-
-                // Check if message has expired
-                if message.is_expired() {
-                    continue; // Skip expired message
-                }
-
-                // Decompress if needed
-                if self.config.compression != CompressionMode::None {
-                    message = self.decompress_message(message)?;
-                }
-
-                return Ok(Some(message));
-            }
-
-            // Check timeout
-            if let Some(timeout) = timeout {
-                let elapsed = start_time.elapsed();
-                if elapsed >= timeout {
-                    return Ok(None);
-                }
-                
-                let remaining = timeout - elapsed;
-                let (new_messages, timeout_result) = self.condition.wait_timeout(messages, remaining).unwrap();
-                messages = new_messages;
-                
-                if timeout_result.timed_out() {
-                    return Ok(None);
-                }
-            } else {
-                messages = self.condition.wait(messages).unwrap();
-            }
-        }
-    }
-
-    fn peek_message(&self) -> IpcResult<Option<Message>> {
-        let messages = self.messages.lock().unwrap();
-        Ok(messages.front().cloned())
-    }
-
-    fn compress_message(&self, mut message: Message) -> IpcResult<Message> {
-        match self.config.compression {
-            CompressionMode::Fast => {
-                // Simplified compression simulation
-                if message.payload.len() > 100 {
-                    message.headers.insert("compressed".to_string(), "fast".to_string());
-                }
-            }
-            CompressionMode::Best => {
-                // Simplified compression simulation
-                if message.payload.len() > 50 {
-                    message.headers.insert("compressed".to_string(), "best".to_string());
-                }
-            }
-            CompressionMode::Adaptive => {
-                // Simplified adaptive compression
-                if message.payload.len() > 200 {
-                    message.headers.insert("compressed".to_string(), "adaptive".to_string());
-                }
-            }
-            CompressionMode::None => {}
-        }
-        Ok(message)
-    }
-
-    fn decompress_message(&self, mut message: Message) -> IpcResult<Message> {
-        if message.headers.contains_key("compressed") {
-            message.headers.remove("compressed");
-        }
-        Ok(message)
-    }
-}
-
-/// Message queue statistics
-#[derive(Debug, Clone)]
-pub struct MessageQueueStatistics {
-    pub messages_sent: u64,
-    pub messages_received: u64,
-    pub messages_dropped: u64,
-    pub messages_expired: u64,
-    pub messages_dead_lettered: u64,
-    pub current_queue_size: usize,
-    pub peak_queue_size: usize,
-    pub total_bytes_sent: u64,
-    pub total_bytes_received: u64,
-    pub average_message_size: f64,
-    pub last_activity: Option<SystemTime>,
-    pub creation_time: SystemTime,
-    pub subscribers_count: usize,
-}
-
-impl MessageQueueStatistics {
-    pub fn new() -> Self {
-        Self {
-            messages_sent: 0,
-            messages_received: 0,
-            messages_dropped: 0,
-            messages_expired: 0,
-            messages_dead_lettered: 0,
-            current_queue_size: 0,
-            peak_queue_size: 0,
-            total_bytes_sent: 0,
-            total_bytes_received: 0,
-            average_message_size: 0.0,
-            last_activity: None,
-            creation_time: SystemTime::now(),
-            subscribers_count: 0,
-        }
-    }
-
-    pub fn record_send(&mut self, message_size: usize) {
-        self.messages_sent += 1;
-        self.total_bytes_sent += message_size as u64;
-        self.last_activity = Some(SystemTime::now());
-        self.update_average_size();
-    }
-
-    pub fn record_receive(&mut self, message_size: usize) {
-        self.messages_received += 1;
-        self.total_bytes_received += message_size as u64;
-        self.last_activity = Some(SystemTime::now());
-        self.update_average_size();
-    }
-
-    pub fn record_drop(&mut self) {
-        self.messages_dropped += 1;
-        self.last_activity = Some(SystemTime::now());
-    }
-
-    pub fn update_queue_size(&mut self, size: usize) {
-        self.current_queue_size = size;
-        if size > self.peak_queue_size {
-            self.peak_queue_size = size;
-        }
-    }
-
-    fn update_average_size(&mut self) {
-        let total_messages = self.messages_sent + self.messages_received;
-        let total_bytes = self.total_bytes_sent + self.total_bytes_received;
-        
-        if total_messages > 0 {
-            self.average_message_size = total_bytes as f64 / total_messages as f64;
-        }
-    }
-}
-
-/// Message handler trait
-pub trait MessageHandler {
-    /// Handle received message
-    fn handle_message(&self, message: &Message) -> IpcResult<()>;
-    
-    /// Get handler ID
-    fn handler_id(&self) -> &str;
-    
-    /// Check if handler can process message type
-    fn can_handle(&self, message_type: &MessageType) -> bool;
+/// In-memory message queue with optional persistence
+pub struct MessageQueue {
+    config: QueueConfig,
+    messages: Arc<Mutex<VecDeque<Message>>>,
+    file: Option<BufWriter<File>>,
+    next_id: Arc<Mutex<u64>>,
+    total_sent: Arc<Mutex<u64>>,
+    total_received: Arc<Mutex<u64>>,
 }
 
 impl MessageQueue {
     /// Create a new message queue
-    pub fn create(config: MessageQueueConfig) -> IpcResult<Self> {
-        let handle = IpcHandle::new(
-            config.name.clone(),
-            IpcHandleType::MessageQueue
-        );
+    pub fn create(name: &str) -> IpcResult<Self> {
+        let config = QueueConfig::new(name);
+        Self::create_with_config(config)
+    }
 
-        let inner = Arc::new(MessageQueueInner::new(config.clone()));
+    /// Create message queue with custom configuration
+    pub fn create_with_config(config: QueueConfig) -> IpcResult<Self> {
+        let messages = Arc::new(Mutex::new(VecDeque::with_capacity(config.max_size)));
+        let next_id = Arc::new(Mutex::new(1));
+        let total_sent = Arc::new(Mutex::new(0));
+        let total_received = Arc::new(Mutex::new(0));
 
-        let queue = Self {
-            handle,
-            config,
-            inner,
-            state: MessageQueueState::Created,
-            statistics: Arc::new(Mutex::new(MessageQueueStatistics::new())),
+        let file = if config.persistent {
+            let path = get_queue_file_path(&config.name);
+            
+            #[cfg(unix)]
+            let mut options = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .mode(config.permissions);
+            
+            #[cfg(not(unix))]
+            let mut options = OpenOptions::new()
+                .create(true)
+                .append(true);
+
+            let file = options.open(&path).map_err(IpcError::from)?;
+            Some(BufWriter::new(file))
+        } else {
+            None
         };
 
-        // Register in global registry
-        MESSAGE_QUEUE_REGISTRY.write().unwrap()
-            .insert(queue.handle.id.clone(), Arc::new(RwLock::new(())));
+        let queue = Self {
+            config: config.clone(),
+            messages,
+            file,
+            next_id,
+            total_sent,
+            total_received,
+        };
+
+        // Load existing messages if persistent
+        if config.persistent {
+            queue.load_messages_from_file()?;
+        }
+
+        // Register with IPC registry
+        let path = if config.persistent {
+            get_queue_file_path(&config.name).to_string_lossy().to_string()
+        } else {
+            format!("memory:{}", config.name)
+        };
+        crate::stdlib::ipc::register_message_queue(config.name, path)?;
 
         Ok(queue)
     }
 
-    /// Open an existing message queue
-    pub fn open(name: &str) -> IpcResult<Self> {
-        let config = MessageQueueConfig::new(name);
-        
-        // Check if queue exists in registry
-        if !MESSAGE_QUEUE_REGISTRY.read().unwrap().contains_key(name) {
-            return Err(message_queue_error("open", name, "Message queue does not exist"));
-        }
-
-        let handle = IpcHandle::new(
-            config.name.clone(),
-            IpcHandleType::MessageQueue
-        );
-
-        let inner = Arc::new(MessageQueueInner::new(config.clone()));
-
-        Ok(Self {
-            handle,
-            config,
-            inner,
-            state: MessageQueueState::Active,
-            statistics: Arc::new(Mutex::new(MessageQueueStatistics::new())),
-        })
-    }
-
     /// Send a message to the queue
-    pub fn send(&mut self, message: Message) -> IpcResult<()> {
-        if self.state != MessageQueueState::Active {
-            return Err(message_queue_error(
-                "send",
-                &self.config.name,
-                "Queue is not active"
-            ));
+    pub fn send(&mut self, message: Message) -> IpcResult<u64> {
+        if message.size() > self.config.max_message_size {
+            return Err(IpcError::InvalidInput(format!(
+                "Message size {} exceeds maximum {}",
+                message.size(),
+                self.config.max_message_size
+            )));
         }
 
-        let message_size = message.payload.len();
-        let result = self.inner.send_message(message);
+        crate::stdlib::ipc::increment_operations();
 
-        if let Ok(mut stats) = self.statistics.lock() {
-            if result.is_ok() {
-                stats.record_send(message_size);
-            } else {
-                stats.record_drop();
-            }
+        let mut messages = self.messages.lock()
+            .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
+
+        // Check queue capacity
+        if messages.len() >= self.config.max_size {
+            // Remove oldest message if at capacity
+            messages.pop_front();
         }
 
-        result
+        let message_id = message.id;
+
+        // Insert message in priority order (higher priority first)
+        let insert_pos = messages.iter()
+            .position(|m| m.priority < message.priority)
+            .unwrap_or(messages.len());
+        
+        messages.insert(insert_pos, message.clone());
+
+        // Persist to file if configured
+        if let Some(file) = &mut self.file {
+            let serialized = serde_json::to_string(&message)
+                .map_err(|e| IpcError::Internal(format!("Failed to serialize message: {}", e)))?;
+            writeln!(file, "{}", serialized)
+                .map_err(|e| IpcError::IoError(format!("Failed to write message: {}", e)))?;
+            file.flush().map_err(IpcError::from)?;
+        }
+
+        // Update statistics
+        if let Ok(mut count) = self.total_sent.lock() {
+            *count += 1;
+        }
+
+        Ok(message_id)
     }
 
     /// Receive a message from the queue
     pub fn receive(&mut self) -> IpcResult<Option<Message>> {
-        self.receive_timeout(self.config.timeout)
+        crate::stdlib::ipc::increment_operations();
+
+        let mut messages = self.messages.lock()
+            .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
+
+        match messages.pop_front() {
+            Some(message) => {
+                // Update statistics
+                if let Ok(mut count) = self.total_received.lock() {
+                    *count += 1;
+                }
+                Ok(Some(message))
+            }
+            None => Ok(None),
+        }
     }
 
     /// Receive a message with timeout
     pub fn receive_timeout(&mut self, timeout: Duration) -> IpcResult<Option<Message>> {
-        if self.state != MessageQueueState::Active {
-            return Err(message_queue_error(
-                "receive",
-                &self.config.name,
-                "Queue is not active"
-            ));
-        }
-
-        let result = self.inner.receive_message(Some(timeout));
-
-        if let Ok(Some(ref message)) = result {
-            if let Ok(mut stats) = self.statistics.lock() {
-                stats.record_receive(message.payload.len());
+        let start = SystemTime::now();
+        
+        loop {
+            if let Some(message) = self.receive()? {
+                return Ok(Some(message));
             }
-        }
 
-        result
+            if start.elapsed().unwrap_or(Duration::ZERO) >= timeout {
+                return Ok(None);
+            }
+
+            // Small delay to avoid busy waiting
+            std::thread::sleep(Duration::from_millis(10));
+        }
     }
 
     /// Peek at the next message without removing it
     pub fn peek(&self) -> IpcResult<Option<Message>> {
-        self.inner.peek_message()
+        let messages = self.messages.lock()
+            .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
+        
+        Ok(messages.front().cloned())
     }
 
-    /// Get queue size
-    pub fn size(&self) -> usize {
-        *self.inner.message_count.lock().unwrap()
+    /// Get the number of messages in the queue
+    pub fn len(&self) -> usize {
+        self.messages.lock()
+            .map(|messages| messages.len())
+            .unwrap_or(0)
     }
 
-    /// Check if queue is empty
+    /// Check if the queue is empty
     pub fn is_empty(&self) -> bool {
-        self.size() == 0
+        self.len() == 0
     }
 
-    /// Check if queue is full
-    pub fn is_full(&self) -> bool {
-        self.size() >= self.config.max_messages
+    /// Clear all messages from the queue
+    pub fn clear(&mut self) -> IpcResult<()> {
+        let mut messages = self.messages.lock()
+            .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
+        
+        messages.clear();
+        Ok(())
     }
 
     /// Get queue statistics
-    pub fn get_statistics(&self) -> MessageQueueStatistics {
-        self.statistics.lock()
-            .map(|stats| stats.clone())
-            .unwrap_or_else(|_| MessageQueueStatistics::new())
+    pub fn statistics(&self) -> QueueStatistics {
+        QueueStatistics {
+            name: self.config.name.clone(),
+            current_size: self.len(),
+            max_size: self.config.max_size,
+            total_sent: self.total_sent.lock().map(|c| *c).unwrap_or(0),
+            total_received: self.total_received.lock().map(|c| *c).unwrap_or(0),
+            max_message_size: self.config.max_message_size,
+            persistent: self.config.persistent,
+        }
     }
 
-    /// Subscribe to message notifications
-    pub fn subscribe<H>(&mut self, message_type: MessageType, handler: H) -> IpcResult<()>
-    where
-        H: MessageHandler + Send + Sync + 'static,
-    {
-        let mut subscribers = self.inner.subscribers.write().unwrap();
-        let type_key = format!("{:?}", message_type);
+    /// Load messages from persistent file
+    fn load_messages_from_file(&self) -> IpcResult<()> {
+        let path = get_queue_file_path(&self.config.name);
         
-        subscribers.entry(type_key)
-            .or_insert_with(Vec::new)
-            .push(Box::new(handler));
+        if !path.exists() {
+            return Ok(());
+        }
 
-        Ok(())
-    }
+        let file = File::open(&path).map_err(IpcError::from)?;
+        let reader = BufReader::new(file);
 
-    /// Remove the message queue
-    pub fn remove(name: &str) -> IpcResult<()> {
-        MESSAGE_QUEUE_REGISTRY.write().unwrap().remove(name);
-        Ok(())
-    }
+        let mut messages = self.messages.lock()
+            .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
 
-    /// Activate the queue
-    pub fn activate(&mut self) -> IpcResult<()> {
-        self.state = MessageQueueState::Active;
-        Ok(())
-    }
+        for line in reader.lines() {
+            let line = line.map_err(IpcError::from)?;
+            if let Ok(message) = serde_json::from_str::<Message>(&line) {
+                if messages.len() < self.config.max_size {
+                    messages.push_back(message);
+                }
+            }
+        }
 
-    /// Suspend the queue
-    pub fn suspend(&mut self) -> IpcResult<()> {
-        self.state = MessageQueueState::Suspended;
-        Ok(())
-    }
-
-    /// Close the queue
-    pub fn close(&mut self) -> IpcResult<()> {
-        self.state = MessageQueueState::Closed;
         Ok(())
     }
 }
 
 impl Drop for MessageQueue {
     fn drop(&mut self) {
-        let _ = self.close();
-        MESSAGE_QUEUE_REGISTRY.write().unwrap().remove(&self.handle.id);
+        if let Some(file) = &mut self.file {
+            let _ = file.flush();
+        }
+        let _ = crate::stdlib::ipc::unregister_message_queue(&self.config.name);
     }
 }
 
-/// Generate unique message ID
-fn generate_message_id() -> String {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    let count = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let timestamp = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap_or(Duration::from_secs(0))
-        .as_secs();
-    
-    format!("msg_{}_{}", timestamp, count)
+/// Queue statistics
+#[derive(Debug, Clone)]
+pub struct QueueStatistics {
+    pub name: String,
+    pub current_size: usize,
+    pub max_size: usize,
+    pub total_sent: u64,
+    pub total_received: u64,
+    pub max_message_size: usize,
+    pub persistent: bool,
 }
 
-// Global message queue registry
-lazy_static::lazy_static! {
-    static ref MESSAGE_QUEUE_REGISTRY: Arc<RwLock<HashMap<String, Arc<RwLock<()>>>>> = 
-        Arc::new(RwLock::new(HashMap::new()));
-    
-    static ref GLOBAL_STATISTICS: Arc<Mutex<HashMap<String, MessageQueueStatistics>>> = 
-        Arc::new(Mutex::new(HashMap::new()));
-}
-
-/// Module-level functions for message queue management
-
-/// Create a new message queue
-pub fn create_message_queue(config: MessageQueueConfig) -> IpcResult<MessageQueue> {
-    MessageQueue::create(config)
+/// Create a message queue
+pub fn create_message_queue(name: &str) -> IpcResult<MessageQueue> {
+    MessageQueue::create(name)
 }
 
 /// Open an existing message queue
 pub fn open_message_queue(name: &str) -> IpcResult<MessageQueue> {
-    MessageQueue::open(name)
-}
-
-/// Remove a message queue
-pub fn remove_message_queue(name: &str) -> IpcResult<()> {
-    MessageQueue::remove(name)
+    MessageQueue::create(name) // Same as create for file-based queues
 }
 
 /// Send a message to a queue
-pub fn send_message(queue_name: &str, message: Message) -> IpcResult<()> {
-    let mut queue = MessageQueue::open(queue_name)?;
+pub fn send_message(queue: &mut MessageQueue, message: Message) -> IpcResult<u64> {
     queue.send(message)
 }
 
 /// Receive a message from a queue
-pub fn receive_message(queue_name: &str) -> IpcResult<Option<Message>> {
-    let mut queue = MessageQueue::open(queue_name)?;
+pub fn receive_message(queue: &mut MessageQueue) -> IpcResult<Option<Message>> {
     queue.receive()
 }
 
-/// Peek at a message in a queue
-pub fn peek_message(queue_name: &str) -> IpcResult<Option<Message>> {
-    let queue = MessageQueue::open(queue_name)?;
-    queue.peek()
-}
-
-/// Initialize message queue subsystem
-pub fn initialize_message_queue_subsystem() -> IpcResult<()> {
-    // Initialize global registry and statistics
-    Ok(())
-}
-
-/// Shutdown message queue subsystem
-pub fn shutdown_message_queue_subsystem() -> IpcResult<()> {
-    // Clean up all queues
-    cleanup_all_queues()?;
-    Ok(())
-}
-
-/// Clean up all message queues
-pub fn cleanup_all_queues() -> IpcResult<()> {
-    let queue_names: Vec<String> = MESSAGE_QUEUE_REGISTRY.read()
-        .map(|registry| registry.keys().cloned().collect())
-        .unwrap_or_default();
-
-    for name in queue_names {
-        let _ = MessageQueue::remove(&name);
+/// Remove a message queue
+pub fn remove_message_queue(name: &str) -> IpcResult<()> {
+    let path = get_queue_file_path(name);
+    if path.exists() {
+        std::fs::remove_file(path).map_err(IpcError::from)?;
     }
-
     Ok(())
 }
 
-/// Get count of active message queues
-pub fn get_active_queue_count() -> usize {
-    MESSAGE_QUEUE_REGISTRY.read()
-        .map(|registry| registry.len())
+// Helper functions
+
+fn get_queue_file_path(name: &str) -> PathBuf {
+    let base_path = std::env::temp_dir();
+    base_path.join(format!("cursed_mq_{}.json", name))
+}
+
+static mut MESSAGE_ID_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+
+fn generate_message_id() -> u64 {
+    unsafe {
+        MESSAGE_ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+fn timestamp_now() -> u64 {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_secs())
         .unwrap_or(0)
-}
-
-/// Get memory usage of message queue subsystem
-pub fn get_memory_usage() -> usize {
-    // Calculate memory usage across all queues
-    0
-}
-
-/// Get throughput for message queue operations
-pub fn get_throughput() -> f64 {
-    // Calculate messages per second throughput
-    0.0
-}
-
-/// Get full event count
-pub fn get_full_event_count() -> u64 {
-    // Count of queue full events
-    0
-}
-
-/// Message iterator for queue traversal
-pub struct MessageIterator {
-    queue_name: String,
-    timeout: Duration,
-}
-
-impl MessageIterator {
-    pub fn new(queue_name: String, timeout: Duration) -> Self {
-        Self { queue_name, timeout }
-    }
-}
-
-impl Iterator for MessageIterator {
-    type Item = IpcResult<Message>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match MessageQueue::open(&self.queue_name) {
-            Ok(mut queue) => {
-                match queue.receive_timeout(self.timeout) {
-                    Ok(Some(message)) => Some(Ok(message)),
-                    Ok(None) => None, // Timeout or no more messages
-                    Err(e) => Some(Err(e)),
-                }
-            }
-            Err(e) => Some(Err(e)),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -883,109 +458,149 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_queue_config() {
+        let config = QueueConfig::new("test")
+            .with_max_size(50)
+            .with_max_message_size(4096)
+            .in_memory()
+            .with_permissions(0o644);
+
+        assert_eq!(config.name, "test");
+        assert_eq!(config.max_size, 50);
+        assert_eq!(config.max_message_size, 4096);
+        assert!(!config.persistent);
+        assert_eq!(config.permissions, 0o644);
+    }
+
+    #[test]
     fn test_message_creation() {
-        let message = Message::new(MessageType::Topic("test".to_string()), b"hello world")
-            .with_priority(MessagePriority::High)
-            .with_header("content-type", "text/plain");
+        let msg = Message::new_text("Hello, world!")
+            .with_priority(100)
+            .with_sender("test_sender");
 
-        assert!(!message.id.is_empty());
-        assert_eq!(message.priority, MessagePriority::High);
-        assert_eq!(message.payload, b"hello world");
-        assert_eq!(message.headers.get("content-type"), Some(&"text/plain".to_string()));
+        assert_eq!(msg.msg_type, MessageType::Text);
+        assert_eq!(msg.as_string().unwrap(), "Hello, world!");
+        assert_eq!(msg.priority, 100);
+        assert_eq!(msg.sender.as_deref(), Some("test_sender"));
     }
 
     #[test]
-    fn test_message_queue_config() {
-        let config = MessageQueueConfig::new("test_queue")
-            .with_max_messages(500)
-            .with_priority()
-            .with_dead_letter(5);
+    fn test_message_queue_operations() {
+        let mut queue = MessageQueue::create("test_queue").unwrap();
 
-        assert_eq!(config.name, "test_queue");
-        assert_eq!(config.max_messages, 500);
-        assert!(config.enable_priority);
-        assert!(config.enable_dead_letter);
-        assert_eq!(config.dead_letter_max_retries, 5);
+        // Send messages
+        let msg1 = Message::new_text("First message").with_priority(50);
+        let msg2 = Message::new_text("Second message").with_priority(100);
+        let msg3 = Message::new_text("Third message").with_priority(25);
+
+        let id1 = queue.send(msg1).unwrap();
+        let id2 = queue.send(msg2).unwrap();
+        let id3 = queue.send(msg3).unwrap();
+
+        assert_eq!(queue.len(), 3);
+
+        // Messages should be ordered by priority (highest first)
+        let received1 = queue.receive().unwrap().unwrap();
+        assert_eq!(received1.priority, 100);
+        assert_eq!(received1.as_string().unwrap(), "Second message");
+
+        let received2 = queue.receive().unwrap().unwrap();
+        assert_eq!(received2.priority, 50);
+
+        let received3 = queue.receive().unwrap().unwrap();
+        assert_eq!(received3.priority, 25);
+
+        assert!(queue.is_empty());
+        assert_eq!(queue.receive().unwrap(), None);
+
+        // Cleanup
+        let _ = remove_message_queue("test_queue");
     }
 
     #[test]
-    fn test_message_queue_creation() {
-        let config = MessageQueueConfig::new("test_queue");
-        let queue = MessageQueue::create(config);
-        assert!(queue.is_ok());
+    fn test_queue_capacity() {
+        let config = QueueConfig::new("test_capacity").with_max_size(2);
+        let mut queue = MessageQueue::create_with_config(config).unwrap();
+
+        // Fill queue to capacity
+        let msg1 = Message::new_text("Message 1");
+        let msg2 = Message::new_text("Message 2");
+        let msg3 = Message::new_text("Message 3");
+
+        queue.send(msg1).unwrap();
+        queue.send(msg2).unwrap();
+        assert_eq!(queue.len(), 2);
+
+        // Adding third message should remove oldest
+        queue.send(msg3).unwrap();
+        assert_eq!(queue.len(), 2);
+
+        // First message should be gone
+        let received = queue.receive().unwrap().unwrap();
+        assert_eq!(received.as_string().unwrap(), "Message 2");
+
+        // Cleanup
+        let _ = remove_message_queue("test_capacity");
+    }
+
+    #[test]
+    fn test_queue_peek() {
+        let mut queue = MessageQueue::create("test_peek").unwrap();
+        let msg = Message::new_text("Peek test");
+        queue.send(msg).unwrap();
+
+        // Peek should not remove message
+        let peeked = queue.peek().unwrap().unwrap();
+        assert_eq!(peeked.as_string().unwrap(), "Peek test");
+        assert_eq!(queue.len(), 1);
+
+        // Receive should still work
+        let received = queue.receive().unwrap().unwrap();
+        assert_eq!(received.as_string().unwrap(), "Peek test");
+        assert_eq!(queue.len(), 0);
+
+        // Cleanup
+        let _ = remove_message_queue("test_peek");
+    }
+
+    #[test]
+    fn test_json_message() {
+        let json_data = r#"{"name": "test", "value": 42}"#;
+        let msg = Message::new_json(json_data).unwrap();
         
-        let queue = queue.unwrap();
-        assert_eq!(queue.config.name, "test_queue");
-        assert_eq!(queue.state, MessageQueueState::Created);
+        assert_eq!(msg.msg_type, MessageType::Json);
+        assert_eq!(msg.as_string().unwrap(), json_data);
+
+        // Test invalid JSON
+        let invalid_json = r#"{"invalid": json}"#;
+        assert!(Message::new_json(invalid_json).is_err());
     }
 
     #[test]
-    fn test_message_priority_ordering() {
-        assert!(MessagePriority::Critical > MessagePriority::High);
-        assert!(MessagePriority::High > MessagePriority::Normal);
-        assert!(MessagePriority::Normal > MessagePriority::Low);
-    }
-
-    #[test]
-    fn test_message_expiration() {
-        let mut message = Message::new(MessageType::Event, b"test");
-        assert!(!message.is_expired());
-
-        message = message.with_expiration(Duration::from_millis(1));
-        std::thread::sleep(Duration::from_millis(10));
-        assert!(message.is_expired());
-    }
-
-    #[test]
-    fn test_message_statistics() {
-        let mut stats = MessageQueueStatistics::new();
-        assert_eq!(stats.messages_sent, 0);
-        assert_eq!(stats.messages_received, 0);
-
-        stats.record_send(100);
-        assert_eq!(stats.messages_sent, 1);
-        assert_eq!(stats.total_bytes_sent, 100);
-
-        stats.record_receive(200);
-        assert_eq!(stats.messages_received, 1);
-        assert_eq!(stats.total_bytes_received, 200);
-        assert_eq!(stats.average_message_size, 150.0);
-    }
-
-    #[test]
-    fn test_message_id_generation() {
-        let id1 = generate_message_id();
-        let id2 = generate_message_id();
+    fn test_queue_statistics() {
+        let mut queue = MessageQueue::create("test_stats").unwrap();
         
-        assert_ne!(id1, id2);
-        assert!(id1.starts_with("msg_"));
-        assert!(id2.starts_with("msg_"));
-    }
+        let stats = queue.statistics();
+        assert_eq!(stats.name, "test_stats");
+        assert_eq!(stats.current_size, 0);
+        assert_eq!(stats.total_sent, 0);
+        assert_eq!(stats.total_received, 0);
 
-    #[test]
-    fn test_message_payload_operations() {
-        let message = Message::new(MessageType::Request, b"hello world");
+        // Send and receive messages
+        let msg = Message::new_text("Test message");
+        queue.send(msg).unwrap();
         
-        assert_eq!(message.payload_size(), 11);
-        assert_eq!(message.payload_as_string().unwrap(), "hello world");
-    }
+        let stats = queue.statistics();
+        assert_eq!(stats.total_sent, 1);
+        assert_eq!(stats.current_size, 1);
 
-    #[test]
-    fn test_message_clone_for_retry() {
-        let original = Message::new(MessageType::Topic("test".to_string()), b"data");
-        let retry = original.clone_for_retry();
+        queue.receive().unwrap();
         
-        assert_ne!(original.id, retry.id);
-        assert_eq!(retry.delivery_attempts, 1);
-        assert_eq!(retry.original_id, Some(original.id));
-        assert_eq!(retry.payload, original.payload);
-    }
+        let stats = queue.statistics();
+        assert_eq!(stats.total_received, 1);
+        assert_eq!(stats.current_size, 0);
 
-    #[test]
-    fn test_global_functions() {
-        assert_eq!(get_active_queue_count(), 0);
-        assert_eq!(get_memory_usage(), 0);
-        assert_eq!(get_throughput(), 0.0);
-        assert_eq!(get_full_event_count(), 0);
+        // Cleanup
+        let _ = remove_message_queue("test_stats");
     }
 }

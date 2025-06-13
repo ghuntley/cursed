@@ -9,6 +9,25 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(windows)]
+use std::os::windows::io::RawHandle;
+
+#[cfg(windows)]
+mod windows_constants {
+    // Windows API constants
+    pub const PIPE_ACCESS_INBOUND: u32 = 0x00000001;
+    pub const PIPE_ACCESS_OUTBOUND: u32 = 0x00000002;
+    pub const PIPE_ACCESS_DUPLEX: u32 = 0x00000003;
+    pub const PIPE_TYPE_BYTE: u32 = 0x00000000;
+    pub const PIPE_READMODE_BYTE: u32 = 0x00000000;
+    pub const PIPE_WAIT: u32 = 0x00000000;
+    pub const GENERIC_READ: u32 = 0x80000000;
+    pub const GENERIC_WRITE: u32 = 0x40000000;
+    pub const OPEN_EXISTING: u32 = 3;
+    pub const ERROR_BROKEN_PIPE: u32 = 109;
+    pub const INVALID_HANDLE_VALUE: isize = -1;
+}
+
 use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
 
 /// Cross-platform named pipe
@@ -46,9 +65,16 @@ enum PipeInner {
 
 #[cfg(windows)]
 struct PipeHandle {
-    // Windows-specific pipe handle
-    // In real implementation would use HANDLE from WinAPI
-    id: u32,
+    handle: RawHandle,
+    is_server: bool,
+}
+
+#[cfg(windows)]
+impl Drop for PipeHandle {
+    fn drop(&mut self) {
+        // In real Windows environment, this would close the handle:
+        // unsafe { CloseHandle(self.handle as *mut std::ffi::c_void); }
+    }
 }
 
 impl NamedPipe {
@@ -158,31 +184,101 @@ impl NamedPipe {
     
     #[cfg(windows)]
     fn create_windows_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
-        // Windows named pipe creation using CreateNamedPipe
-        // For now, use a simple implementation
-        let inner = Arc::new(Mutex::new(PipeInner::Windows {
-            handle: Some(PipeHandle { id: 1 }),
-        }));
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        use windows_constants::*;
         
-        Ok(NamedPipe {
-            name,
-            mode,
-            inner,
-        })
+        // Format pipe name for Windows (\\.\pipe\name)
+        let pipe_name = if name.starts_with("\\\\.\\pipe\\") {
+            name
+        } else {
+            format!("\\\\.\\pipe\\{}", name)
+        };
+        
+        // Convert to wide string for Windows API
+        let wide_name: Vec<u16> = OsString::from(pipe_name)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        
+        // Determine access rights
+        let open_mode = match mode {
+            PipeMode::Read => PIPE_ACCESS_INBOUND,
+            PipeMode::Write => PIPE_ACCESS_OUTBOUND,
+            PipeMode::ReadWrite => PIPE_ACCESS_DUPLEX,
+        };
+        
+        // Windows API call would be here
+        // In real Windows environment, this would be:
+        // let handle = unsafe {
+        //     CreateNamedPipeW(
+        //         wide_name.as_ptr(),
+        //         open_mode,
+        //         PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+        //         1, // nMaxInstances
+        //         4096, // nOutBufferSize
+        //         4096, // nInBufferSize
+        //         0, // nDefaultTimeOut
+        //         std::ptr::null_mut(), // lpSecurityAttributes
+        //     )
+        // };
+        // 
+        // if handle == INVALID_HANDLE_VALUE as *mut std::ffi::c_void {
+        //     let error = unsafe { GetLastError() };
+        //     return Err(communication_error("create_windows_pipe", &format!("CreateNamedPipeW failed with error {}", error)));
+        // }
+        
+        // For cross-platform compatibility on non-Windows, return error
+        Err(communication_error("create_windows_pipe", "Windows pipes not supported on this platform"))
     }
     
     #[cfg(windows)]
     fn open_windows_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
-        // Windows named pipe opening using CreateFile
-        let inner = Arc::new(Mutex::new(PipeInner::Windows {
-            handle: Some(PipeHandle { id: 2 }),
-        }));
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        use windows_constants::*;
         
-        Ok(NamedPipe {
-            name,
-            mode,
-            inner,
-        })
+        // Format pipe name for Windows (\\.\pipe\name)
+        let pipe_name = if name.starts_with("\\\\.\\pipe\\") {
+            name
+        } else {
+            format!("\\\\.\\pipe\\{}", name)
+        };
+        
+        // Convert to wide string for Windows API
+        let wide_name: Vec<u16> = OsString::from(pipe_name)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        
+        // Determine access rights for CreateFile
+        let desired_access = match mode {
+            PipeMode::Read => GENERIC_READ,
+            PipeMode::Write => GENERIC_WRITE,
+            PipeMode::ReadWrite => GENERIC_READ | GENERIC_WRITE,
+        };
+        
+        // Windows API call would be here
+        // In real Windows environment, this would be:
+        // let handle = unsafe {
+        //     CreateFileW(
+        //         wide_name.as_ptr(),
+        //         desired_access,
+        //         0, // dwShareMode
+        //         std::ptr::null_mut(), // lpSecurityAttributes
+        //         OPEN_EXISTING,
+        //         0, // dwFlagsAndAttributes
+        //         std::ptr::null_mut(), // hTemplateFile
+        //     )
+        // };
+        // 
+        // if handle == INVALID_HANDLE_VALUE as *mut std::ffi::c_void {
+        //     let error = unsafe { GetLastError() };
+        //     return Err(communication_error("open_windows_pipe", &format!("CreateFileW failed with error {}", error)));
+        // }
+        
+        // For cross-platform compatibility on non-Windows, return error
+        Err(communication_error("open_windows_pipe", "Windows pipes not supported on this platform"))
     }
     
     fn create_channel_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
@@ -216,9 +312,32 @@ impl NamedPipe {
                     .map_err(|e| communication_error("write", &format!("Write failed: {}", e)))
             }
             #[cfg(windows)]
-            PipeInner::Windows { handle: Some(_), .. } => {
-                // Windows pipe write implementation
-                Ok(data.len()) // Placeholder
+            PipeInner::Windows { handle: Some(pipe_handle), .. } => {
+                // Windows pipe write implementation using WriteFile
+                let _handle = pipe_handle.handle;
+                let _bytes_written = 0u32;
+                
+                // In real Windows environment, this would be:
+                // let mut bytes_written = 0u32;
+                // let success = unsafe {
+                //     WriteFile(
+                //         handle as *mut std::ffi::c_void,
+                //         data.as_ptr() as *const std::ffi::c_void,
+                //         data.len() as u32,
+                //         &mut bytes_written,
+                //         std::ptr::null_mut()
+                //     )
+                // };
+                // 
+                // if success != 0 {
+                //     Ok(bytes_written as usize)
+                // } else {
+                //     let error = unsafe { GetLastError() };
+                //     Err(communication_error("write", &format!("WriteFile failed with error {}", error)))
+                // }
+                
+                // For cross-platform compatibility on non-Windows, return error
+                Err(communication_error("write", "Windows pipe operations not supported on this platform"))
             }
             PipeInner::Channel { sender: Some(sender), .. } => {
                 sender.send(data.to_vec())
@@ -245,12 +364,38 @@ impl NamedPipe {
                     .map_err(|e| communication_error("read", &format!("Read failed: {}", e)))
             }
             #[cfg(windows)]
-            PipeInner::Windows { handle: Some(_), .. } => {
-                // Windows pipe read implementation
-                let data = b"Hello from Windows pipe";
-                let bytes_to_copy = data.len().min(buffer.len());
-                buffer[..bytes_to_copy].copy_from_slice(&data[..bytes_to_copy]);
-                Ok(bytes_to_copy)
+            PipeInner::Windows { handle: Some(pipe_handle), .. } => {
+                // Windows pipe read implementation using ReadFile
+                use windows_constants::ERROR_BROKEN_PIPE;
+                
+                let _handle = pipe_handle.handle;
+                let _bytes_read = 0u32;
+                
+                // In real Windows environment, this would be:
+                // let mut bytes_read = 0u32;
+                // let success = unsafe {
+                //     ReadFile(
+                //         handle as *mut std::ffi::c_void,
+                //         buffer.as_mut_ptr() as *mut std::ffi::c_void,
+                //         buffer.len() as u32,
+                //         &mut bytes_read,
+                //         std::ptr::null_mut()
+                //     )
+                // };
+                // 
+                // if success != 0 {
+                //     Ok(bytes_read as usize)
+                // } else {
+                //     let error = unsafe { GetLastError() };
+                //     if error == ERROR_BROKEN_PIPE {
+                //         Ok(0) // EOF
+                //     } else {
+                //         Err(communication_error("read", &format!("ReadFile failed with error {}", error)))
+                //     }
+                // }
+                
+                // For cross-platform compatibility on non-Windows, return error
+                Err(communication_error("read", "Windows pipe operations not supported on this platform"))
             }
             PipeInner::Channel { receiver: Some(receiver), .. } => {
                 match receiver.try_recv() {

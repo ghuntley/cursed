@@ -17,6 +17,7 @@ pub mod memory;
 pub mod runtime;
 pub mod tools;
 pub mod config;
+pub mod bootstrap;
 
 // Re-export enhanced debug information types
 pub use runtime::{

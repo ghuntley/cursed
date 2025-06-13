@@ -12,6 +12,7 @@ use super::template_syntax::{
     TemplateAst, TemplateNode, BlockNode, TemplateExpression, FilterCall, BinaryOperator, UnaryOperator
 };
 use super::template_filters::FilterRegistry;
+use super::template_security::{TemplateSecurityValidator, SecurityContext};
 
 /// Rendering context that extends TemplateContext with rendering-specific state
 #[derive(Debug, Clone)]
@@ -26,6 +27,12 @@ pub struct RenderContext {
     pub security_level: SecurityLevel,
     /// Output format for escaping
     pub output_format: OutputFormat,
+    /// Block content for template inheritance
+    pub blocks: HashMap<String, Vec<TemplateNode>>,
+    /// Parent template for inheritance chain
+    pub parent_template: Option<String>,
+    /// Security context for enhanced security features
+    pub security_context: Option<SecurityContext>,
 }
 
 impl RenderContext {
@@ -36,7 +43,14 @@ impl RenderContext {
             start_time: Instant::now(),
             security_level: SecurityLevel::Strict,
             output_format: OutputFormat::Html,
+            blocks: HashMap::new(),
+            parent_template: None,
+            security_context: None,
         }
+    }
+
+    pub fn new() -> Self {
+        Self::new(TemplateContext::new())
     }
 
     pub fn with_template(mut self, template_name: String) -> Self {
@@ -64,6 +78,32 @@ impl RenderContext {
     
     pub fn update(&mut self, key: String, value: CursedObject) -> Result<bool, CursedError> {
         self.template_context.update(key, value)
+    }
+
+    /// Set variable in context
+    pub fn set_variable(&mut self, key: String, value: CursedObject) {
+        let _ = self.template_context.set(key, value);
+    }
+
+    /// Add a block definition for inheritance
+    pub fn add_block(&mut self, name: String, content: Vec<TemplateNode>) {
+        self.blocks.insert(name, content);
+    }
+
+    /// Get block content by name
+    pub fn get_block(&self, name: &str) -> Option<&Vec<TemplateNode>> {
+        self.blocks.get(name)
+    }
+
+    /// Set parent template for inheritance
+    pub fn set_parent_template(&mut self, template_name: String) {
+        self.parent_template = Some(template_name);
+    }
+    
+    /// Set security context for enhanced security features
+    pub fn with_security_context(mut self, security_context: SecurityContext) -> Self {
+        self.security_context = Some(security_context);
+        self
     }
 }
 
@@ -345,8 +385,9 @@ impl TemplateRenderer {
                 // Handle extends - load base template
                 self.render_extends_with_context(name, render_context, output)?;
             }
-            TemplateNode::BlockDef { content, .. } => {
-                // Block definitions are rendered in place for now
+            TemplateNode::BlockDef { name, content, .. } => {
+                // For now, render block content directly 
+                // Block inheritance will be handled by explicit extends processing
                 self.render_nodes_with_context(content, render_context, output)?;
             }
             TemplateNode::Raw { content, .. } => {
@@ -705,9 +746,60 @@ impl TemplateRenderer {
         let template_source = self.loader.load(name)?;
         debug!(template = name, "Loading base template - lowkey extends vibes");
         
-        // For now, just include the base template content
-        // In a full implementation, this would handle block inheritance
-        output.push_str(&template_source);
+        // Parse the base template
+        use super::template_syntax::{TemplateLexer, TemplateParser};
+        
+        let mut lexer = TemplateLexer::new(&template_source);
+        let tokens = lexer.tokenize().map_err(|e| {
+            CursedError::TemplateError {
+                message: format!("Failed to tokenize base template '{}': {}", name, e),
+                source_location: None,
+            }
+        })?;
+        
+        let mut parser = TemplateParser::new(tokens);
+        let base_ast = parser.parse().map_err(|e| {
+            CursedError::TemplateError {
+                message: format!("Failed to parse base template '{}': {}", name, e),
+                source_location: None,
+            }
+        })?;
+        
+        // Create a mutable copy of the render context for inheritance
+        let mut inheritance_context = render_context.clone();
+        inheritance_context.set_parent_template(name.to_string());
+        
+        // Render the base template with block inheritance
+        self.render_ast_with_inheritance(&base_ast, &inheritance_context, output)?;
+        
+        Ok(())
+    }
+
+    /// Render AST with block inheritance support
+    fn render_ast_with_inheritance(
+        &mut self,
+        ast: &TemplateAst,
+        render_context: &RenderContext,
+        output: &mut String,
+    ) -> Result<(), CursedError> {
+        for node in &ast.nodes {
+            match node {
+                TemplateNode::BlockDef { name, content, .. } => {
+                    // Check if child template has overridden this block
+                    if let Some(child_content) = render_context.get_block(name) {
+                        debug!("Rendering overridden block: {}", name);
+                        self.render_nodes_with_context(child_content, render_context, output)?;
+                    } else {
+                        debug!("Rendering default block: {}", name);
+                        self.render_nodes_with_context(content, render_context, output)?;
+                    }
+                }
+                _ => {
+                    // Render other nodes normally
+                    self.render_node_with_context(node, render_context, output)?;
+                }
+            }
+        }
         Ok(())
     }
 

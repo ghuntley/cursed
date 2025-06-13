@@ -615,59 +615,148 @@ impl Drop for GoroutineScheduler {
 // FFI functions for LLVM integration
 
 /// Spawn a goroutine from compiled CURSED code
+/// 
+/// # Arguments
+/// * `scheduler_ptr` - Pointer to the GoroutineScheduler instance
+/// * `function_ptr` - Pointer to the function to execute in the goroutine
+/// 
+/// # Returns
+/// * Goroutine ID on success, 0 on failure
+/// 
+/// # Safety
+/// This function is unsafe as it dereferences raw pointers and transmutes function pointers.
+/// The caller must ensure that:
+/// - `scheduler_ptr` points to a valid, initialized GoroutineScheduler
+/// - `function_ptr` points to a valid function with signature `fn()`
+/// - Both pointers remain valid for the duration of the call
 #[no_mangle]
 pub extern "C" fn cursed_spawn_goroutine(
     scheduler_ptr: *mut GoroutineScheduler,
-    function_ptr: extern "C" fn(),
+    function_ptr: *const u8,
 ) -> u64 {
-    if scheduler_ptr.is_null() {
+    if scheduler_ptr.is_null() || function_ptr.is_null() {
+        tracing::error!("Invalid null pointer passed to cursed_spawn_goroutine");
         return 0;
     }
     
     let scheduler = unsafe { &mut *scheduler_ptr };
     
+    // Convert function pointer to a callable closure
+    // Note: This is a simplified implementation - in a real system,
+    // we would need proper function signature handling and argument passing
+    let func_ptr = function_ptr as *const fn();
+    
+    tracing::debug!("Spawning goroutine with function pointer: {:p}", func_ptr);
+    
     match scheduler.spawn(move || {
-        function_ptr();
+        if !func_ptr.is_null() {
+            unsafe {
+                let func: fn() = std::mem::transmute(func_ptr);
+                tracing::debug!("Executing goroutine function");
+                func();
+                tracing::debug!("Goroutine function completed");
+            }
+        } else {
+            tracing::warn!("Attempted to execute null function pointer in goroutine");
+        }
     }) {
-        Ok(id) => id,
-        Err(_) => 0,
+        Ok(id) => {
+            tracing::info!("Successfully spawned goroutine with ID: {}", id);
+            id
+        },
+        Err(e) => {
+            tracing::error!("Failed to spawn goroutine: {:?}", e);
+            0
+        }
     }
 }
 
 /// Yield from current goroutine
+/// 
+/// # Arguments
+/// * `scheduler_ptr` - Pointer to the GoroutineScheduler instance
+/// 
+/// # Safety
+/// This function dereferences a raw pointer. The caller must ensure that
+/// `scheduler_ptr` points to a valid, initialized GoroutineScheduler.
 #[no_mangle]
 pub extern "C" fn cursed_yield_goroutine(scheduler_ptr: *mut GoroutineScheduler) {
     if scheduler_ptr.is_null() {
+        tracing::error!("Invalid null scheduler pointer passed to cursed_yield_goroutine");
         return;
     }
     
     let scheduler = unsafe { &*scheduler_ptr };
-    let _ = scheduler.yield_current();
+    
+    tracing::debug!("Yielding current goroutine");
+    if let Err(e) = scheduler.yield_current() {
+        tracing::error!("Failed to yield goroutine: {:?}", e);
+    }
 }
 
-/// Signal a safe point for GC
+/// Signal a safe point for GC coordination
+/// 
+/// # Arguments
+/// * `scheduler_ptr` - Pointer to the GoroutineScheduler instance
+/// * `location` - C string indicating the source location of the safe point
+/// 
+/// # Safety
+/// This function dereferences raw pointers. The caller must ensure that:
+/// - `scheduler_ptr` points to a valid, initialized GoroutineScheduler
+/// - `location` points to a valid null-terminated C string
 #[no_mangle]
 pub extern "C" fn cursed_safe_point(
     scheduler_ptr: *mut GoroutineScheduler,
     location: *const std::os::raw::c_char,
 ) {
-    if scheduler_ptr.is_null() || location.is_null() {
+    if scheduler_ptr.is_null() {
+        tracing::error!("Invalid null scheduler pointer passed to cursed_safe_point");
         return;
     }
     
     let scheduler = unsafe { &*scheduler_ptr };
-    let _ = scheduler.yield_current(); // Yielding serves as a safe point
+    
+    let location_str = if location.is_null() {
+        "unknown".to_string()
+    } else {
+        unsafe {
+            std::ffi::CStr::from_ptr(location)
+                .to_string_lossy()
+                .into_owned()
+        }
+    };
+    
+    tracing::debug!("Signaling safe point at location: {}", location_str);
+    
+    // Yielding serves as a safe point - allows GC coordination
+    if let Err(e) = scheduler.yield_current() {
+        tracing::error!("Failed to yield at safe point {}: {:?}", location_str, e);
+    }
 }
 
 /// Check if GC coordination is requested
+/// 
+/// # Arguments
+/// * `scheduler_ptr` - Pointer to the GoroutineScheduler instance
+/// 
+/// # Returns
+/// * `true` if GC coordination is requested, `false` otherwise
+/// 
+/// # Safety
+/// This function dereferences a raw pointer. The caller must ensure that
+/// `scheduler_ptr` points to a valid, initialized GoroutineScheduler.
 #[no_mangle]
 pub extern "C" fn cursed_gc_requested(scheduler_ptr: *mut GoroutineScheduler) -> bool {
     if scheduler_ptr.is_null() {
+        tracing::error!("Invalid null scheduler pointer passed to cursed_gc_requested");
         return false;
     }
     
     let scheduler = unsafe { &*scheduler_ptr };
-    scheduler.gc_coordinator.is_gc_requested()
+    let requested = scheduler.gc_coordinator.is_gc_requested();
+    
+    tracing::trace!("GC coordination requested: {}", requested);
+    requested
 }
 
 // External dependency placeholder - replace with actual crate

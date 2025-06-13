@@ -43,6 +43,18 @@ use rand::rngs::OsRng;
 use sha3::{Sha3_256, Sha3_512, Digest};
 use hmac::{Hmac, Mac};
 
+// Post-quantum cryptography imports
+use pqcrypto_traits::kem::{PublicKey as KemPublicKey, SecretKey as KemSecretKey, SharedSecret, Ciphertext};
+use pqcrypto_traits::sign::{PublicKey as SignPublicKey, SecretKey as SignSecretKey, DetachedSignature};
+use pqcrypto_kyber::{kyber512, kyber768, kyber1024};
+use pqcrypto_dilithium::{dilithium2, dilithium3, dilithium5};
+use pqcrypto_sphincsplus::{sphincssha256128ssimple, sphincssha256192ssimple, sphincssha256256ssimple};
+use pqcrypto_falcon::{falcon512, falcon1024};
+use pqcrypto_ntru::{ntruhps2048509, ntruhps2048677, ntruhps4096821, ntruhrss701};
+
+// Additional cryptography for hybrid encryption
+use aes_gcm::{Aes256Gcm, Key, Nonce, NewAead, Aead};
+
 use crate::error::CursedError;
 
 /// Post-Quantum Cryptography specific errors
@@ -284,42 +296,68 @@ impl KyberKem {
 
     /// Generate a Kyber key pair with specific parameter set
     pub fn keygen_with_params(params: KyberParameterSet) -> PqcResult<(KyberPublicKey, KyberSecretKey)> {
-        let mut rng = OsRng;
-        
-        // Generate random seed for key generation
-        let mut seed = vec![0u8; 64];
-        rng.fill_bytes(&mut seed);
-
-        // Simulate Kyber key generation (in production, use actual kyber crate)
-        let public_key_data = Self::generate_public_key(&seed, params)?;
-        let secret_key_data = Self::generate_secret_key(&seed, params)?;
-
-        let public_key = KyberPublicKey {
-            parameter_set: params,
-            key_data: public_key_data,
-        };
-
-        let secret_key = KyberSecretKey {
-            parameter_set: params,
-            key_data: secret_key_data,
-        };
-
-        Ok((public_key, secret_key))
+        match params {
+            KyberParameterSet::Kyber512 => {
+                let (pk, sk) = kyber512::keypair();
+                let public_key = KyberPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = KyberSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            KyberParameterSet::Kyber768 => {
+                let (pk, sk) = kyber768::keypair();
+                let public_key = KyberPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = KyberSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            KyberParameterSet::Kyber1024 => {
+                let (pk, sk) = kyber1024::keypair();
+                let public_key = KyberPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = KyberSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+        }
     }
 
     /// Encapsulate a shared secret using a public key
     pub fn encaps(public_key: &KyberPublicKey) -> PqcResult<(Vec<u8>, Vec<u8>)> {
-        let mut rng = OsRng;
-        
-        // Generate random coins for encapsulation
-        let mut coins = vec![0u8; 32];
-        rng.fill_bytes(&mut coins);
-
-        // Simulate encapsulation (in production, use actual kyber crate)
-        let ciphertext = Self::perform_encapsulation(&public_key.key_data, &coins, public_key.parameter_set)?;
-        let shared_secret = Self::derive_shared_secret(&coins, &public_key.key_data)?;
-
-        Ok((ciphertext, shared_secret))
+        match public_key.parameter_set {
+            KyberParameterSet::Kyber512 => {
+                let pk = kyber512::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Kyber512 public key".to_string()))?;
+                let (ss, ct) = kyber512::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+            KyberParameterSet::Kyber768 => {
+                let pk = kyber768::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Kyber768 public key".to_string()))?;
+                let (ss, ct) = kyber768::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+            KyberParameterSet::Kyber1024 => {
+                let pk = kyber1024::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Kyber1024 public key".to_string()))?;
+                let (ss, ct) = kyber1024::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+        }
     }
 
     /// Decapsulate a shared secret using a secret key and ciphertext
@@ -332,101 +370,35 @@ impl KyberKem {
             ));
         }
 
-        // Simulate decapsulation (in production, use actual kyber crate)
-        let shared_secret = Self::perform_decapsulation(&secret_key.key_data, ciphertext, secret_key.parameter_set)?;
-
-        Ok(shared_secret)
-    }
-
-    // Private helper methods for simulation
-    fn generate_public_key(seed: &[u8], params: KyberParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(seed);
-        hasher.update(b"kyber_public_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.public_key_size()];
-        
-        // Use hash to seed key generation
-        for (i, chunk) in key.chunks_mut(32).enumerate() {
-            let mut seed_hasher = Sha3_256::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(32);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
+        match secret_key.parameter_set {
+            KyberParameterSet::Kyber512 => {
+                let sk = kyber512::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Kyber512 secret key".to_string()))?;
+                let ct = kyber512::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid Kyber512 ciphertext".to_string()))?;
+                let ss = kyber512::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
+            KyberParameterSet::Kyber768 => {
+                let sk = kyber768::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Kyber768 secret key".to_string()))?;
+                let ct = kyber768::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid Kyber768 ciphertext".to_string()))?;
+                let ss = kyber768::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
+            KyberParameterSet::Kyber1024 => {
+                let sk = kyber1024::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Kyber1024 secret key".to_string()))?;
+                let ct = kyber1024::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid Kyber1024 ciphertext".to_string()))?;
+                let ss = kyber1024::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
         }
-        
-        Ok(key)
     }
 
-    fn generate_secret_key(seed: &[u8], params: KyberParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(seed);
-        hasher.update(b"kyber_secret_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.secret_key_size()];
-        
-        // Use hash to seed key generation
-        for (i, chunk) in key.chunks_mut(32).enumerate() {
-            let mut seed_hasher = Sha3_256::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(32);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(key)
-    }
 
-    fn perform_encapsulation(public_key: &[u8], coins: &[u8], params: KyberParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(public_key);
-        hasher.update(coins);
-        hasher.update(b"kyber_encaps");
-        
-        let hash = hasher.finalize();
-        let mut ciphertext = vec![0u8; params.ciphertext_size()];
-        
-        // Generate ciphertext from hash
-        for (i, chunk) in ciphertext.chunks_mut(32).enumerate() {
-            let mut seed_hasher = Sha3_256::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(32);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(ciphertext)
-    }
-
-    fn derive_shared_secret(coins: &[u8], public_key: &[u8]) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(coins);
-        hasher.update(public_key);
-        hasher.update(b"kyber_shared_secret");
-        
-        let hash = hasher.finalize();
-        Ok(hash.to_vec())
-    }
-
-    fn perform_decapsulation(secret_key: &[u8], ciphertext: &[u8], params: KyberParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(secret_key);
-        hasher.update(ciphertext);
-        hasher.update(b"kyber_decaps");
-        
-        let hash = hasher.finalize();
-        Ok(hash.to_vec())
-    }
 }
 
 // ============================================================================
@@ -509,41 +481,68 @@ impl DilithiumSignature {
 
     /// Generate a Dilithium key pair with specific parameter set
     pub fn keygen_with_params(params: DilithiumParameterSet) -> PqcResult<(DilithiumPublicKey, DilithiumSecretKey)> {
-        let mut rng = OsRng;
-        
-        // Generate random seed for key generation
-        let mut seed = vec![0u8; 64];
-        rng.fill_bytes(&mut seed);
-
-        // Simulate Dilithium key generation
-        let public_key_data = Self::generate_public_key(&seed, params)?;
-        let secret_key_data = Self::generate_secret_key(&seed, params)?;
-
-        let public_key = DilithiumPublicKey {
-            parameter_set: params,
-            key_data: public_key_data,
-        };
-
-        let secret_key = DilithiumSecretKey {
-            parameter_set: params,
-            key_data: secret_key_data,
-        };
-
-        Ok((public_key, secret_key))
+        match params {
+            DilithiumParameterSet::Dilithium2 => {
+                let (pk, sk) = dilithium2::keypair();
+                let public_key = DilithiumPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = DilithiumSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            DilithiumParameterSet::Dilithium3 => {
+                let (pk, sk) = dilithium3::keypair();
+                let public_key = DilithiumPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = DilithiumSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            DilithiumParameterSet::Dilithium5 => {
+                let (pk, sk) = dilithium5::keypair();
+                let public_key = DilithiumPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = DilithiumSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+        }
     }
 
     /// Sign a message using Dilithium
     pub fn sign(secret_key: &DilithiumSecretKey, message: &[u8]) -> PqcResult<Vec<u8>> {
-        let mut rng = OsRng;
-        
-        // Generate random nonce for signing
-        let mut nonce = vec![0u8; 32];
-        rng.fill_bytes(&mut nonce);
-
-        // Simulate signing process
-        let signature = Self::perform_signing(&secret_key.key_data, message, &nonce, secret_key.parameter_set)?;
-
-        Ok(signature)
+        match secret_key.parameter_set {
+            DilithiumParameterSet::Dilithium2 => {
+                let sk = dilithium2::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Dilithium2 secret key".to_string()))?;
+                let signature = dilithium2::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+            DilithiumParameterSet::Dilithium3 => {
+                let sk = dilithium3::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Dilithium3 secret key".to_string()))?;
+                let signature = dilithium3::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+            DilithiumParameterSet::Dilithium5 => {
+                let sk = dilithium5::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Dilithium5 secret key".to_string()))?;
+                let signature = dilithium5::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+        }
     }
 
     /// Verify a Dilithium signature
@@ -556,94 +555,41 @@ impl DilithiumSignature {
             ));
         }
 
-        // Simulate verification process
-        let is_valid = Self::perform_verification(&public_key.key_data, message, signature, public_key.parameter_set)?;
-
-        Ok(is_valid)
-    }
-
-    // Private helper methods
-    fn generate_public_key(seed: &[u8], params: DilithiumParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"dilithium_public_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.public_key_size()];
-        
-        for (i, chunk) in key.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
+        match public_key.parameter_set {
+            DilithiumParameterSet::Dilithium2 => {
+                let pk = dilithium2::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Dilithium2 public key".to_string()))?;
+                let sig = dilithium2::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid Dilithium2 signature".to_string()))?;
+                match dilithium2::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
+            DilithiumParameterSet::Dilithium3 => {
+                let pk = dilithium3::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Dilithium3 public key".to_string()))?;
+                let sig = dilithium3::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid Dilithium3 signature".to_string()))?;
+                match dilithium3::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
+            DilithiumParameterSet::Dilithium5 => {
+                let pk = dilithium5::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Dilithium5 public key".to_string()))?;
+                let sig = dilithium5::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid Dilithium5 signature".to_string()))?;
+                match dilithium5::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
         }
-        
-        Ok(key)
     }
 
-    fn generate_secret_key(seed: &[u8], params: DilithiumParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"dilithium_secret_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.secret_key_size()];
-        
-        for (i, chunk) in key.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(key)
-    }
 
-    fn perform_signing(secret_key: &[u8], message: &[u8], nonce: &[u8], params: DilithiumParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(secret_key);
-        hasher.update(message);
-        hasher.update(nonce);
-        hasher.update(b"dilithium_sign");
-        
-        let hash = hasher.finalize();
-        let mut signature = vec![0u8; params.signature_size()];
-        
-        for (i, chunk) in signature.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(signature)
-    }
-
-    fn perform_verification(public_key: &[u8], message: &[u8], signature: &[u8], params: DilithiumParameterSet) -> PqcResult<bool> {
-        // Simulate verification by reconstructing the signature
-        let mut hasher = Sha3_512::new();
-        hasher.update(public_key);
-        hasher.update(message);
-        hasher.update(signature);
-        hasher.update(b"dilithium_verify");
-        
-        let verification_hash = hasher.finalize();
-        
-        // Simple validation: check if first byte of hash matches a pattern
-        // In real implementation, this would be the actual Dilithium verification
-        Ok(verification_hash[0] % 2 == 0)
-    }
 }
 
 // ============================================================================
@@ -726,32 +672,68 @@ impl SphincsPlusSignature {
 
     /// Generate a SPHINCS+ key pair with specific parameter set
     pub fn keygen_with_params(params: SphincsPlusParameterSet) -> PqcResult<(SphincsPlusPublicKey, SphincsPlusSecretKey)> {
-        let mut rng = OsRng;
-        
-        // Generate random seed
-        let mut seed = vec![0u8; 48];
-        rng.fill_bytes(&mut seed);
-
-        let public_key_data = Self::generate_public_key(&seed, params)?;
-        let secret_key_data = Self::generate_secret_key(&seed, params)?;
-
-        let public_key = SphincsPlusPublicKey {
-            parameter_set: params,
-            key_data: public_key_data,
-        };
-
-        let secret_key = SphincsPlusSecretKey {
-            parameter_set: params,
-            key_data: secret_key_data,
-        };
-
-        Ok((public_key, secret_key))
+        match params {
+            SphincsPlusParameterSet::Sphincs128s => {
+                let (pk, sk) = sphincssha256128ssimple::keypair();
+                let public_key = SphincsPlusPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = SphincsPlusSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            SphincsPlusParameterSet::Sphincs192s => {
+                let (pk, sk) = sphincssha256192ssimple::keypair();
+                let public_key = SphincsPlusPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = SphincsPlusSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            SphincsPlusParameterSet::Sphincs256s => {
+                let (pk, sk) = sphincssha256256ssimple::keypair();
+                let public_key = SphincsPlusPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = SphincsPlusSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+        }
     }
 
     /// Sign a message using SPHINCS+
     pub fn sign(secret_key: &SphincsPlusSecretKey, message: &[u8]) -> PqcResult<Vec<u8>> {
-        let signature = Self::perform_hash_based_signing(&secret_key.key_data, message, secret_key.parameter_set)?;
-        Ok(signature)
+        match secret_key.parameter_set {
+            SphincsPlusParameterSet::Sphincs128s => {
+                let sk = sphincssha256128ssimple::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+128s secret key".to_string()))?;
+                let signature = sphincssha256128ssimple::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+            SphincsPlusParameterSet::Sphincs192s => {
+                let sk = sphincssha256192ssimple::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+192s secret key".to_string()))?;
+                let signature = sphincssha256192ssimple::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+            SphincsPlusParameterSet::Sphincs256s => {
+                let sk = sphincssha256256ssimple::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+256s secret key".to_string()))?;
+                let signature = sphincssha256256ssimple::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+        }
     }
 
     /// Verify a SPHINCS+ signature
@@ -763,89 +745,41 @@ impl SphincsPlusSignature {
             ));
         }
 
-        let is_valid = Self::perform_hash_based_verification(&public_key.key_data, message, signature, public_key.parameter_set)?;
-        Ok(is_valid)
-    }
-
-    // Private helper methods
-    fn generate_public_key(seed: &[u8], params: SphincsPlusParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"sphincs_public_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let key_size = params.public_key_size();
-        Ok(hash[..key_size].to_vec())
-    }
-
-    fn generate_secret_key(seed: &[u8], params: SphincsPlusParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"sphincs_secret_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let key_size = params.secret_key_size();
-        if key_size <= 64 {
-            Ok(hash[..key_size].to_vec())
-        } else {
-            // For larger keys, generate additional hash rounds
-            let mut key = vec![0u8; key_size];
-            key[..64].copy_from_slice(&hash);
-            
-            for chunk in key[64..].chunks_mut(64) {
-                let mut extended_hasher = Sha3_512::new();
-                extended_hasher.update(&hash);
-                extended_hasher.update(&key[..64]);
-                extended_hasher.update(&(chunk.as_ptr() as usize).to_le_bytes());
-                let extended_hash = extended_hasher.finalize();
-                
-                let copy_len = chunk.len().min(64);
-                chunk[..copy_len].copy_from_slice(&extended_hash[..copy_len]);
-            }
-            
-            Ok(key)
+        match public_key.parameter_set {
+            SphincsPlusParameterSet::Sphincs128s => {
+                let pk = sphincssha256128ssimple::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+128s public key".to_string()))?;
+                let sig = sphincssha256128ssimple::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid SPHINCS+128s signature".to_string()))?;
+                match sphincssha256128ssimple::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
+            SphincsPlusParameterSet::Sphincs192s => {
+                let pk = sphincssha256192ssimple::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+192s public key".to_string()))?;
+                let sig = sphincssha256192ssimple::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid SPHINCS+192s signature".to_string()))?;
+                match sphincssha256192ssimple::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
+            SphincsPlusParameterSet::Sphincs256s => {
+                let pk = sphincssha256256ssimple::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+256s public key".to_string()))?;
+                let sig = sphincssha256256ssimple::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid SPHINCS+256s signature".to_string()))?;
+                match sphincssha256256ssimple::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
         }
     }
 
-    fn perform_hash_based_signing(secret_key: &[u8], message: &[u8], params: SphincsPlusParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(secret_key);
-        hasher.update(message);
-        hasher.update(b"sphincs_sign");
-        
-        let hash = hasher.finalize();
-        let mut signature = vec![0u8; params.signature_size()];
-        
-        // Generate signature using multiple hash rounds for larger signatures
-        for (i, chunk) in signature.chunks_mut(64).enumerate() {
-            let mut chunk_hasher = Sha3_512::new();
-            chunk_hasher.update(&hash);
-            chunk_hasher.update(&i.to_le_bytes());
-            let chunk_hash = chunk_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(signature)
-    }
 
-    fn perform_hash_based_verification(public_key: &[u8], message: &[u8], signature: &[u8], _params: SphincsPlusParameterSet) -> PqcResult<bool> {
-        // Simulate hash-based verification
-        let mut hasher = Sha3_512::new();
-        hasher.update(public_key);
-        hasher.update(message);
-        hasher.update(signature);
-        hasher.update(b"sphincs_verify");
-        
-        let verification_hash = hasher.finalize();
-        
-        // Simple validation based on hash properties
-        let valid = verification_hash.iter().take(4).sum::<u8>() % 7 == 0;
-        Ok(valid)
-    }
 }
 
 // ============================================================================
@@ -921,31 +855,50 @@ impl FalconSignature {
 
     /// Generate a Falcon key pair with specific parameter set
     pub fn keygen_with_params(params: FalconParameterSet) -> PqcResult<(FalconPublicKey, FalconSecretKey)> {
-        let mut rng = OsRng;
-        
-        let mut seed = vec![0u8; 48];
-        rng.fill_bytes(&mut seed);
-
-        let public_key_data = Self::generate_public_key(&seed, params)?;
-        let secret_key_data = Self::generate_secret_key(&seed, params)?;
-
-        let public_key = FalconPublicKey {
-            parameter_set: params,
-            key_data: public_key_data,
-        };
-
-        let secret_key = FalconSecretKey {
-            parameter_set: params,
-            key_data: secret_key_data,
-        };
-
-        Ok((public_key, secret_key))
+        match params {
+            FalconParameterSet::Falcon512 => {
+                let (pk, sk) = falcon512::keypair();
+                let public_key = FalconPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = FalconSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            FalconParameterSet::Falcon1024 => {
+                let (pk, sk) = falcon1024::keypair();
+                let public_key = FalconPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = FalconSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+        }
     }
 
     /// Sign a message using Falcon
     pub fn sign(secret_key: &FalconSecretKey, message: &[u8]) -> PqcResult<Vec<u8>> {
-        let signature = Self::perform_tree_signing(&secret_key.key_data, message, secret_key.parameter_set)?;
-        Ok(signature)
+        match secret_key.parameter_set {
+            FalconParameterSet::Falcon512 => {
+                let sk = falcon512::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Falcon512 secret key".to_string()))?;
+                let signature = falcon512::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+            FalconParameterSet::Falcon1024 => {
+                let sk = falcon1024::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Falcon1024 secret key".to_string()))?;
+                let signature = falcon1024::detached_sign(message, &sk);
+                Ok(signature.as_bytes().to_vec())
+            },
+        }
     }
 
     /// Verify a Falcon signature
@@ -957,90 +910,31 @@ impl FalconSignature {
             ));
         }
 
-        let is_valid = Self::perform_tree_verification(&public_key.key_data, message, signature, public_key.parameter_set)?;
-        Ok(is_valid)
-    }
-
-    // Private helper methods
-    fn generate_public_key(seed: &[u8], params: FalconParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"falcon_public_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.public_key_size()];
-        
-        for (i, chunk) in key.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
+        match public_key.parameter_set {
+            FalconParameterSet::Falcon512 => {
+                let pk = falcon512::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Falcon512 public key".to_string()))?;
+                let sig = falcon512::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid Falcon512 signature".to_string()))?;
+                match falcon512::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
+            FalconParameterSet::Falcon1024 => {
+                let pk = falcon1024::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid Falcon1024 public key".to_string()))?;
+                let sig = falcon1024::DetachedSignature::from_bytes(signature)
+                    .map_err(|_| PqcError::InvalidSignature("Invalid Falcon1024 signature".to_string()))?;
+                match falcon1024::verify_detached_signature(message, &sig, &pk) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            },
         }
-        
-        Ok(key)
     }
 
-    fn generate_secret_key(seed: &[u8], params: FalconParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"falcon_secret_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.secret_key_size()];
-        
-        for (i, chunk) in key.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(key)
-    }
 
-    fn perform_tree_signing(secret_key: &[u8], message: &[u8], params: FalconParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(secret_key);
-        hasher.update(message);
-        hasher.update(b"falcon_tree_sign");
-        
-        let hash = hasher.finalize();
-        let mut signature = vec![0u8; params.signature_size()];
-        
-        for (i, chunk) in signature.chunks_mut(32).enumerate() {
-            let mut chunk_hasher = Sha3_256::new();
-            chunk_hasher.update(&hash);
-            chunk_hasher.update(&i.to_le_bytes());
-            let chunk_hash = chunk_hasher.finalize();
-            
-            let copy_len = chunk.len().min(32);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(signature)
-    }
-
-    fn perform_tree_verification(public_key: &[u8], message: &[u8], signature: &[u8], _params: FalconParameterSet) -> PqcResult<bool> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(public_key);
-        hasher.update(message);
-        hasher.update(signature);
-        hasher.update(b"falcon_tree_verify");
-        
-        let verification_hash = hasher.finalize();
-        
-        // Simple validation based on tree-like properties
-        let valid = verification_hash[0] ^ verification_hash[31] == verification_hash[15];
-        Ok(valid)
-    }
 }
 
 // ============================================================================
@@ -1128,40 +1022,90 @@ impl NtruEncryption {
 
     /// Generate an NTRU key pair with specific parameter set
     pub fn keygen_with_params(params: NtruParameterSet) -> PqcResult<(NtruPublicKey, NtruSecretKey)> {
-        let mut rng = OsRng;
-        
-        let mut seed = vec![0u8; 48];
-        rng.fill_bytes(&mut seed);
-
-        let public_key_data = Self::generate_public_key(&seed, params)?;
-        let secret_key_data = Self::generate_secret_key(&seed, params)?;
-
-        let public_key = NtruPublicKey {
-            parameter_set: params,
-            key_data: public_key_data,
-        };
-
-        let secret_key = NtruSecretKey {
-            parameter_set: params,
-            key_data: secret_key_data,
-        };
-
-        Ok((public_key, secret_key))
+        match params {
+            NtruParameterSet::NtruHps2048509 => {
+                let (pk, sk) = ntruhps2048509::keypair();
+                let public_key = NtruPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = NtruSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            NtruParameterSet::NtruHps2048677 => {
+                let (pk, sk) = ntruhps2048677::keypair();
+                let public_key = NtruPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = NtruSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            NtruParameterSet::NtruHps4096821 => {
+                let (pk, sk) = ntruhps4096821::keypair();
+                let public_key = NtruPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = NtruSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+            NtruParameterSet::NtruHrss701 => {
+                let (pk, sk) = ntruhrss701::keypair();
+                let public_key = NtruPublicKey {
+                    parameter_set: params,
+                    key_data: pk.as_bytes().to_vec(),
+                };
+                let secret_key = NtruSecretKey {
+                    parameter_set: params,
+                    key_data: sk.as_bytes().to_vec(),
+                };
+                Ok((public_key, secret_key))
+            },
+        }
     }
 
-    /// Encrypt a message using NTRU
-    pub fn encrypt(public_key: &NtruPublicKey, plaintext: &[u8]) -> PqcResult<Vec<u8>> {
-        let mut rng = OsRng;
-        
-        let mut randomness = vec![0u8; 32];
-        rng.fill_bytes(&mut randomness);
-
-        let ciphertext = Self::perform_encryption(&public_key.key_data, plaintext, &randomness, public_key.parameter_set)?;
-        Ok(ciphertext)
+    /// Encapsulate a shared secret using NTRU (KEM operation)
+    pub fn encapsulate(public_key: &NtruPublicKey) -> PqcResult<(Vec<u8>, Vec<u8>)> {
+        match public_key.parameter_set {
+            NtruParameterSet::NtruHps2048509 => {
+                let pk = ntruhps2048509::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HPS-2048-509 public key".to_string()))?;
+                let (ss, ct) = ntruhps2048509::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+            NtruParameterSet::NtruHps2048677 => {
+                let pk = ntruhps2048677::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HPS-2048-677 public key".to_string()))?;
+                let (ss, ct) = ntruhps2048677::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+            NtruParameterSet::NtruHps4096821 => {
+                let pk = ntruhps4096821::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HPS-4096-821 public key".to_string()))?;
+                let (ss, ct) = ntruhps4096821::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+            NtruParameterSet::NtruHrss701 => {
+                let pk = ntruhrss701::PublicKey::from_bytes(&public_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HRSS-701 public key".to_string()))?;
+                let (ss, ct) = ntruhrss701::encapsulate(&pk);
+                Ok((ct.as_bytes().to_vec(), ss.as_bytes().to_vec()))
+            },
+        }
     }
 
-    /// Decrypt a message using NTRU
-    pub fn decrypt(secret_key: &NtruSecretKey, ciphertext: &[u8]) -> PqcResult<Vec<u8>> {
+    /// Decapsulate a shared secret using NTRU (KEM operation)
+    pub fn decapsulate(secret_key: &NtruSecretKey, ciphertext: &[u8]) -> PqcResult<Vec<u8>> {
         let expected_size = secret_key.parameter_set.ciphertext_size();
         if ciphertext.len() != expected_size {
             return Err(PqcError::InvalidCiphertext(
@@ -1169,90 +1113,90 @@ impl NtruEncryption {
             ));
         }
 
-        let plaintext = Self::perform_decryption(&secret_key.key_data, ciphertext, secret_key.parameter_set)?;
-        Ok(plaintext)
+        match secret_key.parameter_set {
+            NtruParameterSet::NtruHps2048509 => {
+                let sk = ntruhps2048509::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HPS-2048-509 secret key".to_string()))?;
+                let ct = ntruhps2048509::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid NTRU-HPS-2048-509 ciphertext".to_string()))?;
+                let ss = ntruhps2048509::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
+            NtruParameterSet::NtruHps2048677 => {
+                let sk = ntruhps2048677::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HPS-2048-677 secret key".to_string()))?;
+                let ct = ntruhps2048677::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid NTRU-HPS-2048-677 ciphertext".to_string()))?;
+                let ss = ntruhps2048677::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
+            NtruParameterSet::NtruHps4096821 => {
+                let sk = ntruhps4096821::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HPS-4096-821 secret key".to_string()))?;
+                let ct = ntruhps4096821::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid NTRU-HPS-4096-821 ciphertext".to_string()))?;
+                let ss = ntruhps4096821::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
+            NtruParameterSet::NtruHrss701 => {
+                let sk = ntruhrss701::SecretKey::from_bytes(&secret_key.key_data)
+                    .map_err(|_| PqcError::InvalidKey("Invalid NTRU-HRSS-701 secret key".to_string()))?;
+                let ct = ntruhrss701::Ciphertext::from_bytes(ciphertext)
+                    .map_err(|_| PqcError::InvalidCiphertext("Invalid NTRU-HRSS-701 ciphertext".to_string()))?;
+                let ss = ntruhrss701::decapsulate(&ct, &sk);
+                Ok(ss.as_bytes().to_vec())
+            },
+        }
     }
 
-    // Private helper methods
-    fn generate_public_key(seed: &[u8], params: NtruParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"ntru_public_key");
-        hasher.update(&[params as u8]);
+    /// Legacy encryption method for backward compatibility
+    /// (Now uses KEM with AES-GCM for actual message encryption)
+    pub fn encrypt(public_key: &NtruPublicKey, plaintext: &[u8]) -> PqcResult<Vec<u8>> {
+        // Use KEM for shared secret, then AES-GCM for actual encryption
+        let (ciphertext, shared_secret) = Self::encapsulate(public_key)?;
         
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.public_key_size()];
+        // Use the shared secret with AES-GCM to encrypt the plaintext
         
-        for (i, chunk) in key.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
+        let key = Key::from_slice(&shared_secret[..32]);
+        let cipher = Aes256Gcm::new(key);
+        let nonce = Nonce::from_slice(&shared_secret[..12]); // Use part of shared secret as nonce
+        
+        let encrypted_data = cipher.encrypt(nonce, plaintext)
+            .map_err(|_| PqcError::EncryptionFailed("AES-GCM encryption failed".to_string()))?;
+        
+        // Prepend the ciphertext with the KEM ciphertext
+        let mut result = ciphertext;
+        result.extend_from_slice(&encrypted_data);
+        Ok(result)
+    }
+
+    /// Legacy decryption method for backward compatibility  
+    /// (Now uses KEM with AES-GCM for actual message decryption)
+    pub fn decrypt(secret_key: &NtruSecretKey, ciphertext: &[u8]) -> PqcResult<Vec<u8>> {
+        let kem_ciphertext_size = secret_key.parameter_set.ciphertext_size();
+        if ciphertext.len() < kem_ciphertext_size {
+            return Err(PqcError::InvalidCiphertext("Ciphertext too short".to_string()));
         }
         
-        Ok(key)
+        // Split KEM ciphertext and encrypted data
+        let (kem_ciphertext, encrypted_data) = ciphertext.split_at(kem_ciphertext_size);
+        
+        // Decapsulate shared secret
+        let shared_secret = Self::decapsulate(secret_key, kem_ciphertext)?;
+        
+        // Use the shared secret with AES-GCM to decrypt the data
+        
+        let key = Key::from_slice(&shared_secret[..32]);
+        let cipher = Aes256Gcm::new(key);
+        let nonce = Nonce::from_slice(&shared_secret[..12]); // Use part of shared secret as nonce
+        
+        let decrypted_data = cipher.decrypt(nonce, encrypted_data)
+            .map_err(|_| PqcError::DecryptionFailed("AES-GCM decryption failed".to_string()))?;
+        
+        Ok(decrypted_data)
     }
 
-    fn generate_secret_key(seed: &[u8], params: NtruParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_512::new();
-        hasher.update(seed);
-        hasher.update(b"ntru_secret_key");
-        hasher.update(&[params as u8]);
-        
-        let hash = hasher.finalize();
-        let mut key = vec![0u8; params.secret_key_size()];
-        
-        for (i, chunk) in key.chunks_mut(64).enumerate() {
-            let mut seed_hasher = Sha3_512::new();
-            seed_hasher.update(&hash);
-            seed_hasher.update(&i.to_le_bytes());
-            let chunk_hash = seed_hasher.finalize();
-            
-            let copy_len = chunk.len().min(64);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(key)
-    }
 
-    fn perform_encryption(public_key: &[u8], plaintext: &[u8], randomness: &[u8], params: NtruParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(public_key);
-        hasher.update(plaintext);
-        hasher.update(randomness);
-        hasher.update(b"ntru_encrypt");
-        
-        let hash = hasher.finalize();
-        let mut ciphertext = vec![0u8; params.ciphertext_size()];
-        
-        for (i, chunk) in ciphertext.chunks_mut(32).enumerate() {
-            let mut chunk_hasher = Sha3_256::new();
-            chunk_hasher.update(&hash);
-            chunk_hasher.update(&i.to_le_bytes());
-            let chunk_hash = chunk_hasher.finalize();
-            
-            let copy_len = chunk.len().min(32);
-            chunk[..copy_len].copy_from_slice(&chunk_hash[..copy_len]);
-        }
-        
-        Ok(ciphertext)
-    }
-
-    fn perform_decryption(secret_key: &[u8], ciphertext: &[u8], _params: NtruParameterSet) -> PqcResult<Vec<u8>> {
-        let mut hasher = Sha3_256::new();
-        hasher.update(secret_key);
-        hasher.update(ciphertext);
-        hasher.update(b"ntru_decrypt");
-        
-        let hash = hasher.finalize();
-        
-        // Simulate decryption by returning a derived plaintext
-        // In practice, this would be the actual NTRU decryption result
-        Ok(hash.to_vec())
-    }
 }
 
 // ============================================================================

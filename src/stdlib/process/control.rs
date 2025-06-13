@@ -306,13 +306,66 @@ pub fn set_process_priority(pid: u32, priority: Priority) -> ProcessResult<()> {
 
     #[cfg(windows)]
     {
-        // Windows priority setting would require additional WinAPI calls
-        // For now, return an error indicating it's not implemented
-        Err(system_error(
-            -1,
-            "set_priority",
-            "Process priority setting not implemented on Windows"
-        ))
+        use std::process::Command;
+        
+        // Map Priority to Windows priority class
+        let priority_class = match priority {
+            Priority::VeryLow => "idle",
+            Priority::Low => "belownormal",
+            Priority::BelowNormal => "belownormal",
+            Priority::Normal => "normal",
+            Priority::AboveNormal => "abovenormal",
+            Priority::High => "high",
+            Priority::VeryHigh => "realtime",
+        };
+        
+        // Use WMIC to set process priority
+        let output = Command::new("wmic")
+            .args(&[
+                "process", 
+                "where", 
+                &format!("ProcessId={}", pid),
+                "call",
+                "setpriority",
+                priority_class
+            ])
+            .output()
+            .map_err(|e| system_error(-1, "set_priority", &e.to_string()))?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            // Try PowerShell approach as fallback
+            let ps_script = format!(
+                "(Get-Process -Id {}).PriorityClass = '{}'", 
+                pid, 
+                match priority {
+                    Priority::VeryLow => "Idle",
+                    Priority::Low => "BelowNormal",
+                    Priority::BelowNormal => "BelowNormal",
+                    Priority::Normal => "Normal",
+                    Priority::AboveNormal => "AboveNormal",
+                    Priority::High => "High",
+                    Priority::VeryHigh => "RealTime",
+                }
+            );
+            
+            let ps_output = Command::new("powershell")
+                .args(&["-Command", &ps_script])
+                .output()
+                .map_err(|e| system_error(-1, "set_priority", &e.to_string()))?;
+
+            if ps_output.status.success() {
+                Ok(())
+            } else {
+                let stderr = String::from_utf8_lossy(&ps_output.stderr);
+                Err(system_error(
+                    -1,
+                    "set_priority",
+                    &format!("Failed to set process priority: {}", stderr)
+                ))
+            }
+        }
     }
 }
 
@@ -340,9 +393,72 @@ pub fn get_process_priority(pid: u32) -> ProcessResult<Priority> {
 
     #[cfg(windows)]
     {
-        // Windows priority getting would require additional WinAPI calls
-        // For now, return normal priority as default
-        Ok(Priority::Normal)
+        use std::process::Command;
+        
+        // Use PowerShell to get process priority
+        let ps_script = format!(
+            "(Get-Process -Id {}).PriorityClass", 
+            pid
+        );
+        
+        let output = Command::new("powershell")
+            .args(&["-Command", &ps_script])
+            .output()
+            .map_err(|e| system_error(-1, "get_priority", &e.to_string()))?;
+
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let priority_class = stdout.trim();
+            
+            let priority = match priority_class {
+                "Idle" => Priority::VeryLow,
+                "BelowNormal" => Priority::BelowNormal,
+                "Normal" => Priority::Normal,
+                "AboveNormal" => Priority::AboveNormal,
+                "High" => Priority::High,
+                "RealTime" => Priority::VeryHigh,
+                _ => Priority::Normal, // Default fallback
+            };
+            
+            Ok(priority)
+        } else {
+            // Fallback: Use WMIC
+            let wmic_output = Command::new("wmic")
+                .args(&[
+                    "process", 
+                    "where", 
+                    &format!("ProcessId={}", pid),
+                    "get",
+                    "Priority",
+                    "/value"
+                ])
+                .output()
+                .map_err(|e| system_error(-1, "get_priority", &e.to_string()))?;
+
+            if wmic_output.status.success() {
+                let stdout = String::from_utf8_lossy(&wmic_output.stdout);
+                for line in stdout.lines() {
+                    if line.starts_with("Priority=") {
+                        if let Some(priority_str) = line.split('=').nth(1) {
+                            // Windows priority values: 4=Idle, 6=BelowNormal, 8=Normal, 10=AboveNormal, 13=High, 24=RealTime
+                            let priority = match priority_str.trim().parse::<u32>() {
+                                Ok(4) => Priority::VeryLow,
+                                Ok(6) => Priority::BelowNormal,
+                                Ok(8) => Priority::Normal,
+                                Ok(10) => Priority::AboveNormal,
+                                Ok(13) => Priority::High,
+                                Ok(24) => Priority::VeryHigh,
+                                _ => Priority::Normal,
+                            };
+                            return Ok(priority);
+                        }
+                    }
+                }
+            }
+            
+            // Final fallback
+            Ok(Priority::Normal)
+        }
     }
 }
 

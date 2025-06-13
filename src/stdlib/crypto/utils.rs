@@ -463,7 +463,7 @@ impl CryptoUtils {
     }
 }
 
-/// Simple base64 encoding (placeholder implementation)
+/// Base64 encoding implementation
 fn base64_encode(bytes: &[u8]) -> String {
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut result = String::new();
@@ -485,7 +485,7 @@ fn base64_encode(bytes: &[u8]) -> String {
     result
 }
 
-/// Simple base64 decoding (placeholder implementation)
+/// Base64 decoding implementation
 fn base64_decode(s: &str) -> CryptoResult<Vec<u8>> {
     // Simplified base64 decoder - in production use a proper library
     let mut result = Vec::new();

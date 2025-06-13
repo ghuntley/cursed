@@ -10,7 +10,10 @@ pub mod tls;
 
 // Re-export main types
 pub use smtp::{SmtpClient, EmailMessage, SmtpConfig};
-pub use ftp::{FtpClient, FtpTransferMode, FtpConfig};
+pub use ftp::{
+    FtpClient, FtpTransferMode, FtpConfig, FtpDataMode, FtpResponse, 
+    FtpEntry, FtpState, TransferProgress, AsyncFtpClient
+};
 pub use ssh::{SshClient, SshCommand, SshKey, SshConfig};
 pub use tls::{TlsConfig, TlsVersion, CipherSuite};
 

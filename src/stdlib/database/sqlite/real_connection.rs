@@ -78,17 +78,9 @@ impl RealSqliteConnection {
 
 impl DriverConn for RealSqliteConnection {
     fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
-        let handle = self.handle.lock().unwrap();
-        if let Some(ref conn) = *handle {
-            let stmt = RealSqliteStatement::new(conn, query)
-                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
-            Ok(Box::new(stmt))
-        } else {
-            Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
-                "Connection is not available"
-            ))
-        }
+        let stmt = RealSqliteStatement::new(self.handle.clone(), query)
+            .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
+        Ok(Box::new(stmt))
     }
 
     fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
@@ -228,31 +220,84 @@ impl DriverConn for RealSqliteConnection {
 #[derive(Debug)]
 pub struct RealSqliteStatement {
     query: String,
+    connection: Arc<Mutex<Option<Connection>>>,
 }
 
 impl RealSqliteStatement {
-    pub fn new(_conn: &Connection, query: &str) -> Result<Self, DatabaseError> {
+    pub fn new(connection: Arc<Mutex<Option<Connection>>>, query: &str) -> Result<Self, DatabaseError> {
         Ok(Self {
             query: query.to_string(),
+            connection,
         })
     }
 }
 
 impl DriverStmt for RealSqliteStatement {
     fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
-        // This would need access to the connection for real execution
-        Err(DatabaseError::new(
-            super::super::DatabaseErrorKind::NotImplemented,
-            "Statement execution not fully implemented yet"
-        ))
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            let mut stmt = conn.prepare(&self.query)
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to prepare statement: {}", e)))?;
+            
+            let params = convert_args_to_params(args)?;
+            
+            let changes = stmt.execute(rusqlite::params_from_iter(params.iter()))
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to execute statement: {}", e)))?;
+            
+            let last_insert_id = conn.last_insert_rowid();
+            
+            Ok(ExecuteResult {
+                rows_affected: changes as i64,
+                last_insert_id: Some(last_insert_id as i64),
+            })
+        } else {
+            Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConnectionError,
+                "Connection is not available"
+            ))
+        }
     }
 
     fn query(&self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
-        // This would need access to the connection for real querying
-        Err(DatabaseError::new(
-            super::super::DatabaseErrorKind::NotImplemented,
-            "Statement query not fully implemented yet"
-        ))
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            let mut stmt = conn.prepare(&self.query)
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to prepare query: {}", e)))?;
+            
+            // Get column names before borrowing mutably
+            let columns = stmt.column_names().into_iter().map(|s| s.to_string()).collect();
+            
+            // Convert SqlValue args to rusqlite params
+            let params = convert_args_to_params(args)?;
+            
+            let mut rows = stmt.query(rusqlite::params_from_iter(params.iter()))
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to execute query: {}", e)))?;
+            
+            let mut result_rows = Vec::new();
+            
+            while let Some(row) = rows.next()
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to fetch row: {}", e)))? {
+                
+                let mut values = Vec::new();
+                for i in 0..row.as_ref().column_count() {
+                    let value = convert_value_from_sqlite(&row, i)?;
+                    values.push(value);
+                }
+                result_rows.push(values);
+            }
+            
+            Ok(QueryResult {
+                column_names: columns,
+                column_types: vec![], // Would need to extract actual types
+                rows: result_rows,
+                error: None,
+            })
+        } else {
+            Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConnectionError,
+                "Connection is not available"
+            ))
+        }
     }
 
     fn close(&self) -> Result<(), DatabaseError> {
@@ -320,23 +365,76 @@ impl DriverTx for RealSqliteTransaction {
     }
 
     fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
-        Ok(Box::new(RealSqliteStatement {
-            query: query.to_string(),
-        }))
+        let stmt = RealSqliteStatement::new(self.connection.clone(), query)
+            .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
+        Ok(Box::new(stmt))
     }
 
-    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
-        Err(DatabaseError::new(
-            super::super::DatabaseErrorKind::NotImplemented,
-            "Transaction query not fully implemented yet"
-        ))
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            let mut stmt = conn.prepare(query)
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to prepare query: {}", e)))?;
+            
+            // Get column names before borrowing mutably
+            let columns = stmt.column_names().into_iter().map(|s| s.to_string()).collect();
+            
+            // Convert SqlValue args to rusqlite params
+            let params = convert_args_to_params(args)?;
+            
+            let mut rows = stmt.query(rusqlite::params_from_iter(params.iter()))
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to execute query: {}", e)))?;
+            
+            let mut result_rows = Vec::new();
+            
+            while let Some(row) = rows.next()
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to fetch row: {}", e)))? {
+                
+                let mut values = Vec::new();
+                for i in 0..row.as_ref().column_count() {
+                    let value = convert_value_from_sqlite(&row, i)?;
+                    values.push(value);
+                }
+                result_rows.push(values);
+            }
+            
+            Ok(QueryResult {
+                column_names: columns,
+                column_types: vec![], // Would need to extract actual types
+                rows: result_rows,
+                error: None,
+            })
+        } else {
+            Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConnectionError,
+                "Connection is not available"
+            ))
+        }
     }
 
-    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
-        Err(DatabaseError::new(
-            super::super::DatabaseErrorKind::NotImplemented,
-            "Transaction execute not fully implemented yet"
-        ))
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            let mut stmt = conn.prepare(query)
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to prepare statement: {}", e)))?;
+            
+            let params = convert_args_to_params(args)?;
+            
+            let changes = stmt.execute(rusqlite::params_from_iter(params.iter()))
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to execute statement: {}", e)))?;
+            
+            let last_insert_id = conn.last_insert_rowid();
+            
+            Ok(ExecuteResult {
+                rows_affected: changes as i64,
+                last_insert_id: Some(last_insert_id as i64),
+            })
+        } else {
+            Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConnectionError,
+                "Connection is not available"
+            ))
+        }
     }
 
     fn options(&self) -> &TxOptions {

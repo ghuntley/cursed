@@ -20,6 +20,9 @@ pub mod template_html;
 pub mod template_formats;
 pub mod template_cache;
 pub mod template_web;
+pub mod template_security;
+pub mod template_streaming;
+pub mod template_bundler;
 
 pub use template_core::*;
 pub use template_syntax::*;
@@ -29,3 +32,6 @@ pub use template_html::*;
 pub use template_formats::*;
 pub use template_cache::*;
 pub use template_web::*;
+pub use template_security::*;
+pub use template_streaming::*;
+pub use template_bundler::*;

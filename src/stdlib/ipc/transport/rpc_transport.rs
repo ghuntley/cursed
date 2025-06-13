@@ -123,13 +123,87 @@ impl UnixSocketRpcTransport {
     /// Receive an RPC request and return request data
     #[instrument(skip(self))]
     fn receive_rpc_request(&self) -> IpcResult<Vec<u8>> {
-        // This would be implemented for server-side request handling
-        // For now, we'll return a placeholder implementation
-        Err(communication_error_detailed(
-            "rpc_transport",
-            "receive_request",
-            "Server-side request handling not yet implemented"
-        ))
+        if !self.is_server {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "receive_request",
+                "Only server transport can receive requests"
+            ));
+        }
+        
+        // Get a connection from the pool to receive requests
+        let mut pooled_connection = self.pool.get_connection(&self.server_address)?;
+        let connection = pooled_connection.connection()?;
+        
+        // Receive the request message
+        let request_data = self.receive_message(connection)?;
+        
+        debug!(
+            data_size = request_data.len(),
+            "Successfully received RPC request"
+        );
+        
+        Ok(request_data)
+    }
+    
+    /// Process an RPC request and send response
+    #[instrument(skip(self, request_handler))]
+    pub fn handle_request<F>(&self, request_handler: F) -> IpcResult<()> 
+    where
+        F: Fn(&RpcRequest) -> IpcResult<RpcResponse> + Send + Sync,
+    {
+        if !self.is_server {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "handle_request",
+                "Only server transport can handle requests"
+            ));
+        }
+        
+        // Receive request data
+        let request_data = self.receive_rpc_request()?;
+        
+        // Deserialize the request
+        let request = self.deserialize_request(&request_data)?;
+        
+        debug!(
+            method = %request.method,
+            id = %request.id,
+            "Processing RPC request"
+        );
+        
+        // Call the request handler
+        let response = match request_handler(&request) {
+            Ok(resp) => resp,
+            Err(e) => RpcResponse::error(Some(request.id.clone()), e.to_string()),
+        };
+        
+        // Send the response
+        self.send_response(&response, &request.id)?;
+        
+        Ok(())
+    }
+    
+    /// Send an RPC response
+    #[instrument(skip(self, response))]
+    fn send_response(&self, response: &RpcResponse, request_id: &str) -> IpcResult<()> {
+        // Serialize the response
+        let response_data = self.serialize_response(response)?;
+        
+        // Get a connection to send the response
+        let mut pooled_connection = self.pool.get_connection(&self.server_address)?;
+        let connection = pooled_connection.connection()?;
+        
+        // Send the response
+        self.send_message(connection, &response_data)?;
+        
+        debug!(
+            request_id = %request_id,
+            response_size = response_data.len(),
+            "Successfully sent RPC response"
+        );
+        
+        Ok(())
     }
     
     /// Send a message with length prefix
@@ -194,6 +268,127 @@ impl UnixSocketRpcTransport {
         }
         
         Ok(data)
+    }
+    
+    /// Serialize an RPC response to bytes
+    fn serialize_response(&self, response: &RpcResponse) -> IpcResult<Vec<u8>> {
+        // Simple serialization format:
+        // [success:1][result_len:4][result:var][error_len:4][error:var]
+        
+        let mut data = Vec::new();
+        
+        // Success flag
+        data.push(if response.is_success() { 1 } else { 0 });
+        
+        // Result data
+        let result_bytes = response.result.as_ref().unwrap_or(&Vec::new());
+        data.extend_from_slice(&(result_bytes.len() as u32).to_be_bytes());
+        data.extend_from_slice(result_bytes);
+        
+        // Error message
+        let error_bytes = response.error.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]);
+        data.extend_from_slice(&(error_bytes.len() as u32).to_be_bytes());
+        data.extend_from_slice(error_bytes);
+        
+        Ok(data)
+    }
+    
+    /// Deserialize an RPC request from bytes
+    fn deserialize_request(&self, data: &[u8]) -> IpcResult<RpcRequest> {
+        // Simple deserialization format:
+        // [method_len:4][method:var][params_len:4][params:var][id_len:4][id:var]
+        
+        if data.len() < 12 { // Minimum: three length fields
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                "Request data too short"
+            ));
+        }
+        
+        let mut offset = 0;
+        
+        // Method length and data
+        let method_len = u32::from_be_bytes([
+            data[offset], data[offset + 1], data[offset + 2], data[offset + 3]
+        ]) as usize;
+        offset += 4;
+        
+        if offset + method_len > data.len() {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                "Invalid method length in request"
+            ));
+        }
+        
+        let method = String::from_utf8(data[offset..offset + method_len].to_vec())
+            .map_err(|e| communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                &format!("Invalid UTF-8 in method: {}", e)
+            ))?;
+        offset += method_len;
+        
+        // Params length and data
+        if offset + 4 > data.len() {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                "Missing params length in request"
+            ));
+        }
+        
+        let params_len = u32::from_be_bytes([
+            data[offset], data[offset + 1], data[offset + 2], data[offset + 3]
+        ]) as usize;
+        offset += 4;
+        
+        if offset + params_len > data.len() {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                "Invalid params length in request"
+            ));
+        }
+        
+        let params = data[offset..offset + params_len].to_vec();
+        offset += params_len;
+        
+        // ID length and data
+        if offset + 4 > data.len() {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                "Missing ID length in request"
+            ));
+        }
+        
+        let id_len = u32::from_be_bytes([
+            data[offset], data[offset + 1], data[offset + 2], data[offset + 3]
+        ]) as usize;
+        offset += 4;
+        
+        if offset + id_len > data.len() {
+            return Err(communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                "Invalid ID length in request"
+            ));
+        }
+        
+        let id = String::from_utf8(data[offset..offset + id_len].to_vec())
+            .map_err(|e| communication_error_detailed(
+                "rpc_transport",
+                "deserialize_request",
+                &format!("Invalid UTF-8 in ID: {}", e)
+            ))?;
+        
+        Ok(RpcRequest {
+            method,
+            params,
+            id,
+        })
     }
     
     /// Serialize an RPC request to bytes

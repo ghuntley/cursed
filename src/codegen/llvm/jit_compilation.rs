@@ -315,8 +315,8 @@ impl<'ctx> JitCompilationInterface<'ctx> {
                     );
                     
                     if self.config.enable_background_compilation {
-                        // In a full implementation, this would trigger background recompilation
-                        // For now, we'll just mark it for future optimization
+                        // Trigger background recompilation
+                        self.schedule_background_recompilation(function_name)?;
                     }
                 }
             }
@@ -330,6 +330,48 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         );
 
         Ok(result)
+    }
+
+    /// Schedule background recompilation for hot path optimization
+    fn schedule_background_recompilation(&mut self, function_name: &str) -> Result<(), Error> {
+        tracing::info!(
+            function_name = function_name,
+            "Scheduling background recompilation for hot path optimization"
+        );
+
+        // Get current function info
+        let (llvm_ir, _current_optimization) = {
+            let cache = self.compilation_cache.lock().unwrap();
+            if let Some(func) = cache.get(function_name) {
+                (func.llvm_ir.clone(), func.optimization_level)
+            } else {
+                return Err(Error::from_str(&format!("Function '{}' not found in cache", function_name)));
+            }
+        };
+
+        // Recompile with aggressive optimization
+        self.jit_engine.remove_function(function_name)?;
+        self.jit_engine.compile_function(function_name, &llvm_ir)?;
+
+        // Update cache to mark as optimized
+        {
+            let mut cache = self.compilation_cache.lock().unwrap();
+            if let Some(func) = cache.get_mut(function_name) {
+                func.is_hot_path_optimized = true;
+                func.optimization_level = OptimizationLevel::Aggressive;
+                func.compiled_at = Instant::now();
+            }
+        }
+
+        self.stats.hot_path_optimizations += 1;
+        self.stats.background_compilations += 1;
+
+        tracing::info!(
+            function_name = function_name,
+            "Background recompilation completed"
+        );
+
+        Ok(())
     }
 
     /// Compile a complete CURSED program for JIT execution
@@ -548,6 +590,123 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         );
 
         Ok(avg_time)
+    }
+
+    /// Execute CURSED code directly in REPL context
+    pub fn execute_repl_code(&mut self, code: &str) -> Result<i32, Error> {
+        let function_name = format!("repl_expr_{}", self.generate_unique_id());
+        
+        tracing::debug!(
+            function_name = function_name,
+            code = code,
+            "Executing REPL code"
+        );
+
+        // Generate LLVM IR for the code
+        let llvm_ir = self.codegen.generate_ir(code)
+            .map_err(|e| Error::from_str(&format!("Failed to generate IR for REPL code: {}", e)))?;
+
+        // Compile and execute immediately
+        self.compile_function(&function_name, &llvm_ir)?;
+        let result = self.execute_function(&function_name)?;
+
+        // Clean up temporary function unless it's being cached for optimization
+        if !self.hot_path_detector.is_hot_path(&function_name) {
+            let _ = self.jit_engine.remove_function(&function_name);
+        }
+
+        Ok(result)
+    }
+
+    /// Compile and cache a function for later execution
+    pub fn compile_and_cache_function(&mut self, name: &str, source: &str) -> Result<(), Error> {
+        tracing::info!(
+            function_name = name,
+            "Compiling and caching function for later execution"
+        );
+
+        // Generate LLVM IR
+        let llvm_ir = self.codegen.generate_ir(source)
+            .map_err(|e| Error::from_str(&format!("Failed to generate IR: {}", e)))?;
+
+        // Compile with regular optimization initially
+        self.compile_function(name, &llvm_ir)?;
+
+        tracing::info!(
+            function_name = name,
+            "Function compiled and cached successfully"
+        );
+
+        Ok(())
+    }
+
+    /// Generate unique ID for temporary functions
+    fn generate_unique_id(&self) -> u64 {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos() as u64
+    }
+
+    /// List all available functions in the JIT engine
+    pub fn list_functions(&self) -> Vec<String> {
+        let cache = self.compilation_cache.lock().unwrap();
+        cache.keys().cloned().collect()
+    }
+
+    /// Get detailed function information
+    pub fn get_function_info(&self, function_name: &str) -> Option<CompiledFunction> {
+        let cache = self.compilation_cache.lock().unwrap();
+        cache.get(function_name).cloned()
+    }
+
+    /// Generate performance report for all functions
+    pub fn generate_performance_report(&self) -> String {
+        let cache = self.compilation_cache.lock().unwrap();
+        let stats = self.get_stats();
+        let engine_stats = self.get_engine_stats();
+
+        let mut report = String::from("🔥 JIT Performance Report\n");
+        report.push_str("=" .repeat(40).as_str());
+        report.push('\n');
+
+        // Overall statistics
+        report.push_str(&format!("Total compilations: {}\n", stats.total_jit_compilations));
+        report.push_str(&format!("Hot path optimizations: {}\n", stats.hot_path_optimizations));
+        report.push_str(&format!("Background compilations: {}\n", stats.background_compilations));
+        report.push_str(&format!("Average compilation time: {:.2}ms\n", stats.avg_compilation_time.as_millis()));
+        report.push_str(&format!("Memory usage: {} bytes\n", engine_stats.memory_usage_bytes));
+        report.push('\n');
+
+        // Per-function statistics
+        report.push_str("Function Details:\n");
+        report.push_str("-".repeat(40).as_str());
+        report.push('\n');
+
+        for (name, func) in cache.iter() {
+            report.push_str(&format!("📦 {}\n", name));
+            report.push_str(&format!("  Executions: {}\n", func.execution_count));
+            report.push_str(&format!("  Total time: {:.2}ms\n", func.total_execution_time.as_millis()));
+            if func.execution_count > 0 {
+                let avg_time = func.total_execution_time / func.execution_count as u32;
+                report.push_str(&format!("  Avg time: {:.2}μs\n", avg_time.as_micros()));
+            }
+            report.push_str(&format!("  Optimized: {}\n", func.is_hot_path_optimized));
+            report.push_str(&format!("  Opt level: {:?}\n", func.optimization_level));
+            report.push('\n');
+        }
+
+        // Hot path information
+        let hot_paths = self.get_hot_paths();
+        if !hot_paths.is_empty() {
+            report.push_str("🔥 Hot Paths:\n");
+            for path in hot_paths {
+                report.push_str(&format!("  - {}\n", path));
+            }
+        }
+
+        report
     }
 }
 

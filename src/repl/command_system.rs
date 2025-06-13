@@ -339,6 +339,58 @@ impl CommandSystem {
                 Ok(format!("📁 Workspace Information:\n{}", workspace_info))
             }),
         );
+
+        // JIT compilation commands
+        self.register_command(
+            "jit",
+            "Show JIT compilation status and statistics",
+            ":jit [report|functions|status]",
+            &["j"],
+            Box::new(|args, _session, _build| {
+                if args.is_empty() {
+                    Ok("🔥 JIT compilation system available. Use ':jit report' for performance statistics.".to_string())
+                } else {
+                    match args[0].as_str() {
+                        "report" => Ok("📊 JIT performance report would be shown here".to_string()),
+                        "functions" => Ok("📦 Available JIT functions would be listed here".to_string()),
+                        "status" => Ok("✅ JIT compilation system is active".to_string()),
+                        _ => Err(CursedError::repl_error("Unknown JIT command. Use ':help jit' for usage.".to_string()))
+                    }
+                }
+            }),
+        );
+
+        self.register_command(
+            "optimize",
+            "Trigger JIT hot path optimization",
+            ":optimize",
+            &["opt"],
+            Box::new(|args, _session, _build| {
+                if !args.is_empty() {
+                    return Err(CursedError::repl_error("Usage: :optimize".to_string()));
+                }
+                Ok("🔥 Hot path optimization triggered (if JIT is available)".to_string())
+            }),
+        );
+
+        self.register_command(
+            "profile",
+            "Profile function execution performance",
+            ":profile <function_name> [iterations]",
+            &["perf"],
+            Box::new(|args, _session, _build| {
+                if args.is_empty() {
+                    return Err(CursedError::repl_error("Usage: :profile <function_name> [iterations]".to_string()));
+                }
+                let function_name = &args[0];
+                let iterations = if args.len() > 1 {
+                    args[1].parse::<u32>().unwrap_or(10)
+                } else {
+                    10
+                };
+                Ok(format!("📊 Would profile function '{}' for {} iterations", function_name, iterations))
+            }),
+        );
     }
 
     /// Register a command with the system

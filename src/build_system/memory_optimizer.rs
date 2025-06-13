@@ -511,14 +511,236 @@ impl MemoryOptimizer {
 
     /// Start memory monitoring thread
     fn start_memory_monitoring(&self) -> Result<()> {
-        // TODO: Implement memory monitoring thread
+        let memory_monitor = Arc::clone(&self.memory_monitor);
+        let statistics = Arc::clone(&self.statistics);
+        let config = self.config.clone();
+        let is_running = Arc::clone(&self.is_running);
+        
+        thread::spawn(move || {
+            use sysinfo::{System, SystemExt, ProcessExt, Pid};
+            let mut sys = System::new_all();
+            let current_pid = Pid::from(std::process::id() as usize);
+            
+            debug!("Memory monitoring thread started");
+            
+            loop {
+                // Check if we should continue running
+                {
+                    let running = match is_running.lock() {
+                        Ok(running) => *running,
+                        Err(_) => break,
+                    };
+                    if !running {
+                        break;
+                    }
+                }
+                
+                sys.refresh_all();
+                
+                let mut monitor = match memory_monitor.lock() {
+                    Ok(monitor) => monitor,
+                    Err(_) => break,
+                };
+                
+                let now = Instant::now();
+                if now.duration_since(monitor.last_sample_time) < monitor.sampling_interval {
+                    drop(monitor);
+                    thread::sleep(Duration::from_millis(50));
+                    continue;
+                }
+                
+                // Sample current memory usage
+                if let Some(process) = sys.process(current_pid) {
+                    let memory_mb = process.memory() as f64 / (1024.0 * 1024.0);
+                    
+                    monitor.current_usage = memory_mb;
+                    monitor.peak_usage = monitor.peak_usage.max(memory_mb);
+                    monitor.usage_history.push_back((now, memory_mb));
+                    
+                    // Limit history size
+                    while monitor.usage_history.len() > 1000 {
+                        monitor.usage_history.pop_front();
+                    }
+                    
+                    // Update pressure state
+                    let usage_percent = (memory_mb / config.max_memory_mb) * 100.0;
+                    let old_pressure = monitor.pressure_state.clone();
+                    
+                    monitor.pressure_state = if usage_percent < 50.0 {
+                        MemoryPressure::Low
+                    } else if usage_percent < config.warning_threshold_percent {
+                        MemoryPressure::Medium
+                    } else if usage_percent < config.critical_threshold_percent {
+                        MemoryPressure::High
+                    } else {
+                        MemoryPressure::Critical
+                    };
+                    
+                    // Log pressure changes
+                    if monitor.pressure_state != old_pressure {
+                        warn!(
+                            old_pressure = ?old_pressure,
+                            new_pressure = ?monitor.pressure_state,
+                            memory_mb = memory_mb,
+                            usage_percent = usage_percent,
+                            "Memory pressure state changed"
+                        );
+                    }
+                    
+                    monitor.last_sample_time = now;
+                    
+                    // Update statistics
+                    if let Ok(mut stats) = statistics.lock() {
+                        stats.current_usage_mb = memory_mb;
+                        stats.peak_usage_mb = stats.peak_usage_mb.max(memory_mb);
+                        stats.memory_efficiency_percent = if config.max_memory_mb > 0.0 {
+                            ((config.max_memory_mb - memory_mb) / config.max_memory_mb) * 100.0
+                        } else {
+                            100.0
+                        };
+                    }
+                }
+                
+                drop(monitor);
+                thread::sleep(Duration::from_millis(config.memory_sampling_interval_ms));
+            }
+            
+            debug!("Memory monitoring thread stopped");
+        });
+        
         debug!("Started memory monitoring");
         Ok(())
     }
 
     /// Start scheduling thread
     fn start_scheduling_thread(&self) -> Result<()> {
-        // TODO: Implement scheduling thread
+        let task_queue = Arc::clone(&self.task_queue);
+        let memory_intensive_queue = Arc::clone(&self.memory_intensive_queue);
+        let active_tasks = Arc::clone(&self.active_tasks);
+        let memory_monitor = Arc::clone(&self.memory_monitor);
+        let statistics = Arc::clone(&self.statistics);
+        let config = self.config.clone();
+        let is_running = Arc::clone(&self.is_running);
+        
+        thread::spawn(move || {
+            debug!("Task scheduling thread started");
+            
+            loop {
+                // Check if we should continue running
+                {
+                    let running = match is_running.lock() {
+                        Ok(running) => *running,
+                        Err(_) => break,
+                    };
+                    if !running {
+                        break;
+                    }
+                }
+                
+                // Get current memory state
+                let (current_pressure, current_usage) = {
+                    let monitor = match memory_monitor.lock() {
+                        Ok(monitor) => monitor,
+                        Err(_) => break,
+                    };
+                    (monitor.pressure_state.clone(), monitor.current_usage)
+                };
+                
+                // Check active task count
+                let active_count = {
+                    let active = match active_tasks.read() {
+                        Ok(active) => active,
+                        Err(_) => break,
+                    };
+                    active.len()
+                };
+                
+                // Decide whether to schedule new tasks
+                let can_schedule_intensive = active_count < config.max_concurrent_memory_intensive_tasks;
+                let should_schedule_normal = match current_pressure {
+                    MemoryPressure::Low | MemoryPressure::Medium => true,
+                    MemoryPressure::High => active_count < 2,
+                    MemoryPressure::Critical => false,
+                };
+                
+                // Try to schedule memory-intensive tasks if conditions allow
+                if can_schedule_intensive && current_pressure != MemoryPressure::Critical {
+                    let mut intensive_queue = match memory_intensive_queue.lock() {
+                        Ok(queue) => queue,
+                        Err(_) => break,
+                    };
+                    
+                    if let Some(task) = intensive_queue.pop_front() {
+                        debug!(
+                            task_id = task.id,
+                            estimated_memory = task.estimated_memory_mb,
+                            current_pressure = ?current_pressure,
+                            "Scheduling memory-intensive task"
+                        );
+                        
+                        // Add to active tasks (in real implementation, would spawn execution)
+                        if let Ok(mut active) = active_tasks.write() {
+                            active.insert(task.id.clone(), task);
+                        }
+                        
+                        // Update statistics
+                        if let Ok(mut stats) = statistics.lock() {
+                            stats.average_task_memory_mb = (stats.average_task_memory_mb + task.estimated_memory_mb) / 2.0;
+                        }
+                    }
+                    
+                    drop(intensive_queue);
+                }
+                
+                // Try to schedule normal tasks
+                if should_schedule_normal {
+                    let mut task_queue = match task_queue.lock() {
+                        Ok(queue) => queue,
+                        Err(_) => break,
+                    };
+                    
+                    if let Some(task) = task_queue.pop_front() {
+                        debug!(
+                            task_id = task.id,
+                            estimated_memory = task.estimated_memory_mb,
+                            current_pressure = ?current_pressure,
+                            "Scheduling normal task"
+                        );
+                        
+                        // Add to active tasks (in real implementation, would spawn execution)
+                        if let Ok(mut active) = active_tasks.write() {
+                            active.insert(task.id.clone(), task);
+                        }
+                    }
+                    
+                    drop(task_queue);
+                }
+                
+                // Simulate task completion (remove some active tasks)
+                if active_count > 0 {
+                    let mut active = match active_tasks.write() {
+                        Ok(active) => active,
+                        Err(_) => break,
+                    };
+                    
+                    // Simulate random task completion
+                    if active.len() > 0 && rand::random::<f32>() < 0.1 {
+                        if let Some(task_id) = active.keys().next().cloned() {
+                            active.remove(&task_id);
+                            debug!(task_id, "Simulated task completion");
+                        }
+                    }
+                    
+                    drop(active);
+                }
+                
+                // Sleep before next scheduling cycle
+                thread::sleep(Duration::from_millis(100));
+            }
+            
+            debug!("Task scheduling thread stopped");
+        });
+        
         debug!("Started scheduling thread");
         Ok(())
     }

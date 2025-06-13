@@ -255,6 +255,7 @@ impl TypeSystem {
             base_type,
             type_args,
             &mut self.type_environment,
+            &self.constraint_resolver,
         )
     }
 

@@ -278,7 +278,12 @@ fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> Re
                 .map_err(|e| CursedError::CryptoError(format!("Failed to encode RSA private key to DER: {}", e)))?
                 .as_bytes().to_vec()
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for RSA private keys", format.name()))),
+        SerializationFormat::Jwk => {
+            create_jwk_rsa_private_key(&private_key)?
+        },
+        SerializationFormat::Ssh => {
+            return Err(CursedError::InvalidArgument("SSH format not supported for private keys".to_string()));
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::RsaPrivate, serialized);
@@ -314,7 +319,9 @@ fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> Res
         SerializationFormat::Ssh => {
             create_ssh_rsa_public_key(&public_key)?
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for RSA public keys", format.name()))),
+        SerializationFormat::Jwk => {
+            create_jwk_rsa_public_key(&public_key)?
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::RsaPublic, serialized);
@@ -331,6 +338,452 @@ fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> Result<Vec<u8>, Curse
     let ssh_key = format!("ssh-rsa {} cursed-generated-key", base64_key);
     
     Ok(ssh_key.into_bytes())
+}
+
+/// Create JWK format for RSA public key
+fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> Result<Vec<u8>, CursedError> {
+    use rsa::traits::PublicKeyParts;
+    
+    let n = public_key.n();
+    let e = public_key.e();
+    
+    // Convert to base64url encoding (JWK standard)
+    let n_bytes = n.to_bytes_be();
+    let e_bytes = e.to_bytes_be();
+    
+    let n_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&n_bytes);
+    let e_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&e_bytes);
+    
+    let jwk = serde_json::json!({
+        "kty": "RSA",
+        "use": "sig",
+        "key_ops": ["verify"],
+        "alg": "RS256",
+        "n": n_b64,
+        "e": e_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create JWK format for RSA private key  
+fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> Result<Vec<u8>, CursedError> {
+    use rsa::traits::PublicKeyParts;
+    
+    let public_key = private_key.to_public_key();
+    let n = public_key.n();
+    let e = public_key.e();
+    let d = private_key.d();
+    
+    // Convert to base64url encoding
+    let n_bytes = n.to_bytes_be();
+    let e_bytes = e.to_bytes_be();
+    let d_bytes = d.to_bytes_be();
+    
+    let n_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&n_bytes);
+    let e_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&e_bytes);
+    let d_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&d_bytes);
+    
+    let jwk = serde_json::json!({
+        "kty": "RSA",
+        "use": "sig",
+        "key_ops": ["sign"],
+        "alg": "RS256",
+        "n": n_b64,
+        "e": e_b64,
+        "d": d_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create JWK format for P-256 private key
+fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> Result<Vec<u8>, CursedError> {
+    use elliptic_curve::sec1::ToEncodedPoint;
+    
+    let public_key = private_key.public_key();
+    let point = public_key.to_encoded_point(false);
+    
+    // Extract x and y coordinates (skip the first byte which is 0x04 for uncompressed)
+    let coords = point.as_bytes();
+    if coords.len() != 65 || coords[0] != 0x04 {
+        return Err(CursedError::CryptoError("Invalid P-256 public key point".to_string()));
+    }
+    
+    let x = &coords[1..33];
+    let y = &coords[33..65];
+    let d = private_key.to_bytes();
+    
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(x);
+    let y_b64 = general_purpose::URL_SAFE_NO_PAD.encode(y);
+    let d_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&d);
+    
+    let jwk = serde_json::json!({
+        "kty": "EC",
+        "crv": "P-256",
+        "use": "sig",
+        "key_ops": ["sign"],
+        "alg": "ES256",
+        "x": x_b64,
+        "y": y_b64,
+        "d": d_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create JWK format for P-256 public key
+fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> Result<Vec<u8>, CursedError> {
+    use elliptic_curve::sec1::ToEncodedPoint;
+    
+    let point = public_key.to_encoded_point(false);
+    let coords = point.as_bytes();
+    
+    if coords.len() != 65 || coords[0] != 0x04 {
+        return Err(CursedError::CryptoError("Invalid P-256 public key point".to_string()));
+    }
+    
+    let x = &coords[1..33];
+    let y = &coords[33..65];
+    
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(x);
+    let y_b64 = general_purpose::URL_SAFE_NO_PAD.encode(y);
+    
+    let jwk = serde_json::json!({
+        "kty": "EC",
+        "crv": "P-256",
+        "use": "sig",
+        "key_ops": ["verify"],
+        "alg": "ES256",
+        "x": x_b64,
+        "y": y_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create SSH format for P-256 public key
+fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> Result<Vec<u8>, CursedError> {
+    use elliptic_curve::sec1::ToEncodedPoint;
+    
+    let point = public_key.to_encoded_point(false);
+    let base64_key = general_purpose::STANDARD.encode(point.as_bytes());
+    let ssh_key = format!("ecdsa-sha2-nistp256 {} cursed-generated-key", base64_key);
+    
+    Ok(ssh_key.into_bytes())
+}
+
+/// Create JWK format for P-384 private key
+fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> Result<Vec<u8>, CursedError> {
+    use elliptic_curve::sec1::ToEncodedPoint;
+    
+    let public_key = private_key.public_key();
+    let point = public_key.to_encoded_point(false);
+    
+    // Extract x and y coordinates (skip the first byte which is 0x04 for uncompressed)
+    let coords = point.as_bytes();
+    if coords.len() != 97 || coords[0] != 0x04 {
+        return Err(CursedError::CryptoError("Invalid P-384 public key point".to_string()));
+    }
+    
+    let x = &coords[1..49];
+    let y = &coords[49..97];
+    let d = private_key.to_bytes();
+    
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(x);
+    let y_b64 = general_purpose::URL_SAFE_NO_PAD.encode(y);
+    let d_b64 = general_purpose::URL_SAFE_NO_PAD.encode(&d);
+    
+    let jwk = serde_json::json!({
+        "kty": "EC",
+        "crv": "P-384",
+        "use": "sig",
+        "key_ops": ["sign"],
+        "alg": "ES384",
+        "x": x_b64,
+        "y": y_b64,
+        "d": d_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create JWK format for P-384 public key
+fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> Result<Vec<u8>, CursedError> {
+    use elliptic_curve::sec1::ToEncodedPoint;
+    
+    let point = public_key.to_encoded_point(false);
+    let coords = point.as_bytes();
+    
+    if coords.len() != 97 || coords[0] != 0x04 {
+        return Err(CursedError::CryptoError("Invalid P-384 public key point".to_string()));
+    }
+    
+    let x = &coords[1..49];
+    let y = &coords[49..97];
+    
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(x);
+    let y_b64 = general_purpose::URL_SAFE_NO_PAD.encode(y);
+    
+    let jwk = serde_json::json!({
+        "kty": "EC",
+        "crv": "P-384",
+        "use": "sig",
+        "key_ops": ["verify"],
+        "alg": "ES384",
+        "x": x_b64,
+        "y": y_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create SSH format for P-384 public key
+fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> Result<Vec<u8>, CursedError> {
+    use elliptic_curve::sec1::ToEncodedPoint;
+    
+    let point = public_key.to_encoded_point(false);
+    let base64_key = general_purpose::STANDARD.encode(point.as_bytes());
+    let ssh_key = format!("ecdsa-sha2-nistp384 {} cursed-generated-key", base64_key);
+    
+    Ok(ssh_key.into_bytes())
+}
+
+/// Create PEM format for Ed25519 private key
+fn create_ed25519_private_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let der = create_ed25519_private_key_der(key_data)?;
+    let pem = format!(
+        "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
+        general_purpose::STANDARD.encode(&der).chars()
+            .collect::<Vec<char>>()
+            .chunks(64)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+    Ok(pem.into_bytes())
+}
+
+/// Create DER format for Ed25519 private key  
+fn create_ed25519_private_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    // Ed25519 PKCS#8 DER format
+    let mut der = Vec::new();
+    
+    // SEQUENCE tag and length (will be calculated)
+    der.push(0x30);
+    
+    // Version: INTEGER 0
+    der.extend_from_slice(&[0x02, 0x01, 0x00]);
+    
+    // AlgorithmIdentifier SEQUENCE
+    der.extend_from_slice(&[0x30, 0x05]);
+    // Ed25519 OID: 1.3.101.112
+    der.extend_from_slice(&[0x06, 0x03, 0x2b, 0x65, 0x70]);
+    
+    // PrivateKey OCTET STRING
+    der.extend_from_slice(&[0x04, 0x22]); // Length: 34 bytes
+    der.extend_from_slice(&[0x04, 0x20]); // OCTET STRING, 32 bytes
+    der.extend_from_slice(key_data);
+    
+    // Update sequence length
+    let total_len = der.len() - 1;
+    der[1] = total_len as u8;
+    
+    Ok(der)
+}
+
+/// Create PEM format for Ed25519 public key
+fn create_ed25519_public_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let der = create_ed25519_public_key_der(key_data)?;
+    let pem = format!(
+        "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----\n",
+        general_purpose::STANDARD.encode(&der).chars()
+            .collect::<Vec<char>>()
+            .chunks(64)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+    Ok(pem.into_bytes())
+}
+
+/// Create DER format for Ed25519 public key
+fn create_ed25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    // Ed25519 SubjectPublicKeyInfo DER format
+    let mut der = Vec::new();
+    
+    // SEQUENCE tag and length
+    der.push(0x30);
+    der.push(0x2a); // Total length: 42 bytes
+    
+    // AlgorithmIdentifier SEQUENCE
+    der.extend_from_slice(&[0x30, 0x05]);
+    // Ed25519 OID: 1.3.101.112
+    der.extend_from_slice(&[0x06, 0x03, 0x2b, 0x65, 0x70]);
+    
+    // subjectPublicKey BIT STRING
+    der.extend_from_slice(&[0x03, 0x21, 0x00]); // BIT STRING, 33 bytes (32 + padding)
+    der.extend_from_slice(key_data);
+    
+    Ok(der)
+}
+
+/// Create JWK format for Ed25519 private key
+fn create_jwk_ed25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let signing_key = SigningKey::from_bytes(
+        key_data.try_into()
+            .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 private key length".to_string()))?
+    );
+    
+    let public_key = signing_key.verifying_key();
+    let d_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(public_key.as_bytes());
+    
+    let jwk = serde_json::json!({
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "use": "sig",
+        "key_ops": ["sign"],
+        "alg": "EdDSA",
+        "x": x_b64,
+        "d": d_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create JWK format for Ed25519 public key
+fn create_jwk_ed25519_public_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
+    
+    let jwk = serde_json::json!({
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "use": "sig",
+        "key_ops": ["verify"],
+        "alg": "EdDSA",
+        "x": x_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create PEM format for X25519 private key
+fn create_x25519_private_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let der = create_x25519_private_key_der(key_data)?;
+    let pem = format!(
+        "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
+        general_purpose::STANDARD.encode(&der).chars()
+            .collect::<Vec<char>>()
+            .chunks(64)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+    Ok(pem.into_bytes())
+}
+
+/// Create DER format for X25519 private key  
+fn create_x25519_private_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    // X25519 PKCS#8 DER format
+    let mut der = Vec::new();
+    
+    // SEQUENCE tag and length
+    der.push(0x30);
+    
+    // Version: INTEGER 0
+    der.extend_from_slice(&[0x02, 0x01, 0x00]);
+    
+    // AlgorithmIdentifier SEQUENCE
+    der.extend_from_slice(&[0x30, 0x05]);
+    // X25519 OID: 1.3.101.110
+    der.extend_from_slice(&[0x06, 0x03, 0x2b, 0x65, 0x6e]);
+    
+    // PrivateKey OCTET STRING
+    der.extend_from_slice(&[0x04, 0x22]); // Length: 34 bytes
+    der.extend_from_slice(&[0x04, 0x20]); // OCTET STRING, 32 bytes
+    der.extend_from_slice(key_data);
+    
+    // Update sequence length
+    let total_len = der.len() - 1;
+    der[1] = total_len as u8;
+    
+    Ok(der)
+}
+
+/// Create PEM format for X25519 public key
+fn create_x25519_public_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let der = create_x25519_public_key_der(key_data)?;
+    let pem = format!(
+        "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----\n",
+        general_purpose::STANDARD.encode(&der).chars()
+            .collect::<Vec<char>>()
+            .chunks(64)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+    Ok(pem.into_bytes())
+}
+
+/// Create DER format for X25519 public key
+fn create_x25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    // X25519 SubjectPublicKeyInfo DER format
+    let mut der = Vec::new();
+    
+    // SEQUENCE tag and length
+    der.push(0x30);
+    der.push(0x2a); // Total length: 42 bytes
+    
+    // AlgorithmIdentifier SEQUENCE
+    der.extend_from_slice(&[0x30, 0x05]);
+    // X25519 OID: 1.3.101.110
+    der.extend_from_slice(&[0x06, 0x03, 0x2b, 0x65, 0x6e]);
+    
+    // subjectPublicKey BIT STRING
+    der.extend_from_slice(&[0x03, 0x21, 0x00]); // BIT STRING, 33 bytes (32 + padding)
+    der.extend_from_slice(key_data);
+    
+    Ok(der)
+}
+
+/// Create JWK format for X25519 private key
+fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let key_array: [u8; 32] = key_data.try_into()
+        .map_err(|_| CursedError::InvalidArgument("Invalid X25519 private key length".to_string()))?;
+    let private_key = StaticSecret::from(key_array);
+    let public_key = X25519PublicKey::from(&private_key);
+    
+    let d_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(public_key.as_bytes());
+    
+    let jwk = serde_json::json!({
+        "kty": "OKP",
+        "crv": "X25519",
+        "use": "enc",
+        "key_ops": ["deriveKey"],
+        "alg": "ECDH-ES",
+        "x": x_b64,
+        "d": d_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
+}
+
+/// Create JWK format for X25519 public key
+fn create_jwk_x25519_public_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
+    
+    let jwk = serde_json::json!({
+        "kty": "OKP",
+        "crv": "X25519",
+        "use": "enc",
+        "key_ops": ["deriveKey"],
+        "alg": "ECDH-ES",
+        "x": x_b64
+    });
+    
+    Ok(jwk.to_string().into_bytes())
 }
 
 /// Serialize P-256 private key
@@ -357,7 +810,12 @@ fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> R
         SerializationFormat::Raw => {
             private_key.to_bytes().to_vec()
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for P-256 private keys", format.name()))),
+        SerializationFormat::Jwk => {
+            create_jwk_p256_private_key(&private_key)?
+        },
+        SerializationFormat::Ssh => {
+            return Err(CursedError::InvalidArgument("SSH format not supported for private keys".to_string()));
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::EcdsaP256Private, serialized);
@@ -389,7 +847,12 @@ fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> Re
             use elliptic_curve::sec1::ToEncodedPoint;
             public_key.to_encoded_point(false).as_bytes().to_vec()
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for P-256 public keys", format.name()))),
+        SerializationFormat::Jwk => {
+            create_jwk_p256_public_key(&public_key)?
+        },
+        SerializationFormat::Ssh => {
+            create_ssh_p256_public_key(&public_key)?
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::EcdsaP256Public, serialized);
@@ -420,7 +883,12 @@ fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> R
         SerializationFormat::Raw => {
             private_key.to_bytes().to_vec()
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for P-384 private keys", format.name()))),
+        SerializationFormat::Jwk => {
+            create_jwk_p384_private_key(&private_key)?
+        },
+        SerializationFormat::Ssh => {
+            return Err(CursedError::InvalidArgument("SSH format not supported for private keys".to_string()));
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::EcdsaP384Private, serialized);
@@ -452,7 +920,12 @@ fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> Re
             use elliptic_curve::sec1::ToEncodedPoint;
             public_key.to_encoded_point(false).as_bytes().to_vec()
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for P-384 public keys", format.name()))),
+        SerializationFormat::Jwk => {
+            create_jwk_p384_public_key(&public_key)?
+        },
+        SerializationFormat::Ssh => {
+            create_ssh_p384_public_key(&public_key)?
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::EcdsaP384Public, serialized);
@@ -473,7 +946,18 @@ fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -
     let serialized = match format {
         SerializationFormat::Raw => key_data.to_vec(),
         SerializationFormat::Hex => hex::encode(key_data).into_bytes(),
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for Ed25519 private keys", format.name()))),
+        SerializationFormat::Pem => {
+            create_ed25519_private_key_pem(key_data)?
+        },
+        SerializationFormat::Der => {
+            create_ed25519_private_key_der(key_data)?
+        },
+        SerializationFormat::Jwk => {
+            create_jwk_ed25519_private_key(key_data)?
+        },
+        SerializationFormat::Ssh => {
+            return Err(CursedError::InvalidArgument("SSH format not supported for private keys".to_string()));
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::Ed25519Private, serialized);
@@ -499,7 +983,15 @@ fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) ->
             let ssh_key = format!("ssh-ed25519 {} cursed-generated-key", base64_key);
             ssh_key.into_bytes()
         },
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for Ed25519 public keys", format.name()))),
+        SerializationFormat::Pem => {
+            create_ed25519_public_key_pem(key_data)?
+        },
+        SerializationFormat::Der => {
+            create_ed25519_public_key_der(key_data)?
+        },
+        SerializationFormat::Jwk => {
+            create_jwk_ed25519_public_key(key_data)?
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::Ed25519Public, serialized);
@@ -515,7 +1007,18 @@ fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) ->
     let serialized = match format {
         SerializationFormat::Raw => key_data.to_vec(),
         SerializationFormat::Hex => hex::encode(key_data).into_bytes(),
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for X25519 private keys", format.name()))),
+        SerializationFormat::Pem => {
+            create_x25519_private_key_pem(key_data)?
+        },
+        SerializationFormat::Der => {
+            create_x25519_private_key_der(key_data)?
+        },
+        SerializationFormat::Jwk => {
+            create_jwk_x25519_private_key(key_data)?
+        },
+        SerializationFormat::Ssh => {
+            return Err(CursedError::InvalidArgument("SSH format not supported for private keys".to_string()));
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::X25519Private, serialized);
@@ -531,7 +1034,18 @@ fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> 
     let serialized = match format {
         SerializationFormat::Raw => key_data.to_vec(),
         SerializationFormat::Hex => hex::encode(key_data).into_bytes(),
-        _ => return Err(CursedError::NotImplemented(format!("{} format not implemented for X25519 public keys", format.name()))),
+        SerializationFormat::Pem => {
+            create_x25519_public_key_pem(key_data)?
+        },
+        SerializationFormat::Der => {
+            create_x25519_public_key_der(key_data)?
+        },
+        SerializationFormat::Jwk => {
+            create_jwk_x25519_public_key(key_data)?
+        },
+        SerializationFormat::Ssh => {
+            return Err(CursedError::InvalidArgument("SSH format not supported for X25519 keys".to_string()));
+        },
     };
     
     let result = SerializationResult::new(format, KeyType::X25519Public, serialized);
@@ -564,8 +1078,11 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
     
     // Convert serialized data to bytes based on format
     let data_bytes = match format {
-        SerializationFormat::Pem | SerializationFormat::Ssh => {
-            serialized_data.as_bytes().to_vec()
+        SerializationFormat::Pem => {
+            parse_pem_to_bytes(&serialized_data)?
+        },
+        SerializationFormat::Ssh => {
+            parse_ssh_to_bytes(&serialized_data)?
         },
         SerializationFormat::Der | SerializationFormat::Raw => {
             general_purpose::STANDARD.decode(serialized_data)
@@ -576,8 +1093,7 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
                 .map_err(|e| CursedError::InvalidArgument(format!("Invalid hex data: {}", e)))?
         },
         SerializationFormat::Jwk => {
-            // JWK deserialization would require more complex parsing
-            return Err(CursedError::NotImplemented("JWK deserialization not yet implemented".to_string()));
+            parse_jwk_to_bytes(&serialized_data, &expected_key_type)?
         },
     };
     
@@ -608,41 +1124,252 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
     Ok(Value::Object(result))
 }
 
+/// Parse PEM to raw bytes
+fn parse_pem_to_bytes(pem_data: &str) -> Result<Vec<u8>, CursedError> {
+    // Remove PEM headers and decode base64 content
+    let lines: Vec<&str> = pem_data.lines().collect();
+    
+    // Find content between -----BEGIN and -----END lines
+    let mut start_idx = None;
+    let mut end_idx = None;
+    
+    for (i, line) in lines.iter().enumerate() {
+        if line.starts_with("-----BEGIN") {
+            start_idx = Some(i + 1);
+        } else if line.starts_with("-----END") {
+            end_idx = Some(i);
+            break;
+        }
+    }
+    
+    let (start, end) = match (start_idx, end_idx) {
+        (Some(s), Some(e)) => (s, e),
+        _ => return Err(CursedError::InvalidArgument("Invalid PEM format: missing BEGIN/END markers".to_string())),
+    };
+    
+    if start >= end {
+        return Err(CursedError::InvalidArgument("Invalid PEM format: empty content".to_string()));
+    }
+    
+    // Concatenate base64 content lines
+    let base64_content = lines[start..end].join("");
+    
+    // Decode base64
+    general_purpose::STANDARD.decode(base64_content)
+        .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64 in PEM: {}", e)))
+}
+
+/// Parse SSH key to raw bytes
+fn parse_ssh_to_bytes(ssh_data: &str) -> Result<Vec<u8>, CursedError> {
+    // SSH public key format: <algorithm> <base64-key> [comment]
+    let parts: Vec<&str> = ssh_data.trim().split_whitespace().collect();
+    
+    if parts.len() < 2 {
+        return Err(CursedError::InvalidArgument("Invalid SSH key format: expected algorithm and key data".to_string()));
+    }
+    
+    let algorithm = parts[0];
+    let key_data = parts[1];
+    
+    // Validate algorithm
+    match algorithm {
+        "ssh-rsa" | "ssh-ed25519" | "ecdsa-sha2-nistp256" | "ecdsa-sha2-nistp384" => {},
+        _ => return Err(CursedError::InvalidArgument(format!("Unsupported SSH key algorithm: {}", algorithm))),
+    }
+    
+    // Decode base64 key data
+    general_purpose::STANDARD.decode(key_data)
+        .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64 in SSH key: {}", e)))
+}
+
+/// Parse JWK to raw bytes
+fn parse_jwk_to_bytes(jwk_str: &str, expected_key_type: &KeyType) -> Result<Vec<u8>, CursedError> {
+    let jwk: serde_json::Value = serde_json::from_str(jwk_str)
+        .map_err(|e| CursedError::InvalidArgument(format!("Invalid JWK JSON: {}", e)))?;
+    
+    let kty = jwk.get("kty")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| CursedError::InvalidArgument("Missing 'kty' field in JWK".to_string()))?;
+    
+    match (kty, expected_key_type) {
+        ("RSA", KeyType::RsaPrivate) => {
+            let d = jwk.get("d")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' field for RSA private key".to_string()))?;
+            
+            general_purpose::URL_SAFE_NO_PAD.decode(d)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in RSA private key: {}", e)))
+        },
+        ("RSA", KeyType::RsaPublic) => {
+            let n = jwk.get("n")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'n' field for RSA public key".to_string()))?;
+            
+            general_purpose::URL_SAFE_NO_PAD.decode(n)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in RSA public key: {}", e)))
+        },
+        ("EC", KeyType::EcdsaP256Private) | ("EC", KeyType::EcdsaP384Private) => {
+            let d = jwk.get("d")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' field for EC private key".to_string()))?;
+            
+            general_purpose::URL_SAFE_NO_PAD.decode(d)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in EC private key: {}", e)))
+        },
+        ("EC", KeyType::EcdsaP256Public) | ("EC", KeyType::EcdsaP384Public) => {
+            let x = jwk.get("x")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'x' field for EC public key".to_string()))?;
+            let y = jwk.get("y")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'y' field for EC public key".to_string()))?;
+            
+            let x_bytes = general_purpose::URL_SAFE_NO_PAD.decode(x)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in EC x coordinate: {}", e)))?;
+            let y_bytes = general_purpose::URL_SAFE_NO_PAD.decode(y)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in EC y coordinate: {}", e)))?;
+            
+            // Combine x and y coordinates with uncompressed point format (0x04 prefix)
+            let mut point = vec![0x04u8];
+            point.extend_from_slice(&x_bytes);
+            point.extend_from_slice(&y_bytes);
+            Ok(point)
+        },
+        ("OKP", KeyType::Ed25519Private) | ("OKP", KeyType::X25519Private) => {
+            let d = jwk.get("d")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' field for OKP private key".to_string()))?;
+            
+            general_purpose::URL_SAFE_NO_PAD.decode(d)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in OKP private key: {}", e)))
+        },
+        ("OKP", KeyType::Ed25519Public) | ("OKP", KeyType::X25519Public) => {
+            let x = jwk.get("x")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| CursedError::InvalidArgument("Missing 'x' field for OKP public key".to_string()))?;
+            
+            general_purpose::URL_SAFE_NO_PAD.decode(x)
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid base64url in OKP public key: {}", e)))
+        },
+        _ => Err(CursedError::InvalidArgument(format!("Unsupported key type combination: {} for {:?}", kty, expected_key_type))),
+    }
+}
+
 /// Validation helper functions
 fn validate_rsa_private_key_data(data: &[u8]) -> Result<(), String> {
-    RsaPrivateKey::from_pkcs8_der(data)
-        .map_err(|e| format!("Invalid RSA private key: {}", e))?;
-    Ok(())
+    // Try PKCS#8 first, then PKCS#1 if that fails
+    match RsaPrivateKey::from_pkcs8_der(data) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            // Try PKCS#1 format
+            RsaPrivateKey::from_pkcs1_der(data)
+                .map_err(|e| format!("Invalid RSA private key (tried PKCS#8 and PKCS#1): {}", e))?;
+            Ok(())
+        }
+    }
 }
 
 fn validate_rsa_public_key_data(data: &[u8]) -> Result<(), String> {
-    RsaPublicKey::from_public_key_der(data)
-        .map_err(|e| format!("Invalid RSA public key: {}", e))?;
-    Ok(())
+    // Try SubjectPublicKeyInfo first, then PKCS#1 if that fails
+    match RsaPublicKey::from_public_key_der(data) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            // Try PKCS#1 format
+            RsaPublicKey::from_pkcs1_der(data)
+                .map_err(|e| format!("Invalid RSA public key (tried SubjectPublicKeyInfo and PKCS#1): {}", e))?;
+            Ok(())
+        }
+    }
 }
 
 fn validate_p256_private_key_data(data: &[u8]) -> Result<(), String> {
-    P256SecretKey::from_pkcs8_der(data)
-        .map_err(|e| format!("Invalid P-256 private key: {}", e))?;
-    Ok(())
+    // Try PKCS#8 first, then raw key if length matches
+    match P256SecretKey::from_pkcs8_der(data) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            if data.len() == 32 {
+                // Try as raw 32-byte key
+                P256SecretKey::from_slice(data)
+                    .map_err(|e| format!("Invalid P-256 private key (tried PKCS#8 and raw): {}", e))?;
+                Ok(())
+            } else {
+                Err(format!("Invalid P-256 private key: wrong length {} (expected 32 for raw or PKCS#8 DER)", data.len()))
+            }
+        }
+    }
 }
 
 fn validate_p256_public_key_data(data: &[u8]) -> Result<(), String> {
-    P256PublicKey::from_public_key_der(data)
-        .map_err(|e| format!("Invalid P-256 public key: {}", e))?;
-    Ok(())
+    // Try SubjectPublicKeyInfo first, then raw key formats
+    match P256PublicKey::from_public_key_der(data) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            if data.len() == 65 && data[0] == 0x04 {
+                // Try as uncompressed SEC1 point
+                use elliptic_curve::sec1::{FromEncodedPoint, EncodedPoint};
+                let point = EncodedPoint::<p256::NistP256>::from_bytes(data)
+                    .map_err(|e| format!("Invalid SEC1 encoded point: {}", e))?;
+                P256PublicKey::from_encoded_point(&point)
+                    .map_err(|e| format!("Invalid P-256 public key point: {}", e))?;
+                Ok(())
+            } else if data.len() == 33 && (data[0] == 0x02 || data[0] == 0x03) {
+                // Try as compressed SEC1 point
+                use elliptic_curve::sec1::{FromEncodedPoint, EncodedPoint};
+                let point = EncodedPoint::<p256::NistP256>::from_bytes(data)
+                    .map_err(|e| format!("Invalid SEC1 encoded point: {}", e))?;
+                P256PublicKey::from_encoded_point(&point)
+                    .map_err(|e| format!("Invalid P-256 public key point: {}", e))?;
+                Ok(())
+            } else {
+                Err(format!("Invalid P-256 public key: unsupported format or length {}", data.len()))
+            }
+        }
+    }
 }
 
 fn validate_p384_private_key_data(data: &[u8]) -> Result<(), String> {
-    P384SecretKey::from_pkcs8_der(data)
-        .map_err(|e| format!("Invalid P-384 private key: {}", e))?;
-    Ok(())
+    // Try PKCS#8 first, then raw key if length matches
+    match P384SecretKey::from_pkcs8_der(data) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            if data.len() == 48 {
+                // Try as raw 48-byte key
+                P384SecretKey::from_slice(data)
+                    .map_err(|e| format!("Invalid P-384 private key (tried PKCS#8 and raw): {}", e))?;
+                Ok(())
+            } else {
+                Err(format!("Invalid P-384 private key: wrong length {} (expected 48 for raw or PKCS#8 DER)", data.len()))
+            }
+        }
+    }
 }
 
 fn validate_p384_public_key_data(data: &[u8]) -> Result<(), String> {
-    P384PublicKey::from_public_key_der(data)
-        .map_err(|e| format!("Invalid P-384 public key: {}", e))?;
-    Ok(())
+    // Try SubjectPublicKeyInfo first, then raw key formats
+    match P384PublicKey::from_public_key_der(data) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            if data.len() == 97 && data[0] == 0x04 {
+                // Try as uncompressed SEC1 point
+                use elliptic_curve::sec1::{FromEncodedPoint, EncodedPoint};
+                let point = EncodedPoint::<p384::NistP384>::from_bytes(data)
+                    .map_err(|e| format!("Invalid SEC1 encoded point: {}", e))?;
+                P384PublicKey::from_encoded_point(&point)
+                    .map_err(|e| format!("Invalid P-384 public key point: {}", e))?;
+                Ok(())
+            } else if data.len() == 49 && (data[0] == 0x02 || data[0] == 0x03) {
+                // Try as compressed SEC1 point
+                use elliptic_curve::sec1::{FromEncodedPoint, EncodedPoint};
+                let point = EncodedPoint::<p384::NistP384>::from_bytes(data)
+                    .map_err(|e| format!("Invalid SEC1 encoded point: {}", e))?;
+                P384PublicKey::from_encoded_point(&point)
+                    .map_err(|e| format!("Invalid P-384 public key point: {}", e))?;
+                Ok(())
+            } else {
+                Err(format!("Invalid P-384 public key: unsupported format or length {}", data.len()))
+            }
+        }
+    }
 }
 
 fn validate_ed25519_private_key_data(data: &[u8]) -> Result<(), String> {
@@ -696,27 +1423,157 @@ pub fn list_serialization_formats() -> Vec<String> {
 pub fn get_format_compatibility() -> HashMap<String, Vec<String>> {
     let mut compatibility = HashMap::new();
     
+    // RSA keys support all formats including SSH for public keys
     compatibility.insert(
-        "RSA".to_string(),
-        vec!["PEM".to_string(), "DER".to_string(), "SSH".to_string(), "Hex".to_string(), "Raw".to_string()]
+        "RSA-Private".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "Hex".to_string(), "Raw".to_string()]
+    );
+    compatibility.insert(
+        "RSA-Public".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "SSH".to_string(), "Hex".to_string(), "Raw".to_string()]
     );
     
+    // ECDSA P-256 keys
     compatibility.insert(
-        "ECDSA".to_string(),
-        vec!["PEM".to_string(), "DER".to_string(), "Hex".to_string(), "Raw".to_string()]
+        "ECDSA-P256-Private".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "Hex".to_string(), "Raw".to_string()]
+    );
+    compatibility.insert(
+        "ECDSA-P256-Public".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "SSH".to_string(), "Hex".to_string(), "Raw".to_string()]
     );
     
+    // ECDSA P-384 keys
     compatibility.insert(
-        "Ed25519".to_string(),
-        vec!["SSH".to_string(), "Hex".to_string(), "Raw".to_string()]
+        "ECDSA-P384-Private".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "Hex".to_string(), "Raw".to_string()]
+    );
+    compatibility.insert(
+        "ECDSA-P384-Public".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "SSH".to_string(), "Hex".to_string(), "Raw".to_string()]
     );
     
+    // Ed25519 keys
     compatibility.insert(
-        "X25519".to_string(),
-        vec!["Hex".to_string(), "Raw".to_string()]
+        "Ed25519-Private".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "Hex".to_string(), "Raw".to_string()]
+    );
+    compatibility.insert(
+        "Ed25519-Public".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "SSH".to_string(), "Hex".to_string(), "Raw".to_string()]
+    );
+    
+    // X25519 keys (no SSH support as it's for key exchange, not authentication)
+    compatibility.insert(
+        "X25519-Private".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "Hex".to_string(), "Raw".to_string()]
+    );
+    compatibility.insert(
+        "X25519-Public".to_string(),
+        vec!["PEM".to_string(), "DER".to_string(), "JWK".to_string(), "Hex".to_string(), "Raw".to_string()]
     );
     
     compatibility
+}
+
+/// Get detailed format information
+pub fn get_format_info(args: Vec<Value>) -> Result<Value, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::InvalidArgument("Format name required".to_string()));
+    }
+    
+    let format_name = match &args[0] {
+        Value::String(s) => s.clone(),
+        _ => return Err(CursedError::InvalidArgument("Format name must be a string".to_string())),
+    };
+    
+    let format = SerializationFormat::from_name(&format_name)?;
+    
+    let mut info = HashMap::new();
+    info.insert("name".to_string(), Value::String(format.name().to_string()));
+    info.insert("description".to_string(), Value::String(format.description().to_string()));
+    info.insert("file_extension".to_string(), Value::String(format.file_extension().to_string()));
+    
+    let encoding_info = match format {
+        SerializationFormat::Pem => "Base64 with ASCII armor headers (BEGIN/END)",
+        SerializationFormat::Der => "Binary ASN.1 Distinguished Encoding Rules",
+        SerializationFormat::Jwk => "JSON Web Key standard (RFC 7517)",
+        SerializationFormat::Ssh => "OpenSSH public key format",
+        SerializationFormat::Raw => "Raw binary key material",
+        SerializationFormat::Hex => "Hexadecimal string representation",
+    };
+    info.insert("encoding_details".to_string(), Value::String(encoding_info.to_string()));
+    
+    let supported_ops = match format {
+        SerializationFormat::Ssh => vec!["Public key export only"],
+        _ => vec!["Serialization", "Deserialization"],
+    };
+    let ops_values: Vec<Value> = supported_ops.iter().map(|s| Value::String(s.to_string())).collect();
+    info.insert("supported_operations".to_string(), Value::Array(ops_values));
+    
+    Ok(Value::Object(info))
+}
+
+/// Convert between key formats
+pub fn convert_key_format(args: Vec<Value>) -> Result<Value, CursedError> {
+    if args.len() < 4 {
+        return Err(CursedError::InvalidArgument("Key format conversion requires: key_type, key_data, source_format, target_format".to_string()));
+    }
+    
+    let key_type_name = match &args[0] {
+        Value::String(s) => s.clone(),
+        _ => return Err(CursedError::InvalidArgument("Key type must be a string".to_string())),
+    };
+    
+    let key_data = match &args[1] {
+        Value::String(s) => s.clone(),
+        _ => return Err(CursedError::InvalidArgument("Key data must be a string".to_string())),
+    };
+    
+    let source_format_name = match &args[2] {
+        Value::String(s) => s.clone(),
+        _ => return Err(CursedError::InvalidArgument("Source format must be a string".to_string())),
+    };
+    
+    let target_format_name = match &args[3] {
+        Value::String(s) => s.clone(),
+        _ => return Err(CursedError::InvalidArgument("Target format must be a string".to_string())),
+    };
+    
+    // First deserialize from source format
+    let deserialize_result = deserialize_key(vec![
+        Value::String(source_format_name),
+        Value::String(key_data),
+        Value::String(key_type_name.clone()),
+    ])?;
+    
+    // Extract the raw key data
+    let raw_key_data = match deserialize_result {
+        Value::Object(mut map) => {
+            let valid = map.get("valid").and_then(|v| {
+                if let Value::Boolean(b) = v { Some(*b) } else { None }
+            }).unwrap_or(false);
+            
+            if !valid {
+                let error_msg = map.get("error")
+                    .and_then(|v| if let Value::String(s) = v { Some(s.clone()) } else { None })
+                    .unwrap_or_else(|| "Unknown validation error".to_string());
+                return Err(CursedError::InvalidArgument(format!("Invalid source key data: {}", error_msg)));
+            }
+            
+            map.remove("key_data")
+                .and_then(|v| if let Value::String(s) = v { Some(s) } else { None })
+                .ok_or_else(|| CursedError::InvalidArgument("No key data in deserialization result".to_string()))?
+        },
+        _ => return Err(CursedError::InvalidArgument("Invalid deserialization result format".to_string())),
+    };
+    
+    // Then serialize to target format
+    serialize_key(vec![
+        Value::String(key_type_name),
+        Value::String(raw_key_data),
+        Value::String(target_format_name),
+    ])
 }
 
 #[cfg(test)]
@@ -767,11 +1624,187 @@ mod tests {
     #[test]
     fn test_get_format_compatibility() {
         let compatibility = get_format_compatibility();
-        assert!(compatibility.contains_key("RSA"));
-        assert!(compatibility.contains_key("Ed25519"));
+        assert!(compatibility.contains_key("RSA-Private"));
+        assert!(compatibility.contains_key("RSA-Public"));
+        assert!(compatibility.contains_key("Ed25519-Private"));
+        assert!(compatibility.contains_key("Ed25519-Public"));
+        assert!(compatibility.contains_key("ECDSA-P256-Private"));
+        assert!(compatibility.contains_key("ECDSA-P256-Public"));
+        assert!(compatibility.contains_key("ECDSA-P384-Private"));
+        assert!(compatibility.contains_key("ECDSA-P384-Public"));
+        assert!(compatibility.contains_key("X25519-Private"));
+        assert!(compatibility.contains_key("X25519-Public"));
         
-        let rsa_formats = &compatibility["RSA"];
-        assert!(rsa_formats.contains(&"PEM".to_string()));
-        assert!(rsa_formats.contains(&"SSH".to_string()));
+        let rsa_public_formats = &compatibility["RSA-Public"];
+        assert!(rsa_public_formats.contains(&"PEM".to_string()));
+        assert!(rsa_public_formats.contains(&"DER".to_string()));
+        assert!(rsa_public_formats.contains(&"JWK".to_string()));
+        assert!(rsa_public_formats.contains(&"SSH".to_string()));
+        
+        let rsa_private_formats = &compatibility["RSA-Private"];
+        assert!(rsa_private_formats.contains(&"PEM".to_string()));
+        assert!(rsa_private_formats.contains(&"JWK".to_string()));
+        assert!(!rsa_private_formats.contains(&"SSH".to_string())); // Private keys don't support SSH
+        
+        let ed25519_public_formats = &compatibility["Ed25519-Public"];
+        assert!(ed25519_public_formats.contains(&"PEM".to_string()));
+        assert!(ed25519_public_formats.contains(&"JWK".to_string()));
+        assert!(ed25519_public_formats.contains(&"SSH".to_string()));
+        
+        let x25519_formats = &compatibility["X25519-Public"];
+        assert!(x25519_formats.contains(&"JWK".to_string()));
+        assert!(x25519_formats.contains(&"PEM".to_string()));
+        assert!(!x25519_formats.contains(&"SSH".to_string())); // X25519 doesn't support SSH
+    }
+
+    #[test]
+    fn test_jwk_parsing() {
+        // Test Ed25519 public key JWK
+        let ed25519_jwk = r#"{"kty":"OKP","crv":"Ed25519","x":"GpwbGQhqNWGJBIIqwByCdtKEYGCk0G0nfFfFwCl_-DE"}"#;
+        let result = parse_jwk_to_bytes(ed25519_jwk, &KeyType::Ed25519Public);
+        assert!(result.is_ok());
+        let bytes = result.unwrap();
+        assert_eq!(bytes.len(), 32);
+        
+        // Test RSA public key JWK
+        let rsa_jwk = r#"{"kty":"RSA","n":"0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbIS"}"#;
+        let result = parse_jwk_to_bytes(rsa_jwk, &KeyType::RsaPublic);
+        assert!(result.is_ok());
+        
+        // Test invalid JWK
+        let invalid_jwk = r#"{"invalid": "json"}"#;
+        let result = parse_jwk_to_bytes(invalid_jwk, &KeyType::Ed25519Public);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_create_ed25519_der() {
+        let key_data = vec![0u8; 32];
+        let result = create_ed25519_private_key_der(&key_data);
+        assert!(result.is_ok());
+        let der = result.unwrap();
+        
+        // Should be valid PKCS#8 DER format
+        assert!(der.len() > 32); // Should be longer than just the key
+        assert_eq!(der[0], 0x30); // Should start with SEQUENCE tag
+        
+        let public_result = create_ed25519_public_key_der(&key_data);
+        assert!(public_result.is_ok());
+        let public_der = public_result.unwrap();
+        assert_eq!(public_der[0], 0x30); // Should start with SEQUENCE tag
+    }
+
+    #[test]
+    fn test_create_x25519_jwk() {
+        let key_data = vec![1u8; 32];
+        let result = create_jwk_x25519_private_key(&key_data);
+        assert!(result.is_ok());
+        
+        let jwk_bytes = result.unwrap();
+        let jwk_str = String::from_utf8(jwk_bytes).unwrap();
+        let jwk: serde_json::Value = serde_json::from_str(&jwk_str).unwrap();
+        
+        assert_eq!(jwk["kty"], "OKP");
+        assert_eq!(jwk["crv"], "X25519");
+        assert!(jwk["d"].is_string());
+        assert!(jwk["x"].is_string());
+    }
+
+    #[test]
+    fn test_format_round_trip() {
+        let test_key = vec![42u8; 32];
+        
+        // Test Ed25519 key round trip through various formats
+        for format in &[SerializationFormat::Hex, SerializationFormat::Raw] {
+            let serialized = match format {
+                SerializationFormat::Hex => hex::encode(&test_key).into_bytes(),
+                SerializationFormat::Raw => test_key.clone(),
+                _ => continue,
+            };
+            
+            let serialized_str = String::from_utf8_lossy(&serialized);
+            let parsed = match format {
+                SerializationFormat::Hex => hex::decode(serialized_str.as_ref()).unwrap(),
+                SerializationFormat::Raw => serialized_str.as_bytes().to_vec(),
+                _ => continue,
+            };
+            
+            assert_eq!(parsed, test_key);
+        }
+    }
+
+    #[test]
+    fn test_pem_parsing() {
+        let pem_data = r#"-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4f5wg5l2hKsTeNem/V41
+fGnJm6gOdrj8ym3rFkEjWT2btf/FuFAIWTrR7N2FHR1JiYTjhp0wI4lKRXp1ObVc
+1YA8y8A2cM3HFdF4zX7l5Z0JQ8AuVtVjRa5Fhf4YkfznF5jNg2D6JjZKY6BVbZQ
+-----END PUBLIC KEY-----"#;
+        
+        let result = parse_pem_to_bytes(pem_data);
+        assert!(result.is_ok());
+        let bytes = result.unwrap();
+        assert!(!bytes.is_empty());
+        
+        // Test invalid PEM
+        let invalid_pem = "This is not a PEM";
+        let result = parse_pem_to_bytes(invalid_pem);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_ssh_parsing() {
+        let ssh_data = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGpwbGQhqNWGJBIIqwByCdtKEYGCk0G0nfFfFwCl_-DE test@example.com";
+        
+        let result = parse_ssh_to_bytes(ssh_data);
+        assert!(result.is_ok());
+        let bytes = result.unwrap();
+        assert!(!bytes.is_empty());
+        
+        // Test invalid SSH
+        let invalid_ssh = "invalid-key format";
+        let result = parse_ssh_to_bytes(invalid_ssh);
+        assert!(result.is_err());
+        
+        // Test unsupported algorithm
+        let unsupported_ssh = "unsupported-algo AAAAC3NzaC1lZDI1NTE5AAAAIGpwbGQhqNWGJBIIqwByCdtKEYGCk0G0nfFfFwCl_-DE";
+        let result = parse_ssh_to_bytes(unsupported_ssh);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_format_info() {
+        let result = get_format_info(vec![Value::String("PEM".to_string())]);
+        assert!(result.is_ok());
+        
+        if let Ok(Value::Object(info)) = result {
+            assert!(info.contains_key("name"));
+            assert!(info.contains_key("description"));
+            assert!(info.contains_key("file_extension"));
+            assert!(info.contains_key("encoding_details"));
+            assert!(info.contains_key("supported_operations"));
+        }
+        
+        // Test invalid format
+        let result = get_format_info(vec![Value::String("INVALID".to_string())]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_enhanced_validation() {
+        // Test Ed25519 validation with correct length
+        let valid_ed25519 = vec![1u8; 32];
+        assert!(validate_ed25519_private_key_data(&valid_ed25519).is_ok());
+        assert!(validate_ed25519_public_key_data(&valid_ed25519).is_ok());
+        
+        // Test Ed25519 validation with incorrect length
+        let invalid_ed25519 = vec![1u8; 16];
+        assert!(validate_ed25519_private_key_data(&invalid_ed25519).is_err());
+        assert!(validate_ed25519_public_key_data(&invalid_ed25519).is_err());
+        
+        // Test X25519 validation
+        let valid_x25519 = vec![2u8; 32];
+        assert!(validate_x25519_private_key_data(&valid_x25519).is_ok());
+        assert!(validate_x25519_public_key_data(&valid_x25519).is_ok());
     }
 }

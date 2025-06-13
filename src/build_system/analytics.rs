@@ -596,14 +596,77 @@ impl BuildAnalytics {
 
     /// Start system resource monitoring
     fn start_system_monitoring(&self) -> Result<()> {
-        // TODO: Implement system monitoring
-        debug!("Started system monitoring");
+        if !self.config.enable_memory_profiling && !self.config.enable_cpu_profiling {
+            return Ok(());
+        }
+
+        let system_monitor = Arc::clone(&self.system_monitor);
+        let sampling_interval = Duration::from_millis(self.config.sampling_interval_ms);
+        let enable_memory = self.config.enable_memory_profiling;
+        let enable_cpu = self.config.enable_cpu_profiling;
+
+        thread::spawn(move || {
+            use sysinfo::{System, SystemExt, ProcessExt, Pid};
+            let mut sys = System::new_all();
+            let current_pid = Pid::from(std::process::id() as usize);
+
+            loop {
+                sys.refresh_all();
+                let now = Instant::now();
+                
+                let mut monitor = match system_monitor.lock() {
+                    Ok(monitor) => monitor,
+                    Err(_) => break,
+                };
+
+                // Check if we should continue monitoring
+                if now.duration_since(monitor.last_sample_time) < sampling_interval {
+                    drop(monitor);
+                    thread::sleep(Duration::from_millis(10));
+                    continue;
+                }
+
+                // Sample memory usage
+                if enable_memory {
+                    if let Some(process) = sys.process(current_pid) {
+                        let memory_mb = process.memory() as f64 / (1024.0 * 1024.0);
+                        monitor.memory_samples.push_back(memory_mb);
+                        
+                        // Limit sample history
+                        if monitor.memory_samples.len() > 1000 {
+                            monitor.memory_samples.pop_front();
+                        }
+                    }
+                }
+
+                // Sample CPU usage
+                if enable_cpu {
+                    if let Some(process) = sys.process(current_pid) {
+                        let cpu_percent = process.cpu_usage() as f64;
+                        monitor.cpu_samples.push_back(cpu_percent);
+                        
+                        // Limit sample history
+                        if monitor.cpu_samples.len() > 1000 {
+                            monitor.cpu_samples.pop_front();
+                        }
+                    }
+                }
+
+                monitor.last_sample_time = now;
+                drop(monitor);
+                
+                thread::sleep(sampling_interval);
+            }
+        });
+
+        debug!("Started system monitoring with {}ms interval", self.config.sampling_interval_ms);
         Ok(())
     }
 
     /// Stop system resource monitoring
     fn stop_system_monitoring(&self) -> Result<()> {
-        // TODO: Implement system monitoring stop
+        // The monitoring thread will stop when the system_monitor mutex is dropped
+        // or when the process exits. For graceful shutdown, we could use a shutdown signal.
         debug!("Stopped system monitoring");
         Ok(())
     }
@@ -687,29 +750,248 @@ impl BuildAnalytics {
 
     /// Load historical analytics data
     fn load_historical_data(&self) -> Result<()> {
-        // TODO: Implement historical data loading
-        debug!("Loading historical analytics data");
+        let data_path = &self.config.analytics_data_path;
+        
+        // Load metrics history
+        let metrics_file = data_path.join("metrics_history.json");
+        if metrics_file.exists() {
+            match std::fs::read_to_string(&metrics_file) {
+                Ok(content) => {
+                    match serde_json::from_str::<Vec<BuildMetrics>>(&content) {
+                        Ok(metrics) => {
+                            let mut history = self.metrics_history.write()
+                                .map_err(|_| CursedError::system_error("Failed to lock metrics history"))?;
+                            *history = metrics;
+                            info!("Loaded {} historical metrics entries", history.len());
+                        }
+                        Err(e) => warn!("Failed to parse metrics history: {}", e),
+                    }
+                }
+                Err(e) => warn!("Failed to read metrics history file: {}", e),
+            }
+        }
+
+        // Load trend data
+        let trends_file = data_path.join("trend_analysis.json");
+        if trends_file.exists() {
+            match std::fs::read_to_string(&trends_file) {
+                Ok(content) => {
+                    match serde_json::from_str::<TrendAnalysis>(&content) {
+                        Ok(trends) => {
+                            let mut trend_data = self.trend_data.write()
+                                .map_err(|_| CursedError::system_error("Failed to lock trend data"))?;
+                            *trend_data = trends;
+                            info!("Loaded trend analysis data");
+                        }
+                        Err(e) => warn!("Failed to parse trend data: {}", e),
+                    }
+                }
+                Err(e) => warn!("Failed to read trend data file: {}", e),
+            }
+        }
+
+        // Load performance baselines
+        let baselines_file = data_path.join("baselines.json");
+        if baselines_file.exists() {
+            match std::fs::read_to_string(&baselines_file) {
+                Ok(content) => {
+                    match serde_json::from_str::<HashMap<String, f64>>(&content) {
+                        Ok(baselines) => {
+                            let mut performance_baselines = self.performance_baselines.write()
+                                .map_err(|_| CursedError::system_error("Failed to lock baselines"))?;
+                            *performance_baselines = baselines;
+                            info!("Loaded {} performance baselines", performance_baselines.len());
+                        }
+                        Err(e) => warn!("Failed to parse baselines: {}", e),
+                    }
+                }
+                Err(e) => warn!("Failed to read baselines file: {}", e),
+            }
+        }
+
+        debug!("Historical analytics data loading completed");
         Ok(())
     }
 
     /// Generate optimization recommendations
     fn generate_recommendations(&self) -> Result<Vec<String>> {
-        // TODO: Implement recommendation generation
-        Ok(vec![
-            "Consider enabling more aggressive caching".to_string(),
-            "Increase parallel compilation jobs".to_string(),
-            "Review dependency structure for optimization opportunities".to_string(),
-        ])
+        let mut recommendations = Vec::new();
+        
+        // Get recent metrics for analysis
+        let history = self.metrics_history.read()
+            .map_err(|_| CursedError::system_error("Failed to lock metrics history"))?;
+        
+        if history.is_empty() {
+            return Ok(vec!["Collect more build data to generate recommendations".to_string()]);
+        }
+        
+        let latest = &history[history.len() - 1];
+        
+        // Analyze cache hit rate
+        if latest.cache_hit_rate < 0.5 {
+            recommendations.push(format!(
+                "Cache hit rate is low ({:.1}%). Consider enabling more aggressive caching or checking cache invalidation logic.",
+                latest.cache_hit_rate * 100.0
+            ));
+        }
+        
+        // Analyze build time
+        if latest.total_build_time.as_secs() > 60 {
+            recommendations.push(format!(
+                "Build time is {}s. Consider increasing parallelization or enabling incremental compilation.",
+                latest.total_build_time.as_secs()
+            ));
+        }
+        
+        // Analyze memory usage
+        if latest.memory_peak_mb > 2048.0 {
+            recommendations.push(format!(
+                "Peak memory usage is {:.1}MB. Consider enabling streaming compilation or reducing concurrent jobs.",
+                latest.memory_peak_mb
+            ));
+        }
+        
+        // Analyze parallelism efficiency
+        if latest.parallelism_efficiency < 0.7 {
+            recommendations.push(format!(
+                "Parallelism efficiency is {:.1}%. Review dependency graph for better parallelization opportunities.",
+                latest.parallelism_efficiency * 100.0
+            ));
+        }
+        
+        // Compare with historical data if available
+        if history.len() >= 5 {
+            let recent_avg_time = history.iter()
+                .rev()
+                .take(5)
+                .map(|m| m.total_build_time.as_secs_f64())
+                .sum::<f64>() / 5.0;
+            
+            let older_avg_time = history.iter()
+                .rev()
+                .skip(5)
+                .take(5)
+                .map(|m| m.total_build_time.as_secs_f64())
+                .sum::<f64>() / 5.0;
+            
+            if recent_avg_time > older_avg_time * 1.2 {
+                recommendations.push(format!(
+                    "Build times have increased by {:.1}% recently. Review recent changes for performance impacts.",
+                    ((recent_avg_time - older_avg_time) / older_avg_time) * 100.0
+                ));
+            }
+        }
+        
+        // Analyze compilation vs linking time ratio
+        let compile_ratio = latest.compilation_time.as_secs_f64() / latest.total_build_time.as_secs_f64();
+        if compile_ratio < 0.3 {
+            recommendations.push(
+                "Linking takes a large portion of build time. Consider splitting large binaries or using dynamic linking.".to_string()
+            );
+        }
+        
+        // Network time analysis
+        if latest.network_time.as_secs() > 5 {
+            recommendations.push(format!(
+                "Network operations take {}s. Consider using local package cache or faster registry.",
+                latest.network_time.as_secs()
+            ));
+        }
+        
+        // Add general recommendations if no specific issues found
+        if recommendations.is_empty() {
+            recommendations.push("Build performance looks good! Consider enabling advanced optimizations for even better performance.".to_string());
+        }
+        
+        Ok(recommendations)
     }
 
     /// Generate performance comparison with historical data
     fn generate_performance_comparison(&self) -> Result<PerformanceComparison> {
-        // TODO: Implement performance comparison
+        let history = self.metrics_history.read()
+            .map_err(|_| CursedError::system_error("Failed to lock metrics history"))?;
+        
+        if history.len() < 2 {
+            return Ok(PerformanceComparison {
+                compared_to_last_build: 0.0,
+                compared_to_average: 0.0,
+                compared_to_best: 0.0,
+                trend_direction: TrendDirection::Stable,
+            });
+        }
+        
+        let latest = &history[history.len() - 1];
+        let current_time = latest.total_build_time.as_secs_f64();
+        
+        // Compare to last build
+        let last_build = &history[history.len() - 2];
+        let last_time = last_build.total_build_time.as_secs_f64();
+        let compared_to_last = if last_time > 0.0 {
+            ((current_time - last_time) / last_time) * 100.0
+        } else {
+            0.0
+        };
+        
+        // Compare to average of recent builds
+        let recent_count = history.len().min(10);
+        let recent_avg = history.iter()
+            .rev()
+            .take(recent_count)
+            .map(|m| m.total_build_time.as_secs_f64())
+            .sum::<f64>() / recent_count as f64;
+        
+        let compared_to_average = if recent_avg > 0.0 {
+            ((current_time - recent_avg) / recent_avg) * 100.0
+        } else {
+            0.0
+        };
+        
+        // Compare to best build time
+        let best_time = history.iter()
+            .map(|m| m.total_build_time.as_secs_f64())
+            .fold(f64::INFINITY, f64::min);
+        
+        let compared_to_best = if best_time > 0.0 && best_time < f64::INFINITY {
+            ((current_time - best_time) / best_time) * 100.0
+        } else {
+            0.0
+        };
+        
+        // Determine trend direction
+        let trend_direction = if history.len() >= 5 {
+            let recent_trend = history.iter()
+                .rev()
+                .take(5)
+                .map(|m| m.total_build_time.as_secs_f64())
+                .collect::<Vec<_>>();
+            
+            // Simple linear regression to determine trend
+            let n = recent_trend.len() as f64;
+            let sum_x: f64 = (0..recent_trend.len()).map(|i| i as f64).sum();
+            let sum_y: f64 = recent_trend.iter().sum();
+            let sum_xy: f64 = recent_trend.iter().enumerate()
+                .map(|(i, &y)| i as f64 * y)
+                .sum();
+            let sum_x2: f64 = (0..recent_trend.len()).map(|i| (i as f64).powi(2)).sum();
+            
+            let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x.powi(2));
+            
+            if slope > 0.1 {
+                TrendDirection::Degrading
+            } else if slope < -0.1 {
+                TrendDirection::Improving
+            } else {
+                TrendDirection::Stable
+            }
+        } else {
+            TrendDirection::Stable
+        };
+        
         Ok(PerformanceComparison {
-            compared_to_last_build: 0.0,
-            compared_to_average: 0.0,
-            compared_to_best: 0.0,
-            trend_direction: TrendDirection::Stable,
+            compared_to_last_build: compared_to_last,
+            compared_to_average: compared_to_average,
+            compared_to_best: compared_to_best,
+            trend_direction,
         })
     }
 

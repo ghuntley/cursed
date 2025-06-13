@@ -1014,9 +1014,92 @@ impl LayoutHelpers {
         locals: &HashMap<String, CursedObject>,
         context: &HtmlTemplateContext,
     ) -> Result<String, CursedError> {
-        // In a real implementation, this would load the partial template from filesystem
-        // For now, return a placeholder
-        Ok(format!("<!-- Partial: {} with {} locals -->", partial_name, locals.len()))
+        use super::template_core::{FileSystemLoader, TemplateLoader, TemplateEngine};
+        use super::template_render::RenderContext;
+        use std::path::PathBuf;
+        
+        // Default partials directory
+        let partials_dir = PathBuf::from("templates/partials");
+        
+        // Create filesystem loader for partials
+        let loader = FileSystemLoader::new(partials_dir);
+        
+        // Try different partial file patterns
+        let possible_names = vec![
+            format!("_{}.html", partial_name),    // _header.html
+            format!("{}.html", partial_name),      // header.html
+            format!("_{}.txt", partial_name),      // _header.txt
+            format!("{}.txt", partial_name),       // header.txt
+        ];
+        
+        let mut template_content = None;
+        let mut found_name = None;
+        
+        for name in &possible_names {
+            if loader.exists(name) {
+                match loader.load(name) {
+                    Ok(content) => {
+                        template_content = Some(content);
+                        found_name = Some(name.clone());
+                        debug!("Loaded partial template: {}", name);
+                        break;
+                    }
+                    Err(e) => {
+                        warn!("Failed to load partial '{}': {}", name, e);
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        let content = template_content.ok_or_else(|| {
+            CursedError::TemplateError {
+                message: format!("Partial template '{}' not found. Tried: {:?}", partial_name, possible_names),
+                source_location: None,
+            }
+        })?;
+        
+        // Parse and render the partial template
+        use super::template_syntax::{TemplateLexer, TemplateParser};
+        
+        let mut lexer = TemplateLexer::new(&content);
+        let tokens = lexer.tokenize().map_err(|e| {
+            CursedError::TemplateError {
+                message: format!("Failed to tokenize partial '{}': {}", partial_name, e),
+                source_location: None,
+            }
+        })?;
+        
+        let mut parser = TemplateParser::new(tokens);
+        let ast = parser.parse().map_err(|e| {
+            CursedError::TemplateError {
+                message: format!("Failed to parse partial '{}': {}", partial_name, e),
+                source_location: None,
+            }
+        })?;
+        
+        // Create render context with locals merged in
+        let mut render_context = RenderContext::new();
+        
+        // Add locals to render context
+        for (key, value) in locals {
+            render_context.set_variable(key.clone(), value.clone());
+        }
+        
+        // Create a basic template engine for rendering
+        let engine = TemplateEngine::new(Box::new(loader));
+        let mut renderer = super::template_render::TemplateRenderer::new(&engine);
+        
+        // Render the partial
+        let rendered = renderer.render_ast(&ast, &render_context).map_err(|e| {
+            CursedError::TemplateError {
+                message: format!("Failed to render partial '{}': {}", partial_name, e),
+                source_location: None,
+            }
+        })?;
+        
+        debug!("Successfully rendered partial '{}' ({} chars)", found_name.unwrap_or_default(), rendered.len());
+        Ok(rendered)
     }
 }
 
