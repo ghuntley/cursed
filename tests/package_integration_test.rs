@@ -138,7 +138,7 @@ async fn test_import_resolution() {
     
     // Test stdlib import resolution
     let stdlib_import = ImportStatement::new(
-        cursed::lexer::Token::new(cursed::lexer::TokenType::Yeet, "yeet".to_string(), 1, 1),
+        cursed::lexer::Token::new(cursed::lexer::TokenType::Yeet, "yeet"),
         "stdlib::io".to_string()
     );
     

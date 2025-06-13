@@ -6,6 +6,38 @@ use tracing::{debug, instrument, warn, info};
 use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 
+/// Template-specific error types
+#[derive(Debug, Clone)]
+pub enum TemplateError {
+    /// Error during template rendering
+    RenderError(String),
+    /// Invalid template parameter
+    ParameterError(String),
+    /// Template not found
+    NotFoundError(String),
+    /// General template error
+    GeneralError(String),
+}
+
+impl std::fmt::Display for TemplateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TemplateError::RenderError(msg) => write!(f, "Template render error: {}", msg),
+            TemplateError::ParameterError(msg) => write!(f, "Template parameter error: {}", msg),
+            TemplateError::NotFoundError(msg) => write!(f, "Template not found: {}", msg),
+            TemplateError::GeneralError(msg) => write!(f, "Template error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for TemplateError {}
+
+impl From<CursedError> for TemplateError {
+    fn from(err: CursedError) -> Self {
+        TemplateError::GeneralError(err.to_string())
+    }
+}
+
 /// HTML template context with auto-escaping and safe content handling
 #[derive(Debug, Clone)]
 pub struct HtmlTemplateContext {
@@ -611,7 +643,7 @@ impl HtmlTemplateHelpers {
         text: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<String, TemplateError> {
         let mut attr_map = HashMap::new();
         attr_map.insert("href".to_string(), href.to_string());
 
@@ -631,7 +663,7 @@ impl HtmlTemplateHelpers {
         }
 
         let html = escaper.generate_html_with_csp("a", &attr_map, Some(text))?;
-        Ok(CursedObject::String(html))
+        Ok(html)
     }
 
     /// Generate an image tag
@@ -763,7 +795,7 @@ impl HtmlTemplateHelpers {
         selected: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<String, TemplateError> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
 
@@ -798,7 +830,7 @@ impl HtmlTemplateHelpers {
         }
 
         let html = escaper.generate_html_with_csp("select", &attr_map, Some(&content))?;
-        Ok(CursedObject::String(html))
+        Ok(html)
     }
 
     /// Generate a textarea
@@ -807,7 +839,7 @@ impl HtmlTemplateHelpers {
         content: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<String, TemplateError> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
 
@@ -827,7 +859,7 @@ impl HtmlTemplateHelpers {
         }
 
         let html = escaper.generate_html_with_csp("textarea", &attr_map, Some(content))?;
-        Ok(CursedObject::String(html))
+        Ok(html)
     }
 
     /// Generate radio button group
@@ -836,7 +868,7 @@ impl HtmlTemplateHelpers {
         options: &[(String, String)], // (value, label) pairs
         selected: Option<&str>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<String, TemplateError> {
         let mut html = String::new();
         
         for (value, label) in options {
@@ -857,7 +889,7 @@ impl HtmlTemplateHelpers {
             ));
         }
         
-        Ok(CursedObject::String(html))
+        Ok(html)
     }
 
     /// Generate checkbox
@@ -868,7 +900,7 @@ impl HtmlTemplateHelpers {
         label: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<String, TemplateError> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), "checkbox".to_string());
         attr_map.insert("name".to_string(), name.to_string());
@@ -903,9 +935,9 @@ impl HtmlTemplateHelpers {
             // Add id to input
             let input_with_id = input_html.replace(">", &format!(" id=\"{}\">", escaped_id));
             let full_html = format!("{}<label for=\"{}\">{}</label>", input_with_id, escaped_id, escaped_label);
-            Ok(CursedObject::String(full_html))
+            Ok(full_html)
         } else {
-            Ok(CursedObject::String(input_html))
+            Ok(input_html)
         }
     }
 }
@@ -1355,15 +1387,12 @@ mod tests {
             ("value2".to_string(), "Option 2".to_string()),
         ];
 
-        let result = HtmlTemplateHelpers::select("test_select", &options, Some("value1"), None, &escaper).unwrap();
-        if let CursedObject::String(html) = result {
-            assert!(html.contains("<select"));
-            assert!(html.contains("name=\"test_select\""));
-            assert!(html.contains("<option value=\"value1\" selected>Option 1</option>"));
-            assert!(html.contains("<option value=\"value2\">Option 2</option>"));
-        } else {
-            panic!("Expected String result");
-        }
+        let html = HtmlTemplateHelpers::select("test_select", &options, Some("value1"), None, &escaper)
+            .expect("Failed to generate select HTML - expected String result but got different type");
+        assert!(html.contains("<select"));
+        assert!(html.contains("name=\"test_select\""));
+        assert!(html.contains("<option value=\"value1\" selected>Option 1</option>"));
+        assert!(html.contains("<option value=\"value2\">Option 2</option>"));
     }
 
     #[test]
@@ -1371,15 +1400,12 @@ mod tests {
         let context = HtmlTemplateContext::new();
         let escaper = HtmlEscaper::new(context);
 
-        let result = HtmlTemplateHelpers::textarea("message", "Hello world", None, &escaper).unwrap();
-        if let CursedObject::String(html) = result {
-            assert!(html.contains("<textarea"));
-            assert!(html.contains("name=\"message\""));
-            assert!(html.contains("Hello world"));
-            assert!(html.contains("</textarea>"));
-        } else {
-            panic!("Expected String result");
-        }
+        let html = HtmlTemplateHelpers::textarea("message", "Hello world", None, &escaper)
+            .expect("Failed to generate textarea HTML - expected String result but got different type");
+        assert!(html.contains("<textarea"));
+        assert!(html.contains("name=\"message\""));
+        assert!(html.contains("Hello world"));
+        assert!(html.contains("</textarea>"));
     }
 
     #[test]
@@ -1392,17 +1418,14 @@ mod tests {
             ("no".to_string(), "No".to_string()),
         ];
 
-        let result = HtmlTemplateHelpers::radio_group("choice", &options, Some("yes"), &escaper).unwrap();
-        if let CursedObject::String(html) = result {
-            assert!(html.contains("type=\"radio\""));
-            assert!(html.contains("name=\"choice\""));
-            assert!(html.contains("value=\"yes\" id=\"choice_yes\" checked"));
-            assert!(html.contains("value=\"no\" id=\"choice_no\">"));
-            assert!(html.contains("<label for=\"choice_yes\">Yes</label>"));
-            assert!(html.contains("<label for=\"choice_no\">No</label>"));
-        } else {
-            panic!("Expected String result");
-        }
+        let html = HtmlTemplateHelpers::radio_group("choice", &options, Some("yes"), &escaper)
+            .expect("Failed to generate radio group HTML - expected String result but got different type");
+        assert!(html.contains("type=\"radio\""));
+        assert!(html.contains("name=\"choice\""));
+        assert!(html.contains("value=\"yes\" id=\"choice_yes\" checked"));
+        assert!(html.contains("value=\"no\" id=\"choice_no\">"));
+        assert!(html.contains("<label for=\"choice_yes\">Yes</label>"));
+        assert!(html.contains("<label for=\"choice_no\">No</label>"));
     }
 
     #[test]
@@ -1410,16 +1433,13 @@ mod tests {
         let context = HtmlTemplateContext::new();
         let escaper = HtmlEscaper::new(context);
 
-        let result = HtmlTemplateHelpers::checkbox("agree", "1", true, Some("I agree"), None, &escaper).unwrap();
-        if let CursedObject::String(html) = result {
-            assert!(html.contains("type=\"checkbox\""));
-            assert!(html.contains("name=\"agree\""));
-            assert!(html.contains("value=\"1\""));
-            assert!(html.contains("checked"));
-            assert!(html.contains("<label for=\"agree_1\">I agree</label>"));
-        } else {
-            panic!("Expected String result");
-        }
+        let html = HtmlTemplateHelpers::checkbox("agree", "1", true, Some("I agree"), None, &escaper)
+            .expect("Failed to generate checkbox HTML - expected String result but got different type");
+        assert!(html.contains("type=\"checkbox\""));
+        assert!(html.contains("name=\"agree\""));
+        assert!(html.contains("value=\"1\""));
+        assert!(html.contains("checked"));
+        assert!(html.contains("<label for=\"agree_1\">I agree</label>"));
     }
 
     #[test]

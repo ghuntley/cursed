@@ -8,6 +8,9 @@ pub struct DebugConfig {
     /// Enable debug information generation
     pub generate_debug_info: bool,
     
+    /// Enable debug information generation (alternative field name for compatibility)
+    pub debug_info_enabled: bool,
+    
     /// Debug information level (0-3)
     pub debug_level: u8,
     
@@ -68,6 +71,7 @@ impl Default for DebugConfig {
     fn default() -> Self {
         Self {
             generate_debug_info: true,
+            debug_info_enabled: true,
             debug_level: 2,
             include_source: false,
             optimized_debug: false,
@@ -101,6 +105,7 @@ impl DebugConfig {
     pub fn none() -> Self {
         Self {
             generate_debug_info: false,
+            debug_info_enabled: false,
             debug_level: 0,
             include_source: false,
             optimized_debug: false,
@@ -116,6 +121,7 @@ impl DebugConfig {
     pub fn minimal() -> Self {
         Self {
             generate_debug_info: true,
+            debug_info_enabled: true,
             debug_level: 1,
             include_source: false,
             optimized_debug: true,
@@ -131,6 +137,7 @@ impl DebugConfig {
     pub fn full() -> Self {
         Self {
             generate_debug_info: true,
+            debug_info_enabled: true,
             debug_level: 3,
             include_source: true,
             optimized_debug: false,
@@ -146,6 +153,7 @@ impl DebugConfig {
     pub fn release() -> Self {
         Self {
             generate_debug_info: true,
+            debug_info_enabled: true,
             debug_level: 1,
             include_source: false,
             optimized_debug: true,
@@ -234,6 +242,7 @@ impl DebugConfig {
     pub fn merge_with(&self, other: &DebugConfig) -> DebugConfig {
         DebugConfig {
             generate_debug_info: other.generate_debug_info,
+            debug_info_enabled: other.debug_info_enabled,
             debug_level: other.debug_level,
             include_source: other.include_source,
             optimized_debug: other.optimized_debug,

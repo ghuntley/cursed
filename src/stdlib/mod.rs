@@ -20,6 +20,8 @@ pub mod testing;
 pub mod process;
 pub mod sync;
 pub mod ipc;
+pub mod net;
+pub mod vibecheck;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -448,6 +450,71 @@ pub use ipc::{
     // Module management
     initialize as initialize_ipc, shutdown as shutdown_ipc, get_ipc_statistics,
     ResourceContentionStats, IpcPerformanceMetrics,
+};
+
+// Networking re-exports - Comprehensive networking and protocol support
+pub use net::{
+    // Error handling system
+    NetError, NetResult, connection_error, timeout_error as net_timeout_error, dns_error, protocol_error,
+    
+    // Core networking types
+    IpAddr, IpAddrV4, IpAddrV6, SocketAddr, SocketAddrV4, SocketAddrV6,
+    TcpSocket, UdpSocket, TcpListener, SocketConfig, SocketOptions,
+    SocketType, SocketState, ProtocolType,
+    
+    // DNS operations
+    DnsResolver, DnsRecord, DnsRecordType, DnsQuery, DnsResponse,
+    resolve_hostname, resolve_ip, lookup_mx, lookup_txt, lookup_cname,
+    
+    // Network interface utilities
+    NetworkInterface, InterfaceType, InterfaceStats, InterfaceConfig,
+    list_interfaces, get_interface_by_name, get_default_interface,
+    
+    // HTTP client functionality
+    HttpClient, HttpRequest, HttpResponse, HttpHeaders, HttpMethod, StatusCode,
+    RequestBuilder, ConnectionPool, Cookie, HttpAuth, HttpConfig,
+    
+    // WebSocket functionality
+    WebSocketClient, WebSocketServer, WebSocketMessage, WebSocketFrame,
+    MessageType, CloseCode, WebSocketConfig, CompressionConfig,
+    
+    // Protocol implementations
+    SmtpClient, FtpClient, SshClient, TlsConfig,
+    EmailMessage, FtpTransferMode, SshCommand, SshKey,
+    
+    // Utility functions
+    is_port_available, scan_ports, ping_host, trace_route,
+    get_public_ip, get_local_ips, validate_email, validate_url,
+    parse_url, format_bandwidth, network_diagnostics,
+    
+    // Initialization functions
+    initialize as initialize_net, shutdown as shutdown_net, get_network_statistics,
+    NetworkStatistics,
+};
+
+// Runtime introspection (vibecheck) re-exports - Comprehensive runtime control
+pub use vibecheck::{
+    // Memory statistics and management
+    MemStats, read_mem_stats, update_allocation_stats, memory_profile, write_profile, free_os_memory,
+    MemoryProfile, GcOverhead,
+    
+    // Garbage collection control
+    run_gc, set_gc_percent, get_gc_percent, is_gc_enabled, get_gc_stats, configure_gc,
+    GcStats, GcConfig, jit_stats, set_jit_opt_level, get_metrics, set_finalizer, keep_alive,
+    cpu_profile, JitStats, RuntimeMetrics, CpuProfile,
+    
+    // Goroutine management
+    num_goroutine, go_id, stack, num_cpu, gomaxprocs, get_all_goroutine_info, block_profile,
+    goroutine_info, coordinate_gc, get_stack_bounds, set_current_goroutine_id, clear_current_goroutine_id,
+    GoroutineInfo, init_scheduler,
+    
+    // Version and runtime information
+    version, compiler, goarch, goos, caller, func_for_pc, build_info, runtime_features,
+    memory_layout, StackFrame, FuncInfo, BuildInfo, RuntimeFeatures, MemoryLayout,
+    
+    // Runtime configuration and hooks
+    start_time, update_alloc_stats, update_gc_stats, set_gc_notifier, set_memory_limit,
+    set_cpu_profile_rate, get_memory_limit, get_cpu_profile_rate
 };
 
 pub use dot_registry::DOT_REGISTRY;

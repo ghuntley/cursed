@@ -1,17 +1,10 @@
-/// fr fr Asymmetric algorithms stub  
-#[derive(Debug, Clone)]
-pub enum AsymmetricAlgorithm {
-    Ed25519,
-    Rsa2048,
-    EcdsaP256,
-}
+/// fr fr Asymmetric algorithms - re-export from key_generator
+/// 
+/// This module provides the algorithm enumeration and related functionality
+/// for asymmetric cryptography operations. The actual implementation is in
+/// the key_generator module to avoid circular dependencies.
 
-impl AsymmetricAlgorithm {
-    pub fn name(&self) -> &str {
-        match self {
-            AsymmetricAlgorithm::Ed25519 => "Ed25519",
-            AsymmetricAlgorithm::Rsa2048 => "RSA-2048", 
-            AsymmetricAlgorithm::EcdsaP256 => "ECDSA-P256",
-        }
-    }
-}
+pub use super::key_generator::{AsymmetricAlgorithm, GeneratedKeyPair, KeyGenerator, KeyGeneratorError};
+
+// Re-export for backward compatibility
+pub use AsymmetricAlgorithm::{Ed25519, Rsa2048, EcdsaP256};

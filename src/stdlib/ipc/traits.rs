@@ -1,42 +1,377 @@
-/// Core traits and interfaces for IPC operations
-use std::time::Duration;
-use crate::stdlib::ipc::error::{IpcResult, IpcError};
-use crate::stdlib::ipc::types::{IpcHandle, IpcPermissions, IpcMode, ProcessId};
+/// IPC traits and interfaces for CURSED
+/// 
+/// This module defines the common traits and interfaces used throughout the IPC system,
+/// providing a unified API for different communication mechanisms.
 
-/// Core trait for all IPC communication channels
+use std::io::{Read, Write};
+use std::time::Duration;
+use crate::stdlib::ipc::{IpcResult, IpcError};
+
+/// Core trait for IPC channels
 pub trait IpcChannel {
-    /// Get the channel's unique handle
-    fn handle(&self) -> &IpcHandle;
+    /// Get the channel identifier
+    fn id(&self) -> &str;
     
-    /// Check if the channel is currently open and ready for operations
+    /// Check if the channel is open/connected
     fn is_open(&self) -> bool;
     
-    /// Close the channel and release resources
+    /// Close the channel
     fn close(&mut self) -> IpcResult<()>;
     
-    /// Get the current permissions for this channel
-    fn permissions(&self) -> &IpcPermissions;
+    /// Get channel statistics
+    fn get_statistics(&self) -> IpcResult<ChannelStatistics>;
     
-    /// Set new permissions (if supported and authorized)
-    fn set_permissions(&mut self, permissions: IpcPermissions) -> IpcResult<()>;
+    /// Set timeout for operations
+    fn set_timeout(&mut self, operation: &str, timeout: Duration) -> IpcResult<()>;
     
-    /// Get the channel's current mode
-    fn mode(&self) -> IpcMode;
+    /// Get timeout for operations
+    fn get_timeout(&self, operation: &str) -> Option<Duration>;
     
-    /// Get statistics about this channel's usage
-    fn statistics(&self) -> ChannelStatistics;
+    /// Check if channel supports operation
+    fn supports_operation(&self, operation: &str) -> bool;
 }
 
-/// Statistics for individual IPC channels
+/// Trait for reading from IPC channels
+pub trait IpcReader: IpcChannel {
+    /// Read data into buffer, returns number of bytes read
+    fn read_data(&mut self, buffer: &mut [u8]) -> IpcResult<usize>;
+    
+    /// Read exact amount of data
+    fn read_exact(&mut self, buffer: &mut [u8]) -> IpcResult<()> {
+        let mut total_read = 0;
+        while total_read < buffer.len() {
+            let bytes_read = self.read_data(&mut buffer[total_read..])?;
+            if bytes_read == 0 {
+                return Err(IpcError::CommunicationError {
+                    operation: "read_exact".to_string(),
+                    error_type: "unexpected_eof".to_string(),
+                    message: "Unexpected end of stream".to_string(),
+                    resource_id: Some(self.id().to_string()),
+                });
+            }
+            total_read += bytes_read;
+        }
+        Ok(())
+    }
+    
+    /// Read data with timeout
+    fn read_timeout(&mut self, buffer: &mut [u8], timeout: Duration) -> IpcResult<usize>;
+    
+    /// Read until delimiter or buffer is full
+    fn read_until(&mut self, delimiter: u8, buffer: &mut Vec<u8>) -> IpcResult<usize>;
+    
+    /// Read all available data
+    fn read_all(&mut self, buffer: &mut Vec<u8>) -> IpcResult<usize>;
+    
+    /// Peek at data without consuming it
+    fn peek(&self, buffer: &mut [u8]) -> IpcResult<usize>;
+    
+    /// Check if data is available for reading
+    fn has_data_available(&self) -> IpcResult<bool>;
+    
+    /// Get number of bytes available for reading
+    fn bytes_available(&self) -> IpcResult<usize>;
+}
+
+/// Trait for writing to IPC channels
+pub trait IpcWriter: IpcChannel {
+    /// Write data to channel, returns number of bytes written
+    fn write_data(&mut self, data: &[u8]) -> IpcResult<usize>;
+    
+    /// Write all data to channel
+    fn write_all(&mut self, data: &[u8]) -> IpcResult<()> {
+        let mut total_written = 0;
+        while total_written < data.len() {
+            let bytes_written = self.write_data(&data[total_written..])?;
+            if bytes_written == 0 {
+                return Err(IpcError::CommunicationError {
+                    operation: "write_all".to_string(),
+                    error_type: "write_failed".to_string(),
+                    message: "Unable to write data".to_string(),
+                    resource_id: Some(self.id().to_string()),
+                });
+            }
+            total_written += bytes_written;
+        }
+        Ok(())
+    }
+    
+    /// Write data with timeout
+    fn write_timeout(&mut self, data: &[u8], timeout: Duration) -> IpcResult<usize>;
+    
+    /// Flush any buffered data
+    fn flush(&mut self) -> IpcResult<()>;
+    
+    /// Check if channel can accept more data
+    fn can_write(&self) -> IpcResult<bool>;
+    
+    /// Get available write buffer space
+    fn write_buffer_space(&self) -> IpcResult<usize>;
+    
+    /// Write formatted data
+    fn write_formatted(&mut self, format: &str, args: &[&dyn ToString]) -> IpcResult<usize> {
+        // Simple implementation - could be enhanced with proper formatting
+        let mut formatted = format.to_string();
+        for (i, arg) in args.iter().enumerate() {
+            let placeholder = format!("{{{}}}", i);
+            formatted = formatted.replace(&placeholder, &arg.to_string());
+        }
+        self.write_all(formatted.as_bytes())?;
+        Ok(formatted.len())
+    }
+}
+
+/// Trait for bidirectional IPC channels
+pub trait IpcBidirectional: IpcReader + IpcWriter {
+    /// Exchange data (write then read)
+    fn exchange(&mut self, request: &[u8], response: &mut [u8]) -> IpcResult<usize> {
+        self.write_all(request)?;
+        self.flush()?;
+        self.read_data(response)
+    }
+    
+    /// Exchange data with timeout
+    fn exchange_timeout(&mut self, request: &[u8], response: &mut [u8], timeout: Duration) -> IpcResult<usize> {
+        self.write_timeout(request, timeout)?;
+        self.flush()?;
+        self.read_timeout(response, timeout)
+    }
+    
+    /// Shutdown one direction of communication
+    fn shutdown_direction(&mut self, direction: ShutdownDirection) -> IpcResult<()>;
+}
+
+/// Direction for shutdown operations
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShutdownDirection {
+    Read,
+    Write,
+    Both,
+}
+
+/// Trait for synchronizable IPC resources
+pub trait Synchronizable {
+    /// Wait for resource to become available
+    fn wait(&self) -> IpcResult<()>;
+    
+    /// Wait with timeout
+    fn wait_timeout(&self, timeout: Duration) -> IpcResult<bool>;
+    
+    /// Try to acquire resource without blocking
+    fn try_wait(&self) -> IpcResult<bool>;
+    
+    /// Signal the resource
+    fn signal(&self) -> IpcResult<()>;
+    
+    /// Signal all waiting processes
+    fn signal_all(&self) -> IpcResult<()>;
+    
+    /// Get number of waiting processes
+    fn waiting_count(&self) -> IpcResult<usize>;
+}
+
+/// Trait for lockable IPC resources
+pub trait Lockable {
+    /// Lock the resource
+    fn lock(&self) -> IpcResult<LockGuard>;
+    
+    /// Try to lock without blocking
+    fn try_lock(&self) -> IpcResult<Option<LockGuard>>;
+    
+    /// Lock with timeout
+    fn lock_timeout(&self, timeout: Duration) -> IpcResult<Option<LockGuard>>;
+    
+    /// Check if resource is currently locked
+    fn is_locked(&self) -> IpcResult<bool>;
+    
+    /// Get lock holder information
+    fn lock_info(&self) -> IpcResult<LockInfo>;
+}
+
+/// Lock guard for automatic unlocking
+pub struct LockGuard {
+    resource_id: String,
+    lock_type: LockType,
+}
+
+impl LockGuard {
+    pub fn new(resource_id: String, lock_type: LockType) -> Self {
+        Self { resource_id, lock_type }
+    }
+    
+    pub fn resource_id(&self) -> &str {
+        &self.resource_id
+    }
+    
+    pub fn lock_type(&self) -> LockType {
+        self.lock_type
+    }
+}
+
+impl Drop for LockGuard {
+    fn drop(&mut self) {
+        // Automatically unlock when guard is dropped
+        // Implementation would need access to the actual lock mechanism
+    }
+}
+
+/// Types of locks
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LockType {
+    Exclusive,
+    Shared,
+    Upgradeable,
+}
+
+/// Lock information
+#[derive(Debug, Clone)]
+pub struct LockInfo {
+    pub lock_type: LockType,
+    pub holder_pid: Option<u32>,
+    pub acquired_at: std::time::SystemTime,
+    pub lock_count: u32,
+}
+
+/// Trait for waitable IPC resources
+pub trait Waitable {
+    /// Wait for specific condition
+    fn wait_for_condition(&self, condition: &str) -> IpcResult<()>;
+    
+    /// Wait for condition with timeout
+    fn wait_for_condition_timeout(&self, condition: &str, timeout: Duration) -> IpcResult<bool>;
+    
+    /// Check if condition is currently met
+    fn check_condition(&self, condition: &str) -> IpcResult<bool>;
+    
+    /// List available conditions
+    fn available_conditions(&self) -> Vec<String>;
+}
+
+/// Trait for signalable IPC resources
+pub trait Signalable {
+    /// Send signal to resource
+    fn send_signal(&self, signal: &str) -> IpcResult<()>;
+    
+    /// Send signal with data
+    fn send_signal_with_data(&self, signal: &str, data: &[u8]) -> IpcResult<()>;
+    
+    /// Register signal handler
+    fn register_signal_handler(&mut self, signal: &str, handler: Box<dyn SignalHandler>) -> IpcResult<()>;
+    
+    /// Unregister signal handler
+    fn unregister_signal_handler(&mut self, signal: &str) -> IpcResult<()>;
+    
+    /// List supported signals
+    fn supported_signals(&self) -> Vec<String>;
+}
+
+/// Signal handler trait
+pub trait SignalHandler: Send + Sync {
+    /// Handle received signal
+    fn handle_signal(&self, signal: &str, data: &[u8]) -> IpcResult<()>;
+}
+
+/// Trait for serializable data
+pub trait Serializable {
+    /// Serialize object to bytes
+    fn serialize(&self) -> IpcResult<Vec<u8>>;
+    
+    /// Get serialized size estimate
+    fn serialized_size(&self) -> usize;
+    
+    /// Serialize to writer
+    fn serialize_to<W: Write>(&self, writer: &mut W) -> IpcResult<()> {
+        let data = self.serialize()?;
+        writer.write_all(&data)
+            .map_err(|e| IpcError::SerializationError {
+                operation: "serialize_to".to_string(),
+                data_type: std::any::type_name::<Self>().to_string(),
+                message: e.to_string(),
+                position: None,
+            })?;
+        Ok(())
+    }
+}
+
+/// Trait for deserializable data
+pub trait Deserializable: Sized {
+    /// Deserialize object from bytes
+    fn deserialize(data: &[u8]) -> IpcResult<Self>;
+    
+    /// Deserialize from reader
+    fn deserialize_from<R: Read>(reader: &mut R) -> IpcResult<Self> {
+        let mut buffer = Vec::new();
+        reader.read_to_end(&mut buffer)
+            .map_err(|e| IpcError::SerializationError {
+                operation: "deserialize_from".to_string(),
+                data_type: std::any::type_name::<Self>().to_string(),
+                message: e.to_string(),
+                position: None,
+            })?;
+        Self::deserialize(&buffer)
+    }
+    
+    /// Try to deserialize with partial data
+    fn try_deserialize_partial(data: &[u8]) -> IpcResult<(Self, usize)>;
+}
+
+/// Trait for IPC resources with lifecycle management
+pub trait IpcResource {
+    /// Initialize the resource
+    fn initialize(&mut self) -> IpcResult<()>;
+    
+    /// Cleanup the resource
+    fn cleanup(&mut self) -> IpcResult<()>;
+    
+    /// Check if resource is valid/healthy
+    fn is_healthy(&self) -> IpcResult<bool>;
+    
+    /// Get resource information
+    fn get_info(&self) -> IpcResult<ResourceInfo>;
+    
+    /// Reset resource to initial state
+    fn reset(&mut self) -> IpcResult<()>;
+    
+    /// Get resource dependencies
+    fn dependencies(&self) -> Vec<String>;
+}
+
+/// Resource information
+#[derive(Debug, Clone)]
+pub struct ResourceInfo {
+    pub id: String,
+    pub resource_type: String,
+    pub status: ResourceStatus,
+    pub created_at: std::time::SystemTime,
+    pub last_accessed: Option<std::time::SystemTime>,
+    pub access_count: u64,
+    pub size: Option<usize>,
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+/// Resource status
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResourceStatus {
+    Initializing,
+    Ready,
+    Active,
+    Idle,
+    Error,
+    Cleanup,
+    Destroyed,
+}
+
+/// Channel statistics
 #[derive(Debug, Clone)]
 pub struct ChannelStatistics {
     pub bytes_read: u64,
     pub bytes_written: u64,
     pub read_operations: u64,
     pub write_operations: u64,
-    pub errors_count: u64,
+    pub errors: u64,
     pub last_activity: Option<std::time::SystemTime>,
-    pub creation_time: std::time::SystemTime,
+    pub average_latency: Duration,
+    pub peak_throughput: f64,
 }
 
 impl ChannelStatistics {
@@ -46,415 +381,98 @@ impl ChannelStatistics {
             bytes_written: 0,
             read_operations: 0,
             write_operations: 0,
-            errors_count: 0,
+            errors: 0,
             last_activity: None,
-            creation_time: std::time::SystemTime::now(),
+            average_latency: Duration::from_nanos(0),
+            peak_throughput: 0.0,
         }
     }
-
-    pub fn record_read(&mut self, bytes: usize) {
+    
+    pub fn record_read(&mut self, bytes: usize, latency: Duration) {
         self.bytes_read += bytes as u64;
         self.read_operations += 1;
         self.last_activity = Some(std::time::SystemTime::now());
+        self.update_latency(latency);
     }
-
-    pub fn record_write(&mut self, bytes: usize) {
+    
+    pub fn record_write(&mut self, bytes: usize, latency: Duration) {
         self.bytes_written += bytes as u64;
         self.write_operations += 1;
         self.last_activity = Some(std::time::SystemTime::now());
+        self.update_latency(latency);
     }
-
+    
     pub fn record_error(&mut self) {
-        self.errors_count += 1;
+        self.errors += 1;
         self.last_activity = Some(std::time::SystemTime::now());
     }
-
-    pub fn total_operations(&self) -> u64 {
-        self.read_operations + self.write_operations
-    }
-
-    pub fn total_bytes(&self) -> u64 {
-        self.bytes_read + self.bytes_written
-    }
-}
-
-impl Default for ChannelStatistics {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Trait for readable IPC channels
-pub trait IpcReader {
-    /// Read data into the provided buffer
-    /// Returns the number of bytes actually read
-    fn read(&mut self, buf: &mut [u8]) -> IpcResult<usize>;
     
-    /// Read all available data into a vector
-    fn read_all(&mut self) -> IpcResult<Vec<u8>>;
-    
-    /// Read a specific number of bytes
-    fn read_exact(&mut self, buf: &mut [u8]) -> IpcResult<()>;
-    
-    /// Read data with a timeout
-    fn read_timeout(&mut self, buf: &mut [u8], timeout: Duration) -> IpcResult<usize>;
-    
-    /// Check if data is available for reading without blocking
-    fn has_data(&self) -> IpcResult<bool>;
-    
-    /// Get the number of bytes available for reading
-    fn available(&self) -> IpcResult<usize>;
-}
-
-/// Trait for writable IPC channels
-pub trait IpcWriter {
-    /// Write data to the channel
-    /// Returns the number of bytes actually written
-    fn write(&mut self, data: &[u8]) -> IpcResult<usize>;
-    
-    /// Write all data, retrying if necessary
-    fn write_all(&mut self, data: &[u8]) -> IpcResult<()>;
-    
-    /// Write data with a timeout
-    fn write_timeout(&mut self, data: &[u8], timeout: Duration) -> IpcResult<usize>;
-    
-    /// Flush any buffered data
-    fn flush(&mut self) -> IpcResult<()>;
-    
-    /// Check if the channel is ready for writing without blocking
-    fn can_write(&self) -> IpcResult<bool>;
-    
-    /// Get the amount of buffer space available for writing
-    fn write_capacity(&self) -> IpcResult<usize>;
-}
-
-/// Trait for bidirectional IPC channels
-pub trait IpcBidirectional: IpcReader + IpcWriter {
-    /// Perform a synchronous request-response operation
-    fn exchange(&mut self, request: &[u8], response: &mut [u8]) -> IpcResult<usize>;
-    
-    /// Send data and read response with timeout
-    fn exchange_timeout(&mut self, request: &[u8], response: &mut [u8], timeout: Duration) -> IpcResult<usize>;
-}
-
-/// Trait for synchronizable IPC resources
-pub trait Synchronizable {
-    /// Wait for the resource to become available
-    fn wait(&self) -> IpcResult<()>;
-    
-    /// Wait with timeout
-    fn wait_timeout(&self, timeout: Duration) -> IpcResult<bool>;
-    
-    /// Try to acquire without blocking
-    fn try_wait(&self) -> IpcResult<bool>;
-    
-    /// Signal or notify waiting processes
-    fn signal(&self) -> IpcResult<()>;
-    
-    /// Broadcast signal to all waiting processes
-    fn broadcast(&self) -> IpcResult<()>;
-}
-
-/// Trait for lockable IPC resources
-pub trait Lockable {
-    /// Acquire exclusive lock
-    fn lock(&self) -> IpcResult<()>;
-    
-    /// Try to acquire lock without blocking
-    fn try_lock(&self) -> IpcResult<bool>;
-    
-    /// Acquire lock with timeout
-    fn lock_timeout(&self, timeout: Duration) -> IpcResult<bool>;
-    
-    /// Release the lock
-    fn unlock(&self) -> IpcResult<()>;
-    
-    /// Check if currently locked
-    fn is_locked(&self) -> bool;
-    
-    /// Get the process ID that currently holds the lock
-    fn lock_owner(&self) -> Option<ProcessId>;
-}
-
-/// Trait for waitable IPC resources
-pub trait Waitable {
-    /// Wait for condition to be met
-    fn wait_for_condition<F>(&self, condition: F) -> IpcResult<()>
-    where
-        F: Fn() -> bool;
-    
-    /// Wait for condition with timeout
-    fn wait_for_condition_timeout<F>(&self, condition: F, timeout: Duration) -> IpcResult<bool>
-    where
-        F: Fn() -> bool;
-    
-    /// Wait for specific event
-    fn wait_for_event(&self, event_type: EventType) -> IpcResult<()>;
-    
-    /// Wait for event with timeout
-    fn wait_for_event_timeout(&self, event_type: EventType, timeout: Duration) -> IpcResult<bool>;
-}
-
-/// Types of events that can be waited for
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum EventType {
-    DataAvailable,
-    SpaceAvailable,
-    ConnectionEstablished,
-    ConnectionClosed,
-    ErrorOccurred,
-    Custom(String),
-}
-
-/// Trait for signalable IPC resources
-pub trait Signalable {
-    /// Send signal to specific process
-    fn send_signal(&self, target: ProcessId, signal: Signal) -> IpcResult<()>;
-    
-    /// Send signal to group of processes
-    fn send_signal_group(&self, targets: &[ProcessId], signal: Signal) -> IpcResult<()>;
-    
-    /// Register signal handler
-    fn register_handler<F>(&mut self, signal: Signal, handler: F) -> IpcResult<()>
-    where
-        F: Fn(Signal) + Send + 'static;
-    
-    /// Unregister signal handler
-    fn unregister_handler(&mut self, signal: Signal) -> IpcResult<()>;
-    
-    /// Block specific signal
-    fn block_signal(&self, signal: Signal) -> IpcResult<()>;
-    
-    /// Unblock specific signal
-    fn unblock_signal(&self, signal: Signal) -> IpcResult<()>;
-}
-
-/// Signal types for IPC communication
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Signal {
-    /// User-defined signal 1
-    SIGUSR1,
-    /// User-defined signal 2
-    SIGUSR2,
-    /// Termination signal
-    SIGTERM,
-    /// Interrupt signal
-    SIGINT,
-    /// Quit signal
-    SIGQUIT,
-    /// Kill signal (cannot be caught or ignored)
-    SIGKILL,
-    /// Stop signal
-    SIGSTOP,
-    /// Continue signal
-    SIGCONT,
-    /// Custom signal with identifier
-    Custom(String),
-}
-
-/// Trait for serializable data in IPC operations
-pub trait Serializable {
-    /// Serialize object to bytes
-    fn serialize(&self) -> IpcResult<Vec<u8>>;
-    
-    /// Get the serialized size without actually serializing
-    fn serialized_size(&self) -> usize;
-    
-    /// Serialize with specific format
-    fn serialize_with_format(&self, format: SerializationFormat) -> IpcResult<Vec<u8>>;
-}
-
-/// Trait for deserializable data in IPC operations
-pub trait Deserializable: Sized {
-    /// Deserialize from bytes
-    fn deserialize(data: &[u8]) -> IpcResult<Self>;
-    
-    /// Deserialize with specific format
-    fn deserialize_with_format(data: &[u8], format: SerializationFormat) -> IpcResult<Self>;
-    
-    /// Partial deserialize (for streaming)
-    fn partial_deserialize(data: &[u8]) -> IpcResult<(Self, usize)>;
-}
-
-/// Serialization formats supported by IPC
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SerializationFormat {
-    Binary,
-    Json,
-    MessagePack,
-    Protobuf,
-    Custom(String),
-}
-
-/// Trait for IPC resources that need cleanup
-pub trait IpcResource {
-    /// Get resource information
-    fn resource_info(&self) -> ResourceInfo;
-    
-    /// Check if resource is still valid
-    fn is_valid(&self) -> bool;
-    
-    /// Cleanup and release resource
-    fn cleanup(&mut self) -> IpcResult<()>;
-    
-    /// Get resource usage statistics
-    fn usage_stats(&self) -> ResourceUsageStats;
-    
-    /// Set resource limits
-    fn set_limits(&mut self, limits: ResourceLimits) -> IpcResult<()>;
-}
-
-/// Information about an IPC resource
-#[derive(Debug, Clone)]
-pub struct ResourceInfo {
-    pub resource_type: String,
-    pub id: String,
-    pub owner: Option<ProcessId>,
-    pub created_at: std::time::SystemTime,
-    pub size: Option<usize>,
-    pub permissions: IpcPermissions,
-}
-
-/// Resource usage statistics
-#[derive(Debug, Clone, Default)]
-pub struct ResourceUsageStats {
-    pub memory_usage: usize,
-    pub file_descriptors: usize,
-    pub active_connections: usize,
-    pub total_operations: u64,
-    pub error_count: u64,
-    pub last_access: Option<std::time::SystemTime>,
-}
-
-impl ResourceUsageStats {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn record_operation(&mut self) {
-        self.total_operations += 1;
-        self.last_access = Some(std::time::SystemTime::now());
-    }
-
-    pub fn record_error(&mut self) {
-        self.error_count += 1;
-        self.last_access = Some(std::time::SystemTime::now());
-    }
-
-    pub fn error_rate(&self) -> f64 {
-        if self.total_operations == 0 {
-            0.0
+    fn update_latency(&mut self, latency: Duration) {
+        let total_ops = self.read_operations + self.write_operations;
+        if total_ops > 1 {
+            let current_avg = self.average_latency.as_nanos() as u64;
+            let new_latency = latency.as_nanos() as u64;
+            let updated_avg = (current_avg * (total_ops - 1) + new_latency) / total_ops;
+            self.average_latency = Duration::from_nanos(updated_avg);
         } else {
-            self.error_count as f64 / self.total_operations as f64
+            self.average_latency = latency;
         }
     }
 }
 
-/// Resource limits for IPC operations
+/// Utility trait for converting between different data types in IPC
+pub trait IpcConvert<T> {
+    /// Convert to IPC-compatible type
+    fn to_ipc(&self) -> IpcResult<T>;
+    
+    /// Convert from IPC-compatible type
+    fn from_ipc(value: T) -> IpcResult<Self>
+    where
+        Self: Sized;
+}
+
+/// Trait for IPC message formatting
+pub trait MessageFormat {
+    /// Get message format identifier
+    fn format_id(&self) -> &str;
+    
+    /// Encode message with this format
+    fn encode(&self, data: &[u8]) -> IpcResult<Vec<u8>>;
+    
+    /// Decode message with this format
+    fn decode(&self, data: &[u8]) -> IpcResult<Vec<u8>>;
+    
+    /// Get format metadata
+    fn metadata(&self) -> std::collections::HashMap<String, String>;
+}
+
+/// Trait for connection pooling
+pub trait ConnectionPool<T> {
+    /// Get connection from pool
+    fn get_connection(&self) -> IpcResult<T>;
+    
+    /// Return connection to pool
+    fn return_connection(&self, connection: T) -> IpcResult<()>;
+    
+    /// Get pool statistics
+    fn pool_stats(&self) -> PoolStatistics;
+    
+    /// Resize pool
+    fn resize(&self, new_size: usize) -> IpcResult<()>;
+    
+    /// Close all connections
+    fn close_all(&self) -> IpcResult<()>;
+}
+
+/// Pool statistics
 #[derive(Debug, Clone)]
-pub struct ResourceLimits {
-    pub max_memory: Option<usize>,
-    pub max_file_descriptors: Option<usize>,
-    pub max_connections: Option<usize>,
-    pub max_operations_per_second: Option<u64>,
-    pub max_errors_per_minute: Option<u64>,
-}
-
-impl ResourceLimits {
-    pub fn unlimited() -> Self {
-        Self {
-            max_memory: None,
-            max_file_descriptors: None,
-            max_connections: None,
-            max_operations_per_second: None,
-            max_errors_per_minute: None,
-        }
-    }
-
-    pub fn default_limits() -> Self {
-        Self {
-            max_memory: Some(100 * 1024 * 1024), // 100 MB
-            max_file_descriptors: Some(1024),
-            max_connections: Some(100),
-            max_operations_per_second: Some(1000),
-            max_errors_per_minute: Some(60),
-        }
-    }
-
-    pub fn check_memory(&self, current: usize) -> bool {
-        self.max_memory.map_or(true, |limit| current <= limit)
-    }
-
-    pub fn check_file_descriptors(&self, current: usize) -> bool {
-        self.max_file_descriptors.map_or(true, |limit| current <= limit)
-    }
-
-    pub fn check_connections(&self, current: usize) -> bool {
-        self.max_connections.map_or(true, |limit| current <= limit)
-    }
-}
-
-impl Default for ResourceLimits {
-    fn default() -> Self {
-        Self::default_limits()
-    }
-}
-
-/// Trait for connection-oriented IPC channels
-pub trait IpcConnection: IpcChannel + IpcBidirectional {
-    /// Connect to remote endpoint
-    fn connect(&mut self, address: &str) -> IpcResult<()>;
-    
-    /// Connect with timeout
-    fn connect_timeout(&mut self, address: &str, timeout: Duration) -> IpcResult<()>;
-    
-    /// Disconnect from remote endpoint
-    fn disconnect(&mut self) -> IpcResult<()>;
-    
-    /// Check if connected
-    fn is_connected(&self) -> bool;
-    
-    /// Get remote endpoint address
-    fn remote_address(&self) -> Option<String>;
-    
-    /// Get local endpoint address
-    fn local_address(&self) -> Option<String>;
-    
-    /// Get connection state
-    fn connection_state(&self) -> ConnectionState;
-}
-
-/// Connection states for IPC connections
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ConnectionState {
-    Disconnected,
-    Connecting,
-    Connected,
-    Error(String),
-}
-
-/// Trait for listening/server IPC channels
-pub trait IpcListener {
-    /// Start listening for connections
-    fn listen(&mut self, address: &str) -> IpcResult<()>;
-    
-    /// Accept incoming connection
-    fn accept(&mut self) -> IpcResult<Box<dyn IpcConnection>>;
-    
-    /// Accept with timeout
-    fn accept_timeout(&mut self, timeout: Duration) -> IpcResult<Option<Box<dyn IpcConnection>>>;
-    
-    /// Stop listening
-    fn stop_listening(&mut self) -> IpcResult<()>;
-    
-    /// Check if currently listening
-    fn is_listening(&self) -> bool;
-    
-    /// Get the address being listened on
-    fn listening_address(&self) -> Option<String>;
-    
-    /// Get pending connection count
-    fn pending_connections(&self) -> usize;
+pub struct PoolStatistics {
+    pub total_connections: usize,
+    pub active_connections: usize,
+    pub idle_connections: usize,
+    pub failed_connections: usize,
+    pub pool_hits: u64,
+    pub pool_misses: u64,
 }
 
 #[cfg(test)]
@@ -464,77 +482,67 @@ mod tests {
     #[test]
     fn test_channel_statistics() {
         let mut stats = ChannelStatistics::new();
-        assert_eq!(stats.total_operations(), 0);
-        assert_eq!(stats.total_bytes(), 0);
-
-        stats.record_read(100);
-        stats.record_write(50);
+        assert_eq!(stats.bytes_read, 0);
+        assert_eq!(stats.read_operations, 0);
         
-        assert_eq!(stats.total_operations(), 2);
-        assert_eq!(stats.total_bytes(), 150);
-        assert_eq!(stats.bytes_read, 100);
-        assert_eq!(stats.bytes_written, 50);
-    }
-
-    #[test]
-    fn test_resource_usage_stats() {
-        let mut stats = ResourceUsageStats::new();
-        assert_eq!(stats.error_rate(), 0.0);
-
-        stats.record_operation();
-        stats.record_operation();
-        stats.record_error();
-
-        assert_eq!(stats.total_operations, 2);
-        assert_eq!(stats.error_count, 1);
-        assert_eq!(stats.error_rate(), 0.5);
-    }
-
-    #[test]
-    fn test_resource_limits() {
-        let limits = ResourceLimits::default_limits();
-        assert!(limits.check_memory(1024));
-        assert!(!limits.check_memory(200 * 1024 * 1024));
-
-        let unlimited = ResourceLimits::unlimited();
-        assert!(unlimited.check_memory(usize::MAX));
-        assert!(unlimited.check_connections(usize::MAX));
-    }
-
-    #[test]
-    fn test_signal_types() {
-        assert_eq!(Signal::SIGUSR1, Signal::SIGUSR1);
-        assert_ne!(Signal::SIGUSR1, Signal::SIGUSR2);
+        stats.record_read(1024, Duration::from_millis(10));
+        assert_eq!(stats.bytes_read, 1024);
+        assert_eq!(stats.read_operations, 1);
+        assert!(stats.last_activity.is_some());
         
-        let custom = Signal::Custom("my_signal".to_string());
-        assert!(matches!(custom, Signal::Custom(_)));
+        stats.record_write(512, Duration::from_millis(5));
+        assert_eq!(stats.bytes_written, 512);
+        assert_eq!(stats.write_operations, 1);
     }
 
     #[test]
-    fn test_event_types() {
-        assert_eq!(EventType::DataAvailable, EventType::DataAvailable);
-        assert_ne!(EventType::DataAvailable, EventType::SpaceAvailable);
-        
-        let custom = EventType::Custom("my_event".to_string());
-        assert!(matches!(custom, EventType::Custom(_)));
+    fn test_lock_guard() {
+        let guard = LockGuard::new("test_resource".to_string(), LockType::Exclusive);
+        assert_eq!(guard.resource_id(), "test_resource");
+        assert_eq!(guard.lock_type(), LockType::Exclusive);
     }
 
     #[test]
-    fn test_serialization_formats() {
-        assert_eq!(SerializationFormat::Binary, SerializationFormat::Binary);
-        assert_ne!(SerializationFormat::Binary, SerializationFormat::Json);
-        
-        let custom = SerializationFormat::Custom("protobuf".to_string());
-        assert!(matches!(custom, SerializationFormat::Custom(_)));
+    fn test_resource_status() {
+        let status = ResourceStatus::Ready;
+        assert_eq!(status, ResourceStatus::Ready);
+        assert_ne!(status, ResourceStatus::Error);
     }
 
     #[test]
-    fn test_connection_state() {
-        let state = ConnectionState::Connected;
-        assert_eq!(state, ConnectionState::Connected);
-        assert_ne!(state, ConnectionState::Disconnected);
+    fn test_shutdown_direction() {
+        let direction = ShutdownDirection::Both;
+        assert_eq!(direction, ShutdownDirection::Both);
+        assert_ne!(direction, ShutdownDirection::Read);
+    }
+
+    #[test]
+    fn test_lock_info() {
+        let info = LockInfo {
+            lock_type: LockType::Shared,
+            holder_pid: Some(1234),
+            acquired_at: std::time::SystemTime::now(),
+            lock_count: 1,
+        };
         
-        let error_state = ConnectionState::Error("timeout".to_string());
-        assert!(matches!(error_state, ConnectionState::Error(_)));
+        assert_eq!(info.lock_type, LockType::Shared);
+        assert_eq!(info.holder_pid, Some(1234));
+        assert_eq!(info.lock_count, 1);
+    }
+
+    #[test]
+    fn test_pool_statistics() {
+        let stats = PoolStatistics {
+            total_connections: 10,
+            active_connections: 5,
+            idle_connections: 5,
+            failed_connections: 0,
+            pool_hits: 100,
+            pool_misses: 10,
+        };
+        
+        assert_eq!(stats.total_connections, 10);
+        assert_eq!(stats.active_connections, 5);
+        assert_eq!(stats.pool_hits, 100);
     }
 }

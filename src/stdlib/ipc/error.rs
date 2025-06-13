@@ -1,538 +1,563 @@
-/// Error handling for IPC operations
+/// Comprehensive error handling for IPC operations in CURSED
+/// 
+/// This module provides detailed error types for all inter-process communication
+/// operations including shared memory, pipes, message queues, and synchronization.
+
 use std::fmt;
-use std::error::Error as StdError;
+use std::io;
 use std::time::Duration;
-use crate::error::CursedError;
 
 /// Result type for IPC operations
 pub type IpcResult<T> = Result<T, IpcError>;
 
-/// Comprehensive error types for Inter-Process Communication operations
-#[derive(Debug, Clone, PartialEq)]
+/// Comprehensive error types for IPC operations
+#[derive(Debug, Clone)]
 pub enum IpcError {
-    /// Communication channel error (pipes, sockets, etc.)
-    CommunicationError { 
-        channel_type: String, 
-        operation: String, 
+    /// Communication error during IPC operation
+    CommunicationError {
+        operation: String,
+        error_type: String,
         message: String,
-        error_code: Option<i32>
+        resource_id: Option<String>,
     },
     
-    /// Security or permission related error
-    SecurityError { 
-        operation: String, 
-        required_permission: String, 
-        current_user: Option<String>,
-        resource: String
-    },
-    
-    /// Resource allocation or management error
-    ResourceError { 
-        resource_type: String, 
-        operation: String, 
+    /// Security-related error
+    SecurityError {
+        operation: String,
+        security_context: String,
         message: String,
-        available: Option<usize>,
-        requested: Option<usize>
+        permission_required: Option<String>,
     },
     
-    /// Operation timed out
-    TimeoutError { 
-        operation: String, 
+    /// Resource-related error (memory, handles, etc.)
+    ResourceError {
+        resource_type: String,
+        operation: String,
+        message: String,
+        resource_id: Option<String>,
+        limit_exceeded: Option<u64>,
+    },
+    
+    /// Operation timeout
+    Timeout {
+        operation: String,
         duration: Duration,
-        resource: String
+        message: String,
+        resource_id: Option<String>,
     },
     
     /// Invalid operation for current state
-    InvalidOperation { 
-        operation: String, 
-        current_state: String, 
+    InvalidOperation {
+        operation: String,
+        current_state: String,
         expected_state: String,
-        resource: String
+        resource_id: Option<String>,
     },
     
-    /// Permission denied for operation
-    PermissionDenied { 
-        operation: String, 
-        resource: String,
+    /// Permission denied for IPC operation
+    PermissionDenied {
+        operation: String,
+        resource_id: String,
         required_permission: String,
-        current_user: Option<String>
+        message: String,
     },
     
-    /// Resource limit exceeded
-    ResourceExhausted { 
-        resource_type: String, 
-        limit: usize, 
-        current_usage: usize,
-        operation: String
+    /// Resource exhausted (e.g., no more shared memory)
+    ResourceExhausted {
+        resource_type: String,
+        operation: String,
+        current_usage: u64,
+        max_limit: u64,
+        message: String,
     },
     
-    /// Connection establishment failed
-    ConnectionFailed { 
-        target: String, 
-        reason: String,
+    /// Connection failed
+    ConnectionFailed {
+        operation: String,
+        target: String,
+        error_type: String,
+        message: String,
         retry_count: Option<u32>,
-        last_error_code: Option<i32>
     },
     
-    /// Shared memory specific errors
-    SharedMemoryError { 
-        operation: String, 
-        memory_id: String, 
+    /// Serialization/Deserialization error
+    SerializationError {
+        operation: String,
+        data_type: String,
         message: String,
-        size: Option<usize>
+        position: Option<usize>,
     },
     
-    /// Message queue specific errors
-    MessageQueueError { 
-        operation: String, 
-        queue_id: String, 
+    /// Protocol error
+    ProtocolError {
+        protocol: String,
+        operation: String,
         message: String,
-        queue_size: Option<usize>,
-        message_count: Option<usize>
-    },
-    
-    /// Semaphore specific errors
-    SemaphoreError { 
-        operation: String, 
-        semaphore_id: String, 
-        message: String,
-        current_value: Option<i32>,
-        max_value: Option<i32>
-    },
-    
-    /// Signal handling errors
-    SignalError { 
-        signal: String, 
-        operation: String, 
-        message: String,
-        process_id: Option<u32>
-    },
-    
-    /// Serialization/Deserialization errors
-    SerializationError { 
-        operation: String, 
-        data_type: String, 
-        message: String,
-        data_size: Option<usize>
-    },
-    
-    /// Protocol or format errors
-    ProtocolError { 
-        protocol: String, 
-        operation: String, 
-        message: String,
-        version_expected: Option<String>,
-        version_received: Option<String>
-    },
-    
-    /// Deadlock detected in IPC operations
-    DeadlockError { 
-        resources: Vec<String>, 
-        processes: Vec<u32>,
-        detection_method: String
-    },
-    
-    /// Data corruption detected
-    DataCorruption { 
-        resource: String, 
-        operation: String, 
-        checksum_expected: Option<String>,
-        checksum_actual: Option<String>
+        error_code: Option<i32>,
     },
     
     /// System-level error
-    SystemError { 
-        code: i32, 
+    SystemError {
+        operation: String,
+        error_code: i32,
         message: String,
-        system_call: Option<String>
+        system_call: Option<String>,
     },
     
-    /// General IPC error
-    General { 
+    /// Data corruption detected
+    DataCorruption {
+        resource_type: String,
+        resource_id: String,
+        operation: String,
         message: String,
-        context: Option<String>
+        checksum_expected: Option<String>,
+        checksum_actual: Option<String>,
     },
+    
+    /// Deadlock detected
+    Deadlock {
+        operation: String,
+        resources_involved: Vec<String>,
+        message: String,
+        detection_method: String,
+    },
+    
+    /// Configuration error
+    ConfigurationError {
+        parameter: String,
+        value: String,
+        message: String,
+        valid_range: Option<String>,
+    },
+    
+    /// Generic IPC error
+    General {
+        message: String,
+        error_code: Option<i32>,
+    },
+}
+
+impl IpcError {
+    /// Get error message
+    pub fn message(&self) -> &str {
+        match self {
+            IpcError::CommunicationError { message, .. } => message,
+            IpcError::SecurityError { message, .. } => message,
+            IpcError::ResourceError { message, .. } => message,
+            IpcError::Timeout { message, .. } => message,
+            IpcError::InvalidOperation { .. } => "Invalid operation for current state",
+            IpcError::PermissionDenied { message, .. } => message,
+            IpcError::ResourceExhausted { message, .. } => message,
+            IpcError::ConnectionFailed { message, .. } => message,
+            IpcError::SerializationError { message, .. } => message,
+            IpcError::ProtocolError { message, .. } => message,
+            IpcError::SystemError { message, .. } => message,
+            IpcError::DataCorruption { message, .. } => message,
+            IpcError::Deadlock { message, .. } => message,
+            IpcError::ConfigurationError { message, .. } => message,
+            IpcError::General { message, .. } => message,
+        }
+    }
+    
+    /// Get error category
+    pub fn category(&self) -> &'static str {
+        match self {
+            IpcError::CommunicationError { .. } => "CommunicationError",
+            IpcError::SecurityError { .. } => "SecurityError",
+            IpcError::ResourceError { .. } => "ResourceError",
+            IpcError::Timeout { .. } => "Timeout",
+            IpcError::InvalidOperation { .. } => "InvalidOperation",
+            IpcError::PermissionDenied { .. } => "PermissionDenied",
+            IpcError::ResourceExhausted { .. } => "ResourceExhausted",
+            IpcError::ConnectionFailed { .. } => "ConnectionFailed",
+            IpcError::SerializationError { .. } => "SerializationError",
+            IpcError::ProtocolError { .. } => "ProtocolError",
+            IpcError::SystemError { .. } => "SystemError",
+            IpcError::DataCorruption { .. } => "DataCorruption",
+            IpcError::Deadlock { .. } => "Deadlock",
+            IpcError::ConfigurationError { .. } => "ConfigurationError",
+            IpcError::General { .. } => "General",
+        }
+    }
+    
+    /// Check if error is recoverable
+    pub fn is_recoverable(&self) -> bool {
+        match self {
+            IpcError::CommunicationError { .. } => true,
+            IpcError::SecurityError { .. } => false,
+            IpcError::ResourceError { .. } => true,
+            IpcError::Timeout { .. } => true,
+            IpcError::InvalidOperation { .. } => true,
+            IpcError::PermissionDenied { .. } => false,
+            IpcError::ResourceExhausted { .. } => true,
+            IpcError::ConnectionFailed { .. } => true,
+            IpcError::SerializationError { .. } => false,
+            IpcError::ProtocolError { .. } => false,
+            IpcError::SystemError { .. } => false,
+            IpcError::DataCorruption { .. } => false,
+            IpcError::Deadlock { .. } => true,
+            IpcError::ConfigurationError { .. } => false,
+            IpcError::General { .. } => false,
+        }
+    }
+    
+    /// Check if error suggests retry
+    pub fn should_retry(&self) -> bool {
+        match self {
+            IpcError::CommunicationError { .. } => true,
+            IpcError::ResourceError { .. } => true,
+            IpcError::Timeout { .. } => true,
+            IpcError::ResourceExhausted { .. } => true,
+            IpcError::ConnectionFailed { .. } => true,
+            IpcError::Deadlock { .. } => true,
+            _ => false,
+        }
+    }
+    
+    /// Get retry delay suggestion
+    pub fn suggested_retry_delay(&self) -> Option<Duration> {
+        match self {
+            IpcError::Timeout { duration, .. } => Some(*duration / 2),
+            IpcError::ResourceExhausted { .. } => Some(Duration::from_millis(100)),
+            IpcError::ConnectionFailed { retry_count, .. } => {
+                let base_delay = Duration::from_millis(50);
+                let count = retry_count.unwrap_or(0);
+                Some(base_delay * (1 << count.min(6))) // Exponential backoff, max 3.2s
+            }
+            IpcError::Deadlock { .. } => Some(Duration::from_millis(10)),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for IpcError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IpcError::CommunicationError { channel_type, operation, message, error_code } => {
+            IpcError::CommunicationError { operation, error_type, message, resource_id } => {
+                write!(f, "Communication error in {} ({}): {}", operation, error_type, message)?;
+                if let Some(id) = resource_id {
+                    write!(f, " [resource: {}]", id)?;
+                }
+                Ok(())
+            }
+            IpcError::SecurityError { operation, security_context, message, permission_required } => {
+                write!(f, "Security error in {} ({}): {}", operation, security_context, message)?;
+                if let Some(perm) = permission_required {
+                    write!(f, " [permission required: {}]", perm)?;
+                }
+                Ok(())
+            }
+            IpcError::ResourceError { resource_type, operation, message, resource_id, limit_exceeded } => {
+                write!(f, "Resource error with {} in {}: {}", resource_type, operation, message)?;
+                if let Some(id) = resource_id {
+                    write!(f, " [resource: {}]", id)?;
+                }
+                if let Some(limit) = limit_exceeded {
+                    write!(f, " [limit: {}]", limit)?;
+                }
+                Ok(())
+            }
+            IpcError::Timeout { operation, duration, message, resource_id } => {
+                write!(f, "Timeout in {} after {:?}: {}", operation, duration, message)?;
+                if let Some(id) = resource_id {
+                    write!(f, " [resource: {}]", id)?;
+                }
+                Ok(())
+            }
+            IpcError::InvalidOperation { operation, current_state, expected_state, resource_id } => {
+                write!(f, "Invalid operation '{}': expected state '{}', got '{}'", 
+                       operation, expected_state, current_state)?;
+                if let Some(id) = resource_id {
+                    write!(f, " [resource: {}]", id)?;
+                }
+                Ok(())
+            }
+            IpcError::PermissionDenied { operation, resource_id, required_permission, message } => {
+                write!(f, "Permission denied for {} on {}: {} (requires {})", 
+                       operation, resource_id, message, required_permission)
+            }
+            IpcError::ResourceExhausted { resource_type, operation, current_usage, max_limit, message } => {
+                write!(f, "Resource exhausted: {} in {} ({}/{}) - {}", 
+                       resource_type, operation, current_usage, max_limit, message)
+            }
+            IpcError::ConnectionFailed { operation, target, error_type, message, retry_count } => {
+                write!(f, "Connection failed in {} to {} ({}): {}", operation, target, error_type, message)?;
+                if let Some(count) = retry_count {
+                    write!(f, " [retry: {}]", count)?;
+                }
+                Ok(())
+            }
+            IpcError::SerializationError { operation, data_type, message, position } => {
+                write!(f, "Serialization error in {} for {}: {}", operation, data_type, message)?;
+                if let Some(pos) = position {
+                    write!(f, " [position: {}]", pos)?;
+                }
+                Ok(())
+            }
+            IpcError::ProtocolError { protocol, operation, message, error_code } => {
+                write!(f, "Protocol error in {} ({}): {}", protocol, operation, message)?;
                 if let Some(code) = error_code {
-                    write!(f, "{} {} failed (code {}): {}", channel_type, operation, code, message)
-                } else {
-                    write!(f, "{} {} failed: {}", channel_type, operation, message)
+                    write!(f, " [code: {}]", code)?;
                 }
+                Ok(())
             }
-            IpcError::SecurityError { operation, required_permission, current_user, resource } => {
-                if let Some(user) = current_user {
-                    write!(f, "Security error in {}: user '{}' lacks '{}' permission for {}", 
-                           operation, user, required_permission, resource)
-                } else {
-                    write!(f, "Security error in {}: '{}' permission required for {}", 
-                           operation, required_permission, resource)
-                }
-            }
-            IpcError::ResourceError { resource_type, operation, message, available, requested } => {
-                if let (Some(avail), Some(req)) = (available, requested) {
-                    write!(f, "{} {} failed: {} (available: {}, requested: {})", 
-                           resource_type, operation, message, avail, req)
-                } else {
-                    write!(f, "{} {} failed: {}", resource_type, operation, message)
-                }
-            }
-            IpcError::TimeoutError { operation, duration, resource } => {
-                write!(f, "Operation '{}' on {} timed out after {:?}", operation, resource, duration)
-            }
-            IpcError::InvalidOperation { operation, current_state, expected_state, resource } => {
-                write!(f, "Invalid operation '{}' on {}: state is '{}', expected '{}'", 
-                       operation, resource, current_state, expected_state)
-            }
-            IpcError::PermissionDenied { operation, resource, required_permission, current_user } => {
-                if let Some(user) = current_user {
-                    write!(f, "Permission denied for {} on {}: user '{}' needs '{}'", 
-                           operation, resource, user, required_permission)
-                } else {
-                    write!(f, "Permission denied for {} on {}: '{}' required", 
-                           operation, resource, required_permission)
-                }
-            }
-            IpcError::ResourceExhausted { resource_type, limit, current_usage, operation } => {
-                write!(f, "{} limit exceeded in {}: {}/{} used", 
-                       resource_type, operation, current_usage, limit)
-            }
-            IpcError::ConnectionFailed { target, reason, retry_count, last_error_code } => {
-                if let (Some(retries), Some(code)) = (retry_count, last_error_code) {
-                    write!(f, "Connection to {} failed after {} retries (code {}): {}", 
-                           target, retries, code, reason)
-                } else {
-                    write!(f, "Connection to {} failed: {}", target, reason)
-                }
-            }
-            IpcError::SharedMemoryError { operation, memory_id, message, size } => {
-                if let Some(s) = size {
-                    write!(f, "Shared memory {} '{}' failed (size {}): {}", 
-                           operation, memory_id, s, message)
-                } else {
-                    write!(f, "Shared memory {} '{}' failed: {}", operation, memory_id, message)
-                }
-            }
-            IpcError::MessageQueueError { operation, queue_id, message, queue_size, message_count } => {
-                if let (Some(size), Some(count)) = (queue_size, message_count) {
-                    write!(f, "Message queue {} '{}' failed ({}/{} messages): {}", 
-                           operation, queue_id, count, size, message)
-                } else {
-                    write!(f, "Message queue {} '{}' failed: {}", operation, queue_id, message)
-                }
-            }
-            IpcError::SemaphoreError { operation, semaphore_id, message, current_value, max_value } => {
-                if let (Some(current), Some(max)) = (current_value, max_value) {
-                    write!(f, "Semaphore {} '{}' failed (value {}/{}): {}", 
-                           operation, semaphore_id, current, max, message)
-                } else {
-                    write!(f, "Semaphore {} '{}' failed: {}", operation, semaphore_id, message)
-                }
-            }
-            IpcError::SignalError { signal, operation, message, process_id } => {
-                if let Some(pid) = process_id {
-                    write!(f, "Signal {} {} failed for process {}: {}", 
-                           signal, operation, pid, message)
-                } else {
-                    write!(f, "Signal {} {} failed: {}", signal, operation, message)
-                }
-            }
-            IpcError::SerializationError { operation, data_type, message, data_size } => {
-                if let Some(size) = data_size {
-                    write!(f, "{} {} failed ({} bytes): {}", 
-                           data_type, operation, size, message)
-                } else {
-                    write!(f, "{} {} failed: {}", data_type, operation, message)
-                }
-            }
-            IpcError::ProtocolError { protocol, operation, message, version_expected, version_received } => {
-                if let (Some(expected), Some(received)) = (version_expected, version_received) {
-                    write!(f, "{} {} failed: {} (expected version {}, got {})", 
-                           protocol, operation, message, expected, received)
-                } else {
-                    write!(f, "{} {} failed: {}", protocol, operation, message)
-                }
-            }
-            IpcError::DeadlockError { resources, processes, detection_method } => {
-                write!(f, "Deadlock detected by {}: resources {:?}, processes {:?}", 
-                       detection_method, resources, processes)
-            }
-            IpcError::DataCorruption { resource, operation, checksum_expected, checksum_actual } => {
-                if let (Some(expected), Some(actual)) = (checksum_expected, checksum_actual) {
-                    write!(f, "Data corruption in {} during {}: checksum mismatch (expected {}, got {})", 
-                           resource, operation, expected, actual)
-                } else {
-                    write!(f, "Data corruption detected in {} during {}", resource, operation)
-                }
-            }
-            IpcError::SystemError { code, message, system_call } => {
+            IpcError::SystemError { operation, error_code, message, system_call } => {
+                write!(f, "System error in {} (code {}): {}", operation, error_code, message)?;
                 if let Some(call) = system_call {
-                    write!(f, "System error in {} (code {}): {}", call, code, message)
-                } else {
-                    write!(f, "System error (code {}): {}", code, message)
+                    write!(f, " [syscall: {}]", call)?;
                 }
+                Ok(())
             }
-            IpcError::General { message, context } => {
-                if let Some(ctx) = context {
-                    write!(f, "IPC error in {}: {}", ctx, message)
-                } else {
-                    write!(f, "IPC error: {}", message)
+            IpcError::DataCorruption { resource_type, resource_id, operation, message, checksum_expected, checksum_actual } => {
+                write!(f, "Data corruption in {} {} during {}: {}", resource_type, resource_id, operation, message)?;
+                if let (Some(expected), Some(actual)) = (checksum_expected, checksum_actual) {
+                    write!(f, " [checksum: expected {}, got {}]", expected, actual)?;
                 }
+                Ok(())
+            }
+            IpcError::Deadlock { operation, resources_involved, message, detection_method } => {
+                write!(f, "Deadlock detected in {} ({}): {} [resources: {}]", 
+                       operation, detection_method, message, resources_involved.join(", "))
+            }
+            IpcError::ConfigurationError { parameter, value, message, valid_range } => {
+                write!(f, "Configuration error: {} = '{}' - {}", parameter, value, message)?;
+                if let Some(range) = valid_range {
+                    write!(f, " [valid range: {}]", range)?;
+                }
+                Ok(())
+            }
+            IpcError::General { message, error_code } => {
+                write!(f, "IPC error: {}", message)?;
+                if let Some(code) = error_code {
+                    write!(f, " [code: {}]", code)?;
+                }
+                Ok(())
             }
         }
     }
 }
 
-impl StdError for IpcError {
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+impl std::error::Error for IpcError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 }
 
-// Helper functions for creating specific error types
+impl From<io::Error> for IpcError {
+    fn from(error: io::Error) -> Self {
+        IpcError::SystemError {
+            operation: "io_operation".to_string(),
+            error_code: error.raw_os_error().unwrap_or(-1),
+            message: error.to_string(),
+            system_call: None,
+        }
+    }
+}
+
+/// Error creation helper functions
+
+/// Create a communication error
 pub fn communication_error(message: &str) -> IpcError {
     IpcError::CommunicationError {
-        channel_type: "unknown".to_string(),
         operation: "unknown".to_string(),
+        error_type: "general".to_string(),
         message: message.to_string(),
-        error_code: None,
+        resource_id: None,
     }
 }
 
-pub fn communication_error_detailed(channel_type: &str, operation: &str, message: &str) -> IpcError {
+/// Create a detailed communication error
+pub fn communication_error_detailed(operation: &str, error_type: &str, message: &str) -> IpcError {
     IpcError::CommunicationError {
-        channel_type: channel_type.to_string(),
         operation: operation.to_string(),
+        error_type: error_type.to_string(),
         message: message.to_string(),
-        error_code: None,
+        resource_id: None,
     }
 }
 
-pub fn communication_error_with_code(channel_type: &str, operation: &str, message: &str, code: i32) -> IpcError {
+/// Create a communication error with resource ID
+pub fn communication_error_with_resource(operation: &str, error_type: &str, message: &str, resource_id: &str) -> IpcError {
     IpcError::CommunicationError {
-        channel_type: channel_type.to_string(),
         operation: operation.to_string(),
+        error_type: error_type.to_string(),
         message: message.to_string(),
-        error_code: Some(code),
+        resource_id: Some(resource_id.to_string()),
     }
 }
 
+/// Create a security error
 pub fn security_error(message: &str) -> IpcError {
     IpcError::SecurityError {
         operation: "unknown".to_string(),
-        required_permission: "unknown".to_string(),
-        current_user: None,
-        resource: "unknown".to_string(),
+        security_context: "general".to_string(),
+        message: message.to_string(),
+        permission_required: None,
     }
 }
 
-pub fn security_error_detailed(operation: &str, required_permission: &str, resource: &str) -> IpcError {
+/// Create a detailed security error
+pub fn security_error_detailed(operation: &str, context: &str, message: &str) -> IpcError {
     IpcError::SecurityError {
         operation: operation.to_string(),
-        required_permission: required_permission.to_string(),
-        current_user: None,
-        resource: resource.to_string(),
+        security_context: context.to_string(),
+        message: message.to_string(),
+        permission_required: None,
     }
 }
 
+/// Create a resource error
 pub fn resource_error(message: &str) -> IpcError {
     IpcError::ResourceError {
         resource_type: "unknown".to_string(),
         operation: "unknown".to_string(),
         message: message.to_string(),
-        available: None,
-        requested: None,
+        resource_id: None,
+        limit_exceeded: None,
     }
 }
 
+/// Create a detailed resource error
 pub fn resource_error_detailed(resource_type: &str, operation: &str, message: &str) -> IpcError {
     IpcError::ResourceError {
         resource_type: resource_type.to_string(),
         operation: operation.to_string(),
         message: message.to_string(),
-        available: None,
-        requested: None,
+        resource_id: None,
+        limit_exceeded: None,
     }
 }
 
-pub fn timeout_error(operation: &str, duration: Duration, resource: &str) -> IpcError {
-    IpcError::TimeoutError {
+/// Create a timeout error
+pub fn timeout_error(operation: &str, duration: Duration, message: &str) -> IpcError {
+    IpcError::Timeout {
         operation: operation.to_string(),
         duration,
-        resource: resource.to_string(),
+        message: message.to_string(),
+        resource_id: None,
     }
 }
 
-pub fn invalid_operation(operation: &str, current_state: &str, expected_state: &str, resource: &str) -> IpcError {
+/// Create an invalid operation error
+pub fn invalid_operation(operation: &str, current_state: &str, expected_state: &str) -> IpcError {
     IpcError::InvalidOperation {
         operation: operation.to_string(),
         current_state: current_state.to_string(),
         expected_state: expected_state.to_string(),
-        resource: resource.to_string(),
+        resource_id: None,
     }
 }
 
-pub fn permission_denied(operation: &str, resource: &str) -> IpcError {
+/// Create a permission denied error
+pub fn permission_denied(operation: &str, resource_id: &str) -> IpcError {
     IpcError::PermissionDenied {
         operation: operation.to_string(),
-        resource: resource.to_string(),
-        required_permission: "unknown".to_string(),
-        current_user: None,
+        resource_id: resource_id.to_string(),
+        required_permission: "read_write".to_string(),
+        message: "Access denied".to_string(),
     }
 }
 
-pub fn permission_denied_detailed(operation: &str, resource: &str, required_permission: &str) -> IpcError {
+/// Create a detailed permission denied error
+pub fn permission_denied_detailed(operation: &str, resource_id: &str, required_permission: &str, message: &str) -> IpcError {
     IpcError::PermissionDenied {
         operation: operation.to_string(),
-        resource: resource.to_string(),
+        resource_id: resource_id.to_string(),
         required_permission: required_permission.to_string(),
-        current_user: None,
+        message: message.to_string(),
     }
 }
 
-pub fn resource_exhausted(resource_type: &str, limit: usize, current_usage: usize, operation: &str) -> IpcError {
+/// Create a resource exhausted error
+pub fn resource_exhausted(resource_type: &str, operation: &str, current: u64, limit: u64) -> IpcError {
     IpcError::ResourceExhausted {
         resource_type: resource_type.to_string(),
-        limit,
-        current_usage,
         operation: operation.to_string(),
+        current_usage: current,
+        max_limit: limit,
+        message: format!("Resource limit exceeded: {}/{}", current, limit),
     }
 }
 
-pub fn connection_failed(target: &str, reason: &str) -> IpcError {
+/// Create a connection failed error
+pub fn connection_failed(operation: &str, target: &str, message: &str) -> IpcError {
     IpcError::ConnectionFailed {
+        operation: operation.to_string(),
         target: target.to_string(),
-        reason: reason.to_string(),
+        error_type: "connection".to_string(),
+        message: message.to_string(),
         retry_count: None,
-        last_error_code: None,
     }
 }
 
-pub fn shared_memory_error(operation: &str, memory_id: &str, message: &str) -> IpcError {
-    IpcError::SharedMemoryError {
-        operation: operation.to_string(),
-        memory_id: memory_id.to_string(),
-        message: message.to_string(),
-        size: None,
-    }
-}
-
-pub fn message_queue_error(operation: &str, queue_id: &str, message: &str) -> IpcError {
-    IpcError::MessageQueueError {
-        operation: operation.to_string(),
-        queue_id: queue_id.to_string(),
-        message: message.to_string(),
-        queue_size: None,
-        message_count: None,
-    }
-}
-
-pub fn semaphore_error(operation: &str, semaphore_id: &str, message: &str) -> IpcError {
-    IpcError::SemaphoreError {
-        operation: operation.to_string(),
-        semaphore_id: semaphore_id.to_string(),
-        message: message.to_string(),
-        current_value: None,
-        max_value: None,
-    }
-}
-
-pub fn signal_error(signal: &str, operation: &str, message: &str) -> IpcError {
-    IpcError::SignalError {
-        signal: signal.to_string(),
-        operation: operation.to_string(),
-        message: message.to_string(),
-        process_id: None,
-    }
-}
-
-pub fn serialization_error(operation: &str, data_type: &str, message: &str) -> IpcError {
-    IpcError::SerializationError {
-        operation: operation.to_string(),
-        data_type: data_type.to_string(),
-        message: message.to_string(),
-        data_size: None,
-    }
-}
-
-pub fn protocol_error(protocol: &str, operation: &str, message: &str) -> IpcError {
-    IpcError::ProtocolError {
-        protocol: protocol.to_string(),
-        operation: operation.to_string(),
-        message: message.to_string(),
-        version_expected: None,
-        version_received: None,
-    }
-}
-
-pub fn deadlock_error(resources: Vec<String>, processes: Vec<u32>, detection_method: &str) -> IpcError {
-    IpcError::DeadlockError {
-        resources,
-        processes,
-        detection_method: detection_method.to_string(),
-    }
-}
-
-pub fn data_corruption_error(resource: &str, operation: &str) -> IpcError {
-    IpcError::DataCorruption {
-        resource: resource.to_string(),
-        operation: operation.to_string(),
-        checksum_expected: None,
-        checksum_actual: None,
-    }
-}
-
+/// Create a system error
 pub fn system_error(code: i32, message: &str) -> IpcError {
     IpcError::SystemError {
-        code,
+        operation: "system".to_string(),
+        error_code: code,
         message: message.to_string(),
         system_call: None,
     }
 }
 
-pub fn general_error(message: &str) -> IpcError {
-    IpcError::General {
+/// Create a detailed system error
+pub fn system_error_detailed(operation: &str, code: i32, message: &str, system_call: &str) -> IpcError {
+    IpcError::SystemError {
+        operation: operation.to_string(),
+        error_code: code,
         message: message.to_string(),
-        context: None,
+        system_call: Some(system_call.to_string()),
     }
 }
 
-// Conversion from standard library errors
-impl From<std::io::Error> for IpcError {
-    fn from(err: std::io::Error) -> Self {
-        system_error(
-            err.raw_os_error().unwrap_or(-1), 
-            &err.to_string()
-        )
+/// Create a shared memory error
+pub fn shared_memory_error(operation: &str, resource_id: &str, message: &str) -> IpcError {
+    IpcError::ResourceError {
+        resource_type: "shared_memory".to_string(),
+        operation: operation.to_string(),
+        message: message.to_string(),
+        resource_id: Some(resource_id.to_string()),
+        limit_exceeded: None,
     }
 }
 
-impl From<std::string::FromUtf8Error> for IpcError {
-    fn from(err: std::string::FromUtf8Error) -> Self {
-        serialization_error("deserialization", "UTF-8", &err.to_string())
+/// Create a pipe error
+pub fn pipe_error(operation: &str, resource_id: &str, message: &str) -> IpcError {
+    IpcError::CommunicationError {
+        operation: operation.to_string(),
+        error_type: "pipe".to_string(),
+        message: message.to_string(),
+        resource_id: Some(resource_id.to_string()),
     }
 }
 
-impl From<std::str::Utf8Error> for IpcError {
-    fn from(err: std::str::Utf8Error) -> Self {
-        serialization_error("deserialization", "UTF-8", &err.to_string())
+/// Create a message queue error
+pub fn message_queue_error(operation: &str, resource_id: &str, message: &str) -> IpcError {
+    IpcError::CommunicationError {
+        operation: operation.to_string(),
+        error_type: "message_queue".to_string(),
+        message: message.to_string(),
+        resource_id: Some(resource_id.to_string()),
     }
 }
 
-// Integration with CURSED error system
-impl From<IpcError> for CursedError {
-    fn from(err: IpcError) -> Self {
-        CursedError::Runtime(err.to_string())
+/// Create a serialization error
+pub fn serialization_error(operation: &str, data_type: &str, message: &str) -> IpcError {
+    IpcError::SerializationError {
+        operation: operation.to_string(),
+        data_type: data_type.to_string(),
+        message: message.to_string(),
+        position: None,
     }
 }
 
-impl From<CursedError> for IpcError {
-    fn from(err: CursedError) -> Self {
-        general_error(&err.to_string())
+/// Create a deadlock error
+pub fn deadlock_error(operation: &str, resources: Vec<String>, message: &str) -> IpcError {
+    IpcError::Deadlock {
+        operation: operation.to_string(),
+        resources_involved: resources,
+        message: message.to_string(),
+        detection_method: "timeout".to_string(),
     }
 }
 
@@ -542,66 +567,96 @@ mod tests {
 
     #[test]
     fn test_error_creation() {
-        let err = communication_error("test error");
-        assert!(matches!(err, IpcError::CommunicationError { .. }));
-        assert_eq!(err.to_string(), "unknown unknown failed: test error");
+        let err = communication_error("Test communication error");
+        assert_eq!(err.category(), "CommunicationError");
+        assert!(err.is_recoverable());
+        assert!(err.should_retry());
+
+        let err = security_error("Access denied");
+        assert_eq!(err.category(), "SecurityError");
+        assert!(!err.is_recoverable());
+        assert!(!err.should_retry());
     }
 
     #[test]
-    fn test_communication_error_detailed() {
-        let err = communication_error_detailed("pipe", "write", "broken pipe");
-        assert!(matches!(err, IpcError::CommunicationError { .. }));
-        assert!(err.to_string().contains("pipe write failed"));
-    }
-
-    #[test]
-    fn test_security_error() {
-        let err = security_error_detailed("read", "read_permission", "/shared/data");
-        assert!(matches!(err, IpcError::SecurityError { .. }));
-        assert!(err.to_string().contains("Security error"));
+    fn test_error_display() {
+        let err = communication_error_detailed("read", "pipe", "Connection lost");
+        let display = format!("{}", err);
+        assert!(display.contains("Communication error"));
+        assert!(display.contains("read"));
+        assert!(display.contains("pipe"));
+        assert!(display.contains("Connection lost"));
     }
 
     #[test]
     fn test_timeout_error() {
-        let timeout = Duration::from_millis(1000);
-        let err = timeout_error("acquire", timeout, "semaphore1");
-        assert!(matches!(err, IpcError::TimeoutError { .. }));
-        assert!(err.to_string().contains("timed out"));
+        let duration = Duration::from_secs(30);
+        let err = timeout_error("wait", duration, "Operation timed out");
+        
+        assert_eq!(err.category(), "Timeout");
+        assert!(err.is_recoverable());
+        assert!(err.should_retry());
+        
+        let suggested_delay = err.suggested_retry_delay();
+        assert!(suggested_delay.is_some());
+        assert_eq!(suggested_delay.unwrap(), Duration::from_secs(15));
     }
 
     #[test]
     fn test_resource_exhausted_error() {
-        let err = resource_exhausted("memory", 1024, 2048, "allocate");
-        assert!(matches!(err, IpcError::ResourceExhausted { .. }));
-        assert!(err.to_string().contains("limit exceeded"));
+        let err = resource_exhausted("memory", "allocate", 1024, 512);
+        assert_eq!(err.category(), "ResourceExhausted");
+        assert!(err.is_recoverable());
+        assert!(err.should_retry());
+        
+        let display = format!("{}", err);
+        assert!(display.contains("1024/512"));
     }
 
     #[test]
-    fn test_error_conversions() {
-        // Test conversion from std::io::Error
-        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "access denied");
-        let ipc_err: IpcError = io_err.into();
-        assert!(matches!(ipc_err, IpcError::SystemError { .. }));
-
-        // Test conversion to CursedError
-        let ipc_err = communication_error("test");
-        let cursed_err: CursedError = ipc_err.into();
-        assert!(matches!(cursed_err, CursedError::Runtime(_)));
+    fn test_permission_denied_error() {
+        let err = permission_denied_detailed("write", "/tmp/shared", "write", "Insufficient privileges");
+        assert_eq!(err.category(), "PermissionDenied");
+        assert!(!err.is_recoverable());
+        assert!(!err.should_retry());
+        
+        let display = format!("{}", err);
+        assert!(display.contains("write"));
+        assert!(display.contains("/tmp/shared"));
+        assert!(display.contains("Insufficient privileges"));
     }
 
     #[test]
     fn test_deadlock_error() {
         let resources = vec!["resource1".to_string(), "resource2".to_string()];
-        let processes = vec![1234, 5678];
-        let err = deadlock_error(resources, processes, "banker's algorithm");
-        assert!(matches!(err, IpcError::DeadlockError { .. }));
-        assert!(err.to_string().contains("Deadlock detected"));
+        let err = deadlock_error("acquire", resources, "Circular dependency detected");
+        
+        assert_eq!(err.category(), "Deadlock");
+        assert!(err.is_recoverable());
+        assert!(err.should_retry());
+        
+        let display = format!("{}", err);
+        assert!(display.contains("resource1, resource2"));
     }
 
     #[test]
-    fn test_data_corruption_error() {
-        let err = data_corruption_error("shared_memory_1", "read");
-        assert!(matches!(err, IpcError::DataCorruption { .. }));
-        assert!(err.to_string().contains("Data corruption"));
+    fn test_error_conversion_from_io() {
+        let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "Access denied");
+        let ipc_err: IpcError = io_err.into();
+        
+        assert_eq!(ipc_err.category(), "SystemError");
+        assert!(ipc_err.message().contains("Access denied"));
+    }
+
+    #[test]
+    fn test_retry_delay_suggestions() {
+        let err1 = timeout_error("wait", Duration::from_secs(10), "Timeout");
+        assert_eq!(err1.suggested_retry_delay(), Some(Duration::from_secs(5)));
+        
+        let err2 = resource_exhausted("memory", "alloc", 100, 50);
+        assert_eq!(err2.suggested_retry_delay(), Some(Duration::from_millis(100)));
+        
+        let err3 = security_error("Access denied");
+        assert_eq!(err3.suggested_retry_delay(), None);
     }
 }

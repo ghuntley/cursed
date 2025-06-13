@@ -17,6 +17,10 @@ use crate::lsp::completion::CompletionProvider;
 use crate::lsp::navigation::NavigationProvider;
 use crate::lsp::formatting::FormattingProvider;
 use crate::lsp::workspace::WorkspaceManager;
+use crate::lsp::semantic_highlighting::SemanticHighlightingProvider;
+use crate::lsp::code_lens::CodeLensProvider;
+use crate::lsp::inlay_hints::InlayHintsProvider;
+use crate::lsp::enhanced_symbols::EnhancedSymbolProvider;
 use crate::parser::Parser;
 use crate::lexer::Lexer;
 
@@ -36,6 +40,14 @@ pub struct CursedLanguageServer {
     formatting: Arc<FormattingProvider>,
     /// Workspace manager
     workspace: Arc<WorkspaceManager>,
+    /// Semantic highlighting provider
+    semantic_highlighting: Arc<RwLock<SemanticHighlightingProvider>>,
+    /// Code lens provider
+    code_lens: Arc<RwLock<CodeLensProvider>>,
+    /// Inlay hints provider
+    inlay_hints: Arc<RwLock<InlayHintsProvider>>,
+    /// Enhanced symbol provider
+    symbols: Arc<RwLock<EnhancedSymbolProvider>>,
     /// Server capabilities
     capabilities: ServerCapabilities,
 }
@@ -54,6 +66,10 @@ impl CursedLanguageServer {
         let navigation = Arc::new(NavigationProvider::new());
         let formatting = Arc::new(FormattingProvider::new());
         let workspace = Arc::new(WorkspaceManager::new());
+        let semantic_highlighting = Arc::new(RwLock::new(SemanticHighlightingProvider::new()));
+        let code_lens = Arc::new(RwLock::new(CodeLensProvider::new()));
+        let inlay_hints = Arc::new(RwLock::new(InlayHintsProvider::new()));
+        let symbols = Arc::new(RwLock::new(EnhancedSymbolProvider::new()));
 
         let capabilities = Self::build_server_capabilities();
 
@@ -65,6 +81,10 @@ impl CursedLanguageServer {
             navigation,
             formatting,
             workspace,
+            semantic_highlighting,
+            code_lens,
+            inlay_hints,
+            symbols,
             capabilities,
         }
     }
@@ -119,37 +139,13 @@ impl CursedLanguageServer {
                 SemanticTokensServerCapabilities::SemanticTokensOptions(
                     SemanticTokensOptions {
                         work_done_progress_options: WorkDoneProgressOptions::default(),
-                        legend: SemanticTokensLegend {
-                            token_types: vec![
-                                SemanticTokenType::NAMESPACE,
-                                SemanticTokenType::TYPE,
-                                SemanticTokenType::CLASS,
-                                SemanticTokenType::ENUM,
-                                SemanticTokenType::INTERFACE,
-                                SemanticTokenType::STRUCT,
-                                SemanticTokenType::FUNCTION,
-                                SemanticTokenType::VARIABLE,
-                                SemanticTokenType::PROPERTY,
-                                SemanticTokenType::KEYWORD,
-                                SemanticTokenType::COMMENT,
-                                SemanticTokenType::STRING,
-                                SemanticTokenType::NUMBER,
-                                SemanticTokenType::OPERATOR,
-                            ],
-                            token_modifiers: vec![
-                                SemanticTokenModifier::DECLARATION,
-                                SemanticTokenModifier::DEFINITION,
-                                SemanticTokenModifier::READONLY,
-                                SemanticTokenModifier::STATIC,
-                                SemanticTokenModifier::DEPRECATED,
-                                SemanticTokenModifier::ASYNC,
-                            ],
-                        },
+                        legend: SemanticHighlightingProvider::new().get_legend(),
                         range: Some(true),
                         full: Some(SemanticTokensFullOptions::Bool(true)),
                     },
                 ),
             ),
+            inlay_hint_provider: Some(OneOf::Left(true)),
             workspace: Some(WorkspaceServerCapabilities {
                 workspace_folders: Some(WorkspaceFoldersServerCapabilities {
                     supported: Some(true),
@@ -471,6 +467,145 @@ impl LanguageServer for CursedLanguageServer {
         }
         
         Ok(None)
+    }
+
+    #[instrument(skip(self, params))]
+    async fn semantic_tokens_full(&self, params: SemanticTokensParams) -> LspResult<Option<SemanticTokensResult>> {
+        debug!("Semantic tokens full requested for {}", params.text_document.uri);
+        
+        if let Some(content) = self.document_manager.get_document_content(&params.text_document.uri).await {
+            let provider = self.semantic_highlighting.read().await;
+            match provider.get_semantic_tokens(&content).await {
+                Ok(tokens) => {
+                    let encoded_tokens = provider.encode_semantic_tokens(tokens);
+                    return Ok(Some(SemanticTokensResult::Tokens(encoded_tokens)));
+                }
+                Err(e) => {
+                    debug!("Failed to generate semantic tokens: {}", e);
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    #[instrument(skip(self, params))]
+    async fn semantic_tokens_range(&self, params: SemanticTokensRangeParams) -> LspResult<Option<SemanticTokensRangeResult>> {
+        debug!("Semantic tokens range requested for {}", params.text_document.uri);
+        
+        if let Some(content) = self.document_manager.get_document_content(&params.text_document.uri).await {
+            let provider = self.semantic_highlighting.read().await;
+            match provider.get_semantic_tokens_range(&content, params.range).await {
+                Ok(tokens) => {
+                    let encoded_tokens = provider.encode_semantic_tokens(tokens);
+                    return Ok(Some(SemanticTokensRangeResult::Tokens(encoded_tokens)));
+                }
+                Err(e) => {
+                    debug!("Failed to generate semantic tokens for range: {}", e);
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    #[instrument(skip(self, params))]
+    async fn code_lens(&self, params: CodeLensParams) -> LspResult<Option<Vec<CodeLens>>> {
+        debug!("Code lens requested for {}", params.text_document.uri);
+        
+        if let Some(content) = self.document_manager.get_document_content(&params.text_document.uri).await {
+            let provider = self.code_lens.read().await;
+            match provider.get_code_lenses(&content, &params.text_document.uri).await {
+                Ok(lenses) => {
+                    let lsp_lenses: Vec<CodeLens> = lenses
+                        .into_iter()
+                        .map(|lens| lens.to_lsp_code_lens())
+                        .collect();
+                    return Ok(Some(lsp_lenses));
+                }
+                Err(e) => {
+                    debug!("Failed to generate code lenses: {}", e);
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    #[instrument(skip(self, params))]
+    async fn code_lens_resolve(&self, params: CodeLens) -> LspResult<CodeLens> {
+        debug!("Code lens resolve requested");
+        
+        let provider = self.code_lens.read().await;
+        match provider.resolve_code_lens(params).await {
+            Ok(resolved) => Ok(resolved),
+            Err(e) => {
+                debug!("Failed to resolve code lens: {}", e);
+                Ok(params) // Return original if resolution fails
+            }
+        }
+    }
+
+    #[instrument(skip(self, params))]
+    async fn inlay_hint(&self, params: InlayHintParams) -> LspResult<Option<Vec<InlayHint>>> {
+        debug!("Inlay hints requested for {}", params.text_document.uri);
+        
+        if let Some(content) = self.document_manager.get_document_content(&params.text_document.uri).await {
+            let mut provider = self.inlay_hints.write().await;
+            match provider.get_inlay_hints(&content, params.range).await {
+                Ok(hints) => {
+                    let lsp_hints: Vec<InlayHint> = hints
+                        .into_iter()
+                        .map(|hint| hint.to_lsp_inlay_hint())
+                        .collect();
+                    return Ok(Some(lsp_hints));
+                }
+                Err(e) => {
+                    debug!("Failed to generate inlay hints: {}", e);
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    #[instrument(skip(self, params))]
+    async fn document_symbol(&self, params: DocumentSymbolParams) -> LspResult<Option<DocumentSymbolResponse>> {
+        debug!("Document symbols requested for {}", params.text_document.uri);
+        
+        if let Some(content) = self.document_manager.get_document_content(&params.text_document.uri).await {
+            let mut provider = self.symbols.write().await;
+            match provider.get_document_symbols(&content, &params.text_document.uri).await {
+                Ok(symbols) => {
+                    let document_symbols: Vec<DocumentSymbol> = symbols
+                        .into_iter()
+                        .map(|symbol| symbol.to_document_symbol())
+                        .collect();
+                    return Ok(Some(DocumentSymbolResponse::Nested(document_symbols)));
+                }
+                Err(e) => {
+                    debug!("Failed to extract document symbols: {}", e);
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    #[instrument(skip(self, params))]
+    async fn symbol(&self, params: WorkspaceSymbolParams) -> LspResult<Option<Vec<WorkspaceSymbol>>> {
+        debug!("Workspace symbols requested with query: {}", params.query);
+        
+        let workspace_folders = self.workspace.get_workspace_folders().await;
+        let mut provider = self.symbols.write().await;
+        
+        match provider.search_workspace_symbols(&params.query, &workspace_folders).await {
+            Ok(symbols) => Ok(Some(symbols)),
+            Err(e) => {
+                debug!("Failed to search workspace symbols: {}", e);
+                Ok(None)
+            }
+        }
     }
 }
 

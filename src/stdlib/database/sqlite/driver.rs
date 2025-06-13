@@ -374,18 +374,9 @@ impl SqliteDriver {
     pub fn open_with_config(&self, config: SqliteConfig) -> SqliteResult<Box<dyn DriverConn>> {
         config.validate()?;
         
-        let connection = RealSqliteConnection::new(config)?;
-        let connection_arc = Arc::new(connection);
-        let connection_id = uuid::Uuid::new_v4().to_string();
-        
-        self.register_connection(connection_id.clone(), connection_arc.clone())?;
-        
-        // Return boxed connection that manages its own lifecycle
-        Ok(Box::new(ManagedSqliteConnection {
-            connection: connection_arc,
-            connection_id,
-            driver: Arc::new(self.clone_for_connection()),
-        }))
+        // Use production connection instead of placeholder
+        let connection = super::production_driver::ProductionSqliteConnection::new(config)?;
+        Ok(Box::new(connection))
     }
 
     /// slay Clone driver for connection management (internal use)

@@ -18,6 +18,7 @@
 pub mod driver;
 pub mod connection;
 pub mod real_connection;
+pub mod production_driver;
 pub mod statement;
 pub mod transaction;
 pub mod ffi;
@@ -31,6 +32,7 @@ pub mod utils;
 // Re-export main types for convenience
 pub use driver::{SqliteDriver, SqliteDriverCapabilities};
 pub use connection::{SqliteConnection, SqliteConnectionInfo, ConnectionState};
+pub use production_driver::{ProductionSqliteConnection, ProductionSqliteStatement, ProductionSqliteTransaction, ConnectionStats};
 pub use statement::{SqliteStatement, StatementInfo, ParameterInfo};
 pub use transaction::{SqliteTransaction, TransactionState, SqliteTransactionOptions};
 pub use ffi::{SqliteFFI, SqliteHandle, SqliteStmtHandle, SqliteBackupHandle};

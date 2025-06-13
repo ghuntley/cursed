@@ -124,6 +124,10 @@ pub enum HandlerError {
     BusinessLogic(String),
     /// Validation error
     Validation(String),
+    /// Network communication error
+    Network(String),
+    /// Configuration error
+    Configuration(String),
     /// Not implemented
     NotImplemented(String),
     /// Internal error
@@ -142,6 +146,8 @@ impl fmt::Display for HandlerError {
             HandlerError::ExternalApi(msg) => write!(f, "External API error: {}", msg),
             HandlerError::BusinessLogic(msg) => write!(f, "Business logic error: {}", msg),
             HandlerError::Validation(msg) => write!(f, "Validation error: {}", msg),
+            HandlerError::Network(msg) => write!(f, "Network error: {}", msg),
+            HandlerError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
             HandlerError::NotImplemented(msg) => write!(f, "Not implemented: {}", msg),
             HandlerError::Internal(msg) => write!(f, "Internal error: {}", msg),
         }

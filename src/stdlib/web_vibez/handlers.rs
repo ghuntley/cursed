@@ -549,14 +549,37 @@ pub struct ProxyHandler {
     additional_headers: HashMap<String, String>,
     /// Whether to preserve host header
     preserve_host: bool,
+    /// Request timeout for proxied requests
+    timeout: std::time::Duration,
+    /// HTTP client for making requests
+    client: reqwest::Client,
+    /// Headers to remove from proxied responses
+    filtered_response_headers: std::collections::HashSet<String>,
 }
 
 impl ProxyHandler {
     pub fn new(target_base_url: &str) -> Self {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .redirect(reqwest::redirect::Policy::none()) // Handle redirects manually
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new());
+
+        let mut filtered_headers = std::collections::HashSet::new();
+        // Headers that should not be forwarded from the target response
+        filtered_headers.insert("connection".to_lowercase());
+        filtered_headers.insert("transfer-encoding".to_lowercase());
+        filtered_headers.insert("upgrade".to_lowercase());
+        filtered_headers.insert("proxy-authenticate".to_lowercase());
+        filtered_headers.insert("proxy-authorization".to_lowercase());
+
         Self {
             target_base_url: target_base_url.to_string(),
             additional_headers: HashMap::new(),
             preserve_host: false,
+            timeout: std::time::Duration::from_secs(30),
+            client,
+            filtered_response_headers: filtered_headers,
         }
     }
 
@@ -569,6 +592,107 @@ impl ProxyHandler {
         self.preserve_host = preserve;
         self
     }
+
+    pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    pub fn with_client(mut self, client: reqwest::Client) -> Self {
+        self.client = client;
+        self
+    }
+
+    /// Build the target URL from base URL and request path
+    fn build_target_url(&self, path: &str, query: &str) -> Result<String, HandlerError> {
+        let base = self.target_base_url.trim_end_matches('/');
+        let path = if path.starts_with('/') { path } else { &format!("/{}", path) };
+        
+        let url = if query.is_empty() {
+            format!("{}{}", base, path)
+        } else {
+            format!("{}{}?{}", base, path, query)
+        };
+
+        // Validate the URL
+        reqwest::Url::parse(&url)
+            .map_err(|e| HandlerError::Configuration(format!("Invalid proxy target URL: {}", e)))?;
+
+        Ok(url)
+    }
+
+    /// Build headers for the proxied request
+    fn build_request_headers(&self, context: &RequestContext) -> reqwest::header::HeaderMap {
+        let mut headers = reqwest::header::HeaderMap::new();
+
+        // Copy headers from original request (except filtered ones)
+        for (name, value) in &context.headers {
+            let header_name = name.to_lowercase();
+            
+            // Skip connection-related headers
+            if !self.should_filter_request_header(&header_name) {
+                if let (Ok(name), Ok(value)) = (
+                    reqwest::header::HeaderName::from_bytes(name.as_bytes()),
+                    reqwest::header::HeaderValue::from_str(value)
+                ) {
+                    headers.insert(name, value);
+                }
+            }
+        }
+
+        // Handle host header preservation
+        if !self.preserve_host {
+            if let Ok(target_url) = reqwest::Url::parse(&self.target_base_url) {
+                if let Some(host) = target_url.host_str() {
+                    if let Ok(host_value) = reqwest::header::HeaderValue::from_str(host) {
+                        headers.insert(reqwest::header::HOST, host_value);
+                    }
+                }
+            }
+        }
+
+        // Add additional headers
+        for (name, value) in &self.additional_headers {
+            if let (Ok(name), Ok(value)) = (
+                reqwest::header::HeaderName::from_str(name),
+                reqwest::header::HeaderValue::from_str(value)
+            ) {
+                headers.insert(name, value);
+            }
+        }
+
+        // Add X-Forwarded headers for proxy transparency
+        if let Ok(forwarded_for) = reqwest::header::HeaderValue::from_str(&context.client_ip.as_ref().unwrap_or(&"unknown".to_string())) {
+            headers.insert("x-forwarded-for", forwarded_for);
+        }
+        
+        if let Ok(forwarded_proto) = reqwest::header::HeaderValue::from_str("http") {
+            headers.insert("x-forwarded-proto", forwarded_proto);
+        }
+
+        headers
+    }
+
+    /// Check if a request header should be filtered out
+    fn should_filter_request_header(&self, header_name: &str) -> bool {
+        matches!(header_name.to_lowercase().as_str(),
+            "connection" | "upgrade" | "proxy-connection" | "proxy-authenticate" | "proxy-authorization"
+        )
+    }
+
+    /// Copy response headers from target to client response
+    fn copy_response_headers(&self, target_response: &reqwest::Response, response: &mut ResponseContext) {
+        for (name, value) in target_response.headers() {
+            let header_name = name.as_str().to_lowercase();
+            
+            // Skip filtered headers
+            if !self.filtered_response_headers.contains(&header_name) {
+                if let Ok(value_str) = value.to_str() {
+                    response.set_header(name.as_str(), value_str);
+                }
+            }
+        }
+    }
 }
 
 impl RequestHandler for ProxyHandler {
@@ -578,27 +702,84 @@ impl RequestHandler for ProxyHandler {
         response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
-        // This is a simplified proxy implementation
-        // In a real implementation, you would use an HTTP client library
+        // Build target URL with query parameters
+        let query_string = context.query_params.iter()
+            .map(|(k, v)| format!("{}={}", urlencoding::encode(k), urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
         
-        let target_url = format!("{}{}", self.target_base_url.trim_end_matches('/'), &context.path);
-        
-        // For now, just return a placeholder response
-        let proxy_response = format!(
-            "PROXY: {} {} -> {}",
-            context.method,
-            context.path,
-            target_url
-        );
-        
-        response.set_status(StatusCode::OK);
-        response.set_header("Content-Type", "text/plain");
-        response.set_body_string(&proxy_response);
+        let target_url = self.build_target_url(&context.path, &query_string)?;
         
         debug!(
             source_path = %context.path,
             target_url = %target_url,
-            "Proxied request"
+            method = %context.method,
+            "Starting proxy request"
+        );
+
+        // Build the proxied request
+        let mut request_builder = self.client
+            .request(self.convert_method(&context.method)?, &target_url)
+            .timeout(self.timeout)
+            .headers(self.build_request_headers(context));
+
+        // Add request body if present
+        if !context.body.is_empty() {
+            request_builder = request_builder.body(context.body.clone());
+        }
+
+        // Execute the proxied request
+        let target_response = match request_builder.send().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                let error_msg = if e.is_timeout() {
+                    format!("Proxy request timeout after {:?}", self.timeout)
+                } else if e.is_connect() {
+                    format!("Failed to connect to target server: {}", e)
+                } else {
+                    format!("Proxy request failed: {}", e)
+                };
+                
+                debug!(
+                    target_url = %target_url,
+                    error = %e,
+                    "Proxy request failed"
+                );
+                
+                return Err(HandlerError::Network(error_msg));
+            }
+        };
+
+        // Convert response status
+        let status_code = target_response.status().as_u16();
+        let status = StatusCode(status_code);
+
+        // Copy response headers
+        self.copy_response_headers(&target_response, response);
+
+        // Get response body
+        let response_body = match target_response.bytes().await {
+            Ok(bytes) => bytes.to_vec(),
+            Err(e) => {
+                debug!(
+                    target_url = %target_url,
+                    error = %e,
+                    "Failed to read response body"
+                );
+                return Err(HandlerError::Network(format!("Failed to read proxy response body: {}", e)));
+            }
+        };
+
+        // Set final response
+        response.set_status(status);
+        response.set_body(response_body);
+
+        debug!(
+            source_path = %context.path,
+            target_url = %target_url,
+            status = status_code,
+            response_size = response.body.len(),
+            "Proxy request completed"
         );
         
         Ok(())
@@ -611,6 +792,28 @@ impl RequestHandler for ProxyHandler {
 
     fn description(&self) -> String {
         format!("Proxy handler to: {}", self.target_base_url)
+    }
+}
+
+impl ProxyHandler {
+    /// Convert CURSED HttpMethod to reqwest Method
+    fn convert_method(&self, method: &crate::stdlib::web_vibez::HttpMethod) -> Result<reqwest::Method, HandlerError> {
+        use crate::stdlib::web_vibez::HttpMethod;
+        
+        let method_str = match method {
+            HttpMethod::GET => "GET",
+            HttpMethod::POST => "POST",
+            HttpMethod::PUT => "PUT",
+            HttpMethod::DELETE => "DELETE",
+            HttpMethod::HEAD => "HEAD",
+            HttpMethod::OPTIONS => "OPTIONS",
+            HttpMethod::PATCH => "PATCH",
+            HttpMethod::TRACE => "TRACE",
+            HttpMethod::CONNECT => "CONNECT",
+        };
+
+        reqwest::Method::from_bytes(method_str.as_bytes())
+            .map_err(|e| HandlerError::Configuration(format!("Invalid HTTP method: {}", e)))
     }
 }
 

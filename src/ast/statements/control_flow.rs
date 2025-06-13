@@ -306,3 +306,6 @@ impl Statement for TypeAliasStatement {
         Box::new(self.clone())
     }
 }
+
+// Re-export type switch from the main type_switch module
+pub use crate::ast::type_switch::*;

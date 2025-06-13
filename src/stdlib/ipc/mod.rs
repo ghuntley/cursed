@@ -63,6 +63,8 @@ pub mod signals;
 pub mod domain_socket;
 pub mod rpc;
 pub mod security;
+pub mod channels;
+pub mod synchronization;
 
 // Re-export main types and functions for easy access
 pub use error::{
@@ -142,6 +144,18 @@ pub use security::{
     Credential, AuthenticationMethod, AuthorizationResult,
     create_security_context, validate_permissions, check_access,
     encrypt_ipc_data, decrypt_ipc_data, generate_ipc_token
+};
+
+// High-level IPC channels
+pub use channels::{
+    IpcChannel, ChannelConfig, ChannelType, ChannelStatistics, ChannelPair
+};
+
+// Advanced synchronization primitives
+pub use synchronization::{
+    IpcBarrier, IpcRwLock, IpcCondVar, ProcessCoordinator,
+    IpcRwLockReadGuard, IpcRwLockWriteGuard, BarrierWaitResult,
+    CoordinatorStatistics
 };
 
 /// Initialize the IPC subsystem

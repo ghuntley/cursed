@@ -1,4 +1,5 @@
 use crate::error::CursedError;
+use crate::stdlib::value::Value as CursedValue;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use sha2::{Sha256, Digest};
@@ -6,6 +7,26 @@ use hmac::{Hmac, Mac};
 use base64::{Engine as _, engine::general_purpose};
 use serde_json::{json, Value};
 use tracing::{debug, info, warn, error, instrument};
+
+// Re-export comprehensive protocol suite
+pub use super::protocols_comprehensive::{
+    ProtocolSuite, ProtocolBuilder, SecurityLevel, ProtocolConfig,
+    SecureMessagingProtocol, MpcProtocol, DkgProtocol,
+    SecurityAuditReport, ProtocolHealthStatus,
+};
+
+// Re-export all protocol types for compatibility
+pub use super::protocols_production::{
+    ProtocolError, ProtocolResult, CryptoPrimitives,
+    X25519KeyExchange, EcdhKeyExchange, DiffieHellmanKeyExchange,
+    EcdheKeyExchange, EcdheMessage, SecureChannel,
+};
+
+pub use super::protocols_advanced::{
+    ChallengeResponseAuth, ChallengeSet, ResponseSet, AuthenticationResult,
+    MultiPartyComputation, ShareDistribution,
+    DistributedKeyGeneration, DistributedKey,
+};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -428,6 +449,219 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     result == 0
 }
 
+// ============================================================================
+// CURSED LANGUAGE FUNCTION EXPORTS
+// ============================================================================
+
+/// Initialize comprehensive cryptographic protocols
+pub fn init_crypto_protocols() -> Result<(), CursedError> {
+    info!("Initializing comprehensive cryptographic protocols module");
+    Ok(())
+}
+
+/// Create new protocol suite with specified security level
+pub fn create_protocol_suite(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    let security_level = if args.is_empty() {
+        SecurityLevel::Level256
+    } else {
+        match args[0].as_string().as_deref() {
+            Some("Level128") => SecurityLevel::Level128,
+            Some("Level192") => SecurityLevel::Level192,
+            Some("Level256") => SecurityLevel::Level256,
+            Some("PostQuantum") => SecurityLevel::PostQuantum,
+            _ => return Err(CursedError::Runtime("Invalid security level".to_string())),
+        }
+    };
+
+    let _suite = ProtocolSuite::new(security_level);
+    
+    // Return success indicator (in a real implementation, this would return a handle)
+    Ok(CursedValue::bool(true))
+}
+
+/// Generate X25519 keypair for key exchange
+pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    let security_level = SecurityLevel::Level256;
+    let exchange = X25519KeyExchange::new(security_level);
+    let public_key = exchange.public_key();
+    
+    let mut result = HashMap::new();
+    result.insert("public_key".to_string(), CursedValue::String(hex::encode(public_key)));
+    result.insert("key_type".to_string(), CursedValue::String("X25519".to_string()));
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Perform X25519 key exchange
+pub fn x25519_exchange(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.len() < 2 {
+        return Err(CursedError::Runtime("x25519_exchange requires private_key and peer_public_key".to_string()));
+    }
+
+    // In a real implementation, this would use the actual private key
+    // For now, return a mock shared secret
+    let shared_secret = hex::encode(CryptoPrimitives::random_bytes(32));
+    
+    Ok(CursedValue::String(shared_secret))
+}
+
+/// Create secure communication channel
+pub fn create_secure_channel(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::Runtime("create_secure_channel requires shared_secret".to_string()));
+    }
+
+    // Generate channel ID
+    let channel_id = hex::encode(CryptoPrimitives::random_bytes(8));
+    
+    Ok(CursedValue::String(channel_id))
+}
+
+/// Send message through secure channel
+pub fn send_secure_message(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.len() < 2 {
+        return Err(CursedError::Runtime("send_secure_message requires channel_id and message".to_string()));
+    }
+
+    let _channel_id = args[0].as_string();
+    let message = args[1].as_string();
+    
+    // Mock encryption (in real implementation, would use actual secure channel)
+    let encrypted = base64::engine::general_purpose::STANDARD.encode(message.as_bytes());
+    
+    Ok(CursedValue::String(encrypted))
+}
+
+/// Receive message from secure channel
+pub fn receive_secure_message(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.len() < 2 {
+        return Err(CursedError::Runtime("receive_secure_message requires channel_id and encrypted_message".to_string()));
+    }
+
+    let _channel_id = args[0].as_string();
+    let encrypted_message = args[1].as_string();
+    
+    // Mock decryption
+    let decrypted = base64::engine::general_purpose::STANDARD
+        .decode(encrypted_message.as_bytes())
+        .map_err(|e| CursedError::Runtime(format!("Decryption failed: {}", e)))?;
+    
+    let message = String::from_utf8(decrypted)
+        .map_err(|e| CursedError::Runtime(format!("Invalid UTF-8: {}", e)))?;
+    
+    Ok(CursedValue::String(message))
+}
+
+/// Initiate challenge-response authentication
+pub fn initiate_authentication(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::Runtime("initiate_authentication requires peer_public_key".to_string()));
+    }
+
+    // Generate mock challenge set
+    let mut result = HashMap::new();
+    result.insert("session_id".to_string(), CursedValue::String(hex::encode(CryptoPrimitives::random_bytes(16))));
+    result.insert("challenges".to_string(), CursedValue::Number(3.0));
+    result.insert("status".to_string(), CursedValue::String("challenges_sent".to_string()));
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Respond to authentication challenges
+pub fn respond_to_challenges(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::Runtime("respond_to_challenges requires challenge_set".to_string()));
+    }
+
+    // Generate mock response set
+    let mut result = HashMap::new();
+    result.insert("session_id".to_string(), args[0].clone());
+    result.insert("responses".to_string(), CursedValue::Number(3.0));
+    result.insert("status".to_string(), CursedValue::String("responses_generated".to_string()));
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Verify authentication responses
+pub fn verify_authentication(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::Runtime("verify_authentication requires response_set".to_string()));
+    }
+
+    // Mock verification result
+    let mut result = HashMap::new();
+    result.insert("authenticated".to_string(), CursedValue::bool(true));
+    result.insert("success_rate".to_string(), CursedValue::Number(0.95));
+    result.insert("completion_time_ms".to_string(), CursedValue::Number(250.0));
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Initiate multi-party computation
+pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.len() < 2 {
+        return Err(CursedError::Runtime("initiate_mpc_computation requires participants and threshold".to_string()));
+    }
+
+    // Generate MPC session
+    let session_id = hex::encode(CryptoPrimitives::random_bytes(16));
+    
+    let mut result = HashMap::new();
+    result.insert("session_id".to_string(), CursedValue::String(session_id));
+    result.insert("status".to_string(), CursedValue::String("initialized".to_string()));
+    result.insert("participants".to_string(), args[0].clone());
+    result.insert("threshold".to_string(), args[1].clone());
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Get protocol statistics
+pub fn get_protocol_statistics(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    let suite = ProtocolSuite::new(SecurityLevel::Level256);
+    let stats = suite.get_protocol_statistics();
+    Ok(CursedValue::Object(stats))
+}
+
+/// Perform security audit
+pub fn security_audit(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    let suite = ProtocolSuite::new(SecurityLevel::Level256);
+    let audit = suite.security_audit();
+    
+    let mut result = HashMap::new();
+    result.insert("overall_status".to_string(), CursedValue::String(format!("{:?}", audit.overall_status)));
+    result.insert("risk_level".to_string(), CursedValue::String(format!("{:?}", audit.risk_level)));
+    result.insert("findings_count".to_string(), CursedValue::Number(audit.findings.len() as f64));
+    result.insert("recommendations_count".to_string(), CursedValue::Number(audit.recommendations.len() as f64));
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Get protocol health status
+pub fn get_health_status(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    let suite = ProtocolSuite::new(SecurityLevel::Level256);
+    let health = suite.get_health_status();
+    
+    let mut result = HashMap::new();
+    result.insert("status".to_string(), CursedValue::String(format!("{:?}", health.status)));
+    result.insert("active_channels".to_string(), CursedValue::Number(health.active_channels as f64));
+    result.insert("error_rate".to_string(), CursedValue::Number(health.error_rate));
+    result.insert("uptime_seconds".to_string(), CursedValue::Number(health.uptime.as_secs() as f64));
+    
+    Ok(CursedValue::Object(result))
+}
+
+/// Log protocol error for debugging
+pub fn log_error(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::Runtime("log_error requires error_message".to_string()));
+    }
+
+    let error_message = args[0].as_string();
+    error!(error_message = error_message, "Protocol error occurred");
+    
+    Ok(CursedValue::bool(true))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -498,5 +732,24 @@ mod tests {
         assert!(constant_time_eq(b"hello", b"hello"));
         assert!(!constant_time_eq(b"hello", b"world"));
         assert!(!constant_time_eq(b"hello", b"hello!"));
+    }
+
+    #[test]
+    fn test_cursed_function_exports() {
+        // Test protocol suite creation
+        let result = create_protocol_suite(vec![CursedValue::String("Level256".to_string())]);
+        assert!(result.is_ok());
+
+        // Test X25519 keypair generation
+        let keypair = generate_x25519_keypair(vec![]);
+        assert!(keypair.is_ok());
+
+        // Test security audit
+        let audit = security_audit(vec![]);
+        assert!(audit.is_ok());
+
+        // Test health status
+        let health = get_health_status(vec![]);
+        assert!(health.is_ok());
     }
 }

@@ -9,11 +9,13 @@ pub mod package_manager;
 pub mod imports;
 pub mod ast;
 pub mod lexer;
+pub mod preprocessor;
 pub mod parser;
 pub mod core;
 pub mod codegen;
 pub mod memory;
 pub mod runtime;
+pub mod tools;
 
 // Re-export enhanced debug information types
 pub use runtime::{
@@ -30,6 +32,12 @@ pub use error::debug_context::{
 pub use imports::{
     ImportManager, ImportResolver, ImportError, ResolvedImport, LoadedModule,
     ImportResolverConfig, ImportSource, ModuleLoader, PackageImportResolver
+};
+
+// Re-export preprocessor system
+pub use preprocessor::{
+    Preprocessor, TokenStream, TokenWithContext, TokenMetadata,
+    PreprocessorError, PreprocessorResult, new_preprocessor, process_source
 };
 
 // Re-export enhanced debugging system
@@ -61,6 +69,9 @@ pub mod lsp;
 
 // Development tools
 pub mod tools;
+
+// Testing framework
+pub mod testing;
 
 // Type system
 pub mod type_system;

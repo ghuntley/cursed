@@ -1,49 +1,23 @@
-/// Basic types and data structures for IPC operations
-use std::collections::HashMap;
-use std::time::{Duration, SystemTime};
-use std::fmt;
+/// Core IPC types and data structures for CURSED
+/// 
+/// This module defines the fundamental types used throughout the IPC system,
+/// including handles, permissions, configurations, and resource identifiers.
 
-/// Process identifier type
+use std::collections::HashMap;
+use std::fmt;
+use std::time::{Duration, SystemTime};
+
+/// Process identifier
 pub type ProcessId = u32;
 
-/// Generic IPC handle identifier
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct IpcHandle {
-    pub id: String,
-    pub handle_type: IpcHandleType,
-    pub created_at: SystemTime,
-}
-
-impl IpcHandle {
-    pub fn new(id: String, handle_type: IpcHandleType) -> Self {
-        Self {
-            id,
-            handle_type,
-            created_at: SystemTime::now(),
-        }
-    }
-
-    pub fn is_valid(&self) -> bool {
-        !self.id.is_empty()
-    }
-
-    pub fn age(&self) -> Duration {
-        SystemTime::now()
-            .duration_since(self.created_at)
-            .unwrap_or(Duration::from_secs(0))
-    }
-}
-
-/// Types of IPC handles
+/// IPC handle type identifier
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IpcHandleType {
     SharedMemory,
+    NamedPipe,
     MessageQueue,
     Semaphore,
-    NamedPipe,
-    AnonymousPipe,
     DomainSocket,
-    Signal,
     RpcConnection,
 }
 
@@ -51,495 +25,604 @@ impl fmt::Display for IpcHandleType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             IpcHandleType::SharedMemory => write!(f, "SharedMemory"),
+            IpcHandleType::NamedPipe => write!(f, "NamedPipe"),
             IpcHandleType::MessageQueue => write!(f, "MessageQueue"),
             IpcHandleType::Semaphore => write!(f, "Semaphore"),
-            IpcHandleType::NamedPipe => write!(f, "NamedPipe"),
-            IpcHandleType::AnonymousPipe => write!(f, "AnonymousPipe"),
             IpcHandleType::DomainSocket => write!(f, "DomainSocket"),
-            IpcHandleType::Signal => write!(f, "Signal"),
             IpcHandleType::RpcConnection => write!(f, "RpcConnection"),
         }
     }
 }
 
-/// IPC resource permissions
+/// IPC handle - universal identifier for IPC resources
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct IpcHandle {
+    /// Unique identifier for the resource
+    pub id: String,
+    /// Type of IPC resource
+    pub handle_type: IpcHandleType,
+    /// Creation timestamp
+    pub created_at: SystemTime,
+    /// Process ID that created this handle
+    pub creator_pid: ProcessId,
+    /// Optional metadata
+    pub metadata: HashMap<String, String>,
+}
+
+impl IpcHandle {
+    /// Create a new IPC handle
+    pub fn new(id: String, handle_type: IpcHandleType) -> Self {
+        Self {
+            id,
+            handle_type,
+            created_at: SystemTime::now(),
+            creator_pid: std::process::id(),
+            metadata: HashMap::new(),
+        }
+    }
+
+    /// Create handle with metadata
+    pub fn with_metadata(id: String, handle_type: IpcHandleType, metadata: HashMap<String, String>) -> Self {
+        Self {
+            id,
+            handle_type,
+            created_at: SystemTime::now(),
+            creator_pid: std::process::id(),
+            metadata,
+        }
+    }
+
+    /// Get age of the handle
+    pub fn age(&self) -> Duration {
+        self.created_at.elapsed().unwrap_or(Duration::from_secs(0))
+    }
+
+    /// Set metadata value
+    pub fn set_metadata(&mut self, key: String, value: String) {
+        self.metadata.insert(key, value);
+    }
+
+    /// Get metadata value
+    pub fn get_metadata(&self, key: &str) -> Option<&String> {
+        self.metadata.get(key)
+    }
+
+    /// Check if handle is owned by current process
+    pub fn is_owned_by_current_process(&self) -> bool {
+        self.creator_pid == std::process::id()
+    }
+}
+
+impl fmt::Display for IpcHandle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.handle_type, self.id)
+    }
+}
+
+/// IPC permissions system
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IpcPermissions {
+    /// Read permission
     pub read: bool,
+    /// Write permission
     pub write: bool,
+    /// Execute permission (for some resource types)
     pub execute: bool,
-    pub owner: Option<String>,
-    pub group: Option<String>,
-    pub others_read: bool,
-    pub others_write: bool,
-    pub others_execute: bool,
+    /// Delete permission
+    pub delete: bool,
+    /// Admin/control permission
+    pub admin: bool,
+    /// Owner user ID (Unix)
+    pub owner_uid: Option<u32>,
+    /// Owner group ID (Unix)
+    pub owner_gid: Option<u32>,
+    /// Permission mask
+    pub mask: u32,
 }
 
 impl IpcPermissions {
+    /// Create read-only permissions
     pub fn read_only() -> Self {
         Self {
             read: true,
             write: false,
             execute: false,
-            owner: None,
-            group: None,
-            others_read: false,
-            others_write: false,
-            others_execute: false,
+            delete: false,
+            admin: false,
+            owner_uid: None,
+            owner_gid: None,
+            mask: 0o444,
         }
     }
 
+    /// Create write-only permissions
+    pub fn write_only() -> Self {
+        Self {
+            read: false,
+            write: true,
+            execute: false,
+            delete: false,
+            admin: false,
+            owner_uid: None,
+            owner_gid: None,
+            mask: 0o222,
+        }
+    }
+
+    /// Create read-write permissions
     pub fn read_write() -> Self {
         Self {
             read: true,
             write: true,
             execute: false,
-            owner: None,
-            group: None,
-            others_read: false,
-            others_write: false,
-            others_execute: false,
+            delete: false,
+            admin: false,
+            owner_uid: None,
+            owner_gid: None,
+            mask: 0o666,
         }
     }
 
-    pub fn full_access() -> Self {
+    /// Create full permissions
+    pub fn full() -> Self {
         Self {
             read: true,
             write: true,
             execute: true,
-            owner: None,
-            group: None,
-            others_read: true,
-            others_write: true,
-            others_execute: true,
+            delete: true,
+            admin: true,
+            owner_uid: None,
+            owner_gid: None,
+            mask: 0o777,
         }
     }
 
+    /// Create permissions from octal mode
+    pub fn from_octal(mode: u32) -> Self {
+        Self {
+            read: (mode & 0o444) != 0,
+            write: (mode & 0o222) != 0,
+            execute: (mode & 0o111) != 0,
+            delete: (mode & 0o200) != 0, // Write permission implies delete
+            admin: (mode & 0o700) == 0o700, // Full owner permissions
+            owner_uid: None,
+            owner_gid: None,
+            mask: mode,
+        }
+    }
+
+    /// Convert to octal mode
+    pub fn to_octal(&self) -> u32 {
+        self.mask
+    }
+
+    /// Check if can read
     pub fn can_read(&self) -> bool {
         self.read
     }
 
+    /// Check if can write
     pub fn can_write(&self) -> bool {
         self.write
     }
 
+    /// Check if can execute
     pub fn can_execute(&self) -> bool {
         self.execute
     }
 
-    pub fn to_octal(&self) -> u32 {
-        let mut mode = 0u32;
-        
-        // Owner permissions
-        if self.read { mode |= 0o400; }
-        if self.write { mode |= 0o200; }
-        if self.execute { mode |= 0o100; }
-        
-        // Others permissions
-        if self.others_read { mode |= 0o004; }
-        if self.others_write { mode |= 0o002; }
-        if self.others_execute { mode |= 0o001; }
-        
-        mode
+    /// Check if can delete
+    pub fn can_delete(&self) -> bool {
+        self.delete
+    }
+
+    /// Check if has admin rights
+    pub fn can_admin(&self) -> bool {
+        self.admin
+    }
+
+    /// Set owner information
+    pub fn with_owner(mut self, uid: u32, gid: u32) -> Self {
+        self.owner_uid = Some(uid);
+        self.owner_gid = Some(gid);
+        self
+    }
+
+    /// Check if permissions allow operation
+    pub fn allows(&self, operation: &str) -> bool {
+        match operation {
+            "read" => self.read,
+            "write" => self.write,
+            "execute" => self.execute,
+            "delete" => self.delete,
+            "admin" => self.admin,
+            _ => false,
+        }
     }
 }
 
 /// IPC access mode
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IpcMode {
+    /// Read-only access
     ReadOnly,
+    /// Write-only access
     WriteOnly,
+    /// Read-write access
     ReadWrite,
-    Execute,
-    Create,
-    CreateExclusive,
+    /// Append mode (write-only, append to end)
+    Append,
+    /// Create and write (fail if exists)
+    CreateNew,
+    /// Create or truncate and write
+    CreateOrTruncate,
 }
 
-impl fmt::Display for IpcMode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IpcMode::ReadOnly => write!(f, "ReadOnly"),
-            IpcMode::WriteOnly => write!(f, "WriteOnly"),
-            IpcMode::ReadWrite => write!(f, "ReadWrite"),
-            IpcMode::Execute => write!(f, "Execute"),
-            IpcMode::Create => write!(f, "Create"),
-            IpcMode::CreateExclusive => write!(f, "CreateExclusive"),
-        }
+impl IpcMode {
+    /// Check if mode allows reading
+    pub fn can_read(&self) -> bool {
+        matches!(self, IpcMode::ReadOnly | IpcMode::ReadWrite)
+    }
+
+    /// Check if mode allows writing
+    pub fn can_write(&self) -> bool {
+        matches!(
+            self,
+            IpcMode::WriteOnly | IpcMode::ReadWrite | IpcMode::Append | 
+            IpcMode::CreateNew | IpcMode::CreateOrTruncate
+        )
+    }
+
+    /// Check if mode creates new resource
+    pub fn creates_new(&self) -> bool {
+        matches!(self, IpcMode::CreateNew | IpcMode::CreateOrTruncate)
     }
 }
 
-/// Shared memory region identifier
+/// Resource identifiers for different IPC types
 pub type SharedMemoryId = String;
-
-/// Message queue identifier
 pub type MessageQueueId = String;
-
-/// Semaphore identifier
 pub type SemaphoreId = String;
-
-/// Named pipe identifier
 pub type PipeId = String;
 
-/// Timeout configuration for IPC operations
+/// IPC timeout configuration
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IpcTimeout {
+    /// Connect timeout
     pub connect: Option<Duration>,
+    /// Read timeout
     pub read: Option<Duration>,
+    /// Write timeout
     pub write: Option<Duration>,
-    pub total: Option<Duration>,
+    /// Operation timeout
+    pub operation: Option<Duration>,
+    /// Idle timeout
+    pub idle: Option<Duration>,
 }
 
 impl IpcTimeout {
-    pub fn new() -> Self {
+    /// Create timeout with all operations having the same duration
+    pub fn uniform(duration: Duration) -> Self {
+        Self {
+            connect: Some(duration),
+            read: Some(duration),
+            write: Some(duration),
+            operation: Some(duration),
+            idle: Some(duration),
+        }
+    }
+
+    /// Create timeout with no limits
+    pub fn infinite() -> Self {
         Self {
             connect: None,
             read: None,
             write: None,
-            total: None,
+            operation: None,
+            idle: None,
         }
     }
 
-    pub fn with_connect_timeout(mut self, timeout: Duration) -> Self {
+    /// Create default timeout configuration
+    pub fn default() -> Self {
+        Self {
+            connect: Some(Duration::from_secs(30)),
+            read: Some(Duration::from_secs(60)),
+            write: Some(Duration::from_secs(60)),
+            operation: Some(Duration::from_secs(120)),
+            idle: Some(Duration::from_secs(300)),
+        }
+    }
+
+    /// Set connect timeout
+    pub fn with_connect(mut self, timeout: Duration) -> Self {
         self.connect = Some(timeout);
         self
     }
 
-    pub fn with_read_timeout(mut self, timeout: Duration) -> Self {
+    /// Set read timeout
+    pub fn with_read(mut self, timeout: Duration) -> Self {
         self.read = Some(timeout);
         self
     }
 
-    pub fn with_write_timeout(mut self, timeout: Duration) -> Self {
+    /// Set write timeout
+    pub fn with_write(mut self, timeout: Duration) -> Self {
         self.write = Some(timeout);
         self
     }
 
-    pub fn with_total_timeout(mut self, timeout: Duration) -> Self {
-        self.total = Some(timeout);
+    /// Set operation timeout
+    pub fn with_operation(mut self, timeout: Duration) -> Self {
+        self.operation = Some(timeout);
         self
     }
 
-    pub fn infinite() -> Self {
-        Self::new()
-    }
-
-    pub fn immediate() -> Self {
-        Self {
-            connect: Some(Duration::from_secs(0)),
-            read: Some(Duration::from_secs(0)),
-            write: Some(Duration::from_secs(0)),
-            total: Some(Duration::from_secs(0)),
-        }
+    /// Set idle timeout
+    pub fn with_idle(mut self, timeout: Duration) -> Self {
+        self.idle = Some(timeout);
+        self
     }
 }
 
-impl Default for IpcTimeout {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Configuration for IPC operations
+/// IPC configuration container
 #[derive(Debug, Clone)]
 pub struct IpcConfig {
+    /// Resource name/identifier
+    pub name: String,
+    /// Access mode
+    pub mode: IpcMode,
+    /// Permissions
     pub permissions: IpcPermissions,
+    /// Timeout configuration
     pub timeout: IpcTimeout,
-    pub buffer_size: usize,
-    pub max_connections: Option<usize>,
-    pub enable_compression: bool,
-    pub enable_encryption: bool,
-    pub retry_count: u32,
-    pub backoff_strategy: BackoffStrategy,
-    pub metadata: HashMap<String, String>,
+    /// Buffer sizes
+    pub buffer_sizes: HashMap<String, usize>,
+    /// Feature flags
+    pub features: HashMap<String, bool>,
+    /// Custom properties
+    pub properties: HashMap<String, String>,
 }
 
 impl IpcConfig {
-    pub fn new() -> Self {
+    /// Create new configuration
+    pub fn new(name: String) -> Self {
         Self {
+            name,
+            mode: IpcMode::ReadWrite,
             permissions: IpcPermissions::read_write(),
             timeout: IpcTimeout::default(),
-            buffer_size: 8192,
-            max_connections: None,
-            enable_compression: false,
-            enable_encryption: false,
-            retry_count: 3,
-            backoff_strategy: BackoffStrategy::Exponential,
-            metadata: HashMap::new(),
+            buffer_sizes: HashMap::new(),
+            features: HashMap::new(),
+            properties: HashMap::new(),
         }
     }
 
+    /// Set access mode
+    pub fn with_mode(mut self, mode: IpcMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
+    /// Set permissions
     pub fn with_permissions(mut self, permissions: IpcPermissions) -> Self {
         self.permissions = permissions;
         self
     }
 
+    /// Set timeout configuration
     pub fn with_timeout(mut self, timeout: IpcTimeout) -> Self {
         self.timeout = timeout;
         self
     }
 
-    pub fn with_buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
+    /// Set buffer size
+    pub fn with_buffer_size(mut self, buffer_type: &str, size: usize) -> Self {
+        self.buffer_sizes.insert(buffer_type.to_string(), size);
         self
     }
 
-    pub fn with_encryption(mut self, enabled: bool) -> Self {
-        self.enable_encryption = enabled;
+    /// Enable feature
+    pub fn with_feature(mut self, feature: &str, enabled: bool) -> Self {
+        self.features.insert(feature.to_string(), enabled);
         self
     }
 
-    pub fn with_compression(mut self, enabled: bool) -> Self {
-        self.enable_compression = enabled;
+    /// Set property
+    pub fn with_property(mut self, key: &str, value: &str) -> Self {
+        self.properties.insert(key.to_string(), value.to_string());
         self
     }
 
-    pub fn with_retry_count(mut self, count: u32) -> Self {
-        self.retry_count = count;
-        self
+    /// Get buffer size
+    pub fn get_buffer_size(&self, buffer_type: &str) -> usize {
+        self.buffer_sizes.get(buffer_type).copied().unwrap_or(8192)
     }
 
-    pub fn add_metadata(mut self, key: String, value: String) -> Self {
-        self.metadata.insert(key, value);
-        self
+    /// Check if feature is enabled
+    pub fn is_feature_enabled(&self, feature: &str) -> bool {
+        self.features.get(feature).copied().unwrap_or(false)
     }
-}
 
-impl Default for IpcConfig {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Backoff strategy for retries
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BackoffStrategy {
-    None,
-    Linear,
-    Exponential,
-    Custom(Vec<Duration>),
-}
-
-impl BackoffStrategy {
-    pub fn calculate_delay(&self, attempt: u32) -> Duration {
-        match self {
-            BackoffStrategy::None => Duration::from_millis(0),
-            BackoffStrategy::Linear => Duration::from_millis(100 * attempt as u64),
-            BackoffStrategy::Exponential => {
-                let base_ms = 100u64;
-                let max_ms = 30000u64; // 30 seconds max
-                let delay_ms = base_ms * (2u64.pow(attempt.min(10)));
-                Duration::from_millis(delay_ms.min(max_ms))
-            }
-            BackoffStrategy::Custom(delays) => {
-                delays.get(attempt as usize)
-                    .copied()
-                    .unwrap_or_else(|| delays.last().copied().unwrap_or(Duration::from_secs(1)))
-            }
-        }
+    /// Get property value
+    pub fn get_property(&self, key: &str) -> Option<&String> {
+        self.properties.get(key)
     }
 }
 
 /// Resource limits for IPC operations
 #[derive(Debug, Clone)]
 pub struct ResourceLimits {
-    pub max_memory_usage: usize,
-    pub max_file_descriptors: usize,
-    pub max_connections: usize,
-    pub max_message_size: usize,
-    pub max_queue_size: usize,
-    pub max_shared_memory_regions: usize,
-    pub max_semaphores: usize,
-    pub max_pipes: usize,
+    /// Maximum shared memory size
+    pub max_shared_memory_size: Option<usize>,
+    /// Maximum number of shared memory regions
+    pub max_shared_memory_regions: Option<usize>,
+    /// Maximum message queue size
+    pub max_message_queue_size: Option<usize>,
+    /// Maximum number of message queues
+    pub max_message_queues: Option<usize>,
+    /// Maximum number of pipes
+    pub max_pipes: Option<usize>,
+    /// Maximum number of semaphores
+    pub max_semaphores: Option<usize>,
+    /// Maximum number of open file descriptors
+    pub max_file_descriptors: Option<usize>,
+    /// Maximum memory usage
+    pub max_memory_usage: Option<usize>,
+    /// Maximum number of concurrent connections
+    pub max_connections: Option<usize>,
 }
 
 impl ResourceLimits {
-    pub fn default_limits() -> Self {
-        Self {
-            max_memory_usage: 1024 * 1024 * 100,  // 100 MB
-            max_file_descriptors: 1024,
-            max_connections: 100,
-            max_message_size: 1024 * 64,           // 64 KB
-            max_queue_size: 1000,
-            max_shared_memory_regions: 50,
-            max_semaphores: 100,
-            max_pipes: 50,
-        }
-    }
-
+    /// Create unlimited configuration
     pub fn unlimited() -> Self {
         Self {
-            max_memory_usage: usize::MAX,
-            max_file_descriptors: usize::MAX,
-            max_connections: usize::MAX,
-            max_message_size: usize::MAX,
-            max_queue_size: usize::MAX,
-            max_shared_memory_regions: usize::MAX,
-            max_semaphores: usize::MAX,
-            max_pipes: usize::MAX,
+            max_shared_memory_size: None,
+            max_shared_memory_regions: None,
+            max_message_queue_size: None,
+            max_message_queues: None,
+            max_pipes: None,
+            max_semaphores: None,
+            max_file_descriptors: None,
+            max_memory_usage: None,
+            max_connections: None,
         }
     }
 
-    pub fn strict_limits() -> Self {
+    /// Create conservative limits
+    pub fn conservative() -> Self {
         Self {
-            max_memory_usage: 1024 * 1024 * 10,   // 10 MB
-            max_file_descriptors: 100,
-            max_connections: 10,
-            max_message_size: 1024 * 4,           // 4 KB
-            max_queue_size: 100,
-            max_shared_memory_regions: 10,
-            max_semaphores: 20,
-            max_pipes: 10,
+            max_shared_memory_size: Some(64 * 1024 * 1024), // 64MB
+            max_shared_memory_regions: Some(100),
+            max_message_queue_size: Some(1024 * 1024), // 1MB
+            max_message_queues: Some(50),
+            max_pipes: Some(100),
+            max_semaphores: Some(100),
+            max_file_descriptors: Some(1024),
+            max_memory_usage: Some(128 * 1024 * 1024), // 128MB
+            max_connections: Some(100),
+        }
+    }
+
+    /// Create production limits
+    pub fn production() -> Self {
+        Self {
+            max_shared_memory_size: Some(512 * 1024 * 1024), // 512MB
+            max_shared_memory_regions: Some(1000),
+            max_message_queue_size: Some(16 * 1024 * 1024), // 16MB
+            max_message_queues: Some(500),
+            max_pipes: Some(1000),
+            max_semaphores: Some(1000),
+            max_file_descriptors: Some(65536),
+            max_memory_usage: Some(2 * 1024 * 1024 * 1024), // 2GB
+            max_connections: Some(10000),
+        }
+    }
+
+    /// Check if value is within limit
+    pub fn check_limit(&self, resource: &str, current: usize) -> bool {
+        match resource {
+            "shared_memory_size" => {
+                self.max_shared_memory_size.map_or(true, |limit| current <= limit)
+            }
+            "shared_memory_regions" => {
+                self.max_shared_memory_regions.map_or(true, |limit| current <= limit)
+            }
+            "message_queue_size" => {
+                self.max_message_queue_size.map_or(true, |limit| current <= limit)
+            }
+            "message_queues" => {
+                self.max_message_queues.map_or(true, |limit| current <= limit)
+            }
+            "pipes" => {
+                self.max_pipes.map_or(true, |limit| current <= limit)
+            }
+            "semaphores" => {
+                self.max_semaphores.map_or(true, |limit| current <= limit)
+            }
+            "file_descriptors" => {
+                self.max_file_descriptors.map_or(true, |limit| current <= limit)
+            }
+            "memory_usage" => {
+                self.max_memory_usage.map_or(true, |limit| current <= limit)
+            }
+            "connections" => {
+                self.max_connections.map_or(true, |limit| current <= limit)
+            }
+            _ => true,
+        }
+    }
+
+    /// Get limit value for resource
+    pub fn get_limit(&self, resource: &str) -> Option<usize> {
+        match resource {
+            "shared_memory_size" => self.max_shared_memory_size,
+            "shared_memory_regions" => self.max_shared_memory_regions,
+            "message_queue_size" => self.max_message_queue_size,
+            "message_queues" => self.max_message_queues,
+            "pipes" => self.max_pipes,
+            "semaphores" => self.max_semaphores,
+            "file_descriptors" => self.max_file_descriptors,
+            "memory_usage" => self.max_memory_usage,
+            "connections" => self.max_connections,
+            _ => None,
         }
     }
 }
 
-impl Default for ResourceLimits {
-    fn default() -> Self {
-        Self::default_limits()
-    }
-}
-
-/// Comprehensive IPC statistics
+/// IPC statistics container
 #[derive(Debug, Clone)]
 pub struct IpcStatistics {
+    /// Number of active shared memory regions
     pub active_shared_memory_regions: usize,
+    /// Number of active pipes
     pub active_pipes: usize,
+    /// Number of active message queues
     pub active_message_queues: usize,
+    /// Number of active semaphores
     pub active_semaphores: usize,
+    /// Number of active sockets
     pub active_sockets: usize,
+    /// Number of active RPC connections
     pub active_rpc_connections: usize,
+    /// Total memory usage by IPC subsystems
     pub total_memory_usage: usize,
+    /// Number of security violations detected
     pub security_violations: u64,
-    pub resource_contention_stats: crate::stdlib::ipc::ResourceContentionStats,
-    pub performance_metrics: crate::stdlib::ipc::IpcPerformanceMetrics,
+    /// Resource contention statistics
+    pub resource_contention_stats: ResourceContentionStats,
+    /// Performance metrics
+    pub performance_metrics: IpcPerformanceMetrics,
 }
 
-impl IpcStatistics {
-    pub fn new() -> Self {
-        Self {
-            active_shared_memory_regions: 0,
-            active_pipes: 0,
-            active_message_queues: 0,
-            active_semaphores: 0,
-            active_sockets: 0,
-            active_rpc_connections: 0,
-            total_memory_usage: 0,
-            security_violations: 0,
-            resource_contention_stats: crate::stdlib::ipc::ResourceContentionStats {
-                semaphore_waits: 0,
-                pipe_blocks: 0,
-                queue_full_events: 0,
-                memory_allocation_failures: 0,
-                average_wait_time_nanos: 0,
-            },
-            performance_metrics: crate::stdlib::ipc::IpcPerformanceMetrics {
-                message_throughput: 0.0,
-                memory_transfer_rate: 0.0,
-                pipe_latency_nanos: 0,
-                rpc_call_rate: 0.0,
-                signal_handling_time: 0,
-            },
-        }
-    }
-
-    pub fn total_active_resources(&self) -> usize {
-        self.active_shared_memory_regions +
-        self.active_pipes +
-        self.active_message_queues +
-        self.active_semaphores +
-        self.active_sockets +
-        self.active_rpc_connections
-    }
-
-    pub fn is_healthy(&self) -> bool {
-        // Define health criteria
-        self.total_active_resources() < 1000 &&
-        self.total_memory_usage < 100 * 1024 * 1024 && // < 100MB
-        self.security_violations < 10
-    }
-}
-
-impl Default for IpcStatistics {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Data buffer for IPC operations
+/// Resource contention statistics
 #[derive(Debug, Clone)]
-pub struct IpcBuffer {
-    data: Vec<u8>,
-    capacity: usize,
-    position: usize,
+pub struct ResourceContentionStats {
+    /// Number of semaphore waits
+    pub semaphore_waits: u64,
+    /// Number of pipe blocks
+    pub pipe_blocks: u64,
+    /// Number of queue full events
+    pub queue_full_events: u64,
+    /// Number of memory allocation failures
+    pub memory_allocation_failures: u64,
+    /// Average wait time in nanoseconds
+    pub average_wait_time_nanos: u64,
 }
 
-impl IpcBuffer {
-    pub fn new(capacity: usize) -> Self {
-        Self {
-            data: Vec::with_capacity(capacity),
-            capacity,
-            position: 0,
-        }
-    }
-
-    pub fn with_data(data: Vec<u8>) -> Self {
-        let capacity = data.len();
-        Self {
-            data,
-            capacity,
-            position: 0,
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-
-    pub fn capacity(&self) -> usize {
-        self.capacity
-    }
-
-    pub fn remaining(&self) -> usize {
-        self.capacity.saturating_sub(self.data.len())
-    }
-
-    pub fn write(&mut self, data: &[u8]) -> Result<usize, &'static str> {
-        if self.remaining() < data.len() {
-            return Err("Buffer overflow");
-        }
-        
-        self.data.extend_from_slice(data);
-        Ok(data.len())
-    }
-
-    pub fn read(&mut self, buf: &mut [u8]) -> usize {
-        let available = self.data.len() - self.position;
-        let to_read = buf.len().min(available);
-        
-        if to_read > 0 {
-            buf[..to_read].copy_from_slice(&self.data[self.position..self.position + to_read]);
-            self.position += to_read;
-        }
-        
-        to_read
-    }
-
-    pub fn as_slice(&self) -> &[u8] {
-        &self.data
-    }
-
-    pub fn clear(&mut self) {
-        self.data.clear();
-        self.position = 0;
-    }
-
-    pub fn reset_position(&mut self) {
-        self.position = 0;
-    }
+/// Performance metrics for IPC operations
+#[derive(Debug, Clone)]
+pub struct IpcPerformanceMetrics {
+    /// Message throughput (messages per second)
+    pub message_throughput: f64,
+    /// Memory transfer rate (bytes per second)
+    pub memory_transfer_rate: f64,
+    /// Average pipe operation latency (nanoseconds)
+    pub pipe_latency_nanos: u64,
+    /// RPC call rate (calls per second)
+    pub rpc_call_rate: f64,
+    /// Average signal handling time (nanoseconds)
+    pub signal_handling_time: u64,
 }
 
 #[cfg(test)]
@@ -548,10 +631,10 @@ mod tests {
 
     #[test]
     fn test_ipc_handle_creation() {
-        let handle = IpcHandle::new("test_handle".to_string(), IpcHandleType::SharedMemory);
-        assert!(handle.is_valid());
-        assert_eq!(handle.id, "test_handle");
+        let handle = IpcHandle::new("test_shm".to_string(), IpcHandleType::SharedMemory);
+        assert_eq!(handle.id, "test_shm");
         assert_eq!(handle.handle_type, IpcHandleType::SharedMemory);
+        assert_eq!(handle.creator_pid, std::process::id());
     }
 
     #[test]
@@ -561,111 +644,98 @@ mod tests {
         assert!(perms.can_write());
         assert!(!perms.can_execute());
 
-        let full_perms = IpcPermissions::full_access();
+        let full_perms = IpcPermissions::full();
         assert!(full_perms.can_read());
         assert!(full_perms.can_write());
         assert!(full_perms.can_execute());
+        assert!(full_perms.can_delete());
+        assert!(full_perms.can_admin());
+    }
 
-        // Test octal conversion
-        let octal = full_perms.to_octal();
-        assert!(octal > 0);
+    #[test]
+    fn test_ipc_permissions_octal() {
+        let perms = IpcPermissions::from_octal(0o755);
+        assert!(perms.can_read());
+        assert!(perms.can_write());
+        assert!(perms.can_execute());
+        assert_eq!(perms.to_octal(), 0o755);
+    }
+
+    #[test]
+    fn test_ipc_mode() {
+        let mode = IpcMode::ReadWrite;
+        assert!(mode.can_read());
+        assert!(mode.can_write());
+        assert!(!mode.creates_new());
+
+        let create_mode = IpcMode::CreateNew;
+        assert!(!create_mode.can_read());
+        assert!(create_mode.can_write());
+        assert!(create_mode.creates_new());
     }
 
     #[test]
     fn test_ipc_timeout() {
-        let timeout = IpcTimeout::new()
-            .with_connect_timeout(Duration::from_secs(5))
-            .with_read_timeout(Duration::from_secs(10));
-        
-        assert_eq!(timeout.connect, Some(Duration::from_secs(5)));
-        assert_eq!(timeout.read, Some(Duration::from_secs(10)));
-        assert_eq!(timeout.write, None);
+        let timeout = IpcTimeout::uniform(Duration::from_secs(30));
+        assert_eq!(timeout.connect, Some(Duration::from_secs(30)));
+        assert_eq!(timeout.read, Some(Duration::from_secs(30)));
+        assert_eq!(timeout.write, Some(Duration::from_secs(30)));
+
+        let infinite = IpcTimeout::infinite();
+        assert_eq!(infinite.connect, None);
+        assert_eq!(infinite.read, None);
     }
 
     #[test]
     fn test_ipc_config() {
-        let config = IpcConfig::new()
-            .with_buffer_size(16384)
-            .with_encryption(true)
-            .with_retry_count(5)
-            .add_metadata("version".to_string(), "1.0".to_string());
+        let config = IpcConfig::new("test_resource".to_string())
+            .with_mode(IpcMode::ReadOnly)
+            .with_buffer_size("input", 4096)
+            .with_feature("compression", true)
+            .with_property("version", "1.0");
 
-        assert_eq!(config.buffer_size, 16384);
-        assert!(config.enable_encryption);
-        assert_eq!(config.retry_count, 5);
-        assert_eq!(config.metadata.get("version"), Some(&"1.0".to_string()));
-    }
-
-    #[test]
-    fn test_backoff_strategy() {
-        let exponential = BackoffStrategy::Exponential;
-        let delay1 = exponential.calculate_delay(1);
-        let delay2 = exponential.calculate_delay(2);
-        assert!(delay2 > delay1);
-
-        let linear = BackoffStrategy::Linear;
-        let linear_delay = linear.calculate_delay(3);
-        assert_eq!(linear_delay, Duration::from_millis(300));
-
-        let custom = BackoffStrategy::Custom(vec![
-            Duration::from_millis(100),
-            Duration::from_millis(500),
-            Duration::from_millis(1000),
-        ]);
-        assert_eq!(custom.calculate_delay(1), Duration::from_millis(500));
+        assert_eq!(config.name, "test_resource");
+        assert_eq!(config.mode, IpcMode::ReadOnly);
+        assert_eq!(config.get_buffer_size("input"), 4096);
+        assert_eq!(config.get_buffer_size("unknown"), 8192); // default
+        assert!(config.is_feature_enabled("compression"));
+        assert!(!config.is_feature_enabled("encryption")); // default
+        assert_eq!(config.get_property("version"), Some(&"1.0".to_string()));
     }
 
     #[test]
     fn test_resource_limits() {
-        let limits = ResourceLimits::default_limits();
-        assert!(limits.max_memory_usage > 0);
-        assert!(limits.max_connections > 0);
-
-        let strict = ResourceLimits::strict_limits();
-        assert!(strict.max_memory_usage < limits.max_memory_usage);
-        assert!(strict.max_connections < limits.max_connections);
+        let limits = ResourceLimits::conservative();
+        assert!(limits.check_limit("shared_memory_size", 32 * 1024 * 1024));
+        assert!(!limits.check_limit("shared_memory_size", 128 * 1024 * 1024));
+        
+        let unlimited = ResourceLimits::unlimited();
+        assert!(unlimited.check_limit("shared_memory_size", usize::MAX));
     }
 
     #[test]
-    fn test_ipc_statistics() {
-        let stats = IpcStatistics::new();
-        assert_eq!(stats.total_active_resources(), 0);
-        assert!(stats.is_healthy());
-
-        let mut unhealthy_stats = stats.clone();
-        unhealthy_stats.security_violations = 100;
-        assert!(!unhealthy_stats.is_healthy());
+    fn test_handle_metadata() {
+        let mut handle = IpcHandle::new("test".to_string(), IpcHandleType::MessageQueue);
+        handle.set_metadata("owner".to_string(), "test_process".to_string());
+        
+        assert_eq!(handle.get_metadata("owner"), Some(&"test_process".to_string()));
+        assert_eq!(handle.get_metadata("nonexistent"), None);
     }
 
     #[test]
-    fn test_ipc_buffer() {
-        let mut buffer = IpcBuffer::new(1024);
-        assert_eq!(buffer.capacity(), 1024);
-        assert_eq!(buffer.len(), 0);
-        assert!(buffer.is_empty());
-
-        let data = b"hello world";
-        let written = buffer.write(data).unwrap();
-        assert_eq!(written, data.len());
-        assert_eq!(buffer.len(), data.len());
-
-        let mut read_buf = [0u8; 5];
-        let read_count = buffer.read(&mut read_buf);
-        assert_eq!(read_count, 5);
-        assert_eq!(&read_buf, b"hello");
+    fn test_handle_display() {
+        let handle = IpcHandle::new("test_pipe".to_string(), IpcHandleType::NamedPipe);
+        let display = format!("{}", handle);
+        assert_eq!(display, "NamedPipe:test_pipe");
     }
 
     #[test]
-    fn test_handle_type_display() {
-        assert_eq!(IpcHandleType::SharedMemory.to_string(), "SharedMemory");
-        assert_eq!(IpcHandleType::MessageQueue.to_string(), "MessageQueue");
-        assert_eq!(IpcHandleType::NamedPipe.to_string(), "NamedPipe");
-    }
-
-    #[test]
-    fn test_ipc_mode_display() {
-        assert_eq!(IpcMode::ReadOnly.to_string(), "ReadOnly");
-        assert_eq!(IpcMode::ReadWrite.to_string(), "ReadWrite");
-        assert_eq!(IpcMode::CreateExclusive.to_string(), "CreateExclusive");
+    fn test_permissions_allows() {
+        let perms = IpcPermissions::read_write();
+        assert!(perms.allows("read"));
+        assert!(perms.allows("write"));
+        assert!(!perms.allows("execute"));
+        assert!(!perms.allows("admin"));
+        assert!(!perms.allows("unknown"));
     }
 }

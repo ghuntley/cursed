@@ -1494,7 +1494,7 @@ mod tests {
             assert_eq!(then_branch.len(), 1);
             assert!(else_branch.is_some());
         } else {
-            panic!("Expected LowkeyIf node");
+            assert!(false, "Expected LowkeyIf node, but got: {:?}", ast.nodes[0]);
         }
     }
 
@@ -1512,7 +1512,7 @@ mod tests {
             assert!(matches!(iterator, TemplateExpression::Variable(_)));
             assert_eq!(body.len(), 1);
         } else {
-            panic!("Expected StanLoop node");
+            assert!(false, "Expected StanLoop node, but got: {:?}", ast.nodes[0]);
         }
     }
 
@@ -1532,7 +1532,7 @@ mod tests {
             assert!(matches!(*object.as_ref(), TemplateExpression::Variable(_)));
             assert_eq!(property, "name");
         } else {
-            panic!("Expected PropertyAccess expression");
+            assert!(false, "Expected PropertyAccess expression, but got: {:?}", expr);
         }
     }
 

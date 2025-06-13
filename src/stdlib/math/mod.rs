@@ -146,8 +146,13 @@ pub use statistics::{
     range, interquartile_range,
     // Probability density and distribution functions
     normal_pdf, standard_normal_cdf, normal_cdf, uniform_pdf, uniform_cdf,
+    exponential_pdf, exponential_cdf, binomial_pmf, poisson_pmf,
     // Statistical analysis
-    covariance, sample_covariance, correlation,
+    covariance, sample_covariance, correlation, spearman_correlation,
+    // Statistical tests
+    t_test_one_sample, t_test_two_sample, chi_square_test, anova_one_way,
+    // Regression analysis
+    linear_regression, multiple_linear_regression,
     // Data validation and cleaning
     outliers_iqr, outliers_z_score, has_invalid_values, clean_data, validate_dataset,
 };

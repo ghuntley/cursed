@@ -1,162 +1,529 @@
-/// Process-specific error types and error handling utilities
+/// Process management error types for CURSED
+/// 
+/// This module provides comprehensive error handling for process management operations,
+/// including spawning, communication, monitoring, and control.
+
 use std::fmt;
 use std::io;
-use crate::stdlib::errors_simple::CursedError;
+use std::num;
+use std::time::Duration;
 
-/// Process-specific error types
-#[derive(Debug, Clone, PartialEq)]
+/// Result type for process operations
+pub type ProcessResult<T> = Result<T, ProcessError>;
+
+/// Comprehensive error types for process management
+#[derive(Debug, Clone)]
 pub enum ProcessError {
-    /// Process not found or doesn't exist
-    ProcessNotFound(u32),
-    /// Permission denied when accessing or controlling process
-    PermissionDenied(String),
-    /// Process already running or in invalid state
-    InvalidState(String),
+    /// Process not found error
+    ProcessNotFound {
+        pid: Option<u32>,
+        name: Option<String>,
+        message: String,
+    },
+    
+    /// Permission denied for process operation
+    PermissionDenied {
+        operation: String,
+        pid: Option<u32>,
+        message: String,
+    },
+    
+    /// Invalid process state for operation
+    InvalidState {
+        expected: String,
+        actual: String,
+        pid: u32,
+    },
+    
     /// Process execution failed
-    ExecutionFailed(String),
-    /// Process timeout exceeded
-    Timeout(String),
-    /// Invalid process arguments or configuration
-    InvalidArguments(String),
-    /// Working directory doesn't exist or is inaccessible
-    InvalidWorkingDirectory(String),
+    ExecutionFailed {
+        command: String,
+        exit_code: Option<i32>,
+        stderr: Option<String>,
+        message: String,
+    },
+    
+    /// Operation timed out
+    Timeout {
+        operation: String,
+        duration: Duration,
+        message: String,
+    },
+    
+    /// Invalid arguments provided
+    InvalidArguments {
+        operation: String,
+        argument: String,
+        message: String,
+    },
+    
     /// Environment variable error
-    EnvironmentError(String),
-    /// I/O redirection error
-    IoRedirectionError(String),
+    EnvironmentError {
+        variable: Option<String>,
+        operation: String,
+        message: String,
+    },
+    
+    /// Communication error with process
+    CommunicationError {
+        operation: String,
+        error_type: String,
+        message: String,
+    },
+    
+    /// System-level error
+    SystemError {
+        code: i32,
+        operation: String,
+        message: String,
+    },
+    
+    /// I/O error during process operations
+    IoError {
+        operation: String,
+        kind: String,
+        message: String,
+    },
+    
     /// Signal handling error
-    SignalError(String),
-    /// Process communication error (pipes, IPC)
-    CommunicationError(String),
-    /// System resource limit exceeded
-    ResourceLimitExceeded(String),
+    SignalError {
+        signal: String,
+        operation: String,
+        message: String,
+    },
+    
+    /// Resource limit exceeded
+    ResourceLimitExceeded {
+        resource: String,
+        limit: u64,
+        current: u64,
+        message: String,
+    },
+    
     /// Platform-specific error
-    PlatformError(String),
-    /// General system error with code
-    SystemError(i32, String),
-    /// Child process management error
-    ChildProcessError(String),
+    PlatformError {
+        platform: String,
+        feature: Option<String>,
+        message: String,
+    },
+    
+    /// Generic process error
+    General {
+        message: String,
+    },
+}
+
+impl ProcessError {
+    /// Get error message
+    pub fn message(&self) -> &str {
+        match self {
+            ProcessError::ProcessNotFound { message, .. } => message,
+            ProcessError::PermissionDenied { message, .. } => message,
+            ProcessError::InvalidState { .. } => "Invalid process state",
+            ProcessError::ExecutionFailed { message, .. } => message,
+            ProcessError::Timeout { message, .. } => message,
+            ProcessError::InvalidArguments { message, .. } => message,
+            ProcessError::EnvironmentError { message, .. } => message,
+            ProcessError::CommunicationError { message, .. } => message,
+            ProcessError::SystemError { message, .. } => message,
+            ProcessError::IoError { message, .. } => message,
+            ProcessError::SignalError { message, .. } => message,
+            ProcessError::ResourceLimitExceeded { message, .. } => message,
+            ProcessError::PlatformError { message, .. } => message,
+            ProcessError::General { message } => message,
+        }
+    }
+    
+    /// Get error category
+    pub fn category(&self) -> &'static str {
+        match self {
+            ProcessError::ProcessNotFound { .. } => "ProcessNotFound",
+            ProcessError::PermissionDenied { .. } => "PermissionDenied",
+            ProcessError::InvalidState { .. } => "InvalidState",
+            ProcessError::ExecutionFailed { .. } => "ExecutionFailed",
+            ProcessError::Timeout { .. } => "Timeout",
+            ProcessError::InvalidArguments { .. } => "InvalidArguments",
+            ProcessError::EnvironmentError { .. } => "EnvironmentError",
+            ProcessError::CommunicationError { .. } => "CommunicationError",
+            ProcessError::SystemError { .. } => "SystemError",
+            ProcessError::IoError { .. } => "IoError",
+            ProcessError::SignalError { .. } => "SignalError",
+            ProcessError::ResourceLimitExceeded { .. } => "ResourceLimitExceeded",
+            ProcessError::PlatformError { .. } => "PlatformError",
+            ProcessError::General { .. } => "General",
+        }
+    }
+    
+    /// Check if error is recoverable
+    pub fn is_recoverable(&self) -> bool {
+        match self {
+            ProcessError::ProcessNotFound { .. } => false,
+            ProcessError::PermissionDenied { .. } => false,
+            ProcessError::InvalidState { .. } => true,
+            ProcessError::ExecutionFailed { .. } => false,
+            ProcessError::Timeout { .. } => true,
+            ProcessError::InvalidArguments { .. } => false,
+            ProcessError::EnvironmentError { .. } => true,
+            ProcessError::CommunicationError { .. } => true,
+            ProcessError::SystemError { .. } => false,
+            ProcessError::IoError { .. } => true,
+            ProcessError::SignalError { .. } => true,
+            ProcessError::ResourceLimitExceeded { .. } => true,
+            ProcessError::PlatformError { .. } => false,
+            ProcessError::General { .. } => false,
+        }
+    }
 }
 
 impl fmt::Display for ProcessError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProcessError::ProcessNotFound(pid) => {
-                write!(f, "Process with PID {} not found", pid)
+            ProcessError::ProcessNotFound { pid, name, message } => {
+                write!(f, "Process not found")?;
+                if let Some(pid) = pid {
+                    write!(f, " (PID: {})", pid)?;
+                }
+                if let Some(name) = name {
+                    write!(f, " (name: {})", name)?;
+                }
+                write!(f, ": {}", message)
             }
-            ProcessError::PermissionDenied(msg) => {
-                write!(f, "Permission denied: {}", msg)
+            ProcessError::PermissionDenied { operation, pid, message } => {
+                write!(f, "Permission denied for {}", operation)?;
+                if let Some(pid) = pid {
+                    write!(f, " (PID: {})", pid)?;
+                }
+                write!(f, ": {}", message)
             }
-            ProcessError::InvalidState(msg) => {
-                write!(f, "Invalid process state: {}", msg)
+            ProcessError::InvalidState { expected, actual, pid } => {
+                write!(f, "Invalid process state for PID {}: expected {}, got {}", pid, expected, actual)
             }
-            ProcessError::ExecutionFailed(msg) => {
-                write!(f, "Process execution failed: {}", msg)
+            ProcessError::ExecutionFailed { command, exit_code, stderr, message } => {
+                write!(f, "Execution failed for '{}': {}", command, message)?;
+                if let Some(code) = exit_code {
+                    write!(f, " (exit code: {})", code)?;
+                }
+                if let Some(err) = stderr {
+                    write!(f, " (stderr: {})", err)?;
+                }
+                Ok(())
             }
-            ProcessError::Timeout(msg) => {
-                write!(f, "Process operation timed out: {}", msg)
+            ProcessError::Timeout { operation, duration, message } => {
+                write!(f, "Timeout in {} after {:?}: {}", operation, duration, message)
             }
-            ProcessError::InvalidArguments(msg) => {
-                write!(f, "Invalid process arguments: {}", msg)
+            ProcessError::InvalidArguments { operation, argument, message } => {
+                write!(f, "Invalid argument '{}' for {}: {}", argument, operation, message)
             }
-            ProcessError::InvalidWorkingDirectory(msg) => {
-                write!(f, "Invalid working directory: {}", msg)
+            ProcessError::EnvironmentError { variable, operation, message } => {
+                write!(f, "Environment error in {}", operation)?;
+                if let Some(var) = variable {
+                    write!(f, " (variable: {})", var)?;
+                }
+                write!(f, ": {}", message)
             }
-            ProcessError::EnvironmentError(msg) => {
-                write!(f, "Environment variable error: {}", msg)
+            ProcessError::CommunicationError { operation, error_type, message } => {
+                write!(f, "Communication error in {} ({}): {}", operation, error_type, message)
             }
-            ProcessError::IoRedirectionError(msg) => {
-                write!(f, "I/O redirection error: {}", msg)
+            ProcessError::SystemError { code, operation, message } => {
+                write!(f, "System error in {} (code {}): {}", operation, code, message)
             }
-            ProcessError::SignalError(msg) => {
-                write!(f, "Signal handling error: {}", msg)
+            ProcessError::IoError { operation, kind, message } => {
+                write!(f, "I/O error in {} ({}): {}", operation, kind, message)
             }
-            ProcessError::CommunicationError(msg) => {
-                write!(f, "Process communication error: {}", msg)
+            ProcessError::SignalError { signal, operation, message } => {
+                write!(f, "Signal error for {} in {}: {}", signal, operation, message)
             }
-            ProcessError::ResourceLimitExceeded(msg) => {
-                write!(f, "Resource limit exceeded: {}", msg)
+            ProcessError::ResourceLimitExceeded { resource, limit, current, message } => {
+                write!(f, "Resource limit exceeded for {}: {} / {} - {}", resource, current, limit, message)
             }
-            ProcessError::PlatformError(msg) => {
-                write!(f, "Platform-specific error: {}", msg)
+            ProcessError::PlatformError { platform, feature, message } => {
+                write!(f, "Platform error on {}", platform)?;
+                if let Some(feat) = feature {
+                    write!(f, " (feature: {})", feat)?;
+                }
+                write!(f, ": {}", message)
             }
-            ProcessError::SystemError(code, msg) => {
-                write!(f, "System error {}: {}", code, msg)
-            }
-            ProcessError::ChildProcessError(msg) => {
-                write!(f, "Child process error: {}", msg)
+            ProcessError::General { message } => {
+                write!(f, "Process error: {}", message)
             }
         }
     }
 }
 
-impl std::error::Error for ProcessError {}
+impl std::error::Error for ProcessError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
+}
 
 impl From<io::Error> for ProcessError {
-    fn from(err: io::Error) -> Self {
-        match err.kind() {
-            io::ErrorKind::NotFound => {
-                ProcessError::ProcessNotFound(0) // Generic not found
-            }
-            io::ErrorKind::PermissionDenied => {
-                ProcessError::PermissionDenied(err.to_string())
-            }
-            io::ErrorKind::TimedOut => {
-                ProcessError::Timeout(err.to_string())
-            }
-            io::ErrorKind::InvalidInput => {
-                ProcessError::InvalidArguments(err.to_string())
-            }
-            _ => ProcessError::SystemError(
-                err.raw_os_error().unwrap_or(-1),
-                err.to_string()
-            )
+    fn from(error: io::Error) -> Self {
+        ProcessError::IoError {
+            operation: "unknown".to_string(),
+            kind: format!("{:?}", error.kind()),
+            message: error.to_string(),
         }
     }
 }
 
-impl From<ProcessError> for CursedError {
-    fn from(err: ProcessError) -> Self {
-        CursedError::ProcessError(err.to_string())
+impl From<num::ParseIntError> for ProcessError {
+    fn from(error: num::ParseIntError) -> Self {
+        ProcessError::InvalidArguments {
+            operation: "parse_integer".to_string(),
+            argument: "number".to_string(),
+            message: error.to_string(),
+        }
     }
 }
 
-/// Type alias for Result with ProcessError
-pub type ProcessResult<T> = Result<T, ProcessError>;
+/// Error creation helper functions
 
-/// Helper functions for creating common process errors
-pub fn process_not_found(pid: u32) -> ProcessError {
-    ProcessError::ProcessNotFound(pid)
+/// Create a process not found error
+pub fn process_not_found(message: &str) -> ProcessError {
+    ProcessError::ProcessNotFound {
+        pid: None,
+        name: None,
+        message: message.to_string(),
+    }
 }
 
-pub fn permission_denied(msg: &str) -> ProcessError {
-    ProcessError::PermissionDenied(msg.to_string())
+/// Create a process not found error with PID
+pub fn process_not_found_pid(pid: u32, message: &str) -> ProcessError {
+    ProcessError::ProcessNotFound {
+        pid: Some(pid),
+        name: None,
+        message: message.to_string(),
+    }
 }
 
-pub fn invalid_state(msg: &str) -> ProcessError {
-    ProcessError::InvalidState(msg.to_string())
+/// Create a process not found error with name
+pub fn process_not_found_name(name: &str, message: &str) -> ProcessError {
+    ProcessError::ProcessNotFound {
+        pid: None,
+        name: Some(name.to_string()),
+        message: message.to_string(),
+    }
 }
 
-pub fn execution_failed(msg: &str) -> ProcessError {
-    ProcessError::ExecutionFailed(msg.to_string())
+/// Create a permission denied error
+pub fn permission_denied(operation: &str, message: &str) -> ProcessError {
+    ProcessError::PermissionDenied {
+        operation: operation.to_string(),
+        pid: None,
+        message: message.to_string(),
+    }
 }
 
-pub fn timeout_error(msg: &str) -> ProcessError {
-    ProcessError::Timeout(msg.to_string())
+/// Create a permission denied error with PID
+pub fn permission_denied_pid(operation: &str, pid: u32, message: &str) -> ProcessError {
+    ProcessError::PermissionDenied {
+        operation: operation.to_string(),
+        pid: Some(pid),
+        message: message.to_string(),
+    }
 }
 
-pub fn invalid_arguments(msg: &str) -> ProcessError {
-    ProcessError::InvalidArguments(msg.to_string())
+/// Create an invalid state error
+pub fn invalid_state(expected: &str, actual: &str, pid: u32) -> ProcessError {
+    ProcessError::InvalidState {
+        expected: expected.to_string(),
+        actual: actual.to_string(),
+        pid,
+    }
 }
 
-pub fn environment_error(msg: &str) -> ProcessError {
-    ProcessError::EnvironmentError(msg.to_string())
+/// Create an execution failed error
+pub fn execution_failed(command: &str, message: &str) -> ProcessError {
+    ProcessError::ExecutionFailed {
+        command: command.to_string(),
+        exit_code: None,
+        stderr: None,
+        message: message.to_string(),
+    }
 }
 
-pub fn communication_error(msg: &str) -> ProcessError {
-    ProcessError::CommunicationError(msg.to_string())
+/// Create an execution failed error with exit code
+pub fn execution_failed_with_code(command: &str, exit_code: i32, message: &str) -> ProcessError {
+    ProcessError::ExecutionFailed {
+        command: command.to_string(),
+        exit_code: Some(exit_code),
+        stderr: None,
+        message: message.to_string(),
+    }
 }
 
-pub fn system_error(code: i32, msg: &str) -> ProcessError {
-    ProcessError::SystemError(code, msg.to_string())
+/// Create an execution failed error with stderr
+pub fn execution_failed_with_stderr(command: &str, stderr: &str, message: &str) -> ProcessError {
+    ProcessError::ExecutionFailed {
+        command: command.to_string(),
+        exit_code: None,
+        stderr: Some(stderr.to_string()),
+        message: message.to_string(),
+    }
+}
+
+/// Create a timeout error
+pub fn timeout_error(operation: &str, duration: Duration, message: &str) -> ProcessError {
+    ProcessError::Timeout {
+        operation: operation.to_string(),
+        duration,
+        message: message.to_string(),
+    }
+}
+
+/// Create an invalid arguments error
+pub fn invalid_arguments(operation: &str, argument: &str, message: &str) -> ProcessError {
+    ProcessError::InvalidArguments {
+        operation: operation.to_string(),
+        argument: argument.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create an environment error
+pub fn environment_error(operation: &str, message: &str) -> ProcessError {
+    ProcessError::EnvironmentError {
+        variable: None,
+        operation: operation.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create an environment error with variable name
+pub fn environment_error_var(variable: &str, operation: &str, message: &str) -> ProcessError {
+    ProcessError::EnvironmentError {
+        variable: Some(variable.to_string()),
+        operation: operation.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create a communication error
+pub fn communication_error(operation: &str, error_type: &str, message: &str) -> ProcessError {
+    ProcessError::CommunicationError {
+        operation: operation.to_string(),
+        error_type: error_type.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create a system error
+pub fn system_error(code: i32, operation: &str, message: &str) -> ProcessError {
+    ProcessError::SystemError {
+        code,
+        operation: operation.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create an I/O error
+pub fn io_error(operation: &str, kind: &str, message: &str) -> ProcessError {
+    ProcessError::IoError {
+        operation: operation.to_string(),
+        kind: kind.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create a signal error
+pub fn signal_error(signal: &str, operation: &str, message: &str) -> ProcessError {
+    ProcessError::SignalError {
+        signal: signal.to_string(),
+        operation: operation.to_string(),
+        message: message.to_string(),
+    }
+}
+
+/// Create a resource limit exceeded error
+pub fn resource_limit_exceeded(resource: &str, limit: u64, current: u64, message: &str) -> ProcessError {
+    ProcessError::ResourceLimitExceeded {
+        resource: resource.to_string(),
+        limit,
+        current,
+        message: message.to_string(),
+    }
+}
+
+/// Create a platform error
+pub fn platform_error(message: &str) -> ProcessError {
+    ProcessError::PlatformError {
+        platform: std::env::consts::OS.to_string(),
+        feature: None,
+        message: message.to_string(),
+    }
+}
+
+/// Create a platform error with feature
+pub fn platform_error_feature(feature: &str, message: &str) -> ProcessError {
+    ProcessError::PlatformError {
+        platform: std::env::consts::OS.to_string(),
+        feature: Some(feature.to_string()),
+        message: message.to_string(),
+    }
+}
+
+/// Create a general error
+pub fn general_error(message: &str) -> ProcessError {
+    ProcessError::General {
+        message: message.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_creation() {
+        let err = process_not_found("Process does not exist");
+        assert_eq!(err.category(), "ProcessNotFound");
+        assert!(!err.is_recoverable());
+
+        let err = permission_denied("kill", "Access denied");
+        assert_eq!(err.category(), "PermissionDenied");
+        assert!(!err.is_recoverable());
+
+        let err = timeout_error("wait", Duration::from_secs(30), "Process did not respond");
+        assert_eq!(err.category(), "Timeout");
+        assert!(err.is_recoverable());
+    }
+
+    #[test]
+    fn test_error_display() {
+        let err = process_not_found_pid(1234, "No such process");
+        let display = format!("{}", err);
+        assert!(display.contains("Process not found"));
+        assert!(display.contains("PID: 1234"));
+        assert!(display.contains("No such process"));
+    }
+
+    #[test]
+    fn test_error_conversion() {
+        let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "Access denied");
+        let proc_err: ProcessError = io_err.into();
+        assert_eq!(proc_err.category(), "IoError");
+    }
+
+    #[test]
+    fn test_execution_failed_variants() {
+        let err1 = execution_failed("ls", "Command not found");
+        let err2 = execution_failed_with_code("ls", 127, "Command not found");
+        let err3 = execution_failed_with_stderr("ls", "No such file", "Failed");
+
+        assert_eq!(err1.category(), "ExecutionFailed");
+        assert_eq!(err2.category(), "ExecutionFailed");
+        assert_eq!(err3.category(), "ExecutionFailed");
+    }
+
+    #[test]
+    fn test_resource_limit_error() {
+        let err = resource_limit_exceeded("memory", 1024*1024, 2*1024*1024, "Memory limit exceeded");
+        assert_eq!(err.category(), "ResourceLimitExceeded");
+        assert!(err.is_recoverable());
+        
+        let display = format!("{}", err);
+        assert!(display.contains("memory"));
+        assert!(display.contains("1048576"));
+        assert!(display.contains("2097152"));
+    }
 }
