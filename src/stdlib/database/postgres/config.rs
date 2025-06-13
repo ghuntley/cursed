@@ -1,653 +1,443 @@
-/// PostgreSQL connection configuration and string parsing for CURSED database operations
+/// PostgreSQL Configuration and Connection String Parsing
 /// 
-/// This module provides comprehensive configuration support for PostgreSQL connections
-/// including URI parsing, SSL configuration, and connection parameter management.
+/// Provides comprehensive configuration management for PostgreSQL connections
+/// including SSL/TLS settings, timeouts, and connection parameters.
 
 use std::collections::HashMap;
 use std::time::Duration;
-use super::error::PostgreSQLError;
+use super::error::{PostgresError, PostgresErrorKind};
 
-/// fr fr PostgreSQL-specific configuration options
-#[derive(Debug, Clone)]
-pub struct PostgreSQLConfig {
-    /// fr fr Database host
-    pub host: String,
-    /// fr fr Database port
-    pub port: u16,
-    /// fr fr Database name
-    pub dbname: String,
-    /// fr fr Username
-    pub user: String,
-    /// fr fr Password
-    pub password: Option<String>,
-    /// fr fr Connection timeout
-    pub connect_timeout: Duration,
-    /// fr fr Query timeout
-    pub query_timeout: Duration,
-    /// fr fr SSL mode
-    pub ssl_mode: SslMode,
-    /// fr fr SSL certificate file
-    pub ssl_cert: Option<String>,
-    /// fr fr SSL key file
-    pub ssl_key: Option<String>,
-    /// fr fr SSL CA file
-    pub ssl_ca: Option<String>,
-    /// fr fr Application name
-    pub application_name: String,
-    /// fr fr Client encoding
-    pub client_encoding: String,
-    /// fr fr Timezone
-    pub timezone: Option<String>,
-    /// fr fr Statement timeout
-    pub statement_timeout: Option<Duration>,
-    /// fr fr Lock timeout
-    pub lock_timeout: Option<Duration>,
-    /// fr fr Idle in transaction timeout
-    pub idle_in_transaction_timeout: Option<Duration>,
-    /// fr fr Additional parameters
-    pub extra_params: HashMap<String, String>,
-}
-
-impl Default for PostgreSQLConfig {
-    fn default() -> Self {
-        Self {
-            host: "localhost".to_string(),
-            port: 5432,
-            dbname: "postgres".to_string(),
-            user: "postgres".to_string(),
-            password: None,
-            connect_timeout: Duration::from_secs(30),
-            query_timeout: Duration::from_secs(300),
-            ssl_mode: SslMode::Prefer,
-            ssl_cert: None,
-            ssl_key: None,
-            ssl_ca: None,
-            application_name: "cursed_app".to_string(),
-            client_encoding: "UTF8".to_string(),
-            timezone: None,
-            statement_timeout: None,
-            lock_timeout: None,
-            idle_in_transaction_timeout: None,
-            extra_params: HashMap::new(),
-        }
-    }
-}
-
-impl PostgreSQLConfig {
-    /// slay Create a new configuration
-    pub fn new() -> Self {
-        Self::default()
-    }
-    
-    /// slay Set host
-    pub fn host(mut self, host: String) -> Self {
-        self.host = host;
-        self
-    }
-    
-    /// slay Set port
-    pub fn port(mut self, port: u16) -> Self {
-        self.port = port;
-        self
-    }
-    
-    /// slay Set database name
-    pub fn dbname(mut self, dbname: String) -> Self {
-        self.dbname = dbname;
-        self
-    }
-    
-    /// slay Set user
-    pub fn user(mut self, user: String) -> Self {
-        self.user = user;
-        self
-    }
-    
-    /// slay Set password
-    pub fn password(mut self, password: String) -> Self {
-        self.password = Some(password);
-        self
-    }
-    
-    /// slay Set SSL mode
-    pub fn ssl_mode(mut self, ssl_mode: SslMode) -> Self {
-        self.ssl_mode = ssl_mode;
-        self
-    }
-    
-    /// slay Set application name
-    pub fn application_name(mut self, name: String) -> Self {
-        self.application_name = name;
-        self
-    }
-    
-    /// slay Set connection timeout
-    pub fn connect_timeout(mut self, timeout: Duration) -> Self {
-        self.connect_timeout = timeout;
-        self
-    }
-    
-    /// slay Set query timeout
-    pub fn query_timeout(mut self, timeout: Duration) -> Self {
-        self.query_timeout = timeout;
-        self
-    }
-    
-    /// slay Add extra parameter
-    pub fn extra_param(mut self, key: String, value: String) -> Self {
-        self.extra_params.insert(key, value);
-        self
-    }
-    
-    /// slay Build connection string
-    pub fn to_connection_string(&self) -> String {
-        let mut parts = Vec::new();
-        
-        parts.push(format!("host={}", self.host));
-        parts.push(format!("port={}", self.port));
-        parts.push(format!("dbname={}", self.dbname));
-        parts.push(format!("user={}", self.user));
-        
-        if let Some(ref password) = self.password {
-            parts.push(format!("password={}", password));
-        }
-        
-        parts.push(format!("connect_timeout={}", self.connect_timeout.as_secs()));
-        parts.push(format!("sslmode={}", self.ssl_mode.to_string()));
-        parts.push(format!("application_name={}", self.application_name));
-        parts.push(format!("client_encoding={}", self.client_encoding));
-        
-        if let Some(ref ssl_cert) = self.ssl_cert {
-            parts.push(format!("sslcert={}", ssl_cert));
-        }
-        
-        if let Some(ref ssl_key) = self.ssl_key {
-            parts.push(format!("sslkey={}", ssl_key));
-        }
-        
-        if let Some(ref ssl_ca) = self.ssl_ca {
-            parts.push(format!("sslrootcert={}", ssl_ca));
-        }
-        
-        if let Some(ref timezone) = self.timezone {
-            parts.push(format!("timezone={}", timezone));
-        }
-        
-        if let Some(statement_timeout) = self.statement_timeout {
-            parts.push(format!("statement_timeout={}ms", statement_timeout.as_millis()));
-        }
-        
-        if let Some(lock_timeout) = self.lock_timeout {
-            parts.push(format!("lock_timeout={}ms", lock_timeout.as_millis()));
-        }
-        
-        if let Some(idle_timeout) = self.idle_in_transaction_timeout {
-            parts.push(format!("idle_in_transaction_session_timeout={}ms", idle_timeout.as_millis()));
-        }
-        
-        // Add extra parameters
-        for (key, value) in &self.extra_params {
-            parts.push(format!("{}={}", key, value));
-        }
-        
-        parts.join(" ")
-    }
-    
-    /// slay Build PostgreSQL URI
-    pub fn to_uri(&self) -> String {
-        let mut uri = String::from("postgresql://");
-        
-        uri.push_str(&self.user);
-        if let Some(ref password) = self.password {
-            uri.push(':');
-            uri.push_str(password);
-        }
-        
-        uri.push('@');
-        uri.push_str(&self.host);
-        uri.push(':');
-        uri.push_str(&self.port.to_string());
-        uri.push('/');
-        uri.push_str(&self.dbname);
-        
-        // Add query parameters
-        let mut params = Vec::new();
-        
-        if self.ssl_mode != SslMode::Prefer {
-            params.push(format!("sslmode={}", self.ssl_mode.to_string()));
-        }
-        
-        if self.application_name != "cursed_app" {
-            params.push(format!("application_name={}", self.application_name));
-        }
-        
-        if self.connect_timeout != Duration::from_secs(30) {
-            params.push(format!("connect_timeout={}", self.connect_timeout.as_secs()));
-        }
-        
-        for (key, value) in &self.extra_params {
-            params.push(format!("{}={}", key, value));
-        }
-        
-        if !params.is_empty() {
-            uri.push('?');
-            uri.push_str(&params.join("&"));
-        }
-        
-        uri
-    }
-}
-
-/// fr fr SSL connection modes for PostgreSQL
+/// SSL/TLS connection mode for PostgreSQL
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SslMode {
-    /// Disable SSL
+    /// Do not use SSL
     Disable,
-    /// Allow SSL but don't require it
+    /// Use SSL if available, but don't verify certificates
     Allow,
-    /// Prefer SSL but fall back to non-SSL
+    /// Prefer SSL connections but allow non-SSL
     Prefer,
-    /// Require SSL
+    /// Require SSL connection
     Require,
-    /// Require SSL and verify server certificate
+    /// Require SSL and verify that server certificate is issued by trusted CA
     VerifyCa,
-    /// Require SSL and verify server certificate and hostname
+    /// Require SSL, verify CA, and verify that server certificate matches hostname
     VerifyFull,
 }
 
-impl SslMode {
-    /// slay Convert to PostgreSQL string
-    pub fn to_string(&self) -> &'static str {
+impl Default for SslMode {
+    fn default() -> Self {
+        SslMode::Prefer
+    }
+}
+
+impl std::fmt::Display for SslMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Disable => "disable",
-            Self::Allow => "allow",
-            Self::Prefer => "prefer",
-            Self::Require => "require",
-            Self::VerifyCa => "verify-ca",
-            Self::VerifyFull => "verify-full",
+            SslMode::Disable => write!(f, "disable"),
+            SslMode::Allow => write!(f, "allow"),
+            SslMode::Prefer => write!(f, "prefer"),
+            SslMode::Require => write!(f, "require"),
+            SslMode::VerifyCa => write!(f, "verify-ca"),
+            SslMode::VerifyFull => write!(f, "verify-full"),
         }
     }
-    
-    /// slay Parse from string
-    pub fn from_string(s: &str) -> Result<Self, PostgreSQLError> {
+}
+
+impl std::str::FromStr for SslMode {
+    type Err = PostgresError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "disable" => Ok(Self::Disable),
-            "allow" => Ok(Self::Allow),
-            "prefer" => Ok(Self::Prefer),
-            "require" => Ok(Self::Require),
-            "verify-ca" => Ok(Self::VerifyCa),
-            "verify-full" => Ok(Self::VerifyFull),
-            _ => Err(PostgreSQLError::new(
-                super::super::DatabaseErrorKind::ConfigurationError,
-                format!("Invalid SSL mode: {}", s)
+            "disable" => Ok(SslMode::Disable),
+            "allow" => Ok(SslMode::Allow),
+            "prefer" => Ok(SslMode::Prefer),
+            "require" => Ok(SslMode::Require),
+            "verify-ca" => Ok(SslMode::VerifyCa),
+            "verify-full" => Ok(SslMode::VerifyFull),
+            _ => Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                &format!("Invalid SSL mode: {}", s),
             )),
         }
     }
 }
 
-/// fr fr Connection string parser for PostgreSQL
+/// Comprehensive PostgreSQL configuration
 #[derive(Debug, Clone)]
-pub struct ConnectionString {
-    /// fr fr Raw connection string
-    pub raw: String,
-    /// fr fr Parsed parameters
-    pub params: HashMap<String, String>,
+pub struct PostgresConfig {
+    /// Database host (default: localhost)
+    pub host: String,
+    /// Database port (default: 5432)
+    pub port: u16,
+    /// Database name
+    pub database: String,
+    /// Username for authentication
+    pub username: String,
+    /// Password for authentication
+    pub password: Option<String>,
+    /// SSL/TLS mode
+    pub ssl_mode: SslMode,
+    /// Connection timeout
+    pub connect_timeout: Duration,
+    /// Query timeout
+    pub query_timeout: Duration,
+    /// Application name for connection identification
+    pub application_name: String,
+    /// Additional connection parameters
+    pub parameters: HashMap<String, String>,
+    /// Maximum number of connections in pool
+    pub max_connections: u32,
+    /// Minimum number of connections in pool
+    pub min_connections: u32,
+    /// Maximum lifetime of a connection
+    pub max_lifetime: Option<Duration>,
+    /// Maximum idle time for a connection
+    pub idle_timeout: Option<Duration>,
+    /// Connection retry attempts
+    pub retry_attempts: u32,
+    /// Retry delay between attempts
+    pub retry_delay: Duration,
 }
 
-impl ConnectionString {
-    /// slay Parse connection string
-    pub fn parse(conn_str: &str) -> Result<Self, PostgreSQLError> {
-        let mut params = HashMap::new();
+impl Default for PostgresConfig {
+    fn default() -> Self {
+        Self {
+            host: "localhost".to_string(),
+            port: 5432,
+            database: "postgres".to_string(),
+            username: "postgres".to_string(),
+            password: None,
+            ssl_mode: SslMode::Prefer,
+            connect_timeout: Duration::from_secs(30),
+            query_timeout: Duration::from_secs(300),
+            application_name: "CURSED Database Client".to_string(),
+            parameters: HashMap::new(),
+            max_connections: 100,
+            min_connections: 10,
+            max_lifetime: Some(Duration::from_secs(3600)), // 1 hour
+            idle_timeout: Some(Duration::from_secs(600)),   // 10 minutes
+            retry_attempts: 3,
+            retry_delay: Duration::from_secs(1),
+        }
+    }
+}
+
+impl PostgresConfig {
+    /// Create new configuration with required parameters
+    pub fn new<S: Into<String>>(host: S, port: u16, database: S, username: S) -> Self {
+        Self {
+            host: host.into(),
+            port,
+            database: database.into(),
+            username: username.into(),
+            ..Default::default()
+        }
+    }
+
+    /// Set password for authentication
+    pub fn with_password<S: Into<String>>(mut self, password: S) -> Self {
+        self.password = Some(password.into());
+        self
+    }
+
+    /// Set SSL mode
+    pub fn with_ssl_mode(mut self, ssl_mode: SslMode) -> Self {
+        self.ssl_mode = ssl_mode;
+        self
+    }
+
+    /// Set connection timeout
+    pub fn with_connect_timeout(mut self, timeout: Duration) -> Self {
+        self.connect_timeout = timeout;
+        self
+    }
+
+    /// Set query timeout
+    pub fn with_query_timeout(mut self, timeout: Duration) -> Self {
+        self.query_timeout = timeout;
+        self
+    }
+
+    /// Set application name
+    pub fn with_application_name<S: Into<String>>(mut self, name: S) -> Self {
+        self.application_name = name.into();
+        self
+    }
+
+    /// Add connection parameter
+    pub fn with_parameter<K: Into<String>, V: Into<String>>(mut self, key: K, value: V) -> Self {
+        self.parameters.insert(key.into(), value.into());
+        self
+    }
+
+    /// Set connection pool limits
+    pub fn with_pool_limits(mut self, min: u32, max: u32) -> Self {
+        self.min_connections = min;
+        self.max_connections = max;
+        self
+    }
+
+    /// Convert to tokio-postgres configuration
+    pub fn to_tokio_config(&self) -> tokio_postgres::Config {
+        let mut config = tokio_postgres::Config::new();
         
-        if conn_str.starts_with("postgresql://") || conn_str.starts_with("postgres://") {
-            // Parse URI format
-            Self::parse_uri(conn_str, &mut params)?;
-        } else {
-            // Parse key=value format
-            Self::parse_key_value(conn_str, &mut params)?;
+        config.host(&self.host);
+        config.port(self.port);
+        config.dbname(&self.database);
+        config.user(&self.username);
+        
+        if let Some(ref password) = self.password {
+            config.password(password);
         }
         
-        Ok(Self {
-            raw: conn_str.to_string(),
-            params,
-        })
+        match self.ssl_mode {
+            SslMode::Disable => {
+                config.ssl_mode(tokio_postgres::config::SslMode::Disable);
+            }
+            SslMode::Allow => {
+                config.ssl_mode(tokio_postgres::config::SslMode::Allow);
+            }
+            SslMode::Prefer => {
+                config.ssl_mode(tokio_postgres::config::SslMode::Prefer);
+            }
+            SslMode::Require => {
+                config.ssl_mode(tokio_postgres::config::SslMode::Require);
+            }
+            SslMode::VerifyCa => {
+                config.ssl_mode(tokio_postgres::config::SslMode::VerifyCa);
+            }
+            SslMode::VerifyFull => {
+                config.ssl_mode(tokio_postgres::config::SslMode::VerifyFull);
+            }
+        }
+        
+        config.connect_timeout(self.connect_timeout);
+        config.application_name(&self.application_name);
+        
+        for (key, value) in &self.parameters {
+            config.options(&format!("{}={}", key, value));
+        }
+        
+        config
+    }
+
+    /// Validate configuration
+    pub fn validate(&self) -> Result<(), PostgresError> {
+        if self.host.is_empty() {
+            return Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                "Host cannot be empty",
+            ));
+        }
+        
+        if self.port == 0 {
+            return Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                "Port must be greater than 0",
+            ));
+        }
+        
+        if self.database.is_empty() {
+            return Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                "Database name cannot be empty",
+            ));
+        }
+        
+        if self.username.is_empty() {
+            return Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                "Username cannot be empty",
+            ));
+        }
+        
+        if self.max_connections == 0 {
+            return Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                "Max connections must be greater than 0",
+            ));
+        }
+        
+        if self.min_connections > self.max_connections {
+            return Err(PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                "Min connections cannot be greater than max connections",
+            ));
+        }
+        
+        Ok(())
+    }
+}
+
+/// PostgreSQL connection string parser
+pub struct PostgresConnectionString;
+
+impl PostgresConnectionString {
+    /// Parse PostgreSQL connection string into configuration
+    /// 
+    /// Supports various formats:
+    /// - postgresql://user:password@host:port/database
+    /// - postgres://user:password@host:port/database?param=value
+    /// - host=host port=port dbname=database user=user password=password
+    pub fn parse(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+        // Try URL format first
+        if dsn.starts_with("postgresql://") || dsn.starts_with("postgres://") {
+            Self::parse_url(dsn)
+        } else {
+            // Try key-value format
+            Self::parse_key_value(dsn)
+        }
     }
     
-    /// slay Parse URI format (postgresql://user:pass@host:port/dbname?param1=value1)
-    fn parse_uri(uri: &str, params: &mut HashMap<String, String>) -> Result<(), PostgreSQLError> {
-        // Remove scheme
-        let without_scheme = uri.trim_start_matches("postgresql://").trim_start_matches("postgres://");
+    /// Parse URL format connection string
+    fn parse_url(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+        let url = url::Url::parse(dsn).map_err(|e| {
+            PostgresError::new(
+                PostgresErrorKind::InvalidConfiguration,
+                &format!("Invalid connection URL: {}", e),
+            )
+        })?;
         
-        // Split at '?' for query parameters
-        let (main_part, query_part) = if let Some(pos) = without_scheme.find('?') {
-            (&without_scheme[..pos], Some(&without_scheme[pos + 1..]))
-        } else {
-            (without_scheme, None)
-        };
+        let mut config = PostgresConfig::default();
         
-        // Parse main part (user:pass@host:port/dbname)
-        let (auth_part, host_db_part) = if let Some(pos) = main_part.find('@') {
-            (Some(&main_part[..pos]), &main_part[pos + 1..])
-        } else {
-            (None, main_part)
-        };
-        
-        // Parse authentication
-        if let Some(auth) = auth_part {
-            if let Some(pos) = auth.find(':') {
-                params.insert("user".to_string(), auth[..pos].to_string());
-                params.insert("password".to_string(), auth[pos + 1..].to_string());
-            } else {
-                params.insert("user".to_string(), auth.to_string());
-            }
+        if let Some(host) = url.host_str() {
+            config.host = host.to_string();
         }
         
-        // Parse host:port/dbname
-        let (host_port, dbname) = if let Some(pos) = host_db_part.find('/') {
-            (&host_db_part[..pos], Some(&host_db_part[pos + 1..]))
-        } else {
-            (host_db_part, None)
-        };
-        
-        // Parse host and port
-        if let Some(pos) = host_port.rfind(':') {
-            let host = &host_port[..pos];
-            let port_str = &host_port[pos + 1..];
-            
-            params.insert("host".to_string(), host.to_string());
-            if !port_str.is_empty() {
-                params.insert("port".to_string(), port_str.to_string());
-            }
-        } else if !host_port.is_empty() {
-            params.insert("host".to_string(), host_port.to_string());
+        if let Some(port) = url.port() {
+            config.port = port;
         }
         
-        // Set database name
-        if let Some(db) = dbname {
-            if !db.is_empty() {
-                params.insert("dbname".to_string(), db.to_string());
-            }
+        let path = url.path();
+        if path.len() > 1 {
+            config.database = path[1..].to_string(); // Skip leading '/'
+        }
+        
+        config.username = url.username().to_string();
+        
+        if let Some(password) = url.password() {
+            config.password = Some(password.to_string());
         }
         
         // Parse query parameters
-        if let Some(query) = query_part {
-            Self::parse_query_string(query, params)?;
-        }
-        
-        Ok(())
-    }
-    
-    /// slay Parse key=value format (host=localhost port=5432 dbname=mydb)
-    fn parse_key_value(conn_str: &str, params: &mut HashMap<String, String>) -> Result<(), PostgreSQLError> {
-        let mut chars = conn_str.chars().peekable();
-        
-        while chars.peek().is_some() {
-            // Skip whitespace
-            while chars.peek() == Some(&' ') || chars.peek() == Some(&'\t') {
-                chars.next();
-            }
-            
-            if chars.peek().is_none() {
-                break;
-            }
-            
-            // Read key
-            let mut key = String::new();
-            while let Some(&ch) = chars.peek() {
-                if ch == '=' || ch == ' ' || ch == '\t' {
-                    break;
+        for (key, value) in url.query_pairs() {
+            match key.as_ref() {
+                "sslmode" => {
+                    config.ssl_mode = value.parse()?;
                 }
-                key.push(chars.next().unwrap());
-            }
-            
-            if key.is_empty() {
-                break;
-            }
-            
-            // Skip whitespace and '='
-            while chars.peek() == Some(&' ') || chars.peek() == Some(&'\t') {
-                chars.next();
-            }
-            
-            if chars.next() != Some('=') {
-                return Err(PostgreSQLError::new(
-                    super::super::DatabaseErrorKind::ConfigurationError,
-                    format!("Expected '=' after key '{}'", key)
-                ));
-            }
-            
-            // Skip whitespace after '='
-            while chars.peek() == Some(&' ') || chars.peek() == Some(&'\t') {
-                chars.next();
-            }
-            
-            // Read value
-            let mut value = String::new();
-            let quoted = chars.peek() == Some(&'\'') || chars.peek() == Some(&'"');
-            
-            if quoted {
-                let quote_char = chars.next().unwrap();
-                while let Some(ch) = chars.next() {
-                    if ch == quote_char {
-                        break;
-                    }
-                    if ch == '\\' {
-                        if let Some(escaped) = chars.next() {
-                            value.push(escaped);
-                        }
-                    } else {
-                        value.push(ch);
-                    }
+                "connect_timeout" => {
+                    let timeout_secs: u64 = value.parse().map_err(|_| {
+                        PostgresError::new(
+                            PostgresErrorKind::InvalidConfiguration,
+                            "Invalid connect_timeout value",
+                        )
+                    })?;
+                    config.connect_timeout = Duration::from_secs(timeout_secs);
                 }
-            } else {
-                while let Some(&ch) = chars.peek() {
-                    if ch == ' ' || ch == '\t' {
-                        break;
-                    }
-                    value.push(chars.next().unwrap());
+                "application_name" => {
+                    config.application_name = value.to_string();
+                }
+                _ => {
+                    config.parameters.insert(key.to_string(), value.to_string());
                 }
             }
-            
-            params.insert(key, value);
         }
         
-        Ok(())
+        config.validate()?;
+        Ok(config)
     }
     
-    /// slay Parse query string (param1=value1&param2=value2)
-    fn parse_query_string(query: &str, params: &mut HashMap<String, String>) -> Result<(), PostgreSQLError> {
-        for pair in query.split('&') {
-            if let Some(pos) = pair.find('=') {
-                let key = &pair[..pos];
-                let value = &pair[pos + 1..];
-                
-                // URL decode key and value
-                let decoded_key = Self::url_decode(key)?;
-                let decoded_value = Self::url_decode(value)?;
-                
-                params.insert(decoded_key, decoded_value);
-            } else if !pair.is_empty() {
-                params.insert(Self::url_decode(pair)?, String::new());
+    /// Parse key-value format connection string
+    fn parse_key_value(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+        let mut config = PostgresConfig::default();
+        
+        for pair in dsn.split_whitespace() {
+            if let Some((key, value)) = pair.split_once('=') {
+                match key {
+                    "host" => config.host = value.to_string(),
+                    "port" => {
+                        config.port = value.parse().map_err(|_| {
+                            PostgresError::new(
+                                PostgresErrorKind::InvalidConfiguration,
+                                "Invalid port value",
+                            )
+                        })?;
+                    }
+                    "dbname" | "database" => config.database = value.to_string(),
+                    "user" | "username" => config.username = value.to_string(),
+                    "password" => config.password = Some(value.to_string()),
+                    "sslmode" => {
+                        config.ssl_mode = value.parse()?;
+                    }
+                    "connect_timeout" => {
+                        let timeout_secs: u64 = value.parse().map_err(|_| {
+                            PostgresError::new(
+                                PostgresErrorKind::InvalidConfiguration,
+                                "Invalid connect_timeout value",
+                            )
+                        })?;
+                        config.connect_timeout = Duration::from_secs(timeout_secs);
+                    }
+                    "application_name" => {
+                        config.application_name = value.to_string();
+                    }
+                    _ => {
+                        config.parameters.insert(key.to_string(), value.to_string());
+                    }
+                }
             }
         }
         
-        Ok(())
-    }
-    
-    /// slay URL decode string
-    fn url_decode(s: &str) -> Result<String, PostgreSQLError> {
-        let mut result = String::new();
-        let mut chars = s.chars();
-        
-        while let Some(ch) = chars.next() {
-            if ch == '%' {
-                let hex1 = chars.next().ok_or_else(|| PostgreSQLError::new(
-                    super::super::DatabaseErrorKind::ConfigurationError,
-                    "Invalid percent encoding".to_string()
-                ))?;
-                let hex2 = chars.next().ok_or_else(|| PostgreSQLError::new(
-                    super::super::DatabaseErrorKind::ConfigurationError,
-                    "Invalid percent encoding".to_string()
-                ))?;
-                
-                let hex_str = format!("{}{}", hex1, hex2);
-                let byte = u8::from_str_radix(&hex_str, 16).map_err(|_| PostgreSQLError::new(
-                    super::super::DatabaseErrorKind::ConfigurationError,
-                    "Invalid hex in percent encoding".to_string()
-                ))?;
-                
-                result.push(byte as char);
-            } else if ch == '+' {
-                result.push(' ');
-            } else {
-                result.push(ch);
-            }
-        }
-        
-        Ok(result)
-    }
-    
-    /// slay Get parameter value
-    pub fn get(&self, key: &str) -> Option<&String> {
-        self.params.get(key)
-    }
-    
-    /// slay Convert to PostgreSQL config
-    pub fn to_config(&self) -> Result<PostgreSQLConfig, PostgreSQLError> {
-        let mut config = PostgreSQLConfig::default();
-        
-        if let Some(host) = self.get("host") {
-            config.host = host.clone();
-        }
-        
-        if let Some(port_str) = self.get("port") {
-            config.port = port_str.parse().map_err(|_| PostgreSQLError::new(
-                super::super::DatabaseErrorKind::ConfigurationError,
-                format!("Invalid port: {}", port_str)
-            ))?;
-        }
-        
-        if let Some(dbname) = self.get("dbname") {
-            config.dbname = dbname.clone();
-        }
-        
-        if let Some(user) = self.get("user") {
-            config.user = user.clone();
-        }
-        
-        if let Some(password) = self.get("password") {
-            config.password = Some(password.clone());
-        }
-        
-        if let Some(ssl_mode_str) = self.get("sslmode") {
-            config.ssl_mode = SslMode::from_string(ssl_mode_str)?;
-        }
-        
-        if let Some(app_name) = self.get("application_name") {
-            config.application_name = app_name.clone();
-        }
-        
-        if let Some(encoding) = self.get("client_encoding") {
-            config.client_encoding = encoding.clone();
-        }
-        
-        if let Some(timeout_str) = self.get("connect_timeout") {
-            let timeout_secs: u64 = timeout_str.parse().map_err(|_| PostgreSQLError::new(
-                super::super::DatabaseErrorKind::ConfigurationError,
-                format!("Invalid connect_timeout: {}", timeout_str)
-            ))?;
-            config.connect_timeout = Duration::from_secs(timeout_secs);
-        }
-        
-        // Add any unrecognized parameters as extra params
-        let known_params = [
-            "host", "port", "dbname", "user", "password", "sslmode",
-            "application_name", "client_encoding", "connect_timeout"
-        ];
-        
-        for (key, value) in &self.params {
-            if !known_params.contains(&key.as_str()) {
-                config.extra_params.insert(key.clone(), value.clone());
-            }
-        }
-        
+        config.validate()?;
         Ok(config)
     }
 }
 
-/// fr fr Connection string builder for easier configuration
-#[derive(Debug, Clone)]
-pub struct ConnectionStringBuilder {
-    config: PostgreSQLConfig,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl ConnectionStringBuilder {
-    /// slay Create a new builder
-    pub fn new() -> Self {
-        Self {
-            config: PostgreSQLConfig::default(),
-        }
+    #[test]
+    fn test_ssl_mode_parsing() {
+        assert_eq!("disable".parse::<SslMode>().unwrap(), SslMode::Disable);
+        assert_eq!("prefer".parse::<SslMode>().unwrap(), SslMode::Prefer);
+        assert_eq!("require".parse::<SslMode>().unwrap(), SslMode::Require);
+        assert!("invalid".parse::<SslMode>().is_err());
     }
-    
-    /// slay Build from existing config
-    pub fn from_config(config: PostgreSQLConfig) -> Self {
-        Self { config }
-    }
-    
-    /// slay Set host
-    pub fn host(mut self, host: &str) -> Self {
-        self.config.host = host.to_string();
-        self
-    }
-    
-    /// slay Set port
-    pub fn port(mut self, port: u16) -> Self {
-        self.config.port = port;
-        self
-    }
-    
-    /// slay Set database name
-    pub fn database(mut self, dbname: &str) -> Self {
-        self.config.dbname = dbname.to_string();
-        self
-    }
-    
-    /// slay Set username
-    pub fn username(mut self, user: &str) -> Self {
-        self.config.user = user.to_string();
-        self
-    }
-    
-    /// slay Set password
-    pub fn password(mut self, password: &str) -> Self {
-        self.config.password = Some(password.to_string());
-        self
-    }
-    
-    /// slay Set SSL mode
-    pub fn ssl_mode(mut self, ssl_mode: SslMode) -> Self {
-        self.config.ssl_mode = ssl_mode;
-        self
-    }
-    
-    /// slay Build connection string
-    pub fn build(&self) -> String {
-        self.config.to_connection_string()
-    }
-    
-    /// slay Build URI
-    pub fn build_uri(&self) -> String {
-        self.config.to_uri()
-    }
-    
-    /// slay Get config
-    pub fn config(&self) -> &PostgreSQLConfig {
-        &self.config
-    }
-}
 
-impl Default for ConnectionStringBuilder {
-    fn default() -> Self {
-        Self::new()
+    #[test]
+    fn test_config_validation() {
+        let config = PostgresConfig::default();
+        assert!(config.validate().is_ok());
+        
+        let mut invalid_config = PostgresConfig::default();
+        invalid_config.host = "".to_string();
+        assert!(invalid_config.validate().is_err());
+    }
+
+    #[test]
+    fn test_url_parsing() {
+        let dsn = "postgresql://user:pass@localhost:5432/mydb?sslmode=require";
+        let config = PostgresConnectionString::parse(dsn).unwrap();
+        
+        assert_eq!(config.host, "localhost");
+        assert_eq!(config.port, 5432);
+        assert_eq!(config.database, "mydb");
+        assert_eq!(config.username, "user");
+        assert_eq!(config.password, Some("pass".to_string()));
+        assert_eq!(config.ssl_mode, SslMode::Require);
+    }
+
+    #[test]
+    fn test_key_value_parsing() {
+        let dsn = "host=localhost port=5432 dbname=mydb user=user password=pass sslmode=disable";
+        let config = PostgresConnectionString::parse(dsn).unwrap();
+        
+        assert_eq!(config.host, "localhost");
+        assert_eq!(config.port, 5432);
+        assert_eq!(config.database, "mydb");
+        assert_eq!(config.username, "user");
+        assert_eq!(config.password, Some("pass".to_string()));
+        assert_eq!(config.ssl_mode, SslMode::Disable);
     }
 }

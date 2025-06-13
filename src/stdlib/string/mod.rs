@@ -14,6 +14,7 @@ pub mod transform;
 pub mod split_join;
 pub mod validation;
 pub mod format;
+pub mod regex;
 
 // Re-export all public functions for easy access
 pub use core::*;
@@ -22,6 +23,7 @@ pub use transform::*;
 pub use split_join::*;
 pub use validation::*;
 pub use format::*;
+pub use regex::*;
 
 // String manipulation result type
 pub type StringResult<T> = Result<T, StringError>;
@@ -34,6 +36,7 @@ pub enum StringError {
     InvalidUtf8 { position: usize },
     EmptyInput,
     InvalidParameter { param: String, value: String },
+    RegexError { message: String, pattern: String },
 }
 
 impl std::fmt::Display for StringError {
@@ -51,6 +54,9 @@ impl std::fmt::Display for StringError {
             StringError::EmptyInput => write!(f, "Empty input string"),
             StringError::InvalidParameter { param, value } => {
                 write!(f, "Invalid parameter '{}': {}", param, value)
+            }
+            StringError::RegexError { message, pattern } => {
+                write!(f, "Regex error in pattern '{}': {}", pattern, message)
             }
         }
     }

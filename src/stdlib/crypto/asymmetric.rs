@@ -849,6 +849,143 @@ impl AsymmetricCrypto {
         
         Ok(Ed25519Signature { inner: signature })
     }
+
+    /// slay Parse ECDSA private key from base64 format
+    pub fn ecdsa_private_key_from_base64(&self, key_data: &str, curve: EcCurve) -> AsymmetricResult<EcdsaPrivateKey> {
+        let bytes = general_purpose::STANDARD.decode(key_data)
+            .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
+        
+        let data = match curve {
+            EcCurve::P256 => {
+                if bytes.len() != 32 {
+                    return Err(AsymmetricError::InvalidPrivateKey);
+                }
+                let secret_key = P256SecretKey::from_slice(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
+                EcPrivateKeyData::P256(secret_key)
+            },
+            EcCurve::P384 => {
+                if bytes.len() != 48 {
+                    return Err(AsymmetricError::InvalidPrivateKey);
+                }
+                let secret_key = P384SecretKey::from_slice(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
+                EcPrivateKeyData::P384(secret_key)
+            },
+            EcCurve::Secp256k1 => {
+                if bytes.len() != 32 {
+                    return Err(AsymmetricError::InvalidPrivateKey);
+                }
+                let secret_key = K256SecretKey::from_slice(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
+                EcPrivateKeyData::K256(secret_key)
+            },
+            _ => return Err(AsymmetricError::UnsupportedOperation(format!("Curve {} not supported", curve.name()))),
+        };
+        
+        Ok(EcdsaPrivateKey { curve, data })
+    }
+
+    /// slay Parse ECDSA public key from base64 format
+    pub fn ecdsa_public_key_from_base64(&self, key_data: &str, curve: EcCurve) -> AsymmetricResult<EcdsaPublicKey> {
+        let bytes = general_purpose::STANDARD.decode(key_data)
+            .map_err(|e| AsymmetricError::InvalidPublicKey)?;
+        
+        let data = match curve {
+            EcCurve::P256 => {
+                let public_key = P256PublicKey::from_sec1_bytes(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidPublicKey)?;
+                EcPublicKeyData::P256(public_key)
+            },
+            EcCurve::P384 => {
+                let public_key = P384PublicKey::from_sec1_bytes(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidPublicKey)?;
+                EcPublicKeyData::P384(public_key)
+            },
+            EcCurve::Secp256k1 => {
+                let public_key = K256PublicKey::from_sec1_bytes(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidPublicKey)?;
+                EcPublicKeyData::K256(public_key)
+            },
+            _ => return Err(AsymmetricError::UnsupportedOperation(format!("Curve {} not supported", curve.name()))),
+        };
+        
+        Ok(EcdsaPublicKey { curve, data })
+    }
+
+    /// slay Parse ECDSA signature from base64 format
+    pub fn ecdsa_signature_from_base64(&self, signature_data: &str, curve: EcCurve) -> AsymmetricResult<EcdsaSignature> {
+        let bytes = general_purpose::STANDARD.decode(signature_data)
+            .map_err(|e| AsymmetricError::InvalidSignature)?;
+        
+        let data = match curve {
+            EcCurve::P256 => {
+                let signature = P256Signature::from_der(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidSignature)?;
+                EcSignatureData::P256(signature)
+            },
+            EcCurve::P384 => {
+                let signature = P384Signature::from_der(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidSignature)?;
+                EcSignatureData::P384(signature)
+            },
+            EcCurve::Secp256k1 => {
+                let signature = K256Signature::from_der(&bytes)
+                    .map_err(|e| AsymmetricError::InvalidSignature)?;
+                EcSignatureData::K256(signature)
+            },
+            _ => return Err(AsymmetricError::UnsupportedOperation(format!("Curve {} not supported", curve.name()))),
+        };
+        
+        Ok(EcdsaSignature { curve, data })
+    }
+
+    /// slay Serialize ECDSA signature to base64 format
+    pub fn ecdsa_signature_to_base64(&self, signature: &EcdsaSignature) -> AsymmetricResult<String> {
+        let bytes = match &signature.data {
+            EcSignatureData::P256(sig) => {
+                sig.to_der().as_ref().to_vec()
+            },
+            EcSignatureData::P384(sig) => {
+                sig.to_der().as_ref().to_vec()
+            },
+            EcSignatureData::K256(sig) => {
+                sig.to_der().as_ref().to_vec()
+            },
+        };
+        
+        Ok(general_purpose::STANDARD.encode(&bytes))
+    }
+
+    /// slay Parse Ed25519 private key from base64 format
+    pub fn ed25519_private_key_from_base64(&self, key_data: &str) -> AsymmetricResult<Ed25519PrivateKey> {
+        let bytes = general_purpose::STANDARD.decode(key_data)
+            .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
+        
+        if bytes.len() != ED25519_PRIVATE_KEY_SIZE {
+            return Err(AsymmetricError::InvalidPrivateKey);
+        }
+        
+        let secret_key = Ed25519SecretKey::from_bytes(&bytes)
+            .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
+        
+        Ok(Ed25519PrivateKey { inner: secret_key })
+    }
+
+    /// slay Parse Ed25519 public key from base64 format
+    pub fn ed25519_public_key_from_base64(&self, key_data: &str) -> AsymmetricResult<Ed25519PublicKey> {
+        let bytes = general_purpose::STANDARD.decode(key_data)
+            .map_err(|e| AsymmetricError::InvalidPublicKey)?;
+        
+        if bytes.len() != ED25519_PUBLIC_KEY_SIZE {
+            return Err(AsymmetricError::InvalidPublicKey);
+        }
+        
+        let public_key = Ed25519PublicKeyInternal::from_bytes(&bytes)
+            .map_err(|e| AsymmetricError::InvalidPublicKey)?;
+        
+        Ok(Ed25519PublicKey { inner: public_key })
+    }
 }
 
 impl Default for AsymmetricCrypto {
@@ -948,8 +1085,40 @@ pub fn rsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("RSA sign requires private key and message".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("signature_placeholder".to_string()))
+    let private_key_pem = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Private key must be a string (PEM format)".to_string())),
+    };
+    
+    let message = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
+    };
+    
+    // Optional padding scheme (default to PSS)
+    let padding = if args.len() >= 3 {
+        match &args[2] {
+            Value::String(p) => match p.as_str() {
+                "PKCS1v15" => Some(RsaPadding::Pkcs1v15),
+                "PSS" => Some(RsaPadding::Pss),
+                _ => Some(RsaPadding::Pss),
+            },
+            _ => Some(RsaPadding::Pss),
+        }
+    } else {
+        Some(RsaPadding::Pss)
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.rsa_private_key_from_pem(private_key_pem) {
+        Ok(private_key) => {
+            match crypto.rsa_sign(&private_key, message, padding) {
+                Ok(signature) => Ok(Value::String(general_purpose::STANDARD.encode(&signature))),
+                Err(e) => Err(CursedError::Runtime(format!("RSA signing failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid private key: {}", e)))
+    }
 }
 
 /// slay RSA signature verification
@@ -958,8 +1127,48 @@ pub fn rsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("RSA verify requires public key, message, and signature".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::bool(true))
+    let public_key_pem = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Public key must be a string (PEM format)".to_string())),
+    };
+    
+    let message = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
+    };
+    
+    let signature_b64 = match &args[2] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Signature must be a string (base64)".to_string())),
+    };
+    
+    // Optional padding scheme (default to PSS)
+    let padding = if args.len() >= 4 {
+        match &args[3] {
+            Value::String(p) => match p.as_str() {
+                "PKCS1v15" => Some(RsaPadding::Pkcs1v15),
+                "PSS" => Some(RsaPadding::Pss),
+                _ => Some(RsaPadding::Pss),
+            },
+            _ => Some(RsaPadding::Pss),
+        }
+    } else {
+        Some(RsaPadding::Pss)
+    };
+    
+    let signature = general_purpose::STANDARD.decode(signature_b64)
+        .map_err(|e| CursedError::Runtime(format!("Invalid base64 signature: {}", e)))?;
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.rsa_public_key_from_pem(public_key_pem) {
+        Ok(public_key) => {
+            match crypto.rsa_verify(&public_key, message, &signature, padding) {
+                Ok(is_valid) => Ok(Value::Bool(is_valid)),
+                Err(e) => Err(CursedError::Runtime(format!("RSA verification failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid public key: {}", e)))
+    }
 }
 
 /// slay ECDSA key generation
@@ -998,8 +1207,48 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("ECDSA sign requires private key and message".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("ecdsa_signature_placeholder".to_string()))
+    let private_key_b64 = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Private key must be a string (base64 format)".to_string())),
+    };
+    
+    let message = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
+    };
+    
+    // Curve specification (default to P-256)
+    let curve = if args.len() >= 3 {
+        match &args[2] {
+            Value::String(curve_name) => {
+                match curve_name.as_str() {
+                    "P-256" => EcCurve::P256,
+                    "P-384" => EcCurve::P384,
+                    "secp256k1" => EcCurve::Secp256k1,
+                    _ => EcCurve::P256,
+                }
+            },
+            _ => EcCurve::P256,
+        }
+    } else {
+        EcCurve::P256
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.ecdsa_private_key_from_base64(private_key_b64, curve) {
+        Ok(private_key) => {
+            match crypto.ecdsa_sign(&private_key, message) {
+                Ok(signature) => {
+                    match crypto.ecdsa_signature_to_base64(&signature) {
+                        Ok(signature_b64) => Ok(Value::String(signature_b64)),
+                        Err(e) => Err(CursedError::Runtime(format!("Signature encoding failed: {}", e)))
+                    }
+                },
+                Err(e) => Err(CursedError::Runtime(format!("ECDSA signing failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid private key: {}", e)))
+    }
 }
 
 /// slay ECDSA verification
@@ -1008,8 +1257,53 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("ECDSA verify requires public key, message, and signature".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::bool(true))
+    let public_key_b64 = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Public key must be a string (base64 format)".to_string())),
+    };
+    
+    let message = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
+    };
+    
+    let signature_b64 = match &args[2] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Signature must be a string (base64 format)".to_string())),
+    };
+    
+    // Curve specification (default to P-256)
+    let curve = if args.len() >= 4 {
+        match &args[3] {
+            Value::String(curve_name) => {
+                match curve_name.as_str() {
+                    "P-256" => EcCurve::P256,
+                    "P-384" => EcCurve::P384,
+                    "secp256k1" => EcCurve::Secp256k1,
+                    _ => EcCurve::P256,
+                }
+            },
+            _ => EcCurve::P256,
+        }
+    } else {
+        EcCurve::P256
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.ecdsa_public_key_from_base64(public_key_b64, curve) {
+        Ok(public_key) => {
+            match crypto.ecdsa_signature_from_base64(signature_b64, curve) {
+                Ok(signature) => {
+                    match crypto.ecdsa_verify(&public_key, message, &signature) {
+                        Ok(is_valid) => Ok(Value::Bool(is_valid)),
+                        Err(e) => Err(CursedError::Runtime(format!("ECDSA verification failed: {}", e)))
+                    }
+                },
+                Err(e) => Err(CursedError::Runtime(format!("Invalid signature: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid public key: {}", e)))
+    }
 }
 
 /// slay ECDH key exchange
@@ -1018,8 +1312,92 @@ pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("ECDH requires private key and public key".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("shared_secret_placeholder".to_string()))
+    let private_key_b64 = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Private key must be a string (base64 format)".to_string())),
+    };
+    
+    let public_key_b64 = match &args[1] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Public key must be a string (base64 format)".to_string())),
+    };
+    
+    // Curve specification (default to P-256)
+    let curve = if args.len() >= 3 {
+        match &args[2] {
+            Value::String(curve_name) => {
+                match curve_name.as_str() {
+                    "P-256" => EcCurve::P256,
+                    "secp256k1" => EcCurve::Secp256k1,
+                    _ => EcCurve::P256,
+                }
+            },
+            _ => EcCurve::P256,
+        }
+    } else {
+        EcCurve::P256
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    
+    // Parse private key
+    let private_key_data = match curve {
+        EcCurve::P256 => {
+            let bytes = general_purpose::STANDARD.decode(private_key_b64)
+                .map_err(|e| CursedError::Runtime(format!("Invalid private key base64: {}", e)))?;
+            if bytes.len() != 32 {
+                return Err(CursedError::Runtime("P-256 private key must be 32 bytes".to_string()));
+            }
+            let secret_key = P256SecretKey::from_slice(&bytes)
+                .map_err(|e| CursedError::Runtime(format!("Invalid P-256 private key: {}", e)))?;
+            EcPrivateKeyData::P256(secret_key)
+        },
+        EcCurve::Secp256k1 => {
+            let bytes = general_purpose::STANDARD.decode(private_key_b64)
+                .map_err(|e| CursedError::Runtime(format!("Invalid private key base64: {}", e)))?;
+            if bytes.len() != 32 {
+                return Err(CursedError::Runtime("secp256k1 private key must be 32 bytes".to_string()));
+            }
+            let secret_key = K256SecretKey::from_slice(&bytes)
+                .map_err(|e| CursedError::Runtime(format!("Invalid secp256k1 private key: {}", e)))?;
+            EcPrivateKeyData::K256(secret_key)
+        },
+        _ => return Err(CursedError::Runtime(format!("Curve {} not supported for ECDH", curve.name()))),
+    };
+    
+    let private_key = EcdhPrivateKey {
+        curve,
+        data: private_key_data,
+    };
+    
+    // Parse public key
+    let public_key_data = match curve {
+        EcCurve::P256 => {
+            let bytes = general_purpose::STANDARD.decode(public_key_b64)
+                .map_err(|e| CursedError::Runtime(format!("Invalid public key base64: {}", e)))?;
+            let public_key = P256PublicKey::from_sec1_bytes(&bytes)
+                .map_err(|e| CursedError::Runtime(format!("Invalid P-256 public key: {}", e)))?;
+            EcPublicKeyData::P256(public_key)
+        },
+        EcCurve::Secp256k1 => {
+            let bytes = general_purpose::STANDARD.decode(public_key_b64)
+                .map_err(|e| CursedError::Runtime(format!("Invalid public key base64: {}", e)))?;
+            let public_key = K256PublicKey::from_sec1_bytes(&bytes)
+                .map_err(|e| CursedError::Runtime(format!("Invalid secp256k1 public key: {}", e)))?;
+            EcPublicKeyData::K256(public_key)
+        },
+        _ => return Err(CursedError::Runtime(format!("Curve {} not supported for ECDH", curve.name()))),
+    };
+    
+    let public_key = EcdhPublicKey {
+        curve,
+        data: public_key_data,
+    };
+    
+    match crypto.ecdh_exchange(&private_key, &public_key) {
+        Ok(shared_secret) => Ok(Value::String(general_purpose::STANDARD.encode(&shared_secret))),
+        Err(e) => Err(CursedError::Runtime(format!("ECDH key exchange failed: {}", e)))
+    }
 }
 
 /// slay X25519 key generation
@@ -1043,8 +1421,52 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("X25519 exchange requires private key and public key".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("x25519_shared_secret_placeholder".to_string()))
+    let private_key_b64 = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Private key must be a string (base64 format)".to_string())),
+    };
+    
+    let public_key_b64 = match &args[1] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Public key must be a string (base64 format)".to_string())),
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    
+    // Parse private key
+    let private_key_bytes = general_purpose::STANDARD.decode(private_key_b64)
+        .map_err(|e| CursedError::Runtime(format!("Invalid private key base64: {}", e)))?;
+    
+    if private_key_bytes.len() != 32 {
+        return Err(CursedError::Runtime("X25519 private key must be 32 bytes".to_string()));
+    }
+    
+    let private_key_array: [u8; 32] = private_key_bytes.try_into()
+        .map_err(|_| CursedError::Runtime("Failed to convert private key to 32-byte array".to_string()))?;
+    
+    let private_key = X25519PrivateKey {
+        secret: StaticSecret::from(private_key_array),
+    };
+    
+    // Parse public key
+    let public_key_bytes = general_purpose::STANDARD.decode(public_key_b64)
+        .map_err(|e| CursedError::Runtime(format!("Invalid public key base64: {}", e)))?;
+    
+    if public_key_bytes.len() != 32 {
+        return Err(CursedError::Runtime("X25519 public key must be 32 bytes".to_string()));
+    }
+    
+    let public_key_array: [u8; 32] = public_key_bytes.try_into()
+        .map_err(|_| CursedError::Runtime("Failed to convert public key to 32-byte array".to_string()))?;
+    
+    let public_key = X25519PublicKey {
+        bytes: public_key_array,
+    };
+    
+    match crypto.x25519_exchange(&private_key, &public_key) {
+        Ok(shared_secret) => Ok(Value::String(general_purpose::STANDARD.encode(&shared_secret))),
+        Err(e) => Err(CursedError::Runtime(format!("X25519 key exchange failed: {}", e)))
+    }
 }
 
 /// slay Ed25519 key generation
@@ -1068,8 +1490,31 @@ pub fn ed25519_sign(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("Ed25519 sign requires private key and message".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("ed25519_signature_placeholder".to_string()))
+    let private_key_b64 = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Private key must be a string (base64 format)".to_string())),
+    };
+    
+    let message = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.ed25519_private_key_from_base64(private_key_b64) {
+        Ok(private_key) => {
+            match crypto.ed25519_sign(&private_key, message) {
+                Ok(signature) => {
+                    match crypto.ed25519_signature_to_base64(&signature) {
+                        Ok(signature_b64) => Ok(Value::String(signature_b64)),
+                        Err(e) => Err(CursedError::Runtime(format!("Signature encoding failed: {}", e)))
+                    }
+                },
+                Err(e) => Err(CursedError::Runtime(format!("Ed25519 signing failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid private key: {}", e)))
+    }
 }
 
 /// slay Ed25519 verification
@@ -1078,8 +1523,36 @@ pub fn ed25519_verify(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("Ed25519 verify requires public key, message, and signature".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::bool(true))
+    let public_key_b64 = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Public key must be a string (base64 format)".to_string())),
+    };
+    
+    let message = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
+    };
+    
+    let signature_b64 = match &args[2] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Signature must be a string (base64 format)".to_string())),
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.ed25519_public_key_from_base64(public_key_b64) {
+        Ok(public_key) => {
+            match crypto.ed25519_signature_from_base64(signature_b64) {
+                Ok(signature) => {
+                    match crypto.ed25519_verify(&public_key, message, &signature) {
+                        Ok(is_valid) => Ok(Value::Bool(is_valid)),
+                        Err(e) => Err(CursedError::Runtime(format!("Ed25519 verification failed: {}", e)))
+                    }
+                },
+                Err(e) => Err(CursedError::Runtime(format!("Invalid signature: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid public key: {}", e)))
+    }
 }
 
 #[cfg(test)]

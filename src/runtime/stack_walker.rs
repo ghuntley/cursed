@@ -253,37 +253,344 @@ impl StackWalker {
     fn walk_stack_impl(&self) -> Result<Vec<RawStackFrame>, CursedError> {
         let mut frames = Vec::new();
         
-        // Use Rust's backtrace for cross-platform stack walking
-        let backtrace = Backtrace::capture();
+        // Use platform-specific stack walking implementation
+        #[cfg(target_os = "linux")]
+        {
+            self.walk_stack_linux(&mut frames)?;
+        }
         
-        // For now, create a simple mock frame since backtrace.frames() is unstable
-        // In a real implementation, this would use platform-specific stack walking
-        let mock_frame = RawStackFrame::new(0x12345678)
-            .with_symbol("test_function".to_string());
-        frames.push(mock_frame);
+        #[cfg(target_os = "macos")]
+        {
+            self.walk_stack_macos(&mut frames)?;
+        }
         
-        // Process each backtrace frame (commented out due to unstable API)
-        // for (index, frame) in backtrace.frames().iter().enumerate() {
-            if frames.len() >= self.config.max_frames {
-                return Ok(vec![]);
-            }
-            
-            // Mock implementation - replace with real stack walking
-            // let ip = frame.ip() as usize;
-            // let mut raw_frame = RawStackFrame::new(ip);
-            
-            // TODO: Implement real stack walking using platform-specific APIs
-            // This is commented out until we can use stable backtrace APIs
-            
-        // } // End of commented backtrace processing
+        #[cfg(target_os = "windows")]
+        {
+            self.walk_stack_windows(&mut frames)?;
+        }
         
-        Ok(frames)
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+        {
+            self.walk_stack_generic(&mut frames)?;
+        }
+        
+        // Filter frames based on configuration
+        let filtered_frames: Vec<RawStackFrame> = frames
+            .into_iter()
+            .filter(|frame| self.should_include_frame(frame))
+            .take(self.config.max_frames)
+            .collect();
+        
+        Ok(filtered_frames)
     }
 
-    /// Resolve symbol for a backtrace frame (mock implementation)
-    fn resolve_symbol_for_frame(&self, _frame: &str) -> Result<Option<String>, CursedError> {
-        let ip = 0x12345678; // Mock IP address
+    /// Linux-specific stack walking using backtrace
+    #[cfg(target_os = "linux")]
+    fn walk_stack_linux(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+        use std::ffi::c_void;
+        use std::mem;
         
+        // Capture backtrace using libc::backtrace
+        const MAX_FRAMES: usize = 256;
+        let mut buffer: [*mut c_void; MAX_FRAMES] = [std::ptr::null_mut(); MAX_FRAMES];
+        
+        let num_frames = unsafe {
+            libc::backtrace(buffer.as_mut_ptr(), MAX_FRAMES as i32)
+        };
+        
+        if num_frames < 0 {
+            return Err(CursedError::Runtime("Failed to capture backtrace".to_string()));
+        }
+        
+        debug!("Captured {} frames on Linux", num_frames);
+        
+        // Get symbol names
+        let symbols = unsafe {
+            libc::backtrace_symbols(buffer.as_ptr(), num_frames)
+        };
+        
+        if symbols.is_null() {
+            warn!("Failed to get symbol names for backtrace");
+        }
+        
+        // Process each frame
+        for i in 0..num_frames as usize {
+            if frames.len() >= self.config.max_frames {
+                break;
+            }
+            
+            let ip = buffer[i] as usize;
+            let mut raw_frame = RawStackFrame::new(ip);
+            
+            // Get symbol name if available
+            if !symbols.is_null() {
+                let symbol_ptr = unsafe { *symbols.add(i) };
+                if !symbol_ptr.is_null() {
+                    let symbol_cstr = unsafe { std::ffi::CStr::from_ptr(symbol_ptr) };
+                    if let Ok(symbol_str) = symbol_cstr.to_str() {
+                        let demangled = self.demangle_function_name(symbol_str);
+                        raw_frame = raw_frame.with_symbol(demangled);
+                    }
+                }
+            }
+            
+            // Try to resolve additional symbol information
+            if self.config.resolve_symbols {
+                if let Ok(Some(resolved_symbol)) = self.resolve_symbol_for_frame_addr(ip) {
+                    raw_frame = raw_frame.with_symbol(resolved_symbol);
+                }
+            }
+            
+            // Try to get source information
+            if self.config.capture_source_info {
+                if let Ok(Some(source_info)) = self.extract_source_info_for_addr(ip) {
+                    raw_frame = raw_frame.with_source_info(source_info);
+                }
+            }
+            
+            frames.push(raw_frame);
+        }
+        
+        // Free symbol names
+        if !symbols.is_null() {
+            unsafe {
+                libc::free(symbols as *mut c_void);
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// macOS-specific stack walking using backtrace
+    #[cfg(target_os = "macos")]
+    fn walk_stack_macos(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+        use std::ffi::c_void;
+        
+        // macOS uses similar backtrace API to Linux
+        const MAX_FRAMES: usize = 256;
+        let mut buffer: [*mut c_void; MAX_FRAMES] = [std::ptr::null_mut(); MAX_FRAMES];
+        
+        let num_frames = unsafe {
+            libc::backtrace(buffer.as_mut_ptr(), MAX_FRAMES as i32)
+        };
+        
+        if num_frames < 0 {
+            return Err(CursedError::Runtime("Failed to capture backtrace on macOS".to_string()));
+        }
+        
+        debug!("Captured {} frames on macOS", num_frames);
+        
+        // Get symbol names
+        let symbols = unsafe {
+            libc::backtrace_symbols(buffer.as_ptr(), num_frames)
+        };
+        
+        // Process frames similar to Linux
+        for i in 0..num_frames as usize {
+            if frames.len() >= self.config.max_frames {
+                break;
+            }
+            
+            let ip = buffer[i] as usize;
+            let mut raw_frame = RawStackFrame::new(ip);
+            
+            // Get symbol name if available
+            if !symbols.is_null() {
+                let symbol_ptr = unsafe { *symbols.add(i) };
+                if !symbol_ptr.is_null() {
+                    let symbol_cstr = unsafe { std::ffi::CStr::from_ptr(symbol_ptr) };
+                    if let Ok(symbol_str) = symbol_cstr.to_str() {
+                        let demangled = self.demangle_function_name(symbol_str);
+                        raw_frame = raw_frame.with_symbol(demangled);
+                    }
+                }
+            }
+            
+            // Try to resolve additional information
+            if self.config.resolve_symbols {
+                if let Ok(Some(resolved_symbol)) = self.resolve_symbol_for_frame_addr(ip) {
+                    raw_frame = raw_frame.with_symbol(resolved_symbol);
+                }
+            }
+            
+            if self.config.capture_source_info {
+                if let Ok(Some(source_info)) = self.extract_source_info_for_addr(ip) {
+                    raw_frame = raw_frame.with_source_info(source_info);
+                }
+            }
+            
+            frames.push(raw_frame);
+        }
+        
+        // Free symbol names
+        if !symbols.is_null() {
+            unsafe {
+                libc::free(symbols as *mut c_void);
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Windows-specific stack walking using StackWalk64
+    #[cfg(target_os = "windows")]
+    fn walk_stack_windows(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+        use std::ffi::c_void;
+        use std::mem;
+        
+        // Windows stack walking using StackWalk64 API
+        // This is a simplified implementation - full Windows support would require
+        // more complex integration with Windows debugging APIs
+        
+        debug!("Attempting Windows stack walk");
+        
+        // For now, use a basic implementation that captures current context
+        // In a full implementation, this would use:
+        // - GetCurrentProcess/GetCurrentThread
+        // - StackWalk64 with proper CONTEXT structure
+        // - Symbol resolution using DbgHelp.dll
+        
+        // Placeholder implementation using basic frame pointer walking
+        let mut frame_ptr: *const usize = std::ptr::null();
+        
+        // Get current frame pointer (this is architecture-specific)
+        #[cfg(target_arch = "x86_64")]
+        unsafe {
+            std::arch::asm!("mov {}, rbp", out(reg) frame_ptr);
+        }
+        
+        #[cfg(target_arch = "x86")]
+        unsafe {
+            std::arch::asm!("mov {}, ebp", out(reg) frame_ptr);
+        }
+        
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
+        {
+            warn!("Inline assembly stack walking not supported on this architecture");
+            return Ok(());
+        }
+        
+        let mut frame_count = 0;
+        let mut current_frame = frame_ptr;
+        
+        // Walk the frame chain
+        while !current_frame.is_null() && frame_count < self.config.max_frames {
+            let ip = unsafe {
+                if current_frame.is_null() {
+                    break;
+                }
+                *current_frame.add(1) // Return address is at [rbp + 8]
+            };
+            
+            if ip == 0 {
+                break;
+            }
+            
+            let mut raw_frame = RawStackFrame::new(ip);
+            
+            // Try to resolve symbol information
+            if self.config.resolve_symbols {
+                if let Ok(Some(symbol)) = self.resolve_symbol_for_frame_addr(ip) {
+                    raw_frame = raw_frame.with_symbol(symbol);
+                }
+            }
+            
+            if self.config.capture_source_info {
+                if let Ok(Some(source_info)) = self.extract_source_info_for_addr(ip) {
+                    raw_frame = raw_frame.with_source_info(source_info);
+                }
+            }
+            
+            frames.push(raw_frame);
+            
+            // Move to next frame
+            current_frame = unsafe {
+                if current_frame.is_null() {
+                    std::ptr::null()
+                } else {
+                    *current_frame as *const usize
+                }
+            };
+            
+            frame_count += 1;
+            
+            // Safety check to prevent infinite loops
+            if frame_count > 1000 {
+                warn!("Stack walk exceeded safety limit on Windows");
+                break;
+            }
+        }
+        
+        debug!("Captured {} frames on Windows", frame_count);
+        Ok(())
+    }
+
+    /// Generic stack walking fallback for unsupported platforms
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    fn walk_stack_generic(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+        warn!("Stack walking not fully supported on this platform, using generic implementation");
+        
+        // Try to use Rust's backtrace if available
+        let backtrace = Backtrace::capture();
+        let backtrace_str = format!("{}", backtrace);
+        
+        // Parse the backtrace string to extract frame information
+        for (index, line) in backtrace_str.lines().enumerate() {
+            if index >= self.config.max_frames {
+                break;
+            }
+            
+            if line.trim().is_empty() {
+                continue;
+            }
+            
+            // Try to extract address and symbol from backtrace line
+            if let Some(ip) = self.extract_address_from_backtrace_line(line) {
+                let mut raw_frame = RawStackFrame::new(ip);
+                
+                // Try to extract symbol name from the line
+                if let Some(symbol) = self.extract_symbol_from_backtrace_line(line) {
+                    raw_frame = raw_frame.with_symbol(symbol);
+                }
+                
+                frames.push(raw_frame);
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Extract address from backtrace line
+    fn extract_address_from_backtrace_line(&self, line: &str) -> Option<usize> {
+        // Look for hex addresses in the line
+        if let Some(start) = line.find("0x") {
+            let addr_str = &line[start..];
+            if let Some(end) = addr_str.find(' ') {
+                let addr_str = &addr_str[..end];
+                if let Ok(addr) = usize::from_str_radix(&addr_str[2..], 16) {
+                    return Some(addr);
+                }
+            }
+        }
+        None
+    }
+
+    /// Extract symbol name from backtrace line
+    fn extract_symbol_from_backtrace_line(&self, line: &str) -> Option<String> {
+        // Look for symbol patterns in backtrace lines
+        if let Some(start) = line.find(" - ") {
+            let symbol_part = &line[start + 3..];
+            if let Some(end) = symbol_part.find('\n') {
+                return Some(symbol_part[..end].trim().to_string());
+            } else {
+                return Some(symbol_part.trim().to_string());
+            }
+        }
+        None
+    }
+
+    /// Resolve symbol for a specific instruction pointer address
+    fn resolve_symbol_for_frame_addr(&self, ip: usize) -> Result<Option<String>, CursedError> {
         // Check cache first
         if let Ok(cache) = self.symbol_cache.lock() {
             if let Some(cached_symbol) = cache.get(&ip) {
@@ -294,7 +601,7 @@ impl StackWalker {
         // Try symbol resolver first
         if let Some(resolver) = &self.symbol_resolver {
             if let Some(symbol_info) = resolver.resolve_symbol(ip) {
-                let symbol_name = symbol_info.name.clone();
+                let symbol_name = self.demangle_function_name(&symbol_info.name);
                 
                 // Cache the result
                 if let Ok(mut cache) = self.symbol_cache.lock() {
@@ -309,49 +616,197 @@ impl StackWalker {
             }
         }
         
-        // Mock symbol resolution
-        let symbol_name = "mock_function".to_string();
-        
-        // Truncate if too long
-        let truncated_name = if symbol_name.len() > self.config.max_symbol_length {
-            format!("{}...", &symbol_name[..self.config.max_symbol_length - 3])
-        } else {
-            symbol_name
-        };
-        
-        // Cache the result
-        if let Ok(mut cache) = self.symbol_cache.lock() {
-            cache.insert(ip, truncated_name.clone());
-            
-            if let Ok(mut stats) = self.stats.lock() {
-                stats.symbols_resolved += 1;
+        // Try using addr2line for better symbol resolution on Unix systems
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        {
+            if let Ok(Some(symbol)) = self.resolve_symbol_with_addr2line(ip) {
+                let demangled = self.demangle_function_name(&symbol);
+                
+                // Cache the result
+                if let Ok(mut cache) = self.symbol_cache.lock() {
+                    cache.insert(ip, demangled.clone());
+                    
+                    if let Ok(mut stats) = self.stats.lock() {
+                        stats.symbols_resolved += 1;
+                    }
+                }
+                
+                return Ok(Some(demangled));
             }
         }
         
-        Ok(Some(truncated_name))
+        // No symbol found
+        Ok(None)
     }
 
-    /// Extract source information for a backtrace frame (mock implementation)
-    fn extract_source_info_for_frame(&self, _frame: &str) -> Result<Option<SourceFrameInfo>, CursedError> {
-        // Mock source information
-        let file_path = PathBuf::from("test.csd");
-        let line = 42;
-        let function_name = "mock_function".to_string();
-        let module_name = Some("mock_module".to_string());
+    /// Resolve symbol using addr2line utility on Unix systems
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    fn resolve_symbol_with_addr2line(&self, ip: usize) -> Result<Option<String>, CursedError> {
+        use std::process::Command;
         
-        let source_info = SourceFrameInfo {
-            file_path,
-            line,
-            column: Some(10),
-            function_name,
-            module_name,
-        };
+        // Get the current executable path
+        let exe_path = std::env::current_exe()
+            .map_err(|e| CursedError::Runtime(format!("Failed to get executable path: {}", e)))?;
         
-        if let Ok(mut stats) = self.stats.lock() {
-            stats.source_info_captured += 1;
+        // Run addr2line to resolve the symbol
+        let output = Command::new("addr2line")
+            .arg("-e")
+            .arg(&exe_path)
+            .arg("-f")  // Show function names
+            .arg("-C")  // Demangle C++ symbols
+            .arg(format!("0x{:x}", ip))
+            .output();
+        
+        match output {
+            Ok(output) if output.status.success() => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let lines: Vec<&str> = stdout.trim().split('\n').collect();
+                
+                if lines.len() >= 1 && lines[0] != "??" {
+                    return Ok(Some(lines[0].to_string()));
+                }
+            }
+            _ => {
+                // addr2line failed or not available, fall back to other methods
+                debug!("addr2line resolution failed for address 0x{:x}", ip);
+            }
         }
         
-        Ok(Some(source_info))
+        Ok(None)
+    }
+
+    /// Extract source information for a specific instruction pointer address
+    fn extract_source_info_for_addr(&self, ip: usize) -> Result<Option<SourceFrameInfo>, CursedError> {
+        // Try symbol resolver first if available
+        if let Some(resolver) = &self.symbol_resolver {
+            if let Some(symbol_info) = resolver.resolve_symbol(ip) {
+                if let (Some(file), Some(line)) = (&symbol_info.file, symbol_info.line) {
+                    let source_info = SourceFrameInfo {
+                        file_path: file.clone(),
+                        line,
+                        column: symbol_info.column,
+                        function_name: self.demangle_function_name(&symbol_info.name),
+                        module_name: self.extract_module_name(&symbol_info.name),
+                    };
+                    
+                    if let Ok(mut stats) = self.stats.lock() {
+                        stats.source_info_captured += 1;
+                    }
+                    
+                    return Ok(Some(source_info));
+                }
+            }
+        }
+        
+        // Try debug registry if available
+        if let Some(debug_registry) = &self.debug_registry {
+            // This would integrate with the debug manager to get source info
+            // For now, we'll leave this as a placeholder for future integration
+            debug!("Debug registry available but not yet integrated for address 0x{:x}", ip);
+        }
+        
+        // Try using addr2line for source information on Unix systems
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        {
+            if let Ok(Some(source_info)) = self.extract_source_info_with_addr2line(ip) {
+                if let Ok(mut stats) = self.stats.lock() {
+                    stats.source_info_captured += 1;
+                }
+                return Ok(Some(source_info));
+            }
+        }
+        
+        // Try using DWARF debug information
+        if let Ok(Some(source_info)) = self.extract_source_info_from_dwarf(ip) {
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.source_info_captured += 1;
+            }
+            return Ok(Some(source_info));
+        }
+        
+        // No source information found
+        Ok(None)
+    }
+
+    /// Extract source information using addr2line utility
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    fn extract_source_info_with_addr2line(&self, ip: usize) -> Result<Option<SourceFrameInfo>, CursedError> {
+        use std::process::Command;
+        
+        // Get the current executable path
+        let exe_path = std::env::current_exe()
+            .map_err(|e| CursedError::Runtime(format!("Failed to get executable path: {}", e)))?;
+        
+        // Run addr2line to get source location
+        let output = Command::new("addr2line")
+            .arg("-e")
+            .arg(&exe_path)
+            .arg("-f")  // Show function names
+            .arg("-C")  // Demangle C++ symbols
+            .arg(format!("0x{:x}", ip))
+            .output();
+        
+        match output {
+            Ok(output) if output.status.success() => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let lines: Vec<&str> = stdout.trim().split('\n').collect();
+                
+                if lines.len() >= 2 {
+                    let function_name = lines[0].to_string();
+                    let location = lines[1];
+                    
+                    // Parse location in format "file:line:column"
+                    if let Some(colon_pos) = location.rfind(':') {
+                        let (file_and_line, _column_str) = location.split_at(colon_pos);
+                        
+                        if let Some(line_colon_pos) = file_and_line.rfind(':') {
+                            let (file_path_str, line_str) = file_and_line.split_at(line_colon_pos);
+                            let line_str = &line_str[1..]; // Remove the ':'
+                            
+                            if let Ok(line_num) = line_str.parse::<u32>() {
+                                let source_info = SourceFrameInfo {
+                                    file_path: PathBuf::from(file_path_str),
+                                    line: line_num,
+                                    column: None, // addr2line doesn't always provide column info
+                                    function_name: self.demangle_function_name(&function_name),
+                                    module_name: self.extract_module_name(&function_name),
+                                };
+                                
+                                return Ok(Some(source_info));
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {
+                debug!("addr2line source info resolution failed for address 0x{:x}", ip);
+            }
+        }
+        
+        Ok(None)
+    }
+
+    /// Extract source information from DWARF debug information
+    fn extract_source_info_from_dwarf(&self, ip: usize) -> Result<Option<SourceFrameInfo>, CursedError> {
+        // This would integrate with a DWARF parser library like gimli
+        // For now, this is a placeholder for future DWARF integration
+        debug!("DWARF debug info parsing not yet implemented for address 0x{:x}", ip);
+        Ok(None)
+    }
+
+    /// Extract module name from symbol name
+    fn extract_module_name(&self, symbol_name: &str) -> Option<String> {
+        // Try to extract module/namespace from symbol
+        if let Some(last_colon) = symbol_name.rfind("::") {
+            let module_part = &symbol_name[..last_colon];
+            if let Some(second_last_colon) = module_part.rfind("::") {
+                return Some(module_part[second_last_colon + 2..].to_string());
+            } else {
+                return Some(module_part.to_string());
+            }
+        }
+        
+        None
     }
 
     /// Demangle function name to extract CURSED function names

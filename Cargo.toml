@@ -31,6 +31,9 @@ libc = "0.2"  # For C functions like strlen
 inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 atty = "0.2"  # For checking if stdin/stdout is a terminal
 
+# Stack walking and debug information dependencies
+# rustc-demangle already included above
+
 # Basic cryptography dependencies
 hex = "0.4"     # Hex encoding/decoding
 rand = "0.8"    # Random number generation
@@ -85,9 +88,13 @@ asn1-rs = "0.5"              # ASN.1 parsing
 sha1 = "0.10"                # SHA-1 for certificate fingerprints
 time = { version = "0.3", features = ["macros", "parsing", "formatting"] }  # Time handling for certificate validity
 
-# Post-quantum cryptography (when available)
-# kyber = "0.1"  # Kyber KEM (when crate becomes available)
-# dilithium = "0.1"  # Dilithium signatures (when crate becomes available)
+# Post-quantum cryptography
+pqcrypto-kyber = "0.7"      # Kyber KEM
+pqcrypto-dilithium = "0.5"  # Dilithium signatures  
+pqcrypto-sphincsplus = "0.7" # SPHINCS+ hash-based signatures
+pqcrypto-falcon = "0.3"     # Falcon compact signatures
+pqcrypto-ntru = "0.5"       # NTRU encryption
+pqcrypto-traits = "0.3"     # Common traits for PQC algorithms
 
 # Zero-knowledge proofs dependencies (commented out due to version conflicts)
 # ark-ff = "0.4"          # Finite field arithmetic
@@ -128,6 +135,10 @@ fs2 = "0.4"     # File locking support
 
 # Regex support
 regex = "1.10"  # Regular expression support
+urlencoding = "2.1"  # URL encoding/decoding
+
+# Build system analytics dependencies
+sysinfo = "0.29"    # System information and resource monitoring
 
 # Terminal support
 # atty = "0.2"    # TTY detection - duplicate removed
@@ -142,6 +153,10 @@ serde_json = "1.0"  # JSON serialization/deserialization
 serde_yaml = "0.9"  # YAML serialization/deserialization
 toml = "0.8"  # TOML serialization/deserialization
 chrono = { version = "0.4", features = ["serde"] }  # Date and time handling
+
+# Optimization system dependencies (num_cpus already included above)
+rayon = "1.8"           # For data parallelism in optimization
+tempfile = "3.8"        # For temporary files in incremental compilation
 bincode = "1.3"  # Binary serialization for profiling data
 thread_local = "1.1"  # Thread-local storage
 parking_lot = "0.12"  # Better RwLock implementation with timeout support
@@ -163,7 +178,7 @@ lru = "0.10.0"  # LRU cache implementation
 # tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation (already included above)
 
 # Performance and optimization dependencies
-rayon = "1.8"         # Data parallelism for parallel compilation
+# rayon = "1.8"         # Data parallelism for parallel compilation (already included above)
 # num_cpus = "1.16"     # CPU core detection for parallel jobs (already included above)
 crossbeam = "0.8"     # Concurrent data structures
 
@@ -178,14 +193,14 @@ fastrand = "2.0"       # Fast random number generation for benchmarks
 
 # For the bootstrap verification system
 # sha2 already included above for cryptography
-tempfile = "3.8"  # Temporary directories for testing
+# tempfile = "3.8"  # Temporary directories for testing (already included above)
 
 # Documentation generation dependencies
 pulldown-cmark = "0.9"  # Markdown parsing and HTML generation
 handlebars = "4.4"      # Template engine for HTML generation
 
 # IPC dependencies
-uuid = { version = "1.6", features = ["v4", "serde"] }  # For generating unique IDs in RPC
+uuid = { version = "1.6", features = ["v4", "serde"] }  # For generating unique IDs in RPC and build events
 
 # Package management dependencies (simplified for now)
 semver = "1.0"          # Semantic version parsing and comparison
@@ -197,6 +212,8 @@ bytes = "1.5"           # Byte manipulation for package data
 flate2 = "1.0.28"       # Gzip compression/decompression
 tar = "0.4.40"          # TAR archive handling
 zip = "0.6.6"           # ZIP archive handling
+
+# Distributed compilation dependencies (dependencies already included above)
 
 # SSH client dependencies
 ssh2 = { version = "0.9", features = ["vendored-openssl"] }  # SSH client library with bundled OpenSSL
@@ -214,7 +231,7 @@ bb8 = "0.8"                                        # Connection pooling
 bb8-postgres = "0.8"                               # PostgreSQL connection pool
 
 # Missing dependencies for web_vibez (uuid already defined above)
-urlencoding = "2.1"                                # For URL encoding/decoding
+
 httpdate = "1.0"                                   # For HTTP date formatting  
 async-trait = "0.1"                                # For async traits
 
@@ -225,7 +242,7 @@ dashmap = "5.5"           # Concurrent HashMap for document storage
 ropey = "1.6"             # Rope data structure for efficient text editing
 tree-sitter = "0.20"      # Tree-sitter parsing for incremental updates
 
-# File watching for development tools
+# File watching for development tools and build orchestrator
 notify = "6.1"    # Cross-platform file system notifications
 futures = "0.3"   # Futures utilities for async operations
 
@@ -250,10 +267,10 @@ criterion = "0.5"  # For benchmarking
 pretty_assertions = "1.4"  # For nicer test output
 proptest = "1.3"  # For property-based testing
 rand = "0.8.5"  # For randomization in tests
-tempfile = "3.8"  # For temporary files in tests
+# tempfile = "3.8"  # For temporary files in tests (already included above)
 clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing
 tracing-test = "0.2"  # For tracing in tests
-notify = "6.1"  # For file watching in tests
+# notify = "6.1"  # For file watching in tests (already included above)
 
 [workspace]
 members = [
@@ -314,3 +331,8 @@ harness = true
 [[bin]]
 name = "cursed-lsp"
 path = "src/bin/cursed_lsp.rs"
+
+[[bin]]
+name = "bootstrap-verify"
+path = "src/bin/bootstrap_verify.rs"
+num-cpus = "1.16"

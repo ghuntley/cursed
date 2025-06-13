@@ -5,6 +5,10 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
+use backtrace::{Backtrace, BacktraceFrame, Symbol};
+use rustc_demangle::demangle;
+use std::path::PathBuf;
+use std::ffi::{CStr, CString};
 
 /// Enhanced runtime support for error propagation in CURSED
 /// 
@@ -51,6 +55,53 @@ pub struct PropagationFrame {
     
     /// Whether this is a tail position propagation
     pub is_tail_position: bool,
+    
+    /// Stack trace at propagation point
+    pub stack_trace: Vec<StackFrame>,
+    
+    /// Debug information
+    pub debug_info: Option<DebugInfo>,
+}
+
+/// Represents a single frame in the stack trace
+#[derive(Debug, Clone)]
+pub struct StackFrame {
+    /// Function name (demangled if possible)
+    pub function_name: Option<String>,
+    
+    /// Raw symbol name
+    pub symbol_name: Option<String>,
+    
+    /// Source file path
+    pub file_path: Option<PathBuf>,
+    
+    /// Line number in source file
+    pub line_number: Option<u32>,
+    
+    /// Column number in source file
+    pub column_number: Option<u32>,
+    
+    /// Module path
+    pub module_path: Option<String>,
+    
+    /// Instruction pointer
+    pub instruction_pointer: Option<usize>,
+}
+
+/// Debug information associated with a stack frame
+#[derive(Debug, Clone)]
+pub struct DebugInfo {
+    /// Compilation unit
+    pub compilation_unit: Option<String>,
+    
+    /// Debug symbols available
+    pub symbols_available: bool,
+    
+    /// Source language
+    pub source_language: Option<String>,
+    
+    /// Optimization level
+    pub optimization_level: Option<String>,
 }
 
 /// Thread-local state for error propagation
@@ -185,13 +236,18 @@ impl ErrorPropagationRuntime {
         // Check propagation depth
         self.check_propagation_depth(&location)?;
         
-        // Create propagation frame
+        // Create propagation frame with stack trace
+        let stack_trace = self.capture_stack_trace();
+        let debug_info = self.extract_debug_info(&stack_trace);
+        
         let frame = PropagationFrame {
             location: location.clone(),
             function_name: function_context.clone(),
             timestamp: Instant::now(),
             error_type: self.get_error_type_name(&error),
-            is_tail_position: self.is_tail_position(&location),
+            is_tail_position: self.is_tail_position(&location, &stack_trace),
+            stack_trace,
+            debug_info,
         };
         
         // Update thread-local state
@@ -364,10 +420,161 @@ impl ErrorPropagationRuntime {
         }
     }
     
-    /// Check if location is in tail position
-    fn is_tail_position(&self, _location: &ErrorSourceLocation) -> bool {
-        // Simplified implementation - would use AST analysis in practice
-        false
+    /// Capture current stack trace
+    fn capture_stack_trace(&self) -> Vec<StackFrame> {
+        let mut frames = Vec::new();
+        
+        if !self.config.generate_stack_traces {
+            return frames;
+        }
+        
+        let backtrace = Backtrace::new();
+        
+        backtrace.frames().iter().for_each(|frame| {
+            frame.symbols().iter().for_each(|symbol| {
+                let stack_frame = self.symbol_to_stack_frame(symbol, frame);
+                frames.push(stack_frame);
+            });
+        });
+        
+        frames
+    }
+    
+    /// Convert a backtrace symbol to our StackFrame format
+    fn symbol_to_stack_frame(&self, symbol: &Symbol, frame: &BacktraceFrame) -> StackFrame {
+        let symbol_name = symbol.name().map(|s| s.to_string());
+        let function_name = symbol_name.as_ref().map(|name| {
+            demangle(name).to_string()
+        });
+        
+        let file_path = symbol.filename().map(|p| p.to_path_buf());
+        let line_number = symbol.lineno();
+        let column_number = symbol.colno();
+        
+        // Extract module path from symbol name
+        let module_path = function_name.as_ref().and_then(|name| {
+            if name.contains("::") {
+                let parts: Vec<&str> = name.split("::").collect();
+                if parts.len() > 1 {
+                    Some(parts[..parts.len()-1].join("::"))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        });
+        
+        StackFrame {
+            function_name,
+            symbol_name,
+            file_path,
+            line_number,
+            column_number,
+            module_path,
+            instruction_pointer: Some(frame.ip() as usize),
+        }
+    }
+    
+    /// Extract debug information from stack trace
+    fn extract_debug_info(&self, stack_trace: &[StackFrame]) -> Option<DebugInfo> {
+        if stack_trace.is_empty() {
+            return None;
+        }
+        
+        let symbols_available = stack_trace.iter().any(|frame| {
+            frame.function_name.is_some() || frame.file_path.is_some()
+        });
+        
+        // Try to determine if we're in a CURSED compilation unit
+        let compilation_unit = stack_trace.iter()
+            .find_map(|frame| {
+                frame.file_path.as_ref().and_then(|path| {
+                    if path.extension().and_then(|s| s.to_str()) == Some("csd") {
+                        path.file_stem().and_then(|s| s.to_str()).map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                })
+            });
+        
+        Some(DebugInfo {
+            compilation_unit,
+            symbols_available,
+            source_language: Some("CURSED".to_string()),
+            optimization_level: None, // Would need compiler info
+        })
+    }
+    
+    /// Check if location is in tail position based on stack analysis
+    fn is_tail_position(&self, _location: &ErrorSourceLocation, stack_trace: &[StackFrame]) -> bool {
+        // Analyze stack trace to determine if this is a tail position
+        // Look for patterns that indicate tail calls or return statements
+        
+        if stack_trace.len() < 2 {
+            return false;
+        }
+        
+        // Check if the current frame is the last meaningful frame before main/runtime
+        let current_frame = &stack_trace[0];
+        let next_frame = &stack_trace[1];
+        
+        // Heuristic: if the next frame is a runtime function or main, 
+        // this might be a tail position
+        if let (Some(current_fn), Some(next_fn)) = (&current_frame.function_name, &next_frame.function_name) {
+            next_fn.contains("main") || 
+            next_fn.contains("runtime") || 
+            next_fn.contains("error_propagation") ||
+            current_fn.ends_with("?") // Question mark operator functions
+        } else {
+            false
+        }
+    }
+    
+    /// Get current function name from stack trace
+    fn get_current_function_name(&self) -> Option<String> {
+        let backtrace = Backtrace::new();
+        
+        for frame in backtrace.frames() {
+            for symbol in frame.symbols() {
+                if let Some(name) = symbol.name() {
+                    let demangled = demangle(&name.to_string()).to_string();
+                    // Skip runtime and error propagation functions
+                    if !demangled.contains("error_propagation") && 
+                       !demangled.contains("backtrace") &&
+                       !demangled.contains("__rust") {
+                        return Some(demangled);
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+    
+    /// Create a minimal stack trace for FFI
+    fn create_minimal_stack_trace(&self) -> Box<MinimalStackTrace> {
+        let frames = self.capture_stack_trace();
+        let mut minimal_frames = Vec::new();
+        
+        for frame in frames.into_iter().take(10) { // Limit to 10 frames
+            minimal_frames.push(MinimalStackFrame {
+                function_name: frame.function_name.unwrap_or_else(|| "<unknown>".to_string()),
+                file_name: frame.file_path
+                    .and_then(|p| p.file_name())
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("<unknown>")
+                    .to_string(),
+                line_number: frame.line_number.unwrap_or(0),
+                column_number: frame.column_number.unwrap_or(0),
+            });
+        }
+        
+        Box::new(MinimalStackTrace {
+            frames: minimal_frames,
+            total_frames: minimal_frames.len(),
+            timestamp: Instant::now(),
+        })
     }
     
     /// Get current propagation statistics
@@ -430,6 +637,23 @@ impl Default for ThreadLocalState {
     }
 }
 
+/// Minimal stack trace for FFI and external use
+#[derive(Debug, Clone)]
+pub struct MinimalStackTrace {
+    pub frames: Vec<MinimalStackFrame>,
+    pub total_frames: usize,
+    pub timestamp: Instant,
+}
+
+/// Minimal stack frame for FFI
+#[derive(Debug, Clone)]
+pub struct MinimalStackFrame {
+    pub function_name: String,
+    pub file_name: String,
+    pub line_number: u32,
+    pub column_number: u32,
+}
+
 /// Default error handler for basic error types
 #[derive(Debug)]
 pub struct DefaultErrorHandler {
@@ -466,16 +690,34 @@ impl ErrorHandler for DefaultErrorHandler {
     }
 }
 
+/// Global error propagation runtime instance
+static mut GLOBAL_RUNTIME: Option<Mutex<ErrorPropagationRuntime>> = None;
+static INIT_ONCE: std::sync::Once = std::sync::Once::new();
+
+/// Initialize global error propagation runtime
+fn ensure_global_runtime() -> &'static Mutex<ErrorPropagationRuntime> {
+    unsafe {
+        INIT_ONCE.call_once(|| {
+            GLOBAL_RUNTIME = Some(Mutex::new(ErrorPropagationRuntime::new()));
+        });
+        GLOBAL_RUNTIME.as_ref().unwrap()
+    }
+}
+
 /// FFI functions for runtime integration
 #[no_mangle]
 pub extern "C" fn cursed_error_propagation_init() {
-    // Initialize global error propagation runtime
-    // In practice, this would set up global state
+    ensure_global_runtime();
+    eprintln!("Error propagation runtime initialized");
 }
 
 #[no_mangle]
 pub extern "C" fn cursed_error_propagation_cleanup() {
-    // Cleanup global error propagation runtime
+    // Reset global runtime
+    unsafe {
+        GLOBAL_RUNTIME = None;
+    }
+    eprintln!("Error propagation runtime cleaned up");
 }
 
 #[no_mangle]
@@ -488,9 +730,20 @@ pub extern "C" fn cursed_error_propagation(
         return;
     }
     
-    // This would integrate with the actual runtime system
-    // For now, just log the propagation
-    eprintln!("Error propagated at line {}, column {}", line, column);
+    let runtime = ensure_global_runtime();
+    if let Ok(mut runtime) = runtime.lock() {
+        let location = ErrorSourceLocation::new(line as u32, column as u32);
+        let function_name = runtime.get_current_function_name();
+        
+        // Create a generic runtime error for demonstration
+        let error = Error::Runtime(format!("Error propagated at {}:{}", line, column));
+        
+        if let Err(e) = runtime.propagate_error(error, location, function_name) {
+            eprintln!("Failed to propagate error: {}", e);
+        }
+    } else {
+        eprintln!("Error propagated at line {}, column {} (runtime unavailable)", line, column);
+    }
 }
 
 #[no_mangle]
@@ -520,20 +773,42 @@ pub extern "C" fn cursed_capture_stack_trace(
         return;
     }
     
-    // Simplified stack trace capture implementation
-    eprintln!("Capturing stack trace with max depth {} at {:p}", max_depth, stack_trace_ptr);
-    
-    // In a real implementation, this would use platform-specific APIs like:
-    // - backtrace() on Unix systems
-    // - CaptureStackBackTrace() on Windows
-    // - libunwind for portable stack walking
+    let runtime = ensure_global_runtime();
+    if let Ok(runtime) = runtime.lock() {
+        let frames = runtime.capture_stack_trace();
+        let limited_frames: Vec<_> = frames.into_iter().take(max_depth as usize).collect();
+        
+        // Store stack trace information at the provided pointer
+        // In a real implementation, this would serialize the stack trace
+        let trace_info = format!("Stack trace: {} frames captured", limited_frames.len());
+        eprintln!("{}", trace_info);
+        
+        // For demonstration, store frame count at the pointer location
+        unsafe {
+            if max_depth > 0 {
+                *(stack_trace_ptr as *mut u64) = limited_frames.len() as u64;
+            }
+        }
+    } else {
+        eprintln!("Failed to capture stack trace: runtime unavailable");
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn cursed_get_current_function_name() -> *const u8 {
-    // Return a placeholder function name
-    // In a real implementation, this would use debug information or stack introspection
-    let function_name = b"<current_function>\0";
+    let runtime = ensure_global_runtime();
+    if let Ok(runtime) = runtime.lock() {
+        if let Some(function_name) = runtime.get_current_function_name() {
+            // Convert to C string and leak memory (caller must free)
+            let c_string = CString::new(function_name).unwrap_or_else(|_| {
+                CString::new("<invalid_function_name>").unwrap()
+            });
+            return c_string.into_raw() as *const u8;
+        }
+    }
+    
+    // Return placeholder if unable to get function name
+    let function_name = b"<unknown_function>\0";
     function_name.as_ptr()
 }
 
@@ -616,10 +891,26 @@ pub extern "C" fn cursed_resolve_stack_symbols(stack_trace_ptr: *mut u8) {
 
 #[no_mangle]
 pub extern "C" fn cursed_create_minimal_stack_trace() -> *mut u8 {
-    // Allocate minimal stack trace structure
-    // In a real implementation, this would allocate actual memory
-    eprintln!("Creating minimal stack trace");
-    std::ptr::null_mut() // Placeholder
+    let runtime = ensure_global_runtime();
+    if let Ok(runtime) = runtime.lock() {
+        let minimal_trace = runtime.create_minimal_stack_trace();
+        let boxed_trace = Box::into_raw(minimal_trace);
+        eprintln!("Created minimal stack trace at {:p}", boxed_trace);
+        boxed_trace as *mut u8
+    } else {
+        eprintln!("Failed to create minimal stack trace: runtime unavailable");
+        std::ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_free_minimal_stack_trace(stack_trace_ptr: *mut u8) {
+    if !stack_trace_ptr.is_null() {
+        unsafe {
+            let _trace = Box::from_raw(stack_trace_ptr as *mut MinimalStackTrace);
+            // trace will be automatically dropped and freed
+        }
+    }
 }
 
 #[no_mangle]
@@ -631,6 +922,12 @@ pub extern "C" fn cursed_error_propagation_panic(message: *const u8) {
     // Convert C string to Rust string and panic
     let c_str = unsafe { std::ffi::CStr::from_ptr(message as *const i8) };
     if let Ok(rust_str) = c_str.to_str() {
+        // Create a proper propagation frame before panicking
+        let runtime = ensure_global_runtime();
+        if let Ok(runtime) = runtime.lock() {
+            let stack_trace = runtime.capture_stack_trace();
+            eprintln!("Error propagation panic with {} stack frames: {}", stack_trace.len(), rust_str);
+        }
         panic!("Error propagation panic: {}", rust_str);
     } else {
         panic!("Error propagation panic with invalid message");

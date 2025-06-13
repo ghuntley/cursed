@@ -5,8 +5,16 @@
 /// FFI functions for compiled CURSED code to interact with the IPC system.
 
 use crate::codegen::llvm::{LlvmCodeGenerator, expression_compiler::{LlvmValue, LlvmType}};
-use crate::error::Error;
+use crate::error::{Error, CursedError};
 use std::collections::HashMap;
+use inkwell::{
+    values::{BasicValueEnum, PointerValue},
+    AddressSpace,
+    types::{BasicTypeEnum, IntType, PointerType},
+};
+
+// Type aliases for consistency
+type CursedResult<T> = Result<T, CursedError>;
 
 /// Trait for compiling IPC operations to LLVM IR
 pub trait IpcCompiler {
@@ -23,38 +31,38 @@ pub trait IpcCompiler {
     fn compile_pipe_op(
         &mut self,
         operation: PipeOperation,
-        name: &LlvmValue,
-        data: Option<&LlvmValue>,
-    ) -> Result<LlvmValue, Error>;
+        name: BasicValueEnum,
+        data: Option<BasicValueEnum>,
+    ) -> CursedResult<BasicValueEnum>;
 
     /// Compile message queue operations
     fn compile_message_queue_op(
         &mut self,
         operation: MessageQueueOperation,
-        name: &LlvmValue,
-        message: Option<&LlvmValue>,
-        priority: Option<&LlvmValue>,
-    ) -> Result<LlvmValue, Error>;
+        name: BasicValueEnum,
+        message: Option<BasicValueEnum>,
+        priority: Option<BasicValueEnum>,
+    ) -> CursedResult<BasicValueEnum>;
 
     /// Compile semaphore operations
     fn compile_semaphore_op(
         &mut self,
         operation: SemaphoreOperation,
-        name: &LlvmValue,
-        count: Option<&LlvmValue>,
-    ) -> Result<LlvmValue, Error>;
+        name: BasicValueEnum,
+        count: Option<BasicValueEnum>,
+    ) -> CursedResult<BasicValueEnum>;
 
     /// Compile signal operations
     fn compile_signal_op(
         &mut self,
         operation: SignalOperation,
-        signal: &LlvmValue,
-        target: Option<&LlvmValue>,
-        handler: Option<&LlvmValue>,
-    ) -> Result<LlvmValue, Error>;
+        signal: BasicValueEnum,
+        target: Option<BasicValueEnum>,
+        handler: Option<BasicValueEnum>,
+    ) -> CursedResult<BasicValueEnum>;
 
     /// Generate FFI function declarations for IPC operations
-    fn declare_ipc_ffi_functions(&mut self) -> Result<(), Error>;
+    fn declare_ipc_ffi_functions(&mut self) -> CursedResult<()>;
 }
 
 /// Shared memory operation types
@@ -445,6 +453,84 @@ impl IpcCompiler for LlvmCodeGenerator {
 }
 
 impl LlvmCodeGenerator {
+    /// Helper to ensure a value is a string pointer
+    fn ensure_string_pointer(&self, value: BasicValueEnum) -> CursedResult<PointerValue> {
+        match value {
+            BasicValueEnum::PointerValue(ptr) => Ok(ptr),
+            BasicValueEnum::ArrayValue(arr) => {
+                let ptr = self.builder.build_bitcast(
+                    arr,
+                    self.context.i8_type().ptr_type(AddressSpace::default()),
+                    "string_ptr"
+                ).map_err(|e| CursedError::codegen_error("ensure_string_pointer", &e.to_string()))?;
+                Ok(ptr.into_pointer_value())
+            }
+            _ => {
+                // For other types, create a string representation and return pointer
+                let str_val = format!("{:?}", value);
+                let global_str = self.builder.build_global_string(&str_val, "temp_str")
+                    .map_err(|e| CursedError::codegen_error("ensure_string_pointer", &e.to_string()))?;
+                Ok(global_str.as_pointer_value())
+            }
+        }
+    }
+
+    /// Helper to convert a value to i32
+    fn convert_to_int32(&self, value: BasicValueEnum) -> CursedResult<inkwell::values::IntValue> {
+        match value {
+            BasicValueEnum::IntValue(int_val) => {
+                match int_val.get_type().get_bit_width() {
+                    32 => Ok(int_val),
+                    64 => {
+                        // Truncate i64 to i32
+                        let i32_type = self.context.i32_type();
+                        self.builder.build_int_truncate(int_val, i32_type, "trunc_i32")
+                            .map_err(|e| CursedError::codegen_error("convert_to_int32", &e.to_string()))
+                    }
+                    8 | 16 => {
+                        // Zero extend to i32
+                        let i32_type = self.context.i32_type();
+                        self.builder.build_int_z_extend(int_val, i32_type, "zext_i32")
+                            .map_err(|e| CursedError::codegen_error("convert_to_int32", &e.to_string()))
+                    }
+                    _ => Err(CursedError::codegen_error("convert_to_int32", "Unsupported integer width"))
+                }
+            }
+            BasicValueEnum::FloatValue(float_val) => {
+                // Convert float to i32
+                let i32_type = self.context.i32_type();
+                self.builder.build_float_to_signed_int(float_val, i32_type, "float_to_i32")
+                    .map_err(|e| CursedError::codegen_error("convert_to_int32", &e.to_string()))
+            }
+            _ => Err(CursedError::codegen_error("convert_to_int32", "Cannot convert value to i32"))
+        }
+    }
+
+    /// Helper to convert a value to i64
+    fn convert_to_int64(&self, value: BasicValueEnum) -> CursedResult<inkwell::values::IntValue> {
+        match value {
+            BasicValueEnum::IntValue(int_val) => {
+                match int_val.get_type().get_bit_width() {
+                    64 => Ok(int_val),
+                    32 | 16 | 8 => {
+                        // Zero extend to i64
+                        let i64_type = self.context.i64_type();
+                        self.builder.build_int_z_extend(int_val, i64_type, "zext_i64")
+                            .map_err(|e| CursedError::codegen_error("convert_to_int64", &e.to_string()))
+                    }
+                    _ => Err(CursedError::codegen_error("convert_to_int64", "Unsupported integer width"))
+                }
+            }
+            BasicValueEnum::FloatValue(float_val) => {
+                // Convert float to i64
+                let i64_type = self.context.i64_type();
+                self.builder.build_float_to_signed_int(float_val, i64_type, "float_to_i64")
+                    .map_err(|e| CursedError::codegen_error("convert_to_int64", &e.to_string()))
+            }
+            _ => Err(CursedError::codegen_error("convert_to_int64", "Cannot convert value to i64"))
+        }
+    }
+
     /// Helper to ensure a value is a data pointer
     fn ensure_data_pointer(&self, value: BasicValueEnum) -> CursedResult<PointerValue> {
         match value {
@@ -784,7 +870,366 @@ pub extern "C" fn cursed_mq_send(name: *const i8, message: *const i8, priority: 
     }
 }
 
-// Additional FFI functions for other IPC operations would follow the same pattern...
+#[no_mangle]
+pub extern "C" fn cursed_mq_open(name: *const i8, _message: *const i8, _priority: i32) -> i64 {
+    use crate::stdlib::ipc::open_message_queue;
+    use std::ffi::CStr;
+
+    if name.is_null() {
+        return -1;
+    }
+
+    let name_str = unsafe {
+        match CStr::from_ptr(name).to_str() {
+            Ok(s) => s,
+            Err(_) => return -2, // Error: invalid UTF-8
+        }
+    };
+
+    match open_message_queue(name_str) {
+        Ok(mq) => store_mq_handle(mq) as i64,
+        Err(_) => -3, // Error: open failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_mq_receive(name: *const i8, message: *const i8, _priority: i32) -> i64 {
+    if name.is_null() || message.is_null() {
+        return -1;
+    }
+
+    let handle = name as usize;
+    match get_mq_handle_mut(handle) {
+        Some(mq) => {
+            match mq.receive() {
+                Ok(msg) => {
+                    let content = msg.content();
+                    let len = content.len().min(1024); // Max 1KB
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(
+                            content.as_ptr(),
+                            message as *mut u8,
+                            len
+                        );
+                    }
+                    len as i64
+                }
+                Err(_) => -2, // Error: receive failed
+            }
+        }
+        None => -3, // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_mq_peek(name: *const i8, message: *const i8, _priority: i32) -> i64 {
+    if name.is_null() || message.is_null() {
+        return -1;
+    }
+
+    let handle = name as usize;
+    match get_mq_handle_mut(handle) {
+        Some(mq) => {
+            match mq.peek() {
+                Ok(Some(msg)) => {
+                    let content = msg.content();
+                    let len = content.len().min(1024); // Max 1KB
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(
+                            content.as_ptr(),
+                            message as *mut u8,
+                            len
+                        );
+                    }
+                    len as i64
+                }
+                Ok(None) => 0, // No message available
+                Err(_) => -2, // Error: peek failed
+            }
+        }
+        None => -3, // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_mq_close(name: *const i8, _message: *const i8, _priority: i32) -> i64 {
+    let handle = name as usize;
+    match remove_mq_handle(handle) {
+        Some(_) => 0, // Success
+        None => -1,   // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_mq_remove(name: *const i8, _message: *const i8, _priority: i32) -> i64 {
+    use crate::stdlib::ipc::remove_message_queue;
+    use std::ffi::CStr;
+
+    if name.is_null() {
+        return -1;
+    }
+
+    let name_str = unsafe {
+        match CStr::from_ptr(name).to_str() {
+            Ok(s) => s,
+            Err(_) => return -2, // Error: invalid UTF-8
+        }
+    };
+
+    match remove_message_queue(name_str) {
+        Ok(()) => 0, // Success
+        Err(_) => -3, // Error: remove failed
+    }
+}
+
+// Semaphore FFI Functions
+#[no_mangle]
+pub extern "C" fn cursed_sem_create(name: *const i8, count: i32) -> i32 {
+    use crate::stdlib::ipc::create_semaphore;
+    use std::ffi::CStr;
+
+    if name.is_null() || count < 0 {
+        return -1;
+    }
+
+    let name_str = unsafe {
+        match CStr::from_ptr(name).to_str() {
+            Ok(s) => s,
+            Err(_) => return -2, // Error: invalid UTF-8
+        }
+    };
+
+    match create_semaphore(name_str, count as u32) {
+        Ok(sem) => store_sem_handle(sem) as i32,
+        Err(_) => -3, // Error: creation failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_sem_open(name: *const i8, _count: i32) -> i32 {
+    use crate::stdlib::ipc::open_semaphore;
+    use std::ffi::CStr;
+
+    if name.is_null() {
+        return -1;
+    }
+
+    let name_str = unsafe {
+        match CStr::from_ptr(name).to_str() {
+            Ok(s) => s,
+            Err(_) => return -2, // Error: invalid UTF-8
+        }
+    };
+
+    match open_semaphore(name_str) {
+        Ok(sem) => store_sem_handle(sem) as i32,
+        Err(_) => -3, // Error: open failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_sem_acquire(name: *const i8, _count: i32) -> i32 {
+    let handle = name as usize;
+    match get_sem_handle_mut(handle) {
+        Some(sem) => {
+            match sem.acquire() {
+                Ok(()) => 0, // Success
+                Err(_) => -2, // Error: acquire failed
+            }
+        }
+        None => -1, // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_sem_release(name: *const i8, _count: i32) -> i32 {
+    let handle = name as usize;
+    match get_sem_handle_mut(handle) {
+        Some(sem) => {
+            match sem.release() {
+                Ok(()) => 0, // Success
+                Err(_) => -2, // Error: release failed
+            }
+        }
+        None => -1, // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_sem_try_acquire(name: *const i8, _count: i32) -> i32 {
+    let handle = name as usize;
+    match get_sem_handle_mut(handle) {
+        Some(sem) => {
+            match sem.try_acquire() {
+                Ok(true) => 1,  // Success: acquired
+                Ok(false) => 0, // Would block: semaphore unavailable
+                Err(_) => -2,   // Error: try_acquire failed
+            }
+        }
+        None => -1, // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_sem_close(name: *const i8, _count: i32) -> i32 {
+    let handle = name as usize;
+    match remove_sem_handle(handle) {
+        Some(_) => 0, // Success
+        None => -1,   // Error: invalid handle
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_sem_remove(name: *const i8, _count: i32) -> i32 {
+    use crate::stdlib::ipc::remove_semaphore;
+    use std::ffi::CStr;
+
+    if name.is_null() {
+        return -1;
+    }
+
+    let name_str = unsafe {
+        match CStr::from_ptr(name).to_str() {
+            Ok(s) => s,
+            Err(_) => return -2, // Error: invalid UTF-8
+        }
+    };
+
+    match remove_semaphore(name_str) {
+        Ok(()) => 0, // Success
+        Err(_) => -3, // Error: remove failed
+    }
+}
+
+// Signal handling FFI Functions
+#[no_mangle]
+pub extern "C" fn cursed_signal_send(signal: i32, target: i64, _handler: *const i8) -> i32 {
+    use crate::stdlib::ipc::send_signal;
+
+    let target_pid = if target == 0 {
+        std::process::id() as u64
+    } else {
+        target as u64
+    };
+
+    // Convert i32 signal to Signal enum (simplified mapping)
+    let signal_enum = match signal {
+        1 => crate::stdlib::ipc::Signal::SIGHUP,
+        2 => crate::stdlib::ipc::Signal::SIGINT,
+        9 => crate::stdlib::ipc::Signal::SIGKILL,
+        15 => crate::stdlib::ipc::Signal::SIGTERM,
+        10 => crate::stdlib::ipc::Signal::SIGUSR1,
+        12 => crate::stdlib::ipc::Signal::SIGUSR2,
+        _ => return -1, // Unsupported signal
+    };
+
+    match send_signal(target_pid, signal_enum) {
+        Ok(()) => 0, // Success
+        Err(_) => -2, // Error: send failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_signal_register(signal: i32, _target: i64, handler: *const i8) -> i32 {
+    use crate::stdlib::ipc::{register_signal_handler, Signal, SignalAction};
+
+    if handler.is_null() {
+        return -1;
+    }
+
+    // Convert i32 signal to Signal enum (simplified mapping)
+    let signal_enum = match signal {
+        1 => Signal::SIGHUP,
+        2 => Signal::SIGINT,
+        9 => Signal::SIGKILL,
+        15 => Signal::SIGTERM,
+        10 => Signal::SIGUSR1,
+        12 => Signal::SIGUSR2,
+        _ => return -1, // Unsupported signal
+    };
+
+    // For simplicity, use a default handler (in production this would be more complex)
+    let action = SignalAction::Default;
+
+    match register_signal_handler(signal_enum, action) {
+        Ok(()) => 0, // Success
+        Err(_) => -2, // Error: registration failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_signal_block(signal: i32, _target: i64, _handler: *const i8) -> i32 {
+    use crate::stdlib::ipc::{block_signal, Signal};
+
+    // Convert i32 signal to Signal enum (simplified mapping)
+    let signal_enum = match signal {
+        1 => Signal::SIGHUP,
+        2 => Signal::SIGINT,
+        9 => Signal::SIGKILL,
+        15 => Signal::SIGTERM,
+        10 => Signal::SIGUSR1,
+        12 => Signal::SIGUSR2,
+        _ => return -1, // Unsupported signal
+    };
+
+    match block_signal(signal_enum) {
+        Ok(()) => 0, // Success
+        Err(_) => -2, // Error: block failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_signal_unblock(signal: i32, _target: i64, _handler: *const i8) -> i32 {
+    use crate::stdlib::ipc::{unblock_signal, Signal};
+
+    // Convert i32 signal to Signal enum (simplified mapping)
+    let signal_enum = match signal {
+        1 => Signal::SIGHUP,
+        2 => Signal::SIGINT,
+        9 => Signal::SIGKILL,
+        15 => Signal::SIGTERM,
+        10 => Signal::SIGUSR1,
+        12 => Signal::SIGUSR2,
+        _ => return -1, // Unsupported signal
+    };
+
+    match unblock_signal(signal_enum) {
+        Ok(()) => 0, // Success
+        Err(_) => -2, // Error: unblock failed
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn cursed_signal_wait(signal: i32, _target: i64, _handler: *const i8) -> i32 {
+    use crate::stdlib::ipc::{wait_for_signal, Signal};
+
+    // Convert i32 signal to Signal enum (simplified mapping)
+    let signal_enum = match signal {
+        1 => Signal::SIGHUP,
+        2 => Signal::SIGINT,
+        9 => Signal::SIGKILL,
+        15 => Signal::SIGTERM,
+        10 => Signal::SIGUSR1,
+        12 => Signal::SIGUSR2,
+        _ => return -1, // Unsupported signal
+    };
+
+    match wait_for_signal(signal_enum) {
+        Ok(received_signal) => {
+            // Return the signal number that was received
+            match received_signal {
+                Signal::SIGHUP => 1,
+                Signal::SIGINT => 2,
+                Signal::SIGKILL => 9,
+                Signal::SIGTERM => 15,
+                Signal::SIGUSR1 => 10,
+                Signal::SIGUSR2 => 12,
+                _ => signal, // Return original signal if mapping not found
+            }
+        }
+        Err(_) => -2, // Error: wait failed
+    }
+}
 
 // Global IPC handle registries
 use std::sync::Mutex;
@@ -855,6 +1300,27 @@ fn store_mq_handle(mq: MessageQueue) -> usize {
 fn get_mq_handle_mut(handle: usize) -> Option<MessageQueue> {
     let registry = MQ_REGISTRY.lock().unwrap();
     registry.get(&handle).cloned()
+}
+
+fn store_sem_handle(sem: Semaphore) -> usize {
+    let mut registry = SEM_REGISTRY.lock().unwrap();
+    let mut next_handle = NEXT_IPC_HANDLE.lock().unwrap();
+    
+    let handle = *next_handle;
+    *next_handle += 1;
+    
+    registry.insert(handle, sem);
+    handle
+}
+
+fn get_sem_handle_mut(handle: usize) -> Option<Semaphore> {
+    let registry = SEM_REGISTRY.lock().unwrap();
+    registry.get(&handle).cloned()
+}
+
+fn remove_sem_handle(handle: usize) -> Option<Semaphore> {
+    let mut registry = SEM_REGISTRY.lock().unwrap();
+    registry.remove(&handle)
 }
 
 #[cfg(test)]
@@ -963,8 +1429,12 @@ mod tests {
         // Test semaphore operations
         let operations = [
             SemaphoreOperation::Create,
+            SemaphoreOperation::Open,
             SemaphoreOperation::Acquire,
             SemaphoreOperation::Release,
+            SemaphoreOperation::TryAcquire,
+            SemaphoreOperation::Close,
+            SemaphoreOperation::Remove,
         ];
         
         for op in &operations {
@@ -975,5 +1445,150 @@ mod tests {
             );
             assert!(result.is_ok());
         }
+    }
+
+    #[test]
+    fn test_signal_operations() {
+        let context = Context::create();
+        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+        
+        let signal = context.i32_type().const_int(2, false); // SIGINT
+        let target = context.i64_type().const_int(0, false); // Self
+        let handler = context.i8_type().ptr_type(AddressSpace::default()).const_null();
+        
+        // Test signal operations
+        let operations = [
+            SignalOperation::Send,
+            SignalOperation::Register,
+            SignalOperation::Block,
+            SignalOperation::Unblock,
+            SignalOperation::Wait,
+        ];
+        
+        for op in &operations {
+            let result = generator.compile_signal_op(
+                *op,
+                signal.into(),
+                Some(target.into()),
+                Some(handler.into())
+            );
+            assert!(result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_complete_message_queue_operations() {
+        let context = Context::create();
+        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+        
+        let name = context.const_string(b"test_mq_complete", false);
+        let message = context.const_string(b"test message content", false);
+        let priority = context.i32_type().const_int(1, false);
+        
+        // Test all message queue operations
+        let operations = [
+            MessageQueueOperation::Create,
+            MessageQueueOperation::Open,
+            MessageQueueOperation::Send,
+            MessageQueueOperation::Receive,
+            MessageQueueOperation::Peek,
+            MessageQueueOperation::Close,
+            MessageQueueOperation::Remove,
+        ];
+        
+        for op in &operations {
+            let result = generator.compile_message_queue_op(
+                *op,
+                name.into(),
+                Some(message.into()),
+                Some(priority.into())
+            );
+            assert!(result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_ffi_function_signatures() {
+        let context = Context::create();
+        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+        
+        // Declare FFI functions
+        assert!(generator.declare_ipc_ffi_functions().is_ok());
+        
+        // Verify all semaphore functions exist
+        assert!(generator.module.get_function("cursed_sem_create").is_some());
+        assert!(generator.module.get_function("cursed_sem_open").is_some());
+        assert!(generator.module.get_function("cursed_sem_acquire").is_some());
+        assert!(generator.module.get_function("cursed_sem_release").is_some());
+        assert!(generator.module.get_function("cursed_sem_try_acquire").is_some());
+        assert!(generator.module.get_function("cursed_sem_close").is_some());
+        assert!(generator.module.get_function("cursed_sem_remove").is_some());
+        
+        // Verify all signal functions exist
+        assert!(generator.module.get_function("cursed_signal_send").is_some());
+        assert!(generator.module.get_function("cursed_signal_register").is_some());
+        assert!(generator.module.get_function("cursed_signal_block").is_some());
+        assert!(generator.module.get_function("cursed_signal_unblock").is_some());
+        assert!(generator.module.get_function("cursed_signal_wait").is_some());
+        
+        // Verify remaining message queue functions exist
+        assert!(generator.module.get_function("cursed_mq_open").is_some());
+        assert!(generator.module.get_function("cursed_mq_receive").is_some());
+        assert!(generator.module.get_function("cursed_mq_peek").is_some());
+        assert!(generator.module.get_function("cursed_mq_close").is_some());
+        assert!(generator.module.get_function("cursed_mq_remove").is_some());
+    }
+
+    #[test]
+    fn test_helper_functions() {
+        let context = Context::create();
+        let generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+        
+        // Test string pointer conversion
+        let test_string = context.const_string(b"test", false);
+        let result = generator.ensure_string_pointer(test_string.into());
+        assert!(result.is_ok());
+        
+        // Test integer conversions
+        let test_i32 = context.i32_type().const_int(42, false);
+        let result = generator.convert_to_int32(test_i32.into());
+        assert!(result.is_ok());
+        
+        let test_i64 = context.i64_type().const_int(42, false);
+        let result = generator.convert_to_int64(test_i64.into());
+        assert!(result.is_ok());
+        
+        // Test data pointer conversion
+        let test_ptr = context.i8_type().ptr_type(AddressSpace::default()).const_null();
+        let result = generator.ensure_data_pointer(test_ptr.into());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_ipc_handle_management() {
+        use crate::stdlib::ipc::{SharedMemoryConfig, create_shared_memory, create_message_queue, create_semaphore};
+        
+        // Test shared memory handle management
+        let config = SharedMemoryConfig::new("test_shm", 1024).unwrap();
+        let shm = create_shared_memory(config).unwrap();
+        let handle = store_shm_handle(shm);
+        assert!(handle > 0);
+        assert!(get_shm_handle_mut(handle).is_some());
+        assert!(remove_shm_handle(handle).is_some());
+        assert!(get_shm_handle_mut(handle).is_none());
+        
+        // Test message queue handle management
+        let mq = create_message_queue("test_mq", 10).unwrap();
+        let handle = store_mq_handle(mq);
+        assert!(handle > 0);
+        assert!(get_mq_handle_mut(handle).is_some());
+        
+        // Test semaphore handle management (if semaphore creation is implemented)
+        // This would need actual semaphore implementation in stdlib
+        // let sem = create_semaphore("test_sem", 1).unwrap();
+        // let handle = store_sem_handle(sem);
+        // assert!(handle > 0);
+        // assert!(get_sem_handle_mut(handle).is_some());
+        // assert!(remove_sem_handle(handle).is_some());
     }
 }

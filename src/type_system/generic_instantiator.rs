@@ -307,13 +307,13 @@ impl GenericInstantiator {
         }
     }
 
-    /// Instantiate a generic type with concrete type arguments (simplified for basic AST)
+    /// Instantiate a generic type with concrete type arguments (re-enabled with constraint checking)
     pub fn instantiate(
         &mut self,
         base_type: &str,
         type_args: &[TypeExpression],
         environment: &mut TypeEnvironment,
-        // constraint_resolver: &mut ConstraintResolver, // Disabled for simplified AST
+        constraint_resolver: &ConstraintResolver,
     ) -> Result<InstantiatedType, Error> {
         let start_time = std::time::SystemTime::now();
 
@@ -345,10 +345,28 @@ impl GenericInstantiator {
         // Create substitution mapping
         let substitution_map = self.create_substitution_map(&base_type_def.type_parameters, type_args)?;
 
-        // Constraint checking disabled for simplified AST compatibility
-        // TODO: Re-enable when constraint system is expanded
+        // Constraint checking re-enabled with full constraint resolution
         let constraints_checked = base_type_def.constraints.len();
-        // Skip constraint satisfaction checking for now
+        
+        // Check constraint satisfaction for each type argument
+        for (i, (type_param, type_arg)) in base_type_def.type_parameters.iter().zip(type_args.iter()).enumerate() {
+            // Find constraints that apply to this type parameter
+            let applicable_constraints: Vec<&GenericConstraint> = base_type_def.constraints.iter()
+                .filter(|constraint| constraint.type_parameters.contains(&type_param.name))
+                .collect();
+            
+            // Check if the type argument satisfies all applicable constraints
+            for constraint in applicable_constraints {
+                if !constraint_resolver.check_satisfaction(type_arg, &[constraint.clone()], environment)? {
+                    return Err(Error::Type(format!(
+                        "Type argument '{}' for parameter '{}' does not satisfy constraint '{}'",
+                        type_arg.to_string(),
+                        type_param.name,
+                        constraint.constraint_name
+                    )));
+                }
+            }
+        }
 
         // Generate unique instance ID
         let instance_id = self.generate_instance_id(base_type, type_args);

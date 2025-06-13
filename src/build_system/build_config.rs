@@ -183,6 +183,53 @@ fn default_panic() -> PanicStrategy {
     PanicStrategy::Unwind
 }
 
+impl Default for BuildProfile {
+    fn default() -> Self {
+        Self {
+            optimization: OptimizationLevel::Basic,
+            debug: true,
+            panic: PanicStrategy::Unwind,
+            lto: false,
+            incremental: true,
+            codegen_units: 1,
+            strip: false,
+            cross_target: None,
+            llvm_args: Vec::new(),
+            env: HashMap::new(),
+        }
+    }
+}
+
+impl Default for BuildConfig {
+    fn default() -> Self {
+        Self {
+            project: ProjectMetadata {
+                name: "unnamed".to_string(),
+                version: "0.1.0".to_string(),
+                authors: Vec::new(),
+                edition: "2024".to_string(),
+                description: None,
+                license: None,
+                repository: None,
+                homepage: None,
+                documentation: None,
+                readme: None,
+                keywords: Vec::new(),
+                categories: Vec::new(),
+                project_type: ProjectType::Binary,
+            },
+            targets: Vec::new(),
+            profiles: HashMap::new(),
+            dependencies: HashMap::new(),
+            dev_dependencies: HashMap::new(),
+            build_dependencies: HashMap::new(),
+            features: HashMap::new(),
+            scripts: HashMap::new(),
+            tools: ToolConfigurations::default(),
+        }
+    }
+}
+
 /// Optimization levels
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -195,6 +242,17 @@ pub enum OptimizationLevel {
     Max,
     /// Size optimizations
     Size,
+}
+
+impl std::fmt::Display for OptimizationLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OptimizationLevel::None => write!(f, "none"),
+            OptimizationLevel::Basic => write!(f, "basic"),
+            OptimizationLevel::Max => write!(f, "max"),
+            OptimizationLevel::Size => write!(f, "size"),
+        }
+    }
 }
 
 /// Panic strategies

@@ -20,6 +20,7 @@ pub mod statistics;
 pub mod utilities;
 pub mod complex;
 pub mod advanced;
+pub mod matrix;
 
 // Re-export core mathematical functions with explicit imports to avoid conflicts
 // BASIC OPERATIONS - Fundamental arithmetic and utility functions
@@ -231,6 +232,18 @@ pub use advanced::{
     solve_linear_system, matrix_determinant,
     // Mathematical modeling
     polynomial_fit, evaluate_polynomial as advanced_evaluate_polynomial,
+};
+
+// MATRIX OPERATIONS - Linear algebra and matrix computations
+pub use matrix::{
+    // Matrix structure and creation
+    Matrix, matrix_add, matrix_subtract, matrix_multiply, matrix_scalar_multiply, matrix_vector_multiply,
+    // Matrix decompositions
+    LuDecomposition, lu_decomposition, QrDecomposition, qr_decomposition,
+    // Eigenvalue computations
+    EigenDecomposition, eigen_decomposition,
+    // Matrix utilities
+    vector_dot, vector_norm, matrix_norm, matrix_inverse,
 };
 
 /// Error types for mathematical operations

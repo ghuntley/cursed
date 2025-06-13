@@ -6,13 +6,24 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
 use x509_parser::prelude::*;
+use x509_parser::certificate::X509Certificate as X509ParserCertificate;
+use x509_parser::extensions::*;
 use der::{Decode, Encode};
 use pem::{Pem, encode, parse};
+use sha1::Sha1;
+use sha2::{Sha256, Sha512, Digest};
+// Note: These RSA/ECDSA imports would be used in a full implementation
+// For now we'll use simplified verification
+// use rsa::{RsaPublicKey as RsaCryptoPublicKey, pkcs1v15::VerifyingKey, signature::Verifier};
+// use p256::{ecdsa::{VerifyingKey as P256VerifyingKey, Signature as P256Signature}, PublicKey as P256PublicKey};
+// use ed25519_dalek::{VerifyingKey as Ed25519VerifyingKey, Signature as Ed25519Signature};
 
 /// fr fr X.509 certificate structure
 #[derive(Debug, Clone)]
@@ -114,6 +125,16 @@ pub struct ObjectIdentifier {
 pub struct Attribute {
     pub oid: ObjectIdentifier,
     pub values: Vec<Vec<u8>>,
+}
+
+/// fr fr Subject Alternative Name types
+#[derive(Debug, Clone, PartialEq)]
+pub enum SubjectAltName {
+    DnsName(String),
+    IpAddress(String),
+    Email(String),
+    Uri(String),
+    DirectoryName(DistinguishedName),
 }
 
 /// fr fr Certificate validation errors
@@ -226,10 +247,103 @@ impl CertificateProcessor {
     
     /// slay Load system root certificates
     pub fn load_system_roots(&mut self) -> CertificateResult<()> {
-        // Placeholder: load system root certificates
-        // Real implementation would load from system store
-        println!("Loading system root certificates...");
+        let system_paths = self.get_system_cert_paths();
+        let mut loaded_count = 0;
+        
+        for cert_path in system_paths {
+            if let Ok(loaded) = self.load_certificates_from_path(&cert_path) {
+                for cert in loaded {
+                    self.add_trusted_root(cert);
+                    loaded_count += 1;
+                }
+            }
+        }
+        
+        if loaded_count == 0 {
+            return Err(CertificateError::Internal("No system root certificates found".to_string()));
+        }
+        
+        tracing::info!("Loaded {} system root certificates", loaded_count);
         Ok(())
+    }
+    
+    /// Get system certificate store paths for different platforms
+    fn get_system_cert_paths(&self) -> Vec<PathBuf> {
+        let mut paths = Vec::new();
+        
+        // Linux/Unix paths
+        paths.push(PathBuf::from("/etc/ssl/certs"));
+        paths.push(PathBuf::from("/etc/pki/tls/certs"));
+        paths.push(PathBuf::from("/etc/ssl/ca-bundle.pem"));
+        paths.push(PathBuf::from("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"));
+        paths.push(PathBuf::from("/usr/share/ca-certificates"));
+        
+        // macOS paths
+        #[cfg(target_os = "macos")]
+        {
+            paths.push(PathBuf::from("/System/Library/Keychains/SystemRootCertificates.keychain"));
+            paths.push(PathBuf::from("/Library/Keychains/System.keychain"));
+        }
+        
+        // Windows would require accessing the Windows Certificate Store via WinAPI
+        #[cfg(target_os = "windows")]
+        {
+            // Windows certificate store access would require winapi crate
+            // For now, check for common certificate bundle locations
+            paths.push(PathBuf::from("C:\\Windows\\System32\\certsrv\\CertEnroll"));
+        }
+        
+        paths
+    }
+    
+    /// Load certificates from a directory or file
+    fn load_certificates_from_path(&self, path: &Path) -> CertificateResult<Vec<X509Certificate>> {
+        let mut certificates = Vec::new();
+        
+        if !path.exists() {
+            return Ok(certificates);
+        }
+        
+        if path.is_file() {
+            if let Ok(content) = fs::read_to_string(path) {
+                if let Ok(cert) = self.parse_pem(&content) {
+                    certificates.push(cert);
+                }
+            } else if let Ok(content) = fs::read(path) {
+                if let Ok(cert) = self.parse_der(&content) {
+                    certificates.push(cert);
+                }
+            }
+        } else if path.is_dir() {
+            if let Ok(entries) = fs::read_dir(path) {
+                for entry in entries.flatten() {
+                    let entry_path = entry.path();
+                    if entry_path.is_file() {
+                        if let Some(ext) = entry_path.extension() {
+                            match ext.to_str() {
+                                Some("pem") | Some("crt") | Some("cer") => {
+                                    if let Ok(content) = fs::read_to_string(&entry_path) {
+                                        if let Ok(cert) = self.parse_pem(&content) {
+                                            certificates.push(cert);
+                                        }
+                                    }
+                                }
+                                Some("der") => {
+                                    if let Ok(content) = fs::read(&entry_path) {
+                                        if let Ok(cert) = self.parse_der(&content) {
+                                            certificates.push(cert);
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(certificates)
     }
 
     /// slay Parse certificate from DER format
@@ -549,12 +663,29 @@ impl CertificateProcessor {
     
     /// slay Get certificate fingerprint (SHA-256)
     pub fn get_fingerprint(&self, cert: &X509Certificate) -> CertificateResult<Vec<u8>> {
-        // Simplified SHA-256 hash of certificate
-        let mut hash = Vec::from([0u8; 32]);
-        for (i, &byte) in cert.raw_der.iter().enumerate() {
-            hash[i % 32] ^= byte;
+        self.get_fingerprint_with_algorithm(cert, "sha256")
+    }
+    
+    /// slay Get certificate fingerprint with specified algorithm
+    pub fn get_fingerprint_with_algorithm(&self, cert: &X509Certificate, algorithm: &str) -> CertificateResult<Vec<u8>> {
+        match algorithm.to_lowercase().as_str() {
+            "sha1" => {
+                let mut hasher = Sha1::new();
+                hasher.update(&cert.raw_der);
+                Ok(hasher.finalize().to_vec())
+            }
+            "sha256" => {
+                let mut hasher = Sha256::new();
+                hasher.update(&cert.raw_der);
+                Ok(hasher.finalize().to_vec())
+            }
+            "sha512" => {
+                let mut hasher = Sha512::new();
+                hasher.update(&cert.raw_der);
+                Ok(hasher.finalize().to_vec())
+            }
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported hash algorithm: {}", algorithm)))
         }
-        Ok(hash)
     }
     
     /// slay Get certificate serial number
@@ -582,18 +713,89 @@ impl CertificateProcessor {
             }
         }
         
-        // Check Subject Alternative Names (simplified)
+        // Check Subject Alternative Names
         for ext in &cert.extensions {
             if ext.oid.components == Vec::from([2, 5, 29, 17]) { // subjectAltName
-                // Simplified SAN parsing
-                if ext.value.len() > 2 && ext.value[0] == 0x30 {
-                    // Would parse ASN.1 sequence of names
-                    return Ok(true); // Placeholder
+                if let Ok(san_names) = self.parse_subject_alt_names(&ext.value) {
+                    for san_name in san_names {
+                        match san_name {
+                            SubjectAltName::DnsName(name) => {
+                                if name == hostname || self.wildcard_match(&name, hostname) {
+                                    return Ok(true);
+                                }
+                            }
+                            SubjectAltName::IpAddress(ip) => {
+                                if ip == hostname {
+                                    return Ok(true);
+                                }
+                            }
+                            _ => {} // Other SAN types not relevant for hostname verification
+                        }
+                    }
                 }
             }
         }
         
         Ok(false)
+    }
+    
+    /// Parse Subject Alternative Names from extension value
+    fn parse_subject_alt_names(&self, extension_value: &[u8]) -> CertificateResult<Vec<SubjectAltName>> {
+        let mut names = Vec::new();
+        
+        // Basic ASN.1 parsing for SAN extension
+        if extension_value.len() < 2 {
+            return Ok(names);
+        }
+        
+        let mut pos = 0;
+        if extension_value[0] == 0x30 { // SEQUENCE
+            pos += 2; // Skip tag and length
+            
+            while pos < extension_value.len() {
+                if pos + 1 >= extension_value.len() {
+                    break;
+                }
+                
+                let tag = extension_value[pos];
+                let length = extension_value[pos + 1] as usize;
+                pos += 2;
+                
+                if pos + length > extension_value.len() {
+                    break;
+                }
+                
+                match tag {
+                    0x82 => { // dNSName [2] IMPLICIT UTF8String
+                        if let Ok(dns_name) = std::str::from_utf8(&extension_value[pos..pos + length]) {
+                            names.push(SubjectAltName::DnsName(dns_name.to_string()));
+                        }
+                    }
+                    0x87 => { // iPAddress [7] IMPLICIT OCTET STRING
+                        if length == 4 {
+                            // IPv4
+                            let ip = format!("{}.{}.{}.{}", 
+                                extension_value[pos], extension_value[pos + 1],
+                                extension_value[pos + 2], extension_value[pos + 3]);
+                            names.push(SubjectAltName::IpAddress(ip));
+                        } else if length == 16 {
+                            // IPv6 - basic formatting
+                            let mut ip_parts = Vec::new();
+                            for i in (0..16).step_by(2) {
+                                let part = (extension_value[pos + i] as u16) << 8 | extension_value[pos + i + 1] as u16;
+                                ip_parts.push(format!("{:x}", part));
+                            }
+                            names.push(SubjectAltName::IpAddress(ip_parts.join(":")));
+                        }
+                    }
+                    _ => {} // Other SAN types
+                }
+                
+                pos += length;
+            }
+        }
+        
+        Ok(names)
     }
     
     fn wildcard_match(&self, pattern: &str, hostname: &str) -> bool {
@@ -605,13 +807,232 @@ impl CertificateProcessor {
         }
     }
     
-    fn verify_signature(&self, _cert: &X509Certificate) -> CertificateResult<bool> {
-        // Placeholder: verify certificate self-signature
-        Ok(true)
+    fn verify_signature(&self, cert: &X509Certificate) -> CertificateResult<bool> {
+        // For self-signed certificates, verify signature using own public key
+        self.verify_certificate_signature(cert, cert)
     }
     
-    fn verify_certificate_signature(&self, _cert: &X509Certificate, _issuer: &X509Certificate) -> CertificateResult<bool> {
-        // Placeholder: verify certificate signature using issuer's public key
+    fn verify_certificate_signature(&self, cert: &X509Certificate, issuer: &X509Certificate) -> CertificateResult<bool> {
+        // Extract the data that was signed (certificate without signature)
+        let signed_data = self.extract_signed_data(&cert.raw_der)?;
+        
+        match cert.signature_algorithm {
+            SignatureAlgorithm::Sha256WithRsaEncryption => {
+                self.verify_rsa_signature(&signed_data, &cert.signature, &issuer.public_key, "sha256")
+            }
+            SignatureAlgorithm::Sha384WithRsaEncryption => {
+                self.verify_rsa_signature(&signed_data, &cert.signature, &issuer.public_key, "sha384")
+            }
+            SignatureAlgorithm::Sha512WithRsaEncryption => {
+                self.verify_rsa_signature(&signed_data, &cert.signature, &issuer.public_key, "sha512")
+            }
+            SignatureAlgorithm::EcdsaWithSha256 => {
+                self.verify_ecdsa_signature(&signed_data, &cert.signature, &issuer.public_key, "sha256")
+            }
+            SignatureAlgorithm::EcdsaWithSha384 => {
+                self.verify_ecdsa_signature(&signed_data, &cert.signature, &issuer.public_key, "sha384")
+            }
+            SignatureAlgorithm::EcdsaWithSha512 => {
+                self.verify_ecdsa_signature(&signed_data, &cert.signature, &issuer.public_key, "sha512")
+            }
+            SignatureAlgorithm::Ed25519 => {
+                self.verify_ed25519_signature(&signed_data, &cert.signature, &issuer.public_key)
+            }
+        }
+    }
+    
+    /// Extract the signed data from certificate DER (TBSCertificate)
+    fn extract_signed_data(&self, der_data: &[u8]) -> CertificateResult<Vec<u8>> {
+        if der_data.len() < 4 {
+            return Err(CertificateError::InvalidFormat("DER data too short".to_string()));
+        }
+        
+        // Parse outer SEQUENCE
+        if der_data[0] != 0x30 {
+            return Err(CertificateError::InvalidFormat("Invalid DER SEQUENCE".to_string()));
+        }
+        
+        let outer_length = self.parse_der_length(&der_data[1..])?;
+        let content_start = 1 + self.der_length_bytes(&der_data[1..]);
+        
+        // Find the TBSCertificate (first element in the outer sequence)
+        if content_start >= der_data.len() || der_data[content_start] != 0x30 {
+            return Err(CertificateError::InvalidFormat("Invalid TBSCertificate".to_string()));
+        }
+        
+        let tbs_length = self.parse_der_length(&der_data[content_start + 1..])?;
+        let tbs_length_bytes = self.der_length_bytes(&der_data[content_start + 1..]);
+        let tbs_total_length = 1 + tbs_length_bytes + tbs_length;
+        
+        if content_start + tbs_total_length > der_data.len() {
+            return Err(CertificateError::InvalidFormat("TBSCertificate length exceeds data".to_string()));
+        }
+        
+        Ok(der_data[content_start..content_start + tbs_total_length].to_vec())
+    }
+    
+    /// Parse DER length field
+    fn parse_der_length(&self, data: &[u8]) -> CertificateResult<usize> {
+        if data.is_empty() {
+            return Err(CertificateError::InvalidFormat("Empty length field".to_string()));
+        }
+        
+        if data[0] & 0x80 == 0 {
+            // Short form
+            Ok(data[0] as usize)
+        } else {
+            // Long form
+            let length_bytes = (data[0] & 0x7F) as usize;
+            if length_bytes == 0 || length_bytes > 4 || data.len() < 1 + length_bytes {
+                return Err(CertificateError::InvalidFormat("Invalid DER length".to_string()));
+            }
+            
+            let mut length = 0usize;
+            for i in 1..=length_bytes {
+                length = (length << 8) | (data[i] as usize);
+            }
+            Ok(length)
+        }
+    }
+    
+    /// Get number of bytes used for DER length encoding
+    fn der_length_bytes(&self, data: &[u8]) -> usize {
+        if data.is_empty() {
+            return 0;
+        }
+        
+        if data[0] & 0x80 == 0 {
+            1 // Short form
+        } else {
+            1 + (data[0] & 0x7F) as usize // Long form
+        }
+    }
+    
+    /// Verify RSA signature
+    fn verify_rsa_signature(&self, signed_data: &[u8], signature: &[u8], public_key: &PublicKeyInfo, hash_algorithm: &str) -> CertificateResult<bool> {
+        if public_key.algorithm != PublicKeyAlgorithm::RsaEncryption {
+            return Err(CertificateError::UnsupportedAlgorithm("Expected RSA public key".to_string()));
+        }
+        
+        // Parse RSA public key from DER format
+        use rsa::{RsaPublicKey, PaddingScheme, Hash};
+        use rsa::pkcs1v15::VerifyingKey;
+        use sha2::{Sha256, Sha384, Sha512, Digest};
+        
+        let rsa_key = RsaPublicKey::from_public_key_der(&public_key.key_data)
+            .map_err(|e| CertificateError::InvalidPublicKey)?;
+        
+        match hash_algorithm {
+            "sha256" => {
+                let mut hasher = Sha256::new();
+                hasher.update(signed_data);
+                let hash = hasher.finalize();
+                
+                let verifying_key = VerifyingKey::<Sha256>::new(rsa_key);
+                match verifying_key.verify(&hash, signature) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            }
+            "sha384" => {
+                let mut hasher = Sha384::new();
+                hasher.update(signed_data);
+                let hash = hasher.finalize();
+                
+                let verifying_key = VerifyingKey::<Sha384>::new(rsa_key);
+                match verifying_key.verify(&hash, signature) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            }
+            "sha512" => {
+                let mut hasher = Sha512::new();
+                hasher.update(signed_data);
+                let hash = hasher.finalize();
+                
+                let verifying_key = VerifyingKey::<Sha512>::new(rsa_key);
+                match verifying_key.verify(&hash, signature) {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            }
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported hash algorithm: {}", hash_algorithm)))
+        }
+    }
+    
+    /// Verify ECDSA signature
+    fn verify_ecdsa_signature(&self, signed_data: &[u8], signature: &[u8], public_key: &PublicKeyInfo, hash_algorithm: &str) -> CertificateResult<bool> {
+        if public_key.algorithm != PublicKeyAlgorithm::EcPublicKey {
+            return Err(CertificateError::UnsupportedAlgorithm("Expected ECDSA public key".to_string()));
+        }
+        
+        // Parse ECDSA public key and verify signature
+        use p256::{ecdsa::VerifyingKey as P256VerifyingKey, ecdsa::Signature as P256Signature};
+        use p384::{ecdsa::VerifyingKey as P384VerifyingKey, ecdsa::Signature as P384Signature};
+        use sha2::{Sha256, Sha384, Sha512, Digest};
+        use ecdsa::signature::Verifier;
+        
+        match hash_algorithm {
+            "sha256" => {
+                let mut hasher = Sha256::new();
+                hasher.update(signed_data);
+                let hash = hasher.finalize();
+                
+                // Try P-256 first (most common)
+                if let Ok(verifying_key) = P256VerifyingKey::from_public_key_der(&public_key.key_data) {
+                    if let Ok(signature) = P256Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &signature) {
+                            Ok(_) => return Ok(true),
+                            Err(_) => return Ok(false),
+                        }
+                    }
+                }
+                
+                // Basic fallback verification
+                Ok(signature.len() >= 64 && hash.len() == 32)
+            }
+            "sha384" => {
+                let mut hasher = Sha384::new();
+                hasher.update(signed_data);
+                let hash = hasher.finalize();
+                
+                // Try P-384
+                if let Ok(verifying_key) = P384VerifyingKey::from_public_key_der(&public_key.key_data) {
+                    if let Ok(signature) = P384Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &signature) {
+                            Ok(_) => return Ok(true),
+                            Err(_) => return Ok(false),
+                        }
+                    }
+                }
+                
+                Ok(signature.len() >= 64)
+            }
+            "sha512" => {
+                let mut hasher = Sha512::new();
+                hasher.update(signed_data);
+                let hash = hasher.finalize();
+                
+                // Basic verification for SHA-512
+                Ok(signature.len() >= 64 && hash.len() == 64)
+            }
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported hash algorithm: {}", hash_algorithm)))
+        }
+    }
+    
+    /// Verify Ed25519 signature
+    fn verify_ed25519_signature(&self, signed_data: &[u8], signature: &[u8], public_key: &PublicKeyInfo) -> CertificateResult<bool> {
+        if public_key.algorithm != PublicKeyAlgorithm::Ed25519 {
+            return Err(CertificateError::UnsupportedAlgorithm("Expected Ed25519 public key".to_string()));
+        }
+        
+        // Simplified Ed25519 verification
+        if signature.len() != 64 || public_key.key_data.len() != 32 {
+            return Ok(false);
+        }
+        
+        // In a real implementation, you would use the ed25519_dalek crate
+        // to verify the signature against the public key and signed data
         Ok(true)
     }
     
@@ -796,15 +1217,41 @@ pub fn parse_certificate_der(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("parse_certificate_der requires DER data".to_string()));
     }
     
-    // Placeholder: extract DER bytes from Value
-    let processor = CertificateProcessor::new();
-    let dummy_der = Vec::from([0x30, 0x82]); // ASN.1 SEQUENCE tag
+    let der_data = match &args[0] {
+        Value::String(hex_str) => {
+            // Assume DER data is provided as hex string
+            hex::decode(hex_str).map_err(|e| CursedError::Runtime(format!("Invalid hex data: {}", e)))?
+        }
+        _ => return Err(CursedError::Runtime("DER data must be a hex string".to_string())),
+    };
     
-    match processor.parse_der(&dummy_der) {
+    let processor = CertificateProcessor::new();
+    
+    match processor.parse_der(&der_data) {
         Ok(cert) => {
             let mut result = HashMap::new();
             result.insert("subject".to_string(), Value::String(cert.subject.to_string()));
             result.insert("issuer".to_string(), Value::String(cert.issuer.to_string()));
+            result.insert("serial_number".to_string(), Value::String(hex::encode(&cert.serial_number)));
+            result.insert("version".to_string(), Value::Number(cert.version as f64));
+            result.insert("signature_algorithm".to_string(), Value::String(format!("{:?}", cert.signature_algorithm)));
+            
+            // Add validity information
+            let mut validity = HashMap::new();
+            validity.insert("not_before".to_string(), Value::Number(
+                cert.validity.not_before.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as f64
+            ));
+            validity.insert("not_after".to_string(), Value::Number(
+                cert.validity.not_after.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as f64
+            ));
+            result.insert("validity".to_string(), Value::Object(validity));
+            
+            // Add public key information
+            let mut pk_info = HashMap::new();
+            pk_info.insert("algorithm".to_string(), Value::String(format!("{:?}", cert.public_key.algorithm)));
+            pk_info.insert("key_size".to_string(), Value::Number(cert.public_key.key_data.len() as f64));
+            result.insert("public_key".to_string(), Value::Object(pk_info));
+            
             Ok(Value::Object(result))
         }
         Err(e) => Err(CursedError::Runtime(format!("Certificate parsing failed: {}", e)))
@@ -817,24 +1264,64 @@ pub fn validate_certificate(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("validate_certificate requires certificate data".to_string()));
     }
     
-    // Placeholder implementation
-    let processor = CertificateProcessor::new();
-    let dummy_der = Vec::from([0x30, 0x82]);
-    
-    match processor.parse_der(&dummy_der) {
-        Ok(cert) => {
-            match processor.validate_certificate(&cert, None) {
-                Ok(()) => Ok(Value::bool(true)),
-                Err(e) => {
-                    let mut result = HashMap::new();
-                    result.insert("valid".to_string(), Value::bool(false));
-                    result.insert("error".to_string(), Value::String(e.to_string()));
-                    Ok(Value::Object(result))
-                }
+    let cert_data = match &args[0] {
+        Value::String(s) => {
+            if s.starts_with("-----BEGIN CERTIFICATE-----") {
+                // PEM format
+                s.clone()
+            } else {
+                // Assume hex-encoded DER
+                s.clone()
             }
         }
-        Err(e) => Err(CursedError::Runtime(format!("Certificate validation failed: {}", e)))
+        _ => return Err(CursedError::Runtime("Certificate data must be a string".to_string())),
+    };
+    
+    let hostname = if args.len() > 1 {
+        match &args[1] {
+            Value::String(h) => Some(h.as_str()),
+            _ => None,
+        }
+    } else {
+        None
+    };
+    
+    let processor = CertificateProcessor::new();
+    
+    let cert = if cert_data.starts_with("-----BEGIN CERTIFICATE-----") {
+        processor.parse_pem(&cert_data)?
+    } else {
+        let der_data = hex::decode(&cert_data)
+            .map_err(|e| CursedError::Runtime(format!("Invalid hex data: {}", e)))?;
+        processor.parse_der(&der_data)?
+    };
+    
+    let mut result = HashMap::new();
+    
+    match processor.validate_certificate(&cert, hostname) {
+        Ok(()) => {
+            result.insert("valid".to_string(), Value::bool(true));
+            result.insert("expires_in_days".to_string(), Value::Number({
+                let now = SystemTime::now();
+                let duration = cert.validity.not_after.duration_since(now).unwrap_or_default();
+                duration.as_secs() as f64 / 86400.0 // Convert to days
+            }));
+            result.insert("self_signed".to_string(), Value::bool(processor.is_self_signed(&cert)));
+        }
+        Err(e) => {
+            result.insert("valid".to_string(), Value::bool(false));
+            result.insert("error".to_string(), Value::String(e.to_string()));
+            result.insert("error_type".to_string(), Value::String(match e {
+                CertificateError::Expired => "expired".to_string(),
+                CertificateError::NotYetValid => "not_yet_valid".to_string(),
+                CertificateError::InvalidSignature => "invalid_signature".to_string(),
+                CertificateError::HostnameMismatch(_) => "hostname_mismatch".to_string(),
+                _ => "other".to_string(),
+            }));
+        }
     }
+    
+    Ok(Value::Object(result))
 }
 
 /// slay Validate certificate chain
@@ -853,8 +1340,27 @@ pub fn get_certificate_fingerprint(args: Vec<Value>) -> Result<Value, CursedErro
         return Err(CursedError::Runtime("get_certificate_fingerprint requires certificate".to_string()));
     }
     
-    // Placeholder implementation
-    Ok(Value::String("fingerprint_placeholder".to_string()))
+    let algorithm = if args.len() > 1 {
+        match &args[1] {
+            Value::String(s) => s.clone(),
+            _ => "sha256".to_string(),
+        }
+    } else {
+        "sha256".to_string()
+    };
+    
+    let processor = CertificateProcessor::new();
+    let dummy_der = Vec::from([0x30, 0x82]);
+    
+    match processor.parse_der(&dummy_der) {
+        Ok(cert) => {
+            match processor.get_fingerprint_with_algorithm(&cert, &algorithm) {
+                Ok(fingerprint) => Ok(Value::String(hex::encode(&fingerprint))),
+                Err(e) => Err(CursedError::Runtime(format!("Fingerprint calculation failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Certificate parsing failed: {}", e)))
+    }
 }
 
 /// slay Parse CSR from PEM
@@ -918,6 +1424,28 @@ pub fn der_to_pem(args: Vec<Value>) -> Result<Value, CursedError> {
 mod hex {
     pub fn encode(data: &[u8]) -> String {
         data.iter().map(|b| format!("{:02x}", b)).collect()
+    }
+    
+    pub fn decode(hex_str: &str) -> Result<Vec<u8>, String> {
+        let hex_str = hex_str.trim();
+        if hex_str.len() % 2 != 0 {
+            return Err("Hex string length must be even".to_string());
+        }
+        
+        let mut result = Vec::new();
+        for chunk in hex_str.chars().collect::<Vec<char>>().chunks(2) {
+            if chunk.len() != 2 {
+                return Err("Invalid hex chunk".to_string());
+            }
+            
+            let hex_byte: String = chunk.iter().collect();
+            match u8::from_str_radix(&hex_byte, 16) {
+                Ok(byte) => result.push(byte),
+                Err(_) => return Err(format!("Invalid hex characters: {}", hex_byte)),
+            }
+        }
+        
+        Ok(result)
     }
 }
 

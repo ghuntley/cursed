@@ -1,0 +1,136 @@
+/// Error types for the profiler subsystem
+use std::fmt;
+
+/// Result type for profiler operations
+pub type ProfilerResult<T> = Result<T, ProfilerError>;
+
+/// Profiler-specific errors
+#[derive(Debug, Clone, PartialEq)]
+pub enum ProfilerError {
+    /// Profiler is not initialized
+    NotInitialized,
+    /// Profiler is already running
+    AlreadyRunning,
+    /// Profiler is not running
+    NotRunning,
+    /// Invalid configuration
+    InvalidConfig(String),
+    /// Sampling failed
+    SamplingFailed(String),
+    /// Memory allocation failed
+    AllocationFailed,
+    /// I/O error during profiling
+    IoError(String),
+    /// Serialization error
+    SerializationError(String),
+    /// Runtime integration error
+    RuntimeError(String),
+    /// Benchmark error
+    BenchmarkError(String),
+    /// Metrics collection error
+    MetricsError(String),
+    /// General profiler error
+    General(String),
+}
+
+impl fmt::Display for ProfilerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ProfilerError::NotInitialized => write!(f, "Profiler is not initialized"),
+            ProfilerError::AlreadyRunning => write!(f, "Profiler is already running"),
+            ProfilerError::NotRunning => write!(f, "Profiler is not running"),
+            ProfilerError::InvalidConfig(msg) => write!(f, "Invalid profiler configuration: {}", msg),
+            ProfilerError::SamplingFailed(msg) => write!(f, "Profiling sampling failed: {}", msg),
+            ProfilerError::AllocationFailed => write!(f, "Memory allocation failed during profiling"),
+            ProfilerError::IoError(msg) => write!(f, "I/O error during profiling: {}", msg),
+            ProfilerError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
+            ProfilerError::RuntimeError(msg) => write!(f, "Runtime integration error: {}", msg),
+            ProfilerError::BenchmarkError(msg) => write!(f, "Benchmark error: {}", msg),
+            ProfilerError::MetricsError(msg) => write!(f, "Metrics collection error: {}", msg),
+            ProfilerError::General(msg) => write!(f, "Profiler error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for ProfilerError {}
+
+impl From<std::io::Error> for ProfilerError {
+    fn from(err: std::io::Error) -> Self {
+        ProfilerError::IoError(err.to_string())
+    }
+}
+
+impl From<serde_json::Error> for ProfilerError {
+    fn from(err: serde_json::Error) -> Self {
+        ProfilerError::SerializationError(err.to_string())
+    }
+}
+
+/// Create a profiler error with a custom message
+pub fn profiler_error(msg: &str) -> ProfilerError {
+    ProfilerError::General(msg.to_string())
+}
+
+/// Create an invalid configuration error
+pub fn invalid_config_error(msg: &str) -> ProfilerError {
+    ProfilerError::InvalidConfig(msg.to_string())
+}
+
+/// Create a sampling failed error
+pub fn sampling_failed_error(msg: &str) -> ProfilerError {
+    ProfilerError::SamplingFailed(msg.to_string())
+}
+
+/// Create a runtime integration error
+pub fn runtime_error(msg: &str) -> ProfilerError {
+    ProfilerError::RuntimeError(msg.to_string())
+}
+
+/// Create a benchmark error
+pub fn benchmark_error(msg: &str) -> ProfilerError {
+    ProfilerError::BenchmarkError(msg.to_string())
+}
+
+/// Create a metrics error
+pub fn metrics_error(msg: &str) -> ProfilerError {
+    ProfilerError::MetricsError(msg.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_display() {
+        let error = ProfilerError::NotInitialized;
+        assert_eq!(error.to_string(), "Profiler is not initialized");
+
+        let error = ProfilerError::InvalidConfig("bad setting".to_string());
+        assert_eq!(error.to_string(), "Invalid profiler configuration: bad setting");
+    }
+
+    #[test]
+    fn test_error_helpers() {
+        let error = profiler_error("test message");
+        match error {
+            ProfilerError::General(msg) => assert_eq!(msg, "test message"),
+            _ => panic!("Expected General error"),
+        }
+
+        let error = invalid_config_error("config issue");
+        match error {
+            ProfilerError::InvalidConfig(msg) => assert_eq!(msg, "config issue"),
+            _ => panic!("Expected InvalidConfig error"),
+        }
+    }
+
+    #[test]
+    fn test_error_conversions() {
+        let io_error = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+        let profiler_error = ProfilerError::from(io_error);
+        match profiler_error {
+            ProfilerError::IoError(msg) => assert!(msg.contains("file not found")),
+            _ => panic!("Expected IoError"),
+        }
+    }
+}

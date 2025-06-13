@@ -4,6 +4,7 @@
 /// isolation levels, and proper ACID compliance for SQLite.
 
 use std::sync::{Arc, Mutex};
+use rusqlite::{Connection, types::Value as SqliteValue};
 use super::{SqliteError, SqliteResult};
 use super::connection::SqliteConnection;
 use super::super::{DriverTx, DatabaseError, SqlValue, TxOptions, SqlIsolationLevel};
@@ -233,6 +234,239 @@ impl DriverTx for SqliteTransaction {
             started_at: self.started_at,
             savepoints: self.savepoints.clone(),
         })
+    }
+}
+
+/// Real SQLite transaction implementation for rusqlite integration
+#[derive(Debug)]
+pub struct RealSqliteTransaction {
+    connection: Arc<Mutex<Option<Connection>>>,
+    options: TxOptions,
+    state: Arc<Mutex<TransactionState>>,
+}
+
+impl RealSqliteTransaction {
+    /// Create new transaction with connection handle
+    pub fn new(connection: Arc<Mutex<Option<Connection>>>, options: TxOptions) -> Result<Self, DatabaseError> {
+        {
+            let handle = connection.lock().unwrap();
+            if let Some(ref conn) = *handle {
+                // Begin transaction
+                conn.execute("BEGIN", [])
+                    .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::TransactionError, &format!("Failed to begin transaction: {}", e)))?;
+            }
+        }
+        
+        Ok(Self {
+            connection,
+            options,
+            state: Arc::new(Mutex::new(TransactionState::Active)),
+        })
+    }
+}
+
+impl DriverTx for RealSqliteTransaction {
+    fn prepare(&self, query: &str) -> Result<Box<dyn super::super::DriverStmt>, DatabaseError> {
+        if self.state() != TransactionState::Active {
+            return Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Transaction is not active"
+            ));
+        }
+
+        let stmt = super::statement::SqliteStatement::new_with_connection(self.connection.clone(), query.to_string())
+            .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
+        Ok(Box::new(stmt))
+    }
+
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::QueryResult, DatabaseError> {
+        if self.state() != TransactionState::Active {
+            return Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Transaction is not active"
+            ));
+        }
+
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            let mut stmt = conn.prepare(query)
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to prepare query: {}", e)))?;
+            
+            // Get column names before borrowing mutably
+            let columns = stmt.column_names().into_iter().map(|s| s.to_string()).collect();
+            
+            // Convert SqlValue args to rusqlite params
+            let params = convert_args_to_params(args)?;
+            
+            let mut rows = stmt.query(rusqlite::params_from_iter(params.iter()))
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to execute query: {}", e)))?;
+            
+            let mut result_rows = Vec::new();
+            
+            while let Some(row) = rows.next()
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to fetch row: {}", e)))? {
+                
+                let mut values = Vec::new();
+                for i in 0..row.as_ref().column_count() {
+                    let value = convert_value_from_sqlite(&row, i)?;
+                    values.push(value);
+                }
+                result_rows.push(values);
+            }
+            
+            Ok(super::super::driver::QueryResult {
+                column_names: columns,
+                column_types: vec![], // Would need to extract actual types
+                rows: result_rows,
+                error: None,
+            })
+        } else {
+            Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConnectionError,
+                "Connection is not available"
+            ))
+        }
+    }
+
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::ExecuteResult, DatabaseError> {
+        if self.state() != TransactionState::Active {
+            return Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Transaction is not active"
+            ));
+        }
+
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            let mut stmt = conn.prepare(query)
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to prepare statement: {}", e)))?;
+            
+            let params = convert_args_to_params(args)?;
+            
+            let changes = stmt.execute(rusqlite::params_from_iter(params.iter()))
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &format!("Failed to execute statement: {}", e)))?;
+            
+            let last_insert_id = conn.last_insert_rowid();
+            
+            Ok(super::super::driver::ExecuteResult {
+                rows_affected: changes as i64,
+                last_insert_id: Some(last_insert_id as i64),
+            })
+        } else {
+            Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConnectionError,
+                "Connection is not available"
+            ))
+        }
+    }
+
+    fn commit(&self) -> Result<(), DatabaseError> {
+        let mut state = self.state.lock()
+            .map_err(|_| DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Failed to acquire transaction state lock"
+            ))?;
+
+        if *state != TransactionState::Active {
+            return Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Transaction is not active"
+            ));
+        }
+
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            conn.execute("COMMIT", [])
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::TransactionError, &format!("Failed to commit transaction: {}", e)))?;
+        }
+
+        *state = TransactionState::Committed;
+        Ok(())
+    }
+
+    fn rollback(&self) -> Result<(), DatabaseError> {
+        let mut state = self.state.lock()
+            .map_err(|_| DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Failed to acquire transaction state lock"
+            ))?;
+
+        if *state != TransactionState::Active {
+            return Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::TransactionError,
+                "Transaction is not active"
+            ));
+        }
+
+        let handle = self.connection.lock().unwrap();
+        if let Some(ref conn) = *handle {
+            conn.execute("ROLLBACK", [])
+                .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::TransactionError, &format!("Failed to rollback transaction: {}", e)))?;
+        }
+
+        *state = TransactionState::RolledBack;
+        Ok(())
+    }
+
+    fn options(&self) -> &TxOptions {
+        &self.options
+    }
+
+    fn is_active(&self) -> bool {
+        self.state() == TransactionState::Active
+    }
+
+    fn clone(&self) -> Box<dyn DriverTx> {
+        Box::new(Self {
+            connection: self.connection.clone(),
+            options: self.options.clone(),
+            state: self.state.clone(),
+        })
+    }
+}
+
+impl RealSqliteTransaction {
+    /// Get transaction state
+    pub fn state(&self) -> TransactionState {
+        self.state.lock()
+            .map(|s| *s)
+            .unwrap_or(TransactionState::Error)
+    }
+}
+
+/// Convert CURSED SqlValue to rusqlite parameters
+fn convert_args_to_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusqlite::ToSql>>, DatabaseError> {
+    let mut params = Vec::new();
+    
+    for arg in args {
+        match arg {
+            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
+            SqlValue::String(s) => params.push(Box::new(s.clone()) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Bytes(b) => params.push(Box::new(b.clone()) as Box<dyn rusqlite::ToSql>),
+            _ => return Err(DatabaseError::new(
+                super::super::DatabaseErrorKind::ConversionError,
+                &format!("Unsupported SqlValue type: {:?}", arg)
+            )),
+        }
+    }
+    
+    Ok(params)
+}
+
+/// Convert rusqlite value to CURSED SqlValue
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<SqlValue, DatabaseError> {
+    let value: SqliteValue = row.get(index)
+        .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
+    
+    match value {
+        SqliteValue::Null => Ok(SqlValue::Null),
+        SqliteValue::Integer(i) => Ok(SqlValue::Integer(i)),
+        SqliteValue::Real(f) => Ok(SqlValue::Float(f)),
+        SqliteValue::Text(s) => Ok(SqlValue::String(s)),
+        SqliteValue::Blob(b) => Ok(SqlValue::Bytes(b)),
     }
 }
 

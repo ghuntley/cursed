@@ -29,6 +29,7 @@ pub mod validation;
 pub mod certificate_generation;
 pub mod certificate_signing;
 pub mod certificate_revocation;
+pub mod certificate_renewal;
 pub mod trust_chains;
 pub mod path_validation;
 pub mod timestamping;
@@ -42,6 +43,18 @@ pub use x509_parser::{X509Parser, ParserConfig};
 pub use certificate_authority::{CertificateAuthority, CaConfig, CertificateIssuanceRequest};
 pub use chain_validation::{ChainValidator, ValidationContext, ValidationPolicy};
 pub use csr_generator::{CsrGenerator, CsrRequest};
+pub use certificate_signing::{
+    CertificateSigner, CertificateSigningRequest, CertificateSigningPolicy,
+    CertificateTemplate, CertificatePurpose, BatchSigningRequest, BatchSigningResult,
+    CertificateRenewalRequest, SerialNumberPolicy, ExtensionPolicy
+};
+pub use certificate_renewal::{
+    CertificateRenewalManager, RenewalConfig, RenewalMethod, AcmeClient, AcmeConfig,
+    CertificateMonitoringConfig, CertificateStatus, RenewalTask, RenewalTaskStatus,
+    NotificationConfig, ValidationRequirements, BackupConfig, MonitoringConfig,
+    init_certificate_renewal, create_renewal_manager, add_certificate_to_monitoring,
+    trigger_certificate_renewal, get_certificate_renewal_status, get_renewal_statistics
+};
 pub use crl_manager::{CrlManager, CrlConfig};
 pub use ocsp_client::{OcspClient, OcspRequest as PkiOcspRequest};
 pub use trust_store::{TrustStoreManager};
@@ -63,6 +76,8 @@ static PKI_MANAGER: LazyLock<Arc<Mutex<PkiManager>>> =
 pub struct PkiManager {
     /// Certificate authorities registry
     pub certificate_authorities: HashMap<String, CertificateAuthority>,
+    /// Certificate signers registry
+    pub certificate_signers: HashMap<String, CertificateSigner>,
     /// Trust stores registry
     pub trust_stores: HashMap<String, PkiTrustStore>,
     /// Certificate parsers
@@ -130,6 +145,7 @@ impl PkiManager {
     pub fn new() -> Self {
         Self {
             certificate_authorities: HashMap::new(),
+            certificate_signers: HashMap::new(),
             trust_stores: HashMap::new(),
             parsers: HashMap::new(),
             validators: HashMap::new(),
@@ -261,6 +277,60 @@ impl PkiManager {
         self.certificate_authorities.get_mut(name)
     }
     
+    /// Create a certificate signer from an existing CA
+    pub fn create_signer_from_ca(&mut self, ca_name: &str, signer_name: String) -> Result<(), PkiError> {
+        let ca = self.certificate_authorities.get(ca_name)
+            .ok_or_else(|| PkiError::general(format!("CA not found: {}", ca_name)))?;
+        
+        let signer = CertificateSigner::new(
+            ca.private_key.clone(),
+            ca.ca_certificate.clone(),
+        );
+        
+        self.certificate_signers.insert(signer_name, signer);
+        Ok(())
+    }
+    
+    /// Sign a certificate using a registered signer
+    pub fn sign_certificate(
+        &mut self, 
+        signer_name: &str, 
+        request: certificate_signing::CertificateSigningRequest
+    ) -> Result<X509Certificate, PkiError> {
+        let signer = self.certificate_signers.get_mut(signer_name)
+            .ok_or_else(|| PkiError::general(format!("Certificate signer not found: {}", signer_name)))?;
+        
+        let certificate = signer.sign_certificate(request)?;
+        self.statistics.certificates_issued += 1;
+        
+        Ok(certificate)
+    }
+    
+    /// Sign a batch of certificates
+    pub fn sign_certificate_batch(
+        &mut self,
+        signer_name: &str,
+        batch_request: certificate_signing::BatchSigningRequest
+    ) -> Result<certificate_signing::BatchSigningResult, PkiError> {
+        let signer = self.certificate_signers.get_mut(signer_name)
+            .ok_or_else(|| PkiError::general(format!("Certificate signer not found: {}", signer_name)))?;
+        
+        let result = signer.sign_batch(batch_request)?;
+        self.statistics.certificates_issued += result.statistics.successful_signings as u64;
+        
+        Ok(result)
+    }
+    
+    /// Get certificate signer by name
+    pub fn get_signer(&self, name: &str) -> Option<&CertificateSigner> {
+        self.certificate_signers.get(name)
+    }
+    
+    /// Get mutable certificate signer by name
+    pub fn get_signer_mut(&mut self, name: &str) -> Option<&mut CertificateSigner> {
+        self.certificate_signers.get_mut(name)
+    }
+    
     /// Parse a certificate from PEM or DER data
     pub fn parse_certificate(&mut self, data: &[u8], format_hint: Option<&str>) -> Result<X509Certificate, PkiError> {
         let parser = self.parsers.get("default")
@@ -364,6 +434,9 @@ pub fn init_crypto_pki() -> Result<(), CursedError> {
     println!("   ✅ Multiple signature algorithms (RSA, ECDSA, Ed25519)");
     println!("   ✅ Trust store management");
     println!("   ✅ Key management and CSR generation");
+    println!("   ✅ Certificate renewal and lifecycle management");
+    println!("   ✅ ACME protocol support (Let's Encrypt)");
+    println!("   ✅ Automated certificate monitoring and alerting");
     
     Ok(())
 }
@@ -393,6 +466,39 @@ pub fn create_certificate_authority(name: String, config: CaConfig) -> Result<St
     
     manager.create_ca(name, config, None)
         .map_err(|e| CursedError::Runtime(format!("CA creation failed: {}", e)))
+}
+
+/// Create a certificate signer from an existing CA
+pub fn create_certificate_signer(ca_name: &str, signer_name: String) -> Result<(), CursedError> {
+    let mut manager = PKI_MANAGER.lock()
+        .map_err(|_| CursedError::Runtime("Failed to acquire PKI manager lock".to_string()))?;
+    
+    manager.create_signer_from_ca(ca_name, signer_name)
+        .map_err(|e| CursedError::Runtime(format!("Certificate signer creation failed: {}", e)))
+}
+
+/// Sign a certificate from a CSR
+pub fn sign_certificate_from_csr(
+    signer_name: &str, 
+    request: certificate_signing::CertificateSigningRequest
+) -> Result<X509Certificate, CursedError> {
+    let mut manager = PKI_MANAGER.lock()
+        .map_err(|_| CursedError::Runtime("Failed to acquire PKI manager lock".to_string()))?;
+    
+    manager.sign_certificate(signer_name, request)
+        .map_err(|e| CursedError::Runtime(format!("Certificate signing failed: {}", e)))
+}
+
+/// Sign a batch of certificates
+pub fn sign_certificate_batch(
+    signer_name: &str,
+    batch_request: certificate_signing::BatchSigningRequest
+) -> Result<certificate_signing::BatchSigningResult, CursedError> {
+    let mut manager = PKI_MANAGER.lock()
+        .map_err(|_| CursedError::Runtime("Failed to acquire PKI manager lock".to_string()))?;
+    
+    manager.sign_certificate_batch(signer_name, batch_request)
+        .map_err(|e| CursedError::Runtime(format!("Batch certificate signing failed: {}", e)))
 }
 
 /// Get PKI system statistics

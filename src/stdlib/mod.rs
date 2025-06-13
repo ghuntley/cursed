@@ -22,6 +22,8 @@ pub mod sync;
 pub mod ipc;
 pub mod net;
 pub mod vibecheck;
+pub mod system;
+pub mod profiler;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -518,3 +520,115 @@ pub use vibecheck::{
 };
 
 pub use dot_registry::DOT_REGISTRY;
+
+// Performance monitoring and profiling re-exports - Comprehensive profiling tools
+pub use profiler::{
+    // Error handling system
+    ProfilerError, ProfilerResult,
+    
+    // CPU profiling
+    CpuProfiler, CpuProfile, CpuSample, FunctionProfile, CallGraph, 
+    ProfileData, SamplingConfig, ProfilerConfig,
+    start_cpu_profiling, stop_cpu_profiling, get_cpu_profile,
+    
+    // Memory profiling
+    MemoryProfiler, MemoryProfile, AllocationProfile, AllocationSite,
+    MemoryStats, HeapProfile, GcProfile, MemoryTracker,
+    start_memory_profiling, stop_memory_profiling, get_memory_profile,
+    track_allocation, track_deallocation, get_memory_stats,
+    
+    // Benchmark framework
+    Benchmark, BenchmarkResult, BenchmarkSuite, BenchmarkConfig,
+    BenchmarkRunner, BenchmarkReport, ComparisonResult,
+    benchmark_function, benchmark_with_setup, run_benchmark_suite,
+    compare_benchmarks, generate_benchmark_report,
+    
+    // Performance metrics
+    PerformanceMetrics, MetricsCollector, MetricType, MetricValue,
+    CounterMetric, GaugeMetric, HistogramMetric, TimerMetric,
+    collect_metrics, start_metrics_collection, stop_metrics_collection,
+    get_current_metrics, export_metrics,
+    
+    // Runtime integration
+    ProfilerRuntime, RuntimeProfiler, IntegrationConfig,
+    initialize_profiler, shutdown_profiler, get_profiler_runtime,
+    integrate_with_gc, integrate_with_goroutines, integrate_with_jit,
+    
+    // Utility functions
+    get_statistics, ProfilerStatistics, quick_performance_check, QuickStats,
+    get_profiling_overhead
+};
+
+// IPC (Inter-Process Communication) re-exports - Complete IPC functionality
+pub use ipc::{
+    IpcError, IpcResult, 
+    communication_error, security_error, resource_error, timeout_error,
+    invalid_operation, permission_denied, resource_exhausted, connection_failed,
+    
+    // Core IPC types and traits
+    ProcessId, IpcHandle, IpcPermissions, IpcMode, 
+    SharedMemoryId, MessageQueueId, SemaphoreId, PipeId,
+    IpcTimeout, IpcConfig, IpcStatistics, ResourceLimits,
+    IpcChannel, IpcReader, IpcWriter, IpcBidirectional,
+    Synchronizable, Lockable, Waitable, Signalable,
+    Serializable, Deserializable, IpcResource,
+    
+    // Shared Memory operations
+    SharedMemory, SharedMemoryConfig, SharedMemoryAccess,
+    create_shared_memory, open_shared_memory, remove_shared_memory,
+    SharedMemoryIterator, SharedMemoryView, MemoryMapping, MemoryProtection,
+    
+    // Named Pipes operations
+    NamedPipe, AnonymousPipe, PipeConfig, PipeMode, PipeEnd,
+    create_pipe, create_named_pipe, open_pipe, connect_pipe,
+    PipeReader, PipeWriter, PipeStream, PipeListener,
+    
+    // Message Queue operations
+    MessageQueue, Message, MessageType, MessagePriority, MessageConfig,
+    create_message_queue, open_message_queue, remove_message_queue,
+    send_message, receive_message, peek_message, MessageIterator,
+    
+    // Semaphore operations
+    Semaphore, SemaphoreConfig, SemaphoreValue, SemaphorePermissions,
+    create_semaphore, open_semaphore, remove_semaphore,
+    acquire_semaphore, release_semaphore, try_acquire_semaphore,
+    CountingSemaphore, BinarySemaphore, NamedSemaphore,
+    
+    // Signal handling
+    SignalHandler, Signal, SignalAction, SignalMask, SignalConfig,
+    send_signal, block_signal, unblock_signal, ignore_signal,
+    register_signal_handler, unregister_signal_handler,
+    wait_for_signal, signal_pending, SignalSet,
+    
+    // Domain Socket operations
+    DomainSocket, UnixSocket, SocketConfig, SocketType, SocketAddress,
+    create_socket, bind_socket, listen_socket, accept_connection,
+    connect_socket, SocketListener, SocketStream, SocketPair,
+    
+    // Remote Procedure Call infrastructure
+    RpcClient, RpcServer, RpcConfig, RpcMethod, RpcRequest, RpcResponse,
+    RpcError, RpcHandler, RpcRegistry, RpcTransport,
+    create_rpc_server, create_rpc_client, register_rpc_method,
+    call_remote_method, RpcSerializer, RpcDeserializer,
+    
+    // Security and permissions management
+    IpcSecurityContext, SecurityPolicy, AccessControl, Permission,
+    Credential, AuthenticationMethod, AuthorizationResult,
+    create_security_context, validate_permissions, check_access,
+    encrypt_ipc_data, decrypt_ipc_data, generate_ipc_token,
+    
+    // High-level IPC channels and synchronization
+    IpcChannel as IpcChannelHighLevel, ChannelConfig, ChannelType, ChannelStatistics, ChannelPair,
+    IpcBarrier, IpcRwLock, IpcCondVar, ProcessCoordinator,
+    IpcRwLockReadGuard, IpcRwLockWriteGuard, BarrierWaitResult,
+    CoordinatorStatistics,
+    
+    // Transport layer
+    UnixSocketTransport, UnixSocketConfig, UnixSocketPool, ConnectionPool,
+    TransportPool, PooledConnection, PoolManager, PoolConfiguration,
+    Transport, TransportConnection, TransportListener, StreamTransport, DatagramTransport,
+    TransportStatistics,
+    
+    // Module initialization and statistics
+    get_ipc_statistics
+};

@@ -5,7 +5,10 @@
 
 use crate::build_system::{
     BuildConfig, BuildTarget, BuildProfile, IncrementalCache, DependencyResolver,
-    TargetType, OptimizationLevel
+    TargetType, OptimizationLevel, TestDiscovery, TestDiscoveryConfig, TestExecutor, 
+    TestExecutionConfig, TestExecutionResult, TestFilter, TestCategory,
+    ParallelCompiler, ParallelCompilationConfig, IncrementalOptimizer, IncrementalConfig,
+    BuildProfiler, ProfilerConfig, ArtifactManager, ArtifactConfig
 };
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
 use crate::build_system::incremental_cache::CacheError;
@@ -18,6 +21,7 @@ use std::time::{Duration, Instant};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use num_cpus;
 use tracing::{debug, error, info, warn, instrument};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind, Config, Result as NotifyResult};
 use futures;
@@ -69,6 +73,11 @@ pub struct BuildOrchestrator {
     work_dir: PathBuf,
     file_watcher: Option<FileWatcher>,
     watch_config: WatchConfig,
+    // Advanced features
+    parallel_compiler: Option<ParallelCompiler>,
+    incremental_optimizer: Option<IncrementalOptimizer>,
+    build_profiler: Option<BuildProfiler>,
+    artifact_manager: Option<ArtifactManager>,
 }
 
 /// Build result information
@@ -177,6 +186,10 @@ impl BuildOrchestrator {
             work_dir,
             file_watcher: None,
             watch_config: WatchConfig::default(),
+            parallel_compiler: None,
+            incremental_optimizer: None,
+            build_profiler: None,
+            artifact_manager: None,
         })
     }
     
@@ -662,44 +675,330 @@ impl BuildOrchestrator {
         Ok(())
     }
     
-    /// Run tests
+    /// Run tests with comprehensive discovery and execution
     #[instrument(skip(self))]
     pub async fn test(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
-        info!("Running tests with profile: {}", profile);
+        info!("Running comprehensive test suite with profile: {}", profile);
         
-        // Build first if needed
-        self.build_all(profile).await?;
+        let start_time = Instant::now();
         
-        // Run test executable if it exists
-        let test_executable = self.work_dir.join("target").join("debug").join("test");
-        if test_executable.exists() {
-            let output = Command::new(&test_executable)
-                .output()?;
-            
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(BuildError::CompilationError(format!(
-                    "Tests failed: {}", stderr
-                )));
-            }
+        // Configure test discovery
+        let discovery_config = TestDiscoveryConfig {
+            root_dir: self.work_dir.clone(),
+            include_unit_tests: true,
+            include_integration_tests: true,
+            include_doc_tests: false,
+            include_benchmarks: false,
+            include_examples: false,
+            custom_patterns: Vec::new(),
+            exclude_patterns: vec![
+                "target/**".to_string(),
+                ".git/**".to_string(),
+                "*.bak".to_string(),
+            ],
+        };
+        
+        // Discover tests
+        let test_discovery = TestDiscovery::new(discovery_config)
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        let discovery_result = test_discovery.discover_tests()
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        info!("Discovered {} tests ({} unit, {} integration)", 
+              discovery_result.statistics.total_tests,
+              discovery_result.statistics.unit_tests,
+              discovery_result.statistics.integration_tests);
+        
+        if discovery_result.tests.is_empty() {
+            warn!("No tests found in project");
+            return Ok(BuildResult {
+                success: true,
+                duration: start_time.elapsed(),
+                targets_built: Vec::from(["tests".to_string()]),
+                targets_skipped: Vec::from([]),
+                outputs: Vec::from([]),
+                artifacts: HashMap::new(),
+                warnings: vec!["No tests found in project".to_string()],
+                statistics: BuildStatistics {
+                    files_compiled: 0,
+                    files_cached: 0,
+                    lines_compiled: 0,
+                    peak_memory: 0,
+                    phase_timings: HashMap::new(),
+                },
+            });
         }
         
-        // TODO: Implement proper test discovery and execution
-        Ok(BuildResult {
-            success: true,
-            duration: Duration::from_millis(0),
-            targets_built: Vec::from(["tests".to_string()]),
-            targets_skipped: Vec::from([]),
-            outputs: Vec::from([]),
-            artifacts: HashMap::new(),
-            warnings: Vec::from([]),
-            statistics: BuildStatistics {
-                files_compiled: 0,
-                files_cached: 0,
-                lines_compiled: 0,
-                peak_memory: 0,
-                phase_timings: HashMap::new(),
+        // Configure test execution
+        let mut execution_config = TestExecutionConfig::default();
+        execution_config.work_dir = self.work_dir.clone();
+        execution_config.release_mode = profile == "release";
+        execution_config.use_linking_fix = true; // Enable Nix environment linking fix
+        execution_config.linking_fix_script = Some(self.work_dir.join("fix_linking.sh"));
+        execution_config.parallel_threads = std::cmp::min(num_cpus::get(), 4); // Limit parallelism
+        
+        // Add linking fix environment variables for Nix compatibility
+        execution_config.env_vars.insert(
+            "LIBRARY_PATH".to_string(),
+            "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib".to_string()
+        );
+        execution_config.env_vars.insert(
+            "RUSTFLAGS".to_string(),
+            "-C linker=gcc -C link-arg=-fuse-ld=bfd".to_string()
+        );
+        
+        // Filter tests if needed (exclude ignored tests by default)
+        let test_filter = TestFilter::default();
+        let tests_to_run = test_filter.apply(&discovery_result);
+        
+        info!("Running {} tests (filtered from {})", tests_to_run.len(), discovery_result.tests.len());
+        
+        // Execute tests
+        let test_executor = TestExecutor::new(execution_config);
+        let execution_result = test_executor.execute_tests(tests_to_run).await
+            .map_err(|e| BuildError::CompilationError(e.to_string()))?;
+        
+        // Convert test execution results to build results
+        let build_result = self.convert_test_results_to_build_result(execution_result, start_time.elapsed())?;
+        
+        if build_result.success {
+            info!("All tests passed successfully!");
+        } else {
+            error!("Some tests failed. Check output for details.");
+        }
+        
+        Ok(build_result)
+    }
+    
+    /// Run tests with custom filter patterns
+    #[instrument(skip(self))]
+    pub async fn test_with_filter(&mut self, profile: &str, patterns: &[String]) -> Result<BuildResult, BuildError> {
+        info!("Running filtered tests with patterns: {:?}", patterns);
+        
+        let start_time = Instant::now();
+        
+        // Configure test discovery
+        let discovery_config = TestDiscoveryConfig {
+            root_dir: self.work_dir.clone(),
+            include_unit_tests: true,
+            include_integration_tests: true,
+            include_doc_tests: false,
+            include_benchmarks: false,
+            include_examples: false,
+            custom_patterns: Vec::new(),
+            exclude_patterns: vec![
+                "target/**".to_string(),
+                ".git/**".to_string(),
+                "*.bak".to_string(),
+            ],
+        };
+        
+        // Discover tests
+        let test_discovery = TestDiscovery::new(discovery_config)
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        let discovery_result = test_discovery.discover_tests()
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        // Apply custom filter patterns
+        let filtered_tests = test_discovery.filter_tests(&discovery_result, patterns);
+        
+        info!("Found {} tests matching patterns from {} total tests", 
+              filtered_tests.len(), discovery_result.statistics.total_tests);
+        
+        if filtered_tests.is_empty() {
+            warn!("No tests found matching filter patterns: {:?}", patterns);
+            return Ok(BuildResult {
+                success: true,
+                duration: start_time.elapsed(),
+                targets_built: Vec::from(["tests".to_string()]),
+                targets_skipped: Vec::from([]),
+                outputs: Vec::from([]),
+                artifacts: HashMap::new(),
+                warnings: vec![format!("No tests found matching patterns: {:?}", patterns)],
+                statistics: BuildStatistics {
+                    files_compiled: 0,
+                    files_cached: 0,
+                    lines_compiled: 0,
+                    peak_memory: 0,
+                    phase_timings: HashMap::new(),
+                },
+            });
+        }
+        
+        // Configure test execution
+        let mut execution_config = TestExecutionConfig::default();
+        execution_config.work_dir = self.work_dir.clone();
+        execution_config.release_mode = profile == "release";
+        execution_config.use_linking_fix = true;
+        execution_config.linking_fix_script = Some(self.work_dir.join("fix_linking.sh"));
+        
+        // Add linking fix environment variables
+        execution_config.env_vars.insert(
+            "LIBRARY_PATH".to_string(),
+            "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib".to_string()
+        );
+        execution_config.env_vars.insert(
+            "RUSTFLAGS".to_string(),
+            "-C linker=gcc -C link-arg=-fuse-ld=bfd".to_string()
+        );
+        
+        // Execute filtered tests
+        let test_executor = TestExecutor::new(execution_config);
+        let execution_result = test_executor.execute_tests(filtered_tests).await
+            .map_err(|e| BuildError::CompilationError(e.to_string()))?;
+        
+        // Convert test execution results to build results
+        let build_result = self.convert_test_results_to_build_result(execution_result, start_time.elapsed())?;
+        
+        Ok(build_result)
+    }
+    
+    /// Run only ignored tests
+    #[instrument(skip(self))]
+    pub async fn test_ignored(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+        info!("Running ignored tests with profile: {}", profile);
+        
+        let start_time = Instant::now();
+        
+        // Configure test discovery
+        let discovery_config = TestDiscoveryConfig {
+            root_dir: self.work_dir.clone(),
+            include_unit_tests: true,
+            include_integration_tests: true,
+            include_doc_tests: false,
+            include_benchmarks: false,
+            include_examples: false,
+            custom_patterns: Vec::new(),
+            exclude_patterns: vec![
+                "target/**".to_string(),
+                ".git/**".to_string(),
+                "*.bak".to_string(),
+            ],
+        };
+        
+        // Discover tests
+        let test_discovery = TestDiscovery::new(discovery_config)
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        let discovery_result = test_discovery.discover_tests()
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        // Filter for ignored tests only
+        let test_filter = TestFilter {
+            only_ignored: true,
+            include_ignored: true,
+            ..Default::default()
+        };
+        let ignored_tests = test_filter.apply(&discovery_result);
+        
+        info!("Found {} ignored tests out of {} total tests", 
+              ignored_tests.len(), discovery_result.statistics.total_tests);
+        
+        if ignored_tests.is_empty() {
+            info!("No ignored tests found");
+            return Ok(BuildResult {
+                success: true,
+                duration: start_time.elapsed(),
+                targets_built: Vec::from(["ignored_tests".to_string()]),
+                targets_skipped: Vec::from([]),
+                outputs: Vec::from([]),
+                artifacts: HashMap::new(),
+                warnings: Vec::from([]),
+                statistics: BuildStatistics {
+                    files_compiled: 0,
+                    files_cached: 0,
+                    lines_compiled: 0,
+                    peak_memory: 0,
+                    phase_timings: HashMap::new(),
+                },
+            });
+        }
+        
+        // Configure test execution for ignored tests
+        let mut execution_config = TestExecutionConfig::default();
+        execution_config.work_dir = self.work_dir.clone();
+        execution_config.release_mode = profile == "release";
+        execution_config.use_linking_fix = true;
+        execution_config.linking_fix_script = Some(self.work_dir.join("fix_linking.sh"));
+        execution_config.cargo_args.push("--ignored".to_string()); // Add --ignored flag for cargo test
+        
+        // Add linking fix environment variables
+        execution_config.env_vars.insert(
+            "LIBRARY_PATH".to_string(),
+            "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib".to_string()
+        );
+        execution_config.env_vars.insert(
+            "RUSTFLAGS".to_string(),
+            "-C linker=gcc -C link-arg=-fuse-ld=bfd".to_string()
+        );
+        
+        // Execute ignored tests
+        let test_executor = TestExecutor::new(execution_config);
+        let execution_result = test_executor.execute_tests(ignored_tests).await
+            .map_err(|e| BuildError::CompilationError(e.to_string()))?;
+        
+        // Convert test execution results to build results
+        let build_result = self.convert_test_results_to_build_result(execution_result, start_time.elapsed())?;
+        
+        Ok(build_result)
+    }
+    
+    /// Convert test execution results to BuildResult format
+    fn convert_test_results_to_build_result(
+        &self, 
+        execution_result: TestExecutionResult, 
+        total_duration: Duration
+    ) -> Result<BuildResult, BuildError> {
+        let success = execution_result.summary.success;
+        let statistics = &execution_result.statistics;
+        
+        // Create warnings from failed tests
+        let mut warnings = Vec::new();
+        for failed_test in &execution_result.summary.failed_tests {
+            warnings.push(format!(
+                "Test '{}' failed: {}",
+                failed_test.test_name,
+                failed_test.reason
+            ));
+        }
+        
+        // Add performance insights as warnings
+        for insight in &execution_result.summary.performance_insights {
+            warnings.push(format!("Performance insight: {}", insight));
+        }
+        
+        // Create build statistics from test statistics
+        let build_statistics = BuildStatistics {
+            files_compiled: statistics.total_tests,
+            files_cached: 0, // Tests aren't cached in the same way
+            lines_compiled: 0, // Could be computed from test files
+            peak_memory: statistics.total_memory_usage.unwrap_or(0),
+            phase_timings: {
+                let mut timings = HashMap::new();
+                timings.insert("test_discovery".to_string(), Duration::from_millis(100)); // Estimated
+                timings.insert("test_execution".to_string(), execution_result.total_duration);
+                timings
             },
+        };
+        
+        // Create artifacts from test results (test reports, coverage, etc.)
+        let mut artifacts = HashMap::new();
+        artifacts.insert(
+            "test_results".to_string(),
+            self.work_dir.join("target").join("test_results.json")
+        );
+        
+        Ok(BuildResult {
+            success,
+            duration: total_duration,
+            targets_built: vec![format!("tests ({} passed)", statistics.passed)],
+            targets_skipped: vec![format!("{} ignored", statistics.ignored)],
+            outputs: vec![self.work_dir.join("target").join("test_results.json")],
+            artifacts,
+            warnings,
+            statistics: build_statistics,
         })
     }
     
@@ -957,6 +1256,239 @@ impl BuildOrchestrator {
     /// Get current watch configuration
     pub fn get_watch_config(&self) -> &WatchConfig {
         &self.watch_config
+    }
+    
+    /// Enable advanced parallel compilation
+    #[instrument(skip(self))]
+    pub async fn enable_parallel_compilation(&mut self, config: Option<ParallelCompilationConfig>) -> Result<(), BuildError> {
+        info!("Enabling advanced parallel compilation");
+        
+        let parallel_config = config.unwrap_or_default();
+        let compiler = ParallelCompiler::new(parallel_config)
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        let worker_count = parallel_config.max_workers;
+        self.parallel_compiler = Some(compiler);
+        info!("Parallel compilation enabled with {} workers", worker_count);
+        
+        Ok(())
+    }
+    
+    /// Enable incremental optimization
+    #[instrument(skip(self))]
+    pub async fn enable_incremental_optimization(&mut self, config: Option<IncrementalConfig>) -> Result<(), BuildError> {
+        info!("Enabling incremental compilation optimization");
+        
+        let incremental_config = config.unwrap_or_default();
+        let optimizer = IncrementalOptimizer::new(incremental_config, self.work_dir.clone())
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        self.incremental_optimizer = Some(optimizer);
+        info!("Incremental optimization enabled with fine-grained dependency tracking");
+        
+        Ok(())
+    }
+    
+    /// Enable build profiling
+    #[instrument(skip(self))]
+    pub async fn enable_build_profiling(&mut self, config: Option<ProfilerConfig>) -> Result<(), BuildError> {
+        info!("Enabling build performance profiling");
+        
+        let profiler_config = config.unwrap_or_default();
+        let profiler = BuildProfiler::new(profiler_config)
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        self.build_profiler = Some(profiler);
+        info!("Build profiling enabled with detailed performance analysis");
+        
+        Ok(())
+    }
+    
+    /// Enable artifact management
+    #[instrument(skip(self))]
+    pub async fn enable_artifact_management(&mut self, config: Option<ArtifactConfig>) -> Result<(), BuildError> {
+        info!("Enabling advanced artifact management");
+        
+        let artifact_config = config.unwrap_or_default();
+        let manager = ArtifactManager::new(artifact_config)
+            .map_err(|e| BuildError::ConfigError(e.to_string()))?;
+        
+        self.artifact_manager = Some(manager);
+        info!("Artifact management enabled with intelligent storage and versioning");
+        
+        Ok(())
+    }
+    
+    /// Build with advanced optimization
+    #[instrument(skip(self))]
+    pub async fn build_optimized(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+        info!("Starting optimized build with advanced features");
+        
+        // Start profiling if enabled
+        if let Some(ref mut profiler) = self.build_profiler {
+            profiler.start_profiling(
+                self.config.clone(),
+                self.config.targets.clone(),
+                self.config.get_effective_profile(profile)
+                    .map_err(|e| BuildError::ConfigError(e.to_string()))?
+            ).await?;
+        }
+        
+        let start_time = Instant::now();
+        let mut result = BuildResult {
+            success: true,
+            duration: Duration::default(),
+            targets_built: Vec::new(),
+            targets_skipped: Vec::new(),
+            outputs: Vec::new(),
+            artifacts: HashMap::new(),
+            warnings: Vec::new(),
+            statistics: BuildStatistics {
+                files_compiled: 0,
+                files_cached: 0,
+                lines_compiled: 0,
+                peak_memory: 0,
+                phase_timings: HashMap::new(),
+            },
+        };
+        
+        // Run incremental analysis if enabled
+        if let Some(ref mut optimizer) = self.incremental_optimizer {
+            let incremental_plan = optimizer.analyze_incremental_build(
+                &self.config.targets,
+                &self.config.get_effective_profile(profile)
+                    .map_err(|e| BuildError::ConfigError(e.to_string()))?
+            ).await?;
+            
+            info!(
+                "Incremental analysis: {} files to compile, {} from cache, {:.1}% cache hit rate",
+                incremental_plan.files_to_compile.len(),
+                incremental_plan.files_from_cache.len(),
+                incremental_plan.cache_hit_rate * 100.0
+            );
+            
+            result.targets_skipped = incremental_plan.files_from_cache
+                .iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
+        }
+        
+        // Use parallel compilation if enabled
+        if let Some(ref mut parallel_compiler) = self.parallel_compiler {
+            // Convert targets to compilation tasks
+            let compilation_tasks = self.create_compilation_tasks(&self.config.targets, profile)?;
+            
+            let parallel_result = parallel_compiler.compile_parallel(
+                compilation_tasks,
+                &self.config.get_effective_profile(profile)
+                    .map_err(|e| BuildError::ConfigError(e.to_string()))?
+            ).await?;
+            
+            info!(
+                "Parallel compilation completed: {} tasks, {:.1}% efficiency",
+                parallel_result.tasks_completed,
+                parallel_result.parallel_efficiency * 100.0
+            );
+            
+            // Convert parallel result to build result
+            result.success = parallel_result.success;
+            result.targets_built = parallel_result.worker_statistics
+                .iter()
+                .map(|ws| format!("worker_{}", ws.worker_id))
+                .collect();
+            result.statistics.files_compiled = parallel_result.tasks_completed;
+            result.statistics.peak_memory = parallel_result.resource_utilization.peak_memory_usage;
+        } else {
+            // Fall back to standard build
+            result = self.build_all(profile).await?;
+        }
+        
+        // Store artifacts if artifact management is enabled
+        if let Some(ref mut artifact_manager) = self.artifact_manager {
+            let stored_artifacts = artifact_manager.store_artifacts(
+                &result,
+                &self.config,
+                &self.config.get_effective_profile(profile)
+                    .map_err(|e| BuildError::ConfigError(e.to_string()))?
+            ).await.map_err(|e| BuildError::ConfigError(e.to_string()))?;
+            
+            info!("Stored {} artifacts", stored_artifacts.len());
+        }
+        
+        result.duration = start_time.elapsed();
+        
+        // Generate profiling report if enabled
+        if let Some(ref mut profiler) = self.build_profiler {
+            let profiling_report = profiler.stop_profiling().await?;
+            
+            info!(
+                "Build profiling completed - Performance score: {:.1}, {} optimization recommendations",
+                profiling_report.performance_analysis.overall_score * 100.0,
+                profiling_report.optimization_recommendations.len()
+            );
+            
+            // Add profiling insights to warnings
+            for recommendation in &profiling_report.optimization_recommendations {
+                result.warnings.push(format!(
+                    "Performance recommendation: {} (potential savings: {:?})",
+                    recommendation.title,
+                    recommendation.expected_improvement.time_savings
+                ));
+            }
+        }
+        
+        info!("Optimized build completed in {:?}", result.duration);
+        Ok(result)
+    }
+    
+    /// Get performance insights from profiler
+    pub fn get_performance_insights(&self) -> Option<String> {
+        self.build_profiler.as_ref().map(|profiler| {
+            let stats = profiler.get_current_statistics();
+            format!(
+                "Current build performance:\n- Total time: {:?}\n- Compilation time: {:?}\n- Peak memory: {} MB\n- CPU usage: {:.1}%",
+                stats.timing_metrics.total_build_time,
+                stats.timing_metrics.compilation_time,
+                stats.resource_metrics.peak_memory_usage / (1024 * 1024),
+                stats.resource_metrics.peak_cpu_usage
+            )
+        })
+    }
+    
+    /// Get artifact management statistics
+    pub fn get_artifact_statistics(&self) -> Option<String> {
+        self.artifact_manager.as_ref().map(|manager| {
+            let stats = manager.get_statistics();
+            format!(
+                "Artifact storage:\n- Total artifacts: {}\n- Storage used: {} MB\n- Cache hit rate: {:.1}%\n- Deduplication savings: {} MB",
+                stats.total_artifacts,
+                stats.total_storage_used / (1024 * 1024),
+                stats.cache_hit_rate * 100.0,
+                stats.deduplication_savings / (1024 * 1024)
+            )
+        })
+    }
+    
+    /// Create compilation tasks from build targets
+    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> Result<Vec<crate::build_system::CompilationTask>, BuildError> {
+        let mut tasks = Vec::new();
+        
+        for target in targets {
+            let task = crate::build_system::CompilationTask {
+                id: target.name.clone(),
+                target: target.clone(),
+                profile: self.config.get_effective_profile(profile)
+                    .map_err(|e| BuildError::ConfigError(e.to_string()))?,
+                dependencies: target.dependencies.clone(),
+                estimated_duration: Duration::from_secs(10), // Placeholder estimation
+                memory_requirement: 256 * 1024 * 1024, // 256MB placeholder
+                priority: crate::build_system::TaskPriority::Normal,
+                compilation_units: Vec::new(), // Would be populated from analysis
+            };
+            tasks.push(task);
+        }
+        
+        Ok(tasks)
     }
 }
 

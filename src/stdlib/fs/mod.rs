@@ -66,6 +66,7 @@ pub mod metadata;
 pub mod file_ops;
 pub mod dir_ops;
 pub mod path_utils;
+pub mod watcher;
 
 // Re-export error types
 pub use error::{FsError, FsResult};
@@ -92,6 +93,12 @@ pub use path_utils::{
     join_path, parent_dir, file_name, extension, file_stem,
     absolute_path, is_absolute, is_relative, current_dir,
     normalize_path, split_path, is_ancestor, relative_path
+};
+
+// Re-export file watcher functionality
+pub use watcher::{
+    FileWatcher, WatchEvent, WatcherConfig, watch_path, watch_path_with_config,
+    watch_paths, wait_for_changes
 };
 
 /// File system module version

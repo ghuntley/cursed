@@ -1,635 +1,433 @@
-/// PostgreSQL connection pooling with optimizations for CURSED database operations
+/// PostgreSQL Connection Pool Implementation
 /// 
-/// This module provides advanced connection pooling specifically optimized for PostgreSQL
-/// including connection validation, automatic recovery, and PostgreSQL-specific features.
+/// Provides high-performance connection pooling for PostgreSQL using bb8 with
+/// comprehensive monitoring, health checking, and configurable pool behavior.
 
-use std::sync::{Arc, Mutex, Condvar};
-use std::collections::{VecDeque, HashMap};
-use std::time::{Duration, Instant, SystemTime};
-use std::thread;
-use super::{
-    PostgreSQLConnection, PostgreSQLConfig, PostgreSQLError
-};
-use super::super::{DatabaseError, DatabaseErrorKind};
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use bb8::{Pool, PooledConnection};
+use bb8_postgres::PostgresConnectionManager;
+use tokio_postgres::{NoTls, Client};
+use super::config::{PostgresConfig, SslMode};
+use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
+use super::connection::PostgresConnection;
 
-/// fr fr PostgreSQL-specific pool configuration
+/// PostgreSQL connection pool configuration
 #[derive(Debug, Clone)]
-pub struct PostgreSQLPoolConfig {
-    /// fr fr Minimum number of connections to maintain
-    pub min_connections: usize,
-    /// fr fr Maximum number of connections allowed
-    pub max_connections: usize,
-    /// fr fr Maximum time to wait for a connection
+pub struct PostgresPoolConfig {
+    /// Maximum number of connections in the pool
+    pub max_size: u32,
+    /// Minimum number of connections to maintain
+    pub min_idle: Option<u32>,
+    /// Maximum lifetime of a connection
+    pub max_lifetime: Option<Duration>,
+    /// Maximum idle time before connection is closed
+    pub idle_timeout: Option<Duration>,
+    /// Timeout for getting connection from pool
     pub connection_timeout: Duration,
-    /// fr fr Maximum lifetime of a connection
-    pub max_connection_lifetime: Duration,
-    /// fr fr Maximum idle time for a connection
-    pub max_idle_time: Duration,
-    /// fr fr Health check interval
-    pub health_check_interval: Duration,
-    /// fr fr Connection validation query
-    pub validation_query: String,
-    /// fr fr Enable connection validation on borrow
-    pub validate_on_borrow: bool,
-    /// fr fr Enable connection validation on return
-    pub validate_on_return: bool,
-    /// fr fr Enable periodic health checks
-    pub enable_health_checks: bool,
-    /// fr fr PostgreSQL-specific: prepare cache size per connection
-    pub prepare_cache_size: usize,
-    /// fr fr PostgreSQL-specific: enable connection multiplexing
-    pub enable_multiplexing: bool,
-    /// fr fr PostgreSQL-specific: connection application name prefix
-    pub app_name_prefix: String,
+    /// Test connections before use
+    pub test_on_check_out: bool,
+    /// Test connections while idle
+    pub test_while_idle: bool,
+    /// Interval for testing idle connections
+    pub test_idle_interval: Duration,
+    /// Number of connection retries
+    pub retry_connection: u32,
+    /// Delay between connection retries
+    pub retry_delay: Duration,
 }
 
-impl Default for PostgreSQLPoolConfig {
+impl Default for PostgresPoolConfig {
     fn default() -> Self {
         Self {
-            min_connections: 5,
-            max_connections: 20,
+            max_size: 100,
+            min_idle: Some(10),
+            max_lifetime: Some(Duration::from_secs(3600)), // 1 hour
+            idle_timeout: Some(Duration::from_secs(600)),   // 10 minutes
             connection_timeout: Duration::from_secs(30),
-            max_connection_lifetime: Duration::from_secs(3600), // 1 hour
-            max_idle_time: Duration::from_secs(600), // 10 minutes
-            health_check_interval: Duration::from_secs(30),
-            validation_query: "SELECT 1".to_string(),
-            validate_on_borrow: true,
-            validate_on_return: false,
-            enable_health_checks: true,
-            prepare_cache_size: 100,
-            enable_multiplexing: false,
-            app_name_prefix: "cursed_pool".to_string(),
+            test_on_check_out: true,
+            test_while_idle: true,
+            test_idle_interval: Duration::from_secs(300), // 5 minutes
+            retry_connection: 3,
+            retry_delay: Duration::from_secs(1),
         }
     }
 }
 
-/// fr fr Connection wrapper with metadata for pool management
-#[derive(Debug)]
-struct PooledConnection {
-    /// fr fr The actual connection
-    connection: PostgreSQLConnection,
-    /// fr fr When this connection was created
-    created_at: Instant,
-    /// fr fr When this connection was last used
-    last_used: Instant,
-    /// fr fr Number of times this connection has been borrowed
-    borrow_count: u64,
-    /// fr fr Whether this connection is currently borrowed
-    is_borrowed: bool,
-    /// fr fr Connection health status
-    is_healthy: bool,
-    /// fr fr Connection ID for tracking
-    id: String,
-}
-
-impl PooledConnection {
-    fn new(connection: PostgreSQLConnection) -> Self {
-        let now = Instant::now();
-        let id = format!("conn_{:x}", now.elapsed().as_nanos());
-        
+impl PostgresPoolConfig {
+    /// Create pool configuration from PostgreSQL configuration
+    pub fn from_postgres_config(config: &PostgresConfig) -> Self {
         Self {
-            connection,
-            created_at: now,
-            last_used: now,
-            borrow_count: 0,
-            is_borrowed: false,
-            is_healthy: true,
-            id,
+            max_size: config.max_connections,
+            min_idle: Some(config.min_connections),
+            max_lifetime: config.max_lifetime,
+            idle_timeout: config.idle_timeout,
+            connection_timeout: config.connect_timeout,
+            retry_connection: config.retry_attempts,
+            retry_delay: config.retry_delay,
+            ..Default::default()
         }
     }
-    
-    fn borrow(&mut self) -> &mut PostgreSQLConnection {
-        self.is_borrowed = true;
-        self.last_used = Instant::now();
-        self.borrow_count += 1;
-        &mut self.connection
-    }
-    
-    fn return_to_pool(&mut self) {
-        self.is_borrowed = false;
-        self.last_used = Instant::now();
-    }
-    
-    fn is_expired(&self, max_lifetime: Duration) -> bool {
-        self.created_at.elapsed() > max_lifetime
-    }
-    
-    fn is_idle_too_long(&self, max_idle: Duration) -> bool {
-        !self.is_borrowed && self.last_used.elapsed() > max_idle
-    }
-    
-    fn validate(&mut self, validation_query: &str) -> bool {
-        match self.connection.query(validation_query, &[]) {
-            Ok(_) => {
-                self.is_healthy = true;
-                true
-            }
-            Err(_) => {
-                self.is_healthy = false;
-                false
-            }
+
+    /// Convert to bb8 pool builder
+    pub fn to_bb8_builder(&self) -> bb8::Builder<PostgresConnectionManager<NoTls>> {
+        let mut builder = bb8::Pool::builder()
+            .max_size(self.max_size)
+            .connection_timeout(self.connection_timeout)
+            .test_on_check_out(self.test_on_check_out);
+
+        if let Some(min_idle) = self.min_idle {
+            builder = builder.min_idle(Some(min_idle));
         }
+
+        if let Some(max_lifetime) = self.max_lifetime {
+            builder = builder.max_lifetime(Some(max_lifetime));
+        }
+
+        if let Some(idle_timeout) = self.idle_timeout {
+            builder = builder.idle_timeout(Some(idle_timeout));
+        }
+
+        builder
     }
 }
 
-/// fr fr PostgreSQL connection pool implementation
-#[derive(Debug)]
-pub struct PostgreSQLPool {
-    /// fr fr Pool configuration
-    config: PostgreSQLPoolConfig,
-    /// fr fr Database configuration
-    db_config: PostgreSQLConfig,
-    /// fr fr Available connections
-    available: Arc<Mutex<VecDeque<PooledConnection>>>,
-    /// fr fr Borrowed connections
-    borrowed: Arc<Mutex<HashMap<String, PooledConnection>>>,
-    /// fr fr Condition variable for waiting threads
-    available_notify: Arc<Condvar>,
-    /// fr fr Pool statistics
-    stats: Arc<Mutex<PoolStats>>,
-    /// fr fr Health checker handle
-    health_checker: Option<thread::JoinHandle<()>>,
-    /// fr fr Shutdown flag
-    shutdown: Arc<std::sync::atomic::AtomicBool>,
+/// PostgreSQL connection pool with comprehensive monitoring
+pub struct PostgresPool {
+    /// Underlying bb8 connection pool
+    pool: Pool<PostgresConnectionManager<NoTls>>,
+    /// Pool configuration
+    config: PostgresPoolConfig,
+    /// PostgreSQL configuration
+    pg_config: PostgresConfig,
+    /// Pool creation time
+    created_at: Instant,
+    /// Pool statistics
+    stats: Arc<std::sync::Mutex<PoolStatistics>>,
 }
 
-/// fr fr Pool statistics for monitoring
+/// Pool statistics for monitoring
 #[derive(Debug, Clone, Default)]
-pub struct PoolStats {
-    /// fr fr Total connections created
-    pub connections_created: u64,
-    /// fr fr Total connections destroyed
-    pub connections_destroyed: u64,
-    /// fr fr Total connection borrows
-    pub connections_borrowed: u64,
-    /// fr fr Total connection returns
-    pub connections_returned: u64,
-    /// fr fr Current active connections
-    pub active_connections: usize,
-    /// fr fr Current idle connections
-    pub idle_connections: usize,
-    /// fr fr Total failed validations
-    pub validation_failures: u64,
-    /// fr fr Total health check failures
-    pub health_check_failures: u64,
-    /// fr fr Average connection wait time
-    pub avg_wait_time: Duration,
-    /// fr fr Peak connections
-    pub peak_connections: usize,
-    /// fr fr Pool start time
-    pub started_at: SystemTime,
+pub struct PoolStatistics {
+    /// Total connections created
+    pub total_connections_created: u64,
+    /// Total connections closed
+    pub total_connections_closed: u64,
+    /// Total successful checkouts
+    pub total_checkouts: u64,
+    /// Total failed checkouts
+    pub total_checkout_failures: u64,
+    /// Total timeout errors
+    pub total_timeouts: u64,
+    /// Total connection errors
+    pub total_connection_errors: u64,
+    /// Average checkout time (milliseconds)
+    pub avg_checkout_time_ms: f64,
+    /// Peak concurrent connections
+    pub peak_connections: u32,
+    /// Current active connections
+    pub current_active: u32,
+    /// Current idle connections
+    pub current_idle: u32,
 }
 
-impl PostgreSQLPool {
-    /// slay Create a new PostgreSQL connection pool
-    pub fn new(db_config: PostgreSQLConfig, pool_config: PostgreSQLPoolConfig) -> Result<Self, PostgreSQLError> {
-        let available = Arc::new(Mutex::new(VecDeque::new()));
-        let borrowed = Arc::new(Mutex::new(HashMap::new()));
-        let available_notify = Arc::new(Condvar::new());
-        let shutdown = Arc::new(std::sync::atomic::AtomicBool::new(false));
+impl PostgresPool {
+    /// Create new PostgreSQL connection pool
+    pub async fn new(config: PostgresConfig) -> PostgresResult<Self> {
+        config.validate()?;
         
-        let mut stats = PoolStats::default();
-        stats.started_at = SystemTime::now();
-        let stats = Arc::new(Mutex::new(stats));
+        let pool_config = PostgresPoolConfig::from_postgres_config(&config);
+        let tokio_config = config.to_tokio_config();
         
-        let mut pool = Self {
-            config: pool_config.clone(),
-            db_config: db_config.clone(),
-            available: available.clone(),
-            borrowed,
-            available_notify: available_notify.clone(),
-            stats: stats.clone(),
-            health_checker: None,
-            shutdown: shutdown.clone(),
+        // Create connection manager
+        let manager = match config.ssl_mode {
+            SslMode::Disable => {
+                PostgresConnectionManager::new(tokio_config, NoTls)
+            }
+            _ => {
+                // For SSL modes, we would need rustls or native-tls
+                // For now, use NoTls and log a warning
+                log::warn!("SSL mode {:?} requested but SSL support not implemented, using plain connection", config.ssl_mode);
+                PostgresConnectionManager::new(tokio_config, NoTls)
+            }
         };
-        
-        // Create initial connections
-        pool.initialize_connections()?;
-        
-        // Start health checker if enabled
-        if pool_config.enable_health_checks {
-            pool.start_health_checker();
-        }
-        
-        Ok(pool)
+
+        // Build pool
+        let pool = pool_config
+            .to_bb8_builder()
+            .build(manager)
+            .await
+            .map_err(|e| PostgresError::new(
+                PostgresErrorKind::PoolError,
+                &format!("Failed to create connection pool: {}", e),
+            ))?;
+
+        Ok(Self {
+            pool,
+            config: pool_config,
+            pg_config: config,
+            created_at: Instant::now(),
+            stats: Arc::new(std::sync::Mutex::new(PoolStatistics::default())),
+        })
     }
-    
-    /// slay Initialize minimum number of connections
-    fn initialize_connections(&mut self) -> Result<(), PostgreSQLError> {
-        let mut available = self.available.lock().map_err(|_| {
-            PostgreSQLError::new(DatabaseErrorKind::ConnectionError, "Failed to acquire pool lock".to_string())
-        })?;
-        
-        for i in 0..self.config.min_connections {
-            let mut db_config = self.db_config.clone();
-            db_config.application_name = format!("{}_init_{}", self.config.app_name_prefix, i);
-            
-            match PostgreSQLConnection::from_config(db_config) {
-                Ok(conn) => {
-                    let pooled_conn = PooledConnection::new(conn);
-                    available.push_back(pooled_conn);
-                    
-                    if let Ok(mut stats) = self.stats.lock() {
-                        stats.connections_created += 1;
-                        stats.idle_connections += 1;
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Failed to create initial connection {}: {}", i, e);
-                    // Continue creating other connections
-                }
-            }
-        }
-        
-        if available.is_empty() {
-            return Err(PostgreSQLError::connection_error("Failed to create any initial connections"));
-        }
-        
-        Ok(())
-    }
-    
-    /// slay Start health checker thread
-    fn start_health_checker(&mut self) {
-        let available = self.available.clone();
-        let borrowed = self.borrowed.clone();
-        let stats = self.stats.clone();
-        let config = self.config.clone();
-        let db_config = self.db_config.clone();
-        let shutdown = self.shutdown.clone();
-        
-        let handle = thread::spawn(move || {
-            while !shutdown.load(std::sync::atomic::Ordering::Relaxed) {
-                thread::sleep(config.health_check_interval);
-                
-                // Check available connections
-                if let Ok(mut available_conns) = available.lock() {
-                    let mut to_remove = Vec::new();
-                    
-                    for (i, conn) in available_conns.iter_mut().enumerate() {
-                        if conn.is_expired(config.max_connection_lifetime) ||
-                           conn.is_idle_too_long(config.max_idle_time) ||
-                           !conn.validate(&config.validation_query) {
-                            to_remove.push(i);
-                        }
-                    }
-                    
-                    // Remove expired/invalid connections (in reverse order to maintain indices)
-                    for &i in to_remove.iter().rev() {
-                        available_conns.remove(i);
-                        if let Ok(mut stats) = stats.lock() {
-                            stats.connections_destroyed += 1;
-                            stats.idle_connections = stats.idle_connections.saturating_sub(1);
-                        }
-                    }
-                    
-                    // Ensure minimum connections
-                    while available_conns.len() < config.min_connections {
-                        let mut new_db_config = db_config.clone();
-                        new_db_config.application_name = format!("{}_health", config.app_name_prefix);
-                        
-                        match PostgreSQLConnection::from_config(new_db_config) {
-                            Ok(conn) => {
-                                let pooled_conn = PooledConnection::new(conn);
-                                available_conns.push_back(pooled_conn);
-                                
-                                if let Ok(mut stats) = stats.lock() {
-                                    stats.connections_created += 1;
-                                    stats.idle_connections += 1;
-                                }
-                            }
-                            Err(_) => {
-                                if let Ok(mut stats) = stats.lock() {
-                                    stats.health_check_failures += 1;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Update stats
-                if let Ok(mut stats) = stats.lock() {
-                    let available_count = available.lock().map(|a| a.len()).unwrap_or(0);
-                    let borrowed_count = borrowed.lock().map(|b| b.len()).unwrap_or(0);
-                    
-                    stats.idle_connections = available_count;
-                    stats.active_connections = borrowed_count;
-                    stats.peak_connections = stats.peak_connections.max(available_count + borrowed_count);
-                }
-            }
-        });
-        
-        self.health_checker = Some(handle);
-    }
-    
-    /// slay Get a connection from the pool
-    pub fn get_connection(&self) -> Result<PooledConnectionWrapper, PostgreSQLError> {
+
+    /// Get connection from pool
+    pub async fn get_connection(&self) -> PostgresResult<PooledPostgresConnection> {
         let start_time = Instant::now();
         
-        let mut available = self.available.lock().map_err(|_| {
-            PostgreSQLError::connection_error("Failed to acquire pool lock")
-        })?;
-        
-        // Wait for available connection or timeout
-        let (mut available, _) = self.available_notify.wait_timeout_while(
-            available,
-            self.config.connection_timeout,
-            |available| available.is_empty() && self.can_create_connection()
-        ).map_err(|_| {
-            PostgreSQLError::connection_error("Failed to wait for available connection")
-        })?;
-        
-        let mut connection = if let Some(mut pooled_conn) = available.pop_front() {
-            // Validate connection if required
-            if self.config.validate_on_borrow && !pooled_conn.validate(&self.config.validation_query) {
-                if let Ok(mut stats) = self.stats.lock() {
-                    stats.validation_failures += 1;
+        let connection = self.pool.get().await.map_err(|e| {
+            self.update_stats(|stats| {
+                stats.total_checkout_failures += 1;
+                if e.to_string().contains("timeout") {
+                    stats.total_timeouts += 1;
                 }
-                
-                // Try to create a new connection
-                return self.create_new_connection();
+            });
+            PostgresError::from_bb8_error(e)
+        })?;
+
+        let checkout_time = start_time.elapsed();
+        self.update_stats(|stats| {
+            stats.total_checkouts += 1;
+            stats.avg_checkout_time_ms = (stats.avg_checkout_time_ms + checkout_time.as_millis() as f64) / 2.0;
+        });
+
+        Ok(PooledPostgresConnection {
+            connection,
+            pool_stats: Arc::clone(&self.stats),
+        })
+    }
+
+    /// Get pool statistics
+    pub fn get_statistics(&self) -> PoolStatistics {
+        let stats = self.stats.lock().unwrap();
+        let mut result = stats.clone();
+        
+        // Update current pool state
+        let state = self.pool.state();
+        result.current_active = state.connections - state.idle_connections;
+        result.current_idle = state.idle_connections;
+        
+        if result.current_active > result.peak_connections {
+            result.peak_connections = result.current_active;
+        }
+        
+        result
+    }
+
+    /// Get pool health information
+    pub fn get_health(&self) -> PoolHealth {
+        let stats = self.get_statistics();
+        let state = self.pool.state();
+        let uptime = self.created_at.elapsed();
+        
+        let health_score = self.calculate_health_score(&stats, &state);
+        
+        PoolHealth {
+            is_healthy: health_score > 0.7,
+            health_score,
+            uptime,
+            total_connections: state.connections,
+            active_connections: stats.current_active,
+            idle_connections: stats.current_idle,
+            max_connections: self.config.max_size,
+            checkout_success_rate: if stats.total_checkouts > 0 {
+                (stats.total_checkouts as f64 - stats.total_checkout_failures as f64) / stats.total_checkouts as f64
+            } else {
+                1.0
+            },
+            avg_checkout_time_ms: stats.avg_checkout_time_ms,
+            connection_errors: stats.total_connection_errors,
+            timeout_errors: stats.total_timeouts,
+        }
+    }
+
+    /// Test pool connectivity
+    pub async fn test_connectivity(&self) -> PostgresResult<()> {
+        let connection = self.get_connection().await?;
+        connection.ping().await?;
+        Ok(())
+    }
+
+    /// Close all connections and shutdown pool
+    pub async fn close(&self) {
+        // bb8 doesn't provide explicit close method
+        // Connections will be closed when pool is dropped
+        log::info!("PostgreSQL connection pool shutting down");
+    }
+
+    /// Update pool statistics
+    fn update_stats<F>(&self, updater: F) 
+    where
+        F: FnOnce(&mut PoolStatistics),
+    {
+        if let Ok(mut stats) = self.stats.lock() {
+            updater(&mut stats);
+        }
+    }
+
+    /// Calculate pool health score (0.0 to 1.0)
+    fn calculate_health_score(&self, stats: &PoolStatistics, state: &bb8::State) -> f64 {
+        let mut score = 1.0;
+        
+        // Penalize high failure rate
+        if stats.total_checkouts > 0 {
+            let failure_rate = stats.total_checkout_failures as f64 / stats.total_checkouts as f64;
+            score -= failure_rate * 0.3;
+        }
+        
+        // Penalize high timeout rate
+        if stats.total_checkouts > 0 {
+            let timeout_rate = stats.total_timeouts as f64 / stats.total_checkouts as f64;
+            score -= timeout_rate * 0.2;
+        }
+        
+        // Penalize high connection utilization
+        if self.config.max_size > 0 {
+            let utilization = state.connections as f64 / self.config.max_size as f64;
+            if utilization > 0.9 {
+                score -= (utilization - 0.9) * 0.5;
             }
-            
-            pooled_conn
-        } else if self.can_create_connection() {
-            // Create new connection
-            let mut db_config = self.db_config.clone();
-            db_config.application_name = format!("{}_dynamic", self.config.app_name_prefix);
-            
-            let conn = PostgreSQLConnection::from_config(db_config)?;
-            PooledConnection::new(conn)
-        } else {
-            return Err(PostgreSQLError::connection_error("Pool exhausted and cannot create new connections"));
+        }
+        
+        // Penalize slow checkout times
+        if stats.avg_checkout_time_ms > 1000.0 {
+            score -= (stats.avg_checkout_time_ms - 1000.0) / 10000.0;
+        }
+        
+        score.max(0.0).min(1.0)
+    }
+}
+
+/// Pooled PostgreSQL connection wrapper
+pub struct PooledPostgresConnection {
+    connection: PooledConnection<'static, PostgresConnectionManager<NoTls>>,
+    pool_stats: Arc<std::sync::Mutex<PoolStatistics>>,
+}
+
+impl PooledPostgresConnection {
+    /// Get underlying client
+    pub fn client(&self) -> &Client {
+        &self.connection
+    }
+
+    /// Execute simple query
+    pub async fn execute(&self, query: &str) -> PostgresResult<u64> {
+        self.connection
+            .execute(query, &[])
+            .await
+            .map_err(PostgresError::from)
+    }
+
+    /// Execute query with parameters
+    pub async fn query(&self, query: &str, params: &[&(dyn tokio_postgres::types::ToSql + Sync)]) -> PostgresResult<Vec<tokio_postgres::Row>> {
+        self.connection
+            .query(query, params)
+            .await
+            .map_err(PostgresError::from)
+    }
+
+    /// Ping the connection
+    pub async fn ping(&self) -> PostgresResult<()> {
+        self.connection
+            .execute("SELECT 1", &[])
+            .await
+            .map(|_| ())
+            .map_err(PostgresError::from)
+    }
+
+    /// Begin transaction
+    pub async fn begin_transaction(&self) -> PostgresResult<tokio_postgres::Transaction<'_>> {
+        self.connection
+            .transaction()
+            .await
+            .map_err(PostgresError::from)
+    }
+}
+
+impl Drop for PooledPostgresConnection {
+    fn drop(&mut self) {
+        // Connection automatically returned to pool by bb8
+        if let Ok(mut stats) = self.pool_stats.lock() {
+            stats.total_connections_closed += 1;
+        }
+    }
+}
+
+/// Pool health information
+#[derive(Debug, Clone)]
+pub struct PoolHealth {
+    pub is_healthy: bool,
+    pub health_score: f64,
+    pub uptime: Duration,
+    pub total_connections: u32,
+    pub active_connections: u32,
+    pub idle_connections: u32,
+    pub max_connections: u32,
+    pub checkout_success_rate: f64,
+    pub avg_checkout_time_ms: f64,
+    pub connection_errors: u64,
+    pub timeout_errors: u64,
+}
+
+impl std::fmt::Display for PoolHealth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "PostgreSQL Pool Health:")?;
+        writeln!(f, "  Status: {}", if self.is_healthy { "Healthy" } else { "Unhealthy" })?;
+        writeln!(f, "  Health Score: {:.1}%", self.health_score * 100.0)?;
+        writeln!(f, "  Uptime: {:?}", self.uptime)?;
+        writeln!(f, "  Connections: {}/{} (active: {}, idle: {})", 
+                 self.total_connections, self.max_connections, 
+                 self.active_connections, self.idle_connections)?;
+        writeln!(f, "  Checkout Success Rate: {:.1}%", self.checkout_success_rate * 100.0)?;
+        writeln!(f, "  Avg Checkout Time: {:.1}ms", self.avg_checkout_time_ms)?;
+        writeln!(f, "  Errors: {} (timeouts: {})", self.connection_errors, self.timeout_errors)?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pool_config_defaults() {
+        let config = PostgresPoolConfig::default();
+        assert_eq!(config.max_size, 100);
+        assert_eq!(config.min_idle, Some(10));
+        assert_eq!(config.connection_timeout, Duration::from_secs(30));
+    }
+
+    #[test]
+    fn test_pool_config_from_postgres_config() {
+        let pg_config = PostgresConfig {
+            max_connections: 50,
+            min_connections: 5,
+            ..Default::default()
         };
         
-        // Update statistics
-        {
-            let wait_time = start_time.elapsed();
-            if let Ok(mut stats) = self.stats.lock() {
-                stats.connections_borrowed += 1;
-                stats.active_connections += 1;
-                stats.idle_connections = stats.idle_connections.saturating_sub(1);
-                
-                // Update average wait time
-                let total_borrows = stats.connections_borrowed;
-                stats.avg_wait_time = Duration::from_nanos(
-                    ((stats.avg_wait_time.as_nanos() * (total_borrows - 1) as u128 + wait_time.as_nanos()) / total_borrows as u128) as u64
-                );
-            }
-        }
-        
-        let conn_id = connection.id.clone();
-        let connection_ref = connection.borrow();
-        
-        // Move to borrowed connections
-        {
-            let mut borrowed = self.borrowed.lock().map_err(|_| {
-                PostgreSQLError::connection_error("Failed to acquire borrowed connections lock")
-            })?;
-            borrowed.insert(conn_id.clone(), connection);
-        }
-        
-        Ok(PooledConnectionWrapper {
-            pool: self,
-            connection_id: conn_id,
-        })
+        let pool_config = PostgresPoolConfig::from_postgres_config(&pg_config);
+        assert_eq!(pool_config.max_size, 50);
+        assert_eq!(pool_config.min_idle, Some(5));
     }
-    
-    /// slay Check if we can create a new connection
-    fn can_create_connection(&self) -> bool {
-        let available_count = self.available.lock().map(|a| a.len()).unwrap_or(0);
-        let borrowed_count = self.borrowed.lock().map(|b| b.len()).unwrap_or(0);
-        
-        available_count + borrowed_count < self.config.max_connections
-    }
-    
-    /// slay Create a new connection
-    fn create_new_connection(&self) -> Result<PooledConnectionWrapper, PostgreSQLError> {
-        if !self.can_create_connection() {
-            return Err(PostgreSQLError::connection_error("Pool exhausted"));
-        }
-        
-        let mut db_config = self.db_config.clone();
-        db_config.application_name = format!("{}_new", self.config.app_name_prefix);
-        
-        let conn = PostgreSQLConnection::from_config(db_config)?;
-        let mut pooled_conn = PooledConnection::new(conn);
-        
-        if let Ok(mut stats) = self.stats.lock() {
-            stats.connections_created += 1;
-            stats.connections_borrowed += 1;
-            stats.active_connections += 1;
-        }
-        
-        let conn_id = pooled_conn.id.clone();
-        pooled_conn.borrow();
-        
-        {
-            let mut borrowed = self.borrowed.lock().map_err(|_| {
-                PostgreSQLError::connection_error("Failed to acquire borrowed connections lock")
-            })?;
-            borrowed.insert(conn_id.clone(), pooled_conn);
-        }
-        
-        Ok(PooledConnectionWrapper {
-            pool: self,
-            connection_id: conn_id,
-        })
-    }
-    
-    /// slay Return a connection to the pool
-    fn return_connection(&self, connection_id: String) -> Result<(), PostgreSQLError> {
-        let mut borrowed = self.borrowed.lock().map_err(|_| {
-            PostgreSQLError::connection_error("Failed to acquire borrowed connections lock")
-        })?;
-        
-        if let Some(mut pooled_conn) = borrowed.remove(&connection_id) {
-            // Validate on return if required
-            if self.config.validate_on_return && !pooled_conn.validate(&self.config.validation_query) {
-                if let Ok(mut stats) = self.stats.lock() {
-                    stats.validation_failures += 1;
-                    stats.connections_destroyed += 1;
-                    stats.active_connections = stats.active_connections.saturating_sub(1);
-                }
-                return Ok(()); // Don't return invalid connection to pool
-            }
-            
-            // Reset connection state for reuse
-            if let Err(_) = pooled_conn.connection.reset_for_pool_reuse() {
-                // Connection reset failed, don't return to pool
-                if let Ok(mut stats) = self.stats.lock() {
-                    stats.connections_destroyed += 1;
-                    stats.active_connections = stats.active_connections.saturating_sub(1);
-                }
-                return Ok(());
-            }
-            
-            pooled_conn.return_to_pool();
-            
-            // Add back to available connections
-            {
-                let mut available = self.available.lock().map_err(|_| {
-                    PostgreSQLError::connection_error("Failed to acquire available connections lock")
-                })?;
-                available.push_back(pooled_conn);
-                
-                if let Ok(mut stats) = self.stats.lock() {
-                    stats.connections_returned += 1;
-                    stats.active_connections = stats.active_connections.saturating_sub(1);
-                    stats.idle_connections += 1;
-                }
-            }
-            
-            // Notify waiting threads
-            self.available_notify.notify_one();
-        }
-        
-        Ok(())
-    }
-    
-    /// slay Get pool statistics
-    pub fn stats(&self) -> Result<PoolStats, PostgreSQLError> {
-        self.stats.lock()
-            .map(|stats| stats.clone())
-            .map_err(|_| PostgreSQLError::connection_error("Failed to acquire stats lock"))
-    }
-    
-    /// slay Get current pool size
-    pub fn size(&self) -> (usize, usize) {
-        let available_count = self.available.lock().map(|a| a.len()).unwrap_or(0);
-        let borrowed_count = self.borrowed.lock().map(|b| b.len()).unwrap_or(0);
-        (available_count, borrowed_count)
-    }
-    
-    /// slay Close the pool and all connections
-    pub fn close(&mut self) -> Result<(), PostgreSQLError> {
-        // Set shutdown flag
-        self.shutdown.store(true, std::sync::atomic::Ordering::Relaxed);
-        
-        // Wait for health checker to finish
-        if let Some(handle) = self.health_checker.take() {
-            let _ = handle.join();
-        }
-        
-        // Close all available connections
-        {
-            let mut available = self.available.lock().map_err(|_| {
-                PostgreSQLError::connection_error("Failed to acquire available connections lock")
-            })?;
-            
-            while let Some(mut conn) = available.pop_front() {
-                let _ = conn.connection.close();
-            }
-        }
-        
-        // Note: Borrowed connections will be closed when returned to the pool
-        
-        Ok(())
-    }
-}
 
-impl Drop for PostgreSQLPool {
-    fn drop(&mut self) {
-        let _ = self.close();
+    #[test]
+    fn test_pool_statistics() {
+        let stats = PoolStatistics::default();
+        assert_eq!(stats.total_connections_created, 0);
+        assert_eq!(stats.total_checkouts, 0);
+        assert_eq!(stats.avg_checkout_time_ms, 0.0);
     }
-}
 
-/// fr fr Wrapper for pooled connections that automatically returns to pool on drop
-pub struct PooledConnectionWrapper<'a> {
-    pool: &'a PostgreSQLPool,
-    connection_id: String,
-}
-
-impl<'a> PooledConnectionWrapper<'a> {
-    /// slay Get reference to the underlying connection
-    pub fn connection(&self) -> Result<&PostgreSQLConnection, PostgreSQLError> {
-        let borrowed = self.pool.borrowed.lock().map_err(|_| {
-            PostgreSQLError::connection_error("Failed to acquire borrowed connections lock")
-        })?;
+    #[tokio::test]
+    async fn test_pool_creation() {
+        let config = PostgresConfig::default();
         
-        borrowed.get(&self.connection_id)
-            .map(|pooled| &pooled.connection)
-            .ok_or_else(|| PostgreSQLError::connection_error("Connection not found in borrowed pool"))
-    }
-    
-    /// slay Get mutable reference to the underlying connection
-    pub fn connection_mut(&mut self) -> Result<&mut PostgreSQLConnection, PostgreSQLError> {
-        let mut borrowed = self.pool.borrowed.lock().map_err(|_| {
-            PostgreSQLError::connection_error("Failed to acquire borrowed connections lock")
-        })?;
+        // This will fail without a real PostgreSQL server, but tests the creation logic
+        let result = PostgresPool::new(config).await;
         
-        borrowed.get_mut(&self.connection_id)
-            .map(|pooled| &mut pooled.connection)
-            .ok_or_else(|| PostgreSQLError::connection_error("Connection not found in borrowed pool"))
-    }
-}
-
-impl<'a> Drop for PooledConnectionWrapper<'a> {
-    fn drop(&mut self) {
-        let _ = self.pool.return_connection(self.connection_id.clone());
-    }
-}
-
-/// fr fr Pool builder for easier configuration
-#[derive(Debug)]
-pub struct PostgreSQLPoolBuilder {
-    db_config: PostgreSQLConfig,
-    pool_config: PostgreSQLPoolConfig,
-}
-
-impl PostgreSQLPoolBuilder {
-    /// slay Create a new pool builder
-    pub fn new(db_config: PostgreSQLConfig) -> Self {
-        Self {
-            db_config,
-            pool_config: PostgreSQLPoolConfig::default(),
+        // Expect connection failure, not configuration error
+        if let Err(err) = result {
+            assert!(matches!(err.kind, PostgresErrorKind::ConnectionFailed | PostgresErrorKind::PoolError));
         }
-    }
-    
-    /// slay Set minimum connections
-    pub fn min_connections(mut self, min: usize) -> Self {
-        self.pool_config.min_connections = min;
-        self
-    }
-    
-    /// slay Set maximum connections
-    pub fn max_connections(mut self, max: usize) -> Self {
-        self.pool_config.max_connections = max;
-        self
-    }
-    
-    /// slay Set connection timeout
-    pub fn connection_timeout(mut self, timeout: Duration) -> Self {
-        self.pool_config.connection_timeout = timeout;
-        self
-    }
-    
-    /// slay Set max connection lifetime
-    pub fn max_lifetime(mut self, lifetime: Duration) -> Self {
-        self.pool_config.max_connection_lifetime = lifetime;
-        self
-    }
-    
-    /// slay Set max idle time
-    pub fn max_idle_time(mut self, idle_time: Duration) -> Self {
-        self.pool_config.max_idle_time = idle_time;
-        self
-    }
-    
-    /// slay Enable validation on borrow
-    pub fn validate_on_borrow(mut self, validate: bool) -> Self {
-        self.pool_config.validate_on_borrow = validate;
-        self
-    }
-    
-    /// slay Set application name prefix
-    pub fn app_name_prefix(mut self, prefix: String) -> Self {
-        self.pool_config.app_name_prefix = prefix;
-        self
-    }
-    
-    /// slay Build the pool
-    pub fn build(self) -> Result<PostgreSQLPool, PostgreSQLError> {
-        PostgreSQLPool::new(self.db_config, self.pool_config)
     }
 }

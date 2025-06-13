@@ -13,6 +13,8 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::ast::Program;
 use crate::codegen::LlvmCodeGenerator;
+use crate::codegen::llvm::{JitCompilationInterface, create_optimized_jit_interface};
+use inkwell::context::Context;
 
 /// Execution context for REPL evaluations
 #[derive(Debug, Clone)]
@@ -46,6 +48,8 @@ pub struct ContextFunction {
 pub struct ReplEvaluator {
     context: Arc<Mutex<ExecutionContext>>,
     codegen: Option<LlvmCodeGenerator>,
+    jit_interface: Option<JitCompilationInterface<'static>>,
+    llvm_context: Option<Context>,
     session_code: Vec<String>,
     last_expression: Option<String>,
     evaluation_timeout: Duration,
@@ -64,6 +68,8 @@ impl ReplEvaluator {
         Ok(Self {
             context: Arc::new(Mutex::new(context)),
             codegen: None,
+            jit_interface: None,
+            llvm_context: None,
             session_code: Vec::new(),
             last_expression: None,
             evaluation_timeout: Duration::from_secs(30),
@@ -75,6 +81,13 @@ impl ReplEvaluator {
         match LlvmCodeGenerator::new() {
             Ok(codegen) => {
                 self.codegen = Some(codegen);
+                
+                // Initialize JIT compilation interface
+                if let Err(e) = self.initialize_jit_interface() {
+                    tracing::warn!("JIT compilation not available: {}", e);
+                    tracing::info!("Falling back to interpretation mode");
+                }
+                
                 Ok(())
             }
             Err(e) => {
@@ -82,6 +95,27 @@ impl ReplEvaluator {
                 eprintln!("Warning: LLVM code generation not available: {}", e);
                 eprintln!("Falling back to interpreter mode");
                 Ok(())
+            }
+        }
+    }
+
+    /// Initialize JIT compilation interface
+    fn initialize_jit_interface(&mut self) -> ReplResult<()> {
+        // Create LLVM context - in production this would be managed properly
+        // For now, we'll use a leaked static context to satisfy lifetime requirements
+        let context = Box::leak(Box::new(Context::create()));
+        
+        match create_optimized_jit_interface(context) {
+            Ok(jit_interface) => {
+                self.jit_interface = Some(jit_interface);
+                tracing::info!("JIT compilation interface initialized for REPL");
+                Ok(())
+            }
+            Err(e) => {
+                tracing::error!("Failed to initialize JIT interface: {}", e);
+                Err(CursedError::repl_error(format!(
+                    "Failed to initialize JIT compilation: {}", e
+                )))
             }
         }
     }
@@ -106,6 +140,65 @@ impl ReplEvaluator {
         session_manager.add_to_history(code.to_string(), true, execution_time);
         
         Ok(ReplOutput::success(result).with_timing(execution_time))
+    }
+
+    /// Evaluate code using JIT compilation if available
+    pub fn evaluate_with_jit(&mut self, code: &str) -> ReplResult<String> {
+        if let Some(ref mut jit_interface) = self.jit_interface {
+            tracing::debug!("Attempting JIT evaluation of: {}", code);
+            
+            match jit_interface.execute_repl_code(code) {
+                Ok(result) => {
+                    tracing::debug!("JIT execution succeeded with result: {}", result);
+                    Ok(result.to_string())
+                }
+                Err(e) => {
+                    tracing::debug!("JIT execution failed: {}", e);
+                    Err(CursedError::repl_error(format!("JIT execution failed: {}", e)))
+                }
+            }
+        } else {
+            Err(CursedError::repl_error("JIT interface not initialized".to_string()))
+        }
+    }
+
+    /// Check if JIT compilation is available
+    pub fn has_jit_support(&self) -> bool {
+        self.jit_interface.is_some()
+    }
+
+    /// Get JIT performance report
+    pub fn get_jit_performance_report(&self) -> Option<String> {
+        self.jit_interface.as_ref().map(|jit| jit.generate_performance_report())
+    }
+
+    /// Compile and cache a function in JIT engine
+    pub fn compile_function(&mut self, name: &str, source: &str) -> ReplResult<()> {
+        if let Some(ref mut jit_interface) = self.jit_interface {
+            jit_interface.compile_and_cache_function(name, source)
+                .map_err(|e| CursedError::repl_error(format!("Function compilation failed: {}", e)))
+        } else {
+            Err(CursedError::repl_error("JIT interface not initialized".to_string()))
+        }
+    }
+
+    /// List all available JIT-compiled functions
+    pub fn list_jit_functions(&self) -> Vec<String> {
+        self.jit_interface.as_ref()
+            .map(|jit| jit.list_functions())
+            .unwrap_or_default()
+    }
+
+    /// Execute a previously compiled function
+    pub fn execute_jit_function(&mut self, function_name: &str) -> ReplResult<String> {
+        if let Some(ref mut jit_interface) = self.jit_interface {
+            match jit_interface.execute_function(function_name) {
+                Ok(result) => Ok(result.to_string()),
+                Err(e) => Err(CursedError::repl_error(format!("Function execution failed: {}", e)))
+            }
+        } else {
+            Err(CursedError::repl_error("JIT interface not initialized".to_string()))
+        }
     }
 
     /// Parse CURSED code into AST

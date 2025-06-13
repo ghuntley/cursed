@@ -1,459 +1,355 @@
-// Comprehensive demo of CURSED process management system
-// This example showcases pipes, signals, daemon management, and cross-platform features
+// CURSED Process Management Demo
+// Comprehensive demonstration of process management capabilities
+// Including spawning, monitoring, control, and system information
 
 import "stdlib::process";
 import "stdlib::io";
+import "stdlib::time";
 
-// Main demonstration function
-slay main() -> sus {
-    println("🚀 CURSED Process Management Demo");
-    println("==================================");
+// Simple process spawning example
+slay simple_process_demo() -> Result<(), ProcessError> {
+    println("=== Simple Process Demo ===")?;
     
-    // Demo 1: Named Pipes Communication
-    demo_pipes()?;
+    // Basic command execution
+    facts config = ProcessConfig::new("echo")
+        .arg("Hello from CURSED process management!")
+        .stdout(ProcessIo::Pipe);
     
-    // Demo 2: Signal Handling
-    demo_signals()?;
+    sus mut process = spawn_process(config)?;
     
-    // Demo 3: Daemon Management
-    demo_daemon()?;
+    // Wait for completion and get output
+    facts status = process.wait()?;
+    facts (stdout, stderr) = process.get_output()?;
     
-    // Demo 4: Process Information
-    demo_process_info()?;
+    lowkey (status.success()) {
+        println(&format!("Process output: {}", String::from_utf8_lossy(&stdout)))?;
+    } bestie {
+        println(&format!("Process failed with stderr: {}", String::from_utf8_lossy(&stderr)))?;
+    }
     
-    // Demo 5: Cross-Platform Features
-    demo_platform_features()?;
-    
-    println("\n✅ All demos completed successfully!");
-    
-    yolo 0;
+    Ok(())
 }
 
-// Demo 1: Named Pipes Communication
-slay demo_pipes() -> ProcessResult<()> {
-    println("\n📡 Demo 1: Named Pipes Communication");
-    println("-----------------------------------");
+// Process monitoring demonstration
+slay monitoring_demo() -> Result<(), ProcessError> {
+    println("\n=== Process Monitoring Demo ===")?;
     
-    // Create a named pipe for bidirectional communication
-    sus pipe = NamedPipe::create("demo_pipe", PipeMode::ReadWrite)?;
+    // Get current process information
+    facts current_pid = get_current_pid();
+    println(&format!("Current PID: {}", current_pid))?;
     
-    println("✓ Created named pipe: {}", pipe.name());
-    println("✓ Pipe mode: {:?}", pipe.mode());
-    println("✓ Can read: {}, Can write: {}", pipe.can_read(), pipe.can_write());
+    // Get detailed process information
+    facts info = get_process_info(current_pid)?;
+    println(&format!("Process name: {}", info.name))?;
+    println(&format!("Memory usage: {} bytes", info.memory.resident_size))?;
+    println(&format!("Virtual memory: {} bytes", info.memory.virtual_size))?;
+    println(&format!("Thread count: {}", info.threads))?;
+    println(&format!("File descriptors: {}", info.fd_count))?;
     
-    // Send some data through the pipe
-    sus test_message = "Hello from CURSED process management!";
-    sus bytes_sent = pipe.write(test_message.as_bytes())?;
-    println("✓ Sent {} bytes: '{}'", bytes_sent, test_message);
+    // System information
+    facts cpu_count = get_cpu_count();
+    println(&format!("System CPU count: {}", cpu_count))?;
     
-    // Read the data back
-    sus mut buffer = [0u8; 256];
-    sus bytes_read = pipe.read(&mut buffer)?;
-    sus received_message = String::from_utf8_lossy(&buffer[..bytes_read]);
-    println("✓ Received {} bytes: '{}'", bytes_read, received_message);
+    facts uptime = get_system_uptime()?;
+    println(&format!("System uptime: {} seconds", uptime.as_secs()))?;
     
-    // Demonstrate pipe server with multiple clients
-    sus server = PipeServer::new("demo_server");
-    println("✓ Created pipe server: demo_server");
-    
-    sus client_id = server.accept_client()?;
-    println("✓ Accepted client with ID: {}", client_id);
-    
-    sus server_message = "Welcome to CURSED pipe server!";
-    server.send_to_client(client_id, server_message.as_bytes())?;
-    println("✓ Sent message to client: '{}'", server_message);
-    
-    println("✓ Server has {} connected clients", server.client_count());
-    
-    yolo Ok(());
+    Ok(())
 }
 
-// Demo 2: Signal Handling
-slay demo_signals() -> ProcessResult<()> {
-    println("\n🔔 Demo 2: Signal Handling");
-    println("-------------------------");
+// Process list and search demonstration
+slay process_list_demo() -> Result<(), ProcessError> {
+    println("\n=== Process List Demo ===")?;
     
-    // Create a signal handler
-    sus handler = SignalHandler::new();
-    println("✓ Created signal handler");
+    // Get all processes
+    facts process_list = get_process_list()?;
+    println(&format!("Total processes: {}", process_list.len()))?;
     
-    // Set up a signal counter
-    sus signal_count = Arc::new(AtomicU32::new(0));
-    sus count_clone = Arc::clone(&signal_count);
-    
-    // Register a handler for SIGUSR1 (if available)
-    lowkey Signal::User1.can_be_caught() {
-        sus action = SignalAction::Handle(Arc::new(move |signal| {
-            count_clone.fetch_add(1, Ordering::SeqCst);
-            println("   📨 Received signal: {}", signal.name());
-        }));
-        
-        handler.register(Signal::User1, action)?;
-        println("✓ Registered handler for SIGUSR1");
-        
-        // Simulate receiving signals
-        facts i in 0..3 {
-            handler.simulate_signal(Signal::User1)?;
-            thread::sleep(Duration::from_millis(50));
-        }
-        
-        println("✓ Processed {} signals", signal_count.load(Ordering::SeqCst));
-    } flex {
-        println("⚠ SIGUSR1 cannot be caught on this platform");
+    // Show first 5 processes
+    println("First 5 processes:")?;
+    lowkey (sus i = 0; i < 5 && i < process_list.len(); i++) {
+        facts process = &process_list[i];
+        println(&format!("  PID: {}, Name: {}, Status: {:?}", 
+                        process.pid, process.name, process.status))?;
     }
     
-    // Demonstrate signal properties
-    sus signals = [
-        Signal::Interrupt,
-        Signal::Terminate,
-        Signal::Kill,
-        Signal::Continue,
-    ];
-    
-    println("\n📋 Signal Information:");
-    facts signal in &signals {
-        println("  {} - Can catch: {}, Terminating: {}",
-                signal.name(),
-                signal.can_be_caught(),
-                signal.is_terminating());
+    // Find processes by name (common system processes)
+    facts shell_processes = find_processes_by_name("sh")?;
+    lowkey (!shell_processes.is_empty()) {
+        println(&format!("Found {} shell processes", shell_processes.len()))?;
     }
     
-    // Show platform-specific signal handling
-    #[cfg(unix)]
-    {
-        println("✓ Unix signal handling available");
-        
-        // Create and use signal mask
-        sus mut mask = SignalMask::empty()?;
-        mask.add(Signal::Interrupt)?;
-        println("✓ Created signal mask with SIGINT");
-        
-        lowkey mask.contains(Signal::Interrupt) {
-            println("✓ Signal mask contains SIGINT");
-        }
-    }
-    
-    #[cfg(windows)]
-    {
-        println("✓ Windows signal handling available (limited)");
-        println("  Supported signals: CTRL_C, CTRL_BREAK, CTRL_CLOSE");
-    }
-    
-    yolo Ok(());
+    Ok(())
 }
 
-// Demo 3: Daemon Management
-slay demo_daemon() -> ProcessResult<()> {
-    println("\n👤 Demo 3: Daemon Management");
-    println("----------------------------");
+// Process control demonstration
+slay process_control_demo() -> Result<(), ProcessError> {
+    println("\n=== Process Control Demo ===")?;
     
-    // Create daemon configuration
-    sus temp_dir = std::env::temp_dir();
-    sus config = DaemonConfig::new("cursed-demo-daemon")
-        .working_directory(temp_dir.clone())
-        .pid_file(temp_dir.join("cursed-demo.pid"))
-        .log_file(temp_dir.join("cursed-demo.log"))
-        .description("CURSED demonstration daemon")
-        .env("DEMO_VAR", "cursed_rocks")
-        .umask(0o022);
+    // Spawn a long-running process for demonstration
+    facts config = ProcessConfig::new("sleep")
+        .arg("2")
+        .stdout(ProcessIo::Pipe);
     
-    println("✓ Created daemon configuration");
-    println("  Name: {}", config.name);
-    println("  Working directory: {:?}", config.working_directory);
-    println("  PID file: {:?}", config.pid_file);
-    println("  Log file: {:?}", config.log_file);
+    sus mut process = spawn_process(config)?;
+    facts pid = process.id();
     
-    // Create daemon instance
-    sus daemon = Daemon::new(config);
-    println("✓ Created daemon instance");
-    println("  Status: {:?}", daemon.status());
-    println("  PID: {:?}", daemon.pid());
-    println("  Restart count: {}", daemon.restart_count());
+    println(&format!("Spawned process with PID: {}", pid))?;
     
-    // Demonstrate service manager
-    sus manager = ServiceManager::new();
-    println("✓ Created service manager");
-    
-    sus service_config = DaemonConfig::new("demo-service")
-        .description("Demo service for CURSED");
-    
-    manager.register("demo-service".to_string(), service_config)?;
-    println("✓ Registered service: demo-service");
-    
-    sus services = manager.list_services();
-    println("✓ Active services: {:?}", services);
-    
-    sus service_status = manager.service_status("demo-service")?;
-    println("✓ Service status: {:?}", service_status);
-    
-    // Platform-specific service features
-    #[cfg(target_os = "linux")]
-    {
-        println("🐧 Linux: systemd service support available");
+    // Check if process is running
+    lowkey (is_process_running(pid)) {
+        println("Process is running")?;
+        
+        // Get process information
+        facts process_info = get_process_info(pid)?;
+        println(&format!("Process command: {:?}", process_info.cmdline))?;
+        
+        // Wait for natural completion
+        facts status = process.wait()?;
+        lowkey (status.success()) {
+            println("Process completed successfully")?;
+        } bestie {
+            println("Process failed")?;
+        }
     }
     
-    #[cfg(windows)]
-    {
-        println("🪟 Windows: Windows Service support available");
-    }
-    
-    #[cfg(target_os = "macos")]
-    {
-        println("🍎 macOS: launchd service support available");
-    }
-    
-    yolo Ok(());
+    Ok(())
 }
 
-// Demo 4: Process Information
-slay demo_process_info() -> ProcessResult<()> {
-    println("\n📊 Demo 4: Process Information");
-    println("------------------------------");
+// Advanced monitoring with health checks
+slay advanced_monitoring_demo() -> Result<(), ProcessError> {
+    println("\n=== Advanced Monitoring Demo ===")?;
     
-    sus current_pid = std::process::id();
-    println("✓ Current process PID: {}", current_pid);
+    // Create a process monitor with custom configuration
+    facts config = HealthCheckConfig {
+        check_interval: Duration::from_millis(500),
+        thresholds: ResourceThresholds {
+            max_cpu_percent: 50.0,
+            max_memory_bytes: 512 * 1024 * 1024, // 512MB
+            max_file_descriptors: 500,
+            max_threads: 50,
+            max_execution_time: Some(Duration::from_secs(60)),
+        },
+        failure_threshold: 2,
+        success_threshold: 1,
+        check_responsiveness: false,
+        responsiveness_timeout: Duration::from_secs(1),
+    };
     
-    // Check if we're running with elevated privileges
-    sus is_elevated = PlatformUtils::is_elevated();
-    println("✓ Running with elevated privileges: {}", is_elevated);
+    sus mut monitor = ProcessMonitor::new(config);
     
-    // Get current user information
-    lowkey sus user_info = PlatformUtils::get_current_user() {
-        println("✓ Current user: {}", user_info.username);
-        
-        #[cfg(unix)]
-        {
-            lowkey sus uid = user_info.uid {
-                println("  UID: {}", uid);
-            }
-            lowkey sus gid = user_info.gid {
-                println("  GID: {}", gid);
-            }
-        }
-        
-        lowkey sus home = user_info.home_directory {
-            println("  Home: {:?}", home);
-        }
-    } else {
-        println("⚠ Could not get user information");
+    // Add current process to monitoring
+    facts current_pid = get_current_pid();
+    monitor.add_process(current_pid)?;
+    
+    println(&format!("Monitoring process {}", current_pid))?;
+    
+    // Start monitoring
+    monitor.start()?;
+    
+    // Let it monitor for a short time
+    sleep(Duration::from_secs(2));
+    
+    // Check monitoring results
+    facts status = monitor.get_status();
+    lowkey (sus (pid, (health, last_check)) = status) {
+        println(&format!("PID: {}, Health: {:?}, Last check: {:?}", 
+                        pid, health, last_check))?;
     }
     
-    // Get platform-specific process information
-    lowkey sus platform_info = PlatformUtils::get_platform_info(current_pid) {
-        mood platform_info {
-            #[cfg(target_os = "linux")]
-            PlatformProcessInfo::Linux { command_line, environment, cgroups, namespaces, .. } => {
-                println("🐧 Linux process information:");
-                println("  Command: {:?}", command_line);
-                println("  Environment vars: {}", environment.len());
-                println("  Cgroups: {}", cgroups.len());
-                println("  Namespaces: {}", namespaces.len());
-            }
-            
-            #[cfg(windows)]
-            PlatformProcessInfo::Windows { command_line, environment } => {
-                println("🪟 Windows process information:");
-                println("  Command: {}", command_line);
-                println("  Environment vars: {}", environment.len());
-            }
-            
-            #[cfg(target_os = "macos")]
-            PlatformProcessInfo::MacOS { sysctl_info, memory_regions, mach_ports } => {
-                println("🍎 macOS process information:");
-                println("  Name: {}", sysctl_info.name);
-                println("  Memory regions: {}", memory_regions.len());
-                println("  Mach ports: {}", mach_ports.len());
-            }
-            
-            #[cfg(unix)]
-            PlatformProcessInfo::Unix { command_line, environment, file_descriptors } => {
-                println("🐧 Unix process information:");
-                println("  Command: {:?}", command_line);
-                println("  Environment vars: {}", environment.len());
-                println("  File descriptors: {}", file_descriptors.len());
-            }
+    // Get detailed process information
+    lowkey (sus details = monitor.get_process_details(current_pid)) {
+        println(&format!("Monitoring duration: {:?}", details.monitoring_duration()))?;
+        println(&format!("Performance samples: {}", details.performance_history.samples.len()))?;
+        
+        lowkey (sus latest = details.performance_history.latest()) {
+            println(&format!("Latest CPU: {:.2}%", latest.cpu_percent))?;
+            println(&format!("Latest memory: {} bytes", latest.memory_bytes))?;
         }
-    } else {
-        println("⚠ Could not get platform-specific process information");
     }
     
-    yolo Ok(());
+    // Stop monitoring
+    monitor.stop();
+    println("Monitoring stopped")?;
+    
+    Ok(())
 }
 
-// Demo 5: Cross-Platform Features
-slay demo_platform_features() -> ProcessResult<()> {
-    println("\n🌐 Demo 5: Cross-Platform Features");
-    println("----------------------------------");
+// Performance metrics demonstration
+slay performance_metrics_demo() -> Result<(), ProcessError> {
+    println("\n=== Performance Metrics Demo ===")?;
     
-    sus platform = get_platform_name();
-    println("✓ Platform: {}", platform);
+    facts current_pid = get_current_pid();
     
-    // Check feature support across platforms
-    sus features = [
-        ("Signals", PlatformFeature::Signals),
-        ("Process Groups", PlatformFeature::ProcessGroups),
-        ("Resource Limits", PlatformFeature::ResourceLimits),
-        ("File Descriptors", PlatformFeature::FileDescriptors),
-        ("Windows Services", PlatformFeature::WindowsServices),
-        ("Linux Cgroups", PlatformFeature::Cgroups),
-        ("Linux Namespaces", PlatformFeature::Namespaces),
-        ("SELinux", PlatformFeature::SELinux),
-        ("AppArmor", PlatformFeature::AppArmor),
-        ("macOS Mach Ports", PlatformFeature::MachPorts),
-    ];
+    // Monitor process once
+    facts metrics = monitor_process_once(current_pid)?;
     
-    println("\n📋 Platform Feature Support:");
-    facts (name, feature) in &features {
-        sus supported = supports_feature(*feature);
-        sus indicator = lowkey supported { "✅" } flex { "❌" };
-        println("  {} {}", indicator, name);
+    println(&format!("Process {} metrics:", metrics.pid))?;
+    println(&format!("  CPU usage: {:.2}%", metrics.cpu_percent))?;
+    println(&format!("  Memory: {} bytes", metrics.memory_bytes))?;
+    println(&format!("  Virtual memory: {} bytes", metrics.virtual_memory_bytes))?;
+    println(&format!("  File descriptors: {}", metrics.file_descriptors))?;
+    println(&format!("  Threads: {}", metrics.threads))?;
+    println(&format!("  Uptime: {} seconds", metrics.uptime.as_secs()))?;
+    
+    // Create performance history
+    sus mut history = PerformanceHistory::new(current_pid, 5);
+    
+    // Add some samples
+    lowkey (sus i = 0; i < 3; i++) {
+        facts sample_metrics = monitor_process_once(current_pid)?;
+        history.add_sample(sample_metrics);
+        sleep(Duration::from_millis(100));
     }
     
-    // Platform-specific demonstrations
-    mood platform {
-        "linux" => {
-            println("\n🐧 Linux-specific features:");
-            
-            #[cfg(target_os = "linux")]
-            {
-                // Resource limits
-                lowkey sus limits = unix::get_resource_limits() {
-                    println("  Max file descriptors: {}", limits.max_file_descriptors);
-                    println("  Max processes: {}", limits.max_processes);
-                    println("  Max virtual memory: {}", limits.max_virtual_memory);
-                } else {
-                    println("  ⚠ Could not get resource limits");
-                }
-                
-                // CPU affinity
-                sus current_pid = std::process::id();
-                lowkey sus affinity = linux::get_cpu_affinity(current_pid) {
-                    println("  CPU affinity mask: 0x{:x}", affinity);
-                } else {
-                    println("  ⚠ Could not get CPU affinity");
-                }
-            }
-        }
-        
-        "windows" => {
-            println("\n🪟 Windows-specific features:");
-            
-            #[cfg(windows)]
-            {
-                sus current_pid = std::process::id();
-                lowkey sus win_info = windows::get_process_info(current_pid) {
-                    println("  Memory usage: {} bytes", win_info.memory_usage);
-                    println("  CPU usage: {:.2}%", win_info.cpu_usage);
-                    println("  Handle count: {}", win_info.handle_count);
-                    println("  Thread count: {}", win_info.thread_count);
-                    println("  Priority class: 0x{:x}", win_info.priority_class);
-                } else {
-                    println("  ⚠ Could not get Windows process info");
-                }
-            }
-        }
-        
-        "macos" => {
-            println("\n🍎 macOS-specific features:");
-            
-            #[cfg(target_os = "macos")]
-            {
-                sus current_pid = std::process::id();
-                lowkey sus macos_info = macos::get_process_info_sysctl(current_pid) {
-                    println("  Process name: {}", macos_info.name);
-                    println("  Executable path: {:?}", macos_info.executable_path);
-                    println("  Parent PID: {:?}", macos_info.parent_pid);
-                    println("  Process group: {:?}", macos_info.process_group_id);
-                } else {
-                    println("  ⚠ Could not get macOS process info");
-                }
-            }
-        }
-        
-        _ => {
-            println("\n🔍 Generic Unix features available");
-        }
-    }
+    println(&format!("Average CPU usage: {:.2}%", history.average_cpu_usage()))?;
+    println(&format!("Peak memory usage: {} bytes", history.peak_memory_usage()))?;
+    println(&format!("Peak CPU usage: {:.2}%", history.peak_cpu_usage()))?;
     
-    // Communication integration
-    println("\n💬 Process Communication:");
-    sus comm_config = CommunicationConfig::default();
-    sus comm = create_process_communication(current_pid, comm_config)?;
-    
-    println("  ✓ Created communication for PID: {}", comm.process_id);
-    println("  ✓ Available channels: {}", comm.channels.total_channels());
-    println("  ✓ IPC type: {:?}", comm.channels.config.ipc_type);
-    println("  ✓ Buffer size: {} bytes", comm.channels.config.buffer_size);
-    
-    sus stats = comm.get_statistics();
-    println("  ✓ Communication statistics initialized");
-    println("    - Bytes sent: {}", stats.bytes_sent);
-    println("    - Messages sent: {}", stats.messages_sent);
-    println("    - Bytes received: {}", stats.bytes_received);
-    println("    - Messages received: {}", stats.messages_received);
-    
-    yolo Ok(());
+    Ok(())
 }
 
-// Helper function to demonstrate process spawning
-slay demo_process_spawning() -> ProcessResult<()> {
-    println("\n🎯 Bonus: Process Spawning Demo");
-    println("------------------------------");
+// System resource monitoring
+slay system_resource_demo() -> Result<(), ProcessError> {
+    println("\n=== System Resources Demo ===")?;
     
-    // Create a simple process configuration
-    sus config = ProcessConfig::new("echo")
-        .arg("Hello from spawned process!")
-        .timeout(Duration::from_secs(5));
+    // Get system resource summary
+    facts summary = get_system_resource_summary()?;
     
-    println("✓ Created process configuration");
-    println("  Command: {}", config.command);
-    println("  Args: {:?}", config.args);
-    println("  Timeout: {:?}", config.timeout);
-    
-    // Run the command and capture output
-    sus output = run_command(config)?;
-    
-    println("✓ Process execution results:");
-    println("  Success: {}", output.success());
-    println("  Exit code: {:?}", output.exit_code());
-    println("  Duration: {:?}", output.duration);
-    println("  Stdout: {}", output.stdout_lossy().trim());
-    
-    lowkey !output.stderr.is_empty() {
-        println("  Stderr: {}", output.stderr_lossy().trim());
+    println("System Resource Summary:")?;
+    lowkey (sus (key, value) = summary) {
+        println(&format!("  {}: {}", key, value))?;
     }
     
-    yolo Ok(());
+    // Platform-specific information
+    facts platform_name = get_platform_name();
+    println(&format!("Platform: {}", platform_name))?;
+    
+    // Check platform features
+    facts has_cgroups = supports_feature(PlatformFeature::Cgroups);
+    facts has_systemd = supports_feature(PlatformFeature::Systemd);
+    facts has_job_objects = supports_feature(PlatformFeature::WindowsJobObjects);
+    
+    println(&format!("Platform features:"))?;
+    println(&format!("  Cgroups: {}", has_cgroups))?;
+    println(&format!("  Systemd: {}", has_systemd))?;
+    println(&format!("  Windows Job Objects: {}", has_job_objects))?;
+    
+    Ok(())
+}
+
+// Process tree demonstration
+slay process_tree_demo() -> Result<(), ProcessError> {
+    println("\n=== Process Tree Demo ===")?;
+    
+    facts current_pid = get_current_pid();
+    facts tree = get_process_tree(current_pid)?;
+    
+    println(&format!("Process tree for PID {}:", current_pid))?;
+    lowkey (sus process = tree) {
+        println(&format!("  PID: {}, PPID: {}, Name: {}", 
+                        process.pid, process.ppid, process.name))?;
+    }
+    
+    Ok(())
+}
+
+// Command execution with different I/O configurations
+slay io_configuration_demo() -> Result<(), ProcessError> {
+    println("\n=== I/O Configuration Demo ===")?;
+    
+    // Example 1: Pipe output
+    println("1. Piped output:")?;
+    facts config1 = ProcessConfig::new("echo")
+        .arg("Piped output example")
+        .stdout(ProcessIo::Pipe);
+    
+    facts output1 = run_command(config1)?;
+    println(&format!("   Output: {}", output1.stdout_lossy().trim()))?;
+    
+    // Example 2: Null input/output
+    println("2. Null I/O:")?;
+    facts config2 = ProcessConfig::new("echo")
+        .arg("This goes to null")
+        .stdout(ProcessIo::Null)
+        .stderr(ProcessIo::Null);
+    
+    facts output2 = run_command(config2)?;
+    println(&format!("   No output (as expected): '{}'", output2.stdout_lossy()))?;
+    
+    // Example 3: Environment variables
+    println("3. Environment variables:")?;
+    facts config3 = ProcessConfig::new("sh")
+        .args(&["-c", "echo $CURSED_TEST_VAR"])
+        .env("CURSED_TEST_VAR", "Hello from environment!")
+        .stdout(ProcessIo::Pipe);
+    
+    facts output3 = run_command(config3)?;
+    println(&format!("   Env output: {}", output3.stdout_lossy().trim()))?;
+    
+    Ok(())
 }
 
 // Error handling demonstration
-slay demo_error_handling() -> ProcessResult<()> {
-    println("\n⚠ Error Handling Demo");
-    println("---------------------");
+slay error_handling_demo() -> Result<(), ProcessError> {
+    println("\n=== Error Handling Demo ===")?;
     
-    // Demonstrate various error conditions and recovery
-    
-    // 1. Invalid pipe operations
-    sus read_only_pipe = NamedPipe::create("error_demo", PipeMode::Read)?;
-    mood read_only_pipe.write(b"should fail") {
-        Ok(_) => println!("❌ Unexpected success"),
-        Err(e) => println!("✓ Expected error: {}", e),
+    // Example 1: Command not found
+    println("1. Command not found error:")?;
+    facts result1 = exec("nonexistent_command_12345");
+    match result1 {
+        Ok(_) => println("   Unexpected success")?,
+        Err(error) => {
+            println(&format!("   Error category: {}", error.category()))?;
+            println(&format!("   Error message: {}", error.message()))?;
+            println(&format!("   Is recoverable: {}", error.is_recoverable()))?;
+        }
     }
     
-    // 2. Signal registration errors
-    sus handler = SignalHandler::new();
-    mood handler.register(Signal::Kill, SignalAction::Ignore) {
-        Ok(_) => println!("❌ Unexpected success"),
-        Err(e) => println!("✓ Expected error: {}", e),
+    // Example 2: Process not found
+    println("2. Process not found error:")?;
+    facts result2 = get_process_info(999999);
+    match result2 {
+        Ok(_) => println("   Unexpected success")?,
+        Err(error) => {
+            println(&format!("   Error category: {}", error.category()))?;
+            println(&format!("   Error message: {}", error.message()))?;
+        }
     }
     
-    // 3. Non-existent process operations
-    mood send_signal(999999, Signal::Terminate) {
-        Ok(_) => println!("❌ Unexpected success"),
-        Err(e) => println!("✓ Expected error: {}", e),
+    // Example 3: Timeout error
+    println("3. Timeout error:")?;
+    facts config = ProcessConfig::new("sleep").arg("5");
+    facts result3 = run_command_timeout(config, Duration::from_millis(100));
+    match result3 {
+        Ok(_) => println("   Unexpected success")?,
+        Err(error) => {
+            println(&format!("   Error category: {}", error.category()))?;
+            println(&format!("   Error message: {}", error.message()))?;
+        }
     }
     
-    println("✓ Error handling working correctly");
+    Ok(())
+}
+
+// Main demonstration function
+slay main() -> Result<(), ProcessError> {
+    println("CURSED Process Management Comprehensive Demo")?;
+    println("============================================")?;
     
-    yolo Ok(());
+    // Run all demonstrations
+    simple_process_demo()?;
+    monitoring_demo()?;
+    process_list_demo()?;
+    process_control_demo()?;
+    advanced_monitoring_demo()?;
+    performance_metrics_demo()?;
+    system_resource_demo()?;
+    process_tree_demo()?;
+    io_configuration_demo()?;
+    error_handling_demo()?;
+    
+    println("\n=== Demo Complete ===")?;
+    println("All process management features demonstrated successfully!")?;
+    
+    Ok(())
 }

@@ -26,6 +26,7 @@ pub mod orm;
 
 // Database-specific drivers
 pub mod sqlite;
+pub mod postgres;
 
 // Re-export main types for easy access
 pub use core::{
@@ -55,6 +56,13 @@ pub use orm::{
 pub use sqlite::{
     SqliteDriver, SqliteConfig, SqliteConnectionString, SqliteError, SqliteResult,
     SqliteVersion, SqliteFeatures, SqliteUtils, init_sqlite, register_sqlite_driver
+};
+
+// Re-export PostgreSQL driver
+pub use postgres::{
+    PostgresDriver, PostgresConfig, PostgresConnectionString, PostgresError, 
+    PostgresPool, PostgresPoolConfig, SslMode, init_postgres, new_postgres_driver,
+    parse_connection_string
 };
 
 /// fr fr Database isolation levels for transaction control
