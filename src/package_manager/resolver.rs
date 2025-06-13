@@ -231,6 +231,16 @@ impl DependencyResolver {
         &self.stats
     }
 
+    /// Get the maximum depth setting
+    pub fn max_depth(&self) -> usize {
+        self.max_depth
+    }
+
+    /// Get the allow dev dependencies setting
+    pub fn allow_dev_dependencies(&self) -> bool {
+        self.allow_dev_dependencies
+    }
+
     /// Clear internal caches
     pub fn clear_cache(&mut self) {
         self.resolution_cache.clear();

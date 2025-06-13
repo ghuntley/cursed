@@ -100,8 +100,9 @@ impl SessionManager {
         // Parse and analyze the code to extract variables and functions
         self.analyze_code(code)?;
         
-        // Execute the code (this would interface with the CURSED interpreter)
-        let result = self.execute_cursed_code(code)?;
+        // Execute the code using the new evaluation system
+        let result = crate::execute_repl_code(code, self)
+            .map_err(|e| CursedError::repl_error(e.to_string()))?;
         
         let execution_time = start_time.elapsed();
         

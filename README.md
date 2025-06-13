@@ -17,6 +17,17 @@ CURSED now supports next-level generic programming with:
 
 Check out the [Generics Guide](docs/generics_guide.md) for the full tea! ☕
 
+### Type Switches - Runtime Type Dispatch! 🎯
+
+CURSED features powerful type switches for handling interface values:
+
+- **Runtime Type Checking**: Branch based on actual types (`vibe_check value.(type)`)
+- **Variable Binding**: Automatic type casting with `v := value.(type)`
+- **Multiple Types**: Handle related types in single cases (`mood int, int32, int64:`)
+- **Interface Integration**: Seamless work with interface hierarchies
+
+Check out the [Type Switch Guide](docs/type_switches.md) and [Tutorial](docs/type_switch_tutorial.md)! 🔥
+
 Example CURSED code (it ATE and left no crumbs):
 
 ```

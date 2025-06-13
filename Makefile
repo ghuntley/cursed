@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help error-propagation-test error-propagation-test-integration error-propagation-test-compilation error-propagation-test-examples error-propagation-test-all error-propagation-test-quick error-propagation-test-coverage error-propagation-test-report error-propagation-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help error-propagation-test error-propagation-test-integration error-propagation-test-compilation error-propagation-test-examples error-propagation-test-all error-propagation-test-quick error-propagation-test-coverage error-propagation-test-report error-propagation-help optimization-test optimization-test-quick optimization-test-benchmarks optimization-test-cli optimization-test-performance optimization-test-pipeline optimization-test-all optimization-test-ignored optimization-test-coverage optimization-benchmark optimization-demo optimization-build-example optimization-help ipc-test ipc-test-basic ipc-test-stress ipc-test-performance ipc-test-all ipc-test-quick ipc-test-coverage ipc-test-report ipc-example ipc-demo ipc-help process-test process-test-integration process-test-basic process-test-concurrent process-test-monitoring process-test-all process-test-quick process-help sqlite-production-test sqlite-production-test-all sqlite-production-test-quick sqlite-production-help build-optimization-test build-optimization-test-cli build-optimization-test-integration build-optimization-test-performance build-optimization-test-all build-optimization-test-quick build-optimization-test-coverage build-optimization-test-report build-optimization-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -924,6 +924,8 @@ crypto-test-all:
 	@make crypto-test-stress
 	@make crypto-test-security
 	@make crypto-test-interop
+	@make crypto-test-pqc
+	@make crypto-test-pqc-integration
 	@echo "✅ All crypto tests completed!"
 
 # Run specific crypto test suites
@@ -962,12 +964,29 @@ crypto-test-quick:
 	@echo "⚡ Running quick crypto tests..."
 	./fix_linking.sh devenv shell cargo test --test crypto_integration_test test_end_to_end_encryption_workflow
 	./fix_linking.sh devenv shell cargo test --test crypto_security_test test_randomness_quality
+	./fix_linking.sh devenv shell cargo test --test crypto_pqc_test test_kyber_encaps_decaps_round_trip
 	@echo "✅ Quick crypto tests completed!"
+
+# Post-quantum cryptography tests
+crypto-test-pqc:
+	@echo "🔐 Running post-quantum cryptography tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_pqc_test
+	@echo "✅ PQC tests completed!"
+
+crypto-test-pqc-performance:
+	@echo "⚡ Running PQC performance tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_pqc_performance_test -- --ignored
+	@echo "✅ PQC performance tests completed!"
+
+crypto-test-pqc-integration:
+	@echo "🔗 Running PQC integration tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_pqc_integration_test
+	@echo "✅ PQC integration tests completed!"
 
 # Crypto test with coverage
 crypto-test-coverage:
 	@echo "📊 Running crypto tests with coverage..."
-	./fix_linking.sh devenv shell cargo tarpaulin --tests crypto_integration_test crypto_stress_test crypto_security_test crypto_interop_test --out html --output-dir target/coverage/crypto
+	./fix_linking.sh devenv shell cargo tarpaulin --tests crypto_integration_test crypto_stress_test crypto_security_test crypto_interop_test crypto_pqc_test crypto_pqc_performance_test crypto_pqc_integration_test --out html --output-dir target/coverage/crypto
 
 # Validate crypto implementations
 crypto-validate:
@@ -998,6 +1017,9 @@ crypto-help:
 	@echo "  crypto-test-interop       - Run interoperability tests"
 	@echo "  crypto-test-all           - Run complete crypto test suite"
 	@echo "  crypto-test-quick         - Run essential tests only"
+	@echo "  crypto-test-pqc           - Run post-quantum cryptography tests"
+	@echo "  crypto-test-pqc-performance - Run PQC performance tests"
+	@echo "  crypto-test-pqc-integration - Run PQC integration tests"
 	@echo "  crypto-test-coverage      - Run tests with coverage analysis"
 	@echo ""
 	@echo "Example Commands:"
@@ -1028,6 +1050,7 @@ crypto-help:
 	@echo "  • Key derivation functions (PBKDF2, Argon2, scrypt)"
 	@echo "  • Secure random number generation"
 	@echo "  • Zero-knowledge proofs"
+	@echo "  • Post-quantum cryptography (Kyber, Dilithium, SPHINCS+, Falcon, NTRU)"
 	@echo "  • Post-quantum cryptography assessment"
 	@echo "  • PKI and certificate handling"
 	@echo "  • Cryptographic protocols"
@@ -2079,4 +2102,775 @@ template-cache-help:
 	@echo "  template-cache-test                - Run comprehensive cache tests"
 	@echo "  template-cache-test-unit          - Run unit tests for cache module"
 	@echo "  template-cache-test-all           - Run all cache tests"
+
+# LLVM Optimization System Tests
+optimization-test:
+	@echo "🔧 Running LLVM optimization system tests..."
+	$(LINK_FIX) cargo test --test llvm_optimization_test
+
+optimization-test-quick:
+	@echo "🔧 Running quick optimization tests..."
+	$(LINK_FIX) cargo test --test llvm_optimization_test "test_(optimization_level|config|manager).*"
+
+optimization-test-benchmarks:
+	@echo "🔧 Running optimization benchmarks..."
+	$(LINK_FIX) cargo test --test performance_benchmark_test --release
+
+optimization-test-cli:
+	@echo "🔧 Running CLI optimization integration tests..."
+	$(LINK_FIX) cargo test --test cli_optimization_integration_test
+
+optimization-test-performance:
+	@echo "🔧 Running performance profiling tests..."
+	$(LINK_FIX) cargo test --test llvm_optimization_test "test_performance.*"
+
+optimization-test-pipeline:
+	@echo "🔧 Running performance pipeline tests..."
+	$(LINK_FIX) cargo test --test llvm_optimization_test "test_.*pipeline.*"
+
+optimization-test-all: optimization-test optimization-test-benchmarks optimization-test-cli
+	@echo "✅ All optimization tests completed"
+
+optimization-test-ignored:
+	@echo "🔧 Running ignored optimization tests (performance-intensive)..."
+	$(LINK_FIX) cargo test --test performance_benchmark_test --release -- --ignored
+
+optimization-test-coverage:
+	@echo "📊 Generating optimization test coverage..."
+	$(LINK_FIX) cargo tarpaulin --out Html --output-dir coverage/optimization --tests llvm_optimization_test performance_benchmark_test cli_optimization_integration_test
+
+optimization-benchmark:
+	@echo "📈 Running optimization performance benchmarks..."
+	$(LINK_FIX) cargo test --test performance_benchmark_test benchmark_ --release -- --show-output
+
+optimization-demo:
+	@echo "🎯 Running optimization system demo..."
+	$(LINK_FIX) cargo run -- build examples/fibonacci.csd --opt-level 3 --profile --time-passes
+
+optimization-build-example:
+	@echo "🏗️ Building example with optimizations..."
+	$(LINK_FIX) cargo run -- build examples/fibonacci.csd -O3 --lto --target-cpu native
+
+optimization-help:
+	@echo "LLVM Optimization System Commands:"
+	@echo "  optimization-test                  - Run all optimization system tests"
+	@echo "  optimization-test-quick           - Run quick optimization tests"
+	@echo "  optimization-test-benchmarks      - Run performance benchmarks"
+	@echo "  optimization-test-cli             - Run CLI integration tests"
+	@echo "  optimization-test-performance     - Run performance profiling tests"
+	@echo "  optimization-test-pipeline        - Run performance pipeline tests"
+	@echo "  optimization-test-all             - Run all optimization tests"
+	@echo "  optimization-test-ignored         - Run performance-intensive tests"
+	@echo "  optimization-test-coverage        - Generate test coverage report"
+	@echo "  optimization-benchmark            - Run performance benchmarks"
+	@echo "  optimization-demo                 - Demo optimization system"
+	@echo "  optimization-build-example        - Build example with optimization"
+	@echo "  optimization-help                 - Show this help"
 	@echo "  template-cache-test-performance   - Run performance tests"
+
+# =============================================================================
+# Advanced Build System Optimization Commands
+# =============================================================================
+
+# Build optimization analysis
+build-opt-analyze:
+	cargo run --bin cursed-build -- analyze --smart-ordering --suggestions
+
+build-opt-analyze-verbose:
+	cargo run --bin cursed-build -- --verbose analyze --smart-ordering --dependency-pruning --suggestions --output-format report
+
+# Advanced caching commands
+build-opt-cache-stats:
+	cargo run --bin cursed-build -- cache stats
+
+build-opt-cache-clear:
+	cargo run --bin cursed-build -- cache clear
+
+build-opt-cache-clear-type:
+	@if [ -z "$(TYPE)" ]; then \
+		echo "Usage: make build-opt-cache-clear-type TYPE=<ast|ir|object|all>"; \
+		exit 1; \
+	fi
+	cargo run --bin cursed-build -- cache clear $(TYPE)
+
+build-opt-cache-warm:
+	cargo run --bin cursed-build -- cache warm src/**/*.rs
+
+build-opt-cache-optimize:
+	cargo run --bin cursed-build -- cache optimize
+
+build-opt-cache-configure:
+	cargo run --bin cursed-build -- cache configure --max-size 2048 --distributed --cache-dir .cursed_cache
+
+# Distributed compilation commands
+build-opt-distributed-start:
+	cargo run --bin cursed-build -- distributed start --work-stealing --workers localhost:9001 --workers localhost:9002
+
+build-opt-distributed-stop:
+	cargo run --bin cursed-build -- distributed stop
+
+build-opt-distributed-status:
+	cargo run --bin cursed-build -- distributed status
+
+build-opt-distributed-add-worker:
+	@if [ -z "$(WORKER)" ]; then \
+		echo "Usage: make build-opt-distributed-add-worker WORKER=host:port"; \
+		exit 1; \
+	fi
+	cargo run --bin cursed-build -- distributed add-worker $(WORKER)
+
+build-opt-distributed-configure:
+	cargo run --bin cursed-build -- distributed configure --timeout 300 --strategy work-stealing
+
+# Build analytics commands
+build-opt-analytics-report:
+	cargo run --bin cursed-build -- analytics report --trends --bottlenecks
+
+build-opt-analytics-report-json:
+	cargo run --bin cursed-build -- analytics report --format json --output build_report.json
+
+build-opt-analytics-report-html:
+	cargo run --bin cursed-build -- analytics report --format html --output build_report.html --trends --bottlenecks
+
+build-opt-analytics-stats:
+	cargo run --bin cursed-build -- analytics stats
+
+build-opt-analytics-monitor:
+	cargo run --bin cursed-build -- analytics monitor --interval 5
+
+build-opt-analytics-trends:
+	cargo run --bin cursed-build -- analytics trends --days 30
+
+build-opt-analytics-configure:
+	cargo run --bin cursed-build -- analytics configure --detailed --memory-profiling --regression-detection
+
+# Memory optimization commands
+build-opt-memory-stats:
+	cargo run --bin cursed-build -- memory stats
+
+build-opt-memory-configure:
+	cargo run --bin cursed-build -- memory configure --max-memory 4096 --strategy adaptive --streaming --chunk-size 64
+
+build-opt-memory-configure-conservative:
+	cargo run --bin cursed-build -- memory configure --max-memory 2048 --strategy conservative
+
+build-opt-memory-configure-aggressive:
+	cargo run --bin cursed-build -- memory configure --max-memory 8192 --strategy aggressive
+
+build-opt-memory-monitor:
+	cargo run --bin cursed-build -- memory monitor --interval 1000
+
+build-opt-memory-gc:
+	cargo run --bin cursed-build -- memory gc
+
+build-opt-memory-pressure:
+	cargo run --bin cursed-build -- memory pressure
+
+# Performance tuning commands
+build-opt-tune:
+	cargo run --bin cursed-build -- tune --wizard
+
+build-opt-tune-benchmark:
+	cargo run --bin cursed-build -- tune --benchmark
+
+build-opt-tune-apply:
+	cargo run --bin cursed-build -- tune --apply-recommendations
+
+build-opt-tune-test-config:
+	@if [ -z "$(CONFIG)" ]; then \
+		echo "Usage: make build-opt-tune-test-config CONFIG=path/to/config.toml"; \
+		exit 1; \
+	fi
+	cargo run --bin cursed-build -- tune --test-config $(CONFIG)
+
+# Optimized build commands
+build-opt-optimized-build:
+	cargo run --bin cursed-build -- optimized-build --all-optimizations --release
+
+build-opt-optimized-build-target:
+	@if [ -z "$(TARGET)" ]; then \
+		echo "Usage: make build-opt-optimized-build-target TARGET=<target_name>"; \
+		exit 1; \
+	fi
+	cargo run --bin cursed-build -- optimized-build $(TARGET) --all-optimizations
+
+build-opt-optimized-build-custom:
+	cargo run --bin cursed-build -- optimized-build --dependency-optimization --advanced-caching --memory-optimization --analytics --jobs 8
+
+build-opt-optimized-build-distributed:
+	cargo run --bin cursed-build -- optimized-build --all-optimizations --distributed --jobs 16
+
+# Build optimization testing
+build-opt-test:
+	./fix_linking.sh cargo test --test build_system_optimization_test
+
+build-opt-test-dependency:
+	./fix_linking.sh cargo test --test build_system_optimization_test test_dependency_optimization
+
+build-opt-test-cache:
+	./fix_linking.sh cargo test --test build_system_optimization_test test_advanced_cache
+
+build-opt-test-distributed:
+	./fix_linking.sh cargo test --test build_system_optimization_test test_distributed_compilation
+
+build-opt-test-analytics:
+	./fix_linking.sh cargo test --test build_system_optimization_test test_build_analytics
+
+build-opt-test-memory:
+	./fix_linking.sh cargo test --test build_system_optimization_test test_memory_optimization
+
+build-opt-test-integrated:
+	./fix_linking.sh cargo test --test build_system_optimization_test test_integrated_optimization_workflow
+
+build-opt-test-all:
+	./fix_linking.sh cargo test --test build_system_optimization_test
+
+build-opt-test-verbose:
+	./fix_linking.sh cargo test --test build_system_optimization_test -- --nocapture
+
+# Performance benchmarking
+build-opt-benchmark:
+	./fix_linking.sh cargo bench --bench build_optimization_benchmarks
+
+build-opt-performance-report:
+	cargo run --bin cursed-build -- analytics report --format html --output build_performance.html --trends --bottlenecks
+
+# Documentation and examples
+build-opt-docs:
+	@echo "🚀 CURSED Build System Optimizations"
+	@echo "======================================"
+	@echo ""
+	@echo "The CURSED build system includes advanced optimizations for maximum performance:"
+	@echo ""
+	@echo "📊 Dependency Optimization:"
+	@echo "  - Smart dependency analysis and compilation ordering"
+	@echo "  - Parallel execution optimization"
+	@echo "  - Dependency pruning and graph optimization"
+	@echo ""
+	@echo "💾 Advanced Caching:"
+	@echo "  - Multi-level caching (AST, IR, Object)"
+	@echo "  - Distributed cache support"
+	@echo "  - Content-based invalidation"
+	@echo ""
+	@echo "🌐 Distributed Compilation:"
+	@echo "  - Work-stealing load balancing"
+	@echo "  - Fault tolerance and recovery"
+	@echo "  - Network-based task distribution"
+	@echo ""
+	@echo "📈 Build Analytics:"
+	@echo "  - Performance monitoring and reporting"
+	@echo "  - Bottleneck identification"
+	@echo "  - Trend analysis and regression detection"
+	@echo ""
+	@echo "🧠 Memory Optimization:"
+	@echo "  - Memory-aware scheduling"
+	@echo "  - Streaming compilation for large files"
+	@echo "  - Adaptive memory strategies"
+
+build-opt-examples:
+	@echo "💡 Build Optimization Examples"
+	@echo "==============================="
+	@echo ""
+	@echo "Quick Performance Analysis:"
+	@echo "  make build-opt-analyze"
+	@echo ""
+	@echo "Complete Optimization Workflow:"
+	@echo "  make build-opt-tune                    # Run tuning wizard"
+	@echo "  make build-opt-cache-configure         # Setup caching"
+	@echo "  make build-opt-optimized-build         # Optimized build"
+	@echo "  make build-opt-analytics-report        # Performance report"
+	@echo ""
+	@echo "Distributed Build Setup:"
+	@echo "  make build-opt-distributed-start       # Start coordinator"
+	@echo "  make build-opt-optimized-build-distributed"
+	@echo ""
+	@echo "Memory Optimization:"
+	@echo "  make build-opt-memory-configure-conservative"
+	@echo "  make build-opt-memory-monitor"
+	@echo ""
+	@echo "Advanced Cache Management:"
+	@echo "  make build-opt-cache-warm"
+	@echo "  make build-opt-cache-stats"
+	@echo "  make build-opt-cache-optimize"
+
+# Build optimization help
+build-opt-help:
+	@echo ""
+	@echo "🚀 CURSED Build System Optimization Commands"
+	@echo "============================================="
+	@echo ""
+	@echo "Analysis Commands:"
+	@echo "  build-opt-analyze                      - Analyze build dependencies"
+	@echo "  build-opt-analyze-verbose              - Detailed dependency analysis"
+	@echo ""
+	@echo "Cache Management:"
+	@echo "  build-opt-cache-stats                  - Show cache statistics"
+	@echo "  build-opt-cache-clear                  - Clear all cache"
+	@echo "  build-opt-cache-clear-type TYPE=<type> - Clear specific cache type"
+	@echo "  build-opt-cache-warm                   - Warm cache with source files"
+	@echo "  build-opt-cache-optimize               - Optimize cache storage"
+	@echo "  build-opt-cache-configure              - Configure cache settings"
+	@echo ""
+	@echo "Distributed Compilation:"
+	@echo "  build-opt-distributed-start            - Start distributed coordinator"
+	@echo "  build-opt-distributed-stop             - Stop distributed system"
+	@echo "  build-opt-distributed-status           - Show cluster status"
+	@echo "  build-opt-distributed-add-worker WORKER=<host:port> - Add worker node"
+	@echo "  build-opt-distributed-configure        - Configure distributed settings"
+	@echo ""
+	@echo "Analytics and Monitoring:"
+	@echo "  build-opt-analytics-report             - Generate performance report"
+	@echo "  build-opt-analytics-report-json        - JSON format report"
+	@echo "  build-opt-analytics-report-html        - HTML format report"
+	@echo "  build-opt-analytics-stats              - Current build statistics"
+	@echo "  build-opt-analytics-monitor            - Real-time monitoring"
+	@echo "  build-opt-analytics-trends             - Performance trends"
+	@echo "  build-opt-analytics-configure          - Configure analytics"
+	@echo ""
+	@echo "Memory Optimization:"
+	@echo "  build-opt-memory-stats                 - Show memory statistics"
+	@echo "  build-opt-memory-configure             - Configure memory settings"
+	@echo "  build-opt-memory-configure-conservative - Conservative memory mode"
+	@echo "  build-opt-memory-configure-aggressive  - Aggressive memory mode"
+	@echo "  build-opt-memory-monitor               - Monitor memory usage"
+	@echo "  build-opt-memory-gc                    - Trigger garbage collection"
+	@echo "  build-opt-memory-pressure              - Show memory pressure events"
+	@echo ""
+	@echo "Performance Tuning:"
+	@echo "  build-opt-tune                         - Run tuning wizard"
+	@echo "  build-opt-tune-benchmark              - Performance benchmark"
+	@echo "  build-opt-tune-apply                  - Apply recommendations"
+	@echo "  build-opt-tune-test-config CONFIG=<file> - Test configuration"
+	@echo ""
+	@echo "Optimized Building:"
+	@echo "  build-opt-optimized-build              - Build with all optimizations"
+	@echo "  build-opt-optimized-build-target TARGET=<name> - Build specific target"
+	@echo "  build-opt-optimized-build-custom       - Build with custom optimizations"
+	@echo "  build-opt-optimized-build-distributed  - Distributed optimized build"
+	@echo ""
+	@echo "Testing and Validation:"
+	@echo "  build-opt-test                         - Run all optimization tests"
+	@echo "  build-opt-test-dependency              - Test dependency optimization"
+	@echo "  build-opt-test-cache                   - Test caching system"
+	@echo "  build-opt-test-distributed             - Test distributed compilation"
+	@echo "  build-opt-test-analytics               - Test analytics system"
+	@echo "  build-opt-test-memory                  - Test memory optimization"
+	@echo "  build-opt-test-integrated              - Test integrated workflow"
+	@echo "  build-opt-benchmark                    - Run performance benchmarks"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  build-opt-docs                         - Show optimization documentation"
+	@echo "  build-opt-examples                     - Show usage examples"
+	@echo "  build-opt-help                         - Show this help"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make build-opt-tune                    # Start with tuning wizard"
+	@echo "  make build-opt-optimized-build         # Run optimized build"
+	@echo "  make build-opt-analytics-report        # Check performance"
+
+# ================================
+# IPC (Inter-Process Communication) Testing
+# ================================
+
+# Quick IPC tests (basic functionality)
+ipc-test-quick:
+	@echo "Running quick IPC tests..."
+	./tests/run_ipc_tests.sh --quick
+
+# Basic IPC functionality tests
+ipc-test-basic:
+	@echo "Running basic IPC functionality tests..."
+	./tests/run_ipc_tests.sh basic
+
+# Stress tests for IPC under high load
+ipc-test-stress:
+	@echo "Running IPC stress tests..."
+	./tests/run_ipc_tests.sh stress
+
+# Performance benchmarks for IPC operations
+ipc-test-performance:
+	@echo "Running IPC performance tests..."
+	./tests/run_ipc_tests.sh performance
+
+# Run all IPC tests
+ipc-test-all:
+	@echo "Running all IPC tests..."
+	./tests/run_ipc_tests.sh all
+
+# Standard IPC test suite
+ipc-test:
+	@echo "Running standard IPC test suite..."
+	./tests/run_ipc_tests.sh basic
+
+# Generate IPC test coverage report
+ipc-test-coverage:
+	@echo "Generating IPC test coverage report..."
+	./tests/run_ipc_tests.sh --coverage --report
+
+# Generate detailed IPC test report
+ipc-test-report:
+	@echo "Generating detailed IPC test report..."
+	./tests/run_ipc_tests.sh --report
+
+# Run IPC example/demo
+ipc-example:
+	@echo "Running IPC example program..."
+	./fix_linking.sh devenv shell cargo run --example process_ipc_showcase
+
+# Alternative demo command
+ipc-demo: ipc-example
+
+# Show IPC testing help
+ipc-help:
+	@echo "IPC Testing Commands:"
+	@echo "====================="
+	@echo ""
+	@echo "Basic Testing:"
+	@echo "  ipc-test                    - Run standard IPC test suite"
+	@echo "  ipc-test-quick              - Run quick IPC validation tests"
+	@echo "  ipc-test-basic              - Run basic functionality tests"
+	@echo ""
+	@echo "Advanced Testing:"
+	@echo "  ipc-test-stress             - Run stress tests (high load scenarios)"
+	@echo "  ipc-test-performance        - Run performance benchmarks"
+	@echo "  ipc-test-all                - Run all test categories"
+	@echo ""
+	@echo "Analysis and Reporting:"
+	@echo "  ipc-test-coverage           - Generate coverage analysis"
+	@echo "  ipc-test-report             - Generate detailed test report"
+	@echo ""
+	@echo "Examples and Demos:"
+	@echo "  ipc-example                 - Run comprehensive IPC showcase"
+	@echo "  ipc-demo                    - Alias for ipc-example"
+	@echo ""
+	@echo "IPC Mechanisms Tested:"
+	@echo "  - Shared Memory              - Cross-process memory sharing"
+	@echo "  - Named Pipes               - FIFO-based communication"
+	@echo "  - Message Queues            - Priority-based messaging"
+	@echo "  - Semaphores               - Resource synchronization"
+	@echo "  - Unix Domain Sockets      - Local socket communication"
+	@echo "  - Signal Handling          - Process event signaling"
+	@echo "  - RPC (Remote Procedure)   - Remote method calls"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make ipc-test-quick         # Validate basic functionality"
+	@echo "  make ipc-example            # See comprehensive demo"
+	@echo "  make ipc-test-all           # Run complete test suite"
+
+# ================================
+# Process Management Testing
+# ================================
+
+# Quick process tests
+process-test-quick:
+	@echo "Running quick process management tests..."
+	./fix_linking.sh devenv shell cargo test --test process_basic_test
+
+# Basic process functionality tests
+process-test-basic:
+	@echo "Running basic process functionality tests..."
+	./fix_linking.sh devenv shell cargo test --test process_basic_test
+
+# Integration tests for process management
+process-test-integration:
+	@echo "Running process integration tests..."
+	./fix_linking.sh devenv shell cargo test --test process_integration_test
+
+# Concurrent process management tests
+process-test-concurrent:
+	@echo "Running concurrent process tests..."
+	./fix_linking.sh devenv shell cargo test --test process_integration_test "test_concurrent.*"
+
+# Process monitoring tests
+process-test-monitoring:
+	@echo "Running process monitoring tests..."
+	./fix_linking.sh devenv shell cargo test --test process_integration_test "test.*monitor.*"
+
+# Run all process tests
+process-test-all:
+	@echo "Running all process management tests..."
+	./fix_linking.sh devenv shell cargo test process_basic_test process_integration_test
+
+# Standard process test suite
+process-test:
+	@echo "Running standard process test suite..."
+	./fix_linking.sh devenv shell cargo test --test process_integration_test
+
+# Enhanced Process Management Testing Targets
+process-enhanced-test:
+	@echo "Running enhanced process management tests..."
+	./tests/run_process_tests.sh
+
+process-enhanced-test-quick:
+	@echo "Running quick enhanced process management tests..."
+	./tests/run_process_tests.sh --quick
+
+process-enhanced-test-verbose:
+	@echo "Running enhanced process management tests (verbose)..."
+	./tests/run_process_tests.sh --verbose
+
+process-enhanced-test-coverage:
+	@echo "Running enhanced process management tests with coverage..."
+	./tests/run_process_tests.sh --coverage --report process_enhanced_report.md
+
+process-enhanced-test-stress:
+	@echo "Running enhanced process management stress tests..."
+	./tests/run_process_tests.sh --ignored
+
+process-enhanced-test-pipes:
+	@echo "Running pipe-specific tests..."
+	./tests/run_process_tests.sh --test pipe
+
+process-enhanced-test-signals:
+	@echo "Running signal-specific tests..."
+	./tests/run_process_tests.sh --test signal
+
+process-enhanced-test-daemon:
+	@echo "Running daemon-specific tests..."
+	./tests/run_process_tests.sh --test daemon
+
+process-enhanced-test-platform:
+	@echo "Running platform-specific tests..."
+	./tests/run_process_tests.sh --test platform
+
+# Show process testing help
+process-help:
+	@echo "Process Management Testing Commands:"
+	@echo "===================================="
+	@echo ""
+	@echo "Basic Testing:"
+	@echo "  process-test                - Run standard process test suite"
+	@echo "  process-test-quick          - Run quick process validation"
+	@echo "  process-test-basic          - Run basic functionality tests"
+	@echo ""
+	@echo "Enhanced Testing:"
+	@echo "  process-enhanced-test          - Run enhanced process management tests"
+	@echo "  process-enhanced-test-quick    - Run basic enhanced tests only"
+	@echo "  process-enhanced-test-verbose  - Run tests with verbose output"
+	@echo "  process-enhanced-test-coverage - Run tests with coverage analysis"
+	@echo "  process-enhanced-test-stress   - Run stress and performance tests"
+	@echo "  process-enhanced-test-pipes    - Run pipe communication tests"
+	@echo "  process-enhanced-test-signals  - Run signal handling tests"
+	@echo "  process-enhanced-test-daemon   - Run daemon management tests"
+	@echo "  process-enhanced-test-platform - Run platform-specific tests"
+	@echo ""
+	@echo "Advanced Testing:"
+	@echo "  process-test-integration    - Run integration tests"
+	@echo "  process-test-concurrent     - Run concurrent process tests"
+	@echo "  process-test-monitoring     - Run process monitoring tests"
+	@echo "  process-test-all            - Run all process tests"
+	@echo ""
+	@echo "Process Features Tested:"
+	@echo "  - Process Spawning          - Create and manage child processes"
+	@echo "  - Environment Variables     - Process environment management"
+	@echo "  - Working Directory         - Process working directory control"
+	@echo "  - I/O Redirection          - Stdin/stdout/stderr handling"
+	@echo "  - Process Communication    - Two-way process communication"
+	@echo "  - Process Monitoring       - Resource usage and health monitoring"
+	@echo "  - Process Lifecycle        - Start, wait, kill, monitor operations"
+	@echo "  - Signal Handling          - Process signaling (Unix)"
+	@echo "  - Cross-Platform Support   - Windows, macOS, Linux compatibility"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make process-test-quick     # Validate basic functionality"
+	@echo "  make process-test-all       # Run complete test suite"
+
+# SQLite Production Driver Testing Commands
+sqlite-production-test:
+	@echo "🚀 Running SQLite Production Driver tests..."
+	./fix_linking.sh devenv shell cargo test --test sqlite_production_driver_test
+
+sqlite-production-test-quick:
+	@echo "🚀 Running quick SQLite Production Driver tests..."
+	./fix_linking.sh devenv shell cargo test --test sqlite_production_driver_test "test_(connection|basic_operations|prepared_statements|transactions)"
+
+sqlite-production-test-all: sqlite-production-test
+	@echo "🚀 Running comprehensive SQLite Production Driver tests..."
+	./fix_linking.sh devenv shell cargo test --test sqlite_production_driver_test --ignored
+
+sqlite-production-help:
+	@echo "SQLite Production Driver Test Commands:"
+	@echo "=================================="
+	@echo ""
+	@echo "Main Targets:"
+	@echo "  sqlite-production-test      - Run all production driver tests"
+	@echo "  sqlite-production-test-quick - Run quick validation tests"
+	@echo "  sqlite-production-test-all  - Run comprehensive tests including stress tests"
+	@echo ""
+	@echo "Test Coverage:"
+	@echo "  - Connection Management     - Connection lifecycle, pooling, configuration"
+	@echo "  - Database Operations       - CRUD operations, complex queries"
+	@echo "  - Prepared Statements       - Parameter binding, statement caching"
+	@echo "  - Transaction Management    - ACID compliance, savepoints, isolation"
+	@echo "  - Type Conversions          - Safe type mapping between CURSED and SQLite"
+	@echo "  - Error Handling            - Comprehensive error scenarios and recovery"
+	@echo "  - Performance Features      - Batch operations, caching, monitoring"
+	@echo "  - Concurrent Operations     - Thread safety, WAL mode, contention"
+	@echo "  - Memory Safety             - Resource cleanup, leak prevention"
+	@echo "  - Database Maintenance      - VACUUM, ANALYZE, size monitoring"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make sqlite-production-test-quick  # Validate core functionality"
+	@echo "  make sqlite-production-test        # Run complete test suite"
+
+# Build Optimization System Tests
+# ==============================
+
+# Quick validation of build optimization functionality
+build-optimization-test-quick:
+	@echo "🚀 Running quick build optimization tests..."
+	./tests/run_build_optimization_tests.sh --quick
+
+# CLI functionality tests
+build-optimization-test-cli:
+	@echo "🧪 Running build optimization CLI tests..."
+	./tests/run_build_optimization_tests.sh --test cli
+
+# Integration tests with build system components
+build-optimization-test-integration:
+	@echo "🔗 Running build optimization integration tests..."
+	./tests/run_build_optimization_tests.sh --test integration
+
+# Performance and benchmark tests  
+build-optimization-test-performance:
+	@echo "⚡ Running build optimization performance tests..."
+	./tests/run_build_optimization_tests.sh --test performance
+
+# Complete test suite
+build-optimization-test-all:
+	@echo "🎯 Running complete build optimization test suite..."
+	./tests/run_build_optimization_tests.sh
+
+# Standard test execution
+build-optimization-test:
+	@echo "📊 Running build optimization tests..."
+	./fix_linking.sh devenv shell cargo test --test build_optimization_cli_test
+	./fix_linking.sh devenv shell cargo test --test build_optimization_integration_test
+
+# Generate coverage report
+build-optimization-test-coverage:
+	@echo "📊 Generating build optimization test coverage..."
+	./tests/run_build_optimization_tests.sh --coverage
+
+# Generate test report
+build-optimization-test-report:
+	@echo "📝 Generating build optimization test report..."
+	./tests/run_build_optimization_tests.sh --report
+
+# Build optimization help
+build-optimization-help:
+	@echo "🚀 CURSED Build Optimization System Tests"
+	@echo "========================================="
+	@echo ""
+	@echo "Available Commands:"
+	@echo "  build-optimization-test             - Run core tests"
+	@echo "  build-optimization-test-quick       - Quick validation"
+	@echo "  build-optimization-test-cli         - CLI functionality tests"
+	@echo "  build-optimization-test-integration - Integration tests"
+	@echo "  build-optimization-test-performance - Performance tests"
+	@echo "  build-optimization-test-all         - Complete test suite"
+	@echo "  build-optimization-test-coverage    - Generate coverage report"
+	@echo "  build-optimization-test-report      - Generate test report"
+	@echo "  build-optimization-help             - Show this help"
+	@echo ""
+	@echo "Test Categories:"
+	@echo "  - CLI Functionality         - Command-line interface features"
+	@echo "  - Dependency Analysis       - Project structure analysis and optimization"
+	@echo "  - Cache Management          - Advanced caching system operations"
+	@echo "  - Distributed Compilation   - Multi-node compilation coordination"
+	@echo "  - Analytics & Reporting     - Build performance analysis and reports"
+	@echo "  - Memory Optimization       - Memory usage monitoring and optimization"
+	@echo "  - Performance Tuning        - Automated performance recommendations"
+	@echo "  - Optimized Builds          - End-to-end optimized build execution"
+	@echo ""
+	@echo "System Features Tested:"
+	@echo "  - Project Analysis          - Automatic source file discovery and analysis"
+	@echo "  - Complexity Scoring        - Code complexity calculation and reporting"
+	@echo "  - Dependency Resolution     - Smart compilation ordering and parallelization"
+	@echo "  - Build Caching             - Incremental compilation and cache management"
+	@echo "  - Report Generation         - Markdown and HTML report generation"
+	@echo "  - Performance Monitoring    - Real-time build statistics and trends"
+	@echo "  - Memory Management         - Memory usage optimization and monitoring"
+	@echo "  - Benchmark Execution       - Automated performance benchmarking"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make build-optimization-test-quick  # Validate core functionality"
+	@echo "  make build-optimization-test        # Run standard tests"
+	@echo "  make build-optimization-test-all    # Complete comprehensive testing"
+
+# Process Management and IPC Testing Targets
+# ===========================================
+
+# Process Management and IPC testing commands
+process-ipc-test-quick:
+	@echo "🧪 Running quick process and IPC validation tests..."
+	./tests/run_process_ipc_tests.sh --quick
+
+process-ipc-test-all:
+	@echo "🧪 Running complete process and IPC test suite..."
+	./tests/run_process_ipc_tests.sh
+
+process-ipc-test-process:
+	@echo "🧪 Running process management tests..."
+	./fix_linking.sh cargo test --test process_management_comprehensive_test
+
+process-ipc-test-ipc:
+	@echo "🧪 Running IPC tests..."
+	./fix_linking.sh cargo test --test ipc_comprehensive_test
+
+process-ipc-test-stress:
+	@echo "🧪 Running process and IPC stress tests..."
+	./tests/run_process_ipc_tests.sh --ignored
+
+process-ipc-test-lifecycle:
+	@echo "🧪 Running process lifecycle tests..."
+	./fix_linking.sh cargo test --test process_management_comprehensive_test lifecycle
+
+process-ipc-test-environment:
+	@echo "🧪 Running environment management tests..."
+	./fix_linking.sh cargo test --test process_management_comprehensive_test environment
+
+process-ipc-test-channels:
+	@echo "🧪 Running IPC channel tests..."
+	./fix_linking.sh cargo test --test ipc_comprehensive_test channel
+
+process-ipc-test-sync:
+	@echo "🧪 Running IPC synchronization tests..."
+	./fix_linking.sh cargo test --test ipc_comprehensive_test synchronization
+
+process-ipc-benchmark:
+	@echo "⚡ Running process and IPC performance benchmarks..."
+	./tests/run_process_ipc_tests.sh --ignored --filter performance
+
+process-ipc-validate:
+	@echo "✅ Validating process and IPC implementations..."
+	./tests/run_process_ipc_tests.sh --quick --verbose
+
+process-ipc-test-coverage:
+	@echo "📊 Generating process and IPC test coverage..."
+	./tests/run_process_ipc_tests.sh --coverage
+
+process-ipc-test-report:
+	@echo "📋 Generating process and IPC test report..."
+	./tests/run_process_ipc_tests.sh --report
+
+process-ipc-clean:
+	@echo "🧹 Cleaning process and IPC test artifacts..."
+	rm -rf test_results/process_ipc_*
+
+process-ipc-help:
+	@echo "📚 Process Management and IPC Testing Help:"
+	@echo "  process-ipc-test-quick      - Quick validation tests"
+	@echo "  process-ipc-test-all        - Complete test suite"
+	@echo "  process-ipc-test-process    - Process management tests only"
+	@echo "  process-ipc-test-ipc        - IPC tests only"
+	@echo "  process-ipc-test-stress     - Stress and performance tests"
+	@echo "  process-ipc-test-lifecycle  - Process lifecycle tests"
+	@echo "  process-ipc-test-environment - Environment management tests"
+	@echo "  process-ipc-test-channels   - IPC channel tests"
+	@echo "  process-ipc-test-sync       - IPC synchronization tests"
+	@echo "  process-ipc-benchmark       - Performance benchmarks"
+	@echo "  process-ipc-validate        - Quick validation"
+	@echo "  process-ipc-test-coverage   - Generate coverage report"
+	@echo "  process-ipc-test-report     - Generate detailed test report"
+	@echo "  process-ipc-clean           - Clean test artifacts"

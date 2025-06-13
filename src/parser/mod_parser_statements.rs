@@ -6,6 +6,9 @@ use crate::ast::*;
 use crate::ast::traits::{Node, Statement};
 use std::any::Any;
 
+// Import type switch functionality
+use super::type_switch::{TypeSwitchStatement, TypeSwitchBinding, TypeLiteral};
+
 #[derive(Debug, Clone)]
 pub struct TypeAliasStatement {
     pub token: String,
@@ -52,7 +55,14 @@ impl Parser {
             TokenType::BeLike => self.parse_type_alias(),
             TokenType::Yolo => self.parse_return_statement(),
             TokenType::Lowkey => self.parse_if_statement(),
-            TokenType::VibeCheck => self.parse_switch_statement(),
+            TokenType::VibeCheck => {
+                // Detect if this is a type switch or regular switch
+                if self.is_type_switch() {
+                    self.parse_type_switch_statement()
+                } else {
+                    self.parse_switch_statement()
+                }
+            },
             TokenType::Bestie => self.parse_for_statement(),
             TokenType::Periodt => self.parse_while_statement(),
             TokenType::Ghosted => self.parse_break_statement(),

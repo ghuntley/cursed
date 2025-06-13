@@ -395,7 +395,7 @@ impl Error {
 
 
 /// Source location information for errors
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SourceLocation {
     pub line: usize,
     pub column: usize,

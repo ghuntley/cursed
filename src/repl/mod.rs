@@ -14,6 +14,8 @@ pub mod session_manager;
 pub mod tab_completion;
 pub mod multi_line_editor;
 pub mod build_integration;
+pub mod evaluator;
+pub mod interface;
 
 pub use cursed_repl::CursedRepl;
 pub use syntax_highlighter::SyntaxHighlighter;
@@ -22,6 +24,8 @@ pub use session_manager::SessionManager;
 pub use tab_completion::TabCompletion;
 pub use multi_line_editor::MultiLineEditor;
 pub use build_integration::BuildIntegration;
+pub use evaluator::{ReplEvaluator, ExecutionContext, ContextValue, ContextFunction};
+pub use interface::{ReplInterface, InterfaceConfig, MessageType};
 
 use crate::error::CursedError;
 

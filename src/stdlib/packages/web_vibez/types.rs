@@ -6,11 +6,39 @@ use serde::{Deserialize, Serialize};
 /// fr fr HTTP headers type alias - clean and simple bestie
 pub type Headers = HashMap<String, String>;
 
-/// fr fr Query parameters from URL - no cap needed here
-pub type QueryParams = HashMap<String, String>;
+/// fr fr Query parameters from URL - supports arrays like ?tags=rust&tags=web
+pub type QueryParams = HashMap<String, Vec<String>>;
 
 /// fr fr Form data from POST requests - straightforward vibes
 pub type FormData = HashMap<String, String>;
+
+/// fr fr Helper functions for QueryParams
+impl QueryParams {
+    /// fr fr Create new empty query params
+    pub fn new() -> Self {
+        HashMap::new()
+    }
+
+    /// fr fr Insert a single value (replaces any existing values)
+    pub fn insert_single(&mut self, key: String, value: String) {
+        self.insert(key, vec![value]);
+    }
+
+    /// fr fr Add a value to existing values (or create new entry)
+    pub fn add_value(&mut self, key: String, value: String) {
+        self.entry(key).or_insert_with(Vec::new).push(value);
+    }
+
+    /// fr fr Get first value for a parameter (for backward compatibility)
+    pub fn get_first(&self, key: &str) -> Option<&String> {
+        self.get(key).and_then(|values| values.first())
+    }
+
+    /// fr fr Get all values for a parameter
+    pub fn get_all(&self, key: &str) -> Vec<&String> {
+        self.get(key).map(|values| values.iter().collect()).unwrap_or_default()
+    }
+}
 
 /// fr fr JSON data wrapper for type safety - keeping it real
 #[derive(Debug, Clone, Serialize, Deserialize)]

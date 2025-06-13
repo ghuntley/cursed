@@ -96,6 +96,7 @@ pub enum TokenType {
     Eof,
     Newline,
     Illegal,
+    Comment,
 }
 
 #[derive(Debug, Clone, PartialEq)]

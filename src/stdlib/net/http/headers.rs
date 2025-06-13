@@ -1,0 +1,436 @@
+/// HTTP headers implementation for CURSED networking
+/// 
+/// This module provides HTTP header management including header maps,
+/// header values, and common header utilities.
+
+use std::collections::HashMap;
+use std::fmt;
+
+/// HTTP header map
+#[derive(Debug, Clone)]
+pub struct HttpHeaders {
+    pub headers: HashMap<String, String>,
+}
+
+impl HttpHeaders {
+    /// Create new empty headers
+    pub fn new() -> Self {
+        Self {
+            headers: HashMap::new(),
+        }
+    }
+    
+    /// Set a header value
+    pub fn set(&mut self, name: &str, value: &str) {
+        self.headers.insert(name.to_lowercase(), value.to_string());
+    }
+    
+    /// Get a header value
+    pub fn get(&self, name: &str) -> Option<&String> {
+        self.headers.get(&name.to_lowercase())
+    }
+    
+    /// Remove a header
+    pub fn remove(&mut self, name: &str) -> Option<String> {
+        self.headers.remove(&name.to_lowercase())
+    }
+    
+    /// Check if header exists
+    pub fn contains(&self, name: &str) -> bool {
+        self.headers.contains_key(&name.to_lowercase())
+    }
+    
+    /// Get all header names
+    pub fn names(&self) -> Vec<&String> {
+        self.headers.keys().collect()
+    }
+    
+    /// Get all header values
+    pub fn values(&self) -> Vec<&String> {
+        self.headers.values().collect()
+    }
+    
+    /// Clear all headers
+    pub fn clear(&mut self) {
+        self.headers.clear();
+    }
+    
+    /// Get number of headers
+    pub fn len(&self) -> usize {
+        self.headers.len()
+    }
+    
+    /// Check if headers is empty
+    pub fn is_empty(&self) -> bool {
+        self.headers.is_empty()
+    }
+    
+    /// Merge headers from another HttpHeaders
+    pub fn extend(&mut self, other: &HttpHeaders) {
+        for (name, value) in &other.headers {
+            self.headers.insert(name.clone(), value.clone());
+        }
+    }
+    
+    /// Get iterator over headers
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &String)> {
+        self.headers.iter()
+    }
+}
+
+impl Default for HttpHeaders {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for HttpHeaders {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (name, value) in &self.headers {
+            writeln!(f, "{}: {}", name, value)?;
+        }
+        Ok(())
+    }
+}
+
+/// HTTP header value wrapper
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HeaderValue {
+    value: String,
+}
+
+impl HeaderValue {
+    /// Create new header value
+    pub fn from_str(value: &str) -> Self {
+        Self {
+            value: value.to_string(),
+        }
+    }
+    
+    /// Get value as string
+    pub fn as_str(&self) -> &str {
+        &self.value
+    }
+    
+    /// Get value as bytes
+    pub fn as_bytes(&self) -> &[u8] {
+        self.value.as_bytes()
+    }
+    
+    /// Check if value is empty
+    pub fn is_empty(&self) -> bool {
+        self.value.is_empty()
+    }
+    
+    /// Get length of value
+    pub fn len(&self) -> usize {
+        self.value.len()
+    }
+}
+
+impl fmt::Display for HeaderValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+impl From<&str> for HeaderValue {
+    fn from(value: &str) -> Self {
+        Self::from_str(value)
+    }
+}
+
+impl From<String> for HeaderValue {
+    fn from(value: String) -> Self {
+        Self { value }
+    }
+}
+
+impl From<HeaderValue> for String {
+    fn from(header: HeaderValue) -> Self {
+        header.value
+    }
+}
+
+/// Type alias for header map using HeaderValue
+pub type HeaderMap = HashMap<String, HeaderValue>;
+
+/// Common HTTP headers
+pub mod header {
+    pub const ACCEPT: &str = "accept";
+    pub const ACCEPT_CHARSET: &str = "accept-charset";
+    pub const ACCEPT_ENCODING: &str = "accept-encoding";
+    pub const ACCEPT_LANGUAGE: &str = "accept-language";
+    pub const AUTHORIZATION: &str = "authorization";
+    pub const CACHE_CONTROL: &str = "cache-control";
+    pub const CONNECTION: &str = "connection";
+    pub const CONTENT_ENCODING: &str = "content-encoding";
+    pub const CONTENT_LENGTH: &str = "content-length";
+    pub const CONTENT_TYPE: &str = "content-type";
+    pub const COOKIE: &str = "cookie";
+    pub const DATE: &str = "date";
+    pub const ETAG: &str = "etag";
+    pub const EXPIRES: &str = "expires";
+    pub const HOST: &str = "host";
+    pub const IF_MODIFIED_SINCE: &str = "if-modified-since";
+    pub const IF_NONE_MATCH: &str = "if-none-match";
+    pub const LAST_MODIFIED: &str = "last-modified";
+    pub const LOCATION: &str = "location";
+    pub const REFERER: &str = "referer";
+    pub const SERVER: &str = "server";
+    pub const SET_COOKIE: &str = "set-cookie";
+    pub const TRANSFER_ENCODING: &str = "transfer-encoding";
+    pub const USER_AGENT: &str = "user-agent";
+    pub const WWW_AUTHENTICATE: &str = "www-authenticate";
+}
+
+/// HTTP header utilities
+pub mod utils {
+    use super::*;
+    
+    /// Parse Content-Type header
+    pub fn parse_content_type(value: &str) -> (String, HashMap<String, String>) {
+        let mut parts = value.split(';');
+        let media_type = parts.next().unwrap_or("").trim().to_lowercase();
+        
+        let mut params = HashMap::new();
+        for part in parts {
+            if let Some(eq_pos) = part.find('=') {
+                let key = part[..eq_pos].trim().to_lowercase();
+                let value = part[eq_pos + 1..].trim().trim_matches('"').to_string();
+                params.insert(key, value);
+            }
+        }
+        
+        (media_type, params)
+    }
+    
+    /// Format Content-Type header
+    pub fn format_content_type(media_type: &str, params: &HashMap<String, String>) -> String {
+        let mut result = media_type.to_string();
+        for (key, value) in params {
+            result.push_str(&format!("; {}={}", key, value));
+        }
+        result
+    }
+    
+    /// Parse Cache-Control header
+    pub fn parse_cache_control(value: &str) -> HashMap<String, Option<String>> {
+        let mut directives = HashMap::new();
+        
+        for directive in value.split(',') {
+            let directive = directive.trim();
+            if let Some(eq_pos) = directive.find('=') {
+                let key = directive[..eq_pos].trim().to_lowercase();
+                let value = directive[eq_pos + 1..].trim().trim_matches('"').to_string();
+                directives.insert(key, Some(value));
+            } else {
+                directives.insert(directive.to_lowercase(), None);
+            }
+        }
+        
+        directives
+    }
+    
+    /// Check if header value contains a token
+    pub fn contains_token(value: &str, token: &str) -> bool {
+        value.split(',')
+            .any(|part| part.trim().eq_ignore_ascii_case(token))
+    }
+    
+    /// Parse quality values (q-values)
+    pub fn parse_quality_values(value: &str) -> Vec<(String, f32)> {
+        let mut items = Vec::new();
+        
+        for item in value.split(',') {
+            let item = item.trim();
+            if let Some(semicolon_pos) = item.find(';') {
+                let media_type = item[..semicolon_pos].trim().to_string();
+                let params = &item[semicolon_pos + 1..];
+                
+                let quality = if let Some(q_pos) = params.find("q=") {
+                    params[q_pos + 2..].trim().parse().unwrap_or(1.0)
+                } else {
+                    1.0
+                };
+                
+                items.push((media_type, quality));
+            } else {
+                items.push((item.to_string(), 1.0));
+            }
+        }
+        
+        // Sort by quality value (highest first)
+        items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        items
+    }
+    
+    /// Validate header name according to HTTP specification
+    pub fn is_valid_header_name(name: &str) -> bool {
+        if name.is_empty() {
+            return false;
+        }
+        
+        name.chars().all(|c| {
+            c.is_ascii() && !c.is_control() && !matches!(c, 
+                ' ' | '\t' | '(' | ')' | '<' | '>' | '@' | ',' | ';' | ':' | 
+                '\\' | '"' | '/' | '[' | ']' | '?' | '=' | '{' | '}'
+            )
+        })
+    }
+    
+    /// Validate header value according to HTTP specification
+    pub fn is_valid_header_value(value: &str) -> bool {
+        value.chars().all(|c| {
+            c.is_ascii() && (c == '\t' || (c >= ' ' && c != '\u{7f}'))
+        })
+    }
+    
+    /// Normalize header name (convert to lowercase)
+    pub fn normalize_header_name(name: &str) -> String {
+        name.to_lowercase()
+    }
+    
+    /// Get standard header capitalization
+    pub fn canonical_header_name(name: &str) -> String {
+        name.split('-')
+            .map(|part| {
+                let mut chars: Vec<char> = part.chars().collect();
+                if !chars.is_empty() {
+                    chars[0] = chars[0].to_ascii_uppercase();
+                    for c in chars.iter_mut().skip(1) {
+                        *c = c.to_ascii_lowercase();
+                    }
+                }
+                chars.into_iter().collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("-")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::utils::*;
+
+    #[test]
+    fn test_headers_basic_operations() {
+        let mut headers = HttpHeaders::new();
+        assert!(headers.is_empty());
+        
+        headers.set("Content-Type", "application/json");
+        headers.set("Authorization", "Bearer token");
+        
+        assert_eq!(headers.len(), 2);
+        assert!(!headers.is_empty());
+        assert!(headers.contains("content-type"));
+        assert_eq!(headers.get("content-type"), Some(&"application/json".to_string()));
+        
+        headers.remove("authorization");
+        assert_eq!(headers.len(), 1);
+        assert!(!headers.contains("authorization"));
+        
+        headers.clear();
+        assert!(headers.is_empty());
+    }
+
+    #[test]
+    fn test_header_value() {
+        let value = HeaderValue::from_str("application/json");
+        assert_eq!(value.as_str(), "application/json");
+        assert!(!value.is_empty());
+        assert_eq!(value.len(), 16);
+        
+        let value2: HeaderValue = "text/html".into();
+        assert_eq!(value2.as_str(), "text/html");
+    }
+
+    #[test]
+    fn test_headers_extend() {
+        let mut headers1 = HttpHeaders::new();
+        headers1.set("Content-Type", "application/json");
+        
+        let mut headers2 = HttpHeaders::new();
+        headers2.set("Authorization", "Bearer token");
+        headers2.set("Accept", "*/*");
+        
+        headers1.extend(&headers2);
+        assert_eq!(headers1.len(), 3);
+        assert!(headers1.contains("authorization"));
+        assert!(headers1.contains("accept"));
+    }
+
+    #[test]
+    fn test_parse_content_type() {
+        let (media_type, params) = parse_content_type("text/html; charset=utf-8; boundary=something");
+        assert_eq!(media_type, "text/html");
+        assert_eq!(params.get("charset"), Some(&"utf-8".to_string()));
+        assert_eq!(params.get("boundary"), Some(&"something".to_string()));
+    }
+
+    #[test]
+    fn test_format_content_type() {
+        let mut params = HashMap::new();
+        params.insert("charset".to_string(), "utf-8".to_string());
+        
+        let formatted = format_content_type("text/html", &params);
+        assert!(formatted.contains("text/html"));
+        assert!(formatted.contains("charset=utf-8"));
+    }
+
+    #[test]
+    fn test_parse_cache_control() {
+        let directives = parse_cache_control("no-cache, max-age=3600, private");
+        assert_eq!(directives.get("no-cache"), Some(&None));
+        assert_eq!(directives.get("max-age"), Some(&Some("3600".to_string())));
+        assert_eq!(directives.get("private"), Some(&None));
+    }
+
+    #[test]
+    fn test_contains_token() {
+        assert!(contains_token("gzip, deflate, br", "deflate"));
+        assert!(contains_token("keep-alive", "keep-alive"));
+        assert!(!contains_token("gzip, deflate", "brotli"));
+    }
+
+    #[test]
+    fn test_parse_quality_values() {
+        let values = parse_quality_values("text/html;q=0.9, application/json;q=0.8, */*;q=0.1");
+        assert_eq!(values.len(), 3);
+        assert_eq!(values[0].0, "text/html");
+        assert_eq!(values[0].1, 0.9);
+        assert_eq!(values[1].0, "application/json");
+        assert_eq!(values[1].1, 0.8);
+    }
+
+    #[test]
+    fn test_header_validation() {
+        assert!(is_valid_header_name("Content-Type"));
+        assert!(is_valid_header_name("X-Custom-Header"));
+        assert!(!is_valid_header_name(""));
+        assert!(!is_valid_header_name("Content Type")); // space not allowed
+        
+        assert!(is_valid_header_value("application/json"));
+        assert!(is_valid_header_value("Bearer token123"));
+        assert!(!is_valid_header_value("value\r\n")); // control chars not allowed
+    }
+
+    #[test]
+    fn test_header_name_normalization() {
+        assert_eq!(normalize_header_name("Content-Type"), "content-type");
+        assert_eq!(canonical_header_name("content-type"), "Content-Type");
+        assert_eq!(canonical_header_name("x-custom-header"), "X-Custom-Header");
+    }
+
+    #[test]
+    fn test_headers_display() {
+        let mut headers = HttpHeaders::new();
+        headers.set("Content-Type", "application/json");
+        headers.set("Accept", "*/*");
+        
+        let display = format!("{}", headers);
+        assert!(display.contains("content-type: application/json"));
+        assert!(display.contains("accept: */*"));
+    }
+}

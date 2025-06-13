@@ -14,7 +14,7 @@ use rustyline::history::DefaultHistory;
 use crate::repl::{
     ReplConfig, ReplState, InputType, ReplOutput, ReplResult,
     SyntaxHighlighter, CommandSystem, SessionManager, TabCompletion,
-    MultiLineEditor, BuildIntegration
+    MultiLineEditor, BuildIntegration, ReplEvaluator
 };
 use crate::error::CursedError;
 
@@ -28,6 +28,7 @@ pub struct CursedRepl {
     session_manager: SessionManager,
     multi_line_editor: MultiLineEditor,
     build_integration: BuildIntegration,
+    evaluator: ReplEvaluator,
     current_input: String,
     line_number: usize,
 }
@@ -46,6 +47,13 @@ impl CursedRepl {
         // let tab_completion = TabCompletion::new();
         // editor.set_helper(Some(tab_completion));
 
+        let mut evaluator = ReplEvaluator::new().expect("Failed to create evaluator");
+        
+        // Try to initialize LLVM code generation
+        if let Err(e) = evaluator.initialize_codegen() {
+            eprintln!("Warning: Could not initialize LLVM codegen: {}", e);
+        }
+
         Self {
             config,
             state: ReplState::Interactive,
@@ -55,6 +63,7 @@ impl CursedRepl {
             session_manager: SessionManager::new(),
             multi_line_editor: MultiLineEditor::new(),
             build_integration: BuildIntegration::new(),
+            evaluator,
             current_input: String::new(),
             line_number: 1,
         }
@@ -330,8 +339,6 @@ impl CursedRepl {
 
     /// Execute CURSED code
     fn execute_code(&mut self, code: &str) -> ReplResult<()> {
-        let start_time = Instant::now();
-        
         // Apply syntax highlighting if enabled
         let highlighted_code = if self.config.enable_syntax_highlighting {
             self.syntax_highlighter.highlight(code)
@@ -343,27 +350,41 @@ impl CursedRepl {
             println!("🔥 Executing: {}", highlighted_code);
         }
 
-        // Parse and execute the code
-        let result = crate::execute_repl_code(code, &mut self.session_manager);
-        
-        let execution_time = start_time.elapsed();
-        
-        match result {
+        // Use the evaluator to parse and execute the code
+        match self.evaluator.evaluate(code, &mut self.session_manager) {
             Ok(output) => {
-                let formatted_output = ReplOutput::success(output)
-                    .with_type()
-                    .with_timing(execution_time);
+                self.print_output(&output);
                 
-                self.print_output(&formatted_output);
+                // Update tab completion with new variables and functions
+                self.update_tab_completion();
+                
                 self.line_number += 1;
                 Ok(())
             }
             Err(e) => {
-                let error_output = ReplOutput::error(e.to_string()).with_timing(execution_time);
+                let error_output = ReplOutput::error(e.to_string());
                 self.print_output(&error_output);
                 Ok(())
             }
         }
+    }
+
+    /// Update tab completion with current session state
+    fn update_tab_completion(&mut self) {
+        // Get variables and functions from evaluator
+        let variables: Vec<String> = self.evaluator.get_variables()
+            .into_iter()
+            .map(|(name, _, _)| name)
+            .collect();
+        
+        let functions: Vec<String> = self.evaluator.get_functions()
+            .into_iter()
+            .map(|(name, _)| name)
+            .collect();
+        
+        // Update tab completion (when implemented)
+        // self.tab_completion.update_variables(variables);
+        // self.tab_completion.update_functions(functions);
     }
 
     /// Print formatted output

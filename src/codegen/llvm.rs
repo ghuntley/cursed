@@ -34,6 +34,10 @@ pub mod question_mark;
 pub mod package_integration;
 pub mod result_types;
 pub mod result_types_simple;
+pub mod optimization;
+pub mod process;
+pub mod ipc;
+pub mod type_switch;
 // pub mod database_integration; // Temporarily disabled due to lifetime issues
 
 pub use debug_integration::LlvmDebugCodeGenerator;
@@ -60,6 +64,10 @@ pub use package_integration::{
 };
 pub use result_types::{ResultTypeCompiler as MainResultTypeCompiler, result_type_utils as main_result_utils};
 pub use result_types_simple::{ResultTypeLayout, OptionTypeLayout, ResultTypeCompiler, result_type_utils};
+pub use optimization::{OptimizationManager, OptimizationLevel, OptimizationConfig, OptimizationStats, utils as optimization_utils};
+pub use process::{ProcessCompiler, ProcessIoOperation};
+pub use ipc::{IpcCompiler, SharedMemoryOperation, PipeOperation, MessageQueueOperation, SemaphoreOperation, SignalOperation};
+pub use type_switch::{TypeSwitchCompilation, TypeSwitchContext, LlvmTypeSwitchCompiler, TypeSwitchUtils};
 // pub use database_integration::{DatabaseLlvmRegistry, DatabaseTypeMapping}; // Temporarily disabled
 
 // Export the real LLVM code generator for tests will be added after struct definition

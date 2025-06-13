@@ -6,6 +6,7 @@
 
 mod mod_parser_expressions;
 mod mod_parser_statements;
+mod type_switch;
 
 // Export question mark parser
 pub mod question_mark;

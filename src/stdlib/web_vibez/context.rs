@@ -607,12 +607,163 @@ fn url_decode(input: &str) -> Result<String, std::string::FromUtf8Error> {
     String::from_utf8(result)
 }
 
-/// Add base64 dependency (would be in Cargo.toml)
+/// Base64 decoding implementation for HTTP authentication and data parsing
 mod base64 {
-    pub fn decode(_input: &str) -> Result<Vec<u8>, &'static str> {
-        // Placeholder for base64 decoding
-        // In real implementation, would use base64 crate
-        Err("Base64 decoding not implemented")
+    use std::collections::HashMap;
+    
+    /// Base64 decoding errors
+    #[derive(Debug, Clone)]
+    pub enum Base64Error {
+        InvalidCharacter(char, usize),
+        InvalidLength,
+        InvalidPadding,
+        Empty,
+    }
+    
+    impl std::fmt::Display for Base64Error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Base64Error::InvalidCharacter(ch, pos) => {
+                    write!(f, "Invalid Base64 character '{}' at position {}", ch, pos)
+                }
+                Base64Error::InvalidLength => {
+                    write!(f, "Invalid Base64 string length")
+                }
+                Base64Error::InvalidPadding => {
+                    write!(f, "Invalid Base64 padding")
+                }
+                Base64Error::Empty => {
+                    write!(f, "Empty Base64 string")
+                }
+            }
+        }
+    }
+    
+    impl std::error::Error for Base64Error {}
+    
+    /// Base64 decoder with standard alphabet
+    pub struct Base64Decoder {
+        decode_table: HashMap<char, u8>,
+    }
+    
+    impl Base64Decoder {
+        /// Create a new Base64 decoder with standard alphabet
+        pub fn new() -> Self {
+            let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            let mut decode_table = HashMap::new();
+            
+            for (i, ch) in alphabet.chars().enumerate() {
+                decode_table.insert(ch, i as u8);
+            }
+            
+            Self { decode_table }
+        }
+        
+        /// Decode a Base64 string to bytes
+        pub fn decode(&self, input: &str) -> Result<Vec<u8>, Base64Error> {
+            if input.is_empty() {
+                return Err(Base64Error::Empty);
+            }
+            
+            // Remove whitespace and validate characters
+            let cleaned: String = input.chars().filter(|c| !c.is_whitespace()).collect();
+            
+            // Check for valid length (must be multiple of 4)
+            if cleaned.len() % 4 != 0 {
+                return Err(Base64Error::InvalidLength);
+            }
+            
+            let mut result = Vec::new();
+            let chars: Vec<char> = cleaned.chars().collect();
+            
+            // Process in groups of 4 characters
+            for chunk in chars.chunks(4) {
+                let mut values = [0u8; 4];
+                let mut padding_count = 0;
+                
+                // Convert each character to its 6-bit value
+                for (i, &ch) in chunk.iter().enumerate() {
+                    if ch == '=' {
+                        padding_count += 1;
+                        if i < 2 {
+                            return Err(Base64Error::InvalidPadding);
+                        }
+                        values[i] = 0;
+                    } else if let Some(&value) = self.decode_table.get(&ch) {
+                        if padding_count > 0 {
+                            return Err(Base64Error::InvalidPadding);
+                        }
+                        values[i] = value;
+                    } else {
+                        let pos = chunk.as_ptr() as usize - chars.as_ptr() as usize + i;
+                        return Err(Base64Error::InvalidCharacter(ch, pos));
+                    }
+                }
+                
+                // Validate padding
+                if padding_count > 2 {
+                    return Err(Base64Error::InvalidPadding);
+                }
+                
+                // Convert 4 6-bit values to 3 8-bit bytes
+                let byte1 = (values[0] << 2) | (values[1] >> 4);
+                result.push(byte1);
+                
+                if padding_count < 2 {
+                    let byte2 = ((values[1] & 0x0F) << 4) | (values[2] >> 2);
+                    result.push(byte2);
+                }
+                
+                if padding_count < 1 {
+                    let byte3 = ((values[2] & 0x03) << 6) | values[3];
+                    result.push(byte3);
+                }
+            }
+            
+            Ok(result)
+        }
+    }
+    
+    // Thread-safe static decoder instance
+    use std::sync::OnceLock;
+    static DECODER: OnceLock<Base64Decoder> = OnceLock::new();
+    
+    /// Decode a Base64 string to bytes
+    pub fn decode(input: &str) -> Result<Vec<u8>, String> {
+        let decoder = DECODER.get_or_init(|| Base64Decoder::new());
+        decoder.decode(input).map_err(|e| e.to_string())
+    }
+    
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        
+        #[test]
+        fn test_basic_decoding() {
+            assert_eq!(decode("SGVsbG8=").unwrap(), b"Hello");
+            assert_eq!(decode("V29ybGQ=").unwrap(), b"World");
+            assert_eq!(decode("").unwrap_err(), "Empty Base64 string");
+        }
+        
+        #[test]
+        fn test_padding() {
+            assert_eq!(decode("QQ==").unwrap(), b"A");
+            assert_eq!(decode("QUI=").unwrap(), b"AB");
+            assert_eq!(decode("QUJD").unwrap(), b"ABC");
+        }
+        
+        #[test]
+        fn test_invalid_input() {
+            assert!(decode("SGVsbG8").is_err()); // Invalid length
+            assert!(decode("SGVsbG8@").is_err()); // Invalid character
+            assert!(decode("S=VsbG8=").is_err()); // Invalid padding position
+        }
+        
+        #[test]
+        fn test_whitespace() {
+            assert_eq!(decode("SGVs bG8=").unwrap(), b"Hello");
+            assert_eq!(decode("SGVs\nbG8=").unwrap(), b"Hello");
+        }
     }
 }
 

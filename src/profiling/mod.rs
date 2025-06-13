@@ -12,6 +12,7 @@ pub mod visualization;
 pub mod reporting;
 pub mod cli;
 pub mod integration;
+pub mod performance;
 
 pub use core::*;
 pub use cpu::*;

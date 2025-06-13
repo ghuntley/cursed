@@ -96,6 +96,52 @@ fn build_cli() -> Command {
                         .value_name("FILE")
                 )
                 .arg(
+                    Arg::new("opt-level")
+                        .short('O')
+                        .long("opt-level")
+                        .value_name("LEVEL")
+                        .help("Optimization level (0, 1, 2, 3, s, z)")
+                        .default_value("2")
+                )
+                .arg(
+                    Arg::new("profile")
+                        .long("profile")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable performance profiling")
+                )
+                .arg(
+                    Arg::new("time-passes")
+                        .long("time-passes")
+                        .action(ArgAction::SetTrue)
+                        .help("Time each compilation phase")
+                )
+                .arg(
+                    Arg::new("jobs")
+                        .short('j')
+                        .long("jobs")
+                        .value_name("N")
+                        .help("Number of parallel jobs (0 = auto)")
+                        .default_value("0")
+                )
+                .arg(
+                    Arg::new("target-cpu")
+                        .long("target-cpu")
+                        .value_name("CPU")
+                        .help("Target CPU architecture")
+                )
+                .arg(
+                    Arg::new("target-features")
+                        .long("target-features")
+                        .value_name("FEATURES")
+                        .help("Target CPU features (comma-separated)")
+                )
+                .arg(
+                    Arg::new("enable-lto")
+                        .long("lto")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable Link Time Optimization")
+                )
+                .arg(
                     Arg::new("args")
                         .help("Arguments to pass to the program")
                         .value_name("ARGS")
@@ -148,9 +194,66 @@ fn build_cli() -> Command {
                         .default_value("exe")
                 )
                 .arg(
-                    Arg::new("optimize")
+                    Arg::new("opt-level")
                         .short('O')
-                        .long("optimize")
+                        .long("opt-level")
+                        .value_name("LEVEL")
+                        .help("Optimization level (0, 1, 2, 3, s, z)")
+                        .default_value("2")
+                )
+                .arg(
+                    Arg::new("profile")
+                        .long("profile")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable performance profiling")
+                )
+                .arg(
+                    Arg::new("time-passes")
+                        .long("time-passes")
+                        .action(ArgAction::SetTrue)
+                        .help("Time each compilation phase")
+                )
+                .arg(
+                    Arg::new("jobs")
+                        .short('j')
+                        .long("jobs")
+                        .value_name("N")
+                        .help("Number of parallel jobs (0 = auto)")
+                        .default_value("0")
+                )
+                .arg(
+                    Arg::new("incremental")
+                        .long("incremental")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable incremental compilation")
+                )
+                .arg(
+                    Arg::new("cache-dir")
+                        .long("cache-dir")
+                        .value_name("DIR")
+                        .help("Incremental compilation cache directory")
+                )
+                .arg(
+                    Arg::new("target-cpu")
+                        .long("target-cpu")
+                        .value_name("CPU")
+                        .help("Target CPU architecture")
+                )
+                .arg(
+                    Arg::new("target-features")
+                        .long("target-features")
+                        .value_name("FEATURES")
+                        .help("Target CPU features (comma-separated)")
+                )
+                .arg(
+                    Arg::new("enable-lto")
+                        .long("lto")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable Link Time Optimization")
+                )
+                .arg(
+                    Arg::new("optimize")
+                        .long("legacy-optimize")
                         .action(ArgAction::SetTrue)
                         .help("Enable optimizations")
                 )
@@ -231,30 +334,8 @@ fn build_cli() -> Command {
                 )
         )
         .subcommand(
-            Command::new("doc")
-                .about("Generate documentation")
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .value_name("DIR")
-                        .help("Output directory for documentation")
-                        .default_value("docs")
-                )
-                .arg(
-                    Arg::new("format")
-                        .short('f')
-                        .long("format")
-                        .value_name("FORMAT")
-                        .help("Output format: html, markdown, json")
-                        .default_value("html")
-                )
-                .arg(
-                    Arg::new("serve")
-                        .long("serve")
-                        .action(ArgAction::SetTrue)
-                        .help("Start local documentation server")
-                )
+            cursed::docs::add_doc_commands(Command::new("doc"))
+                .about("Generate comprehensive documentation")
         )
         .subcommand(
             package_manager::add_package_commands(Command::new("package"))
@@ -392,6 +473,86 @@ async fn handle_single_run_command(file: &str) -> Result<(), Box<dyn std::error:
 
     // Execute the file
     cursed::run_file(file)?;
+    
+    println!("✅ Program executed successfully!");
+    Ok(())
+}
+
+async fn handle_single_run_command_with_options(
+    file: &str,
+    opt_level: &str,
+    profile: bool,
+    time_passes: bool,
+    jobs: &str,
+    target_cpu: Option<&str>,
+    target_features: Option<&str>,
+    enable_lto: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use cursed::codegen::llvm::optimization::{OptimizationLevel, utils::create_config_from_args};
+    use cursed::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
+    use cursed::core::performance_pipeline::{PerformancePipeline, utils};
+    
+    println!("🚀 Running CURSED program: {} (O{})", file, opt_level);
+    
+    // Check if file exists
+    if !std::path::Path::new(file).exists() {
+        return Err(format!("File not found: {}", file).into());
+    }
+
+    // Create performance monitor if requested
+    let mut performance_monitor = if profile || time_passes {
+        let mut config = ReportConfig::default();
+        if time_passes {
+            config.format = ReportFormat::Table;
+            config.include_phases = true;
+        }
+        Some(PerformanceMonitor::with_config(config))
+    } else {
+        None
+    };
+
+    // Parse optimization configuration
+    let features: Vec<String> = target_features
+        .map(|s| s.split(',').map(|s| s.trim().to_string()).collect())
+        .unwrap_or_default();
+    
+    let opt_config = create_config_from_args(
+        Some(opt_level),
+        target_cpu,
+        &features,
+        enable_lto,
+    )?;
+
+    // Parse parallel configuration
+    let num_jobs: usize = jobs.parse().unwrap_or(0);
+    let (mut parallel_config, incremental_config, progress_config) = if num_jobs > 1 {
+        utils::production_config()
+    } else {
+        utils::dev_config()
+    };
+    
+    if num_jobs > 0 {
+        parallel_config.num_threads = num_jobs;
+    }
+
+    if let Some(ref mut monitor) = performance_monitor {
+        monitor.start_phase(CompilationPhase::Total)?;
+    }
+
+    // Execute the file with optimization
+    cursed::run_file_optimized(file, opt_config)?;
+
+    if let Some(mut monitor) = performance_monitor {
+        monitor.finalize()?;
+        
+        if profile {
+            let report = monitor.generate_report()?;
+            println!("\n{}", report);
+        } else if time_passes {
+            let report = monitor.get_performance_report(ReportFormat::Summary)?;
+            println!("\n{}", report);
+        }
+    }
     
     println!("✅ Program executed successfully!");
     Ok(())
@@ -627,54 +788,124 @@ async fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn
             println!("{}", formatted);
         }
     } else {
-        println!("🎨 Formatting all CURSED files in current directory");
-        // TODO: Implement directory formatting
-        println!("✅ Directory formatting completed");
+        handle_directory_formatting(".", check_only, write_file).await?;
+    }
+
+    Ok(())
+}
+
+async fn handle_directory_formatting(
+    dir_path: &str,
+    check_only: bool,
+    write_file: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use walkdir::WalkDir;
+    
+    println!("🎨 Formatting all CURSED files in directory: {}", dir_path);
+    
+    // Check if directory exists
+    let path = std::path::Path::new(dir_path);
+    if !path.exists() {
+        return Err(format!("Directory not found: {}", dir_path).into());
+    }
+    
+    if !path.is_dir() {
+        return Err(format!("Path is not a directory: {}", dir_path).into());
+    }
+
+    let mut files_found = 0;
+    let mut files_processed = 0;
+    let mut files_needing_format = 0;
+    let mut errors = Vec::new();
+
+    // Recursively find all .csd files
+    for entry in WalkDir::new(dir_path)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.file_type().is_file() && 
+            e.path().extension().map_or(false, |ext| ext == "csd")
+        })
+    {
+        files_found += 1;
+        let file_path = entry.path();
+        let file_path_str = file_path.to_string_lossy();
+        
+        println!("   📄 Processing: {}", file_path_str);
+        
+        // Read and format source
+        match std::fs::read_to_string(file_path) {
+            Ok(source) => {
+                match cursed::format(&source) {
+                    Ok(formatted) => {
+                        files_processed += 1;
+                        
+                        if source != formatted {
+                            files_needing_format += 1;
+                            
+                            if check_only {
+                                println!("      ❌ File needs formatting");
+                            } else if write_file {
+                                match std::fs::write(file_path, formatted) {
+                                    Ok(_) => println!("      ✅ File formatted and written"),
+                                    Err(e) => {
+                                        let error_msg = format!("Failed to write {}: {}", file_path_str, e);
+                                        println!("      🔥 {}", error_msg);
+                                        errors.push(error_msg);
+                                    }
+                                }
+                            } else {
+                                println!("      📝 File would be formatted (use --write to apply changes)");
+                            }
+                        } else {
+                            println!("      ✅ File is already formatted");
+                        }
+                    }
+                    Err(e) => {
+                        let error_msg = format!("Failed to format {}: {}", file_path_str, e);
+                        println!("      🔥 {}", error_msg);
+                        errors.push(error_msg);
+                    }
+                }
+            }
+            Err(e) => {
+                let error_msg = format!("Failed to read {}: {}", file_path_str, e);
+                println!("      🔥 {}", error_msg);
+                errors.push(error_msg);
+            }
+        }
+    }
+
+    // Print summary
+    println!("\n📊 Formatting Summary:");
+    println!("   Files found: {}", files_found);
+    println!("   Files processed: {}", files_processed);
+    println!("   Files needing formatting: {}", files_needing_format);
+    
+    if !errors.is_empty() {
+        println!("   Errors: {}", errors.len());
+        for error in &errors {
+            println!("     - {}", error);
+        }
+    }
+
+    if check_only && files_needing_format > 0 {
+        return Err(format!("{} files need formatting", files_needing_format).into());
+    }
+
+    if files_found == 0 {
+        println!("   ℹ️  No .csd files found in directory");
+    } else {
+        println!("✅ Directory formatting completed successfully!");
     }
 
     Ok(())
 }
 
 async fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    let output = matches.get_one::<String>("output").unwrap();
-    let format = matches.get_one::<String>("format").unwrap();
-    let serve = matches.get_flag("serve");
-
-    println!("📚 Generating documentation");
-    println!("   Output: {}", output);
-    println!("   Format: {}", format);
-
-    // TODO: Implement documentation generation
-    // For now, create a placeholder
-    let output_path = PathBuf::from(output);
-    std::fs::create_dir_all(&output_path)?;
-    
-    let index_content = r#"<!DOCTYPE html>
-<html>
-<head>
-    <title>CURSED Documentation</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        h1 { color: #333; }
-        .emoji { font-size: 1.2em; }
-    </style>
-</head>
-<body>
-    <h1><span class="emoji">🔥</span> CURSED Documentation</h1>
-    <p>Welcome to the CURSED programming language documentation!</p>
-    <p>This documentation is absolutely fire! 🚀</p>
-</body>
-</html>"#;
-
-    std::fs::write(output_path.join("index.html"), index_content)?;
-    
-    if serve {
-        println!("🌐 Starting documentation server at http://localhost:8080");
-        println!("   (Server functionality not yet implemented)");
-    }
-
-    println!("✅ Documentation generated successfully!");
-    Ok(())
+    // Use the comprehensive documentation system
+    cursed::docs::handle_doc_command(matches).await.map_err(|e| e.into())
 }
 
 async fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
@@ -682,12 +913,32 @@ async fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Box<dy
 }
 
 async fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    use cursed::testing::{TestConfig, TestRunnerBuilder, ReportFormat};
+    
     let pattern = matches.get_one::<String>("pattern");
     let verbose = matches.get_flag("verbose");
+    let watch = matches.get_flag("watch");
 
-    println!("🧪 Running tests");
+    if watch {
+        handle_watch_test_command(matches).await
+    } else {
+        handle_single_test_command(pattern, verbose).await
+    }
+}
+
+async fn handle_single_test_command(
+    pattern: Option<&String>, 
+    verbose: bool
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("🧪 Running CURSED tests");
     
+    // Create test configuration
+    let mut test_config = TestConfig::default();
+    test_config.verbose = verbose;
+    
+    // Add pattern filter if provided
     if let Some(pat) = pattern {
+        test_config.test_patterns.push(pat.clone());
         println!("   Pattern: {}", pat);
     }
     
@@ -695,29 +946,102 @@ async fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn s
         println!("   Verbose mode enabled");
     }
 
-    // TODO: Implement test runner
-    println!("✅ All tests passed!");
+    // Create and configure test runner
+    let mut runner = TestRunnerBuilder::new()
+        .with_config(test_config)
+        .with_report_format(ReportFormat::Console)
+        .build()
+        .map_err(|e| format!("Failed to create test runner: {}", e))?;
+
+    // Run tests
+    match runner.run_all_tests().await {
+        Ok(report) => {
+            if report.summary.failed > 0 {
+                println!("❌ {} test(s) failed", report.summary.failed);
+                std::process::exit(1);
+            } else {
+                println!("✅ All {} test(s) passed!", report.summary.passed);
+            }
+        }
+        Err(e) => {
+            eprintln!("🔥 Test execution failed: {}", e);
+            std::process::exit(1);
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_watch_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let pattern = matches.get_one::<String>("pattern");
+    let verbose = matches.get_flag("verbose");
+    let patterns = matches.get_many::<String>("watch-pattern")
+        .map(|v| v.map(|s| s.clone()).collect())
+        .unwrap_or_else(|| vec!["*.csd".to_string()]);
+    let debounce_ms: u64 = matches.get_one::<String>("debounce")
+        .unwrap()
+        .parse()
+        .map_err(|_| "Invalid debounce value")?;
+
+    println!("👀 Watching for changes to run tests");
+    if let Some(pat) = pattern {
+        println!("   Pattern: {}", pat);
+    }
+    println!("   Watch patterns: {:?}", patterns);
+    println!("   Debounce: {}ms", debounce_ms);
+
+    // Run tests initially
+    if let Err(e) = handle_single_test_command(pattern, verbose).await {
+        eprintln!("Initial test run failed: {}", e);
+    }
+
+    // Simplified watch implementation - demonstrate interface
+    println!("🔧 File watching infrastructure ready");
+    println!("   (Real file watching implementation will be integrated here)");
+
+    // Keep watching until shutdown
+    println!("Press Ctrl+C to stop watching...");
+    let mut interval = tokio::time::interval(Duration::from_millis(debounce_ms));
+    while !SHUTDOWN.load(Ordering::SeqCst) {
+        interval.tick().await;
+        // In a real implementation, file change events would trigger test re-execution here
+    }
+
+    println!("✅ Watch stopped");
     Ok(())
 }
 
 async fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    use cursed::repl::CursedRepl;
+    
     let history = matches.get_flag("history");
 
     println!("🎮 Starting CURSED REPL");
     
-    if history {
-        println!("   Command history enabled");
+    // Create and configure REPL
+    let mut repl = CursedRepl::new()
+        .with_history(history)
+        .with_syntax_highlighting(true)
+        .with_verbose(matches.get_flag("verbose"));
+
+    // Set working directory if we're in a project
+    if let Ok(current_dir) = std::env::current_dir() {
+        if let Ok(repl_with_dir) = repl.with_working_directory(&current_dir.to_string_lossy()) {
+            repl = repl_with_dir;
+        }
     }
 
-    // TODO: Implement REPL
-    println!("CURSED REPL v{}", cursed::VERSION);
-    println!("Type '.help' for help or '.exit' to exit");
-    println!("Welcome to the most fire programming language! 🔥");
-    
-    // For now, just show a message
-    println!("(REPL functionality coming soon...)");
-    
-    Ok(())
+    // Run the REPL
+    match repl.run() {
+        Ok(_) => {
+            println!("👋 REPL session ended");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("🔥 REPL error: {}", e);
+            Err(e.into())
+        }
+    }
 }
 
 async fn handle_watch_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {

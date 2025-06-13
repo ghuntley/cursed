@@ -67,16 +67,19 @@ impl HttpRequest {
             .collect()
     }
 
-    /// fr fr Get query parameter value - URL parameters
+    /// fr fr Get query parameter value - URL parameters (first value for backward compatibility)
     pub fn query_param(&self, name: &str) -> Option<&String> {
-        self.query.get(name)
+        self.query.get_first(name)
     }
 
-    /// fr fr Get all query parameter values - handles arrays
+    /// fr fr Get all query parameter values - handles array parameters like ?tags=rust&tags=web
     pub fn query_params_all(&self, name: &str) -> Vec<&String> {
-        // For now, just return single value
-        // TODO: Enhance to handle array parameters like ?tags=rust&tags=web
-        self.query.get(name).into_iter().collect()
+        self.query.get_all(name)
+    }
+
+    /// fr fr Get query parameter as array - specifically for multi-value parameters
+    pub fn query_array(&self, name: &str) -> Vec<&String> {
+        self.query.get_all(name)
     }
 
     /// fr fr Get cookie by name - find specific cookie
@@ -233,7 +236,7 @@ impl HttpRequest {
             let query_string = self
                 .query
                 .iter()
-                .map(|(k, v)| format!("{}={}", k, v))
+                .flat_map(|(k, values)| values.iter().map(move |v| format!("{}={}", k, v)))
                 .collect::<Vec<_>>()
                 .join("&");
             let url_str = format!("{}?{}", url_str, query_string);
@@ -286,9 +289,21 @@ impl RequestBuilder {
         self
     }
 
-    /// fr fr Add query parameter - URL parameters
+    /// fr fr Add query parameter - URL parameters (replaces existing values)
     pub fn query(mut self, name: String, value: String) -> Self {
-        self.request.query.insert(name, value);
+        self.request.query.insert_single(name, value);
+        self
+    }
+
+    /// fr fr Add query parameter value - adds to existing values for array parameters
+    pub fn query_add(mut self, name: String, value: String) -> Self {
+        self.request.query.add_value(name, value);
+        self
+    }
+
+    /// fr fr Set query parameter array - multiple values at once
+    pub fn query_array(mut self, name: String, values: Vec<String>) -> Self {
+        self.request.query.insert(name, values);
         self
     }
 
@@ -364,7 +379,7 @@ impl fmt::Display for HttpRequest {
             let query_pairs: Vec<String> = self
                 .query
                 .iter()
-                .map(|(k, v)| format!("{}={}", k, v))
+                .flat_map(|(k, values)| values.iter().map(move |v| format!("{}={}", k, v)))
                 .collect();
             write!(f, "{}", query_pairs.join("&"))?;
         }
@@ -411,6 +426,71 @@ mod tests {
     }
 
     #[test]
+    fn test_single_query_params() {
+        let mut req = HttpRequest::new(HttpMethod::Get, "/test".to_string());
+        req.query.insert_single("page".to_string(), "1".to_string());
+        req.query.insert_single("limit".to_string(), "10".to_string());
+        
+        assert_eq!(req.query_param("page"), Some(&"1".to_string()));
+        assert_eq!(req.query_param("limit"), Some(&"10".to_string()));
+        assert_eq!(req.query_param("missing"), None);
+        
+        // Should return single values as arrays
+        assert_eq!(req.query_array("page"), vec![&"1".to_string()]);
+        assert_eq!(req.query_params_all("page"), vec![&"1".to_string()]);
+    }
+
+    #[test]
+    fn test_array_query_params() {
+        let mut req = HttpRequest::new(HttpMethod::Get, "/search".to_string());
+        req.query.add_value("tags".to_string(), "rust".to_string());
+        req.query.add_value("tags".to_string(), "web".to_string());
+        req.query.add_value("tags".to_string(), "programming".to_string());
+        req.query.insert_single("page".to_string(), "1".to_string());
+        
+        // First value for backward compatibility
+        assert_eq!(req.query_param("tags"), Some(&"rust".to_string()));
+        assert_eq!(req.query_param("page"), Some(&"1".to_string()));
+        
+        // All values for array parameters
+        let tag_values = req.query_array("tags");
+        assert_eq!(tag_values.len(), 3);
+        assert!(tag_values.contains(&&"rust".to_string()));
+        assert!(tag_values.contains(&&"web".to_string()));
+        assert!(tag_values.contains(&&"programming".to_string()));
+        
+        // query_params_all should work the same as query_array
+        assert_eq!(req.query_params_all("tags"), req.query_array("tags"));
+        
+        // Empty array for missing parameters
+        assert_eq!(req.query_array("missing"), Vec::<&String>::new());
+    }
+
+    #[test]
+    fn test_request_builder_arrays() {
+        let req = RequestBuilder::new(HttpMethod::Get, "/search".to_string())
+            .query("page".to_string(), "1".to_string())
+            .query_add("tags".to_string(), "rust".to_string())
+            .query_add("tags".to_string(), "web".to_string())
+            .query_array("categories".to_string(), vec!["tech".to_string(), "programming".to_string()])
+            .build();
+
+        assert_eq!(req.query_param("page"), Some(&"1".to_string()));
+        assert_eq!(req.query_array("tags").len(), 2);
+        assert_eq!(req.query_array("categories").len(), 2);
+        
+        // Test overwriting with regular query() method
+        let req2 = RequestBuilder::new(HttpMethod::Get, "/search".to_string())
+            .query_add("tags".to_string(), "rust".to_string())
+            .query_add("tags".to_string(), "web".to_string())
+            .query("tags".to_string(), "only".to_string()) // This should replace all values
+            .build();
+            
+        assert_eq!(req2.query_array("tags").len(), 1);
+        assert_eq!(req2.query_param("tags"), Some(&"only".to_string()));
+    }
+
+    #[test]
     fn test_client_ip() {
         let mut req = HttpRequest::new(HttpMethod::Get, "/test".to_string());
         
@@ -436,5 +516,26 @@ mod tests {
         assert!(display.contains("page=1"));
         assert!(display.contains("limit=10"));
         assert!(display.contains("HTTP/1.1"));
+    }
+
+    #[test]
+    fn test_request_display_with_arrays() {
+        let req = RequestBuilder::new(HttpMethod::Get, "/search".to_string())
+            .query("page".to_string(), "1".to_string())
+            .query_add("tags".to_string(), "rust".to_string())
+            .query_add("tags".to_string(), "web".to_string())
+            .build();
+
+        let display = req.to_string();
+        assert!(display.contains("GET /search"));
+        assert!(display.contains("page=1"));
+        assert!(display.contains("tags=rust"));
+        assert!(display.contains("tags=web"));
+        assert!(display.contains("HTTP/1.1"));
+        
+        // Should contain both tag values
+        let query_part = display.split('?').nth(1).unwrap().split(' ').next().unwrap();
+        assert!(query_part.contains("tags=rust"));
+        assert!(query_part.contains("tags=web"));
     }
 }

@@ -1,13 +1,15 @@
-/// Development tools for CURSED
-pub mod formatter;
+/// CURSED Language Tools
+/// 
+/// This module contains various development tools for the CURSED programming language,
+/// including linters, formatters, and other analysis utilities.
+
 pub mod linter;
+pub mod formatter;
 
-// Re-export profiling tools
-pub use crate::profiling;
-pub use crate::profiling::{
-    ProfilerBuilder, ProfilerConfig, CursedProfiler,
-    BenchmarkSuite, BenchmarkConfig, ReportGenerator,
+// Re-export main types for convenience
+pub use linter::{
+    CursedLinter, LinterConfig, LintResult, LintSeverity, LintCategory
 };
-
-pub use formatter::{CursedFormatter, FormatterConfig, BraceStyle};
-pub use linter::{CursedLinter, LinterConfig};
+pub use formatter::{
+    CursedFormatter, FormatterConfig, FormatterResult, BraceStyle, OperatorSpacing, CommaSpacing
+};

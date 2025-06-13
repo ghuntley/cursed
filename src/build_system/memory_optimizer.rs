@@ -1,0 +1,631 @@
+//! Memory-Optimized Compilation System
+//! 
+//! Implements memory-aware compilation scheduling, streaming compilation,
+//! and adaptive strategies for handling large codebases efficiently.
+
+use std::collections::{HashMap, VecDeque, BTreeSet};
+use std::sync::{Arc, Mutex, RwLock};
+use std::time::{Duration, Instant};
+use std::thread;
+use serde::{Serialize, Deserialize};
+use tracing::{info, debug, warn, instrument};
+
+use crate::error::{CursedError, Result};
+use crate::memory::gc::{GarbageCollector, GcConfig};
+
+/// Memory-aware compilation task
+#[derive(Debug, Clone)]
+pub struct MemoryAwareTask {
+    pub id: String,
+    pub estimated_memory_mb: f64,
+    pub priority: TaskPriority,
+    pub dependencies: Vec<String>,
+    pub can_stream: bool,
+    pub source_file: String,
+    pub target_type: String,
+    pub compilation_flags: Vec<String>,
+    pub created_at: Instant,
+}
+
+/// Task priority levels for memory scheduling
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum TaskPriority {
+    Low,
+    Normal,
+    High,
+    Critical,
+}
+
+/// Memory pressure levels
+#[derive(Debug, Clone, PartialEq)]
+pub enum MemoryPressure {
+    Low,       // < 50% of limit
+    Medium,    // 50-75% of limit
+    High,      // 75-90% of limit
+    Critical,  // > 90% of limit
+}
+
+/// Streaming compilation chunk
+#[derive(Debug, Clone)]
+pub struct CompilationChunk {
+    pub id: String,
+    pub task_id: String,
+    pub chunk_index: usize,
+    pub total_chunks: usize,
+    pub data: Vec<u8>,
+    pub estimated_memory: f64,
+    pub dependencies: Vec<String>,
+}
+
+/// Memory optimization strategy
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MemoryStrategy {
+    Conservative,  // Minimize memory usage
+    Balanced,      // Balance memory vs speed
+    Aggressive,    // Prioritize speed over memory
+    Streaming,     // Use streaming for large files
+    Adaptive,      // Adapt based on current pressure
+}
+
+/// Configuration for memory optimization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryOptimizerConfig {
+    pub max_memory_mb: f64,
+    pub warning_threshold_percent: f64,
+    pub critical_threshold_percent: f64,
+    pub enable_streaming: bool,
+    pub streaming_chunk_size_mb: f64,
+    pub gc_trigger_threshold_mb: f64,
+    pub memory_strategy: MemoryStrategy,
+    pub max_concurrent_memory_intensive_tasks: usize,
+    pub enable_adaptive_scheduling: bool,
+    pub memory_sampling_interval_ms: u64,
+    pub enable_memory_pressure_detection: bool,
+    pub large_file_threshold_mb: f64,
+}
+
+impl Default for MemoryOptimizerConfig {
+    fn default() -> Self {
+        Self {
+            max_memory_mb: 4096.0, // 4GB default
+            warning_threshold_percent: 75.0,
+            critical_threshold_percent: 90.0,
+            enable_streaming: true,
+            streaming_chunk_size_mb: 32.0,
+            gc_trigger_threshold_mb: 512.0,
+            memory_strategy: MemoryStrategy::Adaptive,
+            max_concurrent_memory_intensive_tasks: 2,
+            enable_adaptive_scheduling: true,
+            memory_sampling_interval_ms: 500,
+            enable_memory_pressure_detection: true,
+            large_file_threshold_mb: 100.0,
+        }
+    }
+}
+
+/// Memory usage statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryStats {
+    pub current_usage_mb: f64,
+    pub peak_usage_mb: f64,
+    pub gc_collections: usize,
+    pub streaming_operations: usize,
+    pub memory_pressure_events: usize,
+    pub tasks_deferred_for_memory: usize,
+    pub average_task_memory_mb: f64,
+    pub memory_efficiency_percent: f64,
+}
+
+/// Memory pressure event
+#[derive(Debug, Clone)]
+pub struct MemoryPressureEvent {
+    pub timestamp: Instant,
+    pub pressure_level: MemoryPressure,
+    pub memory_usage_mb: f64,
+    pub triggered_actions: Vec<String>,
+    pub resolved_at: Option<Instant>,
+}
+
+/// Memory-optimized compilation scheduler
+pub struct MemoryOptimizer {
+    config: MemoryOptimizerConfig,
+    task_queue: Arc<Mutex<VecDeque<MemoryAwareTask>>>,
+    memory_intensive_queue: Arc<Mutex<VecDeque<MemoryAwareTask>>>,
+    streaming_tasks: Arc<Mutex<HashMap<String, Vec<CompilationChunk>>>>,
+    active_tasks: Arc<RwLock<HashMap<String, MemoryAwareTask>>>,
+    memory_monitor: Arc<Mutex<MemoryMonitor>>,
+    gc_controller: Arc<Mutex<GarbageCollector>>,
+    statistics: Arc<Mutex<MemoryStats>>,
+    pressure_events: Arc<Mutex<Vec<MemoryPressureEvent>>>,
+    is_running: Arc<Mutex<bool>>,
+}
+
+/// Memory monitoring system
+#[derive(Debug)]
+pub struct MemoryMonitor {
+    current_usage: f64,
+    peak_usage: f64,
+    usage_history: VecDeque<(Instant, f64)>,
+    last_gc_time: Instant,
+    last_sample_time: Instant,
+    sampling_interval: Duration,
+    pressure_state: MemoryPressure,
+}
+
+/// Adaptive scheduling decisions
+#[derive(Debug, Clone)]
+pub struct SchedulingDecision {
+    pub action: SchedulingAction,
+    pub reasoning: String,
+    pub estimated_memory_impact: f64,
+    pub priority_adjustment: Option<TaskPriority>,
+}
+
+/// Scheduling actions
+#[derive(Debug, Clone)]
+pub enum SchedulingAction {
+    Execute,                    // Execute task normally
+    Defer,                      // Defer task due to memory pressure
+    Stream,                     // Use streaming compilation
+    TriggerGC,                  // Trigger garbage collection first
+    SplitTask,                  // Split task into smaller chunks
+    ReduceConcurrency,          // Reduce concurrent tasks
+    WaitForMemory,              // Wait for memory to become available
+}
+
+impl MemoryOptimizer {
+    /// Create a new memory optimizer
+    #[instrument]
+    pub fn new(config: MemoryOptimizerConfig) -> Result<Self> {
+        let gc_config = GcConfig::default();
+
+        let optimizer = Self {
+            task_queue: Arc::new(Mutex::new(VecDeque::new())),
+            memory_intensive_queue: Arc::new(Mutex::new(VecDeque::new())),
+            streaming_tasks: Arc::new(Mutex::new(HashMap::new())),
+            active_tasks: Arc::new(RwLock::new(HashMap::new())),
+            memory_monitor: Arc::new(Mutex::new(MemoryMonitor {
+                current_usage: 0.0,
+                peak_usage: 0.0,
+                usage_history: VecDeque::new(),
+                last_gc_time: Instant::now(),
+                last_sample_time: Instant::now(),
+                sampling_interval: Duration::from_millis(config.memory_sampling_interval_ms),
+                pressure_state: MemoryPressure::Low,
+            })),
+            gc_controller: Arc::new(Mutex::new(GarbageCollector::new())),
+            statistics: Arc::new(Mutex::new(MemoryStats {
+                current_usage_mb: 0.0,
+                peak_usage_mb: 0.0,
+                gc_collections: 0,
+                streaming_operations: 0,
+                memory_pressure_events: 0,
+                tasks_deferred_for_memory: 0,
+                average_task_memory_mb: 0.0,
+                memory_efficiency_percent: 100.0,
+            })),
+            pressure_events: Arc::new(Mutex::new(Vec::new())),
+            is_running: Arc::new(Mutex::new(false)),
+            config,
+        };
+
+        info!("Memory optimizer created with {} MB limit", optimizer.config.max_memory_mb);
+        Ok(optimizer)
+    }
+
+    /// Start the memory optimizer
+    #[instrument(skip(self))]
+    pub fn start(&self) -> Result<()> {
+        {
+            let mut running = self.is_running.lock().map_err(|_| CursedError::system_error("Failed to lock running state"))?;
+            if *running {
+                return Ok(());
+            }
+            *running = true;
+        }
+
+        // Start memory monitoring thread
+        if self.config.enable_memory_pressure_detection {
+            self.start_memory_monitoring()?;
+        }
+
+        // Start scheduling thread
+        self.start_scheduling_thread()?;
+
+        debug!("Memory optimizer started");
+        Ok(())
+    }
+
+    /// Stop the memory optimizer
+    #[instrument(skip(self))]
+    pub fn stop(&self) -> Result<()> {
+        {
+            let mut running = self.is_running.lock().map_err(|_| CursedError::system_error("Failed to lock running state"))?;
+            *running = false;
+        }
+
+        debug!("Memory optimizer stopped");
+        Ok(())
+    }
+
+    /// Submit a task for memory-aware compilation
+    #[instrument(skip(self, task))]
+    pub fn submit_task(&self, task: MemoryAwareTask) -> Result<()> {
+        let is_memory_intensive = task.estimated_memory_mb > self.config.large_file_threshold_mb;
+        
+        if is_memory_intensive {
+            let mut intensive_queue = self.memory_intensive_queue.lock()
+                .map_err(|_| CursedError::system_error("Failed to lock memory intensive queue"))?;
+            intensive_queue.push_back(task.clone());
+        } else {
+            let mut queue = self.task_queue.lock()
+                .map_err(|_| CursedError::system_error("Failed to lock task queue"))?;
+            queue.push_back(task.clone());
+        }
+
+        debug!(
+            task_id = task.id,
+            estimated_memory = task.estimated_memory_mb,
+            is_memory_intensive,
+            "Task submitted for memory-aware compilation"
+        );
+
+        Ok(())
+    }
+
+    /// Get current memory statistics
+    #[instrument(skip(self))]
+    pub fn get_statistics(&self) -> Result<MemoryStats> {
+        let stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+        Ok(stats.clone())
+    }
+
+    /// Trigger garbage collection if needed
+    #[instrument(skip(self))]
+    pub fn trigger_gc_if_needed(&self) -> Result<bool> {
+        let monitor = self.memory_monitor.lock().map_err(|_| CursedError::system_error("Failed to lock monitor"))?;
+        let current_usage = monitor.current_usage;
+        let threshold = self.config.max_memory_mb * (self.config.warning_threshold_percent / 100.0);
+        
+        if current_usage > threshold {
+            drop(monitor);
+            
+            let mut gc = self.gc_controller.lock().map_err(|_| CursedError::system_error("Failed to lock GC"))?;
+            let collected = gc.collect()?.bytes_freed;
+            
+            let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+            stats.gc_collections += 1;
+            
+            info!(
+                collected_bytes = collected,
+                "Triggered garbage collection due to memory pressure"
+            );
+            
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Create streaming chunks for large tasks
+    #[instrument(skip(self, task))]
+    pub fn create_streaming_chunks(&self, task: &MemoryAwareTask) -> Result<Vec<CompilationChunk>> {
+        if !self.config.enable_streaming || !task.can_stream {
+            return Ok(Vec::new());
+        }
+
+        let chunk_size = self.config.streaming_chunk_size_mb;
+        let total_chunks = (task.estimated_memory_mb / chunk_size).ceil() as usize;
+        let mut chunks = Vec::new();
+
+        for i in 0..total_chunks {
+            let chunk = CompilationChunk {
+                id: format!("{}_{}", task.id, i),
+                task_id: task.id.clone(),
+                chunk_index: i,
+                total_chunks,
+                data: Vec::new(), // Would be populated with actual data
+                estimated_memory: chunk_size.min(task.estimated_memory_mb - (i as f64 * chunk_size)),
+                dependencies: if i == 0 { task.dependencies.clone() } else { vec![format!("{}_{}", task.id, i - 1)] },
+            };
+            chunks.push(chunk);
+        }
+
+        {
+            let mut streaming_tasks = self.streaming_tasks.lock().map_err(|_| CursedError::system_error("Failed to lock streaming tasks"))?;
+            streaming_tasks.insert(task.id.clone(), chunks.clone());
+        }
+
+        {
+            let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+            stats.streaming_operations += 1;
+        }
+
+        debug!(
+            task_id = task.id,
+            chunk_count = chunks.len(),
+            chunk_size_mb = chunk_size,
+            "Created streaming chunks for large task"
+        );
+
+        Ok(chunks)
+    }
+
+    /// Make adaptive scheduling decision
+    #[instrument(skip(self, task))]
+    pub fn make_scheduling_decision(&self, task: &MemoryAwareTask) -> Result<SchedulingDecision> {
+        if !self.config.enable_adaptive_scheduling {
+            return Ok(SchedulingDecision {
+                action: SchedulingAction::Execute,
+                reasoning: "Adaptive scheduling disabled".to_string(),
+                estimated_memory_impact: task.estimated_memory_mb,
+                priority_adjustment: None,
+            });
+        }
+
+        let monitor = self.memory_monitor.lock().map_err(|_| CursedError::system_error("Failed to lock monitor"))?;
+        let current_usage = monitor.current_usage;
+        let pressure = monitor.pressure_state.clone();
+        drop(monitor);
+
+        let available_memory = self.config.max_memory_mb - current_usage;
+        let would_exceed_critical = (current_usage + task.estimated_memory_mb) > 
+            (self.config.max_memory_mb * self.config.critical_threshold_percent / 100.0);
+
+        match pressure {
+            MemoryPressure::Low => {
+                if task.estimated_memory_mb > self.config.large_file_threshold_mb && self.config.enable_streaming {
+                    Ok(SchedulingDecision {
+                        action: SchedulingAction::Stream,
+                        reasoning: "Large task, using streaming to optimize memory".to_string(),
+                        estimated_memory_impact: self.config.streaming_chunk_size_mb,
+                        priority_adjustment: None,
+                    })
+                } else {
+                    Ok(SchedulingDecision {
+                        action: SchedulingAction::Execute,
+                        reasoning: "Low memory pressure, execute normally".to_string(),
+                        estimated_memory_impact: task.estimated_memory_mb,
+                        priority_adjustment: None,
+                    })
+                }
+            }
+            
+            MemoryPressure::Medium => {
+                if task.estimated_memory_mb > available_memory * 0.5 {
+                    Ok(SchedulingDecision {
+                        action: SchedulingAction::TriggerGC,
+                        reasoning: "Medium pressure, trigger GC before large task".to_string(),
+                        estimated_memory_impact: task.estimated_memory_mb * 0.7, // Assume GC reduces usage
+                        priority_adjustment: None,
+                    })
+                } else {
+                    Ok(SchedulingDecision {
+                        action: SchedulingAction::Execute,
+                        reasoning: "Medium pressure but task fits in available memory".to_string(),
+                        estimated_memory_impact: task.estimated_memory_mb,
+                        priority_adjustment: Some(TaskPriority::Normal),
+                    })
+                }
+            }
+            
+            MemoryPressure::High => {
+                if would_exceed_critical {
+                    if task.can_stream && self.config.enable_streaming {
+                        Ok(SchedulingDecision {
+                            action: SchedulingAction::Stream,
+                            reasoning: "High pressure, use streaming to avoid critical threshold".to_string(),
+                            estimated_memory_impact: self.config.streaming_chunk_size_mb,
+                            priority_adjustment: Some(TaskPriority::High),
+                        })
+                    } else {
+                        Ok(SchedulingDecision {
+                            action: SchedulingAction::Defer,
+                            reasoning: "High pressure, defer task until memory available".to_string(),
+                            estimated_memory_impact: 0.0,
+                            priority_adjustment: Some(TaskPriority::High),
+                        })
+                    }
+                } else {
+                    Ok(SchedulingDecision {
+                        action: SchedulingAction::TriggerGC,
+                        reasoning: "High pressure, trigger GC and reduce concurrency".to_string(),
+                        estimated_memory_impact: task.estimated_memory_mb * 0.6,
+                        priority_adjustment: Some(TaskPriority::High),
+                    })
+                }
+            }
+            
+            MemoryPressure::Critical => {
+                Ok(SchedulingDecision {
+                    action: SchedulingAction::WaitForMemory,
+                    reasoning: "Critical memory pressure, wait for memory to become available".to_string(),
+                    estimated_memory_impact: 0.0,
+                    priority_adjustment: Some(TaskPriority::Critical),
+                })
+            }
+        }
+    }
+
+    /// Update memory usage
+    #[instrument(skip(self))]
+    pub fn update_memory_usage(&self, usage_mb: f64) -> Result<()> {
+        let mut monitor = self.memory_monitor.lock().map_err(|_| CursedError::system_error("Failed to lock monitor"))?;
+        
+        monitor.current_usage = usage_mb;
+        monitor.peak_usage = monitor.peak_usage.max(usage_mb);
+        
+        let now = Instant::now();
+        monitor.usage_history.push_back((now, usage_mb));
+        
+        // Limit history size
+        while monitor.usage_history.len() > 1000 {
+            monitor.usage_history.pop_front();
+        }
+        
+        // Update pressure state
+        let old_pressure = monitor.pressure_state.clone();
+        let usage_percent = (usage_mb / self.config.max_memory_mb) * 100.0;
+        
+        monitor.pressure_state = if usage_percent < 50.0 {
+            MemoryPressure::Low
+        } else if usage_percent < self.config.warning_threshold_percent {
+            MemoryPressure::Medium
+        } else if usage_percent < self.config.critical_threshold_percent {
+            MemoryPressure::High
+        } else {
+            MemoryPressure::Critical
+        };
+        
+        // Log pressure state changes
+        if monitor.pressure_state != old_pressure {
+            let event = MemoryPressureEvent {
+                timestamp: now,
+                pressure_level: monitor.pressure_state.clone(),
+                memory_usage_mb: usage_mb,
+                triggered_actions: Vec::new(),
+                resolved_at: None,
+            };
+            
+            drop(monitor);
+            
+            let mut events = self.pressure_events.lock().map_err(|_| CursedError::system_error("Failed to lock events"))?;
+            events.push(event);
+            
+            let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+            stats.memory_pressure_events += 1;
+            stats.current_usage_mb = usage_mb;
+            stats.peak_usage_mb = stats.peak_usage_mb.max(usage_mb);
+            
+            warn!(
+                old_pressure = ?old_pressure,
+                new_pressure = ?monitor.pressure_state,
+                usage_mb = usage_mb,
+                usage_percent = usage_percent,
+                "Memory pressure state changed"
+            );
+        }
+        
+        Ok(())
+    }
+
+    /// Start memory monitoring thread
+    fn start_memory_monitoring(&self) -> Result<()> {
+        // TODO: Implement memory monitoring thread
+        debug!("Started memory monitoring");
+        Ok(())
+    }
+
+    /// Start scheduling thread
+    fn start_scheduling_thread(&self) -> Result<()> {
+        // TODO: Implement scheduling thread
+        debug!("Started scheduling thread");
+        Ok(())
+    }
+
+    /// Execute task with memory optimization
+    #[instrument(skip(self, task, execute_fn))]
+    pub fn execute_with_memory_optimization<F>(&self, task: MemoryAwareTask, execute_fn: F) -> Result<()>
+    where
+        F: FnOnce(&MemoryAwareTask) -> Result<()>,
+    {
+        // Make scheduling decision
+        let decision = self.make_scheduling_decision(&task)?;
+        
+        match decision.action {
+            SchedulingAction::Execute => {
+                // Add to active tasks
+                {
+                    let mut active = self.active_tasks.write().map_err(|_| CursedError::system_error("Failed to lock active tasks"))?;
+                    active.insert(task.id.clone(), task.clone());
+                }
+                
+                // Execute the task
+                let result = execute_fn(&task);
+                
+                // Remove from active tasks
+                {
+                    let mut active = self.active_tasks.write().map_err(|_| CursedError::system_error("Failed to lock active tasks"))?;
+                    active.remove(&task.id);
+                }
+                
+                result
+            }
+            
+            SchedulingAction::Stream => {
+                let chunks = self.create_streaming_chunks(&task)?;
+                
+                for chunk in chunks {
+                    // Execute chunk with reduced memory footprint
+                    // TODO: Implement chunk execution
+                    debug!(chunk_id = chunk.id, "Executing streaming chunk");
+                }
+                
+                Ok(())
+            }
+            
+            SchedulingAction::TriggerGC => {
+                self.trigger_gc_if_needed()?;
+                // Retry execution after GC
+                self.execute_with_memory_optimization(task, execute_fn)
+            }
+            
+            SchedulingAction::Defer => {
+                // Put task back in queue with higher priority
+                let mut deferred_task = task;
+                deferred_task.priority = decision.priority_adjustment.unwrap_or(TaskPriority::High);
+                self.submit_task(deferred_task)?;
+                
+                let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+                stats.tasks_deferred_for_memory += 1;
+                
+                Ok(())
+            }
+            
+            SchedulingAction::WaitForMemory => {
+                // Wait for memory pressure to decrease
+                thread::sleep(Duration::from_millis(1000));
+                self.execute_with_memory_optimization(task, execute_fn)
+            }
+            
+            _ => {
+                // Default to normal execution
+                execute_fn(&task)
+            }
+        }
+    }
+}
+
+/// Create a memory-aware task
+pub fn create_memory_aware_task(
+    id: String,
+    source_file: String,
+    estimated_memory_mb: f64,
+    can_stream: bool,
+) -> MemoryAwareTask {
+    MemoryAwareTask {
+        id,
+        estimated_memory_mb,
+        priority: TaskPriority::Normal,
+        dependencies: Vec::new(),
+        can_stream,
+        source_file,
+        target_type: "object".to_string(),
+        compilation_flags: Vec::new(),
+        created_at: Instant::now(),
+    }
+}
+
+// Export public API
+pub use self::{
+    MemoryOptimizer,
+    MemoryOptimizerConfig,
+    MemoryAwareTask,
+    MemoryStrategy,
+    MemoryPressure,
+    MemoryStats,
+    SchedulingDecision,
+    SchedulingAction,
+    TaskPriority,
+    create_memory_aware_task,
+};

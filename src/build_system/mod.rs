@@ -12,6 +12,13 @@ pub mod dependency_resolver;
 pub mod package_integration;
 pub mod file_watcher;
 
+// Advanced Build System Optimizations
+pub mod dependency_optimizer;
+pub mod advanced_cache;
+pub mod distributed_compilation;
+pub mod analytics;
+pub mod memory_optimizer;
+
 // Re-export main types
 pub use build_config::{
     BuildConfig, BuildTarget, BuildProfile, ProjectMetadata, ProjectType,
@@ -34,4 +41,21 @@ pub use package_integration::{
 pub use file_watcher::{
     FileWatcher, WatchConfig, FileWatchEvent, WatchedPath, DebounceManager,
     EventFilter, WatchStatistics, FileWatcherBuilder
+};
+
+// Re-export advanced build system components
+pub use dependency_optimizer::{
+    DependencyOptimizer, DependencyOptimizerConfig, AnalysisResult, OptimizationStats
+};
+pub use advanced_cache::{
+    AdvancedCache, AdvancedCacheConfig, CacheEntry, CacheData, CacheStatistics
+};
+pub use distributed_compilation::{
+    DistributedCompilationSystem, DistributedCompilationConfig, CompilationTask, CompilationResult
+};
+pub use analytics::{
+    BuildAnalytics, BuildAnalyticsConfig, BuildReport, BuildMetrics, BottleneckAnalysis
+};
+pub use memory_optimizer::{
+    MemoryOptimizer, MemoryOptimizerConfig, MemoryAwareTask, MemoryStats
 };

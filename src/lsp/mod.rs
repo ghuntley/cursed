@@ -12,6 +12,10 @@ pub mod completion;
 pub mod navigation;
 pub mod formatting;
 pub mod workspace;
+pub mod semantic_highlighting;
+pub mod code_lens;
+pub mod inlay_hints;
+pub mod enhanced_symbols;
 
 pub use server::*;
 pub use backend::*;

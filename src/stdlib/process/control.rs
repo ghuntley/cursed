@@ -1,364 +1,387 @@
-/// Process control and signal handling
-use std::time::Duration;
-use super::error::{ProcessError, ProcessResult};
-use super::info::ProcessInfo;
+/// Process control and signal handling for CURSED
+/// 
+/// This module provides functionality for controlling processes, sending signals,
+/// managing process priority, and handling process lifecycle events.
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+use crate::stdlib::process::error::{
+    ProcessError, ProcessResult, process_not_found_pid, permission_denied_pid,
+    invalid_state, timeout_error, system_error, signal_error
+};
 
 /// Signal types for process control
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Signal {
-    /// Terminate process (SIGTERM)
-    Terminate,
-    /// Kill process immediately (SIGKILL)
-    Kill,
-    /// Interrupt process (SIGINT)
-    Interrupt,
-    /// Quit process (SIGQUIT)
-    Quit,
-    /// Stop process (SIGSTOP)
-    Stop,
-    /// Continue process (SIGCONT)
-    Continue,
-    /// Hangup (SIGHUP)
-    Hangup,
-    /// User-defined signal 1 (SIGUSR1)
-    User1,
-    /// User-defined signal 2 (SIGUSR2)
-    User2,
-    /// Alarm (SIGALRM)
-    Alarm,
-    /// Child process terminated (SIGCHLD)
-    Child,
-    /// Pipe broken (SIGPIPE)
-    Pipe,
+    /// Terminate process (Ctrl+C)
+    SIGINT = 2,
+    /// Quit process
+    SIGQUIT = 3,
+    /// Illegal instruction
+    SIGILL = 4,
+    /// Abort signal
+    SIGABRT = 6,
+    /// Floating point exception
+    SIGFPE = 8,
+    /// Kill process (cannot be caught)
+    SIGKILL = 9,
+    /// Segmentation violation
+    SIGSEGV = 11,
+    /// Broken pipe
+    SIGPIPE = 13,
+    /// Alarm signal
+    SIGALRM = 14,
+    /// Terminate process (polite)
+    SIGTERM = 15,
+    /// User-defined signal 1
+    SIGUSR1 = 10,
+    /// User-defined signal 2
+    SIGUSR2 = 12,
+    /// Continue if stopped
+    SIGCONT = 18,
+    /// Stop process
+    SIGSTOP = 19,
+    /// Terminal stop signal
+    SIGTSTP = 20,
+    /// Background process attempting read
+    SIGTTIN = 21,
+    /// Background process attempting write
+    SIGTTOU = 22,
+}
+
+impl Signal {
+    /// Get signal number
+    pub fn as_number(&self) -> i32 {
+        *self as i32
+    }
+
+    /// Get signal name
+    pub fn name(&self) -> &'static str {
+        match self {
+            Signal::SIGINT => "SIGINT",
+            Signal::SIGQUIT => "SIGQUIT",
+            Signal::SIGILL => "SIGILL",
+            Signal::SIGABRT => "SIGABRT",
+            Signal::SIGFPE => "SIGFPE",
+            Signal::SIGKILL => "SIGKILL",
+            Signal::SIGSEGV => "SIGSEGV",
+            Signal::SIGPIPE => "SIGPIPE",
+            Signal::SIGALRM => "SIGALRM",
+            Signal::SIGTERM => "SIGTERM",
+            Signal::SIGUSR1 => "SIGUSR1",
+            Signal::SIGUSR2 => "SIGUSR2",
+            Signal::SIGCONT => "SIGCONT",
+            Signal::SIGSTOP => "SIGSTOP",
+            Signal::SIGTSTP => "SIGTSTP",
+            Signal::SIGTTIN => "SIGTTIN",
+            Signal::SIGTTOU => "SIGTTOU",
+        }
+    }
+
+    /// Check if signal can be caught/handled
+    pub fn can_be_caught(&self) -> bool {
+        !matches!(self, Signal::SIGKILL | Signal::SIGSTOP)
+    }
+
+    /// Check if signal terminates by default
+    pub fn is_terminating(&self) -> bool {
+        matches!(
+            self,
+            Signal::SIGINT | Signal::SIGQUIT | Signal::SIGTERM | 
+            Signal::SIGKILL | Signal::SIGABRT | Signal::SIGSEGV |
+            Signal::SIGILL | Signal::SIGFPE
+        )
+    }
+}
+
+impl From<i32> for Signal {
+    fn from(num: i32) -> Self {
+        match num {
+            2 => Signal::SIGINT,
+            3 => Signal::SIGQUIT,
+            4 => Signal::SIGILL,
+            6 => Signal::SIGABRT,
+            8 => Signal::SIGFPE,
+            9 => Signal::SIGKILL,
+            10 => Signal::SIGUSR1,
+            11 => Signal::SIGSEGV,
+            12 => Signal::SIGUSR2,
+            13 => Signal::SIGPIPE,
+            14 => Signal::SIGALRM,
+            15 => Signal::SIGTERM,
+            18 => Signal::SIGCONT,
+            19 => Signal::SIGSTOP,
+            20 => Signal::SIGTSTP,
+            21 => Signal::SIGTTIN,
+            22 => Signal::SIGTTOU,
+            _ => Signal::SIGTERM, // Default fallback
+        }
+    }
 }
 
 /// Process priority levels
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Priority {
     /// Very high priority
     VeryHigh = -20,
     /// High priority
     High = -10,
-    /// Normal priority
+    /// Above normal priority
+    AboveNormal = -5,
+    /// Normal priority (default)
     Normal = 0,
+    /// Below normal priority
+    BelowNormal = 5,
     /// Low priority
     Low = 10,
     /// Very low priority
     VeryLow = 19,
-    /// Custom priority value
-    Custom(i32),
 }
 
-/// Process control interface
-pub trait ProcessControl {
-    /// Send signal to process
-    fn send_signal(&self, signal: Signal) -> ProcessResult<()>;
-    
-    /// Kill process immediately
-    fn kill(&self) -> ProcessResult<()>;
-    
-    /// Terminate process gracefully
-    fn terminate(&self) -> ProcessResult<()>;
-    
-    /// Stop (pause) process execution
-    fn stop(&self) -> ProcessResult<()>;
-    
-    /// Continue process execution
-    fn continue_process(&self) -> ProcessResult<()>;
-    
+impl Priority {
+    /// Get nice value for this priority
+    pub fn nice_value(&self) -> i32 {
+        *self as i32
+    }
+
+    /// Create priority from nice value
+    pub fn from_nice(nice: i32) -> Self {
+        match nice {
+            n if n <= -20 => Priority::VeryHigh,
+            n if n <= -10 => Priority::High,
+            n if n <= -5 => Priority::AboveNormal,
+            n if n <= 0 => Priority::Normal,
+            n if n <= 5 => Priority::BelowNormal,
+            n if n <= 10 => Priority::Low,
+            _ => Priority::VeryLow,
+        }
+    }
+}
+
+/// Process control operations
+pub struct ProcessControl;
+
+impl ProcessControl {
+    /// Send a signal to a process
+    pub fn send_signal(pid: u32, signal: Signal) -> ProcessResult<()> {
+        send_signal_to_pid(pid, signal)
+    }
+
+    /// Kill a process (SIGKILL)
+    pub fn kill(pid: u32) -> ProcessResult<()> {
+        Self::send_signal(pid, Signal::SIGKILL)
+    }
+
+    /// Terminate a process politely (SIGTERM)
+    pub fn terminate(pid: u32) -> ProcessResult<()> {
+        Self::send_signal(pid, Signal::SIGTERM)
+    }
+
+    /// Stop a process (SIGSTOP)
+    pub fn stop(pid: u32) -> ProcessResult<()> {
+        Self::send_signal(pid, Signal::SIGSTOP)
+    }
+
+    /// Continue a stopped process (SIGCONT)
+    pub fn continue_process(pid: u32) -> ProcessResult<()> {
+        Self::send_signal(pid, Signal::SIGCONT)
+    }
+
+    /// Interrupt a process (SIGINT)
+    pub fn interrupt(pid: u32) -> ProcessResult<()> {
+        Self::send_signal(pid, Signal::SIGINT)
+    }
+
     /// Set process priority
-    fn set_priority(&self, priority: Priority) -> ProcessResult<()>;
-    
+    pub fn set_priority(pid: u32, priority: Priority) -> ProcessResult<()> {
+        set_process_priority(pid, priority)
+    }
+
     /// Get process priority
-    fn get_priority(&self) -> ProcessResult<i32>;
-    
-    /// Check if process is running
-    fn is_running(&self) -> ProcessResult<bool>;
-}
+    pub fn get_priority(pid: u32) -> ProcessResult<Priority> {
+        get_process_priority(pid)
+    }
 
-impl ProcessControl for ProcessInfo {
-    fn send_signal(&self, signal: Signal) -> ProcessResult<()> {
-        send_signal_to_pid(self.pid, signal)
-    }
-    
-    fn kill(&self) -> ProcessResult<()> {
-        self.send_signal(Signal::Kill)
-    }
-    
-    fn terminate(&self) -> ProcessResult<()> {
-        self.send_signal(Signal::Terminate)
-    }
-    
-    fn stop(&self) -> ProcessResult<()> {
-        self.send_signal(Signal::Stop)
-    }
-    
-    fn continue_process(&self) -> ProcessResult<()> {
-        self.send_signal(Signal::Continue)
-    }
-    
-    fn set_priority(&self, priority: Priority) -> ProcessResult<()> {
-        set_process_priority(self.pid, priority)
-    }
-    
-    fn get_priority(&self) -> ProcessResult<i32> {
-        get_process_priority(self.pid)
-    }
-    
-    fn is_running(&self) -> ProcessResult<bool> {
-        ProcessInfo::from_pid(self.pid).map(|_| true)
-            .or_else(|e| match e {
-                ProcessError::ProcessNotFound(_) => Ok(false),
-                other => Err(other),
-            })
+    /// Wait for process to terminate
+    pub fn wait_for_process(pid: u32, timeout: Option<Duration>) -> ProcessResult<bool> {
+        wait_for_process(pid, timeout)
     }
 }
 
-/// Send signal to process by PID
+/// Send a signal to a process by PID
 pub fn send_signal_to_pid(pid: u32, signal: Signal) -> ProcessResult<()> {
     #[cfg(unix)]
     {
-        let signal_num = match signal {
-            Signal::Terminate => libc::SIGTERM,
-            Signal::Kill => libc::SIGKILL,
-            Signal::Interrupt => libc::SIGINT,
-            Signal::Quit => libc::SIGQUIT,
-            Signal::Stop => libc::SIGSTOP,
-            Signal::Continue => libc::SIGCONT,
-            Signal::Hangup => libc::SIGHUP,
-            Signal::User1 => libc::SIGUSR1,
-            Signal::User2 => libc::SIGUSR2,
-            Signal::Alarm => libc::SIGALRM,
-            Signal::Child => libc::SIGCHLD,
-            Signal::Pipe => libc::SIGPIPE,
+        let result = unsafe {
+            libc::kill(pid as i32, signal.as_number())
         };
-        
-        let result = unsafe { libc::kill(pid as libc::pid_t, signal_num) };
-        
-        if result == 0 {
-            Ok(())
-        } else {
-            let errno = std::io::Error::last_os_error();
-            match errno.raw_os_error() {
-                Some(libc::ESRCH) => Err(ProcessError::ProcessNotFound(pid)),
-                Some(libc::EPERM) => Err(ProcessError::PermissionDenied(
-                    format!("Cannot send signal to process {}", pid)
-                )),
-                _ => Err(ProcessError::SystemError(
-                    errno.raw_os_error().unwrap_or(-1),
-                    format!("Failed to send signal to process {}: {}", pid, errno)
-                )),
+
+        if result == -1 {
+            let errno = unsafe { *libc::__errno_location() };
+            match errno {
+                libc::ESRCH => Err(process_not_found_pid(pid, "Process not found")),
+                libc::EPERM => Err(permission_denied_pid("kill", pid, "Permission denied")),
+                _ => Err(system_error(errno, "kill", &format!("Failed to send signal {} to process {}", signal.name(), pid))),
             }
+        } else {
+            Ok(())
         }
     }
-    
+
     #[cfg(windows)]
     {
-        // Windows implementation using Windows API
+        use std::process::Command;
+
+        // On Windows, use taskkill command for basic termination
         match signal {
-            Signal::Kill | Signal::Terminate => {
-                terminate_process_windows(pid)
+            Signal::SIGKILL | Signal::SIGTERM => {
+                let output = Command::new("taskkill")
+                    .args(&["/PID", &pid.to_string(), "/F"])
+                    .output()
+                    .map_err(|e| system_error(-1, "taskkill", &e.to_string()))?;
+
+                if !output.status.success() {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    Err(system_error(-1, "taskkill", &stderr))
+                } else {
+                    Ok(())
+                }
             }
-            _ => Err(ProcessError::PlatformError(
-                "Signal not supported on Windows".to_string()
-            ))
+            _ => {
+                Err(signal_error(signal.name(), "send", "Signal not supported on Windows"))
+            }
         }
-    }
-    
-    #[cfg(not(any(unix, windows)))]
-    {
-        Err(ProcessError::PlatformError("Unsupported platform".to_string()))
     }
 }
 
-/// Kill process by PID
+/// Kill a process (SIGKILL - cannot be caught)
 pub fn kill_process(pid: u32) -> ProcessResult<()> {
-    send_signal_to_pid(pid, Signal::Kill)
+    send_signal_to_pid(pid, Signal::SIGKILL)
 }
 
-/// Terminate process gracefully by PID
+/// Terminate a process politely (SIGTERM - can be caught)
 pub fn terminate_process(pid: u32) -> ProcessResult<()> {
-    send_signal_to_pid(pid, Signal::Terminate)
+    send_signal_to_pid(pid, Signal::SIGTERM)
 }
 
-/// Kill process with grace period
-pub fn kill_process_graceful(pid: u32, grace_period: Duration) -> ProcessResult<()> {
-    // First try to terminate gracefully
-    if let Ok(()) = terminate_process(pid) {
-        // Wait for the grace period
-        let start = std::time::Instant::now();
-        while start.elapsed() < grace_period {
-            // Check if process is still running
-            match ProcessInfo::from_pid(pid) {
-                Ok(_) => {
-                    // Still running, wait a bit more
-                    std::thread::sleep(Duration::from_millis(100));
-                }
-                Err(ProcessError::ProcessNotFound(_)) => {
-                    // Process has terminated
-                    return Ok(());
-                }
-                Err(e) => return Err(e),
-            }
+/// Kill a process gracefully (try SIGTERM first, then SIGKILL)
+pub fn kill_process_graceful(pid: u32, timeout: Duration) -> ProcessResult<()> {
+    // Try SIGTERM first
+    terminate_process(pid)?;
+    
+    // Wait for process to terminate
+    let start = Instant::now();
+    while start.elapsed() < timeout {
+        if !crate::stdlib::process::is_process_running(pid) {
+            return Ok(());
         }
+        std::thread::sleep(Duration::from_millis(100));
     }
     
-    // Grace period expired or graceful termination failed, force kill
+    // If still running, use SIGKILL
     kill_process(pid)
 }
 
-/// Set process priority
+/// Set process priority (nice value)
 pub fn set_process_priority(pid: u32, priority: Priority) -> ProcessResult<()> {
-    let priority_value = match priority {
-        Priority::Custom(value) => value,
-        Priority::VeryHigh => -20,
-        Priority::High => -10,
-        Priority::Normal => 0,
-        Priority::Low => 10,
-        Priority::VeryLow => 19,
-    };
-    
     #[cfg(unix)]
     {
-        let result = unsafe { libc::setpriority(libc::PRIO_PROCESS, pid, priority_value) };
-        
-        if result == 0 {
-            Ok(())
-        } else {
-            let errno = std::io::Error::last_os_error();
-            match errno.raw_os_error() {
-                Some(libc::ESRCH) => Err(ProcessError::ProcessNotFound(pid)),
-                Some(libc::EPERM) => Err(ProcessError::PermissionDenied(
-                    format!("Cannot set priority for process {}", pid)
-                )),
-                _ => Err(ProcessError::SystemError(
-                    errno.raw_os_error().unwrap_or(-1),
-                    format!("Failed to set priority for process {}: {}", pid, errno)
-                )),
-            }
-        }
-    }
-    
-    #[cfg(windows)]
-    {
-        set_process_priority_windows(pid, priority_value)
-    }
-    
-    #[cfg(not(any(unix, windows)))]
-    {
-        Err(ProcessError::PlatformError("Unsupported platform".to_string()))
-    }
-}
+        let result = unsafe {
+            libc::setpriority(libc::PRIO_PROCESS, pid, priority.nice_value())
+        };
 
-/// Get process priority
-pub fn get_process_priority(pid: u32) -> ProcessResult<i32> {
-    #[cfg(unix)]
-    {
-        // Clear errno before the call since getpriority can return -1 legitimately
-        let errno_ptr = unsafe { libc::__errno_location() };
-        unsafe { *errno_ptr = 0; }
-        
-        let priority = unsafe { libc::getpriority(libc::PRIO_PROCESS, pid) };
-        let errno = unsafe { *errno_ptr };
-        
-        // getpriority returns the priority value (can be negative), or -1 on error
-        // We need to check errno to distinguish between -1 as a valid priority and error
-        if errno == 0 {
-            Ok(priority)
-        } else {
+        if result == -1 {
+            let errno = unsafe { *libc::__errno_location() };
             match errno {
-                libc::ESRCH => Err(ProcessError::ProcessNotFound(pid)),
-                libc::EPERM => Err(ProcessError::PermissionDenied(
-                    format!("Cannot get priority for process {}", pid)
-                )),
-                _ => Err(ProcessError::SystemError(
-                    errno,
-                    format!("Failed to get priority for process {}: errno {}", pid, errno)
-                )),
+                libc::ESRCH => Err(process_not_found_pid(pid, "Process not found")),
+                libc::EPERM => Err(permission_denied_pid("setpriority", pid, "Permission denied")),
+                _ => Err(system_error(errno, "setpriority", &format!("Failed to set priority for process {}", pid))),
             }
+        } else {
+            Ok(())
         }
     }
-    
+
     #[cfg(windows)]
     {
-        get_process_priority_windows(pid)
-    }
-    
-    #[cfg(not(any(unix, windows)))]
-    {
-        Err(ProcessError::PlatformError("Unsupported platform".to_string()))
+        // Windows priority setting would require additional WinAPI calls
+        // For now, return an error indicating it's not implemented
+        Err(system_error(
+            -1,
+            "set_priority",
+            "Process priority setting not implemented on Windows"
+        ))
     }
 }
 
-/// Wait for process to terminate
-pub fn wait_for_process(pid: u32, timeout: Option<Duration>) -> ProcessResult<i32> {
-    let start_time = std::time::Instant::now();
+/// Get process priority (nice value)
+pub fn get_process_priority(pid: u32) -> ProcessResult<Priority> {
+    #[cfg(unix)]
+    {
+        // Clear errno first
+        unsafe { *libc::__errno_location() = 0; }
+
+        let result = unsafe {
+            libc::getpriority(libc::PRIO_PROCESS, pid)
+        };
+
+        let errno = unsafe { *libc::__errno_location() };
+        if errno != 0 {
+            match errno {
+                libc::ESRCH => Err(process_not_found_pid(pid, "Process not found")),
+                _ => Err(system_error(errno, "getpriority", &format!("Failed to get priority for process {}", pid))),
+            }
+        } else {
+            Ok(Priority::from_nice(result))
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        // Windows priority getting would require additional WinAPI calls
+        // For now, return normal priority as default
+        Ok(Priority::Normal)
+    }
+}
+
+/// Wait for a process to terminate
+pub fn wait_for_process(pid: u32, timeout: Option<Duration>) -> ProcessResult<bool> {
+    let start = Instant::now();
     
     loop {
-        // Check if process is still running
-        match ProcessInfo::from_pid(pid) {
-            Ok(_) => {
-                // Process is still running
-                if let Some(timeout) = timeout {
-                    if start_time.elapsed() >= timeout {
-                        return Err(ProcessError::Timeout(
-                            format!("Process {} did not terminate within {:?}", pid, timeout)
-                        ));
-                    }
-                }
-                
-                // Sleep briefly before checking again
-                std::thread::sleep(Duration::from_millis(100));
-            }
-            Err(ProcessError::ProcessNotFound(_)) => {
-                // Process has terminated
-                // Try to get exit code (platform-specific)
-                return get_process_exit_code(pid);
-            }
-            Err(e) => return Err(e),
+        if !crate::stdlib::process::is_process_running(pid) {
+            return Ok(true);
         }
+        
+        if let Some(timeout) = timeout {
+            if start.elapsed() >= timeout {
+                return Ok(false);
+            }
+        }
+        
+        std::thread::sleep(Duration::from_millis(100));
     }
 }
 
-/// Get process exit code (if available)
-fn get_process_exit_code(pid: u32) -> ProcessResult<i32> {
-    #[cfg(unix)]
-    {
-        // On Unix, we can't easily get the exit code of an arbitrary process
-        // that we didn't spawn ourselves. Return 0 as default.
-        Ok(0)
-    }
-    
-    #[cfg(windows)]
-    {
-        get_process_exit_code_windows(pid)
-    }
-    
-    #[cfg(not(any(unix, windows)))]
-    {
-        Ok(0)
-    }
-}
-
-/// Stop (pause) process execution
+/// Stop a process (SIGSTOP)
 pub fn stop_process(pid: u32) -> ProcessResult<()> {
-    send_signal_to_pid(pid, Signal::Stop)
+    send_signal_to_pid(pid, Signal::SIGSTOP)
 }
 
-/// Continue (resume) process execution
+/// Continue a stopped process (SIGCONT)
 pub fn continue_process(pid: u32) -> ProcessResult<()> {
-    send_signal_to_pid(pid, Signal::Continue)
+    send_signal_to_pid(pid, Signal::SIGCONT)
 }
 
-/// Kill all processes with given name
-pub fn kill_processes_by_name<S: AsRef<str>>(name: S) -> ProcessResult<Vec<u32>> {
-    let name_str = name.as_ref();
-    let processes = super::info::find_processes_by_name(name_str)?;
+/// Kill processes by name
+pub fn kill_processes_by_name(name: &str) -> ProcessResult<Vec<u32>> {
+    let processes = crate::stdlib::process::find_processes_by_name(name)?;
     let mut killed_pids = Vec::new();
     
     for process in processes {
-        if let Ok(()) = kill_process(process.pid) {
+        if kill_process(process.pid).is_ok() {
             killed_pids.push(process.pid);
         }
     }
@@ -366,14 +389,13 @@ pub fn kill_processes_by_name<S: AsRef<str>>(name: S) -> ProcessResult<Vec<u32>>
     Ok(killed_pids)
 }
 
-/// Terminate all processes with given name
-pub fn terminate_processes_by_name<S: AsRef<str>>(name: S) -> ProcessResult<Vec<u32>> {
-    let name_str = name.as_ref();
-    let processes = super::info::find_processes_by_name(name_str)?;
+/// Terminate processes by name
+pub fn terminate_processes_by_name(name: &str) -> ProcessResult<Vec<u32>> {
+    let processes = crate::stdlib::process::find_processes_by_name(name)?;
     let mut terminated_pids = Vec::new();
     
     for process in processes {
-        if let Ok(()) = terminate_process(process.pid) {
+        if terminate_process(process.pid).is_ok() {
             terminated_pids.push(process.pid);
         }
     }
@@ -381,14 +403,14 @@ pub fn terminate_processes_by_name<S: AsRef<str>>(name: S) -> ProcessResult<Vec<
     Ok(terminated_pids)
 }
 
-/// Kill process tree (process and all its children)
+/// Kill entire process tree
 pub fn kill_process_tree(root_pid: u32) -> ProcessResult<Vec<u32>> {
-    let tree = super::info::get_process_tree(root_pid)?;
+    let tree = crate::stdlib::process::get_process_tree(root_pid)?;
     let mut killed_pids = Vec::new();
     
     // Kill children first, then parent
     for process in tree.iter().rev() {
-        if let Ok(()) = kill_process(process.pid) {
+        if kill_process(process.pid).is_ok() {
             killed_pids.push(process.pid);
         }
     }
@@ -396,14 +418,14 @@ pub fn kill_process_tree(root_pid: u32) -> ProcessResult<Vec<u32>> {
     Ok(killed_pids)
 }
 
-/// Terminate process tree gracefully
-pub fn terminate_process_tree(root_pid: u32, grace_period: Duration) -> ProcessResult<Vec<u32>> {
-    let tree = super::info::get_process_tree(root_pid)?;
+/// Terminate entire process tree
+pub fn terminate_process_tree(root_pid: u32) -> ProcessResult<Vec<u32>> {
+    let tree = crate::stdlib::process::get_process_tree(root_pid)?;
     let mut terminated_pids = Vec::new();
     
     // Terminate children first, then parent
     for process in tree.iter().rev() {
-        if let Ok(()) = kill_process_graceful(process.pid, grace_period) {
+        if terminate_process(process.pid).is_ok() {
             terminated_pids.push(process.pid);
         }
     }
@@ -411,182 +433,224 @@ pub fn terminate_process_tree(root_pid: u32, grace_period: Duration) -> ProcessR
     Ok(terminated_pids)
 }
 
-// Platform-specific implementations
-
-#[cfg(windows)]
-fn terminate_process_windows(pid: u32) -> ProcessResult<()> {
-    // Simplified Windows implementation without winapi dependency
-    // In a real implementation, you would use the Windows API
-    use std::process::Command;
-    
-    // Use taskkill command as fallback
-    let output = Command::new("taskkill")
-        .args(&["/F", "/PID", &pid.to_string()])
-        .output()
-        .map_err(|e| ProcessError::ExecutionFailed(format!("Failed to run taskkill: {}", e)))?;
-    
-    if output.status.success() {
-        Ok(())
-    } else {
-        Err(ProcessError::ExecutionFailed(
-            format!("Failed to terminate process {}: {}", pid, String::from_utf8_lossy(&output.stderr))
-        ))
-    }
+/// Signal handler trait
+pub trait SignalHandler: Send + Sync {
+    /// Handle received signal
+    fn handle_signal(&self, signal: Signal) -> ProcessResult<()>;
 }
 
-#[cfg(windows)]
-fn set_process_priority_windows(pid: u32, priority: i32) -> ProcessResult<()> {
-    // Simplified Windows implementation without winapi dependency
-    // In a real implementation, you would use SetPriorityClass
-    use std::process::Command;
-    
-    let priority_class = match priority {
-        p if p <= -15 => "realtime",
-        p if p <= -10 => "high",
-        p if p <= -5 => "abovenormal",
-        p if p <= 5 => "normal",
-        p if p <= 10 => "belownormal",
-        _ => "idle",
-    };
-    
-    // Use wmic command as fallback
-    let output = Command::new("wmic")
-        .args(&["process", "where", &format!("ProcessId={}", pid), "CALL", "setpriority", priority_class])
-        .output()
-        .map_err(|e| ProcessError::ExecutionFailed(format!("Failed to run wmic: {}", e)))?;
-    
-    if output.status.success() {
-        Ok(())
-    } else {
-        Err(ProcessError::ExecutionFailed(
-            format!("Failed to set priority for process {}: {}", pid, String::from_utf8_lossy(&output.stderr))
-        ))
+/// Simple signal handler registry
+static mut SIGNAL_HANDLERS: Option<Arc<Mutex<HashMap<Signal, Box<dyn SignalHandler>>>>> = None;
+
+/// Setup a signal handler
+pub fn setup_signal_handler<H: SignalHandler + 'static>(signal: Signal, handler: H) -> ProcessResult<()> {
+    if !signal.can_be_caught() {
+        return Err(signal_error(signal.name(), "setup_handler", "Signal cannot be caught"));
     }
+
+    // Initialize handlers map if needed
+    unsafe {
+        if SIGNAL_HANDLERS.is_none() {
+            SIGNAL_HANDLERS = Some(Arc::new(Mutex::new(HashMap::new())));
+        }
+    }
+
+    // Store the handler
+    let handlers = unsafe { SIGNAL_HANDLERS.as_ref().unwrap() };
+    handlers.lock().unwrap().insert(signal, Box::new(handler));
+
+    #[cfg(unix)]
+    {
+        // Install signal handler using libc
+        unsafe {
+            let result = libc::signal(signal.as_number(), signal_handler_wrapper as usize);
+            if result == libc::SIG_ERR {
+                return Err(system_error(
+                    unsafe { *libc::__errno_location() },
+                    "signal",
+                    &format!("Failed to install handler for {}", signal.name())
+                ));
+            }
+        }
+    }
+
+    Ok(())
 }
 
-#[cfg(windows)]
-fn get_process_priority_windows(pid: u32) -> ProcessResult<i32> {
-    // Simplified Windows implementation without winapi dependency
-    // In a real implementation, you would use GetPriorityClass
-    use std::process::Command;
+/// Internal signal handler wrapper
+#[cfg(unix)]
+extern "C" fn signal_handler_wrapper(sig: i32) {
+    let signal = Signal::from(sig);
     
-    // Use wmic command to get priority class
-    let output = Command::new("wmic")
-        .args(&["process", "where", &format!("ProcessId={}", pid), "get", "Priority", "/value"])
-        .output()
-        .map_err(|e| ProcessError::ExecutionFailed(format!("Failed to run wmic: {}", e)))?;
-    
-    if output.status.success() {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        
-        // Parse wmic output to extract priority
-        for line in stdout.lines() {
-            if line.starts_with("Priority=") {
-                if let Some(value_str) = line.strip_prefix("Priority=") {
-                    if let Ok(priority) = value_str.trim().parse::<i32>() {
-                        return Ok(priority);
-                    }
+    // Call registered handler
+    unsafe {
+        if let Some(handlers) = &SIGNAL_HANDLERS {
+            if let Ok(handlers) = handlers.lock() {
+                if let Some(handler) = handlers.get(&signal) {
+                    let _ = handler.handle_signal(signal);
                 }
             }
         }
-        
-        // Default to normal priority if parsing fails
-        Ok(0)
-    } else {
-        Err(ProcessError::ExecutionFailed(
-            format!("Failed to get priority for process {}: {}", pid, String::from_utf8_lossy(&output.stderr))
-        ))
     }
 }
 
-#[cfg(windows)]
-fn get_process_exit_code_windows(pid: u32) -> ProcessResult<i32> {
-    // Simplified Windows implementation without winapi dependency
-    // In a real implementation, you would use GetExitCodeProcess
-    
-    // For a terminated process, we can't easily get the exit code without
-    // having monitored it from the beginning. Return a default value.
-    Ok(0)
-}
-
-// Unix-specific signal handler setup
-#[cfg(unix)]
-pub fn setup_signal_handler<F>(signal: Signal, handler: F) -> ProcessResult<()>
-where
-    F: Fn() + Send + Sync + 'static,
-{
-    use std::sync::Arc;
-    
-    let signal_num = match signal {
-        Signal::Terminate => libc::SIGTERM,
-        Signal::Interrupt => libc::SIGINT,
-        Signal::Quit => libc::SIGQUIT,
-        Signal::Hangup => libc::SIGHUP,
-        Signal::User1 => libc::SIGUSR1,
-        Signal::User2 => libc::SIGUSR2,
-        Signal::Alarm => libc::SIGALRM,
-        Signal::Child => libc::SIGCHLD,
-        Signal::Pipe => libc::SIGPIPE,
-        _ => return Err(ProcessError::InvalidArguments(
-            "Cannot set handler for this signal".to_string()
-        )),
-    };
-    
-    // This is a simplified implementation
-    // In practice, you'd use a proper signal handling library
-    let handler = Arc::new(handler);
-    
-    // Store handler in a global registry (simplified)
-    // Real implementation would use proper signal handling
-    
-    Ok(())
-}
-
-/// Ignore a signal (Unix only)
-#[cfg(unix)]
+/// Ignore a signal
 pub fn ignore_signal(signal: Signal) -> ProcessResult<()> {
-    let signal_num = match signal {
-        Signal::Terminate => libc::SIGTERM,
-        Signal::Interrupt => libc::SIGINT,
-        Signal::Quit => libc::SIGQUIT,
-        Signal::Hangup => libc::SIGHUP,
-        Signal::User1 => libc::SIGUSR1,
-        Signal::User2 => libc::SIGUSR2,
-        Signal::Alarm => libc::SIGALRM,
-        Signal::Pipe => libc::SIGPIPE,
-        _ => return Err(ProcessError::InvalidArguments(
-            "Cannot ignore this signal".to_string()
-        )),
-    };
-    
-    unsafe {
-        libc::signal(signal_num, libc::SIG_IGN);
+    if !signal.can_be_caught() {
+        return Err(signal_error(signal.name(), "ignore", "Signal cannot be ignored"));
     }
-    
+
+    #[cfg(unix)]
+    {
+        unsafe {
+            let result = libc::signal(signal.as_number(), libc::SIG_IGN);
+            if result == libc::SIG_ERR {
+                return Err(system_error(
+                    unsafe { *libc::__errno_location() },
+                    "signal",
+                    &format!("Failed to ignore {}", signal.name())
+                ));
+            }
+        }
+    }
+
     Ok(())
 }
 
-/// Reset signal handler to default (Unix only)
-#[cfg(unix)]
+/// Reset signal to default behavior
 pub fn reset_signal_handler(signal: Signal) -> ProcessResult<()> {
-    let signal_num = match signal {
-        Signal::Terminate => libc::SIGTERM,
-        Signal::Interrupt => libc::SIGINT,
-        Signal::Quit => libc::SIGQUIT,
-        Signal::Hangup => libc::SIGHUP,
-        Signal::User1 => libc::SIGUSR1,
-        Signal::User2 => libc::SIGUSR2,
-        Signal::Alarm => libc::SIGALRM,
-        Signal::Child => libc::SIGCHLD,
-        Signal::Pipe => libc::SIGPIPE,
-        _ => return Err(ProcessError::InvalidArguments(
-            "Cannot reset handler for this signal".to_string()
-        )),
-    };
-    
-    unsafe {
-        libc::signal(signal_num, libc::SIG_DFL);
+    #[cfg(unix)]
+    {
+        unsafe {
+            let result = libc::signal(signal.as_number(), libc::SIG_DFL);
+            if result == libc::SIG_ERR {
+                return Err(system_error(
+                    unsafe { *libc::__errno_location() },
+                    "signal",
+                    &format!("Failed to reset handler for {}", signal.name())
+                ));
+            }
+        }
     }
-    
+
+    // Remove from our handlers map
+    unsafe {
+        if let Some(handlers) = &SIGNAL_HANDLERS {
+            handlers.lock().unwrap().remove(&signal);
+        }
+    }
+
     Ok(())
+}
+
+/// Example signal handler implementation
+pub struct DefaultSignalHandler;
+
+impl SignalHandler for DefaultSignalHandler {
+    fn handle_signal(&self, signal: Signal) -> ProcessResult<()> {
+        eprintln!("Received signal: {} ({})", signal.name(), signal.as_number());
+        
+        if signal.is_terminating() {
+            eprintln!("Terminating due to signal {}", signal.name());
+            std::process::exit(signal.as_number());
+        }
+        
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_signal_properties() {
+        assert_eq!(Signal::SIGINT.as_number(), 2);
+        assert_eq!(Signal::SIGINT.name(), "SIGINT");
+        assert!(Signal::SIGINT.can_be_caught());
+        assert!(Signal::SIGINT.is_terminating());
+        
+        assert!(!Signal::SIGKILL.can_be_caught());
+        assert!(Signal::SIGKILL.is_terminating());
+        
+        assert!(Signal::SIGCONT.can_be_caught());
+        assert!(!Signal::SIGCONT.is_terminating());
+    }
+
+    #[test]
+    fn test_signal_conversion() {
+        assert_eq!(Signal::from(2), Signal::SIGINT);
+        assert_eq!(Signal::from(9), Signal::SIGKILL);
+        assert_eq!(Signal::from(15), Signal::SIGTERM);
+        assert_eq!(Signal::from(999), Signal::SIGTERM); // Default fallback
+    }
+
+    #[test]
+    fn test_priority_values() {
+        assert_eq!(Priority::Normal.nice_value(), 0);
+        assert_eq!(Priority::High.nice_value(), -10);
+        assert_eq!(Priority::Low.nice_value(), 10);
+        
+        assert_eq!(Priority::from_nice(0), Priority::Normal);
+        assert_eq!(Priority::from_nice(-15), Priority::High);
+        assert_eq!(Priority::from_nice(15), Priority::Low);
+    }
+
+    #[test]
+    fn test_priority_ordering() {
+        assert!(Priority::VeryHigh < Priority::High);
+        assert!(Priority::High < Priority::Normal);
+        assert!(Priority::Normal < Priority::Low);
+        assert!(Priority::Low < Priority::VeryLow);
+    }
+
+    #[test]
+    fn test_process_control_current_process() {
+        let current_pid = std::process::id();
+        
+        // These operations should work on the current process
+        let priority_result = ProcessControl::get_priority(current_pid);
+        // Don't assert success as it might fail due to permissions on some systems
+        
+        // Test that the current process is running
+        assert!(crate::stdlib::process::is_process_running(current_pid));
+    }
+
+    #[test]
+    fn test_wait_for_nonexistent_process() {
+        // Test waiting for a process that doesn't exist
+        let result = wait_for_process(999999, Some(Duration::from_millis(100)));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), true); // Should return true immediately since process doesn't exist
+    }
+
+    #[test]
+    fn test_signal_error_handling() {
+        // Test sending signal to non-existent process
+        let result = send_signal_to_pid(999999, Signal::SIGTERM);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_default_signal_handler() {
+        let handler = DefaultSignalHandler;
+        
+        // Test non-terminating signal
+        let result = handler.handle_signal(Signal::SIGUSR1);
+        assert!(result.is_ok());
+        
+        // Note: We can't easily test terminating signals without actually terminating
+    }
+
+    #[test]
+    fn test_process_name_operations() {
+        // Test operations that work with process names
+        let result = kill_processes_by_name("nonexistent_process_name");
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+        
+        let result = terminate_processes_by_name("nonexistent_process_name");
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
 }

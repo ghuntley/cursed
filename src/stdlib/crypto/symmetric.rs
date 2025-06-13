@@ -12,6 +12,8 @@ use std::sync::Arc;
 use crate::stdlib::packages::crypto_random::{CryptographicRng, CsprngAlgorithm, CsprngResult, fill_random};
 use crate::stdlib::packages::crypto_kdf::{pbkdf2, scrypt, KdfResult};
 use crate::stdlib::packages::crypto_advanced::{constant_time_compare, SecureMemory, ZeroOnDrop};
+use aes_gcm::{Aes256Gcm as AesGcmCipher, Key, Nonce, KeyInit};
+use aes_gcm::aead::{Aead, Payload};
 
 /// fr fr Comprehensive crypto error types
 #[derive(Debug, Clone)]
@@ -260,6 +262,7 @@ impl SymmetricDecryption for Aes256Cbc {
 /// fr fr AES-256-GCM implementation (Authenticated Encryption)
 pub struct Aes256Gcm {
     key: EncryptionKey,
+    cipher: AesGcmCipher,
 }
 
 impl Aes256Gcm {
@@ -269,48 +272,60 @@ impl Aes256Gcm {
             return Err(CryptoError::InvalidKeySize(format!("AES-256 requires 32-byte key, got {}", key.len())));
         }
         
+        let aes_key = Key::<AesGcmCipher>::from_slice(key);
+        let cipher = AesGcmCipher::new(aes_key);
+        
         Ok(Self {
             key: EncryptionKey::new(key.to_vec(), "AES-256-GCM".to_string())?,
+            cipher,
         })
     }
     
     /// slay Generate new AES-256-GCM cipher with random key
     pub fn generate() -> CryptoResult<Self> {
         let key = EncryptionKey::generate("AES-256-GCM", 32)?;
-        Ok(Self { key })
+        let aes_key = Key::<AesGcmCipher>::from_slice(key.as_bytes());
+        let cipher = AesGcmCipher::new(aes_key);
+        
+        Ok(Self { key, cipher })
     }
 }
 
 impl SymmetricEncryption for Aes256Gcm {
     fn encrypt(&self, plaintext: &[u8], associated_data: &[u8]) -> CryptoResult<EncryptionResult> {
         // Generate random nonce (12 bytes for GCM)
-        let mut nonce = vec![0u8; 12];
-        fill_random(&mut nonce)
+        let mut nonce_bytes = vec![0u8; 12];
+        fill_random(&mut nonce_bytes)
             .map_err(|e| CryptoError::RandomGenerationFailed(format!("Nonce generation failed: {:?}", e)))?;
         
-        // Placeholder for actual AES-GCM encryption
-        // In a real implementation, this would use a proper crypto library
-        let mut ciphertext = plaintext.to_vec();
+        let nonce = Nonce::from_slice(&nonce_bytes);
         
-        // Simple XOR with key and nonce for demonstration (NOT SECURE)
-        for (i, byte) in ciphertext.iter_mut().enumerate() {
-            *byte ^= self.key.as_bytes()[i % self.key.size()];
-            *byte ^= nonce[i % nonce.len()];
+        // Prepare payload with associated data
+        let payload = if associated_data.is_empty() {
+            Payload::from(plaintext)
+        } else {
+            Payload {
+                msg: plaintext,
+                aad: associated_data,
+            }
+        };
+        
+        // Perform AES-GCM encryption
+        let ciphertext_with_tag = self.cipher.encrypt(nonce, payload)
+            .map_err(|e| CryptoError::EncryptionFailed(format!("AES-GCM encryption failed: {:?}", e)))?;
+        
+        // Split ciphertext and tag (tag is last 16 bytes)
+        if ciphertext_with_tag.len() < 16 {
+            return Err(CryptoError::EncryptionFailed("Invalid ciphertext length".to_string()));
         }
         
-        // Generate authentication tag (placeholder)
-        let mut tag = vec![0u8; 16];
-        for (i, byte) in tag.iter_mut().enumerate() {
-            *byte = (ciphertext[i % ciphertext.len()] 
-                   ^ associated_data.get(i % associated_data.len().max(1)).unwrap_or(&0)
-                   ^ self.key.as_bytes()[i % self.key.size()]) as u8;
-        }
+        let (ciphertext, tag) = ciphertext_with_tag.split_at(ciphertext_with_tag.len() - 16);
         
         Ok(EncryptionResult {
-            ciphertext,
+            ciphertext: ciphertext.to_vec(),
             iv: None,
-            nonce: Some(nonce),
-            tag: Some(tag),
+            nonce: Some(nonce_bytes),
+            tag: Some(tag.to_vec()),
             salt: None,
             algorithm: "AES-256".to_string(),
             mode: "GCM".to_string(),
@@ -332,38 +347,39 @@ impl SymmetricEncryption for Aes256Gcm {
 
 impl SymmetricDecryption for Aes256Gcm {
     fn decrypt(&self, ciphertext: &[u8], associated_data: &[u8], metadata: &EncryptionResult) -> CryptoResult<DecryptionResult> {
-        let nonce = metadata.nonce.as_ref()
+        let nonce_bytes = metadata.nonce.as_ref()
             .ok_or_else(|| CryptoError::DecryptionFailed("Missing nonce for GCM mode".to_string()))?;
         
         let tag = metadata.tag.as_ref()
             .ok_or_else(|| CryptoError::DecryptionFailed("Missing authentication tag for GCM mode".to_string()))?;
         
-        if nonce.len() != 12 {
-            return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce.len())));
+        if nonce_bytes.len() != 12 {
+            return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce_bytes.len())));
         }
         
         if tag.len() != 16 {
             return Err(CryptoError::InvalidDataSize(format!("Expected 16-byte tag, got {}", tag.len())));
         }
         
-        // Verify authentication tag first
-        let mut expected_tag = vec![0u8; 16];
-        for (i, byte) in expected_tag.iter_mut().enumerate() {
-            *byte = (ciphertext[i % ciphertext.len()] 
-                   ^ associated_data.get(i % associated_data.len().max(1)).unwrap_or(&0)
-                   ^ self.key.as_bytes()[i % self.key.size()]) as u8;
-        }
+        let nonce = Nonce::from_slice(nonce_bytes);
         
-        if !self.verify_tag(tag, &expected_tag) {
-            return Err(CryptoError::AuthenticationFailed("GCM tag verification failed".to_string()));
-        }
+        // Combine ciphertext and tag for AES-GCM decryption
+        let mut ciphertext_with_tag = ciphertext.to_vec();
+        ciphertext_with_tag.extend_from_slice(tag);
         
-        // Decrypt data
-        let mut plaintext = ciphertext.to_vec();
-        for (i, byte) in plaintext.iter_mut().enumerate() {
-            *byte ^= self.key.as_bytes()[i % self.key.size()];
-            *byte ^= nonce[i % nonce.len()];
-        }
+        // Prepare payload with associated data
+        let payload = if associated_data.is_empty() {
+            Payload::from(ciphertext_with_tag.as_slice())
+        } else {
+            Payload {
+                msg: &ciphertext_with_tag,
+                aad: associated_data,
+            }
+        };
+        
+        // Perform AES-GCM decryption (includes authentication verification)
+        let plaintext = self.cipher.decrypt(nonce, payload)
+            .map_err(|e| CryptoError::AuthenticationFailed(format!("AES-GCM decryption/verification failed: {:?}", e)))?;
         
         Ok(DecryptionResult {
             plaintext,

@@ -574,7 +574,8 @@ mod tests {
     
     #[test]
     fn test_secure_operations() {
-        let mut data1 = vec![1, 2, 3, 4]); let data2 = Vec::from([1, 2, 3, 4];
+        let mut data1 = vec![1, 2, 3, 4];
+        let data2 = Vec::from([1, 2, 3, 4]);
         
         assert!(SecureOps::secure_compare(&data1, &data2));
         

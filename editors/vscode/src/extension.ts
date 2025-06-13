@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import {
     LanguageClient,
     LanguageClientOptions,
@@ -6,19 +8,51 @@ import {
     TransportKind
 } from 'vscode-languageclient/node';
 
+// Extension modules
+import { CursedTaskProvider } from './taskProvider';
+import { CursedProjectTreeDataProvider } from './projectView';
+import { CursedDependencyProvider } from './dependencyView';
+import { CursedStatusBar } from './statusBar';
+import { CursedTerminalManager } from './terminalManager';
+import { CursedOutputChannels } from './outputChannels';
+
 let client: LanguageClient;
+let taskProvider: CursedTaskProvider;
+let projectProvider: CursedProjectTreeDataProvider;
+let dependencyProvider: CursedDependencyProvider;
+let statusBar: CursedStatusBar;
+let terminalManager: CursedTerminalManager;
+let outputChannels: CursedOutputChannels;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('CURSED Language Support extension is now active!');
 
+    // Initialize output channels
+    outputChannels = new CursedOutputChannels();
+    context.subscriptions.push(...outputChannels.getChannels());
+
+    // Initialize status bar
+    statusBar = new CursedStatusBar();
+    context.subscriptions.push(statusBar);
+
+    // Initialize terminal manager
+    terminalManager = new CursedTerminalManager(outputChannels);
+    context.subscriptions.push(terminalManager);
+
     // Start the language server
     startLanguageServer(context);
+
+    // Initialize providers
+    initializeProviders(context);
 
     // Register custom commands
     registerCommands(context);
 
     // Register event handlers
     registerEventHandlers(context);
+
+    // Show welcome message for first-time users
+    showWelcomeMessage(context);
 }
 
 function startLanguageServer(context: vscode.ExtensionContext) {
@@ -91,6 +125,53 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(client);
+}
+
+function initializeProviders(context: vscode.ExtensionContext) {
+    // Task provider
+    taskProvider = new CursedTaskProvider();
+    const taskProviderDisposable = vscode.tasks.registerTaskProvider('cursed', taskProvider);
+    context.subscriptions.push(taskProviderDisposable);
+
+    // Project tree provider
+    projectProvider = new CursedProjectTreeDataProvider(context);
+    const projectTreeView = vscode.window.createTreeView('cursedProjectView', {
+        treeDataProvider: projectProvider,
+        showCollapseAll: true
+    });
+    context.subscriptions.push(projectTreeView);
+
+    // Dependency provider
+    dependencyProvider = new CursedDependencyProvider(context);
+    const dependencyTreeView = vscode.window.createTreeView('cursedDependencies', {
+        treeDataProvider: dependencyProvider,
+        showCollapseAll: true
+    });
+    context.subscriptions.push(dependencyTreeView);
+}
+
+async function showWelcomeMessage(context: vscode.ExtensionContext) {
+    const isFirstTime = !context.globalState.get('cursed.hasShownWelcome', false);
+    
+    if (isFirstTime) {
+        const action = await vscode.window.showInformationMessage(
+            'Welcome to CURSED! 🔥 The Gen Z programming language is ready to slay.',
+            'Show Getting Started',
+            'Create New Project',
+            'Don\'t Show Again'
+        );
+
+        switch (action) {
+            case 'Show Getting Started':
+                vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://github.com/ghuntley/cursed#getting-started'));
+                break;
+            case 'Create New Project':
+                vscode.commands.executeCommand('cursed.newProject');
+                break;
+        }
+
+        await context.globalState.update('cursed.hasShownWelcome', true);
+    }
 }
 
 function registerCommands(context: vscode.ExtensionContext) {
@@ -286,6 +367,212 @@ function registerCommands(context: vscode.ExtensionContext) {
         }
     });
 
+    // New Project Command
+    const newProjectCommand = vscode.commands.registerCommand('cursed.newProject', async () => {
+        const result = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            openLabel: 'Select Folder for New CURSED Project'
+        });
+
+        if (result && result[0]) {
+            const projectPath = result[0].fsPath;
+            const projectName = await vscode.window.showInputBox({
+                prompt: 'Enter project name',
+                value: path.basename(projectPath)
+            });
+
+            if (projectName) {
+                await createNewProject(projectPath, projectName);
+                vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(projectPath));
+            }
+        }
+    });
+
+    // Build Command
+    const buildCommand = vscode.commands.registerCommand('cursed.build', async () => {
+        statusBar.updateStatus('Building...');
+        outputChannels.clear('build');
+        outputChannels.show('build');
+
+        try {
+            await terminalManager.runTask('build', [], 'Building CURSED project...');
+            statusBar.updateStatus('Build Complete', 3000);
+            vscode.window.showInformationMessage('Build completed successfully!');
+        } catch (error) {
+            statusBar.updateStatus('Build Failed', 5000);
+            vscode.window.showErrorMessage(`Build failed: ${error}`);
+        }
+    });
+
+    // Run Command
+    const runCommand = vscode.commands.registerCommand('cursed.run', async () => {
+        statusBar.updateStatus('Running...');
+        outputChannels.clear('run');
+        outputChannels.show('run');
+
+        try {
+            await terminalManager.runTask('run', [], 'Running CURSED project...');
+            statusBar.updateStatus('Run Complete', 3000);
+        } catch (error) {
+            statusBar.updateStatus('Run Failed', 5000);
+            vscode.window.showErrorMessage(`Run failed: ${error}`);
+        }
+    });
+
+    // Test Command
+    const testCommand = vscode.commands.registerCommand('cursed.test', async () => {
+        statusBar.updateStatus('Testing...');
+        outputChannels.clear('test');
+        outputChannels.show('test');
+
+        try {
+            await terminalManager.runTask('test', [], 'Running CURSED tests...');
+            statusBar.updateStatus('Tests Complete', 3000);
+            vscode.window.showInformationMessage('Tests completed successfully!');
+        } catch (error) {
+            statusBar.updateStatus('Tests Failed', 5000);
+            vscode.window.showErrorMessage(`Tests failed: ${error}`);
+        }
+    });
+
+    // Clean Command
+    const cleanCommand = vscode.commands.registerCommand('cursed.clean', async () => {
+        const confirm = await vscode.window.showWarningMessage(
+            'This will clean all build artifacts. Continue?',
+            'Yes', 'No'
+        );
+
+        if (confirm === 'Yes') {
+            statusBar.updateStatus('Cleaning...');
+            try {
+                await terminalManager.runTask('clean', [], 'Cleaning build artifacts...');
+                statusBar.updateStatus('Clean Complete', 3000);
+                vscode.window.showInformationMessage('Clean completed successfully!');
+            } catch (error) {
+                statusBar.updateStatus('Clean Failed', 5000);
+                vscode.window.showErrorMessage(`Clean failed: ${error}`);
+            }
+        }
+    });
+
+    // Open REPL Command
+    const openReplCommand = vscode.commands.registerCommand('cursed.openRepl', async () => {
+        terminalManager.openRepl();
+    });
+
+    // Package Install Command
+    const packageInstallCommand = vscode.commands.registerCommand('cursed.packageInstall', async () => {
+        statusBar.updateStatus('Installing packages...');
+        outputChannels.clear('package');
+        outputChannels.show('package');
+
+        try {
+            await terminalManager.runTask('install', [], 'Installing dependencies...');
+            statusBar.updateStatus('Install Complete', 3000);
+            dependencyProvider.refresh();
+            vscode.window.showInformationMessage('Dependencies installed successfully!');
+        } catch (error) {
+            statusBar.updateStatus('Install Failed', 5000);
+            vscode.window.showErrorMessage(`Package installation failed: ${error}`);
+        }
+    });
+
+    // Package Update Command
+    const packageUpdateCommand = vscode.commands.registerCommand('cursed.packageUpdate', async () => {
+        statusBar.updateStatus('Updating packages...');
+        outputChannels.clear('package');
+        outputChannels.show('package');
+
+        try {
+            await terminalManager.runTask('update', [], 'Updating dependencies...');
+            statusBar.updateStatus('Update Complete', 3000);
+            dependencyProvider.refresh();
+            vscode.window.showInformationMessage('Dependencies updated successfully!');
+        } catch (error) {
+            statusBar.updateStatus('Update Failed', 5000);
+            vscode.window.showErrorMessage(`Package update failed: ${error}`);
+        }
+    });
+
+    // Show Project Structure Command
+    const showProjectStructureCommand = vscode.commands.registerCommand('cursed.showProjectStructure', async () => {
+        const panel = vscode.window.createWebviewPanel(
+            'cursedProjectStructure',
+            'CURSED Project Structure',
+            vscode.ViewColumn.Beside,
+            { enableScripts: true }
+        );
+
+        panel.webview.html = await generateProjectStructureHtml();
+    });
+
+    // Generate Docs Command
+    const generateDocsCommand = vscode.commands.registerCommand('cursed.generateDocs', async () => {
+        statusBar.updateStatus('Generating docs...');
+        try {
+            await terminalManager.runTask('docs', [], 'Generating documentation...');
+            statusBar.updateStatus('Docs Generated', 3000);
+            vscode.window.showInformationMessage('Documentation generated successfully!');
+        } catch (error) {
+            statusBar.updateStatus('Docs Failed', 5000);
+            vscode.window.showErrorMessage(`Documentation generation failed: ${error}`);
+        }
+    });
+
+    // Benchmarks Command
+    const benchmarksCommand = vscode.commands.registerCommand('cursed.benchmarks', async () => {
+        statusBar.updateStatus('Running benchmarks...');
+        outputChannels.clear('benchmark');
+        outputChannels.show('benchmark');
+
+        try {
+            await terminalManager.runTask('benchmark', [], 'Running benchmarks...');
+            statusBar.updateStatus('Benchmarks Complete', 3000);
+            vscode.window.showInformationMessage('Benchmarks completed successfully!');
+        } catch (error) {
+            statusBar.updateStatus('Benchmarks Failed', 5000);
+            vscode.window.showErrorMessage(`Benchmarks failed: ${error}`);
+        }
+    });
+
+    // Show Diagnostics Command
+    const showDiagnosticsCommand = vscode.commands.registerCommand('cursed.showDiagnostics', async () => {
+        vscode.commands.executeCommand('workbench.action.problems.focus');
+    });
+
+    // Check Lints Command
+    const checkLintsCommand = vscode.commands.registerCommand('cursed.checkLints', async () => {
+        statusBar.updateStatus('Checking lints...');
+        try {
+            await terminalManager.runTask('lint', [], 'Running linter...');
+            statusBar.updateStatus('Lints Complete', 3000);
+        } catch (error) {
+            statusBar.updateStatus('Lints Failed', 5000);
+            vscode.window.showErrorMessage(`Linting failed: ${error}`);
+        }
+    });
+
+    // Debug Start Command
+    const debugStartCommand = vscode.commands.registerCommand('cursed.debugStart', async () => {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor || activeEditor.document.languageId !== 'cursed') {
+            vscode.window.showErrorMessage('Please open a CURSED file to start debugging');
+            return;
+        }
+
+        const config = {
+            type: 'cursed',
+            request: 'launch',
+            name: 'Debug CURSED',
+            program: activeEditor.document.uri.fsPath,
+            cwd: vscode.workspace.workspaceFolders?.[0].uri.fsPath || '.'
+        };
+
+        vscode.debug.startDebugging(vscode.workspace.workspaceFolders?.[0], config);
+    });
+
     // Register all commands
     context.subscriptions.push(
         restartCommand,
@@ -294,7 +581,21 @@ function registerCommands(context: vscode.ExtensionContext) {
         formatDocumentCommand,
         runLinterCommand,
         showGoroutineInfoCommand,
-        showChannelInfoCommand
+        showChannelInfoCommand,
+        newProjectCommand,
+        buildCommand,
+        runCommand,
+        testCommand,
+        cleanCommand,
+        openReplCommand,
+        packageInstallCommand,
+        packageUpdateCommand,
+        showProjectStructureCommand,
+        generateDocsCommand,
+        benchmarksCommand,
+        showDiagnosticsCommand,
+        checkLintsCommand,
+        debugStartCommand
     );
 }
 
@@ -309,7 +610,216 @@ function registerEventHandlers(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(formatOnSave);
+    // Watch for configuration changes
+    const configWatcher = vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('cursed')) {
+            // Update providers
+            if (projectProvider) {
+                projectProvider.refresh();
+            }
+            if (dependencyProvider) {
+                dependencyProvider.refresh();
+            }
+            
+            // Update status bar
+            if (statusBar) {
+                statusBar.updateConfiguration();
+            }
+        }
+    });
+
+    // Watch for file changes
+    const fileWatcher = vscode.workspace.createFileSystemWatcher('**/*.{csd,toml}');
+    fileWatcher.onDidCreate(() => {
+        projectProvider?.refresh();
+        dependencyProvider?.refresh();
+    });
+    fileWatcher.onDidDelete(() => {
+        projectProvider?.refresh();
+        dependencyProvider?.refresh();
+    });
+    fileWatcher.onDidChange(() => {
+        projectProvider?.refresh();
+    });
+
+    context.subscriptions.push(formatOnSave, configWatcher, fileWatcher);
+}
+
+async function createNewProject(projectPath: string, projectName: string): Promise<void> {
+    const cursedPackageContent = `[package]
+name = "${projectName}"
+version = "0.1.0"
+edition = "2023"
+
+[dependencies]
+# Add your dependencies here
+
+[build]
+# Build configuration
+`;
+
+    const mainCsdContent = `// Welcome to CURSED! 🔥
+// This is your main entry point - time to slay some code!
+
+// Import the standard library for basic I/O
+import "stdlib::io"
+
+slay main() {
+    // Print a greeting that's absolutely fire
+    println("Yo! Welcome to ${projectName} - this code is about to be lowkey legendary! 💯")?
+    
+    // Variables in CURSED are sus by default (mutable)
+    sus message = "CURSED is absolutely sending me rn"
+    println(message)?
+    
+    // Facts are immutable - they don't lie
+    facts pi = 3.14159
+    println("Pi is facts: " + string(pi))?
+    
+    // Control flow with Gen Z vibes
+    sus mood = "excited"
+    vibe_check mood {
+        mood "excited" => {
+            println("We're absolutely vibing with this code! 🎉")?
+        }
+        mood "tired" => {
+            println("This code needs some coffee ☕")?
+        }
+        basic => {
+            println("Mood is unknown but the code still slaps 🔥")?
+        }
+    }
+    
+    // Loops with style
+    lowkey (sus i = 0; i < 3; i++) {
+        println("Loop iteration: " + string(i) + " - still fire! 🚀")?
+    }
+    
+    println("Project ${projectName} is ready to serve looks! ✨")?
+}
+`;
+
+    try {
+        // Create main directory if it doesn't exist
+        if (!fs.existsSync(projectPath)) {
+            fs.mkdirSync(projectPath, { recursive: true });
+        }
+
+        // Write CursedPackage.toml
+        const packagePath = path.join(projectPath, 'CursedPackage.toml');
+        fs.writeFileSync(packagePath, cursedPackageContent);
+
+        // Write main.csd
+        const mainPath = path.join(projectPath, 'main.csd');
+        fs.writeFileSync(mainPath, mainCsdContent);
+
+        // Create src directory
+        const srcDir = path.join(projectPath, 'src');
+        if (!fs.existsSync(srcDir)) {
+            fs.mkdirSync(srcDir);
+        }
+
+        // Create tests directory
+        const testsDir = path.join(projectPath, 'tests');
+        if (!fs.existsSync(testsDir)) {
+            fs.mkdirSync(testsDir);
+        }
+
+        // Create example test
+        const testContent = `// Test file for ${projectName}
+import "stdlib::testing"
+
+test "basic_test" {
+    facts expected = "test"
+    facts actual = "test"
+    assert_eq(expected, actual)
+}
+`;
+        fs.writeFileSync(path.join(testsDir, 'basic_test.csd'), testContent);
+
+        vscode.window.showInformationMessage(`New CURSED project "${projectName}" created successfully! 🎉`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create project: ${error}`);
+        throw error;
+    }
+}
+
+async function generateProjectStructureHtml(): Promise<string> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        return '<h1>No workspace folder found</h1>';
+    }
+
+    const rootPath = workspaceFolders[0].uri.fsPath;
+    
+    function scanDirectory(dirPath: string, level: number = 0): string {
+        const items: string[] = [];
+        const indent = '  '.repeat(level);
+        
+        try {
+            const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+            
+            for (const entry of entries) {
+                if (entry.name.startsWith('.')) continue;
+                
+                const icon = entry.isDirectory() ? '📁' : getFileIcon(entry.name);
+                const itemPath = path.join(dirPath, entry.name);
+                
+                items.push(`${indent}${icon} ${entry.name}`);
+                
+                if (entry.isDirectory() && level < 3) {
+                    items.push(scanDirectory(itemPath, level + 1));
+                }
+            }
+        } catch (error) {
+            items.push(`${indent}❌ Error reading directory`);
+        }
+        
+        return items.join('\\n');
+    }
+    
+    function getFileIcon(fileName: string): string {
+        const ext = path.extname(fileName).toLowerCase();
+        switch (ext) {
+            case '.csd': return '🔥';
+            case '.toml': return '⚙️';
+            case '.md': return '📝';
+            case '.json': return '📄';
+            default: return '📄';
+        }
+    }
+
+    const structure = scanDirectory(rootPath);
+    
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>CURSED Project Structure</title>
+            <style>
+                body { 
+                    font-family: 'Courier New', monospace; 
+                    padding: 20px; 
+                    background: #1e1e1e; 
+                    color: #d4d4d4; 
+                }
+                h1 { color: #ff6b35; }
+                pre { 
+                    background: #2d2d30; 
+                    padding: 15px; 
+                    border-radius: 5px; 
+                    overflow-x: auto; 
+                }
+                .highlight { color: #ff6b35; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <h1>🔥 CURSED Project Structure</h1>
+            <p>This project is absolutely <span class="highlight">fire</span>! Here's the structure:</p>
+            <pre>${structure}</pre>
+        </body>
+        </html>
+    `;
 }
 
 // Webview content generators
@@ -531,8 +1041,29 @@ function escapeHtml(text: string): string {
 }
 
 export function deactivate(): Thenable<void> | undefined {
+    console.log('CURSED Language Support extension is deactivating...');
+    
+    // Clean up status bar
+    if (statusBar) {
+        statusBar.dispose();
+    }
+    
+    // Clean up terminal manager
+    if (terminalManager) {
+        terminalManager.dispose();
+    }
+    
+    // Clean up output channels
+    if (outputChannels) {
+        outputChannels.dispose();
+    }
+    
+    // Stop language client
     if (!client) {
         return undefined;
     }
-    return client.stop();
+    
+    return client.stop().then(() => {
+        console.log('CURSED Language Support extension deactivated successfully');
+    });
 }
