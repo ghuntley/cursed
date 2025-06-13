@@ -66,6 +66,8 @@ pub enum Error {
     },
     /// Process management errors
     ProcessError(String),
+    /// Optimization errors
+    OptimizationError(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -113,6 +115,7 @@ impl Clone for Error {
                 column: *column,
             },
             Error::ProcessError(msg) => Error::ProcessError(msg.clone()),
+            Error::OptimizationError(msg) => Error::OptimizationError(msg.clone()),
         }
     }
 }
@@ -182,6 +185,7 @@ impl fmt::Display for Error {
                 write!(f, ": {}", message)
             }
             Error::ProcessError(msg) => write!(f, "Process error: {}", msg),
+            Error::OptimizationError(msg) => write!(f, "Optimization error: {}", msg),
         }
     }
 }
@@ -389,6 +393,11 @@ impl Error {
     /// Create a process error
     pub fn process_error(message: String) -> Self {
         Error::ProcessError(message)
+    }
+
+    /// Create an optimization error
+    pub fn optimization_error(message: String) -> Self {
+        Error::OptimizationError(message)
     }
 }
 

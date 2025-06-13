@@ -14,6 +14,8 @@ pub mod ed25519;
 pub mod rsa;
 pub mod ecc;
 pub mod x25519;
+pub mod key_exchange;
+pub mod asymmetric;
 
 // Core functionality exports
 pub use key_generator::{KeyGenerator, AsymmetricAlgorithm, GeneratedKeyPair, KeyGeneratorError};
@@ -36,7 +38,17 @@ pub use x25519::{
     x25519_generate_keypair, x25519_generate_ephemeral_keypair, x25519_generate_keypair_from_seed,
     x25519_key_exchange, x25519_derive_public_key, x25519_validate_public_key
 };
+pub use key_exchange::{
+    KeyExchangeAlgorithm, KeyExchangeResult, DhParameters, DhKeyPair,
+    dh_key_exchange, dh_generate_keypair, x448_key_exchange, x448_generate_keypair,
+    validate_key_exchange_params, list_key_exchange_algorithms, derive_key_from_shared_secret
+};
 pub use key_generator::{generate_asymmetric_keypair, list_asymmetric_algorithms};
+pub use asymmetric::{
+    AsymmetricCrypto, generate_asymmetric_keypair as generate_keypair_unified,
+    asymmetric_sign, asymmetric_verify, asymmetric_key_exchange,
+    get_asymmetric_algorithms, get_asymmetric_capabilities
+};
 
 use crate::error::CursedError;
 
@@ -86,8 +98,25 @@ pub fn init_crypto_asymmetric() -> Result<(), CursedError> {
         }
     }
     
+    // Test key exchange algorithms
+    println!("   Testing key exchange algorithms...");
+    match x25519_generate_keypair(vec![]) {
+        Ok(_) => println!("   ✅ X25519: key generation working"),
+        Err(e) => println!("   ❌ X25519: {}", e),
+    }
+    
+    match x448_generate_keypair(vec![]) {
+        Ok(_) => println!("   ✅ X448: key generation working"),
+        Err(e) => println!("   ❌ X448: {}", e),
+    }
+    
+    match dh_generate_keypair(vec![]) {
+        Ok(_) => println!("   ✅ Diffie-Hellman: key generation working"),
+        Err(e) => println!("   ❌ Diffie-Hellman: {}", e),
+    }
+    
     println!("🔑 Asymmetric crypto package initialized successfully!");
-    println!("   Features: RSA encryption/signatures, ECDSA signatures, Ed25519 signatures, X25519 key exchange");
+    println!("   Features: RSA encryption/signatures, ECDSA signatures, Ed25519 signatures, X25519/X448/DH key exchange");
     println!("   Security: Production-ready cryptographic implementations with proper validation");
     
     Ok(())
@@ -104,6 +133,8 @@ pub fn get_crypto_capabilities() -> Vec<String> {
         "ECDSA-P521 signatures".to_string(),
         "Ed25519 high-performance signatures".to_string(),
         "X25519 elliptic curve Diffie-Hellman".to_string(),
+        "X448 elliptic curve Diffie-Hellman".to_string(),
+        "Classic Diffie-Hellman key exchange".to_string(),
         "Multiple padding schemes (PKCS#1 v1.5, OAEP, PSS)".to_string(),
         "Key serialization (PEM, DER, raw formats)".to_string(),
         "Secure random key generation".to_string(),
@@ -115,5 +146,5 @@ pub fn get_crypto_capabilities() -> Vec<String> {
 /// fr fr Crypto asymmetric package version info
 pub const CRYPTO_ASYMMETRIC_VERSION: &str = "1.0.0";
 pub const CRYPTO_ASYMMETRIC_FEATURES: &[&str] = &[
-    "RSA", "ECC", "Ed25519", "X25519", "ECDSA", "ECDH", "PEM", "DER"
+    "RSA", "ECC", "Ed25519", "X25519", "X448", "DH", "ECDSA", "ECDH", "PEM", "DER"
 ];

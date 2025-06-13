@@ -38,6 +38,8 @@ pub mod optimization;
 pub mod process;
 pub mod ipc;
 pub mod type_switch;
+pub mod jit_engine;
+pub mod jit_compilation;
 // pub mod database_integration; // Temporarily disabled due to lifetime issues
 
 pub use debug_integration::LlvmDebugCodeGenerator;
@@ -68,6 +70,8 @@ pub use optimization::{OptimizationManager, OptimizationLevel, OptimizationConfi
 pub use process::{ProcessCompiler, ProcessIoOperation};
 pub use ipc::{IpcCompiler, SharedMemoryOperation, PipeOperation, MessageQueueOperation, SemaphoreOperation, SignalOperation};
 pub use type_switch::{TypeSwitchCompilation, TypeSwitchContext, LlvmTypeSwitchCompiler, TypeSwitchUtils};
+pub use jit_engine::{CursedJitEngine, JitEngineConfig, JitEngineStats, JitError, create_optimized_jit_engine, create_debug_jit_engine, create_production_jit_engine};
+pub use jit_compilation::{JitCompilationInterface, JitCompilationConfig, JitCompilationStats, CompiledFunction, HotPathDetector, create_optimized_jit_interface, create_debug_jit_interface};
 // pub use database_integration::{DatabaseLlvmRegistry, DatabaseTypeMapping}; // Temporarily disabled
 
 // Export the real LLVM code generator for tests will be added after struct definition
@@ -191,6 +195,9 @@ pub struct LlvmCodeGenerator {
     type_context: TypeCompilationContext,
     gc_integration: Option<LlvmGcIntegration>,
     package_context: Option<LlvmPackageContext>,
+    // Optimization integration
+    optimization_manager: Option<crate::optimization::AdvancedOptimizationManager>,
+    optimization_enabled: bool,
     // State management for code generation
     temp_counter: std::cell::RefCell<u64>,
     block_counter: std::cell::RefCell<u64>,
@@ -213,6 +220,9 @@ pub struct LlvmCodeGeneratorReal<'ctx> {
     type_context: TypeCompilationContext,
     gc_integration: Option<LlvmGcIntegration>,
     package_context: Option<LlvmPackageContext>,
+    // Optimization integration
+    optimization_manager: Option<crate::optimization::AdvancedOptimizationManager>,
+    optimization_enabled: bool,
     // State management for code generation
     temp_counter: std::cell::RefCell<u64>,
     block_counter: std::cell::RefCell<u64>,
@@ -232,6 +242,8 @@ impl LlvmCodeGenerator {
             type_context: TypeCompilationContext::new("default_module".to_string()),
             gc_integration: None,
             package_context: None,
+            optimization_manager: None,
+            optimization_enabled: false,
             temp_counter: std::cell::RefCell::new(0),
             block_counter: std::cell::RefCell::new(0),
             current_function: std::cell::RefCell::new(None),
@@ -247,6 +259,11 @@ impl LlvmCodeGenerator {
         builder: inkwell::builder::Builder<'ctx>,
         runtime: std::sync::Arc<crate::runtime::Runtime>,
     ) -> Result<LlvmCodeGeneratorReal<'ctx>, Error> {
+        // Initialize optimization manager with default configuration
+        let optimization_config = crate::optimization::OptimizationConfig::default();
+        let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&optimization_config)
+            .map_err(|e| Error::OptimizationError(format!("Failed to create optimization manager: {:?}", e)))?;
+
         Ok(LlvmCodeGeneratorReal {
             context,
             module,
@@ -259,6 +276,8 @@ impl LlvmCodeGenerator {
             type_context: TypeCompilationContext::new("llvm_module".to_string()),
             gc_integration: None,
             package_context: None,
+            optimization_manager: Some(optimization_manager),
+            optimization_enabled: true,
             temp_counter: std::cell::RefCell::new(0),
             block_counter: std::cell::RefCell::new(0),
             current_function: std::cell::RefCell::new(None),
@@ -714,6 +733,41 @@ impl LlvmCodeGenerator {
     pub fn package_integration_enabled(&self) -> bool {
         self.package_context.is_some()
     }
+
+    /// Enable optimization with custom configuration
+    pub fn enable_optimization(&mut self, config: crate::optimization::OptimizationConfig) -> Result<(), Error> {
+        let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&config)
+            .map_err(|e| Error::OptimizationError(format!("Failed to create optimization manager: {:?}", e)))?;
+        
+        self.optimization_manager = Some(optimization_manager);
+        self.optimization_enabled = true;
+        Ok(())
+    }
+
+    /// Disable optimization
+    pub fn disable_optimization(&mut self) {
+        self.optimization_enabled = false;
+        self.optimization_manager = None;
+    }
+
+    /// Check if optimization is enabled
+    pub fn optimization_enabled(&self) -> bool {
+        self.optimization_enabled && self.optimization_manager.is_some()
+    }
+
+    /// Get optimization statistics
+    pub fn get_optimization_stats(&self) -> Option<crate::optimization::OptimizationStatistics> {
+        self.optimization_manager.as_ref().map(|manager| manager.get_statistics())
+    }
+
+    /// Print optimization summary
+    pub fn print_optimization_summary(&self) {
+        if let Some(ref manager) = self.optimization_manager {
+            manager.print_summary();
+        } else {
+            println!("🔧 No optimization performed (optimization disabled)");
+        }
+    }
     
     /// Install a package for compilation
     pub async fn install_package(&mut self, package_name: &str) -> Result<crate::package_manager::PackageMetadata, Error> {
@@ -966,6 +1020,8 @@ impl<'ctx> LlvmCodeGeneratorReal<'ctx> {
             type_context: TypeCompilationContext::new("llvm_module".to_string()),
             gc_integration: None,
             package_context: None,
+            optimization_manager: None,
+            optimization_enabled: false,
             temp_counter: std::cell::RefCell::new(0),
             block_counter: std::cell::RefCell::new(0),
             current_function: std::cell::RefCell::new(None),
@@ -999,6 +1055,17 @@ impl<'ctx> LlvmCodeGeneratorReal<'ctx> {
         
         self.builder.position_at_end(basic_block);
         self.builder.build_return(Some(&i32_type.const_zero())).unwrap();
+        
+        // Run optimization passes if enabled
+        if self.optimization_enabled {
+            if let Some(ref manager) = self.optimization_manager {
+                println!("🚀 Running advanced LLVM optimization passes...");
+                manager.optimize_module(&self.module, self.context)
+                    .map_err(|e| Error::OptimizationError(format!("Optimization failed: {:?}", e)))?;
+                println!("✅ Optimization complete!");
+                manager.print_summary();
+            }
+        }
         
         Ok(())
     }

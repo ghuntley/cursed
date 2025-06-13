@@ -491,7 +491,8 @@ pub fn create_sha3_hasher(args: Vec<Value>) -> Result<Value, CursedError> {
     
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String(variant.name().to_string()));
-    result.insert("hasher_id".to_string(), Value::String("sha3_hasher_placeholder".to_string()));
+    result.insert("hasher_id".to_string(), Value::String(format!("sha3_hasher_{:x}", 
+            std::ptr::addr_of!(*self) as usize)));
     
     if let Some(size) = variant.output_size() {
         result.insert("output_size".to_string(), Value::Number(size as f64));

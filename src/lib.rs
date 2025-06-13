@@ -16,6 +16,7 @@ pub mod codegen;
 pub mod memory;
 pub mod runtime;
 pub mod tools;
+pub mod config;
 
 // Re-export enhanced debug information types
 pub use runtime::{
@@ -49,6 +50,19 @@ pub use debug::{
 pub use runtime::debug_runtime::{
     RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint
 };
+
+// Optimization infrastructure
+pub mod optimization;
+
+// Re-export optimization components
+pub use optimization::{
+    OptimizationConfig, OptimizationManager,
+    PerformanceProfiler, CompilationProfiler, RuntimeProfiler,
+    AdaptiveJitOptimizer, HotPathProfiler, ProfileGuidedOptimizer,
+    MemoryLayoutOptimizer, AllocationOptimizer, CacheOptimizer,
+    CompilationSpeedOptimizer, ParallelAstProcessor, TypeCheckingOptimizer,
+};
+
 pub mod stdlib;
 pub mod profiling;
 pub mod docs;

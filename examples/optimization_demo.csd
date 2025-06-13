@@ -1,203 +1,180 @@
-// Optimization Demo - Examples to showcase LLVM optimization effectiveness
-// This file contains various code patterns that benefit from different optimization levels
+// CURSED Advanced Optimization Demo
+// This example demonstrates various optimization opportunities
+// that the LLVM Advanced Optimization System can exploit
 
-// Simple arithmetic that can be constant-folded
-fn constant_folding_demo() normie {
-    let a = 5 + 3;
-    let b = a * 2;
-    let c = b / 4;
-    return c + 1;
+// Function inlining example - small functions that should be inlined
+fn add(a: i32, b: i32) -> i32 {
+    return a + b;
+}
+
+fn multiply(a: i32, b: i32) -> i32 {
+    return a * b;
+}
+
+fn square(x: i32) -> i32 {
+    return multiply(x, x);  // Should inline multiply, then optimize
+}
+
+// Constant propagation example
+fn constant_example() -> i32 {
+    sus x = 10;
+    sus y = 20;
+    sus z = add(x, y);  // Should propagate constants and inline
+    return z + 5;       // Should become: return 35;
 }
 
 // Dead code elimination example
-fn dead_code_demo(x normie) normie {
-    let unused = 42;  // Dead code
-    let y = x + 1;
-    let z = y * 2;
-    let dead_result = unused * 100;  // Dead code
-    return z;
-}
-
-// Function that can benefit from inlining
-fn small_helper(a normie, b normie) normie {
-    return a + b * 2;
-}
-
-fn inlining_demo(x normie) normie {
-    let result1 = small_helper(x, 5);
-    let result2 = small_helper(result1, 3);
-    return result2;
-}
-
-// Loop that can benefit from optimization
-fn loop_optimization_demo(n normie) normie {
-    let sum = 0;
-    let i = 0;
+fn dead_code_example(condition: bool) -> i32 {
+    sus result = 0;
     
-    while i < n {
-        sum = sum + i;
-        i = i + 1;
+    lowkey (condition) {
+        result = 42;
+    } else {
+        result = 24;
+    }
+    
+    // Dead code that should be eliminated
+    lowkey (false) {
+        result = 999;  // Unreachable
+    }
+    
+    // Unused variable
+    sus unused = 100;
+    
+    return result;
+}
+
+// Loop optimization example - should be unrolled
+fn loop_unroll_example() -> i32 {
+    sus sum = 0;
+    
+    // Small loop that should be completely unrolled
+    lowkey (sus i = 0; i < 4; i++) {
+        sum = add(sum, i);  // Should inline add() and unroll loop
     }
     
     return sum;
 }
 
-// Loop with invariant code motion opportunities
-fn loop_invariant_demo(arr []normie, multiplier normie) []normie {
-    let result []normie;
-    let i = 0;
-    
-    while i < len(arr) {
-        // This calculation could be moved outside the loop
-        let constant_factor = multiplier * 2 + 5;
-        result = append(result, arr[i] * constant_factor);
-        i = i + 1;
-    }
-    
-    return result;
-}
-
 // Common subexpression elimination example
-fn cse_demo(a normie, b normie, c normie) normie {
-    let x = a + b;
-    let y = x * c;
-    let z = a + b;  // Common subexpression
-    return y + z;
+fn cse_example(a: i32, b: i32, c: i32) -> i32 {
+    sus temp1 = add(a, b);
+    sus temp2 = multiply(temp1, c);
+    sus temp3 = add(a, b);      // Same as temp1 - should be eliminated
+    sus temp4 = multiply(temp3, c); // Should reuse temp2
+    
+    return add(temp2, temp4);
 }
 
-// Redundant memory operations
-fn memory_optimization_demo(x normie) normie {
-    let temp = x;
-    temp = temp + 1;
-    temp = temp * 2;
-    temp = temp - 1;
-    return temp;
-}
-
-// Branch optimization example
-fn branch_optimization_demo(condition bool, x normie) normie {
-    if condition {
-        if condition {  // Redundant check
-            return x + 1;
-        } else {
-            return x;
-        }
-    } else {
-        return x - 1;
-    }
-}
-
-// Tail call optimization candidate
-fn tail_recursive_factorial(n normie, acc normie) normie {
-    if n <= 1 {
+// Tail call optimization example
+fn factorial_tail(n: i32, acc: i32) -> i32 {
+    lowkey (n <= 1) {
         return acc;
+    } else {
+        return factorial_tail(n - 1, multiply(n, acc));  // Tail call
     }
-    return tail_recursive_factorial(n - 1, acc * n);
 }
 
-fn tail_call_demo(n normie) normie {
-    return tail_recursive_factorial(n, 1);
+fn factorial(n: i32) -> i32 {
+    return factorial_tail(n, 1);
 }
 
-// Vectorization opportunity (simple array operations)
-fn vectorization_demo(arr []normie) []normie {
-    let result []normie;
-    let i = 0;
+// Memory optimization example
+fn memory_example() -> i32 {
+    sus array = [1, 2, 3, 4, 5];
+    sus sum = 0;
     
-    while i < len(arr) {
-        // Simple arithmetic that could be vectorized
-        result = append(result, arr[i] * 2 + 1);
-        i = i + 1;
+    // Memory access pattern that can be optimized
+    lowkey (sus i = 0; i < 5; i++) {
+        sum = add(sum, array[i]);
     }
     
-    return result;
+    return sum;
 }
 
 // Complex optimization example combining multiple opportunities
-fn complex_optimization_demo(data []normie, threshold normie) normie {
-    let sum = 0;
-    let count = 0;
-    let i = 0;
+fn complex_example(n: i32) -> i32 {
+    // Constant that should be propagated
+    sus multiplier = 2;
+    sus result = 0;
     
-    // Loop with multiple optimization opportunities
-    while i < len(data) {
-        let value = data[i];
+    // Loop with inlining and CSE opportunities
+    lowkey (sus i = 0; i < n; i++) {
+        sus temp = multiply(i, multiplier);     // multiply() should inline
+        sus squared = square(temp);             // square() and multiply() should inline
+        result = add(result, squared);          // add() should inline
         
-        // Constant calculation (could be moved out)
-        let adjusted_threshold = threshold + 5;
-        
-        if value > adjusted_threshold {
-            // Dead code if condition is never true
-            let unused_calc = value * 100;
-            
-            sum = sum + value;
-            count = count + 1;
-            
-            // Common subexpression
-            let processed_value = value + adjusted_threshold;
-            sum = sum + processed_value;
+        // Dead code in loop
+        lowkey (false) {
+            result = 0;  // Should be eliminated
         }
-        
-        i = i + 1;
     }
     
-    if count > 0 {
-        return sum / count;
-    } else {
-        return 0;
-    }
+    // Constant folding opportunity
+    sus bonus = add(10, 5);  // Should become: sus bonus = 15;
+    
+    return add(result, bonus);
 }
 
-// Main function demonstrating different optimization scenarios
-fn main() normie {
-    vibez.spill("Running optimization demo...");
+// Main function to demonstrate all optimizations
+fn main() -> i32 {
+    sus result = 0;
     
-    // Test constant folding
-    let folded = constant_folding_demo();
-    vibez.spill("Constant folding result: " + folded.as.string);
+    // Simple function calls that should be inlined
+    result = add(result, constant_example());
+    result = add(result, dead_code_example(true));
+    result = add(result, loop_unroll_example());
+    result = add(result, cse_example(1, 2, 3));
+    result = add(result, factorial(5));
+    result = add(result, memory_example());
+    result = add(result, complex_example(10));
     
-    // Test dead code elimination
-    let dead_result = dead_code_demo(10);
-    vibez.spill("Dead code demo result: " + dead_result.as.string);
+    // Print optimization opportunities for analysis
+    print("Optimization demo completed!\n");
+    print("Total result: ");
+    print(result);
+    print("\n");
     
-    // Test inlining
-    let inlined = inlining_demo(5);
-    vibez.spill("Inlining demo result: " + inlined.as.string);
-    
-    // Test loop optimization
-    let loop_result = loop_optimization_demo(100);
-    vibez.spill("Loop optimization result: " + loop_result.as.string);
-    
-    // Test CSE
-    let cse_result = cse_demo(3, 4, 5);
-    vibez.spill("CSE demo result: " + cse_result.as.string);
-    
-    // Test memory optimization
-    let mem_result = memory_optimization_demo(10);
-    vibez.spill("Memory optimization result: " + mem_result.as.string);
-    
-    // Test branch optimization
-    let branch_result = branch_optimization_demo(true, 20);
-    vibez.spill("Branch optimization result: " + branch_result.as.string);
-    
-    // Test tail call optimization
-    let factorial_result = tail_call_demo(5);
-    vibez.spill("Tail call demo result: " + factorial_result.as.string);
-    
-    // Test with array data
-    let test_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let vectorized = vectorization_demo(test_array);
-    vibez.spill("Vectorization demo completed");
-    
-    // Test loop invariant motion
-    let invariant_result = loop_invariant_demo(test_array, 3);
-    vibez.spill("Loop invariant demo completed");
-    
-    // Test complex optimization
-    let complex_result = complex_optimization_demo(test_array, 5);
-    vibez.spill("Complex optimization result: " + complex_result.as.string);
-    
-    vibez.spill("Optimization demo completed!");
+    // Expected optimizations:
+    // 1. All add(), multiply(), square() calls inlined
+    // 2. Constants propagated (10, 20, 5, etc.)
+    // 3. Dead code eliminated (unreachable branches)
+    // 4. Small loops unrolled completely
+    // 5. Common subexpressions eliminated
+    // 6. Tail recursion optimized to loop
+    // 7. Memory access patterns optimized
+    // 8. Complex nested optimizations applied
     
     return 0;
+}
+
+// Additional functions to test interprocedural optimization
+fn helper1(x: i32) -> i32 {
+    return add(x, 10);  // Should inline across modules
+}
+
+fn helper2(x: i32) -> i32 {
+    return multiply(helper1(x), 2);  // Chain of inlining
+}
+
+// Profile-guided optimization candidate
+fn hot_path(data: [i32; 1000]) -> i32 {
+    sus sum = 0;
+    
+    // Hot loop that would benefit from aggressive optimization
+    lowkey (sus i = 0; i < 1000; i++) {
+        lowkey (data[i] > 0) {
+            sum = add(sum, data[i]);
+        }
+    }
+    
+    return sum;
+}
+
+// Function with optimization barriers (should not be over-optimized)
+fn careful_function(ptr: *mut i32) -> i32 {
+    // Memory operations that need careful optimization
+    sus value = *ptr;
+    *ptr = add(value, 1);
+    return value;
 }

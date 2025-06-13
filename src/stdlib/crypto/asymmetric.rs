@@ -24,6 +24,10 @@ use rand::{rngs::OsRng, RngCore};
 use base64::{Engine as _, engine::general_purpose};
 use pem::{Pem, encode, parse};
 use der::{Encode, Decode};
+use pkcs8::{EncodePrivateKey, DecodePrivateKey, EncodePublicKey, DecodePublicKey};
+use spki::{SubjectPublicKeyInfoRef, SubjectPublicKeyInfo};
+use rsa::pkcs1v15::{SigningKey as Pkcs1v15SigningKey, VerifyingKey as Pkcs1v15VerifyingKey};
+use rsa::pss::{SigningKey as PssSigningKey, VerifyingKey as PssVerifyingKey};
 
 // Re-export from packages for convenience
 // TODO: Re-enable when crypto_asymmetric package is fully implemented
@@ -885,8 +889,26 @@ pub fn rsa_encrypt(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("RSA encrypt requires public key and plaintext".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("encrypted_data_placeholder".to_string()))
+    let public_key_pem = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Public key must be a string (PEM format)".to_string())),
+    };
+    
+    let plaintext = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Plaintext must be a string".to_string())),
+    };
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.rsa_public_key_from_pem(public_key_pem) {
+        Ok(public_key) => {
+            match crypto.rsa_encrypt(&public_key, plaintext, None) {
+                Ok(ciphertext) => Ok(Value::String(general_purpose::STANDARD.encode(&ciphertext))),
+                Err(e) => Err(CursedError::Runtime(format!("RSA encryption failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid public key: {}", e)))
+    }
 }
 
 /// slay RSA decryption  
@@ -895,8 +917,29 @@ pub fn rsa_decrypt(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::Runtime("RSA decrypt requires private key and ciphertext".to_string()));
     }
     
-    // Placeholder implementation - would need proper key serialization/deserialization
-    Ok(Value::String("decrypted_data_placeholder".to_string()))
+    let private_key_pem = match &args[0] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Private key must be a string (PEM format)".to_string())),
+    };
+    
+    let ciphertext_b64 = match &args[1] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Ciphertext must be a string (base64)".to_string())),
+    };
+    
+    let ciphertext = general_purpose::STANDARD.decode(ciphertext_b64)
+        .map_err(|e| CursedError::Runtime(format!("Invalid base64 ciphertext: {}", e)))?;
+    
+    let crypto = AsymmetricCrypto::new();
+    match crypto.rsa_private_key_from_pem(private_key_pem) {
+        Ok(private_key) => {
+            match crypto.rsa_decrypt(&private_key, &ciphertext, None) {
+                Ok(plaintext) => Ok(Value::String(String::from_utf8_lossy(&plaintext).to_string())),
+                Err(e) => Err(CursedError::Runtime(format!("RSA decryption failed: {}", e)))
+            }
+        }
+        Err(e) => Err(CursedError::Runtime(format!("Invalid private key: {}", e)))
+    }
 }
 
 /// slay RSA signing

@@ -14,6 +14,15 @@ use crate::stdlib::packages::crypto_kdf::{pbkdf2, scrypt, KdfResult};
 use crate::stdlib::packages::crypto_advanced::{constant_time_compare, SecureMemory, ZeroOnDrop};
 use aes_gcm::{Aes256Gcm as AesGcmCipher, Key, Nonce, KeyInit};
 use aes_gcm::aead::{Aead, Payload};
+use aes::Aes256;
+use aes_cbc::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
+use cbc::{Encryptor, Decryptor};
+use chacha20::ChaCha20;
+use chacha20::cipher::{KeyIvInit as ChaChaKeyIvInit, StreamCipher};
+use chacha20poly1305::{ChaCha20Poly1305, aead::{Aead as ChaChaAead, KeyInit as ChaChaKeyInit}};
+use pbkdf2::pbkdf2_hmac;
+use sha2::Sha256;
+use hmac::{Hmac, Mac};
 
 /// fr fr Comprehensive crypto error types
 #[derive(Debug, Clone)]
@@ -184,6 +193,36 @@ impl Aes256Cbc {
         let key = EncryptionKey::generate("AES-256-CBC", 32)?;
         Ok(Self { key })
     }
+    
+    /// Apply PKCS#7 padding
+    fn apply_pkcs7_padding(&self, data: &[u8]) -> Vec<u8> {
+        let block_size = 16;
+        let padding_len = block_size - (data.len() % block_size);
+        let mut padded = data.to_vec();
+        padded.extend(vec![padding_len as u8; padding_len]);
+        padded
+    }
+    
+    /// Remove PKCS#7 padding
+    fn remove_pkcs7_padding(&self, data: &[u8]) -> CryptoResult<Vec<u8>> {
+        if data.is_empty() {
+            return Err(CryptoError::PaddingError("Empty data for padding removal".to_string()));
+        }
+        
+        let padding_len = *data.last().unwrap() as usize;
+        if padding_len == 0 || padding_len > 16 || padding_len > data.len() {
+            return Err(CryptoError::PaddingError("Invalid padding length".to_string()));
+        }
+        
+        // Verify padding bytes
+        for &byte in &data[data.len() - padding_len..] {
+            if byte != padding_len as u8 {
+                return Err(CryptoError::PaddingError("Invalid padding bytes".to_string()));
+            }
+        }
+        
+        Ok(data[..data.len() - padding_len].to_vec())
+    }
 }
 
 impl SymmetricEncryption for Aes256Cbc {
@@ -194,17 +233,14 @@ impl SymmetricEncryption for Aes256Cbc {
             .map_err(|e| CryptoError::RandomGenerationFailed(format!("IV generation failed: {:?}", e)))?;
         
         // Apply PKCS#7 padding
-        let padded_plaintext = super::utils::apply_padding(plaintext, 16)?;
+        let padded_plaintext = self.apply_pkcs7_padding(plaintext);
         
-        // Placeholder for actual AES-CBC encryption
-        // In a real implementation, this would use a proper crypto library
-        let mut ciphertext = padded_plaintext.clone();
+        // Real AES-CBC encryption
+        type Aes256CbcEnc = cbc::Encryptor<Aes256>;
+        let cipher = Aes256CbcEnc::new_from_slices(self.key.as_bytes(), &iv)
+            .map_err(|e| CryptoError::EncryptionFailed(format!("AES-CBC cipher init failed: {:?}", e)))?;
         
-        // Simple XOR with key for demonstration (NOT SECURE - replace with real AES)
-        for (i, byte) in ciphertext.iter_mut().enumerate() {
-            *byte ^= self.key.as_bytes()[i % self.key.size()];
-            *byte ^= iv[i % iv.len()];
-        }
+        let ciphertext = cipher.encrypt_vec(&padded_plaintext);
         
         Ok(EncryptionResult {
             ciphertext,
@@ -239,17 +275,16 @@ impl SymmetricDecryption for Aes256Cbc {
             return Err(CryptoError::InvalidIvSize(format!("Expected 16-byte IV, got {}", iv.len())));
         }
         
-        // Placeholder for actual AES-CBC decryption
-        let mut plaintext = ciphertext.to_vec();
+        // Real AES-CBC decryption
+        type Aes256CbcDec = cbc::Decryptor<Aes256>;
+        let cipher = Aes256CbcDec::new_from_slices(self.key.as_bytes(), iv)
+            .map_err(|e| CryptoError::DecryptionFailed(format!("AES-CBC cipher init failed: {:?}", e)))?;
         
-        // Reverse the simple XOR (NOT SECURE - replace with real AES)
-        for (i, byte) in plaintext.iter_mut().enumerate() {
-            *byte ^= self.key.as_bytes()[i % self.key.size()];
-            *byte ^= iv[i % iv.len()];
-        }
+        let mut plaintext = cipher.decrypt_vec(ciphertext)
+            .map_err(|e| CryptoError::DecryptionFailed(format!("AES-CBC decryption failed: {:?}", e)))?;
         
         // Remove PKCS#7 padding
-        let unpadded = super::utils::remove_padding(&plaintext)?;
+        let unpadded = self.remove_pkcs7_padding(&plaintext)?;
         
         Ok(DecryptionResult {
             plaintext: unpadded,
@@ -426,17 +461,12 @@ impl SymmetricEncryption for ChaCha20 {
         fill_random(&mut nonce)
             .map_err(|e| CryptoError::RandomGenerationFailed(format!("Nonce generation failed: {:?}", e)))?;
         
-        // Placeholder for actual ChaCha20 encryption
-        // In a real implementation, this would use the ChaCha20 algorithm
-        let mut ciphertext = plaintext.to_vec();
+        // Real ChaCha20 encryption
+        let mut cipher = chacha20::ChaCha20::new_from_slices(self.key.as_bytes(), &nonce)
+            .map_err(|e| CryptoError::EncryptionFailed(format!("ChaCha20 cipher init failed: {:?}", e)))?;
         
-        // Simple stream cipher simulation (NOT SECURE - replace with real ChaCha20)
-        for (i, byte) in ciphertext.iter_mut().enumerate() {
-            let keystream_byte = (self.key.as_bytes()[i % self.key.size()]
-                                ^ nonce[i % nonce.len()]
-                                ^ ((i as u8).wrapping_mul(251))) as u8;
-            *byte ^= keystream_byte;
-        }
+        let mut ciphertext = plaintext.to_vec();
+        cipher.apply_keystream(&mut ciphertext);
         
         Ok(EncryptionResult {
             ciphertext,
@@ -471,15 +501,12 @@ impl SymmetricDecryption for ChaCha20 {
             return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce.len())));
         }
         
-        // ChaCha20 decryption is the same as encryption (XOR with keystream)
-        let mut plaintext = ciphertext.to_vec();
+        // Real ChaCha20 decryption (same as encryption - XOR with keystream)
+        let mut cipher = chacha20::ChaCha20::new_from_slices(self.key.as_bytes(), nonce)
+            .map_err(|e| CryptoError::DecryptionFailed(format!("ChaCha20 cipher init failed: {:?}", e)))?;
         
-        for (i, byte) in plaintext.iter_mut().enumerate() {
-            let keystream_byte = (self.key.as_bytes()[i % self.key.size()]
-                                ^ nonce[i % nonce.len()]
-                                ^ ((i as u8).wrapping_mul(251))) as u8;
-            *byte ^= keystream_byte;
-        }
+        let mut plaintext = ciphertext.to_vec();
+        cipher.apply_keystream(&mut plaintext);
         
         Ok(DecryptionResult {
             plaintext,
@@ -516,33 +543,42 @@ impl ChaCha20Poly1305Aead {
 impl SymmetricEncryption for ChaCha20Poly1305Aead {
     fn encrypt(&self, plaintext: &[u8], associated_data: &[u8]) -> CryptoResult<EncryptionResult> {
         // Generate random nonce (12 bytes)
-        let mut nonce = vec![0u8; 12];
-        fill_random(&mut nonce)
+        let mut nonce_bytes = vec![0u8; 12];
+        fill_random(&mut nonce_bytes)
             .map_err(|e| CryptoError::RandomGenerationFailed(format!("Nonce generation failed: {:?}", e)))?;
         
-        // Encrypt with ChaCha20
-        let mut ciphertext = plaintext.to_vec();
-        for (i, byte) in ciphertext.iter_mut().enumerate() {
-            let keystream_byte = (self.key.as_bytes()[i % self.key.size()]
-                                ^ nonce[i % nonce.len()]
-                                ^ ((i as u8).wrapping_mul(251))) as u8;
-            *byte ^= keystream_byte;
+        // Real ChaCha20-Poly1305 encryption
+        let cipher = ChaCha20Poly1305::new_from_slice(self.key.as_bytes())
+            .map_err(|e| CryptoError::EncryptionFailed(format!("ChaCha20-Poly1305 cipher init failed: {:?}", e)))?;
+        
+        let nonce = chacha20poly1305::Nonce::from_slice(&nonce_bytes);
+        
+        // Prepare payload with associated data
+        let payload = if associated_data.is_empty() {
+            chacha20poly1305::aead::Payload::from(plaintext)
+        } else {
+            chacha20poly1305::aead::Payload {
+                msg: plaintext,
+                aad: associated_data,
+            }
+        };
+        
+        // Perform ChaCha20-Poly1305 encryption
+        let ciphertext_with_tag = cipher.encrypt(nonce, payload)
+            .map_err(|e| CryptoError::EncryptionFailed(format!("ChaCha20-Poly1305 encryption failed: {:?}", e)))?;
+        
+        // Split ciphertext and tag (tag is last 16 bytes)
+        if ciphertext_with_tag.len() < 16 {
+            return Err(CryptoError::EncryptionFailed("Invalid ciphertext length".to_string()));
         }
         
-        // Generate Poly1305 authentication tag (placeholder)
-        let mut tag = vec![0u8; 16];
-        for (i, byte) in tag.iter_mut().enumerate() {
-            *byte = (ciphertext[i % ciphertext.len()]
-                   ^ associated_data.get(i % associated_data.len().max(1)).unwrap_or(&0)
-                   ^ self.key.as_bytes()[(i + 16) % self.key.size()]
-                   ^ nonce[i % nonce.len()]) as u8;
-        }
+        let (ciphertext, tag) = ciphertext_with_tag.split_at(ciphertext_with_tag.len() - 16);
         
         Ok(EncryptionResult {
-            ciphertext,
+            ciphertext: ciphertext.to_vec(),
             iv: None,
-            nonce: Some(nonce),
-            tag: Some(tag),
+            nonce: Some(nonce_bytes),
+            tag: Some(tag.to_vec()),
             salt: None,
             algorithm: "ChaCha20-Poly1305".to_string(),
             mode: "AEAD".to_string(),
@@ -564,41 +600,43 @@ impl SymmetricEncryption for ChaCha20Poly1305Aead {
 
 impl SymmetricDecryption for ChaCha20Poly1305Aead {
     fn decrypt(&self, ciphertext: &[u8], associated_data: &[u8], metadata: &EncryptionResult) -> CryptoResult<DecryptionResult> {
-        let nonce = metadata.nonce.as_ref()
+        let nonce_bytes = metadata.nonce.as_ref()
             .ok_or_else(|| CryptoError::DecryptionFailed("Missing nonce for ChaCha20-Poly1305".to_string()))?;
         
         let tag = metadata.tag.as_ref()
             .ok_or_else(|| CryptoError::DecryptionFailed("Missing authentication tag for ChaCha20-Poly1305".to_string()))?;
         
-        if nonce.len() != 12 {
-            return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce.len())));
+        if nonce_bytes.len() != 12 {
+            return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce_bytes.len())));
         }
         
         if tag.len() != 16 {
             return Err(CryptoError::InvalidDataSize(format!("Expected 16-byte tag, got {}", tag.len())));
         }
         
-        // Verify Poly1305 authentication tag
-        let mut expected_tag = vec![0u8; 16];
-        for (i, byte) in expected_tag.iter_mut().enumerate() {
-            *byte = (ciphertext[i % ciphertext.len()]
-                   ^ associated_data.get(i % associated_data.len().max(1)).unwrap_or(&0)
-                   ^ self.key.as_bytes()[(i + 16) % self.key.size()]
-                   ^ nonce[i % nonce.len()]) as u8;
-        }
+        // Real ChaCha20-Poly1305 decryption
+        let cipher = ChaCha20Poly1305::new_from_slice(self.key.as_bytes())
+            .map_err(|e| CryptoError::DecryptionFailed(format!("ChaCha20-Poly1305 cipher init failed: {:?}", e)))?;
         
-        if !self.verify_tag(tag, &expected_tag) {
-            return Err(CryptoError::AuthenticationFailed("Poly1305 tag verification failed".to_string()));
-        }
+        let nonce = chacha20poly1305::Nonce::from_slice(nonce_bytes);
         
-        // Decrypt with ChaCha20
-        let mut plaintext = ciphertext.to_vec();
-        for (i, byte) in plaintext.iter_mut().enumerate() {
-            let keystream_byte = (self.key.as_bytes()[i % self.key.size()]
-                                ^ nonce[i % nonce.len()]
-                                ^ ((i as u8).wrapping_mul(251))) as u8;
-            *byte ^= keystream_byte;
-        }
+        // Combine ciphertext and tag for ChaCha20-Poly1305 decryption
+        let mut ciphertext_with_tag = ciphertext.to_vec();
+        ciphertext_with_tag.extend_from_slice(tag);
+        
+        // Prepare payload with associated data
+        let payload = if associated_data.is_empty() {
+            chacha20poly1305::aead::Payload::from(ciphertext_with_tag.as_slice())
+        } else {
+            chacha20poly1305::aead::Payload {
+                msg: &ciphertext_with_tag,
+                aad: associated_data,
+            }
+        };
+        
+        // Perform ChaCha20-Poly1305 decryption (includes authentication verification)
+        let plaintext = cipher.decrypt(nonce, payload)
+            .map_err(|e| CryptoError::AuthenticationFailed(format!("ChaCha20-Poly1305 decryption/verification failed: {:?}", e)))?;
         
         Ok(DecryptionResult {
             plaintext,
@@ -673,15 +711,19 @@ impl KeyManager {
     
     /// slay Derive key using PBKDF2
     pub fn derive_key_pbkdf2(&self, password: &[u8], config: &KeyDerivationConfig) -> CryptoResult<EncryptionKey> {
-        let derived_key = pbkdf2(password, &config.salt, config.iterations, config.key_length)
-            .map_err(|e| CryptoError::KeyDerivationFailed(format!("PBKDF2 failed: {:?}", e)))?;
+        let mut derived_key = vec![0u8; config.key_length];
+        pbkdf2_hmac::<Sha256>(password, &config.salt, config.iterations, &mut derived_key);
         
         EncryptionKey::new(derived_key, "PBKDF2".to_string())
     }
     
     /// slay Derive key using scrypt
     pub fn derive_key_scrypt(&self, password: &[u8], config: &KeyDerivationConfig) -> CryptoResult<EncryptionKey> {
-        let derived_key = scrypt(password, &config.salt, 32768, 8, 1, config.key_length)
+        let params = scrypt::Params::new(15, 8, 1, config.key_length)
+            .map_err(|e| CryptoError::KeyDerivationFailed(format!("scrypt params failed: {:?}", e)))?;
+        
+        let mut derived_key = vec![0u8; config.key_length];
+        scrypt::scrypt(password, &config.salt, &params, &mut derived_key)
             .map_err(|e| CryptoError::KeyDerivationFailed(format!("scrypt failed: {:?}", e)))?;
         
         EncryptionKey::new(derived_key, "scrypt".to_string())

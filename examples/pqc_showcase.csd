@@ -1,496 +1,476 @@
 #!/usr/bin/env cursed
 
-//! Post-Quantum Cryptography Showcase
-//! 
-//! This example demonstrates the comprehensive post-quantum cryptographic
-//! capabilities of the CURSED programming language, including:
-//! - Kyber key encapsulation mechanism
-//! - Dilithium digital signatures
-//! - Hybrid classical-quantum schemes
-//! - Performance benchmarking
-//! - Security assessments
+/// fr fr Complete Post-Quantum Cryptography Showcase
+/// 
+/// This example demonstrates the comprehensive PQC capabilities
+/// including all algorithms, hybrid schemes, compatibility tools,
+/// and migration utilities available in CURSED.
 
-import "stdlib::crypto::pqc_production" as pqc
-import "stdlib::io" as io
+import "stdlib::packages::crypto_pqc";
 
-fn main() -> Result<(), String> {
-    println("🔐 CURSED Post-Quantum Cryptography Showcase")
-    println("===========================================")
+sus main() -> Result<(), CursedError> {
+    println("🔐 Welcome to the CURSED Post-Quantum Cryptography Showcase! 🔐");
+    println("");
     
-    // Demonstrate Kyber KEM
-    kyber_demonstration()?
+    // Initialize the PQC module
+    println("📦 Initializing PQC module...");
+    crypto_pqc::init_crypto_pqc()?;
+    println("");
     
-    // Demonstrate Dilithium signatures
-    dilithium_demonstration()?
+    // Demonstrate algorithm registry
+    demonstrate_algorithm_registry()?;
     
     // Demonstrate hybrid cryptography
-    hybrid_demonstration()?
+    demonstrate_hybrid_cryptography()?;
     
-    // Performance benchmarking
-    performance_benchmarks()?
+    // Demonstrate compatibility assessment
+    demonstrate_compatibility_assessment()?;
     
-    // Security assessment
-    security_assessment()?
+    // Demonstrate migration planning
+    demonstrate_migration_planning()?;
     
-    println("\n✅ All post-quantum cryptography demonstrations completed successfully!")
-    println("🛡️  Your data is now quantum-safe!")
+    // Demonstrate individual PQC algorithms
+    demonstrate_pqc_algorithms()?;
+    
+    println("🎉 Post-Quantum Cryptography showcase completed successfully!");
+    println("✨ CURSED is ready for the quantum age! ✨");
     
     Ok(())
 }
 
-//! Demonstrate Kyber Key Encapsulation Mechanism
-fn kyber_demonstration() -> Result<(), String> {
-    println("\n🚀 Kyber Key Encapsulation Mechanism Demo")
-    println("----------------------------------------")
+sus demonstrate_algorithm_registry() -> Result<(), CursedError> {
+    println("📊 === Algorithm Registry Demonstration ===");
     
-    // Test all security levels
-    let security_levels = [
-        ("Level 1 (AES-128 equivalent)", pqc::SecurityLevel::Level1),
-        ("Level 3 (AES-192 equivalent)", pqc::SecurityLevel::Level3),
-        ("Level 5 (AES-256 equivalent)", pqc::SecurityLevel::Level5),
-    ]
+    facts registry = crypto_pqc::PqcAlgorithmRegistry::new();
+    facts available_algorithms = registry.list_available_algorithms();
     
-    for (name, level) in security_levels {
-        println(f"\n📊 Testing {name}")
+    println("🔢 Total algorithms registered: {}", registry.algorithms.len());
+    println("✅ Available algorithms: {}", available_algorithms.len());
+    
+    println("\n📋 Algorithm Details:");
+    lowkey (sus algorithm in available_algorithms) {
+        if let Some(algo_info) = registry.get_algorithm(&algorithm) {
+            println("  • {} ({:?}) - Security Level: {:?}", 
+                   algo_info.name, 
+                   algo_info.algorithm_type, 
+                   algo_info.security_level);
+            println("    Key size: {} bytes", algo_info.key_size_bytes);
+            if let Some(sig_size) = algo_info.signature_size_bytes {
+                println("    Signature size: {} bytes", sig_size);
+            }
+            if let Some(ct_size) = algo_info.ciphertext_size_bytes {
+                println("    Ciphertext size: {} bytes", ct_size);
+            }
+            println("    Standardized: {}", algo_info.is_standardized);
+            println("");
+        }
+    }
+    
+    Ok(())
+}
+
+sus demonstrate_hybrid_cryptography() -> Result<(), CursedError> {
+    println("🌉 === Hybrid Cryptography Demonstration ===");
+    
+    // Create hybrid configurations
+    facts x25519_kyber_config = crypto_pqc::HybridAlgorithmConfig::x25519_kyber(
+        crypto_pqc::SecurityLevel::Level1
+    );
+    facts ed25519_dilithium_config = crypto_pqc::HybridAlgorithmConfig::ed25519_dilithium(
+        crypto_pqc::SecurityLevel::Level3
+    );
+    
+    println("🔑 X25519+Kyber Configuration:");
+    println("  Classical: {}", x25519_kyber_config.classical_algorithm);
+    println("  PQC: {}", x25519_kyber_config.pqc_algorithm);
+    println("  Security Level: {:?}", x25519_kyber_config.security_level);
+    println("  Scheme Type: {:?}", x25519_kyber_config.scheme_type);
+    println("");
+    
+    println("✍️  Ed25519+Dilithium Configuration:");
+    println("  Classical: {}", ed25519_dilithium_config.classical_algorithm);
+    println("  PQC: {}", ed25519_dilithium_config.pqc_algorithm);
+    println("  Security Level: {:?}", ed25519_dilithium_config.security_level);
+    println("  Scheme Type: {:?}", ed25519_dilithium_config.scheme_type);
+    println("");
+    
+    // Test fallback strategies
+    facts fallback_strategies = [
+        crypto_pqc::FallbackStrategy::RequireBoth,
+        crypto_pqc::FallbackStrategy::AcceptEither,
+        crypto_pqc::FallbackStrategy::PreferPqc,
+        crypto_pqc::FallbackStrategy::PreferClassical,
+    ];
+    
+    println("🔄 Fallback Strategies:");
+    lowkey (sus strategy in fallback_strategies) {
+        sus mut fallback_manager = crypto_pqc::HybridFallbackManager::new(strategy);
+        println("  Strategy: {:?} - Can proceed: {}", strategy, fallback_manager.can_proceed());
         
-        // Generate key pair
-        let start_time = time::now()
-        let (public_key, secret_key) = pqc::KyberKem::keygen(level)?
-        let keygen_time = time::elapsed(start_time)
+        fallback_manager.set_availability(true, false); // Only classical available
+        facts (use_classical, use_pqc) = fallback_manager.determine_algorithms();
+        println("    Classical only available -> Use classical: {}, Use PQC: {}", use_classical, use_pqc);
         
-        println(f"  ✓ Key generation: {keygen_time}ms")
-        println(f"  ✓ Public key size: {public_key.key_data.len()} bytes")
-        println(f"  ✓ Secret key size: {secret_key.key_data.len()} bytes")
+        fallback_manager.set_availability(false, true); // Only PQC available
+        facts (use_classical2, use_pqc2) = fallback_manager.determine_algorithms();
+        println("    PQC only available -> Use classical: {}, Use PQC: {}", use_classical2, use_pqc2);
+    }
+    println("");
+    
+    Ok(())
+}
+
+sus demonstrate_compatibility_assessment() -> Result<(), CursedError> {
+    println("🔍 === Compatibility Assessment Demonstration ===");
+    
+    facts engine = crypto_pqc::CompatibilityEngine::new();
+    
+    // Test with various algorithm sets
+    facts test_scenarios = [
+        ("Legacy System", vec!["RSA-1024", "MD5", "DES"]),
+        ("Modern Classical", vec!["RSA-3072", "ECDSA-P256", "AES-256"]),
+        ("Mixed System", vec!["RSA-2048", "Ed25519", "Kyber768", "AES-256"]),
+        ("PQC-Ready", vec!["Kyber1024", "Dilithium5", "SPHINCS+256s", "AES-256"]),
+    ];
+    
+    lowkey (sus (scenario_name, algorithms) in test_scenarios) {
+        println("📊 Scenario: {}", scenario_name);
         
-        // Encapsulation
-        let start_time = time::now()
-        let (ciphertext, shared_secret1) = pqc::KyberKem::encaps(&public_key)?
-        let encaps_time = time::elapsed(start_time)
+        facts algorithms_vec = algorithms.into_iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
         
-        println(f"  ✓ Encapsulation: {encaps_time}ms")
-        println(f"  ✓ Ciphertext size: {ciphertext.len()} bytes")
-        
-        // Decapsulation
-        let start_time = time::now()
-        let shared_secret2 = pqc::KyberKem::decaps(&secret_key, &ciphertext)?
-        let decaps_time = time::elapsed(start_time)
-        
-        println(f"  ✓ Decapsulation: {decaps_time}ms")
-        
-        // Verify shared secrets match
-        if shared_secret1.as_slice() == shared_secret2.as_slice() {
-            println("  ✅ Shared secrets match - KEM successful!")
+        if let Ok(assessment) = engine.assess_compatibility(&algorithms_vec) {
+            println("  🎯 Quantum Readiness: {:.1}%", assessment.security_analysis.overall_quantum_readiness);
+            println("  ⚠️  Vulnerable Algorithms: {}", assessment.security_analysis.quantum_vulnerable_algorithms.len());
+            println("  ✅ Quantum-Safe Algorithms: {}", assessment.security_analysis.quantum_safe_algorithms.len());
+            println("  📋 Migration Recommendations: {}", assessment.migration_recommendations.len());
+            println("  ⏱️  Estimated Timeline: {} weeks", assessment.timeline_estimate.total_weeks);
+            println("  💰 Performance Impact:");
+            println("    Key Generation: {:.1}x", assessment.performance_impact.key_generation_factor);
+            println("    Signature Size: {:.1}x", assessment.performance_impact.signature_size_factor);
+            println("    Verification Time: {:.1}x", assessment.performance_impact.verification_time_factor);
+            
+            if !assessment.migration_recommendations.is_empty() {
+                println("  📝 Top Recommendation:");
+                facts top_rec = &assessment.migration_recommendations[0];
+                println("    {} -> {} (Priority: {:?})", 
+                       top_rec.current_algorithm, 
+                       top_rec.recommended_replacement,
+                       top_rec.priority);
+                println("    Estimated Effort: {}", top_rec.estimated_effort);
+            }
         } else {
-            return Err("❌ Shared secrets don't match - KEM failed!")
+            println("  ❌ Assessment failed");
+        }
+        println("");
+    }
+    
+    Ok(())
+}
+
+sus demonstrate_migration_planning() -> Result<(), CursedError> {
+    println("📋 === Migration Planning Demonstration ===");
+    
+    sus mut migration_tool = crypto_pqc::PqcMigrationTool::new();
+    
+    // Create a test system configuration
+    facts system_config = crypto_pqc::SystemConfiguration {
+        system_name: "Demo Enterprise System".to_string(),
+        algorithms: vec![
+            "RSA-2048".to_string(),
+            "ECDSA-P256".to_string(),
+            "X25519".to_string(),
+            "AES-256".to_string(),
+        ],
+        protocols: vec![
+            "TLS-1.3".to_string(),
+            "HTTPS".to_string(),
+            "SSH".to_string(),
+        ],
+        certificates: vec![
+            "*.demo.company.com".to_string(),
+            "api.demo.company.com".to_string(),
+        ],
+        critical_systems: vec![
+            "Authentication Service".to_string(),
+            "Payment Gateway".to_string(),
+            "Customer Database".to_string(),
+        ],
+        daily_operations: 1000000,
+    };
+    
+    println("🏢 Analyzing system: {}", system_config.system_name);
+    println("🔧 Algorithms in use: {}", system_config.algorithms.len());
+    println("🌐 Protocols: {}", system_config.protocols.len());
+    println("📜 Certificates: {}", system_config.certificates.len());
+    println("⚡ Daily operations: {}", system_config.daily_operations);
+    println("");
+    
+    // Perform system analysis
+    if let Ok(analysis) = migration_tool.analyze_system(&system_config) {
+        println("📊 System Analysis Results:");
+        println("  🔍 Crypto inventory completed");
+        println("  🎯 Quantum readiness: {:.1}%", 
+               analysis.compatibility_assessment.security_analysis.overall_quantum_readiness);
+        println("  ⚠️  Risk level: {:?}", analysis.risk_assessment.overall_risk_level);
+        println("  🔗 Dependencies: {} external, {} internal", 
+               analysis.dependency_analysis.external_dependencies.len(),
+               analysis.dependency_analysis.internal_dependencies.len());
+        println("  📝 Recommended actions: {}", analysis.recommended_actions.len());
+        
+        println("\n🎯 Key Recommendations:");
+        lowkey (sus (index, action) in analysis.recommended_actions.iter().enumerate()) {
+            if index < 3 { // Show top 3
+                println("    {}. {}", index + 1, action);
+            }
         }
         
-        println(f"  📈 Total operation time: {keygen_time + encaps_time + decaps_time}ms")
-    }
-    
-    Ok(())
-}
-
-//! Demonstrate Dilithium Digital Signatures
-fn dilithium_demonstration() -> Result<(), String> {
-    println("\n✍️  Dilithium Digital Signatures Demo")
-    println("-----------------------------------")
-    
-    let security_levels = [
-        ("Level 2", pqc::SecurityLevel::Level1),
-        ("Level 3", pqc::SecurityLevel::Level3), 
-        ("Level 5", pqc::SecurityLevel::Level5),
-    ]
-    
-    // Test message
-    let message = "This is a super important message that needs quantum-safe signing! 🔏"
-    let message_bytes = message.as_bytes()
-    
-    for (name, level) in security_levels {
-        println(f"\n📝 Testing Dilithium {name}")
-        
-        // Generate signing key pair
-        let start_time = time::now()
-        let (public_key, secret_key) = pqc::DilithiumSigner::keygen(level)?
-        let keygen_time = time::elapsed(start_time)
-        
-        println(f"  ✓ Key generation: {keygen_time}ms")
-        println(f"  ✓ Public key size: {public_key.key_data.len()} bytes")
-        println(f"  ✓ Secret key size: {secret_key.key_data.len()} bytes")
-        
-        // Sign message
-        let start_time = time::now()
-        let signature = pqc::DilithiumSigner::sign(&secret_key, message_bytes)?
-        let sign_time = time::elapsed(start_time)
-        
-        println(f"  ✓ Signing: {sign_time}ms")
-        println(f"  ✓ Signature size: {signature.len()} bytes")
-        
-        // Verify signature
-        let start_time = time::now()
-        let is_valid = pqc::DilithiumSigner::verify(&public_key, message_bytes, &signature)?
-        let verify_time = time::elapsed(start_time)
-        
-        println(f"  ✓ Verification: {verify_time}ms")
-        
-        if is_valid {
-            println("  ✅ Signature verification successful!")
-        } else {
-            return Err("❌ Signature verification failed!")
+        // Create migration plan
+        if let Ok(plan) = migration_tool.create_migration_plan(&analysis) {
+            println("\n📋 Migration Plan Created:");
+            println("  📅 Total duration: {} weeks", plan.timeline.total_duration_weeks);
+            println("  📊 Phases: {}", plan.phases.len());
+            println("  👥 Team size: {} people", 
+                   plan.resource_requirements.development_team_size + 
+                   plan.resource_requirements.security_team_size + 
+                   plan.resource_requirements.operations_team_size);
+            println("  💰 Estimated budget: {}", plan.resource_requirements.estimated_budget);
+            
+            println("\n📋 Migration Phases:");
+            lowkey (sus (index, phase) in plan.phases.iter().enumerate()) {
+                println("    {}. {} ({} weeks)", 
+                       index + 1, 
+                       phase.name, 
+                       phase.duration_weeks);
+                println("       {}", phase.description);
+                if !phase.dependencies.is_empty() {
+                    println("       Dependencies: {}", phase.dependencies.len());
+                }
+            }
+            
+            println("\n🎯 Success Criteria:");
+            lowkey (sus criterion in plan.success_criteria) {
+                println("    • {}: {}", criterion.name, criterion.target_value);
+            }
+            
+            // Monitor initial progress
+            if let Ok(progress) = migration_tool.monitor_progress(&plan.plan_id) {
+                println("\n📈 Migration Progress:");
+                println("  Status: {:?}", progress.status);
+                println("  Progress: {:.1}%", progress.progress_percentage);
+                println("  Completed phases: {} / {}", progress.completed_phases, progress.total_phases);
+                println("  Estimated completion: {}", progress.estimated_completion);
+            }
         }
-        
-        // Test signature tampering detection
-        let mut tampered_signature = signature.clone()
-        tampered_signature[0] ^= 0xFF  // Flip bits in first byte
-        
-        let tampered_result = pqc::DilithiumSigner::verify(&public_key, message_bytes, &tampered_signature)?
-        if !tampered_result {
-            println("  ✅ Tampered signature correctly rejected!")
-        } else {
-            return Err("❌ Failed to detect signature tampering!")
-        }
-        
-        println(f"  📈 Total signature operation: {sign_time + verify_time}ms")
-    }
-    
-    Ok(())
-}
-
-//! Demonstrate Hybrid Classical-Quantum Cryptography
-fn hybrid_demonstration() -> Result<(), String> {
-    println("\n🔄 Hybrid Classical-Quantum Cryptography Demo")
-    println("--------------------------------------------")
-    
-    println("Hybrid schemes combine classical and post-quantum algorithms")
-    println("for enhanced security during the transition period.")
-    
-    // Generate hybrid key pairs for Alice and Bob
-    println("\n👩 Generating Alice's hybrid key pair...")
-    let alice_keys = pqc::HybridKeyExchange::generate_keypair(pqc::SecurityLevel::Level3)?
-    
-    println("👨 Generating Bob's hybrid key pair...")
-    let bob_keys = pqc::HybridKeyExchange::generate_keypair(pqc::SecurityLevel::Level3)?
-    
-    // Perform hybrid key exchange
-    println("\n🤝 Performing hybrid key exchange...")
-    let start_time = time::now()
-    let shared_secret = pqc::HybridKeyExchange::perform_exchange(&alice_keys, &bob_keys)?
-    let exchange_time = time::elapsed(start_time)
-    
-    println(f"  ✓ Key exchange completed in {exchange_time}ms")
-    println(f"  ✓ Shared secret size: {shared_secret.len()} bytes")
-    println("  ✅ Hybrid key exchange successful!")
-    
-    println("\n🛡️  Security Properties:")
-    println("  • Protected against classical attacks (ECDH component)")
-    println("  • Protected against quantum attacks (Kyber component)")
-    println("  • Provides forward secrecy")
-    println("  • Suitable for migration scenarios")
-    
-    Ok(())
-}
-
-//! Performance benchmarking of PQC algorithms
-fn performance_benchmarks() -> Result<(), String> {
-    println("\n⚡ Performance Benchmarking")
-    println("-------------------------")
-    
-    println("Running comprehensive benchmarks...")
-    
-    let iterations = 10
-    let results = pqc::PqcBenchmarkSuite::run_all_benchmarks(iterations)?
-    
-    println(f"\n📊 Benchmark Results ({iterations} iterations each):")
-    println("Algorithm    | KeyGen(ms) | Ops/Sec | Total Size(KB)")
-    println("-------------|------------|---------|---------------")
-    
-    for result in results {
-        let total_size_kb = (result.key_sizes.0 + result.key_sizes.1 + result.ciphertext_size) / 1024
-        println(f"{result.parameter_set:12} | {result.avg_keygen_time.as_millis():10} | {result.operations_per_second():7.0} | {total_size_kb:13}")
-    }
-    
-    println("\n💡 Performance Analysis:")
-    println("  • Level 1: Fastest operations, smallest keys")
-    println("  • Level 3: Balanced security/performance (recommended)")
-    println("  • Level 5: Maximum security, largest overhead")
-    
-    // Generate comparative analysis
-    let analysis = pqc::PqcBenchmarkSuite::comparative_analysis(&results)
-    println(f"\n{analysis}")
-    
-    Ok(())
-}
-
-//! Security assessment and recommendations
-fn security_assessment() -> Result<(), String> {
-    println("\n🛡️  Quantum Security Assessment")
-    println("=============================")
-    
-    // Display current threat level
-    let threat_level = pqc::QuantumThreatAssessment::current_threat_level()
-    println(f"🚨 Current Threat Level: {threat_level}")
-    
-    // Algorithm recommendations
-    println("\n📋 Algorithm Recommendations:")
-    
-    let use_cases = [
-        ("Key Exchange", "kem"),
-        ("Digital Signatures", "signature"), 
-        ("Maximum Security", "hash_signature"),
-        ("Compact Signatures", "compact_signature"),
-    ]
-    
-    for (use_case, identifier) in use_cases {
-        let recommended = pqc::get_recommended_algorithm(identifier, pqc::SecurityLevel::Level3)?
-        let timeline = pqc::QuantumThreatAssessment::migration_timeline(recommended)
-        
-        println(f"  {use_case:20} → {recommended}")
-        println(f"  {' ':20}   Timeline: {timeline}")
-    }
-    
-    // Generate comprehensive security report
-    println("\n📄 Comprehensive Security Report:")
-    let security_report = pqc::QuantumThreatAssessment::security_report()
-    println(security_report)
-    
-    // Migration recommendations
-    println("\n🎯 Migration Strategy:")
-    println("  1. IMMEDIATE: Assess current cryptographic inventory")
-    println("  2. SHORT-TERM: Implement hybrid schemes for critical systems")
-    println("  3. MEDIUM-TERM: Full migration to post-quantum algorithms")
-    println("  4. LONG-TERM: Regular security assessments and updates")
-    
-    Ok(())
-}
-
-//! Demonstrate real-world use cases
-fn real_world_use_cases() -> Result<(), String> {
-    println("\n🌍 Real-World Use Cases")
-    println("======================")
-    
-    // Secure messaging
-    secure_messaging_example()?
-    
-    // Document signing
-    document_signing_example()?
-    
-    // VPN key exchange
-    vpn_key_exchange_example()?
-    
-    Ok(())
-}
-
-//! Secure messaging with PQC
-fn secure_messaging_example() -> Result<(), String> {
-    println("\n💬 Secure Messaging Example")
-    println("---------------------------")
-    
-    // Alice generates her keys
-    let (alice_sign_pk, alice_sign_sk) = pqc::DilithiumSigner::keygen(pqc::SecurityLevel::Level3)?
-    let (alice_kem_pk, alice_kem_sk) = pqc::KyberKem::keygen(pqc::SecurityLevel::Level3)?
-    
-    // Bob generates his keys  
-    let (bob_sign_pk, bob_sign_sk) = pqc::DilithiumSigner::keygen(pqc::SecurityLevel::Level3)?
-    let (bob_kem_pk, bob_kem_sk) = pqc::KyberKem::keygen(pqc::SecurityLevel::Level3)?
-    
-    // Alice sends a message to Bob
-    let message = "Hey Bob! This message is quantum-safe! 🔐"
-    let message_bytes = message.as_bytes()
-    
-    // Alice signs the message
-    let signature = pqc::DilithiumSigner::sign(&alice_sign_sk, message_bytes)?
-    
-    // Alice encrypts using Bob's KEM public key
-    let (ciphertext, shared_secret) = pqc::KyberKem::encaps(&bob_kem_pk)?
-    
-    println("✓ Alice signed and encrypted message")
-    println(f"  Message: '{message}'")
-    println(f"  Signature size: {signature.len()} bytes")
-    println(f"  Ciphertext size: {ciphertext.len()} bytes")
-    
-    // Bob receives and processes the message
-    // First, decrypt to get shared secret
-    let bob_shared_secret = pqc::KyberKem::decaps(&bob_kem_sk, &ciphertext)?
-    
-    // Verify shared secrets match
-    if shared_secret.as_slice() != bob_shared_secret.as_slice() {
-        return Err("❌ Key exchange failed!")
-    }
-    
-    // Verify Alice's signature
-    let signature_valid = pqc::DilithiumSigner::verify(&alice_sign_pk, message_bytes, &signature)?
-    
-    if signature_valid {
-        println("✅ Bob successfully verified message authenticity")
-        println("✅ Message confidentiality protected by quantum-safe encryption")
     } else {
-        return Err("❌ Signature verification failed!")
+        println("❌ System analysis failed");
+    }
+    println("");
+    
+    Ok(())
+}
+
+sus demonstrate_pqc_algorithms() -> Result<(), CursedError> {
+    println("🔐 === Individual PQC Algorithms Demonstration ===");
+    
+    // Demonstrate NTRU
+    println("🏗️  NTRU Lattice-based Encryption:");
+    facts ntru_config = crypto_pqc::NtruConfig::new();
+    println("  Configuration: {} variables, modulus {}", ntru_config.n, ntru_config.q);
+    println("  Security level: {:?} ({} bits)", ntru_config.security_level, ntru_config.security_level.bits());
+    
+    if let Ok(security_validation) = crypto_pqc::NtruUtils::validate_for_production(&ntru_config) {
+        println("  Estimated security: {:.1} bits", security_validation.estimated_security_bits);
+        println("  Production ready: {}", security_validation.is_secure);
+        if !security_validation.warnings.is_empty() {
+            println("  Warnings: {}", security_validation.warnings.len());
+        }
+    }
+    println("");
+    
+    // Demonstrate Rainbow
+    println("🌈 Rainbow Multivariate Signatures:");
+    facts rainbow_config = crypto_pqc::RainbowConfig::level_i();
+    facts rainbow_params = rainbow_config.derived_params();
+    println("  Configuration: {} variables, {} equations", rainbow_params.n, rainbow_params.m);
+    println("  Field size: {}", rainbow_config.field_size);
+    println("  Security level: {:?} ({} bits)", rainbow_config.security_level, rainbow_config.security_level.bits());
+    
+    if let Ok(security_report) = crypto_pqc::RainbowUtils::validate_security(&rainbow_config) {
+        println("  Estimated security: {:.1} bits", security_report.estimated_security_bits);
+        println("  Signature size: {} bytes", security_report.signature_size);
+        println("  Public key size: {} bytes", security_report.public_key_size);
+        println("  Production ready: {}", security_report.is_secure);
+    }
+    println("");
+    
+    // Demonstrate Code-based cryptography
+    println("📊 Code-based Cryptography (McEliece):");
+    facts code_config = crypto_pqc::CodeConfig::new();
+    println("  Configuration: [{}, {}, {}] code", code_config.code_length, code_config.dimension, code_config.error_capacity);
+    println("  Code rate: {:.3}", code_config.code_rate());
+    println("  Redundancy: {} bits", code_config.redundancy());
+    println("  Security level: {:?} ({} bits)", code_config.security_level, code_config.security_level.bits());
+    
+    if let Ok(security_validation) = crypto_pqc::CodeUtils::validate_for_production(&code_config) {
+        println("  Estimated security: {:.1} bits", security_validation.estimated_security_bits);
+        println("  Production ready: {}", security_validation.is_secure);
+        if !security_validation.warnings.is_empty() {
+            println("  Warnings: {}", security_validation.warnings.len());
+        }
+    }
+    println("");
+    
+    // Demonstrate Multivariate cryptography
+    println("🧮 Multivariate Cryptography:");
+    facts mv_config = crypto_pqc::MultivariateConfig::rainbow_level1();
+    println("  Configuration: {} variables, {} equations", mv_config.variables, mv_config.equations);
+    println("  Field size: GF({})", mv_config.field_size);
+    println("  Oil/Vinegar: {} oil, {} vinegar", mv_config.oil_variables, mv_config.vinegar_variables);
+    println("  Scheme: {:?}", mv_config.scheme_type);
+    
+    if let Ok(security_validation) = crypto_pqc::MultivariateUtils::validate_for_production(&mv_config) {
+        println("  Estimated security: {:.1} bits", security_validation.estimated_security_bits);
+        println("  Equation ratio: {:.3}", security_validation.equation_ratio);
+        println("  Production ready: {}", security_validation.is_secure);
+    }
+    println("");
+    
+    Ok(())
+}
+
+sus demonstrate_algorithm_mappings() -> Result<(), CursedError> {
+    println("🔄 === Algorithm Mapping Demonstration ===");
+    
+    facts ke_mappings = crypto_pqc::AlgorithmMapping::key_exchange_mapping();
+    facts sig_mappings = crypto_pqc::AlgorithmMapping::signature_mapping();
+    
+    println("🔑 Key Exchange Algorithm Mappings:");
+    lowkey (sus mapping in ke_mappings) {
+        println("  {} -> {}", mapping.classical_algorithm, mapping.pqc_equivalent);
+        if let Some(hybrid) = &mapping.hybrid_scheme {
+            println("    Hybrid: {}", hybrid);
+        }
+        println("    Security Level: {:?}", mapping.security_level);
+        if !mapping.compatibility_notes.is_empty() {
+            println("    Notes: {}", mapping.compatibility_notes[0]);
+        }
+        println("");
+    }
+    
+    println("✍️  Signature Algorithm Mappings:");
+    lowkey (sus mapping in sig_mappings) {
+        println("  {} -> {}", mapping.classical_algorithm, mapping.pqc_equivalent);
+        if let Some(hybrid) = &mapping.hybrid_scheme {
+            println("    Hybrid: {}", hybrid);
+        }
+        println("    Security Level: {:?}", mapping.security_level);
+        if !mapping.compatibility_notes.is_empty() {
+            println("    Notes: {}", mapping.compatibility_notes[0]);
+        }
+        println("");
     }
     
     Ok(())
 }
 
-//! Document signing for legal applications
-fn document_signing_example() -> Result<(), String> {
-    println("\n📄 Legal Document Signing Example")
-    println("---------------------------------")
+sus demonstrate_system_readiness() -> Result<(), CursedError> {
+    println("🎯 === System PQC Readiness Assessment ===");
     
-    // Use SPHINCS+ for maximum security and long-term validity
-    let (public_key, secret_key) = pqc::SphincsPlusSignature::keygen(pqc::SecurityLevel::Level5)?
+    facts readiness = crypto_pqc::assess_system_pqc_readiness();
     
-    let document = "IMPORTANT LEGAL CONTRACT\n\nThis document represents a binding agreement...\n[Full contract text would be here]"
-    let document_hash = crypto::hash::sha3_256(document.as_bytes())
+    println("📊 Current System Analysis:");
+    println("  Algorithms detected: {}", readiness.current_algorithms.len());
+    println("  Quantum readiness: {:.1}%", readiness.quantum_readiness_percentage);
+    println("  Migration complexity: {:?}", readiness.migration_complexity);
+    println("  Estimated timeline: {} days", readiness.estimated_migration_time_days);
+    println("  Risk score: {}/100", readiness.risk_score);
     
-    // Sign document hash (standard practice)
-    let signature = pqc::SphincsPlusSignature::sign(&secret_key, &document_hash)?
-    
-    println("✓ Document signed with SPHINCS+ (maximum security)")
-    println(f"  Document length: {document.len()} characters")
-    println(f"  Hash: {pqc::bytes_to_hex(&document_hash)}")
-    println(f"  Signature size: {signature.len()} bytes")
-    
-    // Verify signature (as would be done years later)
-    let signature_valid = pqc::SphincsPlusSignature::verify(&public_key, &document_hash, &signature)?
-    
-    if signature_valid {
-        println("✅ Signature verified - document authenticity confirmed")
-        println("🛡️  Signature remains valid even against future quantum attacks")
-    } else {
-        return Err("❌ Document signature verification failed!")
+    println("\n📋 Current Algorithms:");
+    lowkey (sus algorithm in readiness.current_algorithms) {
+        println("    • {}", algorithm);
     }
     
-    Ok(())
-}
-
-//! VPN key exchange with perfect forward secrecy
-fn vpn_key_exchange_example() -> Result<(), String> {
-    println("\n🌐 VPN Key Exchange Example")
-    println("---------------------------")
-    
-    // Simulate VPN client and server
-    println("🖥️  Simulating quantum-safe VPN handshake...")
-    
-    // Server generates ephemeral keys
-    let (server_kem_pk, server_kem_sk) = pqc::KyberKem::keygen(pqc::SecurityLevel::Level3)?
-    
-    // Client performs key exchange
-    let (client_ciphertext, client_shared_secret) = pqc::KyberKem::encaps(&server_kem_pk)?
-    
-    // Server derives the same shared secret
-    let server_shared_secret = pqc::KyberKem::decaps(&server_kem_sk, &client_ciphertext)?
-    
-    // Verify key exchange succeeded
-    if client_shared_secret.as_slice() != server_shared_secret.as_slice() {
-        return Err("❌ VPN key exchange failed!")
-    }
-    
-    println("✅ VPN key exchange completed successfully")
-    println(f"  Shared secret size: {client_shared_secret.len()} bytes")
-    println("🔒 VPN tunnel established with quantum-safe encryption")
-    println("⏰ Perfect forward secrecy: past communications remain secure")
-    
-    // Additional security session keys would be derived from shared secret
-    let session_key = crypto::kdf::hkdf_sha256(&client_shared_secret.as_slice(), b"vpn_session", 32)?
-    println(f"  Session key derived: {pqc::bytes_to_hex(&session_key[..16])}...")
-    
-    Ok(())
-}
-
-//! Utility function to demonstrate constant-time operations
-fn demonstrate_constant_time_operations() -> Result<(), String> {
-    println("\n⏱️  Constant-Time Operations Demo")
-    println("-------------------------------")
-    
-    let secret1 = b"secret_password_123"
-    let secret2 = b"secret_password_123"
-    let secret3 = b"wrong_password_456"
-    
-    // Demonstrate constant-time comparison
-    println("Testing constant-time byte comparison:")
-    
-    let result1 = pqc::ConstantTime::bytes_equal(secret1, secret2)
-    println(f"  '{String::from_utf8_lossy(secret1)}' == '{String::from_utf8_lossy(secret2)}': {result1}")
-    
-    let result2 = pqc::ConstantTime::bytes_equal(secret1, secret3)
-    println(f"  '{String::from_utf8_lossy(secret1)}' == '{String::from_utf8_lossy(secret3)}': {result2}")
-    
-    println("✅ All comparisons performed in constant time")
-    println("🛡️  Protection against timing attacks implemented")
-    
-    Ok(())
-}
-
-//! Display comprehensive security summary
-fn security_summary() -> Result<(), String> {
-    println("\n🎯 SECURITY SUMMARY")
-    println("==================")
-    
-    println("✅ Implemented Protections:")
-    println("  • Quantum-safe key exchange (Kyber)")
-    println("  • Quantum-safe digital signatures (Dilithium)")
-    println("  • Hash-based signatures for maximum security (SPHINCS+)")
-    println("  • Hybrid classical-quantum schemes")
-    println("  • Constant-time operations against timing attacks")
-    println("  • Secure memory handling with automatic zeroization")
-    println("  • Side-channel attack resistance")
-    println("  • NIST standard compliance")
-    
-    println("\n🚨 Threat Mitigation:")
-    println("  • Shor's Algorithm: ✅ Mitigated by lattice-based cryptography")
-    println("  • Grover's Algorithm: ✅ Mitigated by increased key sizes")
-    println("  • Harvest Now, Decrypt Later: ✅ Mitigated by immediate deployment")
-    println("  • Side-Channel Attacks: ✅ Mitigated by constant-time operations")
-    
-    println("\n📈 Performance Impact:")
-    println("  • Key Generation: ~80μs (fast)")
-    println("  • Key Exchange: ~90μs total (acceptable)")
-    println("  • Digital Signatures: ~100μs (reasonable)")
-    println("  • Memory Overhead: 2-50x (manageable)")
-    
-    println("\n🎯 Recommendations:")
-    println("  1. Deploy Kyber for all key exchange immediately")
-    println("  2. Use Dilithium for standard digital signatures")
-    println("  3. Use SPHINCS+ for long-term document signing")
-    println("  4. Implement hybrid schemes during transition")
-    println("  5. Regular security assessments and updates")
-    
-    Ok(())
-}
-
-// Helper functions for timing and utilities
-mod time {
-    use std::time::Instant
-    
-    pub fn now() -> Instant {
-        Instant::now()
-    }
-    
-    pub fn elapsed(start: Instant) -> Duration {
-        start.elapsed()
-    }
-}
-
-mod crypto {
-    pub mod hash {
-        use sha3::{Sha3_256, Digest}
-        
-        pub fn sha3_256(data: &[u8]) -> Vec<u8> {
-            let mut hasher = Sha3_256::new()
-            hasher.update(data)
-            hasher.finalize().to_vec()
+    println("\n💡 Recommendations:");
+    lowkey (sus (index, recommendation) in readiness.recommendations.iter().enumerate()) {
+        if index < 5 { // Show top 5
+            println("    {}. {}", index + 1, recommendation);
         }
     }
     
-    pub mod kdf {
-        use hmac::{Hmac, Mac}
-        use sha2::Sha256
+    println("\n⚠️  Priority Actions:");
+    lowkey (sus action in readiness.priority_actions) {
+        println("    • {}", action);
+    }
+    
+    Ok(())
+}
+
+sus demonstrate_performance_comparison() -> Result<(), CursedError> {
+    println("📈 === Performance Comparison ===");
+    
+    facts security_levels = [
+        crypto_pqc::SecurityLevel::Level1,
+        crypto_pqc::SecurityLevel::Level3,
+        crypto_pqc::SecurityLevel::Level5,
+    ];
+    
+    lowkey (sus level in security_levels) {
+        println("🎯 Security Level: {:?} ({} bits)", level, level.classical_equivalent_bits());
         
-        pub fn hkdf_sha256(ikm: &[u8], info: &[u8], len: usize) -> Result<Vec<u8>, String> {
-            // Simplified HKDF implementation
-            let mut mac = Hmac::<Sha256>::new_from_slice(ikm)
-                .map_err(|e| format!("HKDF error: {}", e))?
-            mac.update(info)
-            let okm = mac.finalize().into_bytes()
-            Ok(okm[..len.min(okm.len())].to_vec())
+        facts pqc_config = crypto_pqc::create_recommended_pqc_config(level);
+        println("  Recommended KEM: {}", pqc_config.kem_algorithm);
+        println("  Recommended Signature: {}", pqc_config.signature_algorithm);
+        println("  Recommended Hash Signature: {}", pqc_config.hash_signature_algorithm);
+        println("  Hybrid enabled: {}", pqc_config.hybrid_enabled);
+        println("  Migration mode: {:?}", pqc_config.migration_mode);
+        println("");
+    }
+    
+    Ok(())
+}
+
+sus demonstrate_validation_and_testing() -> Result<(), CursedError> {
+    println("✅ === Validation and Testing ===");
+    
+    facts validation_report = crypto_pqc::validate_pqc_implementation()?;
+    
+    println("📊 Implementation Validation Report:");
+    println("  Available algorithms: {}", validation_report.algorithms_available.len());
+    println("  Available hybrid schemes: {}", validation_report.hybrid_schemes_available.len());
+    println("  Performance benchmarks: {}", validation_report.performance_benchmarks.len());
+    println("  Security analyses: {}", validation_report.security_analysis.len());
+    println("  Implementation gaps: {}", validation_report.implementation_gaps.len());
+    println("  Recommendations: {}", validation_report.recommendations.len());
+    
+    if !validation_report.algorithms_available.is_empty() {
+        println("\n✅ Available Algorithms:");
+        lowkey (sus algorithm in validation_report.algorithms_available) {
+            println("    • {}", algorithm);
         }
     }
+    
+    if !validation_report.hybrid_schemes_available.is_empty() {
+        println("\n🌉 Available Hybrid Schemes:");
+        lowkey (sus scheme in validation_report.hybrid_schemes_available) {
+            println("    • {}", scheme);
+        }
+    }
+    
+    if !validation_report.implementation_gaps.is_empty() {
+        println("\n⚠️  Implementation Gaps:");
+        lowkey (sus gap in validation_report.implementation_gaps) {
+            println("    • {}", gap);
+        }
+    }
+    
+    if !validation_report.recommendations.is_empty() {
+        println("\n💡 Recommendations:");
+        lowkey (sus recommendation in validation_report.recommendations) {
+            println("    • {}", recommendation);
+        }
+    }
+    
+    Ok(())
 }

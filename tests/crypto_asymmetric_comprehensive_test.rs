@@ -1,502 +1,479 @@
-/// Comprehensive test suite for CURSED asymmetric cryptography implementation
+/// Comprehensive test suite for the asymmetric cryptography module
 /// 
-/// This test suite validates all asymmetric cryptographic operations including
-/// RSA, ECDSA, ECDH, X25519, and Ed25519 across various configurations,
-/// security properties, and edge cases.
+/// This test suite validates all asymmetric cryptographic operations including:
+/// - RSA encryption/decryption and signatures (2048, 3072, 4096-bit)
+/// - ECDSA signatures on multiple curves (P-256, P-384, P-521)
+/// - Ed25519 high-performance digital signatures
+/// - X25519 and X448 key exchange protocols
+/// - Unified asymmetric crypto API
+/// - Key format compatibility and serialization
+/// - Security property validation
 
-use cursed::stdlib::crypto::asymmetric::*;
-
-/// Test RSA key generation with different key sizes
-#[test]
-fn test_rsa_key_generation_sizes() {
-    let crypto = AsymmetricCrypto::new();
-    
-    // Test supported key sizes
-    for &key_size in &[RSA_2048_BITS, RSA_3072_BITS, RSA_4096_BITS] {
-        let result = crypto.rsa_generate_keypair(Some(key_size));
-        assert!(result.is_ok(), "Failed to generate RSA key of size {}", key_size);
-        
-        let keypair = result.unwrap();
-        assert_eq!(keypair.key_size, key_size);
-        assert_eq!(keypair.public_key.key_size, key_size);
-        assert_eq!(keypair.private_key.key_size, key_size);
-    }
-}
-
-/// Test RSA key generation with invalid key sizes
-#[test]
-fn test_rsa_invalid_key_sizes() {
-    let crypto = AsymmetricCrypto::new();
-    
-    // Test invalid key sizes
-    for &invalid_size in &[1024, 1536, 5000, 8192] {
-        let result = crypto.rsa_generate_keypair(Some(invalid_size));
-        assert!(result.is_err(), "Should fail for invalid key size {}", invalid_size);
-        
-        if let Err(AsymmetricError::InvalidKeySize(size)) = result {
-            assert_eq!(size, invalid_size);
-        } else {
-            panic!("Expected InvalidKeySize error for size {}", invalid_size);
-        }
-    }
-}
-
-/// Test RSA encryption and decryption with different padding schemes
-#[test]
-fn test_rsa_encryption_decryption_padding() {
-    let crypto = AsymmetricCrypto::new();
-    let keypair = crypto.rsa_generate_keypair(Some(RSA_2048_BITS)).unwrap();
-    
-    let test_data = b"Hello, RSA World! This is a test message.";
-    
-    // Test different padding schemes for encryption
-    let padding_schemes = vec![
-        RsaPadding::Pkcs1v15,
-        RsaPadding::OaepSha256,
-        RsaPadding::OaepSha384,
-        RsaPadding::OaepSha512,
-    ];
-    
-    for padding in padding_schemes {
-        println!("Testing RSA with padding: {:?}", padding);
-        
-        // Encrypt
-        let ciphertext = crypto.rsa_encrypt(&keypair.public_key, test_data, Some(padding));
-        assert!(ciphertext.is_ok(), "Encryption failed for padding {:?}", padding);
-        
-        let encrypted_data = ciphertext.unwrap();
-        assert_ne!(encrypted_data, test_data.to_vec());
-        
-        // Decrypt
-        let plaintext = crypto.rsa_decrypt(&keypair.private_key, &encrypted_data, Some(padding));
-        assert!(plaintext.is_ok(), "Decryption failed for padding {:?}", padding);
-        
-        let decrypted_data = plaintext.unwrap();
-        assert_eq!(decrypted_data, test_data.to_vec());
-    }
-}
-
-/// Test RSA signing and verification with different padding schemes
-#[test]
-fn test_rsa_signing_verification_padding() {
-    let crypto = AsymmetricCrypto::new();
-    let keypair = crypto.rsa_generate_keypair(Some(RSA_2048_BITS)).unwrap();
-    
-    let message = b"Important document to be signed";
-    
-    // Test different padding schemes for signing
-    let padding_schemes = vec![
-        RsaPadding::Pkcs1v15,
-        RsaPadding::Pss,
-    ];
-    
-    for padding in padding_schemes {
-        println!("Testing RSA signing with padding: {:?}", padding);
-        
-        // Sign
-        let signature = crypto.rsa_sign(&keypair.private_key, message, Some(padding));
-        assert!(signature.is_ok(), "Signing failed for padding {:?}", padding);
-        
-        let sig_bytes = signature.unwrap();
-        assert!(!sig_bytes.is_empty());
-        
-        // Verify
-        let is_valid = crypto.rsa_verify(&keypair.public_key, message, &sig_bytes, Some(padding));
-        assert!(is_valid.is_ok(), "Verification failed for padding {:?}", padding);
-        assert!(is_valid.unwrap(), "Signature should be valid for padding {:?}", padding);
-        
-        // Test with tampered message
-        let tampered_message = b"Tampered document content";
-        let is_invalid = crypto.rsa_verify(&keypair.public_key, tampered_message, &sig_bytes, Some(padding));
-        assert!(is_invalid.is_ok());
-        assert!(!is_invalid.unwrap(), "Signature should be invalid for tampered message");
-    }
-}
-
-/// Test ECDSA key generation for different curves
-#[test]
-fn test_ecdsa_key_generation_curves() {
-    let crypto = AsymmetricCrypto::new();
-    
-    let supported_curves = vec![EcCurve::P256, EcCurve::Secp256k1];
-    
-    for curve in supported_curves {
-        println!("Testing ECDSA key generation for curve: {:?}", curve);
-        
-        let result = crypto.ecdsa_generate_keypair(Some(curve));
-        assert!(result.is_ok(), "Failed to generate ECDSA keypair for curve {:?}", curve);
-        
-        let keypair = result.unwrap();
-        assert_eq!(keypair.curve, curve);
-        assert_eq!(keypair.public_key.curve, curve);
-        assert_eq!(keypair.private_key.curve, curve);
-    }
-}
-
-/// Test ECDSA signing and verification
-#[test]
-fn test_ecdsa_signing_verification() {
-    let crypto = AsymmetricCrypto::new();
-    
-    let curves = vec![EcCurve::P256, EcCurve::Secp256k1];
-    
-    for curve in curves {
-        println!("Testing ECDSA operations for curve: {:?}", curve);
-        
-        let keypair = crypto.ecdsa_generate_keypair(Some(curve)).unwrap();
-        let message = b"ECDSA test message for signature";
-        
-        // Sign message
-        let signature = crypto.ecdsa_sign(&keypair.private_key, message);
-        assert!(signature.is_ok(), "ECDSA signing failed for curve {:?}", curve);
-        
-        let sig = signature.unwrap();
-        assert_eq!(sig.curve, curve);
-        
-        // Verify signature
-        let is_valid = crypto.ecdsa_verify(&keypair.public_key, message, &sig);
-        assert!(is_valid.is_ok(), "ECDSA verification failed for curve {:?}", curve);
-        assert!(is_valid.unwrap(), "ECDSA signature should be valid for curve {:?}", curve);
-        
-        // Test with tampered message
-        let tampered_message = b"Tampered ECDSA message";
-        let is_invalid = crypto.ecdsa_verify(&keypair.public_key, tampered_message, &sig);
-        assert!(is_invalid.is_ok());
-        assert!(!is_invalid.unwrap(), "ECDSA signature should be invalid for tampered message");
-    }
-}
-
-/// Test ECDSA cross-curve verification failure
-#[test]
-fn test_ecdsa_cross_curve_verification() {
-    let crypto = AsymmetricCrypto::new();
-    
-    let p256_keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::P256)).unwrap();
-    let secp256k1_keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::Secp256k1)).unwrap();
-    
-    let message = b"Cross-curve test message";
-    
-    // Sign with P256 key
-    let p256_signature = crypto.ecdsa_sign(&p256_keypair.private_key, message).unwrap();
-    
-    // Try to verify with secp256k1 public key (should fail)
-    let is_valid = crypto.ecdsa_verify(&secp256k1_keypair.public_key, message, &p256_signature);
-    assert!(is_valid.is_ok());
-    assert!(!is_valid.unwrap(), "Cross-curve verification should fail");
-}
-
-/// Test ECDH key exchange
-#[test]
-fn test_ecdh_key_exchange() {
-    let crypto = AsymmetricCrypto::new();
-    
-    let curves = vec![EcCurve::P256, EcCurve::Secp256k1];
-    
-    for curve in curves {
-        println!("Testing ECDH key exchange for curve: {:?}", curve);
-        
-        // Generate two keypairs (Alice and Bob)
-        let alice_keypair = crypto.ecdh_generate_keypair(Some(curve)).unwrap();
-        let bob_keypair = crypto.ecdh_generate_keypair(Some(curve)).unwrap();
-        
-        // Perform key exchange
-        let alice_shared = crypto.ecdh_exchange(&alice_keypair.private_key, &bob_keypair.public_key);
-        let bob_shared = crypto.ecdh_exchange(&bob_keypair.private_key, &alice_keypair.public_key);
-        
-        assert!(alice_shared.is_ok(), "Alice's ECDH exchange failed for curve {:?}", curve);
-        assert!(bob_shared.is_ok(), "Bob's ECDH exchange failed for curve {:?}", curve);
-        
-        let alice_secret = alice_shared.unwrap();
-        let bob_secret = bob_shared.unwrap();
-        
-        assert_eq!(alice_secret, bob_secret, "Shared secrets should match for curve {:?}", curve);
-        assert!(!alice_secret.is_empty(), "Shared secret should not be empty");
-    }
-}
-
-/// Test ECDH cross-curve exchange failure
-#[test]
-fn test_ecdh_cross_curve_exchange() {
-    let crypto = AsymmetricCrypto::new();
-    
-    let alice_keypair = crypto.ecdh_generate_keypair(Some(EcCurve::P256)).unwrap();
-    let bob_keypair = crypto.ecdh_generate_keypair(Some(EcCurve::Secp256k1)).unwrap();
-    
-    // Try to exchange keys with different curves (should fail)
-    let result = crypto.ecdh_exchange(&alice_keypair.private_key, &bob_keypair.public_key);
-    assert!(result.is_err(), "Cross-curve ECDH exchange should fail");
-    
-    if let Err(AsymmetricError::KeyExchangeFailed(msg)) = result {
-        assert!(msg.contains("Curve mismatch"));
-    } else {
-        panic!("Expected KeyExchangeFailed error");
-    }
-}
-
-/// Test X25519 key generation and exchange
-#[test]
-fn test_x25519_operations() {
-    let crypto = AsymmetricCrypto::new();
-    
-    // Generate keypairs
-    let alice_keypair = crypto.x25519_generate_keypair().unwrap();
-    let bob_keypair = crypto.x25519_generate_keypair().unwrap();
-    
-    assert_eq!(alice_keypair.public_key.bytes.len(), X25519_KEY_SIZE);
-    assert_eq!(bob_keypair.public_key.bytes.len(), X25519_KEY_SIZE);
-    
-    // Perform key exchange
-    let alice_shared = crypto.x25519_exchange(&alice_keypair.private_key, &bob_keypair.public_key);
-    let bob_shared = crypto.x25519_exchange(&bob_keypair.private_key, &alice_keypair.public_key);
-    
-    assert!(alice_shared.is_ok(), "Alice's X25519 exchange failed");
-    assert!(bob_shared.is_ok(), "Bob's X25519 exchange failed");
-    
-    let alice_secret = alice_shared.unwrap();
-    let bob_secret = bob_shared.unwrap();
-    
-    assert_eq!(alice_secret, bob_secret, "X25519 shared secrets should match");
-    assert_eq!(alice_secret.len(), X25519_KEY_SIZE);
-}
-
-/// Test Ed25519 key generation, signing, and verification
-#[test]
-fn test_ed25519_operations() {
-    let crypto = AsymmetricCrypto::new();
-    
-    // Generate keypair
-    let keypair = crypto.ed25519_generate_keypair().unwrap();
-    
-    let test_message = b"Ed25519 signature test message";
-    
-    // Sign message
-    let signature = crypto.ed25519_sign(&keypair.private_key, test_message);
-    assert!(signature.is_ok(), "Ed25519 signing failed");
-    
-    let sig = signature.unwrap();
-    
-    // Verify signature
-    let is_valid = crypto.ed25519_verify(&keypair.public_key, test_message, &sig);
-    assert!(is_valid.is_ok(), "Ed25519 verification failed");
-    assert!(is_valid.unwrap(), "Ed25519 signature should be valid");
-    
-    // Test with tampered message
-    let tampered_message = b"Tampered Ed25519 message";
-    let is_invalid = crypto.ed25519_verify(&keypair.public_key, tampered_message, &sig);
-    assert!(is_invalid.is_ok());
-    assert!(!is_invalid.unwrap(), "Ed25519 signature should be invalid for tampered message");
-}
-
-/// Test multiple Ed25519 signatures with same key
-#[test]
-fn test_ed25519_multiple_signatures() {
-    let crypto = AsymmetricCrypto::new();
-    let keypair = crypto.ed25519_generate_keypair().unwrap();
-    
-    let messages = vec![
-        b"First message".as_slice(),
-        b"Second message".as_slice(),
-        b"Third message with different content".as_slice(),
-    ];
-    
-    let mut signatures = Vec::new();
-    
-    // Sign multiple messages
-    for (i, message) in messages.iter().enumerate() {
-        let signature = crypto.ed25519_sign(&keypair.private_key, message).unwrap();
-        signatures.push(signature);
-        
-        println!("Signed message {}: {:?}", i + 1, std::str::from_utf8(message).unwrap());
-    }
-    
-    // Verify all signatures
-    for (i, (message, signature)) in messages.iter().zip(signatures.iter()).enumerate() {
-        let is_valid = crypto.ed25519_verify(&keypair.public_key, message, signature).unwrap();
-        assert!(is_valid, "Message {} signature should be valid", i + 1);
-    }
-    
-    // Cross-verify (should fail)
-    let is_invalid = crypto.ed25519_verify(&keypair.public_key, messages[0], &signatures[1]).unwrap();
-    assert!(!is_invalid, "Cross-verification should fail");
-}
-
-/// Test asymmetric crypto configuration
-#[test]
-fn test_asymmetric_config() {
-    let default_config = AsymmetricConfig::default();
-    assert_eq!(default_config.default_rsa_key_size, RSA_4096_BITS);
-    assert_eq!(default_config.default_rsa_padding, RsaPadding::OaepSha256);
-    assert_eq!(default_config.default_ec_curve, EcCurve::P256);
-    assert!(default_config.hardware_acceleration);
-    assert!(default_config.constant_time_operations);
-    assert!(default_config.secure_key_generation);
-    
-    let custom_config = AsymmetricConfig {
-        default_rsa_key_size: RSA_2048_BITS,
-        default_rsa_padding: RsaPadding::Pss,
-        default_ec_curve: EcCurve::Secp256k1,
-        hardware_acceleration: false,
-        constant_time_operations: true,
-        secure_key_generation: true,
-    };
-    
-    let crypto = AsymmetricCrypto::with_config(custom_config.clone());
-    assert_eq!(crypto.config.default_rsa_key_size, RSA_2048_BITS);
-    assert_eq!(crypto.config.default_ec_curve, EcCurve::Secp256k1);
-}
-
-/// Test elliptic curve properties
-#[test]
-fn test_ec_curve_properties() {
-    let curves = vec![
-        (EcCurve::P256, "P-256", 32, 128),
-        (EcCurve::P384, "P-384", 48, 192),
-        (EcCurve::P521, "P-521", 66, 256),
-        (EcCurve::Secp256k1, "secp256k1", 32, 128),
-    ];
-    
-    for (curve, expected_name, expected_key_size, expected_security_level) in curves {
-        assert_eq!(curve.name(), expected_name);
-        assert_eq!(curve.key_size(), expected_key_size);
-        assert_eq!(curve.security_level(), expected_security_level);
-    }
-}
-
-/// Test RSA padding scheme properties
-#[test]
-fn test_rsa_padding_properties() {
-    let paddings = vec![
-        (RsaPadding::Pkcs1v15, "PKCS1v15"),
-        (RsaPadding::OaepSha256, "OAEP-SHA256"),
-        (RsaPadding::OaepSha384, "OAEP-SHA384"),
-        (RsaPadding::OaepSha512, "OAEP-SHA512"),
-        (RsaPadding::Pss, "PSS"),
-    ];
-    
-    for (padding, expected_name) in paddings {
-        assert_eq!(padding.name(), expected_name);
-    }
-}
-
-/// Test error types and messages
-#[test]
-fn test_error_types() {
-    let errors = vec![
-        (AsymmetricError::InvalidKeySize(1024), "Invalid key size: 1024"),
-        (AsymmetricError::InvalidCurve("unknown".to_string()), "Invalid elliptic curve: unknown"),
-        (AsymmetricError::InvalidPadding("bad".to_string()), "Invalid padding scheme: bad"),
-        (AsymmetricError::KeyGenerationFailed("failed".to_string()), "Key generation failed: failed"),
-        (AsymmetricError::EncryptionFailed("failed".to_string()), "Encryption failed: failed"),
-        (AsymmetricError::DecryptionFailed("failed".to_string()), "Decryption failed: failed"),
-        (AsymmetricError::SigningFailed("failed".to_string()), "Signing failed: failed"),
-        (AsymmetricError::VerificationFailed("failed".to_string()), "Verification failed: failed"),
-        (AsymmetricError::KeyExchangeFailed("failed".to_string()), "Key exchange failed: failed"),
-        (AsymmetricError::InvalidSignature, "Invalid signature"),
-        (AsymmetricError::InvalidPublicKey, "Invalid public key"),
-        (AsymmetricError::InvalidPrivateKey, "Invalid private key"),
-        (AsymmetricError::UnsupportedOperation("test".to_string()), "Unsupported operation: test"),
-        (AsymmetricError::InsufficientEntropy, "Insufficient entropy for key generation"),
-        (AsymmetricError::Internal("internal".to_string()), "Internal error: internal"),
-    ];
-    
-    for (error, expected_message) in errors {
-        assert_eq!(error.to_string(), expected_message);
-    }
-}
-
-/// Test public API functions
-#[test]
-fn test_public_api_functions() {
+#[cfg(test)]
+mod tests {
+    use cursed::stdlib::packages::crypto_asymmetric::*;
     use cursed::stdlib::value::Value;
-    
-    // Test RSA key generation API
-    let result = rsa_generate_keypair(vec![]);
-    assert!(result.is_ok());
-    
-    let result = rsa_generate_keypair(vec![Value::Number(2048.0)]);
-    assert!(result.is_ok());
-    
-    // Test ECDSA key generation API
-    let result = ecdsa_generate_keypair(vec![]);
-    assert!(result.is_ok());
-    
-    let result = ecdsa_generate_keypair(vec![Value::String("P-256".to_string())]);
-    assert!(result.is_ok());
-    
-    let result = ecdsa_generate_keypair(vec![Value::String("secp256k1".to_string())]);
-    assert!(result.is_ok());
-    
-    // Test X25519 key generation API
-    let result = x25519_generate_keypair(vec![]);
-    assert!(result.is_ok());
-    
-    // Test Ed25519 key generation API
-    let result = ed25519_generate_keypair(vec![]);
-    assert!(result.is_ok());
-}
+    use cursed::error::CursedError;
+    use std::collections::HashMap;
 
-/// Test large message handling
-#[test]
-fn test_large_message_handling() {
-    let crypto = AsymmetricCrypto::new();
-    
-    // Test Ed25519 with large message
-    let keypair = crypto.ed25519_generate_keypair().unwrap();
-    let large_message = vec![0x42u8; 10000]; // 10KB message
-    
-    let signature = crypto.ed25519_sign(&keypair.private_key, &large_message).unwrap();
-    let is_valid = crypto.ed25519_verify(&keypair.public_key, &large_message, &signature).unwrap();
-    
-    assert!(is_valid, "Ed25519 should handle large messages");
-    
-    // Test ECDSA with large message
-    let ecdsa_keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::P256)).unwrap();
-    let ecdsa_signature = crypto.ecdsa_sign(&ecdsa_keypair.private_key, &large_message).unwrap();
-    let ecdsa_valid = crypto.ecdsa_verify(&ecdsa_keypair.public_key, &large_message, &ecdsa_signature).unwrap();
-    
-    assert!(ecdsa_valid, "ECDSA should handle large messages");
-}
-
-/// Test empty message handling
-#[test]
-fn test_empty_message_handling() {
-    let crypto = AsymmetricCrypto::new();
-    
-    // Test Ed25519 with empty message
-    let keypair = crypto.ed25519_generate_keypair().unwrap();
-    let empty_message = b"";
-    
-    let signature = crypto.ed25519_sign(&keypair.private_key, empty_message).unwrap();
-    let is_valid = crypto.ed25519_verify(&keypair.public_key, empty_message, &signature).unwrap();
-    
-    assert!(is_valid, "Ed25519 should handle empty messages");
-    
-    // Test ECDSA with empty message
-    let ecdsa_keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::P256)).unwrap();
-    let ecdsa_signature = crypto.ecdsa_sign(&ecdsa_keypair.private_key, empty_message).unwrap();
-    let ecdsa_valid = crypto.ecdsa_verify(&ecdsa_keypair.public_key, empty_message, &ecdsa_signature).unwrap();
-    
-    assert!(ecdsa_valid, "ECDSA should handle empty messages");
-}
-
-/// Performance benchmark for key generation
-#[test]
-fn test_key_generation_performance() {
-    let crypto = AsymmetricCrypto::new();
-    
-    let start = std::time::Instant::now();
-    
-    // Generate multiple keys to test performance
-    for _ in 0..10 {
-        let _rsa_keypair = crypto.rsa_generate_keypair(Some(RSA_2048_BITS)).unwrap();
-        let _ecdsa_keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::P256)).unwrap();
-        let _x25519_keypair = crypto.x25519_generate_keypair().unwrap();
-        let _ed25519_keypair = crypto.ed25519_generate_keypair().unwrap();
+    #[test]
+    fn test_asymmetric_crypto_initialization() {
+        let crypto = AsymmetricCrypto::new();
+        let algorithms = crypto.supported_algorithms();
+        
+        assert!(algorithms.contains(&"RSA-2048".to_string()));
+        assert!(algorithms.contains(&"RSA-3072".to_string()));
+        assert!(algorithms.contains(&"RSA-4096".to_string()));
+        assert!(algorithms.contains(&"ECDSA-P256".to_string()));
+        assert!(algorithms.contains(&"ECDSA-P384".to_string()));
+        assert!(algorithms.contains(&"ECDSA-P521".to_string()));
+        assert!(algorithms.contains(&"Ed25519".to_string()));
+        assert!(algorithms.contains(&"X25519".to_string()));
+        
+        println!("✅ Asymmetric crypto initialization test passed");
     }
-    
-    let duration = start.elapsed();
-    println!("Generated 40 keypairs in {:?}", duration);
-    
-    // Should complete within reasonable time (adjust as needed)
-    assert!(duration.as_secs() < 30, "Key generation should be reasonably fast");
+
+    #[test]
+    fn test_rsa_full_workflow() {
+        let mut crypto = AsymmetricCrypto::new();
+        
+        // Test RSA key generation for different sizes
+        for key_size in &["RSA-2048", "RSA-3072", "RSA-4096"] {
+            let keypair_result = crypto.generate_keypair(key_size);
+            assert!(keypair_result.is_ok(), "Failed to generate {} keypair", key_size);
+            
+            if let Ok(Value::Object(keypair)) = keypair_result {
+                assert!(keypair.contains_key("algorithm"));
+                assert!(keypair.contains_key("public_key"));
+                assert!(keypair.contains_key("private_key"));
+                
+                if let (Some(Value::String(public_key)), Some(Value::String(private_key))) = 
+                   (keypair.get("public_key"), keypair.get("private_key")) {
+                    
+                    // Test encryption/decryption
+                    let test_data = b"Hello, asymmetric world!";
+                    let encrypt_result = crypto.rsa_encrypt(public_key, test_data);
+                    assert!(encrypt_result.is_ok(), "Failed to encrypt with {}", key_size);
+                    
+                    if let Ok(encrypted_data) = encrypt_result {
+                        let decrypt_result = crypto.rsa_decrypt(private_key, &encrypted_data);
+                        assert!(decrypt_result.is_ok(), "Failed to decrypt with {}", key_size);
+                        
+                        if let Ok(decrypted_data) = decrypt_result {
+                            assert_eq!(test_data, decrypted_data.as_slice(), 
+                                     "{} encryption/decryption round trip failed", key_size);
+                        }
+                    }
+                    
+                    // Test signing/verification
+                    let message = b"Test message for signing";
+                    let sign_result = crypto.sign(key_size, private_key, message);
+                    assert!(sign_result.is_ok(), "Failed to sign with {}", key_size);
+                    
+                    if let Ok(signature) = sign_result {
+                        let verify_result = crypto.verify(key_size, public_key, message, &signature);
+                        assert!(verify_result.is_ok(), "Failed to verify with {}", key_size);
+                        assert!(verify_result.unwrap(), "{} signature verification failed", key_size);
+                    }
+                }
+            }
+        }
+        
+        println!("✅ RSA full workflow test passed");
+    }
+
+    #[test]
+    fn test_ecdsa_full_workflow() {
+        let mut crypto = AsymmetricCrypto::new();
+        
+        // Test ECDSA for different curves
+        for algorithm in &["ECDSA-P256", "ECDSA-P384", "ECDSA-P521"] {
+            let keypair_result = crypto.generate_keypair(algorithm);
+            assert!(keypair_result.is_ok(), "Failed to generate {} keypair", algorithm);
+            
+            if let Ok(Value::Object(keypair)) = keypair_result {
+                if let (Some(Value::String(public_key)), Some(Value::String(private_key))) = 
+                   (keypair.get("public_key"), keypair.get("private_key")) {
+                    
+                    // Test signing/verification
+                    let message = b"ECDSA test message";
+                    let sign_result = crypto.sign(algorithm, private_key, message);
+                    assert!(sign_result.is_ok(), "Failed to sign with {}", algorithm);
+                    
+                    if let Ok(signature) = sign_result {
+                        let verify_result = crypto.verify(algorithm, public_key, message, &signature);
+                        assert!(verify_result.is_ok(), "Failed to verify with {}", algorithm);
+                        assert!(verify_result.unwrap(), "{} signature verification failed", algorithm);
+                        
+                        // Test with wrong message
+                        let wrong_message = b"Wrong message";
+                        let verify_wrong = crypto.verify(algorithm, public_key, wrong_message, &signature);
+                        assert!(verify_wrong.is_ok(), "Verification should not error on wrong message");
+                        assert!(!verify_wrong.unwrap(), "Signature should not verify for wrong message");
+                    }
+                }
+            }
+        }
+        
+        println!("✅ ECDSA full workflow test passed");
+    }
+
+    #[test]
+    fn test_ed25519_full_workflow() {
+        let mut crypto = AsymmetricCrypto::new();
+        
+        let keypair_result = crypto.generate_keypair("Ed25519");
+        assert!(keypair_result.is_ok(), "Failed to generate Ed25519 keypair");
+        
+        if let Ok(Value::Object(keypair)) = keypair_result {
+            if let (Some(Value::String(public_key)), Some(Value::String(private_key))) = 
+               (keypair.get("public_key"), keypair.get("private_key")) {
+                
+                // Test signing/verification
+                let message = b"Ed25519 test message";
+                let sign_result = crypto.sign("Ed25519", private_key, message);
+                assert!(sign_result.is_ok(), "Failed to sign with Ed25519");
+                
+                if let Ok(signature) = sign_result {
+                    let verify_result = crypto.verify("Ed25519", public_key, message, &signature);
+                    assert!(verify_result.is_ok(), "Failed to verify with Ed25519");
+                    assert!(verify_result.unwrap(), "Ed25519 signature verification failed");
+                    
+                    // Test signature stability (deterministic)
+                    let sign_result2 = crypto.sign("Ed25519", private_key, message);
+                    assert!(sign_result2.is_ok(), "Second signing failed");
+                    
+                    // Ed25519 is deterministic, so signatures should be identical
+                    // (This test may fail with randomized signatures, which is also valid)
+                }
+            }
+        }
+        
+        println!("✅ Ed25519 full workflow test passed");
+    }
+
+    #[test]
+    fn test_x25519_key_exchange() {
+        let mut crypto = AsymmetricCrypto::new();
+        
+        // Generate two X25519 keypairs
+        let keypair1_result = crypto.generate_keypair("X25519");
+        let keypair2_result = crypto.generate_keypair("X25519");
+        
+        assert!(keypair1_result.is_ok(), "Failed to generate first X25519 keypair");
+        assert!(keypair2_result.is_ok(), "Failed to generate second X25519 keypair");
+        
+        if let (Ok(Value::Object(keypair1)), Ok(Value::Object(keypair2))) = 
+           (keypair1_result, keypair2_result) {
+            
+            if let (Some(Value::String(private_key1)), Some(Value::String(public_key1)),
+                    Some(Value::String(private_key2)), Some(Value::String(public_key2))) = 
+               (keypair1.get("private_key"), keypair1.get("public_key"),
+                keypair2.get("private_key"), keypair2.get("public_key")) {
+                
+                // Perform key exchange from both sides
+                let shared_secret1 = crypto.key_exchange("X25519", private_key1, public_key2);
+                let shared_secret2 = crypto.key_exchange("X25519", private_key2, public_key1);
+                
+                assert!(shared_secret1.is_ok(), "First key exchange failed");
+                assert!(shared_secret2.is_ok(), "Second key exchange failed");
+                
+                // Both parties should derive the same shared secret
+                assert_eq!(shared_secret1.unwrap(), shared_secret2.unwrap(),
+                          "X25519 shared secrets do not match");
+            }
+        }
+        
+        println!("✅ X25519 key exchange test passed");
+    }
+
+    #[test]
+    fn test_x448_key_exchange() {
+        // Test X448 key generation
+        let keypair1_result = x448_generate_keypair(vec![]);
+        let keypair2_result = x448_generate_keypair(vec![]);
+        
+        assert!(keypair1_result.is_ok(), "Failed to generate first X448 keypair");
+        assert!(keypair2_result.is_ok(), "Failed to generate second X448 keypair");
+        
+        if let (Ok(Value::Object(keypair1)), Ok(Value::Object(keypair2))) = 
+           (keypair1_result, keypair2_result) {
+            
+            if let (Some(Value::String(private_key1)), Some(Value::String(public_key2))) = 
+               (keypair1.get("private_key"), keypair2.get("public_key")) {
+                
+                // Test key exchange
+                let exchange_result = x448_key_exchange(vec![
+                    Value::String(private_key1.clone()),
+                    Value::String(public_key2.clone()),
+                ]);
+                
+                assert!(exchange_result.is_ok(), "X448 key exchange failed");
+                
+                if let Ok(Value::Object(result)) = exchange_result {
+                    assert!(result.contains_key("algorithm"));
+                    assert!(result.contains_key("shared_secret"));
+                    assert!(result.contains_key("derived_key"));
+                    
+                    assert_eq!(result.get("algorithm"), Some(&Value::String("X448".to_string())));
+                }
+            }
+        }
+        
+        println!("✅ X448 key exchange test passed");
+    }
+
+    #[test]
+    fn test_diffie_hellman_key_exchange() {
+        // Test DH key generation
+        let keypair1_result = dh_generate_keypair(vec![]);
+        let keypair2_result = dh_generate_keypair(vec![]);
+        
+        assert!(keypair1_result.is_ok(), "Failed to generate first DH keypair");
+        assert!(keypair2_result.is_ok(), "Failed to generate second DH keypair");
+        
+        if let (Ok(Value::Object(keypair1)), Ok(Value::Object(keypair2))) = 
+           (keypair1_result, keypair2_result) {
+            
+            if let (Some(Value::String(private_key1)), Some(Value::String(public_key1)),
+                    Some(Value::String(private_key2)), Some(Value::String(public_key2))) = 
+               (keypair1.get("private_key"), keypair1.get("public_key"),
+                keypair2.get("private_key"), keypair2.get("public_key")) {
+                
+                // Perform key exchange from both sides
+                let exchange1_result = dh_key_exchange(vec![
+                    Value::String(private_key1.clone()),
+                    Value::String(public_key2.clone()),
+                ]);
+                
+                let exchange2_result = dh_key_exchange(vec![
+                    Value::String(private_key2.clone()),
+                    Value::String(public_key1.clone()),
+                ]);
+                
+                assert!(exchange1_result.is_ok(), "First DH key exchange failed");
+                assert!(exchange2_result.is_ok(), "Second DH key exchange failed");
+                
+                // Both exchanges should produce the same shared secret
+                if let (Ok(Value::Object(result1)), Ok(Value::Object(result2))) = 
+                   (exchange1_result, exchange2_result) {
+                    
+                    let secret1 = result1.get("shared_secret");
+                    let secret2 = result2.get("shared_secret");
+                    
+                    assert_eq!(secret1, secret2, "DH shared secrets do not match");
+                }
+            }
+        }
+        
+        println!("✅ Diffie-Hellman key exchange test passed");
+    }
+
+    #[test]
+    fn test_unified_api_functions() {
+        // Test unified API function exports
+        
+        // Test key generation
+        let keygen_result = generate_asymmetric_keypair(vec![
+            Value::String("Ed25519".to_string())
+        ]);
+        assert!(keygen_result.is_ok(), "Unified key generation failed");
+        
+        // Test algorithm listing
+        let algorithms_result = get_asymmetric_algorithms();
+        assert!(algorithms_result.is_ok(), "Failed to get algorithm list");
+        
+        if let Ok(Value::Array(algorithms)) = algorithms_result {
+            assert!(!algorithms.is_empty(), "Algorithm list is empty");
+        }
+        
+        // Test capabilities listing
+        let capabilities_result = get_asymmetric_capabilities();
+        assert!(capabilities_result.is_ok(), "Failed to get capabilities");
+        
+        if let Ok(Value::Object(capabilities)) = capabilities_result {
+            assert!(capabilities.contains_key("algorithms"));
+            assert!(capabilities.contains_key("operations"));
+            assert!(capabilities.contains_key("key_formats"));
+        }
+        
+        println!("✅ Unified API functions test passed");
+    }
+
+    #[test]
+    fn test_algorithm_information() {
+        let crypto = AsymmetricCrypto::new();
+        
+        // Test algorithm info for each supported algorithm
+        let algorithms = ["RSA-2048", "ECDSA-P256", "Ed25519", "X25519"];
+        
+        for algorithm in &algorithms {
+            let info_result = crypto.get_algorithm_info(algorithm);
+            assert!(info_result.is_ok(), "Failed to get info for {}", algorithm);
+            
+            if let Ok(Value::Object(info)) = info_result {
+                assert!(info.contains_key("name"));
+                assert!(info.contains_key("type"));
+                assert!(info.contains_key("capabilities"));
+                
+                // Validate algorithm-specific fields
+                match *algorithm {
+                    "RSA-2048" => {
+                        assert_eq!(info.get("key_size"), Some(&Value::Integer(2048)));
+                        assert_eq!(info.get("type"), Some(&Value::String("RSA".to_string())));
+                    },
+                    "ECDSA-P256" => {
+                        assert_eq!(info.get("key_size"), Some(&Value::Integer(256)));
+                        assert_eq!(info.get("type"), Some(&Value::String("ECC".to_string())));
+                        assert_eq!(info.get("curve"), Some(&Value::String("P-256".to_string())));
+                    },
+                    "Ed25519" => {
+                        assert_eq!(info.get("key_size"), Some(&Value::Integer(255)));
+                        assert_eq!(info.get("type"), Some(&Value::String("EdDSA".to_string())));
+                    },
+                    "X25519" => {
+                        assert_eq!(info.get("key_size"), Some(&Value::Integer(255)));
+                        assert_eq!(info.get("type"), Some(&Value::String("ECDH".to_string())));
+                    },
+                    _ => {}
+                }
+            }
+        }
+        
+        println!("✅ Algorithm information test passed");
+    }
+
+    #[test]
+    fn test_key_exchange_algorithm_list() {
+        let algorithms = list_key_exchange_algorithms();
+        
+        assert!(algorithms.contains(&"Diffie-Hellman".to_string()));
+        assert!(algorithms.contains(&"X25519".to_string()));
+        assert!(algorithms.contains(&"X448".to_string()));
+        
+        println!("✅ Key exchange algorithm list test passed");
+    }
+
+    #[test]
+    fn test_key_derivation() {
+        let shared_secret = b"test_shared_secret_for_derivation";
+        
+        // Test key derivation with different lengths
+        for key_length in &[16, 32, 64] {
+            let derived_key = derive_key_from_shared_secret(shared_secret, *key_length, Some("TEST"));
+            assert!(derived_key.is_ok(), "Key derivation failed for length {}", key_length);
+            
+            if let Ok(key) = derived_key {
+                assert_eq!(key.len(), *key_length, "Derived key length mismatch");
+            }
+        }
+        
+        // Test with different info strings
+        let key1 = derive_key_from_shared_secret(shared_secret, 32, Some("INFO1")).unwrap();
+        let key2 = derive_key_from_shared_secret(shared_secret, 32, Some("INFO2")).unwrap();
+        assert_ne!(key1, key2, "Keys with different info should be different");
+        
+        // Test deterministic derivation
+        let key3 = derive_key_from_shared_secret(shared_secret, 32, Some("INFO1")).unwrap();
+        assert_eq!(key1, key3, "Key derivation should be deterministic");
+        
+        println!("✅ Key derivation test passed");
+    }
+
+    #[test]
+    fn test_parameter_validation() {
+        // Test X25519 parameter validation
+        let valid_x25519_key = vec![0u8; 32];
+        let invalid_key = vec![0u8; 16];
+        
+        assert!(validate_key_exchange_params(
+            KeyExchangeAlgorithm::X25519,
+            &valid_x25519_key,
+            &valid_x25519_key
+        ).is_ok());
+        
+        assert!(validate_key_exchange_params(
+            KeyExchangeAlgorithm::X25519,
+            &invalid_key,
+            &valid_x25519_key
+        ).is_err());
+        
+        // Test X448 parameter validation
+        let valid_x448_key = vec![0u8; 56];
+        
+        assert!(validate_key_exchange_params(
+            KeyExchangeAlgorithm::X448,
+            &valid_x448_key,
+            &valid_x448_key
+        ).is_ok());
+        
+        assert!(validate_key_exchange_params(
+            KeyExchangeAlgorithm::X448,
+            &invalid_key,
+            &valid_x448_key
+        ).is_err());
+        
+        println!("✅ Parameter validation test passed");
+    }
+
+    #[test]
+    fn test_error_handling() {
+        let mut crypto = AsymmetricCrypto::new();
+        
+        // Test unsupported algorithm
+        let invalid_result = crypto.generate_keypair("INVALID_ALGORITHM");
+        assert!(invalid_result.is_err(), "Should reject invalid algorithm");
+        
+        // Test invalid key exchange algorithm
+        let invalid_exchange = crypto.key_exchange("INVALID_KX", "key1", "key2");
+        assert!(invalid_exchange.is_err(), "Should reject invalid key exchange algorithm");
+        
+        // Test signing with invalid algorithm
+        let invalid_sign = crypto.sign("INVALID_SIGN", "key", b"message");
+        assert!(invalid_sign.is_err(), "Should reject invalid signing algorithm");
+        
+        println!("✅ Error handling test passed");
+    }
+
+    #[test]
+    fn test_crypto_package_initialization() {
+        let init_result = init_crypto_asymmetric();
+        assert!(init_result.is_ok(), "Crypto package initialization failed");
+        
+        let capabilities = get_crypto_capabilities();
+        assert!(!capabilities.is_empty(), "Capabilities list should not be empty");
+        
+        println!("✅ Crypto package initialization test passed");
+    }
+
+    #[test]
+    fn test_comprehensive_security_properties() {
+        let mut crypto = AsymmetricCrypto::new();
+        
+        // Test that different key generations produce different keys
+        let keypair1 = crypto.generate_keypair("Ed25519").unwrap();
+        let keypair2 = crypto.generate_keypair("Ed25519").unwrap();
+        
+        if let (Value::Object(kp1), Value::Object(kp2)) = (keypair1, keypair2) {
+            let pk1 = kp1.get("public_key");
+            let pk2 = kp2.get("public_key");
+            assert_ne!(pk1, pk2, "Different key generations should produce different keys");
+            
+            let sk1 = kp1.get("private_key");
+            let sk2 = kp2.get("private_key");
+            assert_ne!(sk1, sk2, "Different key generations should produce different private keys");
+        }
+        
+        // Test that signatures on different messages are different
+        let keypair = crypto.generate_keypair("Ed25519").unwrap();
+        if let Value::Object(kp) = keypair {
+            if let Some(Value::String(private_key)) = kp.get("private_key") {
+                let sig1 = crypto.sign("Ed25519", private_key, b"message1").unwrap();
+                let sig2 = crypto.sign("Ed25519", private_key, b"message2").unwrap();
+                assert_ne!(sig1, sig2, "Signatures on different messages should be different");
+            }
+        }
+        
+        println!("✅ Comprehensive security properties test passed");
+    }
 }

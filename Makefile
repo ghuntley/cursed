@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help error-propagation-test error-propagation-test-integration error-propagation-test-compilation error-propagation-test-examples error-propagation-test-all error-propagation-test-quick error-propagation-test-coverage error-propagation-test-report error-propagation-help optimization-test optimization-test-quick optimization-test-benchmarks optimization-test-cli optimization-test-performance optimization-test-pipeline optimization-test-all optimization-test-ignored optimization-test-coverage optimization-benchmark optimization-demo optimization-build-example optimization-help ipc-test ipc-test-basic ipc-test-stress ipc-test-performance ipc-test-all ipc-test-quick ipc-test-coverage ipc-test-report ipc-example ipc-demo ipc-help process-test process-test-integration process-test-basic process-test-concurrent process-test-monitoring process-test-all process-test-quick process-help sqlite-production-test sqlite-production-test-all sqlite-production-test-quick sqlite-production-help build-optimization-test build-optimization-test-cli build-optimization-test-integration build-optimization-test-performance build-optimization-test-all build-optimization-test-quick build-optimization-test-coverage build-optimization-test-report build-optimization-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark collections-test collections-test-verbose collections-test-quick collections-test-performance collections-test-stress collections-test-errors collections-help queues-test queues-test-unit queues-test-performance queues-test-thread-safety queues-test-edge-cases queues-test-all queues-test-quick queues-test-coverage queues-test-report queues-help stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-quick crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-test-coverage crypto-test-report crypto-example crypto-build-examples crypto-benchmark crypto-validate crypto-clean crypto-help enhanced-gc-test enhanced-gc-test-unit enhanced-gc-test-integration enhanced-gc-test-performance enhanced-gc-test-stress enhanced-gc-test-memory-safety enhanced-gc-test-all enhanced-gc-test-quick enhanced-gc-test-ignored enhanced-gc-test-coverage enhanced-gc-test-report enhanced-gc-help type-system-test type-system-test-integration type-system-test-parser type-system-test-comprehensive type-system-test-all type-system-test-quick type-system-help enhanced-debug-test enhanced-debug-test-integration enhanced-debug-test-performance enhanced-debug-test-edge-cases enhanced-debug-test-unit enhanced-debug-test-all enhanced-debug-test-quick enhanced-debug-test-coverage enhanced-debug-test-report enhanced-debug-help panic-recovery-test panic-recovery-test-unit panic-recovery-test-integration panic-recovery-test-llvm panic-recovery-test-all panic-recovery-test-quick panic-recovery-test-coverage panic-recovery-test-report panic-recovery-help error-handling-test error-handling-test-integration error-handling-test-stress error-handling-test-edge-cases error-handling-test-all error-handling-test-quick error-handling-test-coverage error-handling-test-report error-handling-help testing-framework-test testing-framework-demo testing-framework-runner-demo testing-framework-integration testing-framework-assertions testing-framework-discovery testing-framework-execution testing-framework-reporting testing-framework-stats testing-framework-all testing-framework-coverage testing-framework-docs testing-framework-help package-installer-test package-installer-test-integration package-installer-test-scripts package-installer-test-database package-installer-test-all package-installer-test-quick package-installer-test-coverage package-installer-test-report package-installer-help error-propagation-test error-propagation-test-integration error-propagation-test-compilation error-propagation-test-examples error-propagation-test-all error-propagation-test-quick error-propagation-test-coverage error-propagation-test-report error-propagation-help optimization-test optimization-test-quick optimization-test-benchmarks optimization-test-cli optimization-test-performance optimization-test-pipeline optimization-test-all optimization-test-ignored optimization-test-coverage optimization-benchmark optimization-demo optimization-build-example optimization-help ipc-test ipc-test-basic ipc-test-stress ipc-test-performance ipc-test-all ipc-test-quick ipc-test-coverage ipc-test-report ipc-example ipc-demo ipc-help process-test process-test-integration process-test-basic process-test-concurrent process-test-monitoring process-test-all process-test-quick process-help sqlite-production-test sqlite-production-test-all sqlite-production-test-quick sqlite-production-help build-optimization-test build-optimization-test-cli build-optimization-test-integration build-optimization-test-performance build-optimization-test-all build-optimization-test-quick build-optimization-test-coverage build-optimization-test-report build-optimization-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -2105,12 +2105,12 @@ template-cache-help:
 
 # LLVM Optimization System Tests
 optimization-test:
-	@echo "🔧 Running LLVM optimization system tests..."
-	$(LINK_FIX) cargo test --test llvm_optimization_test
+	@echo "🔧 Running comprehensive optimization system tests..."
+	$(LINK_FIX) cargo test --test optimization_system_test
 
 optimization-test-quick:
 	@echo "🔧 Running quick optimization tests..."
-	$(LINK_FIX) cargo test --test llvm_optimization_test "test_(optimization_level|config|manager).*"
+	$(LINK_FIX) cargo test --test optimization_system_test "test_(optimization_level|manager|cache)"
 
 optimization-test-benchmarks:
 	@echo "🔧 Running optimization benchmarks..."
@@ -2145,7 +2145,7 @@ optimization-benchmark:
 
 optimization-demo:
 	@echo "🎯 Running optimization system demo..."
-	$(LINK_FIX) cargo run -- build examples/fibonacci.csd --opt-level 3 --profile --time-passes
+	$(LINK_FIX) cargo run --example optimization_demo
 
 optimization-build-example:
 	@echo "🏗️ Building example with optimizations..."
@@ -2796,7 +2796,145 @@ build-optimization-help:
 	@echo "Quick Start:"
 	@echo "  make build-optimization-test-quick  # Validate core functionality"
 	@echo "  make build-optimization-test        # Run standard tests"
-	@echo "  make build-optimization-test-all    # Complete comprehensive testing"
+	@echo "  make build-optimization-test-all    # Complete comprehensive testing
+
+# ======================================================================
+# LLVM Advanced Optimization System Tests
+# ======================================================================
+
+# Core LLVM optimization tests
+llvm-opt-test:
+	@echo "🚀 Running LLVM Advanced Optimization tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test
+
+# Quick LLVM optimization validation
+llvm-opt-test-quick:
+	@echo "⚡ Running quick LLVM optimization tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test_(advanced_optimization_manager|optimization_statistics|optimization_config)"
+
+# LLVM optimization unit tests
+llvm-opt-test-unit:
+	@echo "🔧 Running LLVM optimization unit tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test_(function_inliner|loop_optimizer|dead_code_eliminator|constant_propagator|cse_eliminator|tail_call_optimizer|memory_optimizer)"
+
+# LLVM optimization integration tests
+llvm-opt-test-integration:
+	@echo "🔗 Running LLVM optimization integration tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "integration_tests::"
+
+# LLVM optimization performance tests
+llvm-opt-test-performance:
+	@echo "📈 Running LLVM optimization performance tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test --ignored "performance_tests::"
+
+# All LLVM optimization tests
+llvm-opt-test-all:
+	@echo "🎯 Running complete LLVM optimization test suite..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test
+	@echo "🎯 Running performance benchmarks..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test --ignored
+
+# LLVM optimization coverage
+llvm-opt-test-coverage:
+	@echo "📊 Generating LLVM optimization test coverage..."
+	./fix_linking.sh devenv shell cargo tarpaulin --test llvm_advanced_optimization_test --out Html --output-dir coverage/llvm_optimization
+
+# LLVM optimization demo
+llvm-opt-demo:
+	@echo "🎪 Running LLVM optimization demo..."
+	./fix_linking.sh devenv shell cargo run examples/optimization_demo.csd --opt-level=3
+
+# LLVM optimization with code generator integration
+llvm-opt-codegen-test:
+	@echo "🏭 Testing LLVM optimization integration with code generator..."
+	./fix_linking.sh devenv shell cargo test "test.*optimization.*codegen"
+
+# LLVM optimization configuration tests
+llvm-opt-config-test:
+	@echo "⚙️ Running LLVM optimization configuration tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test.*config"
+
+# LLVM optimization statistics tests
+llvm-opt-stats-test:
+	@echo "📊 Running LLVM optimization statistics tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test.*statistics"
+
+# LLVM optimization pass tests
+llvm-opt-pass-test:
+	@echo "🎭 Running individual LLVM optimization pass tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test.*pass"
+
+# LLVM optimization error handling tests
+llvm-opt-error-test:
+	@echo "🚨 Running LLVM optimization error handling tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test.*error"
+
+# LLVM optimization thread safety tests
+llvm-opt-thread-test:
+	@echo "🧵 Running LLVM optimization thread safety tests..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test.*thread.*safety"
+
+# LLVM optimization benchmark
+llvm-opt-benchmark:
+	@echo "🏁 Running LLVM optimization benchmarks..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test --ignored "benchmark_"
+
+# LLVM optimization validation
+llvm-opt-validate:
+	@echo "✅ Validating LLVM optimization system..."
+	./fix_linking.sh devenv shell cargo test --test llvm_advanced_optimization_test "test_.*validation"
+
+# LLVM optimization help
+llvm-opt-help:
+	@echo "🚀 CURSED LLVM Advanced Optimization System Tests"
+	@echo "================================================="
+	@echo ""
+	@echo "Available Commands:"
+	@echo "  llvm-opt-test                - Run core optimization tests"
+	@echo "  llvm-opt-test-quick         - Quick validation tests"
+	@echo "  llvm-opt-test-unit          - Individual optimization pass tests"
+	@echo "  llvm-opt-test-integration   - Integration tests"
+	@echo "  llvm-opt-test-performance   - Performance benchmark tests"
+	@echo "  llvm-opt-test-all           - Complete test suite"
+	@echo "  llvm-opt-test-coverage      - Generate test coverage report"
+	@echo "  llvm-opt-demo               - Run optimization demo"
+	@echo "  llvm-opt-codegen-test       - Code generator integration tests"
+	@echo "  llvm-opt-config-test        - Configuration system tests"
+	@echo "  llvm-opt-stats-test         - Statistics collection tests"
+	@echo "  llvm-opt-pass-test          - Individual pass tests"
+	@echo "  llvm-opt-error-test         - Error handling tests"
+	@echo "  llvm-opt-thread-test        - Thread safety tests"
+	@echo "  llvm-opt-benchmark          - Performance benchmarks"
+	@echo "  llvm-opt-validate           - System validation"
+	@echo "  llvm-opt-help               - Show this help"
+	@echo ""
+	@echo "Optimization Passes Tested:"
+	@echo "  - Function Inlining         - Eliminate function call overhead"
+	@echo "  - Loop Optimization         - Unrolling, vectorization, and transformations"
+	@echo "  - Dead Code Elimination     - Remove unreachable and unused code"
+	@echo "  - Constant Propagation      - Replace variables with constant values"
+	@echo "  - Common Subexpression      - Eliminate redundant computations"
+	@echo "  - Tail Call Optimization    - Convert tail recursion to loops"
+	@echo "  - Memory Optimization       - Improve memory access patterns"
+	@echo ""
+	@echo "Configuration Options:"
+	@echo "  - Optimization Levels       - O0, O1, O2, O3, Os, Oz"
+	@echo "  - Individual Pass Control   - Enable/disable specific passes"
+	@echo "  - Performance Tuning        - Inline size, unroll count limits"
+	@echo "  - Timeout Management        - Prevent infinite optimization"
+	@echo "  - Statistics Collection     - Comprehensive metrics tracking"
+	@echo ""
+	@echo "Integration Features:"
+	@echo "  - LLVM Code Generator       - Direct integration with code generation"
+	@echo "  - Thread Safety             - Safe concurrent optimization"
+	@echo "  - Error Handling            - Robust error recovery and reporting"
+	@echo "  - Performance Monitoring    - Real-time optimization metrics"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make llvm-opt-test-quick    # Validate core functionality"
+	@echo "  make llvm-opt-test          # Run standard tests"
+	@echo "  make llvm-opt-demo          # See optimization in action"
+	@echo "  make llvm-opt-test-all      # Complete comprehensive testing""
 
 # Process Management and IPC Testing Targets
 # ===========================================
@@ -2874,3 +3012,148 @@ process-ipc-help:
 	@echo "  process-ipc-test-coverage   - Generate coverage report"
 	@echo "  process-ipc-test-report     - Generate detailed test report"
 	@echo "  process-ipc-clean           - Clean test artifacts"
+
+# JIT Compilation Testing Commands
+jit-test-quick:
+	@echo "=== Running JIT Quick Tests ==="
+	$(LINKING_FIX) cargo test jit_comprehensive_test --release
+
+jit-test-all:
+	@echo "=== Running All JIT Tests ==="
+	$(LINKING_FIX) cargo test jit_comprehensive_test jit_integration_test --release
+
+jit-test-performance:
+	@echo "=== Running JIT Performance Tests ==="
+	$(LINKING_FIX) cargo test jit_performance_test --release --ignored
+
+jit-test-integration:
+	@echo "=== Running JIT Integration Tests ==="
+	$(LINKING_FIX) cargo test jit_integration_test --release
+
+jit-test-comprehensive:
+	@echo "=== Running JIT Comprehensive Tests ==="
+	$(LINKING_FIX) cargo test jit_comprehensive_test --release
+
+jit-benchmark:
+	@echo "=== Running JIT Benchmarks ==="
+	$(LINKING_FIX) cargo test jit_performance_test --release --ignored -- --nocapture
+
+jit-test-coverage:
+	@echo "=== Generating JIT Test Coverage ==="
+	$(LINKING_FIX) cargo tarpaulin --tests --out Html --output-dir coverage/jit \
+		--include-tests jit_comprehensive_test jit_integration_test
+
+jit-test-report:
+	@echo "=== Generating JIT Test Report ==="
+	@echo "# JIT Test Report" > jit_test_report.md
+	@echo "Generated on: $$(date)" >> jit_test_report.md
+	@echo "" >> jit_test_report.md
+	$(LINKING_FIX) cargo test jit_comprehensive_test jit_integration_test --release -- --format=json | \
+		jq -r '.[] | select(.type == "test") | "- \(.name): \(.outcome)"' >> jit_test_report.md || \
+		echo "JSON processing failed, generating simple report..." >> jit_test_report.md
+	@echo "JIT test report generated: jit_test_report.md"
+
+jit-help:
+	@echo "=== JIT Testing Commands ==="
+	@echo "  jit-test-quick           - Run quick JIT validation tests"
+	@echo "  jit-test-all             - Run all JIT tests"
+	@echo "  jit-test-performance     - Run JIT performance benchmarks"
+	@echo "  jit-test-integration     - Run JIT integration tests"
+	@echo "  jit-test-comprehensive   - Run comprehensive JIT functionality tests"
+	@echo "  jit-benchmark            - Run detailed JIT benchmarks with output"
+	@echo "  jit-test-coverage        - Generate JIT test coverage report"
+	@echo "  jit-test-report          - Generate JIT test report"
+	@echo "  jit-help                 - Show this help message"
+
+# ================================
+# Crypto Package Tests
+# ================================
+
+crypto-test:
+	@echo "Running standard crypto test suite..."
+	./tests/run_crypto_tests.sh
+
+crypto-test-quick:
+	@echo "Running quick crypto validation tests..."
+	./tests/run_crypto_tests.sh --quick
+	./fix_linking.sh devenv shell cargo test --test crypto_pki_integration_test
+
+crypto-test-integration:
+	@echo "Running crypto integration tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_integration_test
+
+crypto-test-stress:
+	@echo "Running crypto stress tests..."
+	./tests/run_crypto_tests.sh --stress --ignored
+
+crypto-test-security:
+	@echo "Running crypto security validation tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_security_test
+
+crypto-test-interop:
+	@echo "Running crypto interoperability tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_interop_test
+
+crypto-test-all:
+	@echo "Running complete crypto test suite including stress tests..."
+	./tests/run_crypto_tests.sh --all --verbose
+	@make crypto-test-pki
+
+# PKI (Public Key Infrastructure) Tests
+crypto-test-pki:
+	@echo "🏛️ Running PKI integration tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_pki_integration_test
+	@echo "✅ PKI tests completed!"
+
+crypto-test-coverage:
+	@echo "Generating crypto test coverage report..."
+	./tests/run_crypto_tests.sh --coverage
+
+crypto-test-report:
+	@echo "Generating detailed crypto test report..."
+	./tests/run_crypto_tests.sh --report
+
+crypto-example:
+	@echo "Running crypto showcase example..."
+	./fix_linking.sh devenv shell ./target/debug/cursed examples/crypto_showcase.csd
+
+crypto-build-examples:
+	@echo "Building crypto example programs..."
+	@echo "Examples available:"
+	@echo "  - examples/crypto_showcase.csd      - Complete crypto feature demonstration"
+	@echo "  - examples/secure_messaging.csd     - End-to-end encrypted messaging"
+	@echo "Build the cursed binary first with 'make build'"
+
+crypto-benchmark:
+	@echo "Running crypto performance benchmarks..."
+	./fix_linking.sh devenv shell cargo test --test crypto_stress_test --ignored "test_.*performance" -- --nocapture
+
+crypto-validate:
+	@echo "Validating crypto implementation correctness..."
+	./fix_linking.sh devenv shell cargo test --test crypto_security_test "test_.*_standard_test_vectors" -- --nocapture
+
+crypto-clean:
+	@echo "Cleaning crypto test artifacts..."
+	rm -f crypto_test_report.md
+	rm -rf coverage/
+
+crypto-help:
+	@echo "CURSED Crypto Package Test Suite"
+	@echo ""
+	@echo "Available crypto test commands:"
+	@echo "  crypto-test              - Run standard crypto test suite"
+	@echo "  crypto-test-quick        - Run quick validation tests"
+	@echo "  crypto-test-integration  - Run integration tests"
+	@echo "  crypto-test-stress       - Run stress tests (with --ignored)"
+	@echo "  crypto-test-security     - Run security validation tests"
+	@echo "  crypto-test-interop      - Run interoperability tests"
+	@echo "  crypto-test-pki          - Run PKI (Public Key Infrastructure) tests"
+	@echo "  crypto-test-all          - Run complete test suite with verbose output"
+	@echo "  crypto-test-coverage     - Generate test coverage report"
+	@echo "  crypto-test-report       - Generate detailed test report"
+	@echo "  crypto-example           - Run crypto showcase example"
+	@echo "  crypto-build-examples    - List available crypto examples"
+	@echo "  crypto-benchmark         - Run performance benchmarks"
+	@echo "  crypto-validate          - Validate implementation correctness"
+	@echo "  crypto-clean             - Clean test artifacts"
+	@echo "  crypto-help              - Show this help message"

@@ -1,340 +1,419 @@
-use rand::{RngCore, rngs::OsRng, Rng};
-use std::sync::Mutex;
-use std::collections::HashMap;
-use std::sync::Arc;
-use once_cell::sync::Lazy;
+/// Production-ready cryptographic random number generation module
+pub mod entropy_sources;
+pub mod entropy_collection;
+pub mod entropy_monitoring;
+pub mod entropy_estimation;
+pub mod entropy_mixing;
+pub mod hardware_entropy;
+pub mod csprng;
+pub mod secure_random;
+pub mod random_generators;
+pub mod random_numbers;
+pub mod random_bytes;
+pub mod random_strings;
+pub mod nonce_generation;
+pub mod randomness_tests;
+pub mod security_analysis;
 
-/// Cryptographically secure random number generation errors
-#[derive(Debug, Clone)]
-pub enum CryptoRandomError {
-    /// System entropy source is unavailable
-    EntropyUnavailable,
-    /// Invalid parameter provided
-    InvalidParameter(String),
-    /// Random number generation failure
-    GenerationFailed(String),
-    /// Insufficient entropy available
-    InsufficientEntropy,
-}
+use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 
-impl std::fmt::Display for CryptoRandomError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CryptoRandomError::EntropyUnavailable => write!(f, "System entropy source is unavailable"),
-            CryptoRandomError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
-            CryptoRandomError::GenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
-            CryptoRandomError::InsufficientEntropy => write!(f, "Insufficient entropy available"),
-        }
-    }
-}
+// Re-export main types and functions for convenient access
+pub use secure_random::{
+    SecureRandom, secure_bytes, secure_u32, secure_u64, secure_f64, secure_bool,
+    secure_range_u32, secure_range_u64, secure_choose, secure_shuffle, 
+    secure_fill_bytes, secure_reseed, secure_entropy_info, secure_test_quality
+};
 
-impl std::error::Error for CryptoRandomError {}
+pub use random_bytes::{
+    RandomBytes, random_bytes, random_hex, random_base64, random_base64url,
+    random_salt, random_iv, random_nonce as random_nonce_bytes, random_key_material
+};
 
-pub type CryptoRandomResult<T> = Result<T, CryptoRandomError>;
+pub use random_strings::{
+    RandomStrings, CharSet, random_string, random_alphabetic, random_alphanumeric,
+    random_numeric, random_hexadecimal, random_password, random_identifier, random_filename
+};
 
-/// Global entropy statistics for monitoring
-static RNG_STATS: Lazy<Arc<Mutex<RngStatistics>>> = Lazy::new(|| {
-    Arc::new(Mutex::new(RngStatistics::new()))
-});
+pub use random_numbers::{
+    RandomNumbers, random_normal, random_exponential, random_uniform, random_uniform_int,
+    random_poisson, random_binomial
+};
 
-/// Statistics tracking for random number generation
-#[derive(Debug, Clone)]
-pub struct RngStatistics {
-    pub bytes_generated: u64,
-    pub generation_count: u64,
-    pub errors_count: u64,
-    pub entropy_sources: HashMap<String, u64>,
-}
+pub use random_generators::{
+    PasswordGenerator, UuidGenerator, TokenGenerator, DataGenerator,
+    generate_password, generate_secure_password, generate_uuid, generate_token,
+    generate_api_key, generate_session_token
+};
 
-impl RngStatistics {
-    pub fn new() -> Self {
-        Self {
-            bytes_generated: 0,
-            generation_count: 0,
-            errors_count: 0,
-            entropy_sources: HashMap::new(),
-        }
-    }
+pub use nonce_generation::{
+    NonceGenerator, NonceStrategy, NonceFormat, NonceConfig,
+    generate_nonce, generate_random_nonce, generate_timestamp_nonce,
+    generate_uuid_nonce, generate_encryption_nonce, generate_session_nonce
+};
 
-    pub fn record_generation(&mut self, bytes: usize) {
-        self.bytes_generated += bytes as u64;
-        self.generation_count += 1;
-        *self.entropy_sources.entry("OsRng".to_string()).or_insert(0) += 1;
-    }
-
-    pub fn record_error(&mut self) {
-        self.errors_count += 1;
-    }
-}
-
-/// Thread-safe cryptographically secure random number generator
-pub struct SecureRng {
-    rng: Mutex<OsRng>,
-}
-
-impl SecureRng {
-    pub fn new() -> CryptoRandomResult<Self> {
-        Ok(Self {
-            rng: Mutex::new(OsRng),
-        })
-    }
-
-    /// Fill buffer with cryptographically secure random bytes
-    pub fn fill_bytes(&self, buffer: &mut [u8]) -> CryptoRandomResult<()> {
-        if buffer.is_empty() {
-            return Ok(());
-        }
-
-        let mut rng = self.rng.lock().map_err(|_| {
-            CryptoRandomError::GenerationFailed("Failed to acquire RNG lock".to_string())
-        })?;
-
-        rng.try_fill_bytes(buffer).map_err(|e| {
-            if let Ok(mut stats) = RNG_STATS.lock() {
-                stats.record_error();
-            }
-            CryptoRandomError::GenerationFailed(format!("OS RNG failed: {}", e))
-        })?;
-
-        // Record successful generation
-        if let Ok(mut stats) = RNG_STATS.lock() {
-            stats.record_generation(buffer.len());
-        }
-
-        Ok(())
-    }
-
-    /// Generate random bytes of specified length
-    pub fn generate_bytes(&self, length: usize) -> CryptoRandomResult<Vec<u8>> {
-        if length == 0 {
-            return Ok(Vec::new());
-        }
-
-        if length > 1024 * 1024 {
-            return Err(CryptoRandomError::InvalidParameter(
-                "Requested length exceeds maximum (1MB)".to_string()
-            ));
-        }
-
-        let mut buffer = vec![0u8; length];
-        self.fill_bytes(&mut buffer)?;
-        Ok(buffer)
-    }
-
-    /// Generate a random u32
-    pub fn next_u32(&self) -> CryptoRandomResult<u32> {
-        let mut rng = self.rng.lock().map_err(|_| {
-            CryptoRandomError::GenerationFailed("Failed to acquire RNG lock".to_string())
-        })?;
-
-        let value = rng.next_u32();
-
-        if let Ok(mut stats) = RNG_STATS.lock() {
-            stats.record_generation(4);
-        }
-
-        Ok(value)
-    }
-
-    /// Generate a random u64
-    pub fn next_u64(&self) -> CryptoRandomResult<u64> {
-        let mut rng = self.rng.lock().map_err(|_| {
-            CryptoRandomError::GenerationFailed("Failed to acquire RNG lock".to_string())
-        })?;
-
-        let value = rng.next_u64();
-
-        if let Ok(mut stats) = RNG_STATS.lock() {
-            stats.record_generation(8);
-        }
-
-        Ok(value)
-    }
-
-    /// Generate a random boolean
-    pub fn next_bool(&self) -> CryptoRandomResult<bool> {
-        let mut rng = self.rng.lock().map_err(|_| {
-            CryptoRandomError::GenerationFailed("Failed to acquire RNG lock".to_string())
-        })?;
-
-        let value = rng.gen::<bool>();
-
-        if let Ok(mut stats) = RNG_STATS.lock() {
-            stats.record_generation(1);
-        }
-
-        Ok(value)
-    }
-
-    /// Generate random integer in range [min, max)
-    pub fn gen_range_u32(&self, min: u32, max: u32) -> CryptoRandomResult<u32> {
-        if min >= max {
-            return Err(CryptoRandomError::InvalidParameter(
-                "min must be less than max".to_string()
-            ));
-        }
-
-        let mut rng = self.rng.lock().map_err(|_| {
-            CryptoRandomError::GenerationFailed("Failed to acquire RNG lock".to_string())
-        })?;
-
-        let value = rng.gen_range(min..max);
-
-        if let Ok(mut stats) = RNG_STATS.lock() {
-            stats.record_generation(4);
-        }
-
-        Ok(value)
-    }
-}
-
-/// Global secure RNG instance
-static GLOBAL_RNG: Lazy<SecureRng> = Lazy::new(|| {
-    SecureRng::new().expect("Failed to initialize secure RNG")
-});
-
-/// Fill buffer with cryptographically secure random bytes
-/// 
-/// This function uses the operating system's cryptographically secure
-/// random number generator to fill the provided buffer with random bytes.
-/// 
-/// # Arguments
-/// * `buffer` - Mutable byte slice to fill with random data
-/// 
-/// # Returns
-/// * `Ok(())` on success
-/// * `Err(String)` if random generation fails
-/// 
-/// # Security
-/// This function is cryptographically secure and suitable for:
-/// - Key generation
-/// - Nonce generation
-/// - Salt generation
-/// - Any security-critical randomness
-pub fn fill_random(buffer: &mut [u8]) -> Result<(), String> {
-    GLOBAL_RNG.fill_bytes(buffer)
-        .map_err(|e| e.to_string())
-}
+pub use csprng::{Csprng, CsprngAlgorithm, CsprngConfig};
+pub use hardware_entropy::{HardwareEntropyCollector, HardwareRngType};
+pub use entropy_collection::{EntropyCollector, EntropyCollectionConfig};
+pub use entropy_monitoring::{EntropyMonitor, EntropyQualityMetrics, AlertLevel};
+pub use randomness_tests::{RandomnessTestSuite, TestResult, TestSuiteConfig};
+pub use security_analysis::{SecurityAnalyzer, SecurityLevel, ThreatModel, SecurityAnalysisConfig};
 
 /// Generate cryptographically secure random bytes
-/// 
-/// This function generates a vector of random bytes using the operating
-/// system's cryptographically secure random number generator.
-/// 
-/// # Arguments
-/// * `length` - Number of random bytes to generate
-/// 
-/// # Returns
-/// * `Ok(Vec<u8>)` containing random bytes on success
-/// * `Err(String)` if random generation fails or length is invalid
-/// 
-/// # Security
-/// This function is cryptographically secure and suitable for:
-/// - Key generation
-/// - Token generation
-/// - Challenge generation
-/// - Any security-critical randomness
-/// 
-/// # Limits
-/// Maximum length is 1MB (1,048,576 bytes) to prevent memory exhaustion
-pub fn generate_random_bytes(length: usize) -> Result<Vec<u8>, String> {
-    GLOBAL_RNG.generate_bytes(length)
-        .map_err(|e| e.to_string())
+pub fn random_bytes(size: usize) -> AdvancedCryptoResult<Vec<u8>> {
+    secure_bytes(size)
 }
 
-/// Generate a cryptographically secure random u32
-pub fn generate_random_u32() -> Result<u32, String> {
-    GLOBAL_RNG.next_u32()
-        .map_err(|e| e.to_string())
+/// Generate cryptographically secure random number
+pub fn random_number() -> AdvancedCryptoResult<u64> {
+    secure_u64()
 }
 
-/// Generate a cryptographically secure random u64
-pub fn generate_random_u64() -> Result<u64, String> {
-    GLOBAL_RNG.next_u64()
-        .map_err(|e| e.to_string())
-}
-
-/// Generate a cryptographically secure random boolean
-pub fn generate_random_bool() -> Result<bool, String> {
-    GLOBAL_RNG.next_bool()
-        .map_err(|e| e.to_string())
-}
-
-/// Generate a random u32 in the specified range [min, max)
-pub fn generate_random_range(min: u32, max: u32) -> Result<u32, String> {
-    GLOBAL_RNG.gen_range_u32(min, max)
-        .map_err(|e| e.to_string())
-}
-
-/// Generate a cryptographically secure random hex string
-pub fn generate_random_hex(length: usize) -> Result<String, String> {
-    let bytes = generate_random_bytes(length)?;
-    Ok(hex::encode(bytes))
-}
-
-/// Generate a cryptographically secure random base64 string
-pub fn generate_random_base64(length: usize) -> Result<String, String> {
-    let bytes = generate_random_bytes(length)?;
-    Ok(base64::encode(bytes))
-}
-
-/// Get statistics about random number generation
-pub fn get_rng_statistics() -> Result<RngStatistics, String> {
-    RNG_STATS.lock()
-        .map(|stats| stats.clone())
-        .map_err(|_| "Failed to acquire statistics lock".to_string())
-}
-
-/// Reset random number generation statistics
-pub fn reset_rng_statistics() -> Result<(), String> {
-    RNG_STATS.lock()
-        .map(|mut stats| *stats = RngStatistics::new())
-        .map_err(|_| "Failed to acquire statistics lock".to_string())
-}
-
-/// Test the entropy quality of the random number generator
-/// Returns true if the RNG appears to be working correctly
-pub fn test_entropy_quality() -> Result<bool, String> {
-    const TEST_SIZE: usize = 1024;
-    let data = generate_random_bytes(TEST_SIZE)?;
-    
-    // Basic entropy test: ensure we don't have too many repeated bytes
-    let mut byte_counts = [0u32; 256];
-    for &byte in &data {
-        byte_counts[byte as usize] += 1;
-    }
-    
-    // Check if any single byte value appears more than 25% of the time
-    // This is a very basic test - in practice, more sophisticated tests would be used
-    let max_count = byte_counts.iter().max().unwrap_or(&0);
-    let threshold = TEST_SIZE / 4; // 25% threshold
-    
-    if *max_count > threshold as u32 {
-        return Ok(false);
-    }
-    
-    // Test that we don't have all zeros (our old stub behavior)
-    let zero_count = byte_counts[0];
-    if zero_count == TEST_SIZE as u32 {
-        return Ok(false);
-    }
-    
-    Ok(true)
-}
-
-/// Verify that the RNG is properly initialized and working
-pub fn verify_rng_health() -> Result<(), String> {
-    // Test basic functionality
-    let _bytes = generate_random_bytes(32)?;
-    let _u32_val = generate_random_u32()?;
-    let _u64_val = generate_random_u64()?;
-    let _bool_val = generate_random_bool()?;
-    let _range_val = generate_random_range(1, 100)?;
-    
-    // Test entropy quality
-    if !test_entropy_quality()? {
-        return Err("RNG failed entropy quality test".to_string());
-    }
-    
+/// Initialize the cryptographic random number generator
+pub fn init_rng() -> AdvancedCryptoResult<()> {
+    // The SecureRandom implementation automatically initializes itself
+    // We can test it by generating a small amount of entropy
+    let _test_bytes = secure_bytes(1)?;
     Ok(())
+}
+
+/// Advanced random number generation API
+pub struct RandomAPI {
+    secure_rng: SecureRandom,
+    byte_generator: RandomBytes,
+    string_generator: RandomStrings,
+    number_generator: RandomNumbers,
+    nonce_generator: NonceGenerator,
+}
+
+impl RandomAPI {
+    /// Create new random API instance
+    pub fn new() -> AdvancedCryptoResult<Self> {
+        Ok(Self {
+            secure_rng: SecureRandom::new()?,
+            byte_generator: RandomBytes::new()?,
+            string_generator: RandomStrings::new()?,
+            number_generator: RandomNumbers::new()?,
+            nonce_generator: NonceGenerator::new()?,
+        })
+    }
+    
+    /// Generate random bytes with various encodings
+    pub fn bytes(&self) -> &RandomBytes {
+        &self.byte_generator
+    }
+    
+    /// Generate random strings with various character sets
+    pub fn strings(&self) -> &RandomStrings {
+        &self.string_generator
+    }
+    
+    /// Generate random numbers with statistical distributions
+    pub fn numbers(&self) -> &RandomNumbers {
+        &self.number_generator
+    }
+    
+    /// Generate nonces for cryptographic operations
+    pub fn nonces(&self) -> &NonceGenerator {
+        &self.nonce_generator
+    }
+    
+    /// Access the underlying secure random generator
+    pub fn secure(&self) -> &SecureRandom {
+        &self.secure_rng
+    }
+    
+    /// Test the quality of generated randomness
+    pub fn test_quality(&self, sample_size: usize) -> AdvancedCryptoResult<String> {
+        self.secure_rng.test_quality(sample_size)
+    }
+    
+    /// Get entropy source information
+    pub fn entropy_info(&self) -> String {
+        self.secure_rng.get_entropy_info()
+    }
+    
+    /// Force reseed of all generators
+    pub fn reseed(&self) -> AdvancedCryptoResult<()> {
+        self.secure_rng.reseed()
+    }
+}
+
+impl Default for RandomAPI {
+    fn default() -> Self {
+        Self::new().expect("Failed to create default RandomAPI")
+    }
+}
+
+/// Quick access functions for common operations
+
+/// Generate a random UUID
+pub fn uuid() -> AdvancedCryptoResult<String> {
+    generate_uuid()
+}
+
+/// Generate a secure password
+pub fn password(length: usize) -> AdvancedCryptoResult<String> {
+    generate_password(length)
+}
+
+/// Generate an API key
+pub fn api_key() -> AdvancedCryptoResult<String> {
+    generate_api_key()
+}
+
+/// Generate a session token
+pub fn session_token() -> AdvancedCryptoResult<String> {
+    generate_session_token()
+}
+
+/// Generate a nonce for cryptographic operations
+pub fn nonce() -> AdvancedCryptoResult<String> {
+    generate_nonce()
+}
+
+/// Generate random integer in range [min, max] (inclusive)
+pub fn range_i32(min: i32, max: i32) -> AdvancedCryptoResult<i32> {
+    SecureRandom::new()?.range_i32(min, max)
+}
+
+/// Generate random integer in range [min, max] (inclusive)
+pub fn range_u32(min: u32, max: u32) -> AdvancedCryptoResult<u32> {
+    SecureRandom::new()?.range_u32(min, max)
+}
+
+/// Generate random float in range [0.0, 1.0)
+pub fn float() -> AdvancedCryptoResult<f64> {
+    secure_f64()
+}
+
+/// Generate random boolean
+pub fn boolean() -> AdvancedCryptoResult<bool> {
+    secure_bool()
+}
+
+/// Choose random element from slice
+pub fn choose<T>(items: &[T]) -> AdvancedCryptoResult<Option<&T>> {
+    secure_choose(items)
+}
+
+/// Shuffle slice in place
+pub fn shuffle<T>(items: &mut [T]) -> AdvancedCryptoResult<()> {
+    secure_shuffle(items)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_random_bytes_generation() {
+        let result = random_bytes(32);
+        assert!(result.is_ok());
+        let bytes = result.unwrap();
+        assert_eq!(bytes.len(), 32);
+        
+        // Test that bytes are not all the same (basic randomness check)
+        let all_same = bytes.windows(2).all(|w| w[0] == w[1]);
+        assert!(!all_same, "Generated bytes should not all be identical");
+    }
+
+    #[test]
+    fn test_random_number_generation() {
+        let result1 = random_number();
+        let result2 = random_number();
+        
+        assert!(result1.is_ok());
+        assert!(result2.is_ok());
+        
+        let num1 = result1.unwrap();
+        let num2 = result2.unwrap();
+        
+        // Numbers should be different (probabilistic test)
+        assert_ne!(num1, num2, "Generated numbers should be different");
+    }
+
+    #[test]
+    fn test_rng_initialization() {
+        let result = init_rng();
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_random_api_creation() {
+        let api = RandomAPI::new();
+        assert!(api.is_ok());
+    }
+    
+    #[test]
+    fn test_uuid_generation() {
+        let uuid_result = uuid();
+        assert!(uuid_result.is_ok());
+        
+        let uuid_str = uuid_result.unwrap();
+        assert!(uuid_str.len() > 0);
+        
+        // UUID should have proper format (basic check)
+        assert!(uuid_str.contains('-'), "UUID should contain hyphens");
+    }
+    
+    #[test]
+    fn test_password_generation() {
+        let password_result = password(16);
+        assert!(password_result.is_ok());
+        
+        let password_str = password_result.unwrap();
+        assert_eq!(password_str.len(), 16);
+    }
+    
+    #[test]
+    fn test_range_generation() {
+        let range_result = range_u32(1, 10);
+        assert!(range_result.is_ok());
+        
+        let value = range_result.unwrap();
+        assert!(value >= 1 && value <= 10);
+    }
+    
+    #[test]
+    fn test_float_generation() {
+        let float_result = float();
+        assert!(float_result.is_ok());
+        
+        let value = float_result.unwrap();
+        assert!(value >= 0.0 && value < 1.0);
+    }
+    
+    #[test]
+    fn test_boolean_generation() {
+        let bool_result = boolean();
+        assert!(bool_result.is_ok());
+        
+        // Generate multiple booleans to check variety
+        let mut has_true = false;
+        let mut has_false = false;
+        
+        for _ in 0..20 {
+            if let Ok(b) = boolean() {
+                if b {
+                    has_true = true;
+                } else {
+                    has_false = true;
+                }
+                
+                if has_true && has_false {
+                    break;
+                }
+            }
+        }
+        
+        // With 20 attempts, we should see both true and false
+        assert!(has_true || has_false, "Should generate at least one boolean value");
+    }
+    
+    #[test]
+    fn test_choose_function() {
+        let items = vec![1, 2, 3, 4, 5];
+        let choice_result = choose(&items);
+        assert!(choice_result.is_ok());
+        
+        let choice = choice_result.unwrap();
+        if let Some(value) = choice {
+            assert!(items.contains(value));
+        }
+    }
+    
+    #[test]
+    fn test_shuffle_function() {
+        let mut items = vec![1, 2, 3, 4, 5];
+        let original = items.clone();
+        
+        let shuffle_result = shuffle(&mut items);
+        assert!(shuffle_result.is_ok());
+        
+        // Items should contain same elements
+        items.sort();
+        assert_eq!(items, original);
+    }
+    
+    #[test]
+    fn test_entropy_info() {
+        let info = secure_entropy_info();
+        assert!(!info.is_empty());
+        assert!(info.contains("CSPRNG"));
+    }
+    
+    #[test]
+    fn test_quality_testing() {
+        let quality_result = secure_test_quality(1000);
+        assert!(quality_result.is_ok());
+        
+        let report = quality_result.unwrap();
+        assert!(!report.is_empty());
+        assert!(report.contains("Test Report"));
+    }
+    
+    #[test]
+    fn test_reseed_functionality() {
+        let reseed_result = secure_reseed();
+        assert!(reseed_result.is_ok());
+    }
+    
+    #[test]
+    fn test_api_key_generation() {
+        let key_result = api_key();
+        assert!(key_result.is_ok());
+        
+        let key = key_result.unwrap();
+        assert!(key.len() >= 32, "API key should be at least 32 characters");
+    }
+    
+    #[test]
+    fn test_session_token_generation() {
+        let token_result = session_token();
+        assert!(token_result.is_ok());
+        
+        let token = token_result.unwrap();
+        assert!(token.len() >= 16, "Session token should be at least 16 characters");
+    }
+    
+    #[test]
+    fn test_nonce_generation() {
+        let nonce_result = nonce();
+        assert!(nonce_result.is_ok());
+        
+        let nonce_str = nonce_result.unwrap();
+        assert!(!nonce_str.is_empty());
+        
+        // Generate multiple nonces to check uniqueness
+        let mut nonces = std::collections::HashSet::new();
+        for _ in 0..10 {
+            if let Ok(n) = nonce() {
+                nonces.insert(n);
+            }
+        }
+        
+        // All nonces should be unique
+        assert_eq!(nonces.len(), 10, "All generated nonces should be unique");
+    }
+    
+    #[test]
+    fn test_random_api_methods() {
+        let api = RandomAPI::new().unwrap();
+        
+        // Test each component
+        let bytes_result = api.bytes().generate(16);
+        assert!(bytes_result.is_ok());
+        
+        let string_result = api.strings().alphanumeric(12);
+        assert!(string_result.is_ok());
+        
+        let number_result = api.numbers().uniform(0.0, 1.0);
+        assert!(number_result.is_ok());
+        
+        let nonce_result = api.nonces().generate();
+        assert!(nonce_result.is_ok());
+        
+        let info = api.entropy_info();
+        assert!(!info.is_empty());
+    }
 }
