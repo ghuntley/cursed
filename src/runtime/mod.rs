@@ -14,6 +14,7 @@ pub mod error_propagation_runtime;
 pub mod debug_runtime;
 pub mod error_propagation;
 pub mod error_context;
+pub mod jit_runtime;
 
 pub use goroutine::{
     GoroutineScheduler, Goroutine, GoroutineState, GoroutineStack,
@@ -83,6 +84,11 @@ pub use error_context::{
     ErrorContextManager, EnhancedErrorContext, FunctionCallContext, FunctionCallStack,
     SourceInfo, SourceLocationMapper, ErrorContextRegistry, ErrorChainTracker,
     ErrorChain, ErrorContextInfo, ErrorReport, ContextManagerConfig
+};
+pub use jit_runtime::{
+    JitRuntime, JitRuntimeConfig, JitRuntimeStats, JitPerformanceMonitor, JitMemoryManager,
+    OptimizationOpportunity, OptimizationReason,
+    cursed_jit_runtime_init, cursed_jit_execute_function, cursed_jit_runtime_cleanup
 };
 
 /// Main runtime system that aggregates all runtime components

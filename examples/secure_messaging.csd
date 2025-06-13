@@ -1,345 +1,503 @@
-// fr fr Secure Messaging System - end-to-end encryption bestie
-// Demonstrates complete secure communication pipeline periodt
+/// fr fr Secure Messaging System - End-to-End Encryption periodt
+/// 
+/// This example demonstrates a complete secure messaging system using CURSED crypto:
+/// - X25519 key exchange for perfect forward secrecy
+/// - ChaCha20-Poly1305 for message encryption
+/// - Ed25519 for message authentication and identity verification
+/// - Secure key derivation and management
+/// 
+/// Usage: cursed examples/secure_messaging.csd
 
-use crypto_advanced::{AesGcm256, SecurityLevel}
-use crypto_asymmetric::{KeyGenerator, AsymmetricAlgorithm}
-use crypto_signatures::{DigitalSignature}
-use crypto_hash_advanced::{AdvancedHashAlgorithm, hash_with_algorithm}
-use crypto_random::{fill_random}
-use crypto_kdf::{pbkdf2_derive}
-use crypto_protocols::{KeyExchangeProtocol, SecureChannel}
+import "stdlib::crypto";
+import "stdlib::io";
+import "stdlib::string";
 
-// Secure message structure
-squad SecureMessage {
-    sender_id: String,
-    recipient_id: String,
-    encrypted_content: Vec<u8>,
-    signature: Vec<u8>,
-    timestamp: u64,
-    message_id: String,
+/// User identity with cryptographic keys
+struct UserIdentity {
+    username: String,
+    long_term_signing_key: Ed25519PrivateKey,
+    long_term_verify_key: Ed25519PublicKey,
+    ephemeral_key_pair: X25519KeyPair,
 }
 
-// User identity with cryptographic keys
-squad UserIdentity {
-    user_id: String,
-    signing_keypair: Ed25519KeyPair,
-    encryption_keypair: EcKeyPair,
-    display_name: String,
+/// Encrypted message with metadata
+struct SecureMessage {
+    sender: String,
+    recipient: String,
+    timestamp: String,
+    encrypted_content: EncryptionResult,
+    signature: Ed25519Signature,
+    sender_ephemeral_public: X25519PublicKey,
 }
 
-// Secure messaging session
-squad MessagingSession {
-    local_user: UserIdentity,
-    remote_user_public: PublicKeyBundle,
-    shared_secret: Vec<u8>,
-    session_key: Vec<u8>,
-    message_counter: u64,
+/// Message conversation state
+struct Conversation {
+    participants: [String],
+    shared_secret: [u8],
+    message_count: u32,
+    last_message_time: String,
 }
 
-squad PublicKeyBundle {
-    user_id: String,
-    signing_public_key: Ed25519PublicKey,
-    encryption_public_key: EcPublicKey,
-    key_fingerprint: String,
+/// slay Main secure messaging demonstration
+function main() {
+    println("💬 Welcome to CURSED Secure Messaging System!")?;
+    println("🔐 End-to-end encryption with perfect forward secrecy")?;
+    println("")?;
+    
+    // Initialize crypto
+    crypto::init_crypto()?;
+    
+    // Create users
+    sus alice = create_user("Alice")?;
+    sus bob = create_user("Bob")?;
+    sus charlie = create_user("Charlie")?;
+    
+    println("✅ Created secure identities for Alice, Bob, and Charlie")?;
+    println("")?;
+    
+    // Establish secure conversations
+    sus alice_bob_conversation = establish_conversation(alice, bob)?;
+    sus group_conversation = establish_group_conversation([alice, bob, charlie])?;
+    
+    // Demonstrate secure messaging
+    demonstrate_two_party_messaging(alice, bob, alice_bob_conversation)?;
+    demonstrate_message_authentication(alice, bob)?;
+    demonstrate_forward_secrecy(alice, bob)?;
+    demonstrate_group_messaging(alice, bob, charlie, group_conversation)?;
+    
+    println("🎉 Secure messaging demonstration completed!")?;
 }
 
-impl UserIdentity {
-    // slay Generate new user identity with cryptographic keys
-    fn generate(user_id: String, display_name: String) -> Result<Self, CryptoError> {
-        print(f"Generating identity for user: {user_id}")
-        
-        // Generate signing key pair (Ed25519)
-        sus signing_keypair = KeyGenerator::generate_ed25519_keypair()?
-        
-        // Generate encryption key pair (EC P-256)
-        sus encryption_keypair = KeyGenerator::generate_ec_keypair("P-256")?
-        
-        Ok(UserIdentity {
-            user_id,
-            signing_keypair,
-            encryption_keypair,
-            display_name,
-        })
+/// bestie Create a new user with cryptographic identity
+function create_user(username: String) -> UserIdentity {
+    println("👤 Creating secure identity for {}...", username)?;
+    
+    // Generate long-term signing keys for identity
+    sus signing_keypair = crypto::generate_ed25519_keypair()?;
+    
+    // Generate ephemeral key pair for this session
+    sus ephemeral_keypair = crypto::generate_x25519_keypair()?;
+    
+    sus user = UserIdentity {
+        username: username,
+        long_term_signing_key: signing_keypair.private_key,
+        long_term_verify_key: signing_keypair.public_key,
+        ephemeral_key_pair: ephemeral_keypair,
+    };
+    
+    println("   ✅ Long-term Ed25519 identity keys generated")?;
+    println("   ✅ Ephemeral X25519 session keys generated")?;
+    
+    user
+}
+
+/// vibes Establish secure conversation between two users
+function establish_conversation(alice: UserIdentity, bob: UserIdentity) -> Conversation {
+    println("🤝 Establishing secure conversation between {} and {}...", alice.username, bob.username)?;
+    
+    // Perform X25519 key exchange
+    sus shared_secret = crypto::x25519_key_exchange(
+        alice.ephemeral_key_pair.private_key,
+        bob.ephemeral_key_pair.public_key
+    )?;
+    
+    // Derive conversation key using shared secret
+    sus conversation_seed = string::concat([
+        "conversation_between_",
+        alice.username,
+        "_and_",
+        bob.username
+    ]);
+    
+    sus derived_key = crypto::derive_key_pbkdf2(
+        shared_secret,
+        conversation_seed.as_bytes(),
+        10000,
+        32
+    )?;
+    
+    sus conversation = Conversation {
+        participants: [alice.username, bob.username],
+        shared_secret: derived_key,
+        message_count: 0,
+        last_message_time: get_current_time(),
+    };
+    
+    println("   ✅ X25519 key exchange completed")?;
+    println("   ✅ Conversation key derived with PBKDF2")?;
+    println("   🔐 Secure channel established")?;
+    println("")?;
+    
+    conversation
+}
+
+/// facts Send secure message between users
+function send_secure_message(
+    sender: UserIdentity,
+    recipient: UserIdentity,
+    conversation: Conversation,
+    message_text: String
+) -> SecureMessage {
+    
+    println("📤 {} sending message to {}...", sender.username, recipient.username)?;
+    
+    // Create message metadata
+    sus timestamp = get_current_time();
+    sus message_id = crypto::generate_random_hex(16)?;
+    
+    // Prepare message content with metadata
+    sus full_message = string::format(
+        "MSG_ID:{}\nTIME:{}\nFROM:{}\nTO:{}\nCONTENT:{}",
+        message_id,
+        timestamp,
+        sender.username,
+        recipient.username,
+        message_text
+    );
+    
+    // Encrypt message using conversation key
+    sus cipher = crypto::create_chacha20_poly1305_cipher(conversation.shared_secret)?;
+    sus associated_data = string::format("{}->{}:{}", sender.username, recipient.username, timestamp);
+    
+    sus encrypted = crypto::encrypt(cipher, full_message, associated_data)?;
+    
+    // Sign the encrypted message for authentication
+    sus message_hash = crypto::sha256(encrypted.ciphertext)?;
+    sus signature = crypto::ed25519_sign(sender.long_term_signing_key, message_hash)?;
+    
+    sus secure_message = SecureMessage {
+        sender: sender.username,
+        recipient: recipient.username,
+        timestamp: timestamp,
+        encrypted_content: encrypted,
+        signature: signature,
+        sender_ephemeral_public: sender.ephemeral_key_pair.public_key,
+    };
+    
+    println("   ✅ Message encrypted with ChaCha20-Poly1305")?;
+    println("   ✅ Message signed with Ed25519")?;
+    println("   📨 Secure message ready for transmission")?;
+    
+    secure_message
+}
+
+/// yolo Receive and decrypt secure message
+function receive_secure_message(
+    recipient: UserIdentity,
+    sender_verify_key: Ed25519PublicKey,
+    conversation: Conversation,
+    secure_message: SecureMessage
+) -> String {
+    
+    println("📥 {} receiving message from {}...", recipient.username, secure_message.sender)?;
+    
+    // Verify message signature
+    sus message_hash = crypto::sha256(secure_message.encrypted_content.ciphertext)?;
+    sus signature_valid = crypto::ed25519_verify(
+        sender_verify_key,
+        message_hash,
+        secure_message.signature
+    )?;
+    
+    if !signature_valid {
+        panic("❌ Message signature verification failed! Possible tampering detected.")?;
     }
     
-    // slay Get public key bundle for sharing
-    fn public_bundle(&self) -> PublicKeyBundle {
-        // Create key fingerprint for verification
-        sus key_data = format!("{}{}", 
-            self.signing_keypair.public_key().to_string(),
-            self.encryption_keypair.public_key().to_string()
-        )
-        
-        sus fingerprint_hash = hash_with_algorithm(
-            key_data.as_bytes(), 
-            AdvancedHashAlgorithm::Sha256
-        ).unwrap()
-        
-        sus fingerprint = hex_encode(&fingerprint_hash[..8]) // First 8 bytes
-        
-        PublicKeyBundle {
-            user_id: self.user_id.clone(),
-            signing_public_key: self.signing_keypair.public_key().clone(),
-            encryption_public_key: self.encryption_keypair.public_key().clone(),
-            key_fingerprint: fingerprint,
+    println("   ✅ Message signature verified")?;
+    
+    // Decrypt message
+    sus cipher = crypto::create_chacha20_poly1305_cipher(conversation.shared_secret)?;
+    sus associated_data = string::format(
+        "{}->{}:{}",
+        secure_message.sender,
+        secure_message.recipient,
+        secure_message.timestamp
+    );
+    
+    sus decrypted = crypto::decrypt(
+        cipher,
+        secure_message.encrypted_content,
+        associated_data
+    )?;
+    
+    if !decrypted.verified {
+        panic("❌ Message authentication failed! Possible tampering detected.")?;
+    }
+    
+    println("   ✅ Message decrypted and authenticated")?;
+    
+    // Extract message content from full message
+    sus lines = string::split(decrypted.plaintext, "\n");
+    sus content_line = "";
+    lowkey (sus line in lines) {
+        if string::starts_with(line, "CONTENT:") {
+            content_line = string::substring(line, 8); // Remove "CONTENT:" prefix
+            periodt;
         }
     }
+    
+    println("   📨 Message content extracted")?;
+    
+    content_line
 }
 
-impl MessagingSession {
-    // slay Establish secure messaging session
-    fn establish(local_user: UserIdentity, remote_public: PublicKeyBundle) -> Result<Self, CryptoError> {
-        print(f"Establishing secure session: {} -> {}", 
-              local_user.user_id, remote_public.user_id)
-        
-        // Perform ECDH key exchange
-        sus shared_secret = local_user.encryption_keypair.key_exchange(
-            &remote_public.encryption_public_key
-        )?
-        
-        print(f"Shared secret established (length: {} bytes)", shared_secret.len())
-        
-        // Derive session key using PBKDF2
-        facts session_salt = format!("{}{}", local_user.user_id, remote_public.user_id)
-        sus session_key = pbkdf2_derive(
-            &shared_secret,
-            session_salt.as_bytes(),
-            10000,
-            32
-        )?
-        
-        print("Session key derived successfully")
-        
-        Ok(MessagingSession {
-            local_user,
-            remote_user_public: remote_public,
-            shared_secret,
-            session_key,
-            message_counter: 0,
-        })
-    }
-    
-    // slay Send secure message
-    fn send_message(&mut self, content: &str) -> Result<SecureMessage, CryptoError> {
-        print(f"Sending secure message: '{content}'")
-        
-        self.message_counter += 1
-        
-        // Generate unique message ID
-        sus message_id = format!("{}-{}-{}", 
-            self.local_user.user_id, 
-            self.remote_user_public.user_id,
-            self.message_counter
-        )
-        
-        // Create cipher with session key
-        sus cipher = AesGcm256::new(&self.session_key)?
-        
-        // Encrypt message content
-        sus encrypted_content = cipher.encrypt(content.as_bytes())?
-        print(f"Message encrypted (length: {} bytes)", encrypted_content.len())
-        
-        // Create message metadata
-        facts timestamp = current_timestamp()
-        sus message_data = format!("{}{}{}{}", 
-            message_id, self.remote_user_public.user_id, timestamp, 
-            hex_encode(&encrypted_content)
-        )
-        
-        // Sign the message
-        sus signature = self.local_user.signing_keypair.sign(message_data.as_bytes())?
-        print("Message signed for authenticity")
-        
-        Ok(SecureMessage {
-            sender_id: self.local_user.user_id.clone(),
-            recipient_id: self.remote_user_public.user_id.clone(),
-            encrypted_content,
-            signature,
-            timestamp,
-            message_id,
-        })
-    }
-    
-    // slay Receive and decrypt secure message
-    fn receive_message(&self, message: &SecureMessage) -> Result<String, CryptoError> {
-        print(f"Receiving message from {}", message.sender_id)
-        
-        // Verify message is for us
-        lowkey message.recipient_id != self.local_user.user_id {
-            return Err(CryptoError::InvalidRecipient)
-        }
-        
-        // Recreate message data for signature verification
-        sus message_data = format!("{}{}{}{}", 
-            message.message_id, message.recipient_id, message.timestamp,
-            hex_encode(&message.encrypted_content)
-        )
-        
-        // Verify signature
-        sus signature_valid = self.remote_user_public.signing_public_key.verify(
-            message_data.as_bytes(),
-            &message.signature
-        )?
-        
-        lowkey !signature_valid {
-            return Err(CryptoError::InvalidSignature)
-        }
-        
-        print("Message signature verified successfully")
-        
-        // Decrypt message content
-        sus cipher = AesGcm256::new(&self.session_key)?
-        sus decrypted_bytes = cipher.decrypt(&message.encrypted_content)?
-        sus decrypted_content = String::from_utf8(decrypted_bytes)?
-        
-        print(f"Message decrypted: '{decrypted_content}'")
-        
-        Ok(decrypted_content)
-    }
-    
-    // slay Verify key fingerprints for security
-    fn verify_fingerprint(&self, expected_fingerprint: &str) -> bool {
-        self.remote_user_public.key_fingerprint == expected_fingerprint
-    }
-}
-
-fn main() {
-    print("🔐 Secure Messaging System Demo")
-    print("==============================")
-    
-    // Initialize crypto packages
-    crypto_advanced::init_crypto_advanced().unwrap()
-    crypto_asymmetric::init_crypto_asymmetric().unwrap()
-    crypto_signatures::init_crypto_signatures().unwrap()
-    crypto_hash_advanced::init_crypto_hash_advanced().unwrap()
-    
-    // Create two users - Alice and Bob
-    print("\n1. Creating user identities...")
-    sus alice = UserIdentity::generate(
-        "alice@secure.chat".to_string(),
-        "Alice Wonder".to_string()
-    ).unwrap()
-    
-    sus bob = UserIdentity::generate(
-        "bob@secure.chat".to_string(), 
-        "Bob Builder".to_string()
-    ).unwrap()
-    
-    print("✅ User identities created")
-    
-    // Exchange public key bundles (normally done through secure channel)
-    print("\n2. Exchanging public keys...")
-    sus alice_public = alice.public_bundle()
-    sus bob_public = bob.public_bundle()
-    
-    print(f"Alice's key fingerprint: {alice_public.key_fingerprint}")
-    print(f"Bob's key fingerprint: {bob_public.key_fingerprint}")
-    print("✅ Public keys exchanged")
-    
-    // Establish secure sessions
-    print("\n3. Establishing secure sessions...")
-    sus alice_session = MessagingSession::establish(alice, bob_public.clone()).unwrap()
-    sus bob_session = MessagingSession::establish(bob, alice_public.clone()).unwrap()
-    print("✅ Secure sessions established")
-    
-    // Verify fingerprints (important for security!)
-    print("\n4. Verifying key fingerprints...")
-    assert!(alice_session.verify_fingerprint(&bob_public.key_fingerprint))
-    assert!(bob_session.verify_fingerprint(&alice_public.key_fingerprint))
-    print("✅ Key fingerprints verified")
-    
-    // Send messages back and forth
-    print("\n5. Secure messaging...")
+/// periodt Demonstrate two-party secure messaging
+function demonstrate_two_party_messaging(
+    alice: UserIdentity,
+    bob: UserIdentity,
+    conversation: Conversation
+) {
+    println("💬 === Two-Party Secure Messaging Demo ===")?;
     
     // Alice sends message to Bob
-    sus message1 = alice_session.send_message("Hey Bob! This is a secure message bestie 🔒").unwrap()
-    sus received1 = bob_session.receive_message(&message1).unwrap()
-    print(f"Bob received: '{received1}'")
+    sus alice_message = "Hello Bob! This is a secure message using CURSED crypto. 🔐";
+    sus secure_msg1 = send_secure_message(alice, bob, conversation, alice_message)?;
+    sus received_msg1 = receive_secure_message(bob, alice.long_term_verify_key, conversation, secure_msg1)?;
+    
+    println("📨 Alice -> Bob: \"{}\"", alice_message)?;
+    println("📨 Bob received: \"{}\"", received_msg1)?;
+    assert(alice_message == received_msg1, "Message integrity check failed")?;
+    println("")?;
     
     // Bob replies to Alice
-    sus message2 = bob_session.send_message("Hi Alice! Got your secure message - encryption is working perfectly! 🎉").unwrap()
-    sus received2 = alice_session.receive_message(&message2).unwrap()
-    print(f"Alice received: '{received2}'")
+    sus bob_message = "Hi Alice! Message received loud and clear. The encryption is working perfectly! 🚀";
+    sus secure_msg2 = send_secure_message(bob, alice, conversation, bob_message)?;
+    sus received_msg2 = receive_secure_message(alice, bob.long_term_verify_key, conversation, secure_msg2)?;
     
-    // Send multiple messages
-    print("\n6. Multiple message exchange...")
+    println("📨 Bob -> Alice: \"{}\"", bob_message)?;
+    println("📨 Alice received: \"{}\"", received_msg2)?;
+    assert(bob_message == received_msg2, "Message integrity check failed")?;
+    println("")?;
     
-    facts messages = [
-        "How's the crypto implementation going?",
-        "It's going great! The encryption is solid periodt",
-        "Awesome! Security first always bestie",
-        "Absolutely! End-to-end encryption for the win 🚀"
-    ]
+    println("✅ Two-party messaging successful - perfect encryption/decryption!")?;
+    println("")?;
+}
+
+/// flex Demonstrate message authentication and tamper detection
+function demonstrate_message_authentication(alice: UserIdentity, bob: UserIdentity) {
+    println("🛡️  === Message Authentication Demo ===")?;
     
-    for (i, content) in messages.iter().enumerate() {
-        lowkey i % 2 == 0 {
-            // Alice sends
-            sus msg = alice_session.send_message(content).unwrap()
-            sus received = bob_session.receive_message(&msg).unwrap()
-            print(f"Alice -> Bob: '{received}'")
-        } else {
-            // Bob sends  
-            sus msg = bob_session.send_message(content).unwrap()
-            sus received = alice_session.receive_message(&msg).unwrap()
-            print(f"Bob -> Alice: '{received}'")
+    // Create temporary conversation for this demo
+    sus temp_conversation = establish_conversation(alice, bob)?;
+    
+    // Alice sends a message
+    sus original_message = "This message must not be tampered with!";
+    sus secure_msg = send_secure_message(alice, bob, temp_conversation, original_message)?;
+    
+    println("📨 Original message: \"{}\"", original_message)?;
+    
+    // Simulate message tampering
+    println("🔍 Testing tamper detection...")?;
+    sus tampered_msg = secure_msg;
+    tampered_msg.encrypted_content.ciphertext[0] = tampered_msg.encrypted_content.ciphertext[0] ^ 1; // Flip one bit
+    
+    // Try to receive tampered message (should fail)
+    vibe_check {
+        sus received = receive_secure_message(bob, alice.long_term_verify_key, temp_conversation, tampered_msg)?;
+        println("❌ ERROR: Tampered message was not detected!")?;
+        mood "AuthenticationFailed" => {
+            println("✅ Tampered message correctly detected and rejected")?;
+        }
+        mood "DecryptionFailed" => {
+            println("✅ Tampered message correctly detected and rejected")?;
+        }
+        basic => {
+            println("✅ Tampered message rejected ({})", error.message)?;
         }
     }
     
-    print("\n7. Testing security features...")
-    
-    // Test message tampering detection
-    sus original_message = alice_session.send_message("Original secure message").unwrap()
-    sus mut tampered_message = original_message.clone()
-    
-    // Tamper with the encrypted content
-    tampered_message.encrypted_content[0] ^= 0xFF
-    
-    sus tampered_result = bob_session.receive_message(&tampered_message)
-    assert!(tampered_result.is_err())
-    print("✅ Message tampering detected and rejected")
-    
-    // Test signature forgery detection
-    sus mut forged_message = alice_session.send_message("Legitimate message").unwrap()
-    
-    // Tamper with signature
-    forged_message.signature[0] ^= 0xFF
-    
-    sus forged_result = bob_session.receive_message(&forged_message)
-    assert!(forged_result.is_err())
-    print("✅ Signature forgery detected and rejected")
-    
-    print("\n🎉 Secure messaging demo completed successfully!")
-    print("\nSecurity features demonstrated:")
-    print("- End-to-end encryption with AES-GCM-256")
-    print("- Perfect forward secrecy with ECDH key exchange")
-    print("- Message authentication with Ed25519 signatures")
-    print("- Key fingerprint verification")
-    print("- Tampering detection")
-    print("- Replay attack prevention")
-    print("- Secure key derivation with PBKDF2")
-    print("\nAll messages secured with military-grade cryptography bestie! 🔐")
+    // Verify original message still works
+    sus received_original = receive_secure_message(bob, alice.long_term_verify_key, temp_conversation, secure_msg)?;
+    println("✅ Original message still decrypts correctly: \"{}\"", received_original)?;
+    println("")?;
 }
 
-// Helper function to get current timestamp
-fn current_timestamp() -> u64 {
-    // In real implementation, use proper timestamp
-    1234567890
+/// sus Demonstrate perfect forward secrecy
+function demonstrate_forward_secrecy(alice: UserIdentity, bob: UserIdentity) {
+    println("🔄 === Perfect Forward Secrecy Demo ===")?;
+    
+    // Session 1
+    println("🔑 Session 1: Initial conversation")?;
+    sus session1_alice = create_user("Alice_Session1")?;
+    sus session1_bob = create_user("Bob_Session1")?;
+    sus conversation1 = establish_conversation(session1_alice, session1_bob)?;
+    
+    sus msg1 = "This is a message in session 1";
+    sus secure_msg1 = send_secure_message(session1_alice, session1_bob, conversation1, msg1)?;
+    sus received1 = receive_secure_message(session1_bob, session1_alice.long_term_verify_key, conversation1, secure_msg1)?;
+    println("   📨 Session 1 message: \"{}\"", received1)?;
+    
+    // Session 2 with new ephemeral keys
+    println("🔑 Session 2: New ephemeral keys generated")?;
+    sus session2_alice = create_user("Alice_Session2")?;
+    sus session2_bob = create_user("Bob_Session2")?;
+    sus conversation2 = establish_conversation(session2_alice, session2_bob)?;
+    
+    sus msg2 = "This is a message in session 2 with different keys";
+    sus secure_msg2 = send_secure_message(session2_alice, session2_bob, conversation2, msg2)?;
+    sus received2 = receive_secure_message(session2_bob, session2_alice.long_term_verify_key, conversation2, secure_msg2)?;
+    println("   📨 Session 2 message: \"{}\"", received2)?;
+    
+    // Verify sessions use different secrets
+    assert(conversation1.shared_secret != conversation2.shared_secret, "Sessions should use different secrets")?;
+    println("✅ Each session uses different ephemeral keys")?;
+    println("✅ Compromising one session doesn't affect others")?;
+    println("")?;
 }
 
-// Helper function to encode bytes as hex
-fn hex_encode(data: &[u8]) -> String {
-    sus result = String::new()
-    for byte in data {
-        result.push_str(&format!("{:02x}", byte))
+/// bestie Establish group conversation (simplified multi-party)
+function establish_group_conversation(users: [UserIdentity]) -> Conversation {
+    println("👥 Establishing group conversation with {} participants...", users.length)?;
+    
+    // Simplified group key agreement (in practice, would use more sophisticated protocol)
+    sus group_seed = "group_conversation";
+    lowkey (sus user in users) {
+        group_seed = string::concat([group_seed, "_", user.username]);
     }
-    result
+    
+    // Generate group secret
+    sus group_salt = crypto::generate_random_bytes(32)?;
+    sus group_secret = crypto::derive_key_pbkdf2(group_seed.as_bytes(), group_salt, 10000, 32)?;
+    
+    sus participants = [];
+    lowkey (sus user in users) {
+        participants.push(user.username);
+    }
+    
+    sus conversation = Conversation {
+        participants: participants,
+        shared_secret: group_secret,
+        message_count: 0,
+        last_message_time: get_current_time(),
+    };
+    
+    println("   ✅ Group secret established")?;
+    println("   👥 Participants: {}", string::join(participants, ", "))?;
+    println("")?;
+    
+    conversation
 }
 
-// Custom error type for demonstration
-enum CryptoError {
-    InvalidRecipient,
-    InvalidSignature,
-    EncryptionError,
-    DecryptionError,
-    KeyExchangeError,
+/// facts Demonstrate group messaging
+function demonstrate_group_messaging(
+    alice: UserIdentity,
+    bob: UserIdentity,
+    charlie: UserIdentity,
+    group_conversation: Conversation
+) {
+    println("👥 === Group Messaging Demo ===")?;
+    
+    // Alice sends to group
+    sus alice_msg = "Hello everyone! This is Alice speaking to the group. 👋";
+    sus secure_group_msg1 = send_group_message(alice, group_conversation, alice_msg)?;
+    
+    println("📨 Alice -> Group: \"{}\"", alice_msg)?;
+    
+    // Bob and Charlie receive
+    sus bob_received = receive_group_message(bob, alice.long_term_verify_key, group_conversation, secure_group_msg1)?;
+    sus charlie_received = receive_group_message(charlie, alice.long_term_verify_key, group_conversation, secure_group_msg1)?;
+    
+    println("📨 Bob received: \"{}\"", bob_received)?;
+    println("📨 Charlie received: \"{}\"", charlie_received)?;
+    println("")?;
+    
+    // Bob replies to group
+    sus bob_msg = "Hey Alice! Bob here. Group messaging is working great! 🎉";
+    sus secure_group_msg2 = send_group_message(bob, group_conversation, bob_msg)?;
+    
+    println("📨 Bob -> Group: \"{}\"", bob_msg)?;
+    
+    // Alice and Charlie receive
+    sus alice_received = receive_group_message(alice, bob.long_term_verify_key, group_conversation, secure_group_msg2)?;
+    sus charlie_received2 = receive_group_message(charlie, bob.long_term_verify_key, group_conversation, secure_group_msg2)?;
+    
+    println("📨 Alice received: \"{}\"", alice_received)?;
+    println("📨 Charlie received: \"{}\"", charlie_received2)?;
+    println("")?;
+    
+    println("✅ Group messaging successful - all participants can communicate securely!")?;
+    println("")?;
 }
+
+/// Send message to group
+function send_group_message(
+    sender: UserIdentity,
+    group_conversation: Conversation,
+    message_text: String
+) -> SecureMessage {
+    
+    // Use group shared secret for encryption
+    sus timestamp = get_current_time();
+    sus group_recipients = string::join(group_conversation.participants, ",");
+    
+    sus full_message = string::format(
+        "GROUP_MSG\nFROM:{}\nTO_GROUP:{}\nTIME:{}\nCONTENT:{}",
+        sender.username,
+        group_recipients,
+        timestamp,
+        message_text
+    );
+    
+    sus cipher = crypto::create_chacha20_poly1305_cipher(group_conversation.shared_secret)?;
+    sus associated_data = string::format("group_msg:{}:{}", sender.username, timestamp);
+    
+    sus encrypted = crypto::encrypt(cipher, full_message, associated_data)?;
+    sus message_hash = crypto::sha256(encrypted.ciphertext)?;
+    sus signature = crypto::ed25519_sign(sender.long_term_signing_key, message_hash)?;
+    
+    SecureMessage {
+        sender: sender.username,
+        recipient: "GROUP",
+        timestamp: timestamp,
+        encrypted_content: encrypted,
+        signature: signature,
+        sender_ephemeral_public: sender.ephemeral_key_pair.public_key,
+    }
+}
+
+/// Receive group message
+function receive_group_message(
+    recipient: UserIdentity,
+    sender_verify_key: Ed25519PublicKey,
+    group_conversation: Conversation,
+    secure_message: SecureMessage
+) -> String {
+    
+    // Verify signature
+    sus message_hash = crypto::sha256(secure_message.encrypted_content.ciphertext)?;
+    sus signature_valid = crypto::ed25519_verify(sender_verify_key, message_hash, secure_message.signature)?;
+    
+    if !signature_valid {
+        panic("Group message signature verification failed!")?;
+    }
+    
+    // Decrypt with group secret
+    sus cipher = crypto::create_chacha20_poly1305_cipher(group_conversation.shared_secret)?;
+    sus associated_data = string::format("group_msg:{}:{}", secure_message.sender, secure_message.timestamp);
+    
+    sus decrypted = crypto::decrypt(cipher, secure_message.encrypted_content, associated_data)?;
+    
+    if !decrypted.verified {
+        panic("Group message authentication failed!")?;
+    }
+    
+    // Extract content
+    sus lines = string::split(decrypted.plaintext, "\n");
+    lowkey (sus line in lines) {
+        if string::starts_with(line, "CONTENT:") {
+            return string::substring(line, 8);
+        }
+    }
+    
+    ""
+}
+
+/// Helper function to get current time (simplified)
+function get_current_time() -> String {
+    // In real implementation, would use proper time library
+    sus random_time = crypto::generate_random_u64()?;
+    string::format("time_{}", random_time)
+}
+
+// Entry point
+main()?;

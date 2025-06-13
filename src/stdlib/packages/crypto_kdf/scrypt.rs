@@ -91,21 +91,27 @@ impl Default for ScryptConfig {
 /// fr fr scrypt error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScryptError {
-    NotImplemented,
     InvalidConfig(String),
     InvalidInput(String),
+    InvalidPassword(String),
+    InvalidSalt(String),
+    InvalidHash(String),
     InsufficientMemory,
-    Internal(String),
+    CryptographicError(String),
+    InternalError(String),
 }
 
 impl std::fmt::Display for ScryptError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ScryptError::NotImplemented => write!(f, "scrypt is not yet implemented"),
             ScryptError::InvalidConfig(msg) => write!(f, "Invalid scrypt configuration: {}", msg),
             ScryptError::InvalidInput(msg) => write!(f, "Invalid scrypt input: {}", msg),
+            ScryptError::InvalidPassword(msg) => write!(f, "Invalid password: {}", msg),
+            ScryptError::InvalidSalt(msg) => write!(f, "Invalid salt: {}", msg),
+            ScryptError::InvalidHash(msg) => write!(f, "Invalid hash: {}", msg),
             ScryptError::InsufficientMemory => write!(f, "Insufficient memory for scrypt operation"),
-            ScryptError::Internal(msg) => write!(f, "Internal scrypt error: {}", msg),
+            ScryptError::CryptographicError(msg) => write!(f, "scrypt cryptographic error: {}", msg),
+            ScryptError::InternalError(msg) => write!(f, "Internal scrypt error: {}", msg),
         }
     }
 }
@@ -136,10 +142,10 @@ impl ScryptEngine {
         }
 
         // Real scrypt implementation
-        let mut key = vec![0u8; self.config.output_length];
+        let mut key = vec![0u8; self.config.output_len];
         
         // Step 1: PBKDF2 to derive initial blocks
-        let initial_key = self.pbkdf2_sha256(password, salt, 1, self.config.n * 128)?;
+        let initial_key = self.pbkdf2_sha256(password, salt, 1, (self.config.r * 128) as usize)?;
         
         // Step 2: scryptROMix on each block
         let mut blocks = Vec::new();
@@ -154,8 +160,8 @@ impl ScryptEngine {
         }
         
         // Step 3: Final PBKDF2 to derive output key
-        let final_key = self.pbkdf2_sha256(password, &blocks, 1, self.config.output_length)?;
-        key.copy_from_slice(&final_key[..self.config.output_length]);
+        let final_key = self.pbkdf2_sha256(password, &blocks, 1, self.config.output_len)?;
+        key.copy_from_slice(&final_key[..self.config.output_len]);
         
         Ok(key)
     }
@@ -230,7 +236,8 @@ impl ScryptEngine {
             n,
             r,
             p,
-            output_length: expected_key.len(),
+            salt_len: salt.len(),
+            output_len: expected_key.len(),
         };
         
         let temp_scrypt = ScryptEngine::new(temp_config)?;
@@ -449,19 +456,88 @@ impl ScryptUtils {
 
 /// fr fr Public API functions for CURSED integration
 
-/// slay scrypt key derivation function (placeholder)
-pub fn scrypt_derive_key(_args: Vec<Value>) -> Result<Value, CursedError> {
-    Err(CursedError::Runtime("scrypt implementation is not yet available. Please use PBKDF2 for now.".to_string()))
+/// slay scrypt key derivation function
+pub fn scrypt_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
+    if args.len() < 2 {
+        return Err(CursedError::Runtime("scrypt_derive_key requires at least password and salt arguments".to_string()));
+    }
+    
+    let password = match &args[0] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
+    };
+    
+    let salt = match &args[1] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Salt must be a string".to_string())),
+    };
+    
+    let config = if args.len() > 2 {
+        // TODO: Parse config from args[2] 
+        ScryptConfig::new()
+    } else {
+        ScryptConfig::new()
+    };
+    
+    let engine = ScryptEngine::new(config)
+        .map_err(|e| CursedError::Runtime(format!("scrypt engine creation failed: {}", e)))?;
+    let key = engine.derive_key(password, salt)
+        .map_err(|e| CursedError::Runtime(format!("scrypt key derivation failed: {}", e)))?;
+    
+    Ok(Value::String(hex::encode(key)))
 }
 
-/// slay Hash password with scrypt (placeholder)
-pub fn scrypt_hash_password(_args: Vec<Value>) -> Result<Value, CursedError> {
-    Err(CursedError::Runtime("scrypt implementation is not yet available. Please use PBKDF2 for now.".to_string()))
+/// slay Hash password with scrypt
+pub fn scrypt_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
+    if args.is_empty() {
+        return Err(CursedError::Runtime("scrypt_hash_password requires password argument".to_string()));
+    }
+    
+    let password = match &args[0] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
+    };
+    
+    let config = if args.len() > 1 {
+        // TODO: Parse config from args[1]
+        ScryptConfig::new()
+    } else {
+        ScryptConfig::new()
+    };
+    
+    let engine = ScryptEngine::new(config)
+        .map_err(|e| CursedError::Runtime(format!("scrypt engine creation failed: {}", e)))?;
+    let hash = engine.hash_password(password)
+        .map_err(|e| CursedError::Runtime(format!("scrypt password hashing failed: {}", e)))?;
+    
+    Ok(Value::String(hash))
 }
 
-/// slay Verify password with scrypt (placeholder)
-pub fn scrypt_verify_password(_args: Vec<Value>) -> Result<Value, CursedError> {
-    Err(CursedError::Runtime("scrypt implementation is not yet available. Please use PBKDF2 for now.".to_string()))
+/// slay Verify password with scrypt
+pub fn scrypt_verify_password(args: Vec<Value>) -> Result<Value, CursedError> {
+    if args.len() < 2 {
+        return Err(CursedError::Runtime("scrypt_verify_password requires password and hash arguments".to_string()));
+    }
+    
+    let password = match &args[0] {
+        Value::String(s) => s.as_bytes(),
+        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
+    };
+    
+    let hash = match &args[1] {
+        Value::String(s) => s,
+        _ => return Err(CursedError::Runtime("Hash must be a string".to_string())),
+    };
+    
+    // Extract config from hash or use default
+    let config = ScryptConfig::new();
+    let engine = ScryptEngine::new(config)
+        .map_err(|e| CursedError::Runtime(format!("scrypt engine creation failed: {}", e)))?;
+    
+    let is_valid = engine.verify_password(password, hash)
+        .map_err(|e| CursedError::Runtime(format!("scrypt password verification failed: {}", e)))?;
+    
+    Ok(Value::Bool(is_valid))
 }
 
 /// slay Create scrypt configuration
@@ -563,13 +639,23 @@ mod tests {
     }
     
     #[test]
-    fn test_scrypt_not_implemented() {
+    fn test_scrypt_key_derivation() {
         let config = ScryptConfig::new();
         let engine = ScryptEngine::new(config).unwrap();
         
-        let result = engine.derive_key(b"password", b"salt");
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ScryptError::NotImplemented));
+        let password = b"test_password";
+        let salt = b"test_salt_123456";
+        
+        let result = engine.derive_key(password, salt);
+        assert!(result.is_ok());
+        
+        let key = result.unwrap();
+        assert_eq!(key.len(), 32); // Default output length
+        
+        // Test with different salt produces different key
+        let salt2 = b"different_salt_12";
+        let key2 = engine.derive_key(password, salt2).unwrap();
+        assert_ne!(key, key2);
     }
     
     #[test]

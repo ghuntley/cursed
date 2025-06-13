@@ -13,9 +13,19 @@ pub mod verification;
 pub mod ed25519;
 pub mod ecdsa;
 pub mod rsa_signatures;
+pub mod rsa_pss;
+pub mod eddsa;
 
 // Advanced features
 pub mod multisig;
+
+// Production-ready signature utilities
+pub mod signature_format;
+pub mod signature_validation;
+pub mod hash_algorithms;
+pub mod message_digest;
+pub mod certificate_validation;
+pub mod timestamping;
 
 // Re-export main types for convenience
 pub use errors::*;
@@ -46,6 +56,36 @@ pub use rsa_signatures::{
 pub use multisig::{
     MultiSigSigner, MultiSignature, MultiSigConfig, MultiSigScheme, 
     MultiSigAlgorithm, IndividualSignature, MultiSigStats
+};
+
+// Production-ready signature utilities exports
+pub use signature_format::{
+    SignatureFormat, SignatureFormatHandler, EncodingOptions, SignatureMetadata, EncodedSignature
+};
+pub use signature_validation::{
+    SignatureValidationManager, ValidationLevel, ValidationPolicy, ValidationContext, ValidationResult
+};
+pub use hash_algorithms::{
+    HashAlgorithm, HashAlgorithmManager, HashResult, HashProperties
+};
+pub use message_digest::{
+    MessageDigestManager, DigestMode, MessageFormat, DigestOptions, MessageDigest
+};
+pub use certificate_validation::{
+    CertificateValidationManager, X509Certificate, CertificateValidationPolicy, 
+    CertificateChainValidationResult, RevocationStatus
+};
+pub use timestamping::{
+    TimestampManager, TimestampRequest, TimestampResponse, TimestampToken, 
+    TimestampValidationPolicy, TimestampVerificationResult
+};
+pub use rsa_pss::{
+    RsaPssManager, RsaKeyPair, RsaPublicKey, RsaPrivateKey, RsaPssParams, 
+    RsaKeySize, SaltLength, RsaPssSignature
+};
+pub use eddsa::{
+    EdDsaManager, EdDsaKeyPair, EdDsaSignature, EdDsaParams, EdDsaCurve, 
+    EdDsaContext, EdDsaVerificationResult, EdDsaBatchVerificationResult
 };
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
@@ -365,11 +405,16 @@ pub fn init_crypto_signatures() -> AdvancedCryptoResult<()> {
         ))?;
     
     println!("🔐 crypto_signatures package initialized - digital signatures ready bestie!");
-    println!("   📝 Algorithms: Ed25519, ECDSA (secp256k1, secp256r1), RSA (PSS, PKCS#1 v1.5)");
+    println!("   📝 Algorithms: Ed25519, Ed448, ECDSA (secp256k1, secp256r1), RSA (PSS, PKCS#1 v1.5)");
     println!("   🔑 Key management: Generation, storage, validation");
-    println!("   ✅ Verification: Universal interface, batch processing");
+    println!("   ✅ Verification: Universal interface, batch processing, certificate validation");
     println!("   🤝 Multi-signatures: Threshold, aggregated, Schnorr-style");
     println!("   📊 Statistics: Performance monitoring, global stats");
+    println!("   🎨 Format support: Base64, Hex, PEM, DER, PKCS#7");
+    println!("   🔍 Hash algorithms: SHA-2, SHA-3, BLAKE3 with streaming support");
+    println!("   📜 Message digest: Canonical, structured, multi-algorithm");
+    println!("   🏆 Certificate validation: X.509 chains, CRL, OCSP");
+    println!("   ⏰ Timestamping: RFC 3161 compliant with TSA support");
     
     Ok(())
 }

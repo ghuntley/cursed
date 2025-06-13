@@ -545,7 +545,8 @@ pub fn create_hmac_stream(args: Vec<Value>) -> Result<Value, CursedError> {
     
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String(algorithm.name().to_string()));
-    result.insert("stream_id".to_string(), Value::String("hmac_stream_placeholder".to_string()));
+    result.insert("stream_id".to_string(), Value::String(format!("hmac_stream_{:x}", 
+            std::ptr::addr_of!(*self) as usize)));
     result.insert("output_size".to_string(), Value::Number(algorithm.output_size() as f64));
     
     Ok(Value::Object(result))

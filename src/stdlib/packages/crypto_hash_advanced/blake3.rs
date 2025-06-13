@@ -583,7 +583,8 @@ pub fn create_blake3_hasher(args: Vec<Value>) -> Result<Value, CursedError> {
     
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String(mode.name().to_string()));
-    result.insert("hasher_id".to_string(), Value::String("blake3_hasher_placeholder".to_string()));
+    result.insert("hasher_id".to_string(), Value::String(format!("blake3_hasher_{:x}", 
+            std::ptr::addr_of!(*self) as usize)));
     result.insert("output_size".to_string(), Value::Number(32.0));
     result.insert("variable_output".to_string(), Value::bool(true));
     

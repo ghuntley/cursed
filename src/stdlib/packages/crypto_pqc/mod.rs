@@ -6,6 +6,21 @@ pub mod pqc_core;
 pub mod hybrid;
 pub mod utils;
 
+// Complete PQC implementations
+pub mod code_crypto;
+pub mod multivariate_crypto;
+pub mod rainbow;
+pub mod ntru;
+pub mod compatibility;
+pub mod migration_tools;
+pub mod lattice_crypto;
+pub mod dilithium;
+pub mod frodo;
+pub mod saber;
+pub mod sphincs_plus;
+pub mod hash_crypto;
+pub mod hybrid_crypto;
+
 // Re-export main PQC functionality
 pub use kyber::*;
 pub use sphincs::*;
@@ -13,6 +28,14 @@ pub use falcon::*;
 pub use pqc_core::*;
 pub use hybrid::*;
 pub use utils::*;
+
+// Re-export complete implementations
+pub use code_crypto::*;
+pub use multivariate_crypto::*;
+pub use rainbow::*;
+pub use ntru::*;
+pub use compatibility::*;
+pub use migration_tools::*;
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::error::CursedError;
@@ -22,6 +45,12 @@ pub fn init_crypto_pqc() -> AdvancedCryptoResult<()> {
     // Initialize existing algorithms
     sphincs::init_sphincs()?;
     falcon::init_falcon()?;
+    
+    // Initialize complete PQC implementations
+    multivariate_crypto::init_multivariate_crypto()?;
+    rainbow::init_rainbow()?;
+    compatibility::init_compatibility()?;
+    migration_tools::init_migration_tools()?;
     
     // Initialize PQC algorithm registry
     let registry = PqcAlgorithmRegistry::new();
@@ -47,7 +76,15 @@ pub fn init_crypto_pqc() -> AdvancedCryptoResult<()> {
     println!("   - SPHINCS+ (hash-based signatures)");
     println!("   - Falcon (lattice-based signatures)");
     println!("   - Dilithium (lattice-based signatures)");
+    println!("   - NTRU (lattice-based encryption)");
+    println!("   - Rainbow (multivariate signatures)");
+    println!("   - Code-based cryptography (McEliece)");
     println!("   - Hybrid schemes (X25519+Kyber, Ed25519+Dilithium)");
+    println!("🔄 Migration and compatibility tools:");
+    println!("   - Classical to PQC migration planning");
+    println!("   - Compatibility assessment tools");
+    println!("   - Hybrid deployment strategies");
+    println!("   - Risk assessment and mitigation");
     
     Ok(())
 }

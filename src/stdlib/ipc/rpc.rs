@@ -599,6 +599,12 @@ impl RpcClient {
             statistics: Arc::new(Mutex::new(ClientStatistics::new())),
         }
     }
+    
+    /// Create a new RPC client with Unix socket transport
+    pub fn new_unix_socket(config: RpcConfig, server_address: String) -> IpcResult<Self> {
+        let transport = crate::stdlib::ipc::transport::create_unix_rpc_client(server_address)?;
+        Ok(Self::new(config, transport))
+    }
 
     pub fn call(&self, method: &str, params: &[u8]) -> IpcResult<Vec<u8>> {
         let request = RpcRequest::new(method, params.to_vec())
@@ -667,6 +673,12 @@ impl RpcServer {
             statistics: Arc::new(Mutex::new(ServerStatistics::new())),
             is_running: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
+    }
+    
+    /// Create a new RPC server with Unix socket transport
+    pub fn new_unix_socket(config: RpcConfig, registry: Arc<RpcRegistry>, bind_address: String) -> IpcResult<Self> {
+        let transport = crate::stdlib::ipc::transport::create_unix_rpc_server(bind_address)?;
+        Ok(Self::new(config, registry, transport))
     }
 
     pub fn start(&self) -> IpcResult<()> {

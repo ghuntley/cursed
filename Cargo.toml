@@ -42,15 +42,19 @@ md5 = "0.7"     # For CSRF token generation and simple hashing
 # Advanced cryptography dependencies (for foundational crypto packages)
 sha3 = "0.10"   # SHA-3 and Keccak hashing
 blake3 = "1.5"  # BLAKE3 hashing
-argon2 = "0.5"  # Argon2 password hashing (for future implementation)
-scrypt = "0.11" # scrypt password hashing (for future implementation)
+argon2 = "0.5"  # Argon2 password hashing
+scrypt = "0.11" # scrypt password hashing
+pbkdf2 = "0.12" # PBKDF2 key derivation
 rsa = "0.9"     # RSA public key cryptography
 p256 = "0.13"   # NIST P-256 elliptic curve
 p384 = "0.13"   # NIST P-384 elliptic curve
+p521 = "0.13"   # NIST P-521 elliptic curve
 k256 = "0.13"   # secp256k1 elliptic curve (Bitcoin/Ethereum)
 ed25519-dalek = "2.0"  # Ed25519 digital signatures
 x25519-dalek = "2.0"   # X25519 key exchange
+aes = "0.8"     # AES block cipher
 aes-gcm = "0.10"  # AES-GCM authenticated encryption
+chacha20 = "0.9" # ChaCha20 stream cipher
 chacha20poly1305 = "0.10.1"  # ChaCha20-Poly1305 authenticated encryption
 curve25519-dalek = "4.1.1"   # Curve25519 elliptic curve operations
 hkdf = "0.12.3"   # HMAC-based Key Derivation Function
@@ -60,9 +64,53 @@ num-bigint = "0.4"  # Big integer arithmetic for RSA operations
 signature = "2.1"   # Digital signature traits
 elliptic-curve = "0.13"  # Elliptic curve traits and utilities
 
+# Additional crypto dependencies for real implementations
+ring = "0.17"    # Comprehensive crypto library (alternative to RustCrypto)
+# aes-cbc = "0.3"  # AES-CBC mode (not available, use cbc + aes)
+cbc = "0.1"      # CBC mode traits
+pkcs8 = "0.10"   # PKCS#8 private key encoding
+pkcs1 = "0.7"    # PKCS#1 RSA key encoding
+spki = "0.7"     # Subject Public Key Info encoding
+der = "0.7"      # DER encoding
+pem = "3.0"      # PEM encoding
+x509-parser = "0.15"  # X.509 certificate parsing
+sec1 = "0.7"     # SEC1 elliptic curve key encoding
+
+# PKI and certificate validation dependencies
+rustls-native-certs = "0.6"  # System certificate store access
+webpki = "0.22"              # Certificate validation
+rustls-pemfile = "1.0"       # PEM file parsing
+oid-registry = "0.6"         # OID registry for X.509 extensions
+asn1-rs = "0.5"              # ASN.1 parsing
+sha1 = "0.10"                # SHA-1 for certificate fingerprints
+time = { version = "0.3", features = ["macros", "parsing", "formatting"] }  # Time handling for certificate validity
+
+# Post-quantum cryptography (when available)
+# kyber = "0.1"  # Kyber KEM (when crate becomes available)
+# dilithium = "0.1"  # Dilithium signatures (when crate becomes available)
+
+# Zero-knowledge proofs dependencies (commented out due to version conflicts)
+# ark-ff = "0.4"          # Finite field arithmetic
+# ark-ec = "0.4"          # Elliptic curve arithmetic  
+# ark-std = "0.4"         # Standard library for arkworks
+# ark-poly = "0.4"        # Polynomial arithmetic
+# ark-serialize = "0.4"   # Serialization for arkworks
+# ark-bn254 = "0.4"       # BN254 curve for pairings
+# ark-bls12-381 = "0.4"   # BLS12-381 curve for pairings
+# ark-relations = "0.4"   # Constraint systems
+# ark-r1cs-std = "0.4"    # R1CS standard library
+# ark-groth16 = "0.4"     # Groth16 zk-SNARK
+# ark-marlin = "0.4"      # Marlin universal SNARK
+
 # Package management dependencies
 tokio = { version = "1.0", features = ["full"] }  # Async runtime
 indicatif = "0.17"  # Progress bars for CLI
+
+# Optimization system dependencies
+num_cpus = "1.16"         # For detecting number of CPU cores
+crossbeam-channel = "0.5" # For thread communication in parallel compilation
+tracing = "0.1"           # For structured logging and instrumentation
+tracing-subscriber = { version = "0.3", features = ["env-filter"] } # For tracing subscriber implementations
 
 # Session store dependencies
 redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis client and session store
@@ -111,12 +159,12 @@ glob = "0.3"    # For file path pattern matching
 lru = "0.10.0"  # LRU cache implementation
 
 # Structured logging
-tracing = "0.1"  # Structured logging framework
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation
+# tracing = "0.1"  # Structured logging framework (already included above)
+# tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation (already included above)
 
 # Performance and optimization dependencies
 rayon = "1.8"         # Data parallelism for parallel compilation
-num_cpus = "1.16"     # CPU core detection for parallel jobs
+# num_cpus = "1.16"     # CPU core detection for parallel jobs (already included above)
 crossbeam = "0.8"     # Concurrent data structures
 
 # Date and time handling

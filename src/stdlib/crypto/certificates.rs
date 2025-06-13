@@ -10,6 +10,9 @@ use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
+use x509_parser::prelude::*;
+use der::{Decode, Encode};
+use pem::{Pem, encode, parse};
 
 /// fr fr X.509 certificate structure
 #[derive(Debug, Clone)]
@@ -235,55 +238,124 @@ impl CertificateProcessor {
             return Err(CertificateError::InvalidFormat("Empty DER data".to_string()));
         }
         
-        // Simplified DER parsing (real implementation would use proper ASN.1 parser)
-        let cert = X509Certificate {
-            version: 3, // X.509 v3
-            serial_number: Vec::from([0x01, 0x02, 0x03, 0x04]),
-            signature_algorithm: SignatureAlgorithm::Sha256WithRsaEncryption,
-            issuer: DistinguishedName {
-                common_name: Some("Example CA".to_string()),
-                organization: Some("Example Corp".to_string()),
-                organizational_unit: None,
-                country: Some("US".to_string()),
-                state: None,
-                locality: None,
-                email: None,
-            },
-            validity: Validity {
-                not_before: SystemTime::now(),
-                not_after: SystemTime::now() + Duration::from_secs(365 * 24 * 3600), // 1 year
-            },
-            subject: DistinguishedName {
-                common_name: Some("example.com".to_string()),
-                organization: Some("Example Corp".to_string()),
-                organizational_unit: None,
-                country: Some("US".to_string()),
-                state: None,
-                locality: None,
-                email: None,
-            },
-            public_key: PublicKeyInfo {
-                algorithm: PublicKeyAlgorithm::RsaEncryption,
-                key_data: Vec::from([0x30; 256]), // Placeholder RSA key
-                parameters: None,
-            },
-            extensions: vec![
-                Extension {
-                    oid: ObjectIdentifier { components: Vec::from([2, 5, 29, 15]) }, // Key Usage
-                    critical: true,
-                    value: Vec::from([0x03, 0x02, 0x05, 0xa0]), // digitalSignature, keyEncipherment
-                },
-                Extension {
-                    oid: ObjectIdentifier { components: Vec::from([2, 5, 29, 37]) }, // Extended Key Usage
-                    critical: false,
-                    value: Vec::from([0x30, 0x14]), // serverAuth, clientAuth
-                },
-            ],
-            signature: Vec::from([0x42; 256]), // Placeholder signature
-            raw_der: der_data.to_vec(),
-        };
+        // Real X.509 DER parsing using x509-parser
+        let (_, x509_cert) = parse_x509_certificate(der_data)
+            .map_err(|e| CertificateError::ParseError(format!("X.509 parsing failed: {:?}", e)))?;
+        
+        // Convert to our internal representation
+        let cert = self.convert_x509_to_internal(x509_cert, der_data)?;
         
         Ok(cert)
+    }
+    
+    /// Convert x509-parser certificate to internal format
+    fn convert_x509_to_internal(&self, x509_cert: X509Certificate<'_>, raw_der: &[u8]) -> CertificateResult<crate::stdlib::crypto::certificates::X509Certificate> {
+        // Extract issuer DN
+        let issuer = self.extract_distinguished_name(&x509_cert.issuer)?;
+        
+        // Extract subject DN
+        let subject = self.extract_distinguished_name(&x509_cert.subject)?;
+        
+        // Extract validity
+        let validity = Validity {
+            not_before: x509_cert.validity.not_before.to_datetime().into(),
+            not_after: x509_cert.validity.not_after.to_datetime().into(),
+        };
+        
+        // Extract public key
+        let public_key = PublicKeyInfo {
+            algorithm: self.determine_public_key_algorithm(&x509_cert.public_key().algorithm)?,
+            key_data: x509_cert.public_key().subject_public_key.data.to_vec(),
+            parameters: None,
+        };
+        
+        // Extract extensions
+        let mut extensions = Vec::new();
+        if let Some(x509_extensions) = &x509_cert.extensions() {
+            for ext in x509_extensions {
+                extensions.push(Extension {
+                    oid: ObjectIdentifier {
+                        components: ext.oid.iter().unwrap().collect(),
+                    },
+                    critical: ext.critical,
+                    value: ext.value.to_vec(),
+                });
+            }
+        }
+        
+        Ok(crate::stdlib::crypto::certificates::X509Certificate {
+            version: x509_cert.version as u8,
+            serial_number: x509_cert.serial.to_bytes_be(),
+            signature_algorithm: self.determine_signature_algorithm(&x509_cert.signature_algorithm)?,
+            issuer,
+            validity,
+            subject,
+            public_key,
+            extensions,
+            signature: x509_cert.signature_value.data.to_vec(),
+            raw_der: raw_der.to_vec(),
+        })
+    }
+    
+    /// Extract Distinguished Name from x509-parser format
+    fn extract_distinguished_name(&self, dn: &x509_parser::name::X509Name) -> CertificateResult<DistinguishedName> {
+        let mut result = DistinguishedName::new();
+        
+        for rdn in dn.iter() {
+            for attr in rdn.iter() {
+                match attr.attr_type().to_id_string().as_str() {
+                    "2.5.4.3" => { // Common Name
+                        result.common_name = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    "2.5.4.10" => { // Organization
+                        result.organization = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    "2.5.4.11" => { // Organizational Unit
+                        result.organizational_unit = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    "2.5.4.6" => { // Country
+                        result.country = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    "2.5.4.8" => { // State
+                        result.state = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    "2.5.4.7" => { // Locality
+                        result.locality = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    "1.2.840.113549.1.9.1" => { // Email
+                        result.email = Some(attr.attr_value().as_str()?.to_string());
+                    },
+                    _ => {}, // Ignore unknown attributes
+                }
+            }
+        }
+        
+        Ok(result)
+    }
+    
+    /// Determine signature algorithm from OID
+    fn determine_signature_algorithm(&self, alg: &x509_parser::algorithm::AlgorithmIdentifier) -> CertificateResult<SignatureAlgorithm> {
+        match alg.algorithm.to_id_string().as_str() {
+            "1.2.840.113549.1.1.11" => Ok(SignatureAlgorithm::Sha256WithRsaEncryption),
+            "1.2.840.113549.1.1.12" => Ok(SignatureAlgorithm::Sha384WithRsaEncryption),
+            "1.2.840.113549.1.1.13" => Ok(SignatureAlgorithm::Sha512WithRsaEncryption),
+            "1.2.840.10045.4.3.2" => Ok(SignatureAlgorithm::EcdsaWithSha256),
+            "1.2.840.10045.4.3.3" => Ok(SignatureAlgorithm::EcdsaWithSha384),
+            "1.2.840.10045.4.3.4" => Ok(SignatureAlgorithm::EcdsaWithSha512),
+            "1.3.101.112" => Ok(SignatureAlgorithm::Ed25519),
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unknown signature algorithm: {}", alg.algorithm.to_id_string()))),
+        }
+    }
+    
+    /// Determine public key algorithm from OID
+    fn determine_public_key_algorithm(&self, alg: &x509_parser::algorithm::AlgorithmIdentifier) -> CertificateResult<PublicKeyAlgorithm> {
+        match alg.algorithm.to_id_string().as_str() {
+            "1.2.840.113549.1.1.1" => Ok(PublicKeyAlgorithm::RsaEncryption),
+            "1.2.840.10045.2.1" => Ok(PublicKeyAlgorithm::EcPublicKey),
+            "1.3.101.112" => Ok(PublicKeyAlgorithm::Ed25519),
+            "1.3.101.110" => Ok(PublicKeyAlgorithm::X25519),
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unknown public key algorithm: {}", alg.algorithm.to_id_string()))),
+        }
     }
     
     /// slay Parse certificate from PEM format

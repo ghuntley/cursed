@@ -65,6 +65,7 @@ pub mod rpc;
 pub mod security;
 pub mod channels;
 pub mod synchronization;
+pub mod transport;
 
 // Re-export main types and functions for easy access
 pub use error::{
@@ -158,6 +159,14 @@ pub use synchronization::{
     CoordinatorStatistics
 };
 
+// Transport layer
+pub use transport::{
+    UnixSocketTransport, UnixSocketConfig, UnixSocketPool, ConnectionPool,
+    TransportPool, PooledConnection, PoolManager, PoolConfiguration,
+    Transport, TransportConnection, TransportListener, StreamTransport, DatagramTransport,
+    TransportStatistics
+};
+
 /// Initialize the IPC subsystem
 /// 
 /// This function should be called once at program startup to initialize
@@ -175,6 +184,9 @@ pub fn initialize() -> IpcResult<()> {
     // Initialize message queue subsystem
     message_queue::initialize_message_queue_subsystem()?;
     
+    // Initialize transport subsystem
+    transport::initialize()?;
+    
     // Set up resource limits and monitoring
     setup_resource_monitoring()?;
     
@@ -188,6 +200,9 @@ pub fn initialize() -> IpcResult<()> {
 pub fn shutdown() -> IpcResult<()> {
     // Clean up all active IPC resources
     cleanup_active_resources()?;
+    
+    // Shutdown transport subsystem
+    transport::shutdown()?;
     
     // Shutdown message queue subsystem
     message_queue::shutdown_message_queue_subsystem()?;

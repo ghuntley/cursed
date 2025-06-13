@@ -48,6 +48,28 @@ use sha3::{Sha3_256, Sha3_512, Digest};
 use blake3::Hasher as Blake3Hasher;
 use hmac::{Hmac, Mac};
 
+// Arkworks imports for real ZK implementations
+use ark_ff::{Field, PrimeField, UniformRand, Zero, One};
+use ark_ec::{CurveGroup, AffineRepr};
+use ark_std::{rand::RngCore, vec::Vec as ArkVec};
+use ark_bn254::{Fr as Bn254Fr, G1Projective as Bn254G1, G1Affine as Bn254G1Affine};
+use ark_bls12_381::{Fr as Bls12Fr, G1Projective as Bls12G1, G1Affine as Bls12G1Affine};
+use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
+use ark_relations::{
+    r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError, Variable},
+    lc,
+};
+use ark_r1cs_std::{
+    alloc::{AllocVar, AllocationMode},
+    fields::fp::FpVar,
+    eq::EqGadget,
+    R1CSVar,
+};
+use ark_groth16::{Groth16, ProvingKey, VerifyingKey, Proof as Groth16ProofInternal};
+use ark_poly::univariate::DensePolynomial;
+use ark_poly_commit::{PolynomialCommitment, kzg10::KZG10};
+use ark_ec::pairing::Pairing;
+
 use crate::error::CursedError;
 
 /// Zero-Knowledge Proof specific errors
@@ -186,22 +208,18 @@ impl ZkSecurityLevel {
     }
 }
 
-/// Field element for ZK computations (finite field arithmetic)
+/// Field element for ZK computations using real cryptographic field arithmetic
 /// 
 /// This implementation provides secure finite field arithmetic over large primes
-/// suitable for cryptographic applications. Supports both 64-bit and 256-bit fields.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct FieldElement {
-    pub value: u64,
-    pub modulus: u64,
+/// suitable for cryptographic applications using arkworks field types.
+#[derive(Debug, Clone, PartialEq)]
+pub enum FieldElement {
+    Bn254(Bn254Fr),  // BN254 scalar field
+    Bls12(Bls12Fr),  // BLS12-381 scalar field
 }
 
-/// Large field element for 256-bit computations
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LargeFieldElement {
-    pub value: Vec<u64>, // Little-endian representation
-    pub modulus: Vec<u64>,
-}
+/// Large field element for 256-bit computations (now using arkworks)
+pub type LargeFieldElement = FieldElement;
 
 /// Polynomial over a finite field
 #[derive(Debug, Clone)]
@@ -210,93 +228,143 @@ pub struct Polynomial {
     pub degree: usize,
 }
 
-/// Point on an elliptic curve for advanced commitments
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct EllipticCurvePoint {
-    pub x: FieldElement,
-    pub y: FieldElement,
-    pub is_infinity: bool,
+/// Point on an elliptic curve for advanced commitments using real curves
+#[derive(Debug, Clone, PartialEq)]
+pub enum EllipticCurvePoint {
+    Bn254G1(Bn254G1Affine),  // BN254 G1 point
+    Bls12G1(Bls12G1Affine),  // BLS12-381 G1 point
 }
 
 impl FieldElement {
-    /// Create a new field element
-    pub fn new(value: u64, modulus: u64) -> Self {
-        Self {
-            value: value % modulus,
-            modulus,
-        }
+    /// Create a new BN254 field element from u64
+    pub fn new_bn254(value: u64) -> Self {
+        FieldElement::Bn254(Bn254Fr::from(value))
+    }
+    
+    /// Create a new BLS12-381 field element from u64
+    pub fn new_bls12(value: u64) -> Self {
+        FieldElement::Bls12(Bls12Fr::from(value))
     }
 
-    /// Zero element
-    pub fn zero(modulus: u64) -> Self {
-        Self::new(0, modulus)
+    /// Zero element for BN254
+    pub fn zero_bn254() -> Self {
+        FieldElement::Bn254(Bn254Fr::zero())
+    }
+    
+    /// Zero element for BLS12-381
+    pub fn zero_bls12() -> Self {
+        FieldElement::Bls12(Bls12Fr::zero())
     }
 
-    /// One element
-    pub fn one(modulus: u64) -> Self {
-        Self::new(1, modulus)
+    /// One element for BN254
+    pub fn one_bn254() -> Self {
+        FieldElement::Bn254(Bn254Fr::one())
+    }
+    
+    /// One element for BLS12-381
+    pub fn one_bls12() -> Self {
+        FieldElement::Bls12(Bls12Fr::one())
     }
 
-    /// Random field element
-    pub fn random(modulus: u64, rng: &mut impl RngCore) -> Self {
-        let value = (rng.next_u64() % modulus);
-        Self::new(value, modulus)
+    /// Random field element for BN254
+    pub fn random_bn254(rng: &mut impl RngCore) -> Self {
+        FieldElement::Bn254(Bn254Fr::rand(rng))
+    }
+    
+    /// Random field element for BLS12-381
+    pub fn random_bls12(rng: &mut impl RngCore) -> Self {
+        FieldElement::Bls12(Bls12Fr::rand(rng))
     }
 
     /// Add two field elements
     pub fn add(&self, other: &Self) -> ZkResult<Self> {
-        if self.modulus != other.modulus {
-            return Err(ZkError::InvalidParameters("Modulus mismatch".to_string()));
+        match (self, other) {
+            (FieldElement::Bn254(a), FieldElement::Bn254(b)) => Ok(FieldElement::Bn254(*a + *b)),
+            (FieldElement::Bls12(a), FieldElement::Bls12(b)) => Ok(FieldElement::Bls12(*a + *b)),
+            _ => Err(ZkError::InvalidParameters("Field type mismatch".to_string())),
         }
-        Ok(Self::new(self.value + other.value, self.modulus))
     }
 
     /// Multiply two field elements
     pub fn mul(&self, other: &Self) -> ZkResult<Self> {
-        if self.modulus != other.modulus {
-            return Err(ZkError::InvalidParameters("Modulus mismatch".to_string()));
+        match (self, other) {
+            (FieldElement::Bn254(a), FieldElement::Bn254(b)) => Ok(FieldElement::Bn254(*a * *b)),
+            (FieldElement::Bls12(a), FieldElement::Bls12(b)) => Ok(FieldElement::Bls12(*a * *b)),
+            _ => Err(ZkError::InvalidParameters("Field type mismatch".to_string())),
         }
-        let result = ((self.value as u128) * (other.value as u128)) % (self.modulus as u128);
-        Ok(Self::new(result as u64, self.modulus))
     }
 
     /// Subtract field elements
     pub fn sub(&self, other: &Self) -> ZkResult<Self> {
-        if self.modulus != other.modulus {
-            return Err(ZkError::InvalidParameters("Modulus mismatch".to_string()));
+        match (self, other) {
+            (FieldElement::Bn254(a), FieldElement::Bn254(b)) => Ok(FieldElement::Bn254(*a - *b)),
+            (FieldElement::Bls12(a), FieldElement::Bls12(b)) => Ok(FieldElement::Bls12(*a - *b)),
+            _ => Err(ZkError::InvalidParameters("Field type mismatch".to_string())),
         }
-        let result = if self.value >= other.value {
-            self.value - other.value
-        } else {
-            self.modulus - (other.value - self.value)
-        };
-        Ok(Self::new(result, self.modulus))
     }
 
     /// Negate field element
     pub fn neg(&self) -> Self {
-        if self.value == 0 {
-            *self
-        } else {
-            Self::new(self.modulus - self.value, self.modulus)
+        match self {
+            FieldElement::Bn254(a) => FieldElement::Bn254(-*a),
+            FieldElement::Bls12(a) => FieldElement::Bls12(-*a),
         }
     }
 
     /// Convert to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.value.to_le_bytes().to_vec()
+        match self {
+            FieldElement::Bn254(f) => {
+                let mut bytes = Vec::new();
+                f.serialize_compressed(&mut bytes).unwrap();
+                bytes
+            },
+            FieldElement::Bls12(f) => {
+                let mut bytes = Vec::new();
+                f.serialize_compressed(&mut bytes).unwrap();
+                bytes
+            },
+        }
     }
 
-    /// From bytes
-    pub fn from_bytes(bytes: &[u8], modulus: u64) -> ZkResult<Self> {
-        if bytes.len() != 8 {
-            return Err(ZkError::InvalidParameters("Field element must be 8 bytes".to_string()));
+    /// From bytes for BN254
+    pub fn from_bytes_bn254(bytes: &[u8]) -> ZkResult<Self> {
+        let field_elem = Bn254Fr::deserialize_compressed(bytes)
+            .map_err(|e| ZkError::InvalidParameters(format!("Failed to deserialize BN254 field element: {:?}", e)))?;
+        Ok(FieldElement::Bn254(field_elem))
+    }
+    
+    /// From bytes for BLS12-381
+    pub fn from_bytes_bls12(bytes: &[u8]) -> ZkResult<Self> {
+        let field_elem = Bls12Fr::deserialize_compressed(bytes)
+            .map_err(|e| ZkError::InvalidParameters(format!("Failed to deserialize BLS12 field element: {:?}", e)))?;
+        Ok(FieldElement::Bls12(field_elem))
+    }
+    
+    /// Multiplicative inverse
+    pub fn inv(&self) -> ZkResult<Self> {
+        match self {
+            FieldElement::Bn254(a) => {
+                if a.is_zero() {
+                    return Err(ZkError::InvalidParameters("Cannot invert zero".to_string()));
+                }
+                Ok(FieldElement::Bn254(a.inverse().unwrap()))
+            },
+            FieldElement::Bls12(a) => {
+                if a.is_zero() {
+                    return Err(ZkError::InvalidParameters("Cannot invert zero".to_string()));
+                }
+                Ok(FieldElement::Bls12(a.inverse().unwrap()))
+            },
         }
-        let value = u64::from_le_bytes([
-            bytes[0], bytes[1], bytes[2], bytes[3],
-            bytes[4], bytes[5], bytes[6], bytes[7],
-        ]);
-        Ok(Self::new(value, modulus))
+    }
+    
+    /// Check if element is zero
+    pub fn is_zero(&self) -> bool {
+        match self {
+            FieldElement::Bn254(a) => a.is_zero(),
+            FieldElement::Bls12(a) => a.is_zero(),
+        }
     }
 }
 
@@ -304,63 +372,67 @@ impl FieldElement {
 // COMMITMENT SCHEMES
 // ============================================================================
 
-/// Pedersen commitment scheme
+/// Pedersen commitment scheme using real elliptic curves
 #[derive(Debug, Clone)]
 pub struct PedersenCommitment {
     /// Generator g
-    pub g: FieldElement,
+    pub g: EllipticCurvePoint,
     /// Generator h
-    pub h: FieldElement,
-    /// Field modulus
-    pub modulus: u64,
+    pub h: EllipticCurvePoint,
 }
 
 impl PedersenCommitment {
-    /// Setup Pedersen commitment scheme
-    pub fn setup(security_level: ZkSecurityLevel, rng: &mut impl RngCore) -> ZkResult<Self> {
-        // Use a safe prime for the modulus (simplified)
-        let modulus = match security_level {
-            ZkSecurityLevel::Security128 => 2147483647, // 2^31 - 1 (Mersenne prime)
-            ZkSecurityLevel::Security192 => 6442450941, // Large prime
-            ZkSecurityLevel::Security256 => 18446744073709551557, // Large prime
-        };
+    /// Setup Pedersen commitment scheme using BN254 curve
+    pub fn setup_bn254(rng: &mut impl RngCore) -> ZkResult<Self> {
+        // Generate random generators on BN254 curve
+        let g = EllipticCurvePoint::Bn254G1(Bn254G1::rand(rng).into());
+        let h = EllipticCurvePoint::Bn254G1(Bn254G1::rand(rng).into());
 
-        // Generate random generators
-        let g = FieldElement::random(modulus, rng);
-        let h = FieldElement::random(modulus, rng);
+        Ok(Self { g, h })
+    }
+    
+    /// Setup Pedersen commitment scheme using BLS12-381 curve
+    pub fn setup_bls12(rng: &mut impl RngCore) -> ZkResult<Self> {
+        // Generate random generators on BLS12-381 curve
+        let g = EllipticCurvePoint::Bls12G1(Bls12G1::rand(rng).into());
+        let h = EllipticCurvePoint::Bls12G1(Bls12G1::rand(rng).into());
 
-        Ok(Self { g, h, modulus })
+        Ok(Self { g, h })
     }
 
-    /// Commit to a value with randomness
-    pub fn commit(&self, value: u64, randomness: u64) -> ZkResult<FieldElement> {
-        // Commitment: C = g^value * h^randomness (mod p)
-        let g_value = self.pow(&self.g, value)?;
-        let h_randomness = self.pow(&self.h, randomness)?;
-        g_value.mul(&h_randomness)
+    /// Commit to a value with randomness using real elliptic curve operations
+    pub fn commit(&self, value: &FieldElement, randomness: &FieldElement) -> ZkResult<EllipticCurvePoint> {
+        match (&self.g, &self.h, value, randomness) {
+            (
+                EllipticCurvePoint::Bn254G1(g), 
+                EllipticCurvePoint::Bn254G1(h),
+                FieldElement::Bn254(v),
+                FieldElement::Bn254(r)
+            ) => {
+                // Commitment: C = g^value * h^randomness
+                let g_val = g.mul_bigint(v.into_bigint());
+                let h_rand = h.mul_bigint(r.into_bigint());
+                Ok(EllipticCurvePoint::Bn254G1((g_val + h_rand).into()))
+            },
+            (
+                EllipticCurvePoint::Bls12G1(g), 
+                EllipticCurvePoint::Bls12G1(h),
+                FieldElement::Bls12(v),
+                FieldElement::Bls12(r)
+            ) => {
+                // Commitment: C = g^value * h^randomness
+                let g_val = g.mul_bigint(v.into_bigint());
+                let h_rand = h.mul_bigint(r.into_bigint());
+                Ok(EllipticCurvePoint::Bls12G1((g_val + h_rand).into()))
+            },
+            _ => Err(ZkError::InvalidParameters("Curve/field type mismatch".to_string())),
+        }
     }
 
     /// Verify a commitment opening
-    pub fn verify(&self, commitment: &FieldElement, value: u64, randomness: u64) -> ZkResult<bool> {
+    pub fn verify(&self, commitment: &EllipticCurvePoint, value: &FieldElement, randomness: &FieldElement) -> ZkResult<bool> {
         let expected = self.commit(value, randomness)?;
-        Ok(commitment.value == expected.value)
-    }
-
-    /// Simple exponentiation (for demo purposes)
-    fn pow(&self, base: &FieldElement, exponent: u64) -> ZkResult<FieldElement> {
-        let mut result = FieldElement::one(self.modulus);
-        let mut base_power = *base;
-        let mut exp = exponent;
-
-        while exp > 0 {
-            if exp & 1 == 1 {
-                result = result.mul(&base_power)?;
-            }
-            base_power = base_power.mul(&base_power)?;
-            exp >>= 1;
-        }
-
-        Ok(result)
+        Ok(commitment == &expected)
     }
 }
 

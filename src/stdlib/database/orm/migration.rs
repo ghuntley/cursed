@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
-use super::entity::{Entity, ColumnDefinition, SqlColumnType, IndexDefinition};
+use super::entity::{Entity, ColumnDefinition, SqlColumnType, IndexDefinition, IndexType};
 use super::schema::{TableSchema, DatabaseSchema, ColumnSchema};
 
 /// fr fr Migration trait for defining schema changes
@@ -249,11 +249,13 @@ impl MigrationManager {
         let latest_version = applied_migrations.last().cloned()
             .unwrap_or_else(|| "0.0.0".to_string());
         
+        let dialect = self.detect_database_dialect()?;
+        
         Ok(SchemaVersion {
             version: latest_version,
             applied_migrations,
             last_migration_at: Some(std::time::SystemTime::now()),
-            dialect: "postgresql".to_string(), // TODO: detect from DB
+            dialect,
         })
     }
 
@@ -288,13 +290,11 @@ impl MigrationManager {
             MigrationOperation::DropColumn { column, .. } => {
                 Ok(Box::new(DropColumnMigration::<T>::new(version, migration_name, column)))
             }
-            MigrationOperation::AddIndex { .. } => {
-                // TODO: Implement AddIndexMigration
-                Err(DatabaseError::validation_error("AddIndex migration not yet implemented"))
+            MigrationOperation::AddIndex { index, .. } => {
+                Ok(Box::new(AddIndexMigration::<T>::new(version, migration_name, index)))
             }
-            MigrationOperation::DropIndex { .. } => {
-                // TODO: Implement DropIndexMigration  
-                Err(DatabaseError::validation_error("DropIndex migration not yet implemented"))
+            MigrationOperation::DropIndex { index, .. } => {
+                Ok(Box::new(DropIndexMigration::<T>::new(version, migration_name, index)))
             }
         }
     }
@@ -418,11 +418,24 @@ impl MigrationManager {
             return Err(DatabaseError::internal_error("Failed to access schema"));
         };
         
-        // Execute SQL statements
+        // Execute SQL statements within a transaction
+        let mut tx = self.db.begin().map_err(|e| {
+            error!(error = %e, "Failed to begin transaction for migration");
+            e
+        })?;
+        
         for sql in sql_statements {
             debug!(sql = %sql, "Executing migration SQL");
-            // TODO: Execute actual SQL
+            tx.exec(sql, Vec::new()).map_err(|e| {
+                error!(sql = %sql, error = %e, "Failed to execute migration SQL");
+                e
+            })?;
         }
+        
+        tx.commit().map_err(|e| {
+            error!(error = %e, "Failed to commit migration transaction");
+            e
+        })?;
         
         Ok(())
     }
@@ -436,11 +449,24 @@ impl MigrationManager {
             return Err(DatabaseError::internal_error("Failed to access schema"));
         };
         
-        // Execute SQL statements in reverse order
+        // Execute SQL statements in reverse order within a transaction
+        let mut tx = self.db.begin().map_err(|e| {
+            error!(error = %e, "Failed to begin transaction for rollback");
+            e
+        })?;
+        
         for sql in sql_statements.iter().rev() {
             debug!(sql = %sql, "Executing rollback SQL");
-            // TODO: Execute actual SQL
+            tx.exec(sql.clone(), Vec::new()).map_err(|e| {
+                error!(sql = %sql, error = %e, "Failed to execute rollback SQL");
+                e
+            })?;
         }
+        
+        tx.commit().map_err(|e| {
+            error!(error = %e, "Failed to commit rollback transaction");
+            e
+        })?;
         
         Ok(())
     }
@@ -471,11 +497,71 @@ impl MigrationManager {
     }
     
     fn sort_by_dependencies(&self, migrations: Vec<String>) -> Result<Vec<String>, DatabaseError> {
-        // TODO: Implement topological sort based on dependencies
-        // For now, just sort by version
-        let mut sorted = migrations;
-        sorted.sort();
-        Ok(sorted)
+        debug!("Sorting migrations by dependencies");
+        
+        let migrations_guard = self.migrations.lock().map_err(|_| 
+            DatabaseError::internal_error("Failed to access migrations for dependency sorting"))?;
+        
+        // Kahn's algorithm for topological sorting
+        let mut graph: HashMap<String, Vec<String>> = HashMap::new();
+        let mut in_degree: HashMap<String, usize> = HashMap::new();
+        
+        // Build dependency graph
+        for migration_version in &migrations {
+            if let Some(migration) = migrations_guard.get(migration_version) {
+                let deps = migration.dependencies();
+                graph.insert(migration_version.clone(), deps.clone());
+                
+                // Initialize in-degree count
+                in_degree.entry(migration_version.clone()).or_insert(0);
+                
+                // Update in-degrees based on dependencies
+                for dep in deps {
+                    if migrations.contains(&dep) {
+                        *in_degree.entry(migration_version.clone()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
+        
+        // Find migrations with no dependencies (in-degree 0)
+        let mut queue: Vec<String> = in_degree.iter()
+            .filter(|(_, &degree)| degree == 0)
+            .map(|(version, _)| version.clone())
+            .collect();
+        
+        let mut result = Vec::new();
+        
+        // Process migrations in topological order
+        while let Some(current) = queue.pop() {
+            result.push(current.clone());
+            
+            // Update dependencies
+            if let Some(deps) = graph.get(&current) {
+                for dep_version in deps {
+                    if let Some(degree) = in_degree.get_mut(dep_version) {
+                        *degree -= 1;
+                        if *degree == 0 {
+                            queue.push(dep_version.clone());
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Check for circular dependencies
+        if result.len() != migrations.len() {
+            let remaining: Vec<String> = migrations.into_iter()
+                .filter(|m| !result.contains(m))
+                .collect();
+            
+            return Err(DatabaseError::validation_error(
+                &format!("Circular dependency detected in migrations: {:?}", remaining)
+            ));
+        }
+        
+        debug!(sorted_migrations = ?result, "Sorted migrations by dependencies");
+        Ok(result)
     }
     
     fn generate_version(&self) -> String {
@@ -485,6 +571,67 @@ impl MigrationManager {
             .unwrap()
             .as_secs();
         format!("{}", timestamp)
+    }
+
+    /// Detect database dialect from connection information
+    /// 
+    /// This method analyzes the database driver name and connection string to determine
+    /// the appropriate SQL dialect for generating migration statements. It supports
+    /// PostgreSQL, MySQL, SQLite, SQL Server, and Oracle databases.
+    /// 
+    /// # Returns
+    /// 
+    /// A string representing the detected database dialect, or "postgresql" as default
+    /// 
+    /// # Supported Dialects
+    /// 
+    /// - "postgresql" - PostgreSQL database
+    /// - "mysql" - MySQL/MariaDB database  
+    /// - "sqlite" - SQLite database
+    /// - "mssql" - Microsoft SQL Server
+    /// - "oracle" - Oracle Database
+    /// 
+    /// # Detection Logic
+    /// 
+    /// 1. First checks the driver name for known database identifiers
+    /// 2. Falls back to analyzing the connection string/data source name
+    /// 3. Defaults to PostgreSQL if detection fails
+    #[instrument(skip(self))]
+    fn detect_database_dialect(&self) -> Result<String, DatabaseError> {
+        debug!("Detecting database dialect");
+        
+        let driver_name = &self.db.driver_name;
+        let data_source = &self.db.data_source_name;
+        
+        // Detect based on driver name first
+        let dialect = match driver_name.to_lowercase().as_str() {
+            "postgres" | "postgresql" | "pg" => "postgresql",
+            "mysql" => "mysql", 
+            "sqlite" | "sqlite3" => "sqlite",
+            "mssql" | "sqlserver" => "mssql",
+            "oracle" => "oracle",
+            _ => {
+                // Try to detect from data source name/connection string
+                if data_source.contains("postgres") || data_source.contains("postgresql") {
+                    "postgresql"
+                } else if data_source.contains("mysql") {
+                    "mysql"
+                } else if data_source.contains("sqlite") || data_source.ends_with(".db") || data_source.ends_with(".sqlite") {
+                    "sqlite"
+                } else if data_source.contains("sqlserver") || data_source.contains("mssql") {
+                    "mssql"
+                } else if data_source.contains("oracle") {
+                    "oracle"
+                } else {
+                    // Default to PostgreSQL if we can't detect
+                    warn!(driver = driver_name, data_source = data_source, "Could not detect database dialect, defaulting to PostgreSQL");
+                    "postgresql"
+                }
+            }
+        };
+        
+        debug!(dialect = dialect, "Detected database dialect");
+        Ok(dialect.to_string())
     }
 }
 
@@ -723,6 +870,236 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
     }
 }
 
+/// Migration for adding database indexes to improve query performance
+/// 
+/// This migration creates a new index on specified columns of an entity's table.
+/// Supports unique indexes, composite indexes, partial indexes with WHERE clauses,
+/// and different index types (B-tree, Hash, GIN, GiST for PostgreSQL).
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// use cursed::stdlib::database::orm::migration::AddIndexMigration;
+/// use cursed::stdlib::database::orm::entity::{IndexDefinition, IndexType};
+/// 
+/// let index = IndexDefinition {
+///     name: "idx_users_email".to_string(),
+///     columns: vec!["email".to_string()],
+///     unique: true,
+///     index_type: IndexType::BTree,
+///     condition: None,
+/// };
+/// 
+/// let migration = AddIndexMigration::<User>::new(
+///     "20231201_001".to_string(),
+///     "add_users_email_index".to_string(),
+///     index,
+/// );
+/// ```
+#[derive(Debug)]
+pub struct AddIndexMigration<T: Entity> {
+    version: String,
+    name: String,
+    index: IndexDefinition,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl<T: Entity> AddIndexMigration<T> {
+    /// Create a new index addition migration
+    /// 
+    /// # Arguments
+    /// 
+    /// * `version` - Unique version identifier for this migration (e.g., timestamp)
+    /// * `name` - Descriptive name for this migration operation
+    /// * `index` - Index definition containing name, columns, type, and constraints
+    /// 
+    /// # Returns
+    /// 
+    /// A new `AddIndexMigration` instance ready for registration with the migration manager
+    pub fn new(version: String, name: String, index: IndexDefinition) -> Self {
+        Self {
+            version,
+            name,
+            index,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<T: Entity> Migration for AddIndexMigration<T> {
+    fn version(&self) -> String {
+        self.version.clone()
+    }
+    
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+    
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+        let unique_keyword = if self.index.unique { "UNIQUE " } else { "" };
+        let condition_clause = if let Some(condition) = &self.index.condition {
+            format!(" WHERE {}", condition)
+        } else {
+            String::new()
+        };
+        
+        let sql = format!(
+            "CREATE {}INDEX {} ON {} ({}){};",
+            unique_keyword,
+            self.index.name,
+            T::table_name(),
+            self.index.columns.join(", "),
+            condition_clause
+        );
+        
+        // Add index to schema
+        if let Some(table) = schema.get_table_mut(T::table_name()) {
+            table.indexes.push(self.index.clone());
+        }
+        
+        Ok(Vec::from([sql]))
+    }
+    
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+        let sql = format!("DROP INDEX IF EXISTS {};", self.index.name);
+        
+        // Remove index from schema
+        if let Some(table) = schema.get_table_mut(T::table_name()) {
+            table.indexes.retain(|idx| idx.name != self.index.name);
+        }
+        
+        Ok(Vec::from([sql]))
+    }
+}
+
+/// Migration for removing database indexes
+/// 
+/// This migration drops an existing index from an entity's table. Note that this is a 
+/// destructive operation and the rollback implementation creates a basic B-tree index
+/// which may not match the original index specification.
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// use cursed::stdlib::database::orm::migration::DropIndexMigration;
+/// 
+/// let migration = DropIndexMigration::<User>::new(
+///     "20231201_002".to_string(),
+///     "drop_users_email_index".to_string(),
+///     "idx_users_email".to_string(),
+/// );
+/// ```
+/// 
+/// # Warning
+/// 
+/// Dropping indexes is destructive. Rollback operations will create a basic index
+/// on the 'id' column but cannot restore the original index specification.
+#[derive(Debug)]
+pub struct DropIndexMigration<T: Entity> {
+    version: String,
+    name: String,
+    index_name: String,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl<T: Entity> DropIndexMigration<T> {
+    /// Create a new index removal migration
+    /// 
+    /// # Arguments
+    /// 
+    /// * `version` - Unique version identifier for this migration (e.g., timestamp)
+    /// * `name` - Descriptive name for this migration operation
+    /// * `index_name` - Name of the index to be dropped
+    /// 
+    /// # Returns
+    /// 
+    /// A new `DropIndexMigration` instance ready for registration with the migration manager
+    pub fn new(version: String, name: String, index_name: String) -> Self {
+        Self {
+            version,
+            name,
+            index_name,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<T: Entity> Migration for DropIndexMigration<T> {
+    fn version(&self) -> String {
+        self.version.clone()
+    }
+    
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+    
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+        let sql = format!("DROP INDEX IF EXISTS {};", self.index_name);
+        
+        // Remove index from schema
+        if let Some(table) = schema.get_table_mut(T::table_name()) {
+            table.indexes.retain(|idx| idx.name != self.index_name);
+        }
+        
+        Ok(Vec::from([sql]))
+    }
+    
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+        // Note: This is a destructive operation - we can't perfectly restore the index
+        // In a real implementation, we'd need to store the original index definition
+        warn!("Dropping index is a destructive operation - rollback may not be perfect");
+        
+        // Create a basic B-tree index for rollback
+        let sql = format!(
+            "CREATE INDEX {} ON {} ({});",
+            self.index_name,
+            T::table_name(),
+            "id" // Default to 'id' column if we don't know the original columns
+        );
+        
+        Ok(Vec::from([sql]))
+    }
+}
+
+/// Implementation of IndexType SQL generation methods for cross-database compatibility
+impl IndexType {
+    /// Generate database-specific index type clause for CREATE INDEX statements
+    /// 
+    /// This method converts CURSED's generic index types into database-specific SQL clauses.
+    /// Different databases support different index types and syntax.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `dialect` - Target database dialect ("postgresql", "mysql", "sqlite", etc.)
+    /// 
+    /// # Returns
+    /// 
+    /// Database-specific SQL clause for index type, or empty string if not supported
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// use cursed::stdlib::database::orm::entity::IndexType;
+    /// 
+    /// assert_eq!(IndexType::BTree.to_sql("postgresql"), "USING btree");
+    /// assert_eq!(IndexType::Hash.to_sql("mysql"), "USING HASH");
+    /// assert_eq!(IndexType::BTree.to_sql("sqlite"), ""); // SQLite doesn't support type specification
+    /// ```
+    pub fn to_sql(&self, dialect: &str) -> String {
+        match (self, dialect) {
+            (IndexType::BTree, "postgresql") => "USING btree",
+            (IndexType::Hash, "postgresql") => "USING hash",
+            (IndexType::Gin, "postgresql") => "USING gin",
+            (IndexType::Gist, "postgresql") => "USING gist",
+            (IndexType::BTree, "mysql") => "USING BTREE",
+            (IndexType::Hash, "mysql") => "USING HASH",
+            (IndexType::BTree, "sqlite") => "", // SQLite doesn't support type specification
+            (IndexType::Hash, "sqlite") => "",
+            _ => "", // Default: no specific type clause
+        }.to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -855,5 +1232,151 @@ mod tests {
         
         assert_eq!(migration.version(), "001");
         assert_eq!(migration.name(), "create_users_table");
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_add_index_migration() {
+        let index = IndexDefinition {
+            name: "idx_users_email".to_string(),
+            columns: vec!["email".to_string()],
+            unique: true,
+            index_type: super::super::entity::IndexType::BTree,
+            condition: None,
+        };
+        
+        let migration = AddIndexMigration::<TestUser>::new(
+            "002".to_string(),
+            "add_email_index".to_string(),
+            index,
+        );
+        
+        assert_eq!(migration.version(), "002");
+        assert_eq!(migration.name(), "add_email_index");
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_drop_index_migration() {
+        let migration = DropIndexMigration::<TestUser>::new(
+            "003".to_string(),
+            "drop_email_index".to_string(),
+            "idx_users_email".to_string(),
+        );
+        
+        assert_eq!(migration.version(), "003");
+        assert_eq!(migration.name(), "drop_email_index");
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_migration_operations() {
+        let db = create_mock_db();
+        let manager = MigrationManager::new(db);
+        
+        // Test AddIndex operation generation
+        let add_index_op = MigrationOperation::AddIndex {
+            table: "users".to_string(),
+            index: IndexDefinition {
+                name: "idx_users_name".to_string(),
+                columns: vec!["name".to_string()],
+                unique: false,
+                index_type: super::super::entity::IndexType::BTree,
+                condition: None,
+            },
+        };
+        
+        let migration = manager.generate_migration::<TestUser>(add_index_op)
+            .expect("Should generate AddIndex migration");
+        assert_eq!(migration.name(), "add_index_users");
+        
+        // Test DropIndex operation generation
+        let drop_index_op = MigrationOperation::DropIndex {
+            table: "users".to_string(),
+            index: "idx_users_name".to_string(),
+        };
+        
+        let migration = manager.generate_migration::<TestUser>(drop_index_op)
+            .expect("Should generate DropIndex migration");
+        assert_eq!(migration.name(), "drop_index_users");
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_migration_dependency_sorting() {
+        let db = create_mock_db();
+        let manager = MigrationManager::new(db);
+        
+        // Create migrations with dependencies
+        struct Migration1;
+        impl Migration for Migration1 {
+            fn version(&self) -> String { "001".to_string() }
+            fn name(&self) -> String { "first".to_string() }
+            fn up(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
+            fn down(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
+        }
+        
+        struct Migration2;
+        impl Migration for Migration2 {
+            fn version(&self) -> String { "002".to_string() }
+            fn name(&self) -> String { "second".to_string() }
+            fn dependencies(&self) -> Vec<String> { vec!["001".to_string()] }
+            fn up(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
+            fn down(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
+        }
+        
+        manager.register_migration(Box::new(Migration1)).expect("Should register migration 1");
+        manager.register_migration(Box::new(Migration2)).expect("Should register migration 2");
+        
+        let sorted = manager.sort_by_dependencies(vec!["002".to_string(), "001".to_string()])
+            .expect("Should sort by dependencies");
+        
+        assert_eq!(sorted, vec!["001", "002"]);
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_database_dialect_detection() {
+        // Test PostgreSQL detection
+        let pg_db = DB::open("postgresql".to_string(), "postgres://user:pass@localhost/db".to_string())
+            .expect("Should create PostgreSQL DB");
+        let pg_manager = MigrationManager::new(Arc::new(pg_db));
+        let pg_dialect = pg_manager.detect_database_dialect().expect("Should detect PostgreSQL");
+        assert_eq!(pg_dialect, "postgresql");
+        
+        // Test MySQL detection
+        let mysql_db = DB::open("mysql".to_string(), "mysql://user:pass@localhost/db".to_string())
+            .expect("Should create MySQL DB");
+        let mysql_manager = MigrationManager::new(Arc::new(mysql_db));
+        let mysql_dialect = mysql_manager.detect_database_dialect().expect("Should detect MySQL");
+        assert_eq!(mysql_dialect, "mysql");
+        
+        // Test SQLite detection
+        let sqlite_db = DB::open("sqlite".to_string(), "test.db".to_string())
+            .expect("Should create SQLite DB");
+        let sqlite_manager = MigrationManager::new(Arc::new(sqlite_db));
+        let sqlite_dialect = sqlite_manager.detect_database_dialect().expect("Should detect SQLite");
+        assert_eq!(sqlite_dialect, "sqlite");
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_index_type_sql_generation() {
+        assert_eq!(
+            super::super::entity::IndexType::BTree.to_sql("postgresql"),
+            "USING btree"
+        );
+        assert_eq!(
+            super::super::entity::IndexType::Hash.to_sql("postgresql"),
+            "USING hash"
+        );
+        assert_eq!(
+            super::super::entity::IndexType::BTree.to_sql("mysql"),
+            "USING BTREE"
+        );
+        assert_eq!(
+            super::super::entity::IndexType::BTree.to_sql("sqlite"),
+            ""
+        );
     }
 }

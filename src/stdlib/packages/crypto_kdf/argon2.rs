@@ -95,24 +95,26 @@ impl Default for Argon2Config {
 /// fr fr Argon2 error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum Argon2Error {
-    NotImplemented,
     InvalidConfig(String),
     InvalidInput(String),
     InvalidPassword(String),
     InvalidSalt(String), 
     InvalidHash(String),
+    CryptographicError(String),
+    InsufficientMemory,
     Internal(String),
 }
 
 impl std::fmt::Display for Argon2Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Argon2Error::NotImplemented => write!(f, "Argon2 is not yet implemented"),
             Argon2Error::InvalidConfig(msg) => write!(f, "Invalid Argon2 configuration: {}", msg),
             Argon2Error::InvalidInput(msg) => write!(f, "Invalid Argon2 input: {}", msg),
             Argon2Error::InvalidPassword(msg) => write!(f, "Invalid password: {}", msg),
             Argon2Error::InvalidSalt(msg) => write!(f, "Invalid salt: {}", msg),
             Argon2Error::InvalidHash(msg) => write!(f, "Invalid hash: {}", msg),
+            Argon2Error::CryptographicError(msg) => write!(f, "Argon2 cryptographic error: {}", msg),
+            Argon2Error::InsufficientMemory => write!(f, "Insufficient memory for Argon2 operation"),
             Argon2Error::Internal(msg) => write!(f, "Internal Argon2 error: {}", msg),
         }
     }
@@ -261,9 +263,13 @@ impl Argon2Engine {
         // Create temporary config with extracted parameters
         let temp_config = Argon2Config {
             variant: self.config.variant,
+            memory_cost: memory_kb,
             memory_size: memory_kb * 1024, // Convert back to bytes
+            time_cost: iterations,
             iterations,
             parallelism,
+            salt_len: salt.len(),
+            output_len: expected_key.len(),
             output_length: expected_key.len(),
         };
         
@@ -465,13 +471,23 @@ mod tests {
     }
     
     #[test]
-    fn test_argon2_not_implemented() {
+    fn test_argon2_key_derivation() {
         let config = Argon2Config::new();
         let engine = Argon2Engine::new(config);
         
-        let result = engine.derive_key(b"password", b"salt");
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), Argon2Error::NotImplemented));
+        let password = b"test_password";
+        let salt = b"test_salt_123456";
+        
+        let result = engine.derive_key(password, salt);
+        assert!(result.is_ok());
+        
+        let key = result.unwrap();
+        assert_eq!(key.len(), 32); // Default output length
+        
+        // Test with different salt produces different key
+        let salt2 = b"different_salt_12";
+        let key2 = engine.derive_key(password, salt2).unwrap();
+        assert_ne!(key, key2);
     }
     
     #[test]
