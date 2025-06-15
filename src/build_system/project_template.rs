@@ -788,23 +788,175 @@ const WEB_SERVER_TEMPLATE: &str = r#"// Web server implementation for {{project_
 
 yeet "std::net";
 yeet "std::io";
+yeet "std::thread";
+yeet "std::sync";
 
 squad WebServer {
     port: i32,
+    routes: Vec<Route>,
+}
+
+squad Route {
+    path: str,
+    method: HttpMethod,
+    handler: slay(Request) -> Response,
+}
+
+squad Request {
+    path: str,
+    method: HttpMethod,
+    headers: Map<str, str>,
+    body: str,
+}
+
+squad Response {
+    status: i32,
+    headers: Map<str, str>,
+    body: str,
+}
+
+enum HttpMethod {
+    GET,
+    POST,
+    PUT,
+    DELETE,
 }
 
 impl WebServer {
     slay new(port: i32) -> WebServer {
-        return WebServer { port: port };
+        return WebServer { 
+            port: port,
+            routes: Vec::new(),
+        };
+    }
+    
+    slay add_route(&mut self, path: str, method: HttpMethod, handler: slay(Request) -> Response) {
+        let route = Route { path: path, method: method, handler: handler };
+        self.routes.push(route);
     }
     
     slay start(&self) -> Result<(), Error> {
-        io::println("Binding to port " + self.port.to_string());
+        io::println("Starting {{project_name}} server on port " + self.port.to_string());
         
-        // TODO: Implement actual HTTP server
-        // This is a placeholder implementation
+        // Create TCP listener
+        let listener = net::TcpListener::bind("127.0.0.1:" + self.port.to_string())?;
+        io::println("Server listening on http://127.0.0.1:" + self.port.to_string());
+        
+        // Handle incoming connections
+        bestie connection in listener.incoming() {
+            vibe_check connection {
+                mood Ok(stream) => {
+                    self.handle_connection(stream);
+                }
+                mood Err(e) => {
+                    io::println("Connection error: " + e.to_string());
+                }
+            }
+        }
         
         return Ok(());
+    }
+    
+    slay handle_connection(&self, mut stream: net::TcpStream) {
+        let request = self.parse_request(&stream);
+        let response = self.route_request(request);
+        self.send_response(&stream, response);
+    }
+    
+    slay parse_request(&self, stream: &net::TcpStream) -> Request {
+        // Basic HTTP request parsing
+        let mut buffer = [0; 1024];
+        stream.read(&mut buffer);
+        let request_str = str::from_utf8(&buffer).unwrap_or("");
+        
+        let lines: Vec<&str> = request_str.split("\r\n").collect();
+        lowkey lines.len() > 0 {
+            let request_line = lines[0];
+            let parts: Vec<&str> = request_line.split(" ").collect();
+            
+            lowkey parts.len() >= 3 {
+                let method = vibe_check parts[0] {
+                    mood "GET" => HttpMethod::GET,
+                    mood "POST" => HttpMethod::POST,
+                    mood "PUT" => HttpMethod::PUT,
+                    mood "DELETE" => HttpMethod::DELETE,
+                    basic => HttpMethod::GET,
+                };
+                
+                return Request {
+                    path: parts[1].to_string(),
+                    method: method,
+                    headers: Map::new(),
+                    body: "".to_string(),
+                };
+            }
+        }
+        
+        return Request {
+            path: "/".to_string(),
+            method: HttpMethod::GET,
+            headers: Map::new(),
+            body: "".to_string(),
+        };
+    }
+    
+    slay route_request(&self, request: Request) -> Response {
+        // Find matching route
+        bestie route in &self.routes {
+            lowkey route.path == request.path && route.method == request.method {
+                return (route.handler)(request);
+            }
+        }
+        
+        // Default 404 response
+        return Response {
+            status: 404,
+            headers: Map::new(),
+            body: "404 Not Found".to_string(),
+        };
+    }
+    
+    slay send_response(&self, mut stream: &net::TcpStream, response: Response) {
+        let status_line = "HTTP/1.1 " + response.status.to_string() + " OK\r\n";
+        let content_length = "Content-Length: " + response.body.len().to_string() + "\r\n";
+        let content_type = "Content-Type: text/html\r\n";
+        let connection = "Connection: close\r\n";
+        
+        let http_response = status_line + content_type + content_length + connection + "\r\n" + response.body;
+        
+        stream.write(http_response.as_bytes());
+        stream.flush();
+    }
+    
+    // Helper methods for common routes
+    slay get(&mut self, path: str, handler: slay(Request) -> Response) {
+        self.add_route(path, HttpMethod::GET, handler);
+    }
+    
+    slay post(&mut self, path: str, handler: slay(Request) -> Response) {
+        self.add_route(path, HttpMethod::POST, handler);
+    }
+    
+    // Static file serving
+    slay serve_static(&self, request: Request) -> Response {
+        let file_path = "static" + request.path;
+        
+        vibe_check std::fs::read_to_string(file_path) {
+            mood Ok(content) => {
+                return Response {
+                    status: 200,
+                    headers: Map::new(),
+                    body: content,
+                };
+            }
+            mood Err(_) => {
+                return Response {
+                    status: 404,
+                    headers: Map::new(),
+                    body: "File not found".to_string(),
+                };
+            }
+        }
     }
 }
 "#;
@@ -850,28 +1002,305 @@ const API_ROUTES_TEMPLATE: &str = r#"// API routes for {{project_name}}
 
 yeet "std::net";
 yeet "std::json";
+yeet "std::time";
+yeet "std::collections";
 
 squad ApiServer {
-    // Server configuration
+    port: i32,
+    routes: Map<str, RouteHandler>,
+    middleware: Vec<Middleware>,
+}
+
+squad RouteHandler {
+    method: HttpMethod,
+    handler: slay(ApiRequest) -> ApiResponse,
+}
+
+squad ApiRequest {
+    path: str,
+    method: HttpMethod,
+    headers: Map<str, str>,
+    query_params: Map<str, str>,
+    body: json::Value,
+    user_id: Option<str>,
+}
+
+squad ApiResponse {
+    status: i32,
+    headers: Map<str, str>,
+    body: json::Value,
+}
+
+squad Middleware {
+    name: str,
+    handler: slay(ApiRequest) -> Result<ApiRequest, ApiResponse>,
+}
+
+enum HttpMethod {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    PATCH,
+    OPTIONS,
 }
 
 impl ApiServer {
-    slay new() -> ApiServer {
-        return ApiServer {};
+    slay new(port: i32) -> ApiServer {
+        let mut server = ApiServer {
+            port: port,
+            routes: Map::new(),
+            middleware: Vec::new(),
+        };
+        
+        // Set up default routes
+        server.setup_routes();
+        
+        return server;
+    }
+    
+    slay setup_routes(&mut self) {
+        // API status endpoint
+        self.get("/api/{{api_version}}/status", |req| {
+            self.get_status(req)
+        });
+        
+        // Health check endpoint
+        self.get("/health", |req| {
+            self.health_check(req)
+        });
+        
+        // Example CRUD endpoints
+        self.get("/api/{{api_version}}/users", |req| {
+            self.list_users(req)
+        });
+        
+        self.post("/api/{{api_version}}/users", |req| {
+            self.create_user(req)
+        });
+        
+        self.get("/api/{{api_version}}/users/{id}", |req| {
+            self.get_user(req)
+        });
+        
+        self.put("/api/{{api_version}}/users/{id}", |req| {
+            self.update_user(req)
+        });
+        
+        self.delete("/api/{{api_version}}/users/{id}", |req| {
+            self.delete_user(req)
+        });
     }
     
     slay start(&self) -> Result<(), Error> {
-        // TODO: Implement actual API server with routes
+        io::println("Starting {{project_name}} API server on port " + self.port.to_string());
+        
+        let listener = net::TcpListener::bind("127.0.0.1:" + self.port.to_string())?;
+        io::println("API server listening on http://127.0.0.1:" + self.port.to_string());
+        
+        bestie connection in listener.incoming() {
+            vibe_check connection {
+                mood Ok(stream) => {
+                    self.handle_request(stream);
+                }
+                mood Err(e) => {
+                    io::println("Connection error: " + e.to_string());
+                }
+            }
+        }
+        
         return Ok(());
     }
     
-    // Example API endpoint
-    slay get_status(&self) -> json::Value {
-        return json::object([
+    slay handle_request(&self, mut stream: net::TcpStream) {
+        let request = self.parse_api_request(&stream);
+        let response = self.process_request(request);
+        self.send_api_response(&stream, response);
+    }
+    
+    slay process_request(&self, mut request: ApiRequest) -> ApiResponse {
+        // Apply middleware
+        bestie middleware in &self.middleware {
+            vibe_check (middleware.handler)(request) {
+                mood Ok(updated_request) => {
+                    request = updated_request;
+                }
+                mood Err(error_response) => {
+                    return error_response;
+                }
+            }
+        }
+        
+        // Route the request
+        lowkey let Some(route_handler) = self.routes.get(&request.path) {
+            lowkey route_handler.method == request.method {
+                return (route_handler.handler)(request);
+            }
+        }
+        
+        // Method not allowed or route not found
+        return self.not_found_response();
+    }
+    
+    // Route helper methods
+    slay get(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
+        self.routes.insert(path.to_string(), RouteHandler {
+            method: HttpMethod::GET,
+            handler: handler,
+        });
+    }
+    
+    slay post(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
+        self.routes.insert(path.to_string(), RouteHandler {
+            method: HttpMethod::POST,
+            handler: handler,
+        });
+    }
+    
+    slay put(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
+        self.routes.insert(path.to_string(), RouteHandler {
+            method: HttpMethod::PUT,
+            handler: handler,
+        });
+    }
+    
+    slay delete(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
+        self.routes.insert(path.to_string(), RouteHandler {
+            method: HttpMethod::DELETE,
+            handler: handler,
+        });
+    }
+    
+    // API endpoint implementations
+    slay get_status(&self, request: ApiRequest) -> ApiResponse {
+        return self.json_response(200, json::object([
             ("status", "ok"),
             ("service", "{{project_name}}"),
-            ("version", "{{api_version}}")
+            ("version", "{{api_version}}"),
+            ("timestamp", time::now().timestamp()),
+            ("uptime", "0:00:00") // TODO: Calculate actual uptime
+        ]));
+    }
+    
+    slay health_check(&self, request: ApiRequest) -> ApiResponse {
+        return self.json_response(200, json::object([
+            ("healthy", true),
+            ("checks", json::object([
+                ("database", "ok"),
+                ("memory", "ok"),
+                ("disk", "ok")
+            ]))
+        ]));
+    }
+    
+    slay list_users(&self, request: ApiRequest) -> ApiResponse {
+        // Mock user data
+        let users = json::array([
+            json::object([
+                ("id", 1),
+                ("name", "John Doe"),
+                ("email", "john@example.com")
+            ]),
+            json::object([
+                ("id", 2),
+                ("name", "Jane Smith"),
+                ("email", "jane@example.com")
+            ])
         ]);
+        
+        return self.json_response(200, json::object([
+            ("users", users),
+            ("total", 2),
+            ("page", 1),
+            ("per_page", 10)
+        ]));
+    }
+    
+    slay create_user(&self, request: ApiRequest) -> ApiResponse {
+        // Validate request body
+        lowkey !request.body.has_key("name") || !request.body.has_key("email") {
+            return self.error_response(400, "Missing required fields: name, email");
+        }
+        
+        // Mock user creation
+        let new_user = json::object([
+            ("id", 3),
+            ("name", request.body["name"]),
+            ("email", request.body["email"]),
+            ("created_at", time::now().timestamp())
+        ]);
+        
+        return self.json_response(201, new_user);
+    }
+    
+    slay get_user(&self, request: ApiRequest) -> ApiResponse {
+        // Extract user ID from path
+        let user_id = self.extract_path_param(&request.path, "id");
+        
+        // Mock user lookup
+        let user = json::object([
+            ("id", user_id.parse::<i32>().unwrap_or(0)),
+            ("name", "John Doe"),
+            ("email", "john@example.com"),
+            ("created_at", "2024-01-01T00:00:00Z")
+        ]);
+        
+        return self.json_response(200, user);
+    }
+    
+    slay update_user(&self, request: ApiRequest) -> ApiResponse {
+        let user_id = self.extract_path_param(&request.path, "id");
+        
+        // Mock user update
+        let updated_user = json::object([
+            ("id", user_id.parse::<i32>().unwrap_or(0)),
+            ("name", request.body.get("name").unwrap_or("John Doe")),
+            ("email", request.body.get("email").unwrap_or("john@example.com")),
+            ("updated_at", time::now().timestamp())
+        ]);
+        
+        return self.json_response(200, updated_user);
+    }
+    
+    slay delete_user(&self, request: ApiRequest) -> ApiResponse {
+        let user_id = self.extract_path_param(&request.path, "id");
+        
+        return self.json_response(200, json::object([
+            ("message", "User deleted successfully"),
+            ("user_id", user_id)
+        ]));
+    }
+    
+    // Helper methods
+    slay json_response(&self, status: i32, body: json::Value) -> ApiResponse {
+        let mut headers = Map::new();
+        headers.insert("Content-Type".to_string(), "application/json".to_string());
+        headers.insert("Access-Control-Allow-Origin".to_string(), "*".to_string());
+        
+        return ApiResponse {
+            status: status,
+            headers: headers,
+            body: body,
+        };
+    }
+    
+    slay error_response(&self, status: i32, message: str) -> ApiResponse {
+        return self.json_response(status, json::object([
+            ("error", true),
+            ("message", message),
+            ("status", status)
+        ]));
+    }
+    
+    slay not_found_response(&self) -> ApiResponse {
+        return self.error_response(404, "Route not found");
+    }
+    
+    slay extract_path_param(&self, path: str, param_name: str) -> str {
+        // Simple path parameter extraction
+        let parts: Vec<&str> = path.split("/").collect();
+        // In a real implementation, this would be more sophisticated
+        return parts.last().unwrap_or("").to_string();
     }
 }
 "#;

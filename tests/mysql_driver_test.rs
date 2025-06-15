@@ -1,406 +1,356 @@
-/// fr fr MySQL driver tests - periodt
-/// Test suite for the complete MySQL database driver implementation
+/// fr fr Comprehensive MySQL driver tests
+/// 
+/// This module provides comprehensive testing for the MySQL driver implementation,
+/// including unit tests, integration tests, and error handling validation.
 
-use cursed::stdlib::packages::{
-    db_core::{
-        ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
-        Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
-        ExecuteResult, TransactionIsolation, Value, ParameterDirection
-    },
-    db_sql::{SqlDriver, SqlValue, SqlResultSet, SqlExecuteResult, SqlConnection}
-};
-use cursed::stdlib::packages::db_sql::mysql::{MySqlDriver, MySqlConnection};
 use std::time::Duration;
+use cursed::stdlib::database::{
+    Driver, DriverConn, SqlValue, TxOptions, SqlIsolationLevel,
+    DatabaseError, DatabaseErrorKind
+};
+use cursed::stdlib::database::mysql::{
+    MySqlDriver, MySqlConfig, MySqlError, MySqlResult,
+    create_mysql_driver, parse_mysql_dsn, validate_mysql_dsn
+};
 
-#[path = "common.rs"]
-mod common;
+/// Test MySQL driver creation and basic properties
+#[test]
+fn test_mysql_driver_creation() {
+    let driver = MySqlDriver::new();
+    
+    assert_eq!(driver.name(), "MySQL Driver for CURSED");
+    
+    let capabilities = driver.capabilities();
+    assert!(capabilities.supports_transactions);
+    assert!(capabilities.supports_prepared_statements);
+    assert!(capabilities.supports_multiple_result_sets);
+    assert!(capabilities.supports_stored_procedures);
+    assert!(capabilities.supports_batch_operations);
+    assert!(capabilities.supports_concurrent_connections);
+    assert_eq!(capabilities.max_connections, Some(100));
+    assert_eq!(capabilities.supported_isolation_levels.len(), 4);
+    assert_eq!(capabilities.max_query_length, Some(16_777_216));
+    assert_eq!(capabilities.max_parameter_count, Some(65535));
+}
 
-// Initialize tracing for tests
-macro_rules! init_tracing {
-    () => {
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter("debug")
-            .with_test_writer()
-            .try_init();
+/// Test MySQL driver with custom configuration
+#[test]
+fn test_mysql_driver_with_config() {
+    let mut config = MySqlConfig::default();
+    config.max_connections = 50;
+    config.connection_timeout = Duration::from_secs(10);
+    config.charset = "utf8".to_string();
+    config.ssl_enabled = true;
+    
+    let driver = MySqlDriver::with_config(config.clone());
+    
+    assert_eq!(driver.config().max_connections, 50);
+    assert_eq!(driver.config().connection_timeout, Duration::from_secs(10));
+    assert_eq!(driver.config().charset, "utf8");
+    assert!(driver.config().ssl_enabled);
+}
+
+/// Test MySQL driver cloning
+#[test]
+fn test_mysql_driver_cloning() {
+    let driver1 = MySqlDriver::new();
+    let driver2 = driver1.clone();
+    
+    assert_eq!(driver1.name(), driver2.name());
+    assert_eq!(driver1.config().max_connections, driver2.config().max_connections);
+    
+    // Test boxed driver cloning
+    let boxed_driver: Box<dyn Driver> = Box::new(MySqlDriver::new());
+    let cloned_driver = boxed_driver.clone_driver();
+    
+    assert_eq!(boxed_driver.name(), cloned_driver.name());
+    assert_eq!(boxed_driver.capabilities().max_connections, cloned_driver.capabilities().max_connections);
+}
+
+/// Test MySQL connection string parsing
+#[test]
+fn test_mysql_dsn_parsing() {
+    // Test full MySQL URL format
+    let dsn1 = "mysql://user:password@localhost:3306/testdb";
+    let info1 = parse_mysql_dsn(dsn1).unwrap();
+    
+    assert_eq!(info1.user, "user");
+    assert_eq!(info1.password, "password");
+    assert_eq!(info1.host, "localhost");
+    assert_eq!(info1.port, 3306);
+    assert_eq!(info1.database, "testdb");
+    
+    // Test simplified format
+    let dsn2 = "user:password@localhost:3306/testdb";
+    let info2 = parse_mysql_dsn(dsn2).unwrap();
+    
+    assert_eq!(info2.user, "user");
+    assert_eq!(info2.password, "password");
+    assert_eq!(info2.host, "localhost");
+    assert_eq!(info2.port, 3306);
+    assert_eq!(info2.database, "testdb");
+    
+    // Test with default port
+    let dsn3 = "user:password@localhost/testdb";
+    let info3 = parse_mysql_dsn(dsn3).unwrap();
+    
+    assert_eq!(info3.user, "user");
+    assert_eq!(info3.password, "password");
+    assert_eq!(info3.host, "localhost");
+    assert_eq!(info3.port, 3306); // Default port
+    assert_eq!(info3.database, "testdb");
+}
+
+/// Test MySQL connection string validation
+#[test]
+fn test_mysql_dsn_validation() {
+    // Valid DSNs
+    assert!(validate_mysql_dsn("mysql://user:pass@localhost:3306/db").is_ok());
+    assert!(validate_mysql_dsn("user:pass@localhost:3306/db").is_ok());
+    assert!(validate_mysql_dsn("user:@localhost/db").is_ok());
+    
+    // Invalid DSNs
+    assert!(validate_mysql_dsn("").is_err());
+    assert!(validate_mysql_dsn("invalid_format").is_err());
+    assert!(validate_mysql_dsn("localhost:3306").is_err());
+}
+
+/// Test MySQL error types and conversions
+#[test]
+fn test_mysql_error_types() {
+    // Test error creation
+    let conn_err = MySqlError::connection_error("Connection failed");
+    assert!(matches!(conn_err, MySqlError::Connection(_)));
+    
+    let query_err = MySqlError::query_error("Query failed", Some("SELECT * FROM table"));
+    assert!(matches!(query_err, MySqlError::Query(_, _)));
+    
+    let tx_err = MySqlError::transaction_error("Transaction failed");
+    assert!(matches!(tx_err, MySqlError::Transaction(_)));
+    
+    let constraint_err = MySqlError::constraint_violation("Constraint violated", Some("uk_email"));
+    assert!(matches!(constraint_err, MySqlError::ConstraintViolation(_, _)));
+    
+    let type_err = MySqlError::type_conversion_error("String", "Integer");
+    assert!(matches!(type_err, MySqlError::TypeConversion(_, _)));
+    
+    // Test error to DatabaseError conversion
+    let db_err = conn_err.to_database_error();
+    assert!(matches!(db_err.kind, DatabaseErrorKind::ConnectionError));
+    
+    let query_db_err = query_err.to_database_error();
+    assert!(matches!(query_db_err.kind, DatabaseErrorKind::QueryError));
+}
+
+/// Test MySQL configuration defaults
+#[test]
+fn test_mysql_config_defaults() {
+    let config = MySqlConfig::default();
+    
+    assert_eq!(config.max_connections, 100);
+    assert_eq!(config.min_connections, 1);
+    assert_eq!(config.connection_timeout, Duration::from_secs(30));
+    assert_eq!(config.query_timeout, Duration::from_secs(300));
+    assert_eq!(config.max_lifetime, Some(Duration::from_secs(3600)));
+    assert_eq!(config.idle_timeout, Some(Duration::from_secs(600)));
+    assert!(!config.ssl_enabled);
+    assert_eq!(config.ssl_cert_path, None);
+    assert_eq!(config.ssl_key_path, None);
+    assert_eq!(config.ssl_ca_path, None);
+    assert!(config.ssl_verify);
+    assert!(!config.compression);
+    assert_eq!(config.charset, "utf8mb4");
+    assert_eq!(config.timezone, None);
+    assert!(config.additional_params.is_empty());
+}
+
+/// Test MySQL driver capabilities
+#[test]
+fn test_mysql_driver_capabilities() {
+    let driver = MySqlDriver::new();
+    let caps = driver.capabilities();
+    
+    // Test all required capabilities
+    assert!(caps.supports_transactions);
+    assert!(caps.supports_prepared_statements);
+    assert!(caps.supports_multiple_result_sets);
+    assert!(caps.supports_stored_procedures);
+    assert!(caps.supports_batch_operations);
+    assert!(caps.supports_concurrent_connections);
+    
+    // Test limits
+    assert_eq!(caps.max_connections, Some(100));
+    assert_eq!(caps.max_query_length, Some(16_777_216));
+    assert_eq!(caps.max_parameter_count, Some(65535));
+    
+    // Test supported isolation levels
+    let isolation_levels = &caps.supported_isolation_levels;
+    assert!(isolation_levels.contains(&SqlIsolationLevel::LevelReadUncommitted));
+    assert!(isolation_levels.contains(&SqlIsolationLevel::LevelReadCommitted));
+    assert!(isolation_levels.contains(&SqlIsolationLevel::LevelRepeatableRead));
+    assert!(isolation_levels.contains(&SqlIsolationLevel::LevelSerializable));
+}
+
+/// Test MySQL driver factory functions
+#[test]
+fn test_mysql_driver_factory_functions() {
+    // Test create_mysql_driver
+    let driver1 = create_mysql_driver();
+    assert_eq!(driver1.name(), "MySQL Driver for CURSED");
+    
+    // Test create_mysql_driver_with_config
+    let mut config = MySqlConfig::default();
+    config.max_connections = 200;
+    
+    let driver2 = cursed::stdlib::database::mysql::create_mysql_driver_with_config(config);
+    assert_eq!(driver2.config().max_connections, 200);
+}
+
+/// Test transaction options
+#[test]
+fn test_transaction_options() {
+    let default_opts = TxOptions::default();
+    assert_eq!(default_opts.isolation, SqlIsolationLevel::LevelDefault);
+    assert!(!default_opts.read_only);
+    
+    let custom_opts = TxOptions {
+        isolation: SqlIsolationLevel::LevelSerializable,
+        read_only: true,
     };
+    assert_eq!(custom_opts.isolation, SqlIsolationLevel::LevelSerializable);
+    assert!(custom_opts.read_only);
 }
 
-/// Test MySQL driver basic functionality
-#[tokio::test]
-async fn test_mysql_driver_creation() {
-    init_tracing!();
-    tracing::info!("Testing MySQL driver creation");
-
-    let driver = MySqlDriver::new();
-    let info = driver.driver_info();
-    
-    assert_eq!(info.name, "mysql");
-    assert_eq!(info.version, "1.0.0");
-    assert_eq!(info.description, "MySQL database driver");
-    assert_eq!(info.vendor, "CURSED");
-}
-
-/// Test MySQL driver features and capabilities
-#[test]
-fn test_mysql_driver_features() {
-    init_tracing!();
-    tracing::info!("Testing MySQL driver features");
-
-    let driver = MySqlDriver::new();
-    
-    // Test feature support
-    assert!(driver.supports_feature(DriverFeature::Transactions));
-    assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-    
-    // Test SQL dialect
-    assert_eq!(driver.sql_dialect(), SqlDialect::MySQL);
-    
-    // Test connection string validation
-    assert!(driver.validate_connection_string("mysql://localhost:3306/test").is_ok());
-}
-
-/// Test MySQL driver SQL capabilities
-#[test]
-fn test_mysql_sql_capabilities() {
-    init_tracing!();
-    tracing::info!("Testing MySQL SQL capabilities");
-
-    let driver = MySqlDriver::new();
-    
-    // Test supported types
-    let supported_types = driver.supported_types();
-    assert!(supported_types.contains(&cursed::stdlib::packages::db_sql::SqlType::Integer));
-    assert!(supported_types.contains(&cursed::stdlib::packages::db_sql::SqlType::Text));
-    assert!(supported_types.contains(&cursed::stdlib::packages::db_sql::SqlType::Boolean));
-    assert!(supported_types.contains(&cursed::stdlib::packages::db_sql::SqlType::Json));
-    
-    // Test SQL features
-    assert!(driver.supports_sql_feature(cursed::stdlib::packages::db_sql::SqlFeature::Transactions));
-    
-    // Test performance info
-    let perf_info = driver.performance_info();
-    assert_eq!(perf_info.connection_time, Duration::from_millis(80));
-    assert_eq!(perf_info.query_overhead, Duration::from_micros(30));
-    assert_eq!(perf_info.max_connections, Some(2000));
-    assert!(perf_info.connection_pooling);
-    assert!(perf_info.statement_caching);
-    assert!(perf_info.batch_operations);
-    assert!(perf_info.streaming_results);
-    
-    // Test limitations
-    let limitations = driver.limitations();
-    assert_eq!(limitations.max_statement_length, Some(1024 * 1024));
-    assert_eq!(limitations.max_parameters, Some(65535));
-    assert_eq!(limitations.max_identifier_length, Some(64));
-    assert_eq!(limitations.max_string_length, Some(65535));
-    assert_eq!(limitations.max_numeric_precision, Some(65));
-    assert_eq!(limitations.max_columns, Some(4096));
-    assert_eq!(limitations.max_rows, None);
-}
-
-/// Test MySQL connection creation with various configurations
-#[test]
-fn test_mysql_connection_configs() {
-    init_tracing!();
-    tracing::info!("Testing MySQL connection configurations");
-
-    // Test with complete connection string
-    let result = MySqlConnection::new("mysql://user:pass@localhost:3306/testdb");
-    assert!(result.is_ok() || result.is_err()); // Will fail without real MySQL server, but should parse
-
-    // Test with minimal connection string
-    let result = MySqlConnection::new("mysql://localhost/test");
-    assert!(result.is_ok() || result.is_err()); // Will fail without real MySQL server, but should parse
-}
-
-/// Test value conversion functionality
-#[test]
-fn test_mysql_value_conversions() {
-    init_tracing!();
-    tracing::info!("Testing MySQL value conversions");
-
-    // Test Parameter::Value to MySqlValue conversion
-    let bool_val = Value::Boolean(true);
-    let converted = MySqlConnection::convert_parameter_value(&bool_val);
-    // Should convert to MySqlValue::Int(1)
-    
-    let int_val = Value::Integer(42);
-    let converted = MySqlConnection::convert_parameter_value(&int_val);
-    // Should convert to MySqlValue::Int(42)
-    
-    let string_val = Value::String("test".to_string());
-    let converted = MySqlConnection::convert_parameter_value(&string_val);
-    // Should convert to MySqlValue::Bytes
-    
-    let null_val = Value::Null;
-    let converted = MySqlConnection::convert_parameter_value(&null_val);
-    // Should convert to MySqlValue::NULL
-}
-
-/// Test parameter conversion
-#[test]
-fn test_mysql_parameter_conversion() {
-    init_tracing!();
-    tracing::info!("Testing MySQL parameter conversion");
-
-    let parameters = vec![
-        Parameter {
-            name: Some("param1".to_string()),
-            value: Value::Integer(123),
-            direction: ParameterDirection::In,
-            sql_type: None,
-        },
-        Parameter {
-            name: Some("param2".to_string()),
-            value: Value::String("test".to_string()),
-            direction: ParameterDirection::In,
-            sql_type: None,
-        },
-        Parameter {
-            name: Some("param3".to_string()),
-            value: Value::Boolean(true),
-            direction: ParameterDirection::In,
-            sql_type: None,
-        },
-    ];
-
-    let mysql_params = MySqlConnection::convert_parameters(&parameters);
-    assert_eq!(mysql_params.len(), 3);
-}
-
-/// Test SQL dialect capabilities
-#[test]
-fn test_mysql_sql_dialect() {
-    init_tracing!();
-    tracing::info!("Testing MySQL SQL dialect");
-
-    let driver = MySqlDriver::new();
-    let dialect = driver.sql_dialect();
-    
-    // Should return MySqlDialect (assuming it exists)
-    // This will test that the dialect creation doesn't panic
-}
-
-/// Test configuration options
-#[test]
-fn test_mysql_configuration_options() {
-    init_tracing!();
-    tracing::info!("Testing MySQL configuration options");
-
-    let driver = MySqlDriver::new();
-    let options = driver.configuration_options();
-    
-    // Currently returns empty vector, which is fine for basic implementation
-    assert!(options.is_empty());
-}
-
-/// Test SQL validation
-#[test]
-fn test_mysql_sql_validation() {
-    init_tracing!();
-    tracing::info!("Testing MySQL SQL validation");
-
-    let driver = MySqlDriver::new();
-    
-    // Test basic SQL validation
-    assert!(driver.validate_sql("SELECT * FROM users").is_ok());
-    assert!(driver.validate_sql("INSERT INTO users (name) VALUES (?)").is_ok());
-    assert!(driver.validate_sql("UPDATE users SET name = ? WHERE id = ?").is_ok());
-    assert!(driver.validate_sql("DELETE FROM users WHERE id = ?").is_ok());
-}
-
-/// Test error handling and edge cases
-#[test]
-fn test_mysql_error_handling() {
-    init_tracing!();
-    tracing::info!("Testing MySQL error handling");
-
-    // Test with invalid connection string
-    let result = MySqlConnection::new("invalid://connection/string");
-    assert!(result.is_err());
-    
-    // Test with malformed URL
-    let result = MySqlConnection::new("not-a-url");
-    assert!(result.is_err());
-}
-
-/// Test connection info structure
-#[test]
-fn test_mysql_connection_info() {
-    init_tracing!();
-    tracing::info!("Testing MySQL connection info");
-
-    // Create a connection (will fail, but we can test the structure)
-    if let Ok(conn) = MySqlConnection::new("mysql://localhost/test") {
-        let info = conn.connection_info();
-        
-        assert_eq!(info.database_name, "mysql_db");
-        assert_eq!(info.server_version, "8.0.35");
-        assert_eq!(info.protocol_version, "10");
-        assert!(!info.connection_id.is_empty());
-        assert!(!info.is_read_only);
-    }
-}
-
-/// Test SQL connection info structure
-#[test]
-fn test_mysql_sql_connection_info() {
-    init_tracing!();
-    tracing::info!("Testing MySQL SQL connection info");
-
-    // Create a connection (will fail, but we can test the structure)
-    if let Ok(conn) = MySqlConnection::new("mysql://localhost/test") {
-        let sql_info = conn.sql_connection_info();
-        
-        assert_eq!(sql_info.server_version, "8.0.35");
-        assert_eq!(sql_info.protocol_version, "10");
-        assert_eq!(sql_info.database_name, "mysql");
-        assert_eq!(sql_info.character_set, "utf8mb4");
-        assert_eq!(sql_info.collation, "utf8mb4_unicode_ci");
-        assert_eq!(sql_info.time_zone, "SYSTEM");
-        assert!(sql_info.auto_commit);
-        assert!(!sql_info.read_only);
-        assert!(!sql_info.capabilities.is_empty());
-    }
-}
-
-/// Test prepared statement creation
-#[test]
-fn test_mysql_prepared_statement_creation() {
-    init_tracing!();
-    tracing::info!("Testing MySQL prepared statement creation");
-
-    if let Ok(mut conn) = MySqlConnection::new("mysql://localhost/test") {
-        // This will fail without a real MySQL server, but tests the code path
-        let result = tokio_test::block_on(conn.prepare("SELECT * FROM users WHERE id = ?"));
-        // The prepare method itself should work (creating the struct), 
-        // actual execution would fail without server
-    }
-}
-
-/// Test MySQL driver integration points
-#[test]
-fn test_mysql_integration_points() {
-    init_tracing!();
-    tracing::info!("Testing MySQL integration points");
-
-    let driver = MySqlDriver::new();
-    
-    // Test that driver can be used as DatabaseDriver trait object
-    let db_driver: &dyn cursed::stdlib::packages::db_core::DatabaseDriver = &driver;
-    let info = db_driver.driver_info();
-    assert_eq!(info.name, "mysql");
-    
-    // Test that driver can be used as SqlDriver trait object
-    let sql_driver: &dyn SqlDriver = &driver;
-    let supported = sql_driver.supported_types();
-    assert!(!supported.is_empty());
-}
-
-/// Test MySQL error display
+/// Test MySQL error display formatting
 #[test]
 fn test_mysql_error_display() {
-    init_tracing!();
-    tracing::info!("Testing MySQL error display");
-
-    let error = cursed::stdlib::packages::db_sql::mysql::MySqlError {
-        message: "Test error message".to_string(),
-    };
+    let conn_err = MySqlError::connection_error("Connection timeout");
+    assert!(conn_err.to_string().contains("MySQL Connection Error"));
+    assert!(conn_err.to_string().contains("Connection timeout"));
     
-    let display = format!("{}", error);
-    assert!(display.contains("MySQL Error"));
-    assert!(display.contains("Test error message"));
+    let query_err = MySqlError::query_error("Syntax error", Some("SELECT invalid"));
+    assert!(query_err.to_string().contains("MySQL Query Error"));
+    assert!(query_err.to_string().contains("Syntax error"));
+    assert!(query_err.to_string().contains("SELECT invalid"));
+    
+    let server_err = MySqlError::server_error(1045, "Access denied");
+    assert!(server_err.to_string().contains("MySQL Server Error 1045"));
+    assert!(server_err.to_string().contains("Access denied"));
 }
 
-/// Performance and load testing
+/// Test MySQL error severity mapping
 #[test]
-fn test_mysql_performance_characteristics() {
-    init_tracing!();
-    tracing::info!("Testing MySQL performance characteristics");
-
-    let driver = MySqlDriver::new();
-    let perf_info = driver.performance_info();
+fn test_mysql_error_severity() {
+    let conn_err = MySqlError::connection_error("Connection failed");
+    let db_err = conn_err.to_database_error();
+    // Connection errors should be warnings (retryable)
+    assert!(db_err.is_retryable());
     
-    // Verify performance expectations
-    assert!(perf_info.connection_time <= Duration::from_millis(100));
-    assert!(perf_info.query_overhead <= Duration::from_millis(1));
-    assert!(perf_info.max_connections.unwrap_or(0) >= 1000);
+    let constraint_err = MySqlError::constraint_violation("Duplicate key", Some("primary"));
+    let constraint_db_err = constraint_err.to_database_error();
+    assert!(constraint_db_err.is_constraint_violation());
     
-    // Verify capabilities
-    assert!(perf_info.connection_pooling);
-    assert!(perf_info.statement_caching);
-    assert!(perf_info.batch_operations);
-    assert!(perf_info.streaming_results);
+    let query_err = MySqlError::query_error("Table not found", None);
+    let query_db_err = query_err.to_database_error();
+    assert!(!query_db_err.is_retryable()); // Query errors are not retryable
 }
 
-/// Test driver limitations and constraints
+/// Mock test for driver open functionality
+/// Note: This test cannot actually open a connection without a real MySQL server
 #[test]
-fn test_mysql_driver_limitations() {
-    init_tracing!();
-    tracing::info!("Testing MySQL driver limitations");
-
+fn test_mysql_driver_open_validation() {
     let driver = MySqlDriver::new();
-    let limitations = driver.limitations();
     
-    // Verify reasonable limits
-    assert!(limitations.max_statement_length.unwrap_or(0) >= 1024);
-    assert!(limitations.max_parameters.unwrap_or(0) >= 1000);
-    assert!(limitations.max_identifier_length.unwrap_or(0) >= 32);
-    assert!(limitations.max_string_length.unwrap_or(0) >= 1000);
-    assert!(limitations.max_columns.unwrap_or(0) >= 100);
+    // Test with invalid DSN
+    let result = driver.open("");
+    assert!(result.is_err());
+    
+    // Test with malformed DSN
+    let result2 = driver.open("invalid_dsn");
+    assert!(result2.is_err());
+    
+    // We can't test successful connection without a real MySQL server
+    // In a real integration test environment, you would test:
+    // let result3 = driver.open("mysql://test:test@localhost:3306/testdb");
+    // assert!(result3.is_ok());
 }
 
-/// Test comprehensive driver functionality
+/// Test type conversion functions
 #[test]
-fn test_mysql_comprehensive_functionality() {
-    init_tracing!();
-    tracing::info!("Testing comprehensive MySQL driver functionality");
-
-    let driver = MySqlDriver::new();
+fn test_type_conversions() {
+    use cursed::stdlib::database::mysql::types::{escape_string, build_placeholders};
     
-    // Test basic creation and info
-    assert!(!driver.driver_info().name.is_empty());
-    assert!(!driver.driver_info().version.is_empty());
+    // Test string escaping
+    let input = "test'string\"with\nnewlines";
+    let escaped = escape_string(input);
+    assert!(escaped.contains("\\'"));
+    assert!(escaped.contains("\\\""));
+    assert!(escaped.contains("\\n"));
     
-    // Test feature detection
-    assert!(driver.supports_feature(DriverFeature::Transactions));
-    assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-    
-    // Test SQL capabilities
-    assert!(!driver.supported_types().is_empty());
-    assert!(driver.supports_sql_feature(cursed::stdlib::packages::db_sql::SqlFeature::Transactions));
-    
-    // Test configuration and validation
-    assert!(driver.validate_sql("SELECT 1").is_ok());
-    assert!(driver.validate_connection_string("mysql://localhost").is_ok());
-    
-    // Test performance and limitation metadata
-    let perf = driver.performance_info();
-    let limits = driver.limitations();
-    assert!(perf.max_connections.is_some());
-    assert!(limits.max_parameters.is_some());
+    // Test placeholder generation
+    assert_eq!(build_placeholders(0), "");
+    assert_eq!(build_placeholders(1), "?");
+    assert_eq!(build_placeholders(3), "?, ?, ?");
 }
 
-/// Test thread safety and concurrent access
+/// Test MySQL pool configuration
 #[test]
-fn test_mysql_thread_safety() {
-    init_tracing!();
-    tracing::info!("Testing MySQL thread safety");
+fn test_mysql_pool_config() {
+    use cursed::stdlib::database::mysql::pool::MySqlPoolConfig;
+    
+    let config = MySqlPoolConfig::default();
+    
+    assert_eq!(config.min_connections, 1);
+    assert_eq!(config.max_connections, 100);
+    assert_eq!(config.connection_timeout, Duration::from_secs(30));
+    assert_eq!(config.test_query, "SELECT 1");
+    assert_eq!(config.health_check_interval, Duration::from_secs(60));
+    assert_eq!(config.max_retries, 3);
+    assert_eq!(config.retry_delay, Duration::from_millis(1000));
+}
 
+/// Test MySQL initialization function
+#[test]
+fn test_mysql_initialization() {
+    // Test that MySQL driver can be initialized
+    // Note: This would normally register the driver globally
+    let driver = cursed::stdlib::database::mysql::new_mysql_driver();
+    assert_eq!(driver.name(), "MySQL Driver for CURSED");
+    
+    let mut config = MySqlConfig::default();
+    config.max_connections = 75;
+    
+    let driver_with_config = cursed::stdlib::database::mysql::new_mysql_driver_with_config(config);
+    assert_eq!(driver_with_config.config().max_connections, 75);
+}
+
+/// Integration test for comprehensive driver functionality
+/// Note: This test requires a running MySQL instance to pass fully
+#[test]
+#[ignore] // Ignored by default since it requires MySQL server
+fn test_mysql_driver_integration() {
     let driver = MySqlDriver::new();
+    let dsn = "mysql://test:test@localhost:3306/test";
     
-    // Test that driver methods can be called from multiple threads
-    let handle1 = std::thread::spawn(move || {
-        let info = driver.driver_info();
-        assert_eq!(info.name, "mysql");
-    });
-    
-    let driver2 = MySqlDriver::new();
-    let handle2 = std::thread::spawn(move || {
-        let features = driver2.supported_types();
-        assert!(!features.is_empty());
-    });
-    
-    handle1.join().unwrap();
-    handle2.join().unwrap();
+    // Test connection opening
+    match driver.open(dsn) {
+        Ok(conn) => {
+            // Test basic operations
+            assert!(conn.is_alive());
+            
+            let metadata = conn.metadata();
+            assert!(!metadata.database_name.is_empty());
+            assert!(!metadata.server_version.is_empty());
+            
+            // Test ping
+            assert!(conn.ping().is_ok());
+            
+            // Test close
+            assert!(conn.close().is_ok());
+        }
+        Err(e) => {
+            // Expected if no MySQL server is running
+            println!("MySQL integration test skipped: {}", e);
+        }
+    }
 }

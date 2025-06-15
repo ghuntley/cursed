@@ -68,10 +68,25 @@ pub enum Error {
     ProcessError(String),
     /// Optimization errors
     OptimizationError(String),
+    /// Configuration errors
+    ConfigurationError(String),
+    /// File read errors
+    FileReadError(std::path::PathBuf, String),
+    /// File write errors
+    FileWriteError(std::path::PathBuf, String),
+    /// Serialization errors
+    SerializationError(String),
+    /// Unsupported format errors
+    UnsupportedFormat(String),
+    /// Documentation generation error
+    GenerationError(String),
 }
 
 /// Alias for CursedError to match expected naming
 pub type CursedError = Error;
+
+/// Result type alias for CURSED operations
+pub type Result<T> = std::result::Result<T, Error>;
 
 impl Clone for Error {
     fn clone(&self) -> Self {
@@ -116,6 +131,12 @@ impl Clone for Error {
             },
             Error::ProcessError(msg) => Error::ProcessError(msg.clone()),
             Error::OptimizationError(msg) => Error::OptimizationError(msg.clone()),
+            Error::ConfigurationError(msg) => Error::ConfigurationError(msg.clone()),
+            Error::FileReadError(path, msg) => Error::FileReadError(path.clone(), msg.clone()),
+            Error::FileWriteError(path, msg) => Error::FileWriteError(path.clone(), msg.clone()),
+            Error::SerializationError(msg) => Error::SerializationError(msg.clone()),
+            Error::UnsupportedFormat(msg) => Error::UnsupportedFormat(msg.clone()),
+            Error::GenerationError(msg) => Error::GenerationError(msg.clone()),
         }
     }
 }
@@ -186,6 +207,12 @@ impl fmt::Display for Error {
             }
             Error::ProcessError(msg) => write!(f, "Process error: {}", msg),
             Error::OptimizationError(msg) => write!(f, "Optimization error: {}", msg),
+            Error::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
+            Error::FileReadError(path, msg) => write!(f, "Failed to read file {}: {}", path.display(), msg),
+            Error::FileWriteError(path, msg) => write!(f, "Failed to write file {}: {}", path.display(), msg),
+            Error::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
+            Error::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
+            Error::GenerationError(msg) => write!(f, "Generation error: {}", msg),
         }
     }
 }
@@ -395,9 +422,75 @@ impl Error {
         Error::ProcessError(message)
     }
 
-    /// Create an optimization error
-    pub fn optimization_error(message: String) -> Self {
-        Error::OptimizationError(message)
+
+
+    /// Create a JSON error
+    pub fn json_error(message: String) -> Self {
+        Error::Runtime(format!("JSON error: {}", message))
+    }
+
+    /// Create a JSON syntax error
+    pub fn json_syntax_error(message: String, position: usize) -> Self {
+        Error::ParseError {
+            message: format!("JSON syntax error at position {}: {}", position, message),
+            line: Some(1),
+            column: Some(position),
+        }
+    }
+
+    /// Create a JSON type error
+    pub fn json_type_error(expected: String, found: String) -> Self {
+        Error::Runtime(format!("JSON type error: expected {}, found {}", expected, found))
+    }
+
+    /// Create a JSON invalid UTF-8 error
+    pub fn json_invalid_utf8(message: String) -> Self {
+        Error::Runtime(format!("Invalid UTF-8 in JSON: {}", message))
+    }
+
+    /// Create a JSON invalid number error
+    pub fn json_invalid_number(value: String) -> Self {
+        Error::Runtime(format!("Invalid JSON number: {}", value))
+    }
+
+    /// Create a JSON invalid string error
+    pub fn json_invalid_string(message: String) -> Self {
+        Error::Runtime(format!("Invalid JSON string: {}", message))
+    }
+
+    /// Create a JSON unexpected EOF error
+    pub fn json_unexpected_eof() -> Self {
+        Error::Runtime("Unexpected end of JSON input".to_string())
+    }
+
+    /// Create a JSON invalid escape error
+    pub fn json_invalid_escape(sequence: String) -> Self {
+        Error::Runtime(format!("Invalid JSON escape sequence: {}", sequence))
+    }
+
+    /// Create a JSON circular reference error
+    pub fn json_circular_reference(path: String) -> Self {
+        Error::Runtime(format!("Circular reference detected in JSON encoding at path: {}", path))
+    }
+
+    /// Create a JSON unsupported type error
+    pub fn json_unsupported_type(type_name: String) -> Self {
+        Error::Runtime(format!("Unsupported type for JSON encoding: {}", type_name))
+    }
+
+    /// Create a JSON invalid tag error
+    pub fn json_invalid_tag(tag: String, message: String) -> Self {
+        Error::Runtime(format!("Invalid JSON tag '{}': {}", tag, message))
+    }
+
+    /// Create a JSON I/O error
+    pub fn json_io_error(message: String) -> Self {
+        Error::Runtime(format!("JSON I/O error: {}", message))
+    }
+
+    /// Create a JSON custom error
+    pub fn json_custom_error(message: String) -> Self {
+        Error::Runtime(format!("JSON error: {}", message))
     }
 }
 

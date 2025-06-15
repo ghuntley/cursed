@@ -8,7 +8,7 @@ use std::fmt;
 use tracing::{debug, info, warn, error, instrument, field};
 use rand::{Rng, SeedableRng};
 
-use crate::runtime::channels::{ChannelError, ChannelResult, SendResult, ReceiveResult};
+use crate::runtime::channels::{ChannelError, ChannelResult, SendResult, ReceiveResult, ChannelSender, ChannelReceiver};
 use crate::error::CursedError;
 
 /// Unique identifier for select operations
@@ -19,12 +19,16 @@ pub type SelectId = u64;
 pub struct SelectCase<T> {
     /// Unique identifier for this case
     pub case_id: u64,
-    /// Channel identifier this case operates on
+    /// Channel identifier this case operates on (for logging purposes)
     pub channel_id: u64,
     /// Operation to perform
     pub operation: SelectOperation<T>,
     /// Priority for this case (higher = more priority)
     pub priority: i32,
+    /// Actual channel sender for send operations
+    pub sender: Option<ChannelSender<T>>,
+    /// Actual channel receiver for receive operations
+    pub receiver: Option<ChannelReceiver<T>>,
 }
 
 /// Types of operations in select cases
@@ -93,13 +97,15 @@ impl<T> SelectBuilder<T> {
     }
 
     /// Add a send case
-    #[instrument(skip(self, value))]
-    pub fn send(mut self, channel_id: u64, value: T) -> Self {
+    #[instrument(skip(self, value, sender))]
+    pub fn send(mut self, channel_id: u64, value: T, sender: ChannelSender<T>) -> Self {
         let case = SelectCase {
             case_id: self.next_case_id,
             channel_id,
             operation: SelectOperation::Send(value),
             priority: 0,
+            sender: Some(sender),
+            receiver: None,
         };
         self.cases.push(case);
         self.next_case_id += 1;
@@ -108,13 +114,15 @@ impl<T> SelectBuilder<T> {
     }
 
     /// Add a receive case
-    #[instrument(skip(self))]
-    pub fn receive(mut self, channel_id: u64) -> Self {
+    #[instrument(skip(self, receiver))]
+    pub fn receive(mut self, channel_id: u64, receiver: ChannelReceiver<T>) -> Self {
         let case = SelectCase {
             case_id: self.next_case_id,
             channel_id,
             operation: SelectOperation::Receive,
             priority: 0,
+            sender: None,
+            receiver: Some(receiver),
         };
         self.cases.push(case);
         self.next_case_id += 1;
@@ -130,6 +138,8 @@ impl<T> SelectBuilder<T> {
             channel_id: 0, // Default case has no channel
             operation: SelectOperation::Default,
             priority: -1000, // Default case has lowest priority
+            sender: None,
+            receiver: None,
         };
         self.cases.push(case);
         self.next_case_id += 1;
@@ -160,15 +170,15 @@ impl<T> SelectBuilder<T> {
         self
     }
 
-    /// Build the select operation
-    pub fn build(self) -> SelectOperation<T> {
+    /// Build the select operation and return the cases
+    pub fn build(self) -> (Vec<SelectCase<T>>, bool, Option<Duration>) {
         debug!(
             cases_count = self.cases.len(),
             randomize = self.randomize,
             ?self.timeout,
             "Built select operation"
         );
-        SelectOperation::Default // Placeholder - will be replaced with actual select execution
+        (self.cases, self.randomize, self.timeout)
     }
 
     /// Get the number of cases
@@ -496,46 +506,79 @@ where
     #[instrument(skip(self, case))]
     fn try_case(&self, case: &SelectCase<T>) -> ChannelResult<SelectResult<T>> {
         match &case.operation {
-            SelectOperation::Send(_value) => {
-                // Simulate channel send operation
-                // In a real implementation, this would call the actual channel send
+            SelectOperation::Send(value) => {
                 debug!(
                     case_id = case.case_id,
                     channel_id = case.channel_id,
                     "Attempting send operation"
                 );
                 
-                // Placeholder logic - would integrate with actual channel
-                if self.simulate_channel_ready(case.channel_id) {
-                    Ok(SelectResult {
-                        case_id: case.case_id,
-                        channel_id: case.channel_id,
-                        result: SelectResultValue::Sent,
-                        completion_time: Instant::now(),
-                    })
+                if let Some(sender) = &case.sender {
+                    // Clone the value for the try_send operation
+                    match sender.try_send(value.clone()) {
+                        SendResult::Sent => {
+                            debug!(case_id = case.case_id, "Send succeeded");
+                            Ok(SelectResult {
+                                case_id: case.case_id,
+                                channel_id: case.channel_id,
+                                result: SelectResultValue::Sent,
+                                completion_time: Instant::now(),
+                            })
+                        }
+                        SendResult::Closed(_) => {
+                            debug!(case_id = case.case_id, "Channel closed during send");
+                            Ok(SelectResult {
+                                case_id: case.case_id,
+                                channel_id: case.channel_id,
+                                result: SelectResultValue::Closed,
+                                completion_time: Instant::now(),
+                            })
+                        }
+                        SendResult::WouldBlock(_) => {
+                            trace!(case_id = case.case_id, "Send would block");
+                            Err(ChannelError::WouldBlock)
+                        }
+                    }
                 } else {
-                    Err(ChannelError::WouldBlock)
+                    error!(case_id = case.case_id, "Send case missing sender");
+                    Err(ChannelError::InvalidState)
                 }
             }
             SelectOperation::Receive => {
-                // Simulate channel receive operation
                 debug!(
                     case_id = case.case_id,
                     channel_id = case.channel_id,
                     "Attempting receive operation"
                 );
                 
-                // Placeholder logic - would integrate with actual channel
-                if self.simulate_channel_ready(case.channel_id) {
-                    // Simulate received value - would be actual channel data
-                    Ok(SelectResult {
-                        case_id: case.case_id,
-                        channel_id: case.channel_id,
-                        result: SelectResultValue::Default, // Placeholder
-                        completion_time: Instant::now(),
-                    })
+                if let Some(receiver) = &case.receiver {
+                    match receiver.try_receive() {
+                        ReceiveResult::Received(value) => {
+                            debug!(case_id = case.case_id, "Receive succeeded");
+                            Ok(SelectResult {
+                                case_id: case.case_id,
+                                channel_id: case.channel_id,
+                                result: SelectResultValue::Received(value),
+                                completion_time: Instant::now(),
+                            })
+                        }
+                        ReceiveResult::Closed => {
+                            debug!(case_id = case.case_id, "Channel closed during receive");
+                            Ok(SelectResult {
+                                case_id: case.case_id,
+                                channel_id: case.channel_id,
+                                result: SelectResultValue::Closed,
+                                completion_time: Instant::now(),
+                            })
+                        }
+                        ReceiveResult::WouldBlock => {
+                            trace!(case_id = case.case_id, "Receive would block");
+                            Err(ChannelError::WouldBlock)
+                        }
+                    }
                 } else {
-                    Err(ChannelError::WouldBlock)
+                    error!(case_id = case.case_id, "Receive case missing receiver");
+                    Err(ChannelError::InvalidState)
                 }
             }
             SelectOperation::Default => {
@@ -582,11 +625,7 @@ where
         self.random_seed = rand::random();
     }
 
-    /// Simulate channel readiness (placeholder for actual channel integration)
-    fn simulate_channel_ready(&self, channel_id: u64) -> bool {
-        // Simple simulation - would be replaced with actual channel state checking
-        (channel_id % 3) == 0 // Simulate 1/3 of channels being ready
-    }
+
 
     /// Clean up completed select operations
     #[instrument(skip(self))]
@@ -621,6 +660,35 @@ where
     pub fn active_selects_count(&self) -> usize {
         self.active_selects.len()
     }
+
+    /// Execute a select operation using a builder
+    #[instrument(skip(self, builder))]
+    pub fn execute_select(&mut self, builder: SelectBuilder<T>) -> ChannelResult<SelectResult<T>> {
+        let (cases, randomize, timeout) = builder.build();
+        
+        if cases.is_empty() {
+            warn!("Attempted to execute select with no cases");
+            return Err(ChannelError::InvalidState);
+        }
+
+        match timeout {
+            Some(duration) => self.select_timeout(cases, duration),
+            None => self.select_blocking(cases),
+        }
+    }
+
+    /// Execute a non-blocking select operation using a builder
+    #[instrument(skip(self, builder))]
+    pub fn execute_select_nonblocking(&mut self, builder: SelectBuilder<T>) -> ChannelResult<SelectResult<T>> {
+        let (cases, _randomize, _timeout) = builder.build();
+        
+        if cases.is_empty() {
+            warn!("Attempted to execute non-blocking select with no cases");
+            return Err(ChannelError::InvalidState);
+        }
+
+        self.select_nonblocking(cases)
+    }
 }
 
 /// Statistics about select operations
@@ -645,6 +713,9 @@ pub mod ffi {
     }
 
     /// Add send case to builder (FFI-safe)
+    /// NOTE: This is a simplified FFI interface. In practice, you'd need to pass
+    /// the actual channel sender handle, which is complex to do safely via FFI.
+    /// This serves as a placeholder for LLVM integration.
     #[no_mangle]
     pub extern "C" fn cursed_select_builder_add_send(
         builder: *mut c_void,
@@ -655,14 +726,14 @@ pub mod ffi {
             return std::ptr::null_mut();
         }
 
-        unsafe {
-            let builder_box = Box::from_raw(builder as *mut SelectBuilder<i64>);
-            let new_builder = builder_box.send(channel_id, value);
-            Box::into_raw(Box::new(new_builder)) as *mut c_void
-        }
+        // NOTE: This is incomplete - we need the actual ChannelSender<i64>
+        // In real usage, this would be passed from the LLVM compiled code
+        // For now, this returns null to indicate the limitation
+        std::ptr::null_mut()
     }
 
     /// Add receive case to builder (FFI-safe)
+    /// NOTE: This is a simplified FFI interface. Similar limitation as send case.
     #[no_mangle]
     pub extern "C" fn cursed_select_builder_add_receive(
         builder: *mut c_void,
@@ -672,11 +743,10 @@ pub mod ffi {
             return std::ptr::null_mut();
         }
 
-        unsafe {
-            let builder_box = Box::from_raw(builder as *mut SelectBuilder<i64>);
-            let new_builder = builder_box.receive(channel_id);
-            Box::into_raw(Box::new(new_builder)) as *mut c_void
-        }
+        // NOTE: This is incomplete - we need the actual ChannelReceiver<i64>
+        // In real usage, this would be passed from the LLVM compiled code
+        // For now, this returns null to indicate the limitation
+        std::ptr::null_mut()
     }
 
     /// Execute non-blocking select (FFI-safe)
@@ -719,15 +789,18 @@ mod tests {
 
     #[test]
     fn test_select_builder() {
+        use crate::runtime::channels::channel;
+        
+        let (tx, rx) = channel::<i32>();
         let builder = SelectBuilder::<i32>::new()
-            .send(1, 42)
-            .receive(2)
+            .send(1, 42, tx)
+            .receive(2, rx)
             .default()
             .timeout(Duration::from_millis(100));
 
         // Builder should have 3 cases
-        assert_eq!(builder.cases.len(), 3);
-        assert!(builder.timeout.is_some());
+        assert_eq!(builder.case_count(), 3);
+        assert!(builder.has_timeout());
     }
 
     #[test]
@@ -749,23 +822,38 @@ mod tests {
 
     #[test]
     fn test_select_nonblocking_with_default() {
+        use crate::runtime::channels::buffered_channel;
+        
         let mut selector = ChannelSelector::<i32>::new();
+        let (tx, _rx) = buffered_channel::<i32>(1);
+        
         let cases = vec![
             SelectCase {
                 case_id: 1,
                 channel_id: 1,
                 operation: SelectOperation::Send(42),
                 priority: 0,
+                sender: Some(tx),
+                receiver: None,
             },
             SelectCase {
                 case_id: 2,
                 channel_id: 0,
                 operation: SelectOperation::Default,
                 priority: -1000,
+                sender: None,
+                receiver: None,
             },
         ];
 
         let result = selector.select_nonblocking(cases);
         assert!(result.is_ok());
+        if let Ok(select_result) = result {
+            // Should either send successfully or use default case
+            match select_result.result {
+                SelectResultValue::Sent | SelectResultValue::Default => {},
+                _ => panic!("Expected sent or default result"),
+            }
+        }
     }
 }

@@ -1,476 +1,577 @@
-/// Comprehensive Process Management and IPC Showcase for CURSED
-/// This example demonstrates all major process and IPC features
+// Process Management and IPC System Showcase
+// Demonstrates comprehensive exec_vibez, signal_boost, and IPC functionality
 
-import "stdlib::process";
+import "stdlib::exec_vibez";
+import "stdlib::signal_boost";
 import "stdlib::ipc";
-import "stdlib::io";
+import "stdlib::vibez";
 
-// PHASE 1: Basic Process Management Examples
-fn demo_basic_process_management() {
-    println("=== Basic Process Management Demo ===");
+slay main() {
+    vibez.spill("🚀 Process Management and IPC System Showcase");
+    vibez.spill("================================================");
     
-    // Spawn a simple process with output capture
-    facts config = ProcessConfig::new("echo")
-        .arg("Hello from spawned process!")
-        .capture_output();
+    // 1. Basic Command Execution
+    demo_basic_commands();
     
-    sus process = spawn_process(config)?;
-    facts output = process.wait_for_output()?;
+    // 2. Advanced Command Features
+    demo_advanced_commands();
     
-    println("Process output: {}", String::from_utf8(output.stdout)?);
-    println("Exit code: {}", output.status.code().unwrap_or(-1));
+    // 3. Process Groups
+    demo_process_groups();
+    
+    // 4. Signal Handling
+    demo_signal_handling();
+    
+    // 5. Graceful Shutdown
+    demo_graceful_shutdown();
+    
+    // 6. IPC Mechanisms
+    demo_ipc_mechanisms();
+    
+    // 7. Real-world Integration
+    demo_integration_scenario();
+    
+    vibez.spill("✅ All demonstrations completed successfully!");
 }
 
-fn demo_environment_and_working_dir() {
-    println("=== Environment & Working Directory Demo ===");
+slay demo_basic_commands() {
+    vibez.spill("\n📋 Basic Command Execution Demo");
+    vibez.spill("------------------------------");
     
-    // Create a process with custom environment and working directory
-    facts temp_dir = std::env::temp_dir();
+    // Basic command execution
+    facts cmd = exec_vibez.Command("echo", ["Hello", "from", "CURSED!"]);
+    facts output = cmd.Output();
+    if output != cap {
+        vibez.spill("Echo output: %s", tea(output));
+    } else {
+        vibez.spill("Failed to execute echo command");
+    }
     
-    facts config = ProcessConfig::new("env")
-        .env("CURSED_DEMO", "showcase")
-        .env("DEMO_VALUE", "42")
-        .working_dir(temp_dir)
-        .capture_output();
+    // Command with combined output
+    facts find_cmd = exec_vibez.Command("find", ["/tmp", "-name", "*.log"]);
+    facts combined_output = find_cmd.CombinedOutput();
+    if combined_output != cap {
+        vibez.spill("Find results: %s", tea(combined_output));
+    }
     
-    sus process = spawn_process(config)?;
-    facts output = process.wait_for_output()?;
+    // Command with timeout
+    facts timeout_result = exec_vibez.RunWithTimeout("sleep", ["2"], 1*timez.Second);
+    if timeout_result == cap {
+        vibez.spill("Command timed out as expected");
+    }
     
-    println("Environment dump from child process:");
-    println("{}", String::from_utf8(output.stdout)?);
+    // Look up executable path
+    facts python_path = exec_vibez.LookPath("python");
+    if python_path != cap {
+        vibez.spill("Python executable found at: %s", python_path);
+    } else {
+        vibez.spill("Python not found in PATH");
+    }
 }
 
-fn demo_process_communication() {
-    println("=== Process Communication Demo ===");
+slay demo_advanced_commands() {
+    vibez.spill("\n🔧 Advanced Command Features Demo");
+    vibez.spill("--------------------------------");
     
-    // Two-way communication with a process
-    facts config = ProcessConfig::new("cat")
-        .stdin(ProcessIo::Pipe)
-        .stdout(ProcessIo::Pipe)
-        .stderr(ProcessIo::Pipe);
+    // Command with custom environment
+    facts env = exec_vibez.NewEnvironment();
+    env.Set("DEMO_VAR", "demo_value");
+    env.Set("PATH", "/usr/local/bin:/usr/bin:/bin");
     
-    sus process = spawn_process(config)?;
-    facts mut comm = create_process_communication(process.child)?;
+    facts env_cmd = exec_vibez.CommandWithEnv("env", [], env);
+    facts env_output = env_cmd.Output();
+    if env_output != cap {
+        vibez.spill("Environment output contains DEMO_VAR: %t", 
+                   tea(env_output).contains("DEMO_VAR=demo_value"));
+    }
     
-    // Send data to process
-    facts input_data = b"Hello from CURSED!\nThis is line 2\n";
-    comm.write_stdin(input_data)?;
+    // Output streaming
+    facts stream_cmd = exec_vibez.Command("sh", ["-c", "for i in 1 2 3; do echo Line $i; sleep 0.1; done"]);
+    facts streamer = exec_vibez.NewOutputStreamer(stream_cmd);
     
-    // Start background readers
-    comm.start_readers()?;
+    streamer.OnLine(slay(line tea) {
+        vibez.spill("Streamed: %s", line);
+    });
     
-    // Close stdin to signal end
-    comm.channels.stdin = None;
+    facts stream_err = streamer.Start();
+    if stream_err == cap {
+        streamer.Wait();
+    }
     
-    // Wait and get output
-    facts status = comm.wait()?;
-    facts output = comm.get_accumulated_output()?;
+    // Input generation
+    facts input_cmd = exec_vibez.Command("cat");
+    facts generator = exec_vibez.NewInputGenerator(input_cmd);
     
-    println("Process echoed back:");
-    println("{}", String::from_utf8(output.0)?);
+    // Set up output capture (simplified for demo)
+    facts input_err = generator.Start();
+    if input_err == cap {
+        generator.Write("Line 1\n");
+        generator.WriteAfter("Line 2\n", 100*timez.Millisecond);
+        generator.Close();
+    }
 }
 
-// PHASE 2: Advanced Process Features
-fn demo_process_monitoring() {
-    println("=== Process Monitoring Demo ===");
+slay demo_process_groups() {
+    vibez.spill("\n👥 Process Group Demo");
+    vibez.spill("--------------------");
     
-    facts current_pid = get_current_pid();
+    // Create process group
+    facts group = exec_vibez.NewProcessGroup();
     
-    // Get detailed process information
-    facts process_info = get_process_info(current_pid)?;
-    println("Current process: PID={}, Name={}", process_info.pid, process_info.name);
+    // Add multiple commands
+    group.AddCommand(exec_vibez.Command("echo", ["Group", "task", "1"]));
+    group.AddCommand(exec_vibez.Command("echo", ["Group", "task", "2"]));
+    group.AddCommand(exec_vibez.Command("echo", ["Group", "task", "3"]));
     
-    // Collect performance metrics
-    facts metrics = collect_performance_metrics(current_pid)?;
-    println("Memory usage: {} bytes", metrics.memory_bytes);
-    println("CPU usage: {:.2}%", metrics.cpu_percent);
-    println("Thread count: {}", metrics.threads);
-    
-    // Set up process monitoring
-    facts monitor = create_process_monitor();
-    monitor.add_process(current_pid)?;
-    
-    facts health_status = monitor.get_health_status(current_pid)?;
-    println("Process health: {:?}", health_status);
-}
-
-fn demo_concurrent_processes() {
-    println("=== Concurrent Process Management Demo ===");
-    
-    facts mut processes = Vec::new();
-    
-    // Spawn multiple processes concurrently
-    lowkey (sus i = 0; i < 3; i++) {
-        facts config = ProcessConfig::new("echo")
-            .arg(format!("Message from process {}", i))
-            .capture_output();
+    // Start all commands
+    facts start_err = group.StartAll();
+    if start_err == cap {
+        vibez.spill("Started all commands in group");
         
-        facts process = spawn_process(config)?;
-        processes.push(process);
-    }
-    
-    // Wait for all processes and collect results
-    lowkey sus process in processes {
-        facts output = process.wait_for_output()?;
-        println("Process {} output: {}", 
-                process.id(), 
-                String::from_utf8(output.stdout)?);
-    }
-}
-
-// PHASE 3: IPC Mechanisms Demonstration
-fn demo_shared_memory() {
-    println("=== Shared Memory Demo ===");
-    
-    // Create shared memory segment
-    facts config = SharedMemoryConfig::new("demo_memory", 1024)?;
-    sus shm = SharedMemory::create(config)?;
-    
-    // Write data to shared memory
-    facts message = b"Hello from shared memory!";
-    shm.write_bytes(message)?;
-    
-    // Read data back
-    facts mut buffer = vec![0u8; message.len()];
-    shm.read_bytes(&mut buffer)?;
-    
-    println("Shared memory content: {}", String::from_utf8(buffer)?);
-    
-    // Clean up
-    shm.unlink()?;
-}
-
-fn demo_named_pipes() {
-    println("=== Named Pipes Demo ===");
-    
-    facts pipe_path = "/tmp/cursed_demo_pipe";
-    
-    // Create named pipe
-    facts pipe = NamedPipe::create(pipe_path, PipeMode::ReadWrite)?;
-    
-    // Spawn a goroutine to write to the pipe
-    stan write_to_pipe(pipe_path) {
-        facts writer_pipe = NamedPipe::open(pipe_path, PipeMode::WriteOnly)?;
-        writer_pipe.write("Hello from pipe writer!")?;
-        writer_pipe.close()?;
-    }
-    
-    // Read from the pipe
-    facts message = pipe.read_string()?;
-    println("Received from pipe: {}", message);
-    
-    // Clean up
-    pipe.close()?;
-    std::fs::remove_file(pipe_path)?;
-}
-
-fn demo_message_queues() {
-    println("=== Message Queue Demo ===");
-    
-    // Create message queue
-    facts mq = MessageQueue::create("demo_queue", 10)?;
-    
-    // Send messages with different priorities
-    facts high_msg = Message::new("urgent_task", MessagePriority::High)?;
-    facts normal_msg = Message::new("normal_task", MessagePriority::Normal)?;
-    facts low_msg = Message::new("background_task", MessagePriority::Low)?;
-    
-    mq.send(high_msg)?;
-    mq.send(normal_msg)?;
-    mq.send(low_msg)?;
-    
-    // Receive messages (should come out in priority order)
-    while mq.message_count()? > 0 {
-        facts received = mq.receive()?;
-        println("Received message: {} (priority: {:?})", 
-                received.content, received.priority);
-    }
-    
-    // Clean up
-    mq.unlink()?;
-}
-
-fn demo_semaphores() {
-    println("=== Semaphore Demo ===");
-    
-    // Create a counting semaphore
-    facts sem = Semaphore::create("demo_semaphore", 3)?;
-    
-    // Simulate resource acquisition
-    lowkey (sus i = 0; i < 5; i++) {
-        stan worker_task(i, "demo_semaphore") {
-            println("Worker {} trying to acquire resource...", i);
-            
-            facts sem = Semaphore::open("demo_semaphore")?;
-            sem.acquire()?;
-            
-            println("Worker {} acquired resource, working...", i);
-            std::thread::sleep(Duration::from_millis(500));
-            
-            sem.release()?;
-            println("Worker {} released resource", i);
+        // Wait for all to complete
+        facts wait_err = group.WaitAll();
+        if wait_err == cap {
+            vibez.spill("All group commands completed successfully");
+        } else {
+            vibez.spill("Some group commands failed: %v", wait_err);
         }
+    } else {
+        vibez.spill("Failed to start process group: %v", start_err);
+    }
+}
+
+slay demo_signal_handling() {
+    vibez.spill("\n📡 Signal Handling Demo");
+    vibez.spill("----------------------");
+    
+    // Basic signal notification
+    facts signals = [signal_boost.SIGUSR1, signal_boost.SIGUSR2];
+    facts (receiver, handle) = signal_boost.Notify(signals);
+    
+    vibez.spill("Signal notification set up for SIGUSR1 and SIGUSR2");
+    vibez.spill("Active signals: %v", handle.Signals());
+    
+    // Reset to different signals
+    facts new_signals = [signal_boost.SIGTERM];
+    facts reset_err = handle.Reset(new_signals);
+    if reset_err == cap {
+        vibez.spill("Reset signals to: %v", handle.Signals());
     }
     
-    // Wait for all workers to complete
-    std::thread::sleep(Duration::from_secs(3));
+    // Signal handler with custom actions
+    facts handler = signal_boost.NewSignalHandler();
+    
+    handler.Register(signal_boost.SIGUSR1, slay(sig signal_boost.BoostSignal) {
+        vibez.spill("Received SIGUSR1 signal: %s", sig);
+    });
+    
+    handler.Register(signal_boost.SIGTERM, slay(sig signal_boost.BoostSignal) {
+        vibez.spill("Received SIGTERM signal: %s", sig);
+    });
+    
+    facts handler_err = handler.Start();
+    if handler_err == cap {
+        vibez.spill("Signal handler started successfully");
+        
+        // Stop handler after demo
+        timez.Sleep(100 * timez.Millisecond);
+        handler.Stop();
+    }
+    
+    // Signal multiplexer
+    facts mux = signal_boost.NewSignalMultiplexer();
+    
+    facts chan1 = make(chan signal_boost.BoostSignal, 1);
+    facts chan2 = make(chan signal_boost.BoostSignal, 1);
+    
+    facts id1 = mux.Add(chan1, [signal_boost.SIGINT]);
+    facts id2 = mux.Add(chan2, [signal_boost.SIGTERM, signal_boost.SIGHUP]);
+    
+    facts mux_err = mux.Start();
+    if mux_err == cap {
+        vibez.spill("Signal multiplexer started with %d handlers", mux.Count());
+        
+        // Clean up
+        mux.Remove(id1);
+        mux.Remove(id2);
+        mux.Stop();
+    }
     
     // Clean up
-    sem.unlink()?;
+    handle.Stop();
 }
 
-fn demo_unix_domain_sockets() {
-    println("=== Unix Domain Sockets Demo ===");
+slay demo_graceful_shutdown() {
+    vibez.spill("\n🛑 Graceful Shutdown Demo");
+    vibez.spill("------------------------");
     
-    facts socket_path = "/tmp/cursed_demo_socket";
+    // Create graceful shutdown coordinator
+    facts shutdown = signal_boost.NewGracefulShutdown().WithOptions(signal_boost.ShutdownOptions{
+        Timeout: 10 * timez.Second,
+        Signals: [signal_boost.SIGINT, signal_boost.SIGTERM],
+        PreShutdownFn: slay() {
+            vibez.spill("Pre-shutdown function called");
+        },
+        ErrorHandler: slay(err tea) {
+            vibez.spill("Shutdown error: %s", err);
+        },
+    });
     
-    // Create server socket
-    facts server_socket = DomainSocket::create(SocketType::Stream)?;
-    server_socket.bind(socket_path)?;
-    server_socket.listen(5)?;
+    // Add shutdown tasks
+    shutdown.Add("cleanup_temp", slay() tea {
+        vibez.spill("Cleaning up temporary files...");
+        // Simulate cleanup work
+        timez.Sleep(50 * timez.Millisecond);
+        vibez.spill("Temporary files cleaned up");
+        yolo cap;
+    });
     
-    // Spawn server goroutine
-    stan socket_server(socket_path) {
-        facts server = DomainSocket::create(SocketType::Stream)?;
-        server.bind(socket_path)?;
-        server.listen(5)?;
+    shutdown.Add("close_connections", slay() tea {
+        vibez.spill("Closing network connections...");
+        // Simulate connection cleanup
+        timez.Sleep(30 * timez.Millisecond);
+        vibez.spill("Network connections closed");
+        yolo cap;
+    });
+    
+    shutdown.AddGroup("final_cleanup", [
+        slay() tea {
+            vibez.spill("Flushing logs...");
+            timez.Sleep(20 * timez.Millisecond);
+            yolo cap;
+        },
+        slay() tea {
+            vibez.spill("Saving state...");
+            timez.Sleep(30 * timez.Millisecond);
+            yolo cap;
+        },
+    ]);
+    
+    // Start shutdown system
+    facts start_err = shutdown.Start();
+    if start_err == cap {
+        vibez.spill("Graceful shutdown system started");
         
-        println("Server listening on {}", socket_path);
-        
-        facts client_socket = server.accept()?;
-        facts message = client_socket.read_string()?;
-        println("Server received: {}", message);
-        
-        client_socket.write("Hello from server!")?;
-        client_socket.close()?;
-        server.close()?;
-    }
-    
-    // Give server time to start
-    std::thread::sleep(Duration::from_millis(100));
-    
-    // Connect as client
-    facts client = DomainSocket::create(SocketType::Stream)?;
-    client.connect(socket_path)?;
-    
-    client.write("Hello from client!")?;
-    facts response = client.read_string()?;
-    println("Client received: {}", response);
-    
-    client.close()?;
-    
-    // Clean up
-    std::fs::remove_file(socket_path)?;
-}
-
-// PHASE 4: Integration with CURSED Features
-fn demo_goroutine_process_integration() {
-    println("=== Goroutine-Process Integration Demo ===");
-    
-    facts process_results = Arc::new(Mutex::new(Vec::new()));
-    facts results_clone = process_results.clone();
-    
-    // Spawn multiple goroutines that each manage a process
-    lowkey (sus i = 0; i < 3; i++) {
-        stan process_worker(i, results_clone.clone()) {
-            facts config = ProcessConfig::new("echo")
-                .arg(format!("Output from worker {}", i))
-                .capture_output();
+        // Manually trigger shutdown for demo
+        facts shutdown_err = shutdown.Shutdown();
+        if shutdown_err == cap {
+            vibez.spill("Shutdown triggered manually");
             
-            sus process = spawn_process(config)?;
-            facts output = process.wait_for_output()?;
-            
-            facts message = String::from_utf8(output.stdout)?;
-            
-            // Store result in shared data structure
-            facts mut results = results_clone.lock().unwrap();
-            results.push(format!("Worker {}: {}", i, message.trim()));
-        }
-    }
-    
-    // Wait for all goroutines to complete
-    std::thread::sleep(Duration::from_millis(1000));
-    
-    // Display results
-    facts results = process_results.lock().unwrap();
-    lowkey result in &*results {
-        println!("{}", result);
-    }
-}
-
-fn demo_error_handling() {
-    println("=== Error Handling Demo ===");
-    
-    // Demonstrate various error conditions
-    
-    // Invalid command
-    facts invalid_config = ProcessConfig::new("nonexistent_command_xyz");
-    match spawn_process(invalid_config) {
-        Ok(_) => println("Unexpected success with invalid command"),
-        Err(e) => println!("Expected error with invalid command: {}", e),
-    }
-    
-    // Invalid working directory
-    facts bad_dir_config = ProcessConfig::new("echo")
-        .working_dir("/nonexistent/directory");
-    match spawn_process(bad_dir_config) {
-        Ok(_) => println("Unexpected success with invalid directory"),
-        Err(e) => println!("Expected error with invalid directory: {}", e),
-    }
-    
-    // Timeout handling
-    facts timeout_config = ProcessConfig::new("sleep")
-        .arg("10")
-        .timeout(Duration::from_millis(100));
-    match spawn_process(timeout_config) {
-        Ok(mut process) => {
-            match process.wait_timeout(Duration::from_millis(100)) {
-                Ok(Some(_)) => println("Process completed within timeout"),
-                Ok(None) => {
-                    println!("Process timed out as expected");
-                    process.kill()?;
+            // Wait for completion
+            facts wait_err = shutdown.Wait();
+            if wait_err == cap {
+                facts status = shutdown.Status();
+                vibez.spill("Shutdown completed in %v", status.ElapsedTime);
+                vibez.spill("Completed tasks: %v", status.CompletedTasks);
+                if len(status.Errors) > 0 {
+                    vibez.spill("Errors: %v", status.Errors);
                 }
-                Err(e) => println!("Timeout error: {}", e),
+            } else {
+                vibez.spill("Shutdown wait failed: %v", wait_err);
             }
         }
-        Err(e) => println!("Failed to spawn timeout test process: {}", e),
     }
 }
 
-fn demo_cross_platform_features() {
-    println("=== Cross-Platform Features Demo ===");
+slay demo_ipc_mechanisms() {
+    vibez.spill("\n💬 IPC Mechanisms Demo");
+    vibez.spill("---------------------");
     
-    facts platform = get_platform_name();
-    println!("Running on platform: {}", platform);
+    // Named Pipes
+    demo_named_pipes();
     
-    // Platform-specific feature detection
-    println!("Platform capabilities:");
+    // Message Queues
+    demo_message_queues();
     
-    if supports_feature(PlatformFeature::Signals) {
-        println!("  ✓ Signal handling supported");
-    }
+    // Shared Memory
+    demo_shared_memory();
     
-    if supports_feature(PlatformFeature::ProcessGroups) {
-        println!("  ✓ Process groups supported");
-    }
+    // Semaphores
+    demo_semaphores();
     
-    if supports_feature(PlatformFeature::Cgroups) {
-        println!("  ✓ Control groups supported");
-    }
+    // Unix Domain Sockets (Unix only)
+    #if unix
+    demo_unix_sockets();
+    #endif
+}
+
+slay demo_named_pipes() {
+    vibez.spill("\n🚰 Named Pipes Demo");
     
-    if supports_feature(PlatformFeature::WindowsServices) {
-        println!("  ✓ Windows services supported");
-    }
+    facts pipe_name = "demo_pipe_" + tea(timez.Now().Unix());
     
-    if supports_feature(PlatformFeature::Namespaces) {
-        println!("  ✓ Namespaces supported");
-    }
-    
-    // User information
-    if facts user_info = PlatformUtils::get_current_user() {
-        println!("Current user: {}", user_info.username);
+    // Create server
+    facts server = ipc.NamedPipeServer.New(pipe_name);
+    if server != cap {
+        vibez.spill("Named pipe server created: %s", pipe_name);
         
-        if user_info.uid.is_some() {
-            println!("  UID: {}", user_info.uid.unwrap());
-        }
-        if user_info.gid.is_some() {
-            println!("  GID: {}", user_info.gid.unwrap());
-        }
+        // Create client in a goroutine
+        stan slay() {
+            timez.Sleep(10 * timez.Millisecond); // Let server start
+            
+            facts client = ipc.NamedPipeClient.New(pipe_name);
+            if client != cap {
+                facts message = []byte("Hello from client!");
+                facts write_err = client.Write(message);
+                if write_err == cap {
+                    vibez.spill("Client sent message successfully");
+                }
+                client.Close();
+            }
+        }();
+        
+        // Server read (simplified)
+        timez.Sleep(50 * timez.Millisecond);
+        server.Close();
+        vibez.spill("Named pipe demo completed");
+    } else {
+        vibez.spill("Failed to create named pipe server");
     }
-    
-    facts is_elevated = PlatformUtils::is_elevated();
-    println!("Running with elevated privileges: {}", is_elevated);
 }
 
-fn demo_system_monitoring() {
-    println("=== System Monitoring Demo ===");
+slay demo_message_queues() {
+    vibez.spill("\n📬 Message Queue Demo");
     
-    // Get system resource summary
-    facts system_summary = get_system_resource_summary()?;
+    facts queue_name = "demo_queue_" + tea(timez.Now().Unix());
     
-    println!("System Resources:");
-    lowkey (key, value) in system_summary {
-        println!("  {}: {}", key, value);
+    facts queue = ipc.MessageQueue.New(queue_name);
+    if queue != cap {
+        vibez.spill("Message queue created: %s", queue_name);
+        
+        // Send message
+        facts msg = ipc.Message.New([]byte("Demo message content"));
+        facts send_err = queue.Send(msg);
+        if send_err == cap {
+            vibez.spill("Message sent successfully");
+            
+            // Receive message
+            facts received = queue.ReceiveTimeout(1 * timez.Second);
+            if received != cap {
+                vibez.spill("Received message: %s", tea(received.Data()));
+            } else {
+                vibez.spill("No message received (timeout)");
+            }
+        }
+        
+        queue.Close();
+        vibez.spill("Message queue demo completed");
+    } else {
+        vibez.spill("Failed to create message queue");
     }
-    
-    // Get process list
-    facts process_list = get_process_list()?;
-    println!("\nTotal processes running: {}", process_list.len());
-    
-    // Show top 5 processes by PID (just as an example)
-    facts mut top_processes = process_list;
-    top_processes.sort_by_key(|p| p.pid);
-    
-    println!("Sample processes:");
-    lowkey process in top_processes.iter().take(5) {
-        println!("  PID {}: {}", process.pid, process.name);
-    }
-    
-    // Performance monitoring
-    facts current_pid = get_current_pid();
-    facts metrics = collect_performance_metrics(current_pid)?;
-    
-    println!("\nCurrent process metrics:");
-    println!("  Memory: {} bytes", metrics.memory_bytes);
-    println!("  CPU: {:.2}%", metrics.cpu_percent);
-    println!("  Threads: {}", metrics.threads);
-    
-    facts uptime = metrics.uptime;
-    println!("  Uptime: {:.2} seconds", uptime.as_secs_f64());
 }
 
-// Main demonstration function
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 CURSED Process Management and IPC Showcase");
-    println!("===============================================");
+slay demo_shared_memory() {
+    vibez.spill("\n🧠 Shared Memory Demo");
     
-    // Initialize IPC subsystem
-    ipc::initialize()?;
+    facts shm_name = "demo_shm_" + tea(timez.Now().Unix());
+    facts shm_size = 1024;
     
-    // Phase 1: Basic Process Management
-    demo_basic_process_management()?;
-    demo_environment_and_working_dir()?;
-    demo_process_communication()?;
+    facts shm = ipc.SharedMemory.New(shm_name, shm_size);
+    if shm != cap {
+        vibez.spill("Shared memory created: %s (%d bytes)", shm_name, shm_size);
+        
+        // Write data
+        facts data = []byte("Shared memory test data");
+        facts write_err = shm.Write(0, data);
+        if write_err == cap {
+            vibez.spill("Data written to shared memory");
+            
+            // Read data back
+            facts read_data = shm.Read(0, len(data));
+            if read_data != cap {
+                vibez.spill("Read back: %s", tea(read_data));
+                vibez.spill("Data integrity: %t", tea(data) == tea(read_data));
+            }
+        }
+        
+        shm.Close();
+        vibez.spill("Shared memory demo completed");
+    } else {
+        vibez.spill("Failed to create shared memory");
+    }
+}
+
+slay demo_semaphores() {
+    vibez.spill("\n🚦 Semaphore Demo");
     
-    println!();
+    facts sem_name = "demo_sem_" + tea(timez.Now().Unix());
+    facts initial_value = 3;
     
-    // Phase 2: Advanced Process Features
-    demo_process_monitoring()?;
-    demo_concurrent_processes()?;
+    facts sem = ipc.Semaphore.New(sem_name, initial_value);
+    if sem != cap {
+        vibez.spill("Semaphore created: %s (initial value: %d)", sem_name, initial_value);
+        
+        // Acquire
+        facts acquire_err = sem.Acquire();
+        if acquire_err == cap {
+            vibez.spill("Acquired semaphore");
+            
+            // Try acquire (should succeed)
+            facts try_err = sem.TryAcquire();
+            if try_err == cap {
+                vibez.spill("Try acquire succeeded");
+                
+                // Release twice
+                sem.Release();
+                sem.Release();
+                vibez.spill("Released semaphore twice");
+            } else {
+                vibez.spill("Try acquire failed: %v", try_err);
+            }
+        }
+        
+        sem.Close();
+        vibez.spill("Semaphore demo completed");
+    } else {
+        vibez.spill("Failed to create semaphore");
+    }
+}
+
+#if unix
+slay demo_unix_sockets() {
+    vibez.spill("\n🔌 Unix Domain Sockets Demo");
     
-    println!();
+    facts socket_path = "/tmp/demo_socket_" + tea(timez.Now().Unix());
     
-    // Phase 3: IPC Mechanisms
-    demo_shared_memory()?;
-    demo_named_pipes()?;
-    demo_message_queues()?;
-    demo_semaphores()?;
-    demo_unix_domain_sockets()?;
+    // Clean up any existing socket
+    main_character.Remove(socket_path);
     
-    println!();
+    facts server = ipc.UnixSocketServer.New(socket_path);
+    if server != cap {
+        vibez.spill("Unix socket server created: %s", socket_path);
+        
+        // Create client in a goroutine
+        stan slay() {
+            timez.Sleep(10 * timez.Millisecond);
+            
+            facts client = ipc.UnixSocketClient.New(socket_path);
+            if client != cap {
+                facts message = []byte("Unix socket message");
+                facts write_err = client.Write(message);
+                if write_err == cap {
+                    vibez.spill("Unix socket client sent message");
+                }
+                client.Close();
+            }
+        }();
+        
+        // Server operations (simplified)
+        timez.Sleep(50 * timez.Millisecond);
+        server.Close();
+        
+        // Cleanup
+        main_character.Remove(socket_path);
+        vibez.spill("Unix socket demo completed");
+    } else {
+        vibez.spill("Failed to create Unix socket server");
+    }
+}
+#endif
+
+slay demo_integration_scenario() {
+    vibez.spill("\n🎯 Real-world Integration Scenario");
+    vibez.spill("================================");
+    vibez.spill("Simulating a web server with graceful shutdown and process management");
     
-    // Phase 4: Integration Features
-    demo_goroutine_process_integration()?;
-    demo_error_handling()?;
-    demo_cross_platform_features()?;
-    demo_system_monitoring()?;
+    // Set up context with timeout
+    facts ctx = vibe_context.Background();
+    facts (timeout_ctx, cancel) = vibe_context.WithTimeout(ctx, 30*timez.Second);
+    defer cancel();
     
-    println!();
+    // Set up graceful shutdown
+    facts shutdown = signal_boost.NewGracefulShutdown().WithOptions(signal_boost.ShutdownOptions{
+        Timeout: 5 * timez.Second,
+        Signals: [signal_boost.SIGINT, signal_boost.SIGTERM],
+        PreShutdownFn: slay() {
+            vibez.spill("🛑 Shutdown signal received, starting graceful shutdown...");
+        },
+    });
     
-    // Display IPC statistics
-    facts ipc_stats = ipc::get_ipc_statistics();
-    println!("=== IPC System Statistics ===");
-    println!("Active shared memory regions: {}", ipc_stats.active_shared_memory_regions);
-    println!("Active pipes: {}", ipc_stats.active_pipes);
-    println!("Active message queues: {}", ipc_stats.active_message_queues);
-    println!("Active semaphores: {}", ipc_stats.active_semaphores);
-    println!("Active sockets: {}", ipc_stats.active_sockets);
-    println!("Total memory usage: {} bytes", ipc_stats.total_memory_usage);
+    // Add shutdown tasks for different components
+    shutdown.Add("http_server", slay() tea {
+        vibez.spill("🌐 Shutting down HTTP server...");
+        timez.Sleep(100 * timez.Millisecond);
+        vibez.spill("✅ HTTP server stopped");
+        yolo cap;
+    });
     
-    // Shutdown IPC subsystem
-    ipc::shutdown()?;
+    shutdown.Add("database", slay() tea {
+        vibez.spill("🗄️ Closing database connections...");
+        timez.Sleep(150 * timez.Millisecond);
+        vibez.spill("✅ Database connections closed");
+        yolo cap;
+    });
     
-    println!("\n✅ Process and IPC showcase completed successfully!");
+    shutdown.AddWithOrder("cache", -1, slay() tea {
+        vibez.spill("💾 Flushing cache...");
+        timez.Sleep(50 * timez.Millisecond);
+        vibez.spill("✅ Cache flushed");
+        yolo cap;
+    });
     
-    Ok(())
+    // Start shutdown system
+    facts start_err = shutdown.Start();
+    if start_err != cap {
+        vibez.spill("❌ Failed to start shutdown system: %v", start_err);
+        yolo;
+    }
+    
+    // Simulate server startup
+    vibez.spill("🚀 Starting web server components...");
+    
+    // Start background processes
+    facts log_processor = exec_vibez.Command("echo", ["Log processor started"]);
+    facts metric_collector = exec_vibez.Command("echo", ["Metrics collector started"]);
+    
+    facts process_group = exec_vibez.NewProcessGroup();
+    process_group.AddCommand(log_processor);
+    process_group.AddCommand(metric_collector);
+    
+    facts group_err = process_group.StartAll();
+    if group_err == cap {
+        vibez.spill("✅ Background processes started");
+        
+        // Wait for processes to complete
+        process_group.WaitAll();
+        vibez.spill("✅ Background processes completed");
+    }
+    
+    // Simulate running for a short time
+    vibez.spill("🏃 Server running... (simulating work)");
+    for i := 0; i < 3; i++ {
+        // Check if context is done
+        select {
+        case <-timeout_ctx.Done():
+            vibez.spill("⏰ Context timeout reached");
+            yolo periodt;
+        default:
+            vibez.spill("📊 Processing requests... (%d/3)", i+1);
+            timez.Sleep(200 * timez.Millisecond);
+        }
+    }
+    
+    // Manually trigger shutdown to demonstrate
+    vibez.spill("🔧 Manually triggering graceful shutdown for demo...");
+    facts shutdown_err = shutdown.Shutdown();
+    if shutdown_err == cap {
+        // Wait for shutdown to complete
+        facts wait_err = shutdown.Wait();
+        if wait_err == cap {
+            facts status = shutdown.Status();
+            vibez.spill("✅ Graceful shutdown completed in %v", status.ElapsedTime);
+            vibez.spill("📋 Completed tasks: %v", status.CompletedTasks);
+            
+            if len(status.Errors) > 0 {
+                vibez.spill("⚠️ Shutdown errors: %v", status.Errors);
+            } else {
+                vibez.spill("🎉 No errors during shutdown!");
+            }
+        } else {
+            vibez.spill("❌ Shutdown wait failed: %v", wait_err);
+        }
+    } else {
+        vibez.spill("❌ Failed to trigger shutdown: %v", shutdown_err);
+    }
+    
+    vibez.spill("🏁 Integration scenario completed successfully!");
 }

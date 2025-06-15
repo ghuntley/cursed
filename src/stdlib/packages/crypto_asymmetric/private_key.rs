@@ -474,12 +474,14 @@ pub fn convert_private_key_format(args: Vec<Value>) -> Result<Value, CursedError
     let private_key_bytes = hex::decode(private_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid private key hex: {}", e)))?;
     
-    // For now, implement basic conversion for RSA keys
     match algorithm {
         PrivateKeyAlgorithm::Rsa2048 | 
         PrivateKeyAlgorithm::Rsa3072 | 
         PrivateKeyAlgorithm::Rsa4096 => convert_rsa_private_key_format(&private_key_bytes, from_format, to_format),
-        _ => Err(CursedError::NotImplemented(format!("Format conversion not yet implemented for {}", algorithm.name()))),
+        PrivateKeyAlgorithm::EcdsaP256 => convert_p256_private_key_format(&private_key_bytes, from_format, to_format),
+        PrivateKeyAlgorithm::EcdsaP384 => convert_p384_private_key_format(&private_key_bytes, from_format, to_format),
+        PrivateKeyAlgorithm::Ed25519 => convert_ed25519_private_key_format(&private_key_bytes, from_format, to_format),
+        PrivateKeyAlgorithm::X25519 => convert_x25519_private_key_format(&private_key_bytes, from_format, to_format),
     }
 }
 
@@ -519,6 +521,164 @@ fn convert_rsa_private_key_format(
     
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String("RSA".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert P-256 private key format
+fn convert_p256_private_key_format(
+    private_key_bytes: &[u8],
+    from_format: PrivateKeyFormat,
+    to_format: PrivateKeyFormat,
+) -> Result<Value, CursedError> {
+    // Parse based on from_format
+    let private_key = match from_format {
+        PrivateKeyFormat::Pkcs8Der => {
+            P256SecretKey::from_pkcs8_der(private_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 PKCS#8 DER: {}", e)))?
+        },
+        PrivateKeyFormat::Raw => {
+            if private_key_bytes.len() != 32 {
+                return Err(CursedError::InvalidArgument("P-256 private key must be 32 bytes in raw format".to_string()));
+            }
+            P256SecretKey::from_bytes(&private_key_bytes.into())
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 raw bytes: {}", e)))?
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for P-256 private key not implemented", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PrivateKeyFormat::Pkcs8Der => {
+            private_key.to_pkcs8_der()
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-256 PKCS#8 DER: {}", e)))?
+                .as_bytes().to_vec()
+        },
+        PrivateKeyFormat::Raw => {
+            private_key.to_bytes().to_vec()
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for P-256 private key not implemented", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("ECDSA-P256".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert P-384 private key format
+fn convert_p384_private_key_format(
+    private_key_bytes: &[u8],
+    from_format: PrivateKeyFormat,
+    to_format: PrivateKeyFormat,
+) -> Result<Value, CursedError> {
+    // Parse based on from_format
+    let private_key = match from_format {
+        PrivateKeyFormat::Pkcs8Der => {
+            P384SecretKey::from_pkcs8_der(private_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 PKCS#8 DER: {}", e)))?
+        },
+        PrivateKeyFormat::Raw => {
+            if private_key_bytes.len() != 48 {
+                return Err(CursedError::InvalidArgument("P-384 private key must be 48 bytes in raw format".to_string()));
+            }
+            P384SecretKey::from_bytes(&private_key_bytes.into())
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 raw bytes: {}", e)))?
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for P-384 private key not implemented", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PrivateKeyFormat::Pkcs8Der => {
+            private_key.to_pkcs8_der()
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-384 PKCS#8 DER: {}", e)))?
+                .as_bytes().to_vec()
+        },
+        PrivateKeyFormat::Raw => {
+            private_key.to_bytes().to_vec()
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for P-384 private key not implemented", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("ECDSA-P384".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert Ed25519 private key format
+fn convert_ed25519_private_key_format(
+    private_key_bytes: &[u8],
+    from_format: PrivateKeyFormat,
+    to_format: PrivateKeyFormat,
+) -> Result<Value, CursedError> {
+    // Parse based on from_format
+    let private_key = match from_format {
+        PrivateKeyFormat::Raw => {
+            if private_key_bytes.len() != 32 {
+                return Err(CursedError::InvalidArgument("Ed25519 private key must be 32 bytes".to_string()));
+            }
+            let key_bytes: [u8; 32] = private_key_bytes.try_into()
+                .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 key length".to_string()))?;
+            SigningKey::from_bytes(&key_bytes)
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for Ed25519 private key not implemented", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PrivateKeyFormat::Raw => {
+            private_key.to_bytes().to_vec()
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for Ed25519 private key not implemented", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("Ed25519".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert X25519 private key format
+fn convert_x25519_private_key_format(
+    private_key_bytes: &[u8],
+    from_format: PrivateKeyFormat,
+    to_format: PrivateKeyFormat,
+) -> Result<Value, CursedError> {
+    // Validate key length
+    if private_key_bytes.len() != 32 {
+        return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
+    }
+    
+    // Parse based on from_format (X25519 only has raw format)
+    match from_format {
+        PrivateKeyFormat::Raw => {},
+        _ => return Err(CursedError::InvalidArgument(format!("X25519 only supports raw format, not {}", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PrivateKeyFormat::Raw => {
+            private_key_bytes.to_vec()
+        },
+        _ => return Err(CursedError::InvalidArgument(format!("X25519 only supports raw format, not {}", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("X25519".to_string()));
     result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
     result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
     result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));

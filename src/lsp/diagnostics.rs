@@ -1,92 +1,416 @@
-//! Diagnostics provider for CURSED language server
+//! Enhanced Diagnostics provider for CURSED language server
 //! 
-//! Provides syntax errors, type errors, warnings, and linting diagnostics
+//! Provides real-time syntax errors, type errors, warnings, and linting diagnostics
+//! using CURSED's actual compiler infrastructure
 
 use std::collections::HashMap;
 use tower_lsp::lsp_types::*;
-use tracing::{debug, error, instrument, warn};
+use tracing::{debug, error, instrument, warn, info};
 
-use crate::lexer::Lexer;
+use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::Parser;
-use crate::error::CursedError;
+use crate::core::type_checker::{TypeChecker, Type};
+use crate::error::{CursedError, Error};
+use crate::ast::Program;
+use crate::import_resolution::ImportResolver;
 
-/// Diagnostics provider for the LSP server
+/// Enhanced diagnostics provider with compiler integration
 pub struct DiagnosticsProvider {
     /// Cached diagnostics to avoid recomputation
     diagnostic_cache: std::sync::RwLock<HashMap<String, Vec<Diagnostic>>>,
+    /// Type checker for semantic analysis
+    type_checker: std::sync::RwLock<TypeChecker>,
+    /// Import resolver for cross-file validation
+    import_resolver: std::sync::RwLock<ImportResolver>,
+    /// Parsed AST cache for efficient re-analysis
+    ast_cache: std::sync::RwLock<HashMap<String, Program>>,
 }
 
 impl DiagnosticsProvider {
-    /// Create a new diagnostics provider
+    /// Create a new diagnostics provider with compiler integration
     pub fn new() -> Self {
         Self {
             diagnostic_cache: std::sync::RwLock::new(HashMap::new()),
+            type_checker: std::sync::RwLock::new(TypeChecker::new()),
+            import_resolver: std::sync::RwLock::new(ImportResolver::new()),
+            ast_cache: std::sync::RwLock::new(HashMap::new()),
         }
     }
 
-    /// Get syntax diagnostics from lexer and parser
+    /// Get comprehensive diagnostics using CURSED compiler infrastructure
     #[instrument(skip(self, content))]
     pub async fn get_syntax_diagnostics(&self, content: &str) -> Vec<Diagnostic> {
-        debug!("Getting syntax diagnostics");
+        debug!("Getting comprehensive syntax diagnostics using CURSED compiler");
         
         let mut diagnostics = Vec::new();
         
-        // Check lexer errors
-        match self.analyze_lexer_errors(content) {
-            Ok(lexer_diagnostics) => diagnostics.extend(lexer_diagnostics),
+        // Check cache first
+        let content_hash = format!("{:x}", md5::compute(content));
+        if let Ok(cache) = self.diagnostic_cache.read() {
+            if let Some(cached_diagnostics) = cache.get(&content_hash) {
+                debug!("Returning cached diagnostics");
+                return cached_diagnostics.clone();
+            }
+        }
+        
+        // Perform comprehensive analysis using CURSED compiler
+        match self.analyze_with_compiler(content).await {
+            Ok(compiler_diagnostics) => {
+                diagnostics.extend(compiler_diagnostics);
+            }
             Err(err) => {
-                error!("Lexer analysis failed: {}", err);
+                error!("Compiler analysis failed: {}", err);
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
                         start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: content.len() as u32 },
+                        end: Position { line: 0, character: 10 },
                     },
                     DiagnosticSeverity::ERROR,
-                    "Lexer analysis failed".to_string(),
-                    Some("lexer".to_string()),
+                    format!("Compilation failed: {}", err),
+                    Some("compiler".to_string()),
                 ));
             }
         }
-
-        // Check parser errors
-        match self.analyze_parser_errors(content) {
-            Ok(parser_diagnostics) => diagnostics.extend(parser_diagnostics),
-            Err(err) => {
-                error!("Parser analysis failed: {}", err);
-                diagnostics.push(self.create_diagnostic_impl(
-                    Range {
-                        start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: content.len() as u32 },
-                    },
-                    DiagnosticSeverity::ERROR,
-                    "Parser analysis failed".to_string(),
-                    Some("parser".to_string()),
-                ));
-            }
+        
+        // Cache the results
+        if let Ok(mut cache) = self.diagnostic_cache.write() {
+            cache.insert(content_hash, diagnostics.clone());
         }
 
         diagnostics
+    }
+    
+    /// Comprehensive analysis using CURSED compiler infrastructure
+    async fn analyze_with_compiler(&self, content: &str) -> Result<Vec<Diagnostic>, CursedError> {
+        info!("Running comprehensive compiler analysis");
+        let mut diagnostics = Vec::new();
+        
+        // Step 1: Lexical analysis
+        let mut tokens = Vec::new();
+        let mut lexer = Lexer::new(content.to_string());
+        
+        loop {
+            match lexer.next_token() {
+                Ok(token) => {
+                    if token.token_type == TokenType::Eof {
+                        break;
+                    }
+                    tokens.push(token);
+                }
+                Err(err) => {
+                    let diagnostic = self.convert_lexer_error_to_diagnostic(&err, content);
+                    diagnostics.push(diagnostic);
+                    break;
+                }
+            }
+        }
+        
+        if diagnostics.is_empty() {
+            // Step 2: Syntax analysis
+            let lexer = Lexer::new(content.to_string());
+            let mut parser = Parser::new(lexer)?;
+            
+            match parser.parse_program() {
+                Ok(ast) => {
+                    // Cache the AST
+                    let content_hash = format!("{:x}", md5::compute(content));
+                    if let Ok(mut cache) = self.ast_cache.write() {
+                        cache.insert(content_hash, ast.clone());
+                    }
+                    
+                    // Step 3: Semantic analysis
+                    let semantic_diagnostics = self.analyze_semantics(&ast).await?;
+                    diagnostics.extend(semantic_diagnostics);
+                    
+                    // Step 4: Type checking
+                    let type_diagnostics = self.analyze_types(&ast).await?;
+                    diagnostics.extend(type_diagnostics);
+                    
+                    // Step 5: Import validation
+                    let import_diagnostics = self.analyze_imports(&ast).await?;
+                    diagnostics.extend(import_diagnostics);
+                }
+                Err(err) => {
+                    let diagnostic = self.convert_parse_error_to_diagnostic(&err, content);
+                    diagnostics.push(diagnostic);
+                }
+            }
+        }
+        
+        Ok(diagnostics)
+    }
+    
+    /// Analyze semantics using AST
+    async fn analyze_semantics(&self, ast: &Program) -> Result<Vec<Diagnostic>, CursedError> {
+        let mut diagnostics = Vec::new();
+        
+        // Check for unreachable code
+        diagnostics.extend(self.check_unreachable_code(ast));
+        
+        // Check for unused variables
+        diagnostics.extend(self.check_unused_variables(ast));
+        
+        // Check for infinite loops
+        diagnostics.extend(self.check_infinite_loops(ast));
+        
+        // Check for dead code
+        diagnostics.extend(self.check_dead_code(ast));
+        
+        Ok(diagnostics)
+    }
+    
+    /// Analyze types using type checker
+    async fn analyze_types(&self, ast: &Program) -> Result<Vec<Diagnostic>, CursedError> {
+        let mut diagnostics = Vec::new();
+        
+        if let Ok(mut type_checker) = self.type_checker.write() {
+            match type_checker.check_program(ast) {
+                Ok(()) => {
+                    debug!("Type checking completed successfully");
+                }
+                Err(err) => {
+                    let diagnostic = self.convert_type_error_to_diagnostic(&err);
+                    diagnostics.push(diagnostic);
+                }
+            }
+        }
+        
+        Ok(diagnostics)
+    }
+    
+    /// Analyze imports using import resolver
+    async fn analyze_imports(&self, ast: &Program) -> Result<Vec<Diagnostic>, CursedError> {
+        let mut diagnostics = Vec::new();
+        
+        if let Ok(mut import_resolver) = self.import_resolver.write() {
+            // Check import statements for validity
+            for statement in &ast.statements {
+                let stmt_str = statement.string();
+                if stmt_str.contains("use ") || stmt_str.contains("import ") {
+                    // Extract import path and validate
+                    if let Some(import_path) = self.extract_import_path(&stmt_str) {
+                        if !import_resolver.resolve_import(&import_path).is_ok() {
+                            diagnostics.push(self.create_diagnostic_impl(
+                                Range {
+                                    start: Position { line: 0, character: 0 },
+                                    end: Position { line: 0, character: stmt_str.len() as u32 },
+                                },
+                                DiagnosticSeverity::ERROR,
+                                format!("Cannot resolve import: '{}'", import_path),
+                                Some("import".to_string()),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(diagnostics)
+    }
+    
+    /// Convert lexer error to diagnostic
+    fn convert_lexer_error_to_diagnostic(&self, error: &CursedError, _content: &str) -> Diagnostic {
+        // Extract position information from error if available
+        let (line, character) = self.extract_error_position(error);
+        
+        self.create_diagnostic_impl(
+            Range {
+                start: Position { line, character },
+                end: Position { line, character + 1 },
+            },
+            DiagnosticSeverity::ERROR,
+            format!("Lexical error: {}", error),
+            Some("lexer".to_string()),
+        )
+    }
+    
+    /// Convert parse error to diagnostic  
+    fn convert_parse_error_to_diagnostic(&self, error: &CursedError, _content: &str) -> Diagnostic {
+        let (line, character) = self.extract_error_position(error);
+        
+        self.create_diagnostic_impl(
+            Range {
+                start: Position { line, character },
+                end: Position { line, character + 10 },
+            },
+            DiagnosticSeverity::ERROR,
+            format!("Syntax error: {}", error),
+            Some("parser".to_string()),
+        )
+    }
+    
+    /// Convert type error to diagnostic
+    fn convert_type_error_to_diagnostic(&self, error: &Error) -> Diagnostic {
+        self.create_diagnostic_impl(
+            Range {
+                start: Position { line: 0, character: 0 },
+                end: Position { line: 0, character: 10 },
+            },
+            DiagnosticSeverity::ERROR,
+            format!("Type error: {}", error),
+            Some("type-checker".to_string()),
+        )
+    }
+    
+    /// Extract error position from CURSED error
+    fn extract_error_position(&self, error: &CursedError) -> (u32, u32) {
+        // Try to extract position information from error
+        // This would need to be enhanced based on CURSED's error structure
+        match error {
+            _ => (0, 0), // Default position for now
+        }
     }
 
     /// Get semantic diagnostics (type checking, etc.)
     #[instrument(skip(self, content))]
     pub async fn get_semantic_diagnostics(&self, content: &str) -> Vec<Diagnostic> {
-        debug!("Getting semantic diagnostics");
+        debug!("Getting enhanced semantic diagnostics");
         
+        // Use cached AST if available
+        let content_hash = format!("{:x}", md5::compute(content));
+        if let Ok(cache) = self.ast_cache.read() {
+            if let Some(ast) = cache.get(&content_hash) {
+                // Use AST-based semantic analysis
+                match self.analyze_semantics(ast).await {
+                    Ok(diagnostics) => return diagnostics,
+                    Err(err) => {
+                        warn!("AST-based semantic analysis failed: {}", err);
+                    }
+                }
+            }
+        }
+        
+        // Fallback to pattern-based analysis
         let mut diagnostics = Vec::new();
-
-        // Type checking diagnostics
         diagnostics.extend(self.check_type_errors_impl(content));
-        
-        // Variable usage diagnostics
         diagnostics.extend(self.check_variable_usage_impl(content));
-        
-        // Function call diagnostics
         diagnostics.extend(self.check_function_calls_impl(content));
-        
-        // Import/module diagnostics
         diagnostics.extend(self.check_imports_impl(content));
 
+        diagnostics
+    }
+    
+    /// Check for unreachable code in AST
+    fn check_unreachable_code(&self, ast: &Program) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        
+        for (stmt_index, statement) in ast.statements.iter().enumerate() {
+            let stmt_str = statement.string();
+            
+            // Check for code after return statements
+            if stmt_str.contains("bounce ") || stmt_str.contains("yeet ") {
+                // Check if there are more statements after this one
+                if stmt_index + 1 < ast.statements.len() {
+                    diagnostics.push(self.create_diagnostic_impl(
+                        Range {
+                            start: Position { line: (stmt_index + 1) as u32, character: 0 },
+                            end: Position { line: (stmt_index + 1) as u32, character: 10 },
+                        },
+                        DiagnosticSeverity::WARNING,
+                        "Unreachable code after return statement".to_string(),
+                        Some("unreachable".to_string()),
+                    ));
+                }
+            }
+        }
+        
+        diagnostics
+    }
+    
+    /// Check for unused variables in AST
+    fn check_unused_variables(&self, ast: &Program) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        let mut declared_vars = HashMap::new();
+        let mut used_vars = std::collections::HashSet::new();
+        
+        // First pass: collect variable declarations
+        for (stmt_index, statement) in ast.statements.iter().enumerate() {
+            let stmt_str = statement.string();
+            if stmt_str.contains("facts ") || stmt_str.contains("sus ") {
+                if let Some(var_name) = self.extract_variable_name(&stmt_str) {
+                    declared_vars.insert(var_name, stmt_index);
+                }
+            }
+        }
+        
+        // Second pass: collect variable usages
+        for statement in &ast.statements {
+            let stmt_str = statement.string();
+            for var_name in declared_vars.keys() {
+                if stmt_str.contains(var_name) && !stmt_str.contains("facts ") && !stmt_str.contains("sus ") {
+                    used_vars.insert(var_name.clone());
+                }
+            }
+        }
+        
+        // Report unused variables
+        for (var_name, stmt_index) in declared_vars {
+            if !used_vars.contains(&var_name) {
+                diagnostics.push(self.create_diagnostic_impl(
+                    Range {
+                        start: Position { line: stmt_index as u32, character: 0 },
+                        end: Position { line: stmt_index as u32, character: 10 },
+                    },
+                    DiagnosticSeverity::WARNING,
+                    format!("Variable '{}' is declared but never used", var_name),
+                    Some("unused-variable".to_string()),
+                ));
+            }
+        }
+        
+        diagnostics
+    }
+    
+    /// Check for infinite loops in AST
+    fn check_infinite_loops(&self, ast: &Program) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        
+        for (stmt_index, statement) in ast.statements.iter().enumerate() {
+            let stmt_str = statement.string();
+            
+            // Check for while true loops
+            if stmt_str.contains("flex true") || stmt_str.contains("periodt true") {
+                diagnostics.push(self.create_diagnostic_impl(
+                    Range {
+                        start: Position { line: stmt_index as u32, character: 0 },
+                        end: Position { line: stmt_index as u32, character: stmt_str.len() as u32 },
+                    },
+                    DiagnosticSeverity::WARNING,
+                    "Potential infinite loop detected".to_string(),
+                    Some("infinite-loop".to_string()),
+                ));
+            }
+        }
+        
+        diagnostics
+    }
+    
+    /// Check for dead code in AST
+    fn check_dead_code(&self, ast: &Program) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        
+        // Check for unreachable code after unconditional returns
+        let mut found_return = false;
+        for (stmt_index, statement) in ast.statements.iter().enumerate() {
+            let stmt_str = statement.string();
+            
+            if found_return {
+                diagnostics.push(self.create_diagnostic_impl(
+                    Range {
+                        start: Position { line: stmt_index as u32, character: 0 },
+                        end: Position { line: stmt_index as u32, character: stmt_str.len() as u32 },
+                    },
+                    DiagnosticSeverity::INFORMATION,
+                    "Dead code - this statement will never be executed".to_string(),
+                    Some("dead-code".to_string()),
+                ));
+            }
+            
+            if stmt_str.trim().starts_with("bounce ") {
+                found_return = true;
+            }
+        }
+        
         diagnostics
     }
 

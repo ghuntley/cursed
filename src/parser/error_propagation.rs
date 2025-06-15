@@ -34,9 +34,69 @@ impl Parser {
             .map_err(|e| CursedError::Parse(format!("Parser error: {:?}", e)))
     }
     
-    /// Parse primary expression (stub)
+    /// Parse primary expression
     fn parse_primary_expression(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        Err(CursedError::Parse("parse_primary_expression not implemented".to_string()))
+        use crate::ast::expressions::{Literal, LiteralValue};
+        use crate::ast::identifiers::Identifier;
+        use crate::lexer::TokenType;
+        
+        match &self.current_token.token_type {
+            TokenType::IntLiteral => {
+                let value = self.current_token.literal.parse::<i64>()
+                    .map_err(|_| CursedError::Parse("Invalid integer literal".to_string()))?;
+                let literal = Literal::new(LiteralValue::Integer(value));
+                self.next_token()?;
+                Ok(Box::new(literal))
+            },
+            TokenType::FloatLiteral => {
+                let value = self.current_token.literal.parse::<f64>()
+                    .map_err(|_| CursedError::Parse("Invalid float literal".to_string()))?;
+                let literal = Literal::new(LiteralValue::Float(value));
+                self.next_token()?;
+                Ok(Box::new(literal))
+            },
+            TokenType::StringLiteral => {
+                let value = self.current_token.literal.clone();
+                let literal = Literal::new(LiteralValue::String(value));
+                self.next_token()?;
+                Ok(Box::new(literal))
+            },
+            TokenType::True => {
+                let literal = Literal::new(LiteralValue::Boolean(true));
+                self.next_token()?;
+                Ok(Box::new(literal))
+            },
+            TokenType::False => {
+                let literal = Literal::new(LiteralValue::Boolean(false));
+                self.next_token()?;
+                Ok(Box::new(literal))
+            },
+            TokenType::Nil => {
+                let literal = Literal::new(LiteralValue::Nil);
+                self.next_token()?;
+                Ok(Box::new(literal))
+            },
+            TokenType::Identifier => {
+                let name = self.current_token.literal.clone();
+                let identifier = Identifier::new(name.clone(), name);
+                self.next_token()?;
+                Ok(Box::new(identifier))
+            },
+            TokenType::LeftParen => {
+                // Grouped expression
+                self.next_token()?; // consume '('
+                let expr = self.parse_primary_expression()?;
+                self.expect_token(TokenType::RightParen)?;
+                Ok(expr)
+            },
+            _ => {
+                Err(CursedError::parse_error_with_location(
+                    format!("Unexpected token in primary expression: {:?}", self.current_token.token_type),
+                    self.current_token.location.line,
+                    self.current_token.location.column,
+                ))
+            }
+        }
     }
     
     // Note: parse_expression and parse_block_statement methods removed to avoid duplicates

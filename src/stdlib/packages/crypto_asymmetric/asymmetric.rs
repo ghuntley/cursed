@@ -200,7 +200,8 @@ impl AsymmetricCrypto {
                 })
             },
             "X448" => {
-                Err(CursedError::NotImplemented("X448 key exchange not yet implemented".to_string()))
+                // Use the new X448 implementation
+                crate::stdlib::crypto::x448_implementation::x448_key_exchange(args)
             },
             _ => Err(CursedError::InvalidArgument(format!("Unsupported key exchange algorithm: {}", algorithm))),
         }

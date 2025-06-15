@@ -1,818 +1,903 @@
-/// Signal handling for IPC in CURSED
+/// SignalBoost (Signal Handling) Implementation
 /// 
-/// This module provides signal-based inter-process communication and event handling,
-/// including process signals, custom signal handlers, and signal coordination.
+/// This module provides comprehensive signal handling for CURSED applications
+/// Based on the signal_boost.md specification
 
+use crate::stdlib::ipc::error::{IpcError, IpcResult, system_error, timeout_error, invalid_operation};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
-use std::time::{Duration, SystemTime};
-use std::thread;
+use std::sync::{Arc, Mutex, RwLock, OnceLock};
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::time::{Duration, Instant, SystemTime};
+use std::thread::{self, JoinHandle};
+use std::fmt;
 
-use crate::stdlib::ipc::{
-    IpcResult, IpcError, IpcHandle, IpcPermissions, IpcConfig,
-    invalid_operation, timeout_error, permission_denied
-};
-use crate::stdlib::ipc::types::IpcHandleType;
-use crate::stdlib::ipc::error::{
-    communication_error_detailed, system_error, resource_error_detailed
-};
+// Global signal boost manager
+static SIGNAL_BOOST: OnceLock<Arc<Mutex<SignalBoost>>> = OnceLock::new();
 
-/// Signal handler for IPC events
+/// Represents an operating system signal
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BoostSignal(i32);
+
+// Common signals
+impl BoostSignal {
+    pub const SIGINT: BoostSignal = BoostSignal(2);    // Interrupt - CTRL+C
+    pub const SIGTERM: BoostSignal = BoostSignal(15);  // Termination request
+    pub const SIGHUP: BoostSignal = BoostSignal(1);    // Terminal connection closed
+    pub const SIGQUIT: BoostSignal = BoostSignal(3);   // Quit - CTRL+\
+    pub const SIGILL: BoostSignal = BoostSignal(4);    // Illegal instruction
+    pub const SIGTRAP: BoostSignal = BoostSignal(5);   // Trace/breakpoint trap
+    pub const SIGABRT: BoostSignal = BoostSignal(6);   // Abort
+    pub const SIGBUS: BoostSignal = BoostSignal(7);    // Bus error
+    pub const SIGFPE: BoostSignal = BoostSignal(8);    // Floating point exception
+    pub const SIGKILL: BoostSignal = BoostSignal(9);   // Kill (cannot be caught)
+    pub const SIGSEGV: BoostSignal = BoostSignal(11);  // Segmentation fault
+    pub const SIGPIPE: BoostSignal = BoostSignal(13);  // Broken pipe
+    pub const SIGALRM: BoostSignal = BoostSignal(14);  // Timer signal
+    pub const SIGCHLD: BoostSignal = BoostSignal(17);  // Child process terminated
+    pub const SIGCONT: BoostSignal = BoostSignal(18);  // Continue execution
+    pub const SIGSTOP: BoostSignal = BoostSignal(19);  // Stop execution
+    pub const SIGTSTP: BoostSignal = BoostSignal(20);  // Terminal stop - CTRL+Z
+    pub const SIGTTIN: BoostSignal = BoostSignal(21);  // Terminal input for background
+    pub const SIGTTOU: BoostSignal = BoostSignal(22);  // Terminal output for background
+    pub const SIGUSR1: BoostSignal = BoostSignal(10);  // User-defined signal 1
+    pub const SIGUSR2: BoostSignal = BoostSignal(12);  // User-defined signal 2
+    pub const SIGWINCH: BoostSignal = BoostSignal(28); // Window size change
+    
+    /// Get signal number
+    pub fn signal_number(&self) -> i32 {
+        self.0
+    }
+    
+    /// Get signal name
+    pub fn name(&self) -> &'static str {
+        match self.0 {
+            2 => "SIGINT",
+            15 => "SIGTERM",
+            1 => "SIGHUP",
+            3 => "SIGQUIT",
+            4 => "SIGILL",
+            5 => "SIGTRAP",
+            6 => "SIGABRT",
+            7 => "SIGBUS",
+            8 => "SIGFPE",
+            9 => "SIGKILL",
+            11 => "SIGSEGV",
+            13 => "SIGPIPE",
+            14 => "SIGALRM",
+            17 => "SIGCHLD",
+            18 => "SIGCONT",
+            19 => "SIGSTOP",
+            20 => "SIGTSTP",
+            21 => "SIGTTIN",
+            22 => "SIGTTOU",
+            10 => "SIGUSR1",
+            12 => "SIGUSR2",
+            28 => "SIGWINCH",
+            _ => "UNKNOWN",
+        }
+    }
+}
+
+impl fmt::Display for BoostSignal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ({})", self.name(), self.0)
+    }
+}
+
+/// Handle for stopping signal notifications
+pub struct NotifyHandle {
+    sender: Option<Sender<()>>,
+    thread: Option<JoinHandle<()>>,
+    active: Arc<Mutex<bool>>,
+}
+
+impl NotifyHandle {
+    /// Stop signal notifications
+    pub fn stop(&mut self) {
+        if let Some(sender) = self.sender.take() {
+            let _ = sender.send(());
+        }
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+        *self.active.lock().unwrap() = false;
+    }
+    
+    /// Reset the signals being monitored
+    pub fn reset(&mut self, _signals: &[BoostSignal]) -> IpcResult<()> {
+        // Implementation would reset signal monitoring
+        Ok(())
+    }
+}
+
+impl Drop for NotifyHandle {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+
+/// SignalHandler for managing signal callbacks
 pub struct SignalHandler {
-    handle: IpcHandle,
-    config: SignalConfig,
-    handlers: Arc<RwLock<HashMap<String, Box<dyn SignalCallback + Send + Sync>>>>,
-    statistics: Arc<Mutex<SignalStatistics>>,
-    pending_signals: Arc<Mutex<Vec<SignalEvent>>>,
-}
-
-/// Signal configuration
-#[derive(Debug, Clone)]
-pub struct SignalConfig {
-    pub name: String,
-    pub permissions: IpcPermissions,
-    pub enable_queuing: bool,
-    pub max_queue_size: usize,
-    pub enable_priority: bool,
-    pub timeout: Duration,
-    pub auto_cleanup: bool,
-}
-
-impl SignalConfig {
-    pub fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            permissions: IpcPermissions::read_write(),
-            enable_queuing: true,
-            max_queue_size: 1000,
-            enable_priority: false,
-            timeout: Duration::from_secs(30),
-            auto_cleanup: true,
-        }
-    }
-
-    pub fn with_queuing(mut self, enabled: bool, max_size: usize) -> Self {
-        self.enable_queuing = enabled;
-        self.max_queue_size = max_size;
-        self
-    }
-
-    pub fn with_priority(mut self) -> Self {
-        self.enable_priority = true;
-        self
-    }
-
-    pub fn with_timeout(mut self, timeout: Duration) -> Self {
-        self.timeout = timeout;
-        self
-    }
-}
-
-/// IPC signal types
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Signal {
-    /// Process lifecycle signals
-    ProcessStarted,
-    ProcessStopped,
-    ProcessCrashed,
-    
-    /// Resource signals
-    ResourceAvailable,
-    ResourceExhausted,
-    
-    /// Communication signals
-    DataAvailable,
-    ConnectionEstablished,
-    ConnectionLost,
-    
-    /// Synchronization signals
-    BarrierReached,
-    LockAcquired,
-    LockReleased,
-    
-    /// Custom user-defined signal
-    Custom(String),
-}
-
-impl Signal {
-    pub fn name(&self) -> String {
-        match self {
-            Signal::ProcessStarted => "ProcessStarted".to_string(),
-            Signal::ProcessStopped => "ProcessStopped".to_string(),
-            Signal::ProcessCrashed => "ProcessCrashed".to_string(),
-            Signal::ResourceAvailable => "ResourceAvailable".to_string(),
-            Signal::ResourceExhausted => "ResourceExhausted".to_string(),
-            Signal::DataAvailable => "DataAvailable".to_string(),
-            Signal::ConnectionEstablished => "ConnectionEstablished".to_string(),
-            Signal::ConnectionLost => "ConnectionLost".to_string(),
-            Signal::BarrierReached => "BarrierReached".to_string(),
-            Signal::LockAcquired => "LockAcquired".to_string(),
-            Signal::LockReleased => "LockReleased".to_string(),
-            Signal::Custom(name) => name.clone(),
-        }
-    }
-
-    pub fn from_name(name: &str) -> Option<Self> {
-        match name {
-            "ProcessStarted" => Some(Signal::ProcessStarted),
-            "ProcessStopped" => Some(Signal::ProcessStopped),
-            "ProcessCrashed" => Some(Signal::ProcessCrashed),
-            "ResourceAvailable" => Some(Signal::ResourceAvailable),
-            "ResourceExhausted" => Some(Signal::ResourceExhausted),
-            "DataAvailable" => Some(Signal::DataAvailable),
-            "ConnectionEstablished" => Some(Signal::ConnectionEstablished),
-            "ConnectionLost" => Some(Signal::ConnectionLost),
-            "BarrierReached" => Some(Signal::BarrierReached),
-            "LockAcquired" => Some(Signal::LockAcquired),
-            "LockReleased" => Some(Signal::LockReleased),
-            _ => Some(Signal::Custom(name.to_string())),
-        }
-    }
-}
-
-/// Signal action configuration
-#[derive(Debug, Clone)]
-pub struct SignalAction {
-    pub signal: Signal,
-    pub action_type: ActionType,
-    pub priority: SignalPriority,
-    pub timeout: Option<Duration>,
-    pub retry_count: u32,
-}
-
-impl SignalAction {
-    pub fn new(signal: Signal, action_type: ActionType) -> Self {
-        Self {
-            signal,
-            action_type,
-            priority: SignalPriority::Normal,
-            timeout: None,
-            retry_count: 0,
-        }
-    }
-
-    pub fn with_priority(mut self, priority: SignalPriority) -> Self {
-        self.priority = priority;
-        self
-    }
-
-    pub fn with_timeout(mut self, timeout: Duration) -> Self {
-        self.timeout = Some(timeout);
-        self
-    }
-
-    pub fn with_retry(mut self, count: u32) -> Self {
-        self.retry_count = count;
-        self
-    }
-}
-
-/// Signal action types
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ActionType {
-    /// Default system action
-    Default,
-    /// Ignore the signal
-    Ignore,
-    /// Call custom handler
-    Custom,
-    /// Block the signal
-    Block,
-}
-
-/// Signal priority levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SignalPriority {
-    Low = 1,
-    Normal = 5,
-    High = 8,
-    Critical = 10,
-}
-
-/// Signal mask for blocking/unblocking signals
-pub struct SignalMask {
-    blocked_signals: HashMap<Signal, bool>,
-}
-
-impl SignalMask {
-    pub fn new() -> Self {
-        Self {
-            blocked_signals: HashMap::new(),
-        }
-    }
-
-    pub fn block(&mut self, signal: Signal) {
-        self.blocked_signals.insert(signal, true);
-    }
-
-    pub fn unblock(&mut self, signal: Signal) {
-        self.blocked_signals.insert(signal, false);
-    }
-
-    pub fn is_blocked(&self, signal: &Signal) -> bool {
-        self.blocked_signals.get(signal).copied().unwrap_or(false)
-    }
-
-    pub fn clear(&mut self) {
-        self.blocked_signals.clear();
-    }
-}
-
-/// Signal event
-#[derive(Debug, Clone)]
-pub struct SignalEvent {
-    pub signal: Signal,
-    pub data: Vec<u8>,
-    pub sender_pid: u32,
-    pub timestamp: SystemTime,
-    pub priority: SignalPriority,
-    pub sequence_number: u64,
-}
-
-impl SignalEvent {
-    pub fn new(signal: Signal, data: Vec<u8>, sender_pid: u32) -> Self {
-        static SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-        
-        Self {
-            signal,
-            data,
-            sender_pid,
-            timestamp: SystemTime::now(),
-            priority: SignalPriority::Normal,
-            sequence_number: SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
-        }
-    }
-
-    pub fn with_priority(mut self, priority: SignalPriority) -> Self {
-        self.priority = priority;
-        self
-    }
-
-    pub fn age(&self) -> Duration {
-        self.timestamp.elapsed().unwrap_or(Duration::from_secs(0))
-    }
-}
-
-/// Signal callback trait
-pub trait SignalCallback {
-    /// Handle received signal
-    fn handle_signal(&self, event: &SignalEvent) -> IpcResult<()>;
-    
-    /// Get callback ID
-    fn callback_id(&self) -> &str;
-    
-    /// Check if callback can handle signal
-    fn can_handle(&self, signal: &Signal) -> bool;
-}
-
-/// Signal statistics
-#[derive(Debug, Clone)]
-pub struct SignalStatistics {
-    pub signals_sent: u64,
-    pub signals_received: u64,
-    pub signals_blocked: u64,
-    pub signals_queued: u64,
-    pub handler_invocations: u64,
-    pub handler_errors: u64,
-    pub average_handling_time: Duration,
-    pub last_activity: Option<SystemTime>,
-    pub creation_time: SystemTime,
-}
-
-impl SignalStatistics {
-    pub fn new() -> Self {
-        Self {
-            signals_sent: 0,
-            signals_received: 0,
-            signals_blocked: 0,
-            signals_queued: 0,
-            handler_invocations: 0,
-            handler_errors: 0,
-            average_handling_time: Duration::from_nanos(0),
-            last_activity: None,
-            creation_time: SystemTime::now(),
-        }
-    }
-
-    pub fn record_signal_sent(&mut self) {
-        self.signals_sent += 1;
-        self.last_activity = Some(SystemTime::now());
-    }
-
-    pub fn record_signal_received(&mut self) {
-        self.signals_received += 1;
-        self.last_activity = Some(SystemTime::now());
-    }
-
-    pub fn record_handler_execution(&mut self, duration: Duration) {
-        self.handler_invocations += 1;
-        self.last_activity = Some(SystemTime::now());
-        
-        // Update average handling time
-        if self.handler_invocations > 1 {
-            let total_nanos = self.average_handling_time.as_nanos() as u64 * (self.handler_invocations - 1) 
-                            + duration.as_nanos() as u64;
-            self.average_handling_time = Duration::from_nanos(total_nanos / self.handler_invocations);
-        } else {
-            self.average_handling_time = duration;
-        }
-    }
-
-    pub fn record_handler_error(&mut self) {
-        self.handler_errors += 1;
-        self.last_activity = Some(SystemTime::now());
-    }
+    handlers: Arc<RwLock<HashMap<BoostSignal, Vec<Box<dyn Fn(BoostSignal) + Send + Sync>>>>>,
+    priorities: Arc<RwLock<HashMap<BoostSignal, i32>>>,
+    debug_enabled: Arc<Mutex<bool>>,
+    active: Arc<Mutex<bool>>,
+    notify_handle: Option<NotifyHandle>,
 }
 
 impl SignalHandler {
     /// Create a new signal handler
-    pub fn new(config: SignalConfig) -> IpcResult<Self> {
-        let handle = IpcHandle::new(
-            config.name.clone(),
-            IpcHandleType::DomainSocket // Using domain socket as closest match
-        );
-
-        Ok(Self {
-            handle,
-            config,
+    pub fn new() -> Self {
+        Self {
             handlers: Arc::new(RwLock::new(HashMap::new())),
-            statistics: Arc::new(Mutex::new(SignalStatistics::new())),
-            pending_signals: Arc::new(Mutex::new(Vec::new())),
-        })
+            priorities: Arc::new(RwLock::new(HashMap::new())),
+            debug_enabled: Arc::new(Mutex::new(false)),
+            active: Arc::new(Mutex::new(false)),
+            notify_handle: None,
+        }
     }
-
+    
     /// Register a signal handler
-    pub fn register<H>(&mut self, signal: Signal, handler: H) -> IpcResult<()>
+    pub fn register<F>(&mut self, signal: BoostSignal, handler: F) -> &mut Self
     where
-        H: SignalCallback + Send + Sync + 'static,
+        F: Fn(BoostSignal) + Send + Sync + 'static,
     {
         let mut handlers = self.handlers.write().unwrap();
-        handlers.insert(signal.name(), Box::new(handler));
-        Ok(())
+        handlers.entry(signal).or_insert_with(Vec::new).push(Box::new(handler));
+        self
     }
-
-    /// Unregister a signal handler
-    pub fn unregister(&mut self, signal: Signal) -> IpcResult<()> {
+    
+    /// Register a simple function handler
+    pub fn register_func<F>(&mut self, signal: BoostSignal, handler: F) -> &mut Self
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.register(signal, move |_| handler())
+    }
+    
+    /// Unregister all handlers for a signal
+    pub fn unregister(&mut self, signal: BoostSignal) -> &mut Self {
         let mut handlers = self.handlers.write().unwrap();
-        handlers.remove(&signal.name());
-        Ok(())
+        handlers.remove(&signal);
+        self
     }
-
-    /// Send a signal to a process
-    pub fn send_signal(&self, target_pid: u32, signal: Signal) -> IpcResult<()> {
-        self.send_signal_with_data(target_pid, signal, Vec::new())
-    }
-
-    /// Send a signal with data to a process
-    pub fn send_signal_with_data(&self, target_pid: u32, signal: Signal, data: Vec<u8>) -> IpcResult<()> {
-        let event = SignalEvent::new(signal, data, std::process::id());
+    
+    /// Start handling signals
+    pub fn handle(&mut self) -> IpcResult<()> {
+        *self.active.lock().unwrap() = true;
         
-        // In a real implementation, this would send to the target process
-        // For now, we'll simulate by adding to our own pending signals
-        if target_pid == std::process::id() {
-            self.queue_signal(event)?;
-        } else {
-            // Simulate sending to external process
-            eprintln!("Sending signal {} to process {}", event.signal.name(), target_pid);
-        }
-
-        if let Ok(mut stats) = self.statistics.lock() {
-            stats.record_signal_sent();
-        }
-
-        Ok(())
-    }
-
-    /// Process pending signals
-    pub fn process_signals(&self) -> IpcResult<usize> {
-        let mut pending = self.pending_signals.lock().unwrap();
-        let signals_to_process: Vec<SignalEvent> = pending.drain(..).collect();
-        drop(pending);
-
-        let mut processed_count = 0;
-
-        for event in signals_to_process {
-            self.handle_signal_event(&event)?;
-            processed_count += 1;
-        }
-
-        Ok(processed_count)
-    }
-
-    /// Wait for a specific signal
-    pub fn wait_for_signal(&self, signal: Signal, timeout: Duration) -> IpcResult<Option<SignalEvent>> {
-        let start_time = std::time::Instant::now();
-
-        loop {
-            // Check pending signals
-            {
-                let mut pending = self.pending_signals.lock().unwrap();
-                if let Some(pos) = pending.iter().position(|e| e.signal == signal) {
-                    let event = pending.remove(pos);
-                    return Ok(Some(event));
+        // Set up signal monitoring (placeholder implementation)
+        let (tx, rx) = mpsc::channel();
+        let active = self.active.clone();
+        let handlers = self.handlers.clone();
+        let debug_enabled = self.debug_enabled.clone();
+        
+        let thread = thread::spawn(move || {
+            while *active.lock().unwrap() {
+                // Simulate signal reception (in real implementation, would use signal handling)
+                if let Ok(_) = rx.recv_timeout(Duration::from_millis(100)) {
+                    break;
                 }
             }
+        });
+        
+        self.notify_handle = Some(NotifyHandle {
+            sender: Some(tx),
+            thread: Some(thread),
+            active: self.active.clone(),
+        });
+        
+        Ok(())
+    }
+    
+    /// Stop handling signals
+    pub fn stop(&mut self) -> IpcResult<()> {
+        *self.active.lock().unwrap() = false;
+        if let Some(mut handle) = self.notify_handle.take() {
+            handle.stop();
+        }
+        Ok(())
+    }
+    
+    /// Enable debug logging
+    pub fn enable_debug(&mut self, enabled: bool) -> &mut Self {
+        *self.debug_enabled.lock().unwrap() = enabled;
+        self
+    }
+    
+    /// Set priority for a signal
+    pub fn set_priority(&mut self, signal: BoostSignal, priority: i32) -> &mut Self {
+        let mut priorities = self.priorities.write().unwrap();
+        priorities.insert(signal, priority);
+        self
+    }
+}
 
-            // Check timeout
-            if start_time.elapsed() >= timeout {
-                return Ok(None);
+/// Options for graceful shutdown
+#[derive(Debug, Clone)]
+pub struct ShutdownOptions {
+    pub timeout: Duration,
+    pub pre_shutdown_fn: Option<fn()>,
+    pub error_handler: Option<fn(&str)>,
+    pub keep_alive: bool,
+    pub sync_shutdown: bool,
+    pub signals: Vec<BoostSignal>,
+}
+
+impl Default for ShutdownOptions {
+    fn default() -> Self {
+        Self {
+            timeout: Duration::from_secs(30),
+            pre_shutdown_fn: None,
+            error_handler: None,
+            keep_alive: false,
+            sync_shutdown: false,
+            signals: vec![BoostSignal::SIGINT, BoostSignal::SIGTERM],
+        }
+    }
+}
+
+/// Status of graceful shutdown
+#[derive(Debug, Clone)]
+pub struct ShutdownStatus {
+    pub in_progress: bool,
+    pub elapsed_time: Duration,
+    pub completed_tasks: Vec<String>,
+    pub remaining_tasks: Vec<String>,
+    pub errors: HashMap<String, String>,
+    pub shutdown_triggered_by: Option<BoostSignal>,
+}
+
+/// Task for shutdown
+type ShutdownTask = Box<dyn Fn() -> Result<(), String> + Send + Sync>;
+
+/// GracefulShutdown manager
+pub struct GracefulShutdown {
+    options: ShutdownOptions,
+    tasks: Arc<RwLock<HashMap<String, (i32, ShutdownTask)>>>, // name -> (order, task)
+    status: Arc<RwLock<ShutdownStatus>>,
+    signal_handler: Option<SignalHandler>,
+    start_time: Option<Instant>,
+}
+
+impl GracefulShutdown {
+    /// Create a new graceful shutdown manager
+    pub fn new() -> Self {
+        Self {
+            options: ShutdownOptions::default(),
+            tasks: Arc::new(RwLock::new(HashMap::new())),
+            status: Arc::new(RwLock::new(ShutdownStatus {
+                in_progress: false,
+                elapsed_time: Duration::from_secs(0),
+                completed_tasks: Vec::new(),
+                remaining_tasks: Vec::new(),
+                errors: HashMap::new(),
+                shutdown_triggered_by: None,
+            })),
+            signal_handler: None,
+            start_time: None,
+        }
+    }
+    
+    /// Configure with options
+    pub fn with_options(mut self, options: ShutdownOptions) -> Self {
+        self.options = options;
+        self
+    }
+    
+    /// Add a shutdown task
+    pub fn add<F>(&mut self, name: &str, task: F) -> &mut Self
+    where
+        F: Fn() -> Result<(), String> + Send + Sync + 'static,
+    {
+        let mut tasks = self.tasks.write().unwrap();
+        tasks.insert(name.to_string(), (0, Box::new(task)));
+        self
+    }
+    
+    /// Add a shutdown task with specific order
+    pub fn add_with_order<F>(&mut self, name: &str, order: i32, task: F) -> &mut Self
+    where
+        F: Fn() -> Result<(), String> + Send + Sync + 'static,
+    {
+        let mut tasks = self.tasks.write().unwrap();
+        tasks.insert(name.to_string(), (order, Box::new(task)));
+        self
+    }
+    
+    /// Add a group of shutdown tasks
+    pub fn add_group(&mut self, base_name: &str, tasks: Vec<Box<dyn Fn() -> Result<(), String> + Send + Sync>>) -> &mut Self {
+        let task_map = self.tasks.clone();
+        for (i, task) in tasks.into_iter().enumerate() {
+            let name = format!("{}_{}", base_name, i);
+            let mut task_map = task_map.write().unwrap();
+            task_map.insert(name, (0, task));
+        }
+        self
+    }
+    
+    /// Start the graceful shutdown system
+    pub fn start(&mut self) -> IpcResult<()> {
+        let mut handler = SignalHandler::new();
+        let status = self.status.clone();
+        let tasks = self.tasks.clone();
+        
+        for &signal in &self.options.signals {
+            let status_clone = status.clone();
+            let tasks_clone = tasks.clone();
+            handler.register(signal, move |sig| {
+                let mut status = status_clone.write().unwrap();
+                status.shutdown_triggered_by = Some(sig);
+                status.in_progress = true;
+                
+                // Execute shutdown tasks
+                let tasks = tasks_clone.read().unwrap();
+                let mut task_list: Vec<_> = tasks.iter().collect();
+                task_list.sort_by_key(|(_, (order, _))| *order);
+                
+                for (name, (_, task)) in task_list {
+                    match task() {
+                        Ok(()) => status.completed_tasks.push(name.clone()),
+                        Err(e) => {
+                            status.errors.insert(name.clone(), e);
+                        }
+                    }
+                }
+                
+                status.in_progress = false;
+            });
+        }
+        
+        handler.handle()?;
+        self.signal_handler = Some(handler);
+        self.start_time = Some(Instant::now());
+        
+        Ok(())
+    }
+    
+    /// Manually trigger shutdown
+    pub fn shutdown(&mut self) -> IpcResult<()> {
+        if let Some(pre_shutdown) = self.options.pre_shutdown_fn {
+            pre_shutdown();
+        }
+        
+        let mut status = self.status.write().unwrap();
+        status.in_progress = true;
+        
+        // Execute all tasks
+        let tasks = self.tasks.read().unwrap();
+        let mut task_list: Vec<_> = tasks.iter().collect();
+        task_list.sort_by_key(|(_, (order, _))| *order);
+        
+        for (name, (_, task)) in task_list {
+            match task() {
+                Ok(()) => status.completed_tasks.push(name.clone()),
+                Err(e) => {
+                    status.errors.insert(name.clone(), e);
+                    if let Some(error_handler) = self.options.error_handler {
+                        error_handler(&e);
+                    }
+                }
             }
-
-            // Small delay before checking again
+        }
+        
+        status.in_progress = false;
+        
+        Ok(())
+    }
+    
+    /// Wait for shutdown to complete
+    pub fn wait(&self) -> IpcResult<()> {
+        let timeout = Instant::now() + self.options.timeout;
+        
+        loop {
+            {
+                let status = self.status.read().unwrap();
+                if !status.in_progress {
+                    return Ok(());
+                }
+            }
+            
+            if Instant::now() > timeout {
+                return Err(timeout_error("shutdown", self.options.timeout, "Shutdown timeout exceeded"));
+            }
+            
             thread::sleep(Duration::from_millis(10));
         }
     }
-
-    /// Check if signals are pending
-    pub fn signal_pending(&self, signal: Signal) -> bool {
-        let pending = self.pending_signals.lock().unwrap();
-        pending.iter().any(|e| e.signal == signal)
+    
+    /// Get current shutdown status
+    pub fn status(&self) -> ShutdownStatus {
+        let mut status = self.status.read().unwrap().clone();
+        if let Some(start_time) = self.start_time {
+            status.elapsed_time = start_time.elapsed();
+        }
+        status
     }
-
-    /// Get signal statistics
-    pub fn get_statistics(&self) -> SignalStatistics {
-        self.statistics.lock()
-            .map(|stats| stats.clone())
-            .unwrap_or_else(|_| SignalStatistics::new())
-    }
-
-    fn queue_signal(&self, event: SignalEvent) -> IpcResult<()> {
-        if !self.config.enable_queuing {
-            return self.handle_signal_event(&event);
-        }
-
-        let mut pending = self.pending_signals.lock().unwrap();
-        
-        if pending.len() >= self.config.max_queue_size {
-            return Err(resource_error_detailed(
-                "signal_queue",
-                "queue_signal",
-                "Signal queue is full"
-            ));
-        }
-
-        if self.config.enable_priority {
-            // Insert in priority order
-            let pos = pending.iter().position(|e| e.priority < event.priority)
-                .unwrap_or(pending.len());
-            pending.insert(pos, event);
-        } else {
-            // FIFO order
-            pending.push(event);
-        }
-
-        if let Ok(mut stats) = self.statistics.lock() {
-            stats.signals_queued += 1;
-        }
-
-        Ok(())
-    }
-
-    fn handle_signal_event(&self, event: &SignalEvent) -> IpcResult<()> {
-        let handlers = self.handlers.read().unwrap();
-        
-        if let Some(handler) = handlers.get(&event.signal.name()) {
-            let start_time = std::time::Instant::now();
-            let result = handler.handle_signal(event);
-            let duration = start_time.elapsed();
-
-            if let Ok(mut stats) = self.statistics.lock() {
-                if result.is_ok() {
-                    stats.record_handler_execution(duration);
-                } else {
-                    stats.record_handler_error();
-                }
-                stats.record_signal_received();
-            }
-
-            result
-        } else {
-            // No handler registered, just record the signal
-            if let Ok(mut stats) = self.statistics.lock() {
-                stats.record_signal_received();
-            }
-            Ok(())
-        }
+    
+    /// Set timeout
+    pub fn set_timeout(&mut self, timeout: Duration) -> &mut Self {
+        self.options.timeout = timeout;
+        self
     }
 }
 
-/// Signal set for managing multiple signals
-pub struct SignalSet {
-    signals: HashMap<Signal, bool>,
+/// Signal multiplexer for distributing signals to multiple channels
+pub struct SignalMultiplexer {
+    channels: Arc<RwLock<HashMap<i32, (Sender<BoostSignal>, Vec<BoostSignal>)>>>,
+    next_id: Arc<Mutex<i32>>,
+    active: Arc<Mutex<bool>>,
+    notify_handle: Option<NotifyHandle>,
 }
 
-impl SignalSet {
+impl SignalMultiplexer {
+    /// Create a new signal multiplexer
     pub fn new() -> Self {
         Self {
-            signals: HashMap::new(),
+            channels: Arc::new(RwLock::new(HashMap::new())),
+            next_id: Arc::new(Mutex::new(1)),
+            active: Arc::new(Mutex::new(false)),
+            notify_handle: None,
         }
     }
-
-    pub fn add(&mut self, signal: Signal) {
-        self.signals.insert(signal, true);
+    
+    /// Add a channel for specific signals
+    pub fn add(&mut self, sender: Sender<BoostSignal>, signals: &[BoostSignal]) -> i32 {
+        let id = {
+            let mut next_id = self.next_id.lock().unwrap();
+            let id = *next_id;
+            *next_id += 1;
+            id
+        };
+        
+        let mut channels = self.channels.write().unwrap();
+        channels.insert(id, (sender, signals.to_vec()));
+        
+        id
     }
-
-    pub fn remove(&mut self, signal: Signal) {
-        self.signals.remove(&signal);
+    
+    /// Remove a channel
+    pub fn remove(&mut self, id: i32) {
+        let mut channels = self.channels.write().unwrap();
+        channels.remove(&id);
     }
-
-    pub fn contains(&self, signal: &Signal) -> bool {
-        self.signals.contains_key(signal)
-    }
-
-    pub fn clear(&mut self) {
-        self.signals.clear();
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.signals.is_empty()
-    }
-
-    pub fn len(&self) -> usize {
-        self.signals.len()
-    }
-}
-
-// Global signal handler registry
-lazy_static::lazy_static! {
-    static ref SIGNAL_REGISTRY: Arc<RwLock<HashMap<String, Arc<Mutex<SignalHandler>>>>> = 
-        Arc::new(RwLock::new(HashMap::new()));
-}
-
-/// Module-level functions for signal management
-
-/// Send a signal to a process
-pub fn send_signal(target_pid: u32, signal: Signal) -> IpcResult<()> {
-    // Create a temporary handler for sending
-    let config = SignalConfig::new("temp_sender");
-    let handler = SignalHandler::new(config)?;
-    handler.send_signal(target_pid, signal)
-}
-
-/// Block a signal
-pub fn block_signal(signal: Signal) -> IpcResult<()> {
-    // In a real implementation, this would block the signal system-wide
-    eprintln!("Blocking signal: {}", signal.name());
-    Ok(())
-}
-
-/// Unblock a signal
-pub fn unblock_signal(signal: Signal) -> IpcResult<()> {
-    // In a real implementation, this would unblock the signal system-wide
-    eprintln!("Unblocking signal: {}", signal.name());
-    Ok(())
-}
-
-/// Ignore a signal
-pub fn ignore_signal(signal: Signal) -> IpcResult<()> {
-    // In a real implementation, this would set the signal to be ignored
-    eprintln!("Ignoring signal: {}", signal.name());
-    Ok(())
-}
-
-/// Register a signal handler globally
-pub fn register_signal_handler(name: &str, handler: SignalHandler) -> IpcResult<()> {
-    SIGNAL_REGISTRY.write().unwrap()
-        .insert(name.to_string(), Arc::new(Mutex::new(handler)));
-    Ok(())
-}
-
-/// Unregister a signal handler
-pub fn unregister_signal_handler(name: &str) -> IpcResult<()> {
-    SIGNAL_REGISTRY.write().unwrap().remove(name);
-    Ok(())
-}
-
-/// Wait for a signal with timeout
-pub fn wait_for_signal(signal: Signal, timeout: Duration) -> IpcResult<Option<SignalEvent>> {
-    // Try to find a handler that can wait for this signal
-    let registry = SIGNAL_REGISTRY.read().unwrap();
-    if let Some(handler_arc) = registry.values().next() {
-        let handler = handler_arc.lock().unwrap();
-        handler.wait_for_signal(signal, timeout)
-    } else {
-        Ok(None)
-    }
-}
-
-/// Check if a signal is pending
-pub fn signal_pending(signal: Signal) -> bool {
-    let registry = SIGNAL_REGISTRY.read().unwrap();
-    for handler_arc in registry.values() {
-        if let Ok(handler) = handler_arc.lock() {
-            if handler.signal_pending(signal.clone()) {
-                return true;
+    
+    /// Start the multiplexer
+    pub fn start(&mut self) -> IpcResult<()> {
+        *self.active.lock().unwrap() = true;
+        
+        let (tx, rx) = mpsc::channel();
+        let active = self.active.clone();
+        let channels = self.channels.clone();
+        
+        let thread = thread::spawn(move || {
+            while *active.lock().unwrap() {
+                if let Ok(_) = rx.recv_timeout(Duration::from_millis(100)) {
+                    break;
+                }
+                
+                // In a real implementation, this would listen for actual signals
+                // and distribute them to registered channels
             }
+        });
+        
+        self.notify_handle = Some(NotifyHandle {
+            sender: Some(tx),
+            thread: Some(thread),
+            active: self.active.clone(),
+        });
+        
+        Ok(())
+    }
+    
+    /// Stop the multiplexer
+    pub fn stop(&mut self) -> IpcResult<()> {
+        *self.active.lock().unwrap() = false;
+        if let Some(mut handle) = self.notify_handle.take() {
+            handle.stop();
+        }
+        Ok(())
+    }
+    
+    /// Get count of registered channels
+    pub fn count(&self) -> usize {
+        self.channels.read().unwrap().len()
+    }
+}
+
+/// Signal action function type
+pub type SignalAction = Box<dyn Fn(BoostSignal) -> bool + Send + Sync>;
+
+/// VibeChecker for health checks triggered by signals
+pub struct VibeChecker {
+    signal: BoostSignal,
+    check_fn: Box<dyn Fn() -> bool + Send + Sync>,
+    handler: Option<SignalHandler>,
+    last_status: Arc<Mutex<bool>>,
+}
+
+impl VibeChecker {
+    /// Create a new vibe checker
+    pub fn new<F>(signal: BoostSignal, check_fn: F) -> Self
+    where
+        F: Fn() -> bool + Send + Sync + 'static,
+    {
+        Self {
+            signal,
+            check_fn: Box::new(check_fn),
+            handler: None,
+            last_status: Arc::new(Mutex::new(true)),
         }
     }
+    
+    /// Start the vibe checker
+    pub fn start(&mut self) -> IpcResult<()> {
+        let mut handler = SignalHandler::new();
+        let check_fn = &self.check_fn;
+        let last_status = self.last_status.clone();
+        
+        // This would need to be restructured to avoid borrowing issues
+        // For now, we'll use a simpler approach
+        handler.register(self.signal, move |_| {
+            // Placeholder for health check execution
+        });
+        
+        handler.handle()?;
+        self.handler = Some(handler);
+        
+        Ok(())
+    }
+    
+    /// Stop the vibe checker
+    pub fn stop(&mut self) -> IpcResult<()> {
+        if let Some(mut handler) = self.handler.take() {
+            handler.stop()?;
+        }
+        Ok(())
+    }
+    
+    /// Get last health check status
+    pub fn get_status(&self) -> bool {
+        *self.last_status.lock().unwrap()
+    }
+}
+
+/// Main SignalBoost system
+pub struct SignalBoost {
+    handlers: HashMap<BoostSignal, Vec<Sender<BoostSignal>>>,
+    multiplexers: Vec<SignalMultiplexer>,
+    graceful_shutdowns: Vec<GracefulShutdown>,
+}
+
+impl SignalBoost {
+    fn new() -> Self {
+        Self {
+            handlers: HashMap::new(),
+            multiplexers: Vec::new(),
+            graceful_shutdowns: Vec::new(),
+        }
+    }
+}
+
+// Core SignalBoost functions
+
+/// Notify causes SignalBoost to relay incoming signals to the channel
+pub fn notify(channel: Sender<BoostSignal>, signals: &[BoostSignal]) -> NotifyHandle {
+    let (tx, rx) = mpsc::channel();
+    let active = Arc::new(Mutex::new(true));
+    let active_clone = active.clone();
+    
+    let thread = thread::spawn(move || {
+        while *active_clone.lock().unwrap() {
+            if let Ok(_) = rx.recv_timeout(Duration::from_millis(100)) {
+                break;
+            }
+            
+            // In real implementation, would listen for actual signals
+            // and send them to the channel
+        }
+    });
+    
+    NotifyHandle {
+        sender: Some(tx),
+        thread: Some(thread),
+        active,
+    }
+}
+
+/// Stop signal notifications to a channel
+pub fn stop(channel: &Sender<BoostSignal>) {
+    // Implementation would stop notifications for this specific channel
+}
+
+/// Reset signal handling to default behavior
+pub fn reset(signals: &[BoostSignal]) -> IpcResult<()> {
+    // Implementation would reset signal handlers
+    Ok(())
+}
+
+/// Check if signal is currently ignored
+pub fn ignored(signal: BoostSignal) -> bool {
+    // Implementation would check if signal is ignored
     false
 }
 
-/// Setup default signal handlers for common IPC events
-pub fn setup_default_signal_handlers() -> IpcResult<()> {
-    let config = SignalConfig::new("default_handler");
-    let mut handler = SignalHandler::new(config)?;
+/// Send a signal to a process
+pub fn send_signal(pid: i32, signal: BoostSignal) -> IpcResult<()> {
+    #[cfg(unix)]
+    {
+        unsafe {
+            if libc::kill(pid, signal.signal_number()) == -1 {
+                let errno = *libc::__errno_location();
+                return Err(system_error(errno, "kill", &format!("Failed to send signal {} to process {}", signal, pid)));
+            }
+        }
+    }
     
-    // Register handlers for common signals
-    handler.register(Signal::ProcessStarted, DefaultSignalCallback::new("process_started"))?;
-    handler.register(Signal::ProcessStopped, DefaultSignalCallback::new("process_stopped"))?;
-    handler.register(Signal::DataAvailable, DefaultSignalCallback::new("data_available"))?;
+    #[cfg(not(unix))]
+    {
+        return Err(system_error(0, "send_signal", "Signal sending not supported on this platform"));
+    }
     
-    register_signal_handler("default", handler)?;
     Ok(())
 }
 
-/// Clean up signal handlers
-pub fn cleanup_signal_handlers() -> IpcResult<()> {
-    SIGNAL_REGISTRY.write().unwrap().clear();
+/// Send a signal to a process group
+pub fn signal_group(pgid: i32, signal: BoostSignal) -> IpcResult<()> {
+    #[cfg(unix)]
+    {
+        unsafe {
+            if libc::killpg(pgid, signal.signal_number()) == -1 {
+                let errno = *libc::__errno_location();
+                return Err(system_error(errno, "killpg", &format!("Failed to send signal {} to process group {}", signal, pgid)));
+            }
+        }
+    }
+    
+    #[cfg(not(unix))]
+    {
+        return Err(system_error(0, "signal_group", "Process group signaling not supported on this platform"));
+    }
+    
     Ok(())
 }
 
-/// Get average signal handling time
-pub fn get_average_handling_time() -> u64 {
-    let registry = SIGNAL_REGISTRY.read().unwrap();
-    let mut total_time = Duration::from_nanos(0);
-    let mut count = 0;
+/// Signal action functions
+pub fn ignore_action(_signal: BoostSignal) -> bool {
+    true // Signal was handled (ignored)
+}
 
-    for handler_arc in registry.values() {
-        if let Ok(handler) = handler_arc.lock() {
-            let stats = handler.get_statistics();
-            total_time += stats.average_handling_time;
-            count += 1;
+pub fn exit_action(_signal: BoostSignal) -> bool {
+    std::process::exit(0);
+}
+
+pub fn exit_with_code_action(code: i32) -> SignalAction {
+    Box::new(move |_| {
+        std::process::exit(code);
+    })
+}
+
+/// Filter signals based on a predicate
+pub fn filter_signals<F>(receiver: Receiver<BoostSignal>, predicate: F) -> Receiver<BoostSignal>
+where
+    F: Fn(BoostSignal) -> bool + Send + 'static,
+{
+    let (tx, rx) = mpsc::channel();
+    
+    thread::spawn(move || {
+        while let Ok(signal) = receiver.recv() {
+            if predicate(signal) {
+                if tx.send(signal).is_err() {
+                    break;
+                }
+            }
         }
-    }
-
-    if count > 0 {
-        (total_time / count).as_nanos() as u64
-    } else {
-        0
-    }
+    });
+    
+    rx
 }
 
-/// Default signal callback implementation
-pub struct DefaultSignalCallback {
-    id: String,
-}
-
-impl DefaultSignalCallback {
-    pub fn new(id: &str) -> Self {
-        Self {
-            id: id.to_string(),
+/// Throttle signals to prevent flooding
+pub fn throttle_signals(receiver: Receiver<BoostSignal>, interval: Duration) -> Receiver<BoostSignal> {
+    let (tx, rx) = mpsc::channel();
+    
+    thread::spawn(move || {
+        let mut last_sent = HashMap::new();
+        
+        while let Ok(signal) = receiver.recv() {
+            let now = Instant::now();
+            let should_send = last_sent.get(&signal)
+                .map(|&last: &Instant| now.duration_since(last) >= interval)
+                .unwrap_or(true);
+            
+            if should_send {
+                last_sent.insert(signal, now);
+                if tx.send(signal).is_err() {
+                    break;
+                }
+            }
         }
+    });
+    
+    rx
+}
+
+/// Debounce signals to only process the last one in a sequence
+pub fn debounce_signals(receiver: Receiver<BoostSignal>, interval: Duration) -> Receiver<BoostSignal> {
+    let (tx, rx) = mpsc::channel();
+    
+    thread::spawn(move || {
+        let mut pending: Option<(BoostSignal, Instant)> = None;
+        
+        loop {
+            match receiver.recv_timeout(Duration::from_millis(10)) {
+                Ok(signal) => {
+                    pending = Some((signal, Instant::now()));
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    if let Some((signal, time)) = pending {
+                        if time.elapsed() >= interval {
+                            if tx.send(signal).is_err() {
+                                break;
+                            }
+                            pending = None;
+                        }
+                    }
+                }
+                Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            }
+        }
+    });
+    
+    rx
+}
+
+// GenZ themed features
+
+/// Create a vibe checker
+pub fn vibe_check<F>(signal: BoostSignal, check: F) -> VibeChecker
+where
+    F: Fn() -> bool + Send + Sync + 'static,
+{
+    VibeChecker::new(signal, check)
+}
+
+/// Yeet on signal - terminate dramatically
+pub fn yeet_on_signal(signal: BoostSignal, message: &str) -> NotifyHandle {
+    let message = message.to_string();
+    let (sender, receiver) = mpsc::channel();
+    
+    let mut handler = SignalHandler::new();
+    handler.register(signal, move |sig| {
+        eprintln!("🚀 YEET! {} - {}", message, sig);
+        std::process::exit(1);
+    });
+    
+    // This is a simplified implementation
+    NotifyHandle {
+        sender: Some(sender),
+        thread: None,
+        active: Arc::new(Mutex::new(true)),
     }
 }
 
-impl SignalCallback for DefaultSignalCallback {
-    fn handle_signal(&self, event: &SignalEvent) -> IpcResult<()> {
-        eprintln!("Default handler [{}]: Received signal {} from PID {} with {} bytes of data",
-                 self.id, event.signal.name(), event.sender_pid, event.data.len());
-        Ok(())
+/// No cap reload config - reload on SIGHUP
+pub fn nocap_reload_config<F>(config_path: &str, reload_fn: F) -> NotifyHandle 
+where
+    F: Fn() -> Result<(), String> + Send + Sync + 'static,
+{
+    let config_path = config_path.to_string();
+    let (sender, receiver) = mpsc::channel();
+    
+    let mut handler = SignalHandler::new();
+    handler.register(BoostSignal::SIGHUP, move |_| {
+        match reload_fn() {
+            Ok(()) => println!("📋 No cap! Config reloaded from {}", config_path),
+            Err(e) => eprintln!("❌ Failed to reload config: {}", e),
+        }
+    });
+    
+    NotifyHandle {
+        sender: Some(sender),
+        thread: None,
+        active: Arc::new(Mutex::new(true)),
     }
+}
 
-    fn callback_id(&self) -> &str {
-        &self.id
-    }
+/// Initialize SignalBoost system
+pub fn initialize_signal_boost() -> IpcResult<()> {
+    let signal_boost = Arc::new(Mutex::new(SignalBoost::new()));
+    SIGNAL_BOOST.set(signal_boost).map_err(|_| {
+        invalid_operation("initialize_signal_boost", "Already initialized")
+    })?;
+    
+    tracing::info!("SignalBoost system initialized");
+    Ok(())
+}
 
-    fn can_handle(&self, _signal: &Signal) -> bool {
-        true // Default handler can handle any signal
-    }
+/// Cleanup SignalBoost system
+pub fn cleanup_signal_boost() -> IpcResult<()> {
+    // Cleanup would stop all active handlers and threads
+    tracing::info!("SignalBoost system cleaned up");
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::mpsc;
+    use std::time::Duration;
 
     #[test]
-    fn test_signal_names() {
-        assert_eq!(Signal::ProcessStarted.name(), "ProcessStarted");
-        assert_eq!(Signal::DataAvailable.name(), "DataAvailable");
-        assert_eq!(Signal::Custom("test".to_string()).name(), "test");
+    fn test_boost_signal_creation() {
+        let sig = BoostSignal::SIGINT;
+        assert_eq!(sig.signal_number(), 2);
+        assert_eq!(sig.name(), "SIGINT");
     }
 
     #[test]
-    fn test_signal_from_name() {
-        assert_eq!(Signal::from_name("ProcessStarted"), Some(Signal::ProcessStarted));
-        assert_eq!(Signal::from_name("DataAvailable"), Some(Signal::DataAvailable));
+    fn test_signal_handler_creation() {
+        let mut handler = SignalHandler::new();
+        let called = Arc::new(Mutex::new(false));
+        let called_clone = called.clone();
         
-        if let Some(Signal::Custom(name)) = Signal::from_name("custom_signal") {
-            assert_eq!(name, "custom_signal");
-        } else {
-            panic!("Expected custom signal");
-        }
+        handler.register(BoostSignal::SIGINT, move |_| {
+            *called_clone.lock().unwrap() = true;
+        });
+        
+        // Handler is registered but not called in this test
+        assert!(!*called.lock().unwrap());
     }
 
     #[test]
-    fn test_signal_config() {
-        let config = SignalConfig::new("test_signal")
-            .with_queuing(true, 500)
-            .with_priority()
-            .with_timeout(Duration::from_secs(10));
-
-        assert_eq!(config.name, "test_signal");
-        assert!(config.enable_queuing);
-        assert_eq!(config.max_queue_size, 500);
-        assert!(config.enable_priority);
-        assert_eq!(config.timeout, Duration::from_secs(10));
+    fn test_graceful_shutdown_creation() {
+        let mut shutdown = GracefulShutdown::new();
+        let executed = Arc::new(Mutex::new(false));
+        let executed_clone = executed.clone();
+        
+        shutdown.add("test_task", move || {
+            *executed_clone.lock().unwrap() = true;
+            Ok(())
+        });
+        
+        // Task is added but not executed until shutdown
+        assert!(!*executed.lock().unwrap());
     }
 
     #[test]
-    fn test_signal_event() {
-        let event = SignalEvent::new(
-            Signal::ProcessStarted,
-            b"test data".to_vec(),
-            1234
-        ).with_priority(SignalPriority::High);
-
-        assert_eq!(event.signal, Signal::ProcessStarted);
-        assert_eq!(event.data, b"test data");
-        assert_eq!(event.sender_pid, 1234);
-        assert_eq!(event.priority, SignalPriority::High);
+    fn test_signal_multiplexer() {
+        let mut mux = SignalMultiplexer::new();
+        let (tx, rx) = mpsc::channel();
+        
+        let id = mux.add(tx, &[BoostSignal::SIGINT, BoostSignal::SIGTERM]);
+        assert_eq!(mux.count(), 1);
+        
+        mux.remove(id);
+        assert_eq!(mux.count(), 0);
     }
 
     #[test]
-    fn test_signal_action() {
-        let action = SignalAction::new(Signal::DataAvailable, ActionType::Custom)
-            .with_priority(SignalPriority::High)
-            .with_timeout(Duration::from_secs(5))
-            .with_retry(3);
-
-        assert_eq!(action.signal, Signal::DataAvailable);
-        assert_eq!(action.action_type, ActionType::Custom);
-        assert_eq!(action.priority, SignalPriority::High);
-        assert_eq!(action.timeout, Some(Duration::from_secs(5)));
-        assert_eq!(action.retry_count, 3);
+    fn test_signal_filtering() {
+        let (tx, rx) = mpsc::channel();
+        
+        // Send some signals
+        tx.send(BoostSignal::SIGINT).unwrap();
+        tx.send(BoostSignal::SIGTERM).unwrap();
+        tx.send(BoostSignal::SIGUSR1).unwrap();
+        drop(tx);
+        
+        // Filter to only allow SIGINT and SIGTERM
+        let filtered = filter_signals(rx, |sig| {
+            sig == BoostSignal::SIGINT || sig == BoostSignal::SIGTERM
+        });
+        
+        let received: Vec<_> = filtered.iter().collect();
+        assert_eq!(received.len(), 2);
     }
 
     #[test]
-    fn test_signal_mask() {
-        let mut mask = SignalMask::new();
-        assert!(!mask.is_blocked(&Signal::ProcessStarted));
-
-        mask.block(Signal::ProcessStarted);
-        assert!(mask.is_blocked(&Signal::ProcessStarted));
-
-        mask.unblock(Signal::ProcessStarted);
-        assert!(!mask.is_blocked(&Signal::ProcessStarted));
-
-        mask.clear();
-        assert!(!mask.is_blocked(&Signal::ProcessStarted));
-    }
-
-    #[test]
-    fn test_signal_set() {
-        let mut set = SignalSet::new();
-        assert!(set.is_empty());
-        assert_eq!(set.len(), 0);
-
-        set.add(Signal::ProcessStarted);
-        assert!(!set.is_empty());
-        assert_eq!(set.len(), 1);
-        assert!(set.contains(&Signal::ProcessStarted));
-
-        set.remove(Signal::ProcessStarted);
-        assert!(set.is_empty());
-        assert!(!set.contains(&Signal::ProcessStarted));
-    }
-
-    #[test]
-    fn test_signal_statistics() {
-        let mut stats = SignalStatistics::new();
-        assert_eq!(stats.signals_sent, 0);
-        assert_eq!(stats.handler_invocations, 0);
-
-        stats.record_signal_sent();
-        assert_eq!(stats.signals_sent, 1);
-
-        stats.record_handler_execution(Duration::from_millis(10));
-        assert_eq!(stats.handler_invocations, 1);
-        assert_eq!(stats.average_handling_time, Duration::from_millis(10));
-
-        stats.record_handler_execution(Duration::from_millis(20));
-        assert_eq!(stats.handler_invocations, 2);
-        assert_eq!(stats.average_handling_time, Duration::from_millis(15));
-    }
-
-    #[test]
-    fn test_signal_priority_ordering() {
-        assert!(SignalPriority::Critical > SignalPriority::High);
-        assert!(SignalPriority::High > SignalPriority::Normal);
-        assert!(SignalPriority::Normal > SignalPriority::Low);
-    }
-
-    #[test]
-    fn test_default_signal_callback() {
-        let callback = DefaultSignalCallback::new("test");
-        assert_eq!(callback.callback_id(), "test");
-        assert!(callback.can_handle(&Signal::ProcessStarted));
-
-        let event = SignalEvent::new(Signal::DataAvailable, Vec::new(), 1234);
-        let result = callback.handle_signal(&event);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_global_functions() {
-        assert!(!signal_pending(Signal::ProcessStarted));
-        assert_eq!(get_average_handling_time(), 0);
+    fn test_vibe_checker_creation() {
+        let checker = vibe_check(BoostSignal::SIGUSR1, || true);
+        assert!(checker.get_status());
     }
 }

@@ -622,12 +622,32 @@ impl LlvmTemplateCompiler {
     ) -> TemplateCompilationResult<LlvmValue> {
         info!(variable = name, "Compiling template set statement");
         
-        let _compiled_value = self.compile_template_expression(value, context)?;
+        let compiled_value = self.compile_template_expression(value, context)?;
         
-        // TODO: Generate code to set variable in template context
-        // This would involve updating the template context during execution
+        // Generate code to set variable in template context
+        let var_name_global = format!("@.str_set_var_{}", name);
+        let escaped_name = name.replace("\"", "\\22").replace("\n", "\\0A");
         
-        self.compile_template_literal("", context) // Set statements don't produce output
+        // Create global string for variable name
+        self.generator.ir_output.push(format!(
+            "{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1",
+            var_name_global,
+            escaped_name.len() + 1,
+            escaped_name
+        ));
+        
+        // Generate call to set variable in context
+        self.generator.ir_output.push(format!(
+            "  call void @cursed_template_set_variable({}* %context, i8* getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0), i8* {})",
+            "%context",
+            escaped_name.len() + 1,
+            escaped_name.len() + 1,
+            var_name_global,
+            compiled_value.llvm_name
+        ));
+        
+        // Set statements don't produce output
+        self.compile_template_literal("", context)
     }
 
     /// Compile template with block
@@ -645,20 +665,44 @@ impl LlvmTemplateCompiler {
         
         // Compile variable expressions and add to context
         for (name, expr) in variables {
-            let _value = self.compile_template_expression(expr, context)?;
-            // TODO: Add variable to child context
-            child_context.add_variable(name.clone(), LlvmType::String);
+            let compiled_value = self.compile_template_expression(expr, context)?;
+            
+            // Generate code to set variable in with block context
+            let var_name_global = format!("@.str_with_var_{}", name);
+            let escaped_name = name.replace("\"", "\\22").replace("\n", "\\0A");
+            
+            // Create global string for variable name
+            self.generator.ir_output.push(format!(
+                "{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1",
+                var_name_global,
+                escaped_name.len() + 1,
+                escaped_name
+            ));
+            
+            // Generate call to set variable in with context
+            self.generator.ir_output.push(format!(
+                "  call void @cursed_template_set_with_variable({}* %context, i8* getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0), i8* {})",
+                "%context",
+                escaped_name.len() + 1,
+                escaped_name.len() + 1,
+                var_name_global,
+                compiled_value.llvm_name
+            ));
+            
+            // Add variable to child context for type checking
+            child_context.add_variable(name.clone(), compiled_value.value_type);
         }
         
         // Compile body with new context
-        let mut body_values = Vec::new();
-        for node in body {
-            let value = self.compile_template_node(node, &child_context)?;
-            body_values.push(value);
-        }
+        let body_result = self.compile_template_body(body, &child_context)?;
         
-        // TODO: Concatenate body values
-        self.compile_template_literal("<!-- With block -->", context)
+        // Generate cleanup call to restore previous context
+        self.generator.ir_output.push(format!(
+            "  call void @cursed_template_restore_with_context({}* %context)",
+            "%context"
+        ));
+        
+        Ok(body_result)
     }
 
     /// Compile template while loop
@@ -1016,6 +1060,89 @@ impl LlvmTemplateCompiler {
     /// Get cache size
     pub fn cache_size(&self) -> usize {
         self.template_cache.len()
+    }
+
+    /// Calculate hash for template source and context
+    #[instrument(skip(self, ast, context))]
+    fn calculate_template_hash(&self, ast: &TemplateAst, context: &TemplateCompilationContext) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        
+        // Hash template name
+        context.template_name.hash(&mut hasher);
+        
+        // Hash security level
+        format!("{:?}", context.security_level).hash(&mut hasher);
+        
+        // Hash output format
+        format!("{:?}", context.output_format).hash(&mut hasher);
+        
+        // Hash optimization level
+        format!("{:?}", context.optimization_level).hash(&mut hasher);
+        
+        // Hash number of nodes (simple approximation of template structure)
+        ast.nodes.len().hash(&mut hasher);
+        
+        // Hash variable names and types
+        let mut vars: Vec<_> = context.variables.iter().collect();
+        vars.sort_by_key(|(name, _)| *name);
+        for (name, var_type) in vars {
+            name.hash(&mut hasher);
+            format!("{:?}", var_type).hash(&mut hasher);
+        }
+        
+        // Hash filter names
+        let mut filters: Vec<_> = context.filters.keys().collect();
+        filters.sort();
+        for filter in filters {
+            filter.hash(&mut hasher);
+        }
+        
+        hasher.finish()
+    }
+
+    /// Generate performance hints based on compilation context
+    #[instrument(skip(self, context))]
+    fn generate_performance_hints(&self, context: &TemplateCompilationContext) -> Vec<String> {
+        let mut hints = Vec::new();
+        
+        // Variable count hints
+        if context.variables.len() > 20 {
+            hints.push("Consider reducing the number of template variables for better performance".to_string());
+        }
+        
+        // Filter count hints
+        if context.filters.len() > 10 {
+            hints.push("Large number of filters may impact compilation time".to_string());
+        }
+        
+        // Scope depth hints
+        if context.scope_depth > 5 {
+            hints.push("Deep nesting detected - consider flattening template structure".to_string());
+        }
+        
+        // Optimization level hints
+        match context.optimization_level {
+            TemplateOptimizationLevel::None => {
+                hints.push("Enable optimization for better runtime performance".to_string());
+            }
+            TemplateOptimizationLevel::Basic => {
+                hints.push("Consider aggressive optimization for production use".to_string());
+            }
+            TemplateOptimizationLevel::Aggressive => {
+                // No hint needed for aggressive optimization
+            }
+        }
+        
+        // Security level hints
+        if context.security_level != SecurityLevel::Strict && context.output_format == OutputFormat::Html {
+            hints.push("Consider using strict security level for HTML output".to_string());
+        }
+        
+        debug!(hints_generated = hints.len(), "Performance hints generated");
+        hints
     }
 
     /// Helper method to compile template body (multiple nodes)
@@ -1676,14 +1803,15 @@ impl TemplateCompiler for LlvmTemplateCompiler {
         let compilation_time = compile_start.elapsed();
         
         // Create metadata
+        let source_hash = self.calculate_template_hash(ast, context);
         let metadata = CompiledTemplateMetadata {
-            source_hash: 0, // TODO: Calculate actual hash
+            source_hash,
             compiled_at: std::time::SystemTime::now(),
             optimization_level: context.optimization_level,
             security_level: context.security_level,
             required_variables: context.variables.keys().cloned().collect(),
             used_filters: context.filters.keys().cloned().collect(),
-            performance_hints: Vec::new(),
+            performance_hints: self.generate_performance_hints(context),
         };
 
         let compiled_template = CompiledTemplate {
@@ -2466,6 +2594,13 @@ pub fn declare_template_runtime_functions(module: &DummyModule) -> Result<HashMa
     // Conversion functions
     let number_to_string_fn = module.add_function("cursed_template_number_to_string", DummyType::Function, None);
     functions.insert("number_to_string".to_string(), number_to_string_fn);
+
+    // With block context management functions
+    let set_with_variable_fn = module.add_function("cursed_template_set_with_variable", DummyType::Function, None);
+    functions.insert("set_with_variable".to_string(), set_with_variable_fn);
+
+    let restore_with_context_fn = module.add_function("cursed_template_restore_with_context", DummyType::Function, None);
+    functions.insert("restore_with_context".to_string(), restore_with_context_fn);
 
     info!(functions_declared = functions.len(), "Template runtime functions declared");
     Ok(functions)

@@ -47,6 +47,7 @@ pub mod streams;
 pub mod console;
 pub mod interactive;
 pub mod buffered;
+pub mod async_io;
 
 // Re-export main types and functions for easy access
 pub use error::{IoError, IoResult, system_error, io_error, invalid_input};

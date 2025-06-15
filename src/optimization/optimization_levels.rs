@@ -1,444 +1,817 @@
-/// CURSED Compiler Optimization Levels
+/// Optimization Level Configuration System
 /// 
-/// Provides standardized optimization levels (-O0, -O1, -O2, -O3) with
-/// comprehensive optimization pass configuration and performance tuning.
+/// Provides detailed configuration settings for each optimization level,
+/// including pass selection, performance tuning, and target-specific optimizations.
 
 use crate::error::{Error, Result};
-use std::time::Duration;
-use tracing::{debug, info, instrument};
+use crate::optimization::config::{OptimizationLevel, LlvmPassConfig};
+use std::collections::HashMap;
+use tracing::{info, debug};
 
-/// Standard optimization levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OptimizationLevel {
-    /// No optimization (-O0) - fastest compilation, debugging friendly
-    None,
-    /// Basic optimization (-O1) - minimal optimizations, good for development
-    Basic,
-    /// Standard optimization (-O2) - balanced optimization, good for production
-    Standard,
-    /// Aggressive optimization (-O3) - maximum performance, slower compilation
-    Aggressive,
-}
-
-impl Default for OptimizationLevel {
-    fn default() -> Self {
-        Self::Standard
-    }
-}
-
-impl std::fmt::Display for OptimizationLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::None => write!(f, "O0"),
-            Self::Basic => write!(f, "O1"),
-            Self::Standard => write!(f, "O2"),
-            Self::Aggressive => write!(f, "O3"),
-        }
-    }
-}
-
-impl std::str::FromStr for OptimizationLevel {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        match s.to_lowercase().as_str() {
-            "0" | "o0" | "none" => Ok(Self::None),
-            "1" | "o1" | "basic" => Ok(Self::Basic),
-            "2" | "o2" | "standard" => Ok(Self::Standard),
-            "3" | "o3" | "aggressive" => Ok(Self::Aggressive),
-            _ => Err(Error::InvalidInput(format!("Invalid optimization level: {}", s))),
-        }
-    }
-}
-
-/// Optimization configuration for a specific level
+/// Optimization level configuration with detailed settings
 #[derive(Debug, Clone)]
 pub struct LevelConfig {
-    /// Optimization level
     pub level: OptimizationLevel,
-    /// Enable function inlining
-    pub enable_inlining: bool,
-    /// Maximum inline function size
-    pub max_inline_size: usize,
-    /// Enable dead code elimination
-    pub enable_dead_code_elimination: bool,
-    /// Enable constant folding
-    pub enable_constant_folding: bool,
-    /// Enable constant propagation
-    pub enable_constant_propagation: bool,
-    /// Enable common subexpression elimination
-    pub enable_cse: bool,
-    /// Enable loop optimizations
-    pub enable_loop_optimization: bool,
-    /// Maximum loop unroll count
-    pub max_unroll_count: usize,
-    /// Enable vectorization
-    pub enable_vectorization: bool,
-    /// Enable tail call optimization
-    pub enable_tail_calls: bool,
-    /// Enable interprocedural optimization
-    pub enable_ipo: bool,
-    /// Enable link-time optimization
-    pub enable_lto: bool,
-    /// Enable fast math optimizations
-    pub enable_fast_math: bool,
-    /// Enable memory optimization
-    pub enable_memory_optimization: bool,
-    /// Enable instruction scheduling
-    pub enable_instruction_scheduling: bool,
-    /// Enable register allocation optimization
-    pub enable_register_optimization: bool,
-    /// Enable branch prediction optimization
-    pub enable_branch_optimization: bool,
-    /// Enable profile-guided optimization
-    pub enable_pgo: bool,
-    /// Compilation timeout
-    pub timeout: Duration,
-    /// Maximum optimization iterations
-    pub max_iterations: usize,
+    pub description: String,
+    pub compilation_speed: CompilationSpeed,
+    pub runtime_performance: RuntimePerformance,
+    pub code_size_priority: CodeSizePriority,
+    pub llvm_passes: LlvmPassConfig,
+    pub memory_optimization: MemoryOptimizationLevel,
+    pub debug_info_level: DebugInfoLevel,
+    pub vectorization_settings: VectorizationSettings,
+    pub inlining_settings: InliningSettings,
+    pub loop_optimization: LoopOptimizationSettings,
+    pub target_specific: TargetSpecificSettings,
 }
 
 impl LevelConfig {
-    /// Create configuration for optimization level
+    /// Get configuration for optimization level
     pub fn for_level(level: OptimizationLevel) -> Self {
         match level {
-            OptimizationLevel::None => Self::none_config(),
-            OptimizationLevel::Basic => Self::basic_config(),
-            OptimizationLevel::Standard => Self::standard_config(),
-            OptimizationLevel::Aggressive => Self::aggressive_config(),
+            OptimizationLevel::None => Self::o0_config(),
+            OptimizationLevel::Less => Self::o1_config(),
+            OptimizationLevel::Default => Self::o2_config(),
+            OptimizationLevel::Aggressive => Self::o3_config(),
+            OptimizationLevel::Size => Self::os_config(),
+            OptimizationLevel::SizeAggressive => Self::oz_config(),
         }
     }
-
-    /// No optimization configuration (-O0)
-    fn none_config() -> Self {
+    
+    /// O0 configuration - No optimization
+    fn o0_config() -> Self {
         Self {
             level: OptimizationLevel::None,
-            enable_inlining: false,
-            max_inline_size: 0,
-            enable_dead_code_elimination: false,
-            enable_constant_folding: false,
-            enable_constant_propagation: false,
-            enable_cse: false,
-            enable_loop_optimization: false,
-            max_unroll_count: 0,
-            enable_vectorization: false,
-            enable_tail_calls: false,
-            enable_ipo: false,
-            enable_lto: false,
-            enable_fast_math: false,
-            enable_memory_optimization: false,
-            enable_instruction_scheduling: false,
-            enable_register_optimization: false,
-            enable_branch_optimization: false,
-            enable_pgo: false,
-            timeout: Duration::from_secs(5),
-            max_iterations: 1,
+            description: "No optimization - fastest compilation".to_string(),
+            compilation_speed: CompilationSpeed::Fastest,
+            runtime_performance: RuntimePerformance::Baseline,
+            code_size_priority: CodeSizePriority::None,
+            llvm_passes: LlvmPassConfig {
+                function_passes: vec!["mem2reg".to_string()],
+                module_passes: vec!["strip-dead-prototypes".to_string()],
+                enable_vectorization: false,
+                enable_loop_unrolling: false,
+                enable_inlining: false,
+                enable_constant_folding: false,
+                enable_dead_code_elimination: false,
+                enable_common_subexpression_elimination: false,
+                enable_tail_call_optimization: false,
+                enable_link_time_optimization: false,
+            },
+            memory_optimization: MemoryOptimizationLevel::None,
+            debug_info_level: DebugInfoLevel::Full,
+            vectorization_settings: VectorizationSettings::disabled(),
+            inlining_settings: InliningSettings::minimal(),
+            loop_optimization: LoopOptimizationSettings::disabled(),
+            target_specific: TargetSpecificSettings::optimized(),
         }
     }
-
-    /// Basic optimization configuration (-O1)
-    fn basic_config() -> Self {
+    
+    /// O1 configuration - Basic optimization
+    fn o1_config() -> Self {
         Self {
-            level: OptimizationLevel::Basic,
-            enable_inlining: true,
-            max_inline_size: 50,
-            enable_dead_code_elimination: true,
-            enable_constant_folding: true,
-            enable_constant_propagation: true,
-            enable_cse: true,
-            enable_loop_optimization: false,
-            max_unroll_count: 0,
-            enable_vectorization: false,
-            enable_tail_calls: true,
-            enable_ipo: false,
-            enable_lto: false,
-            enable_fast_math: false,
-            enable_memory_optimization: true,
-            enable_instruction_scheduling: false,
-            enable_register_optimization: true,
-            enable_branch_optimization: false,
-            enable_pgo: false,
-            timeout: Duration::from_secs(15),
-            max_iterations: 3,
+            level: OptimizationLevel::Less,
+            description: "Basic optimization - good compilation speed".to_string(),
+            compilation_speed: CompilationSpeed::Fast,
+            runtime_performance: RuntimePerformance::Basic,
+            code_size_priority: CodeSizePriority::Low,
+            llvm_passes: LlvmPassConfig {
+                function_passes: vec![
+                    "mem2reg".to_string(),
+                    "instcombine".to_string(),
+                    "simplifycfg".to_string(),
+                    "reassociate".to_string(),
+                ],
+                module_passes: vec![
+                    "globalopt".to_string(),
+                    "strip-dead-prototypes".to_string(),
+                ],
+                enable_vectorization: true,
+                enable_loop_unrolling: true,
+                enable_inlining: true,
+                enable_constant_folding: true,
+                enable_dead_code_elimination: true,
+                enable_common_subexpression_elimination: true,
+                enable_tail_call_optimization: true,
+                enable_link_time_optimization: false,
+            },
+            memory_optimization: MemoryOptimizationLevel::Basic,
+            debug_info_level: DebugInfoLevel::Standard,
+            vectorization_settings: VectorizationSettings::disabled(),
+            inlining_settings: InliningSettings::conservative(),
+            loop_optimization: LoopOptimizationSettings::basic(),
+            target_specific: TargetSpecificSettings::optimized(),
         }
     }
-
-    /// Standard optimization configuration (-O2)
-    fn standard_config() -> Self {
+    
+    /// O2 configuration - Standard optimization
+    fn o2_config() -> Self {
         Self {
-            level: OptimizationLevel::Standard,
-            enable_inlining: true,
-            max_inline_size: 250,
-            enable_dead_code_elimination: true,
-            enable_constant_folding: true,
-            enable_constant_propagation: true,
-            enable_cse: true,
-            enable_loop_optimization: true,
-            max_unroll_count: 4,
-            enable_vectorization: true,
-            enable_tail_calls: true,
-            enable_ipo: true,
-            enable_lto: false,
-            enable_fast_math: false,
-            enable_memory_optimization: true,
-            enable_instruction_scheduling: true,
-            enable_register_optimization: true,
-            enable_branch_optimization: true,
-            enable_pgo: false,
-            timeout: Duration::from_secs(60),
-            max_iterations: 5,
+            level: OptimizationLevel::Default,
+            description: "Standard optimization - balanced performance".to_string(),
+            compilation_speed: CompilationSpeed::Moderate,
+            runtime_performance: RuntimePerformance::Good,
+            code_size_priority: CodeSizePriority::Low,
+            llvm_passes: LlvmPassConfig {
+                function_passes: vec![
+                    "mem2reg".to_string(),
+                    "instcombine".to_string(),
+                    "simplifycfg".to_string(),
+                    "reassociate".to_string(),
+                    "gvn".to_string(),
+                    "basic-aa".to_string(),
+                ],
+                module_passes: vec![
+                    "globalopt".to_string(),
+                    "globaldce".to_string(),
+                    "function-attrs".to_string(),
+                    "constmerge".to_string(),
+                ],
+                enable_vectorization: true,
+                enable_loop_unrolling: true,
+                enable_inlining: true,
+                enable_constant_folding: true,
+                enable_dead_code_elimination: true,
+                enable_common_subexpression_elimination: true,
+                enable_tail_call_optimization: true,
+                enable_link_time_optimization: false,
+            },
+            memory_optimization: MemoryOptimizationLevel::Standard,
+            debug_info_level: DebugInfoLevel::Standard,
+            vectorization_settings: VectorizationSettings::standard(),
+            inlining_settings: InliningSettings::standard(),
+            loop_optimization: LoopOptimizationSettings::standard(),
+            target_specific: TargetSpecificSettings::optimized(),
         }
     }
-
-    /// Aggressive optimization configuration (-O3)
-    fn aggressive_config() -> Self {
+    
+    /// O3 configuration - Aggressive optimization
+    fn o3_config() -> Self {
         Self {
             level: OptimizationLevel::Aggressive,
-            enable_inlining: true,
-            max_inline_size: 1000,
-            enable_dead_code_elimination: true,
-            enable_constant_folding: true,
-            enable_constant_propagation: true,
-            enable_cse: true,
-            enable_loop_optimization: true,
-            max_unroll_count: 16,
-            enable_vectorization: true,
-            enable_tail_calls: true,
-            enable_ipo: true,
-            enable_lto: true,
-            enable_fast_math: true,
-            enable_memory_optimization: true,
-            enable_instruction_scheduling: true,
-            enable_register_optimization: true,
-            enable_branch_optimization: true,
-            enable_pgo: false,
-            timeout: Duration::from_secs(300),
-            max_iterations: 10,
+            description: "Aggressive optimization - maximum performance".to_string(),
+            compilation_speed: CompilationSpeed::Slow,
+            runtime_performance: RuntimePerformance::Maximum,
+            code_size_priority: CodeSizePriority::None,
+            llvm_passes: LlvmPassConfig {
+                function_passes: vec![
+                    "mem2reg".to_string(),
+                    "instcombine".to_string(),
+                    "simplifycfg".to_string(),
+                    "reassociate".to_string(),
+                    "gvn".to_string(),
+                    "basic-aa".to_string(),
+                    "aggressive-instcombine".to_string(),
+                    "licm".to_string(),
+                    "indvars".to_string(),
+                ],
+                module_passes: vec![
+                    "globalopt".to_string(),
+                    "globaldce".to_string(),
+                    "function-attrs".to_string(),
+                    "constmerge".to_string(),
+                    "inline".to_string(),
+                    "argpromotion".to_string(),
+                    "deadargelim".to_string(),
+                ],
+                enable_vectorization: true,
+                enable_loop_unrolling: true,
+                enable_inlining: true,
+                enable_constant_folding: true,
+                enable_dead_code_elimination: true,
+                enable_common_subexpression_elimination: true,
+                enable_tail_call_optimization: true,
+                enable_link_time_optimization: true,
+            },
+            memory_optimization: MemoryOptimizationLevel::Aggressive,
+            debug_info_level: DebugInfoLevel::Minimal,
+            vectorization_settings: VectorizationSettings::aggressive(),
+            inlining_settings: InliningSettings::aggressive(),
+            loop_optimization: LoopOptimizationSettings::aggressive(),
+            target_specific: TargetSpecificSettings::aggressive(),
         }
     }
-
-    /// Create a custom configuration with specific overrides
-    pub fn custom(level: OptimizationLevel) -> LevelConfigBuilder {
-        LevelConfigBuilder::new(level)
-    }
-}
-
-/// Builder for custom optimization configurations
-pub struct LevelConfigBuilder {
-    config: LevelConfig,
-}
-
-impl LevelConfigBuilder {
-    pub fn new(level: OptimizationLevel) -> Self {
+    
+    /// Os configuration - Optimize for size
+    fn os_config() -> Self {
         Self {
-            config: LevelConfig::for_level(level),
+            level: OptimizationLevel::Size,
+            description: "Size optimization - minimize code size".to_string(),
+            compilation_speed: CompilationSpeed::Moderate,
+            runtime_performance: RuntimePerformance::Good,
+            code_size_priority: CodeSizePriority::High,
+            llvm_passes: LlvmPassConfig {
+                function_passes: vec![
+                    "mem2reg".to_string(),
+                    "instcombine".to_string(),
+                    "simplifycfg".to_string(),
+                    "reassociate".to_string(),
+                    "gvn".to_string(),
+                ],
+                module_passes: vec![
+                    "globalopt".to_string(),
+                    "globaldce".to_string(),
+                    "constmerge".to_string(),
+                    "mergefunc".to_string(),
+                    "strip".to_string(),
+                ],
+                enable_vectorization: true,
+                enable_loop_unrolling: true,
+                enable_inlining: true,
+                enable_constant_folding: true,
+                enable_dead_code_elimination: true,
+                enable_common_subexpression_elimination: true,
+                enable_tail_call_optimization: true,
+                enable_link_time_optimization: true,
+            },
+            memory_optimization: MemoryOptimizationLevel::Size,
+            debug_info_level: DebugInfoLevel::Minimal,
+            vectorization_settings: VectorizationSettings::size_optimized(),
+            inlining_settings: InliningSettings::size_optimized(),
+            loop_optimization: LoopOptimizationSettings::size_optimized(),
+            target_specific: TargetSpecificSettings::size_optimized(),
         }
     }
-
-    pub fn enable_inlining(mut self, enable: bool) -> Self {
-        self.config.enable_inlining = enable;
-        self
-    }
-
-    pub fn max_inline_size(mut self, size: usize) -> Self {
-        self.config.max_inline_size = size;
-        self
-    }
-
-    pub fn enable_loop_optimization(mut self, enable: bool) -> Self {
-        self.config.enable_loop_optimization = enable;
-        self
-    }
-
-    pub fn max_unroll_count(mut self, count: usize) -> Self {
-        self.config.max_unroll_count = count;
-        self
-    }
-
-    pub fn enable_vectorization(mut self, enable: bool) -> Self {
-        self.config.enable_vectorization = enable;
-        self
-    }
-
-    pub fn enable_lto(mut self, enable: bool) -> Self {
-        self.config.enable_lto = enable;
-        self
-    }
-
-    pub fn enable_fast_math(mut self, enable: bool) -> Self {
-        self.config.enable_fast_math = enable;
-        self
-    }
-
-    pub fn enable_pgo(mut self, enable: bool) -> Self {
-        self.config.enable_pgo = enable;
-        self
-    }
-
-    pub fn timeout(mut self, timeout: Duration) -> Self {
-        self.config.timeout = timeout;
-        self
-    }
-
-    pub fn max_iterations(mut self, iterations: usize) -> Self {
-        self.config.max_iterations = iterations;
-        self
-    }
-
-    pub fn build(self) -> LevelConfig {
-        self.config
-    }
-}
-
-/// Optimization level manager
-pub struct OptimizationLevelManager {
-    current_level: OptimizationLevel,
-    current_config: LevelConfig,
-    custom_overrides: Option<LevelConfig>,
-}
-
-impl OptimizationLevelManager {
-    /// Create a new optimization level manager
-    pub fn new(level: OptimizationLevel) -> Self {
-        let config = LevelConfig::for_level(level);
+    
+    /// Oz configuration - Aggressively optimize for size
+    fn oz_config() -> Self {
         Self {
-            current_level: level,
-            current_config: config,
-            custom_overrides: None,
+            level: OptimizationLevel::SizeAggressive,
+            description: "Aggressive size optimization - minimize code size aggressively".to_string(),
+            compilation_speed: CompilationSpeed::Slow,
+            runtime_performance: RuntimePerformance::Basic,
+            code_size_priority: CodeSizePriority::Maximum,
+            llvm_passes: LlvmPassConfig {
+                function_passes: vec![
+                    "mem2reg".to_string(),
+                    "instcombine".to_string(),
+                    "simplifycfg".to_string(),
+                    "gvn".to_string(),
+                ],
+                module_passes: vec![
+                    "globalopt".to_string(),
+                    "globaldce".to_string(),
+                    "constmerge".to_string(),
+                    "mergefunc".to_string(),
+                    "strip".to_string(),
+                    "strip-debug-declare".to_string(),
+                ],
+                enable_vectorization: true,
+                enable_loop_unrolling: true,
+                enable_inlining: true,
+                enable_constant_folding: true,
+                enable_dead_code_elimination: true,
+                enable_common_subexpression_elimination: true,
+                enable_tail_call_optimization: true,
+                enable_link_time_optimization: true,
+            },
+            memory_optimization: MemoryOptimizationLevel::Size,
+            debug_info_level: DebugInfoLevel::None,
+            vectorization_settings: VectorizationSettings::disabled(),
+            inlining_settings: InliningSettings::size_aggressive(),
+            loop_optimization: LoopOptimizationSettings::size_optimized(),
+            target_specific: TargetSpecificSettings::size_aggressive(),
         }
     }
-
-    /// Set optimization level
-    #[instrument(skip(self))]
-    pub fn set_level(&mut self, level: OptimizationLevel) {
-        debug!("Setting optimization level to {}", level);
-        self.current_level = level;
-        self.current_config = LevelConfig::for_level(level);
-        self.custom_overrides = None;
-    }
-
-    /// Set custom configuration
-    #[instrument(skip(self, config))]
-    pub fn set_custom_config(&mut self, config: LevelConfig) {
-        debug!("Setting custom optimization configuration for level {}", config.level);
-        self.current_level = config.level;
-        self.current_config = config.clone();
-        self.custom_overrides = Some(config);
-    }
-
-    /// Get current optimization level
-    pub fn current_level(&self) -> OptimizationLevel {
-        self.current_level
-    }
-
-    /// Get current configuration
-    pub fn current_config(&self) -> &LevelConfig {
-        &self.current_config
-    }
-
-    /// Check if using custom configuration
-    pub fn is_custom(&self) -> bool {
-        self.custom_overrides.is_some()
-    }
-
-    /// Get LLVM optimization level equivalent
-    pub fn llvm_optimization_level(&self) -> inkwell::OptimizationLevel {
-        match self.current_level {
-            OptimizationLevel::None => inkwell::OptimizationLevel::None,
-            OptimizationLevel::Basic => inkwell::OptimizationLevel::Less,
-            OptimizationLevel::Standard => inkwell::OptimizationLevel::Default,
-            OptimizationLevel::Aggressive => inkwell::OptimizationLevel::Aggressive,
+    
+    /// Get pass pipeline for this configuration
+    pub fn get_pass_pipeline(&self) -> PassPipeline {
+        PassPipeline {
+            function_passes: self.llvm_passes.function_passes.clone(),
+            module_passes: self.llvm_passes.module_passes.clone(),
+            optimization_level: self.level,
+            custom_passes: Vec::new(),
         }
     }
-
-    /// Print optimization configuration summary
-    pub fn print_summary(&self) {
-        let config = &self.current_config;
-        println!("🎯 Optimization Configuration Summary:");
-        println!("   Level: {} ({})", config.level, 
-                if self.is_custom() { "custom" } else { "standard" });
-        println!("   Function inlining: {} (max size: {})", 
-                config.enable_inlining, config.max_inline_size);
-        println!("   Dead code elimination: {}", config.enable_dead_code_elimination);
-        println!("   Constant folding/propagation: {} / {}", 
-                config.enable_constant_folding, config.enable_constant_propagation);
-        println!("   Common subexpression elimination: {}", config.enable_cse);
-        println!("   Loop optimization: {} (max unroll: {})", 
-                config.enable_loop_optimization, config.max_unroll_count);
-        println!("   Vectorization: {}", config.enable_vectorization);
-        println!("   Tail call optimization: {}", config.enable_tail_calls);
-        println!("   Interprocedural optimization: {}", config.enable_ipo);
-        println!("   Link-time optimization: {}", config.enable_lto);
-        println!("   Fast math: {}", config.enable_fast_math);
-        println!("   Memory optimization: {}", config.enable_memory_optimization);
-        println!("   Profile-guided optimization: {}", config.enable_pgo);
-        println!("   Timeout: {:?}", config.timeout);
-        println!("   Max iterations: {}", config.max_iterations);
+    
+    /// Check if level enables specific optimization
+    pub fn enables_optimization(&self, optimization: &str) -> bool {
+        match optimization {
+            "vectorization" => self.llvm_passes.enable_vectorization,
+            "inlining" => self.llvm_passes.enable_inlining,
+            "loop_unrolling" => self.llvm_passes.enable_loop_unrolling,
+            "lto" => self.llvm_passes.enable_link_time_optimization,
+            "dead_code_elimination" => self.llvm_passes.enable_dead_code_elimination,
+            _ => false,
+        }
+    }
+    
+    /// Get compilation time estimate
+    pub fn get_compilation_time_factor(&self) -> f64 {
+        match self.compilation_speed {
+            CompilationSpeed::Fastest => 1.0,
+            CompilationSpeed::Fast => 1.5,
+            CompilationSpeed::Moderate => 2.5,
+            CompilationSpeed::Slow => 4.0,
+        }
+    }
+    
+    /// Get expected performance improvement
+    pub fn get_performance_factor(&self) -> f64 {
+        match self.runtime_performance {
+            RuntimePerformance::Baseline => 1.0,
+            RuntimePerformance::Basic => 1.2,
+            RuntimePerformance::Good => 1.8,
+            RuntimePerformance::Maximum => 3.0,
+        }
     }
 }
 
-impl Default for OptimizationLevelManager {
+/// Optimization level settings container
+#[derive(Debug, Clone)]
+pub struct OptimizationSettings {
+    pub level_configs: HashMap<OptimizationLevel, LevelConfig>,
+    pub default_level: OptimizationLevel,
+}
+
+impl OptimizationSettings {
+    /// Create new optimization settings
+    pub fn new() -> Self {
+        let mut level_configs = HashMap::new();
+        
+        // Initialize all optimization levels
+        for level in &[
+            OptimizationLevel::None,
+            OptimizationLevel::Less,
+            OptimizationLevel::Default,
+            OptimizationLevel::Aggressive,
+            OptimizationLevel::Size,
+            OptimizationLevel::SizeAggressive,
+        ] {
+            level_configs.insert(*level, LevelConfig::for_level(*level));
+        }
+        
+        Self {
+            level_configs,
+            default_level: OptimizationLevel::Default,
+        }
+    }
+    
+    /// Get configuration for level
+    pub fn get_config(&self, level: OptimizationLevel) -> Result<&LevelConfig> {
+        self.level_configs.get(&level)
+            .ok_or_else(|| Error::Other(format!("No configuration for optimization level: {:?}", level)))
+    }
+    
+    /// Get all available levels
+    pub fn get_available_levels(&self) -> Vec<OptimizationLevel> {
+        self.level_configs.keys().cloned().collect()
+    }
+    
+    /// Get optimization comparison
+    pub fn compare_levels(&self, level1: OptimizationLevel, level2: OptimizationLevel) -> Result<LevelComparison> {
+        let config1 = self.get_config(level1)?;
+        let config2 = self.get_config(level2)?;
+        
+        Ok(LevelComparison {
+            level1,
+            level2,
+            compilation_time_ratio: config2.get_compilation_time_factor() / config1.get_compilation_time_factor(),
+            performance_ratio: config2.get_performance_factor() / config1.get_performance_factor(),
+            code_size_difference: Self::compare_code_size_priority(config1.code_size_priority, config2.code_size_priority),
+        })
+    }
+    
+    /// Compare code size priorities
+    fn compare_code_size_priority(priority1: CodeSizePriority, priority2: CodeSizePriority) -> i8 {
+        let score1 = match priority1 {
+            CodeSizePriority::None => 0,
+            CodeSizePriority::Low => 1,
+            CodeSizePriority::High => 2,
+            CodeSizePriority::Maximum => 3,
+        };
+        
+        let score2 = match priority2 {
+            CodeSizePriority::None => 0,
+            CodeSizePriority::Low => 1,
+            CodeSizePriority::High => 2,
+            CodeSizePriority::Maximum => 3,
+        };
+        
+        score2 - score1
+    }
+}
+
+impl Default for OptimizationSettings {
     fn default() -> Self {
-        Self::new(OptimizationLevel::default())
+        Self::new()
+    }
+}
+
+/// Compilation speed priority
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CompilationSpeed {
+    Fastest,
+    Fast,
+    Moderate,
+    Slow,
+}
+
+/// Runtime performance priority
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RuntimePerformance {
+    Baseline,
+    Basic,
+    Good,
+    Maximum,
+}
+
+/// Code size optimization priority
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CodeSizePriority {
+    None,
+    Low,
+    High,
+    Maximum,
+}
+
+/// Memory optimization level
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MemoryOptimizationLevel {
+    None,
+    Basic,
+    Standard,
+    Aggressive,
+    Size,
+}
+
+/// Debug information level
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DebugInfoLevel {
+    None,
+    Minimal,
+    Standard,
+    Full,
+}
+
+/// Vectorization settings
+#[derive(Debug, Clone)]
+pub struct VectorizationSettings {
+    pub enable_loop_vectorization: bool,
+    pub enable_slp_vectorization: bool,
+    pub vectorization_threshold: usize,
+    pub max_vector_width: usize,
+}
+
+impl VectorizationSettings {
+    pub fn disabled() -> Self {
+        Self {
+            enable_loop_vectorization: false,
+            enable_slp_vectorization: false,
+            vectorization_threshold: 0,
+            max_vector_width: 1,
+        }
+    }
+    
+    pub fn standard() -> Self {
+        Self {
+            enable_loop_vectorization: true,
+            enable_slp_vectorization: true,
+            vectorization_threshold: 4,
+            max_vector_width: 16,
+        }
+    }
+    
+    pub fn aggressive() -> Self {
+        Self {
+            enable_loop_vectorization: true,
+            enable_slp_vectorization: true,
+            vectorization_threshold: 2,
+            max_vector_width: 32,
+        }
+    }
+    
+    pub fn size_optimized() -> Self {
+        Self {
+            enable_loop_vectorization: false,
+            enable_slp_vectorization: false,
+            vectorization_threshold: 8,
+            max_vector_width: 8,
+        }
+    }
+}
+
+/// Inlining settings
+#[derive(Debug, Clone)]
+pub struct InliningSettings {
+    pub enable_always_inline: bool,
+    pub inline_threshold: usize,
+    pub max_inline_depth: usize,
+    pub size_threshold: usize,
+}
+
+impl InliningSettings {
+    pub fn minimal() -> Self {
+        Self {
+            enable_always_inline: false,
+            inline_threshold: 50,
+            max_inline_depth: 2,
+            size_threshold: 100,
+        }
+    }
+    
+    pub fn conservative() -> Self {
+        Self {
+            enable_always_inline: true,
+            inline_threshold: 100,
+            max_inline_depth: 3,
+            size_threshold: 200,
+        }
+    }
+    
+    pub fn standard() -> Self {
+        Self {
+            enable_always_inline: true,
+            inline_threshold: 225,
+            max_inline_depth: 4,
+            size_threshold: 500,
+        }
+    }
+    
+    pub fn aggressive() -> Self {
+        Self {
+            enable_always_inline: true,
+            inline_threshold: 500,
+            max_inline_depth: 8,
+            size_threshold: 1000,
+        }
+    }
+    
+    pub fn size_optimized() -> Self {
+        Self {
+            enable_always_inline: true,
+            inline_threshold: 25,
+            max_inline_depth: 2,
+            size_threshold: 50,
+        }
+    }
+    
+    pub fn size_aggressive() -> Self {
+        Self {
+            enable_always_inline: false,
+            inline_threshold: 10,
+            max_inline_depth: 1,
+            size_threshold: 25,
+        }
+    }
+}
+
+/// Loop optimization settings
+#[derive(Debug, Clone)]
+pub struct LoopOptimizationSettings {
+    pub enable_loop_unrolling: bool,
+    pub unroll_threshold: usize,
+    pub enable_loop_interchange: bool,
+    pub enable_loop_rotation: bool,
+}
+
+impl LoopOptimizationSettings {
+    pub fn disabled() -> Self {
+        Self {
+            enable_loop_unrolling: false,
+            unroll_threshold: 0,
+            enable_loop_interchange: false,
+            enable_loop_rotation: false,
+        }
+    }
+    
+    pub fn basic() -> Self {
+        Self {
+            enable_loop_unrolling: false,
+            unroll_threshold: 0,
+            enable_loop_interchange: false,
+            enable_loop_rotation: true,
+        }
+    }
+    
+    pub fn standard() -> Self {
+        Self {
+            enable_loop_unrolling: true,
+            unroll_threshold: 150,
+            enable_loop_interchange: true,
+            enable_loop_rotation: true,
+        }
+    }
+    
+    pub fn aggressive() -> Self {
+        Self {
+            enable_loop_unrolling: true,
+            unroll_threshold: 300,
+            enable_loop_interchange: true,
+            enable_loop_rotation: true,
+        }
+    }
+    
+    pub fn size_optimized() -> Self {
+        Self {
+            enable_loop_unrolling: false,
+            unroll_threshold: 0,
+            enable_loop_interchange: false,
+            enable_loop_rotation: false,
+        }
+    }
+}
+
+/// Target-specific optimization settings
+#[derive(Debug, Clone)]
+pub struct TargetSpecificSettings {
+    pub enable_cpu_specific: bool,
+    pub enable_feature_detection: bool,
+    pub target_cpu: Option<String>,
+    pub target_features: Vec<String>,
+}
+
+impl TargetSpecificSettings {
+    pub fn generic() -> Self {
+        Self {
+            enable_cpu_specific: false,
+            enable_feature_detection: false,
+            target_cpu: None,
+            target_features: Vec::new(),
+        }
+    }
+    
+    pub fn optimized() -> Self {
+        Self {
+            enable_cpu_specific: true,
+            enable_feature_detection: true,
+            target_cpu: Some("native".to_string()),
+            target_features: vec!["sse4.2".to_string()],
+        }
+    }
+    
+    pub fn aggressive() -> Self {
+        Self {
+            enable_cpu_specific: true,
+            enable_feature_detection: true,
+            target_cpu: Some("native".to_string()),
+            target_features: vec!["sse4.2".to_string(), "avx".to_string(), "avx2".to_string()],
+        }
+    }
+    
+    pub fn size_optimized() -> Self {
+        Self {
+            enable_cpu_specific: false,
+            enable_feature_detection: false,
+            target_cpu: Some("generic".to_string()),
+            target_features: Vec::new(),
+        }
+    }
+    
+    pub fn size_aggressive() -> Self {
+        Self {
+            enable_cpu_specific: false,
+            enable_feature_detection: false,
+            target_cpu: Some("generic".to_string()),
+            target_features: Vec::new(),
+        }
+    }
+}
+
+/// Pass pipeline configuration
+#[derive(Debug, Clone)]
+pub struct PassPipeline {
+    pub function_passes: Vec<String>,
+    pub module_passes: Vec<String>,
+    pub optimization_level: OptimizationLevel,
+    pub custom_passes: Vec<String>,
+}
+
+impl PassPipeline {
+    /// Get total number of passes
+    pub fn total_passes(&self) -> usize {
+        self.function_passes.len() + self.module_passes.len() + self.custom_passes.len()
+    }
+    
+    /// Get pass names as string
+    pub fn get_pass_names(&self) -> String {
+        let mut passes = Vec::new();
+        passes.extend(self.function_passes.iter().cloned());
+        passes.extend(self.module_passes.iter().cloned());
+        passes.extend(self.custom_passes.iter().cloned());
+        passes.join(",")
+    }
+}
+
+/// Optimization level comparison
+#[derive(Debug, Clone)]
+pub struct LevelComparison {
+    pub level1: OptimizationLevel,
+    pub level2: OptimizationLevel,
+    pub compilation_time_ratio: f64,
+    pub performance_ratio: f64,
+    pub code_size_difference: i8,
+}
+
+impl LevelComparison {
+    /// Get human-readable comparison
+    pub fn get_summary(&self) -> String {
+        format!(
+            "{:?} vs {:?}: {:.1}x compilation time, {:.1}x performance, {} code size",
+            self.level1,
+            self.level2,
+            self.compilation_time_ratio,
+            self.performance_ratio,
+            match self.code_size_difference {
+                x if x > 0 => format!("+{} size priority", x),
+                x if x < 0 => format!("{} size priority", x),
+                _ => "same size priority".to_string(),
+            }
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
-
+    
     #[test]
-    fn test_optimization_level_parsing() {
-        assert_eq!(OptimizationLevel::from_str("0").unwrap(), OptimizationLevel::None);
-        assert_eq!(OptimizationLevel::from_str("O1").unwrap(), OptimizationLevel::Basic);
-        assert_eq!(OptimizationLevel::from_str("o2").unwrap(), OptimizationLevel::Standard);
-        assert_eq!(OptimizationLevel::from_str("3").unwrap(), OptimizationLevel::Aggressive);
+    fn test_level_config_creation() {
+        let config = LevelConfig::for_level(OptimizationLevel::Default);
+        assert_eq!(config.level, OptimizationLevel::Default);
+        assert!(config.enables_optimization("vectorization"));
+    }
+    
+    #[test]
+    fn test_optimization_settings() {
+        let settings = OptimizationSettings::new();
+        let config = settings.get_config(OptimizationLevel::Aggressive).unwrap();
+        assert_eq!(config.level, OptimizationLevel::Aggressive);
+        assert_eq!(config.compilation_speed, CompilationSpeed::Slow);
+        assert_eq!(config.runtime_performance, RuntimePerformance::Maximum);
+    }
+    
+    #[test]
+    fn test_level_comparison() {
+        let settings = OptimizationSettings::new();
+        let comparison = settings.compare_levels(
+            OptimizationLevel::None,
+            OptimizationLevel::Aggressive
+        ).unwrap();
         
-        assert!(OptimizationLevel::from_str("invalid").is_err());
+        assert!(comparison.compilation_time_ratio > 1.0);
+        assert!(comparison.performance_ratio > 1.0);
     }
-
+    
     #[test]
-    fn test_level_configs() {
+    fn test_vectorization_settings() {
+        let aggressive = VectorizationSettings::aggressive();
+        let disabled = VectorizationSettings::disabled();
+        
+        assert!(aggressive.enable_loop_vectorization);
+        assert!(!disabled.enable_loop_vectorization);
+        assert!(aggressive.max_vector_width > disabled.max_vector_width);
+    }
+    
+    #[test]
+    fn test_inlining_settings() {
+        let aggressive = InliningSettings::aggressive();
+        let minimal = InliningSettings::minimal();
+        
+        assert!(aggressive.inline_threshold > minimal.inline_threshold);
+        assert!(aggressive.max_inline_depth > minimal.max_inline_depth);
+    }
+    
+    #[test]
+    fn test_pass_pipeline() {
+        let config = LevelConfig::for_level(OptimizationLevel::Default);
+        let pipeline = config.get_pass_pipeline();
+        
+        assert!(!pipeline.function_passes.is_empty());
+        assert!(!pipeline.module_passes.is_empty());
+        assert!(pipeline.total_passes() > 0);
+    }
+    
+    #[test]
+    fn test_o0_vs_o3_settings() {
         let o0 = LevelConfig::for_level(OptimizationLevel::None);
-        assert!(!o0.enable_inlining);
-        assert!(!o0.enable_loop_optimization);
-        assert_eq!(o0.max_inline_size, 0);
-
         let o3 = LevelConfig::for_level(OptimizationLevel::Aggressive);
-        assert!(o3.enable_inlining);
-        assert!(o3.enable_loop_optimization);
-        assert!(o3.enable_lto);
-        assert!(o3.enable_fast_math);
-        assert!(o3.max_inline_size > 0);
+        
+        // O0 should be faster to compile but slower runtime
+        assert!(o0.get_compilation_time_factor() < o3.get_compilation_time_factor());
+        assert!(o0.get_performance_factor() < o3.get_performance_factor());
+        
+        // O3 should enable more optimizations
+        assert!(!o0.enables_optimization("vectorization"));
+        assert!(o3.enables_optimization("vectorization"));
+        assert!(!o0.enables_optimization("lto"));
+        assert!(o3.enables_optimization("lto"));
     }
-
+    
     #[test]
-    fn test_custom_builder() {
-        let config = LevelConfig::custom(OptimizationLevel::Basic)
-            .enable_lto(true)
-            .max_inline_size(500)
-            .enable_fast_math(true)
-            .build();
-
-        assert_eq!(config.level, OptimizationLevel::Basic);
-        assert!(config.enable_lto);
-        assert_eq!(config.max_inline_size, 500);
-        assert!(config.enable_fast_math);
-    }
-
-    #[test]
-    fn test_optimization_manager() {
-        let mut manager = OptimizationLevelManager::new(OptimizationLevel::Standard);
-        assert_eq!(manager.current_level(), OptimizationLevel::Standard);
-        assert!(!manager.is_custom());
-
-        let custom_config = LevelConfig::custom(OptimizationLevel::Aggressive)
-            .enable_lto(false)
-            .build();
-
-        manager.set_custom_config(custom_config);
-        assert_eq!(manager.current_level(), OptimizationLevel::Aggressive);
-        assert!(manager.is_custom());
+    fn test_size_optimization_settings() {
+        let os = LevelConfig::for_level(OptimizationLevel::Size);
+        let oz = LevelConfig::for_level(OptimizationLevel::SizeAggressive);
+        
+        assert_eq!(os.code_size_priority, CodeSizePriority::High);
+        assert_eq!(oz.code_size_priority, CodeSizePriority::Maximum);
+        
+        // Size optimizations should disable vectorization
+        assert!(!os.vectorization_settings.enable_loop_vectorization);
+        assert!(!oz.vectorization_settings.enable_loop_vectorization);
+        
+        // But should still enable inlining for size reduction
+        assert!(os.enables_optimization("inlining"));
+        assert!(oz.enables_optimization("inlining"));
     }
 }

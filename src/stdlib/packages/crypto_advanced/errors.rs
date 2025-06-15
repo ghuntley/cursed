@@ -52,3 +52,36 @@ impl fmt::Display for CipherError {
 }
 
 impl std::error::Error for CipherError {}
+
+/// Security Analysis specific errors
+#[derive(Debug, Clone)]
+pub enum SecurityAnalysisError {
+    TimingVulnerability(String),
+    SideChannelLeak(String),
+    EntropyFailure(String),
+    ParameterError(String),
+    VulnerabilityDetected(String),
+    AnalysisTimeout(String),
+    InsufficientData(String),
+    Internal(String),
+}
+
+impl std::fmt::Display for SecurityAnalysisError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SecurityAnalysisError::TimingVulnerability(msg) => write!(f, "Timing vulnerability: {}", msg),
+            SecurityAnalysisError::SideChannelLeak(msg) => write!(f, "Side-channel leak: {}", msg),
+            SecurityAnalysisError::EntropyFailure(msg) => write!(f, "Entropy failure: {}", msg),
+            SecurityAnalysisError::ParameterError(msg) => write!(f, "Parameter error: {}", msg),
+            SecurityAnalysisError::VulnerabilityDetected(msg) => write!(f, "Vulnerability detected: {}", msg),
+            SecurityAnalysisError::AnalysisTimeout(msg) => write!(f, "Analysis timeout: {}", msg),
+            SecurityAnalysisError::InsufficientData(msg) => write!(f, "Insufficient data: {}", msg),
+            SecurityAnalysisError::Internal(msg) => write!(f, "Internal error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for SecurityAnalysisError {}
+
+/// Result type for security analysis operations
+pub type SecurityAnalysisResult<T> = Result<T, SecurityAnalysisError>;

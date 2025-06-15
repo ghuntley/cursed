@@ -27,6 +27,7 @@ pub mod orm;
 // Database-specific drivers
 pub mod sqlite;
 pub mod postgres;
+pub mod mysql;
 
 // Re-export main types for easy access
 pub use core::{
@@ -63,6 +64,13 @@ pub use postgres::{
     PostgresDriver, PostgresConfig, PostgresConnectionString, PostgresError, 
     PostgresPool, PostgresPoolConfig, SslMode, init_postgres, new_postgres_driver,
     parse_connection_string
+};
+
+// Re-export MySQL driver
+pub use mysql::{
+    MySqlDriver, MySqlConfig, MySqlConnection, MySqlStatement, MySqlTransaction,
+    MySqlError, MySqlResult, MySqlPool, MySqlPoolConfig, init_mysql, 
+    new_mysql_driver, new_mysql_driver_with_config, create_mysql_driver, parse_mysql_dsn
 };
 
 /// fr fr Database isolation levels for transaction control

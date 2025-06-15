@@ -15,6 +15,8 @@ pub mod debug_runtime;
 pub mod error_propagation;
 pub mod error_context;
 pub mod jit_runtime;
+pub mod process;
+pub mod r#async;
 
 pub use goroutine::{
     GoroutineScheduler, Goroutine, GoroutineState, GoroutineStack,
@@ -90,6 +92,32 @@ pub use jit_runtime::{
     OptimizationOpportunity, OptimizationReason,
     cursed_jit_runtime_init, cursed_jit_execute_function, cursed_jit_runtime_cleanup
 };
+pub use process::{
+    ProcessRuntime, ProcessInfo, ProcessStatus, IpcChannel, IpcChannelType, IpcConfig,
+    SharedMemorySegment, SignalHandler,
+    initialize_process_runtime, get_process_runtime, shutdown_process_runtime,
+    cursed_process_spawn, cursed_process_kill, cursed_process_terminate, cursed_process_pause,
+    cursed_process_resume, cursed_process_wait, cursed_process_get_status, cursed_process_get_info,
+    cursed_pipe_create, cursed_named_pipe_create, cursed_message_queue_create,
+    cursed_shared_memory_create, cursed_socket_create, cursed_semaphore_create,
+    cursed_ipc_send, cursed_ipc_receive,
+    cursed_shm_create, cursed_shm_open, cursed_shm_map, cursed_shm_unmap,
+    cursed_shm_read, cursed_shm_write, cursed_shm_sync, cursed_shm_lock, cursed_shm_unlock,
+    cursed_signal_send, cursed_signal_register, cursed_signal_unregister,
+    cursed_signal_block, cursed_signal_unblock, cursed_signal_wait
+};
+pub use r#async::{
+    Future, FutureState, FutureResult, FutureError, BoxFuture, LocalFuture,
+    Promise, PromiseResolver, PromiseRejecter, PromiseState,
+    AsyncExecutor, ExecutorConfig, ExecutorStatistics, TaskQueue,
+    AsyncRuntime, AsyncRuntimeConfig, RuntimeStatistics, RuntimeCoordinator,
+    Task, TaskId, TaskState, TaskHandle, TaskContext, TaskWaker,
+    AsyncScheduler, Timer, Delay, Timeout, Interval, TimerWheel, TimerHandle,
+    initialize_async_runtime, get_async_runtime, shutdown_async_runtime,
+    spawn, block_on, yield_now, delay, timeout,
+    cursed_spawn_async_task, cursed_await_future, cursed_future_is_ready,
+    cursed_future_get_result, cursed_create_delay, cursed_create_timeout
+};
 
 /// Main runtime system that aggregates all runtime components
 pub struct Runtime {
@@ -98,6 +126,8 @@ pub struct Runtime {
     pub error_runtime: Option<std::sync::Arc<ErrorRuntime>>,
     pub stack_trace_manager: Option<StackTraceManager>,
     pub debug_manager: Option<DebugManager>,
+    pub process_runtime: Option<std::sync::Arc<ProcessRuntime>>,
+    pub async_runtime: Option<std::sync::Arc<AsyncRuntime>>,
 }
 
 impl Runtime {
@@ -109,6 +139,8 @@ impl Runtime {
             error_runtime: None,
             stack_trace_manager: None,
             debug_manager: None,
+            process_runtime: None,
+            async_runtime: None,
         }
     }
     
@@ -124,6 +156,18 @@ impl Runtime {
         initialize_error_runtime();
         if let Some(runtime) = get_error_runtime() {
             self.error_runtime = Some(runtime.clone());
+        }
+        
+        // Initialize process runtime
+        initialize_process_runtime();
+        if let Some(runtime) = get_process_runtime() {
+            self.process_runtime = Some(runtime.clone());
+        }
+        
+        // Initialize async runtime
+        initialize_async_runtime()?;
+        if let Some(runtime) = get_async_runtime() {
+            self.async_runtime = Some(runtime.clone());
         }
         
         // Initialize other components as needed

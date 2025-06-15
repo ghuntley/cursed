@@ -1,0 +1,332 @@
+#!/usr/bin/make -f
+# CURSED Performance Optimization Makefile
+# 
+# Provides convenient targets for using the performance optimization system
+# with different profiles and configurations.
+
+# Default configuration
+CURSED_BIN ?= target/release/cursed
+PERFORMANCE_DEMO ?= target/release/examples/performance_optimization_cli_demo
+SOURCE_DIR ?= examples
+OUTPUT_DIR ?= target/performance
+PARALLEL_JOBS ?= auto
+OPTIMIZATION_LEVEL ?= O2
+ENABLE_PERFORMANCE ?= true
+
+# Performance optimization profiles
+PROFILE_DEV = development
+PROFILE_RELEASE = release
+PROFILE_DEBUG = debug
+PROFILE_SIZE = size
+PROFILE_PERFORMANCE = performance
+
+# Build configuration
+BUILD_FLAGS = --release
+DEBUG_FLAGS = --debug
+VERBOSE_FLAGS = --verbose
+
+# Color codes for output
+GREEN = \033[0;32m
+YELLOW = \033[1;33m
+RED = \033[0;31m
+BLUE = \033[0;34m
+NC = \033[0m # No Color
+
+.PHONY: help perf-help perf-build perf-test perf-benchmark
+.PHONY: perf-clean perf-setup perf-dev perf-release
+.PHONY: perf-analyze perf-optimize perf-demo perf-report
+
+# Default target
+help: perf-help
+
+# Performance optimization help
+perf-help:
+	@echo "$(BLUE)CURSED Performance Optimization System$(NC)"
+	@echo "======================================"
+	@echo ""
+	@echo "$(GREEN)Quick Start:$(NC)"
+	@echo "  make perf-setup    Setup performance optimization environment"
+	@echo "  make perf-dev      Build with development optimization profile"
+	@echo "  make perf-release  Build with release optimization profile"
+	@echo "  make perf-test     Run performance tests and benchmarks"
+	@echo ""
+	@echo "$(GREEN)Build Targets:$(NC)"
+	@echo "  perf-build         Build with custom performance configuration"
+	@echo "  perf-dev           Development build (fast compilation)"
+	@echo "  perf-release       Release build (maximum performance)"
+	@echo "  perf-debug         Debug build (no optimization, full debugging)"
+	@echo "  perf-size          Size-optimized build (minimal binary size)"
+	@echo "  perf-performance   Performance build (maximum runtime speed)"
+	@echo ""
+	@echo "$(GREEN)Analysis Targets:$(NC)"
+	@echo "  perf-analyze       Analyze project characteristics"
+	@echo "  perf-optimize      Run optimization analysis with recommendations"
+	@echo "  perf-benchmark     Run comprehensive performance benchmarks"
+	@echo "  perf-report        Generate detailed performance report"
+	@echo ""
+	@echo "$(GREEN)Utility Targets:$(NC)"
+	@echo "  perf-demo          Run interactive performance optimization demo"
+	@echo "  perf-clean         Clean performance artifacts and cache"
+	@echo "  perf-setup         Setup development environment"
+	@echo ""
+	@echo "$(GREEN)Configuration Variables:$(NC)"
+	@echo "  SOURCE_DIR=<dir>          Source directory (default: examples)"
+	@echo "  OUTPUT_DIR=<dir>          Output directory (default: target/performance)"
+	@echo "  PARALLEL_JOBS=<n>         Parallel jobs (default: auto)"
+	@echo "  OPTIMIZATION_LEVEL=<O>    Optimization level (O0, O1, O2, O3, Os, Oz)"
+	@echo "  ENABLE_PERFORMANCE=<bool> Enable performance integration (default: true)"
+	@echo ""
+	@echo "$(GREEN)Examples:$(NC)"
+	@echo "  make perf-release SOURCE_DIR=src OUTPUT_DIR=dist"
+	@echo "  make perf-benchmark PARALLEL_JOBS=8"
+	@echo "  make perf-optimize OPTIMIZATION_LEVEL=O3"
+
+# Setup performance optimization environment
+perf-setup:
+	@echo "$(BLUE)Setting up CURSED Performance Optimization Environment$(NC)"
+	@mkdir -p $(OUTPUT_DIR)
+	@mkdir -p $(OUTPUT_DIR)/reports
+	@mkdir -p $(OUTPUT_DIR)/profiles
+	@mkdir -p $(OUTPUT_DIR)/cache
+	@echo "$(GREEN)✅ Environment setup complete$(NC)"
+	@echo "  📁 Output directory: $(OUTPUT_DIR)"
+	@echo "  📊 Reports directory: $(OUTPUT_DIR)/reports"
+	@echo "  📈 Profiles directory: $(OUTPUT_DIR)/profiles"
+	@echo "  💾 Cache directory: $(OUTPUT_DIR)/cache"
+
+# Build the performance demo tool
+$(PERFORMANCE_DEMO): examples/performance_optimization_cli_demo.rs
+	@echo "$(BLUE)Building performance optimization demo tool$(NC)"
+	cargo build --release --example performance_optimization_cli_demo
+
+# Development build profile (fast compilation)
+perf-dev: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Building with Development Profile$(NC)"
+	@echo "  🎯 Profile: Development (fast compilation)"
+	@echo "  ⚡ Optimization: Minimal for speed"
+	@echo "  🔀 Parallel: Enabled"
+	@echo "  💾 Incremental: Enabled"
+	$(PERFORMANCE_DEMO) build $(SOURCE_DIR)/*.csd \
+		--output $(OUTPUT_DIR)/dev \
+		--debug \
+		--adaptive \
+		--verbose \
+		$(if $(filter false,$(ENABLE_PERFORMANCE)),--no-performance,)
+	@echo "$(GREEN)✅ Development build complete$(NC)"
+
+# Release build profile (balanced performance)
+perf-release: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Building with Release Profile$(NC)"
+	@echo "  🎯 Profile: Release (balanced optimization)"
+	@echo "  ⚡ Optimization: Aggressive"
+	@echo "  🔀 Parallel: Enabled"
+	@echo "  📊 PGO: Enabled"
+	$(PERFORMANCE_DEMO) build $(SOURCE_DIR)/*.csd \
+		--output $(OUTPUT_DIR)/release \
+		--release \
+		--adaptive \
+		--verbose \
+		$(if $(filter false,$(ENABLE_PERFORMANCE)),--no-performance,)
+	@echo "$(GREEN)✅ Release build complete$(NC)"
+
+# Debug build profile (no optimization)
+perf-debug: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Building with Debug Profile$(NC)"
+	@echo "  🎯 Profile: Debug (no optimization)"
+	@echo "  ⚡ Optimization: None"
+	@echo "  🔍 Debug info: Full"
+	@echo "  📊 Analysis: Enabled"
+	$(PERFORMANCE_DEMO) build $(SOURCE_DIR)/*.csd \
+		--output $(OUTPUT_DIR)/debug \
+		--debug \
+		--verbose \
+		$(if $(filter false,$(ENABLE_PERFORMANCE)),--no-performance,)
+	@echo "$(GREEN)✅ Debug build complete$(NC)"
+
+# Size-optimized build profile
+perf-size: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Building with Size Profile$(NC)"
+	@echo "  🎯 Profile: Size (minimal binary size)"
+	@echo "  📦 Optimization: Size-focused"
+	@echo "  🗜️  Link-time optimization: Enabled"
+	$(PERFORMANCE_DEMO) build $(SOURCE_DIR)/*.csd \
+		--output $(OUTPUT_DIR)/size \
+		--release \
+		--profile size \
+		--verbose \
+		$(if $(filter false,$(ENABLE_PERFORMANCE)),--no-performance,)
+	@echo "$(GREEN)✅ Size-optimized build complete$(NC)"
+
+# Performance build profile (maximum runtime speed)
+perf-performance: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Building with Performance Profile$(NC)"
+	@echo "  🎯 Profile: Performance (maximum runtime speed)"
+	@echo "  🚀 Optimization: Maximum"
+	@echo "  📊 PGO: Enabled"
+	@echo "  🎛️  Target-specific: Enabled"
+	$(PERFORMANCE_DEMO) build $(SOURCE_DIR)/*.csd \
+		--output $(OUTPUT_DIR)/performance \
+		--release \
+		--profile performance \
+		--adaptive \
+		--verbose \
+		$(if $(filter false,$(ENABLE_PERFORMANCE)),--no-performance,)
+	@echo "$(GREEN)✅ Performance build complete$(NC)"
+
+# Custom build with specific configuration
+perf-build: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Building with Custom Configuration$(NC)"
+	@echo "  📁 Source: $(SOURCE_DIR)"
+	@echo "  📂 Output: $(OUTPUT_DIR)"
+	@echo "  🔧 Optimization: $(OPTIMIZATION_LEVEL)"
+	@echo "  👥 Parallel jobs: $(PARALLEL_JOBS)"
+	$(PERFORMANCE_DEMO) build $(SOURCE_DIR)/*.csd \
+		--output $(OUTPUT_DIR)/custom \
+		$(if $(filter O0,$(OPTIMIZATION_LEVEL)),--debug,--release) \
+		$(if $(filter auto,$(PARALLEL_JOBS)),,--parallel $(PARALLEL_JOBS)) \
+		--adaptive \
+		--verbose \
+		$(if $(filter false,$(ENABLE_PERFORMANCE)),--no-performance,)
+	@echo "$(GREEN)✅ Custom build complete$(NC)"
+
+# Run comprehensive performance benchmarks
+perf-benchmark: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Running Performance Benchmarks$(NC)"
+	@echo "  📊 Running quick benchmark..."
+	$(PERFORMANCE_DEMO) benchmark quick $(SOURCE_DIR)/*.csd --iterations 5
+	@echo ""
+	@echo "  📊 Running thorough benchmark..."
+	$(PERFORMANCE_DEMO) benchmark thorough $(SOURCE_DIR)/*.csd --iterations 10
+	@echo "$(GREEN)✅ Benchmarks complete$(NC)"
+
+# Analyze project characteristics
+perf-analyze: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Analyzing Project Characteristics$(NC)"
+	$(PERFORMANCE_DEMO) analyze $(SOURCE_DIR) --format table
+	@echo ""
+	@echo "$(BLUE)Generating JSON analysis...$(NC)"
+	$(PERFORMANCE_DEMO) analyze $(SOURCE_DIR) --format json > $(OUTPUT_DIR)/analysis.json
+	@echo "$(GREEN)✅ Analysis complete - JSON saved to $(OUTPUT_DIR)/analysis.json$(NC)"
+
+# Run optimization analysis with recommendations
+perf-optimize: perf-setup $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Running Optimization Analysis$(NC)"
+	@echo "  🎯 Target improvement: 25%"
+	$(PERFORMANCE_DEMO) optimize $(SOURCE_DIR)/*.csd \
+		--target 25 \
+		--report $(OUTPUT_DIR)/optimization_report.json
+	@echo "$(GREEN)✅ Optimization analysis complete$(NC)"
+	@echo "  📄 Report saved to: $(OUTPUT_DIR)/optimization_report.json"
+
+# Generate comprehensive performance report
+perf-report: perf-setup perf-analyze perf-optimize perf-benchmark
+	@echo "$(BLUE)Generating Comprehensive Performance Report$(NC)"
+	@echo "$(YELLOW)Report Contents:$(NC)"
+	@echo "  📊 Project analysis: $(OUTPUT_DIR)/analysis.json"
+	@echo "  🔍 Optimization recommendations: $(OUTPUT_DIR)/optimization_report.json"
+	@echo "  📈 Benchmark results: Check console output above"
+	@echo ""
+	@echo "$(GREEN)✅ Performance report generation complete$(NC)"
+	@echo "$(BLUE)📁 All reports available in: $(OUTPUT_DIR)/$(NC)"
+
+# Run interactive performance optimization demo
+perf-demo: $(PERFORMANCE_DEMO)
+	@echo "$(BLUE)Running Interactive Performance Optimization Demo$(NC)"
+	@echo "$(YELLOW)Available commands:$(NC)"
+	@echo "  • build - Build with performance optimization"
+	@echo "  • benchmark - Run performance benchmarks"
+	@echo "  • optimize - Analyze and optimize performance"
+	@echo "  • analyze - Analyze project characteristics"
+	@echo ""
+	@echo "$(GREEN)Use --help with any command for detailed options$(NC)"
+	$(PERFORMANCE_DEMO) --help
+
+# Test performance optimization system
+perf-test: perf-setup
+	@echo "$(BLUE)Testing Performance Optimization System$(NC)"
+	@echo "  🧪 Running unit tests..."
+	cargo test --release performance_optimization_integration_test
+	@echo ""
+	@echo "  🧪 Running integration tests..."
+	cargo test --release --test performance_optimization_integration_test
+	@echo "$(GREEN)✅ Performance tests complete$(NC)"
+
+# Clean performance artifacts and cache
+perf-clean:
+	@echo "$(BLUE)Cleaning Performance Optimization Artifacts$(NC)"
+	@rm -rf $(OUTPUT_DIR)
+	@rm -rf .cursed_cache
+	@rm -rf .cursed_profiles
+	@rm -rf .cursed_reports
+	@cargo clean
+	@echo "$(GREEN)✅ Performance cleanup complete$(NC)"
+
+# Build all optimization profiles for comparison
+perf-all-profiles: perf-dev perf-release perf-debug perf-size perf-performance
+	@echo "$(BLUE)Building All Optimization Profiles$(NC)"
+	@echo "$(GREEN)✅ All profiles built successfully$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Build Results Summary:$(NC)"
+	@echo "  📁 Development build: $(OUTPUT_DIR)/dev"
+	@echo "  📁 Release build: $(OUTPUT_DIR)/release"
+	@echo "  📁 Debug build: $(OUTPUT_DIR)/debug"
+	@echo "  📁 Size build: $(OUTPUT_DIR)/size"
+	@echo "  📁 Performance build: $(OUTPUT_DIR)/performance"
+	@echo ""
+	@echo "$(BLUE)Compare builds with:$(NC)"
+	@echo "  du -sh $(OUTPUT_DIR)/*"
+	@echo "  ls -la $(OUTPUT_DIR)/*"
+
+# Quick performance validation
+perf-quick: perf-setup perf-dev perf-benchmark
+	@echo "$(GREEN)✅ Quick performance validation complete$(NC)"
+
+# Full performance suite
+perf-full: perf-setup perf-all-profiles perf-benchmark perf-analyze perf-optimize perf-report
+	@echo "$(GREEN)🎉 Full performance optimization suite complete!$(NC)"
+	@echo ""
+	@echo "$(BLUE)Summary:$(NC)"
+	@echo "  ✅ All optimization profiles built"
+	@echo "  ✅ Performance benchmarks completed"
+	@echo "  ✅ Project analysis performed"
+	@echo "  ✅ Optimization recommendations generated"
+	@echo "  ✅ Comprehensive report created"
+	@echo ""
+	@echo "$(YELLOW)Next Steps:$(NC)"
+	@echo "  • Review reports in $(OUTPUT_DIR)/"
+	@echo "  • Apply optimization recommendations"
+	@echo "  • Integrate into CI/CD pipeline"
+
+# CI/CD integration target
+perf-ci: perf-setup perf-release perf-test
+	@echo "$(BLUE)Performance Optimization CI/CD Integration$(NC)"
+	@echo "$(GREEN)✅ CI/CD performance validation complete$(NC)"
+	@if [ -f $(OUTPUT_DIR)/optimization_report.json ]; then \
+		echo "$(BLUE)📊 Performance metrics available for CI analysis$(NC)"; \
+	fi
+
+# Development workflow target
+perf-dev-workflow: perf-setup perf-dev perf-analyze
+	@echo "$(GREEN)✅ Development workflow performance setup complete$(NC)"
+	@echo "$(BLUE)💡 Use 'make perf-quick' for rapid development cycles$(NC)"
+
+# Show performance optimization status
+perf-status:
+	@echo "$(BLUE)CURSED Performance Optimization Status$(NC)"
+	@echo "======================================="
+	@echo ""
+	@echo "$(GREEN)Configuration:$(NC)"
+	@echo "  📁 Source directory: $(SOURCE_DIR)"
+	@echo "  📂 Output directory: $(OUTPUT_DIR)"
+	@echo "  👥 Parallel jobs: $(PARALLEL_JOBS)"
+	@echo "  🔧 Optimization level: $(OPTIMIZATION_LEVEL)"
+	@echo "  ⚡ Performance integration: $(ENABLE_PERFORMANCE)"
+	@echo ""
+	@echo "$(GREEN)Available builds:$(NC)"
+	@ls -la $(OUTPUT_DIR)/ 2>/dev/null || echo "  No builds found - run 'make perf-setup' first"
+	@echo ""
+	@echo "$(GREEN)Cache status:$(NC)"
+	@du -sh .cursed_cache 2>/dev/null || echo "  No cache found"
+	@echo ""
+	@echo "$(GREEN)Reports:$(NC)"
+	@ls -la $(OUTPUT_DIR)/reports/ 2>/dev/null || echo "  No reports found"

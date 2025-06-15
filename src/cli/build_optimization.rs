@@ -21,6 +21,11 @@ use crate::build_system::{
     AdvancedCache, AdvancedCacheConfig, DistributedCompilationSystem, DistributedCompilationConfig,
     MemoryOptimizer, MemoryOptimizerConfig, MemoryStrategy, CompilationUnit, BuildConfig
 };
+use crate::optimization::{
+    PerformanceOptimizationSystem, PerformanceConfig, OptimizationConfig, OptimizationLevel,
+    performance_system::{BenchmarkConfig, BenchmarkType, BenchmarkTestData, ComplexityLevel},
+    enhanced_build_profiler::{EnhancedBuildProfiler, ProfilerConfig, ReportFormat},
+};
 
 /// Enhanced build optimization CLI commands
 #[derive(Parser, Debug)]
@@ -65,6 +70,12 @@ pub enum BuildOptimizationCommand {
     
     /// Build with all optimizations enabled
     OptimizedBuild(OptimizedBuildArgs),
+    
+    /// Advanced performance profiling and analysis
+    Profile(ProfileArgs),
+    
+    /// Run comprehensive performance benchmarks
+    Benchmark(BenchmarkArgs),
 }
 
 /// Dependency analysis arguments
@@ -364,6 +375,176 @@ pub struct OptimizedBuildArgs {
     /// Number of parallel jobs
     #[arg(short, long)]
     pub jobs: Option<usize>,
+}
+
+/// Performance profiling arguments
+#[derive(Args, Debug)]
+pub struct ProfileArgs {
+    #[command(subcommand)]
+    pub action: ProfileAction,
+}
+
+/// Performance profiling subcommands
+#[derive(Subcommand, Debug)]
+pub enum ProfileAction {
+    /// Start profiling session
+    Start {
+        /// Session name
+        session_name: String,
+        
+        /// Enable real-time monitoring
+        #[arg(long)]
+        realtime: bool,
+        
+        /// Monitoring interval in milliseconds
+        #[arg(long, default_value = "100")]
+        interval: u64,
+        
+        /// Enable memory profiling
+        #[arg(long)]
+        memory: bool,
+        
+        /// Enable CPU profiling
+        #[arg(long)]
+        cpu: bool,
+        
+        /// Enable I/O profiling
+        #[arg(long)]
+        io: bool,
+    },
+    
+    /// Stop profiling session and generate report
+    Stop {
+        /// Session ID
+        session_id: String,
+        
+        /// Report format (json, html, markdown, csv, interactive)
+        #[arg(long, default_value = "html")]
+        format: String,
+        
+        /// Output file path
+        #[arg(long)]
+        output: Option<PathBuf>,
+    },
+    
+    /// Show active profiling sessions
+    List,
+    
+    /// Generate report from stored profile data
+    Report {
+        /// Session ID
+        session_id: String,
+        
+        /// Report format
+        #[arg(long, default_value = "html")]
+        format: String,
+        
+        /// Output file
+        #[arg(long)]
+        output: Option<PathBuf>,
+    },
+    
+    /// Real-time performance monitoring
+    Monitor {
+        /// Refresh interval in seconds
+        #[arg(long, default_value = "1")]
+        interval: u64,
+    },
+}
+
+/// Benchmark arguments
+#[derive(Args, Debug)]
+pub struct BenchmarkArgs {
+    #[command(subcommand)]
+    pub action: BenchmarkAction,
+}
+
+/// Benchmark subcommands
+#[derive(Subcommand, Debug)]
+pub enum BenchmarkAction {
+    /// Run compilation speed benchmark
+    CompilationSpeed {
+        /// Number of iterations
+        #[arg(long, default_value = "10")]
+        iterations: usize,
+        
+        /// Warmup iterations
+        #[arg(long, default_value = "3")]
+        warmup: usize,
+        
+        /// Test data complexity (simple, medium, complex, very-complex)
+        #[arg(long, default_value = "medium")]
+        complexity: String,
+        
+        /// Number of test units
+        #[arg(long, default_value = "100")]
+        units: usize,
+    },
+    
+    /// Run optimization effectiveness benchmark
+    OptimizationEffectiveness {
+        /// Optimization levels to test
+        #[arg(long)]
+        levels: Vec<String>,
+        
+        /// Number of iterations per level
+        #[arg(long, default_value = "5")]
+        iterations: usize,
+        
+        /// Test data size in MB
+        #[arg(long, default_value = "10")]
+        data_size: f64,
+    },
+    
+    /// Run memory usage benchmark
+    MemoryUsage {
+        /// Memory stress test levels
+        #[arg(long)]
+        stress_levels: Vec<String>,
+        
+        /// Monitor duration in seconds
+        #[arg(long, default_value = "60")]
+        duration: u64,
+    },
+    
+    /// Run cache performance benchmark
+    CachePerformance {
+        /// Cache sizes to test
+        #[arg(long)]
+        cache_sizes: Vec<String>,
+        
+        /// Test scenarios
+        #[arg(long)]
+        scenarios: Vec<String>,
+    },
+    
+    /// Run comprehensive benchmark suite
+    All {
+        /// Quick mode (fewer iterations)
+        #[arg(long)]
+        quick: bool,
+        
+        /// Generate detailed report
+        #[arg(long)]
+        detailed_report: bool,
+        
+        /// Output directory
+        #[arg(long)]
+        output_dir: Option<PathBuf>,
+    },
+    
+    /// Compare benchmark results
+    Compare {
+        /// Baseline benchmark ID
+        baseline: String,
+        
+        /// Comparison benchmark ID
+        comparison: String,
+        
+        /// Report format
+        #[arg(long, default_value = "html")]
+        format: String,
+    },
 }
 
 /// Collect compilation units from a project directory
@@ -1297,6 +1478,8 @@ pub fn run_build_optimization(cli: BuildOptimizationCli) -> Result<()> {
         BuildOptimizationCommand::Memory(args) => run_memory(args, &cli),
         BuildOptimizationCommand::Tune(args) => run_tune(args, &cli),
         BuildOptimizationCommand::OptimizedBuild(args) => run_optimized_build(args, &cli),
+        BuildOptimizationCommand::Profile(args) => run_profile(args, &cli),
+        BuildOptimizationCommand::Benchmark(args) => run_benchmark(args, &cli),
     }
 }
 
@@ -2074,6 +2257,351 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
         println!("\n🎉 Build completed successfully!");
         println!("  Total time: {:?}", total_duration);
         println!("  Files compiled: {}", compiled_files);
+    }
+    
+    Ok(())
+}
+
+/// Run performance profiling
+fn run_profile(args: ProfileArgs, cli: &BuildOptimizationCli) -> Result<()> {
+    let profiler_config = ProfilerConfig {
+        enable_realtime_monitoring: true,
+        enable_memory_profiling: true,
+        enable_cpu_profiling: true,
+        enable_io_profiling: true,
+        ..Default::default()
+    };
+    
+    let profiler = EnhancedBuildProfiler::new(profiler_config)?;
+    
+    match args.action {
+        ProfileAction::Start { session_name, realtime, interval, memory, cpu, io } => {
+            println!("🔍 Starting performance profiling session: {}", session_name);
+            
+            let mut config = ProfilerConfig::default();
+            config.enable_realtime_monitoring = realtime;
+            config.monitoring_interval_ms = interval;
+            config.enable_memory_profiling = memory;
+            config.enable_cpu_profiling = cpu;
+            config.enable_io_profiling = io;
+            
+            let session = profiler.start_build_session(session_name)?;
+            
+            println!("✅ Profiling session started: {}", session.id);
+            println!("   Session ID: {}", session.id);
+            println!("   Real-time monitoring: {}", if realtime { "enabled" } else { "disabled" });
+            println!("   Monitoring interval: {} ms", interval);
+            println!("   Memory profiling: {}", if memory { "enabled" } else { "disabled" });
+            println!("   CPU profiling: {}", if cpu { "enabled" } else { "disabled" });
+            println!("   I/O profiling: {}", if io { "enabled" } else { "disabled" });
+            
+            println!("\n💡 To stop profiling and generate report, run:");
+            println!("   cursed-build profile stop {}", session.id);
+        }
+        
+        ProfileAction::Stop { session_id, format, output } => {
+            println!("🛑 Stopping profiling session: {}", session_id);
+            
+            // For demonstration, create a mock session
+            let session = crate::optimization::enhanced_build_profiler::BuildSession {
+                id: session_id.clone(),
+                name: "mock_session".to_string(),
+                start_time: std::time::Instant::now() - Duration::from_secs(60),
+                status: crate::optimization::enhanced_build_profiler::BuildSessionStatus::Active,
+            };
+            
+            let report = profiler.end_build_session(session)?;
+            
+            // Parse format
+            let report_format = match format.as_str() {
+                "json" => ReportFormat::Json,
+                "html" => ReportFormat::Html,
+                "markdown" => ReportFormat::Markdown,
+                "csv" => ReportFormat::Csv,
+                "interactive" => ReportFormat::Interactive,
+                _ => return Err(CursedError::system_error("Invalid report format")),
+            };
+            
+            // Generate output path if not provided
+            let output_path = output.unwrap_or_else(|| {
+                let extension = match report_format {
+                    ReportFormat::Json => "json",
+                    ReportFormat::Html => "html",
+                    ReportFormat::Markdown => "md",
+                    ReportFormat::Csv => "csv",
+                    ReportFormat::Interactive => "html",
+                };
+                PathBuf::from(format!("profile_report_{}.{}", session_id, extension))
+            });
+            
+            // Export report
+            profiler.export_report(&report, report_format, output_path.clone())?;
+            
+            println!("✅ Profiling session stopped");
+            println!("📊 Performance report generated: {:?}", output_path);
+            println!("   Total duration: {:?}", report.total_duration);
+            println!("   Performance score: {:.1}", report.performance_summary.overall_performance_score);
+            println!("   Peak memory: {:.1} MB", report.performance_summary.peak_memory_mb);
+            println!("   Average CPU: {:.1}%", report.performance_summary.average_cpu_usage_percent);
+            
+            if !report.recommendations.is_empty() {
+                println!("   Optimization recommendations: {}", report.recommendations.len());
+            }
+        }
+        
+        ProfileAction::List => {
+            println!("📋 Active profiling sessions:");
+            println!("(In a real implementation, this would list active sessions)");
+            // In real implementation, would query session manager
+        }
+        
+        ProfileAction::Report { session_id, format, output } => {
+            println!("📊 Generating report for session: {}", session_id);
+            // In real implementation, would load stored session data and generate report
+            println!("(Report generation from stored data not yet implemented)");
+        }
+        
+        ProfileAction::Monitor { interval } => {
+            println!("📊 Starting real-time performance monitoring (refresh every {}s)", interval);
+            println!("Press Ctrl+C to stop monitoring\n");
+            
+            // Create performance optimization system for monitoring
+            let perf_config = PerformanceConfig::default();
+            let opt_config = OptimizationConfig::default();
+            let perf_system = PerformanceOptimizationSystem::new(perf_config, opt_config)?;
+            
+            perf_system.start_monitoring()?;
+            
+            // Monitor loop
+            for i in 0..60 { // Monitor for 60 iterations
+                print!("\r");
+                
+                let stats = perf_system.get_resource_statistics()?;
+                
+                print!("📊 Memory: {:.1} MB | CPU: {:.1}% | I/O: {} ops | Uptime: {:?}   ",
+                    stats.average_memory_mb,
+                    stats.average_cpu_percent,
+                    stats.total_io_operations,
+                    stats.monitoring_uptime
+                );
+                
+                io::stdout().flush()?;
+                
+                thread::sleep(Duration::from_secs(interval));
+            }
+            
+            println!("\n✅ Monitoring completed");
+        }
+    }
+    
+    Ok(())
+}
+
+/// Run benchmark
+fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> {
+    // Create performance optimization system
+    let perf_config = PerformanceConfig {
+        enable_benchmarking: true,
+        max_benchmark_iterations: 20,
+        ..Default::default()
+    };
+    let opt_config = OptimizationConfig::default();
+    let perf_system = PerformanceOptimizationSystem::new(perf_config, opt_config)?;
+    
+    match args.action {
+        BenchmarkAction::CompilationSpeed { iterations, warmup, complexity, units } => {
+            println!("🚀 Running compilation speed benchmark");
+            println!("   Iterations: {}", iterations);
+            println!("   Warmup: {}", warmup);
+            println!("   Complexity: {}", complexity);
+            println!("   Test units: {}", units);
+            
+            let complexity_level = match complexity.as_str() {
+                "simple" => ComplexityLevel::Simple,
+                "medium" => ComplexityLevel::Medium,
+                "complex" => ComplexityLevel::Complex,
+                "very-complex" => ComplexityLevel::VeryComplex,
+                _ => return Err(CursedError::system_error("Invalid complexity level")),
+            };
+            
+            let benchmark_config = BenchmarkConfig {
+                name: "compilation_speed".to_string(),
+                benchmark_type: BenchmarkType::CompilationSpeed,
+                iterations,
+                warmup_iterations: warmup,
+                test_data: BenchmarkTestData {
+                    unit_count: units,
+                    complexity_level,
+                    data_size_mb: 10.0,
+                },
+            };
+            
+            let results = perf_system.run_benchmark(benchmark_config)?;
+            
+            println!("\n📊 Compilation Speed Benchmark Results:");
+            println!("   Mean time: {:.2} ms", results.statistics.mean_time_ms);
+            println!("   Median time: {:.2} ms", results.statistics.median_time_ms);
+            println!("   Standard deviation: {:.2} ms", results.statistics.std_dev_time_ms);
+            println!("   Min time: {:.2} ms", results.statistics.min_time_ms);
+            println!("   Max time: {:.2} ms", results.statistics.max_time_ms);
+            println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
+        }
+        
+        BenchmarkAction::OptimizationEffectiveness { levels, iterations, data_size } => {
+            println!("⚡ Running optimization effectiveness benchmark");
+            
+            for level in levels {
+                println!("\n🔧 Testing optimization level: {}", level);
+                
+                let benchmark_config = BenchmarkConfig {
+                    name: format!("optimization_effectiveness_{}", level),
+                    benchmark_type: BenchmarkType::OptimizationEffectiveness,
+                    iterations,
+                    warmup_iterations: 2,
+                    test_data: BenchmarkTestData {
+                        unit_count: 50,
+                        complexity_level: ComplexityLevel::Medium,
+                        data_size_mb: data_size,
+                    },
+                };
+                
+                let results = perf_system.run_benchmark(benchmark_config)?;
+                
+                println!("   Mean time: {:.2} ms", results.statistics.mean_time_ms);
+                println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
+                println!("   Memory usage: {:.1} MB", results.statistics.mean_memory_delta_mb);
+            }
+        }
+        
+        BenchmarkAction::MemoryUsage { stress_levels, duration } => {
+            println!("🧠 Running memory usage benchmark");
+            println!("   Duration: {} seconds", duration);
+            
+            for level in stress_levels {
+                println!("\n🔥 Testing memory stress level: {}", level);
+                
+                let benchmark_config = BenchmarkConfig {
+                    name: format!("memory_usage_{}", level),
+                    benchmark_type: BenchmarkType::MemoryUsage,
+                    iterations: (duration / 10) as usize, // Sample every 10 seconds
+                    warmup_iterations: 0,
+                    test_data: BenchmarkTestData {
+                        unit_count: 100,
+                        complexity_level: ComplexityLevel::Complex,
+                        data_size_mb: 100.0,
+                    },
+                };
+                
+                let results = perf_system.run_benchmark(benchmark_config)?;
+                
+                println!("   Peak memory: {:.1} MB", results.statistics.max_memory_delta_mb);
+                println!("   Average memory: {:.1} MB", results.statistics.mean_memory_delta_mb);
+                println!("   Peak CPU: {:.1}%", results.statistics.max_cpu_usage_percent);
+            }
+        }
+        
+        BenchmarkAction::CachePerformance { cache_sizes, scenarios } => {
+            println!("💾 Running cache performance benchmark");
+            
+            for size in cache_sizes {
+                for scenario in &scenarios {
+                    println!("\n📦 Testing cache size: {} with scenario: {}", size, scenario);
+                    
+                    let benchmark_config = BenchmarkConfig {
+                        name: format!("cache_performance_{}_{}", size, scenario),
+                        benchmark_type: BenchmarkType::CachePerformance,
+                        iterations: 10,
+                        warmup_iterations: 2,
+                        test_data: BenchmarkTestData {
+                            unit_count: 200,
+                            complexity_level: ComplexityLevel::Medium,
+                            data_size_mb: 50.0,
+                        },
+                    };
+                    
+                    let results = perf_system.run_benchmark(benchmark_config)?;
+                    
+                    println!("   Mean time: {:.2} ms", results.statistics.mean_time_ms);
+                    println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
+                }
+            }
+        }
+        
+        BenchmarkAction::All { quick, detailed_report, output_dir } => {
+            println!("🏆 Running comprehensive benchmark suite");
+            
+            let iterations = if quick { 5 } else { 10 };
+            let warmup = if quick { 1 } else { 3 };
+            
+            println!("   Mode: {}", if quick { "Quick" } else { "Full" });
+            println!("   Iterations per test: {}", iterations);
+            
+            // Run all benchmark types
+            let benchmark_types = vec![
+                ("compilation_speed", BenchmarkType::CompilationSpeed),
+                ("optimization_effectiveness", BenchmarkType::OptimizationEffectiveness),
+                ("memory_usage", BenchmarkType::MemoryUsage),
+                ("cache_performance", BenchmarkType::CachePerformance),
+            ];
+            
+            let mut all_results = Vec::new();
+            
+            for (name, benchmark_type) in benchmark_types {
+                println!("\n🔄 Running {} benchmark...", name);
+                
+                let benchmark_config = BenchmarkConfig {
+                    name: name.to_string(),
+                    benchmark_type,
+                    iterations,
+                    warmup_iterations: warmup,
+                    test_data: BenchmarkTestData {
+                        unit_count: 100,
+                        complexity_level: ComplexityLevel::Medium,
+                        data_size_mb: 20.0,
+                    },
+                };
+                
+                let results = perf_system.run_benchmark(benchmark_config)?;
+                all_results.push((name, results));
+                
+                println!("   ✅ {} completed", name);
+            }
+            
+            // Generate summary
+            println!("\n📊 Comprehensive Benchmark Results Summary:");
+            println!("=" .repeat(60));
+            
+            for (name, results) in &all_results {
+                println!("\n🔹 {}:", name);
+                println!("   Mean time: {:.2} ms", results.statistics.mean_time_ms);
+                println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
+                println!("   Memory usage: {:.1} MB", results.statistics.mean_memory_delta_mb);
+            }
+            
+            if detailed_report {
+                let report_dir = output_dir.unwrap_or_else(|| PathBuf::from("benchmark_reports"));
+                println!("\n📄 Generating detailed reports in: {:?}", report_dir);
+                
+                fs::create_dir_all(&report_dir)?;
+                
+                for (name, results) in &all_results {
+                    let report_path = report_dir.join(format!("{}_report.json", name));
+                    let json = serde_json::to_string_pretty(results)?;
+                    fs::write(&report_path, json)?;
+                    println!("   📄 {}", report_path.display());
+                }
+            }
+        }
+        
+        BenchmarkAction::Compare { baseline, comparison, format } => {
+            println!("📈 Comparing benchmark results");
+            println!("   Baseline: {}", baseline);
+            println!("   Comparison: {}", comparison);
+            println!("   Format: {}", format);
+            
+            // In real implementation, would load and compare stored benchmark results
+            println!("(Benchmark comparison not yet implemented)");
+        }
     }
     
     Ok(())

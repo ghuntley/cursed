@@ -1,0 +1,318 @@
+/* CURSED Documentation Styles */
+
+:root {
+    --primary-color: #ff6b9d;
+    --secondary-color: #4ecdc4;
+    --accent-color: #45b7d1;
+    --background-color: #f8f9fa;
+    --text-color: #2c3e50;
+    --border-color: #e9ecef;
+    --code-background: #f1f3f4;
+    --warning-color: #f39c12;
+    --error-color: #e74c3c;
+    --success-color: #27ae60;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+}
+
+header .version {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+nav {
+    margin-bottom: 1rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.2);
+    transition: background-color 0.3s;
+}
+
+nav a:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+section {
+    margin-bottom: 3rem;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-color);
+    margin-top: 0;
+}
+
+h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+h3 {
+    color: var(--accent-color);
+}
+
+.overview p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+/* Module and function lists */
+.modules ul, .functions ul, .types ul {
+    list-style: none;
+    padding: 0;
+}
+
+.modules li, .function, .type {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: #fafbfc;
+    transition: box-shadow 0.3s;
+}
+
+.modules li:hover, .function:hover, .type:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.modules li a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.modules li a:hover {
+    color: var(--primary-color);
+}
+
+.modules li p {
+    margin: 0.5rem 0 0 0;
+    color: #666;
+}
+
+/* Function and type documentation */
+.function h3, .type h3 {
+    margin: 0 0 1rem 0;
+    color: var(--primary-color);
+}
+
+.description {
+    margin: 1rem 0;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.parameters, .fields {
+    list-style: none;
+    padding: 0;
+}
+
+.parameters li, .fields li {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    background: var(--code-background);
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* Code styling */
+code {
+    background: var(--code-background);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--code-background);
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    border-left: 4px solid var(--accent-color);
+}
+
+pre code {
+    background: none;
+    padding: 0;
+}
+
+.source {
+    margin-top: 1rem;
+}
+
+.source summary {
+    cursor: pointer;
+    padding: 0.5rem;
+    background: var(--border-color);
+    border-radius: 4px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.source summary:hover {
+    background: #ddd;
+}
+
+.source pre {
+    margin-top: 0.5rem;
+    background: #f8f9fa;
+}
+
+/* Syntax highlighting for CURSED code */
+.cursed .keyword {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.cursed .string {
+    color: var(--success-color);
+}
+
+.cursed .comment {
+    color: #888;
+    font-style: italic;
+}
+
+.cursed .number {
+    color: var(--warning-color);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    header {
+        padding: 1rem;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    main {
+        padding: 1rem;
+    }
+    
+    section {
+        padding: 1rem;
+    }
+    
+    .function, .type {
+        padding: 1rem;
+    }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #1a1a1a;
+        --text-color: #e1e1e1;
+        --border-color: #333;
+        --code-background: #2d2d2d;
+    }
+    
+    section {
+        background: #242424;
+    }
+    
+    .modules li, .function, .type {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+    
+    .source summary {
+        background: #333;
+        color: #e1e1e1;
+    }
+    
+    .source summary:hover {
+        background: #444;
+    }
+}
+
+/* Print styles */
+@media print {
+    header {
+        background: none;
+        color: black;
+        box-shadow: none;
+    }
+    
+    section {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+    
+    .source details {
+        display: none;
+    }
+}
+
+/* Accessibility improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicators */
+a:focus, summary:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    border-top: 1px solid var(--border-color);
+    margin-top: 3rem;
+}

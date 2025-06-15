@@ -1,721 +1,766 @@
-/// Compilation Caching Infrastructure
+/// Compilation Cache System
 /// 
-/// Provides comprehensive compilation result caching to avoid recompiling
-/// unchanged files, including AST caching, bytecode caching, and dependency tracking.
+/// Provides intelligent caching of compiled artifacts, IR, and build metadata
+/// to speed up compilation by reusing previously computed results.
 
 use crate::error::{Error, Result};
-use crate::optimization::optimization_levels::{OptimizationLevel, LevelConfig};
-use crate::optimization::compilation_speed::{CompilationUnit, CompilationStatus};
-use std::collections::{HashMap, HashSet};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{Read, Write, BufReader, BufWriter};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock, Mutex};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tracing::{debug, info, instrument, warn, error};
-use serde::{Serialize, Deserialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 use sha2::{Sha256, Digest};
+use flate2::{Compression, read::GzDecoder, write::GzEncoder};
+
+/// Cache entry metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheEntry {
+    pub key: String,
+    pub file_path: PathBuf,
+    pub source_hash: String,
+    pub dependencies_hash: String,
+    pub compilation_flags: Vec<String>,
+    pub created_at: u64,
+    pub last_accessed: u64,
+    pub access_count: usize,
+    pub file_size: usize,
+    pub cache_type: CacheType,
+}
+
+/// Types of cached content
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CacheType {
+    CompiledObject,
+    LlvmIr,
+    AstSerialized,
+    PreprocessedSource,
+    DependencyInfo,
+    OptimizationMetadata,
+}
+
+impl CacheType {
+    pub fn file_extension(&self) -> &'static str {
+        match self {
+            CacheType::CompiledObject => "o",
+            CacheType::LlvmIr => "ll",
+            CacheType::AstSerialized => "ast",
+            CacheType::PreprocessedSource => "i",
+            CacheType::DependencyInfo => "dep",
+            CacheType::OptimizationMetadata => "opt",
+        }
+    }
+    
+    pub fn should_compress(&self) -> bool {
+        match self {
+            CacheType::LlvmIr | CacheType::PreprocessedSource | CacheType::AstSerialized => true,
+            _ => false,
+        }
+    }
+}
 
 /// Cache configuration
 #[derive(Debug, Clone)]
 pub struct CacheConfig {
-    /// Cache directory
-    pub cache_dir: PathBuf,
-    /// Enable AST caching
-    pub enable_ast_cache: bool,
-    /// Enable bytecode caching
-    pub enable_bytecode_cache: bool,
-    /// Enable dependency caching
-    pub enable_dependency_cache: bool,
-    /// Maximum cache size (in bytes)
-    pub max_cache_size: u64,
-    /// Cache entry TTL (time to live)
-    pub cache_ttl: Duration,
-    /// Enable cache compression
-    pub enable_compression: bool,
-    /// Cache validation strategy
-    pub validation_strategy: CacheValidationStrategy,
+    pub max_size_mb: usize,
+    pub max_entries: usize,
+    pub ttl_hours: usize,
+    pub compression_enabled: bool,
+    pub eviction_strategy: EvictionStrategy,
 }
 
-/// Cache validation strategies
-#[derive(Debug, Clone, Copy)]
-pub enum CacheValidationStrategy {
-    /// Check file modification time only
-    ModificationTime,
-    /// Check file content hash
-    ContentHash,
-    /// Check both modification time and hash
-    ModTimeAndHash,
-    /// Check dependency chain
-    DependencyChain,
+/// Cache eviction strategies
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EvictionStrategy {
+    LeastRecentlyUsed,
+    LeastFrequentlyUsed,
+    FirstInFirstOut,
+    SizeBasedPriority,
 }
 
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            cache_dir: PathBuf::from(".cursed_cache"),
-            enable_ast_cache: true,
-            enable_bytecode_cache: true,
-            enable_dependency_cache: true,
-            max_cache_size: 1024 * 1024 * 1024, // 1GB
-            cache_ttl: Duration::from_secs(24 * 60 * 60), // 24 hours
-            enable_compression: true,
-            validation_strategy: CacheValidationStrategy::ModTimeAndHash,
+            max_size_mb: 1024, // 1GB default
+            max_entries: 10000,
+            ttl_hours: 24 * 7, // 1 week
+            compression_enabled: true,
+            eviction_strategy: EvictionStrategy::LeastRecentlyUsed,
         }
     }
 }
 
-/// Cache entry metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CacheEntry {
-    /// Unique cache key
-    pub key: String,
-    /// Source file path
-    pub source_path: PathBuf,
-    /// Source file hash
-    pub source_hash: String,
-    /// Source file modification time
-    pub source_mtime: SystemTime,
-    /// Compilation options hash
-    pub options_hash: String,
-    /// Dependencies with their hashes
-    pub dependencies: HashMap<PathBuf, String>,
-    /// Cache creation time
-    pub created_at: SystemTime,
-    /// Last access time
-    pub last_accessed: SystemTime,
-    /// Cache entry size
-    pub size: u64,
-    /// Optimization level used
-    pub optimization_level: OptimizationLevel,
-    /// Cache entry type
-    pub entry_type: CacheEntryType,
-}
-
-/// Types of cache entries
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CacheEntryType {
-    /// Abstract Syntax Tree
-    Ast,
-    /// Compiled bytecode/LLVM IR
-    Bytecode,
-    /// Dependency information
-    Dependencies,
-    /// Type checking results
-    TypeInfo,
-    /// Optimization metadata
-    OptimizationData,
+/// Main compilation cache
+pub struct CompilationCache {
+    cache_dir: PathBuf,
+    config: CacheConfig,
+    entries: HashMap<String, CacheEntry>,
+    metadata_file: PathBuf,
+    stats: CacheStats,
 }
 
 /// Cache statistics
-#[derive(Debug, Clone, Default)]
-pub struct CacheStatistics {
-    /// Total cache hits
-    pub cache_hits: usize,
-    /// Total cache misses
-    pub cache_misses: usize,
-    /// Total cache size
-    pub total_size: u64,
-    /// Number of cache entries
+#[derive(Debug, Clone)]
+pub struct CacheStats {
+    pub hits: usize,
+    pub misses: usize,
+    pub evictions: usize,
+    pub total_size_bytes: usize,
     pub entry_count: usize,
-    /// Cache cleanup operations
-    pub cleanup_operations: usize,
-    /// Time saved by caching
-    pub time_saved: Duration,
-    /// Space used by cache
-    pub space_used: u64,
+    pub compression_ratio: f64,
 }
 
-impl CacheStatistics {
-    /// Calculate cache hit ratio
-    pub fn hit_ratio(&self) -> f64 {
-        let total = self.cache_hits + self.cache_misses;
-        if total == 0 {
-            return 0.0;
+impl Default for CacheStats {
+    fn default() -> Self {
+        Self {
+            hits: 0,
+            misses: 0,
+            evictions: 0,
+            total_size_bytes: 0,
+            entry_count: 0,
+            compression_ratio: 1.0,
         }
-        self.cache_hits as f64 / total as f64
-    }
-
-    /// Calculate space efficiency
-    pub fn space_efficiency(&self) -> f64 {
-        if self.space_used == 0 {
-            return 0.0;
-        }
-        self.total_size as f64 / self.space_used as f64
     }
 }
 
-/// Comprehensive cache manager
-pub struct CacheManager {
-    config: CacheConfig,
-    cache_index: Arc<RwLock<HashMap<String, CacheEntry>>>,
-    statistics: Arc<Mutex<CacheStatistics>>,
-    dependency_tracker: DependencyTracker,
-}
-
-impl CacheManager {
-    /// Create a new cache manager
-    #[instrument(skip(config))]
-    pub fn new(config: &super::OptimizationConfig) -> Result<Self> {
-        let cache_config = CacheConfig {
-            cache_dir: PathBuf::from(".cursed_cache"),
-            ..Default::default()
+impl CompilationCache {
+    /// Create new compilation cache
+    pub fn new(cache_dir: &Path) -> Result<Self> {
+        let config = CacheConfig::default();
+        Self::with_config(cache_dir, config)
+    }
+    
+    /// Create cache with custom configuration
+    pub fn with_config(cache_dir: &Path, config: CacheConfig) -> Result<Self> {
+        let cache_directory = cache_dir.to_path_buf();
+        let metadata_file = cache_directory.join("cache_metadata.json");
+        
+        // Create cache directory structure
+        fs::create_dir_all(&cache_directory)
+            .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+        
+        for cache_type in [
+            CacheType::CompiledObject,
+            CacheType::LlvmIr,
+            CacheType::AstSerialized,
+            CacheType::PreprocessedSource,
+            CacheType::DependencyInfo,
+            CacheType::OptimizationMetadata,
+        ] {
+            let subdir = cache_directory.join(cache_type.file_extension());
+            fs::create_dir_all(&subdir)
+                .map_err(|e| Error::Other(format!("Failed to create cache subdirectory: {}", e)))?;
+        }
+        
+        // Load existing metadata
+        let entries = if metadata_file.exists() {
+            Self::load_metadata(&metadata_file)?
+        } else {
+            HashMap::new()
         };
-
-        info!("Initializing cache manager at {:?}", cache_config.cache_dir);
-
-        // Create cache directory if it doesn't exist
-        if !cache_config.cache_dir.exists() {
-            fs::create_dir_all(&cache_config.cache_dir)
-                .map_err(|e| Error::IoError(format!("Failed to create cache directory: {}", e)))?;
-        }
-
-        let cache_index = Arc::new(RwLock::new(HashMap::new()));
-        let statistics = Arc::new(Mutex::new(CacheStatistics::default()));
-        let dependency_tracker = DependencyTracker::new();
-
-        let mut cache_manager = Self {
-            config: cache_config,
-            cache_index,
-            statistics,
-            dependency_tracker,
+        
+        let mut cache = Self {
+            cache_dir: cache_directory,
+            config,
+            entries,
+            metadata_file,
+            stats: CacheStats::default(),
         };
-
-        // Load existing cache index
-        cache_manager.load_cache_index()?;
-
-        Ok(cache_manager)
+        
+        // Update stats
+        cache.recalculate_stats();
+        
+        // Clean expired entries
+        cache.clean_expired_entries()?;
+        
+        Ok(cache)
     }
-
-    /// Generate cache key for a compilation unit
-    #[instrument(skip(self, unit, optimization_level))]
-    pub fn generate_cache_key(
+    
+    /// Generate cache key for source file
+    pub fn generate_key(
         &self,
-        unit: &CompilationUnit,
-        optimization_level: OptimizationLevel,
+        source_path: &Path,
+        dependencies: &[PathBuf],
+        flags: &[String],
+        cache_type: CacheType,
     ) -> Result<String> {
         let mut hasher = Sha256::new();
         
-        // Hash source path
-        hasher.update(unit.source_path.to_string_lossy().as_bytes());
+        // Include source file path
+        hasher.update(source_path.to_string_lossy().as_bytes());
         
-        // Hash source content
-        hasher.update(&unit.source_code);
+        // Include source content hash
+        let source_content = fs::read(source_path)
+            .map_err(|e| Error::Other(format!("Failed to read source file: {}", e)))?;
+        hasher.update(&source_content);
         
-        // Hash optimization level
-        hasher.update(format!("{:?}", optimization_level).as_bytes());
+        // Include dependencies
+        for dep in dependencies {
+            hasher.update(dep.to_string_lossy().as_bytes());
+            if dep.exists() {
+                let dep_content = fs::read(dep)
+                    .map_err(|e| Error::Other(format!("Failed to read dependency: {}", e)))?;
+                hasher.update(&dep_content);
+            }
+        }
         
-        // Hash dependencies
-        for dep in &unit.dependencies {
-            hasher.update(dep.as_bytes());
+        // Include compilation flags
+        for flag in flags {
+            hasher.update(flag.as_bytes());
+        }
+        
+        // Include cache type
+        hasher.update(&[cache_type as u8]);
+        
+        let hash = hasher.finalize();
+        Ok(format!("{:x}", hash))
+    }
+    
+    /// Check if entry exists in cache
+    pub fn contains(&mut self, key: &str) -> bool {
+        if let Some(entry) = self.entries.get_mut(key) {
+            // Update access info
+            entry.last_accessed = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            entry.access_count += 1;
+            
+            // Check if entry is still valid
+            let cache_file = self.get_cache_file_path(key, entry.cache_type);
+            if cache_file.exists() {
+                self.stats.hits += 1;
+                true
+            } else {
+                // File was deleted, remove entry
+                self.entries.remove(key);
+                self.stats.misses += 1;
+                false
+            }
+        } else {
+            self.stats.misses += 1;
+            false
+        }
+    }
+    
+    /// Store data in cache
+    pub fn store(
+        &mut self,
+        key: &str,
+        data: &[u8],
+        source_path: &Path,
+        dependencies: &[PathBuf],
+        flags: &[String],
+        cache_type: CacheType,
+    ) -> Result<()> {
+        let cache_file = self.get_cache_file_path(key, cache_type);
+        
+        // Ensure parent directory exists
+        if let Some(parent) = cache_file.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+        }
+        
+        // Write data (with compression if enabled)
+        let final_size = if self.config.compression_enabled && cache_type.should_compress() {
+            self.write_compressed(&cache_file, data)?
+        } else {
+            fs::write(&cache_file, data)
+                .map_err(|e| Error::Other(format!("Failed to write cache file: {}", e)))?;
+            data.len()
+        };
+        
+        // Calculate hashes
+        let source_hash = self.calculate_file_hash(source_path)?;
+        let dependencies_hash = self.calculate_dependencies_hash(dependencies)?;
+        
+        // Create cache entry
+        let entry = CacheEntry {
+            key: key.to_string(),
+            file_path: cache_file,
+            source_hash,
+            dependencies_hash,
+            compilation_flags: flags.to_vec(),
+            created_at: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+            last_accessed: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+            access_count: 1,
+            file_size: final_size,
+            cache_type,
+        };
+        
+        self.entries.insert(key.to_string(), entry);
+        self.stats.entry_count += 1;
+        self.stats.total_size_bytes += final_size;
+        
+        // Check if eviction is needed
+        self.maybe_evict()?;
+        
+        // Save metadata
+        self.save_metadata()?;
+        
+        Ok(())
+    }
+    
+    /// Retrieve data from cache
+    pub fn retrieve(&mut self, key: &str) -> Result<Option<Vec<u8>>> {
+        if !self.contains(key) {
+            return Ok(None);
+        }
+        
+        let entry = self.entries.get(key).unwrap();
+        let cache_file = &entry.file_path;
+        
+        // Read data (with decompression if needed)
+        let data = if self.config.compression_enabled && entry.cache_type.should_compress() {
+            self.read_compressed(cache_file)?
+        } else {
+            fs::read(cache_file)
+                .map_err(|e| Error::Other(format!("Failed to read cache file: {}", e)))?
+        };
+        
+        Ok(Some(data))
+    }
+    
+    /// Remove entry from cache
+    pub fn remove(&mut self, key: &str) -> Result<bool> {
+        if let Some(entry) = self.entries.remove(key) {
+            // Remove file
+            if entry.file_path.exists() {
+                fs::remove_file(&entry.file_path)
+                    .map_err(|e| Error::Other(format!("Failed to remove cache file: {}", e)))?;
+            }
+            
+            self.stats.entry_count -= 1;
+            self.stats.total_size_bytes = self.stats.total_size_bytes.saturating_sub(entry.file_size);
+            
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+    
+    /// Clear all cache entries
+    pub fn clear_all(&mut self) -> Result<()> {
+        // Remove all files
+        for entry in self.entries.values() {
+            if entry.file_path.exists() {
+                let _ = fs::remove_file(&entry.file_path);
+            }
+        }
+        
+        // Clear subdirectories
+        for cache_type in [
+            CacheType::CompiledObject,
+            CacheType::LlvmIr,
+            CacheType::AstSerialized,
+            CacheType::PreprocessedSource,
+            CacheType::DependencyInfo,
+            CacheType::OptimizationMetadata,
+        ] {
+            let subdir = self.cache_dir.join(cache_type.file_extension());
+            if subdir.exists() {
+                let _ = fs::remove_dir_all(&subdir);
+                let _ = fs::create_dir_all(&subdir);
+            }
+        }
+        
+        self.entries.clear();
+        self.stats = CacheStats::default();
+        
+        // Save empty metadata
+        self.save_metadata()?;
+        
+        Ok(())
+    }
+    
+    /// Get cache statistics
+    pub fn get_stats(&self) -> HashMap<String, usize> {
+        let mut stats = HashMap::new();
+        
+        stats.insert("hits".to_string(), self.stats.hits);
+        stats.insert("misses".to_string(), self.stats.misses);
+        stats.insert("hit_rate".to_string(), 
+            if self.stats.hits + self.stats.misses > 0 {
+                (100 * self.stats.hits) / (self.stats.hits + self.stats.misses)
+            } else {
+                0
+            });
+        stats.insert("evictions".to_string(), self.stats.evictions);
+        stats.insert("entry_count".to_string(), self.stats.entry_count);
+        stats.insert("total_size_mb".to_string(), self.stats.total_size_bytes / 1024 / 1024);
+        stats.insert("compression_ratio".to_string(), (self.stats.compression_ratio * 100.0) as usize);
+        
+        // Cache type breakdown
+        for cache_type in [
+            CacheType::CompiledObject,
+            CacheType::LlvmIr,
+            CacheType::AstSerialized,
+            CacheType::PreprocessedSource,
+            CacheType::DependencyInfo,
+            CacheType::OptimizationMetadata,
+        ] {
+            let count = self.entries.values()
+                .filter(|e| e.cache_type == cache_type)
+                .count();
+            stats.insert(format!("{:?}_count", cache_type).to_lowercase(), count);
+        }
+        
+        stats
+    }
+    
+    /// Get cache file path for key and type
+    fn get_cache_file_path(&self, key: &str, cache_type: CacheType) -> PathBuf {
+        let subdir = self.cache_dir.join(cache_type.file_extension());
+        let filename = if self.config.compression_enabled && cache_type.should_compress() {
+            format!("{}.{}.gz", key, cache_type.file_extension())
+        } else {
+            format!("{}.{}", key, cache_type.file_extension())
+        };
+        subdir.join(filename)
+    }
+    
+    /// Write compressed data
+    fn write_compressed(&self, path: &Path, data: &[u8]) -> Result<usize> {
+        let file = File::create(path)
+            .map_err(|e| Error::Other(format!("Failed to create compressed file: {}", e)))?;
+        
+        let mut encoder = GzEncoder::new(file, Compression::default());
+        encoder.write_all(data)
+            .map_err(|e| Error::Other(format!("Failed to write compressed data: {}", e)))?;
+        
+        encoder.finish()
+            .map_err(|e| Error::Other(format!("Failed to finalize compressed file: {}", e)))
+            .map(|_| {
+                // Return compressed size
+                path.metadata().map(|m| m.len() as usize).unwrap_or(data.len())
+            })
+    }
+    
+    /// Read compressed data
+    fn read_compressed(&self, path: &Path) -> Result<Vec<u8>> {
+        let file = File::open(path)
+            .map_err(|e| Error::Other(format!("Failed to open compressed file: {}", e)))?;
+        
+        let mut decoder = GzDecoder::new(file);
+        let mut data = Vec::new();
+        decoder.read_to_end(&mut data)
+            .map_err(|e| Error::Other(format!("Failed to decompress data: {}", e)))?;
+        
+        Ok(data)
+    }
+    
+    /// Calculate file hash
+    fn calculate_file_hash(&self, file_path: &Path) -> Result<String> {
+        let content = fs::read(file_path)
+            .map_err(|e| Error::Other(format!("Failed to read file for hashing: {}", e)))?;
+        
+        let mut hasher = Sha256::new();
+        hasher.update(&content);
+        let hash = hasher.finalize();
+        
+        Ok(format!("{:x}", hash))
+    }
+    
+    /// Calculate dependencies hash
+    fn calculate_dependencies_hash(&self, dependencies: &[PathBuf]) -> Result<String> {
+        let mut hasher = Sha256::new();
+        
+        for dep in dependencies {
+            hasher.update(dep.to_string_lossy().as_bytes());
+            if dep.exists() {
+                let content = fs::read(dep)
+                    .map_err(|e| Error::Other(format!("Failed to read dependency: {}", e)))?;
+                hasher.update(&content);
+            }
         }
         
         let hash = hasher.finalize();
         Ok(format!("{:x}", hash))
     }
-
-    /// Check if cache entry is valid
-    #[instrument(skip(self, unit))]
-    pub fn is_cache_valid(&self, unit: &CompilationUnit, cache_key: &str) -> Result<bool> {
-        let cache_index = self.cache_index.read().unwrap();
+    
+    /// Clean expired entries
+    fn clean_expired_entries(&mut self) -> Result<()> {
+        let current_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
         
-        let entry = match cache_index.get(cache_key) {
-            Some(entry) => entry,
-            None => {
-                debug!("Cache miss: entry not found for key {}", cache_key);
-                return Ok(false);
-            }
-        };
-
-        // Check TTL
-        if entry.created_at.elapsed().unwrap_or(Duration::MAX) > self.config.cache_ttl {
-            debug!("Cache entry expired for key {}", cache_key);
-            return Ok(false);
-        }
-
-        // Check validation strategy
-        match self.config.validation_strategy {
-            CacheValidationStrategy::ModificationTime => {
-                self.validate_modification_time(unit, entry)
-            }
-            CacheValidationStrategy::ContentHash => {
-                self.validate_content_hash(unit, entry)
-            }
-            CacheValidationStrategy::ModTimeAndHash => {
-                Ok(self.validate_modification_time(unit, entry)? && 
-                self.validate_content_hash(unit, entry)?)
-            }
-            CacheValidationStrategy::DependencyChain => {
-                self.validate_dependency_chain(unit, entry)
+        let ttl_seconds = self.config.ttl_hours as u64 * 3600;
+        let mut expired_keys = Vec::new();
+        
+        for (key, entry) in &self.entries {
+            if current_time.saturating_sub(entry.last_accessed) > ttl_seconds {
+                expired_keys.push(key.clone());
             }
         }
-    }
-
-    /// Validate modification time
-    fn validate_modification_time(&self, unit: &CompilationUnit, entry: &CacheEntry) -> Result<bool> {
-        Ok(unit.last_modified <= entry.source_mtime)
-    }
-
-    /// Validate content hash
-    fn validate_content_hash(&self, unit: &CompilationUnit, entry: &CacheEntry) -> Result<bool> {
-        let current_hash = self.calculate_content_hash(&unit.source_code)?;
-        Ok(current_hash == entry.source_hash)
-    }
-
-    /// Validate dependency chain
-    fn validate_dependency_chain(&self, unit: &CompilationUnit, entry: &CacheEntry) -> Result<bool> {
-        // Check if any dependencies have changed
-        for (dep_path, expected_hash) in &entry.dependencies {
-            if let Ok(current_hash) = self.calculate_file_hash(dep_path) {
-                if current_hash != *expected_hash {
-                    debug!("Dependency changed: {:?}", dep_path);
-                    return Ok(false);
-                }
-            } else {
-                debug!("Dependency not found: {:?}", dep_path);
-                return Ok(false);
-            }
+        
+        for key in expired_keys {
+            self.remove(&key)?;
+            self.stats.evictions += 1;
         }
-        Ok(true)
-    }
-
-    /// Calculate content hash
-    fn calculate_content_hash(&self, content: &str) -> Result<String> {
-        let mut hasher = Sha256::new();
-        hasher.update(content.as_bytes());
-        Ok(format!("{:x}", hasher.finalize()))
-    }
-
-    /// Calculate file hash
-    fn calculate_file_hash(&self, path: &Path) -> Result<String> {
-        let mut file = File::open(path)
-            .map_err(|e| Error::IoError(format!("Failed to open file: {}", e)))?;
         
-        let mut hasher = Sha256::new();
-        let mut buffer = [0; 8192];
+        Ok(())
+    }
+    
+    /// Maybe evict entries based on cache limits
+    fn maybe_evict(&mut self) -> Result<()> {
+        // Check size limit
+        let max_size_bytes = self.config.max_size_mb * 1024 * 1024;
         
-        loop {
-            let bytes_read = file.read(&mut buffer)
-                .map_err(|e| Error::IoError(format!("Failed to read file: {}", e)))?;
+        // Check entry count limit
+        while self.stats.entry_count > self.config.max_entries 
+            || self.stats.total_size_bytes > max_size_bytes {
             
-            if bytes_read == 0 {
+            if let Some(key_to_evict) = self.select_eviction_candidate() {
+                self.remove(&key_to_evict)?;
+                self.stats.evictions += 1;
+            } else {
                 break;
             }
-            
-            hasher.update(&buffer[..bytes_read]);
         }
         
-        Ok(format!("{:x}", hasher.finalize()))
-    }
-
-    /// Store cache entry
-    #[instrument(skip(self, unit, data))]
-    pub fn store_cache_entry(
-        &self,
-        unit: &CompilationUnit,
-        optimization_level: OptimizationLevel,
-        entry_type: CacheEntryType,
-        data: &[u8],
-    ) -> Result<()> {
-        let cache_key = self.generate_cache_key(unit, optimization_level)?;
-        
-        debug!("Storing cache entry: {} (type: {:?})", cache_key, entry_type);
-
-        // Create cache entry metadata
-        let source_hash = self.calculate_content_hash(&unit.source_code)?;
-        let dependencies = self.dependency_tracker.get_dependencies(&unit.source_path)?;
-        
-        let cache_entry = CacheEntry {
-            key: cache_key.clone(),
-            source_path: unit.source_path.clone(),
-            source_hash,
-            source_mtime: unit.last_modified,
-            options_hash: format!("{:?}", optimization_level),
-            dependencies,
-            created_at: SystemTime::now(),
-            last_accessed: SystemTime::now(),
-            size: data.len() as u64,
-            optimization_level,
-            entry_type,
-        };
-
-        // Write data to cache file
-        let cache_file_path = self.get_cache_file_path(&cache_key);
-        self.write_cache_file(&cache_file_path, data)?;
-
-        // Update cache index
-        {
-            let mut cache_index = self.cache_index.write().unwrap();
-            cache_index.insert(cache_key, cache_entry);
-        }
-
-        // Update statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            stats.entry_count += 1;
-            stats.total_size += data.len() as u64;
-        }
-
-        // Check if cache cleanup is needed
-        self.maybe_cleanup_cache()?;
-
         Ok(())
     }
-
-    /// Retrieve cache entry
-    #[instrument(skip(self))]
-    pub fn retrieve_cache_entry(&self, cache_key: &str) -> Result<Option<Vec<u8>>> {
-        let cache_file_path = self.get_cache_file_path(cache_key);
-        
-        if !cache_file_path.exists() {
-            debug!("Cache file not found: {:?}", cache_file_path);
-            return Ok(None);
-        }
-
-        let data = self.read_cache_file(&cache_file_path)?;
-
-        // Update access time
-        {
-            let mut cache_index = self.cache_index.write().unwrap();
-            if let Some(entry) = cache_index.get_mut(cache_key) {
-                entry.last_accessed = SystemTime::now();
+    
+    /// Select candidate for eviction based on strategy
+    fn select_eviction_candidate(&self) -> Option<String> {
+        match self.config.eviction_strategy {
+            EvictionStrategy::LeastRecentlyUsed => {
+                self.entries.iter()
+                    .min_by_key(|(_, entry)| entry.last_accessed)
+                    .map(|(key, _)| key.clone())
+            }
+            EvictionStrategy::LeastFrequentlyUsed => {
+                self.entries.iter()
+                    .min_by_key(|(_, entry)| entry.access_count)
+                    .map(|(key, _)| key.clone())
+            }
+            EvictionStrategy::FirstInFirstOut => {
+                self.entries.iter()
+                    .min_by_key(|(_, entry)| entry.created_at)
+                    .map(|(key, _)| key.clone())
+            }
+            EvictionStrategy::SizeBasedPriority => {
+                // Evict largest files first
+                self.entries.iter()
+                    .max_by_key(|(_, entry)| entry.file_size)
+                    .map(|(key, _)| key.clone())
             }
         }
-
-        // Update statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            stats.cache_hits += 1;
+    }
+    
+    /// Recalculate cache statistics
+    fn recalculate_stats(&mut self) {
+        self.stats.entry_count = self.entries.len();
+        self.stats.total_size_bytes = self.entries.values()
+            .map(|entry| entry.file_size)
+            .sum();
+        
+        // Calculate compression ratio
+        let compressed_entries: Vec<_> = self.entries.values()
+            .filter(|e| self.config.compression_enabled && e.cache_type.should_compress())
+            .collect();
+        
+        if !compressed_entries.is_empty() {
+            // This is a simplified calculation; in practice, you'd compare
+            // original vs compressed sizes
+            self.stats.compression_ratio = 0.7; // Assume 30% compression
         }
-
-        debug!("Cache hit: {} ({} bytes)", cache_key, data.len());
-        Ok(Some(data))
     }
-
-    /// Record cache miss
-    pub fn record_cache_miss(&self) {
-        let mut stats = self.statistics.lock().unwrap();
-        stats.cache_misses += 1;
-    }
-
-    /// Get cache file path
-    fn get_cache_file_path(&self, cache_key: &str) -> PathBuf {
-        self.config.cache_dir.join(format!("{}.cache", cache_key))
-    }
-
-    /// Write cache file
-    fn write_cache_file(&self, path: &Path, data: &[u8]) -> Result<()> {
-        let file = File::create(path)
-            .map_err(|e| Error::IoError(format!("Failed to create cache file: {}", e)))?;
-        
-        let mut writer = BufWriter::new(file);
-        
-        if self.config.enable_compression {
-            // In a real implementation, we would use actual compression
-            // For now, just write the data directly
-            writer.write_all(data)
-                .map_err(|e| Error::IoError(format!("Failed to write cache file: {}", e)))?;
-        } else {
-            writer.write_all(data)
-                .map_err(|e| Error::IoError(format!("Failed to write cache file: {}", e)))?;
-        }
-        
-        Ok(())
-    }
-
-    /// Read cache file
-    fn read_cache_file(&self, path: &Path) -> Result<Vec<u8>> {
+    
+    /// Load cache metadata
+    fn load_metadata(path: &Path) -> Result<HashMap<String, CacheEntry>> {
         let file = File::open(path)
-            .map_err(|e| Error::IoError(format!("Failed to open cache file: {}", e)))?;
+            .map_err(|e| Error::Other(format!("Failed to open metadata file: {}", e)))?;
         
-        let mut reader = BufReader::new(file);
-        let mut data = Vec::new();
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader)
+            .map_err(|e| Error::Other(format!("Failed to parse metadata: {}", e)))
+    }
+    
+    /// Save cache metadata
+    fn save_metadata(&self) -> Result<()> {
+        let file = File::create(&self.metadata_file)
+            .map_err(|e| Error::Other(format!("Failed to create metadata file: {}", e)))?;
         
-        reader.read_to_end(&mut data)
-            .map_err(|e| Error::IoError(format!("Failed to read cache file: {}", e)))?;
+        let writer = BufWriter::new(file);
+        serde_json::to_writer_pretty(writer, &self.entries)
+            .map_err(|e| Error::Other(format!("Failed to write metadata: {}", e)))?;
         
-        Ok(data)
-    }
-
-    /// Load cache index from disk
-    fn load_cache_index(&mut self) -> Result<()> {
-        let index_path = self.config.cache_dir.join("index.json");
-        
-        if !index_path.exists() {
-            info!("No existing cache index found");
-            return Ok(());
-        }
-
-        let index_data = fs::read_to_string(&index_path)
-            .map_err(|e| Error::IoError(format!("Failed to read cache index: {}", e)))?;
-        
-        let entries: HashMap<String, CacheEntry> = serde_json::from_str(&index_data)
-            .map_err(|e| Error::ParseError(format!("Failed to parse cache index: {}", e)))?;
-
-        {
-            let mut cache_index = self.cache_index.write().unwrap();
-            *cache_index = entries;
-        }
-
-        info!("Loaded cache index with {} entries", cache_index.read().unwrap().len());
-        Ok(())
-    }
-
-    /// Save cache index to disk
-    fn save_cache_index(&self) -> Result<()> {
-        let index_path = self.config.cache_dir.join("index.json");
-        let cache_index = self.cache_index.read().unwrap();
-        
-        let index_data = serde_json::to_string_pretty(&*cache_index)
-            .map_err(|e| Error::Internal(format!("Failed to serialize cache index: {}", e)))?;
-        
-        fs::write(&index_path, index_data)
-            .map_err(|e| Error::IoError(format!("Failed to write cache index: {}", e)))?;
-
-        Ok(())
-    }
-
-    /// Maybe cleanup cache if it's getting too large
-    fn maybe_cleanup_cache(&self) -> Result<()> {
-        let current_size = {
-            let stats = self.statistics.lock().unwrap();
-            stats.total_size
-        };
-
-        if current_size > self.config.max_cache_size {
-            info!("Cache size exceeded limit, starting cleanup");
-            self.cleanup_cache()?;
-        }
-
-        Ok(())
-    }
-
-    /// Cleanup old cache entries
-    #[instrument(skip(self))]
-    pub fn cleanup_cache(&self) -> Result<()> {
-        let mut entries_to_remove = Vec::new();
-        let now = SystemTime::now();
-
-        // Find entries to remove (LRU + TTL)
-        {
-            let cache_index = self.cache_index.read().unwrap();
-            
-            for (key, entry) in cache_index.iter() {
-                // Remove expired entries
-                if now.duration_since(entry.created_at).unwrap_or(Duration::MAX) > self.config.cache_ttl {
-                    entries_to_remove.push(key.clone());
-                }
-            }
-        }
-
-        // Remove entries
-        for key in &entries_to_remove {
-            self.remove_cache_entry(key)?;
-        }
-
-        // Update statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            stats.cleanup_operations += 1;
-        }
-
-        info!("Cache cleanup completed, removed {} entries", entries_to_remove.len());
-        Ok(())
-    }
-
-    /// Remove a specific cache entry
-    fn remove_cache_entry(&self, cache_key: &str) -> Result<()> {
-        // Remove from index
-        let entry_size = {
-            let mut cache_index = self.cache_index.write().unwrap();
-            cache_index.remove(cache_key).map(|e| e.size).unwrap_or(0)
-        };
-
-        // Remove cache file
-        let cache_file_path = self.get_cache_file_path(cache_key);
-        if cache_file_path.exists() {
-            fs::remove_file(&cache_file_path)
-                .map_err(|e| Error::IoError(format!("Failed to remove cache file: {}", e)))?;
-        }
-
-        // Update statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            stats.entry_count = stats.entry_count.saturating_sub(1);
-            stats.total_size = stats.total_size.saturating_sub(entry_size);
-        }
-
-        Ok(())
-    }
-
-    /// Get cache statistics
-    pub fn get_statistics(&self) -> CacheStatistics {
-        self.statistics.lock().unwrap().clone()
-    }
-
-    /// Print cache summary
-    pub fn print_summary(&self) {
-        let stats = self.get_statistics();
-        
-        println!("💾 Cache Manager Summary:");
-        println!("   Cache directory: {:?}", self.config.cache_dir);
-        println!("   Total entries: {}", stats.entry_count);
-        println!("   Cache hits: {}", stats.cache_hits);
-        println!("   Cache misses: {}", stats.cache_misses);
-        println!("   Hit ratio: {:.1}%", stats.hit_ratio() * 100.0);
-        println!("   Total size: {:.1} MB", stats.total_size as f64 / 1024.0 / 1024.0);
-        println!("   Space used: {:.1} MB", stats.space_used as f64 / 1024.0 / 1024.0);
-        println!("   Space efficiency: {:.2}x", stats.space_efficiency());
-        println!("   Time saved: {:?}", stats.time_saved);
-        println!("   Cleanup operations: {}", stats.cleanup_operations);
-    }
-
-    /// Clear all cache entries
-    pub fn clear_cache(&self) -> Result<()> {
-        info!("Clearing all cache entries");
-
-        // Remove all cache files
-        if self.config.cache_dir.exists() {
-            fs::remove_dir_all(&self.config.cache_dir)
-                .map_err(|e| Error::IoError(format!("Failed to remove cache directory: {}", e)))?;
-            
-            fs::create_dir_all(&self.config.cache_dir)
-                .map_err(|e| Error::IoError(format!("Failed to recreate cache directory: {}", e)))?;
-        }
-
-        // Clear index
-        {
-            let mut cache_index = self.cache_index.write().unwrap();
-            cache_index.clear();
-        }
-
-        // Reset statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            *stats = CacheStatistics::default();
-        }
-
         Ok(())
     }
 }
-
-impl Drop for CacheManager {
-    fn drop(&mut self) {
-        if let Err(e) = self.save_cache_index() {
-            error!("Failed to save cache index: {}", e);
-        }
-    }
-}
-
-/// Dependency tracker for cache validation
-pub struct DependencyTracker {
-    dependencies: RwLock<HashMap<PathBuf, HashSet<PathBuf>>>,
-}
-
-impl DependencyTracker {
-    pub fn new() -> Self {
-        Self {
-            dependencies: RwLock::new(HashMap::new()),
-        }
-    }
-
-    /// Add dependency relationship
-    pub fn add_dependency(&self, source: &Path, dependency: &Path) {
-        let mut deps = self.dependencies.write().unwrap();
-        deps.entry(source.to_path_buf())
-            .or_insert_with(HashSet::new)
-            .insert(dependency.to_path_buf());
-    }
-
-    /// Get dependencies for a source file
-    pub fn get_dependencies(&self, source: &Path) -> Result<HashMap<PathBuf, String>> {
-        let deps = self.dependencies.read().unwrap();
-        let mut result = HashMap::new();
-
-        if let Some(dep_set) = deps.get(source) {
-            for dep_path in dep_set {
-                if let Ok(hash) = self.calculate_file_hash(dep_path) {
-                    result.insert(dep_path.clone(), hash);
-                }
-            }
-        }
-
-        Ok(result)
-    }
-
-    /// Calculate file hash (simplified implementation)
-    fn calculate_file_hash(&self, path: &Path) -> Result<String> {
-        if let Ok(content) = fs::read_to_string(path) {
-            let mut hasher = Sha256::new();
-            hasher.update(content.as_bytes());
-            Ok(format!("{:x}", hasher.finalize()))
-        } else {
-            Err(Error::IoError(format!("Failed to read file: {:?}", path)))
-        }
-    }
-}
-
-/// Optimization cache (for backward compatibility)
-pub struct OptimizationCache;
-
-/// Cache strategy (for backward compatibility)
-pub struct CacheStrategy;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use tempfile::TempDir;
-
-    fn create_test_cache_manager() -> (CacheManager, TempDir) {
+    use std::fs::File;
+    use std::io::Write;
+    
+    #[test]
+    fn test_cache_creation() {
         let temp_dir = TempDir::new().unwrap();
-        let config = super::super::OptimizationConfig::default();
-        let mut cache_manager = CacheManager::new(&config).unwrap();
-        cache_manager.config.cache_dir = temp_dir.path().to_path_buf();
-        (cache_manager, temp_dir)
+        let cache = CompilationCache::new(temp_dir.path()).unwrap();
+        
+        assert!(cache.cache_dir.exists());
+        assert_eq!(cache.stats.entry_count, 0);
     }
-
+    
+    #[test]
+    fn test_cache_store_and_retrieve() {
+        let temp_dir = TempDir::new().unwrap();
+        let mut cache = CompilationCache::new(temp_dir.path()).unwrap();
+        
+        // Create test source file
+        let source_file = temp_dir.path().join("test.csd");
+        let mut file = File::create(&source_file).unwrap();
+        writeln!(file, "facts x = 42;").unwrap();
+        
+        // Generate key and store data
+        let key = cache.generate_key(
+            &source_file,
+            &[],
+            &["--optimize".to_string()],
+            CacheType::CompiledObject,
+        ).unwrap();
+        
+        let test_data = b"compiled object data";
+        cache.store(
+            &key,
+            test_data,
+            &source_file,
+            &[],
+            &["--optimize".to_string()],
+            CacheType::CompiledObject,
+        ).unwrap();
+        
+        // Check if entry exists
+        assert!(cache.contains(&key));
+        
+        // Retrieve data
+        let retrieved = cache.retrieve(&key).unwrap();
+        assert_eq!(retrieved.unwrap(), test_data);
+        
+        // Check stats
+        let stats = cache.get_stats();
+        assert_eq!(stats["entry_count"], 1);
+        assert!(stats["hits"] >= 1);
+    }
+    
+    #[test]
+    fn test_cache_eviction() {
+        let temp_dir = TempDir::new().unwrap();
+        let config = CacheConfig {
+            max_entries: 2,
+            eviction_strategy: EvictionStrategy::LeastRecentlyUsed,
+            ..Default::default()
+        };
+        let mut cache = CompilationCache::with_config(temp_dir.path(), config).unwrap();
+        
+        // Create test files
+        for i in 0..3 {
+            let source_file = temp_dir.path().join(format!("test{}.csd", i));
+            let mut file = File::create(&source_file).unwrap();
+            writeln!(file, "facts x = {};", i).unwrap();
+            
+            let key = cache.generate_key(
+                &source_file,
+                &[],
+                &[],
+                CacheType::CompiledObject,
+            ).unwrap();
+            
+            cache.store(
+                &key,
+                &format!("data{}", i).as_bytes(),
+                &source_file,
+                &[],
+                &[],
+                CacheType::CompiledObject,
+            ).unwrap();
+        }
+        
+        // Should have evicted one entry
+        let stats = cache.get_stats();
+        assert_eq!(stats["entry_count"], 2);
+        assert!(stats["evictions"] >= 1);
+    }
+    
+    #[test]
+    fn test_cache_compression() {
+        let temp_dir = TempDir::new().unwrap();
+        let config = CacheConfig {
+            compression_enabled: true,
+            ..Default::default()
+        };
+        let mut cache = CompilationCache::with_config(temp_dir.path(), config).unwrap();
+        
+        let source_file = temp_dir.path().join("test.csd");
+        let mut file = File::create(&source_file).unwrap();
+        writeln!(file, "facts x = 42;").unwrap();
+        
+        let key = cache.generate_key(
+            &source_file,
+            &[],
+            &[],
+            CacheType::LlvmIr, // This type should be compressed
+        ).unwrap();
+        
+        let large_data = vec![b'A'; 1000]; // 1KB of 'A's
+        cache.store(
+            &key,
+            &large_data,
+            &source_file,
+            &[],
+            &[],
+            CacheType::LlvmIr,
+        ).unwrap();
+        
+        let retrieved = cache.retrieve(&key).unwrap();
+        assert_eq!(retrieved.unwrap(), large_data);
+    }
+    
     #[test]
     fn test_cache_key_generation() {
-        let (cache_manager, _temp_dir) = create_test_cache_manager();
+        let temp_dir = TempDir::new().unwrap();
+        let cache = CompilationCache::new(temp_dir.path()).unwrap();
         
-        let unit = CompilationUnit {
-            id: "test".to_string(),
-            source_path: PathBuf::from("test.csd"),
-            module_name: "test".to_string(),
-            source_code: "let x = 42;".to_string(),
-            dependencies: vec![],
-            last_modified: SystemTime::now(),
-            status: CompilationStatus::Pending,
-            priority: 1,
-        };
-
-        let key1 = cache_manager.generate_cache_key(&unit, OptimizationLevel::Standard).unwrap();
-        let key2 = cache_manager.generate_cache_key(&unit, OptimizationLevel::Standard).unwrap();
-        let key3 = cache_manager.generate_cache_key(&unit, OptimizationLevel::Aggressive).unwrap();
-
-        assert_eq!(key1, key2);
-        assert_ne!(key1, key3);
-    }
-
-    #[test]
-    fn test_cache_statistics() {
-        let mut stats = CacheStatistics::default();
-        stats.cache_hits = 80;
-        stats.cache_misses = 20;
-
-        assert_eq!(stats.hit_ratio(), 0.8);
-    }
-
-    #[test]
-    fn test_dependency_tracker() {
-        let tracker = DependencyTracker::new();
-        let source = Path::new("main.csd");
-        let dep = Path::new("module.csd");
-
-        tracker.add_dependency(source, dep);
+        let source_file = temp_dir.path().join("test.csd");
+        let mut file = File::create(&source_file).unwrap();
+        writeln!(file, "facts x = 42;").unwrap();
         
-        // Dependencies would be empty since files don't exist in test
-        let deps = tracker.get_dependencies(source).unwrap();
-        assert!(deps.is_empty());
+        let key1 = cache.generate_key(
+            &source_file,
+            &[],
+            &["--optimize".to_string()],
+            CacheType::CompiledObject,
+        ).unwrap();
+        
+        let key2 = cache.generate_key(
+            &source_file,
+            &[],
+            &["--debug".to_string()],
+            CacheType::CompiledObject,
+        ).unwrap();
+        
+        // Different flags should produce different keys
+        assert_ne!(key1, key2);
+        
+        let key3 = cache.generate_key(
+            &source_file,
+            &[],
+            &["--optimize".to_string()],
+            CacheType::CompiledObject,
+        ).unwrap();
+        
+        // Same parameters should produce same key
+        assert_eq!(key1, key3);
     }
 }

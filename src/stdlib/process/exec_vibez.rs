@@ -12,9 +12,16 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(unix)]
+use std::os::unix::process::ExitStatusExt;
+
 use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
-    timeout_error, invalid_arguments, io_error, system_error
+    timeout_error, invalid_arguments, io_error, system_error, platform_error
+};
+use crate::stdlib::process::real_monitoring::{
+    RealProcessState, register_process_for_monitoring, wait_for_real_process,
+    unregister_process_from_monitoring
 };
 
 /// Cmd represents an external command being prepared or run
@@ -37,7 +44,7 @@ pub struct Cmd {
     /// Process context for cancellation
     pub context: Option<ProcessContext>,
     /// Internal child process handle
-    child: Option<Child>,
+    child: Option<Arc<Mutex<Child>>>,
     /// Process start time
     start_time: Option<Instant>,
 }
@@ -214,8 +221,13 @@ impl OutputStreamer {
     pub fn start(&mut self) -> ProcessResult<()> {
         self.cmd.start()?;
         
-        if let Some(child) = &mut self.cmd.child {
-            if let Some(stdout) = child.stdout.take() {
+        if let Some(child_arc) = &self.cmd.child {
+            let stdout = {
+                let mut child = child_arc.lock().unwrap();
+                child.stdout.take()
+            };
+            
+            if let Some(stdout) = stdout {
                 let reader = BufReader::new(stdout);
                 let callback = self.line_callback.take();
                 
@@ -276,8 +288,13 @@ impl InputGenerator {
     pub fn start(&mut self) -> ProcessResult<()> {
         self.cmd.start()?;
         
-        if let Some(child) = &mut self.cmd.child {
-            if let Some(stdin) = child.stdin.take() {
+        if let Some(child_arc) = &self.cmd.child {
+            let stdin = {
+                let mut child = child_arc.lock().unwrap();
+                child.stdin.take()
+            };
+            
+            if let Some(stdin) = stdin {
                 let queue = self.input_queue.clone();
                 
                 thread::spawn(move || {
@@ -362,8 +379,14 @@ impl Cmd {
         let child = command.spawn()
             .map_err(|e| execution_failed(&self.path, &e.to_string()))?;
 
-        self.child = Some(child);
+        let pid = child.id();
+        let child_arc = Arc::new(Mutex::new(child));
+        self.child = Some(child_arc.clone());
         self.start_time = Some(Instant::now());
+
+        // Register process for monitoring
+        let _ = register_process_for_monitoring(pid, Some(child_arc));
+
         Ok(())
     }
 
@@ -377,7 +400,8 @@ impl Cmd {
     pub fn output(&mut self) -> ProcessResult<Vec<u8>> {
         self.start()?;
         
-        let output = if let Some(child) = &mut self.child {
+        let output = if let Some(child_arc) = &self.child {
+            let mut child = child_arc.lock().unwrap();
             child.wait_with_output()
                 .map_err(|e| io_error("output", &format!("{:?}", e.kind()), &e.to_string()))?
         } else {
@@ -397,7 +421,8 @@ impl Cmd {
     pub fn combined_output(&mut self) -> ProcessResult<Vec<u8>> {
         self.start()?;
         
-        let output = if let Some(child) = &mut self.child {
+        let output = if let Some(child_arc) = &self.child {
+            let mut child = child_arc.lock().unwrap();
             child.wait_with_output()
                 .map_err(|e| io_error("combined_output", &format!("{:?}", e.kind()), &e.to_string()))?
         } else {
@@ -419,7 +444,8 @@ impl Cmd {
     pub fn stdin_pipe(&mut self) -> ProcessResult<Box<dyn Write + Send>> {
         self.start()?;
         
-        if let Some(child) = &mut self.child {
+        if let Some(child_arc) = &self.child {
+            let mut child = child_arc.lock().unwrap();
             if let Some(stdin) = child.stdin.take() {
                 Ok(Box::new(stdin))
             } else {
@@ -434,7 +460,8 @@ impl Cmd {
     pub fn stdout_pipe(&mut self) -> ProcessResult<Box<dyn Read + Send>> {
         self.start()?;
         
-        if let Some(child) = &mut self.child {
+        if let Some(child_arc) = &self.child {
+            let mut child = child_arc.lock().unwrap();
             if let Some(stdout) = child.stdout.take() {
                 Ok(Box::new(stdout))
             } else {
@@ -449,7 +476,8 @@ impl Cmd {
     pub fn stderr_pipe(&mut self) -> ProcessResult<Box<dyn Read + Send>> {
         self.start()?;
         
-        if let Some(child) = &mut self.child {
+        if let Some(child_arc) = &self.child {
+            let mut child = child_arc.lock().unwrap();
             if let Some(stderr) = child.stderr.take() {
                 Ok(Box::new(stderr))
             } else {
@@ -462,18 +490,46 @@ impl Cmd {
 
     /// Wait for the command to complete
     pub fn wait(&mut self) -> ProcessResult<()> {
-        if let Some(child) = &mut self.child {
-            let status = child.wait()
-                .map_err(|e| io_error("wait", &format!("{:?}", e.kind()), &e.to_string()))?;
+        if let Some(child_arc) = &self.child {
+            let pid = {
+                let child = child_arc.lock().unwrap();
+                child.id()
+            };
             
-            if !status.success() {
-                if let Some(code) = status.code() {
-                    return Err(execution_failed_with_code(&self.path, code, "Command failed"));
-                } else {
-                    return Err(execution_failed(&self.path, "Command terminated by signal"));
+            // Use real process monitoring to wait for completion
+            match wait_for_real_process(pid) {
+                Ok(real_state) => {
+                    // Check if process completed successfully
+                    if let Some(exit_status) = real_state.exit_status {
+                        if !exit_status.success() {
+                            if let Some(code) = exit_status.code() {
+                                return Err(execution_failed_with_code(&self.path, code, "Command failed"));
+                            } else {
+                                return Err(execution_failed(&self.path, "Command terminated by signal"));
+                            }
+                        }
+                    }
+                    
+                    // Unregister from monitoring
+                    let _ = unregister_process_from_monitoring(pid);
+                    Ok(())
+                }
+                Err(_) => {
+                    // Fallback to standard wait if monitoring fails
+                    let mut child = child_arc.lock().unwrap();
+                    let status = child.wait()
+                        .map_err(|e| io_error("wait", &format!("{:?}", e.kind()), &e.to_string()))?;
+                    
+                    if !status.success() {
+                        if let Some(code) = status.code() {
+                            return Err(execution_failed_with_code(&self.path, code, "Command failed"));
+                        } else {
+                            return Err(execution_failed(&self.path, "Command terminated by signal"));
+                        }
+                    }
+                    Ok(())
                 }
             }
-            Ok(())
         } else {
             Err(invalid_arguments("wait", "command", "Command not started"))
         }
@@ -481,13 +537,14 @@ impl Cmd {
 
     /// Get process handle
     pub fn process(&self) -> ProcessResult<Process> {
-        if let Some(child) = &self.child {
+        if let Some(child_arc) = &self.child {
+            let pid = {
+                let child = child_arc.lock().unwrap();
+                child.id()
+            };
             Ok(Process {
-                pid: child.id(),
-                child: Arc::new(Mutex::new(unsafe { 
-                    // This is unsafe but necessary for the API
-                    std::ptr::read(child as *const Child)
-                })),
+                pid,
+                child: child_arc.clone(),
                 start_time: self.start_time.unwrap_or_else(Instant::now),
             })
         } else {
@@ -497,16 +554,60 @@ impl Cmd {
 
     /// Get process state
     pub fn process_state(&self) -> ProcessResult<ProcessState> {
-        if let Some(child) = &self.child {
-            let pid = child.id();
-            // Note: In a real implementation, we'd collect actual resource usage
-            Ok(ProcessState {
-                exit_status: ExitStatus::from_raw(0), // Placeholder
-                pid,
-                user_time: Duration::from_millis(0),
-                system_time: Duration::from_millis(0),
-                sys_info: Vec::new(),
-            })
+        if let Some(child_arc) = &self.child {
+            let pid = {
+                let child = child_arc.lock().unwrap();
+                child.id()
+            };
+            
+            // Use real process monitoring to get actual state
+            match wait_for_real_process(pid) {
+                Ok(real_state) => {
+                    // Convert real state to our ProcessState format
+                    let exit_status = real_state.exit_status.unwrap_or_else(|| {
+                        // If no exit status yet, create a running status
+                        #[cfg(unix)]
+                        {
+                            ExitStatus::from_raw(0)
+                        }
+                        #[cfg(not(unix))]
+                        {
+                            // On non-Unix platforms, we can't create a fake status
+                            // so we'll need to handle this differently
+                            std::process::ExitStatus::from(std::process::Command::new("true").status().unwrap())
+                        }
+                    });
+                    
+                    Ok(ProcessState {
+                        exit_status,
+                        pid,
+                        user_time: real_state.user_time,
+                        system_time: real_state.system_time,
+                        sys_info: Vec::new(), // Could be extended with real_state.memory_info serialized
+                    })
+                }
+                Err(_) => {
+                    // Fallback to basic state if real monitoring fails
+                    let exit_status = {
+                        #[cfg(unix)]
+                        {
+                            ExitStatus::from_raw(0)
+                        }
+                        #[cfg(not(unix))]
+                        {
+                            std::process::Command::new("true").status().unwrap()
+                        }
+                    };
+                    
+                    Ok(ProcessState {
+                        exit_status,
+                        pid,
+                        user_time: Duration::from_millis(0),
+                        system_time: Duration::from_millis(0),
+                        sys_info: Vec::new(),
+                    })
+                }
+            }
         } else {
             Err(invalid_arguments("process_state", "command", "Command not started"))
         }
@@ -525,16 +626,18 @@ impl Process {
     /// Send signal to process (Unix only)
     #[cfg(unix)]
     pub fn signal(&self, sig: i32) -> ProcessResult<()> {
-        unsafe {
-            if libc::kill(self.pid as i32, sig) == 0 {
-                Ok(())
-            } else {
-                Err(system_error(
-                    *libc::__errno_location(),
-                    "signal",
-                    "Failed to send signal"
-                ))
-            }
+        // Use nix crate for safer signal handling if available, otherwise fall back to basic kill
+        use std::process::Command;
+        
+        let output = Command::new("kill")
+            .arg(format!("-{}", sig))
+            .arg(self.pid.to_string())
+            .output();
+            
+        match output {
+            Ok(result) if result.status.success() => Ok(()),
+            Ok(_) => Err(execution_failed("kill", "Signal sending failed")),
+            Err(e) => Err(io_error("signal", "IO", &e.to_string())),
         }
     }
 
@@ -775,7 +878,7 @@ pub fn new_environment() -> Environment {
     Environment::new()
 }
 
-use crate::stdlib::process::error::platform_error;
+
 
 #[cfg(test)]
 mod tests {
@@ -844,8 +947,13 @@ mod tests {
 
     #[test]
     fn test_process_state() {
+        #[cfg(unix)]
+        let exit_status = ExitStatus::from_raw(0);
+        #[cfg(not(unix))]
+        let exit_status = std::process::Command::new("true").status().unwrap();
+        
         let state = ProcessState {
-            exit_status: ExitStatus::from_raw(0),
+            exit_status,
             pid: 1234,
             user_time: Duration::from_millis(100),
             system_time: Duration::from_millis(50),

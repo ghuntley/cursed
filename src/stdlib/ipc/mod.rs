@@ -1,278 +1,120 @@
-/// Basic Inter-Process Communication (IPC) module for CURSED programming language
+/// IPC (Inter-Process Communication) module for CURSED
 /// 
-/// This module provides essential IPC functionality:
-/// - Named pipes (FIFO) for simple process communication
-/// - Unix domain sockets for local communication
-/// - Basic shared memory for high-performance data sharing
-/// - Simple message passing for structured communication
-/// 
-/// # Examples
-/// 
-/// ## Named Pipes
-/// ```rust
-/// use crate::stdlib::ipc::{NamedPipe, PipeConfig};
-/// 
-/// let pipe = NamedPipe::create("/tmp/my_pipe")?;
-/// pipe.write(b"Hello from process 1")?;
-/// let data = pipe.read()?;
-/// ```
-/// 
-/// ## Unix Domain Sockets
-/// ```rust
-/// use crate::stdlib::ipc::{UnixSocket, SocketType};
-/// 
-/// let socket = UnixSocket::bind("/tmp/my_socket")?;
-/// let client = UnixSocket::connect("/tmp/my_socket")?;
-/// client.send(b"Hello server")?;
-/// ```
-/// 
-/// ## Shared Memory
-/// ```rust
-/// use crate::stdlib::ipc::{SharedMemory, MemoryConfig};
-/// 
-/// let shm = SharedMemory::create("my_memory", 1024)?;
-/// shm.write_at(0, b"Shared data")?;
-/// let data = shm.read_at(0, 11)?;
-/// ```
+/// This module provides comprehensive IPC mechanisms including:
+/// - Named pipes (FIFOs)
+/// - Message queues
+/// - Shared memory
+/// - Semaphores
+/// - Memory-mapped files
+/// - Unix domain sockets
 
-pub mod error;
-pub mod pipes;
-pub mod sockets;
+pub mod named_pipes;
+pub mod message_queues;
 pub mod shared_memory;
-pub mod message_queue;
+pub mod semaphores;
+pub mod unix_sockets;
+pub mod error;
+pub mod traits;
+pub mod process_coordination;
+pub mod real_ipc;
+pub mod connection_pool;
+pub mod advanced_ipc;
+pub mod signals;
 
-// Re-export main types for easy access
 pub use error::{IpcError, IpcResult};
-
-// Named pipes
-pub use pipes::{
-    NamedPipe, PipeConfig, PipeMode, PipeHandle,
-    create_named_pipe, open_named_pipe, remove_named_pipe
+pub use named_pipes::{NamedPipe, NamedPipeServer, NamedPipeClient};
+pub use message_queues::{MessageQueue, Message, MessageQueueConfig};
+pub use shared_memory::{SharedMemory, SharedMemorySegment, SharedMemoryConfig};
+pub use semaphores::{Semaphore, NamedSemaphore, SemaphoreValue};
+pub use unix_sockets::{UnixSocket, UnixSocketType, UnixSocketServer, UnixSocketClient};
+pub use process_coordination::{IpcProcessRegistry, ProcessAwareIpcManager, ProcessIpcBinding};
+pub use real_ipc::{
+    RealIpcManager, IpcConnection, IpcMessage as RealIpcMessage, MessagePriority, IpcStats,
+    PriorityMessageQueue, initialize_real_ipc, get_ipc_manager, cleanup_real_ipc
+};
+pub use connection_pool::{
+    IpcConnectionPool, IpcConnectionType, PooledConnection, ConnectionPoolConfig,
+    IpcPoolManager, ConnectionFactory, initialize_pool_manager, get_pool_manager, cleanup_pool_manager
+};
+pub use advanced_ipc::{
+    AdvancedIpcManager, AdvancedIpcConfig, AdvancedSharedMemory, AdvancedMessageQueue,
+    AdvancedNamedPipe, AdvancedUnixSocket, IpcMessage as AdvancedIpcMessage, 
+    MessagePriority as AdvancedMessagePriority, MessageType,
+    initialize_advanced_ipc, get_advanced_ipc_manager, cleanup_advanced_ipc
+};
+pub use traits::{IpcResource, IpcReadable, IpcWritable, IpcSynchronizable, IpcMessaging, IpcCleanup, IpcStats as IpcStatsProvider, IpcResourceStats};
+pub use signals::{
+    SignalBoost, BoostSignal, SignalHandler, GracefulShutdown, SignalMultiplexer,
+    SignalAction, VibeChecker, NotifyHandle, ShutdownOptions, ShutdownStatus,
+    initialize_signal_boost, cleanup_signal_boost
 };
 
-// Unix domain sockets
-pub use sockets::{
-    UnixSocket, SocketConfig, SocketType, SocketAddress,
-    UnixListener, UnixStream, create_socket_pair
-};
-
-// Shared memory
-pub use shared_memory::{
-    SharedMemory, MemoryConfig, MemoryAccess, MemoryView,
-    create_shared_memory, open_shared_memory, remove_shared_memory
-};
-
-// Message queue
-pub use message_queue::{
-    MessageQueue, Message, QueueConfig, MessageType,
-    create_message_queue, open_message_queue, send_message, receive_message
-};
-
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
-/// IPC subsystem statistics
-#[derive(Debug, Clone, Default)]
-pub struct IpcStatistics {
-    pub active_pipes: usize,
-    pub active_sockets: usize,
-    pub active_shared_memory: usize,
-    pub active_message_queues: usize,
-    pub total_memory_usage: usize,
-    pub total_operations: u64,
-    pub failed_operations: u64,
+/// IPC configuration options
+#[derive(Debug, Clone)]
+pub struct IpcConfig {
+    /// Maximum message size for message queues
+    pub max_message_size: usize,
+    /// Maximum number of messages in queue
+    pub max_queue_size: usize,
+    /// Default shared memory permissions
+    pub default_permissions: u32,
+    /// Timeout for IPC operations
+    pub default_timeout: std::time::Duration,
+    /// Buffer size for named pipes
+    pub pipe_buffer_size: usize,
 }
 
-/// IPC resource registry for cleanup
-static IPC_REGISTRY: Mutex<Option<IpcRegistry>> = Mutex::new(None);
-
-struct IpcRegistry {
-    pipes: HashMap<String, PipeHandle>,
-    sockets: HashMap<String, SocketAddress>,
-    shared_memory: HashMap<String, String>, // name -> path
-    message_queues: HashMap<String, String>, // name -> path
-    statistics: IpcStatistics,
-}
-
-impl IpcRegistry {
-    fn new() -> Self {
+impl Default for IpcConfig {
+    fn default() -> Self {
         Self {
-            pipes: HashMap::new(),
-            sockets: HashMap::new(),
-            shared_memory: HashMap::new(),
-            message_queues: HashMap::new(),
-            statistics: IpcStatistics::default(),
-        }
-    }
-    
-    fn register_pipe(&mut self, name: String, handle: PipeHandle) {
-        self.pipes.insert(name, handle);
-        self.statistics.active_pipes += 1;
-    }
-    
-    fn unregister_pipe(&mut self, name: &str) {
-        if self.pipes.remove(name).is_some() {
-            self.statistics.active_pipes = self.statistics.active_pipes.saturating_sub(1);
-        }
-    }
-    
-    fn register_socket(&mut self, name: String, addr: SocketAddress) {
-        self.sockets.insert(name, addr);
-        self.statistics.active_sockets += 1;
-    }
-    
-    fn unregister_socket(&mut self, name: &str) {
-        if self.sockets.remove(name).is_some() {
-            self.statistics.active_sockets = self.statistics.active_sockets.saturating_sub(1);
-        }
-    }
-    
-    fn register_shared_memory(&mut self, name: String, path: String) {
-        self.shared_memory.insert(name, path);
-        self.statistics.active_shared_memory += 1;
-    }
-    
-    fn unregister_shared_memory(&mut self, name: &str) {
-        if self.shared_memory.remove(name).is_some() {
-            self.statistics.active_shared_memory = self.statistics.active_shared_memory.saturating_sub(1);
-        }
-    }
-    
-    fn register_message_queue(&mut self, name: String, path: String) {
-        self.message_queues.insert(name, path);
-        self.statistics.active_message_queues += 1;
-    }
-    
-    fn unregister_message_queue(&mut self, name: &str) {
-        if self.message_queues.remove(name).is_some() {
-            self.statistics.active_message_queues = self.statistics.active_message_queues.saturating_sub(1);
-        }
-    }
-    
-    fn increment_operations(&mut self) {
-        self.statistics.total_operations += 1;
-    }
-    
-    fn increment_failed_operations(&mut self) {
-        self.statistics.failed_operations += 1;
-    }
-}
-
-/// Initialize the IPC subsystem
-pub fn initialize() -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if registry.is_none() {
-        *registry = Some(IpcRegistry::new());
-    }
-    Ok(())
-}
-
-/// Shutdown the IPC subsystem and cleanup all resources
-pub fn shutdown() -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.take() {
-        // Cleanup all registered resources
-        for (name, _) in &reg.pipes {
-            let _ = remove_named_pipe(name);
-        }
-        
-        for (name, _) in &reg.shared_memory {
-            let _ = remove_shared_memory(name);
-        }
-        
-        // Sockets and message queues cleanup handled by their respective modules
-    }
-    Ok(())
-}
-
-/// Get current IPC statistics
-pub fn get_statistics() -> IpcResult<IpcStatistics> {
-    let registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    match registry.as_ref() {
-        Some(reg) => Ok(reg.statistics.clone()),
-        None => Ok(IpcStatistics::default()),
-    }
-}
-
-// Internal helper functions for registry operations
-pub(crate) fn register_pipe(name: String, handle: PipeHandle) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.register_pipe(name, handle);
-    }
-    Ok(())
-}
-
-pub(crate) fn unregister_pipe(name: &str) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.unregister_pipe(name);
-    }
-    Ok(())
-}
-
-pub(crate) fn register_socket(name: String, addr: SocketAddress) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.register_socket(name, addr);
-    }
-    Ok(())
-}
-
-pub(crate) fn unregister_socket(name: &str) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.unregister_socket(name);
-    }
-    Ok(())
-}
-
-pub(crate) fn register_shared_memory(name: String, path: String) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.register_shared_memory(name, path);
-    }
-    Ok(())
-}
-
-pub(crate) fn unregister_shared_memory(name: &str) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.unregister_shared_memory(name);
-    }
-    Ok(())
-}
-
-pub(crate) fn register_message_queue(name: String, path: String) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.register_message_queue(name, path);
-    }
-    Ok(())
-}
-
-pub(crate) fn unregister_message_queue(name: &str) -> IpcResult<()> {
-    let mut registry = IPC_REGISTRY.lock().map_err(|_| IpcError::Internal("Failed to acquire registry lock".to_string()))?;
-    if let Some(reg) = registry.as_mut() {
-        reg.unregister_message_queue(name);
-    }
-    Ok(())
-}
-
-pub(crate) fn increment_operations() {
-    if let Ok(mut registry) = IPC_REGISTRY.lock() {
-        if let Some(reg) = registry.as_mut() {
-            reg.increment_operations();
+            max_message_size: 65536,      // 64KB
+            max_queue_size: 1000,         // 1000 messages
+            default_permissions: 0o666,   // rw-rw-rw-
+            default_timeout: std::time::Duration::from_secs(30),
+            pipe_buffer_size: 8192,       // 8KB
         }
     }
 }
 
-pub(crate) fn increment_failed_operations() {
-    if let Ok(mut registry) = IPC_REGISTRY.lock() {
-        if let Some(reg) = registry.as_mut() {
-            reg.increment_failed_operations();
+/// Initialize IPC subsystem
+pub fn initialize_ipc() -> IpcResult<()> {
+    #[cfg(unix)]
+    {
+        // Ensure signal handlers are set up for pipe cleanup
+        setup_signal_handlers()?;
+    }
+    
+    tracing::info!("IPC subsystem initialized");
+    Ok(())
+}
+
+/// Cleanup IPC resources
+pub fn cleanup_ipc() -> IpcResult<()> {
+    // Cleanup any global IPC resources
+    named_pipes::cleanup_pipes()?;
+    message_queues::cleanup_queues()?;
+    shared_memory::cleanup_segments()?;
+    semaphores::cleanup_semaphores()?;
+    
+    tracing::info!("IPC subsystem cleaned up");
+    Ok(())
+}
+
+#[cfg(unix)]
+fn setup_signal_handlers() -> IpcResult<()> {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+    
+    static HANDLERS_INSTALLED: AtomicBool = AtomicBool::new(false);
+    
+    if !HANDLERS_INSTALLED.swap(true, Ordering::Acquire) {
+        // Install signal handlers for cleanup
+        unsafe {
+            libc::signal(libc::SIGPIPE, libc::SIG_IGN);
         }
     }
+    
+    Ok(())
 }
 
 #[cfg(test)]
@@ -280,33 +122,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_ipc_config_default() {
+        let config = IpcConfig::default();
+        assert_eq!(config.max_message_size, 65536);
+        assert_eq!(config.max_queue_size, 1000);
+        assert_eq!(config.default_permissions, 0o666);
+    }
+
+    #[test]
     fn test_ipc_initialization() {
-        assert!(initialize().is_ok());
-        assert!(shutdown().is_ok());
-    }
-
-    #[test]
-    fn test_ipc_statistics() {
-        let _ = initialize();
-        let stats = get_statistics().unwrap();
-        assert_eq!(stats.active_pipes, 0);
-        assert_eq!(stats.active_sockets, 0);
-        assert_eq!(stats.active_shared_memory, 0);
-        assert_eq!(stats.active_message_queues, 0);
-    }
-
-    #[test]
-    fn test_registry_operations() {
-        let _ = initialize();
-        
-        // Test pipe registration
-        let handle = PipeHandle::new("/tmp/test".to_string());
-        assert!(register_pipe("test_pipe".to_string(), handle).is_ok());
-        let stats = get_statistics().unwrap();
-        assert_eq!(stats.active_pipes, 1);
-        
-        assert!(unregister_pipe("test_pipe").is_ok());
-        let stats = get_statistics().unwrap();
-        assert_eq!(stats.active_pipes, 0);
+        assert!(initialize_ipc().is_ok());
+        assert!(cleanup_ipc().is_ok());
     }
 }

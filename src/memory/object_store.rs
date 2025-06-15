@@ -123,6 +123,14 @@ impl<T: Storable> ObjectHandle<T> {
         }
     }
     
+    /// Create a new object handle for externally allocated objects
+    /// 
+    /// This is used by enhanced garbage collection systems that manage
+    /// their own memory allocation but need to integrate with the object store.
+    pub fn new_external(object_id: ObjectId, ptr: NonNull<T>, object_store: Weak<ObjectStore>) -> Self {
+        Self::new(object_id, ptr, object_store)
+    }
+    
     /// Get the object ID
     pub fn object_id(&self) -> ObjectId {
         self.object_id

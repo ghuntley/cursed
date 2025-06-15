@@ -1,0 +1,452 @@
+/// Table-driven tests for the TestVibes framework
+/// 
+/// Provides support for parameterized tests with multiple test cases
+
+use crate::stdlib::value::Value;
+use super::{VibeTest, TestVibesResult};
+use std::sync::Arc;
+
+/// A single test case in a table-driven test
+#[derive(Clone)]
+pub struct TestCase {
+    pub Name: String,
+    pub Input: Value,
+    pub Expected: Value,
+    pub SetupFn: Option<Arc<dyn Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync>>,
+    pub TestFn: Arc<dyn Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync>,
+}
+
+impl TestCase {
+    /// Create a new test case
+    pub fn new<F>(name: &str, input: Value, expected: Value, test_fn: F) -> Self
+    where
+        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
+    {
+        Self {
+            Name: name.to_string(),
+            Input: input,
+            Expected: expected,
+            SetupFn: None,
+            TestFn: Arc::new(test_fn),
+        }
+    }
+
+    /// Create a new test case with setup function
+    pub fn new_with_setup<S, F>(
+        name: &str,
+        input: Value,
+        expected: Value,
+        setup_fn: S,
+        test_fn: F,
+    ) -> Self
+    where
+        S: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
+        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
+    {
+        Self {
+            Name: name.to_string(),
+            Input: input,
+            Expected: expected,
+            SetupFn: Some(Arc::new(setup_fn)),
+            TestFn: Arc::new(test_fn),
+        }
+    }
+
+    /// Run this test case
+    pub fn run(&self, parent_test: &VibeTest) -> TestVibesResult<()> {
+        // Create a sub-test for this case
+        let sub_test = VibeTest::new(&format!("{}/{}", parent_test.Name(), self.Name));
+        
+        // Run setup if provided
+        if let Some(ref setup) = self.SetupFn {
+            setup(&sub_test)?;
+        }
+        
+        // Log test case info
+        sub_test.Log(&[Value::String(format!(
+            "Running test case: {} with input: {}",
+            self.Name,
+            value_to_string(&self.Input)
+        ))])?;
+        
+        // Run the actual test function
+        let result = (self.TestFn)(&sub_test, &self.Input, &self.Expected);
+        
+        // Propagate sub-test results to parent
+        if sub_test.Failed() {
+            parent_test.Fail()?;
+            for log in sub_test.get_logs() {
+                parent_test.Log(&[Value::String(format!("  {}: {}", self.Name, log))])?;
+            }
+        } else if sub_test.Skipped() {
+            parent_test.Log(&[Value::String(format!("  {}: SKIPPED", self.Name))])?;
+        } else {
+            parent_test.Log(&[Value::String(format!("  {}: PASSED", self.Name))])?;
+        }
+        
+        result
+    }
+}
+
+/// Run a collection of test cases
+pub fn RunTestCases(t: &VibeTest, test_cases: &[TestCase]) -> TestVibesResult<()> {
+    let mut failed_cases = Vec::new();
+    let mut skipped_cases = Vec::new();
+    let mut passed_cases = Vec::new();
+    
+    t.Log(&[Value::String(format!("Running {} test cases", test_cases.len()))])?;
+    
+    for test_case in test_cases {
+        match test_case.run(t) {
+            Ok(_) => {
+                if t.Skipped() {
+                    skipped_cases.push(test_case.Name.clone());
+                } else {
+                    passed_cases.push(test_case.Name.clone());
+                }
+            }
+            Err(_) => {
+                failed_cases.push(test_case.Name.clone());
+            }
+        }
+    }
+    
+    // Log summary
+    t.Log(&[Value::String(format!(
+        "Test cases summary: {} passed, {} failed, {} skipped",
+        passed_cases.len(),
+        failed_cases.len(),
+        skipped_cases.len()
+    ))])?;
+    
+    if !failed_cases.is_empty() {
+        t.Log(&[Value::String(format!(
+            "Failed cases: {}",
+            failed_cases.join(", ")
+        ))])?;
+        return t.Fatal(&[Value::String("One or more test cases failed".to_string())]);
+    }
+    
+    Ok(())
+}
+
+/// Builder for creating table-driven test suites
+pub struct TableTestBuilder {
+    name: String,
+    cases: Vec<TestCase>,
+    global_setup: Option<Arc<dyn Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync>>,
+    global_teardown: Option<Arc<dyn Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync>>,
+}
+
+impl TableTestBuilder {
+    /// Create a new table test builder
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            cases: Vec::new(),
+            global_setup: None,
+            global_teardown: None,
+        }
+    }
+
+    /// Add a test case
+    pub fn add_case<F>(mut self, name: &str, input: Value, expected: Value, test_fn: F) -> Self
+    where
+        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
+    {
+        self.cases.push(TestCase::new(name, input, expected, test_fn));
+        self
+    }
+
+    /// Add a test case with setup
+    pub fn add_case_with_setup<S, F>(
+        mut self,
+        name: &str,
+        input: Value,
+        expected: Value,
+        setup_fn: S,
+        test_fn: F,
+    ) -> Self
+    where
+        S: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
+        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
+    {
+        self.cases.push(TestCase::new_with_setup(name, input, expected, setup_fn, test_fn));
+        self
+    }
+
+    /// Set global setup function
+    pub fn with_setup<F>(mut self, setup_fn: F) -> Self
+    where
+        F: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
+    {
+        self.global_setup = Some(Arc::new(setup_fn));
+        self
+    }
+
+    /// Set global teardown function
+    pub fn with_teardown<F>(mut self, teardown_fn: F) -> Self
+    where
+        F: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
+    {
+        self.global_teardown = Some(Arc::new(teardown_fn));
+        self
+    }
+
+    /// Run all test cases
+    pub fn run(self, t: &VibeTest) -> TestVibesResult<()> {
+        t.Log(&[Value::String(format!("Running table test: {}", self.name))])?;
+        
+        // Run global setup
+        if let Some(ref setup) = self.global_setup {
+            setup(t)?;
+        }
+        
+        // Run test cases
+        let result = RunTestCases(t, &self.cases);
+        
+        // Run global teardown
+        if let Some(ref teardown) = self.global_teardown {
+            if let Err(teardown_err) = teardown(t) {
+                t.Log(&[Value::String(format!("Teardown failed: {}", teardown_err))])?;
+            }
+        }
+        
+        result
+    }
+}
+
+// Common test case patterns
+
+/// Helper for creating string transformation test cases
+pub fn string_transform_cases() -> Vec<TestCase> {
+    vec![
+        TestCase::new(
+            "to_uppercase",
+            Value::String("hello".to_string()),
+            Value::String("HELLO".to_string()),
+            |_t, input, expected| {
+                if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
+                    let result = input_str.to_uppercase();
+                    if result == *expected_str {
+                        Ok(())
+                    } else {
+                        Err(super::assertion_failed(&format!(
+                            "Expected '{}', got '{}'", expected_str, result
+                        )).into())
+                    }
+                } else {
+                    Err(super::assertion_failed("Invalid input/expected types").into())
+                }
+            }
+        ),
+        TestCase::new(
+            "to_lowercase",
+            Value::String("WORLD".to_string()),
+            Value::String("world".to_string()),
+            |_t, input, expected| {
+                if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
+                    let result = input_str.to_lowercase();
+                    if result == *expected_str {
+                        Ok(())
+                    } else {
+                        Err(super::assertion_failed(&format!(
+                            "Expected '{}', got '{}'", expected_str, result
+                        )).into())
+                    }
+                } else {
+                    Err(super::assertion_failed("Invalid input/expected types").into())
+                }
+            }
+        ),
+        TestCase::new(
+            "trim_whitespace",
+            Value::String("  spaced  ".to_string()),
+            Value::String("spaced".to_string()),
+            |_t, input, expected| {
+                if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
+                    let result = input_str.trim();
+                    if result == *expected_str {
+                        Ok(())
+                    } else {
+                        Err(super::assertion_failed(&format!(
+                            "Expected '{}', got '{}'", expected_str, result
+                        )).into())
+                    }
+                } else {
+                    Err(super::assertion_failed("Invalid input/expected types").into())
+                }
+            }
+        ),
+    ]
+}
+
+/// Helper for creating mathematical operation test cases
+pub fn math_operation_cases() -> Vec<TestCase> {
+    vec![
+        TestCase::new(
+            "addition",
+            Value::Array(vec![Value::Int(2), Value::Int(3)]),
+            Value::Int(5),
+            |_t, input, expected| {
+                if let (Value::Array(operands), Value::Int(expected_result)) = (input, expected) {
+                    if operands.len() == 2 {
+                        if let (Value::Int(a), Value::Int(b)) = (&operands[0], &operands[1]) {
+                            let result = a + b;
+                            if result == *expected_result {
+                                Ok(())
+                            } else {
+                                Err(super::assertion_failed(&format!(
+                                    "Expected {}, got {}", expected_result, result
+                                )).into())
+                            }
+                        } else {
+                            Err(super::assertion_failed("Expected integer operands").into())
+                        }
+                    } else {
+                        Err(super::assertion_failed("Expected 2 operands").into())
+                    }
+                } else {
+                    Err(super::assertion_failed("Invalid input/expected types").into())
+                }
+            }
+        ),
+        TestCase::new(
+            "multiplication",
+            Value::Array(vec![Value::Int(4), Value::Int(7)]),
+            Value::Int(28),
+            |_t, input, expected| {
+                if let (Value::Array(operands), Value::Int(expected_result)) = (input, expected) {
+                    if operands.len() == 2 {
+                        if let (Value::Int(a), Value::Int(b)) = (&operands[0], &operands[1]) {
+                            let result = a * b;
+                            if result == *expected_result {
+                                Ok(())
+                            } else {
+                                Err(super::assertion_failed(&format!(
+                                    "Expected {}, got {}", expected_result, result
+                                )).into())
+                            }
+                        } else {
+                            Err(super::assertion_failed("Expected integer operands").into())
+                        }
+                    } else {
+                        Err(super::assertion_failed("Expected 2 operands").into())
+                    }
+                } else {
+                    Err(super::assertion_failed("Invalid input/expected types").into())
+                }
+            }
+        ),
+        TestCase::new(
+            "division",
+            Value::Array(vec![Value::Int(15), Value::Int(3)]),
+            Value::Int(5),
+            |_t, input, expected| {
+                if let (Value::Array(operands), Value::Int(expected_result)) = (input, expected) {
+                    if operands.len() == 2 {
+                        if let (Value::Int(a), Value::Int(b)) = (&operands[0], &operands[1]) {
+                            if *b == 0 {
+                                return Err(super::assertion_failed("Division by zero").into());
+                            }
+                            let result = a / b;
+                            if result == *expected_result {
+                                Ok(())
+                            } else {
+                                Err(super::assertion_failed(&format!(
+                                    "Expected {}, got {}", expected_result, result
+                                )).into())
+                            }
+                        } else {
+                            Err(super::assertion_failed("Expected integer operands").into())
+                        }
+                    } else {
+                        Err(super::assertion_failed("Expected 2 operands").into())
+                    }
+                } else {
+                    Err(super::assertion_failed("Invalid input/expected types").into())
+                }
+            }
+        ),
+    ]
+}
+
+// Helper functions
+
+/// Convert value to string representation
+fn value_to_string(value: &Value) -> String {
+    match value {
+        Value::Nil => "nil".to_string(),
+        Value::Bool(b) => b.to_string(),
+        Value::Int(i) => i.to_string(),
+        Value::Float(f) => f.to_string(),
+        Value::String(s) => format!("\"{}\"", s),
+        Value::Array(arr) => {
+            let elements: Vec<String> = arr.iter().map(value_to_string).collect();
+            format!("[{}]", elements.join(", "))
+        }
+        Value::Object(obj) => {
+            let pairs: Vec<String> = obj.iter()
+                .map(|(k, v)| format!("{}: {}", k, value_to_string(v)))
+                .collect();
+            format!("{{{}}}", pairs.join(", "))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stdlib::test_vibes::core::VibeTest;
+
+    #[test]
+    fn test_table_driven_string_operations() {
+        let test = VibeTest::new("test_string_ops");
+        let cases = string_transform_cases();
+        
+        let result = RunTestCases(&test, &cases);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_table_driven_math_operations() {
+        let test = VibeTest::new("test_math_ops");
+        let cases = math_operation_cases();
+        
+        let result = RunTestCases(&test, &cases);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_table_test_builder() {
+        let test = VibeTest::new("test_builder");
+        
+        let result = TableTestBuilder::new("string_tests")
+            .add_case(
+                "reverse_test",
+                Value::String("hello".to_string()),
+                Value::String("olleh".to_string()),
+                |_t, input, expected| {
+                    if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
+                        let result: String = input_str.chars().rev().collect();
+                        if result == *expected_str {
+                            Ok(())
+                        } else {
+                            Err(super::assertion_failed(&format!(
+                                "Expected '{}', got '{}'", expected_str, result
+                            )).into())
+                        }
+                    } else {
+                        Err(super::assertion_failed("Invalid types").into())
+                    }
+                }
+            )
+            .with_setup(|t| {
+                t.Log(&[Value::String("Setting up string tests".to_string())])?;
+                Ok(())
+            })
+            .run(&test);
+        
+        assert!(result.is_ok());
+    }
+}

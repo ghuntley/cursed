@@ -11,6 +11,7 @@ pub mod generator;
 pub mod html_generator;
 pub mod markdown_generator;
 pub mod json_generator;
+pub mod xml_generator;
 pub mod comment_parser;
 pub mod cli;
 
@@ -266,6 +267,16 @@ pub fn generate_json_docs(source_file: &Path, output_dir: &Path) -> Result<(), E
     let mut config = generator::DocGeneratorConfig::default();
     config.output_dir = output_dir.to_path_buf();
     config.format = generator::DocFormat::Json;
+    
+    let mut generator = generator::DocumentationGenerator::new(config);
+    generator.generate_from_files(vec![source_file.to_path_buf()])
+}
+
+/// Generate XML documentation for a single file
+pub fn generate_xml_docs(source_file: &Path, output_dir: &Path) -> Result<(), Error> {
+    let mut config = generator::DocGeneratorConfig::default();
+    config.output_dir = output_dir.to_path_buf();
+    config.format = generator::DocFormat::Xml;
     
     let mut generator = generator::DocumentationGenerator::new(config);
     generator.generate_from_files(vec![source_file.to_path_buf()])

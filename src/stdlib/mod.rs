@@ -5,10 +5,12 @@ pub mod web_vibez;
 pub mod http_core;
 pub mod database;
 pub mod crypto;
+pub mod crypto_pqc;
 pub mod template;
 pub mod errors_simple;
 pub use errors_simple as errors;
 pub mod value;
+pub mod exec_slay;
 pub mod fs;
 pub mod io;
 pub mod string;
@@ -19,11 +21,22 @@ pub mod env;
 pub mod testing;
 pub mod process;
 pub mod sync;
+pub mod atomic_drip;
 pub mod ipc;
 pub mod net;
+pub mod vibe_net;
 pub mod vibecheck;
 pub mod system;
+pub mod sys_core;
 pub mod profiler;
+pub mod r#async;
+pub mod test_vibes;
+pub mod signal_boost;
+pub mod exec_vibez;
+pub mod json_tea;
+pub mod oglogging;
+pub mod plug_vibes;
+pub mod csv;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -72,6 +85,39 @@ pub use io::{
     BufferedReader, BufferedWriter, SharedBufferedReader, SharedBufferedWriter,
     buffered_stdin, buffered_stdout, buffered_stderr,
     shared_buffered_stdin, shared_buffered_stdout, shared_buffered_stderr
+};
+
+// Process execution re-exports - ExecSlay module for command execution with style
+pub use exec_slay::{
+    // Error handling and core types
+    SlayResult, SlayOptions, SignalOptions, ProcessStats, SharedProcessState,
+    
+    // Core command execution
+    SlayCommand, SlayProcess, SlayProcessState,
+    
+    // Pipeline execution
+    SlayPipeline,
+    
+    // Background task management
+    SlayTask, SlayTaskManager, TaskStatus, run_background,
+    
+    // Command builder
+    SlayCommandBuilder, slay_command,
+    
+    // Shell command execution
+    run_shell, shell_output, run_shell_with_env, run_shell_in_dir,
+    run_shell_with_env_and_dir, shell_output_with_env, shell_output_in_dir,
+    shell_combined_output, ShellCommandBuilder,
+    
+    // Process monitoring
+    ProcessMonitor, MonitorConfig, MonitoringStats, ResourceLimiter,
+    LimitType, LimitViolation,
+    
+    // Shell utilities
+    shell::utils::command_exists, shell::utils::pwd, shell::utils::ls,
+    shell::utils::cd, shell::utils::mkdir, shell::utils::rm,
+    shell::utils::cp, shell::utils::mv, shell::utils::get_env as shell_get_env,
+    shell::utils::set_env as shell_set_env,
 };
 
 // String manipulation re-exports
@@ -399,59 +445,56 @@ pub use sync::{
     init_global_thread_pool, shutdown_global_thread_pool, get_thread_pool_utilization,
 };
 
+// Atomic operations re-exports - Low-level atomic memory operations for goroutine synchronization
+pub use atomic_drip::{
+    // Error handling system
+    AtomicError, AtomicResult, atomic_error, concurrent_modification_error, alignment_error,
+    
+    // Core atomic types
+    Int32, Int64, Uint32, Uint64, Bool, Float32, Float64, String, Pointer,
+    
+    // Generic atomic value container
+    Value, AtomicString, AtomicVec, AtomicHashMap,
+    
+    // Memory ordering types and constants
+    MemoryOrder, MEMORY_ORDER_RELAXED, MEMORY_ORDER_ACQUIRE, MEMORY_ORDER_RELEASE,
+    MEMORY_ORDER_ACQUIRE_RELEASE, MEMORY_ORDER_SEQUENTIALLY_CONSISTENT,
+    
+    // Memory fence operations
+    fence::memory_fence, fence::compiler_fence, fence::full_barrier, 
+    fence::acquire_barrier, fence::release_barrier,
+    
+    // Module initialization
+    init as init_atomic_drip,
+};
+
 // Inter-Process Communication re-exports - Comprehensive IPC support
 pub use ipc::{
     // Error handling system
-    IpcError, IpcResult, communication_error as ipc_communication_error, security_error, resource_error, timeout_error as ipc_timeout_error,
-    invalid_operation, permission_denied as ipc_permission_denied, resource_exhausted, connection_failed,
+    IpcError, IpcResult,
+    named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+    permission_denied as ipc_permission_denied, already_exists, not_found, timeout_error as ipc_timeout_error,
+    system_error as ipc_system_error, platform_error as ipc_platform_error,
     
-    // Core IPC types and traits
-    ProcessId, IpcHandle, IpcPermissions, IpcMode, IpcTimeout, IpcConfig, IpcStatistics,
-    SharedMemoryId, MessageQueueId, SemaphoreId, PipeId, ResourceLimits as IpcResourceLimits,
-    IpcChannel, IpcReader, IpcWriter, IpcBidirectional, Synchronizable, Lockable, 
-    Waitable, Signalable, Serializable, Deserializable, IpcResource,
+    // Configuration
+    IpcConfig, initialize_ipc, cleanup_ipc,
     
-    // Shared Memory operations
-    SharedMemory as IpcSharedMemory, SharedMemoryConfig, SharedMemoryAccess,
-    create_shared_memory, open_shared_memory, remove_shared_memory,
+    // Named Pipes
+    NamedPipe, NamedPipeServer, NamedPipeClient, NamedPipeConfig,
+    ProcessStdin, ProcessStdout, ProcessStderr,
     
-    // Named Pipes operations
-    NamedPipe as IpcNamedPipe, AnonymousPipe, PipeConfig, PipeMode, PipeEnd,
-    create_pipe as ipc_create_pipe, create_named_pipe, open_pipe, connect_pipe,
+    // Message Queues
+    MessageQueue, Message, MessageQueueConfig, MessageQueueStats,
     
-    // Message Queue operations
-    MessageQueue as IpcMessageQueue, Message, MessageType, MessagePriority, MessageConfig,
-    create_message_queue, open_message_queue, remove_message_queue,
-    send_message, receive_message, peek_message,
+    // Shared Memory
+    SharedMemory, SharedMemorySegment, SharedMemoryConfig, SharedMemoryStats,
     
-    // Semaphore operations
-    Semaphore as IpcSemaphore, SemaphoreConfig, SemaphoreValue, SemaphorePermissions,
-    create_semaphore, open_semaphore, remove_semaphore,
-    acquire_semaphore, release_semaphore, try_acquire_semaphore,
+    // Semaphores
+    Semaphore, NamedSemaphore, SemaphoreConfig, SemaphoreValue,
     
-    // Signal handling
-    SignalHandler, Signal as IpcSignal, SignalAction, SignalMask, SignalConfig,
-    send_signal, block_signal, unblock_signal, ignore_signal as ipc_ignore_signal,
-    register_signal_handler, unregister_signal_handler, wait_for_signal, signal_pending,
-    
-    // Domain Socket operations
-    DomainSocket, UnixSocket, SocketConfig, SocketType, SocketAddress,
-    create_socket, bind_socket, listen_socket, accept_connection, connect_socket,
-    
-    // Remote Procedure Call infrastructure
-    RpcClient, RpcServer, RpcConfig, RpcMethod, RpcRequest, RpcResponse,
-    RpcError, RpcHandler, RpcRegistry, RpcTransport,
-    create_rpc_server, create_rpc_client, register_rpc_method, call_remote_method,
-    
-    // Security and permissions management
-    IpcSecurityContext, SecurityPolicy, AccessControl, Permission,
-    Credential, AuthenticationMethod, AuthorizationResult,
-    create_security_context, validate_permissions, check_access,
-    encrypt_ipc_data, decrypt_ipc_data, generate_ipc_token,
-    
-    // Module management
-    initialize as initialize_ipc, shutdown as shutdown_ipc, get_ipc_statistics,
-    ResourceContentionStats, IpcPerformanceMetrics,
+    // Unix Domain Sockets
+    UnixSocket, UnixSocketServer, UnixSocketClient, UnixSocketConfig, UnixSocketType,
+    UnixDatagramServer, cleanup_sockets,
 };
 
 // Networking re-exports - Comprehensive networking and protocol support
@@ -559,76 +602,239 @@ pub use profiler::{
     get_profiling_overhead
 };
 
-// IPC (Inter-Process Communication) re-exports - Complete IPC functionality
-pub use ipc::{
-    IpcError, IpcResult, 
-    communication_error, security_error, resource_error, timeout_error,
-    invalid_operation, permission_denied, resource_exhausted, connection_failed,
+// TestVibes testing framework re-exports - Comprehensive testing with Gen Z flavor
+pub use test_vibes::{
+    // Core testing types
+    VibeTest, VibeBench, VibeTestingManager, TestMain,
+    VibeTestState, VibeBenchState, TestResult, BenchmarkResult,
     
-    // Core IPC types and traits
-    ProcessId, IpcHandle, IpcPermissions, IpcMode, 
-    SharedMemoryId, MessageQueueId, SemaphoreId, PipeId,
-    IpcTimeout, IpcConfig, IpcStatistics, ResourceLimits,
-    IpcChannel, IpcReader, IpcWriter, IpcBidirectional,
-    Synchronizable, Lockable, Waitable, Signalable,
-    Serializable, Deserializable, IpcResource,
+    // Comprehensive assertion framework
+    Assert, AssertEqual, AssertNotEqual, AssertNil, AssertNotNil,
+    AssertTrue, AssertFalse, AssertError, AssertNoError, AssertErrorIs, AssertErrorContains,
+    AssertLen, AssertEmpty, AssertNotEmpty, AssertContains, AssertNotContains,
+    AssertGreater, AssertGreaterOrEqual, AssertLess, AssertLessOrEqual,
+    AssertZero, AssertNotZero, AssertContainsSubtea, AssertHasPrefix, AssertHasSuffix,
+    AssertMatchesRegex, AssertType, AssertImplements,
+    AssertShooks, AssertShooksWithValue, AssertNoShook,
     
-    // Shared Memory operations
-    SharedMemory, SharedMemoryConfig, SharedMemoryAccess,
-    create_shared_memory, open_shared_memory, remove_shared_memory,
-    SharedMemoryIterator, SharedMemoryView, MemoryMapping, MemoryProtection,
+    // Test fixtures and table-driven tests
+    FixtureVibe, NewFixtureVibe, TestCase, RunTestCases,
     
-    // Named Pipes operations
-    NamedPipe, AnonymousPipe, PipeConfig, PipeMode, PipeEnd,
-    create_pipe, create_named_pipe, open_pipe, connect_pipe,
-    PipeReader, PipeWriter, PipeStream, PipeListener,
+    // Mocking framework
+    MockVibe, Expectation, Stub,
     
-    // Message Queue operations
-    MessageQueue, Message, MessageType, MessagePriority, MessageConfig,
-    create_message_queue, open_message_queue, remove_message_queue,
-    send_message, receive_message, peek_message, MessageIterator,
+    // Test utilities
+    TempFile, TempDir, Parallel, WithDeadline, WithSetup,
+    RandomString, RandomInt, RandomFloat, RandomBytes,
     
-    // Semaphore operations
-    Semaphore, SemaphoreConfig, SemaphoreValue, SemaphorePermissions,
-    create_semaphore, open_semaphore, remove_semaphore,
-    acquire_semaphore, release_semaphore, try_acquire_semaphore,
-    CountingSemaphore, BinarySemaphore, NamedSemaphore,
+    // Benchmarking utilities
+    Benchmark, BenchmarkMemory, BenchmarkParallel,
     
-    // Signal handling
-    SignalHandler, Signal, SignalAction, SignalMask, SignalConfig,
-    send_signal, block_signal, unblock_signal, ignore_signal,
-    register_signal_handler, unregister_signal_handler,
-    wait_for_signal, signal_pending, SignalSet,
-    
-    // Domain Socket operations
-    DomainSocket, UnixSocket, SocketConfig, SocketType, SocketAddress,
-    create_socket, bind_socket, listen_socket, accept_connection,
-    connect_socket, SocketListener, SocketStream, SocketPair,
-    
-    // Remote Procedure Call infrastructure
-    RpcClient, RpcServer, RpcConfig, RpcMethod, RpcRequest, RpcResponse,
-    RpcError, RpcHandler, RpcRegistry, RpcTransport,
-    create_rpc_server, create_rpc_client, register_rpc_method,
-    call_remote_method, RpcSerializer, RpcDeserializer,
-    
-    // Security and permissions management
-    IpcSecurityContext, SecurityPolicy, AccessControl, Permission,
-    Credential, AuthenticationMethod, AuthorizationResult,
-    create_security_context, validate_permissions, check_access,
-    encrypt_ipc_data, decrypt_ipc_data, generate_ipc_token,
-    
-    // High-level IPC channels and synchronization
-    IpcChannel as IpcChannelHighLevel, ChannelConfig, ChannelType, ChannelStatistics, ChannelPair,
-    IpcBarrier, IpcRwLock, IpcCondVar, ProcessCoordinator,
-    IpcRwLockReadGuard, IpcRwLockWriteGuard, BarrierWaitResult,
-    CoordinatorStatistics,
-    
-    // Transport layer
-    UnixSocketTransport, UnixSocketConfig, UnixSocketPool, ConnectionPool,
-    TransportPool, PooledConnection, PoolManager, PoolConfiguration,
-    Transport, TransportConnection, TransportListener, StreamTransport, DatagramTransport,
-    TransportStatistics,
-    
-    // Module initialization and statistics
-    get_ipc_statistics
+    // Error handling
+    TestVibesResult, TestVibesError,
+    test_failed, test_skipped, assertion_failed, expectation_not_met, timeout_exceeded
 };
+
+// SignalBoost signal handling re-exports - Enhanced OS signal management
+pub use signal_boost::{
+    // Core signal types and constants
+    BoostSignal, NotifyHandle,
+    SIGINT, SIGTERM, SIGHUP, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE,
+    SIGKILL, SIGSEGV, SIGPIPE, SIGALRM, SIGCHLD, SIGCONT, SIGSTOP, SIGTSTP,
+    SIGTTIN, SIGTTOU, SIGUSR1, SIGUSR2, SIGWINCH,
+    
+    // Core signal handling functions
+    notify, notify_context, stop, reset, ignored,
+    
+    // Signal handler for custom handlers
+    SignalHandler, SignalHandlerConfig,
+    
+    // Graceful shutdown coordination
+    GracefulShutdown, ShutdownOptions, ShutdownStatus, ShutdownTask, ShutdownTaskGroup,
+    
+    // Signal multiplexing
+    SignalMultiplexer, MultiplexerHandle,
+    
+    // Signal actions
+    SignalAction, ignore_action, exit_action, exit_with_code_action,
+    log_action, shook_action, chain_actions,
+    
+    // Process signal management
+    signal_process, signal_group, broadcast, get_targets,
+    
+    // Signal filtering and throttling
+    filter_signals, throttle_signals, debounce_signals,
+    
+    // GenZ themed features
+    VibeChecker, vibe_check, yeet_on_signal, no_cap_reload_config,
+    
+    // Error handling
+    SignalBoostError, SignalBoostResult,
+    
+    // Module management
+    initialize as initialize_signal_boost, get_statistics as get_signal_boost_statistics,
+    ModuleStatistics as SignalBoostModuleStatistics
+};
+
+// VibeNet networking re-exports - Complete networking package with CURSED flair
+pub use vibe_net::{
+    // Core types and result handling
+    NetResult, VibeContext,
+    
+    // IP addressing
+    IPVibe, IPNetVibe, IPMaskVibe,
+    
+    // Network addresses
+    AddrVibe, TCPAddrVibe, UDPAddrVibe, UnixAddrVibe,
+    
+    // Connections
+    ConnVibe, TCPConnVibe, UDPConnVibe, UnixConnVibe, PacketConnVibe,
+    
+    // Listeners
+    ListenerVibe, TCPListenerVibe, UnixListenerVibe,
+    
+    // DNS resolution
+    DNSResolverVibe, MXVibe, NSVibe, SRVVibe,
+    
+    // Dialer configuration
+    DialerVibe,
+    
+    // Enhanced features
+    ConnPoolVibe, ConnPoolStats,
+    CircuitBreakerVibe, CircuitBreakerState,
+    RateLimiterVibe, Reservation,
+    
+    // Protocol adapters
+    WebSocketConnVibe, MQTTConnVibe, HTTP2ConnVibe, HTTP2StreamVibe,
+    
+    // Network interfaces
+    InterfaceVibe, InterfaceFlags, HardwareAddrVibe,
+    
+    // High-level functions
+    dial, dial_timeout, listen, listen_packet,
+    resolve_tcp_addr, resolve_udp_addr, resolve_unix_addr,
+    dial_tcp, dial_udp, dial_unix,
+    
+    // DNS functions
+    lookup_host, lookup_ip, lookup_port, lookup_cname,
+    lookup_srv, lookup_mx, lookup_ns, lookup_txt, lookup_addr,
+    
+    // IPv6 support
+    is_ipv6_enabled, prefer_ipv6, set_prefer_ipv6, ipv6_interface_addrs,
+    
+    // Interface functions
+    interfaces, interface_by_index, interface_by_name,
+    
+    // Module utilities
+    init as init_vibe_net, version as vibe_net_version, features as vibe_net_features,
+    
+    // Error handling
+    error::{
+        NetError as VibeNetError, address_resolution_error, connection_failed_error, timeout_error as vibe_net_timeout_error,
+        invalid_protocol_error, dns_resolution_error, interface_error, socket_error, tls_error,
+        protocol_error, rate_limit_error, circuit_breaker_error, pool_exhausted_error,
+        io_error as vibe_net_io_error, permission_denied_error, resource_unavailable_error, invalid_config_error
+    }
+};
+
+// exec_vibez command execution re-exports - Enhanced external command execution
+pub use exec_vibez::{
+    // Core command execution types
+    Cmd, Process, ProcessState, Command, CommandContext,
+    
+    // Error handling
+    ExecError, ExecResult,
+    
+    // Process context and timeout support
+    VibeContext, ProcessContext, ContextError,
+    
+    // Process groups and coordination
+    ProcessGroup, ProcessGroupOptions, NewProcessGroup,
+    
+    // Environment management
+    Environment, NewEnvironment, CommandWithEnv,
+    
+    // Output streaming and input generation
+    OutputStreamer, NewOutputStreamer, InputGenerator, NewInputGenerator,
+    
+    // Timeout and execution control
+    RunWithTimeout, TimeoutConfig,
+    
+    // Enhanced features
+    LookPath, ProcessMonitor, ResourceLimits, SecurityOptions,
+    ProcessPool, ProcessQueue, BatchRunner,
+    PlatformFeatures, CrossPlatformUtils,
+    
+    // Module management
+    initialize as initialize_exec_vibez, get_statistics as get_exec_vibez_statistics,
+    ModuleStatistics as ExecVibezModuleStatistics
+};
+
+// JSON Tea - JSON encoding and decoding re-exports
+pub use json_tea::{
+    // Core JSON operations
+    marshal, unmarshal, marshal_indent, valid, marshal_to_string, unmarshal_from_string,
+    
+    // Streaming support
+    new_encoder, new_decoder, Encoder, Decoder, StreamingEncoder, StreamingDecoder,
+    
+    // JSON value types
+    JsonValue, JsonResult, JsonObject, JsonArray,
+    
+    // JSON tag support
+    tags::JsonTag,
+    
+    // Error handling
+    JsonErrorKind,
+    
+    // Utility functions
+    escape_json_string, unescape_json_string,
+};
+
+// OG Logging - Simple and powerful logging re-exports
+pub use oglogging::{
+    // Core logging types
+    Logger, new_logger,
+    
+    // Standard logger functions
+    spill, spillf, fatal, fatalf, shook, shookf,
+    set_flags, set_output, set_prefix, flags, prefix,
+    
+    // Format flags
+    Ldate, Ltime, Lmicroseconds, Llongfile, Lshortfile, LUTC, Lmsgprefix, LstdFlags,
+    has_flag, set_flag, clear_flag, toggle_flag, describe_flags, validate_flags,
+    
+    // Preset flag combinations
+    presets,
+    
+    // Formatting utilities
+    format_log_entry, get_timestamp, format_message,
+};
+
+// CSV Mood - Comprehensive CSV processing re-exports
+pub use csv::{
+    // Error handling system
+    CsvError, CsvResult, ParseError,
+    
+    // Core CSV operations
+    Reader, ReaderConfig, Writer, WriterConfig,
+    new_reader, new_writer,
+    
+    // Column-based access
+    ColumnReader, TypedValue, new_column_reader,
+    
+    // Streaming for large files
+    Streamer, StreamProcessor, new_streamer,
+    
+    // Schema validation
+    Schema, SchemaColumn, ValidationResult, ValidationError, ColumnType, new_schema,
+    
+    // Data transformation
+    Transformer, ColumnTransform, TransformResult, new_transformer,
+    
+    // Utility functions
+    read_all_from_string, write_all_to_string,
+    validate_csv_data, transform_csv_data,
+};
+
+

@@ -77,7 +77,7 @@ pub mod parser_support;
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};
 pub use expressions::*;
 pub use statements::*;
-pub use declarations::{FunctionStatement, FunctionDeclaration, SquadStatement, CollabStatement, GenericConstraint};
+pub use declarations::{FunctionStatement, FunctionDeclaration, SquadStatement, CollabStatement, GenericConstraint, AsyncFunctionStatement, AsyncFunctionDeclaration};
 pub use literals::*;
 pub use operators::*;
 pub use conditionals::*;

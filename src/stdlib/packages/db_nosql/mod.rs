@@ -12,6 +12,12 @@ pub mod redis;
 // Re-export important types
 pub use drivers::{NoSqlDriver, NoSqlConnection};
 pub use document::{Document, Collection};
+pub use mongodb::{
+    MongoDbDriver, MongoDbConnection, MongoDbDatabase, MongoDbCollection,
+    MongoDbConfig, MongoDbError, MongoDbQueryBuilder, MongoDbTransaction,
+    AggregationPipelineBuilder, WriteConcernConfig,
+};
+pub use redis::{RedisDriver, RedisConnection, RedisConfig, RedisConnectionPool};
 
 /// slay Initialize the db_nosql package
 pub fn init_db_nosql() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {

@@ -3,7 +3,7 @@
 /// Provides the test execution environment, context management,
 /// and integration with the CURSED runtime system.
 
-use super::{TestError, TestResult};
+use super::{TestError, TestResult as TestingResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -170,10 +170,10 @@ pub struct TestEnvironmentConfig {
 /// Test fixture trait for setup/teardown
 pub trait TestFixture: std::fmt::Debug + Send + Sync {
     /// Setup the fixture before test execution
-    fn setup(&mut self) -> TestResult<()>;
+    fn setup(&mut self) -> TestingResult<()>;
     
     /// Teardown the fixture after test execution
-    fn teardown(&mut self) -> TestResult<()>;
+    fn teardown(&mut self) -> TestingResult<()>;
     
     /// Get fixture data
     fn get_data(&self) -> HashMap<String, TestValue>;
@@ -303,7 +303,7 @@ impl TestContext {
     }
 
     /// Assert that no failures occurred
-    pub fn assert_no_failures(&self) -> TestResult<()> {
+    pub fn assert_no_failures(&self) -> TestingResult<()> {
         if self.has_failures() {
             let failure_messages: Vec<String> = self.failures
                 .iter()
@@ -367,7 +367,7 @@ impl TestEnvironment {
     }
 
     /// Create a new test context
-    pub fn create_test_context(&self, test_name: String) -> TestResult<TestContext> {
+    pub fn create_test_context(&self, test_name: String) -> TestingResult<TestContext> {
         let mut context = TestContext::new(test_name.clone());
         
         // Configure context based on environment settings
@@ -387,7 +387,7 @@ impl TestEnvironment {
     }
 
     /// Remove test context
-    pub fn remove_test_context(&self, test_name: &str) -> TestResult<()> {
+    pub fn remove_test_context(&self, test_name: &str) -> TestingResult<()> {
         if let Ok(mut contexts) = self.active_contexts.lock() {
             contexts.remove(test_name);
         }
@@ -395,7 +395,7 @@ impl TestEnvironment {
     }
 
     /// Register a test fixture
-    pub fn register_fixture(&self, name: String, fixture: Box<dyn TestFixture>) -> TestResult<()> {
+    pub fn register_fixture(&self, name: String, fixture: Box<dyn TestFixture>) -> TestingResult<()> {
         if let Ok(mut fixtures) = self.fixtures.lock() {
             fixtures.insert(name, fixture);
         }
@@ -403,7 +403,7 @@ impl TestEnvironment {
     }
 
     /// Setup all fixtures
-    pub fn setup_fixtures(&self) -> TestResult<()> {
+    pub fn setup_fixtures(&self) -> TestingResult<()> {
         if let Ok(mut fixtures) = self.fixtures.lock() {
             for (name, fixture) in fixtures.iter_mut() {
                 info!("Setting up fixture: {}", name);
@@ -414,7 +414,7 @@ impl TestEnvironment {
     }
 
     /// Teardown all fixtures
-    pub fn teardown_fixtures(&self) -> TestResult<()> {
+    pub fn teardown_fixtures(&self) -> TestingResult<()> {
         if let Ok(mut fixtures) = self.fixtures.lock() {
             for (name, fixture) in fixtures.iter_mut() {
                 info!("Tearing down fixture: {}", name);
@@ -425,7 +425,7 @@ impl TestEnvironment {
     }
 
     /// Cleanup resources
-    pub fn cleanup(&mut self) -> TestResult<()> {
+    pub fn cleanup(&mut self) -> TestingResult<()> {
         self.resource_manager.cleanup()
     }
 }
@@ -470,7 +470,7 @@ impl ResourceManager {
     }
 
     /// Cleanup all resources
-    pub fn cleanup(&mut self) -> TestResult<()> {
+    pub fn cleanup(&mut self) -> TestingResult<()> {
         // Cleanup temporary files
         for temp_file in &self.temp_files {
             if temp_file.exists() {
@@ -550,14 +550,14 @@ impl TestFramework {
     }
 
     /// Initialize the test framework
-    pub fn initialize(&mut self) -> TestResult<()> {
+    pub fn initialize(&mut self) -> TestingResult<()> {
         info!("Initializing test framework");
         self.environment.setup_fixtures()?;
         Ok(())
     }
 
     /// Shutdown the test framework
-    pub fn shutdown(&mut self) -> TestResult<()> {
+    pub fn shutdown(&mut self) -> TestingResult<()> {
         info!("Shutting down test framework");
         self.environment.teardown_fixtures()?;
         self.environment.cleanup()?;

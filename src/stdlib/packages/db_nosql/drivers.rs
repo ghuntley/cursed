@@ -1,6 +1,7 @@
 /// fr fr NoSQL driver interfaces - the contracts for NoSQL databases periodt
 
 use async_trait::async_trait;
+use std::any::Any;
 
 /// fr fr NoSQL driver trait
 #[async_trait]
@@ -17,4 +18,10 @@ pub trait NoSqlConnection: Send + Sync {
     
     /// slay Find documents
     async fn find(&mut self, collection: &str, query: serde_json::Value) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>>;
+    
+    /// slay Get underlying type for downcasting
+    fn as_any(&self) -> &dyn Any;
+    
+    /// slay Get mutable underlying type for downcasting
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }

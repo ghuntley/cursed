@@ -13,11 +13,13 @@ pub mod fixtures;
 
 // Re-export main types
 pub use runner::{TestRunner, TestRunnerConfig, TestRunnerBuilder};
-pub use execution::{TestExecutor, TestResult, TestStatus, TestExecutionContext};
+pub use execution::{TestExecutor, TestStatus, TestExecutionContext};
+pub use execution::TestResult as ExecutionTestResult; // Rename to avoid conflict
 pub use discovery::{TestDiscovery, TestFile, TestFunction, TestSuite};
 pub use framework::{TestFramework, TestContext, TestEnvironment};
 pub use reporting::{TestReporter, ReportFormat, TestReport, TestStats};
-pub use assertions::{Assert, AssertionError, AssertionResult};
+pub use assertions::{Assert, AssertionError};
+pub use assertions::AssertionResult as AssertionsResult; // Rename to avoid conflict  
 pub use fixtures::{TestFixture, FixtureManager, TestData};
 
 use crate::error::Error;
@@ -130,7 +132,7 @@ impl Default for TestConfig {
 
 /// Main entry point for running tests
 pub async fn run_tests(config: TestConfig) -> TestResult<TestReport> {
-    let runner = TestRunnerBuilder::new()
+    let mut runner = TestRunnerBuilder::new()
         .with_config(config)
         .build()?;
     

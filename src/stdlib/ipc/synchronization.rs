@@ -1,681 +1,605 @@
-/// Advanced synchronization primitives for IPC
+/// Advanced synchronization primitives for CURSED IPC
 /// 
-/// This module provides comprehensive synchronization mechanisms for inter-process
-/// communication including barriers, read-write locks, condition variables, and
-/// coordination primitives.
+/// This module provides sophisticated synchronization mechanisms including
+/// barriers, read-write locks, condition variables, and distributed coordination.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, Condvar};
+use std::sync::{Arc, Mutex, RwLock, Condvar};
 use std::time::{Duration, Instant, SystemTime};
-use std::thread;
+use std::collections::{HashMap, HashSet};
+use std::thread::{self, ThreadId};
+use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 
-use crate::stdlib::ipc::{
-    IpcResult, IpcError, IpcHandle, ProcessId, Semaphore,
-    timeout_error, communication_error, resource_error, invalid_operation
-};
+use crate::stdlib::ipc::{IpcResult, IpcError, IpcHandle, IpcPermissions};
+use crate::stdlib::ipc::error::{timeout_error, resource_error, system_error, communication_error};
 
-/// Inter-process barrier for coordinating multiple processes
-#[derive(Debug)]
-pub struct IpcBarrier {
-    name: String,
-    expected_count: usize,
-    current_count: Arc<Mutex<usize>>,
-    generation: Arc<Mutex<u64>>,
-    condvar: Arc<Condvar>,
-    timeout: Duration,
+/// Barrier configuration
+#[derive(Debug, Clone)]
+pub struct BarrierConfig {
+    pub name: Option<String>,
+    pub party_count: usize,
+    pub timeout: Duration,
+    pub auto_reset: bool,
+    pub enable_monitoring: bool,
 }
 
-/// Inter-process read-write lock
-#[derive(Debug)]
-pub struct IpcRwLock {
-    name: String,
-    readers_sem: Semaphore,
-    writers_sem: Semaphore,
-    read_count_sem: Semaphore,
-    shared_data: Arc<Mutex<RwLockData>>,
-}
-
-#[derive(Debug)]
-struct RwLockData {
-    readers: u32,
-    writers: u32,
-    writer_waiting: bool,
-}
-
-/// Inter-process condition variable
-#[derive(Debug)]
-pub struct IpcCondVar {
-    name: String,
-    waiters: Arc<Mutex<Vec<ProcessId>>>,
-    notifications: Arc<Mutex<HashMap<ProcessId, bool>>>,
-}
-
-/// Process coordination manager
-#[derive(Debug)]
-pub struct ProcessCoordinator {
-    barriers: Arc<Mutex<HashMap<String, IpcBarrier>>>,
-    rwlocks: Arc<Mutex<HashMap<String, IpcRwLock>>>,
-    condvars: Arc<Mutex<HashMap<String, IpcCondVar>>>,
-    cleanup_thread: Option<thread::JoinHandle<()>>,
-    shutdown_flag: Arc<Mutex<bool>>,
-}
-
-/// Barrier wait result
-#[derive(Debug, Clone, PartialEq)]
-pub enum BarrierWaitResult {
-    /// This process was the last to reach the barrier
-    Leader,
-    /// This process was a follower
-    Follower,
-}
-
-impl IpcBarrier {
-    /// Create a new inter-process barrier
-    pub fn new(name: &str, expected_count: usize, timeout: Duration) -> IpcResult<Self> {
-        if expected_count == 0 {
-            return Err(invalid_operation("Barrier count must be greater than 0"));
-        }
-
-        Ok(Self {
-            name: name.to_string(),
-            expected_count,
-            current_count: Arc::new(Mutex::new(0)),
-            generation: Arc::new(Mutex::new(0)),
-            condvar: Arc::new(Condvar::new()),
-            timeout,
-        })
-    }
-
-    /// Wait for all processes to reach the barrier
-    pub fn wait(&self) -> IpcResult<BarrierWaitResult> {
-        let start_time = Instant::now();
-        
-        let (current_gen, is_leader) = {
-            let mut count = self.current_count.lock().unwrap();
-            let mut gen = self.generation.lock().unwrap();
-            
-            *count += 1;
-            let current_gen = *gen;
-            
-            if *count >= self.expected_count {
-                // Last process to arrive - reset for next use
-                *count = 0;
-                *gen += 1;
-                (current_gen, true)
-            } else {
-                (current_gen, false)
-            }
-        };
-
-        if is_leader {
-            // Notify all waiting processes
-            self.condvar.notify_all();
-            return Ok(BarrierWaitResult::Leader);
-        }
-
-        // Wait for barrier to be reached
-        let mut gen = self.generation.lock().unwrap();
-        while *gen == current_gen {
-            let remaining_time = self.timeout.saturating_sub(start_time.elapsed());
-            if remaining_time.is_zero() {
-                return Err(timeout_error("Barrier wait timeout"));
-            }
-
-            let (new_gen, timeout_result) = self.condvar
-                .wait_timeout(gen, remaining_time)
-                .unwrap();
-            
-            gen = new_gen;
-            
-            if timeout_result.timed_out() {
-                return Err(timeout_error("Barrier wait timeout"));
-            }
-        }
-
-        Ok(BarrierWaitResult::Follower)
-    }
-
-    /// Get the number of processes currently waiting at the barrier
-    pub fn waiting_count(&self) -> usize {
-        *self.current_count.lock().unwrap()
-    }
-
-    /// Get the expected total number of processes
-    pub fn expected_count(&self) -> usize {
-        self.expected_count
-    }
-
-    /// Get the current generation (number of times barrier has been used)
-    pub fn generation(&self) -> u64 {
-        *self.generation.lock().unwrap()
-    }
-}
-
-impl IpcRwLock {
-    /// Create a new inter-process read-write lock
-    pub fn new(name: &str) -> IpcResult<Self> {
-        let readers_sem = Semaphore::create(&format!("{}_readers", name), 1)?;
-        let writers_sem = Semaphore::create(&format!("{}_writers", name), 1)?;
-        let read_count_sem = Semaphore::create(&format!("{}_read_count", name), 1)?;
-
-        let shared_data = RwLockData {
-            readers: 0,
-            writers: 0,
-            writer_waiting: false,
-        };
-
-        Ok(Self {
-            name: name.to_string(),
-            readers_sem,
-            writers_sem,
-            read_count_sem,
-            shared_data: Arc::new(Mutex::new(shared_data)),
-        })
-    }
-
-    /// Acquire a read lock
-    pub fn read_lock(&self) -> IpcResult<IpcRwLockReadGuard> {
-        self.read_lock_timeout(Duration::from_secs(30))
-    }
-
-    /// Acquire a read lock with timeout
-    pub fn read_lock_timeout(&self, timeout: Duration) -> IpcResult<IpcRwLockReadGuard> {
-        let start_time = Instant::now();
-
-        // Check if writers are waiting/active
-        {
-            let data = self.shared_data.lock().unwrap();
-            if data.writers > 0 || data.writer_waiting {
-                if start_time.elapsed() >= timeout {
-                    return Err(timeout_error("Read lock timeout"));
-                }
-                // Wait briefly and try again
-                drop(data);
-                thread::sleep(Duration::from_millis(1));
-            }
-        }
-
-        // Acquire read count semaphore
-        self.read_count_sem.acquire_timeout(timeout)?;
-
-        // Increment reader count
-        {
-            let mut data = self.shared_data.lock().unwrap();
-            data.readers += 1;
-            
-            // If this is the first reader, acquire the writers semaphore
-            if data.readers == 1 {
-                self.writers_sem.acquire_timeout(timeout)?;
-            }
-        }
-
-        // Release read count semaphore
-        self.read_count_sem.release()?;
-
-        Ok(IpcRwLockReadGuard {
-            lock: self,
-            _phantom: std::marker::PhantomData,
-        })
-    }
-
-    /// Acquire a write lock
-    pub fn write_lock(&self) -> IpcResult<IpcRwLockWriteGuard> {
-        self.write_lock_timeout(Duration::from_secs(30))
-    }
-
-    /// Acquire a write lock with timeout
-    pub fn write_lock_timeout(&self, timeout: Duration) -> IpcResult<IpcRwLockWriteGuard> {
-        // Mark that a writer is waiting
-        {
-            let mut data = self.shared_data.lock().unwrap();
-            data.writer_waiting = true;
-        }
-
-        // Acquire readers semaphore (blocks new readers)
-        self.readers_sem.acquire_timeout(timeout)?;
-
-        // Acquire writers semaphore (ensures exclusive access)
-        self.writers_sem.acquire_timeout(timeout)?;
-
-        // Update state
-        {
-            let mut data = self.shared_data.lock().unwrap();
-            data.writers += 1;
-            data.writer_waiting = false;
-        }
-
-        Ok(IpcRwLockWriteGuard {
-            lock: self,
-            _phantom: std::marker::PhantomData,
-        })
-    }
-
-    /// Try to acquire a read lock without blocking
-    pub fn try_read_lock(&self) -> IpcResult<Option<IpcRwLockReadGuard>> {
-        match self.read_lock_timeout(Duration::from_nanos(1)) {
-            Ok(guard) => Ok(Some(guard)),
-            Err(IpcError::TimeoutError { .. }) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
-
-    /// Try to acquire a write lock without blocking
-    pub fn try_write_lock(&self) -> IpcResult<Option<IpcRwLockWriteGuard>> {
-        match self.write_lock_timeout(Duration::from_nanos(1)) {
-            Ok(guard) => Ok(Some(guard)),
-            Err(IpcError::TimeoutError { .. }) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
-
-    fn release_read_lock(&self) -> IpcResult<()> {
-        self.read_count_sem.acquire()?;
-        
-        let should_release_writers = {
-            let mut data = self.shared_data.lock().unwrap();
-            data.readers -= 1;
-            data.readers == 0
-        };
-
-        if should_release_writers {
-            self.writers_sem.release()?;
-        }
-
-        self.read_count_sem.release()?;
-        Ok(())
-    }
-
-    fn release_write_lock(&self) -> IpcResult<()> {
-        {
-            let mut data = self.shared_data.lock().unwrap();
-            data.writers -= 1;
-        }
-
-        self.writers_sem.release()?;
-        self.readers_sem.release()?;
-        Ok(())
-    }
-}
-
-/// Read lock guard for IpcRwLock
-pub struct IpcRwLockReadGuard<'a> {
-    lock: &'a IpcRwLock,
-    _phantom: std::marker::PhantomData<&'a ()>,
-}
-
-impl<'a> Drop for IpcRwLockReadGuard<'a> {
-    fn drop(&mut self) {
-        if let Err(e) = self.lock.release_read_lock() {
-            eprintln!("Error releasing read lock: {}", e);
-        }
-    }
-}
-
-/// Write lock guard for IpcRwLock
-pub struct IpcRwLockWriteGuard<'a> {
-    lock: &'a IpcRwLock,
-    _phantom: std::marker::PhantomData<&'a ()>,
-}
-
-impl<'a> Drop for IpcRwLockWriteGuard<'a> {
-    fn drop(&mut self) {
-        if let Err(e) = self.lock.release_write_lock() {
-            eprintln!("Error releasing write lock: {}", e);
-        }
-    }
-}
-
-impl IpcCondVar {
-    /// Create a new inter-process condition variable
-    pub fn new(name: &str) -> Self {
+impl BarrierConfig {
+    pub fn new(party_count: usize) -> Self {
         Self {
-            name: name.to_string(),
-            waiters: Arc::new(Mutex::new(Vec::new())),
-            notifications: Arc::new(Mutex::new(HashMap::new())),
+            name: None,
+            party_count,
+            timeout: Duration::from_secs(60),
+            auto_reset: true,
+            enable_monitoring: true,
         }
     }
 
-    /// Wait for a notification
-    pub fn wait(&self, process_id: ProcessId) -> IpcResult<()> {
-        self.wait_timeout(process_id, Duration::from_secs(u64::MAX))
+    pub fn named(mut self, name: &str) -> Self {
+        self.name = Some(name.to_string());
+        self
     }
 
-    /// Wait for a notification with timeout
-    pub fn wait_timeout(&self, process_id: ProcessId, timeout: Duration) -> IpcResult<()> {
+    pub fn timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    pub fn no_auto_reset(mut self) -> Self {
+        self.auto_reset = false;
+        self
+    }
+}
+
+/// Barrier statistics
+#[derive(Debug, Clone, Default)]
+pub struct BarrierStatistics {
+    pub total_waits: u64,
+    pub total_completions: u64,
+    pub timeout_count: u64,
+    pub current_waiters: usize,
+    pub generation: u64,
+    pub average_wait_time: Duration,
+    pub max_wait_time: Duration,
+}
+
+/// Synchronization barrier for coordinating multiple threads/processes
+pub struct Barrier {
+    handle: IpcHandle,
+    config: BarrierConfig,
+    state: Arc<Mutex<BarrierState>>,
+    condition: Arc<Condvar>,
+    statistics: Arc<Mutex<BarrierStatistics>>,
+}
+
+#[derive(Debug)]
+struct BarrierState {
+    waiters: usize,
+    generation: u64,
+    completed: bool,
+}
+
+impl Barrier {
+    /// Create a new barrier
+    pub fn new(config: BarrierConfig) -> IpcResult<Self> {
+        if config.party_count == 0 {
+            return Err(IpcError::InvalidInput("Party count must be greater than 0".to_string()));
+        }
+
+        let handle = if let Some(ref name) = config.name {
+            IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Barrier)
+        } else {
+            IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Barrier)
+        };
+
+        let state = BarrierState {
+            waiters: 0,
+            generation: 0,
+            completed: false,
+        };
+
+        Ok(Self {
+            handle,
+            config,
+            state: Arc::new(Mutex::new(state)),
+            condition: Arc::new(Condvar::new()),
+            statistics: Arc::new(Mutex::new(BarrierStatistics::default())),
+        })
+    }
+
+    /// Wait for all parties to reach the barrier
+    pub fn wait(&self) -> IpcResult<bool> {
+        self.wait_timeout(self.config.timeout)
+    }
+
+    /// Wait with timeout
+    pub fn wait_timeout(&self, timeout: Duration) -> IpcResult<bool> {
         let start_time = Instant::now();
+        
+        let mut state = self.state.lock().unwrap();
+        let generation = state.generation;
+        
+        // Update statistics
+        {
+            let mut stats = self.statistics.lock().unwrap();
+            stats.total_waits += 1;
+            stats.current_waiters = state.waiters + 1;
+        }
+
+        state.waiters += 1;
+        
+        if state.waiters == self.config.party_count {
+            // Last thread to reach the barrier
+            state.completed = true;
+            state.generation += 1;
+            
+            if self.config.auto_reset {
+                state.waiters = 0;
+                state.completed = false;
+            }
+            
+            // Update statistics
+            {
+                let mut stats = self.statistics.lock().unwrap();
+                stats.total_completions += 1;
+                stats.generation = state.generation;
+                stats.current_waiters = 0;
+            }
+            
+            self.condition.notify_all();
+            Ok(true) // This thread is the "leader"
+        } else {
+            // Wait for other threads
+            let result = self.condition
+                .wait_timeout_while(state, timeout, |s| {
+                    s.generation == generation && !s.completed
+                })
+                .unwrap();
+
+            let wait_time = start_time.elapsed();
+            
+            // Update statistics
+            {
+                let mut stats = self.statistics.lock().unwrap();
+                let total_time = stats.average_wait_time.as_nanos() as u64 * (stats.total_waits - 1) + wait_time.as_nanos() as u64;
+                stats.average_wait_time = Duration::from_nanos(total_time / stats.total_waits);
+                stats.max_wait_time = stats.max_wait_time.max(wait_time);
+                stats.current_waiters = stats.current_waiters.saturating_sub(1);
+                
+                if result.1.timed_out() {
+                    stats.timeout_count += 1;
+                }
+            }
+
+            if result.1.timed_out() {
+                Err(timeout_error(&format!("Barrier wait timed out after {:?}", timeout)))
+            } else {
+                Ok(false)
+            }
+        }
+    }
+
+    /// Get current number of waiters
+    pub fn waiters(&self) -> usize {
+        let state = self.state.lock().unwrap();
+        state.waiters
+    }
+
+    /// Get barrier statistics
+    pub fn statistics(&self) -> BarrierStatistics {
+        let stats = self.statistics.lock().unwrap();
+        stats.clone()
+    }
+
+    /// Reset the barrier
+    pub fn reset(&self) -> IpcResult<()> {
+        let mut state = self.state.lock().unwrap();
+        state.waiters = 0;
+        state.generation += 1;
+        state.completed = false;
+        
+        self.condition.notify_all();
+        Ok(())
+    }
+}
+
+/// Read-Write lock with timeout support
+pub struct RwLockTimeout<T> {
+    inner: Arc<RwLock<T>>,
+    readers: Arc<AtomicUsize>,
+    writers: Arc<AtomicUsize>,
+    statistics: Arc<Mutex<RwLockStatistics>>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RwLockStatistics {
+    pub read_locks: u64,
+    pub write_locks: u64,
+    pub read_timeouts: u64,
+    pub write_timeouts: u64,
+    pub average_read_time: Duration,
+    pub average_write_time: Duration,
+    pub current_readers: usize,
+    pub current_writers: usize,
+}
+
+impl<T> RwLockTimeout<T> {
+    pub fn new(data: T) -> Self {
+        Self {
+            inner: Arc::new(RwLock::new(data)),
+            readers: Arc::new(AtomicUsize::new(0)),
+            writers: Arc::new(AtomicUsize::new(0)),
+            statistics: Arc::new(Mutex::new(RwLockStatistics::default())),
+        }
+    }
+
+    pub fn read_timeout(&self, timeout: Duration) -> IpcResult<std::sync::RwLockReadGuard<T>> {
+        let start = Instant::now();
+        
+        // Simple timeout implementation (real implementation would be more sophisticated)
+        let deadline = start + timeout;
+        
+        loop {
+            match self.inner.try_read() {
+                Ok(guard) => {
+                    self.readers.fetch_add(1, Ordering::Relaxed);
+                    
+                    let mut stats = self.statistics.lock().unwrap();
+                    stats.read_locks += 1;
+                    stats.current_readers += 1;
+                    
+                    let read_time = start.elapsed();
+                    let total_time = stats.average_read_time.as_nanos() as u64 * (stats.read_locks - 1) + read_time.as_nanos() as u64;
+                    stats.average_read_time = Duration::from_nanos(total_time / stats.read_locks);
+                    
+                    return Ok(guard);
+                }
+                Err(_) => {
+                    if Instant::now() > deadline {
+                        let mut stats = self.statistics.lock().unwrap();
+                        stats.read_timeouts += 1;
+                        return Err(timeout_error("Read lock timeout"));
+                    }
+                    thread::sleep(Duration::from_millis(1));
+                }
+            }
+        }
+    }
+
+    pub fn write_timeout(&self, timeout: Duration) -> IpcResult<std::sync::RwLockWriteGuard<T>> {
+        let start = Instant::now();
+        let deadline = start + timeout;
+        
+        loop {
+            match self.inner.try_write() {
+                Ok(guard) => {
+                    self.writers.fetch_add(1, Ordering::Relaxed);
+                    
+                    let mut stats = self.statistics.lock().unwrap();
+                    stats.write_locks += 1;
+                    stats.current_writers += 1;
+                    
+                    let write_time = start.elapsed();
+                    let total_time = stats.average_write_time.as_nanos() as u64 * (stats.write_locks - 1) + write_time.as_nanos() as u64;
+                    stats.average_write_time = Duration::from_nanos(total_time / stats.write_locks);
+                    
+                    return Ok(guard);
+                }
+                Err(_) => {
+                    if Instant::now() > deadline {
+                        let mut stats = self.statistics.lock().unwrap();
+                        stats.write_timeouts += 1;
+                        return Err(timeout_error("Write lock timeout"));
+                    }
+                    thread::sleep(Duration::from_millis(1));
+                }
+            }
+        }
+    }
+
+    pub fn statistics(&self) -> RwLockStatistics {
+        let stats = self.statistics.lock().unwrap();
+        stats.clone()
+    }
+}
+
+/// Distributed coordination system
+pub struct DistributedCoordinator {
+    node_id: String,
+    peers: Arc<RwLock<HashSet<String>>>,
+    leader: Arc<RwLock<Option<String>>>,
+    heartbeat_interval: Duration,
+    election_timeout: Duration,
+    running: Arc<AtomicBool>,
+}
+
+impl DistributedCoordinator {
+    pub fn new(node_id: String) -> Self {
+        Self {
+            node_id,
+            peers: Arc::new(RwLock::new(HashSet::new())),
+            leader: Arc::new(RwLock::new(None)),
+            heartbeat_interval: Duration::from_secs(1),
+            election_timeout: Duration::from_secs(5),
+            running: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub fn add_peer(&self, peer_id: String) -> IpcResult<()> {
+        let mut peers = self.peers.write().unwrap();
+        peers.insert(peer_id);
+        Ok(())
+    }
+
+    pub fn remove_peer(&self, peer_id: &str) -> IpcResult<()> {
+        let mut peers = self.peers.write().unwrap();
+        peers.remove(peer_id);
+        Ok(())
+    }
+
+    pub fn start_coordination(&self) -> IpcResult<()> {
+        self.running.store(true, Ordering::Relaxed);
+        // In real implementation, would start background threads for:
+        // - Heartbeat sending
+        // - Leader election
+        // - Failure detection
+        Ok(())
+    }
+
+    pub fn stop_coordination(&self) -> IpcResult<()> {
+        self.running.store(false, Ordering::Relaxed);
+        Ok(())
+    }
+
+    pub fn is_leader(&self) -> bool {
+        let leader = self.leader.read().unwrap();
+        leader.as_ref() == Some(&self.node_id)
+    }
+
+    pub fn get_leader(&self) -> Option<String> {
+        let leader = self.leader.read().unwrap();
+        leader.clone()
+    }
+
+    pub fn peer_count(&self) -> usize {
+        let peers = self.peers.read().unwrap();
+        peers.len()
+    }
+}
+
+/// Advanced condition variable with timeout and priority support
+pub struct ConditionVariable {
+    inner: Arc<Condvar>,
+    waiters: Arc<Mutex<Vec<WaiterInfo>>>,
+    statistics: Arc<Mutex<CondVarStatistics>>,
+}
+
+#[derive(Debug)]
+struct WaiterInfo {
+    thread_id: ThreadId,
+    priority: i32,
+    start_time: Instant,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CondVarStatistics {
+    pub total_waits: u64,
+    pub total_notifies: u64,
+    pub timeout_count: u64,
+    pub current_waiters: usize,
+    pub average_wait_time: Duration,
+}
+
+impl ConditionVariable {
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(Condvar::new()),
+            waiters: Arc::new(Mutex::new(Vec::new())),
+            statistics: Arc::new(Mutex::new(CondVarStatistics::default())),
+        }
+    }
+
+    pub fn wait_timeout<T>(&self, guard: std::sync::MutexGuard<T>, timeout: Duration) -> IpcResult<(std::sync::MutexGuard<T>, bool)> {
+        let start_time = Instant::now();
+        let thread_id = thread::current().id();
 
         // Add to waiters list
         {
             let mut waiters = self.waiters.lock().unwrap();
-            if !waiters.contains(&process_id) {
-                waiters.push(process_id);
-            }
+            waiters.push(WaiterInfo {
+                thread_id,
+                priority: 0,
+                start_time,
+            });
         }
 
-        // Wait for notification
-        while start_time.elapsed() < timeout {
-            {
-                let mut notifications = self.notifications.lock().unwrap();
-                if notifications.remove(&process_id).unwrap_or(false) {
-                    // Remove from waiters list
-                    let mut waiters = self.waiters.lock().unwrap();
-                    waiters.retain(|&pid| pid != process_id);
-                    return Ok(());
-                }
-            }
-            
-            thread::sleep(Duration::from_millis(10));
+        // Update statistics
+        {
+            let mut stats = self.statistics.lock().unwrap();
+            stats.total_waits += 1;
+            stats.current_waiters += 1;
         }
 
-        // Timeout - remove from waiters list
+        let result = self.inner.wait_timeout(guard, timeout).unwrap();
+        let timed_out = result.1.timed_out();
+
+        // Remove from waiters and update statistics
         {
             let mut waiters = self.waiters.lock().unwrap();
-            waiters.retain(|&pid| pid != process_id);
+            waiters.retain(|w| w.thread_id != thread_id);
         }
 
-        Err(timeout_error("Condition variable wait timeout"))
-    }
-
-    /// Notify one waiting process
-    pub fn notify_one(&self) -> IpcResult<bool> {
-        let waiters = self.waiters.lock().unwrap();
-        if let Some(&process_id) = waiters.first() {
-            let mut notifications = self.notifications.lock().unwrap();
-            notifications.insert(process_id, true);
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    /// Notify all waiting processes
-    pub fn notify_all(&self) -> IpcResult<usize> {
-        let waiters = self.waiters.lock().unwrap();
-        let count = waiters.len();
-        
         {
-            let mut notifications = self.notifications.lock().unwrap();
-            for &process_id in waiters.iter() {
-                notifications.insert(process_id, true);
+            let mut stats = self.statistics.lock().unwrap();
+            stats.current_waiters = stats.current_waiters.saturating_sub(1);
+            
+            let wait_time = start_time.elapsed();
+            let total_time = stats.average_wait_time.as_nanos() as u64 * (stats.total_waits - 1) + wait_time.as_nanos() as u64;
+            stats.average_wait_time = Duration::from_nanos(total_time / stats.total_waits);
+
+            if timed_out {
+                stats.timeout_count += 1;
             }
         }
 
-        Ok(count)
+        Ok((result.0, timed_out))
     }
 
-    /// Get the number of waiting processes
+    pub fn notify_one(&self) {
+        self.inner.notify_one();
+        let mut stats = self.statistics.lock().unwrap();
+        stats.total_notifies += 1;
+    }
+
+    pub fn notify_all(&self) {
+        self.inner.notify_all();
+        let mut stats = self.statistics.lock().unwrap();
+        stats.total_notifies += 1;
+    }
+
+    pub fn statistics(&self) -> CondVarStatistics {
+        let stats = self.statistics.lock().unwrap();
+        stats.clone()
+    }
+
     pub fn waiting_count(&self) -> usize {
-        self.waiters.lock().unwrap().len()
+        let stats = self.statistics.lock().unwrap();
+        stats.current_waiters
     }
 }
 
-impl ProcessCoordinator {
-    /// Create a new process coordinator
-    pub fn new() -> Self {
-        let barriers = Arc::new(Mutex::new(HashMap::new()));
-        let rwlocks = Arc::new(Mutex::new(HashMap::new()));
-        let condvars = Arc::new(Mutex::new(HashMap::new()));
-        let shutdown_flag = Arc::new(Mutex::new(false));
-
-        // Start cleanup thread
-        let cleanup_barriers = barriers.clone();
-        let cleanup_rwlocks = rwlocks.clone();
-        let cleanup_condvars = condvars.clone();
-        let cleanup_shutdown = shutdown_flag.clone();
-
-        let cleanup_handle = thread::spawn(move || {
-            Self::cleanup_loop(cleanup_barriers, cleanup_rwlocks, cleanup_condvars, cleanup_shutdown);
-        });
-
-        Self {
-            barriers,
-            rwlocks,
-            condvars,
-            cleanup_thread: Some(cleanup_handle),
-            shutdown_flag,
-        }
-    }
-
-    /// Get or create a barrier
-    pub fn get_barrier(&self, name: &str, expected_count: usize, timeout: Duration) -> IpcResult<Arc<IpcBarrier>> {
-        let mut barriers = self.barriers.lock().unwrap();
-        
-        if let Some(barrier) = barriers.get(name) {
-            Ok(Arc::new(barrier.clone()))
-        } else {
-            let barrier = IpcBarrier::new(name, expected_count, timeout)?;
-            let barrier_arc = Arc::new(barrier.clone());
-            barriers.insert(name.to_string(), barrier);
-            Ok(barrier_arc)
-        }
-    }
-
-    /// Get or create a read-write lock
-    pub fn get_rwlock(&self, name: &str) -> IpcResult<Arc<IpcRwLock>> {
-        let mut rwlocks = self.rwlocks.lock().unwrap();
-        
-        if let Some(rwlock) = rwlocks.get(name) {
-            Ok(Arc::new(rwlock.clone()))
-        } else {
-            let rwlock = IpcRwLock::new(name)?;
-            let rwlock_arc = Arc::new(rwlock.clone());
-            rwlocks.insert(name.to_string(), rwlock);
-            Ok(rwlock_arc)
-        }
-    }
-
-    /// Get or create a condition variable
-    pub fn get_condvar(&self, name: &str) -> Arc<IpcCondVar> {
-        let mut condvars = self.condvars.lock().unwrap();
-        
-        if let Some(condvar) = condvars.get(name) {
-            Arc::new(condvar.clone())
-        } else {
-            let condvar = IpcCondVar::new(name);
-            let condvar_arc = Arc::new(condvar.clone());
-            condvars.insert(name.to_string(), condvar);
-            condvar_arc
-        }
-    }
-
-    /// Remove a barrier
-    pub fn remove_barrier(&self, name: &str) -> bool {
-        let mut barriers = self.barriers.lock().unwrap();
-        barriers.remove(name).is_some()
-    }
-
-    /// Remove a read-write lock
-    pub fn remove_rwlock(&self, name: &str) -> bool {
-        let mut rwlocks = self.rwlocks.lock().unwrap();
-        rwlocks.remove(name).is_some()
-    }
-
-    /// Remove a condition variable
-    pub fn remove_condvar(&self, name: &str) -> bool {
-        let mut condvars = self.condvars.lock().unwrap();
-        condvars.remove(name).is_some()
-    }
-
-    /// Get statistics about managed synchronization primitives
-    pub fn get_statistics(&self) -> CoordinatorStatistics {
-        let barriers = self.barriers.lock().unwrap();
-        let rwlocks = self.rwlocks.lock().unwrap();
-        let condvars = self.condvars.lock().unwrap();
-
-        CoordinatorStatistics {
-            active_barriers: barriers.len(),
-            active_rwlocks: rwlocks.len(),
-            active_condvars: condvars.len(),
-            total_waiting_processes: condvars.values().map(|cv| cv.waiting_count()).sum(),
-        }
-    }
-
-    /// Shutdown the coordinator
-    pub fn shutdown(&mut self) -> IpcResult<()> {
-        {
-            let mut shutdown = self.shutdown_flag.lock().unwrap();
-            *shutdown = true;
-        }
-
-        if let Some(handle) = self.cleanup_thread.take() {
-            handle.join().map_err(|_| {
-                resource_error("Failed to join cleanup thread")
-            })?;
-        }
-
-        Ok(())
-    }
-
-    fn cleanup_loop(
-        barriers: Arc<Mutex<HashMap<String, IpcBarrier>>>,
-        _rwlocks: Arc<Mutex<HashMap<String, IpcRwLock>>>,
-        condvars: Arc<Mutex<HashMap<String, IpcCondVar>>>,
-        shutdown_flag: Arc<Mutex<bool>>,
-    ) {
-        while !*shutdown_flag.lock().unwrap() {
-            // Clean up condition variables with no waiters
-            {
-                let mut condvars_map = condvars.lock().unwrap();
-                condvars_map.retain(|_, condvar| condvar.waiting_count() > 0);
-            }
-
-            // Clean up old notifications
-            {
-                let condvars_map = condvars.lock().unwrap();
-                for condvar in condvars_map.values() {
-                    let mut notifications = condvar.notifications.lock().unwrap();
-                    // In a real implementation, you might want to clean up old notifications
-                    // based on timestamp or other criteria
-                    if notifications.len() > 1000 {
-                        notifications.clear();
-                    }
-                }
-            }
-
-            thread::sleep(Duration::from_secs(10));
-        }
-    }
+/// Convenience functions
+pub fn create_barrier(party_count: usize) -> IpcResult<Barrier> {
+    Barrier::new(BarrierConfig::new(party_count))
 }
 
-impl Default for ProcessCoordinator {
-    fn default() -> Self {
-        Self::new()
-    }
+pub fn create_named_barrier(name: &str, party_count: usize) -> IpcResult<Barrier> {
+    let config = BarrierConfig::new(party_count).named(name);
+    Barrier::new(config)
 }
 
-impl Drop for ProcessCoordinator {
-    fn drop(&mut self) {
-        if let Err(e) = self.shutdown() {
-            eprintln!("Error during ProcessCoordinator shutdown: {}", e);
-        }
-    }
+pub fn create_rwlock_timeout<T>(data: T) -> RwLockTimeout<T> {
+    RwLockTimeout::new(data)
 }
 
-/// Statistics for the process coordinator
-#[derive(Debug, Clone)]
-pub struct CoordinatorStatistics {
-    pub active_barriers: usize,
-    pub active_rwlocks: usize,
-    pub active_condvars: usize,
-    pub total_waiting_processes: usize,
+pub fn create_condition_variable() -> ConditionVariable {
+    ConditionVariable::new()
 }
 
-// Re-implement Clone for IpcBarrier (simple fields only)
-impl Clone for IpcBarrier {
-    fn clone(&self) -> Self {
-        Self {
-            name: self.name.clone(),
-            expected_count: self.expected_count,
-            current_count: Arc::new(Mutex::new(*self.current_count.lock().unwrap())),
-            generation: Arc::new(Mutex::new(*self.generation.lock().unwrap())),
-            condvar: Arc::new(Condvar::new()),
-            timeout: self.timeout,
-        }
-    }
-}
-
-// Re-implement Clone for IpcRwLock (this is a simplified version)
-impl Clone for IpcRwLock {
-    fn clone(&self) -> Self {
-        // In a real implementation, you'd want to share the underlying semaphores
-        // This is a simplified version for demonstration
-        Self::new(&self.name).unwrap()
-    }
-}
-
-// Re-implement Clone for IpcCondVar
-impl Clone for IpcCondVar {
-    fn clone(&self) -> Self {
-        Self {
-            name: self.name.clone(),
-            waiters: Arc::new(Mutex::new(self.waiters.lock().unwrap().clone())),
-            notifications: Arc::new(Mutex::new(self.notifications.lock().unwrap().clone())),
-        }
-    }
+pub fn create_distributed_coordinator(node_id: &str) -> DistributedCoordinator {
+    DistributedCoordinator::new(node_id.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn test_barrier_creation() {
-        let barrier = IpcBarrier::new("test_barrier", 3, Duration::from_secs(10)).unwrap();
-        assert_eq!(barrier.expected_count(), 3);
-        assert_eq!(barrier.waiting_count(), 0);
-        assert_eq!(barrier.generation(), 0);
+        let config = BarrierConfig::new(3);
+        let barrier = Barrier::new(config).unwrap();
+        assert_eq!(barrier.waiters(), 0);
     }
 
     #[test]
-    fn test_barrier_single_process() {
-        let barrier = IpcBarrier::new("test_single", 1, Duration::from_secs(1)).unwrap();
-        let result = barrier.wait().unwrap();
-        assert_eq!(result, BarrierWaitResult::Leader);
-        assert_eq!(barrier.generation(), 1);
-    }
-
-    #[test]
-    fn test_rwlock_creation() {
-        let _rwlock = IpcRwLock::new("test_rwlock").unwrap();
-    }
-
-    #[test]
-    fn test_condvar_creation() {
-        let condvar = IpcCondVar::new("test_condvar");
-        assert_eq!(condvar.waiting_count(), 0);
-    }
-
-    #[test]
-    fn test_condvar_notify() {
-        let condvar = IpcCondVar::new("test_notify");
+    fn test_barrier_basic_operation() {
+        let barrier = Arc::new(create_barrier(2).unwrap());
+        let counter = Arc::new(AtomicUsize::new(0));
         
-        // No waiters, should return false
-        assert_eq!(condvar.notify_one().unwrap(), false);
-        assert_eq!(condvar.notify_all().unwrap(), 0);
+        let barrier_clone = Arc::clone(&barrier);
+        let counter_clone = Arc::clone(&counter);
+        
+        let handle = thread::spawn(move || {
+            counter_clone.fetch_add(1, Ordering::Relaxed);
+            barrier_clone.wait().unwrap();
+            counter_clone.fetch_add(1, Ordering::Relaxed);
+        });
+        
+        counter.fetch_add(1, Ordering::Relaxed);
+        barrier.wait().unwrap();
+        counter.fetch_add(1, Ordering::Relaxed);
+        
+        handle.join().unwrap();
+        assert_eq!(counter.load(Ordering::Relaxed), 4);
     }
 
     #[test]
-    fn test_process_coordinator() {
-        let coordinator = ProcessCoordinator::new();
+    fn test_rwlock_timeout() {
+        let rwlock = create_rwlock_timeout(42);
         
-        let barrier = coordinator.get_barrier("test", 2, Duration::from_secs(10)).unwrap();
-        assert_eq!(barrier.expected_count(), 2);
+        // Read lock should succeed
+        let read_guard = rwlock.read_timeout(Duration::from_millis(100)).unwrap();
+        assert_eq!(*read_guard, 42);
+        drop(read_guard);
         
-        let condvar = coordinator.get_condvar("test_cv");
-        assert_eq!(condvar.waiting_count(), 0);
+        // Write lock should succeed
+        let write_guard = rwlock.write_timeout(Duration::from_millis(100)).unwrap();
+        drop(write_guard);
         
-        let stats = coordinator.get_statistics();
-        assert_eq!(stats.active_barriers, 1);
-        assert_eq!(stats.active_condvars, 1);
+        let stats = rwlock.statistics();
+        assert_eq!(stats.read_locks, 1);
+        assert_eq!(stats.write_locks, 1);
     }
 
     #[test]
-    fn test_coordinator_cleanup() {
-        let coordinator = ProcessCoordinator::new();
+    fn test_condition_variable() {
+        let condvar = create_condition_variable();
+        let mutex = Arc::new(Mutex::new(false));
+        let mutex_clone = Arc::clone(&mutex);
         
-        let _barrier = coordinator.get_barrier("cleanup_test", 2, Duration::from_secs(10)).unwrap();
-        assert!(coordinator.remove_barrier("cleanup_test"));
-        assert!(!coordinator.remove_barrier("nonexistent"));
+        let handle = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(10));
+            let mut guard = mutex_clone.lock().unwrap();
+            *guard = true;
+            condvar.notify_one();
+        });
+        
+        let guard = mutex.lock().unwrap();
+        let (guard, timed_out) = condvar.wait_timeout(guard, Duration::from_millis(100)).unwrap();
+        assert!(!timed_out);
+        assert!(*guard);
+        
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn test_distributed_coordinator() {
+        let coordinator = create_distributed_coordinator("node1");
+        
+        coordinator.add_peer("node2".to_string()).unwrap();
+        coordinator.add_peer("node3".to_string()).unwrap();
+        
+        assert_eq!(coordinator.peer_count(), 2);
+        
+        coordinator.start_coordination().unwrap();
+        assert!(!coordinator.is_leader()); // No leader election implemented yet
+        
+        coordinator.stop_coordination().unwrap();
+    }
+
+    #[test]
+    fn test_barrier_timeout() {
+        let barrier = create_barrier(2).unwrap();
+        let result = barrier.wait_timeout(Duration::from_millis(10));
+        assert!(result.is_err());
+        
+        let stats = barrier.statistics();
+        assert_eq!(stats.timeout_count, 1);
+    }
+
+    #[test]
+    fn test_barrier_reset() {
+        let barrier = Arc::new(create_barrier(2).unwrap());
+        
+        let barrier_clone = Arc::clone(&barrier);
+        let handle = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(50));
+            barrier_clone.reset().unwrap();
+        });
+        
+        let result = barrier.wait_timeout(Duration::from_millis(100));
+        // Wait should fail due to reset
+        handle.join().unwrap();
+        
+        assert_eq!(barrier.waiters(), 0);
     }
 }

@@ -1,35 +1,49 @@
-//! Auto-completion provider for CURSED language server
+//! Enhanced Auto-completion provider for CURSED language server
 //! 
-//! Provides intelligent code completion for keywords, variables, functions, types, etc.
+//! Provides intelligent context-aware code completion using CURSED's type system,
+//! AST analysis, and semantic information for keywords, variables, functions, types, etc.
 
 use std::collections::HashMap;
 use tower_lsp::lsp_types::*;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, info};
 
 use crate::lexer::{Lexer, TokenType};
+use crate::parser::Parser;
+use crate::core::type_checker::{TypeChecker, Type};
+use crate::ast::Program;
+use crate::error::CursedError;
 
-/// Completion provider for the LSP server
+/// Enhanced completion provider with semantic analysis
 pub struct CompletionProvider {
     /// Cache for completion items to improve performance
     completion_cache: std::sync::RwLock<HashMap<String, Vec<CompletionItem>>>,
+    /// Type checker for semantic completions
+    type_checker: std::sync::RwLock<TypeChecker>,
+    /// AST cache for context-aware completions
+    ast_cache: std::sync::RwLock<HashMap<String, Program>>,
 }
 
 impl CompletionProvider {
-    /// Create a new completion provider
+    /// Create a new completion provider with semantic analysis
     pub fn new() -> Self {
         Self {
             completion_cache: std::sync::RwLock::new(HashMap::new()),
+            type_checker: std::sync::RwLock::new(TypeChecker::new()),
+            ast_cache: std::sync::RwLock::new(HashMap::new()),
         }
     }
 
-    /// Get completions at a specific position
+    /// Get context-aware completions using semantic analysis
     #[instrument(skip(self, content))]
     pub async fn get_completions(&self, content: &str, position: Position) -> Vec<CompletionItem> {
-        debug!("Getting completions at {:?}", position);
+        debug!("Getting context-aware completions at {:?}", position);
         
         let mut completions = Vec::new();
         
-        // Get context at cursor position
+        // Parse content for semantic context
+        let semantic_context = self.get_semantic_context(content, position).await;
+        
+        // Get traditional context as fallback
         let context = self.get_completion_context(content, position);
         
         match context.completion_type {
@@ -37,16 +51,16 @@ impl CompletionProvider {
                 completions.extend(self.get_keyword_completions(&context));
             }
             CompletionType::Variable => {
-                completions.extend(self.get_variable_completions(content, &context));
+                completions.extend(self.get_variable_completions_with_types(content, &context, &semantic_context).await);
             }
             CompletionType::Function => {
-                completions.extend(self.get_function_completions(content, &context));
+                completions.extend(self.get_function_completions_with_signatures(content, &context, &semantic_context).await);
             }
             CompletionType::Type => {
-                completions.extend(self.get_type_completions(&context));
+                completions.extend(self.get_type_completions_enhanced(&context, &semantic_context).await);
             }
             CompletionType::Member => {
-                completions.extend(self.get_member_completions(content, &context));
+                completions.extend(self.get_member_completions_typed(content, &context, &semantic_context).await);
             }
             CompletionType::Import => {
                 completions.extend(self.get_import_completions(&context));
@@ -55,11 +69,11 @@ impl CompletionProvider {
                 completions.extend(self.get_snippet_completions(&context));
             }
             CompletionType::Generic => {
-                // Provide all types of completions
+                // Provide all types of completions with semantic information
                 completions.extend(self.get_keyword_completions(&context));
-                completions.extend(self.get_variable_completions(content, &context));
-                completions.extend(self.get_function_completions(content, &context));
-                completions.extend(self.get_type_completions(&context));
+                completions.extend(self.get_variable_completions_with_types(content, &context, &semantic_context).await);
+                completions.extend(self.get_function_completions_with_signatures(content, &context, &semantic_context).await);
+                completions.extend(self.get_type_completions_enhanced(&context, &semantic_context).await);
             }
         }
 
@@ -75,6 +89,43 @@ impl CompletionProvider {
         });
 
         completions
+    }
+    
+    /// Get semantic context using AST analysis
+    async fn get_semantic_context(&self, content: &str, position: Position) -> SemanticContext {
+        info!("Getting semantic context for position {:?}", position);
+        
+        // Try to parse content and get AST
+        let content_hash = format!("{:x}", md5::compute(content));
+        
+        // Check cache first
+        if let Ok(cache) = self.ast_cache.read() {
+            if let Some(ast) = cache.get(&content_hash) {
+                return self.analyze_semantic_context_from_ast(ast, position);
+            }
+        }
+        
+        // Parse if not cached
+        match self.parse_content_for_context(content).await {
+            Ok(ast) => {
+                // Cache the AST
+                if let Ok(mut cache) = self.ast_cache.write() {
+                    cache.insert(content_hash, ast.clone());
+                }
+                self.analyze_semantic_context_from_ast(&ast, position)
+            }
+            Err(err) => {
+                debug!("Failed to parse content for semantic context: {}", err);
+                SemanticContext::default()
+            }
+        }
+    }
+    
+    /// Parse content to get AST for context analysis
+    async fn parse_content_for_context(&self, content: &str) -> Result<Program, CursedError> {
+        let lexer = Lexer::new(content.to_string());
+        let mut parser = Parser::new(lexer)?;
+        parser.parse_program()
     }
 
     /// Get completion context at cursor position
@@ -638,6 +689,30 @@ enum CompletionType {
     Import,
     Snippet,
     Generic,
+}
+
+/// Semantic context for enhanced completions
+#[derive(Debug, Clone)]
+struct SemanticContext {
+    /// Type of construct we're currently in (function, struct, etc.)
+    containing_construct: Option<String>,
+    /// Variables available in current scope with their types
+    variables_in_scope: HashMap<String, String>,
+    /// Functions available in current scope with their signatures
+    functions_in_scope: HashMap<String, String>,
+    /// Expected type based on context (e.g., in assignment)
+    expected_type: Option<String>,
+}
+
+impl Default for SemanticContext {
+    fn default() -> Self {
+        Self {
+            containing_construct: None,
+            variables_in_scope: HashMap::new(),
+            functions_in_scope: HashMap::new(),
+            expected_type: None,
+        }
+    }
 }
 
 impl Default for CompletionProvider {

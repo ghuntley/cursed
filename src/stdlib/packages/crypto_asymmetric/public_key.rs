@@ -401,10 +401,12 @@ pub fn convert_public_key_format(args: Vec<Value>) -> Result<Value, CursedError>
     let public_key_bytes = hex::decode(public_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid public key hex: {}", e)))?;
     
-    // For now, implement basic conversion for RSA keys
     match algorithm {
         PublicKeyAlgorithm::Rsa => convert_rsa_public_key_format(&public_key_bytes, from_format, to_format),
-        _ => Err(CursedError::NotImplemented(format!("Format conversion not yet implemented for {}", algorithm.name()))),
+        PublicKeyAlgorithm::EcdsaP256 => convert_p256_public_key_format(&public_key_bytes, from_format, to_format),
+        PublicKeyAlgorithm::EcdsaP384 => convert_p384_public_key_format(&public_key_bytes, from_format, to_format),
+        PublicKeyAlgorithm::Ed25519 => convert_ed25519_public_key_format(&public_key_bytes, from_format, to_format),
+        PublicKeyAlgorithm::X25519 => convert_x25519_public_key_format(&public_key_bytes, from_format, to_format),
     }
 }
 
@@ -444,6 +446,161 @@ fn convert_rsa_public_key_format(
     
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String("RSA".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert P-256 public key format
+fn convert_p256_public_key_format(
+    public_key_bytes: &[u8],
+    from_format: PublicKeyFormat,
+    to_format: PublicKeyFormat,
+) -> Result<Value, CursedError> {
+    // Parse based on from_format
+    let public_key = match from_format {
+        PublicKeyFormat::Pkcs8Der => {
+            P256PublicKey::from_public_key_der(public_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 PKCS#8 DER: {}", e)))?
+        },
+        PublicKeyFormat::Raw => {
+            P256PublicKey::from_sec1_bytes(public_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 raw bytes: {}", e)))?
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for P-256 not implemented", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PublicKeyFormat::Pkcs8Der => {
+            public_key.to_public_key_der()
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-256 PKCS#8 DER: {}", e)))?
+                .as_bytes().to_vec()
+        },
+        PublicKeyFormat::Raw => {
+            use elliptic_curve::sec1::ToEncodedPoint;
+            public_key.to_encoded_point(false).as_bytes().to_vec()
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for P-256 not implemented", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("ECDSA-P256".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert P-384 public key format
+fn convert_p384_public_key_format(
+    public_key_bytes: &[u8],
+    from_format: PublicKeyFormat,
+    to_format: PublicKeyFormat,
+) -> Result<Value, CursedError> {
+    // Parse based on from_format
+    let public_key = match from_format {
+        PublicKeyFormat::Pkcs8Der => {
+            P384PublicKey::from_public_key_der(public_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 PKCS#8 DER: {}", e)))?
+        },
+        PublicKeyFormat::Raw => {
+            P384PublicKey::from_sec1_bytes(public_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 raw bytes: {}", e)))?
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for P-384 not implemented", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PublicKeyFormat::Pkcs8Der => {
+            public_key.to_public_key_der()
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-384 PKCS#8 DER: {}", e)))?
+                .as_bytes().to_vec()
+        },
+        PublicKeyFormat::Raw => {
+            use elliptic_curve::sec1::ToEncodedPoint;
+            public_key.to_encoded_point(false).as_bytes().to_vec()
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for P-384 not implemented", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("ECDSA-P384".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert Ed25519 public key format
+fn convert_ed25519_public_key_format(
+    public_key_bytes: &[u8],
+    from_format: PublicKeyFormat,
+    to_format: PublicKeyFormat,
+) -> Result<Value, CursedError> {
+    // Parse based on from_format
+    let public_key = match from_format {
+        PublicKeyFormat::Raw => {
+            if public_key_bytes.len() != 32 {
+                return Err(CursedError::InvalidArgument("Ed25519 public key must be 32 bytes".to_string()));
+            }
+            let key_bytes: [u8; 32] = public_key_bytes.try_into()
+                .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 key length".to_string()))?;
+            VerifyingKey::from_bytes(&key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Invalid Ed25519 public key: {}", e)))?
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for Ed25519 not implemented", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PublicKeyFormat::Raw => {
+            public_key.as_bytes().to_vec()
+        },
+        _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for Ed25519 not implemented", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("Ed25519".to_string()));
+    result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
+    result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
+    result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));
+    
+    Ok(Value::Object(result))
+}
+
+/// Convert X25519 public key format
+fn convert_x25519_public_key_format(
+    public_key_bytes: &[u8],
+    from_format: PublicKeyFormat,
+    to_format: PublicKeyFormat,
+) -> Result<Value, CursedError> {
+    // Validate key length
+    if public_key_bytes.len() != 32 {
+        return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
+    }
+    
+    // Parse based on from_format (X25519 only has raw format)
+    match from_format {
+        PublicKeyFormat::Raw => {},
+        _ => return Err(CursedError::InvalidArgument(format!("X25519 only supports raw format, not {}", from_format.name()))),
+    };
+    
+    // Encode to target format
+    let converted_bytes = match to_format {
+        PublicKeyFormat::Raw => {
+            public_key_bytes.to_vec()
+        },
+        _ => return Err(CursedError::InvalidArgument(format!("X25519 only supports raw format, not {}", to_format.name()))),
+    };
+    
+    let mut result = HashMap::new();
+    result.insert("algorithm".to_string(), Value::String("X25519".to_string()));
     result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));
     result.insert("to_format".to_string(), Value::String(to_format.name().to_string()));
     result.insert("converted_key".to_string(), Value::String(hex::encode(converted_bytes)));

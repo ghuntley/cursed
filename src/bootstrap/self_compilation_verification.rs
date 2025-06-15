@@ -259,12 +259,14 @@ impl SelfCompilationVerifier {
             errors: Vec::new(),
         };
 
-        // For now, simulate Stage 2 compilation since we don't have a CURSED-based compiler yet
-        // This would use Stage 1 compiler to compile a CURSED implementation of the compiler
+        // Use the real Stage 2 CURSED compiler source
+        let stage2_source_dir = PathBuf::from("src/bootstrap/stage2");
+        let cursed_compiler_source = stage2_source_dir.join("main.csd");
         
-        // Create a test CURSED compiler source (placeholder)
-        let cursed_compiler_source = self.config.work_dir.join("compiler_v2.csd");
-        self.create_test_cursed_compiler(&cursed_compiler_source)?;
+        if !cursed_compiler_source.exists() {
+            result.errors.push("Stage 2 CURSED compiler source not found at src/bootstrap/stage2/main.csd".to_string());
+            return Ok(result);
+        }
 
         // Use Stage 1 to compile the CURSED compiler
         let stage1_binary = &stage1.output_files[0];

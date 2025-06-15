@@ -419,6 +419,9 @@ impl BuildAnalytics {
         slowest_files.sort_by(|a, b| b.1.cmp(&a.1));
         slowest_files.truncate(10);
 
+        // Analyze longest dependencies
+        let longest_dependencies = self.analyze_dependency_chain(&events)?;
+
         // Analyze memory intensive operations
         let mut memory_operations: HashMap<BuildEventType, f64> = HashMap::new();
         for event in events.iter() {
@@ -458,13 +461,81 @@ impl BuildAnalytics {
 
         Ok(BottleneckAnalysis {
             slowest_files,
-            longest_dependencies: Vec::new(), // TODO: Implement dependency analysis
+            longest_dependencies,
             memory_intensive_operations: memory_intensive,
             cpu_intensive_operations: cpu_intensive,
             critical_path_duration,
             critical_path_files,
             optimization_opportunities,
         })
+    }
+
+    /// Analyze dependency chain to find longest dependencies
+    #[instrument(skip(self, events))]
+    fn analyze_dependency_chain(&self, events: &[BuildEvent]) -> Result<Vec<(String, Duration)>> {
+        let mut dependency_durations: HashMap<String, Duration> = HashMap::new();
+        let mut dependency_graph: HashMap<String, Vec<String>> = HashMap::new();
+        
+        // Build dependency graph from events
+        for event in events {
+            if matches!(event.event_type, BuildEventType::DependencyResolution) {
+                if let Some(module) = &event.module_name {
+                    dependency_durations.entry(module.clone())
+                        .and_modify(|d| *d += event.duration)
+                        .or_insert(event.duration);
+                    
+                    // Extract dependencies from metadata
+                    if let Some(deps) = event.metadata.get("dependencies") {
+                        let deps: Vec<String> = deps.split(',')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect();
+                        dependency_graph.insert(module.clone(), deps);
+                    }
+                }
+            }
+        }
+        
+        // Calculate transitive dependency costs
+        let mut dependency_costs: HashMap<String, Duration> = HashMap::new();
+        for (module, _) in &dependency_graph {
+            let cost = self.calculate_dependency_cost(module, &dependency_graph, &dependency_durations, &mut HashMap::new())?;
+            dependency_costs.insert(module.clone(), cost);
+        }
+        
+        // Sort by total dependency cost
+        let mut longest_dependencies: Vec<(String, Duration)> = dependency_costs.into_iter().collect();
+        longest_dependencies.sort_by(|a, b| b.1.cmp(&a.1));
+        longest_dependencies.truncate(10);
+        
+        Ok(longest_dependencies)
+    }
+    
+    /// Calculate total dependency cost including transitive dependencies
+    fn calculate_dependency_cost(
+        &self,
+        module: &str,
+        dependency_graph: &HashMap<String, Vec<String>>,
+        dependency_durations: &HashMap<String, Duration>,
+        visited: &mut HashMap<String, Duration>,
+    ) -> Result<Duration> {
+        // Check for circular dependencies
+        if visited.contains_key(module) {
+            return Ok(visited[module]);
+        }
+        
+        let mut total_cost = dependency_durations.get(module).copied().unwrap_or(Duration::ZERO);
+        
+        // Add transitive dependency costs
+        if let Some(deps) = dependency_graph.get(module) {
+            for dep in deps {
+                let dep_cost = self.calculate_dependency_cost(dep, dependency_graph, dependency_durations, visited)?;
+                total_cost += dep_cost;
+            }
+        }
+        
+        visited.insert(module.to_string(), total_cost);
+        Ok(total_cost)
     }
 
     /// Generate optimization opportunities

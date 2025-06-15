@@ -241,31 +241,381 @@ pub trait UnifiedKdf:
     }
 }
 
+/// fr fr KDF engine wrapper to unify different engine types
+pub struct KdfEngineWrapper {
+    engine: KdfEngineType,
+    config: String,
+}
+
+enum KdfEngineType {
+    Pbkdf2(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine),
+    Argon2(crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine),
+    Scrypt(crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine),
+    Hkdf(crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine),
+}
+
+impl KdfEngineWrapper {
+    /// Create PBKDF2 wrapper
+    pub fn new_pbkdf2(engine: crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine) -> Self {
+        Self {
+            engine: KdfEngineType::Pbkdf2(engine),
+            config: "pbkdf2_default".to_string(),
+        }
+    }
+    
+    /// Create Argon2 wrapper  
+    pub fn new_argon2(engine: crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine) -> Self {
+        Self {
+            engine: KdfEngineType::Argon2(engine),
+            config: "argon2_default".to_string(),
+        }
+    }
+    
+    /// Create Scrypt wrapper
+    pub fn new_scrypt(engine: crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine) -> Self {
+        Self {
+            engine: KdfEngineType::Scrypt(engine),
+            config: "scrypt_default".to_string(),
+        }
+    }
+    
+    /// Create HKDF wrapper
+    pub fn new_hkdf(engine: crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine) -> Self {
+        Self {
+            engine: KdfEngineType::Hkdf(engine),
+            config: "hkdf_default".to_string(),
+        }
+    }
+}
+
+impl KeyDerivationFunction for KdfEngineWrapper {
+    type Config = String;
+    
+    fn derive_key(&self, password: &[u8], salt: &[u8], output_length: usize) -> KdfResult<Vec<u8>> {
+        match &self.engine {
+            KdfEngineType::Pbkdf2(engine) => {
+                engine.derive_key_custom(password, salt, 100_000, output_length)
+                    .map_err(|e| KdfError::CryptographicError(format!("PBKDF2 error: {}", e)))
+            }
+            KdfEngineType::Argon2(engine) => {
+                let mut key = engine.derive_key(password, salt)
+                    .map_err(|e| KdfError::CryptographicError(format!("Argon2 error: {}", e)))?;
+                key.truncate(output_length);
+                key.resize(output_length, 0);
+                Ok(key)
+            }
+            KdfEngineType::Scrypt(engine) => {
+                let mut key = engine.derive_key(password, salt)
+                    .map_err(|e| KdfError::CryptographicError(format!("Scrypt error: {}", e)))?;
+                key.truncate(output_length);
+                key.resize(output_length, 0);
+                Ok(key)
+            }
+            KdfEngineType::Hkdf(engine) => {
+                // For HKDF, we need to first extract, then expand
+                // Use salt as IKM (input key material) and derive PRK first
+                let prk = engine.extract(Some(salt), password)
+                    .map_err(|e| KdfError::CryptographicError(format!("HKDF extract error: {}", e)))?;
+                
+                let info: Option<&[u8]> = None; // Empty info for basic key derivation
+                engine.expand(&prk, info, output_length)
+                    .map_err(|e| KdfError::CryptographicError(format!("HKDF expand error: {}", e)))
+            }
+        }
+    }
+    
+    fn config(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl Configurable for KdfEngineWrapper {
+    type Config = String;
+    
+    fn config(&self) -> &Self::Config {
+        &self.config
+    }
+    
+    fn with_config(config: Self::Config) -> KdfResult<Self> where Self: Sized {
+        Self::create_engine_from_config(&config)
+    }
+    
+    /// bestie Create engine from configuration string
+    fn create_engine_from_config(config: &Self::Config) -> KdfResult<Self> where Self: Sized {
+        // Parse configuration format: "algorithm:param1=value1,param2=value2"
+        let parts: Vec<&str> = config.splitn(2, ':').collect();
+        let algorithm = parts[0].trim();
+        let params = if parts.len() > 1 { parts[1] } else { "" };
+        
+        match algorithm.to_lowercase().as_str() {
+            "pbkdf2" => {
+                let pbkdf2_config = KdfFactory::parse_pbkdf2_config(params)?;
+                let engine = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine::new(pbkdf2_config)
+                    .map_err(|e| KdfError::InvalidConfig(format!("PBKDF2 engine creation failed: {}", e)))?;
+                Ok(KdfEngineWrapper::new_pbkdf2(engine))
+            }
+            "argon2" | "argon2i" | "argon2d" | "argon2id" => {
+                let argon2_config = KdfFactory::parse_argon2_config(algorithm, params)?;
+                let engine = crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine::new(argon2_config);
+                Ok(KdfEngineWrapper::new_argon2(engine))
+            }
+            "scrypt" => {
+                let scrypt_config = KdfFactory::parse_scrypt_config(params)?;
+                let engine = crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine::new(scrypt_config)
+                    .map_err(|e| KdfError::InvalidConfig(format!("Scrypt engine creation failed: {}", e)))?;
+                Ok(KdfEngineWrapper::new_scrypt(engine))
+            }
+            "hkdf" => {
+                let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
+                Ok(KdfEngineWrapper::new_hkdf(engine))
+            }
+            _ => Err(KdfError::InvalidConfig(format!("Unknown algorithm in config: {}", algorithm))),
+        }
+    }
+    
+    fn validate_config(config: &Self::Config) -> KdfResult<()> {
+        // Basic validation of config format
+        if config.is_empty() {
+            return Err(KdfError::InvalidConfig("Empty configuration string".to_string()));
+        }
+        
+        let parts: Vec<&str> = config.splitn(2, ':').collect();
+        let algorithm = parts[0].trim();
+        
+        match algorithm.to_lowercase().as_str() {
+            "pbkdf2" | "argon2" | "argon2i" | "argon2d" | "argon2id" | "scrypt" | "hkdf" => Ok(()),
+            _ => Err(KdfError::InvalidConfig(format!("Unsupported algorithm: {}", algorithm))),
+        }
+    }
+}
+
+impl SecurityAssessment for KdfEngineWrapper {
+    fn security_level(&self) -> u32 {
+        match &self.engine {
+            KdfEngineType::Pbkdf2(_) => 128,
+            KdfEngineType::Argon2(_) => 256,
+            KdfEngineType::Scrypt(_) => 192,
+            KdfEngineType::Hkdf(_) => 128,
+        }
+    }
+    
+    fn attack_resistance(&self) -> AttackResistance {
+        match &self.engine {
+            KdfEngineType::Pbkdf2(_) => AttackResistance::new(),
+            KdfEngineType::Argon2(_) => AttackResistance::high_security(),
+            KdfEngineType::Scrypt(_) => {
+                let mut resistance = AttackResistance::new();
+                resistance.gpu_attack = 128;
+                resistance.asic_attack = 80;
+                resistance
+            }
+            KdfEngineType::Hkdf(_) => AttackResistance::new(),
+        }
+    }
+}
+
+impl ConstantTime for KdfEngineWrapper {
+    fn is_constant_time(&self) -> bool {
+        match &self.engine {
+            KdfEngineType::Pbkdf2(_) => true,
+            KdfEngineType::Argon2(_) => false, // Argon2d is not constant-time
+            KdfEngineType::Scrypt(_) => true,
+            KdfEngineType::Hkdf(_) => true,
+        }
+    }
+}
+
+impl UnifiedKdf for KdfEngineWrapper {
+    fn algorithm_name(&self) -> &'static str {
+        match &self.engine {
+            KdfEngineType::Pbkdf2(_) => "PBKDF2",
+            KdfEngineType::Argon2(_) => "Argon2", 
+            KdfEngineType::Scrypt(_) => "scrypt",
+            KdfEngineType::Hkdf(_) => "HKDF",
+        }
+    }
+    
+    fn algorithm_version(&self) -> &'static str {
+        match &self.engine {
+            KdfEngineType::Pbkdf2(_) => "RFC2898",
+            KdfEngineType::Argon2(_) => "v1.3",
+            KdfEngineType::Scrypt(_) => "RFC7914", 
+            KdfEngineType::Hkdf(_) => "RFC5869",
+        }
+    }
+}
+
 /// fr fr KDF factory for creating instances
 pub struct KdfFactory;
 
 impl KdfFactory {
     /// slay Create KDF by algorithm name
     pub fn create_kdf(algorithm: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
+        Self::create_kdf_with_config(algorithm, "")
+    }
+    
+    /// bestie Create KDF by algorithm name with configuration
+    pub fn create_kdf_with_config(algorithm: &str, config: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
         match algorithm.to_lowercase().as_str() {
             "pbkdf2" => {
-                // Return PBKDF2 implementation
-                Err(KdfError::NotImplemented)
+                let pbkdf2_config = Self::parse_pbkdf2_config(config)?;
+                let engine = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine::new(pbkdf2_config)
+                    .map_err(|e| KdfError::InvalidConfig(format!("PBKDF2 config error: {}", e)))?;
+                Ok(Box::new(KdfEngineWrapper::new_pbkdf2(engine)))
             }
             "argon2" | "argon2i" | "argon2d" | "argon2id" => {
-                // Return Argon2 implementation
-                Err(KdfError::NotImplemented)
+                let argon2_config = Self::parse_argon2_config(algorithm, config)?;
+                let engine = crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine::new(argon2_config);
+                Ok(Box::new(KdfEngineWrapper::new_argon2(engine)))
             }
             "scrypt" => {
-                // Return scrypt implementation
-                Err(KdfError::NotImplemented)
+                let scrypt_config = Self::parse_scrypt_config(config)?;
+                let engine = crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine::new(scrypt_config)
+                    .map_err(|e| KdfError::InvalidConfig(format!("Scrypt config error: {}", e)))?;
+                Ok(Box::new(KdfEngineWrapper::new_scrypt(engine)))
             }
             "hkdf" => {
-                // Return HKDF implementation
-                Err(KdfError::NotImplemented)
+                let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
+                Ok(Box::new(KdfEngineWrapper::new_hkdf(engine)))
             }
             _ => Err(KdfError::InvalidConfig(format!("Unknown algorithm: {}", algorithm))),
         }
+    }
+    
+    /// facts Parse PBKDF2 configuration from string
+    fn parse_pbkdf2_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config> {
+        if config.is_empty() {
+            return Ok(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new());
+        }
+        
+        let mut pbkdf2_config = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new();
+        
+        // Parse configuration string format: "iterations=100000,output_len=32,hash=sha256"
+        for pair in config.split(',') {
+            let parts: Vec<&str> = pair.split('=').collect();
+            if parts.len() != 2 {
+                continue;
+            }
+            
+            match parts[0].trim() {
+                "iterations" => {
+                    pbkdf2_config.iterations = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid iterations value".to_string()))?;
+                }
+                "output_len" => {
+                    pbkdf2_config.output_len = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid output_len value".to_string()))?;
+                }
+                "hash" => {
+                    use crate::stdlib::packages::crypto_hash_advanced::hmac::HmacAlgorithm;
+                    pbkdf2_config.hash_algorithm = match parts[1].trim().to_lowercase().as_str() {
+                        "sha256" => HmacAlgorithm::Sha256,
+                        "sha512" => HmacAlgorithm::Sha512,
+                        _ => return Err(KdfError::InvalidConfig("Invalid hash algorithm".to_string())),
+                    };
+                }
+                _ => {} // Ignore unknown parameters
+            }
+        }
+        
+        pbkdf2_config.validate()
+            .map_err(|e| KdfError::InvalidConfig(format!("PBKDF2 validation error: {}", e)))?;
+        
+        Ok(pbkdf2_config)
+    }
+    
+    /// vibes Parse Argon2 configuration from string
+    fn parse_argon2_config(algorithm: &str, config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::argon2::Argon2Config> {
+        let mut argon2_config = crate::stdlib::packages::crypto_kdf::argon2::Argon2Config::new();
+        
+        // Set variant based on algorithm name
+        use crate::stdlib::packages::crypto_kdf::argon2::Argon2Variant;
+        argon2_config.variant = match algorithm.to_lowercase().as_str() {
+            "argon2i" => Argon2Variant::Argon2i,
+            "argon2d" => Argon2Variant::Argon2d,
+            "argon2id" | "argon2" => Argon2Variant::Argon2id,
+            _ => Argon2Variant::Argon2id,
+        };
+        
+        if config.is_empty() {
+            return Ok(argon2_config);
+        }
+        
+        // Parse configuration string format: "memory=65536,time=3,parallelism=4,output_len=32"
+        for pair in config.split(',') {
+            let parts: Vec<&str> = pair.split('=').collect();
+            if parts.len() != 2 {
+                continue;
+            }
+            
+            match parts[0].trim() {
+                "memory" => {
+                    argon2_config.memory_cost = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid memory value".to_string()))?;
+                    argon2_config.memory_size = argon2_config.memory_cost as usize * 1024;
+                }
+                "time" => {
+                    argon2_config.time_cost = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid time value".to_string()))?;
+                    argon2_config.iterations = argon2_config.time_cost;
+                }
+                "parallelism" => {
+                    argon2_config.parallelism = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid parallelism value".to_string()))?;
+                }
+                "output_len" => {
+                    let output_len = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid output_len value".to_string()))?;
+                    argon2_config.output_len = output_len;
+                    argon2_config.output_length = output_len;
+                }
+                _ => {} // Ignore unknown parameters
+            }
+        }
+        
+        Ok(argon2_config)
+    }
+    
+    /// periodt Parse Scrypt configuration from string
+    fn parse_scrypt_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig> {
+        if config.is_empty() {
+            return Ok(crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new());
+        }
+        
+        let mut scrypt_config = crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new();
+        
+        // Parse configuration string format: "n=32768,r=8,p=1,output_len=32"
+        for pair in config.split(',') {
+            let parts: Vec<&str> = pair.split('=').collect();
+            if parts.len() != 2 {
+                continue;
+            }
+            
+            match parts[0].trim() {
+                "n" => {
+                    scrypt_config.n = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid N value".to_string()))?;
+                }
+                "r" => {
+                    scrypt_config.r = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid r value".to_string()))?;
+                }
+                "p" => {
+                    scrypt_config.p = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid p value".to_string()))?;
+                }
+                "output_len" => {
+                    scrypt_config.output_len = parts[1].trim().parse()
+                        .map_err(|_| KdfError::InvalidConfig("Invalid output_len value".to_string()))?;
+                }
+                _ => {} // Ignore unknown parameters
+            }
+        }
+        
+        scrypt_config.validate()
+            .map_err(|e| KdfError::InvalidConfig(format!("Scrypt validation error: {}", e)))?;
+        
+        Ok(scrypt_config)
     }
     
     /// bestie List available algorithms

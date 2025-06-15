@@ -139,7 +139,7 @@ impl RandomNumbers {
             
             loop {
                 let u = self.secure_rng.f64()?;
-                let x = (alpha: f64) - 0.5;
+                let x = alpha - 0.5;
                 let y = 0.5 * (u - 0.5).abs() / l;
                 let lhs = 0.83 + 0.65 / lambda + 0.5 / (lambda * lambda);
                 let rhs = 0.25 * y * (y + 1.0) + (lambda - m) / l;

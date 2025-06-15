@@ -23,9 +23,13 @@ pub mod nonce_generator;
 pub mod constant_time;
 pub mod memory_protection;
 pub mod security_analysis;
+pub mod security_framework;
 
 // Re-export main types for convenience - PRODUCTION READY ✅
 pub use errors::*;
+
+// AES-GCM implementations - FULLY IMPLEMENTED ✅
+pub use aes_gcm::{AesGcm256, AesGcm192, AesGcm128, AesGcmEncryptedData};
 
 // ChaCha20-Poly1305 - FULLY IMPLEMENTED ✅
 pub use chacha20_poly1305::{
@@ -63,6 +67,22 @@ pub use constant_time::{
 pub use memory_protection::{
     SecureMemory, ZeroOnDrop, ProtectedBytes, MemoryBarrier, MemoryProtection,
     clear_sensitive_data, clear_sensitive_data_volatile, memory_lock, memory_unlock
+};
+
+// Security Analysis Framework - FULLY IMPLEMENTED ✅
+pub use security_framework::{
+    SecurityAnalysis, SecurityAnalysisConfig, SecurityAnalysisResult, SecurityAnalysisError,
+    SecurityLevel, SecurityMetrics, SecurityIssue, SecuritySeverity, SecurityCategory,
+    SecurityReport, SecurityContext, CryptoParameters, quick_analysis
+};
+
+// Security Analysis Modules - FULLY IMPLEMENTED ✅
+pub use security_analysis::{
+    TimingAnalyzer, TimingResult, TimingAnalysisResult, TimingComparison, ComplexityAnalysis,
+    SideChannelDetector, SideChannelAnalysisResult, LeakIndicator, LeakType, RiskLevel,
+    EntropyValidator, EntropyMetrics, EntropyResult, EntropyQuality, StatisticalTestResults,
+    ParameterVerifier, ParameterVerificationResult, ParameterViolation, ViolationType,
+    VulnerabilityScanner, VulnerabilityReport, Vulnerability, VulnerabilityType
 };
 
 // Future implementations (stubs currently)

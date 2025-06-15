@@ -1,8 +1,8 @@
 0. study specs/*
-1. pick the highest value item from @IMPLEMENTATION_PLAN.md and implement it using up to 500 subagents.
-2. test the new changes then update @IMPLEMENTATION_PLAN.md to say that the implementation is done using a single subagent.
+1. pick the highest value item from @IMPLEMENTATION_PLAN.MD and implement it using up to 500 subagents.
+2. test the new changes then update @IMPLEMENTATION_PLAN.MD to say that the implementation is done using a single subagent.
 
-    2a. add changed code and @IMPLEMENTATION_PLAN.md with "git add -A" via bash
+    2a. add changed code and @IMPLEMENTATION_PLAN.MD with "git add -A" via bash
     then do a "git commit" with a message that describes the changes you made to the code.
 
 99. Run cargo test and resolve test failures using a single subagent.

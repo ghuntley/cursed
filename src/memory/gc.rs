@@ -910,6 +910,14 @@ impl<T: Storable> Gc<T> {
         }
     }
     
+    /// Create a Gc from an object handle (public constructor for enhanced GC)
+    /// 
+    /// This is used by enhanced garbage collection systems that need to create
+    /// Gc<T> pointers from externally managed allocation systems.
+    pub fn from_object_handle(handle: ObjectHandle<T>, object_store: Weak<ObjectStore>) -> Self {
+        Self::from_handle(handle, object_store)
+    }
+    
     /// Get the object ID
     pub fn object_id(&self) -> ObjectId {
         self.handle.object_id()

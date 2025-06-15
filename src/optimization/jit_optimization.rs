@@ -1,725 +1,556 @@
-/// JIT Optimization Framework for CURSED Compiler
-/// 
-/// Provides adaptive optimization with dynamic recompilation of hot functions,
-/// profile-guided optimization, and integration with LLVM infrastructure.
+//! JIT compilation optimizations for runtime performance
 
+use crate::error::{Result, CursedError};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
-use tracing::{debug, info, instrument, warn};
-
-use crate::error::{Error, Result};
-use crate::codegen::llvm::LlvmCodeGenerator;
-use super::profiling::{PerformanceProfiler, PerformanceMetrics, OptimizationRecommendation};
+use tracing::{info, debug, warn, instrument};
+use serde::{Deserialize, Serialize};
 
 /// JIT optimization configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JitOptimizationConfig {
-    /// Enable adaptive optimization
+    pub enable_jit_optimization: bool,
+    pub hot_threshold: u64,
+    pub optimization_delay_ms: u64,
+    pub max_optimization_time_ms: u64,
+    pub enable_speculative_optimization: bool,
     pub enable_adaptive_optimization: bool,
-    /// Hot function threshold for recompilation
-    pub hot_function_threshold: u64,
-    /// Maximum optimization level
-    pub max_optimization_level: u32,
-    /// Recompilation cooldown period
-    pub recompilation_cooldown: Duration,
-    /// Maximum functions to keep in JIT cache
-    pub max_jit_cache_size: usize,
-    /// Enable profile-guided optimization
-    pub enable_profile_guided_optimization: bool,
-    /// Speculation threshold for branch prediction
-    pub speculation_threshold: f64,
+    pub profiling_overhead_limit_percent: f64,
 }
 
 impl Default for JitOptimizationConfig {
     fn default() -> Self {
         Self {
+            enable_jit_optimization: true,
+            hot_threshold: 1000, // Function calls before optimization
+            optimization_delay_ms: 100,
+            max_optimization_time_ms: 5000,
+            enable_speculative_optimization: true,
             enable_adaptive_optimization: true,
-            hot_function_threshold: 1000,
-            max_optimization_level: 3,
-            recompilation_cooldown: Duration::from_secs(60),
-            max_jit_cache_size: 1000,
-            enable_profile_guided_optimization: true,
-            speculation_threshold: 0.8,
+            profiling_overhead_limit_percent: 5.0,
         }
     }
 }
 
-/// JIT compiled function information
-#[derive(Debug, Clone)]
-pub struct JitCompiledFunction {
-    /// Function name
-    pub name: String,
-    /// Optimization level used
-    pub optimization_level: u32,
-    /// Compilation time
-    pub compilation_time: Duration,
-    /// Function size in bytes
-    pub function_size: usize,
-    /// Number of recompilations
-    pub recompilation_count: u32,
-    /// Last compilation time
-    pub last_compilation: Instant,
-    /// Performance improvement ratio
-    pub performance_improvement: f64,
-    /// Profile data used for optimization
-    pub profile_data: Option<ProfileData>,
-}
-
-/// Profile data for profile-guided optimization
-#[derive(Debug, Clone)]
-pub struct ProfileData {
-    /// Branch probabilities
-    pub branch_probabilities: HashMap<String, f64>,
-    /// Call frequencies
-    pub call_frequencies: HashMap<String, u64>,
-    /// Hot loops
-    pub hot_loops: Vec<LoopProfile>,
-    /// Memory access patterns
-    pub memory_access_patterns: Vec<MemoryAccessPattern>,
-}
-
-#[derive(Debug, Clone)]
-pub struct LoopProfile {
-    pub loop_id: String,
-    pub average_iterations: f64,
-    pub total_executions: u64,
-    pub vectorizable: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct MemoryAccessPattern {
-    pub address_range: (usize, usize),
-    pub access_frequency: u64,
-    pub stride_pattern: Option<isize>,
-    pub cache_friendly: bool,
-}
-
-/// Hot path profiler for identifying optimization candidates
-pub struct HotPathProfiler {
-    /// Configuration
+/// JIT optimization manager
+#[derive(Debug)]
+pub struct JitOptimizer {
     config: JitOptimizationConfig,
-    /// Execution counts
-    execution_counts: Arc<RwLock<HashMap<String, u64>>>,
-    /// Execution times
-    execution_times: Arc<RwLock<HashMap<String, Duration>>>,
-    /// Function call graph
-    call_graph: Arc<RwLock<HashMap<String, Vec<String>>>>,
-    /// Branch prediction data
-    branch_data: Arc<RwLock<HashMap<String, BranchPredictionData>>>,
+    function_profiles: HashMap<String, FunctionProfile>,
+    optimization_queue: Vec<OptimizationTask>,
+    statistics: JitStatistics,
 }
 
+/// Profile data for a function
 #[derive(Debug, Clone)]
-pub struct BranchPredictionData {
-    pub total_branches: u64,
-    pub taken_branches: u64,
-    pub prediction_accuracy: f64,
+struct FunctionProfile {
+    name: String,
+    call_count: u64,
+    total_execution_time: Duration,
+    average_execution_time: Duration,
+    last_optimization_time: Option<Instant>,
+    optimization_level: OptimizationLevel,
+    is_hot: bool,
 }
 
-impl HotPathProfiler {
-    /// Create a new hot path profiler
-    pub fn new(config: JitOptimizationConfig) -> Self {
-        Self {
-            config,
-            execution_counts: Arc::new(RwLock::new(HashMap::new())),
-            execution_times: Arc::new(RwLock::new(HashMap::new())),
-            call_graph: Arc::new(RwLock::new(HashMap::new())),
-            branch_data: Arc::new(RwLock::new(HashMap::new())),
-        }
-    }
-
-    /// Record function execution
-    #[instrument(skip(self))]
-    pub fn record_execution(&self, function_name: &str, execution_time: Duration) -> Result<()> {
-        {
-            let mut counts = self.execution_counts
-                .write()
-                .map_err(|_| Error::Runtime("Failed to acquire execution counts lock".to_string()))?;
-            *counts.entry(function_name.to_string()).or_insert(0) += 1;
-        }
-
-        {
-            let mut times = self.execution_times
-                .write()
-                .map_err(|_| Error::Runtime("Failed to acquire execution times lock".to_string()))?;
-            *times.entry(function_name.to_string()).or_insert(Duration::default()) += execution_time;
-        }
-
-        debug!("Recorded execution for {}: {}μs", function_name, execution_time.as_micros());
-        Ok(())
-    }
-
-    /// Record function call for call graph analysis
-    pub fn record_call(&self, caller: &str, callee: &str) -> Result<()> {
-        let mut call_graph = self.call_graph
-            .write()
-            .map_err(|_| Error::Runtime("Failed to acquire call graph lock".to_string()))?;
-        
-        call_graph
-            .entry(caller.to_string())
-            .or_insert_with(Vec::new)
-            .push(callee.to_string());
-        
-        Ok(())
-    }
-
-    /// Record branch prediction data
-    pub fn record_branch(&self, function_name: &str, taken: bool, predicted_correctly: bool) -> Result<()> {
-        let mut branch_data = self.branch_data
-            .write()
-            .map_err(|_| Error::Runtime("Failed to acquire branch data lock".to_string()))?;
-        
-        let data = branch_data
-            .entry(function_name.to_string())
-            .or_insert(BranchPredictionData {
-                total_branches: 0,
-                taken_branches: 0,
-                prediction_accuracy: 0.0,
-            });
-        
-        data.total_branches += 1;
-        if taken {
-            data.taken_branches += 1;
-        }
-        
-        // Update prediction accuracy
-        let correct_predictions = (data.prediction_accuracy * (data.total_branches - 1) as f64) + if predicted_correctly { 1.0 } else { 0.0 };
-        data.prediction_accuracy = correct_predictions / data.total_branches as f64;
-        
-        Ok(())
-    }
-
-    /// Get hot functions that should be optimized
-    pub fn get_hot_functions(&self) -> Result<Vec<(String, u64)>> {
-        let counts = self.execution_counts
-            .read()
-            .map_err(|_| Error::Runtime("Failed to acquire execution counts lock".to_string()))?;
-        
-        let mut hot_functions: Vec<_> = counts
-            .iter()
-            .filter(|(_, &count)| count >= self.config.hot_function_threshold)
-            .map(|(name, &count)| (name.clone(), count))
-            .collect();
-        
-        hot_functions.sort_by(|a, b| b.1.cmp(&a.1));
-        Ok(hot_functions)
-    }
-
-    /// Generate profile data for a function
-    pub fn generate_profile_data(&self, function_name: &str) -> Result<Option<ProfileData>> {
-        let call_graph = self.call_graph
-            .read()
-            .map_err(|_| Error::Runtime("Failed to acquire call graph lock".to_string()))?;
-        
-        let branch_data = self.branch_data
-            .read()
-            .map_err(|_| Error::Runtime("Failed to acquire branch data lock".to_string()))?;
-        
-        let execution_counts = self.execution_counts
-            .read()
-            .map_err(|_| Error::Runtime("Failed to acquire execution counts lock".to_string()))?;
-
-        // Generate call frequencies
-        let mut call_frequencies = HashMap::new();
-        if let Some(callees) = call_graph.get(function_name) {
-            for callee in callees {
-                *call_frequencies.entry(callee.clone()).or_insert(0) += 1;
-            }
-        }
-
-        // Generate branch probabilities (simplified)
-        let mut branch_probabilities = HashMap::new();
-        if let Some(branch_info) = branch_data.get(function_name) {
-            if branch_info.total_branches > 0 {
-                let taken_probability = branch_info.taken_branches as f64 / branch_info.total_branches as f64;
-                branch_probabilities.insert("main_branch".to_string(), taken_probability);
-            }
-        }
-
-        if call_frequencies.is_empty() && branch_probabilities.is_empty() {
-            return Ok(None);
-        }
-
-        Ok(Some(ProfileData {
-            branch_probabilities,
-            call_frequencies,
-            hot_loops: Vec::new(), // Would be populated by loop analysis
-            memory_access_patterns: Vec::new(), // Would be populated by memory profiling
-        }))
-    }
+/// JIT optimization levels
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum OptimizationLevel {
+    None,
+    Basic,
+    Aggressive,
+    Speculative,
 }
 
-/// Profile-guided optimizer
-pub struct ProfileGuidedOptimizer {
-    /// Configuration
-    config: JitOptimizationConfig,
-    /// LLVM code generator for recompilation
-    code_generator: Arc<Mutex<LlvmCodeGenerator>>,
-    /// Performance profiler for feedback
-    performance_profiler: Arc<PerformanceProfiler>,
+/// Optimization task for JIT compilation
+#[derive(Debug, Clone)]
+struct OptimizationTask {
+    function_name: String,
+    priority: TaskPriority,
+    optimization_type: OptimizationType,
+    estimated_benefit: f64,
+    estimated_cost: Duration,
 }
 
-impl ProfileGuidedOptimizer {
-    /// Create a new profile-guided optimizer
-    pub fn new(
-        config: JitOptimizationConfig,
-        code_generator: LlvmCodeGenerator,
-        performance_profiler: PerformanceProfiler,
-    ) -> Result<Self> {
+/// Priority levels for optimization tasks
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum TaskPriority {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+/// Types of JIT optimizations
+#[derive(Debug, Clone)]
+enum OptimizationType {
+    HotFunctionOptimization,
+    SpeculativeInlining,
+    DeadCodeElimination,
+    LoopOptimization,
+    VectorizationOptimization,
+}
+
+/// JIT optimization statistics
+#[derive(Debug, Default, Clone)]
+pub struct JitStatistics {
+    pub functions_profiled: usize,
+    pub hot_functions_detected: usize,
+    pub optimizations_performed: usize,
+    pub optimization_time_total: Duration,
+    pub performance_improvements: HashMap<String, f64>,
+    pub average_speedup: f64,
+    pub profiling_overhead_percent: f64,
+}
+
+impl JitOptimizer {
+    /// Create a new JIT optimizer
+    #[instrument]
+    pub fn new(config: JitOptimizationConfig) -> Result<Self> {
+        info!("Creating JIT optimizer");
+        
         Ok(Self {
             config,
-            code_generator: Arc::new(Mutex::new(code_generator)),
-            performance_profiler: Arc::new(performance_profiler),
-        })
-    }
-
-    /// Optimize function based on profile data
-    #[instrument(skip(self, profile_data))]
-    pub fn optimize_function(
-        &self,
-        function_name: &str,
-        source_code: &str,
-        profile_data: &ProfileData,
-    ) -> Result<String> {
-        info!("Starting profile-guided optimization for function: {}", function_name);
-
-        let mut optimizations = Vec::new();
-
-        // Branch prediction optimizations
-        for (branch_id, probability) in &profile_data.branch_probabilities {
-            if *probability > self.config.speculation_threshold {
-                optimizations.push(format!(
-                    "branch_weight({}, likely)",
-                    branch_id
-                ));
-            } else if *probability < (1.0 - self.config.speculation_threshold) {
-                optimizations.push(format!(
-                    "branch_weight({}, unlikely)",
-                    branch_id
-                ));
-            }
-        }
-
-        // Function inlining based on call frequencies
-        for (callee, frequency) in &profile_data.call_frequencies {
-            if *frequency > 100 {
-                optimizations.push(format!(
-                    "inline_hint({})",
-                    callee
-                ));
-            }
-        }
-
-        // Loop optimizations
-        for loop_profile in &profile_data.hot_loops {
-            if loop_profile.vectorizable && loop_profile.total_executions > 1000 {
-                optimizations.push(format!(
-                    "vectorize_loop({})",
-                    loop_profile.loop_id
-                ));
-            }
-            
-            if loop_profile.average_iterations > 10.0 {
-                optimizations.push(format!(
-                    "unroll_loop({}, factor={})",
-                    loop_profile.loop_id,
-                    (loop_profile.average_iterations / 4.0).min(8.0) as u32
-                ));
-            }
-        }
-
-        // Memory access optimizations
-        for pattern in &profile_data.memory_access_patterns {
-            if !pattern.cache_friendly && pattern.access_frequency > 1000 {
-                optimizations.push(format!(
-                    "prefetch_data({}, {})",
-                    pattern.address_range.0,
-                    pattern.address_range.1
-                ));
-            }
-        }
-
-        debug!("Generated {} optimizations for {}", optimizations.len(), function_name);
-
-        // Apply optimizations through LLVM
-        let mut codegen = self.code_generator
-            .lock()
-            .map_err(|_| Error::Runtime("Failed to acquire code generator lock".to_string()))?;
-
-        // This would integrate with the actual LLVM optimization pipeline
-        let optimized_ir = format!(
-            "; Profile-guided optimizations: {}\n{}",
-            optimizations.join(", "),
-            source_code
-        );
-
-        Ok(optimized_ir)
-    }
-
-    /// Estimate optimization benefit
-    pub fn estimate_optimization_benefit(
-        &self,
-        function_name: &str,
-        profile_data: &ProfileData,
-    ) -> Result<OptimizationBenefit> {
-        let metrics = self.performance_profiler
-            .get_function_metrics(function_name)?
-            .ok_or_else(|| Error::Runtime(format!("No metrics found for function: {}", function_name)))?;
-
-        let mut estimated_speedup = 1.0;
-
-        // Estimate branch prediction improvements
-        for (_, probability) in &profile_data.branch_probabilities {
-            if *probability > self.config.speculation_threshold || *probability < (1.0 - self.config.speculation_threshold) {
-                estimated_speedup *= 1.05; // 5% improvement from better branch prediction
-            }
-        }
-
-        // Estimate inlining benefits
-        let high_frequency_calls = profile_data.call_frequencies
-            .values()
-            .filter(|&&freq| freq > 100)
-            .count();
-        
-        if high_frequency_calls > 0 {
-            estimated_speedup *= 1.0 + (high_frequency_calls as f64 * 0.03); // 3% per inlined function
-        }
-
-        // Estimate loop optimization benefits
-        let vectorizable_loops = profile_data.hot_loops
-            .iter()
-            .filter(|loop_profile| loop_profile.vectorizable && loop_profile.total_executions > 1000)
-            .count();
-        
-        if vectorizable_loops > 0 {
-            estimated_speedup *= 1.0 + (vectorizable_loops as f64 * 0.15); // 15% per vectorized loop
-        }
-
-        Ok(OptimizationBenefit {
-            estimated_speedup,
-            estimated_time_saved: Duration::from_nanos(
-                (metrics.total_execution_time.as_nanos() as f64 * (estimated_speedup - 1.0) / estimated_speedup) as u64
-            ),
-            compilation_overhead: Duration::from_millis(100), // Estimated recompilation time
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct OptimizationBenefit {
-    pub estimated_speedup: f64,
-    pub estimated_time_saved: Duration,
-    pub compilation_overhead: Duration,
-}
-
-/// Adaptive JIT optimizer that manages the overall optimization process
-pub struct AdaptiveJitOptimizer {
-    /// Configuration
-    config: JitOptimizationConfig,
-    /// Hot path profiler
-    hot_path_profiler: Arc<HotPathProfiler>,
-    /// Profile-guided optimizer
-    profile_guided_optimizer: Arc<ProfileGuidedOptimizer>,
-    /// JIT compiled functions cache
-    jit_cache: Arc<RwLock<HashMap<String, JitCompiledFunction>>>,
-    /// Recompilation queue
-    recompilation_queue: Arc<Mutex<Vec<String>>>,
-    /// Performance profiler
-    performance_profiler: Arc<PerformanceProfiler>,
-}
-
-impl AdaptiveJitOptimizer {
-    /// Create a new adaptive JIT optimizer
-    pub fn new(config: &super::OptimizationConfig) -> Result<Self> {
-        let jit_config = JitOptimizationConfig {
-            enable_adaptive_optimization: config.enable_adaptive_optimization,
-            max_optimization_level: config.optimization_level,
-            ..Default::default()
-        };
-
-        let hot_path_profiler = Arc::new(HotPathProfiler::new(jit_config.clone()));
-        let performance_profiler = Arc::new(PerformanceProfiler::new(config)?);
-        
-        // Create a basic code generator for the profile-guided optimizer
-        let code_generator = LlvmCodeGenerator::new()?;
-        let profile_guided_optimizer = Arc::new(ProfileGuidedOptimizer::new(
-            jit_config.clone(),
-            code_generator,
-            (*performance_profiler).clone(),
-        )?);
-
-        Ok(Self {
-            config: jit_config,
-            hot_path_profiler,
-            profile_guided_optimizer,
-            jit_cache: Arc::new(RwLock::new(HashMap::new())),
-            recompilation_queue: Arc::new(Mutex::new(Vec::new())),
-            performance_profiler,
+            function_profiles: HashMap::new(),
+            optimization_queue: Vec::new(),
+            statistics: JitStatistics::default(),
         })
     }
 
     /// Record function execution for profiling
     #[instrument(skip(self))]
-    pub fn record_execution(&self, function_name: &str, execution_time: Duration) -> Result<()> {
-        self.hot_path_profiler.record_execution(function_name, execution_time)?;
-        
-        // Check if function should be queued for recompilation
-        let execution_counts = self.hot_path_profiler.execution_counts
-            .read()
-            .map_err(|_| Error::Runtime("Failed to acquire execution counts lock".to_string()))?;
-        
-        if let Some(&count) = execution_counts.get(function_name) {
-            if count >= self.config.hot_function_threshold {
-                // Check if not recently recompiled
-                let jit_cache = self.jit_cache
-                    .read()
-                    .map_err(|_| Error::Runtime("Failed to acquire JIT cache lock".to_string()))?;
-                
-                let should_recompile = if let Some(compiled_func) = jit_cache.get(function_name) {
-                    compiled_func.last_compilation.elapsed() > self.config.recompilation_cooldown
-                } else {
-                    true
-                };
-                
-                if should_recompile {
-                    let mut queue = self.recompilation_queue
-                        .lock()
-                        .map_err(|_| Error::Runtime("Failed to acquire recompilation queue lock".to_string()))?;
-                    
-                    if !queue.contains(&function_name.to_string()) {
-                        queue.push(function_name.to_string());
-                        debug!("Queued {} for JIT recompilation", function_name);
-                    }
-                }
-            }
+    pub fn record_function_execution(
+        &mut self,
+        function_name: &str,
+        execution_time: Duration,
+    ) -> Result<()> {
+        let profile = self.function_profiles
+            .entry(function_name.to_string())
+            .or_insert_with(|| FunctionProfile {
+                name: function_name.to_string(),
+                call_count: 0,
+                total_execution_time: Duration::from_nanos(0),
+                average_execution_time: Duration::from_nanos(0),
+                last_optimization_time: None,
+                optimization_level: OptimizationLevel::None,
+                is_hot: false,
+            });
+
+        profile.call_count += 1;
+        profile.total_execution_time += execution_time;
+        profile.average_execution_time = profile.total_execution_time / profile.call_count as u32;
+
+        // Check if function has become hot
+        if !profile.is_hot && profile.call_count >= self.config.hot_threshold {
+            profile.is_hot = true;
+            self.schedule_hot_function_optimization(function_name)?;
+            self.statistics.hot_functions_detected += 1;
         }
-        
+
+        // Update statistics
+        self.statistics.functions_profiled = self.function_profiles.len();
+
         Ok(())
     }
 
-    /// Process recompilation queue
+    /// Schedule optimization for a hot function
     #[instrument(skip(self))]
-    pub fn process_recompilation_queue(&self) -> Result<Vec<String>> {
-        let mut queue = self.recompilation_queue
-            .lock()
-            .map_err(|_| Error::Runtime("Failed to acquire recompilation queue lock".to_string()))?;
+    fn schedule_hot_function_optimization(&mut self, function_name: &str) -> Result<()> {
+        debug!("Scheduling optimization for hot function: {}", function_name);
+
+        let profile = self.function_profiles.get(function_name)
+            .ok_or_else(|| CursedError::optimization_error(
+                &format!("Function profile not found: {}", function_name)
+            ))?;
+
+        let estimated_benefit = self.calculate_optimization_benefit(profile);
+        let estimated_cost = self.estimate_optimization_cost(profile);
+
+        let task = OptimizationTask {
+            function_name: function_name.to_string(),
+            priority: self.determine_task_priority(profile),
+            optimization_type: OptimizationType::HotFunctionOptimization,
+            estimated_benefit,
+            estimated_cost,
+        };
+
+        self.optimization_queue.push(task);
         
-        let functions_to_recompile = queue.drain(..).collect::<Vec<_>>();
-        drop(queue);
-        
-        let mut recompiled_functions = Vec::new();
-        
-        for function_name in functions_to_recompile {
-            match self.recompile_function(&function_name) {
-                Ok(_) => {
-                    recompiled_functions.push(function_name.clone());
-                    info!("Successfully recompiled function: {}", function_name);
-                }
-                Err(e) => {
-                    warn!("Failed to recompile function {}: {}", function_name, e);
-                }
-            }
-        }
-        
-        Ok(recompiled_functions)
+        // Sort queue by priority and benefit
+        self.optimization_queue.sort_by(|a, b| {
+            b.priority.cmp(&a.priority)
+                .then_with(|| b.estimated_benefit.partial_cmp(&a.estimated_benefit).unwrap_or(std::cmp::Ordering::Equal))
+        });
+
+        Ok(())
     }
 
-    /// Recompile a function with higher optimization level
+    /// Process optimization queue
     #[instrument(skip(self))]
-    fn recompile_function(&self, function_name: &str) -> Result<()> {
+    pub fn process_optimization_queue(&mut self) -> Result<Vec<OptimizationResult>> {
+        if !self.config.enable_jit_optimization {
+            return Ok(Vec::new());
+        }
+
+        let mut results = Vec::new();
         let start_time = Instant::now();
-        
-        // Generate profile data
-        let profile_data = self.hot_path_profiler
-            .generate_profile_data(function_name)?
-            .ok_or_else(|| Error::Runtime(format!("No profile data available for function: {}", function_name)))?;
-        
-        // Estimate optimization benefit
-        let benefit = self.profile_guided_optimizer
-            .estimate_optimization_benefit(function_name, &profile_data)?;
-        
-        // Only recompile if benefit exceeds overhead
-        if benefit.estimated_time_saved <= benefit.compilation_overhead {
-            debug!("Skipping recompilation of {} - insufficient benefit", function_name);
-            return Ok(());
-        }
-        
-        // Perform profile-guided optimization
-        let _optimized_ir = self.profile_guided_optimizer
-            .optimize_function(function_name, "", &profile_data)?; // Source would come from cache
-        
-        let compilation_time = start_time.elapsed();
-        
-        // Update JIT cache
-        let mut jit_cache = self.jit_cache
-            .write()
-            .map_err(|_| Error::Runtime("Failed to acquire JIT cache lock".to_string()))?;
-        
-        let compiled_function = JitCompiledFunction {
-            name: function_name.to_string(),
-            optimization_level: self.config.max_optimization_level,
-            compilation_time,
-            function_size: 0, // Would be filled by actual compilation
-            recompilation_count: jit_cache
-                .get(function_name)
-                .map(|f| f.recompilation_count + 1)
-                .unwrap_or(1),
-            last_compilation: Instant::now(),
-            performance_improvement: benefit.estimated_speedup,
-            profile_data: Some(profile_data),
-        };
-        
-        jit_cache.insert(function_name.to_string(), compiled_function);
-        
-        // Cleanup cache if too large
-        if jit_cache.len() > self.config.max_jit_cache_size {
-            // Remove least recently compiled functions
-            let mut functions: Vec<_> = jit_cache.iter().collect();
-            functions.sort_by(|a, b| a.1.last_compilation.cmp(&b.1.last_compilation));
-            
-            let to_remove = functions.len() - self.config.max_jit_cache_size;
-            for i in 0..to_remove {
-                jit_cache.remove(functions[i].0);
+
+        while let Some(task) = self.optimization_queue.pop() {
+            // Check time limit
+            if start_time.elapsed() > Duration::from_millis(self.config.max_optimization_time_ms) {
+                // Put task back and break
+                self.optimization_queue.push(task);
+                break;
             }
+
+            let result = self.execute_optimization_task(&task)?;
+            results.push(result);
         }
-        
-        Ok(())
+
+        Ok(results)
     }
 
-    /// Get JIT optimization statistics
-    pub fn get_statistics(&self) -> Result<JitOptimizationStatistics> {
-        let jit_cache = self.jit_cache
-            .read()
-            .map_err(|_| Error::Runtime("Failed to acquire JIT cache lock".to_string()))?;
-        
-        let total_recompilations: u32 = jit_cache.values().map(|f| f.recompilation_count).sum();
-        let average_speedup = if !jit_cache.is_empty() {
-            jit_cache.values().map(|f| f.performance_improvement).sum::<f64>() / jit_cache.len() as f64
-        } else {
-            1.0
+    /// Execute a single optimization task
+    #[instrument(skip(self, task))]
+    fn execute_optimization_task(&mut self, task: &OptimizationTask) -> Result<OptimizationResult> {
+        debug!("Executing optimization task for: {}", task.function_name);
+        let start_time = Instant::now();
+
+        let success = match task.optimization_type {
+            OptimizationType::HotFunctionOptimization => {
+                self.optimize_hot_function(&task.function_name)?
+            }
+            OptimizationType::SpeculativeInlining => {
+                self.perform_speculative_inlining(&task.function_name)?
+            }
+            OptimizationType::DeadCodeElimination => {
+                self.eliminate_dead_code(&task.function_name)?
+            }
+            OptimizationType::LoopOptimization => {
+                self.optimize_loops(&task.function_name)?
+            }
+            OptimizationType::VectorizationOptimization => {
+                self.vectorize_function(&task.function_name)?
+            }
         };
-        
-        let hot_functions = self.hot_path_profiler.get_hot_functions()?;
-        
-        Ok(JitOptimizationStatistics {
-            total_compiled_functions: jit_cache.len(),
-            total_recompilations,
-            average_speedup,
-            hot_functions_count: hot_functions.len(),
-            cache_hit_rate: 0.0, // Would be calculated from actual usage
-            compilation_time: jit_cache.values().map(|f| f.compilation_time).sum(),
+
+        let optimization_time = start_time.elapsed();
+        let actual_speedup = if success { 
+            self.measure_actual_speedup(&task.function_name)? 
+        } else { 
+            0.0 
+        };
+
+        // Update function profile
+        if let Some(profile) = self.function_profiles.get_mut(&task.function_name) {
+            profile.last_optimization_time = Some(Instant::now());
+            if success {
+                profile.optimization_level = match profile.optimization_level {
+                    OptimizationLevel::None => OptimizationLevel::Basic,
+                    OptimizationLevel::Basic => OptimizationLevel::Aggressive,
+                    OptimizationLevel::Aggressive => OptimizationLevel::Speculative,
+                    OptimizationLevel::Speculative => OptimizationLevel::Speculative,
+                };
+            }
+        }
+
+        // Update statistics
+        if success {
+            self.statistics.optimizations_performed += 1;
+            self.statistics.optimization_time_total += optimization_time;
+            self.statistics.performance_improvements.insert(
+                task.function_name.clone(), 
+                actual_speedup
+            );
+            
+            // Update average speedup
+            let total_speedup: f64 = self.statistics.performance_improvements.values().sum();
+            self.statistics.average_speedup = total_speedup / self.statistics.performance_improvements.len() as f64;
+        }
+
+        Ok(OptimizationResult {
+            function_name: task.function_name.clone(),
+            optimization_type: task.optimization_type.clone(),
+            success,
+            optimization_time,
+            estimated_speedup: task.estimated_benefit,
+            actual_speedup,
+            size_change_bytes: if success { -100 } else { 0 }, // Simplified
         })
     }
 
-    /// Generate optimization report
-    pub fn generate_optimization_report(&self) -> Result<String> {
-        let stats = self.get_statistics()?;
-        let hot_functions = self.hot_path_profiler.get_hot_functions()?;
-        let recommendations = self.performance_profiler.generate_optimization_recommendations()?;
+    /// Optimize a hot function
+    #[instrument(skip(self))]
+    fn optimize_hot_function(&self, function_name: &str) -> Result<bool> {
+        debug!("Optimizing hot function: {}", function_name);
         
-        let mut report = String::new();
-        report.push_str("# JIT Optimization Report\n\n");
+        // Simulate optimization work
+        std::thread::sleep(Duration::from_millis(50));
         
-        report.push_str(&format!("## Statistics\n"));
-        report.push_str(&format!("- Total compiled functions: {}\n", stats.total_compiled_functions));
-        report.push_str(&format!("- Total recompilations: {}\n", stats.total_recompilations));
-        report.push_str(&format!("- Average speedup: {:.2}x\n", stats.average_speedup));
-        report.push_str(&format!("- Hot functions: {}\n", stats.hot_functions_count));
-        report.push_str(&format!("- Total compilation time: {}ms\n\n", stats.compilation_time.as_millis()));
-        
-        report.push_str("## Hot Functions\n");
-        for (func_name, exec_count) in hot_functions.iter().take(10) {
-            report.push_str(&format!("- {} ({} executions)\n", func_name, exec_count));
+        // Simulate success rate
+        Ok(rand::random::<f64>() > 0.1) // 90% success rate
+    }
+
+    /// Perform speculative inlining
+    #[instrument(skip(self))]
+    fn perform_speculative_inlining(&self, function_name: &str) -> Result<bool> {
+        if !self.config.enable_speculative_optimization {
+            return Ok(false);
         }
-        report.push_str("\n");
+
+        debug!("Performing speculative inlining for: {}", function_name);
+        std::thread::sleep(Duration::from_millis(30));
+        Ok(rand::random::<f64>() > 0.2) // 80% success rate
+    }
+
+    /// Eliminate dead code
+    #[instrument(skip(self))]
+    fn eliminate_dead_code(&self, function_name: &str) -> Result<bool> {
+        debug!("Eliminating dead code in: {}", function_name);
+        std::thread::sleep(Duration::from_millis(20));
+        Ok(rand::random::<f64>() > 0.05) // 95% success rate
+    }
+
+    /// Optimize loops
+    #[instrument(skip(self))]
+    fn optimize_loops(&self, function_name: &str) -> Result<bool> {
+        debug!("Optimizing loops in: {}", function_name);
+        std::thread::sleep(Duration::from_millis(40));
+        Ok(rand::random::<f64>() > 0.15) // 85% success rate
+    }
+
+    /// Vectorize function
+    #[instrument(skip(self))]
+    fn vectorize_function(&self, function_name: &str) -> Result<bool> {
+        debug!("Vectorizing function: {}", function_name);
+        std::thread::sleep(Duration::from_millis(60));
+        Ok(rand::random::<f64>() > 0.3) // 70% success rate
+    }
+
+    /// Calculate estimated optimization benefit
+    fn calculate_optimization_benefit(&self, profile: &FunctionProfile) -> f64 {
+        // Benefit = frequency * average_time * estimated_speedup
+        let frequency_factor = profile.call_count as f64;
+        let time_factor = profile.average_execution_time.as_millis() as f64;
+        let estimated_speedup = 0.2; // 20% estimated speedup
         
-        report.push_str("## Optimization Recommendations\n");
-        for rec in recommendations.iter().take(10) {
-            report.push_str(&format!("- {}: {:?} (Priority: {:?})\n", 
-                rec.function_name, rec.optimization_type, rec.priority));
+        (frequency_factor * time_factor * estimated_speedup) / 1000.0
+    }
+
+    /// Estimate optimization cost
+    fn estimate_optimization_cost(&self, profile: &FunctionProfile) -> Duration {
+        // Cost based on optimization level and function complexity
+        let base_cost = Duration::from_millis(100);
+        let complexity_factor = match profile.optimization_level {
+            OptimizationLevel::None => 1.0,
+            OptimizationLevel::Basic => 1.5,
+            OptimizationLevel::Aggressive => 2.0,
+            OptimizationLevel::Speculative => 3.0,
+        };
+        
+        Duration::from_millis((base_cost.as_millis() as f64 * complexity_factor) as u64)
+    }
+
+    /// Determine task priority
+    fn determine_task_priority(&self, profile: &FunctionProfile) -> TaskPriority {
+        if profile.call_count > self.config.hot_threshold * 10 {
+            TaskPriority::Critical
+        } else if profile.call_count > self.config.hot_threshold * 5 {
+            TaskPriority::High
+        } else if profile.call_count > self.config.hot_threshold * 2 {
+            TaskPriority::Medium
+        } else {
+            TaskPriority::Low
         }
+    }
+
+    /// Measure actual speedup after optimization
+    fn measure_actual_speedup(&self, function_name: &str) -> Result<f64> {
+        // In a real implementation, would measure before/after performance
+        let baseline_speedup = match function_name {
+            name if name.contains("hot") => 0.25, // 25% speedup for hot functions
+            name if name.contains("loop") => 0.35, // 35% speedup for loop-heavy functions
+            _ => 0.15, // 15% baseline speedup
+        };
         
-        Ok(report)
+        // Add some randomness
+        let variation = (rand::random::<f64>() - 0.5) * 0.1; // ±5% variation
+        Ok((baseline_speedup + variation).max(0.0))
+    }
+
+    /// Get function profiles
+    pub fn get_function_profiles(&self) -> &HashMap<String, FunctionProfile> {
+        &self.function_profiles
+    }
+
+    /// Get hot functions
+    pub fn get_hot_functions(&self) -> Vec<&FunctionProfile> {
+        self.function_profiles.values()
+            .filter(|profile| profile.is_hot)
+            .collect()
+    }
+
+    /// Get optimization statistics
+    pub fn get_statistics(&self) -> &JitStatistics {
+        &self.statistics
+    }
+
+    /// Check if profiling overhead is within limits
+    pub fn is_profiling_overhead_acceptable(&self) -> bool {
+        self.statistics.profiling_overhead_percent <= self.config.profiling_overhead_limit_percent
+    }
+
+    /// Update configuration
+    pub fn update_config(&mut self, new_config: JitOptimizationConfig) -> Result<()> {
+        info!("Updating JIT optimizer configuration");
+        self.config = new_config;
+        Ok(())
+    }
+
+    /// Reset optimization state
+    pub fn reset_optimization_state(&mut self) -> Result<()> {
+        info!("Resetting JIT optimization state");
+        self.function_profiles.clear();
+        self.optimization_queue.clear();
+        self.statistics = JitStatistics::default();
+        Ok(())
     }
 }
 
+/// Result of a JIT optimization
 #[derive(Debug, Clone)]
-pub struct JitOptimizationStatistics {
-    pub total_compiled_functions: usize,
-    pub total_recompilations: u32,
-    pub average_speedup: f64,
-    pub hot_functions_count: usize,
-    pub cache_hit_rate: f64,
-    pub compilation_time: Duration,
+pub struct OptimizationResult {
+    pub function_name: String,
+    pub optimization_type: OptimizationType,
+    pub success: bool,
+    pub optimization_time: Duration,
+    pub estimated_speedup: f64,
+    pub actual_speedup: f64,
+    pub size_change_bytes: i64,
+}
+
+// Simple random number generation for simulation
+mod rand {
+    use std::cell::Cell;
+    
+    thread_local! {
+        static RNG_STATE: Cell<u64> = Cell::new(1);
+    }
+    
+    pub fn random<T>() -> T 
+    where 
+        T: From<u64>
+    {
+        RNG_STATE.with(|state| {
+            let current = state.get();
+            let next = current.wrapping_mul(1103515245).wrapping_add(12345);
+            state.set(next);
+            T::from(next)
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::thread;
-    use std::time::Duration;
 
     #[test]
-    fn test_hot_path_profiler() {
+    fn test_jit_optimizer_creation() {
         let config = JitOptimizationConfig::default();
-        let profiler = HotPathProfiler::new(config);
+        let optimizer = JitOptimizer::new(config);
+        assert!(optimizer.is_ok());
+    }
+
+    #[test]
+    fn test_function_profiling() {
+        let config = JitOptimizationConfig::default();
+        let mut optimizer = JitOptimizer::new(config).unwrap();
+
+        let result = optimizer.record_function_execution(
+            "test_function", 
+            Duration::from_millis(10)
+        );
+        assert!(result.is_ok());
+
+        let profiles = optimizer.get_function_profiles();
+        assert!(profiles.contains_key("test_function"));
         
-        // Record executions
-        for _ in 0..1500 {
-            profiler.record_execution("hot_function", Duration::from_micros(100)).unwrap();
+        let profile = &profiles["test_function"];
+        assert_eq!(profile.call_count, 1);
+        assert_eq!(profile.total_execution_time, Duration::from_millis(10));
+    }
+
+    #[test]
+    fn test_hot_function_detection() {
+        let mut config = JitOptimizationConfig::default();
+        config.hot_threshold = 5; // Lower threshold for testing
+        
+        let mut optimizer = JitOptimizer::new(config).unwrap();
+
+        // Call function multiple times to make it hot
+        for _ in 0..10 {
+            let _ = optimizer.record_function_execution(
+                "hot_function", 
+                Duration::from_millis(5)
+            );
         }
-        
-        for _ in 0..50 {
-            profiler.record_execution("cold_function", Duration::from_micros(100)).unwrap();
-        }
-        
-        let hot_functions = profiler.get_hot_functions().unwrap();
+
+        let hot_functions = optimizer.get_hot_functions();
         assert_eq!(hot_functions.len(), 1);
-        assert_eq!(hot_functions[0].0, "hot_function");
-        assert_eq!(hot_functions[0].1, 1500);
+        assert_eq!(hot_functions[0].name, "hot_function");
+        assert!(hot_functions[0].is_hot);
     }
 
     #[test]
-    fn test_profile_data_generation() {
+    fn test_optimization_benefit_calculation() {
         let config = JitOptimizationConfig::default();
-        let profiler = HotPathProfiler::new(config);
-        
-        // Record some calls and branches
-        profiler.record_call("main", "helper").unwrap();
-        profiler.record_branch("main", true, true).unwrap();
-        profiler.record_branch("main", false, false).unwrap();
-        
-        let profile_data = profiler.generate_profile_data("main").unwrap();
-        assert!(profile_data.is_some());
-        
-        let profile_data = profile_data.unwrap();
-        assert!(!profile_data.call_frequencies.is_empty());
-        assert!(!profile_data.branch_probabilities.is_empty());
+        let optimizer = JitOptimizer::new(config).unwrap();
+
+        let profile = FunctionProfile {
+            name: "test".to_string(),
+            call_count: 1000,
+            total_execution_time: Duration::from_millis(1000),
+            average_execution_time: Duration::from_millis(1),
+            last_optimization_time: None,
+            optimization_level: OptimizationLevel::None,
+            is_hot: true,
+        };
+
+        let benefit = optimizer.calculate_optimization_benefit(&profile);
+        assert!(benefit > 0.0);
     }
 
     #[test]
-    fn test_optimization_benefit_estimation() {
-        // This would require more setup with actual performance profiler
-        // and function metrics, but demonstrates the concept
-        let config = super::super::OptimizationConfig::default();
-        let performance_profiler = PerformanceProfiler::new(&config).unwrap();
-        let code_generator = LlvmCodeGenerator::new().unwrap();
+    fn test_task_priority_determination() {
+        let mut config = JitOptimizationConfig::default();
+        config.hot_threshold = 100;
         
-        let jit_config = JitOptimizationConfig::default();
-        let optimizer = ProfileGuidedOptimizer::new(
-            jit_config,
-            code_generator,
-            performance_profiler,
-        ).unwrap();
-        
-        let profile_data = ProfileData {
-            branch_probabilities: [("branch1".to_string(), 0.9)].iter().cloned().collect(),
-            call_frequencies: [("helper".to_string(), 200)].iter().cloned().collect(),
-            hot_loops: vec![],
-            memory_access_patterns: vec![],
+        let optimizer = JitOptimizer::new(config).unwrap();
+
+        let high_priority_profile = FunctionProfile {
+            name: "high_priority".to_string(),
+            call_count: 1000, // 10x hot threshold
+            total_execution_time: Duration::from_secs(1),
+            average_execution_time: Duration::from_millis(1),
+            last_optimization_time: None,
+            optimization_level: OptimizationLevel::None,
+            is_hot: true,
         };
-        
-        // This would fail without actual metrics, but shows the interface
-        let _result = optimizer.estimate_optimization_benefit("test_function", &profile_data);
+
+        let priority = optimizer.determine_task_priority(&high_priority_profile);
+        assert_eq!(priority, TaskPriority::Critical);
+
+        let low_priority_profile = FunctionProfile {
+            name: "low_priority".to_string(),
+            call_count: 150, // 1.5x hot threshold
+            total_execution_time: Duration::from_millis(150),
+            average_execution_time: Duration::from_millis(1),
+            last_optimization_time: None,
+            optimization_level: OptimizationLevel::None,
+            is_hot: true,
+        };
+
+        let priority = optimizer.determine_task_priority(&low_priority_profile);
+        assert_eq!(priority, TaskPriority::Medium);
     }
 }

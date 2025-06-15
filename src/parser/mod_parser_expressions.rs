@@ -87,6 +87,7 @@ impl Parser {
             TokenType::LeftArrow => self.parse_channel_receive(),
             TokenType::Stan => self.parse_goroutine_spawn(),
             TokenType::Dm => self.parse_channel_type(),
+            TokenType::Await => self.parse_await_expression(),
             _ => Err(Error::Parse(format!(
                 "No prefix parse function for {:?} found at line {} column {}",
                 self.current_token.token_type,

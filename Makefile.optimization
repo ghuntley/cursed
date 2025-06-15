@@ -1,0 +1,298 @@
+# CURSED Compiler Optimization System - Enhanced Build Targets
+# =============================================================================
+# This file provides comprehensive optimization system targets that integrate
+# with the main CURSED build system.
+
+# Optimization Configuration
+# =============================================================================
+OPT_WORKERS ?= $(WORKERS)
+OPT_LEVEL ?= 2
+OPT_PROFILE ?= development
+OPT_CACHE_DIR ?= $(CACHE_DIR)/optimization
+OPT_OUTPUT_DIR ?= $(OUTPUT_DIR)/optimization
+OPT_SESSION ?= default
+
+# Optimization Build Targets
+# =============================================================================
+.PHONY: opt-build opt-cli opt-clean opt-dev opt-help
+
+opt-build: ## Build optimization system components
+	$(AT)echo -e "$(CYAN)⚡ Building optimization system...$(RESET)"
+	$(AT)$(CARGO_CMD) build --release --bin cursed-optimize $(V)
+	$(AT)echo -e "$(GREEN)✅ Optimization system built$(RESET)"
+
+opt-cli: opt-build ## Build cursed-optimize CLI tool
+	$(AT)echo -e "$(GREEN)✅ cursed-optimize CLI ready: target/release/cursed-optimize$(RESET)"
+
+opt-clean: ## Clean optimization artifacts
+	$(AT)echo -e "$(YELLOW)🧹 Cleaning optimization artifacts...$(RESET)"
+	$(AT)rm -rf $(OPT_OUTPUT_DIR) $(OPT_CACHE_DIR)
+	$(AT)$(CARGO_CMD) clean --package cursed --bin cursed-optimize $(V)
+	$(AT)echo -e "$(GREEN)✅ Optimization artifacts cleaned$(RESET)"
+
+opt-dev: opt-build opt-test ## Development setup for optimization system
+	$(AT)echo -e "$(GREEN)✅ Optimization development environment ready$(RESET)"
+
+# Optimization Testing
+# =============================================================================
+.PHONY: opt-test opt-test-unit opt-test-integration opt-test-all opt-test-performance
+
+opt-test: opt-test-unit ## Run optimization tests
+
+opt-test-unit: build ## Run optimization unit tests
+	$(AT)echo -e "$(BLUE)🧪 Running optimization unit tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) optimization::
+
+opt-test-integration: opt-build ## Run optimization integration tests
+	$(AT)echo -e "$(BLUE)🔗 Running optimization integration tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) --test optimization_integration_test
+
+opt-test-performance: opt-build ## Run optimization performance tests
+	$(AT)echo -e "$(BLUE)📈 Running optimization performance tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) --test optimization_performance_test --release
+
+opt-test-all: opt-test-unit opt-test-integration opt-test-performance ## Run all optimization tests
+	$(AT)echo -e "$(GREEN)✅ All optimization tests completed$(RESET)"
+
+# Performance Analysis and Profiling
+# =============================================================================
+.PHONY: opt-analyze opt-profile opt-benchmark opt-report
+
+opt-analyze: opt-build ## Run performance analysis
+	$(AT)echo -e "$(MAGENTA)📊 Running performance analysis...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- analyze \
+		examples/ \
+		--output $(OPT_OUTPUT_DIR)/analysis_report.md \
+		--profile $(OPT_PROFILE) \
+		--workers $(OPT_WORKERS) \
+		--cache-dir $(OPT_CACHE_DIR) \
+		--verbose
+	$(AT)echo -e "$(GREEN)📊 Analysis report: $(OPT_OUTPUT_DIR)/analysis_report.md$(RESET)"
+
+opt-profile: opt-build ## Profile compilation pipeline
+	$(AT)echo -e "$(MAGENTA)📈 Profiling compilation pipeline...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/profiles
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- profile \
+		examples/ \
+		--session "$(OPT_SESSION)" \
+		--output-dir $(OPT_OUTPUT_DIR)/profiles \
+		--real-time
+	$(AT)echo -e "$(GREEN)📈 Profile data: $(OPT_OUTPUT_DIR)/profiles/$(RESET)"
+
+opt-benchmark: opt-build ## Run optimization benchmarks
+	$(AT)echo -e "$(MAGENTA)🏁 Running optimization benchmarks...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- benchmark \
+		examples/ \
+		--iterations 3 \
+		--optimization-levels $(OPT_LEVEL) \
+		--output $(OPT_OUTPUT_DIR)/benchmark_results.json \
+		--format json
+	$(AT)echo -e "$(GREEN)🏁 Benchmark results: $(OPT_OUTPUT_DIR)/benchmark_results.json$(RESET)"
+
+opt-report: opt-build ## Generate optimization report
+	$(AT)echo -e "$(MAGENTA)📄 Generating optimization report...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- report \
+		$(OPT_OUTPUT_DIR)/profiles \
+		--output $(OPT_OUTPUT_DIR)/optimization_report.md \
+		--format markdown
+	$(AT)echo -e "$(GREEN)📄 Report generated: $(OPT_OUTPUT_DIR)/optimization_report.md$(RESET)"
+
+# Cache Management
+# =============================================================================
+.PHONY: opt-cache-stats opt-cache-clear opt-cache-info
+
+opt-cache-stats: opt-build ## Show cache statistics
+	$(AT)echo -e "$(CYAN)📊 Cache statistics...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- cache stats \
+		--cache-dir $(OPT_CACHE_DIR)
+
+opt-cache-clear: ## Clear optimization cache
+	$(AT)echo -e "$(YELLOW)🗑️  Clearing optimization cache...$(RESET)"
+	$(AT)rm -rf $(OPT_CACHE_DIR)
+	$(AT)echo -e "$(GREEN)✅ Optimization cache cleared$(RESET)"
+
+opt-cache-info: ## Show cache information
+	$(AT)echo -e "$(CYAN)ℹ️  Cache Information:$(RESET)"
+	$(AT)echo -e "  Location: $(OPT_CACHE_DIR)"
+	$(AT)if [ -d "$(OPT_CACHE_DIR)" ]; then \
+		echo -e "  Size: $$(du -sh $(OPT_CACHE_DIR) 2>/dev/null | cut -f1)"; \
+		echo -e "  Files: $$(find $(OPT_CACHE_DIR) -type f 2>/dev/null | wc -l)"; \
+	else \
+		echo -e "  Status: Not created"; \
+	fi
+
+# Advanced Profiling and Analysis
+# =============================================================================
+.PHONY: opt-profile-parsing opt-profile-codegen opt-profile-memory
+
+opt-profile-parsing: opt-build ## Profile parsing performance
+	$(AT)echo -e "$(MAGENTA)📈 Profiling parsing performance...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/parsing_profile
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- profile \
+		examples/ \
+		--session "parsing_focus" \
+		--output-dir $(OPT_OUTPUT_DIR)/parsing_profile \
+		--focus parsing
+
+opt-profile-codegen: opt-build ## Profile code generation performance
+	$(AT)echo -e "$(MAGENTA)📈 Profiling code generation performance...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/codegen_profile
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- profile \
+		examples/ \
+		--session "codegen_focus" \
+		--output-dir $(OPT_OUTPUT_DIR)/codegen_profile \
+		--focus codegen
+
+opt-profile-memory: opt-build ## Profile memory usage
+	$(AT)echo -e "$(MAGENTA)📈 Profiling memory usage...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/memory_profile
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- profile \
+		examples/ \
+		--session "memory_focus" \
+		--output-dir $(OPT_OUTPUT_DIR)/memory_profile \
+		--focus memory
+
+# Workflow Targets
+# =============================================================================
+.PHONY: opt-workflow opt-quick opt-full opt-regression opt-validate
+
+opt-workflow: opt-analyze opt-benchmark opt-report ## Complete optimization workflow
+	$(AT)echo -e "$(GREEN)🎉 Complete optimization workflow finished!$(RESET)"
+	$(AT)echo -e "$(GREEN)📊 Check $(OPT_OUTPUT_DIR)/ for all results$(RESET)"
+
+opt-quick: opt-build opt-test-unit ## Quick optimization validation
+	$(AT)echo -e "$(GREEN)⚡ Quick optimization validation completed$(RESET)"
+
+opt-full: opt-clean opt-build opt-test-all opt-analyze opt-benchmark opt-report ## Full optimization pipeline
+	$(AT)echo -e "$(GREEN)🎉 Full optimization pipeline completed!$(RESET)"
+
+opt-regression: opt-build ## Performance regression testing
+	$(AT)echo -e "$(MAGENTA)📈 Running performance regression tests...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/regression
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- benchmark \
+		examples/ \
+		--iterations 5 \
+		--optimization-levels 0,2,3 \
+		--output $(OPT_OUTPUT_DIR)/regression/baseline.json \
+		--format json
+	$(AT)echo -e "$(GREEN)📈 Regression baseline: $(OPT_OUTPUT_DIR)/regression/baseline.json$(RESET)"
+
+opt-validate: opt-test-all opt-regression ## Validate optimization system
+	$(AT)echo -e "$(GREEN)✅ Optimization system validation completed$(RESET)"
+
+# Development and Debugging
+# =============================================================================
+.PHONY: opt-watch opt-debug opt-example
+
+opt-watch: ## Watch for optimization changes
+	$(AT)echo -e "$(CYAN)👀 Watching optimization system...$(RESET)"
+	$(AT)command -v cargo-watch >/dev/null 2>&1 || \
+		(echo -e "$(YELLOW)⚠️  Installing cargo-watch...$(RESET)" && $(CARGO_CMD) install cargo-watch)
+	$(AT)$(CARGO_CMD) watch -x "build --bin cursed-optimize" -x "test optimization::" $(V)
+
+opt-debug: ## Debug optimization system
+	$(AT)echo -e "$(YELLOW)🐛 Building optimization system with debug symbols...$(RESET)"
+	$(AT)$(CARGO_CMD) build --bin cursed-optimize $(V)
+	$(AT)echo -e "$(YELLOW)🔍 Debug build ready: target/debug/cursed-optimize$(RESET)"
+
+opt-example: opt-build ## Run optimization example
+	$(AT)echo -e "$(GREEN)🚀 Running optimization showcase...$(RESET)"
+	$(AT)$(CARGO_CMD) run --example optimization_showcase $(V)
+
+# Information and Help
+# =============================================================================
+.PHONY: opt-status opt-info opt-help
+
+opt-status: ## Show optimization system status
+	$(AT)echo -e "$(BOLD)$(CYAN)Optimization System Status$(RESET)"
+	$(AT)echo -e "$(CYAN)============================$(RESET)"
+	$(AT)echo -e "Configuration:"
+	$(AT)echo -e "  Workers: $(OPT_WORKERS)"
+	$(AT)echo -e "  Optimization Level: $(OPT_LEVEL)"
+	$(AT)echo -e "  Profile: $(OPT_PROFILE)"
+	$(AT)echo -e "  Cache Directory: $(OPT_CACHE_DIR)"
+	$(AT)echo -e "  Output Directory: $(OPT_OUTPUT_DIR)"
+	$(AT)echo -e "  Session: $(OPT_SESSION)"
+	$(AT)echo ""
+	$(AT)echo -e "Build Status:"
+	$(AT)test -f target/release/cursed-optimize && \
+		echo -e "  ✅ cursed-optimize CLI built (release)" || \
+		echo -e "  ❌ cursed-optimize CLI not built (release)"
+	$(AT)test -f target/debug/cursed-optimize && \
+		echo -e "  ✅ cursed-optimize CLI built (debug)" || \
+		echo -e "  ❌ cursed-optimize CLI not built (debug)"
+	$(AT)echo ""
+
+opt-info: opt-status opt-cache-info ## Show comprehensive optimization information
+
+opt-help: ## Show optimization system help
+	$(AT)echo -e "$(BOLD)$(CYAN)CURSED Optimization System$(RESET)"
+	$(AT)echo -e "$(CYAN)============================$(RESET)"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Build Targets:$(RESET)"
+	$(AT)echo -e "  $(CYAN)opt-build$(RESET)         Build optimization system"
+	$(AT)echo -e "  $(CYAN)opt-cli$(RESET)           Build cursed-optimize CLI"
+	$(AT)echo -e "  $(CYAN)opt-clean$(RESET)         Clean optimization artifacts"
+	$(AT)echo -e "  $(CYAN)opt-dev$(RESET)           Setup development environment"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Testing:$(RESET)"
+	$(AT)echo -e "  $(CYAN)opt-test$(RESET)          Run optimization tests"
+	$(AT)echo -e "  $(CYAN)opt-test-unit$(RESET)     Run unit tests"
+	$(AT)echo -e "  $(CYAN)opt-test-integration$(RESET) Run integration tests"
+	$(AT)echo -e "  $(CYAN)opt-test-performance$(RESET) Run performance tests"
+	$(AT)echo -e "  $(CYAN)opt-test-all$(RESET)      Run all tests"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Analysis:$(RESET)"
+	$(AT)echo -e "  $(CYAN)opt-analyze$(RESET)       Performance analysis"
+	$(AT)echo -e "  $(CYAN)opt-profile$(RESET)       Compilation profiling"
+	$(AT)echo -e "  $(CYAN)opt-benchmark$(RESET)     Run benchmarks"
+	$(AT)echo -e "  $(CYAN)opt-report$(RESET)        Generate reports"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Workflows:$(RESET)"
+	$(AT)echo -e "  $(CYAN)opt-workflow$(RESET)      Complete optimization workflow"
+	$(AT)echo -e "  $(CYAN)opt-quick$(RESET)         Quick validation"
+	$(AT)echo -e "  $(CYAN)opt-full$(RESET)          Full pipeline"
+	$(AT)echo -e "  $(CYAN)opt-regression$(RESET)    Regression testing"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Configuration Variables:$(RESET)"
+	$(AT)echo -e "  $(YELLOW)OPT_WORKERS=N$(RESET)       Number of workers (default: $(OPT_WORKERS))"
+	$(AT)echo -e "  $(YELLOW)OPT_LEVEL=X$(RESET)         Optimization level (default: $(OPT_LEVEL))"
+	$(AT)echo -e "  $(YELLOW)OPT_PROFILE=X$(RESET)       Profile type (default: $(OPT_PROFILE))"
+	$(AT)echo -e "  $(YELLOW)OPT_SESSION=X$(RESET)       Session name (default: $(OPT_SESSION))"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Examples:$(RESET)"
+	$(AT)echo -e "  $(YELLOW)make opt-analyze OPT_PROFILE=release$(RESET)"
+	$(AT)echo -e "  $(YELLOW)make opt-benchmark OPT_LEVEL=3$(RESET)"
+	$(AT)echo -e "  $(YELLOW)make opt-profile OPT_SESSION=parsing$(RESET)"
+	$(AT)echo -e "  $(YELLOW)make opt-workflow OPT_WORKERS=8$(RESET)"
+
+# Advanced Features
+# =============================================================================
+.PHONY: opt-compare opt-history opt-export
+
+opt-compare: opt-build ## Compare optimization results
+	$(AT)echo -e "$(MAGENTA)📊 Comparing optimization results...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/compare
+	$(AT)$(CARGO_CMD) run --bin cursed-optimize --release $(V) -- compare \
+		$(OPT_OUTPUT_DIR)/benchmark_results.json \
+		--baseline $(OPT_OUTPUT_DIR)/regression/baseline.json \
+		--output $(OPT_OUTPUT_DIR)/compare/comparison.md
+
+opt-history: ## Show optimization history
+	$(AT)echo -e "$(CYAN)📅 Optimization History:$(RESET)"
+	$(AT)if [ -d "$(OPT_OUTPUT_DIR)" ]; then \
+		find $(OPT_OUTPUT_DIR) -name "*.json" -o -name "*.md" | \
+		xargs ls -lt | head -10; \
+	else \
+		echo -e "$(YELLOW)  No optimization history found$(RESET)"; \
+	fi
+
+opt-export: ## Export optimization data
+	$(AT)echo -e "$(CYAN)📤 Exporting optimization data...$(RESET)"
+	$(AT)mkdir -p $(OPT_OUTPUT_DIR)/export
+	$(AT)tar -czf $(OPT_OUTPUT_DIR)/export/optimization_data_$$(date +%Y%m%d_%H%M%S).tar.gz \
+		-C $(OPT_OUTPUT_DIR) . 2>/dev/null || true
+	$(AT)echo -e "$(GREEN)✅ Optimization data exported to $(OPT_OUTPUT_DIR)/export/$(RESET)"

@@ -3,8 +3,8 @@
 /// Provides comprehensive assertion functions for CURSED tests
 /// with detailed error messages and support for different data types.
 
-use super::{TestError, TestResult};
-use super::framework::{AssertionResult, SourceLocation, TestContext};
+use super::{TestError, TestResult as TestingResult};
+use super::framework::{AssertionResult as FrameworkAssertionResult, SourceLocation, TestContext};
 use std::fmt::Debug;
 use std::time::Instant;
 use tracing::debug;
