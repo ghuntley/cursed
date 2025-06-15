@@ -32,9 +32,9 @@ pub fn add_doc_commands(cmd: Command) -> Command {
                     .short('f')
                     .long("format")
                     .value_name("FORMAT")
-                    .help("Output format: html, markdown, json")
+                    .help("Output format: html, markdown, json, xml")
                     .default_value("html")
-                    .value_parser(["html", "markdown", "md", "json"])
+                    .value_parser(["html", "markdown", "md", "json", "xml"])
             )
             .arg(
                 Arg::new("title")

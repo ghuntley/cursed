@@ -93,6 +93,49 @@ impl ReportGenerator {
         Ok(())
     }
     
+    /// Import a performance report from JSON file
+    #[instrument(skip(self))]
+    pub fn import_json(&self, input_path: &str) -> Result<PerformanceReport, ProfilerError> {
+        let json = std::fs::read_to_string(input_path)
+            .map_err(ProfilerError::IoError)?;
+        let report: PerformanceReport = serde_json::from_str(&json)
+            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
+        info!("JSON report imported from: {}", input_path);
+        Ok(report)
+    }
+    
+    /// Import a benchmark report from JSON file
+    #[instrument(skip(self))]
+    pub fn import_benchmark_json(&self, input_path: &str) -> Result<BenchmarkReport, ProfilerError> {
+        let json = std::fs::read_to_string(input_path)
+            .map_err(ProfilerError::IoError)?;
+        let report: BenchmarkReport = serde_json::from_str(&json)
+            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
+        info!("Benchmark report imported from: {}", input_path);
+        Ok(report)
+    }
+    
+    /// Import a performance report from binary format
+    #[instrument(skip(self))]
+    pub fn import_binary(&self, input_path: &str) -> Result<PerformanceReport, ProfilerError> {
+        let data = std::fs::read(input_path)
+            .map_err(ProfilerError::IoError)?;
+        let report: PerformanceReport = bincode::deserialize(&data)
+            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
+        info!("Binary report imported from: {}", input_path);
+        Ok(report)
+    }
+    
+    /// Export a performance report to binary format
+    #[instrument(skip(self, report))]
+    pub fn export_binary(&self, report: &PerformanceReport, output_path: &str) -> Result<(), ProfilerError> {
+        let data = bincode::serialize(report)
+            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
+        std::fs::write(output_path, data).map_err(ProfilerError::IoError)?;
+        info!("Binary report exported to: {}", output_path);
+        Ok(())
+    }
+    
     fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<Option<CpuProfileData>, ProfilerError> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Cpu) {
             let cpu_data: CpuProfileData = bincode::deserialize(data)
@@ -113,10 +156,14 @@ impl ReportGenerator {
         }
     }
     
-    fn extract_concurrency_data(&self, _profile_data: &ProfileData) -> Result<Option<ConcurrencyProfileData>, ProfilerError> {
-        // TODO: Re-enable when deserialization is properly implemented
-        // For now, return None as concurrency data cannot be deserialized due to Instant fields
-        Ok(None)
+    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<Option<ConcurrencyProfileData>, ProfilerError> {
+        if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Concurrency) {
+            let concurrency_data: ConcurrencyProfileData = bincode::deserialize(data)
+                .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
+            Ok(Some(concurrency_data))
+        } else {
+            Ok(None)
+        }
     }
     
     fn generate_cpu_analysis(&self, cpu_data: &CpuProfileData) -> Result<CpuAnalysisReport, ProfilerError> {
@@ -158,8 +205,9 @@ impl ReportGenerator {
         Ok(MemoryAnalysisReport {
             current_usage,
             allocation_analysis,
-            memory_leaks: memory_leaks.into_iter()
+            memory_leaks: memory_leaks.iter()
                 .take(self.config.max_memory_leaks)
+                .map(SerializableMemoryLeak::from)
                 .collect(),
             gc_performance: self.analyze_gc_performance(memory_data),
             memory_insights: self.generate_memory_insights(memory_data),
@@ -173,10 +221,11 @@ impl ReportGenerator {
         let scheduler_analysis = concurrency_data.analyze_scheduler();
         
         Ok(ConcurrencyAnalysisReport {
-            goroutine_timeline: goroutine_timeline.into_iter()
+            goroutine_timeline: goroutine_timeline.iter()
                 .take(self.config.max_goroutines)
+                .map(SerializableGoroutineTimeline::from)
                 .collect(),
-            channel_analysis,
+            channel_analysis: SerializableChannelAnalysis::from(&channel_analysis),
             deadlock_detections: deadlocks,
             scheduler_analysis,
             concurrency_insights: self.generate_concurrency_insights(concurrency_data),
@@ -530,16 +579,14 @@ impl Default for ReportConfig {
 }
 
 /// Complete performance report
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceReport {
     pub session_name: String,
     pub timestamp: std::time::SystemTime,
     pub config: ReportConfig,
     pub summary: PerformanceSummary,
     pub cpu_analysis: Option<CpuAnalysisReport>,
-    #[serde(skip)]
     pub memory_analysis: Option<MemoryAnalysisReport>,
-    #[serde(skip)]
     pub concurrency_analysis: Option<ConcurrencyAnalysisReport>,
 }
 
@@ -598,12 +645,11 @@ pub struct CallGraphSummary {
 }
 
 /// Memory analysis report section
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryAnalysisReport {
     pub current_usage: crate::profiling::memory::MemoryUsageSnapshot,
     pub allocation_analysis: crate::profiling::memory::AllocationAnalysis,
-    #[serde(skip)]
-    pub memory_leaks: Vec<crate::profiling::memory::MemoryLeak>,
+    pub memory_leaks: Vec<SerializableMemoryLeak>,
     pub gc_performance: GcPerformanceAnalysis,
     pub memory_insights: Vec<String>,
 }
@@ -619,11 +665,10 @@ pub struct GcPerformanceAnalysis {
 }
 
 /// Concurrency analysis report section
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConcurrencyAnalysisReport {
-    pub goroutine_timeline: Vec<crate::profiling::concurrency::GoroutineTimeline>,
-    #[serde(skip)]
-    pub channel_analysis: crate::profiling::concurrency::ChannelAnalysis,
+    pub goroutine_timeline: Vec<SerializableGoroutineTimeline>,
+    pub channel_analysis: SerializableChannelAnalysis,
     pub deadlock_detections: Vec<crate::profiling::concurrency::DeadlockDetection>,
     pub scheduler_analysis: crate::profiling::concurrency::SchedulerAnalysis,
     pub concurrency_insights: Vec<String>,
@@ -639,6 +684,138 @@ pub struct BenchmarkReport {
     pub regression_analysis: Option<crate::profiling::benchmarking::RegressionAnalysis>,
     pub performance_insights: Vec<String>,
     pub recommendations: Vec<String>,
+}
+
+/// Serializable wrapper for memory leak data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableMemoryLeak {
+    pub address: u64,
+    pub size: usize,
+    pub age: std::time::Duration,
+    pub stack_trace: Vec<String>,
+    pub allocation_timestamp_millis: u64, // Instant converted to milliseconds since start
+}
+
+impl From<&crate::profiling::memory::MemoryLeak> for SerializableMemoryLeak {
+    fn from(leak: &crate::profiling::memory::MemoryLeak) -> Self {
+        Self {
+            address: leak.address,
+            size: leak.size,
+            age: leak.age,
+            stack_trace: leak.stack_trace.clone(),
+            allocation_timestamp_millis: leak.allocation_timestamp.elapsed().as_millis() as u64,
+        }
+    }
+}
+
+/// Serializable wrapper for goroutine timeline data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableGoroutineTimeline {
+    pub goroutine_id: u64,
+    pub start_time_millis: u64,
+    pub end_time_millis: Option<u64>,
+    pub events: Vec<SerializableGoroutineEvent>,
+    pub state_transitions: Vec<SerializableStateTransition>,
+}
+
+impl From<&crate::profiling::concurrency::GoroutineTimeline> for SerializableGoroutineTimeline {
+    fn from(timeline: &crate::profiling::concurrency::GoroutineTimeline) -> Self {
+        Self {
+            goroutine_id: timeline.goroutine_id,
+            start_time_millis: timeline.start_time.elapsed().as_millis() as u64,
+            end_time_millis: timeline.end_time.map(|t| t.elapsed().as_millis() as u64),
+            events: timeline.events.iter().map(SerializableGoroutineEvent::from).collect(),
+            state_transitions: timeline.state_transitions.iter().map(SerializableStateTransition::from).collect(),
+        }
+    }
+}
+
+/// Serializable wrapper for goroutine events
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableGoroutineEvent {
+    pub event_type: String,
+    pub timestamp_millis: u64,
+    pub data: HashMap<String, String>,
+}
+
+impl From<&crate::profiling::concurrency::GoroutineEvent> for SerializableGoroutineEvent {
+    fn from(event: &crate::profiling::concurrency::GoroutineEvent) -> Self {
+        Self {
+            event_type: format!("{:?}", event.event_type),
+            timestamp_millis: event.timestamp.elapsed().as_millis() as u64,
+            data: event.data.clone(),
+        }
+    }
+}
+
+/// Serializable wrapper for state transitions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableStateTransition {
+    pub from_state: String,
+    pub to_state: String,
+    pub timestamp_millis: u64,
+    pub reason: Option<String>,
+}
+
+impl From<&crate::profiling::concurrency::StateTransition> for SerializableStateTransition {
+    fn from(transition: &crate::profiling::concurrency::StateTransition) -> Self {
+        Self {
+            from_state: format!("{:?}", transition.from),
+            to_state: format!("{:?}", transition.to),
+            timestamp_millis: transition.timestamp.elapsed().as_millis() as u64,
+            reason: transition.reason.clone(),
+        }
+    }
+}
+
+/// Serializable wrapper for channel analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableChannelAnalysis {
+    pub total_channels: usize,
+    pub active_channels: usize,
+    pub total_messages: u64,
+    pub total_blocks: u64,
+    pub average_buffer_utilization: f64,
+    pub channel_statistics: HashMap<String, SerializableChannelStats>,
+}
+
+impl From<&crate::profiling::concurrency::ChannelAnalysis> for SerializableChannelAnalysis {
+    fn from(analysis: &crate::profiling::concurrency::ChannelAnalysis) -> Self {
+        Self {
+            total_channels: analysis.total_channels,
+            active_channels: analysis.active_channels,
+            total_messages: analysis.total_messages,
+            total_blocks: analysis.total_blocks,
+            average_buffer_utilization: analysis.average_buffer_utilization,
+            channel_statistics: analysis.channel_statistics.iter()
+                .map(|(k, v)| (k.clone(), SerializableChannelStats::from(v)))
+                .collect(),
+        }
+    }
+}
+
+/// Serializable wrapper for channel statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableChannelStats {
+    pub messages_sent: u64,
+    pub messages_received: u64,
+    pub blocks_on_send: u64,
+    pub blocks_on_receive: u64,
+    pub buffer_capacity: usize,
+    pub current_buffer_size: usize,
+}
+
+impl From<&crate::profiling::concurrency::ChannelStats> for SerializableChannelStats {
+    fn from(stats: &crate::profiling::concurrency::ChannelStats) -> Self {
+        Self {
+            messages_sent: stats.messages_sent,
+            messages_received: stats.messages_received,
+            blocks_on_send: stats.blocks_on_send,
+            blocks_on_receive: stats.blocks_on_receive,
+            buffer_capacity: stats.buffer_capacity,
+            current_buffer_size: stats.current_buffer_size,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -673,5 +850,174 @@ mod tests {
         
         assert!(markdown.contains("# Performance Report: test_session"));
         assert!(markdown.contains("## Summary"));
+    }
+    
+    #[test]
+    fn test_serializable_memory_leak_conversion() {
+        use std::time::{Duration, Instant};
+        use crate::profiling::memory::MemoryLeak;
+        
+        let start_time = Instant::now();
+        std::thread::sleep(Duration::from_millis(1)); // Ensure some elapsed time
+        
+        let leak = MemoryLeak {
+            address: 0x12345678,
+            size: 1024,
+            age: Duration::from_secs(10),
+            stack_trace: vec!["function_a".to_string(), "function_b".to_string()],
+            allocation_timestamp: start_time,
+        };
+        
+        let serializable = SerializableMemoryLeak::from(&leak);
+        
+        assert_eq!(serializable.address, 0x12345678);
+        assert_eq!(serializable.size, 1024);
+        assert_eq!(serializable.age, Duration::from_secs(10));
+        assert_eq!(serializable.stack_trace, vec!["function_a", "function_b"]);
+        assert!(serializable.allocation_timestamp_millis > 0);
+    }
+    
+    #[test]
+    fn test_performance_report_serialization() {
+        let config = ReportConfig::default();
+        let report = PerformanceReport::new("test_session".to_string(), config);
+        
+        // Test JSON serialization
+        let json = serde_json::to_string(&report).unwrap();
+        assert!(json.contains("test_session"));
+        
+        // Test JSON deserialization
+        let deserialized: PerformanceReport = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.session_name, "test_session");
+        assert_eq!(deserialized.config.max_functions, 20);
+        
+        // Test binary serialization
+        let binary = bincode::serialize(&report).unwrap();
+        assert!(!binary.is_empty());
+        
+        // Test binary deserialization
+        let deserialized_bin: PerformanceReport = bincode::deserialize(&binary).unwrap();
+        assert_eq!(deserialized_bin.session_name, "test_session");
+    }
+    
+    #[test]
+    fn test_report_generator_import_export() {
+        use std::fs;
+        use std::env;
+        
+        let config = ReportConfig::default();
+        let generator = ReportGenerator::new(config.clone());
+        
+        let report = PerformanceReport::new("import_export_test".to_string(), config);
+        
+        // Create temporary directory for test files
+        let temp_dir = env::temp_dir().join("cursed_profiling_test");
+        fs::create_dir_all(&temp_dir).unwrap();
+        
+        // Test JSON export/import
+        let json_path = temp_dir.join("test_report.json");
+        generator.export_json(&report, json_path.to_str().unwrap()).unwrap();
+        
+        let imported_report = generator.import_json(json_path.to_str().unwrap()).unwrap();
+        assert_eq!(imported_report.session_name, "import_export_test");
+        
+        // Test binary export/import
+        let binary_path = temp_dir.join("test_report.bin");
+        generator.export_binary(&report, binary_path.to_str().unwrap()).unwrap();
+        
+        let imported_binary = generator.import_binary(binary_path.to_str().unwrap()).unwrap();
+        assert_eq!(imported_binary.session_name, "import_export_test");
+        
+        // Cleanup
+        fs::remove_dir_all(&temp_dir).unwrap();
+    }
+    
+    #[test]
+    fn test_serializable_channel_analysis_conversion() {
+        use std::collections::HashMap;
+        use crate::profiling::concurrency::{ChannelAnalysis, ChannelStats};
+        
+        let mut channel_stats = HashMap::new();
+        channel_stats.insert("channel_1".to_string(), ChannelStats {
+            messages_sent: 100,
+            messages_received: 95,
+            blocks_on_send: 5,
+            blocks_on_receive: 2,
+            buffer_capacity: 10,
+            current_buffer_size: 3,
+        });
+        
+        let analysis = ChannelAnalysis {
+            total_channels: 5,
+            active_channels: 3,
+            total_messages: 500,
+            total_blocks: 20,
+            average_buffer_utilization: 0.6,
+            channel_statistics: channel_stats,
+        };
+        
+        let serializable = SerializableChannelAnalysis::from(&analysis);
+        
+        assert_eq!(serializable.total_channels, 5);
+        assert_eq!(serializable.active_channels, 3);
+        assert_eq!(serializable.total_messages, 500);
+        assert_eq!(serializable.average_buffer_utilization, 0.6);
+        assert!(serializable.channel_statistics.contains_key("channel_1"));
+        
+        let channel_1_stats = &serializable.channel_statistics["channel_1"];
+        assert_eq!(channel_1_stats.messages_sent, 100);
+        assert_eq!(channel_1_stats.buffer_capacity, 10);
+    }
+    
+    #[test]
+    fn test_deserialization_error_handling() {
+        let config = ReportConfig::default();
+        let generator = ReportGenerator::new(config);
+        
+        // Test with invalid JSON
+        let invalid_json = r#"{"invalid": "json", "missing_fields": true}"#;
+        let temp_dir = std::env::temp_dir().join("cursed_profiling_test_errors");
+        std::fs::create_dir_all(&temp_dir).unwrap();
+        
+        let invalid_json_path = temp_dir.join("invalid.json");
+        std::fs::write(&invalid_json_path, invalid_json).unwrap();
+        
+        let result = generator.import_json(invalid_json_path.to_str().unwrap());
+        assert!(result.is_err());
+        
+        // Test with non-existent file
+        let result = generator.import_json("/non/existent/path.json");
+        assert!(result.is_err());
+        
+        // Cleanup
+        std::fs::remove_dir_all(&temp_dir).unwrap();
+    }
+    
+    #[test]
+    fn test_report_config_serialization() {
+        let config = ReportConfig {
+            include_flame_graphs: false,
+            include_call_graphs: true,
+            max_functions: 50,
+            max_memory_leaks: 25,
+            max_goroutines: 100,
+            performance_threshold: 15.5,
+        };
+        
+        // Test JSON serialization
+        let json = serde_json::to_string(&config).unwrap();
+        let deserialized: ReportConfig = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(deserialized.include_flame_graphs, false);
+        assert_eq!(deserialized.include_call_graphs, true);
+        assert_eq!(deserialized.max_functions, 50);
+        assert_eq!(deserialized.performance_threshold, 15.5);
+        
+        // Test binary serialization
+        let binary = bincode::serialize(&config).unwrap();
+        let deserialized_bin: ReportConfig = bincode::deserialize(&binary).unwrap();
+        
+        assert_eq!(deserialized_bin.max_memory_leaks, 25);
+        assert_eq!(deserialized_bin.max_goroutines, 100);
     }
 }

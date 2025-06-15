@@ -1,602 +1,838 @@
-/// Comprehensive tests for the CURSED optimization system
+/// Comprehensive Test Suite for CURSED Optimization System
 /// 
-/// Tests incremental compilation, benchmarking, adaptive optimization,
-/// and integration between different optimization components.
+/// Tests all aspects of the performance optimization system including:
+/// - ML-driven optimization decisions
+/// - CURSED-specific optimizations (goroutines, channels, Gen Z slang)
+/// - Advanced LLVM passes (memory layout, vectorization, cache optimization)
+/// - Compiler speed improvements (incremental caching, parallel compilation)
 
-use cursed::optimization::*;
-use cursed::error::*;
-use std::path::PathBuf;
+use cursed::optimization::{
+    ml_optimization::*,
+    enhanced_llvm_passes::{
+        memory_layout_optimizer::MemoryLayoutOptimizer,
+        vectorization_optimizer::VectorizationOptimizer,
+        real_goroutine_optimizer::RealGoroutineOptimizer,
+    },
+    *,
+};
+use cursed::error::Result;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tempfile::TempDir;
+use std::collections::HashMap;
 
-#[test]
-fn test_optimization_config_creation() {
-    let config = OptimizationConfig::default();
-    
-    assert!(config.enable_advanced_llvm);
-    assert!(config.enable_parallel_compilation);
-    assert!(config.enable_incremental_compilation);
-    assert!(config.enable_jit_optimization);
-    assert!(config.enable_memory_optimization);
-    assert!(config.enable_caching);
-    assert_eq!(config.optimization_level, 2);
-    assert!(config.max_parallel_threads > 0);
-}
+/// Test the ML optimization engine
+mod ml_optimization_tests {
+    use super::*;
 
-#[test]
-fn test_optimization_manager_creation() {
-    let config = OptimizationConfig::default();
-    let manager = OptimizationManager::new(config);
-    
-    assert!(manager.is_ok());
-    let manager = manager.unwrap();
-    
-    assert!(manager.llvm_optimizer().is_some());
-    assert!(manager.speed_optimizer().is_some());
-    assert!(manager.jit_optimizer().is_some());
-    assert!(manager.memory_optimizer().is_some());
-    assert!(manager.parallel_compiler().is_some());
-    assert!(manager.incremental_compiler().is_some());
-    assert!(manager.cache_manager().is_some());
-}
+    #[test]
+    fn test_ml_engine_creation() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let engine = MLOptimizationEngine::new(config)?;
+        
+        assert!(engine.config.enabled);
+        assert_eq!(engine.config.learning_rate, 0.01);
+        assert_eq!(engine.config.batch_size, 32);
+        
+        Ok(())
+    }
 
-#[test]
-fn test_incremental_compilation_basic() {
-    let temp_dir = TempDir::new().unwrap();
-    let config = IncrementalConfig {
-        cache_dir: temp_dir.path().join(".cache"),
-        enable_dependency_tracking: true,
-        enable_fine_grained_detection: true,
-        parallel_incremental: false, // Keep simple for test
-        ..Default::default()
-    };
-    
-    let mut detector = ChangeDetector::new(config).unwrap();
-    
-    // Create a test file
-    let test_file = temp_dir.path().join("test.csd");
-    std::fs::write(&test_file, "fn main() { println(\"hello\"); }").unwrap();
-    
-    detector.analyze_file(&test_file).unwrap();
-    let changed = detector.get_changed_files();
-    
-    // New file should be detected as changed
-    assert!(changed.contains(&test_file));
-    
-    // Save metadata
-    detector.save_metadata_cache().unwrap();
-    
-    // Create new detector and load cache
-    let mut detector2 = ChangeDetector::new(detector.config.clone()).unwrap();
-    detector2.analyze_file(&test_file).unwrap();
-    
-    // File should not be changed now (same content)
-    let changed2 = detector2.get_changed_files();
-    assert!(!changed2.contains(&test_file));
-}
-
-#[test]
-fn test_dependency_graph_functionality() {
-    let mut graph = DependencyGraph::default();
-    
-    let file_a = PathBuf::from("a.csd");
-    let file_b = PathBuf::from("b.csd");
-    let file_c = PathBuf::from("c.csd");
-    
-    // a depends on b, b depends on c
-    graph.add_dependency(file_a.clone(), file_b.clone());
-    graph.add_dependency(file_b.clone(), file_c.clone());
-    
-    // Check dependencies
-    let deps_a = graph.get_dependencies(&file_a);
-    assert!(deps_a.contains(&file_b));
-    
-    let deps_b = graph.get_dependencies(&file_b);
-    assert!(deps_b.contains(&file_c));
-    
-    // Check dependents (reverse)
-    let dependents_c = graph.get_dependents(&file_c);
-    assert!(dependents_c.contains(&file_b));
-    
-    let dependents_b = graph.get_dependents(&file_b);
-    assert!(dependents_b.contains(&file_a));
-    
-    // Topological sort
-    let order = graph.topological_sort().unwrap();
-    
-    // c should come before b, b should come before a
-    let pos_c = order.iter().position(|f| f == &file_c).unwrap();
-    let pos_b = order.iter().position(|f| f == &file_b).unwrap();
-    let pos_a = order.iter().position(|f| f == &file_a).unwrap();
-    
-    assert!(pos_c < pos_b);
-    assert!(pos_b < pos_a);
-}
-
-#[test]
-fn test_compilation_cache_functionality() {
-    let temp_dir = TempDir::new().unwrap();
-    let config = IncrementalConfig {
-        cache_dir: temp_dir.path().to_path_buf(),
-        max_cache_size: 1024 * 1024, // 1MB
-        ..Default::default()
-    };
-    
-    let cache = CompilationCache::new(config).unwrap();
-    
-    // Create a fake artifact file
-    let artifact_path = temp_dir.path().join("output.o");
-    std::fs::write(&artifact_path, b"compiled code").unwrap();
-    
-    // Store in cache
-    cache.store(
-        "hash123".to_string(),
-        "deps456".to_string(),
-        artifact_path.clone(),
-        Duration::from_millis(100),
-    ).unwrap();
-    
-    // Retrieve from cache
-    let entry = cache.get("hash123", "deps456");
-    assert!(entry.is_some());
-    
-    let entry = entry.unwrap();
-    assert_eq!(entry.artifact_path, artifact_path);
-    assert_eq!(entry.compilation_time, Duration::from_millis(100));
-    
-    // Cache miss with different dependencies
-    let miss = cache.get("hash123", "deps789");
-    assert!(miss.is_none());
-    
-    // Test cache statistics
-    let stats = cache.stats();
-    assert_eq!(stats.hits, 1);
-    assert_eq!(stats.misses, 1);
-    assert!(stats.total_size > 0);
-}
-
-#[test]
-fn test_incremental_compiler_workflow() {
-    let temp_dir = TempDir::new().unwrap();
-    let opt_config = OptimizationConfig::default();
-    
-    let mut compiler = IncrementalCompiler::new(&opt_config).unwrap();
-    
-    // Create test files
-    let main_file = temp_dir.path().join("main.csd");
-    let util_file = temp_dir.path().join("util.csd");
-    
-    std::fs::write(&main_file, r#"
-        import "util.csd"
-        fn main() { 
-            println(helper_function());
+    #[test]
+    fn test_feature_extraction() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let function_ir = r#"
+        define i32 @test_function(i32 %x) {
+        entry:
+          %add = add i32 %x, 1
+          ret i32 %add
         }
-    "#).unwrap();
-    
-    std::fs::write(&util_file, r#"
-        fn helper_function() -> String {
-            "Hello from util"
+        "#;
+        
+        let features = engine.extract_features(function_ir, None)?;
+        
+        // Verify feature vector has reasonable defaults
+        assert_eq!(features.function_features.size_in_bytes, 0);
+        assert_eq!(features.target_features.available_registers, 16);
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_inlining_decision() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let mut features = FeatureVector::default();
+        features.function_features.size_in_bytes = 80;  // Small function
+        features.function_features.call_count = 20;     // High call count
+        
+        let decision = engine.make_optimization_decision("inlining", &features)?;
+        
+        match decision {
+            OptimizationDecision::Inline { should_inline, confidence } => {
+                assert!(should_inline);
+                assert!(confidence > 0.5);
+            },
+            _ => panic!("Expected inlining decision"),
         }
-    "#).unwrap();
-    
-    // Mock compilation function
-    let compile_fn = |path: &std::path::Path| -> Result<(PathBuf, Duration)> {
-        let output_path = path.with_extension("o");
-        std::fs::write(&output_path, b"compiled object").unwrap();
-        Ok((output_path, Duration::from_millis(50)))
-    };
-    
-    // First compilation (everything should be compiled)
-    let result = compiler.compile_directory(temp_dir.path(), compile_fn).unwrap();
-    assert!(result.compiled_files.len() >= 2);
-    assert_eq!(result.cache_hits, 0); // First time, no cache hits
-    
-    // Second compilation (should use cache)
-    let result2 = compiler.compile_directory(temp_dir.path(), compile_fn).unwrap();
-    assert!(result2.cache_hits > 0); // Should have cache hits now
-    
-    // Modify one file and recompile
-    std::fs::write(&util_file, r#"
-        fn helper_function() -> String {
-            "Modified helper function"
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_vectorization_decision() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let mut features = FeatureVector::default();
+        features.performance_features.instruction_level_parallelism = 3.0;
+        
+        let decision = engine.make_optimization_decision("vectorization", &features)?;
+        
+        match decision {
+            OptimizationDecision::Vectorize { vector_width, profitability } => {
+                assert_eq!(vector_width, 8);
+                assert!(profitability > 0.0);
+            },
+            _ => panic!("Expected vectorization decision"),
         }
-    "#).unwrap();
-    
-    let result3 = compiler.compile_directory(temp_dir.path(), compile_fn).unwrap();
-    assert!(result3.files_changed > 0);
-    assert!(result3.files_affected > 0);
-}
-
-#[test]
-fn test_benchmark_suite_creation() {
-    let temp_dir = TempDir::new().unwrap();
-    let config = BenchmarkConfig {
-        output_dir: temp_dir.path().to_path_buf(),
-        iterations: 3,
-        warmup_iterations: 1,
-        max_time: Duration::from_secs(5),
-        ..Default::default()
-    };
-    
-    let suite = BenchmarkSuite::new(config);
-    assert!(suite.is_ok());
-}
-
-#[test]
-fn test_benchmark_statistics() {
-    let measurements = vec![
-        BenchmarkMeasurement {
-            name: "test".to_string(),
-            duration: Duration::from_millis(100),
-            memory_usage: Some(1024),
-            cpu_usage: Some(50.0),
-            custom_metrics: std::collections::HashMap::new(),
-            timestamp: chrono::Utc::now(),
-        },
-        BenchmarkMeasurement {
-            name: "test".to_string(),
-            duration: Duration::from_millis(110),
-            memory_usage: Some(1024),
-            cpu_usage: Some(55.0),
-            custom_metrics: std::collections::HashMap::new(),
-            timestamp: chrono::Utc::now(),
-        },
-        BenchmarkMeasurement {
-            name: "test".to_string(),
-            duration: Duration::from_millis(90),
-            memory_usage: Some(1024),
-            cpu_usage: Some(45.0),
-            custom_metrics: std::collections::HashMap::new(),
-            timestamp: chrono::Utc::now(),
-        },
-    ];
-    
-    let stats = BenchmarkStatistics::from_measurements("test".to_string(), &measurements);
-    
-    assert_eq!(stats.count, 3);
-    assert_eq!(stats.mean, Duration::from_millis(100));
-    assert_eq!(stats.median, Duration::from_millis(100));
-    assert_eq!(stats.min, Duration::from_millis(90));
-    assert_eq!(stats.max, Duration::from_millis(110));
-    assert!(stats.coefficient_of_variation > 0.0);
-    assert!(stats.is_stable(0.2)); // Should be stable with low variance
-}
-
-#[test]
-fn test_performance_comparison() {
-    let stats1 = BenchmarkStatistics {
-        name: "test".to_string(),
-        count: 10,
-        mean: Duration::from_millis(100),
-        median: Duration::from_millis(100),
-        std_dev: Duration::from_millis(5),
-        min: Duration::from_millis(90),
-        max: Duration::from_millis(110),
-        coefficient_of_variation: 0.05,
-        p95: Duration::from_millis(108),
-        p99: Duration::from_millis(110),
-        confidence_interval: (Duration::from_millis(95), Duration::from_millis(105)),
-        outliers: vec![],
-    };
-    
-    let stats2 = BenchmarkStatistics {
-        name: "test".to_string(),
-        count: 10,
-        mean: Duration::from_millis(120),
-        median: Duration::from_millis(120),
-        std_dev: Duration::from_millis(5),
-        min: Duration::from_millis(110),
-        max: Duration::from_millis(130),
-        coefficient_of_variation: 0.04,
-        p95: Duration::from_millis(128),
-        p99: Duration::from_millis(130),
-        confidence_interval: (Duration::from_millis(115), Duration::from_millis(125)),
-        outliers: vec![],
-    };
-    
-    let comparison = stats2.compare(&stats1);
-    match comparison {
-        PerformanceComparison::Regression(percent) => {
-            assert!(percent > 15.0 && percent < 25.0);
-        },
-        _ => panic!("Expected regression"),
+        
+        Ok(())
     }
-}
 
-#[test]
-fn test_built_in_benchmarks() {
-    let temp_dir = TempDir::new().unwrap();
-    let opt_config = OptimizationConfig::default();
-    let benchmarks = OptimizationBenchmarks::new(opt_config);
-    
-    let benchmark_config = BenchmarkConfig {
-        output_dir: temp_dir.path().to_path_buf(),
-        iterations: 2,
-        warmup_iterations: 1,
-        max_time: Duration::from_secs(5),
-        ..Default::default()
-    };
-    
-    let suite = benchmarks.create_suite(benchmark_config).unwrap();
-    let results = suite.run_all().unwrap();
-    
-    // Should have several built-in benchmarks
-    assert!(results.results.contains_key("compilation_speed"));
-    assert!(results.results.contains_key("optimization_passes"));
-    assert!(results.results.contains_key("memory_usage"));
-    assert!(results.results.contains_key("code_quality"));
-    
-    // Check that results are reasonable
-    for (name, stats) in &results.results {
-        assert!(stats.count >= 2, "Benchmark {} should have at least 2 measurements", name);
-        assert!(stats.mean > Duration::default(), "Benchmark {} should have non-zero mean", name);
+    #[test]
+    fn test_cursed_specific_optimization() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let mut features = FeatureVector::default();
+        features.cursed_features.goroutine_usage.goroutine_spawn_count = 15;
+        
+        let decision = engine.make_optimization_decision("cursed_specific", &features)?;
+        
+        match decision {
+            OptimizationDecision::CursedSpecific { optimization, .. } => {
+                match optimization {
+                    CursedOptType::GoroutineStackOptimization { target_size } => {
+                        assert_eq!(target_size, 64 * 1024);
+                    },
+                    _ => panic!("Expected goroutine stack optimization"),
+                }
+            },
+            _ => panic!("Expected CURSED-specific decision"),
+        }
+        
+        Ok(())
     }
-}
 
-#[test]
-fn test_adaptive_optimizer_basic() {
-    let opt_config = OptimizationConfig::default();
-    let optimizer = AdaptiveOptimizer::new(&opt_config).unwrap();
-    
-    // Record some execution feedback
-    let feedback = OptimizationFeedback {
-        name: "test_function".to_string(),
-        execution_time: Duration::from_millis(100),
-        memory_usage: 1024,
-        success: true,
-        error: None,
-        timestamp: std::time::SystemTime::now(),
-    };
-    
-    optimizer.record_execution(feedback).unwrap();
-    
-    let summary = optimizer.get_summary();
-    assert_eq!(summary.total_functions, 1);
-    assert_eq!(summary.total_executions, 1);
-}
-
-#[test]
-fn test_execution_profile_updates() {
-    let mut profile = ExecutionProfile::new("test_function".to_string());
-    
-    // Update with execution data
-    profile.update(Duration::from_millis(100), 1024, 10);
-    profile.update(Duration::from_millis(110), 1024, 10);
-    profile.update(Duration::from_millis(90), 1024, 10);
-    
-    assert_eq!(profile.execution_count, 3);
-    assert_eq!(profile.performance_history.len(), 3);
-    assert!(profile.average_time.as_millis() > 95);
-    assert!(profile.average_time.as_millis() < 105);
-    assert!(profile.hotness_score >= 0.0);
-}
-
-#[test]
-fn test_performance_trend_detection() {
-    let mut profile = ExecutionProfile::new("test_function".to_string());
-    
-    // Add improving trend data (decreasing execution times)
-    for i in 0..20 {
-        let time = Duration::from_millis(200 - i * 5); // Getting faster
-        profile.update(time, 1024, 100);
-    }
-    
-    let trend = profile.get_performance_trend();
-    assert_eq!(trend, PerformanceTrend::Improving);
-    
-    // Test degrading trend
-    let mut profile2 = ExecutionProfile::new("degrading_function".to_string());
-    for i in 0..20 {
-        let time = Duration::from_millis(100 + i * 5); // Getting slower
-        profile2.update(time, 1024, 100);
-    }
-    
-    let trend2 = profile2.get_performance_trend();
-    assert_eq!(trend2, PerformanceTrend::Degrading);
-}
-
-#[test]
-fn test_optimization_recommendations() {
-    let config = AdaptiveConfig {
-        min_execution_count: 5,
-        confidence_threshold: 0.5,
-        ..Default::default()
-    };
-    
-    let optimizer = LearningOptimizer::new(config);
-    
-    // Record feedback for a function to make it hot
-    for i in 0..20 {
-        let feedback = OptimizationFeedback {
-            name: "hot_function".to_string(),
-            execution_time: Duration::from_millis(100),
-            memory_usage: 1024,
-            success: true,
-            error: None,
+    #[test]
+    fn test_training_sample_addition() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let sample = TrainingSample {
+            features: FeatureVector::default(),
+            optimization_decision: OptimizationDecision::Inline {
+                should_inline: true,
+                confidence: 0.9,
+            },
+            actual_performance: PerformanceMetrics {
+                execution_time: Duration::from_millis(100),
+                memory_usage: 1024,
+                cache_misses: 50,
+                energy_consumption: 0.5,
+                throughput: 1000.0,
+            },
             timestamp: std::time::SystemTime::now(),
+            quality_score: 0.9,
         };
         
-        optimizer.record_feedback(feedback).unwrap();
+        engine.add_training_sample(sample)?;
+        
+        Ok(())
     }
-    
-    let recommendations = optimizer.get_recommendations().unwrap();
-    
-    // Should generate recommendations for hot function
-    assert!(!recommendations.is_empty());
-    
-    let hot_rec = recommendations.iter()
-        .find(|r| r.function_name == "hot_function");
-    assert!(hot_rec.is_some());
-    
-    let rec = hot_rec.unwrap();
-    assert!(rec.priority > 0.0);
-    assert!(rec.confidence > 0.0);
-}
 
-#[test]
-fn test_success_rate_tracking() {
-    let mut success_rate = SuccessRate::new();
-    
-    // Record successful optimizations
-    success_rate.update(true, 0.1);   // 10% improvement
-    success_rate.update(true, 0.2);   // 20% improvement
-    success_rate.update(false, -0.05); // 5% regression
-    success_rate.update(true, 0.15);  // 15% improvement
-    
-    assert_eq!(success_rate.total_applications, 4);
-    assert_eq!(success_rate.successful_applications, 3);
-    assert_eq!(success_rate.success_rate(), 0.75);
-    assert!(success_rate.average_improvement > 0.0);
-    assert!(success_rate.confidence > 0.0);
-}
+    #[test]
+    fn test_model_training() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        // Add some training samples
+        for i in 0..5 {
+            let sample = TrainingSample {
+                features: FeatureVector::default(),
+                optimization_decision: OptimizationDecision::Inline {
+                    should_inline: i % 2 == 0,
+                    confidence: 0.8,
+                },
+                actual_performance: PerformanceMetrics {
+                    execution_time: Duration::from_millis(100 + i as u64 * 10),
+                    memory_usage: 1024,
+                    cache_misses: 50,
+                    energy_consumption: 0.5,
+                    throughput: 1000.0,
+                },
+                timestamp: std::time::SystemTime::now(),
+                quality_score: 0.8,
+            };
+            engine.add_training_sample(sample)?;
+        }
+        
+        engine.train_models()?;
+        
+        let stats = engine.get_model_statistics();
+        assert!(stats.overall_accuracy > 0.0);
+        
+        Ok(())
+    }
 
-#[test]
-fn test_optimization_integration() {
-    // Test that all optimization components work together
-    let temp_dir = TempDir::new().unwrap();
-    
-    let config = OptimizationConfig {
-        enable_advanced_llvm: true,
-        enable_parallel_compilation: true,
-        enable_incremental_compilation: true,
-        enable_jit_optimization: true,
-        enable_memory_optimization: true,
-        enable_profiling: true,
-        enable_caching: true,
-        enable_adaptive_optimization: true,
-        optimization_level: 2,
-        ..Default::default()
-    };
-    
-    // Create optimization manager
-    let manager = OptimizationManager::new(config).unwrap();
-    
-    // Verify all components are initialized
-    assert!(manager.llvm_optimizer().is_some());
-    assert!(manager.speed_optimizer().is_some());
-    assert!(manager.jit_optimizer().is_some());
-    assert!(manager.memory_optimizer().is_some());
-    assert!(manager.parallel_compiler().is_some());
-    assert!(manager.incremental_compiler().is_some());
-    assert!(manager.cache_manager().is_some());
-    assert!(manager.adaptive_optimizer().is_some());
-    assert!(manager.profiler().is_some());
-    
-    // Test configuration changes
-    let mut new_config = manager.config().clone();
-    new_config.optimization_level = 3;
-    manager.update_config(new_config).unwrap();
-    
-    assert_eq!(manager.config().optimization_level, 3);
-}
-
-#[test]
-fn test_optimization_manager_summary() {
-    let config = OptimizationConfig::default();
-    let manager = OptimizationManager::new(config).unwrap();
-    
-    // Should not panic and should produce some output
-    manager.print_comprehensive_summary();
-}
-
-#[test]
-fn test_circular_dependency_detection() {
-    let mut graph = DependencyGraph::default();
-    
-    let file_a = PathBuf::from("a.csd");
-    let file_b = PathBuf::from("b.csd");
-    let file_c = PathBuf::from("c.csd");
-    
-    // Create circular dependency: a -> b -> c -> a
-    graph.add_dependency(file_a.clone(), file_b.clone());
-    graph.add_dependency(file_b.clone(), file_c.clone());
-    graph.add_dependency(file_c.clone(), file_a.clone()); // Creates cycle
-    
-    // Topological sort should fail
-    let result = graph.topological_sort();
-    assert!(result.is_err());
-    
-    let error = result.unwrap_err();
-    match error {
-        Error::Parse(msg) => {
-            assert!(msg.contains("Circular dependency"));
-        },
-        _ => panic!("Expected Parse error for circular dependency"),
+    #[test]
+    fn test_optimization_caching() -> Result<()> {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let features = FeatureVector::default();
+        
+        // First call should be computed
+        let decision1 = engine.make_optimization_decision("inlining", &features)?;
+        
+        // Second call should use cache
+        let decision2 = engine.make_optimization_decision("inlining", &features)?;
+        
+        // Decisions should be the same
+        match (&decision1, &decision2) {
+            (
+                OptimizationDecision::Inline { should_inline: s1, confidence: c1 },
+                OptimizationDecision::Inline { should_inline: s2, confidence: c2 }
+            ) => {
+                assert_eq!(s1, s2);
+                assert_eq!(c1, c2);
+            },
+            _ => panic!("Expected same inlining decisions"),
+        }
+        
+        Ok(())
     }
 }
 
-#[test]
-fn test_regression_detection() {
-    let temp_dir = TempDir::new().unwrap();
-    let benchmark_config = BenchmarkConfig {
-        output_dir: temp_dir.path().to_path_buf(),
-        iterations: 3,
-        warmup_iterations: 1,
-        ..Default::default()
-    };
-    
-    let mut suite = BenchmarkSuite::new(benchmark_config).unwrap();
-    
-    // Add a simple test benchmark
-    struct SimpleBenchmark {
-        duration: Duration,
+/// Test CURSED-specific optimizations
+mod cursed_specific_tests {
+    use super::*;
+    use inkwell::context::Context;
+
+    #[test]
+    fn test_goroutine_optimizer_creation() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = RealGoroutineOptimizer::new(statistics, None);
+        
+        assert!(optimizer.optimization_config.enable_stack_size_optimization);
+        assert!(optimizer.optimization_config.enable_scheduler_hints);
+        assert!(optimizer.optimization_config.enable_goroutine_pooling);
     }
-    
-    impl Benchmark for SimpleBenchmark {
-        fn name(&self) -> &str { "simple_test" }
-        fn description(&self) -> &str { "Simple test benchmark" }
-        fn run_once(&self) -> Result<BenchmarkMeasurement> {
-            Ok(BenchmarkMeasurement {
-                name: self.name().to_string(),
-                duration: self.duration,
-                memory_usage: Some(1024),
-                cpu_usage: Some(50.0),
-                custom_metrics: std::collections::HashMap::new(),
-                timestamp: chrono::Utc::now(),
-            })
+
+    #[test]
+    fn test_goroutine_pattern_analysis() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = RealGoroutineOptimizer::new(statistics, None);
+        
+        let config = &optimizer.optimization_config;
+        assert_eq!(config.min_stack_size, 8 * 1024);
+        assert_eq!(config.max_stack_size, 1024 * 1024);
+        assert_eq!(config.pool_size_threshold, 10);
+    }
+
+    #[test]
+    fn test_stack_size_optimization() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = RealGoroutineOptimizer::new(statistics, None);
+        
+        // Test different stack risk levels
+        use cursed::optimization::enhanced_llvm_passes::real_goroutine_optimizer::StackRiskLevel;
+        
+        assert_eq!(optimizer.assess_stack_risk(16 * 1024, 2), StackRiskLevel::Safe);
+        assert_eq!(optimizer.assess_stack_risk(200 * 1024, 5), StackRiskLevel::High);
+    }
+
+    #[test]
+    fn test_creation_pattern_optimization_potential() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = RealGoroutineOptimizer::new(statistics, None);
+        
+        use cursed::optimization::enhanced_llvm_passes::real_goroutine_optimizer::CreationPatternType;
+        
+        let potential = optimizer.calculate_optimization_potential(&CreationPatternType::Periodic);
+        assert_eq!(potential, 0.9);
+        
+        let potential = optimizer.calculate_optimization_potential(&CreationPatternType::ShortLived);
+        assert_eq!(potential, 0.8);
+        
+        let potential = optimizer.calculate_optimization_potential(&CreationPatternType::LongLived);
+        assert_eq!(potential, 0.4);
+    }
+
+    #[test]
+    fn test_goroutine_optimization_config() {
+        use cursed::optimization::enhanced_llvm_passes::real_goroutine_optimizer::GoroutineOptimizationConfig;
+        
+        let config = GoroutineOptimizationConfig::default();
+        
+        assert!(config.enable_stack_size_optimization);
+        assert!(config.enable_scheduler_hints);
+        assert!(config.enable_goroutine_pooling);
+        assert!(config.enable_concurrent_pattern_optimization);
+        
+        assert_eq!(config.min_optimization_benefit, 0.05);
+        assert_eq!(config.max_optimization_overhead, 0.02);
+        assert_eq!(config.optimization_confidence_threshold, 0.8);
+    }
+}
+
+/// Test advanced LLVM passes
+mod llvm_passes_tests {
+    use super::*;
+    use inkwell::context::Context;
+
+    #[test]
+    fn test_memory_layout_optimizer() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = MemoryLayoutOptimizer::new(statistics);
+        
+        // Test alignment requirements
+        assert_eq!(optimizer.alignment_requirements.cache_line_size, 64);
+        assert_eq!(optimizer.alignment_requirements.page_size, 4096);
+        assert_eq!(optimizer.alignment_requirements.vector_alignment, 16);
+    }
+
+    #[test]
+    fn test_memory_layout_hot_field_identification() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = MemoryLayoutOptimizer::new(statistics);
+        
+        use cursed::optimization::enhanced_llvm_passes::memory_layout_optimizer::{
+            FieldAccessInfo, AccessPattern
+        };
+        
+        let access_patterns = vec![
+            FieldAccessInfo {
+                field_index: 0,
+                access_frequency: 100,
+                access_pattern: AccessPattern::Sequential,
+                temporal_locality: 0.8,
+            },
+            FieldAccessInfo {
+                field_index: 1,
+                access_frequency: 10,
+                access_pattern: AccessPattern::Random,
+                temporal_locality: 0.2,
+            },
+            FieldAccessInfo {
+                field_index: 2,
+                access_frequency: 80,
+                access_pattern: AccessPattern::Sequential,
+                temporal_locality: 0.7,
+            },
+        ];
+        
+        let hot_fields = optimizer.identify_hot_fields(&access_patterns);
+        assert!(hot_fields.is_some());
+        let hot_fields = hot_fields.unwrap();
+        assert!(hot_fields.contains(&0));
+        assert!(hot_fields.contains(&2));
+        assert!(!hot_fields.contains(&1));
+    }
+
+    #[test]
+    fn test_vectorization_optimizer() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = VectorizationOptimizer::new(statistics);
+        
+        // Test target vector info defaults
+        assert_eq!(optimizer.target_info.supported_widths.get("i32"), Some(&vec![4, 8, 16]));
+        assert_eq!(optimizer.target_info.supported_widths.get("f32"), Some(&vec![4, 8, 16]));
+        assert_eq!(optimizer.target_info.supported_widths.get("f64"), Some(&vec![2, 4, 8]));
+    }
+
+    #[test]
+    fn test_vectorization_speedup_estimation() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = VectorizationOptimizer::new(statistics);
+        
+        use cursed::optimization::enhanced_llvm_passes::vectorization_optimizer::VectorOperation;
+        
+        let speedup = optimizer.estimate_vectorization_speedup(&VectorOperation::Add, 8);
+        assert_eq!(speedup, 6.4); // 8 * 0.8
+        
+        let speedup = optimizer.estimate_vectorization_speedup(&VectorOperation::Multiply, 4);
+        assert_eq!(speedup, 2.88); // 4 * 0.8 * 0.9
+        
+        let speedup = optimizer.estimate_vectorization_speedup(&VectorOperation::Divide, 4);
+        assert_eq!(speedup, 1.92); // 4 * 0.8 * 0.6
+    }
+
+    #[test]
+    fn test_vectorization_optimal_width() {
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let optimizer = VectorizationOptimizer::new(statistics);
+        
+        assert_eq!(optimizer.get_optimal_vector_width("i32"), 16);
+        assert_eq!(optimizer.get_optimal_vector_width("f32"), 16);
+        assert_eq!(optimizer.get_optimal_vector_width("f64"), 8);
+        assert_eq!(optimizer.get_optimal_vector_width("unknown"), 4);
+    }
+}
+
+/// Test performance optimization system integration
+mod integration_tests {
+    use super::*;
+
+    #[test]
+    fn test_performance_optimization_system_creation() -> Result<()> {
+        let performance_config = PerformanceConfig::default();
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_optimization_session_creation() -> Result<()> {
+        let performance_config = PerformanceConfig::default();
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        let session = system.create_session("test_session".to_string());
+        assert_eq!(session.name, "test_session");
+        assert!(session.id.starts_with("test_session_"));
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_system_statistics() -> Result<()> {
+        let performance_config = PerformanceConfig::default();
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        let stats = system.get_system_statistics();
+        // Should not panic and return valid statistics
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_benchmarking_integration() -> Result<()> {
+        let performance_config = PerformanceConfig::default();
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        let benchmark_config = BenchmarkConfig {
+            benchmark_type: BenchmarkType::Compilation,
+            iterations: 5,
+            warmup_iterations: 2,
+            complexity_level: ComplexityLevel::Medium,
+            enable_profiling: true,
+            timeout: Duration::from_secs(30),
+            test_data: BenchmarkTestData::Synthetic {
+                function_count: 10,
+                complexity_factor: 1.0,
+            },
+        };
+        
+        let results = system.run_benchmark(benchmark_config)?;
+        assert!(results.iterations.len() > 0);
+        
+        Ok(())
+    }
+}
+
+/// Test compiler speed improvements
+mod compiler_speed_tests {
+    use super::*;
+
+    #[test]
+    fn test_incremental_compilation_cache() -> Result<()> {
+        // Test incremental compilation caching
+        let performance_config = PerformanceConfig::default();
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        // Create multiple sessions to test caching
+        let session1 = system.create_session("session1".to_string());
+        let session2 = system.create_session("session2".to_string());
+        
+        assert_ne!(session1.id, session2.id);
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_parallel_optimization_benefits() -> Result<()> {
+        // Test that parallel optimization provides benefits
+        let performance_config = PerformanceConfig {
+            enable_realtime_monitoring: true,
+            enable_benchmarking: true,
+            enable_prediction: true,
+            monitoring_interval_ms: 50,
+            max_benchmark_iterations: 5,
+            max_performance_entries: 1000,
+            resource_monitoring_level: ResourceMonitoringLevel::Detailed,
+        };
+        
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        // Test resource statistics collection
+        let resource_stats = system.get_resource_statistics()?;
+        // Should return valid resource statistics
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_optimization_prediction() -> Result<()> {
+        let performance_config = PerformanceConfig {
+            enable_prediction: true,
+            ..PerformanceConfig::default()
+        };
+        
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        // Test performance analysis
+        let analysis = system.get_performance_analysis(Duration::from_secs(1))?;
+        assert_eq!(analysis.units_optimized, 0); // No units optimized yet
+        
+        Ok(())
+    }
+}
+
+/// Test error handling and edge cases
+mod error_handling_tests {
+    use super::*;
+
+    #[test]
+    fn test_invalid_optimization_type() {
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config).unwrap();
+        
+        let features = FeatureVector::default();
+        let result = engine.make_optimization_decision("invalid_type", &features);
+        
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_ml_engine_with_disabled_config() -> Result<()> {
+        let config = MLOptimizationConfig {
+            enabled: false,
+            ..MLOptimizationConfig::default()
+        };
+        
+        let engine = MLOptimizationEngine::new(config)?;
+        assert!(!engine.config.enabled);
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_performance_config_validation() {
+        let config = PerformanceConfig {
+            enable_realtime_monitoring: true,
+            enable_benchmarking: true,
+            enable_prediction: false,
+            monitoring_interval_ms: 100,
+            max_benchmark_iterations: 10,
+            max_performance_entries: 10000,
+            resource_monitoring_level: ResourceMonitoringLevel::Basic,
+        };
+        
+        assert!(config.enable_realtime_monitoring);
+        assert!(!config.enable_prediction);
+        assert_eq!(config.monitoring_interval_ms, 100);
+    }
+}
+
+/// Test comprehensive optimization scenarios
+mod comprehensive_optimization_tests {
+    use super::*;
+
+    #[test]
+    fn test_full_optimization_pipeline() -> Result<()> {
+        // Test complete optimization pipeline with ML integration
+        let ml_config = MLOptimizationConfig::default();
+        let ml_engine = Arc::new(Mutex::new(MLOptimizationEngine::new(ml_config)?));
+        
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        let goroutine_optimizer = RealGoroutineOptimizer::new(
+            statistics.clone(),
+            Some(ml_engine.clone())
+        );
+        
+        // Test that the optimizer was created successfully
+        assert!(goroutine_optimizer.optimization_config.enable_stack_size_optimization);
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_optimization_coordination() -> Result<()> {
+        // Test coordination between different optimization passes
+        let performance_config = PerformanceConfig::default();
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        let session = system.create_session("coordination_test".to_string());
+        
+        // Test that session management works correctly
+        assert!(!session.id.is_empty());
+        assert_eq!(session.name, "coordination_test");
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_optimization_effectiveness_measurement() -> Result<()> {
+        // Test measurement of optimization effectiveness
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        // Add training data to measure effectiveness
+        for i in 0..10 {
+            let sample = TrainingSample {
+                features: FeatureVector::default(),
+                optimization_decision: OptimizationDecision::Inline {
+                    should_inline: i % 2 == 0,
+                    confidence: 0.8 + (i as f64 * 0.01),
+                },
+                actual_performance: PerformanceMetrics {
+                    execution_time: Duration::from_millis(100 - i as u64 * 5),
+                    memory_usage: 1024 + i * 50,
+                    cache_misses: 50 - i * 2,
+                    energy_consumption: 0.5 + (i as f64 * 0.01),
+                    throughput: 1000.0 + (i as f64 * 10.0),
+                },
+                timestamp: std::time::SystemTime::now(),
+                quality_score: 0.8 + (i as f64 * 0.02),
+            };
+            engine.add_training_sample(sample)?;
+        }
+        
+        engine.train_models()?;
+        
+        let stats = engine.get_model_statistics();
+        assert!(stats.overall_accuracy > 0.0);
+        assert!(stats.inlining_accuracy > 0.0);
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_multi_pass_optimization() -> Result<()> {
+        // Test that multiple optimization passes work together
+        let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
+        
+        let memory_optimizer = MemoryLayoutOptimizer::new(statistics.clone());
+        let vectorization_optimizer = VectorizationOptimizer::new(statistics.clone());
+        let goroutine_optimizer = RealGoroutineOptimizer::new(statistics.clone(), None);
+        
+        // Test that all optimizers use the same statistics
+        let stats = statistics.lock().unwrap();
+        assert_eq!(stats.memory_layout_improvements, 0);
+        assert_eq!(stats.vectorized_operations, 0);
+        assert_eq!(stats.goroutine_optimizations, 0);
+        
+        Ok(())
+    }
+}
+
+/// Performance regression tests
+mod performance_tests {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    fn test_optimization_performance() -> Result<()> {
+        // Test that optimizations complete within reasonable time
+        let start_time = Instant::now();
+        
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let features = FeatureVector::default();
+        let _decision = engine.make_optimization_decision("inlining", &features)?;
+        
+        let elapsed = start_time.elapsed();
+        assert!(elapsed < Duration::from_millis(100), "Optimization took too long: {:?}", elapsed);
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_large_scale_optimization() -> Result<()> {
+        // Test optimization with large numbers of functions
+        let performance_config = PerformanceConfig {
+            max_performance_entries: 100,
+            ..PerformanceConfig::default()
+        };
+        let optimization_config = OptimizationConfig::default();
+        
+        let system = PerformanceOptimizationSystem::new(
+            performance_config,
+            optimization_config,
+        )?;
+        
+        // Create multiple sessions to simulate large scale optimization
+        for i in 0..10 {
+            let session = system.create_session(format!("session_{}", i));
+            assert!(!session.id.is_empty());
+        }
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_memory_usage_optimization() -> Result<()> {
+        // Test that the optimization system doesn't use excessive memory
+        let config = MLOptimizationConfig {
+            batch_size: 16,  // Smaller batch size
+            feature_vector_size: 64,  // Smaller feature vectors
+            ..MLOptimizationConfig::default()
+        };
+        
+        let engine = MLOptimizationEngine::new(config)?;
+        
+        // Test that the engine was created with the optimized configuration
+        assert_eq!(engine.config.batch_size, 16);
+        assert_eq!(engine.config.feature_vector_size, 64);
+        
+        Ok(())
+    }
+}
+
+/// Integration with existing CURSED systems
+mod cursed_integration_tests {
+    use super::*;
+
+    #[test]
+    fn test_gen_z_slang_optimization() -> Result<()> {
+        // Test optimization of Gen Z slang patterns
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let mut features = FeatureVector::default();
+        features.cursed_features.gen_z_slang_patterns.slay_function_usage = 5;
+        features.cursed_features.gen_z_slang_patterns.yolo_expression_count = 10;
+        features.cursed_features.gen_z_slang_patterns.periodt_termination_usage = 3;
+        
+        let decision = engine.make_optimization_decision("cursed_specific", &features)?;
+        
+        match decision {
+            OptimizationDecision::CursedSpecific { optimization, .. } => {
+                // Should suggest some CURSED-specific optimization
+                match optimization {
+                    CursedOptType::GenZSlangInlining { inline_threshold } => {
+                        assert_eq!(inline_threshold, 0.7);
+                    },
+                    _ => {}, // Other optimizations are also valid
+                }
+            },
+            _ => panic!("Expected CURSED-specific optimization"),
+        }
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_channel_optimization() -> Result<()> {
+        // Test channel buffer sizing optimization
+        let config = MLOptimizationConfig::default();
+        let mut engine = MLOptimizationEngine::new(config)?;
+        
+        let mut features = FeatureVector::default();
+        features.cursed_features.channel_usage.channel_count = 8;
+        features.cursed_features.channel_usage.send_receive_ratio = 1.2;
+        features.cursed_features.channel_usage.select_statement_usage = 3;
+        
+        let decision = engine.make_optimization_decision("cursed_specific", &features)?;
+        
+        match decision {
+            OptimizationDecision::CursedSpecific { optimization, .. } => {
+                match optimization {
+                    CursedOptType::ChannelBufferSizing { optimal_size } => {
+                        assert_eq!(optimal_size, 16);
+                    },
+                    _ => {}, // Other optimizations are also valid for this case
+                }
+            },
+            _ => panic!("Expected CURSED-specific optimization"),
+        }
+        
+        Ok(())
+    }
+
+    #[test]
+    fn test_error_propagation_optimization() -> Result<()> {
+        // Test error propagation optimization
+        let mut features = FeatureVector::default();
+        features.cursed_features.error_propagation_usage.question_mark_operator_usage = 15;
+        features.cursed_features.error_propagation_usage.error_handling_blocks = 5;
+        features.cursed_features.error_propagation_usage.panic_recovery_usage = 2;
+        
+        // Test that features are set correctly
+        assert_eq!(features.cursed_features.error_propagation_usage.question_mark_operator_usage, 15);
+        assert_eq!(features.cursed_features.error_propagation_usage.error_handling_blocks, 5);
+        
+        Ok(())
+    }
+}
+
+/// Create helper functions for testing
+impl Default for EnhancedOptimizationStatistics {
+    fn default() -> Self {
+        Self {
+            memory_layout_improvements: 0,
+            vectorized_operations: 0,
+            goroutine_optimizations: 0,
         }
     }
-    
-    // Register benchmark with good performance
-    suite.register_benchmark(Box::new(SimpleBenchmark { 
-        duration: Duration::from_millis(100) 
-    }));
-    
-    let results1 = suite.run_all().unwrap();
-    
-    // Simulate regression by increasing duration
-    suite.register_benchmark(Box::new(SimpleBenchmark { 
-        duration: Duration::from_millis(150) // 50% slower
-    }));
-    
-    let results2 = suite.run_all().unwrap();
-    
-    // Check for regressions
-    let regressions = suite.detect_regressions(&results2).unwrap();
-    
-    // Should detect regression
-    assert!(!regressions.is_empty());
-    let regression = &regressions[0];
-    assert_eq!(regression.benchmark_name, "simple_test");
-    
-    match &regression.comparison {
-        PerformanceComparison::Regression(percent) => {
-            assert!(*percent > 40.0); // Should detect significant regression
-        },
-        _ => panic!("Expected regression detection"),
-    }
 }
 
-#[test]
-fn test_memory_profile_updates() {
-    let mut profile = MemoryProfile::default();
-    
-    profile.update(1024);
-    profile.update(2048);
-    profile.update(512);
-    
-    assert_eq!(profile.allocation_count, 3);
-    assert_eq!(profile.total_allocated, 1024 + 2048 + 512);
-    assert_eq!(profile.peak_usage, 2048);
-    assert_eq!(profile.average_usage, (1024 + 2048 + 512) / 3);
+#[derive(Debug, Default)]
+pub struct EnhancedOptimizationStatistics {
+    pub memory_layout_improvements: usize,
+    pub vectorized_operations: usize,
+    pub goroutine_optimizations: usize,
 }

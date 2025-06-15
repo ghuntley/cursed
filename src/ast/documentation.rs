@@ -157,6 +157,9 @@ impl DocumentationExtractor {
 
     /// Extract documentation from individual statements
     pub fn extract_statement_documentation(&mut self, statement: &dyn Statement, module: &str) -> Result<Option<DocElement>, Error> {
+        use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
+        use crate::ast::statements::variable::VariableStatement;
+        
         // Try to downcast to specific statement types for detailed extraction
         let any_stmt = statement.as_any();
         
@@ -180,27 +183,8 @@ impl DocumentationExtractor {
             return Ok(Some(self.extract_variable_documentation(var_stmt, module)?));
         }
 
-        // Default case - create basic documentation
-        let location = SourceLocation { line: 1, column: 1, file: None };
-        let basic_doc = DocElement {
-            name: "unknown_statement".to_string(),
-            element_type: ElementType::Other,
-            visibility: Visibility::Private,
-            module: module.to_string(),
-            summary: "Undocumented statement".to_string(),
-            description: None,
-            signature: Some(statement.string()),
-            parameters: Vec::new(),
-            return_type: None,
-            type_info: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location,
-            source_code: if self.config.include_source { Some(statement.string()) } else { None },
-            metadata: ElementMetadata::default(),
-        };
-
-        Ok(Some(basic_doc))
+        // For other statement types, return None (not documentable)
+        Ok(None)
     }
 
     /// Extract function documentation
@@ -208,7 +192,7 @@ impl DocumentationExtractor {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         // Extract function name and signature
-        let func_name = &func.name;
+        let func_name = &func.name.value;
         let signature = self.build_function_signature(func);
         
         // Extract parameter documentation
@@ -220,8 +204,8 @@ impl DocumentationExtractor {
         // Parse documentation comments
         let (summary, description, tags, examples) = self.comment_parser.parse_documentation_for_location(&location)?;
         
-        // Determine visibility
-        let visibility = if func.is_public { Visibility::Public } else { Visibility::Private };
+        // Functions are typically public in CURSED
+        let visibility = Visibility::Public;
         
         Ok(DocElement {
             name: func_name.clone(),
@@ -233,7 +217,11 @@ impl DocumentationExtractor {
             } else { 
                 summary 
             },
-            description: if description.is_empty() { None } else { Some(description) },
+            description: if description.is_empty() { 
+                Some(format!("CURSED function declaration using the 'slay' keyword"))
+            } else { 
+                Some(description) 
+            },
             signature: Some(signature),
             parameters,
             return_type,
@@ -250,7 +238,7 @@ impl DocumentationExtractor {
     fn extract_struct_documentation(&mut self, struct_stmt: &SquadStatement, module: &str) -> Result<DocElement, Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
-        let struct_name = &struct_stmt.name;
+        let struct_name = &struct_stmt.name.value;
         let signature = self.build_struct_signature(struct_stmt);
         
         // Extract field documentation
@@ -262,7 +250,7 @@ impl DocumentationExtractor {
         // Build type information
         let type_info = Some(TypeInfo {
             base_type: "struct".to_string(),
-            generic_params: struct_stmt.type_params.iter().map(|p| p.name.clone()).collect(),
+            generic_params: struct_stmt.type_parameters.iter().map(|p| p.name.clone()).collect(),
             constraints: Vec::new(),
             fields: field_docs,
             methods: Vec::new(),
@@ -278,7 +266,11 @@ impl DocumentationExtractor {
             } else { 
                 summary 
             },
-            description: if description.is_empty() { None } else { Some(description) },
+            description: if description.is_empty() { 
+                Some(format!("CURSED struct declaration using the 'squad' keyword"))
+            } else { 
+                Some(description) 
+            },
             signature: Some(signature),
             parameters: Vec::new(),
             return_type: None,
@@ -295,7 +287,7 @@ impl DocumentationExtractor {
     fn extract_interface_documentation(&mut self, interface: &CollabStatement, module: &str) -> Result<DocElement, Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
-        let interface_name = &interface.name;
+        let interface_name = &interface.name.value;
         let signature = self.build_interface_signature(interface);
         
         // Extract method documentation
@@ -307,7 +299,7 @@ impl DocumentationExtractor {
         // Build type information
         let type_info = Some(TypeInfo {
             base_type: "interface".to_string(),
-            generic_params: interface.type_params.iter().map(|p| p.name.clone()).collect(),
+            generic_params: interface.type_parameters.iter().map(|p| p.name.clone()).collect(),
             constraints: Vec::new(),
             fields: Vec::new(),
             methods: method_docs,
@@ -323,7 +315,11 @@ impl DocumentationExtractor {
             } else { 
                 summary 
             },
-            description: if description.is_empty() { None } else { Some(description) },
+            description: if description.is_empty() { 
+                Some(format!("CURSED interface declaration using the 'collab' keyword"))
+            } else { 
+                Some(description) 
+            },
             signature: Some(signature),
             parameters: Vec::new(),
             return_type: None,
@@ -341,28 +337,38 @@ impl DocumentationExtractor {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         let var_name = &var.name;
-        let signature = format!("{} {}", var.token.literal, var_name);
+        let keyword = if var.is_mutable { "sus" } else { "facts" };
+        let signature = format!("{} {}", keyword, var_name);
         
-        // Determine variable type
-        let var_type = var.value.as_ref().map(|v| self.infer_expression_type(v));
+        // Determine element type based on mutability
+        let element_type = if var.is_mutable {
+            ElementType::Variable
+        } else {
+            ElementType::Constant
+        };
         
         // Parse documentation comments
         let (summary, description, tags, examples) = self.comment_parser.parse_documentation_for_location(&location)?;
 
         Ok(DocElement {
             name: var_name.clone(),
-            element_type: ElementType::Variable,
+            element_type,
             visibility: Visibility::Private, // Variables are typically private unless exported
             module: module.to_string(),
             summary: if summary.is_empty() { 
-                format!("Variable {}", var_name) 
+                format!("{} {}", if var.is_mutable { "Variable" } else { "Constant" }, var_name) 
             } else { 
                 summary 
             },
-            description: if description.is_empty() { None } else { Some(description) },
+            description: if description.is_empty() { 
+                Some(format!("CURSED {} declaration using the '{}' keyword", 
+                           if var.is_mutable { "variable" } else { "constant" }, keyword))
+            } else { 
+                Some(description) 
+            },
             signature: Some(signature),
             parameters: Vec::new(),
-            return_type: var_type,
+            return_type: var.var_type.clone(),
             type_info: None,
             examples,
             tags,
@@ -374,31 +380,27 @@ impl DocumentationExtractor {
 
     /// Build function signature string
     fn build_function_signature(&self, func: &FunctionStatement) -> String {
+        use crate::ast::traits::Node;
+        
         let mut sig = String::new();
         
         // Add function keyword (slay in CURSED)
         sig.push_str("slay ");
         
         // Add function name
-        sig.push_str(&func.name);
+        sig.push_str(&func.name.value);
         
         // Add generic parameters if present
-        if !func.type_params.is_empty() {
+        if !func.type_parameters.is_empty() {
             sig.push('<');
-            let type_params: Vec<String> = func.type_params.iter().map(|p| p.name.clone()).collect();
+            let type_params: Vec<String> = func.type_parameters.iter().map(|p| p.name.clone()).collect();
             sig.push_str(&type_params.join(", "));
             sig.push('>');
         }
         
         // Add parameters
         sig.push('(');
-        let param_strs: Vec<String> = func.parameters.iter().map(|p| {
-            if let Some(type_hint) = &p.type_hint {
-                format!("{}: {}", p.name, type_hint.string())
-            } else {
-                p.name.clone()
-            }
-        }).collect();
+        let param_strs: Vec<String> = func.parameters.iter().map(|p| p.string()).collect();
         sig.push_str(&param_strs.join(", "));
         sig.push(')');
         
@@ -416,12 +418,12 @@ impl DocumentationExtractor {
         let mut sig = String::new();
         
         sig.push_str("squad ");
-        sig.push_str(&struct_stmt.name);
+        sig.push_str(&struct_stmt.name.value);
         
         // Add generic parameters if present
-        if !struct_stmt.type_params.is_empty() {
+        if !struct_stmt.type_parameters.is_empty() {
             sig.push('<');
-            let type_params: Vec<String> = struct_stmt.type_params.iter().map(|p| p.name.clone()).collect();
+            let type_params: Vec<String> = struct_stmt.type_parameters.iter().map(|p| p.name.clone()).collect();
             sig.push_str(&type_params.join(", "));
             sig.push('>');
         }
@@ -434,12 +436,12 @@ impl DocumentationExtractor {
         let mut sig = String::new();
         
         sig.push_str("collab ");
-        sig.push_str(&interface.name);
+        sig.push_str(&interface.name.value);
         
         // Add generic parameters if present
-        if !interface.type_params.is_empty() {
+        if !interface.type_parameters.is_empty() {
             sig.push('<');
-            let type_params: Vec<String> = interface.type_params.iter().map(|p| p.name.clone()).collect();
+            let type_params: Vec<String> = interface.type_parameters.iter().map(|p| p.name.clone()).collect();
             sig.push_str(&type_params.join(", "));
             sig.push('>');
         }
@@ -448,13 +450,15 @@ impl DocumentationExtractor {
     }
 
     /// Extract parameter documentation
-    fn extract_parameter_docs(&self, parameters: &[FunctionParameter]) -> Result<Vec<ParameterDoc>, Error> {
+    fn extract_parameter_docs(&self, parameters: &[crate::ast::expressions::Parameter]) -> Result<Vec<ParameterDoc>, Error> {
+        use crate::ast::traits::Node;
+        
         let mut param_docs = Vec::new();
         
         for param in parameters {
             let param_doc = ParameterDoc {
                 name: param.name.clone(),
-                param_type: param.type_hint.as_ref().map(|t| t.string()),
+                param_type: param.param_type.as_ref().map(|t| t.string()),
                 description: format!("Parameter {}", param.name), // Would be extracted from comments
                 default_value: param.default_value.as_ref().map(|v| v.string()),
                 is_optional: param.default_value.is_some(),
@@ -466,15 +470,15 @@ impl DocumentationExtractor {
     }
 
     /// Extract field documentation
-    fn extract_field_docs(&self, fields: &[FieldDefinition]) -> Result<Vec<FieldDoc>, Error> {
+    fn extract_field_docs(&self, fields: &[crate::ast::declarations::FieldStatement]) -> Result<Vec<FieldDoc>, Error> {
         let mut field_docs = Vec::new();
         
         for field in fields {
             let field_doc = FieldDoc {
-                name: field.name.clone(),
-                field_type: field.field_type.as_ref().map(|t| t.string()).unwrap_or_else(|| "unknown".to_string()),
-                description: format!("Field {}", field.name), // Would be extracted from comments
-                is_public: field.is_public,
+                name: field.name.value.clone(),
+                field_type: field.type_name.value.clone(),
+                description: format!("Field {}", field.name.value), // Would be extracted from comments
+                is_public: true, // Fields in CURSED structs are typically public
                 default_value: None, // Could be extracted if present
             };
             field_docs.push(field_doc);
@@ -484,14 +488,16 @@ impl DocumentationExtractor {
     }
 
     /// Extract method documentation
-    fn extract_method_docs(&self, methods: &[FunctionStatement]) -> Result<Vec<MethodDoc>, Error> {
+    fn extract_method_docs(&self, methods: &[crate::ast::declarations::MethodDeclaration]) -> Result<Vec<MethodDoc>, Error> {
+        use crate::ast::traits::Node;
+        
         let mut method_docs = Vec::new();
         
         for method in methods {
             let method_doc = MethodDoc {
-                name: method.name.clone(),
-                signature: self.build_function_signature(method),
-                description: format!("Method {}", method.name), // Would be extracted from comments
+                name: method.name.value.clone(),
+                signature: method.string(),
+                description: format!("Method {}", method.name.value), // Would be extracted from comments
                 parameters: self.extract_parameter_docs(&method.parameters)?,
                 return_type: method.return_type.as_ref().map(|t| t.string()),
                 is_static: false, // Would need to be determined from context

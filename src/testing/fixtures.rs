@@ -3,7 +3,7 @@
 /// Provides test data management, setup/teardown functionality,
 /// and reusable test components for CURSED tests.
 
-use super::{TestError, TestResult};
+use super::{TestError, TestResult as TestingResult};
 use super::framework::{TestFixture, TestValue};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -156,7 +156,7 @@ impl TestData {
     }
 
     /// Load test data from JSON file
-    pub fn from_json_file(path: &Path) -> TestResult<Self> {
+    pub fn from_json_file(path: &Path) -> TestingResult<Self> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| TestError::Io(format!("Failed to read test data file: {}", e)))?;
         
@@ -167,7 +167,7 @@ impl TestData {
     }
 
     /// Save test data to JSON file
-    pub fn to_json_file(&self, path: &Path) -> TestResult<()> {
+    pub fn to_json_file(&self, path: &Path) -> TestingResult<()> {
         let content = serde_json::to_string_pretty(self)
             .map_err(|e| TestError::General(format!("Failed to serialize test data: {}", e)))?;
         
@@ -217,7 +217,7 @@ impl FixtureManager {
     }
 
     /// Register a fixture
-    pub fn register_fixture(&mut self, name: String, fixture: Box<dyn TestFixture>) -> TestResult<()> {
+    pub fn register_fixture(&mut self, name: String, fixture: Box<dyn TestFixture>) -> TestingResult<()> {
         info!("Registering fixture: {}", name);
         self.fixtures.insert(name.clone(), fixture);
         self.active_fixtures.insert(name, false);
@@ -225,14 +225,14 @@ impl FixtureManager {
     }
 
     /// Register fixture dependencies
-    pub fn register_dependencies(&mut self, name: String, dependencies: Vec<String>) -> TestResult<()> {
+    pub fn register_dependencies(&mut self, name: String, dependencies: Vec<String>) -> TestingResult<()> {
         debug!("Registering dependencies for {}: {:?}", name, dependencies);
         self.dependencies.insert(name, dependencies);
         Ok(())
     }
 
     /// Setup all fixtures in dependency order
-    pub fn setup_all_fixtures(&mut self) -> TestResult<()> {
+    pub fn setup_all_fixtures(&mut self) -> TestingResult<()> {
         info!("Setting up all fixtures");
         
         let setup_order = self.calculate_setup_order()?;
@@ -246,7 +246,7 @@ impl FixtureManager {
     }
 
     /// Setup a specific fixture
-    pub fn setup_fixture(&mut self, name: &str) -> TestResult<()> {
+    pub fn setup_fixture(&mut self, name: &str) -> TestingResult<()> {
         if self.active_fixtures.get(name) == Some(&true) {
             debug!("Fixture {} already active", name);
             return Ok(());
@@ -274,7 +274,7 @@ impl FixtureManager {
     }
 
     /// Teardown all fixtures in reverse dependency order
-    pub fn teardown_all_fixtures(&mut self) -> TestResult<()> {
+    pub fn teardown_all_fixtures(&mut self) -> TestingResult<()> {
         info!("Tearing down all fixtures");
         
         let mut teardown_order = self.calculate_setup_order()?;
@@ -289,7 +289,7 @@ impl FixtureManager {
     }
 
     /// Teardown a specific fixture
-    pub fn teardown_fixture(&mut self, name: &str) -> TestResult<()> {
+    pub fn teardown_fixture(&mut self, name: &str) -> TestingResult<()> {
         if self.active_fixtures.get(name) == Some(&false) {
             debug!("Fixture {} already inactive", name);
             return Ok(());
@@ -309,7 +309,7 @@ impl FixtureManager {
     }
 
     /// Get fixture data
-    pub fn get_fixture_data(&self, name: &str) -> TestResult<HashMap<String, TestValue>> {
+    pub fn get_fixture_data(&self, name: &str) -> TestingResult<HashMap<String, TestValue>> {
         if let Some(fixture) = self.fixtures.get(name) {
             Ok(fixture.get_data())
         } else {
@@ -318,7 +318,7 @@ impl FixtureManager {
     }
 
     /// Calculate setup order based on dependencies
-    fn calculate_setup_order(&self) -> TestResult<Vec<String>> {
+    fn calculate_setup_order(&self) -> TestingResult<Vec<String>> {
         let mut visited = std::collections::HashSet::new();
         let mut temp_visited = std::collections::HashSet::new();
         let mut order = Vec::new();
@@ -339,7 +339,7 @@ impl FixtureManager {
         visited: &mut std::collections::HashSet<String>,
         temp_visited: &mut std::collections::HashSet<String>,
         order: &mut Vec<String>,
-    ) -> TestResult<()> {
+    ) -> TestingResult<()> {
         if temp_visited.contains(name) {
             return Err(TestError::Framework(format!("Circular dependency detected involving: {}", name)));
         }
@@ -391,7 +391,7 @@ impl DatabaseFixture {
 }
 
 impl TestFixture for DatabaseFixture {
-    fn setup(&mut self) -> TestResult<()> {
+    fn setup(&mut self) -> TestingResult<()> {
         info!("Setting up database fixture: {}", self.name);
         
         // Simulate database connection and setup
@@ -414,7 +414,7 @@ impl TestFixture for DatabaseFixture {
         Ok(())
     }
 
-    fn teardown(&mut self) -> TestResult<()> {
+    fn teardown(&mut self) -> TestingResult<()> {
         info!("Tearing down database fixture: {}", self.name);
         
         if self.connected {
@@ -451,7 +451,7 @@ impl FileSystemFixture {
     }
 
     /// Create a file with content
-    pub fn create_file(&mut self, relative_path: &str, content: &str) -> TestResult<PathBuf> {
+    pub fn create_file(&mut self, relative_path: &str, content: &str) -> TestingResult<PathBuf> {
         let temp_dir = self.temp_dir.as_ref()
             .ok_or_else(|| TestError::Framework("Fixture not setup".to_string()))?;
         
@@ -477,7 +477,7 @@ impl FileSystemFixture {
 }
 
 impl TestFixture for FileSystemFixture {
-    fn setup(&mut self) -> TestResult<()> {
+    fn setup(&mut self) -> TestingResult<()> {
         info!("Setting up filesystem fixture: {}", self.name);
         
         let temp_dir = tempfile::TempDir::new()
@@ -490,7 +490,7 @@ impl TestFixture for FileSystemFixture {
         Ok(())
     }
 
-    fn teardown(&mut self) -> TestResult<()> {
+    fn teardown(&mut self) -> TestingResult<()> {
         info!("Tearing down filesystem fixture: {}", self.name);
         
         self.created_paths.clear();
@@ -537,7 +537,7 @@ impl HttpServerFixture {
 }
 
 impl TestFixture for HttpServerFixture {
-    fn setup(&mut self) -> TestResult<()> {
+    fn setup(&mut self) -> TestingResult<()> {
         info!("Setting up HTTP server fixture: {} on port {}", self.name, self.port);
         
         // Simulate server startup
@@ -551,7 +551,7 @@ impl TestFixture for HttpServerFixture {
         Ok(())
     }
 
-    fn teardown(&mut self) -> TestResult<()> {
+    fn teardown(&mut self) -> TestingResult<()> {
         info!("Tearing down HTTP server fixture: {}", self.name);
         
         if self.server_running {
@@ -587,7 +587,7 @@ impl MemoryFixture {
     }
 
     /// Store a value in memory
-    pub fn store(&self, key: String, value: TestValue) -> TestResult<()> {
+    pub fn store(&self, key: String, value: TestValue) -> TestingResult<()> {
         if let Ok(mut store) = self.data_store.lock() {
             store.insert(key, value);
             Ok(())
@@ -597,7 +597,7 @@ impl MemoryFixture {
     }
 
     /// Retrieve a value from memory
-    pub fn retrieve(&self, key: &str) -> TestResult<Option<TestValue>> {
+    pub fn retrieve(&self, key: &str) -> TestingResult<Option<TestValue>> {
         if let Ok(store) = self.data_store.lock() {
             Ok(store.get(key).cloned())
         } else {
@@ -607,14 +607,14 @@ impl MemoryFixture {
 }
 
 impl TestFixture for MemoryFixture {
-    fn setup(&mut self) -> TestResult<()> {
+    fn setup(&mut self) -> TestingResult<()> {
         info!("Setting up memory fixture: {}", self.name);
         
         self.data.insert("status".to_string(), TestValue::String("initialized".to_string()));
         Ok(())
     }
 
-    fn teardown(&mut self) -> TestResult<()> {
+    fn teardown(&mut self) -> TestingResult<()> {
         info!("Tearing down memory fixture: {}", self.name);
         
         if let Ok(mut store) = self.data_store.lock() {

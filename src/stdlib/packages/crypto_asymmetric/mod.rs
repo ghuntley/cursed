@@ -19,6 +19,7 @@ pub mod key_agreement;
 pub mod asymmetric;
 pub mod key_validation;
 pub mod hardware_acceleration;
+pub mod key_formats;
 
 // Core functionality exports
 pub use key_generator::{KeyGenerator, AsymmetricAlgorithm, GeneratedKeyPair, KeyGeneratorError};
@@ -63,6 +64,9 @@ pub use key_validation::{validate_key, validate_key_pair, validate_key_strength}
 pub use hardware_acceleration::{
     check_hardware_support, has_cpu_feature, get_available_hsms, refresh_hardware_detection,
     get_hardware_detector
+};
+pub use key_formats::{
+    convert_public_key_format_enhanced, convert_private_key_format_enhanced
 };
 
 use crate::error::CursedError;

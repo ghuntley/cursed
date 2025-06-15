@@ -750,10 +750,10 @@ impl ProductionSqliteTransaction {
         {
             let handle = connection.lock().unwrap();
             if let Some(ref conn) = *handle {
-                let isolation_sql = match options.isolation_level {
-                    Some(SqlIsolationLevel::LevelReadUncommitted) => "BEGIN IMMEDIATE",
-                    Some(SqlIsolationLevel::LevelReadCommitted) => "BEGIN IMMEDIATE",
-                    Some(SqlIsolationLevel::LevelSerializable) => "BEGIN EXCLUSIVE",
+                let isolation_sql = match options.isolation {
+                    SqlIsolationLevel::LevelReadUncommitted => "BEGIN IMMEDIATE",
+                    SqlIsolationLevel::LevelReadCommitted => "BEGIN IMMEDIATE",
+                    SqlIsolationLevel::LevelSerializable => "BEGIN EXCLUSIVE",
                     _ => "BEGIN",
                 };
                 
@@ -941,9 +941,16 @@ fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusq
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
             SqlValue::String(s) => params.push(Box::new(s.clone()) as Box<dyn rusqlite::ToSql>),
             SqlValue::Bytes(b) => params.push(Box::new(b.clone()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Date(d) => params.push(Box::new(d.to_string()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Time(t) => params.push(Box::new(t.to_string()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::DateTime(dt) => params.push(Box::new(dt.to_string()) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Timestamp(ts) => {
+                // Convert SystemTime to ISO string representation
+                let timestamp_str = format!("{:?}", ts);
+                params.push(Box::new(timestamp_str) as Box<dyn rusqlite::ToSql>);
+            },
+            SqlValue::Json(j) => {
+                // Convert JSON to string representation
+                let json_str = j.to_string();
+                params.push(Box::new(json_str) as Box<dyn rusqlite::ToSql>);
+            },
             _ => return Err(DatabaseError::new(
                 DatabaseErrorKind::ConversionError,
                 &format!("Unsupported SqlValue type for SQLite: {:?}", arg)

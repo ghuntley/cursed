@@ -49,7 +49,13 @@ impl Parser {
     pub fn parse_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         match &self.current_token.token_type {
             TokenType::Sus | TokenType::Facts => self.parse_variable_declaration(),
-            TokenType::Slay => self.parse_function_declaration(),
+            TokenType::Slay => {
+                if self.peek_token_is(&TokenType::Async) {
+                    self.parse_async_function()
+                } else {
+                    self.parse_function_declaration()
+                }
+            },
             TokenType::Squad => self.parse_struct_declaration(),
             TokenType::Collab => self.parse_interface_declaration(),
             TokenType::BeLike => self.parse_type_alias(),

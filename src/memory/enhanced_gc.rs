@@ -97,6 +97,18 @@ pub struct EnhancedGcStats {
 }
 
 impl EnhancedGarbageCollector {
+    /// Allocate a new object with enhanced garbage collection
+    /// 
+    /// This is the main allocation interface for the enhanced GC system.
+    /// It uses real heap management when available, falling back to legacy
+    /// allocation when needed.
+    #[instrument(skip(self, obj))]
+    pub fn allocate<T>(&self, obj: T) -> Result<Gc<T>, String>
+    where
+        T: Storable,
+    {
+        self.allocate_real(obj)
+    }
     /// Convert this enhanced GC to a standard GC
     /// 
     /// This is a convenience method that performs the same conversion as `Into<GarbageCollector>`,
@@ -241,9 +253,45 @@ impl EnhancedGarbageCollector {
     where
         T: Storable,
     {
-        // For now, always use legacy allocation until full integration is complete
-        // This maintains compatibility with the existing Gc<T> and ObjectStore system
-        return self.allocate_legacy(obj);
+        debug!("Allocating object of type {} using enhanced heap management", std::any::type_name::<T>());
+        
+        if self.use_real_heap {
+            self.allocate_with_real_heap(obj)
+        } else {
+            self.allocate_legacy(obj)
+        }
+    }
+    
+    /// Allocate using real heap manager
+    fn allocate_with_real_heap<T>(&self, obj: T) -> Result<Gc<T>, String>
+    where
+        T: Storable,
+    {
+        let type_name = obj.type_name();
+        let size = obj.object_size();
+        
+        debug!("Real heap allocation: {} bytes for {}", size, type_name);
+        
+        // Use real heap manager for allocation
+        let (object_id, ptr) = self.real_heap_manager.allocate(size, std::mem::align_of::<T>(), type_name)?;
+        
+        // Write object to allocated memory
+        unsafe {
+            let typed_ptr = ptr.as_ptr() as *mut T;
+            typed_ptr.write(obj);
+        }
+        
+        // Create object handle through object store
+        let handle = self.create_object_handle(object_id, ptr.cast(), size, type_name)?;
+        
+        // Create Gc<T> using the public constructor
+        let gc_ptr = Gc::from_object_handle(handle, Arc::downgrade(&self.object_store));
+        
+        // Notify allocation for pressure tracking
+        self.notify_allocation_enhanced(size);
+        
+        debug!("Successfully allocated object {} using real heap at {:p}", object_id, ptr.as_ptr());
+        Ok(gc_ptr)
     }
     
     /// Legacy allocation for compatibility
@@ -253,9 +301,42 @@ impl EnhancedGarbageCollector {
     {
         debug!("Allocating object of type {} using legacy heap", std::any::type_name::<T>());
         
-        // For now, enhanced allocation is not implemented
-        // TODO: Create proper Gc constructor that doesn't require private method
-        Err("Enhanced GC allocation not yet implemented - use regular GC for now".to_string())
+        // Use legacy heap manager through object store
+        let handle = self.object_store.store(obj)?;
+        let gc_ptr = Gc::from_object_handle(handle, Arc::downgrade(&self.object_store));
+        
+        // Notify allocation for pressure tracking
+        self.notify_allocation_enhanced(obj.object_size());
+        
+        debug!("Successfully allocated object {} using legacy heap", gc_ptr.object_id());
+        Ok(gc_ptr)
+    }
+    
+    /// Create an object handle for an allocated object
+    fn create_object_handle<T: Storable>(
+        &self, 
+        object_id: ObjectId, 
+        ptr: NonNull<T>, 
+        size: usize, 
+        type_name: &str
+    ) -> Result<ObjectHandle<T>, String> {
+        use crate::memory::object_store::ObjectHandle;
+        use std::marker::PhantomData;
+        
+        // Register object in the registry
+        let metadata = crate::memory::object_id::ObjectMetadata::new(
+            object_id,
+            size,
+            type_name.to_string()
+        );
+        
+        if let Err(e) = self.object_registry.register(metadata) {
+            warn!("Failed to register object in registry: {}", e);
+        }
+        
+        // Create handle (note: this is a simplified approach)
+        // In a full implementation, this would go through the ObjectStore
+        Ok(ObjectHandle::new_external(object_id, ptr, Arc::downgrade(&self.object_store)))
     }
     
     /// Enhanced collection with real heap integration

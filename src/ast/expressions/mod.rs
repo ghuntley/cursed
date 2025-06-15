@@ -14,6 +14,7 @@ pub mod error_propagation_enhanced;
 pub mod block;
 pub mod type_assertion;
 pub mod type_assertion_question;
+pub mod await_expression;
 
 // Re-export commonly used expression types
 pub use question_mark::QuestionMarkExpression;
@@ -28,3 +29,4 @@ pub use error_propagation_enhanced::ErrorPropagation as EnhancedErrorPropagation
 pub use block::BlockExpression;
 pub use type_assertion::TypeAssertion;
 pub use type_assertion_question::TypeAssertionQuestion;
+pub use await_expression::{AwaitExpression, AwaitAssignment, AsyncBlockExpression};

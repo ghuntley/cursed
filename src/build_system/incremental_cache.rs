@@ -189,7 +189,7 @@ impl IncrementalCache {
             outputs,
             artifacts,
             files_count,
-            profile: "default".to_string(), // TODO: Get actual profile from build context
+            profile: self.get_current_build_profile(),
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
         };
         
@@ -330,6 +330,151 @@ impl IncrementalCache {
         Ok(())
     }
     
+    /// Get current build profile from environment or context
+    fn get_current_build_profile(&self) -> String {
+        // Try to get profile from environment variable
+        if let Ok(profile) = std::env::var("CURSED_BUILD_PROFILE") {
+            return profile;
+        }
+        
+        // Check for common profile indicators
+        if std::env::var("CARGO_CFG_DEBUG_ASSERTIONS").is_ok() {
+            return "debug".to_string();
+        }
+        
+        // Try to detect from build flags
+        if let Ok(flags) = std::env::var("RUSTFLAGS") {
+            if flags.contains("-O") || flags.contains("--opt-level") {
+                return "release".to_string();
+            }
+        }
+        
+        // Check Cargo profile from environment
+        if let Ok(cargo_profile) = std::env::var("CARGO_PROFILE") {
+            return cargo_profile;
+        }
+        
+        // Default fallback
+        "dev".to_string()
+    }
+    
+    /// Validate cache entry against current build context
+    pub fn validate_cache_entry(&self, entry: &CacheEntry) -> bool {
+        let current_profile = self.get_current_build_profile();
+        
+        // Check if profile matches
+        if entry.profile != current_profile {
+            debug!("Cache entry profile mismatch: {} != {}", entry.profile, current_profile);
+            return false;
+        }
+        
+        // Check compiler version compatibility
+        let current_version = env!("CARGO_PKG_VERSION");
+        if entry.compiler_version != current_version {
+            debug!("Cache entry compiler version mismatch: {} != {}", entry.compiler_version, current_version);
+            return false;
+        }
+        
+        // Check if source files still exist and haven't changed
+        for (source_path, cached_checksum) in &entry.source_checksums {
+            if !source_path.exists() {
+                debug!("Source file no longer exists: {}", source_path.display());
+                return false;
+            }
+            
+            match calculate_file_checksum(source_path) {
+                Ok(current_checksum) => {
+                    if &current_checksum != cached_checksum {
+                        debug!("Source file checksum changed: {}", source_path.display());
+                        return false;
+                    }
+                }
+                Err(_) => {
+                    debug!("Failed to calculate checksum for: {}", source_path.display());
+                    return false;
+                }
+            }
+        }
+        
+        true
+    }
+    
+    /// Enhanced cache invalidation with dependency tracking
+    pub fn invalidate_dependents(&mut self, changed_files: &[PathBuf]) -> Result<usize, CacheError> {
+        let mut invalidated = 0;
+        let mut to_invalidate = Vec::new();
+        
+        // Build dependency graph
+        let mut dependency_graph: HashMap<String, Vec<String>> = HashMap::new();
+        for (target_name, entry) in &self.entries {
+            let mut deps = Vec::new();
+            
+            // Add source file dependencies
+            for source_path in entry.source_checksums.keys() {
+                if let Some(path_str) = source_path.to_str() {
+                    deps.push(path_str.to_string());
+                }
+            }
+            
+            // Add explicit dependencies from metadata
+            for dep in entry.dependency_checksums.keys() {
+                deps.push(dep.clone());
+            }
+            
+            dependency_graph.insert(target_name.clone(), deps);
+        }
+        
+        // Find targets affected by changed files
+        for changed_file in changed_files {
+            let changed_file_str = changed_file.to_string_lossy().to_string();
+            
+            // Direct dependencies
+            for (target_name, entry) in &self.entries {
+                for source_path in entry.source_checksums.keys() {
+                    if source_path == changed_file {
+                        to_invalidate.push(target_name.clone());
+                        break;
+                    }
+                }
+            }
+            
+            // Transitive dependencies
+            self.find_transitive_dependents(&changed_file_str, &dependency_graph, &mut to_invalidate);
+        }
+        
+        // Remove invalidated entries
+        for target_name in to_invalidate {
+            if self.entries.remove(&target_name).is_some() {
+                invalidated += 1;
+                info!("Invalidated cache entry for target: {}", target_name);
+            }
+        }
+        
+        if invalidated > 0 {
+            self.metadata.entry_count = self.entries.len();
+            self.save_to_disk()?;
+        }
+        
+        Ok(invalidated)
+    }
+    
+    /// Find targets transitively dependent on a changed file
+    fn find_transitive_dependents(
+        &self,
+        changed_file: &str,
+        dependency_graph: &HashMap<String, Vec<String>>,
+        to_invalidate: &mut Vec<String>,
+    ) {
+        for (target_name, dependencies) in dependency_graph {
+            if dependencies.contains(&changed_file.to_string()) && !to_invalidate.contains(target_name) {
+                to_invalidate.push(target_name.clone());
+                
+                // Recursively find dependents of this target
+                self.find_transitive_dependents(target_name, dependency_graph, to_invalidate);
+            }
+        }
+    }
+
     /// Get cache statistics
     pub fn get_statistics(&self) -> CacheStatistics {
         // Calculate hit rate based on cache lookups vs hits

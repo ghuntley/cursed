@@ -1,360 +1,411 @@
 // CURSED IPC Comprehensive Demo
-// Showcases all Inter-Process Communication features in CURSED
+// Demonstrates all Inter-Process Communication features
 
-import "stdlib::ipc"
-import "stdlib::sync"  
-import "stdlib::io"
+import "stdlib::ipc";
+import "stdlib::sync";
+import "stdlib::io";
 
-// Named Pipes Demo with Gen Z slang
-slay demo_named_pipes() -> Result<(), IpcError> {
-    println("🔧 Starting named pipes demo...")?;
-    
-    // Create a named pipe with CURSED vibes
-    sus pipe_config = PipeConfig::new("/tmp/cursed_pipe")
-        .with_mode(PipeMode::ReadWrite)
-        .with_buffer_size(8192)
-        .with_timeout(Duration::from_secs(10));
-    
-    // Create the pipe - this is bussin fr
-    sus pipe = NamedPipe::create(pipe_config)?;
-    
-    // Write some Gen Z content
-    pipe.write("no cap this IPC is fire 🔥")?;
-    pipe.write("periodt on god")?;
-    
-    // Read it back
-    sus response = pipe.read_string()?;
-    println("📨 Received: {}", response)?;
-    
-    Ok(())
-}
-
-// Shared Memory Demo - sharing is caring bestie
-slay demo_shared_memory() -> Result<(), IpcError> {
-    println("💾 Starting shared memory demo...")?;
-    
-    // Configure shared memory with that CURSED energy
-    sus shm_config = SharedMemoryConfig::new("cursed_shared", 4096)
-        .with_permissions(IpcPermissions::read_write())
-        .with_remove_on_drop();
-    
-    // Create shared memory region
-    sus mut shm = SharedMemory::create(shm_config)?;
-    shm.map()?;
-    
-    // Write some data that's absolutely sending me
-    sus data = b"shared memory hits different fr fr";
-    shm.write_bytes(0, data)?;
-    
-    // Read it back to confirm it's not cap
-    sus read_data = shm.read_bytes(0, data.len())?;
-    println("📊 Shared data: {}", String::from_utf8_lossy(&read_data))?;
-    
-    // Get statistics because we love the metrics
-    sus stats = shm.get_statistics();
-    println("📈 Bytes written: {}, Bytes read: {}", 
-           stats.bytes_written, stats.bytes_read)?;
-    
-    Ok(())
-}
-
-// Unix Domain Sockets Demo - local networking that slaps
-slay demo_domain_sockets() -> Result<(), IpcError> {
-    println("🔌 Starting domain sockets demo...")?;
-    
-    // Create socket config that's chef's kiss
-    sus socket_config = SocketConfig::new("/tmp/cursed_socket", SocketType::Stream)
-        .with_buffer_size(4096)
-        .with_timeout(Duration::from_secs(5));
-    
-    // Create the socket listener
-    sus listener = DomainSocket::bind(socket_config)?;
-    
-    // Start listening - we're so ready for connections
-    listener.listen(5)?;
-    
-    // In a real scenario, another process would connect
-    // For demo purposes, we'll simulate with threading
-    sus handle = std::thread::spawn(|| {
-        sus client_config = SocketConfig::new("/tmp/cursed_socket", SocketType::Stream);
-        if sus mut client = DomainSocket::connect(client_config).ok() {
-            client.write(b"socket communication is immaculate")?;
-        }
-        Ok::<(), IpcError>(())
-    });
-    
-    // Accept connection and receive data
-    if sus connection = listener.accept().ok() {
-        sus mut buffer = vec![0u8; 1024];
-        sus bytes_read = connection.read(&mut buffer)?;
-        sus message = String::from_utf8_lossy(&buffer[..bytes_read]);
-        println("🔗 Socket received: {}", message)?;
-    }
-    
-    handle.join().unwrap()?;
-    Ok(())
-}
-
-// Message Queue Demo - async messaging that's clean
-slay demo_message_queues() -> Result<(), IpcError> {
-    println("📬 Starting message queue demo...")?;
-    
-    // Create message queue config
-    sus mq_config = MessageQueueConfig::new("cursed_messages", 10)
-        .with_max_message_size(1024);
-    
-    // Create the queue
-    sus mq = MessageQueue::create(mq_config)?;
-    
-    // Send some messages with different priorities
-    sus high_priority_msg = Message::new("urgent: deploy is broken", MessagePriority::High)?;
-    sus normal_msg = Message::new("just vibing with some data", MessagePriority::Normal)?;
-    sus low_priority_msg = Message::new("background task update", MessagePriority::Low)?;
-    
-    mq.send(high_priority_msg)?;
-    mq.send(normal_msg)?;
-    mq.send(low_priority_msg)?;
-    
-    // Receive messages (should be in priority order)
-    periodt (mq.has_messages()) {
-        sus msg = mq.receive()?;
-        println("📨 Message: {} (Priority: {:?})", 
-               msg.content(), msg.priority())?;
-    }
-    
-    Ok(())
-}
-
-// Semaphore Demo - coordination that's synchronized
-slay demo_semaphores() -> Result<(), IpcError> {
-    println("🚦 Starting semaphore demo...")?;
-    
-    // Create semaphore for resource coordination
-    sus sem_config = SemaphoreConfig::new("cursed_semaphore", 3);
-    sus semaphore = Semaphore::create(sem_config)?;
-    
-    println("🔒 Initial semaphore value: {}", semaphore.get_value()?)?;
-    
-    // Acquire resources
-    semaphore.acquire()?;
-    println("🔒 After acquire: {}", semaphore.get_value()?)?;
-    
-    semaphore.acquire()?;
-    println("🔒 After second acquire: {}", semaphore.get_value()?)?;
-    
-    // Release a resource
-    semaphore.release()?;
-    println("🔓 After release: {}", semaphore.get_value()?)?;
-    
-    // Try acquire with timeout
-    sus acquired = semaphore.try_acquire_timeout(Duration::from_millis(100))?;
-    println("🔒 Timeout acquire result: {}", acquired)?;
-    
-    Ok(())
-}
-
-// Signal Demo - process communication through signals
-slay demo_signals() -> Result<(), IpcError> {
-    println("📡 Starting signal demo...")?;
-    
-    // Create signal handler
-    sus handler = SignalHandler::new()?;
-    
-    // Register custom signal handler
-    handler.register(Signal::SIGUSR1, |signal| {
-        println("📡 Received custom signal: {:?}", signal);
-        Ok(())
-    })?;
-    
-    // Block certain signals
-    handler.block_signal(Signal::SIGTERM)?;
-    
-    // In a real scenario, another process would send signals
-    // For demo, we'll show the registration worked
-    println("📡 Signal handlers registered successfully")?;
-    
-    // Check if any signals are pending
-    sus pending = handler.signal_pending(Signal::SIGUSR1)?;
-    println("📡 SIGUSR1 pending: {}", pending)?;
-    
-    Ok(())
-}
-
-// Memory-mapped file demo - persistent shared data
-slay demo_memory_mapped_files() -> Result<(), IpcError> {
-    println("🗺️ Starting memory-mapped file demo...")?;
-    
-    // Create a file for memory mapping
-    sus file_path = "/tmp/cursed_mapped_file.dat";
-    sus mut file = std::fs::File::create(file_path)?;
-    
-    // Write initial data
-    sus initial_data = b"memory mapped files are absolutely sending me";
-    file.write_all(initial_data)?;
-    file.sync_all()?;
-    
-    // Create memory mapping config
-    sus mapping_config = SharedMemoryConfig::new("file_mapping", initial_data.len())
-        .with_file_backing(file_path)
-        .with_permissions(IpcPermissions::read_write());
-    
-    // Create memory mapping
-    sus mut mapping = SharedMemory::create_file_mapping(mapping_config)?;
-    mapping.map()?;
-    
-    // Read the mapped data
-    sus mapped_data = mapping.read_bytes(0, initial_data.len())?;
-    println("🗺️ Mapped file content: {}", String::from_utf8_lossy(&mapped_data))?;
-    
-    // Modify through mapping
-    sus new_data = b"modified through memory mapping - this is iconic";
-    mapping.write_bytes(0, new_data)?;
-    mapping.sync()?;
-    
-    // Verify persistence
-    sus file_content = std::fs::read(file_path)?;
-    println("🗺️ File after mapping update: {}", String::from_utf8_lossy(&file_content))?;
-    
-    // Clean up
-    std::fs::remove_file(file_path).ok();
-    
-    Ok(())
-}
-
-// Advanced IPC patterns demo
-slay demo_advanced_patterns() -> Result<(), IpcError> {
-    println("🚀 Starting advanced IPC patterns demo...")?;
-    
-    // Producer-Consumer pattern with shared ring buffer
-    println("🔄 Producer-Consumer pattern...")?;
-    
-    sus ring_config = SharedMemoryConfig::new("ring_buffer", 8192)
-        .with_remove_on_drop();
-    sus mut ring_shm = SharedMemory::create(ring_config)?;
-    ring_shm.map()?;
-    
-    // Create synchronization primitives
-    sus producer_sem = Semaphore::create(SemaphoreConfig::new("producer_sem", 10))?;
-    sus consumer_sem = Semaphore::create(SemaphoreConfig::new("consumer_sem", 0))?;
-    
-    // Simulate producer
-    lowkey (sus i = 0; i < 5; i++) {
-        producer_sem.acquire()?;
-        sus data = format!("item_{}", i);
-        ring_shm.write_string(i * 100, &data)?;
-        consumer_sem.release()?;
-        println("📦 Produced: {}", data)?;
-    }
-    
-    // Simulate consumer
-    lowkey (sus i = 0; i < 5; i++) {
-        consumer_sem.acquire()?;
-        sus data = ring_shm.read_string(i * 100, 20)?;
-        producer_sem.release()?;
-        println("📥 Consumed: {}", data)?;
-    }
-    
-    Ok(())
-}
-
-// RPC Demo - remote procedure calls that hit different
-slay demo_rpc() -> Result<(), IpcError> {
-    println("🌐 Starting RPC demo...")?;
-    
-    // Create RPC server config
-    sus server_config = RpcConfig::new("cursed_rpc_server")
-        .with_transport(RpcTransport::UnixSocket("/tmp/cursed_rpc"));
-    
-    // Create RPC server
-    sus mut server = RpcServer::create(server_config)?;
-    
-    // Register RPC methods
-    server.register_method("calculate_vibes", |params| {
-        // Parse parameters and calculate result
-        sus x: i32 = params.get("x").and_then(|v| v.as_i32()).unwrap_or(0);
-        sus y: i32 = params.get("y").and_then(|v| v.as_i32()).unwrap_or(0);
-        sus result = x + y;
-        Ok(format!("vibes calculated: {} + {} = {} (that's bussin)", x, y, result))
-    })?;
-    
-    server.register_method("get_status", |_params| {
-        Ok("server is absolutely thriving fr".to_string())
-    })?;
-    
-    // Start server in background
-    sus server_handle = server.start_async()?;
-    
-    // Create RPC client
-    sus client_config = RpcConfig::new("cursed_rpc_client")
-        .with_transport(RpcTransport::UnixSocket("/tmp/cursed_rpc"));
-    
-    sus client = RpcClient::connect(client_config)?;
-    
-    // Make RPC calls
-    sus calc_params = vec![("x", "42"), ("y", "58")];
-    sus calc_result = client.call("calculate_vibes", calc_params)?;
-    println("🧮 RPC result: {}", calc_result)?;
-    
-    sus status_result = client.call("get_status", vec![])?;
-    println("📊 Server status: {}", status_result)?;
-    
-    // Clean up
-    server.stop()?;
-    
-    Ok(())
-}
-
-// Main demo function that runs all examples
-slay main() -> Result<(), IpcError> {
-    println("🎉 CURSED IPC Comprehensive Demo - Let's get this bag!")?;
-    println("=" * 60)?;
+// Main IPC demonstration
+slay main() {
+    println("🔗 CURSED IPC Comprehensive Demo");
+    println("================================");
     
     // Initialize IPC subsystem
     ipc::initialize()?;
     
-    // Run all demos
+    // Demonstrate all IPC mechanisms
     demo_named_pipes()?;
-    println("✅ Named pipes demo completed\n")?;
-    
     demo_shared_memory()?;
-    println("✅ Shared memory demo completed\n")?;
-    
-    demo_domain_sockets()?;
-    println("✅ Domain sockets demo completed\n")?;
-    
     demo_message_queues()?;
-    println("✅ Message queues demo completed\n")?;
-    
     demo_semaphores()?;
-    println("✅ Semaphores demo completed\n")?;
+    demo_barriers()?;
+    demo_rwlock_timeout()?;
+    demo_condition_variables()?;
+    demo_unix_sockets()?;
+    demo_signal_handling()?;
+    demo_rpc_system()?;
+    demo_distributed_coordination()?;
+    demo_performance_monitoring()?;
     
-    demo_signals()?;
-    println("✅ Signals demo completed\n")?;
+    // Show final statistics
+    facts stats = ipc::get_statistics()?;
+    println("\n📊 Final IPC Statistics:");
+    println("  Active pipes: {}", stats.active_pipes);
+    println("  Active sockets: {}", stats.active_sockets);
+    println("  Active shared memory: {}", stats.active_shared_memory);
+    println("  Active message queues: {}", stats.active_message_queues);
+    println("  Total operations: {}", stats.total_operations);
     
-    demo_memory_mapped_files()?;
-    println("✅ Memory-mapped files demo completed\n")?;
-    
-    demo_advanced_patterns()?;
-    println("✅ Advanced patterns demo completed\n")?;
-    
-    demo_rpc()?;
-    println("✅ RPC demo completed\n")?;
-    
-    // Get final statistics
-    sus stats = ipc::get_ipc_statistics();
-    println("📊 Final IPC Statistics:")?;
-    println("   - Shared memory regions: {}", stats.active_shared_memory_regions)?;
-    println("   - Active pipes: {}", stats.active_pipes)?;
-    println("   - Message queues: {}", stats.active_message_queues)?;
-    println("   - Semaphores: {}", stats.active_semaphores)?;
-    println("   - Domain sockets: {}", stats.active_sockets)?;
-    println("   - RPC connections: {}", stats.active_rpc_connections)?;
-    println("   - Total memory usage: {} bytes", stats.total_memory_usage)?;
-    
-    // Shutdown IPC subsystem
+    // Cleanup
     ipc::shutdown()?;
+    println("\n✅ Demo completed successfully!");
     
-    println("🎊 All IPC demos completed successfully! That was absolutely iconic!")?;
+    yolo;
+}
+
+// Demonstrate named pipes
+slay demo_named_pipes() {
+    println("\n🚰 Named Pipes Demo");
+    println("==================");
     
-    Ok(())
+    facts pipe_path = "/tmp/cursed_demo_pipe";
+    
+    // Create pipe with custom configuration
+    facts config = ipc::PipeConfig::new(pipe_path)
+        .with_mode(ipc::PipeMode::ReadWrite)
+        .with_buffer_size(8192)
+        .with_timeout(Duration::from_secs(5));
+    
+    facts pipe = ipc::NamedPipe::create_with_config(config)?;
+    println("✓ Created named pipe: {}", pipe_path);
+    
+    // Write test data
+    facts test_data = b"Hello from CURSED named pipe!";
+    pipe.write(test_data)?;
+    println("✓ Wrote {} bytes to pipe", test_data.len());
+    
+    // Read back data
+    facts read_data = pipe.read()?;
+    println("✓ Read {} bytes from pipe", read_data.len());
+    
+    // Cleanup
+    ipc::remove_named_pipe(pipe_path)?;
+    println("✓ Cleaned up named pipe");
+}
+
+// Demonstrate shared memory
+slay demo_shared_memory() {
+    println("\n🧠 Shared Memory Demo");
+    println("====================");
+    
+    facts shm_name = "cursed_demo_shm";
+    facts shm_size = 4096;
+    
+    // Create shared memory with configuration
+    facts config = ipc::MemoryConfig::new(shm_name, shm_size)
+        .with_access(ipc::MemoryAccess::ReadWrite);
+    
+    sus mut shm = ipc::SharedMemory::create_with_config(config)?;
+    println("✓ Created shared memory: {} ({} bytes)", shm_name, shm_size);
+    
+    // Map memory
+    shm.map()?;
+    println("✓ Mapped shared memory");
+    
+    // Write test data
+    facts test_message = "CURSED shared memory works!";
+    shm.write_at(0, test_message.as_bytes())?;
+    println("✓ Wrote message to shared memory");
+    
+    // Read back data
+    facts read_data = shm.read_at(0, test_message.len())?;
+    facts read_message = String::from_utf8(read_data)?;
+    println("✓ Read message: '{}'", read_message);
+    
+    // Create memory view
+    facts view = shm.view(0, test_message.len())?;
+    println("✓ Created memory view (offset: {}, size: {})", view.offset(), view.size());
+    
+    // Cleanup
+    shm.unmap()?;
+    ipc::remove_shared_memory(shm_name)?;
+    println("✓ Cleaned up shared memory");
+}
+
+// Demonstrate message queues
+slay demo_message_queues() {
+    println("\n📬 Message Queues Demo");
+    println("=====================");
+    
+    facts queue_name = "cursed_demo_queue";
+    facts config = ipc::QueueConfig::new(queue_name, 100);
+    
+    facts queue = ipc::MessageQueue::create_with_config(config)?;
+    println("✓ Created message queue: {}", queue_name);
+    
+    // Send different types of messages
+    facts messages = [
+        ipc::Message::new(ipc::MessageType::Text, b"Hello World".to_vec()),
+        ipc::Message::new(ipc::MessageType::Binary, vec![1, 2, 3, 4, 5]),
+        ipc::Message::new(ipc::MessageType::Structured, b"{'key': 'value'}".to_vec()),
+    ];
+    
+    lowkey (sus i = 0; i < messages.len(); i++) {
+        queue.send(messages[i].clone())?;
+        println("✓ Sent message {} (type: {:?})", i + 1, messages[i].message_type());
+    }
+    
+    // Receive messages
+    lowkey (sus i = 0; i < messages.len(); i++) {
+        facts received = queue.receive()?;
+        println("✓ Received message {} (type: {:?}, size: {} bytes)", 
+                i + 1, received.message_type(), received.data().len());
+    }
+    
+    // Show queue statistics
+    facts stats = queue.statistics();
+    println("✓ Queue stats - Sent: {}, Received: {}", stats.total_sent, stats.total_received);
+}
+
+// Demonstrate semaphores
+slay demo_semaphores() {
+    println("\n🚦 Semaphores Demo");
+    println("=================");
+    
+    // Binary semaphore
+    facts binary_sem = ipc::create_binary_semaphore()?;
+    println("✓ Created binary semaphore (value: {})", binary_sem.value()?);
+    
+    binary_sem.wait()?;
+    println("✓ Acquired binary semaphore (value: {})", binary_sem.value()?);
+    
+    binary_sem.post()?;
+    println("✓ Released binary semaphore (value: {})", binary_sem.value()?);
+    
+    // Counting semaphore
+    facts counting_sem = ipc::create_counting_semaphore(5, 10)?;
+    println("✓ Created counting semaphore (value: {})", counting_sem.value()?);
+    
+    lowkey (sus i = 0; i < 3; i++) {
+        counting_sem.wait()?;
+    }
+    println("✓ Acquired 3 permits (value: {})", counting_sem.value()?);
+    
+    lowkey (sus i = 0; i < 3; i++) {
+        counting_sem.post()?;
+    }
+    println("✓ Released 3 permits (value: {})", counting_sem.value()?);
+    
+    // Named semaphore
+    facts named_sem = ipc::create_named_semaphore("demo_semaphore", 2)?;
+    println("✓ Created named semaphore (value: {})", named_sem.value()?);
+    
+    facts sem_stats = named_sem.statistics();
+    println("✓ Semaphore stats - Waits: {}, Posts: {}", sem_stats.total_waits, sem_stats.total_posts);
+}
+
+// Demonstrate barriers
+slay demo_barriers() {
+    println("\n🚧 Barriers Demo");
+    println("===============");
+    
+    facts thread_count = 3;
+    facts barrier = ipc::create_barrier(thread_count)?;
+    println("✓ Created barrier for {} threads", thread_count);
+    
+    // In a real scenario, you'd spawn threads here
+    // For demo purposes, we'll simulate with a single thread
+    facts is_leader = barrier.wait()?;
+    println("✓ Reached barrier (leader: {})", is_leader);
+    
+    facts stats = barrier.statistics();
+    println("✓ Barrier stats - Completions: {}, Generation: {}", 
+            stats.total_completions, stats.generation);
+    
+    // Reset barrier
+    barrier.reset()?;
+    println("✓ Reset barrier");
+}
+
+// Demonstrate RwLock with timeout
+slay demo_rwlock_timeout() {
+    println("\n🔒 RwLock Timeout Demo");
+    println("=====================");
+    
+    facts rwlock = ipc::create_rwlock_timeout(42);
+    println("✓ Created RwLock with timeout");
+    
+    // Read lock
+    facts read_guard = rwlock.read_timeout(Duration::from_millis(100))?;
+    println("✓ Acquired read lock (value: {})", *read_guard);
+    drop(read_guard);
+    
+    // Write lock
+    facts write_guard = rwlock.write_timeout(Duration::from_millis(100))?;
+    println("✓ Acquired write lock");
+    drop(write_guard);
+    
+    facts stats = rwlock.statistics();
+    println("✓ RwLock stats - Reads: {}, Writes: {}", stats.read_locks, stats.write_locks);
+}
+
+// Demonstrate condition variables
+slay demo_condition_variables() {
+    println("\n⏰ Condition Variables Demo");
+    println("==========================");
+    
+    facts condvar = ipc::create_condition_variable();
+    facts mutex = std::sync::Mutex::new(false);
+    
+    println("✓ Created condition variable and mutex");
+    
+    // In a real scenario, you'd use this across threads
+    facts guard = mutex.lock().unwrap();
+    println("✓ Acquired mutex lock");
+    
+    // Simulate quick timeout
+    facts (guard, timed_out) = condvar.wait_timeout(guard, Duration::from_millis(1))?;
+    println("✓ Condition wait completed (timed_out: {})", timed_out);
+    
+    facts stats = condvar.statistics();
+    println("✓ CondVar stats - Waits: {}, Notifies: {}", stats.total_waits, stats.total_notifies);
+}
+
+// Demonstrate Unix domain sockets
+slay demo_unix_sockets() {
+    println("\n🔌 Unix Domain Sockets Demo");
+    println("===========================");
+    
+    // Create socket pair
+    facts (socket1, socket2) = ipc::create_socket_pair()?;
+    println("✓ Created Unix socket pair");
+    
+    facts test_data = b"Hello from socket!";
+    
+    // Send data from socket1 to socket2
+    socket1.send(test_data)?;
+    println("✓ Sent {} bytes via socket1", test_data.len());
+    
+    // Receive data on socket2
+    facts received = socket2.receive()?;
+    println("✓ Received {} bytes via socket2", received.len());
+    
+    println("✓ Socket communication successful");
+}
+
+// Demonstrate signal handling
+slay demo_signal_handling() {
+    println("\n📡 Signal Handling Demo");
+    println("======================");
+    
+    facts config = ipc::SignalConfig::new("demo_signals");
+    facts handler = ipc::SignalHandler::new(config)?;
+    println("✓ Created signal handler");
+    
+    // Register callback
+    handler.register_callback("test_signal", Box::new(|event| {
+        println("  📨 Received signal: {:?}", event.signal());
+        facts Ok(())
+    }))?;
+    println("✓ Registered signal callback");
+    
+    // Send custom signal
+    facts signal = ipc::Signal::Custom("test_signal".to_string());
+    handler.send_signal(signal)?;
+    println("✓ Sent custom signal");
+    
+    // Process pending signals
+    handler.process_pending_signals()?;
+    
+    facts stats = handler.statistics();
+    println("✓ Signal stats - Sent: {}, Processed: {}", 
+            stats.total_signals_sent, stats.total_signals_processed);
+}
+
+// Demonstrate RPC system
+slay demo_rpc_system() {
+    println("\n🌐 RPC System Demo");
+    println("=================");
+    
+    facts config = ipc::RpcConfig::new("demo_rpc_service");
+    
+    // Create RPC server
+    facts server = ipc::RpcServer::new(config.clone())?;
+    println("✓ Created RPC server");
+    
+    // Register RPC method
+    server.register_method("add", Box::new(|params| {
+        if params.len() >= 8 {
+            facts a = i32::from_le_bytes([params[0], params[1], params[2], params[3]]);
+            facts b = i32::from_le_bytes([params[4], params[5], params[6], params[7]]);
+            facts result = a + b;
+            Ok(result.to_le_bytes().to_vec())
+        } else {
+            Err(ipc::RpcError::InvalidParameters("Need 8 bytes for two i32s".to_string()))
+        }
+    }))?;
+    println("✓ Registered 'add' RPC method");
+    
+    // Start server
+    server.start()?;
+    println("✓ Started RPC server");
+    
+    // Create RPC client
+    facts client = ipc::RpcClient::new(config)?;
+    client.connect()?;
+    println("✓ Connected RPC client");
+    
+    // Make RPC call
+    facts params = [5i32.to_le_bytes(), 7i32.to_le_bytes()].concat();
+    facts request = ipc::RpcRequest::new("add", params);
+    
+    facts response = client.call(request)?;
+    if let Some(result_data) = response.result {
+        facts result = i32::from_le_bytes([
+            result_data[0], result_data[1], result_data[2], result_data[3]
+        ]);
+        println("✓ RPC call result: 5 + 7 = {}", result);
+    }
+    
+    // Cleanup
+    client.disconnect()?;
+    server.stop()?;
+    println("✓ RPC system demo completed");
+}
+
+// Demonstrate distributed coordination
+slay demo_distributed_coordination() {
+    println("\n🌍 Distributed Coordination Demo");
+    println("================================");
+    
+    facts coordinator = ipc::create_distributed_coordinator("demo_node");
+    println("✓ Created distributed coordinator");
+    
+    // Add peers
+    coordinator.add_peer("peer1".to_string())?;
+    coordinator.add_peer("peer2".to_string())?;
+    println("✓ Added {} peers", coordinator.peer_count());
+    
+    // Start coordination
+    coordinator.start_coordination()?;
+    println("✓ Started coordination (leader: {})", coordinator.is_leader());
+    
+    // Stop coordination
+    coordinator.stop_coordination()?;
+    println("✓ Stopped coordination");
+}
+
+// Demonstrate performance monitoring
+slay demo_performance_monitoring() {
+    println("\n📈 Performance Monitoring Demo");
+    println("==============================");
+    
+    // Create multiple IPC resources for monitoring
+    facts shm = ipc::create_shared_memory("perf_monitor_shm", 1024)?;
+    facts sem = ipc::create_semaphore(5)?;
+    facts barrier = ipc::create_barrier(1)?;
+    
+    println("✓ Created IPC resources for monitoring");
+    
+    // Perform some operations
+    sem.try_wait()?;
+    sem.post()?;
+    barrier.wait()?;
+    
+    println("✓ Performed monitored operations");
+    
+    // Get comprehensive statistics
+    facts global_stats = ipc::get_statistics()?;
+    facts sem_stats = sem.statistics();
+    facts barrier_stats = barrier.statistics();
+    
+    println("\n📊 Performance Statistics:");
+    println("  Global operations: {}", global_stats.total_operations);
+    println("  Failed operations: {}", global_stats.failed_operations);
+    println("  Semaphore waits: {}", sem_stats.total_waits);
+    println("  Semaphore posts: {}", sem_stats.total_posts);
+    println("  Barrier completions: {}", barrier_stats.total_completions);
+    println("  Memory usage: {} bytes", global_stats.total_memory_usage);
+    
+    println("✓ Performance monitoring completed");
 }

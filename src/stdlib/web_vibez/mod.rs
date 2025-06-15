@@ -14,17 +14,30 @@
 
 pub mod router;
 pub mod middleware;
+pub mod middleware_async;
+pub mod middleware_chain;
 pub mod timeout_middleware;
 pub mod session;
+pub mod session_enhanced;
 pub mod session_timeout;
 pub mod context;
 pub mod handlers;
 pub mod route_matcher;
-pub mod middleware_chain;
 pub mod error_handling;
 pub mod config;
 pub mod health;
 pub mod client;
+pub mod server;
+pub mod compression;
+pub mod csrf;
+pub mod debug;
+pub mod json;
+pub mod monitoring;
+pub mod multipart;
+pub mod security;
+pub mod static_files;
+pub mod templates;
+pub mod utils;
 
 // Re-export main types for easy access
 pub use router::{Router, Route, RouteGroup, RoutePriority};
@@ -42,6 +55,24 @@ pub use error_handling::{RouterError, MiddlewareError, HandlerError};
 pub use config::WebVibezConfig;
 pub use health::{HealthChecker, HealthResult, HealthStatus, HealthCheck};
 pub use client::{HttpClient, HttpError, HttpResponse, RequestBuilder, Cookie, ConnectionPool};
+pub use server::{
+    HttpServer, ServerState, Connection, ConnectionPool as ServerConnectionPool,
+    HttpRequest, HttpResponse as ServerHttpResponse, HttpVersion, TlsConfig, TlsProtocol,
+    ServerStats, ServerError, Signal, SignalHandler
+};
+
+// Additional module re-exports
+pub use compression::{CompressionType, CompressionConfig, CompressionEngine, CompressionStats};
+pub use csrf::{CsrfToken, CsrfMiddleware, CsrfConfig, CsrfError};
+pub use debug::{RequestDebugger, LiveReload, DebugMode, DebugConfig};
+pub use json::{JsonHandler, JsonValue, JsonError, JsonResponse};
+pub use monitoring::{MetricsCollector, RequestMetrics, GlobalMetrics, MonitoringDashboard};
+pub use multipart::{MultipartProcessor, FileUpload, MultipartError, MultipartField};
+pub use security::{InputSanitizer, XssProtection, SecurityHeaders, ContentSecurityPolicy};
+pub use static_files::{StaticFileServer, StaticFileCache, StaticFileResponse, StaticFileError};
+pub use templates::{TemplateEngine, Template, TemplateContext, TemplateValue, TemplateError};
+pub use utils::{ConnectionPool as UtilsConnectionPool, UrlEncoder, HttpHeaders, MimeTypes};
+pub use session_enhanced::{EnhancedSessionManager, SessionOptions, SessionSecurity};
 
 /// HTTP methods supported by the router
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

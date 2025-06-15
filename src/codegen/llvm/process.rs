@@ -1,8 +1,9 @@
 /// LLVM code generation for process management operations
 /// 
 /// This module provides LLVM IR generation for CURSED process management
-/// and IPC operations, enabling efficient compilation of process spawning,
-/// control, and inter-process communication.
+/// and IPC operations, including exec_slay and exec_vibez functionality,
+/// enabling efficient compilation of process spawning, control, and 
+/// inter-process communication.
 
 use std::collections::HashMap;
 use llvm_sys::core::*;
@@ -34,6 +35,24 @@ pub trait ProcessCompilation {
     
     /// Compile signal operations
     fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&Expression]) -> CursedResult<LLVMValueRef>;
+    
+    /// Compile exec_slay command operations
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    
+    /// Compile exec_slay pipeline operations
+    fn compile_slay_pipeline(&mut self, commands: &[&Expression], options: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    
+    /// Compile exec_slay background task operations
+    fn compile_slay_background_task(&mut self, command_expr: &Expression) -> CursedResult<LLVMValueRef>;
+    
+    /// Compile exec_vibez command operations
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    
+    /// Compile exec_vibez process group operations
+    fn compile_vibez_process_group(&mut self, commands: &[&Expression], config: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    
+    /// Compile exec_vibez output streaming operations
+    fn compile_vibez_output_streaming(&mut self, command_expr: &Expression, callback: &Expression) -> CursedResult<LLVMValueRef>;
 }
 
 /// Process control operations
@@ -293,6 +312,196 @@ impl ProcessCompilation for LlvmCodeGenerator {
                 arg_values.as_mut_ptr(),
                 arg_values.len() as u32,
                 c_str!("signal_result").as_ptr(),
+            )
+        };
+        
+        Ok(result)
+    }
+
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+        // Get or create the slay command function
+        let slay_cmd_fn = self.get_or_create_slay_command_function()?;
+        
+        // Create command string constant
+        let command_str = self.create_string_constant(command)?;
+        
+        // Create args array
+        let args_array = self.create_string_array_constant(args)?;
+        let args_count = self.create_i32_constant(args.len() as i64);
+        
+        // Compile options if provided
+        let options_value = if let Some(opts) = options {
+            self.compile_expression(opts)?
+        } else {
+            // Create null/default options
+            self.get_null_ptr()
+        };
+        
+        // Call the slay command function
+        let mut call_args = vec![command_str, args_array, args_count, options_value];
+        let result = unsafe {
+            LLVMBuildCall2(
+                self.builder,
+                LLVMGetElementType(LLVMTypeOf(slay_cmd_fn)),
+                slay_cmd_fn,
+                call_args.as_mut_ptr(),
+                call_args.len() as u32,
+                c_str!("slay_cmd_result").as_ptr(),
+            )
+        };
+        
+        Ok(result)
+    }
+
+    fn compile_slay_pipeline(&mut self, commands: &[&Expression], options: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+        // Get or create the slay pipeline function
+        let pipeline_fn = self.get_or_create_slay_pipeline_function()?;
+        
+        // Compile all command expressions
+        let mut cmd_values = Vec::new();
+        for cmd in commands {
+            cmd_values.push(self.compile_expression(cmd)?);
+        }
+        
+        // Create command array
+        let cmd_array = self.create_value_array(&cmd_values)?;
+        let cmd_count = self.create_i32_constant(commands.len() as i64);
+        
+        // Compile options if provided
+        let options_value = if let Some(opts) = options {
+            self.compile_expression(opts)?
+        } else {
+            self.get_null_ptr()
+        };
+        
+        // Call the pipeline function
+        let mut call_args = vec![cmd_array, cmd_count, options_value];
+        let result = unsafe {
+            LLVMBuildCall2(
+                self.builder,
+                LLVMGetElementType(LLVMTypeOf(pipeline_fn)),
+                pipeline_fn,
+                call_args.as_mut_ptr(),
+                call_args.len() as u32,
+                c_str!("pipeline_result").as_ptr(),
+            )
+        };
+        
+        Ok(result)
+    }
+
+    fn compile_slay_background_task(&mut self, command_expr: &Expression) -> CursedResult<LLVMValueRef> {
+        // Get or create the background task function
+        let bg_task_fn = self.get_or_create_slay_background_function()?;
+        
+        // Compile the command expression
+        let command_value = self.compile_expression(command_expr)?;
+        
+        // Call the background task function
+        let mut call_args = vec![command_value];
+        let result = unsafe {
+            LLVMBuildCall2(
+                self.builder,
+                LLVMGetElementType(LLVMTypeOf(bg_task_fn)),
+                bg_task_fn,
+                call_args.as_mut_ptr(),
+                call_args.len() as u32,
+                c_str!("bg_task_result").as_ptr(),
+            )
+        };
+        
+        Ok(result)
+    }
+
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+        // Get or create the vibez command function
+        let vibez_cmd_fn = self.get_or_create_vibez_command_function()?;
+        
+        // Create command string constant
+        let command_str = self.create_string_constant(command)?;
+        
+        // Create args array
+        let args_array = self.create_string_array_constant(args)?;
+        let args_count = self.create_i32_constant(args.len() as i64);
+        
+        // Compile context if provided
+        let context_value = if let Some(ctx) = context {
+            self.compile_expression(ctx)?
+        } else {
+            self.get_null_ptr()
+        };
+        
+        // Call the vibez command function
+        let mut call_args = vec![command_str, args_array, args_count, context_value];
+        let result = unsafe {
+            LLVMBuildCall2(
+                self.builder,
+                LLVMGetElementType(LLVMTypeOf(vibez_cmd_fn)),
+                vibez_cmd_fn,
+                call_args.as_mut_ptr(),
+                call_args.len() as u32,
+                c_str!("vibez_cmd_result").as_ptr(),
+            )
+        };
+        
+        Ok(result)
+    }
+
+    fn compile_vibez_process_group(&mut self, commands: &[&Expression], config: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+        // Get or create the process group function
+        let group_fn = self.get_or_create_vibez_process_group_function()?;
+        
+        // Compile all command expressions
+        let mut cmd_values = Vec::new();
+        for cmd in commands {
+            cmd_values.push(self.compile_expression(cmd)?);
+        }
+        
+        // Create command array
+        let cmd_array = self.create_value_array(&cmd_values)?;
+        let cmd_count = self.create_i32_constant(commands.len() as i64);
+        
+        // Compile config if provided
+        let config_value = if let Some(cfg) = config {
+            self.compile_expression(cfg)?
+        } else {
+            self.get_null_ptr()
+        };
+        
+        // Call the process group function
+        let mut call_args = vec![cmd_array, cmd_count, config_value];
+        let result = unsafe {
+            LLVMBuildCall2(
+                self.builder,
+                LLVMGetElementType(LLVMTypeOf(group_fn)),
+                group_fn,
+                call_args.as_mut_ptr(),
+                call_args.len() as u32,
+                c_str!("group_result").as_ptr(),
+            )
+        };
+        
+        Ok(result)
+    }
+
+    fn compile_vibez_output_streaming(&mut self, command_expr: &Expression, callback: &Expression) -> CursedResult<LLVMValueRef> {
+        // Get or create the output streaming function
+        let stream_fn = self.get_or_create_vibez_streaming_function()?;
+        
+        // Compile the command and callback expressions
+        let command_value = self.compile_expression(command_expr)?;
+        let callback_value = self.compile_expression(callback)?;
+        
+        // Call the streaming function
+        let mut call_args = vec![command_value, callback_value];
+        let result = unsafe {
+            LLVMBuildCall2(
+                self.builder,
+                LLVMGetElementType(LLVMTypeOf(stream_fn)),
+                stream_fn,
+                call_args.as_mut_ptr(),
+                call_args.len() as u32,
+                c_str!("stream_result").as_ptr(),
             )
         };
         

@@ -20,12 +20,14 @@ pub mod advanced_cache;
 pub mod distributed_compilation;
 pub mod analytics;
 pub mod memory_optimizer;
+pub mod performance_tracker;
 
 // New Advanced Build System Features
 pub mod parallel_compilation;
 pub mod incremental_optimization;
 pub mod build_profiler;
 pub mod artifact_manager;
+pub mod lto_integration;
 
 // Re-export main types
 pub use build_config::{
@@ -76,6 +78,9 @@ pub use analytics::{
 pub use memory_optimizer::{
     MemoryOptimizer, MemoryOptimizerConfig, MemoryAwareTask, MemoryStats
 };
+pub use performance_tracker::{
+    BuildPerformanceTracker, PerformanceConfig, BuildPerformanceReport, PerformanceStatistics
+};
 
 // Re-export new advanced features
 pub use parallel_compilation::{
@@ -94,4 +99,8 @@ pub use build_profiler::{
 pub use artifact_manager::{
     ArtifactManager, ArtifactConfig, BuildArtifact, ArtifactType,
     VersionManager, CleanupManager, DistributionManager, ArtifactStatistics
+};
+pub use lto_integration::{
+    LtoBuildIntegration, LtoBuildConfig, LtoOptimizationResult, CompilationArtifact,
+    LtoBuildStatistics, LtoBuildConfigFactory
 };

@@ -208,28 +208,39 @@ impl NamedPipe {
             PipeMode::ReadWrite => PIPE_ACCESS_DUPLEX,
         };
         
-        // Windows API call would be here
-        // In real Windows environment, this would be:
-        // let handle = unsafe {
-        //     CreateNamedPipeW(
-        //         wide_name.as_ptr(),
-        //         open_mode,
-        //         PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-        //         1, // nMaxInstances
-        //         4096, // nOutBufferSize
-        //         4096, // nInBufferSize
-        //         0, // nDefaultTimeOut
-        //         std::ptr::null_mut(), // lpSecurityAttributes
-        //     )
-        // };
-        // 
-        // if handle == INVALID_HANDLE_VALUE as *mut std::ffi::c_void {
-        //     let error = unsafe { GetLastError() };
-        //     return Err(communication_error("create_windows_pipe", &format!("CreateNamedPipeW failed with error {}", error)));
-        // }
+        // Windows API call implementation
+        use winapi::um::winbase::{CreateNamedPipeW, PIPE_ACCESS_INBOUND, PIPE_ACCESS_OUTBOUND, PIPE_ACCESS_DUPLEX,
+                                 PIPE_TYPE_BYTE, PIPE_READMODE_BYTE, PIPE_WAIT, INVALID_HANDLE_VALUE};
+        use winapi::um::errhandlingapi::GetLastError;
         
-        // For cross-platform compatibility on non-Windows, return error
-        Err(communication_error("create_windows_pipe", "Windows pipes not supported on this platform"))
+        let handle = unsafe {
+            CreateNamedPipeW(
+                wide_name.as_ptr(),
+                open_mode,
+                PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                1, // nMaxInstances
+                4096, // nOutBufferSize
+                4096, // nInBufferSize
+                0, // nDefaultTimeOut
+                std::ptr::null_mut(), // lpSecurityAttributes
+            )
+        };
+        
+        if handle == INVALID_HANDLE_VALUE {
+            let error = unsafe { GetLastError() };
+            return Err(communication_error("create_windows_pipe", &format!("CreateNamedPipeW failed with error {}", error)));
+        }
+        
+        let inner = Arc::new(Mutex::new(PipeInner::Windows {
+            handle: handle as *mut std::ffi::c_void,
+            name: name.clone(),
+            mode,
+        }));
+        
+        Ok(ProcessPipe {
+            inner,
+            name: Some(name),
+        })
     }
     
     #[cfg(windows)]
@@ -258,27 +269,39 @@ impl NamedPipe {
             PipeMode::ReadWrite => GENERIC_READ | GENERIC_WRITE,
         };
         
-        // Windows API call would be here
-        // In real Windows environment, this would be:
-        // let handle = unsafe {
-        //     CreateFileW(
-        //         wide_name.as_ptr(),
-        //         desired_access,
-        //         0, // dwShareMode
-        //         std::ptr::null_mut(), // lpSecurityAttributes
-        //         OPEN_EXISTING,
-        //         0, // dwFlagsAndAttributes
-        //         std::ptr::null_mut(), // hTemplateFile
-        //     )
-        // };
-        // 
-        // if handle == INVALID_HANDLE_VALUE as *mut std::ffi::c_void {
-        //     let error = unsafe { GetLastError() };
-        //     return Err(communication_error("open_windows_pipe", &format!("CreateFileW failed with error {}", error)));
-        // }
+        // Windows API call implementation
+        use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
+        use winapi::um::winnt::{GENERIC_READ, GENERIC_WRITE};
+        use winapi::um::winbase::INVALID_HANDLE_VALUE;
+        use winapi::um::errhandlingapi::GetLastError;
         
-        // For cross-platform compatibility on non-Windows, return error
-        Err(communication_error("open_windows_pipe", "Windows pipes not supported on this platform"))
+        let handle = unsafe {
+            CreateFileW(
+                wide_name.as_ptr(),
+                desired_access,
+                0, // dwShareMode
+                std::ptr::null_mut(), // lpSecurityAttributes
+                OPEN_EXISTING,
+                0, // dwFlagsAndAttributes
+                std::ptr::null_mut(), // hTemplateFile
+            )
+        };
+        
+        if handle == INVALID_HANDLE_VALUE {
+            let error = unsafe { GetLastError() };
+            return Err(communication_error("open_windows_pipe", &format!("CreateFileW failed with error {}", error)));
+        }
+        
+        let inner = Arc::new(Mutex::new(PipeInner::Windows {
+            handle: handle as *mut std::ffi::c_void,
+            name: name.clone(),
+            mode,
+        }));
+        
+        Ok(ProcessPipe {
+            inner,
+            name: Some(name),
+        })
     }
     
     fn create_channel_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
@@ -317,27 +340,27 @@ impl NamedPipe {
                 let _handle = pipe_handle.handle;
                 let _bytes_written = 0u32;
                 
-                // In real Windows environment, this would be:
-                // let mut bytes_written = 0u32;
-                // let success = unsafe {
-                //     WriteFile(
-                //         handle as *mut std::ffi::c_void,
-                //         data.as_ptr() as *const std::ffi::c_void,
-                //         data.len() as u32,
-                //         &mut bytes_written,
-                //         std::ptr::null_mut()
-                //     )
-                // };
-                // 
-                // if success != 0 {
-                //     Ok(bytes_written as usize)
-                // } else {
-                //     let error = unsafe { GetLastError() };
-                //     Err(communication_error("write", &format!("WriteFile failed with error {}", error)))
-                // }
+                // Windows WriteFile implementation
+                use winapi::um::fileapi::WriteFile;
+                use winapi::um::errhandlingapi::GetLastError;
                 
-                // For cross-platform compatibility on non-Windows, return error
-                Err(communication_error("write", "Windows pipe operations not supported on this platform"))
+                let mut bytes_written = 0u32;
+                let success = unsafe {
+                    WriteFile(
+                        pipe_handle.handle,
+                        data.as_ptr() as *const std::ffi::c_void,
+                        data.len() as u32,
+                        &mut bytes_written,
+                        std::ptr::null_mut()
+                    )
+                };
+                
+                if success != 0 {
+                    Ok(bytes_written as usize)
+                } else {
+                    let error = unsafe { GetLastError() };
+                    Err(communication_error("write", &format!("WriteFile failed with error {}", error)))
+                }
             }
             PipeInner::Channel { sender: Some(sender), .. } => {
                 sender.send(data.to_vec())
@@ -371,31 +394,32 @@ impl NamedPipe {
                 let _handle = pipe_handle.handle;
                 let _bytes_read = 0u32;
                 
-                // In real Windows environment, this would be:
-                // let mut bytes_read = 0u32;
-                // let success = unsafe {
-                //     ReadFile(
-                //         handle as *mut std::ffi::c_void,
-                //         buffer.as_mut_ptr() as *mut std::ffi::c_void,
-                //         buffer.len() as u32,
-                //         &mut bytes_read,
-                //         std::ptr::null_mut()
-                //     )
-                // };
-                // 
-                // if success != 0 {
-                //     Ok(bytes_read as usize)
-                // } else {
-                //     let error = unsafe { GetLastError() };
-                //     if error == ERROR_BROKEN_PIPE {
-                //         Ok(0) // EOF
-                //     } else {
-                //         Err(communication_error("read", &format!("ReadFile failed with error {}", error)))
-                //     }
-                // }
+                // Windows ReadFile implementation
+                use winapi::um::fileapi::ReadFile;
+                use winapi::um::errhandlingapi::GetLastError;
+                use winapi::shared::winerror::ERROR_BROKEN_PIPE;
                 
-                // For cross-platform compatibility on non-Windows, return error
-                Err(communication_error("read", "Windows pipe operations not supported on this platform"))
+                let mut bytes_read = 0u32;
+                let success = unsafe {
+                    ReadFile(
+                        pipe_handle.handle,
+                        buffer.as_mut_ptr() as *mut std::ffi::c_void,
+                        buffer.len() as u32,
+                        &mut bytes_read,
+                        std::ptr::null_mut()
+                    )
+                };
+                
+                if success != 0 {
+                    Ok(bytes_read as usize)
+                } else {
+                    let error = unsafe { GetLastError() };
+                    if error == ERROR_BROKEN_PIPE {
+                        Ok(0) // EOF
+                    } else {
+                        Err(communication_error("read", &format!("ReadFile failed with error {}", error)))
+                    }
+                }
             }
             PipeInner::Channel { receiver: Some(receiver), .. } => {
                 match receiver.try_recv() {

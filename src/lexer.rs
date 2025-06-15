@@ -37,6 +37,10 @@ pub enum TokenType {
     Match,      // match keyword (alternative to vibe_check)
     If,         // if keyword (alternative to lowkey)
     
+    // Async/await keywords
+    Async,      // async
+    Await,      // await
+    
     // Identifiers and literals
     Identifier,
     Integer,
@@ -620,6 +624,8 @@ impl Lexer {
             "no_cap" => TokenType::NoCap,
             "main_character" => TokenType::MainCharacter,
             "dm" => TokenType::Dm,
+            "async" => TokenType::Async,
+            "await" => TokenType::Await,
             "true" | "false" => TokenType::Boolean,
             _ => TokenType::Identifier,
         };

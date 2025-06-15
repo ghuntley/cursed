@@ -14,13 +14,16 @@ use crate::stdlib::process::error::{
 };
 use crate::stdlib::process::core::{ProcessConfig, Process};
 use crate::stdlib::process::control::{Signal, Priority};
+use crate::stdlib::process::fork::{JobControlManager, fork_process, exec_program};
+use crate::stdlib::process::resource_limits::{ResourceLimitManager, ResourceType, ResourceLimit};
+use crate::stdlib::process::privileges::{PrivilegeManager, SecureEnvironment};
 
 /// Enhanced process controller with comprehensive management capabilities
 pub struct EnhancedProcessController {
     /// Map of managed processes
     processes: Arc<RwLock<HashMap<u32, EnhancedProcessInfo>>>,
     /// Process hierarchy tracking
-    hierarchy: Arc<RwLock<ProcessHierarchy>>>,
+    hierarchy: Arc<RwLock<ProcessHierarchy>>,
     /// Global process statistics
     statistics: Arc<Mutex<ProcessStatistics>>,
     /// Controller configuration
@@ -29,6 +32,12 @@ pub struct EnhancedProcessController {
     running_processes: Arc<Mutex<HashMap<u32, Process>>>,
     /// Process event callbacks
     event_callbacks: Arc<RwLock<Vec<Box<dyn ProcessEventCallback>>>>,
+    /// Job control manager for process groups
+    job_control: Arc<Mutex<JobControlManager>>,
+    /// Resource limit manager
+    resource_manager: Arc<Mutex<ResourceLimitManager>>,
+    /// Privilege manager
+    privilege_manager: Arc<Mutex<Option<PrivilegeManager>>>,
 }
 
 /// Enhanced process information with comprehensive metadata
@@ -236,12 +245,17 @@ impl EnhancedProcessController {
 
     /// Create a new enhanced process controller with custom configuration
     pub fn with_config(config: ProcessControllerConfig) -> Self {
+        let privilege_manager = PrivilegeManager::new().ok();
+        
         let controller = Self {
             processes: Arc::new(RwLock::new(HashMap::new())),
             hierarchy: Arc::new(RwLock::new(ProcessHierarchy::new())),
             statistics: Arc::new(Mutex::new(ProcessStatistics::default())),
             running_processes: Arc::new(Mutex::new(HashMap::new())),
             event_callbacks: Arc::new(RwLock::new(Vec::new())),
+            job_control: Arc::new(Mutex::new(JobControlManager::new())),
+            resource_manager: Arc::new(Mutex::new(ResourceLimitManager::new())),
+            privilege_manager: Arc::new(Mutex::new(privilege_manager)),
             config,
         };
 
@@ -501,6 +515,93 @@ impl EnhancedProcessController {
         killed_processes.push(pid);
         
         Ok(killed_processes)
+    }
+
+    /// Create process group
+    pub fn create_process_group(&self, leader_pid: u32, pgid: Option<u32>) -> ProcessResult<u32> {
+        let job_control = self.job_control.lock()
+            .map_err(|_| system_error(-1, "create_process_group", "Failed to lock job control"))?;
+        job_control.create_process_group(leader_pid, pgid)
+    }
+
+    /// Add process to existing group
+    pub fn add_to_process_group(&self, pid: u32, pgid: u32) -> ProcessResult<()> {
+        let job_control = self.job_control.lock()
+            .map_err(|_| system_error(-1, "add_to_process_group", "Failed to lock job control"))?;
+        job_control.add_to_group(pid, pgid)
+    }
+
+    /// Set resource limit for a resource type
+    pub fn set_resource_limit(&self, resource: ResourceType, limit: ResourceLimit) -> ProcessResult<()> {
+        let mut resource_manager = self.resource_manager.lock()
+            .map_err(|_| system_error(-1, "set_resource_limit", "Failed to lock resource manager"))?;
+        resource_manager.set_limit(resource, limit)
+    }
+
+    /// Apply secure environment to current process
+    pub fn apply_secure_environment(&self, env: &SecureEnvironment) -> ProcessResult<()> {
+        env.apply()
+    }
+
+    /// Drop privileges using privilege manager
+    pub fn drop_privileges(&self, target_uid: u32, target_gid: u32) -> ProcessResult<()> {
+        let mut privilege_manager_opt = self.privilege_manager.lock()
+            .map_err(|_| system_error(-1, "drop_privileges", "Failed to lock privilege manager"))?;
+        
+        if let Some(ref mut privilege_manager) = *privilege_manager_opt {
+            privilege_manager.drop_privileges(target_uid, target_gid)
+        } else {
+            Err(system_error(-1, "drop_privileges", "Privilege manager not available"))
+        }
+    }
+
+    /// Fork and exec a new process with enhanced control
+    pub fn fork_exec_process<S: AsRef<str>>(&self, program: S, args: &[S], env: Option<&[(S, S)]>) -> ProcessResult<u32> {
+        let fork_result = fork_process()?;
+        
+        if fork_result.is_parent {
+            // Parent process - return child PID
+            let child_pid = fork_result.child_pid.unwrap();
+            
+            // Register the child process for monitoring
+            let process_info = EnhancedProcessInfo {
+                pid: child_pid,
+                internal_id: self.generate_internal_id(),
+                command: program.as_ref().to_string(),
+                args: args.iter().map(|s| s.as_ref().to_string()).collect(),
+                status: ProcessStatus::Running,
+                start_time: fork_result.fork_time,
+                parent_pid: Some(std::process::id()),
+                children: HashSet::new(),
+                working_dir: None,
+                environment: HashMap::new(),
+                resource_usage: ResourceUsage::default(),
+                exit_info: None,
+                process_group: None,
+                session_id: None,
+                priority: Priority::Normal,
+                metadata: HashMap::new(),
+                io_statistics: IoStatistics::default(),
+                security_context: SecurityContext::default(),
+                resource_limits: crate::stdlib::process::enhanced_control::ResourceLimits::default(),
+            };
+
+            {
+                let mut processes = self.processes.write().unwrap();
+                processes.insert(child_pid, process_info);
+            }
+
+            Ok(child_pid)
+        } else {
+            // Child process - exec the program
+            if let Err(e) = exec_program(program, args, env) {
+                eprintln!("Child exec failed: {}", e);
+                std::process::exit(1);
+            }
+            
+            // This line should never be reached
+            std::process::exit(0);
+        }
     }
 
     /// Set process priority  
@@ -817,6 +918,9 @@ impl Clone for EnhancedProcessController {
             statistics: Arc::clone(&self.statistics),
             running_processes: Arc::clone(&self.running_processes),
             event_callbacks: Arc::clone(&self.event_callbacks),
+            job_control: Arc::clone(&self.job_control),
+            resource_manager: Arc::clone(&self.resource_manager),
+            privilege_manager: Arc::clone(&self.privilege_manager),
             config: self.config.clone(),
         }
     }

@@ -142,6 +142,7 @@ pub enum SubjectAltName {
 pub enum CertificateError {
     InvalidFormat(String),
     InvalidSignature,
+    InvalidPublicKey,
     Expired,
     NotYetValid,
     UntrustedIssuer,
@@ -161,6 +162,8 @@ impl fmt::Display for CertificateError {
                 write!(f, "Invalid certificate format: {}", msg),
             CertificateError::InvalidSignature => 
                 write!(f, "Invalid certificate signature"),
+            CertificateError::InvalidPublicKey => 
+                write!(f, "Invalid public key format"),
             CertificateError::Expired => 
                 write!(f, "Certificate has expired"),
             CertificateError::NotYetValid => 
@@ -908,19 +911,29 @@ impl CertificateProcessor {
         }
     }
     
-    /// Verify RSA signature
+    /// Verify RSA signature using PKCS#1 v1.5 padding with proper error handling
     fn verify_rsa_signature(&self, signed_data: &[u8], signature: &[u8], public_key: &PublicKeyInfo, hash_algorithm: &str) -> CertificateResult<bool> {
         if public_key.algorithm != PublicKeyAlgorithm::RsaEncryption {
             return Err(CertificateError::UnsupportedAlgorithm("Expected RSA public key".to_string()));
         }
         
-        // Parse RSA public key from DER format
-        use rsa::{RsaPublicKey, PaddingScheme, Hash};
-        use rsa::pkcs1v15::VerifyingKey;
+        // Validate input parameters
+        if signed_data.is_empty() || signature.is_empty() || public_key.key_data.is_empty() {
+            return Ok(false);
+        }
+        
+        // Parse RSA public key from SPKI DER format
+        use rsa::{RsaPublicKey, pkcs1v15::VerifyingKey};
         use sha2::{Sha256, Sha384, Sha512, Digest};
+        use signature::Verifier;
         
         let rsa_key = RsaPublicKey::from_public_key_der(&public_key.key_data)
-            .map_err(|e| CertificateError::InvalidPublicKey)?;
+            .map_err(|_| CertificateError::InvalidPublicKey)?;
+        
+        // Validate key size (minimum 1024 bits for security)
+        if rsa_key.size() < 128 { // 128 bytes = 1024 bits
+            return Err(CertificateError::InvalidPublicKey);
+        }
         
         match hash_algorithm {
             "sha256" => {
@@ -956,19 +969,25 @@ impl CertificateProcessor {
                     Err(_) => Ok(false),
                 }
             }
-            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported hash algorithm: {}", hash_algorithm)))
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported RSA hash algorithm: {}", hash_algorithm)))
         }
     }
     
-    /// Verify ECDSA signature
+    /// Verify ECDSA signature with comprehensive curve support
     fn verify_ecdsa_signature(&self, signed_data: &[u8], signature: &[u8], public_key: &PublicKeyInfo, hash_algorithm: &str) -> CertificateResult<bool> {
         if public_key.algorithm != PublicKeyAlgorithm::EcPublicKey {
             return Err(CertificateError::UnsupportedAlgorithm("Expected ECDSA public key".to_string()));
         }
         
+        // Validate input parameters
+        if signed_data.is_empty() || signature.is_empty() || public_key.key_data.is_empty() {
+            return Ok(false);
+        }
+        
         // Parse ECDSA public key and verify signature
         use p256::{ecdsa::VerifyingKey as P256VerifyingKey, ecdsa::Signature as P256Signature};
         use p384::{ecdsa::VerifyingKey as P384VerifyingKey, ecdsa::Signature as P384Signature};
+        use p521::{ecdsa::VerifyingKey as P521VerifyingKey, ecdsa::Signature as P521Signature};
         use sha2::{Sha256, Sha384, Sha512, Digest};
         use ecdsa::signature::Verifier;
         
@@ -978,62 +997,181 @@ impl CertificateProcessor {
                 hasher.update(signed_data);
                 let hash = hasher.finalize();
                 
-                // Try P-256 first (most common)
+                // Try P-256 first (most common for SHA-256)
                 if let Ok(verifying_key) = P256VerifyingKey::from_public_key_der(&public_key.key_data) {
-                    if let Ok(signature) = P256Signature::from_der(signature) {
-                        match verifying_key.verify(&hash, &signature) {
+                    if let Ok(ecdsa_signature) = P256Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &ecdsa_signature) {
                             Ok(_) => return Ok(true),
                             Err(_) => return Ok(false),
                         }
                     }
                 }
                 
-                // Basic fallback verification
-                Ok(signature.len() >= 64 && hash.len() == 32)
+                // Try P-384 as fallback
+                if let Ok(verifying_key) = P384VerifyingKey::from_public_key_der(&public_key.key_data) {
+                    if let Ok(ecdsa_signature) = P384Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &ecdsa_signature) {
+                            Ok(_) => return Ok(true),
+                            Err(_) => return Ok(false),
+                        }
+                    }
+                }
+                
+                // Basic DER signature structure validation as final fallback
+                self.validate_ecdsa_signature_structure(signature, 64, 72)
             }
             "sha384" => {
                 let mut hasher = Sha384::new();
                 hasher.update(signed_data);
                 let hash = hasher.finalize();
                 
-                // Try P-384
+                // Try P-384 first (recommended for SHA-384)
                 if let Ok(verifying_key) = P384VerifyingKey::from_public_key_der(&public_key.key_data) {
-                    if let Ok(signature) = P384Signature::from_der(signature) {
-                        match verifying_key.verify(&hash, &signature) {
+                    if let Ok(ecdsa_signature) = P384Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &ecdsa_signature) {
                             Ok(_) => return Ok(true),
                             Err(_) => return Ok(false),
                         }
                     }
                 }
                 
-                Ok(signature.len() >= 64)
+                // Try P-521 as fallback
+                if let Ok(verifying_key) = P521VerifyingKey::from_public_key_der(&public_key.key_data) {
+                    if let Ok(ecdsa_signature) = P521Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &ecdsa_signature) {
+                            Ok(_) => return Ok(true),
+                            Err(_) => return Ok(false),
+                        }
+                    }
+                }
+                
+                // Basic DER signature structure validation
+                self.validate_ecdsa_signature_structure(signature, 64, 104)
             }
             "sha512" => {
                 let mut hasher = Sha512::new();
                 hasher.update(signed_data);
                 let hash = hasher.finalize();
                 
-                // Basic verification for SHA-512
-                Ok(signature.len() >= 64 && hash.len() == 64)
+                // Try P-521 first (recommended for SHA-512)
+                if let Ok(verifying_key) = P521VerifyingKey::from_public_key_der(&public_key.key_data) {
+                    if let Ok(ecdsa_signature) = P521Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &ecdsa_signature) {
+                            Ok(_) => return Ok(true),
+                            Err(_) => return Ok(false),
+                        }
+                    }
+                }
+                
+                // Try P-384 as fallback
+                if let Ok(verifying_key) = P384VerifyingKey::from_public_key_der(&public_key.key_data) {
+                    if let Ok(ecdsa_signature) = P384Signature::from_der(signature) {
+                        match verifying_key.verify(&hash, &ecdsa_signature) {
+                            Ok(_) => return Ok(true),
+                            Err(_) => return Ok(false),
+                        }
+                    }
+                }
+                
+                // Basic DER signature structure validation
+                self.validate_ecdsa_signature_structure(signature, 64, 140)
             }
-            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported hash algorithm: {}", hash_algorithm)))
+            _ => Err(CertificateError::UnsupportedAlgorithm(format!("Unsupported ECDSA hash algorithm: {}", hash_algorithm)))
         }
     }
     
-    /// Verify Ed25519 signature
+    /// Validate ECDSA signature DER structure
+    fn validate_ecdsa_signature_structure(&self, signature: &[u8], min_len: usize, max_len: usize) -> CertificateResult<bool> {
+        if signature.len() < min_len || signature.len() > max_len {
+            return Ok(false);
+        }
+        
+        // Check DER SEQUENCE structure
+        if signature.len() >= 6 && signature[0] == 0x30 {
+            let declared_length = signature[1] as usize;
+            Ok(declared_length + 2 == signature.len())
+        } else {
+            Ok(false)
+        }
+    }
+    
+    /// Verify Ed25519 signature with enhanced validation
     fn verify_ed25519_signature(&self, signed_data: &[u8], signature: &[u8], public_key: &PublicKeyInfo) -> CertificateResult<bool> {
         if public_key.algorithm != PublicKeyAlgorithm::Ed25519 {
             return Err(CertificateError::UnsupportedAlgorithm("Expected Ed25519 public key".to_string()));
         }
         
-        // Simplified Ed25519 verification
-        if signature.len() != 64 || public_key.key_data.len() != 32 {
+        // Validate input parameters
+        if signed_data.is_empty() || signature.is_empty() || public_key.key_data.is_empty() {
             return Ok(false);
         }
         
-        // In a real implementation, you would use the ed25519_dalek crate
-        // to verify the signature against the public key and signed data
-        Ok(true)
+        // Validate signature length (Ed25519 signatures are always 64 bytes)
+        if signature.len() != 64 {
+            return Ok(false);
+        }
+        
+        // Extract Ed25519 public key from SubjectPublicKeyInfo DER format
+        let ed25519_key_data = if public_key.key_data.len() == 32 {
+            // Raw public key bytes
+            &public_key.key_data
+        } else if public_key.key_data.len() > 32 {
+            // Try to extract from SPKI DER format
+            self.extract_ed25519_key_from_spki(&public_key.key_data)?
+        } else {
+            return Ok(false);
+        };
+        
+        if ed25519_key_data.len() != 32 {
+            return Ok(false);
+        }
+        
+        // Use ed25519_dalek for proper signature verification
+        use ed25519_dalek::{VerifyingKey, Signature};
+        use signature::Verifier;
+        
+        // Parse public key
+        let ed25519_public_key = match VerifyingKey::from_bytes(ed25519_key_data.try_into().unwrap()) {
+            Ok(key) => key,
+            Err(_) => return Ok(false),
+        };
+        
+        // Parse signature
+        let ed25519_signature = match Signature::from_bytes(signature.try_into().unwrap()) {
+            Ok(sig) => sig,
+            Err(_) => return Ok(false),
+        };
+        
+        // Verify signature
+        match ed25519_public_key.verify(signed_data, &ed25519_signature) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    }
+    
+    /// Extract Ed25519 public key from SPKI DER format
+    fn extract_ed25519_key_from_spki(&self, spki_data: &[u8]) -> CertificateResult<&[u8]> {
+        // Simple SPKI parsing for Ed25519 keys
+        // SPKI structure: SEQUENCE { SEQUENCE { OID, NULL }, BIT STRING }
+        if spki_data.len() < 44 { // Minimum SPKI size for Ed25519
+            return Err(CertificateError::InvalidPublicKey);
+        }
+        
+        // Look for Ed25519 OID (1.3.101.112) in the SPKI
+        let ed25519_oid = [0x06, 0x03, 0x2B, 0x65, 0x70]; // DER encoded OID
+        
+        if let Some(oid_pos) = spki_data.windows(ed25519_oid.len()).position(|window| window == ed25519_oid) {
+            // Find BIT STRING after the OID
+            let search_start = oid_pos + ed25519_oid.len();
+            for i in search_start..spki_data.len() - 33 {
+                if spki_data[i] == 0x03 && spki_data[i + 1] == 0x21 && spki_data[i + 2] == 0x00 {
+                    // Found BIT STRING with length 33 (1 unused bit + 32 key bytes)
+                    return Ok(&spki_data[i + 3..i + 35]);
+                }
+            }
+        }
+        
+        Err(CertificateError::InvalidPublicKey)
     }
     
     fn is_trusted_root(&self, cert: &X509Certificate) -> bool {

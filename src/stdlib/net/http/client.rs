@@ -495,13 +495,60 @@ impl<'a> RequestBuilder<'a> {
     }
     
     /// Set request body as JSON
-    pub fn json<T: serde::Serialize>(self, data: &T) -> NetResult<Self> {
-        let json_body = serde_json::to_string(data)
+    pub fn json<T: json::JsonSerialize>(self, data: &T) -> NetResult<Self> {
+        let json_body = json::to_string(data)
             .map_err(|e| http_error(&format!("Failed to serialize JSON: {}", e)))?;
         
         Ok(self
             .content_type(mime::APPLICATION_JSON)
             .body(json_body))
+    }
+    
+    /// Add query parameter
+    pub fn query(mut self, key: &str, value: &str) -> Self {
+        let mut params = HashMap::new();
+        if let Some(query_start) = self.request.url.find('?') {
+            let query_part = &self.request.url[query_start + 1..];
+            params = query::parse_query_string(query_part);
+            self.request.url = self.request.url[..query_start].to_string();
+        }
+        
+        params.insert(key.to_string(), value.to_string());
+        self.request.url = query::add_query_params(&self.request.url, &params);
+        self
+    }
+    
+    /// Add multiple query parameters
+    pub fn query_params(mut self, params: &HashMap<String, String>) -> Self {
+        let mut existing_params = HashMap::new();
+        if let Some(query_start) = self.request.url.find('?') {
+            let query_part = &self.request.url[query_start + 1..];
+            existing_params = query::parse_query_string(query_part);
+            self.request.url = self.request.url[..query_start].to_string();
+        }
+        
+        // Merge new params with existing ones
+        for (key, value) in params {
+            existing_params.insert(key.clone(), value.clone());
+        }
+        
+        self.request.url = query::add_query_params(&self.request.url, &existing_params);
+        self
+    }
+    
+    /// Set Bearer token authorization
+    pub fn bearer_token(self, token: &str) -> Self {
+        self.header("Authorization", &format!("Bearer {}", token))
+    }
+    
+    /// Set Basic authentication
+    pub fn basic_auth(self, username: &str, password: Option<&str>) -> Self {
+        let credentials = match password {
+            Some(pwd) => format!("{}:{}", username, pwd),
+            None => username.to_string(),
+        };
+        let encoded = base64_encode(credentials.as_bytes());
+        self.header("Authorization", &format!("Basic {}", encoded))
     }
     
     /// Set request body as form data
@@ -531,31 +578,658 @@ struct UrlComponents {
     is_https: bool,
 }
 
-// Placeholder for external dependencies
-mod serde {
-    pub trait Serialize {}
-}
-
-mod serde_json {
-    use super::serde::Serialize;
-    use crate::stdlib::net::error::NetError;
+/// Enhanced JSON serialization support
+mod json {
+    use crate::stdlib::net::error::{NetError, NetResult};
+    use std::collections::HashMap;
     
-    pub fn to_string<T: Serialize>(_data: &T) -> Result<String, NetError> {
-        // Placeholder implementation
-        Ok("{}".to_string())
+    /// JSON serialization trait
+    pub trait JsonSerialize {
+        fn to_json(&self) -> NetResult<String>;
+    }
+    
+    /// JSON value representation
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum JsonValue {
+        Null,
+        Bool(bool),
+        Number(f64),
+        String(String),
+        Array(Vec<JsonValue>),
+        Object(HashMap<String, JsonValue>),
+    }
+    
+    impl JsonValue {
+        /// Convert JsonValue to string representation
+        pub fn to_string(&self) -> String {
+            match self {
+                JsonValue::Null => "null".to_string(),
+                JsonValue::Bool(b) => b.to_string(),
+                JsonValue::Number(n) => {
+                    if n.fract() == 0.0 && n.is_finite() {
+                        format!("{}", *n as i64)
+                    } else {
+                        n.to_string()
+                    }
+                },
+                JsonValue::String(s) => format!("\"{}\"", escape_json_string(s)),
+                JsonValue::Array(arr) => {
+                    let items: Vec<String> = arr.iter().map(|v| v.to_string()).collect();
+                    format!("[{}]", items.join(","))
+                },
+                JsonValue::Object(obj) => {
+                    let items: Vec<String> = obj.iter()
+                        .map(|(k, v)| format!("\"{}\":{}", escape_json_string(k), v.to_string()))
+                        .collect();
+                    format!("{{{}}}", items.join(","))
+                },
+            }
+        }
+        
+        /// Parse JSON string into JsonValue
+        pub fn parse(json_str: &str) -> NetResult<JsonValue> {
+            let mut parser = JsonParser::new(json_str);
+            parser.parse_value()
+        }
+    }
+    
+    /// Simple JSON parser
+    struct JsonParser {
+        input: Vec<char>,
+        pos: usize,
+    }
+    
+    impl JsonParser {
+        fn new(input: &str) -> Self {
+            Self {
+                input: input.chars().collect(),
+                pos: 0,
+            }
+        }
+        
+        fn parse_value(&mut self) -> NetResult<JsonValue> {
+            self.skip_whitespace();
+            
+            if self.pos >= self.input.len() {
+                return Err(NetError::General("Unexpected end of JSON".to_string()));
+            }
+            
+            match self.input[self.pos] {
+                'n' => self.parse_null(),
+                't' | 'f' => self.parse_bool(),
+                '"' => self.parse_string(),
+                '[' => self.parse_array(),
+                '{' => self.parse_object(),
+                c if c.is_ascii_digit() || c == '-' => self.parse_number(),
+                _ => Err(NetError::General(format!("Unexpected character: {}", self.input[self.pos]))),
+            }
+        }
+        
+        fn parse_null(&mut self) -> NetResult<JsonValue> {
+            if self.consume_literal("null") {
+                Ok(JsonValue::Null)
+            } else {
+                Err(NetError::General("Invalid null literal".to_string()))
+            }
+        }
+        
+        fn parse_bool(&mut self) -> NetResult<JsonValue> {
+            if self.consume_literal("true") {
+                Ok(JsonValue::Bool(true))
+            } else if self.consume_literal("false") {
+                Ok(JsonValue::Bool(false))
+            } else {
+                Err(NetError::General("Invalid boolean literal".to_string()))
+            }
+        }
+        
+        fn parse_string(&mut self) -> NetResult<JsonValue> {
+            if self.input[self.pos] != '"' {
+                return Err(NetError::General("Expected '\"'".to_string()));
+            }
+            self.pos += 1; // Skip opening quote
+            
+            let mut result = String::new();
+            while self.pos < self.input.len() && self.input[self.pos] != '"' {
+                if self.input[self.pos] == '\\' {
+                    self.pos += 1;
+                    if self.pos >= self.input.len() {
+                        return Err(NetError::General("Unterminated string escape".to_string()));
+                    }
+                    match self.input[self.pos] {
+                        '"' => result.push('"'),
+                        '\\' => result.push('\\'),
+                        '/' => result.push('/'),
+                        'b' => result.push('\u{0008}'),
+                        'f' => result.push('\u{000C}'),
+                        'n' => result.push('\n'),
+                        'r' => result.push('\r'),
+                        't' => result.push('\t'),
+                        _ => return Err(NetError::General("Invalid escape sequence".to_string())),
+                    }
+                } else {
+                    result.push(self.input[self.pos]);
+                }
+                self.pos += 1;
+            }
+            
+            if self.pos >= self.input.len() {
+                return Err(NetError::General("Unterminated string".to_string()));
+            }
+            self.pos += 1; // Skip closing quote
+            
+            Ok(JsonValue::String(result))
+        }
+        
+        fn parse_array(&mut self) -> NetResult<JsonValue> {
+            if self.input[self.pos] != '[' {
+                return Err(NetError::General("Expected '['".to_string()));
+            }
+            self.pos += 1; // Skip opening bracket
+            
+            let mut array = Vec::new();
+            self.skip_whitespace();
+            
+            if self.pos < self.input.len() && self.input[self.pos] == ']' {
+                self.pos += 1;
+                return Ok(JsonValue::Array(array));
+            }
+            
+            loop {
+                array.push(self.parse_value()?);
+                self.skip_whitespace();
+                
+                if self.pos >= self.input.len() {
+                    return Err(NetError::General("Unterminated array".to_string()));
+                }
+                
+                match self.input[self.pos] {
+                    ',' => {
+                        self.pos += 1;
+                        self.skip_whitespace();
+                    },
+                    ']' => {
+                        self.pos += 1;
+                        break;
+                    },
+                    _ => return Err(NetError::General("Expected ',' or ']'".to_string())),
+                }
+            }
+            
+            Ok(JsonValue::Array(array))
+        }
+        
+        fn parse_object(&mut self) -> NetResult<JsonValue> {
+            if self.input[self.pos] != '{' {
+                return Err(NetError::General("Expected '{'".to_string()));
+            }
+            self.pos += 1; // Skip opening brace
+            
+            let mut object = HashMap::new();
+            self.skip_whitespace();
+            
+            if self.pos < self.input.len() && self.input[self.pos] == '}' {
+                self.pos += 1;
+                return Ok(JsonValue::Object(object));
+            }
+            
+            loop {
+                // Parse key
+                if self.input[self.pos] != '"' {
+                    return Err(NetError::General("Expected string key".to_string()));
+                }
+                let key = match self.parse_string()? {
+                    JsonValue::String(s) => s,
+                    _ => unreachable!(),
+                };
+                
+                self.skip_whitespace();
+                if self.pos >= self.input.len() || self.input[self.pos] != ':' {
+                    return Err(NetError::General("Expected ':'".to_string()));
+                }
+                self.pos += 1; // Skip colon
+                self.skip_whitespace();
+                
+                // Parse value
+                let value = self.parse_value()?;
+                object.insert(key, value);
+                
+                self.skip_whitespace();
+                if self.pos >= self.input.len() {
+                    return Err(NetError::General("Unterminated object".to_string()));
+                }
+                
+                match self.input[self.pos] {
+                    ',' => {
+                        self.pos += 1;
+                        self.skip_whitespace();
+                    },
+                    '}' => {
+                        self.pos += 1;
+                        break;
+                    },
+                    _ => return Err(NetError::General("Expected ',' or '}'".to_string())),
+                }
+            }
+            
+            Ok(JsonValue::Object(object))
+        }
+        
+        fn parse_number(&mut self) -> NetResult<JsonValue> {
+            let start = self.pos;
+            
+            if self.input[self.pos] == '-' {
+                self.pos += 1;
+            }
+            
+            if self.pos >= self.input.len() || !self.input[self.pos].is_ascii_digit() {
+                return Err(NetError::General("Invalid number".to_string()));
+            }
+            
+            // Integer part
+            if self.input[self.pos] == '0' {
+                self.pos += 1;
+            } else {
+                while self.pos < self.input.len() && self.input[self.pos].is_ascii_digit() {
+                    self.pos += 1;
+                }
+            }
+            
+            // Fractional part
+            if self.pos < self.input.len() && self.input[self.pos] == '.' {
+                self.pos += 1;
+                if self.pos >= self.input.len() || !self.input[self.pos].is_ascii_digit() {
+                    return Err(NetError::General("Invalid number".to_string()));
+                }
+                while self.pos < self.input.len() && self.input[self.pos].is_ascii_digit() {
+                    self.pos += 1;
+                }
+            }
+            
+            // Exponent part
+            if self.pos < self.input.len() && (self.input[self.pos] == 'e' || self.input[self.pos] == 'E') {
+                self.pos += 1;
+                if self.pos < self.input.len() && (self.input[self.pos] == '+' || self.input[self.pos] == '-') {
+                    self.pos += 1;
+                }
+                if self.pos >= self.input.len() || !self.input[self.pos].is_ascii_digit() {
+                    return Err(NetError::General("Invalid number".to_string()));
+                }
+                while self.pos < self.input.len() && self.input[self.pos].is_ascii_digit() {
+                    self.pos += 1;
+                }
+            }
+            
+            let number_str: String = self.input[start..self.pos].iter().collect();
+            let number = number_str.parse::<f64>()
+                .map_err(|_| NetError::General("Invalid number format".to_string()))?;
+            
+            Ok(JsonValue::Number(number))
+        }
+        
+        fn consume_literal(&mut self, literal: &str) -> bool {
+            let chars: Vec<char> = literal.chars().collect();
+            if self.pos + chars.len() <= self.input.len() {
+                let slice = &self.input[self.pos..self.pos + chars.len()];
+                if slice == chars {
+                    self.pos += chars.len();
+                    return true;
+                }
+            }
+            false
+        }
+        
+        fn skip_whitespace(&mut self) {
+            while self.pos < self.input.len() && self.input[self.pos].is_whitespace() {
+                self.pos += 1;
+            }
+        }
+    }
+    
+    /// Escape string for JSON
+    fn escape_json_string(s: &str) -> String {
+        let mut result = String::new();
+        for c in s.chars() {
+            match c {
+                '"' => result.push_str("\\\""),
+                '\\' => result.push_str("\\\\"),
+                '\u{0008}' => result.push_str("\\b"),
+                '\u{000C}' => result.push_str("\\f"),
+                '\n' => result.push_str("\\n"),
+                '\r' => result.push_str("\\r"),
+                '\t' => result.push_str("\\t"),
+                c if c.is_control() => result.push_str(&format!("\\u{:04x}", c as u32)),
+                c => result.push(c),
+            }
+        }
+        result
+    }
+    
+    /// Simple JSON serialization for common types
+    impl JsonSerialize for String {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::String(self.clone()).to_string())
+        }
+    }
+    
+    impl JsonSerialize for &str {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::String(self.to_string()).to_string())
+        }
+    }
+    
+    impl JsonSerialize for i32 {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::Number(*self as f64).to_string())
+        }
+    }
+    
+    impl JsonSerialize for i64 {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::Number(*self as f64).to_string())
+        }
+    }
+    
+    impl JsonSerialize for f32 {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::Number(*self as f64).to_string())
+        }
+    }
+    
+    impl JsonSerialize for f64 {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::Number(*self).to_string())
+        }
+    }
+    
+    impl JsonSerialize for bool {
+        fn to_json(&self) -> NetResult<String> {
+            Ok(JsonValue::Bool(*self).to_string())
+        }
+    }
+    
+    impl<T: JsonSerialize> JsonSerialize for Vec<T> {
+        fn to_json(&self) -> NetResult<String> {
+            let items: Result<Vec<String>, NetError> = self.iter()
+                .map(|item| item.to_json())
+                .collect();
+            let items = items?;
+            Ok(format!("[{}]", items.join(",")))
+        }
+    }
+    
+    impl<T: JsonSerialize> JsonSerialize for HashMap<String, T> {
+        fn to_json(&self) -> NetResult<String> {
+            let items: Result<Vec<String>, NetError> = self.iter()
+                .map(|(k, v)| {
+                    let value_json = v.to_json()?;
+                    Ok(format!("\"{}\":{}", escape_json_string(k), value_json))
+                })
+                .collect();
+            let items = items?;
+            Ok(format!("{{{}}}", items.join(",")))
+        }
+    }
+    
+    /// Convert JSON serializable type to string
+    pub fn to_string<T: JsonSerialize>(data: &T) -> NetResult<String> {
+        data.to_json()
     }
 }
 
+/// Enhanced URL encoding with RFC 3986 compliance
 mod urlencoding {
+    /// URL encode string with RFC 3986 compliance
     pub fn encode(input: &str) -> String {
-        // Simple URL encoding implementation
         input.chars()
             .map(|c| match c {
                 'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
                 ' ' => "+".to_string(),
-                _ => format!("%{:02X}", c as u8),
+                _ => percent_encode_byte(c as u8),
             })
             .collect()
+    }
+    
+    /// URL encode for form data (application/x-www-form-urlencoded)
+    pub fn encode_form(input: &str) -> String {
+        input.chars()
+            .map(|c| match c {
+                'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
+                ' ' => "+".to_string(),
+                _ => percent_encode_byte(c as u8),
+            })
+            .collect()
+    }
+    
+    /// URL encode for path segments (preserves slashes)
+    pub fn encode_path(input: &str) -> String {
+        input.chars()
+            .map(|c| match c {
+                'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' | '/' => c.to_string(),
+                _ => percent_encode_byte(c as u8),
+            })
+            .collect()
+    }
+    
+    /// URL decode string
+    pub fn decode(input: &str) -> String {
+        let mut result = String::new();
+        let mut chars = input.chars().peekable();
+        
+        while let Some(c) = chars.next() {
+            match c {
+                '+' => result.push(' '),
+                '%' => {
+                    if let (Some(h1), Some(h2)) = (chars.next(), chars.next()) {
+                        if let (Some(d1), Some(d2)) = (hex_digit_value(h1), hex_digit_value(h2)) {
+                            let byte = (d1 << 4) | d2;
+                            result.push(byte as char);
+                        } else {
+                            // Invalid hex, keep as literal
+                            result.push('%');
+                            result.push(h1);
+                            result.push(h2);
+                        }
+                    } else {
+                        result.push('%');
+                    }
+                },
+                c => result.push(c),
+            }
+        }
+        
+        result
+    }
+    
+    /// Percent encode a single byte
+    fn percent_encode_byte(byte: u8) -> String {
+        format!("%{:02X}", byte)
+    }
+    
+    /// Convert hex digit to value
+    fn hex_digit_value(c: char) -> Option<u8> {
+        match c {
+            '0'..='9' => Some(c as u8 - b'0'),
+            'A'..='F' => Some(c as u8 - b'A' + 10),
+            'a'..='f' => Some(c as u8 - b'a' + 10),
+            _ => None,
+        }
+    }
+}
+
+/// Base64 encoding utilities
+mod base64 {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    
+    /// Encode bytes to base64 string
+    pub fn encode(input: &[u8]) -> String {
+        let mut result = String::new();
+        let mut i = 0;
+        
+        while i + 2 < input.len() {
+            let b1 = input[i];
+            let b2 = input[i + 1];
+            let b3 = input[i + 2];
+            
+            let n = ((b1 as u32) << 16) | ((b2 as u32) << 8) | (b3 as u32);
+            
+            result.push(ALPHABET[((n >> 18) & 63) as usize] as char);
+            result.push(ALPHABET[((n >> 12) & 63) as usize] as char);
+            result.push(ALPHABET[((n >> 6) & 63) as usize] as char);
+            result.push(ALPHABET[(n & 63) as usize] as char);
+            
+            i += 3;
+        }
+        
+        match input.len() - i {
+            1 => {
+                let b1 = input[i];
+                let n = (b1 as u32) << 16;
+                result.push(ALPHABET[((n >> 18) & 63) as usize] as char);
+                result.push(ALPHABET[((n >> 12) & 63) as usize] as char);
+                result.push('=');
+                result.push('=');
+            },
+            2 => {
+                let b1 = input[i];
+                let b2 = input[i + 1];
+                let n = ((b1 as u32) << 16) | ((b2 as u32) << 8);
+                result.push(ALPHABET[((n >> 18) & 63) as usize] as char);
+                result.push(ALPHABET[((n >> 12) & 63) as usize] as char);
+                result.push(ALPHABET[((n >> 6) & 63) as usize] as char);
+                result.push('=');
+            },
+            _ => {},
+        }
+        
+        result
+    }
+    
+    /// Decode base64 string to bytes
+    pub fn decode(input: &str) -> Result<Vec<u8>, String> {
+        let input = input.replace(['\r', '\n', ' ', '\t'], "");
+        let input = input.trim_end_matches('=');
+        
+        let mut result = Vec::new();
+        let chars: Vec<u8> = input.bytes().collect();
+        let mut i = 0;
+        
+        while i + 3 < chars.len() {
+            let c1 = decode_char(chars[i])?;
+            let c2 = decode_char(chars[i + 1])?;
+            let c3 = decode_char(chars[i + 2])?;
+            let c4 = decode_char(chars[i + 3])?;
+            
+            let n = (c1 << 18) | (c2 << 12) | (c3 << 6) | c4;
+            
+            result.push((n >> 16) as u8);
+            result.push((n >> 8) as u8);
+            result.push(n as u8);
+            
+            i += 4;
+        }
+        
+        match chars.len() - i {
+            2 => {
+                let c1 = decode_char(chars[i])?;
+                let c2 = decode_char(chars[i + 1])?;
+                let n = (c1 << 18) | (c2 << 12);
+                result.push((n >> 16) as u8);
+            },
+            3 => {
+                let c1 = decode_char(chars[i])?;
+                let c2 = decode_char(chars[i + 1])?;
+                let c3 = decode_char(chars[i + 2])?;
+                let n = (c1 << 18) | (c2 << 12) | (c3 << 6);
+                result.push((n >> 16) as u8);
+                result.push((n >> 8) as u8);
+            },
+            1 => return Err("Invalid base64 padding".to_string()),
+            _ => {},
+        }
+        
+        Ok(result)
+    }
+    
+    fn decode_char(c: u8) -> Result<u32, String> {
+        match c {
+            b'A'..=b'Z' => Ok((c - b'A') as u32),
+            b'a'..=b'z' => Ok((c - b'a' + 26) as u32),
+            b'0'..=b'9' => Ok((c - b'0' + 52) as u32),
+            b'+' => Ok(62),
+            b'/' => Ok(63),
+            _ => Err(format!("Invalid base64 character: {}", c as char)),
+        }
+    }
+}
+
+/// Helper function for base64 encoding
+pub fn base64_encode(input: &[u8]) -> String {
+    base64::encode(input)
+}
+
+/// Helper function for base64 decoding
+pub fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
+    base64::decode(input)
+}
+
+/// Query parameter building utilities
+pub mod query {
+    use super::urlencoding;
+    use std::collections::HashMap;
+    
+    /// Build query string from parameters
+    pub fn build_query_string(params: &HashMap<String, String>) -> String {
+        if params.is_empty() {
+            return String::new();
+        }
+        
+        let encoded_params: Vec<String> = params.iter()
+            .map(|(key, value)| {
+                format!("{}={}", 
+                    urlencoding::encode(key), 
+                    urlencoding::encode(value))
+            })
+            .collect();
+        
+        encoded_params.join("&")
+    }
+    
+    /// Parse query string into parameters
+    pub fn parse_query_string(query: &str) -> HashMap<String, String> {
+        let mut params = HashMap::new();
+        
+        if query.is_empty() {
+            return params;
+        }
+        
+        for pair in query.split('&') {
+            if let Some(eq_pos) = pair.find('=') {
+                let key = urlencoding::decode(&pair[..eq_pos]);
+                let value = urlencoding::decode(&pair[eq_pos + 1..]);
+                params.insert(key, value);
+            } else {
+                let key = urlencoding::decode(pair);
+                params.insert(key, String::new());
+            }
+        }
+        
+        params
+    }
+    
+    /// Add parameters to URL
+    pub fn add_query_params(url: &str, params: &HashMap<String, String>) -> String {
+        if params.is_empty() {
+            return url.to_string();
+        }
+        
+        let query_string = build_query_string(params);
+        
+        if url.contains('?') {
+            format!("{}&{}", url, query_string)
+        } else {
+            format!("{}?{}", url, query_string)
+        }
     }
 }
 
@@ -597,6 +1271,30 @@ mod tests {
     }
 
     #[test]
+    fn test_request_builder_with_query_params() {
+        let client = HttpClient::new().unwrap();
+        
+        let request_builder = client.get("http://example.com/api")
+            .query("page", "1")
+            .query("limit", "10");
+        
+        assert!(request_builder.request.url.contains("page=1"));
+        assert!(request_builder.request.url.contains("limit=10"));
+        assert!(request_builder.request.url.contains("?"));
+    }
+
+    #[test]
+    fn test_request_builder_with_auth() {
+        let client = HttpClient::new().unwrap();
+        
+        let request_builder = client.get("http://example.com")
+            .bearer_token("abc123")
+            .basic_auth("user", Some("pass"));
+        
+        assert!(request_builder.request.headers.contains("authorization"));
+    }
+
+    #[test]
     fn test_url_parsing() {
         let client = HttpClient::new().unwrap();
         
@@ -630,5 +1328,133 @@ mod tests {
         assert_eq!(urlencoding::encode("hello world"), "hello+world");
         assert_eq!(urlencoding::encode("test@example.com"), "test%40example.com");
         assert_eq!(urlencoding::encode("normal"), "normal");
+        
+        assert_eq!(urlencoding::decode("hello+world"), "hello world");
+        assert_eq!(urlencoding::decode("test%40example.com"), "test@example.com");
+    }
+
+    #[test]
+    fn test_json_serialization() {
+        let value = "test string";
+        let json = json::to_string(value).unwrap();
+        assert_eq!(json, "\"test string\"");
+        
+        let number = 42i32;
+        let json = json::to_string(&number).unwrap();
+        assert_eq!(json, "42");
+        
+        let boolean = true;
+        let json = json::to_string(&boolean).unwrap();
+        assert_eq!(json, "true");
+    }
+
+    #[test]
+    fn test_json_parsing() {
+        let json_str = r#"{"name":"John","age":30,"active":true}"#;
+        let value = json::JsonValue::parse(json_str).unwrap();
+        
+        if let json::JsonValue::Object(obj) = value {
+            assert_eq!(obj.get("name"), Some(&json::JsonValue::String("John".to_string())));
+            assert_eq!(obj.get("age"), Some(&json::JsonValue::Number(30.0)));
+            assert_eq!(obj.get("active"), Some(&json::JsonValue::Bool(true)));
+        } else {
+            panic!("Expected JSON object");
+        }
+    }
+
+    #[test]
+    fn test_base64_encoding() {
+        let input = b"Hello, World!";
+        let encoded = base64_encode(input);
+        assert_eq!(encoded, "SGVsbG8sIFdvcmxkIQ==");
+        
+        let decoded = base64_decode(&encoded).unwrap();
+        assert_eq!(decoded, input);
+        
+        // Test encoding without padding
+        let input2 = b"Hello";
+        let encoded2 = base64_encode(input2);
+        let decoded2 = base64_decode(&encoded2).unwrap();
+        assert_eq!(decoded2, input2);
+    }
+
+    #[test]
+    fn test_query_parameter_handling() {
+        let mut params = HashMap::new();
+        params.insert("key1".to_string(), "value1".to_string());
+        params.insert("key2".to_string(), "value with spaces".to_string());
+        
+        let query_string = query::build_query_string(&params);
+        assert!(query_string.contains("key1=value1"));
+        assert!(query_string.contains("key2=value+with+spaces"));
+        
+        let parsed = query::parse_query_string(&query_string);
+        assert_eq!(parsed.get("key1"), Some(&"value1".to_string()));
+        assert_eq!(parsed.get("key2"), Some(&"value with spaces".to_string()));
+    }
+
+    #[test]
+    fn test_add_query_params_to_url() {
+        let mut params = HashMap::new();
+        params.insert("page".to_string(), "1".to_string());
+        params.insert("limit".to_string(), "10".to_string());
+        
+        let url = query::add_query_params("http://example.com/api", &params);
+        assert!(url.starts_with("http://example.com/api?"));
+        assert!(url.contains("page=1"));
+        assert!(url.contains("limit=10"));
+    }
+
+    #[test]
+    fn test_json_array_serialization() {
+        let vec = vec!["item1".to_string(), "item2".to_string()];
+        let json = json::to_string(&vec).unwrap();
+        assert_eq!(json, r#"["item1","item2"]"#);
+    }
+
+    #[test]
+    fn test_json_object_serialization() {
+        let mut map = HashMap::new();
+        map.insert("key1".to_string(), "value1".to_string());
+        map.insert("key2".to_string(), "value2".to_string());
+        
+        let json = json::to_string(&map).unwrap();
+        assert!(json.contains(r#""key1":"value1""#));
+        assert!(json.contains(r#""key2":"value2""#));
+        assert!(json.starts_with('{') && json.ends_with('}'));
+    }
+
+    #[test]
+    fn test_json_escape_sequences() {
+        let value = "Hello\nWorld\t\"Quote\"\\Backslash";
+        let json = json::to_string(&value).unwrap();
+        assert!(json.contains("\\n"));
+        assert!(json.contains("\\t"));
+        assert!(json.contains("\\\""));
+        assert!(json.contains("\\\\"));
+    }
+
+    #[test]
+    fn test_form_data_encoding() {
+        let client = HttpClient::new().unwrap();
+        let mut form_data = HashMap::new();
+        form_data.insert("username".to_string(), "john doe".to_string());
+        form_data.insert("password".to_string(), "secret@123".to_string());
+        
+        let request_builder = client.post("http://example.com/login")
+            .form(&form_data);
+        
+        assert!(request_builder.request.body.is_some());
+        let body = request_builder.request.body.unwrap();
+        assert!(body.contains("username=john+doe"));
+        assert!(body.contains("password=secret%40123"));
+    }
+
+    #[test]
+    fn test_chunked_encoding_utilities() {
+        // Test hex parsing for chunked encoding
+        assert_eq!(usize::from_str_radix("a", 16).unwrap(), 10);
+        assert_eq!(usize::from_str_radix("ff", 16).unwrap(), 255);
+        assert_eq!(usize::from_str_radix("1000", 16).unwrap(), 4096);
     }
 }

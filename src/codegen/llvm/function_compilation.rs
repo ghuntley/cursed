@@ -321,18 +321,288 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         }
     }
     
-    /// Compile a block statement (placeholder)
-    fn compile_block_statement(&mut self, _block: &crate::ast::block::BlockStatement) -> Result<String, Error> {
-        // This would compile all statements in the block
-        // For now, return empty implementation
-        Ok("  ; Block statements would be compiled here\n".to_string())
+    /// Compile a block statement
+    fn compile_block_statement(&mut self, block: &crate::ast::block::BlockStatement) -> Result<String, Error> {
+        use crate::ast::traits::Statement;
+        
+        let mut ir = String::new();
+        
+        // Compile each statement in the block
+        for statement in &block.statements {
+            // Try to compile different statement types
+            let stmt_ir = self.compile_statement_dispatch(statement.as_ref())?;
+            ir.push_str(&stmt_ir);
+        }
+        
+        // If the block is empty, add a comment
+        if block.statements.is_empty() {
+            ir.push_str("  ; Empty block\n");
+        }
+        
+        Ok(ir)
     }
     
-    /// Compile an expression body (placeholder)
-    fn compile_expression_body(&mut self, _expr: &Box<dyn Expression>) -> Result<String, Error> {
-        // This would compile the expression and return its LLVM IR
-        // For now, return a simple constant
-        Ok("  ; Expression compilation placeholder\n".to_string())
+    /// Dispatch statement compilation to appropriate handler
+    fn compile_statement_dispatch(&mut self, stmt: &dyn Statement) -> Result<String, Error> {
+        use crate::ast::{LetStatement, FactsStatement, ExpressionStatement, ReturnStatement};
+        
+        // Try to downcast to specific statement types
+        if let Some(let_stmt) = stmt.as_any().downcast_ref::<LetStatement>() {
+            self.compile_let_statement(let_stmt)
+        } else if let Some(facts_stmt) = stmt.as_any().downcast_ref::<FactsStatement>() {
+            self.compile_facts_statement(facts_stmt)
+        } else if let Some(expr_stmt) = stmt.as_any().downcast_ref::<ExpressionStatement>() {
+            self.compile_expression_statement(expr_stmt)
+        } else if let Some(ret_stmt) = stmt.as_any().downcast_ref::<ReturnStatement>() {
+            self.compile_return_statement(ret_stmt)
+        } else {
+            // For unknown statement types, generate a comment
+            Ok(format!("  ; Statement: {}\n", stmt.string()))
+        }
+    }
+    
+    /// Compile a let statement (variable declaration)
+    fn compile_let_statement(&mut self, let_stmt: &crate::ast::LetStatement) -> Result<String, Error> {
+        let var_name = &let_stmt.name.value;
+        
+        // Determine variable type
+        let var_type = if let Some(type_annotation) = &let_stmt.type_annotation {
+            self.map_cursed_type_to_llvm(&type_annotation.string())
+        } else if let Some(value) = &let_stmt.value {
+            // Infer type from initial value
+            self.infer_type_from_expression(value.as_ref())?
+        } else {
+            "i8*".to_string() // Default to generic pointer
+        };
+        
+        let mut ir = String::new();
+        
+        // Allocate local variable
+        let alloca_ir = self.allocate_local_variable(var_name, &var_type)?;
+        ir.push_str(&alloca_ir);
+        
+        // If there's an initial value, compile and store it
+        if let Some(value) = &let_stmt.value {
+            let value_ir = self.compile_expression_body(value)?;
+            ir.push_str(&value_ir);
+            
+            // Store the value
+            let store_ir = format!("  store {} %temp_val, {}* %{}_addr, align 8\n", 
+                var_type, var_type, var_name);
+            ir.push_str(&store_ir);
+        }
+        
+        Ok(ir)
+    }
+    
+    /// Compile a facts statement (constant declaration)
+    fn compile_facts_statement(&mut self, facts_stmt: &crate::ast::FactsStatement) -> Result<String, Error> {
+        let const_name = &facts_stmt.name.value;
+        
+        // Determine constant type
+        let const_type = if let Some(type_annotation) = &facts_stmt.type_annotation {
+            self.map_cursed_type_to_llvm(&type_annotation.string())
+        } else {
+            self.infer_type_from_expression(facts_stmt.value.as_ref())?
+        };
+        
+        let mut ir = String::new();
+        
+        // Compile the constant value
+        let value_ir = self.compile_expression_body(&facts_stmt.value)?;
+        ir.push_str(&value_ir);
+        
+        // Create a local constant (using alloca + store for simplicity)
+        let alloca_ir = format!("  %{}_addr = alloca {}, align 8\n", const_name, const_type);
+        ir.push_str(&alloca_ir);
+        
+        let store_ir = format!("  store {} %temp_val, {}* %{}_addr, align 8\n", 
+            const_type, const_type, const_name);
+        ir.push_str(&store_ir);
+        
+        Ok(ir)
+    }
+    
+    /// Compile an expression statement
+    fn compile_expression_statement(&mut self, expr_stmt: &crate::ast::ExpressionStatement) -> Result<String, Error> {
+        // Compile the expression and discard the result
+        let expr_ir = self.compile_expression_body(&expr_stmt.expression)?;
+        Ok(expr_ir)
+    }
+    
+    /// Infer LLVM type from expression
+    fn infer_type_from_expression(&self, expr: &dyn crate::ast::traits::Expression) -> Result<String, Error> {
+        use crate::ast::expressions::{Literal, LiteralValue};
+        
+        // Try to infer type from literal values
+        if let Some(literal) = expr.as_any().downcast_ref::<Literal>() {
+            match &literal.value {
+                LiteralValue::Integer(_) => Ok("i64".to_string()),
+                LiteralValue::Float(_) => Ok("double".to_string()),
+                LiteralValue::String(_) => Ok("i8*".to_string()),
+                LiteralValue::Boolean(_) => Ok("i1".to_string()),
+                LiteralValue::Nil => Ok("i8*".to_string()),
+            }
+        } else {
+            // For complex expressions, default to generic pointer
+            Ok("i8*".to_string())
+        }
+    }
+    
+    /// Compile an expression body
+    fn compile_expression_body(&mut self, expr: &Box<dyn Expression>) -> Result<String, Error> {
+        use crate::ast::expressions::{Literal, LiteralValue, Identifier, Binary, CallExpression};
+        use crate::ast::calls::CallExpression as CallExpr;
+        
+        let mut ir = String::new();
+        
+        // Try to downcast to specific expression types
+        if let Some(literal) = expr.as_any().downcast_ref::<Literal>() {
+            ir.push_str(&self.compile_literal_expression(literal)?);
+        } else if let Some(identifier) = expr.as_any().downcast_ref::<Identifier>() {
+            ir.push_str(&self.compile_identifier_expression(identifier)?);
+        } else if let Some(binary) = expr.as_any().downcast_ref::<Binary>() {
+            ir.push_str(&self.compile_binary_expression(binary)?);
+        } else if let Some(call) = expr.as_any().downcast_ref::<CallExpression>() {
+            ir.push_str(&self.compile_call_expression(call)?);
+        } else if let Some(call) = expr.as_any().downcast_ref::<CallExpr>() {
+            ir.push_str(&self.compile_function_call(call)?);
+        } else {
+            // For unknown expression types, generate a placeholder
+            ir.push_str(&format!("  ; Expression: {} (placeholder)\n  %temp_val = add i32 0, 0\n", expr.string()));
+        }
+        
+        Ok(ir)
+    }
+    
+    /// Compile a literal expression
+    fn compile_literal_expression(&mut self, literal: &crate::ast::expressions::Literal) -> Result<String, Error> {
+        use crate::ast::expressions::LiteralValue;
+        
+        match &literal.value {
+            LiteralValue::Integer(val) => {
+                Ok(format!("  ; Integer literal: {}\n  %temp_val = add i64 {}, 0\n", val, val))
+            },
+            LiteralValue::Float(val) => {
+                Ok(format!("  ; Float literal: {}\n  %temp_val = fadd double {}, 0.0\n", val, val))
+            },
+            LiteralValue::String(val) => {
+                // Generate a global string constant
+                let string_id = format!("str_{}", self.get_next_string_id());
+                let escaped_string = val.escape_default().to_string();
+                
+                Ok(format!(
+                    "  ; String literal: \"{}\"\n  %temp_val = getelementptr inbounds [{} x i8], [{} x i8]* @{}, i32 0, i32 0\n",
+                    val, val.len() + 1, val.len() + 1, string_id
+                ))
+            },
+            LiteralValue::Boolean(val) => {
+                let bool_val = if *val { 1 } else { 0 };
+                Ok(format!("  ; Boolean literal: {}\n  %temp_val = add i1 {}, 0\n", val, bool_val))
+            },
+            LiteralValue::Nil => {
+                Ok("  ; Nil literal\n  %temp_val = add i8* null, 0\n".to_string())
+            },
+        }
+    }
+    
+    /// Compile an identifier expression (variable reference)
+    fn compile_identifier_expression(&mut self, identifier: &crate::ast::identifiers::Identifier) -> Result<String, Error> {
+        let var_name = &identifier.value;
+        
+        // Check if it's a local variable
+        if let Some(context) = self.current_function() {
+            if let Some(llvm_value) = context.get_local(var_name) {
+                return Ok(format!("  ; Load variable: {}\n  %temp_val = load i8*, i8** {}\n", var_name, llvm_value));
+            }
+        }
+        
+        // Check if it's a parameter
+        if let Some(context) = self.current_function() {
+            for (i, param) in context.parameters.iter().enumerate() {
+                if param == &format!("%{}", var_name) {
+                    return Ok(format!("  ; Parameter reference: {}\n  %temp_val = add i8* %{}, 0\n", var_name, var_name));
+                }
+            }
+        }
+        
+        // Default to global variable
+        Ok(format!("  ; Global variable: {}\n  %temp_val = load i8*, i8** @{}\n", var_name, var_name))
+    }
+    
+    /// Compile a binary expression
+    fn compile_binary_expression(&mut self, binary: &crate::ast::expressions::Binary) -> Result<String, Error> {
+        let mut ir = String::new();
+        
+        // Compile left operand
+        let left_ir = self.compile_expression_body(&binary.left)?;
+        ir.push_str(&left_ir);
+        ir.push_str("  %left_val = add i32 %temp_val, 0\n"); // Store left value
+        
+        // Compile right operand
+        let right_ir = self.compile_expression_body(&binary.right)?;
+        ir.push_str(&right_ir);
+        ir.push_str("  %right_val = add i32 %temp_val, 0\n"); // Store right value
+        
+        // Generate operation based on operator
+        let op_ir = match binary.operator.as_str() {
+            "+" => "  %temp_val = add i32 %left_val, %right_val\n",
+            "-" => "  %temp_val = sub i32 %left_val, %right_val\n",
+            "*" => "  %temp_val = mul i32 %left_val, %right_val\n",
+            "/" => "  %temp_val = sdiv i32 %left_val, %right_val\n",
+            "%" => "  %temp_val = srem i32 %left_val, %right_val\n",
+            "==" => "  %temp_val = icmp eq i32 %left_val, %right_val\n",
+            "!=" => "  %temp_val = icmp ne i32 %left_val, %right_val\n",
+            "<" => "  %temp_val = icmp slt i32 %left_val, %right_val\n",
+            ">" => "  %temp_val = icmp sgt i32 %left_val, %right_val\n",
+            "<=" => "  %temp_val = icmp sle i32 %left_val, %right_val\n",
+            ">=" => "  %temp_val = icmp sge i32 %left_val, %right_val\n",
+            "&&" => "  %temp_val = and i1 %left_val, %right_val\n",
+            "||" => "  %temp_val = or i1 %left_val, %right_val\n",
+            _ => "  ; Unknown operator\n  %temp_val = add i32 0, 0\n",
+        };
+        
+        ir.push_str(&format!("  ; Binary operation: {}\n", binary.operator));
+        ir.push_str(op_ir);
+        
+        Ok(ir)
+    }
+    
+    /// Compile a call expression
+    fn compile_call_expression(&mut self, call: &crate::ast::expressions::CallExpression) -> Result<String, Error> {
+        let func_name = call.function.string();
+        
+        // Compile arguments
+        let mut args_ir = String::new();
+        let mut arg_values = Vec::new();
+        
+        for (i, arg) in call.arguments.iter().enumerate() {
+            let arg_ir = self.compile_expression_body(arg)?;
+            args_ir.push_str(&arg_ir);
+            
+            let arg_temp = format!("%arg_{}", i);
+            args_ir.push_str(&format!("  {} = add i32 %temp_val, 0\n", arg_temp));
+            arg_values.push(format!("i32 {}", arg_temp));
+        }
+        
+        let args_str = arg_values.join(", ");
+        
+        let mut ir = String::new();
+        ir.push_str(&args_ir);
+        ir.push_str(&format!("  ; Function call: {}\n", func_name));
+        ir.push_str(&format!("  %temp_val = call i32 @{}({})\n", func_name, args_str));
+        
+        Ok(ir)
+    }
+    
+    /// Get next string ID for global string constants
+    fn get_next_string_id(&mut self) -> u64 {
+        if let Some(context) = self.current_function() {
+            context.temp_counter += 1;
+            context.temp_counter as u64
+        } else {
+            0
+        }
     }
 }
 

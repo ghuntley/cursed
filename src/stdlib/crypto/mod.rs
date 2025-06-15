@@ -28,6 +28,9 @@ pub mod utils;
 pub mod encoding;
 pub mod llvm_integration;
 pub mod zk_enhanced;
+pub mod format_conversions;
+pub mod x448_implementation;
+pub mod crypto_advanced;
 
 // Re-export main types for convenience
 pub use asymmetric::{
@@ -40,6 +43,22 @@ pub use asymmetric::{
     EcCurve, EcPoint, EcScalar,
     RSA_2048_BITS, RSA_3072_BITS, RSA_4096_BITS,
     X25519_KEY_SIZE, ED25519_PUBLIC_KEY_SIZE, ED25519_PRIVATE_KEY_SIZE, ED25519_SIGNATURE_SIZE,
+};
+
+pub use format_conversions::{
+    FormatConverter, KeyFormat, JsonWebKey,
+    key_to_jwk, jwk_from_json, key_to_der, der_decode, detect_format,
+};
+
+pub use x448_implementation::{
+    X448Engine, X448PublicKey, X448PrivateKey, X448KeyPair, X448_KEY_SIZE,
+    x448_generate_keypair, x448_key_exchange, x448_validate_public_key, x448_get_public_key,
+};
+
+pub use crypto_advanced::{
+    XChaCha20Key, XChaCha20Nonce, XChaCha20Poly1305Cipher,
+    XChaCha20Poly1305StreamingEncoder, XChaCha20Poly1305StreamingDecoder, XChaCha20Poly1305Api,
+    XCHACHA20_KEY_SIZE, XCHACHA20_NONCE_SIZE, XCHACHA20_TAG_SIZE, XCHACHA20_MAX_PLAINTEXT_SIZE,
 };
 
 pub use certificates::{
@@ -58,6 +77,9 @@ pub use pqc::{
     NtruParameterSet, NtruPublicKey, NtruSecretKey, NtruEncryption,
     PqcBenchmark, validate_security_level, get_recommended_algorithm, bytes_to_hex, hex_to_bytes,
 };
+
+// Import comprehensive PQC module
+use crate::stdlib::crypto_pqc;
 
 // Re-export production PQC types
 pub use pqc_production::{

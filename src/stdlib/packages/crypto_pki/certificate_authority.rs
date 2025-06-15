@@ -1,908 +1,761 @@
-//! Certificate Authority (CA) - Production Implementation
-//! 
-//! Complete CA functionality including:
-//! - Self-signed root CA generation
-//! - Intermediate CA creation
-//! - Certificate issuance and management
-//! - Serial number management
-//! - Certificate templates and policies
-
-use crate::stdlib::packages::crypto_pki::{
-    error::{PkiError, PkiResult, CertificateErrorCode},
-    types::*,
-};
+/// fr fr Certificate Authority (CA) implementation with full lifecycle management
+use crate::stdlib::packages::crypto_pki::errors::*;
+use crate::stdlib::packages::crypto_pki::certificate::*;
+use crate::stdlib::packages::crypto_asymmetric::{rsa_generate_keypair, RsaKeyPair, EccKeyPair};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, Duration};
 
-/// Certificate Authority configuration
+/// fr fr Certificate Authority main structure
 #[derive(Debug, Clone)]
-pub struct CaConfig {
-    /// CA distinguished name
-    pub distinguished_name: DistinguishedName,
-    /// Signature algorithm for certificates issued by this CA
-    pub signature_algorithm: SignatureAlgorithm,
-    /// Default certificate validity period
-    pub default_validity_days: u32,
-    /// Maximum certificate validity period
-    pub max_validity_days: u32,
-    /// CA basic constraints
-    pub basic_constraints: BasicConstraintsConfig,
-    /// CA key usage
-    pub ca_key_usage: KeyUsage,
-    /// Certificate policies
-    pub certificate_policies: Vec<String>,
-    /// Path length constraint for intermediate CAs
-    pub path_length_constraint: Option<u32>,
-    /// Serial number generation strategy
-    pub serial_number_strategy: SerialNumberStrategy,
-    /// Certificate templates
-    pub certificate_templates: HashMap<String, CertificateTemplate>,
-}
-
-/// Basic constraints configuration
-#[derive(Debug, Clone)]
-pub struct BasicConstraintsConfig {
-    /// Whether this is a CA certificate
-    pub is_ca: bool,
-    /// Path length constraint
-    pub path_length_constraint: Option<u32>,
-}
-
-/// Serial number generation strategies
-#[derive(Debug, Clone)]
-pub enum SerialNumberStrategy {
-    /// Sequential numbering
-    Sequential { start: u64, increment: u64 },
-    /// Random serial numbers
-    Random { size_bytes: usize },
-    /// Custom strategy
-    Custom { algorithm: String },
-}
-
-/// Certificate template for different certificate types
-#[derive(Debug, Clone)]
-pub struct CertificateTemplate {
-    /// Template name
-    pub name: String,
-    /// Key usage for certificates from this template
-    pub key_usage: KeyUsage,
-    /// Extended key usage
-    pub extended_key_usage: ExtendedKeyUsage,
-    /// Default validity period
-    pub validity_days: u32,
-    /// Required subject attributes
-    pub required_subject_attributes: Vec<String>,
-    /// Extensions to include
-    pub extensions: Vec<TemplateExtension>,
-    /// Supported key algorithms
-    pub supported_key_algorithms: Vec<PublicKeyAlgorithm>,
-}
-
-/// Template extension configuration
-#[derive(Debug, Clone)]
-pub struct TemplateExtension {
-    /// Extension OID
-    pub oid: String,
-    /// Whether extension is critical
-    pub critical: bool,
-    /// Extension template data
-    pub template_data: Vec<u8>,
-}
-
-/// Certificate issuance request
-#[derive(Debug, Clone)]
-pub struct CertificateIssuanceRequest {
-    /// Certificate signing request
-    pub csr: CertificateSigningRequest,
-    /// Template to use for issuance
-    pub template_name: Option<String>,
-    /// Custom validity period (if different from template)
-    pub validity_days: Option<u32>,
-    /// Additional extensions
-    pub additional_extensions: Vec<X509Extension>,
-    /// Subject alternative names
-    pub subject_alternative_names: Vec<GeneralName>,
-    /// Custom serial number (if not using CA strategy)
-    pub custom_serial: Option<SerialNumber>,
-}
-
-/// Certificate Authority implementation
-#[derive(Debug)]
 pub struct CertificateAuthority {
     /// CA configuration
-    pub config: CaConfig,
-    /// CA certificate (self-signed or issued by parent CA)
-    pub ca_certificate: X509Certificate,
-    /// CA private key
-    pub ca_private_key: Vec<u8>,
-    /// Issued certificates registry
-    pub issued_certificates: Arc<Mutex<HashMap<SerialNumber, IssuedCertificateInfo>>>,
-    /// Serial number counter (for sequential strategy)
-    pub serial_counter: Arc<Mutex<u64>>,
-    /// CA statistics
-    pub statistics: Arc<Mutex<CaStatistics>>,
-    /// Certificate revocation list
-    pub crl: Arc<Mutex<Option<CertificateRevocationList>>>,
-    /// OCSP responder configuration
-    pub ocsp_config: Option<OcspResponderConfig>,
+    pub config: CaConfiguration,
+    
+    /// CA certificate
+    pub certificate: Certificate,
+    
+    /// CA private key (encrypted)
+    private_key: Vec<u8>,
+    
+    /// CA metadata
+    pub metadata: CaMetadata,
+    
+    /// CA policy settings
+    pub policy: CaPolicy,
+    
+    /// Issued certificates database
+    issued_certificates: HashMap<String, Certificate>,
+    
+    /// Revoked certificates
+    revoked_certificates: HashMap<String, RevocationEntry>,
 }
 
-/// Information about issued certificates
+/// fr fr CA configuration settings
 #[derive(Debug, Clone)]
-pub struct IssuedCertificateInfo {
-    /// Certificate serial number
-    pub serial_number: SerialNumber,
-    /// Certificate subject
-    pub subject: DistinguishedName,
-    /// Issuance timestamp
-    pub issued_at: SystemTime,
-    /// Expiration timestamp
-    pub expires_at: SystemTime,
-    /// Template used for issuance
-    pub template_name: Option<String>,
-    /// Certificate status
-    pub status: CertificateStatus,
-    /// Revocation information (if revoked)
-    pub revocation_info: Option<RevocationInfo>,
+pub struct CaConfiguration {
+    pub name: String,
+    pub key_size: usize,
+    pub signature_algorithm: SignatureAlgorithm,
+    pub validity_days: u32,
+    pub country: Option<String>,
+    pub state: Option<String>,
+    pub locality: Option<String>,
+    pub organization: String,
+    pub organizational_unit: Option<String>,
+    pub email: Option<String>,
+    pub enable_crl: bool,
+    pub crl_distribution_points: Vec<String>,
+    pub ocsp_responder_url: Option<String>,
 }
 
-/// Certificate status enumeration
-#[derive(Debug, Clone, PartialEq)]
-pub enum CertificateStatus {
+/// fr fr CA key pair structure
+#[derive(Debug, Clone)]
+pub struct CaKeyPair {
+    pub public_key: Vec<u8>,
+    pub private_key: Vec<u8>,
+    pub algorithm: PublicKeyAlgorithm,
+    pub key_size: usize,
+}
+
+/// fr fr CA policy settings
+#[derive(Debug, Clone)]
+pub struct CaPolicy {
+    pub max_validity_days: u32,
+    pub require_san: bool,
+    pub allowed_key_sizes: Vec<usize>,
+    pub allowed_signature_algorithms: Vec<SignatureAlgorithm>,
+    pub path_length_constraint: Option<u32>,
+    pub name_constraints: Vec<String>,
+    pub policy_oids: Vec<String>,
+}
+
+/// fr fr CA profile for different certificate types
+#[derive(Debug, Clone)]
+pub struct CaProfile {
+    pub name: String,
+    pub validity_days: u32,
+    pub key_usage: KeyUsage,
+    pub extended_key_usage: Option<ExtendedKeyUsage>,
+    pub basic_constraints: Option<BasicConstraints>,
+    pub require_san: bool,
+}
+
+/// fr fr Root CA structure
+#[derive(Debug, Clone)]
+pub struct RootCa {
+    pub ca: CertificateAuthority,
+    pub subordinates: Vec<IntermediateCa>,
+}
+
+/// fr fr Intermediate CA structure
+#[derive(Debug, Clone)]
+pub struct IntermediateCa {
+    pub ca: CertificateAuthority,
+    pub parent: Box<Certificate>,
+    pub subordinates: Vec<SubordinateCa>,
+}
+
+/// fr fr Subordinate CA structure
+#[derive(Debug, Clone)]
+pub struct SubordinateCa {
+    pub ca: CertificateAuthority,
+    pub parent: Box<Certificate>,
+}
+
+/// fr fr CA hierarchy management
+#[derive(Debug, Clone)]
+pub struct CaHierarchy {
+    pub root: RootCa,
+    pub depth: usize,
+    pub trust_anchor: Certificate,
+}
+
+/// fr fr CA manager for multiple CAs
+#[derive(Debug)]
+pub struct CaManager {
+    pub cas: HashMap<String, CertificateAuthority>,
+    pub hierarchies: HashMap<String, CaHierarchy>,
+    pub policies: HashMap<String, CaPolicy>,
+    pub profiles: HashMap<String, CaProfile>,
+}
+
+/// fr fr CA metadata
+#[derive(Debug, Clone)]
+pub struct CaMetadata {
+    pub ca_id: String,
+    pub created_at: SystemTime,
+    pub last_crl_update: Option<SystemTime>,
+    pub next_crl_update: Option<SystemTime>,
+    pub certificates_issued: u64,
+    pub certificates_revoked: u64,
+    pub status: CaStatus,
+    pub version: String,
+}
+
+/// fr fr CA status enumeration
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CaStatus {
     Active,
+    Suspended,
     Revoked,
     Expired,
-    Suspended,
+    Compromised,
 }
 
-/// Revocation information
+/// fr fr Revocation entry
 #[derive(Debug, Clone)]
-pub struct RevocationInfo {
-    /// Revocation date
-    pub revoked_at: SystemTime,
-    /// Revocation reason
+pub struct RevocationEntry {
+    pub serial_number: String,
+    pub revocation_time: SystemTime,
     pub reason: RevocationReason,
-    /// Revocation comment
-    pub comment: Option<String>,
+    pub invalidity_date: Option<SystemTime>,
 }
 
-/// CA statistics
-#[derive(Debug, Default)]
-pub struct CaStatistics {
-    /// Total certificates issued
-    pub certificates_issued: u64,
-    /// Active certificates
-    pub active_certificates: u64,
-    /// Revoked certificates
-    pub revoked_certificates: u64,
-    /// Expired certificates
-    pub expired_certificates: u64,
-    /// Failed issuance attempts
-    pub failed_issuances: u64,
-    /// Average issuance time (milliseconds)
-    pub avg_issuance_time_ms: f64,
+/// fr fr Revocation reasons
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RevocationReason {
+    Unspecified,
+    KeyCompromise,
+    CaCompromise,
+    AffiliationChanged,
+    Superseded,
+    CessationOfOperation,
+    CertificateHold,
+    RemoveFromCrl,
+    PrivilegeWithdrawn,
+    AaCompromise,
 }
 
-/// OCSP responder configuration
-#[derive(Debug, Clone)]
-pub struct OcspResponderConfig {
-    /// Responder URL
-    pub responder_url: String,
-    /// Signing certificate
-    pub signing_certificate: X509Certificate,
-    /// Signing private key
-    pub signing_private_key: Vec<u8>,
-    /// Response validity period
-    pub response_validity_hours: u32,
-}
-
-impl Default for CaConfig {
+impl Default for CaConfiguration {
     fn default() -> Self {
-        let mut ca_key_usage = KeyUsage::default();
-        ca_key_usage.key_cert_sign = true;
-        ca_key_usage.crl_sign = true;
-        ca_key_usage.digital_signature = true;
-        
-        let mut templates = HashMap::new();
-        
-        // Server certificate template
-        let mut server_template = CertificateTemplate {
-            name: "server".to_string(),
-            key_usage: KeyUsage {
-                digital_signature: true,
-                key_encipherment: true,
-                ..Default::default()
-            },
-            extended_key_usage: ExtendedKeyUsage {
-                server_auth: true,
-                ..Default::default()
-            },
-            validity_days: 365,
-            required_subject_attributes: vec!["CN".to_string()],
-            extensions: Vec::new(),
-            supported_key_algorithms: vec![
-                PublicKeyAlgorithm::Rsa { key_size: 2048 },
-                PublicKeyAlgorithm::EllipticCurve { curve: EllipticCurve::P256 },
-            ],
-        };
-        templates.insert("server".to_string(), server_template);
-        
-        // Client certificate template
-        let client_template = CertificateTemplate {
-            name: "client".to_string(),
-            key_usage: KeyUsage {
-                digital_signature: true,
-                key_agreement: true,
-                ..Default::default()
-            },
-            extended_key_usage: ExtendedKeyUsage {
-                client_auth: true,
-                ..Default::default()
-            },
-            validity_days: 365,
-            required_subject_attributes: vec!["CN".to_string()],
-            extensions: Vec::new(),
-            supported_key_algorithms: vec![
-                PublicKeyAlgorithm::Rsa { key_size: 2048 },
-                PublicKeyAlgorithm::EllipticCurve { curve: EllipticCurve::P256 },
-            ],
-        };
-        templates.insert("client".to_string(), client_template);
-        
         Self {
-            distinguished_name: DistinguishedName::from_common_name("Default CA"),
+            name: "Default CA".to_string(),
+            key_size: 2048,
             signature_algorithm: SignatureAlgorithm::RsaWithSha256,
-            default_validity_days: 365,
-            max_validity_days: 3650,
-            basic_constraints: BasicConstraintsConfig {
-                is_ca: true,
-                path_length_constraint: None,
-            },
-            ca_key_usage,
-            certificate_policies: Vec::new(),
+            validity_days: 3650, // 10 years for CA
+            country: Some("US".to_string()),
+            state: None,
+            locality: None,
+            organization: "Default Organization".to_string(),
+            organizational_unit: None,
+            email: None,
+            enable_crl: true,
+            crl_distribution_points: Vec::new(),
+            ocsp_responder_url: None,
+        }
+    }
+}
+
+impl Default for CaPolicy {
+    fn default() -> Self {
+        Self {
+            max_validity_days: 365,
+            require_san: false,
+            allowed_key_sizes: vec![2048, 3072, 4096],
+            allowed_signature_algorithms: vec![
+                SignatureAlgorithm::RsaWithSha256,
+                SignatureAlgorithm::RsaWithSha384,
+                SignatureAlgorithm::RsaWithSha512,
+                SignatureAlgorithm::EcdsaWithSha256,
+                SignatureAlgorithm::EcdsaWithSha384,
+            ],
             path_length_constraint: None,
-            serial_number_strategy: SerialNumberStrategy::Sequential {
-                start: 1,
-                increment: 1,
-            },
-            certificate_templates: templates,
+            name_constraints: Vec::new(),
+            policy_oids: Vec::new(),
         }
     }
 }
 
 impl CertificateAuthority {
-    /// Create a new Certificate Authority
-    pub fn new(
-        config: CaConfig,
-        ca_certificate: X509Certificate,
-        ca_private_key: Vec<u8>,
-    ) -> Self {
-        Self {
+    /// slay Create a new Certificate Authority
+    pub fn new(config: CaConfiguration) -> PkiResult<Self> {
+        // Generate CA key pair
+        let key_pair = rsa_generate_keypair(config.key_size, vec![])
+            .map_err(|e| PkiError::CaOperationFailed(format!("Key generation failed: {}", e)))?;
+        
+        // Create CA certificate
+        let mut cert_builder = CertificateBuilder::new();
+        cert_builder.set_subject_common_name(&config.name);
+        cert_builder.set_subject_organization(&config.organization);
+        
+        if let Some(ref country) = config.country {
+            cert_builder.subject.country = Some(country.clone());
+        }
+        if let Some(ref state) = config.state {
+            cert_builder.subject.state = Some(state.clone());
+        }
+        if let Some(ref locality) = config.locality {
+            cert_builder.subject.locality = Some(locality.clone());
+        }
+        if let Some(ref ou) = config.organizational_unit {
+            cert_builder.subject.organizational_unit = Some(ou.clone());
+        }
+        if let Some(ref email) = config.email {
+            cert_builder.subject.email = Some(email.clone());
+        }
+        
+        cert_builder.set_validity_days(config.validity_days);
+        cert_builder.set_key_size(config.key_size);
+        cert_builder.set_ca(true, None); // Root CA has no path length constraint
+        
+        let certificate = cert_builder.build_self_signed()?;
+        
+        let metadata = CaMetadata {
+            ca_id: generate_ca_id(&config.name),
+            created_at: SystemTime::now(),
+            last_crl_update: None,
+            next_crl_update: None,
+            certificates_issued: 0,
+            certificates_revoked: 0,
+            status: CaStatus::Active,
+            version: "1.0.0".to_string(),
+        };
+        
+        Ok(Self {
             config,
-            ca_certificate,
-            ca_private_key,
-            issued_certificates: Arc::new(Mutex::new(HashMap::new())),
-            serial_counter: Arc::new(Mutex::new(1)),
-            statistics: Arc::new(Mutex::new(CaStatistics::default())),
-            crl: Arc::new(Mutex::new(None)),
-            ocsp_config: None,
-        }
+            certificate,
+            private_key: key_pair.private_key,
+            metadata,
+            policy: CaPolicy::default(),
+            issued_certificates: HashMap::new(),
+            revoked_certificates: HashMap::new(),
+        })
     }
     
-    /// Initialize CA with default configurations
-    pub fn initialize_with_defaults(&mut self) -> PkiResult<()> {
-        // Set up initial serial number
-        if let SerialNumberStrategy::Sequential { start, .. } = &self.config.serial_number_strategy {
-            let mut counter = self.serial_counter.lock()
-                .map_err(|_| PkiError::ca_error("Failed to lock serial counter", "initialization"))?;
-            *counter = *start;
-        }
-        
-        // Initialize empty CRL
-        let mut crl = self.crl.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock CRL", "initialization"))?;
-        *crl = Some(self.generate_empty_crl()?);
-        
-        Ok(())
-    }
-    
-    /// Issue a certificate based on a CSR
-    pub fn issue_certificate(
-        &self,
-        request: CertificateIssuanceRequest,
-    ) -> PkiResult<X509Certificate> {
-        let start_time = SystemTime::now();
-        
-        // Validate the CSR
-        self.validate_csr(&request.csr)?;
-        
-        // Get certificate template
-        let template = if let Some(template_name) = &request.template_name {
-            self.config.certificate_templates.get(template_name)
-                .ok_or_else(|| PkiError::ca_error(
-                    format!("Certificate template not found: {}", template_name),
-                    "issuance"
-                ))?
-        } else {
-            // Use default server template
-            self.config.certificate_templates.get("server")
-                .ok_or_else(|| PkiError::ca_error("Default template not found", "issuance"))?
-        };
-        
-        // Validate subject against template requirements
-        self.validate_subject_against_template(&request.csr.subject, template)?;
-        
-        // Generate serial number
-        let serial_number = if let Some(custom) = request.custom_serial {
-            custom
-        } else {
-            self.generate_serial_number()?
-        };
-        
-        // Calculate validity period
-        let validity_days = request.validity_days
-            .unwrap_or(template.validity_days)
-            .min(self.config.max_validity_days);
-        
-        let not_before = SystemTime::now();
-        let not_after = not_before + Duration::from_secs(validity_days as u64 * 24 * 3600);
-        
-        // Build certificate
-        let mut certificate = X509Certificate {
-            version: 3,
-            serial_number: serial_number.clone(),
-            signature_algorithm: self.config.signature_algorithm.clone(),
-            issuer: self.ca_certificate.subject.clone(),
-            validity: Validity {
-                not_before,
-                not_after,
-            },
-            subject: request.csr.subject.clone(),
-            subject_public_key_info: request.csr.subject_public_key_info.clone(),
-            extensions: Vec::new(),
-            raw_data: Vec::new(),
-            fingerprint: None,
-            key_usage: template.key_usage.clone(),
-            extended_key_usage: template.extended_key_usage.clone(),
-        };
-        
-        // Add standard extensions
-        self.add_standard_extensions(&mut certificate, template, &request)?;
-        
-        // Add additional extensions from request
-        certificate.extensions.extend(request.additional_extensions);
-        
-        // Sign the certificate
-        let signed_cert = self.sign_certificate(certificate)?;
-        
-        // Record the issued certificate
-        let cert_info = IssuedCertificateInfo {
-            serial_number: serial_number.clone(),
-            subject: signed_cert.subject.clone(),
-            issued_at: not_before,
-            expires_at: not_after,
-            template_name: request.template_name.clone(),
-            status: CertificateStatus::Active,
-            revocation_info: None,
-        };
-        
-        let mut issued_certs = self.issued_certificates.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock issued certificates", "issuance"))?;
-        issued_certs.insert(serial_number, cert_info);
-        
-        // Update statistics
-        let mut stats = self.statistics.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock statistics", "issuance"))?;
-        stats.certificates_issued += 1;
-        stats.active_certificates += 1;
-        
-        if let Ok(elapsed) = start_time.elapsed() {
-            let elapsed_ms = elapsed.as_millis() as f64;
-            stats.avg_issuance_time_ms = (stats.avg_issuance_time_ms * (stats.certificates_issued - 1) as f64 + elapsed_ms) / stats.certificates_issued as f64;
-        }
-        
-        Ok(signed_cert)
-    }
-    
-    /// Revoke a certificate
-    pub fn revoke_certificate(
-        &self,
-        serial_number: &SerialNumber,
-        reason: RevocationReason,
-        comment: Option<String>,
-    ) -> PkiResult<()> {
-        let mut issued_certs = self.issued_certificates.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock issued certificates", "revocation"))?;
-        
-        let cert_info = issued_certs.get_mut(serial_number)
-            .ok_or_else(|| PkiError::ca_error(
-                format!("Certificate not found: {}", serial_number.to_hex_string()),
-                "revocation"
-            ))?;
-        
-        if cert_info.status == CertificateStatus::Revoked {
-            return Err(PkiError::ca_error(
-                "Certificate already revoked",
-                "revocation"
+    /// slay Create CA from existing certificate and key
+    pub fn from_certificate(cert: Certificate, private_key: Vec<u8>) -> PkiResult<Self> {
+        if !cert.is_ca() {
+            return Err(PkiError::CaConfigurationInvalid(
+                "Certificate is not a CA certificate".to_string()
             ));
         }
         
-        cert_info.status = CertificateStatus::Revoked;
-        cert_info.revocation_info = Some(RevocationInfo {
-            revoked_at: SystemTime::now(),
-            reason,
-            comment,
-        });
-        
-        // Update statistics
-        let mut stats = self.statistics.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock statistics", "revocation"))?;
-        stats.revoked_certificates += 1;
-        stats.active_certificates = stats.active_certificates.saturating_sub(1);
-        
-        // Update CRL
-        self.update_crl()?;
-        
-        Ok(())
-    }
-    
-    /// Generate a new Certificate Revocation List
-    pub fn generate_crl(&self) -> PkiResult<CertificateRevocationList> {
-        let issued_certs = self.issued_certificates.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock issued certificates", "crl_generation"))?;
-        
-        let mut revoked_certificates = Vec::new();
-        
-        for cert_info in issued_certs.values() {
-            if cert_info.status == CertificateStatus::Revoked {
-                if let Some(revocation_info) = &cert_info.revocation_info {
-                    revoked_certificates.push(RevokedCertificate {
-                        serial_number: cert_info.serial_number.clone(),
-                        revocation_date: revocation_info.revoked_at,
-                        reason: Some(revocation_info.reason),
-                        extensions: Vec::new(),
-                    });
-                }
-            }
-        }
-        
-        let now = SystemTime::now();
-        let next_update = now + Duration::from_secs(7 * 24 * 3600); // 7 days
-        
-        let crl = CertificateRevocationList {
-            version: Some(2),
-            signature_algorithm: self.config.signature_algorithm.clone(),
-            issuer: self.ca_certificate.subject.clone(),
-            this_update: now,
-            next_update: Some(next_update),
-            revoked_certificates,
-            extensions: Vec::new(),
-            raw_data: Vec::new(),
+        let config = CaConfiguration {
+            name: cert.subject.common_name.clone().unwrap_or_default(),
+            key_size: cert.public_key_info.key_size,
+            signature_algorithm: cert.signature_algorithm.clone(),
+            validity_days: 365, // Default for issued certificates
+            country: cert.subject.country.clone(),
+            state: cert.subject.state.clone(),
+            locality: cert.subject.locality.clone(),
+            organization: cert.subject.organization.clone().unwrap_or_default(),
+            organizational_unit: cert.subject.organizational_unit.clone(),
+            email: cert.subject.email.clone(),
+            enable_crl: true,
+            crl_distribution_points: Vec::new(),
+            ocsp_responder_url: None,
         };
         
-        Ok(crl)
+        let metadata = CaMetadata {
+            ca_id: generate_ca_id(&config.name),
+            created_at: cert.validity.not_before,
+            last_crl_update: None,
+            next_crl_update: None,
+            certificates_issued: 0,
+            certificates_revoked: 0,
+            status: if cert.is_valid_now() { CaStatus::Active } else { CaStatus::Expired },
+            version: "1.0.0".to_string(),
+        };
+        
+        Ok(Self {
+            config,
+            certificate: cert,
+            private_key,
+            metadata,
+            policy: CaPolicy::default(),
+            issued_certificates: HashMap::new(),
+            revoked_certificates: HashMap::new(),
+        })
     }
     
-    /// Get certificate status
-    pub fn get_certificate_status(&self, serial_number: &SerialNumber) -> PkiResult<CertificateStatus> {
-        let issued_certs = self.issued_certificates.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock issued certificates", "status_check"))?;
+    /// slay Create root CA
+    pub fn create_root_ca(&self, subject: &str, key_size: usize) -> PkiResult<(Certificate, Vec<u8>)> {
+        let mut config = self.config.clone();
+        config.name = subject.to_string();
+        config.key_size = key_size;
         
-        let cert_info = issued_certs.get(serial_number)
-            .ok_or_else(|| PkiError::ca_error(
-                format!("Certificate not found: {}", serial_number.to_hex_string()),
-                "status_check"
-            ))?;
-        
-        // Check if certificate has expired
-        if cert_info.expires_at < SystemTime::now() && cert_info.status == CertificateStatus::Active {
-            Ok(CertificateStatus::Expired)
-        } else {
-            Ok(cert_info.status.clone())
-        }
+        let ca = Self::new(config)?;
+        Ok((ca.certificate, ca.private_key))
     }
     
-    /// Get CA statistics
-    pub fn get_statistics(&self) -> PkiResult<CaStatistics> {
-        let stats = self.statistics.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock statistics", "statistics"))?;
-        Ok(stats.clone())
-    }
-    
-    /// List all issued certificates
-    pub fn list_issued_certificates(&self) -> PkiResult<Vec<IssuedCertificateInfo>> {
-        let issued_certs = self.issued_certificates.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock issued certificates", "listing"))?;
+    /// slay Issue a certificate using a template
+    pub fn issue_certificate(&self, template: &CertificateTemplate) -> PkiResult<Certificate> {
+        // Validate request against CA policy
+        self.validate_certificate_request(template)?;
         
-        Ok(issued_certs.values().cloned().collect())
-    }
-    
-    /// Validate CSR
-    fn validate_csr(&self, csr: &CertificateSigningRequest) -> PkiResult<()> {
-        // Validate CSR signature
-        if !self.verify_csr_signature(csr)? {
-            return Err(PkiError::certificate_error(
-                "CSR signature validation failed",
-                CertificateErrorCode::InvalidSignature,
-            ));
+        // Build certificate from template
+        let mut cert_builder = CertificateBuilder::new();
+        
+        // Set subject from template
+        cert_builder.set_subject_common_name(&template.subject.common_name);
+        if let Some(ref org) = template.subject.organization {
+            cert_builder.set_subject_organization(org);
         }
         
-        // Validate subject
-        if csr.subject.common_name.is_none() {
-            return Err(PkiError::certificate_error(
-                "CSR subject must have a common name",
-                CertificateErrorCode::MalformedCertificate,
-            ));
+        // Set validity (constrained by CA policy)
+        let validity_days = std::cmp::min(template.validity_days, self.policy.max_validity_days);
+        cert_builder.set_validity_days(validity_days);
+        
+        // Set key size
+        cert_builder.set_key_size(template.key_size);
+        
+        // Add subject alternative names
+        for san in &template.subject_alt_names {
+            cert_builder.add_dns_san(san);
         }
         
-        Ok(())
-    }
-    
-    /// Verify CSR signature
-    fn verify_csr_signature(&self, _csr: &CertificateSigningRequest) -> PkiResult<bool> {
-        // In a real implementation, this would:
-        // 1. Extract the public key from the CSR
-        // 2. Verify the signature over the CSR info
-        // 3. Check that the signature algorithm is supported
-        
-        // For now, we'll assume the signature is valid
-        Ok(true)
-    }
-    
-    /// Validate subject against template requirements
-    fn validate_subject_against_template(
-        &self,
-        subject: &DistinguishedName,
-        template: &CertificateTemplate,
-    ) -> PkiResult<()> {
-        for required_attr in &template.required_subject_attributes {
-            match required_attr.as_str() {
-                "CN" => {
-                    if subject.common_name.is_none() {
-                        return Err(PkiError::certificate_error(
-                            "Common Name (CN) is required",
-                            CertificateErrorCode::MalformedCertificate,
-                        ));
-                    }
-                }
-                "O" => {
-                    if subject.organization.is_none() {
-                        return Err(PkiError::certificate_error(
-                            "Organization (O) is required",
-                            CertificateErrorCode::MalformedCertificate,
-                        ));
-                    }
-                }
-                "C" => {
-                    if subject.country.is_none() {
-                        return Err(PkiError::certificate_error(
-                            "Country (C) is required",
-                            CertificateErrorCode::MalformedCertificate,
-                        ));
-                    }
-                }
-                _ => {
-                    // Check additional attributes
-                    if !subject.additional_attributes.contains_key(required_attr) {
-                        return Err(PkiError::certificate_error(
-                            format!("Required attribute missing: {}", required_attr),
-                            CertificateErrorCode::MalformedCertificate,
-                        ));
-                    }
-                }
-            }
+        // Set extensions from template
+        if let Some(ref basic_constraints) = template.basic_constraints {
+            cert_builder.set_ca(basic_constraints.ca, basic_constraints.path_length);
         }
         
-        Ok(())
-    }
-    
-    /// Generate serial number based on strategy
-    fn generate_serial_number(&self) -> PkiResult<SerialNumber> {
-        match &self.config.serial_number_strategy {
-            SerialNumberStrategy::Sequential { increment, .. } => {
-                let mut counter = self.serial_counter.lock()
-                    .map_err(|_| PkiError::ca_error("Failed to lock serial counter", "serial_generation"))?;
-                
-                let serial = *counter;
-                *counter += increment;
-                Ok(SerialNumber::from_big_int(serial))
-            }
-            SerialNumberStrategy::Random { size_bytes } => {
-                // Generate random serial number
-                let mut bytes = vec![0u8; *size_bytes];
-                
-                // Simple random number generation (use proper CSPRNG in production)
-                use std::collections::hash_map::DefaultHasher;
-                use std::hash::{Hash, Hasher};
-                
-                let mut hasher = DefaultHasher::new();
-                SystemTime::now().hash(&mut hasher);
-                let random_seed = hasher.finish();
-                
-                for (i, byte) in bytes.iter_mut().enumerate() {
-                    *byte = ((random_seed >> (i * 8)) & 0xFF) as u8;
-                }
-                
-                Ok(SerialNumber::from_bytes(bytes))
-            }
-            SerialNumberStrategy::Custom { algorithm } => {
-                Err(PkiError::ca_error(
-                    format!("Custom serial number algorithm not implemented: {}", algorithm),
-                    "serial_generation"
-                ))
-            }
-        }
-    }
-    
-    /// Add standard extensions to certificate
-    fn add_standard_extensions(
-        &self,
-        certificate: &mut X509Certificate,
-        template: &CertificateTemplate,
-        request: &CertificateIssuanceRequest,
-    ) -> PkiResult<()> {
-        // Basic Constraints (only for CA certificates)
-        if template.key_usage.key_cert_sign {
-            certificate.extensions.push(X509Extension {
-                oid: "2.5.29.19".to_string(),
-                critical: true,
-                value: vec![0x30, 0x00], // Empty SEQUENCE for non-CA
-                parsed_data: Some(ExtensionData::BasicConstraints {
-                    is_ca: false,
-                    path_length_constraint: None,
-                }),
-            });
-        }
+        // Build and sign certificate
+        let mut certificate = cert_builder.build_self_signed()?;
         
-        // Key Usage
-        certificate.extensions.push(X509Extension {
-            oid: "2.5.29.15".to_string(),
-            critical: true,
-            value: self.encode_key_usage(&template.key_usage)?,
-            parsed_data: Some(ExtensionData::KeyUsage(template.key_usage.clone())),
-        });
+        // Override issuer with CA certificate subject
+        certificate.issuer = self.certificate.subject.clone().into();
         
-        // Extended Key Usage
-        if template.extended_key_usage.server_auth 
-            || template.extended_key_usage.client_auth 
-            || template.extended_key_usage.code_signing 
-            || template.extended_key_usage.email_protection {
-            certificate.extensions.push(X509Extension {
-                oid: "2.5.29.37".to_string(),
-                critical: false,
-                value: self.encode_extended_key_usage(&template.extended_key_usage)?,
-                parsed_data: Some(ExtensionData::ExtendedKeyUsage(template.extended_key_usage.clone())),
-            });
-        }
-        
-        // Subject Alternative Names
-        if !request.subject_alternative_names.is_empty() {
-            certificate.extensions.push(X509Extension {
-                oid: "2.5.29.17".to_string(),
-                critical: false,
-                value: self.encode_subject_alternative_names(&request.subject_alternative_names)?,
-                parsed_data: Some(ExtensionData::SubjectAlternativeName(request.subject_alternative_names.clone())),
-            });
-        }
-        
-        // Authority Key Identifier
-        if let Some(authority_key_id) = self.get_authority_key_identifier()? {
-            certificate.extensions.push(X509Extension {
-                oid: "2.5.29.35".to_string(),
-                critical: false,
-                value: authority_key_id.clone(),
-                parsed_data: Some(ExtensionData::AuthorityKeyIdentifier {
-                    key_identifier: Some(authority_key_id),
-                    authority_cert_issuer: None,
-                    authority_cert_serial_number: None,
-                }),
-            });
-        }
-        
-        // Subject Key Identifier
-        let subject_key_id = self.generate_subject_key_identifier(&certificate.subject_public_key_info)?;
-        certificate.extensions.push(X509Extension {
-            oid: "2.5.29.14".to_string(),
-            critical: false,
-            value: subject_key_id.clone(),
-            parsed_data: Some(ExtensionData::SubjectKeyIdentifier(subject_key_id)),
-        });
-        
-        Ok(())
-    }
-    
-    /// Encode key usage extension
-    fn encode_key_usage(&self, key_usage: &KeyUsage) -> PkiResult<Vec<u8>> {
-        let mut flags = 0u8;
-        
-        if key_usage.digital_signature { flags |= 0x80; }
-        if key_usage.non_repudiation { flags |= 0x40; }
-        if key_usage.key_encipherment { flags |= 0x20; }
-        if key_usage.data_encipherment { flags |= 0x10; }
-        if key_usage.key_agreement { flags |= 0x08; }
-        if key_usage.key_cert_sign { flags |= 0x04; }
-        if key_usage.crl_sign { flags |= 0x02; }
-        if key_usage.encipher_only { flags |= 0x01; }
-        
-        // BIT STRING with one byte
-        Ok(vec![0x03, 0x02, 0x00, flags])
-    }
-    
-    /// Encode extended key usage extension
-    fn encode_extended_key_usage(&self, eku: &ExtendedKeyUsage) -> PkiResult<Vec<u8>> {
-        // Simplified encoding - SEQUENCE of OIDs
-        let mut encoded = vec![0x30]; // SEQUENCE tag
-        let mut content = Vec::new();
-        
-        if eku.server_auth {
-            content.extend_from_slice(&[0x06, 0x08, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x01]);
-        }
-        if eku.client_auth {
-            content.extend_from_slice(&[0x06, 0x08, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x02]);
-        }
-        if eku.code_signing {
-            content.extend_from_slice(&[0x06, 0x08, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x03]);
-        }
-        if eku.email_protection {
-            content.extend_from_slice(&[0x06, 0x08, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x04]);
-        }
-        
-        encoded.push(content.len() as u8);
-        encoded.extend_from_slice(&content);
-        
-        Ok(encoded)
-    }
-    
-    /// Encode subject alternative names
-    fn encode_subject_alternative_names(&self, names: &[GeneralName]) -> PkiResult<Vec<u8>> {
-        // Simplified encoding
-        let mut encoded = vec![0x30]; // SEQUENCE tag
-        let mut content = Vec::new();
-        
-        for name in names {
-            match name {
-                GeneralName::DnsName(dns) => {
-                    content.push(0x82); // [2] IMPLICIT
-                    content.push(dns.len() as u8);
-                    content.extend_from_slice(dns.as_bytes());
-                }
-                GeneralName::Rfc822Name(email) => {
-                    content.push(0x81); // [1] IMPLICIT
-                    content.push(email.len() as u8);
-                    content.extend_from_slice(email.as_bytes());
-                }
-                GeneralName::UniformResourceIdentifier(uri) => {
-                    content.push(0x86); // [6] IMPLICIT
-                    content.push(uri.len() as u8);
-                    content.extend_from_slice(uri.as_bytes());
-                }
-                _ => {
-                    // Skip unsupported name types for now
-                }
-            }
-        }
-        
-        encoded.push(content.len() as u8);
-        encoded.extend_from_slice(&content);
-        
-        Ok(encoded)
-    }
-    
-    /// Get authority key identifier from CA certificate
-    fn get_authority_key_identifier(&self) -> PkiResult<Option<Vec<u8>>> {
-        // Extract subject key identifier from CA certificate if available
-        for extension in &self.ca_certificate.extensions {
-            if extension.oid == "2.5.29.14" { // Subject Key Identifier
-                if let Some(ExtensionData::SubjectKeyIdentifier(key_id)) = &extension.parsed_data {
-                    return Ok(Some(key_id.clone()));
-                }
-            }
-        }
-        
-        // Generate from CA public key if not available
-        Ok(Some(self.generate_subject_key_identifier(&self.ca_certificate.subject_public_key_info)?))
-    }
-    
-    /// Generate subject key identifier
-    fn generate_subject_key_identifier(&self, spki: &SubjectPublicKeyInfo) -> PkiResult<Vec<u8>> {
-        // Use a simple hash of the public key
-        // In production, use SHA-1 of the public key
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        use std::hash::{Hash, Hasher};
-        spki.public_key.hash(&mut hasher);
-        let hash = hasher.finish();
-        
-        // Convert to 20-byte key identifier
-        let mut key_id = vec![0u8; 20];
-        for i in 0..8 {
-            key_id[i] = ((hash >> (i * 8)) & 0xFF) as u8;
-        }
-        
-        Ok(key_id)
-    }
-    
-    /// Sign certificate
-    fn sign_certificate(&self, mut certificate: X509Certificate) -> PkiResult<X509Certificate> {
-        // In a real implementation, this would:
-        // 1. Encode the tbsCertificate in DER format
-        // 2. Sign the DER-encoded tbsCertificate with the CA private key
-        // 3. Create the complete certificate structure
-        
-        // For now, we'll create a mock signature
-        let mock_signature = vec![0x30, 0x80]; // Mock ASN.1 signature
-        
-        // Generate DER encoding of the certificate
-        certificate.raw_data = self.encode_certificate_der(&certificate)?;
-        
-        // Generate fingerprint
-        certificate.fingerprint = Some(self.generate_certificate_fingerprint(&certificate.raw_data)?);
+        // Sign certificate with CA private key
+        self.sign_certificate(&mut certificate)?;
         
         Ok(certificate)
     }
     
-    /// Encode certificate in DER format
-    fn encode_certificate_der(&self, _certificate: &X509Certificate) -> PkiResult<Vec<u8>> {
-        // Simplified DER encoding
-        // In production, use a proper ASN.1 encoder
-        Ok(vec![
-            0x30, 0x82, 0x03, 0x45, // Certificate SEQUENCE
-            // TBSCertificate, signatureAlgorithm, signatureValue would go here
-        ])
-    }
-    
-    /// Generate certificate fingerprint
-    fn generate_certificate_fingerprint(&self, der_data: &[u8]) -> PkiResult<Vec<u8>> {
-        // Simple hash for demonstration
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
+    /// slay Revoke a certificate
+    pub fn revoke_certificate(
+        &mut self, 
+        serial_number: &str, 
+        reason: RevocationReason
+    ) -> PkiResult<()> {
+        let revocation_entry = RevocationEntry {
+            serial_number: serial_number.to_string(),
+            revocation_time: SystemTime::now(),
+            reason,
+            invalidity_date: None,
+        };
         
-        let mut hasher = DefaultHasher::new();
-        der_data.hash(&mut hasher);
-        let hash = hasher.finish();
-        
-        let mut fingerprint = vec![0u8; 32]; // SHA-256 size
-        for i in 0..8 {
-            let start = i * 4;
-            if start < 32 {
-                fingerprint[start] = ((hash >> (i * 8)) & 0xFF) as u8;
-            }
-        }
-        
-        Ok(fingerprint)
-    }
-    
-    /// Generate empty CRL
-    fn generate_empty_crl(&self) -> PkiResult<CertificateRevocationList> {
-        let now = SystemTime::now();
-        let next_update = now + Duration::from_secs(7 * 24 * 3600); // 7 days
-        
-        Ok(CertificateRevocationList {
-            version: Some(2),
-            signature_algorithm: self.config.signature_algorithm.clone(),
-            issuer: self.ca_certificate.subject.clone(),
-            this_update: now,
-            next_update: Some(next_update),
-            revoked_certificates: Vec::new(),
-            extensions: Vec::new(),
-            raw_data: Vec::new(),
-        })
-    }
-    
-    /// Update CRL with current revoked certificates
-    fn update_crl(&self) -> PkiResult<()> {
-        let new_crl = self.generate_crl()?;
-        
-        let mut crl = self.crl.lock()
-            .map_err(|_| PkiError::ca_error("Failed to lock CRL", "crl_update"))?;
-        *crl = Some(new_crl);
+        self.revoked_certificates.insert(serial_number.to_string(), revocation_entry);
+        self.metadata.certificates_revoked += 1;
         
         Ok(())
     }
+    
+    /// slay Generate Certificate Revocation List (CRL)
+    pub fn generate_crl(&mut self) -> PkiResult<Vec<u8>> {
+        let now = SystemTime::now();
+        let next_update = now + Duration::from_secs(7 * 24 * 60 * 60); // 7 days
+        
+        // Create CRL structure (mock implementation)
+        let mut crl_data = Vec::new();
+        crl_data.extend_from_slice(b"CRL_HEADER");
+        
+        // Add revoked certificates
+        for (serial, entry) in &self.revoked_certificates {
+            crl_data.extend_from_slice(serial.as_bytes());
+            crl_data.extend_from_slice(&entry.revocation_time
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+                .to_be_bytes());
+        }
+        
+        self.metadata.last_crl_update = Some(now);
+        self.metadata.next_crl_update = Some(next_update);
+        
+        Ok(crl_data)
+    }
+    
+    /// slay Check if certificate is revoked
+    pub fn is_revoked(&self, serial_number: &str) -> bool {
+        self.revoked_certificates.contains_key(serial_number)
+    }
+    
+    /// slay Get CA certificate chain
+    pub fn get_certificate_chain(&self) -> Vec<Certificate> {
+        vec![self.certificate.clone()]
+    }
+    
+    /// slay Validate certificate request against CA policy
+    fn validate_certificate_request(&self, template: &CertificateTemplate) -> PkiResult<()> {
+        // Check validity period
+        if template.validity_days > self.policy.max_validity_days {
+            return Err(PkiError::CaOperationFailed(
+                format!("Requested validity period {} days exceeds maximum allowed {} days",
+                    template.validity_days, self.policy.max_validity_days)
+            ));
+        }
+        
+        // Check key size
+        if !self.policy.allowed_key_sizes.contains(&template.key_size) {
+            return Err(PkiError::CaOperationFailed(
+                format!("Key size {} not allowed by CA policy", template.key_size)
+            ));
+        }
+        
+        // Check if SAN is required
+        if self.policy.require_san && template.subject_alt_names.is_empty() {
+            return Err(PkiError::CaOperationFailed(
+                "Subject Alternative Name is required by CA policy".to_string()
+            ));
+        }
+        
+        Ok(())
+    }
+    
+    /// slay Sign a certificate with the CA's private key
+    fn sign_certificate(&self, certificate: &mut Certificate) -> PkiResult<()> {
+        use crate::stdlib::packages::crypto_asymmetric::{rsa_sign, ecdsa_sign, RsaPadding, EccCurve, EccHashAlgorithm};
+        use crate::stdlib::packages::crypto_hash_advanced::sha256_hash;
+        
+        // Prepare certificate data for signing (TBSCertificate)
+        let tbs_cert_data = self.prepare_certificate_tbs_data(certificate)?;
+        
+        // Sign the certificate based on the signature algorithm
+        let signature = match certificate.signature_algorithm {
+            SignatureAlgorithm::RsaWithSha256 => {
+                // Parse RSA private key from stored format
+                let rsa_key_pair = self.parse_rsa_private_key()?;
+                rsa_sign(&tbs_cert_data, &rsa_key_pair.private_key, RsaPadding::Pkcs1v15)
+                    .map_err(|e| PkiError::CaOperationFailed(format!("RSA signing failed: {}", e)))?
+            },
+            SignatureAlgorithm::RsaWithSha384 => {
+                let rsa_key_pair = self.parse_rsa_private_key()?;
+                rsa_sign(&tbs_cert_data, &rsa_key_pair.private_key, RsaPadding::PssSha384)
+                    .map_err(|e| PkiError::CaOperationFailed(format!("RSA signing failed: {}", e)))?
+            },
+            SignatureAlgorithm::RsaWithSha512 => {
+                let rsa_key_pair = self.parse_rsa_private_key()?;
+                rsa_sign(&tbs_cert_data, &rsa_key_pair.private_key, RsaPadding::PssSha512)
+                    .map_err(|e| PkiError::CaOperationFailed(format!("RSA signing failed: {}", e)))?
+            },
+            SignatureAlgorithm::EcdsaWithSha256 => {
+                let ecc_key_pair = self.parse_ecc_private_key(EccCurve::P256)?;
+                ecdsa_sign(&tbs_cert_data, &ecc_key_pair.private_key_bytes, EccCurve::P256, EccHashAlgorithm::Sha256)
+                    .map_err(|e| PkiError::CaOperationFailed(format!("ECDSA signing failed: {}", e)))?
+            },
+            SignatureAlgorithm::EcdsaWithSha384 => {
+                let ecc_key_pair = self.parse_ecc_private_key(EccCurve::P384)?;
+                ecdsa_sign(&tbs_cert_data, &ecc_key_pair.private_key_bytes, EccCurve::P384, EccHashAlgorithm::Sha384)
+                    .map_err(|e| PkiError::CaOperationFailed(format!("ECDSA signing failed: {}", e)))?
+            },
+            SignatureAlgorithm::EcdsaWithSha512 => {
+                let ecc_key_pair = self.parse_ecc_private_key(EccCurve::P521)?;
+                ecdsa_sign(&tbs_cert_data, &ecc_key_pair.private_key_bytes, EccCurve::P521, EccHashAlgorithm::Sha512)
+                    .map_err(|e| PkiError::CaOperationFailed(format!("ECDSA signing failed: {}", e)))?
+            },
+            _ => return Err(PkiError::UnsupportedAlgorithm(
+                format!("Signature algorithm {:?} not supported for certificate signing", certificate.signature_algorithm)
+            )),
+        };
+        
+        // Store signature in certificate
+        certificate.signature = signature;
+        
+        // Update raw DER data with signed certificate
+        certificate.raw = self.encode_signed_certificate(certificate)?;
+        
+        Ok(())
+    }
+    
+    /// slay Prepare certificate TBSCertificate data for signing
+    fn prepare_certificate_tbs_data(&self, certificate: &Certificate) -> PkiResult<Vec<u8>> {
+        // In a real implementation, this would create proper ASN.1 DER-encoded TBSCertificate
+        // For now, we'll create a structured representation of the certificate data
+        let mut tbs_data = Vec::new();
+        
+        // Version
+        tbs_data.extend_from_slice(&certificate.version.to_be_bytes());
+        
+        // Serial number
+        tbs_data.extend_from_slice(&certificate.serial_number.bytes);
+        
+        // Signature algorithm identifier
+        tbs_data.extend_from_slice(format!("{:?}", certificate.signature_algorithm).as_bytes());
+        
+        // Issuer distinguished name
+        tbs_data.extend_from_slice(certificate.issuer.distinguished_name.as_bytes());
+        
+        // Validity period
+        let not_before_secs = certificate.validity.not_before.duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default().as_secs();
+        let not_after_secs = certificate.validity.not_after.duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default().as_secs();
+        tbs_data.extend_from_slice(&not_before_secs.to_be_bytes());
+        tbs_data.extend_from_slice(&not_after_secs.to_be_bytes());
+        
+        // Subject distinguished name
+        tbs_data.extend_from_slice(certificate.subject.distinguished_name.as_bytes());
+        
+        // Subject public key info
+        tbs_data.extend_from_slice(format!("{:?}", certificate.public_key_info.algorithm).as_bytes());
+        tbs_data.extend_from_slice(&certificate.public_key_info.public_key);
+        
+        // Extensions (basic constraints, key usage, etc.)
+        if let Some(ref basic_constraints) = certificate.extensions.basic_constraints {
+            tbs_data.extend_from_slice(&[basic_constraints.ca as u8]);
+            if let Some(path_length) = basic_constraints.path_length {
+                tbs_data.extend_from_slice(&path_length.to_be_bytes());
+            }
+        }
+        
+        // Subject alternative names
+        for san in &certificate.extensions.subject_alt_names {
+            match san {
+                SubjectAlternativeName::DnsName(name) => {
+                    tbs_data.extend_from_slice(b"DNS:");
+                    tbs_data.extend_from_slice(name.as_bytes());
+                },
+                SubjectAlternativeName::IpAddress(ip) => {
+                    tbs_data.extend_from_slice(b"IP:");
+                    tbs_data.extend_from_slice(ip.to_string().as_bytes());
+                },
+                SubjectAlternativeName::EmailAddress(email) => {
+                    tbs_data.extend_from_slice(b"EMAIL:");
+                    tbs_data.extend_from_slice(email.as_bytes());
+                },
+                _ => {}, // Skip other SAN types for now
+            }
+        }
+        
+        Ok(tbs_data)
+    }
+    
+    /// slay Parse RSA private key from stored format
+    fn parse_rsa_private_key(&self) -> PkiResult<RsaKeyPair> {
+        // For now, assume the private key is already in the correct format
+        // In a real implementation, this would parse PEM/DER encoded RSA keys
+        Ok(RsaKeyPair {
+            public_key: Vec::new(), // Not needed for signing
+            private_key: self.private_key.clone(),
+        })
+    }
+    
+    /// slay Parse ECC private key from stored format
+    fn parse_ecc_private_key(&self, curve: EccCurve) -> PkiResult<EccKeyPair> {
+        use crate::stdlib::packages::crypto_asymmetric::EccKeyPair;
+        
+        // For now, assume the private key is already in the correct format
+        // In a real implementation, this would parse PEM/DER encoded ECC keys
+        Ok(EccKeyPair {
+            public_key_bytes: Vec::new(), // Not needed for signing
+            private_key_bytes: self.private_key.clone(),
+            curve,
+        })
+    }
+    
+    /// slay Encode signed certificate to DER format
+    fn encode_signed_certificate(&self, certificate: &Certificate) -> PkiResult<Vec<u8>> {
+        // In a real implementation, this would create proper ASN.1 DER encoding
+        // For now, create a mock signed certificate structure
+        let mut der = Vec::new();
+        
+        // Certificate header
+        der.extend_from_slice(b"SIGNED_CERTIFICATE_DER");
+        
+        // TBS Certificate data
+        let tbs_data = self.prepare_certificate_tbs_data(certificate)?;
+        der.extend_from_slice(&(tbs_data.len() as u32).to_be_bytes());
+        der.extend_from_slice(&tbs_data);
+        
+        // Signature algorithm
+        der.extend_from_slice(format!("{:?}", certificate.signature_algorithm).as_bytes());
+        
+        // Signature value
+        der.extend_from_slice(&(certificate.signature.len() as u32).to_be_bytes());
+        der.extend_from_slice(&certificate.signature);
+        
+        Ok(der)
+    }
 }
 
-impl Default for SerialNumberStrategy {
+impl CaManager {
+    /// slay Create a new CA manager
+    pub fn new() -> Self {
+        Self {
+            cas: HashMap::new(),
+            hierarchies: HashMap::new(),
+            policies: HashMap::new(),
+            profiles: HashMap::new(),
+        }
+    }
+    
+    /// slay Add a CA to the manager
+    pub fn add_ca(&mut self, name: String, ca: CertificateAuthority) {
+        self.cas.insert(name, ca);
+    }
+    
+    /// slay Get a CA by name
+    pub fn get_ca(&self, name: &str) -> Option<&CertificateAuthority> {
+        self.cas.get(name)
+    }
+    
+    /// slay Get a mutable CA by name
+    pub fn get_ca_mut(&mut self, name: &str) -> Option<&mut CertificateAuthority> {
+        self.cas.get_mut(name)
+    }
+    
+    /// slay List all CAs
+    pub fn list_cas(&self) -> Vec<String> {
+        self.cas.keys().cloned().collect()
+    }
+    
+    /// slay Add a CA profile
+    pub fn add_profile(&mut self, name: String, profile: CaProfile) {
+        self.profiles.insert(name, profile);
+    }
+    
+    /// slay Get a CA profile
+    pub fn get_profile(&self, name: &str) -> Option<&CaProfile> {
+        self.profiles.get(name)
+    }
+}
+
+/// fr fr High-level CA operations
+
+/// slay Create a root CA
+pub fn create_root_ca(name: &str, organization: &str, key_size: Option<usize>) -> PkiResult<CertificateAuthority> {
+    let mut config = CaConfiguration::default();
+    config.name = name.to_string();
+    config.organization = organization.to_string();
+    config.key_size = key_size.unwrap_or(2048);
+    
+    CertificateAuthority::new(config)
+}
+
+/// slay Create an intermediate CA
+pub fn create_intermediate_ca(
+    parent_ca: &mut CertificateAuthority,
+    name: &str,
+    organization: &str
+) -> PkiResult<CertificateAuthority> {
+    let mut config = CaConfiguration::default();
+    config.name = name.to_string();
+    config.organization = organization.to_string();
+    config.validity_days = 1825; // 5 years for intermediate CA
+    
+    let mut ca = CertificateAuthority::new(config)?;
+    
+    // Set as intermediate CA (path length constraint)
+    ca.certificate.extensions.basic_constraints = Some(BasicConstraints {
+        ca: true,
+        path_length: Some(0), // Can only issue end-entity certificates
+    });
+    
+    // Override issuer with parent CA
+    ca.certificate.issuer = parent_ca.certificate.subject.clone().into();
+    
+    Ok(ca)
+}
+
+/// slay Create a subordinate CA
+pub fn create_subordinate_ca(
+    parent_ca: &mut CertificateAuthority,
+    name: &str,
+    organization: &str
+) -> PkiResult<CertificateAuthority> {
+    create_intermediate_ca(parent_ca, name, organization)
+}
+
+/// slay Sign a certificate with CA
+pub fn ca_sign_certificate(
+    ca: &mut CertificateAuthority,
+    template: &CertificateTemplate
+) -> PkiResult<Certificate> {
+    ca.issue_certificate(template)
+}
+
+/// slay Revoke a certificate with CA
+pub fn ca_revoke_certificate(
+    ca: &mut CertificateAuthority,
+    serial_number: &str,
+    reason: RevocationReason
+) -> PkiResult<()> {
+    ca.revoke_certificate(serial_number, reason)
+}
+
+/// slay Generate CRL with CA
+pub fn ca_generate_crl(ca: &mut CertificateAuthority) -> PkiResult<Vec<u8>> {
+    ca.generate_crl()
+}
+
+/// fr fr Utility functions
+
+fn generate_ca_id(name: &str) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    
+    let mut hasher = DefaultHasher::new();
+    name.hash(&mut hasher);
+    SystemTime::now().hash(&mut hasher);
+    
+    format!("ca_{:x}", hasher.finish())
+}
+
+/// fr fr Certificate template structure (imported from templates module)
+#[derive(Debug, Clone)]
+pub struct CertificateTemplate {
+    pub subject: TemplateSubject,
+    pub validity_days: u32,
+    pub key_size: usize,
+    pub subject_alt_names: Vec<String>,
+    pub key_usage: Option<KeyUsage>,
+    pub extended_key_usage: Option<ExtendedKeyUsage>,
+    pub basic_constraints: Option<BasicConstraints>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TemplateSubject {
+    pub common_name: String,
+    pub organization: Option<String>,
+    pub organizational_unit: Option<String>,
+    pub country: Option<String>,
+    pub state: Option<String>,
+    pub locality: Option<String>,
+    pub email: Option<String>,
+}
+
+impl Default for CaManager {
     fn default() -> Self {
-        Self::Sequential { start: 1, increment: 1 }
+        Self::new()
     }
 }

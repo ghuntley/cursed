@@ -1,667 +1,723 @@
-/// Parallel Compilation Infrastructure
-/// 
-/// Provides advanced parallel compilation features including module-level
-/// parallelization, pipeline parallelism, and intelligent work distribution.
+//! Parallel compilation support for improved build performance
 
-use crate::error::{Error, Result};
-use crate::optimization::optimization_levels::LevelConfig;
-use crate::optimization::compilation_speed::{CompilationUnit, DependencyGraph, CompilationStatus};
-use std::collections::{HashMap, VecDeque};
-use std::sync::{Arc, Mutex, RwLock, mpsc, Condvar};
-use std::thread::{self, JoinHandle};
+use crate::error::{Result, CursedError};
+use crate::optimization::metrics::CompilationUnit;
+use crate::optimization::dependency_analyzer::{DependencyGraph, CompilationPlan};
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
-use tracing::{debug, info, instrument, warn, error};
-use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
-use rayon::prelude::*;
+use std::collections::HashMap;
+use tracing::{info, debug, warn, error, instrument};
+use serde::{Deserialize, Serialize};
 
-/// Parallel compilation configuration
-#[derive(Debug, Clone)]
+/// Configuration for parallel compilation
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParallelCompilationConfig {
-    /// Number of worker threads
-    pub worker_threads: usize,
-    /// Enable pipeline parallelism
-    pub enable_pipeline_parallelism: bool,
-    /// Enable module-level parallelism
-    pub enable_module_parallelism: bool,
-    /// Maximum queue size per worker
-    pub max_queue_size: usize,
-    /// Compilation timeout per unit
-    pub compilation_timeout: Duration,
-    /// Enable work stealing
-    pub enable_work_stealing: bool,
-    /// Load balancing strategy
-    pub load_balancing: LoadBalancingStrategy,
-}
-
-/// Load balancing strategies
-#[derive(Debug, Clone, Copy)]
-pub enum LoadBalancingStrategy {
-    /// Round-robin distribution
-    RoundRobin,
-    /// Least loaded worker
-    LeastLoaded,
-    /// Priority-based distribution
-    Priority,
-    /// Work stealing
-    WorkStealing,
+    pub enable_parallel: bool,
+    pub max_parallel_jobs: Option<usize>,
+    pub job_scheduling_strategy: SchedulingStrategy,
+    pub load_balancing_enabled: bool,
+    pub thread_affinity_enabled: bool,
+    pub compilation_timeout_secs: Option<u64>,
 }
 
 impl Default for ParallelCompilationConfig {
     fn default() -> Self {
         Self {
-            worker_threads: num_cpus::get().max(1),
-            enable_pipeline_parallelism: true,
-            enable_module_parallelism: true,
-            max_queue_size: 100,
-            compilation_timeout: Duration::from_secs(60),
-            enable_work_stealing: true,
-            load_balancing: LoadBalancingStrategy::WorkStealing,
+            enable_parallel: true,
+            max_parallel_jobs: None, // Use all available cores
+            job_scheduling_strategy: SchedulingStrategy::WorkStealing,
+            load_balancing_enabled: true,
+            thread_affinity_enabled: false,
+            compilation_timeout_secs: Some(300), // 5 minutes per unit
         }
     }
 }
 
-/// Compilation work item
-#[derive(Debug, Clone)]
-pub struct WorkItem {
-    /// Compilation unit
-    pub unit: CompilationUnit,
-    /// Priority (higher = more urgent)
-    pub priority: u32,
-    /// Dependencies that must complete first
-    pub dependencies: Vec<String>,
-    /// Estimated compilation time
-    pub estimated_time: Option<Duration>,
+/// Job scheduling strategies
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SchedulingStrategy {
+    /// Simple round-robin assignment
+    RoundRobin,
+    /// Work-stealing queue based scheduling
+    WorkStealing,
+    /// Longest job first
+    LongestJobFirst,
+    /// Critical path first
+    CriticalPathFirst,
 }
 
-/// Worker thread state
+/// Parallel compilation coordinator
 #[derive(Debug)]
-pub struct WorkerState {
-    /// Worker ID
-    pub id: usize,
-    /// Current work item
-    pub current_work: Option<String>,
-    /// Number of completed items
-    pub completed_items: usize,
-    /// Total compilation time
-    pub total_time: Duration,
-    /// Worker load (0.0 to 1.0)
-    pub load: f64,
-    /// Last activity timestamp
-    pub last_activity: Instant,
-}
-
-/// Parallel compiler with advanced scheduling
 pub struct ParallelCompiler {
     config: ParallelCompilationConfig,
-    workers: Vec<Worker>,
-    work_queue: Arc<RwLock<VecDeque<WorkItem>>>,
-    completed_work: Arc<RwLock<HashMap<String, CompilationResult>>>,
-    dependency_graph: Arc<Mutex<DependencyGraph>>,
-    statistics: Arc<Mutex<ParallelCompilationStatistics>>,
-    scheduler: Arc<Mutex<WorkScheduler>>,
-    shutdown_signal: Arc<(Mutex<bool>, Condvar)>,
-}
-
-/// Compilation result
-#[derive(Debug, Clone)]
-pub struct CompilationResult {
-    /// Unit ID
-    pub unit_id: String,
-    /// Compilation status
-    pub status: CompilationStatus,
-    /// Compilation time
-    pub compilation_time: Duration,
-    /// Worker that completed the work
-    pub worker_id: usize,
-    /// Any error message
-    pub error_message: Option<String>,
-}
-
-/// Parallel compilation statistics
-#[derive(Debug, Clone, Default)]
-pub struct ParallelCompilationStatistics {
-    /// Total compilation units processed
-    pub units_processed: usize,
-    /// Total compilation time across all workers
-    pub total_compilation_time: Duration,
-    /// Wall clock time for entire compilation
-    pub wall_clock_time: Duration,
-    /// Number of cache hits
-    pub cache_hits: usize,
-    /// Number of cache misses
-    pub cache_misses: usize,
-    /// Average worker utilization
-    pub average_utilization: f64,
-    /// Peak memory usage
-    pub peak_memory_usage: usize,
-    /// Work stealing events
-    pub work_stealing_events: usize,
-}
-
-impl ParallelCompilationStatistics {
-    /// Calculate parallelization efficiency
-    pub fn efficiency(&self) -> f64 {
-        if self.wall_clock_time.as_millis() == 0 {
-            return 0.0;
-        }
-        
-        let parallel_time = self.total_compilation_time.as_millis() as f64;
-        let wall_time = self.wall_clock_time.as_millis() as f64;
-        
-        parallel_time / wall_time
-    }
-
-    /// Calculate cache hit ratio
-    pub fn cache_hit_ratio(&self) -> f64 {
-        let total_accesses = self.cache_hits + self.cache_misses;
-        if total_accesses == 0 {
-            return 0.0;
-        }
-        
-        self.cache_hits as f64 / total_accesses as f64
-    }
-}
-
-/// Work scheduler for intelligent work distribution
-pub struct WorkScheduler {
-    config: ParallelCompilationConfig,
-    worker_states: Vec<WorkerState>,
-    pending_work: VecDeque<WorkItem>,
-    ready_work: VecDeque<WorkItem>,
-    next_worker: usize, // For round-robin scheduling
-}
-
-impl WorkScheduler {
-    /// Create a new work scheduler
-    pub fn new(config: ParallelCompilationConfig) -> Self {
-        let worker_states = (0..config.worker_threads)
-            .map(|id| WorkerState {
-                id,
-                current_work: None,
-                completed_items: 0,
-                total_time: Duration::default(),
-                load: 0.0,
-                last_activity: Instant::now(),
-            })
-            .collect();
-
-        Self {
-            config,
-            worker_states,
-            pending_work: VecDeque::new(),
-            ready_work: VecDeque::new(),
-            next_worker: 0,
-        }
-    }
-
-    /// Add work items to the scheduler
-    #[instrument(skip(self, items))]
-    pub fn add_work(&mut self, items: Vec<WorkItem>) {
-        debug!("Adding {} work items to scheduler", items.len());
-        
-        for item in items {
-            if item.dependencies.is_empty() {
-                self.ready_work.push_back(item);
-            } else {
-                self.pending_work.push_back(item);
-            }
-        }
-        
-        // Sort ready work by priority
-        let mut ready_items: Vec<_> = self.ready_work.drain(..).collect();
-        ready_items.sort_by(|a, b| b.priority.cmp(&a.priority));
-        self.ready_work.extend(ready_items);
-    }
-
-    /// Get next work item for a worker
-    #[instrument(skip(self))]
-    pub fn get_work(&mut self, worker_id: usize) -> Option<WorkItem> {
-        match self.config.load_balancing {
-            LoadBalancingStrategy::RoundRobin => self.get_work_round_robin(),
-            LoadBalancingStrategy::LeastLoaded => self.get_work_least_loaded(worker_id),
-            LoadBalancingStrategy::Priority => self.get_work_priority(),
-            LoadBalancingStrategy::WorkStealing => self.get_work_stealing(worker_id),
-        }
-    }
-
-    /// Round-robin work distribution
-    fn get_work_round_robin(&mut self) -> Option<WorkItem> {
-        self.ready_work.pop_front()
-    }
-
-    /// Least loaded worker strategy
-    fn get_work_least_loaded(&mut self, worker_id: usize) -> Option<WorkItem> {
-        // Find the worker with the least load
-        let least_loaded_worker = self.worker_states
-            .iter()
-            .enumerate()
-            .min_by(|(_, a), (_, b)| a.load.partial_cmp(&b.load).unwrap_or(std::cmp::Ordering::Equal))
-            .map(|(id, _)| id)
-            .unwrap_or(0);
-
-        if least_loaded_worker == worker_id {
-            self.ready_work.pop_front()
-        } else {
-            None
-        }
-    }
-
-    /// Priority-based work distribution
-    fn get_work_priority(&mut self) -> Option<WorkItem> {
-        // Work is already sorted by priority
-        self.ready_work.pop_front()
-    }
-
-    /// Work stealing strategy
-    fn get_work_stealing(&mut self, worker_id: usize) -> Option<WorkItem> {
-        // Try to get work from own queue first
-        if let Some(work) = self.ready_work.pop_front() {
-            return Some(work);
-        }
-
-        // Try to steal work from other workers
-        // This is a simplified implementation
-        None
-    }
-
-    /// Mark work as completed and check for newly ready work
-    #[instrument(skip(self))]
-    pub fn complete_work(&mut self, unit_id: &str, worker_id: usize, duration: Duration) {
-        debug!("Marking work {} as completed by worker {}", unit_id, worker_id);
-
-        // Update worker state
-        if let Some(worker) = self.worker_states.get_mut(worker_id) {
-            worker.completed_items += 1;
-            worker.total_time += duration;
-            worker.current_work = None;
-            worker.last_activity = Instant::now();
-            worker.load = self.calculate_worker_load(worker_id);
-        }
-
-        // Check if any pending work is now ready
-        let mut newly_ready = Vec::new();
-        self.pending_work.retain(|item| {
-            if item.dependencies.iter().any(|dep| dep == unit_id) {
-                // Remove this dependency
-                let mut updated_item = item.clone();
-                updated_item.dependencies.retain(|dep| dep != unit_id);
-                
-                if updated_item.dependencies.is_empty() {
-                    newly_ready.push(updated_item);
-                    false
-                } else {
-                    *item = updated_item;
-                    true
-                }
-            } else {
-                true
-            }
-        });
-
-        // Add newly ready work to ready queue
-        for item in newly_ready {
-            self.ready_work.push_back(item);
-        }
-
-        // Resort ready work by priority
-        let mut ready_items: Vec<_> = self.ready_work.drain(..).collect();
-        ready_items.sort_by(|a, b| b.priority.cmp(&a.priority));
-        self.ready_work.extend(ready_items);
-    }
-
-    /// Calculate current load for a worker
-    fn calculate_worker_load(&self, worker_id: usize) -> f64 {
-        if let Some(worker) = self.worker_states.get(worker_id) {
-            // Simple load calculation based on recent activity
-            let time_since_activity = worker.last_activity.elapsed();
-            if time_since_activity > Duration::from_secs(5) {
-                0.0 // Idle
-            } else if worker.current_work.is_some() {
-                1.0 // Busy
-            } else {
-                0.5 // Available
-            }
-        } else {
-            0.0
-        }
-    }
-
-    /// Check if there's any work available
-    pub fn has_work(&self) -> bool {
-        !self.ready_work.is_empty()
-    }
-
-    /// Get scheduler statistics
-    pub fn get_statistics(&self) -> HashMap<String, f64> {
-        let mut stats = HashMap::new();
-        
-        let total_completed: usize = self.worker_states.iter().map(|w| w.completed_items).sum();
-        let average_load: f64 = self.worker_states.iter().map(|w| w.load).sum::<f64>() / self.worker_states.len() as f64;
-        
-        stats.insert("total_completed".to_string(), total_completed as f64);
-        stats.insert("average_load".to_string(), average_load);
-        stats.insert("pending_work".to_string(), self.pending_work.len() as f64);
-        stats.insert("ready_work".to_string(), self.ready_work.len() as f64);
-        
-        stats
-    }
+    worker_threads: Vec<WorkerThread>,
+    job_queue: Arc<Mutex<JobQueue>>,
+    statistics: ParallelCompilationStatistics,
 }
 
 /// Worker thread for parallel compilation
-pub struct Worker {
+#[derive(Debug)]
+struct WorkerThread {
     id: usize,
-    handle: Option<JoinHandle<()>>,
-    work_sender: Sender<WorkItem>,
-    result_receiver: Receiver<CompilationResult>,
+    handle: Option<thread::JoinHandle<()>>,
+    status: WorkerStatus,
 }
 
-impl Worker {
-    /// Create a new worker
-    pub fn new(
-        id: usize,
-        config: ParallelCompilationConfig,
-        scheduler: Arc<Mutex<WorkScheduler>>,
-        statistics: Arc<Mutex<ParallelCompilationStatistics>>,
-        shutdown_signal: Arc<(Mutex<bool>, Condvar)>,
-    ) -> Self {
-        let (work_sender, work_receiver) = bounded(config.max_queue_size);
-        let (result_sender, result_receiver) = unbounded();
+/// Status of a worker thread
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum WorkerStatus {
+    Idle,
+    Working,
+    Finished,
+    Error,
+}
 
-        let handle = thread::spawn(move || {
-            Self::worker_loop(
-                id,
-                work_receiver,
-                result_sender,
-                scheduler,
-                statistics,
-                shutdown_signal,
-                config,
-            );
-        });
+/// Job queue for managing compilation tasks
+#[derive(Debug)]
+struct JobQueue {
+    pending_jobs: Vec<CompilationJob>,
+    in_progress_jobs: HashMap<usize, CompilationJob>,
+    completed_jobs: Vec<CompilationResult>,
+    failed_jobs: Vec<CompilationResult>,
+}
 
-        Self {
-            id,
-            handle: Some(handle),
-            work_sender,
-            result_receiver,
-        }
-    }
+/// A compilation job for a single unit
+#[derive(Debug, Clone)]
+struct CompilationJob {
+    id: usize,
+    unit: CompilationUnit,
+    priority: JobPriority,
+    estimated_time: Duration,
+    dependencies: Vec<usize>,
+}
 
-    /// Worker main loop
-    fn worker_loop(
-        worker_id: usize,
-        work_receiver: Receiver<WorkItem>,
-        result_sender: Sender<CompilationResult>,
-        scheduler: Arc<Mutex<WorkScheduler>>,
-        statistics: Arc<Mutex<ParallelCompilationStatistics>>,
-        shutdown_signal: Arc<(Mutex<bool>, Condvar)>,
-        config: ParallelCompilationConfig,
-    ) {
-        debug!("Worker {} starting", worker_id);
+/// Priority levels for compilation jobs
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum JobPriority {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
 
-        loop {
-            // Check for shutdown signal
-            {
-                let (lock, _) = &*shutdown_signal;
-                if *lock.lock().unwrap() {
-                    debug!("Worker {} received shutdown signal", worker_id);
-                    break;
-                }
-            }
+/// Result of a compilation job
+#[derive(Debug, Clone)]
+struct CompilationResult {
+    job_id: usize,
+    unit_name: String,
+    success: bool,
+    compilation_time: Duration,
+    worker_id: usize,
+    error_message: Option<String>,
+    output_size: usize,
+}
 
-            // Try to get work from scheduler
-            let work_item = {
-                let mut scheduler = scheduler.lock().unwrap();
-                scheduler.get_work(worker_id)
-            };
+/// Statistics for parallel compilation
+#[derive(Debug, Default, Clone)]
+pub struct ParallelCompilationStatistics {
+    pub total_jobs: usize,
+    pub completed_jobs: usize,
+    pub failed_jobs: usize,
+    pub total_compilation_time: Duration,
+    pub parallel_efficiency: f64,
+    pub worker_utilization: HashMap<usize, f64>,
+    pub average_job_time: Duration,
+    pub peak_memory_usage_mb: f64,
+}
 
-            if let Some(work) = work_item {
-                // Process the work item
-                let result = Self::process_work_item(worker_id, work, &config);
-                
-                // Update statistics
-                {
-                    let mut stats = statistics.lock().unwrap();
-                    stats.units_processed += 1;
-                    stats.total_compilation_time += result.compilation_time;
-                }
-
-                // Notify scheduler of completion
-                {
-                    let mut scheduler = scheduler.lock().unwrap();
-                    scheduler.complete_work(&result.unit_id, worker_id, result.compilation_time);
-                }
-
-                // Send result
-                if let Err(e) = result_sender.send(result) {
-                    error!("Worker {} failed to send result: {}", worker_id, e);
-                    break;
-                }
-            } else {
-                // No work available, sleep briefly
-                thread::sleep(Duration::from_millis(10));
-            }
-        }
-
-        debug!("Worker {} shutting down", worker_id);
-    }
-
-    /// Process a single work item
-    fn process_work_item(
-        worker_id: usize,
-        work_item: WorkItem,
-        config: &ParallelCompilationConfig,
-    ) -> CompilationResult {
-        let start_time = Instant::now();
-        let unit_id = work_item.unit.id.clone();
-
-        debug!("Worker {} processing unit {}", worker_id, unit_id);
-
-        // Simulate compilation work
-        // In a real implementation, this would call the actual compiler
-        let compilation_time = Duration::from_millis(100); // Simulate work
-        thread::sleep(compilation_time);
-
-        let result = CompilationResult {
-            unit_id,
-            status: CompilationStatus::Completed,
-            compilation_time: start_time.elapsed(),
-            worker_id,
-            error_message: None,
-        };
-
-        debug!("Worker {} completed unit {} in {:?}", 
-               worker_id, result.unit_id, result.compilation_time);
-
-        result
-    }
-
-    /// Send work to this worker
-    pub fn send_work(&self, work: WorkItem) -> Result<()> {
-        self.work_sender.send(work)
-            .map_err(|_| Error::Internal("Failed to send work to worker".to_string()))
-    }
-
-    /// Try to receive a result from this worker
-    pub fn try_receive_result(&self) -> Option<CompilationResult> {
-        self.result_receiver.try_recv().ok()
-    }
-
-    /// Shutdown the worker
-    pub fn shutdown(mut self) -> Result<()> {
-        if let Some(handle) = self.handle.take() {
-            handle.join()
-                .map_err(|_| Error::Internal("Failed to join worker thread".to_string()))?;
-        }
-        Ok(())
-    }
+/// Result of parallel compilation
+#[derive(Debug)]
+pub struct ParallelCompilationResult {
+    pub successful_units: Vec<String>,
+    pub failed_units: Vec<String>,
+    pub total_time: Duration,
+    pub parallel_efficiency: f64,
+    pub jobs_per_second: f64,
+    pub statistics: ParallelCompilationStatistics,
 }
 
 impl ParallelCompiler {
     /// Create a new parallel compiler
-    #[instrument(skip(config))]
-    pub fn new(config: &super::OptimizationConfig) -> Result<Self> {
-        let parallel_config = ParallelCompilationConfig {
-            worker_threads: config.max_parallel_threads,
-            ..Default::default()
-        };
+    #[instrument]
+    pub fn new(config: ParallelCompilationConfig) -> Result<Self> {
+        info!("Creating parallel compiler with {} max jobs", 
+            config.max_parallel_jobs.unwrap_or_else(num_cpus::get));
 
-        info!("Creating parallel compiler with {} workers", parallel_config.worker_threads);
-
-        let work_queue = Arc::new(RwLock::new(VecDeque::new()));
-        let completed_work = Arc::new(RwLock::new(HashMap::new()));
-        let dependency_graph = Arc::new(Mutex::new(DependencyGraph::new()));
-        let statistics = Arc::new(Mutex::new(ParallelCompilationStatistics::default()));
-        let scheduler = Arc::new(Mutex::new(WorkScheduler::new(parallel_config.clone())));
-        let shutdown_signal = Arc::new((Mutex::new(false), Condvar::new()));
+        let job_queue = Arc::new(Mutex::new(JobQueue::new()));
+        let worker_count = config.effective_worker_count();
+        let mut worker_threads = Vec::with_capacity(worker_count);
 
         // Create worker threads
-        let mut workers = Vec::new();
-        for i in 0..parallel_config.worker_threads {
-            let worker = Worker::new(
-                i,
-                parallel_config.clone(),
-                scheduler.clone(),
-                statistics.clone(),
-                shutdown_signal.clone(),
-            );
-            workers.push(worker);
+        for id in 0..worker_count {
+            worker_threads.push(WorkerThread {
+                id,
+                handle: None,
+                status: WorkerStatus::Idle,
+            });
         }
 
         Ok(Self {
-            config: parallel_config,
-            workers,
-            work_queue,
-            completed_work,
-            dependency_graph,
-            statistics,
-            scheduler,
-            shutdown_signal,
+            config,
+            worker_threads,
+            job_queue,
+            statistics: ParallelCompilationStatistics::default(),
         })
     }
 
-    /// Compile multiple units in parallel
-    #[instrument(skip(self, units))]
-    pub fn compile_parallel(&self, units: Vec<CompilationUnit>) -> Result<HashMap<String, CompilationResult>> {
-        let start_time = Instant::now();
-        
-        info!("Starting parallel compilation of {} units", units.len());
-
-        // Convert units to work items
-        let work_items: Vec<WorkItem> = units.into_iter().map(|unit| {
-            WorkItem {
-                priority: unit.priority,
-                dependencies: unit.dependencies.clone(),
-                estimated_time: None,
-                unit,
-            }
-        }).collect();
-
-        // Add work to scheduler
-        {
-            let mut scheduler = self.scheduler.lock().unwrap();
-            scheduler.add_work(work_items);
+    /// Compile units in parallel
+    #[instrument(skip(self, units, dependency_graph))]
+    pub fn compile_parallel(
+        &mut self,
+        units: &mut [CompilationUnit],
+        dependency_graph: Option<&DependencyGraph>,
+    ) -> Result<ParallelCompilationResult> {
+        if !self.config.enable_parallel || units.len() <= 1 {
+            return self.compile_sequential(units);
         }
 
-        // Distribute work to workers and collect results
-        let mut results = HashMap::new();
-        let total_units = {
-            let scheduler = self.scheduler.lock().unwrap();
-            scheduler.ready_work.len() + scheduler.pending_work.len()
-        };
+        info!("Starting parallel compilation of {} units", units.len());
+        let start_time = Instant::now();
 
-        while results.len() < total_units {
-            // Collect results from workers
-            for worker in &self.workers {
-                if let Some(result) = worker.try_receive_result() {
-                    results.insert(result.unit_id.clone(), result);
+        // Create compilation plan
+        let compilation_plan = self.create_compilation_plan(units, dependency_graph)?;
+        
+        // Prepare job queue
+        self.prepare_job_queue(&compilation_plan)?;
+
+        // Start worker threads
+        self.start_worker_threads()?;
+
+        // Wait for completion
+        let result = self.wait_for_completion(start_time)?;
+
+        // Apply results back to units
+        self.apply_results_to_units(units)?;
+
+        info!(
+            "Parallel compilation completed: {} successful, {} failed in {:.2?}",
+            result.successful_units.len(),
+            result.failed_units.len(),
+            result.total_time
+        );
+
+        Ok(result)
+    }
+
+    /// Create compilation plan considering dependencies
+    #[instrument(skip(self, units, dependency_graph))]
+    fn create_compilation_plan(
+        &self,
+        units: &[CompilationUnit],
+        dependency_graph: Option<&DependencyGraph>,
+    ) -> Result<CompilationPlan> {
+        if let Some(graph) = dependency_graph {
+            // Use dependency graph to create optimal plan
+            graph.find_optimal_compilation_order(self.config.effective_worker_count())
+        } else {
+            // Create simple parallel plan without dependencies
+            let batches = self.create_simple_batches(units);
+            Ok(CompilationPlan {
+                batches,
+                critical_path: Vec::new(),
+                estimated_total_time: Duration::from_secs(units.len() as u64),
+                max_parallelism: self.config.effective_worker_count(),
+            })
+        }
+    }
+
+    /// Create simple batches for units without dependency information
+    fn create_simple_batches(&self, units: &[CompilationUnit]) -> Vec<Vec<String>> {
+        let worker_count = self.config.effective_worker_count();
+        let mut batches = vec![Vec::new(); worker_count];
+        
+        // Distribute units across workers using round-robin
+        for (i, unit) in units.iter().enumerate() {
+            batches[i % worker_count].push(unit.name.clone());
+        }
+
+        // Remove empty batches
+        batches.into_iter().filter(|batch| !batch.is_empty()).collect()
+    }
+
+    /// Prepare the job queue with compilation jobs
+    #[instrument(skip(self, plan))]
+    fn prepare_job_queue(&mut self, plan: &CompilationPlan) -> Result<()> {
+        let mut queue = self.job_queue.lock().map_err(|_| {
+            CursedError::optimization_error("Failed to acquire job queue lock")
+        })?;
+
+        let mut job_id = 0;
+        
+        for batch in &plan.batches {
+            for unit_name in batch {
+                // Find the actual unit (simplified lookup)
+                let unit = CompilationUnit::new(unit_name.clone());
+                
+                let priority = if plan.critical_path.contains(unit_name) {
+                    JobPriority::Critical
+                } else {
+                    JobPriority::Medium
+                };
+
+                let estimated_time = self.estimate_compilation_time(&unit);
+
+                queue.pending_jobs.push(CompilationJob {
+                    id: job_id,
+                    unit,
+                    priority,
+                    estimated_time,
+                    dependencies: Vec::new(), // Simplified
+                });
+                
+                job_id += 1;
+            }
+        }
+
+        // Sort jobs by priority and estimated time
+        queue.pending_jobs.sort_by(|a, b| {
+            b.priority.cmp(&a.priority)
+                .then_with(|| match self.config.job_scheduling_strategy {
+                    SchedulingStrategy::LongestJobFirst => b.estimated_time.cmp(&a.estimated_time),
+                    _ => a.estimated_time.cmp(&b.estimated_time),
+                })
+        });
+
+        self.statistics.total_jobs = queue.pending_jobs.len();
+        debug!("Prepared {} compilation jobs", queue.pending_jobs.len());
+
+        Ok(())
+    }
+
+    /// Start worker threads
+    #[instrument(skip(self))]
+    fn start_worker_threads(&mut self) -> Result<()> {
+        debug!("Starting {} worker threads", self.worker_threads.len());
+
+        for worker in &mut self.worker_threads {
+            let queue = Arc::clone(&self.job_queue);
+            let worker_id = worker.id;
+            let timeout = self.config.compilation_timeout_secs.map(Duration::from_secs);
+
+            let handle = thread::spawn(move || {
+                Self::worker_thread_main(worker_id, queue, timeout);
+            });
+
+            worker.handle = Some(handle);
+            worker.status = WorkerStatus::Working;
+        }
+
+        Ok(())
+    }
+
+    /// Main function for worker threads
+    fn worker_thread_main(
+        worker_id: usize,
+        job_queue: Arc<Mutex<JobQueue>>,
+        timeout: Option<Duration>,
+    ) {
+        debug!("Worker {} started", worker_id);
+
+        loop {
+            // Try to get a job from the queue
+            let job = {
+                let mut queue = match job_queue.lock() {
+                    Ok(queue) => queue,
+                    Err(_) => {
+                        error!("Worker {} failed to acquire queue lock", worker_id);
+                        break;
+                    }
+                };
+
+                if let Some(job) = queue.get_next_job() {
+                    queue.in_progress_jobs.insert(job.id, job.clone());
+                    Some(job)
+                } else {
+                    None
+                }
+            };
+
+            match job {
+                Some(job) => {
+                    // Process the job
+                    let result = Self::compile_job(worker_id, job, timeout);
+                    
+                    // Store result
+                    let mut queue = match job_queue.lock() {
+                        Ok(queue) => queue,
+                        Err(_) => {
+                            error!("Worker {} failed to acquire queue lock for result", worker_id);
+                            break;
+                        }
+                    };
+
+                    queue.in_progress_jobs.remove(&result.job_id);
+                    
+                    if result.success {
+                        queue.completed_jobs.push(result);
+                    } else {
+                        queue.failed_jobs.push(result);
+                    }
+                }
+                None => {
+                    // No more jobs, check if we should exit
+                    let queue = match job_queue.lock() {
+                        Ok(queue) => queue,
+                        Err(_) => break,
+                    };
+
+                    if queue.pending_jobs.is_empty() && queue.in_progress_jobs.is_empty() {
+                        break; // All jobs completed
+                    }
+
+                    // Wait a bit before checking again
+                    thread::sleep(Duration::from_millis(10));
                 }
             }
-
-            // Brief sleep to prevent busy waiting
-            thread::sleep(Duration::from_millis(1));
         }
 
-        // Update final statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            stats.wall_clock_time = start_time.elapsed();
-        }
-
-        info!("Parallel compilation completed in {:?}", start_time.elapsed());
-        
-        Ok(results)
+        debug!("Worker {} finished", worker_id);
     }
 
-    /// Get compilation statistics
-    pub fn get_statistics(&self) -> ParallelCompilationStatistics {
-        self.statistics.lock().unwrap().clone()
-    }
-
-    /// Print compilation summary
-    pub fn print_summary(&self) {
-        let stats = self.get_statistics();
-        
-        println!("⚡ Parallel Compilation Summary:");
-        println!("   Worker threads: {}", self.config.worker_threads);
-        println!("   Units processed: {}", stats.units_processed);
-        println!("   Wall clock time: {:?}", stats.wall_clock_time);
-        println!("   Total compilation time: {:?}", stats.total_compilation_time);
-        println!("   Parallelization efficiency: {:.2}x", stats.efficiency());
-        println!("   Average worker utilization: {:.1}%", stats.average_utilization * 100.0);
-        println!("   Cache hit ratio: {:.1}%", stats.cache_hit_ratio() * 100.0);
-        println!("   Work stealing events: {}", stats.work_stealing_events);
-    }
-}
-
-impl Drop for ParallelCompiler {
-    fn drop(&mut self) {
-        // Signal shutdown
-        {
-            let (lock, cvar) = &*self.shutdown_signal;
-            let mut shutdown = lock.lock().unwrap();
-            *shutdown = true;
-            cvar.notify_all();
-        }
-
-        // Shutdown all workers
-        let workers = std::mem::take(&mut self.workers);
-        for worker in workers {
-            if let Err(e) = worker.shutdown() {
-                error!("Failed to shutdown worker: {}", e);
-            }
-        }
-    }
-}
-
-/// Module compiler for individual compilation units
-pub struct ModuleCompiler {
-    config: ParallelCompilationConfig,
-}
-
-impl ModuleCompiler {
-    /// Create a new module compiler
-    pub fn new(config: ParallelCompilationConfig) -> Self {
-        Self { config }
-    }
-
-    /// Compile a single module
-    #[instrument(skip(self, unit))]
-    pub fn compile_module(&self, unit: &CompilationUnit) -> Result<CompilationResult> {
+    /// Compile a single job
+    fn compile_job(
+        worker_id: usize,
+        job: CompilationJob,
+        timeout: Option<Duration>,
+    ) -> CompilationResult {
         let start_time = Instant::now();
         
-        debug!("Compiling module: {}", unit.module_name);
+        debug!("Worker {} compiling unit: {}", worker_id, job.unit.name);
 
-        // Simulate module compilation
-        // In a real implementation, this would call the lexer, parser, type checker, and code generator
-        thread::sleep(Duration::from_millis(50));
+        // Check timeout before starting
+        if let Some(timeout_duration) = timeout {
+            if job.estimated_time > timeout_duration {
+                warn!("Job {} estimated time exceeds timeout, skipping", job.id);
+                return CompilationResult {
+                    job_id: job.id,
+                    unit_name: job.unit.name,
+                    success: false,
+                    compilation_time: start_time.elapsed(),
+                    worker_id,
+                    error_message: Some("Compilation timeout (pre-check)".to_string()),
+                    output_size: 0,
+                };
+            }
+        }
 
-        Ok(CompilationResult {
-            unit_id: unit.id.clone(),
-            status: CompilationStatus::Completed,
-            compilation_time: start_time.elapsed(),
-            worker_id: 0,
-            error_message: None,
+        // Perform actual compilation work (simulated with realistic steps)
+        let mut success = true;
+        let mut error_message = None;
+        let mut output_size = job.unit.estimated_size_bytes;
+        
+        // Step 1: Parse and validate source files
+        let parse_time = job.estimated_time / 4;
+        thread::sleep(parse_time.min(Duration::from_millis(25)));
+        
+        if start_time.elapsed() > timeout.unwrap_or(Duration::from_secs(u64::MAX)) {
+            success = false;
+            error_message = Some("Timeout during parsing".to_string());
+        }
+        
+        // Step 2: Type checking and semantic analysis
+        if success {
+            let typecheck_time = job.estimated_time / 4;
+            thread::sleep(typecheck_time.min(Duration::from_millis(25)));
+            
+            if start_time.elapsed() > timeout.unwrap_or(Duration::from_secs(u64::MAX)) {
+                success = false;
+                error_message = Some("Timeout during type checking".to_string());
+            }
+        }
+        
+        // Step 3: LLVM IR generation
+        if success {
+            let codegen_time = job.estimated_time / 4;
+            thread::sleep(codegen_time.min(Duration::from_millis(25)));
+            
+            if start_time.elapsed() > timeout.unwrap_or(Duration::from_secs(u64::MAX)) {
+                success = false;
+                error_message = Some("Timeout during code generation".to_string());
+            }
+        }
+        
+        // Step 4: Optimization
+        if success {
+            let optimization_time = job.estimated_time / 4;
+            thread::sleep(optimization_time.min(Duration::from_millis(25)));
+            
+            if start_time.elapsed() > timeout.unwrap_or(Duration::from_secs(u64::MAX)) {
+                success = false;
+                error_message = Some("Timeout during optimization".to_string());
+            } else {
+                // Simulate optimization reducing output size
+                output_size = (output_size as f64 * 0.85) as usize;
+            }
+        }
+        
+        // Simulate occasional compilation failures based on complexity
+        if success {
+            let failure_probability = match job.priority {
+                JobPriority::Critical => 0.01, // 1% failure rate for critical jobs
+                JobPriority::High => 0.02,     // 2% failure rate for high priority
+                JobPriority::Medium => 0.03,   // 3% failure rate for medium priority
+                JobPriority::Low => 0.05,      // 5% failure rate for low priority
+            };
+            
+            if rand::random::<f64>() < failure_probability {
+                success = false;
+                error_message = Some(format!("Simulated compilation error (priority: {:?})", job.priority));
+            }
+        }
+
+        let actual_time = start_time.elapsed();
+
+        CompilationResult {
+            job_id: job.id,
+            unit_name: job.unit.name,
+            success,
+            compilation_time: actual_time,
+            worker_id,
+            error_message,
+            output_size,
+        }
+    }
+
+    /// Wait for all compilation to complete
+    #[instrument(skip(self))]
+    fn wait_for_completion(&mut self, start_time: Instant) -> Result<ParallelCompilationResult> {
+        // Wait for all worker threads to finish
+        for worker in &mut self.worker_threads {
+            if let Some(handle) = worker.handle.take() {
+                if let Err(_) = handle.join() {
+                    warn!("Worker {} panicked", worker.id);
+                    worker.status = WorkerStatus::Error;
+                } else {
+                    worker.status = WorkerStatus::Finished;
+                }
+            }
+        }
+
+        let total_time = start_time.elapsed();
+
+        // Collect results
+        let queue = self.job_queue.lock().map_err(|_| {
+            CursedError::optimization_error("Failed to acquire job queue lock for results")
+        })?;
+
+        let successful_units: Vec<String> = queue.completed_jobs.iter()
+            .map(|result| result.unit_name.clone())
+            .collect();
+
+        let failed_units: Vec<String> = queue.failed_jobs.iter()
+            .map(|result| result.unit_name.clone())
+            .collect();
+
+        // Calculate statistics
+        self.statistics.completed_jobs = queue.completed_jobs.len();
+        self.statistics.failed_jobs = queue.failed_jobs.len();
+        self.statistics.total_compilation_time = total_time;
+
+        let sequential_time: Duration = queue.completed_jobs.iter()
+            .map(|result| result.compilation_time)
+            .sum();
+
+        self.statistics.parallel_efficiency = if total_time.as_secs_f64() > 0.0 {
+            sequential_time.as_secs_f64() / (total_time.as_secs_f64() * self.worker_threads.len() as f64)
+        } else {
+            0.0
+        };
+
+        if !queue.completed_jobs.is_empty() {
+            self.statistics.average_job_time = sequential_time / queue.completed_jobs.len() as u32;
+        }
+
+        let jobs_per_second = if total_time.as_secs_f64() > 0.0 {
+            queue.completed_jobs.len() as f64 / total_time.as_secs_f64()
+        } else {
+            0.0
+        };
+
+        Ok(ParallelCompilationResult {
+            successful_units,
+            failed_units,
+            total_time,
+            parallel_efficiency: self.statistics.parallel_efficiency,
+            jobs_per_second,
+            statistics: self.statistics.clone(),
         })
+    }
+
+    /// Apply compilation results back to units
+    fn apply_results_to_units(&self, _units: &mut [CompilationUnit]) -> Result<()> {
+        // In a real implementation, would apply compilation artifacts back to units
+        Ok(())
+    }
+
+    /// Compile units sequentially (fallback)
+    fn compile_sequential(&self, units: &mut [CompilationUnit]) -> Result<ParallelCompilationResult> {
+        info!("Compiling {} units sequentially", units.len());
+        let start_time = Instant::now();
+
+        let mut successful_units = Vec::new();
+        let mut failed_units = Vec::new();
+
+        for unit in units.iter_mut() {
+            let unit_start = Instant::now();
+            
+            // Simulate compilation
+            let estimated_time = self.estimate_compilation_time(unit);
+            thread::sleep(estimated_time.min(Duration::from_millis(50)));
+
+            let success = true; // Simplified
+            if success {
+                successful_units.push(unit.name.clone());
+            } else {
+                failed_units.push(unit.name.clone());
+            }
+        }
+
+        let total_time = start_time.elapsed();
+
+        Ok(ParallelCompilationResult {
+            successful_units,
+            failed_units,
+            total_time,
+            parallel_efficiency: 1.0, // Sequential is 100% efficient by definition
+            jobs_per_second: units.len() as f64 / total_time.as_secs_f64(),
+            statistics: ParallelCompilationStatistics {
+                total_jobs: units.len(),
+                completed_jobs: successful_units.len(),
+                failed_jobs: failed_units.len(),
+                total_compilation_time: total_time,
+                parallel_efficiency: 1.0,
+                ..Default::default()
+            },
+        })
+    }
+
+    /// Estimate compilation time for a unit
+    fn estimate_compilation_time(&self, unit: &CompilationUnit) -> Duration {
+        // Base time + time per source file + time per dependency
+        let base_time = Duration::from_millis(100);
+        let file_time = Duration::from_millis(unit.source_files.len() as u64 * 50);
+        let dep_time = Duration::from_millis(unit.dependencies.len() as u64 * 10);
+        let size_time = Duration::from_millis(unit.estimated_size_bytes as u64 / 1000);
+
+        base_time + file_time + dep_time + size_time
+    }
+
+    /// Get current statistics
+    pub fn get_statistics(&self) -> &ParallelCompilationStatistics {
+        &self.statistics
+    }
+
+    /// Update configuration
+    pub fn update_config(&mut self, new_config: ParallelCompilationConfig) -> Result<()> {
+        info!("Updating parallel compilation configuration");
+        self.config = new_config;
+        Ok(())
+    }
+}
+
+impl ParallelCompilationConfig {
+    /// Get effective worker count
+    pub fn effective_worker_count(&self) -> usize {
+        if !self.enable_parallel {
+            return 1;
+        }
+
+        self.max_parallel_jobs.unwrap_or_else(num_cpus::get).max(1)
+    }
+}
+
+impl JobQueue {
+    fn new() -> Self {
+        Self {
+            pending_jobs: Vec::new(),
+            in_progress_jobs: HashMap::new(),
+            completed_jobs: Vec::new(),
+            failed_jobs: Vec::new(),
+        }
+    }
+
+    fn get_next_job(&mut self) -> Option<CompilationJob> {
+        // Get highest priority job that has no pending dependencies
+        for i in 0..self.pending_jobs.len() {
+            let job = &self.pending_jobs[i];
+            if self.dependencies_satisfied(job) {
+                return Some(self.pending_jobs.remove(i));
+            }
+        }
+        None
+    }
+
+    fn dependencies_satisfied(&self, job: &CompilationJob) -> bool {
+        // Check if all dependencies are completed
+        job.dependencies.iter().all(|&dep_id| {
+            self.completed_jobs.iter().any(|result| result.job_id == dep_id)
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parallel_compiler_creation() {
+        let config = ParallelCompilationConfig::default();
+        let compiler = ParallelCompiler::new(config);
+        assert!(compiler.is_ok());
+    }
+
+    #[test]
+    fn test_effective_worker_count() {
+        let mut config = ParallelCompilationConfig::default();
+        config.max_parallel_jobs = Some(4);
+        assert_eq!(config.effective_worker_count(), 4);
+
+        config.enable_parallel = false;
+        assert_eq!(config.effective_worker_count(), 1);
+    }
+
+    #[test]
+    fn test_job_priority_ordering() {
+        assert!(JobPriority::Critical > JobPriority::High);
+        assert!(JobPriority::High > JobPriority::Medium);
+        assert!(JobPriority::Medium > JobPriority::Low);
+    }
+
+    #[test]
+    fn test_compilation_time_estimation() {
+        let config = ParallelCompilationConfig::default();
+        let compiler = ParallelCompiler::new(config).unwrap();
+        
+        let mut unit = CompilationUnit::new("test_unit".to_string());
+        unit.source_files.push("test.csd".to_string());
+        unit.dependencies.push("dep1".to_string());
+
+        let estimated_time = compiler.estimate_compilation_time(&unit);
+        assert!(estimated_time > Duration::from_millis(100)); // Should be more than base time
+    }
+
+    #[test]
+    fn test_job_queue_operations() {
+        let mut queue = JobQueue::new();
+        
+        let job = CompilationJob {
+            id: 1,
+            unit: CompilationUnit::new("test".to_string()),
+            priority: JobPriority::High,
+            estimated_time: Duration::from_millis(100),
+            dependencies: Vec::new(),
+        };
+
+        queue.pending_jobs.push(job);
+        assert_eq!(queue.pending_jobs.len(), 1);
+
+        let next_job = queue.get_next_job();
+        assert!(next_job.is_some());
+        assert_eq!(queue.pending_jobs.len(), 0);
     }
 }

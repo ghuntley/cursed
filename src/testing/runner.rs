@@ -3,7 +3,7 @@
 /// Orchestrates the complete test execution pipeline including discovery,
 /// compilation, execution, and reporting.
 
-use super::{TestError, TestResult, TestConfig};
+use super::{TestError, TestResult as TestingResult, TestConfig};
 use super::discovery::{TestDiscovery, TestSuite};
 use super::execution::{TestExecutor, TestExecutionContext};
 use super::framework::{TestFramework, TestEnvironment, TestEnvironmentConfig};
@@ -135,14 +135,14 @@ impl TestRunnerBuilder {
     }
 
     /// Build the test runner
-    pub fn build(self) -> TestResult<TestRunner> {
+    pub fn build(self) -> TestingResult<TestRunner> {
         TestRunner::new(self.config)
     }
 }
 
 impl TestRunner {
     /// Create new test runner with configuration
-    pub fn new(config: TestRunnerConfig) -> TestResult<Self> {
+    pub fn new(config: TestRunnerConfig) -> TestingResult<Self> {
         info!("Creating test runner with config: {:?}", config);
 
         // Create test discovery
@@ -201,7 +201,7 @@ impl TestRunner {
     }
 
     /// Run all discovered tests
-    pub async fn run_all_tests(&mut self) -> TestResult<TestReport> {
+    pub async fn run_all_tests(&mut self) -> TestingResult<TestReport> {
         let start_time = Instant::now();
         info!("Starting test run");
 
@@ -261,7 +261,7 @@ impl TestRunner {
     }
 
     /// Run tests matching a specific pattern
-    pub async fn run_tests_matching(&mut self, pattern: &str) -> TestResult<TestReport> {
+    pub async fn run_tests_matching(&mut self, pattern: &str) -> TestingResult<TestReport> {
         info!("Running tests matching pattern: {}", pattern);
         
         // Discover all tests first
@@ -287,7 +287,7 @@ impl TestRunner {
     }
 
     /// Run a specific test file
-    pub async fn run_test_file(&mut self, file_path: &str) -> TestResult<TestReport> {
+    pub async fn run_test_file(&mut self, file_path: &str) -> TestingResult<TestReport> {
         info!("Running test file: {}", file_path);
         
         // Update config to only include this file
@@ -313,7 +313,7 @@ impl TestRunner {
     }
 
     /// Discover all test files and functions
-    async fn discover_tests(&mut self) -> TestResult<Vec<TestSuite>> {
+    async fn discover_tests(&mut self) -> TestingResult<Vec<TestSuite>> {
         info!("Starting test discovery");
         
         let test_suites = self.discovery.discover_tests().await?;
@@ -323,7 +323,7 @@ impl TestRunner {
     }
 
     /// Execute all test suites
-    async fn execute_test_suites(&mut self, test_suites: Vec<TestSuite>) -> TestResult<Vec<TestSuiteResult>> {
+    async fn execute_test_suites(&mut self, test_suites: Vec<TestSuite>) -> TestingResult<Vec<TestSuiteResult>> {
         let mut suite_results = Vec::new();
         let mut total_failed = 0;
 
@@ -443,7 +443,7 @@ impl TestRunner {
     }
 
     /// Report progress for a completed test suite
-    fn report_suite_progress(&self, suite_result: &TestSuiteResult) {
+    pub fn report_suite_progress(&self, suite_result: &TestSuiteResult) {
         let passed = suite_result.test_results.iter()
             .filter(|r| r.status == super::execution::TestStatus::Passed)
             .count();
@@ -477,7 +477,7 @@ impl TestRunner {
     }
 
     /// Setup signal handlers for graceful shutdown
-    async fn setup_signal_handlers(&self) {
+    pub async fn setup_signal_handlers(&self) {
         let shutdown = self.shutdown.clone();
         
         tokio::spawn(async move {
@@ -496,7 +496,7 @@ impl TestRunner {
     }
 
     /// Check if shutdown was requested
-    fn should_shutdown(&self) -> bool {
+    pub fn should_shutdown(&self) -> bool {
         self.shutdown.lock()
             .map(|flag| *flag)
             .unwrap_or(false)
@@ -514,13 +514,13 @@ impl TestRunner {
 }
 
 /// Convenience function to run tests with default configuration
-pub async fn run_tests() -> TestResult<TestReport> {
+pub async fn run_tests() -> TestingResult<TestReport> {
     let mut runner = TestRunnerBuilder::new().build()?;
     runner.run_all_tests().await
 }
 
 /// Convenience function to run tests in a specific directory
-pub async fn run_tests_in_dir(directory: &str) -> TestResult<TestReport> {
+pub async fn run_tests_in_dir(directory: &str) -> TestingResult<TestReport> {
     let mut config = TestConfig::default();
     config.working_directory = PathBuf::from(directory);
     
@@ -532,7 +532,7 @@ pub async fn run_tests_in_dir(directory: &str) -> TestResult<TestReport> {
 }
 
 /// Convenience function to run tests with pattern matching
-pub async fn run_tests_with_pattern(pattern: &str) -> TestResult<TestReport> {
+pub async fn run_tests_with_pattern(pattern: &str) -> TestingResult<TestReport> {
     let mut runner = TestRunnerBuilder::new().build()?;
     runner.run_tests_matching(pattern).await
 }

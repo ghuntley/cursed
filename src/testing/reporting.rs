@@ -3,7 +3,7 @@
 /// Comprehensive test result reporting with multiple output formats
 /// including console output, JSON, XML, and HTML reports.
 
-use super::{TestError, TestResult};
+use super::{TestError, TestResult as TestingResult};
 use super::execution::{TestResult as ExecutionResult, TestStatus};
 use super::discovery::{TestSuite, TestFile, TestFunction};
 use std::collections::HashMap;
@@ -278,7 +278,7 @@ impl TestReporter {
     }
 
     /// Generate and write test report
-    pub fn generate_report(&mut self, test_report: &TestReport) -> TestResult<()> {
+    pub fn generate_report(&mut self, test_report: &TestReport) -> TestingResult<()> {
         match self.format {
             ReportFormat::Console => self.write_console_report(test_report),
             ReportFormat::Json => self.write_json_report(test_report),
@@ -290,7 +290,7 @@ impl TestReporter {
     }
 
     /// Write console format report
-    fn write_console_report(&mut self, report: &TestReport) -> TestResult<()> {
+    fn write_console_report(&mut self, report: &TestReport) -> TestingResult<()> {
         // Header
         writeln!(self.output, "🧪 CURSED Test Results")?;
         writeln!(self.output, "═══════════════════════")?;
@@ -317,7 +317,7 @@ impl TestReporter {
     }
 
     /// Write console summary
-    fn write_console_summary(&mut self, summary: &TestSummary) -> TestResult<()> {
+    fn write_console_summary(&mut self, summary: &TestSummary) -> TestingResult<()> {
         let status_symbol = if summary.failed > 0 { "❌" } else { "✅" };
         let status_text = if summary.failed > 0 { "FAILED" } else { "PASSED" };
         
@@ -344,7 +344,7 @@ impl TestReporter {
     }
 
     /// Write console suite result
-    fn write_console_suite_result(&mut self, suite_result: &TestSuiteResult) -> TestResult<()> {
+    fn write_console_suite_result(&mut self, suite_result: &TestSuiteResult) -> TestingResult<()> {
         writeln!(self.output, "📦 Suite: {}", suite_result.suite_name)?;
         writeln!(self.output, "   Duration: {:.2}s", suite_result.duration.as_secs_f64())?;
         
@@ -374,7 +374,7 @@ impl TestReporter {
     }
 
     /// Write console test result
-    fn write_console_test_result(&mut self, test_result: &ExecutionResult) -> TestResult<()> {
+    fn write_console_test_result(&mut self, test_result: &ExecutionResult) -> TestingResult<()> {
         let (symbol, status_text) = match test_result.status {
             TestStatus::Passed => ("✅", "PASS"),
             TestStatus::Failed => ("❌", "FAIL"),
@@ -402,7 +402,7 @@ impl TestReporter {
     }
 
     /// Write console performance metrics
-    fn write_console_performance(&mut self, performance: &PerformanceReport) -> TestResult<()> {
+    fn write_console_performance(&mut self, performance: &PerformanceReport) -> TestingResult<()> {
         writeln!(self.output, "⚡ Performance Metrics")?;
         writeln!(self.output, "   Compilation: {:.2}s (cache hit rate: {:.1}%)",
                  performance.compilation.total_duration.as_secs_f64(),
@@ -418,7 +418,7 @@ impl TestReporter {
     }
 
     /// Write console statistics
-    fn write_console_statistics(&mut self, statistics: &TestStats) -> TestResult<()> {
+    fn write_console_statistics(&mut self, statistics: &TestStats) -> TestingResult<()> {
         writeln!(self.output, "📊 Statistics")?;
         writeln!(self.output, "   Avg Duration: {:.2}s", statistics.avg_duration.as_secs_f64())?;
         writeln!(self.output, "   Fastest:      {:.2}s", statistics.fastest_test.as_secs_f64())?;
@@ -432,7 +432,7 @@ impl TestReporter {
     }
 
     /// Write JSON format report
-    fn write_json_report(&mut self, report: &TestReport) -> TestResult<()> {
+    fn write_json_report(&mut self, report: &TestReport) -> TestingResult<()> {
         let json = serde_json::to_string_pretty(report)
             .map_err(|e| TestError::General(format!("Failed to serialize JSON: {}", e)))?;
         
@@ -441,7 +441,7 @@ impl TestReporter {
     }
 
     /// Write XML format report (JUnit compatible)
-    fn write_xml_report(&mut self, report: &TestReport) -> TestResult<()> {
+    fn write_xml_report(&mut self, report: &TestReport) -> TestingResult<()> {
         writeln!(self.output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")?;
         writeln!(self.output, "<testsuites tests=\"{}\" failures=\"{}\" time=\"{:.3}\">",
                  report.summary.total_tests,
@@ -492,7 +492,7 @@ impl TestReporter {
     }
 
     /// Write HTML format report
-    fn write_html_report(&mut self, report: &TestReport) -> TestResult<()> {
+    fn write_html_report(&mut self, report: &TestReport) -> TestingResult<()> {
         writeln!(self.output, "<!DOCTYPE html>")?;
         writeln!(self.output, "<html>")?;
         writeln!(self.output, "<head>")?;
@@ -545,7 +545,7 @@ impl TestReporter {
     }
 
     /// Write CSV format report
-    fn write_csv_report(&mut self, report: &TestReport) -> TestResult<()> {
+    fn write_csv_report(&mut self, report: &TestReport) -> TestingResult<()> {
         writeln!(self.output, "Suite,Test,Status,Duration,Error")?;
         
         for suite_result in &report.suite_results {
@@ -573,7 +573,7 @@ impl TestReporter {
     }
 
     /// Write Markdown format report
-    fn write_markdown_report(&mut self, report: &TestReport) -> TestResult<()> {
+    fn write_markdown_report(&mut self, report: &TestReport) -> TestingResult<()> {
         writeln!(self.output, "# CURSED Test Report")?;
         writeln!(self.output)?;
         

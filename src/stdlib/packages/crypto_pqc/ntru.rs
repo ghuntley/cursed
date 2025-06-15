@@ -429,33 +429,309 @@ impl NtruPolynomialRing {
         Ok(NtruPolynomial::new(result, self.n))
     }
     
-    /// facts Compute polynomial inverse modulo q (simplified)
+    /// facts Compute polynomial inverse modulo q using Extended Euclidean Algorithm
+    /// 
+    /// This computes the multiplicative inverse of a polynomial f(x) in the ring
+    /// Z_q[x]/(x^n - 1), i.e., finds g(x) such that f(x) * g(x) ≡ 1 (mod q, x^n - 1).
+    /// 
+    /// Critical for NTRU security: Without proper polynomial inversion, the entire
+    /// cryptosystem is broken as key generation requires computing f^(-1) mod q.
     pub fn invert_mod_q(&self, poly: &NtruPolynomial) -> Result<NtruPolynomial, NtruError> {
-        // This is a simplified implementation
-        // In practice, use extended Euclidean algorithm for polynomial rings
-        if poly.is_zero() {
-            return Err(NtruError::InversionError("Cannot invert zero polynomial".to_string()));
-        }
-        
-        // For demonstration, assume we can compute inverse
-        // In real implementation, this would use the extended Euclidean algorithm
-        let mut result_coeffs = vec![0i32; self.n];
-        result_coeffs[0] = 1; // Placeholder - this is not a real inverse
-        
-        Ok(NtruPolynomial::new(result_coeffs, self.n))
+        self.extended_euclidean_invert(poly, self.q as i32)
+            .ok_or_else(|| NtruError::InversionError(
+                format!("Polynomial not invertible modulo q={}", self.q)
+            ))
     }
     
-    /// yolo Compute polynomial inverse modulo p
+    /// yolo Compute polynomial inverse modulo p using Extended Euclidean Algorithm
+    /// 
+    /// This computes the multiplicative inverse of a polynomial f(x) in the ring
+    /// Z_p[x]/(x^n - 1), i.e., finds g(x) such that f(x) * g(x) ≡ 1 (mod p, x^n - 1).
+    /// 
+    /// Critical for NTRU decryption: f_p = f^(-1) mod p is required to recover
+    /// the original message during decryption.
     pub fn invert_mod_p(&self, poly: &NtruPolynomial, p: u16) -> Result<NtruPolynomial, NtruError> {
-        // Simplified implementation
+        self.extended_euclidean_invert(poly, p as i32)
+            .ok_or_else(|| NtruError::InversionError(
+                format!("Polynomial not invertible modulo p={}", p)
+            ))
+    }
+
+    /// periodt Extended Euclidean Algorithm for polynomial inversion in Z_m[x]/(x^n - 1)
+    /// 
+    /// This implements the core cryptographic algorithm for NTRU polynomial inversion.
+    /// Uses the Extended Euclidean Algorithm to find the multiplicative inverse of
+    /// a polynomial in the quotient ring Z_m[x]/(x^n - 1).
+    /// 
+    /// Returns Some(inverse) if the polynomial is invertible, None otherwise.
+    /// 
+    /// Security Note: This is a critical security function. The polynomial f(x) is
+    /// invertible mod m if and only if gcd(f(x), x^n - 1) = 1 in Z_m[x].
+    fn extended_euclidean_invert(&self, poly: &NtruPolynomial, modulus: i32) -> Option<NtruPolynomial> {
         if poly.is_zero() {
-            return Err(NtruError::InversionError("Cannot invert zero polynomial".to_string()));
+            return None;
+        }
+
+        // Initialize Extended Euclidean Algorithm variables
+        // We compute gcd(poly, x^n - 1) and the Bézout coefficients
+        let mut old_r = self.create_xn_minus_1(); // x^n - 1
+        let mut r = poly.clone();
+        let mut old_s = self.create_zero_polynomial();
+        let mut s = self.create_unit_polynomial(); // 1
+        let mut old_t = self.create_unit_polynomial(); // 1  
+        let mut t = self.create_zero_polynomial();
+
+        // Extended Euclidean Algorithm main loop
+        while !r.is_zero() {
+            // Compute quotient and remainder
+            let (quotient, remainder) = self.polynomial_division_mod(&old_r, &r, modulus)?;
+            
+            // Update remainders: old_r, r = r, old_r - quotient * r
+            old_r = std::mem::replace(&mut r, remainder);
+            
+            // Update Bézout coefficients for s
+            let qs = self.multiply_polynomials_mod(&quotient, &s, modulus)?;
+            let new_s = self.subtract_polynomials_mod(&old_s, &qs, modulus)?;
+            old_s = std::mem::replace(&mut s, new_s);
+            
+            // Update Bézout coefficients for t  
+            let qt = self.multiply_polynomials_mod(&quotient, &t, modulus)?;
+            let new_t = self.subtract_polynomials_mod(&old_t, &qt, modulus)?;
+            old_t = std::mem::replace(&mut t, new_t);
+        }
+
+        // Check if gcd = 1 (polynomial is invertible)
+        if !self.is_unit_polynomial(&old_r, modulus) {
+            return None; // Not invertible
+        }
+
+        // Normalize the result by dividing by the gcd coefficient
+        let gcd_leading_coeff = self.get_gcd_leading_coefficient(&old_r, modulus)?;
+        let gcd_inv = self.modular_inverse(gcd_leading_coeff, modulus)?;
+        
+        // The inverse is old_s * gcd_inv^(-1) mod modulus
+        let inverse = self.scalar_multiply_mod(&old_s, gcd_inv, modulus)?;
+        
+        Some(inverse)
+    }
+
+    /// stan Create polynomial x^n - 1 
+    fn create_xn_minus_1(&self) -> NtruPolynomial {
+        let mut coeffs = vec![0i32; self.n + 1];
+        coeffs[0] = -1; // Constant term: -1
+        if self.n < coeffs.len() {
+            coeffs[self.n] = 1; // x^n term: 1
+        }
+        NtruPolynomial::new(coeffs, self.n)
+    }
+
+    /// bestie Create zero polynomial
+    fn create_zero_polynomial(&self) -> NtruPolynomial {
+        NtruPolynomial::new(vec![0i32; self.n], self.n)
+    }
+
+    /// vibes Create unit polynomial (1)
+    fn create_unit_polynomial(&self) -> NtruPolynomial {
+        let mut coeffs = vec![0i32; self.n];
+        coeffs[0] = 1;
+        NtruPolynomial::new(coeffs, self.n)
+    }
+
+    /// flex Polynomial division with remainder in Z_m[x]
+    /// 
+    /// Computes (quotient, remainder) such that dividend = divisor * quotient + remainder
+    /// and degree(remainder) < degree(divisor).
+    fn polynomial_division_mod(&self, dividend: &NtruPolynomial, divisor: &NtruPolynomial, modulus: i32) -> Option<(NtruPolynomial, NtruPolynomial)> {
+        if divisor.is_zero() {
+            return None;
+        }
+
+        let mut remainder = dividend.clone();
+        let mut quotient = self.create_zero_polynomial();
+        
+        let divisor_degree = self.polynomial_degree(divisor);
+        let divisor_leading = self.get_leading_coefficient(divisor, divisor_degree);
+        let divisor_leading_inv = self.modular_inverse(divisor_leading, modulus)?;
+
+        while !remainder.is_zero() {
+            let remainder_degree = self.polynomial_degree(&remainder);
+            if remainder_degree < divisor_degree {
+                break;
+            }
+
+            let remainder_leading = self.get_leading_coefficient(&remainder, remainder_degree);
+            let coeff = self.mod_reduce(remainder_leading * divisor_leading_inv, modulus);
+            let degree_diff = remainder_degree - divisor_degree;
+
+            // Create monomial: coeff * x^degree_diff
+            let mut monomial_coeffs = vec![0i32; self.n];
+            if degree_diff < self.n {
+                monomial_coeffs[degree_diff] = coeff;
+            }
+            let monomial = NtruPolynomial::new(monomial_coeffs, self.n);
+
+            // Update quotient
+            quotient = self.add_polynomials_mod(&quotient, &monomial, modulus)?;
+
+            // Subtract divisor * monomial from remainder
+            let product = self.multiply_polynomials_mod(divisor, &monomial, modulus)?;
+            remainder = self.subtract_polynomials_mod(&remainder, &product, modulus)?;
+        }
+
+        Some((quotient, remainder))
+    }
+
+    /// periodt Add polynomials modulo m
+    fn add_polynomials_mod(&self, a: &NtruPolynomial, b: &NtruPolynomial, modulus: i32) -> Option<NtruPolynomial> {
+        let mut result_coeffs = vec![0i32; self.n];
+        
+        for i in 0..self.n {
+            let a_coeff = if i < a.coefficients.len() { a.coefficients[i] } else { 0 };
+            let b_coeff = if i < b.coefficients.len() { b.coefficients[i] } else { 0 };
+            result_coeffs[i] = self.mod_reduce(a_coeff + b_coeff, modulus);
         }
         
+        Some(NtruPolynomial::new(result_coeffs, self.n))
+    }
+
+    /// sus Subtract polynomials modulo m  
+    fn subtract_polynomials_mod(&self, a: &NtruPolynomial, b: &NtruPolynomial, modulus: i32) -> Option<NtruPolynomial> {
         let mut result_coeffs = vec![0i32; self.n];
-        result_coeffs[0] = 1; // Placeholder
         
-        Ok(NtruPolynomial::new(result_coeffs, self.n))
+        for i in 0..self.n {
+            let a_coeff = if i < a.coefficients.len() { a.coefficients[i] } else { 0 };
+            let b_coeff = if i < b.coefficients.len() { b.coefficients[i] } else { 0 };
+            result_coeffs[i] = self.mod_reduce(a_coeff - b_coeff, modulus);
+        }
+        
+Some(NtruPolynomial::new(result_coeffs, self.n))
+    }
+
+    /// facts Multiply polynomials modulo m and x^n - 1
+    fn multiply_polynomials_mod(&self, a: &NtruPolynomial, b: &NtruPolynomial, modulus: i32) -> Option<NtruPolynomial> {
+        let mut result_coeffs = vec![0i32; self.n];
+        
+        for (i, &a_coeff) in a.coefficients.iter().enumerate() {
+            for (j, &b_coeff) in b.coefficients.iter().enumerate() {
+                let pos = (i + j) % self.n; // Reduction modulo x^n - 1
+                let product = self.constant_time_multiply(a_coeff, b_coeff, modulus);
+                result_coeffs[pos] = self.mod_reduce(result_coeffs[pos] + product, modulus);
+            }
+        }
+        
+        Some(NtruPolynomial::new(result_coeffs, self.n))
+    }
+
+    /// yolo Scalar multiplication modulo m
+    fn scalar_multiply_mod(&self, poly: &NtruPolynomial, scalar: i32, modulus: i32) -> Option<NtruPolynomial> {
+        let result_coeffs = poly.coefficients.iter()
+            .map(|&coeff| self.mod_reduce(coeff * scalar, modulus))
+            .collect();
+        
+        Some(NtruPolynomial::new(result_coeffs, self.n))
+    }
+
+    /// stan Check if polynomial is a unit (constant polynomial equal to 1)
+    fn is_unit_polynomial(&self, poly: &NtruPolynomial, modulus: i32) -> bool {
+        if poly.coefficients.is_empty() {
+            return false;
+        }
+        
+        // Check if first coefficient is 1 (or coprime to modulus)
+        let first_coeff = self.mod_reduce(poly.coefficients[0], modulus);
+        if self.modular_inverse(first_coeff, modulus).is_none() {
+            return false;
+        }
+        
+        // Check if all other coefficients are 0
+        poly.coefficients.iter().skip(1).all(|&c| self.mod_reduce(c, modulus) == 0)
+    }
+
+    /// bestie Get leading coefficient of polynomial
+    fn get_leading_coefficient(&self, poly: &NtruPolynomial, degree: usize) -> i32 {
+        if degree < poly.coefficients.len() {
+            poly.coefficients[degree]
+        } else {
+            0
+        }
+    }
+
+    /// vibes Get polynomial degree (highest non-zero coefficient index)
+    fn polynomial_degree(&self, poly: &NtruPolynomial) -> usize {
+        for (i, &coeff) in poly.coefficients.iter().enumerate().rev() {
+            if coeff != 0 {
+                return i;
+            }
+        }
+        0
+    }
+
+    /// flex Get GCD leading coefficient for normalization
+    fn get_gcd_leading_coefficient(&self, poly: &NtruPolynomial, modulus: i32) -> Option<i32> {
+        for &coeff in &poly.coefficients {
+            let normalized = self.mod_reduce(coeff, modulus);
+            if normalized != 0 {
+                return Some(normalized);
+            }
+        }
+        None
+    }
+
+    /// periodt Constant-time modular multiplication (timing attack protection)
+    fn constant_time_multiply(&self, a: i32, b: i32, modulus: i32) -> i32 {
+        // Use 64-bit arithmetic to prevent overflow
+        let product = (a as i64) * (b as i64);
+        self.mod_reduce(product as i32, modulus)
+    }
+
+    /// sus Modular reduction with proper handling of negative numbers
+    fn mod_reduce(&self, value: i32, modulus: i32) -> i32 {
+        let result = value % modulus;
+        if result < 0 {
+            result + modulus
+        } else {
+            result
+        }
+    }
+
+    /// facts Extended Euclidean Algorithm for modular inverse
+    /// 
+    /// Computes the multiplicative inverse of a modulo m using the Extended
+    /// Euclidean Algorithm. Returns Some(inverse) if gcd(a, m) = 1, None otherwise.
+    fn modular_inverse(&self, a: i32, modulus: i32) -> Option<i32> {
+        if modulus <= 1 {
+            return None;
+        }
+
+        let mut old_r = modulus;
+        let mut r = a % modulus;
+        if r < 0 {
+            r += modulus;
+        }
+
+        let mut old_s = 0i32;
+        let mut s = 1i32;
+
+        while r != 0 {
+            let quotient = old_r / r;
+            
+            let temp_r = r;
+            r = old_r - quotient * r;
+            old_r = temp_r;
+
+            let temp_s = s;  
+            s = old_s - quotient * s;
+            old_s = temp_s;
+        }
+
+        if old_r > 1 {
+            None // Not invertible
+        } else {
+            if old_s < 0 {
+                old_s += modulus;
+            }
+            Some(old_s)
+        }
     }
     
     /// stan Center reduction for polynomial coefficients

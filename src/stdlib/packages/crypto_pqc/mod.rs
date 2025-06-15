@@ -36,6 +36,7 @@ pub use rainbow::*;
 pub use ntru::*;
 pub use compatibility::*;
 pub use migration_tools::*;
+pub use hybrid_crypto::*;
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::error::CursedError;

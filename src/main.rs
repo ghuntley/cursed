@@ -15,7 +15,7 @@ use std::time::Duration;
 use tokio::signal;
 
 use cursed::prelude::*;
-use cursed::cli::package_manager;
+use cursed::cli::{package_manager, optimization_commands, documentation};
 
 /// Global flag for graceful shutdown
 static SHUTDOWN: AtomicBool = AtomicBool::new(false);
@@ -38,6 +38,7 @@ async fn main() {
         Some(("format", sub_matches)) => handle_format_command(sub_matches).await,
         Some(("doc", sub_matches)) => handle_doc_command(sub_matches).await,
         Some(("package", sub_matches)) => handle_package_command(sub_matches).await,
+        Some(("optimize", sub_matches)) => handle_optimize_command(sub_matches).await,
         Some(("test", sub_matches)) => handle_test_command(sub_matches).await,
         Some(("repl", sub_matches)) => handle_repl_command(sub_matches).await,
         Some(("watch", sub_matches)) => handle_watch_command(sub_matches).await,
@@ -140,6 +141,18 @@ fn build_cli() -> Command {
                         .long("lto")
                         .action(ArgAction::SetTrue)
                         .help("Enable Link Time Optimization")
+                )
+                .arg(
+                    Arg::new("enhanced-passes")
+                        .long("enhanced-passes")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable enhanced LLVM optimization passes (CURSED-specific)")
+                )
+                .arg(
+                    Arg::new("disable-enhanced-passes")
+                        .long("disable-enhanced-passes")
+                        .action(ArgAction::SetTrue)
+                        .help("Disable enhanced LLVM optimization passes")
                 )
                 .arg(
                     Arg::new("args")
@@ -334,13 +347,18 @@ fn build_cli() -> Command {
                 )
         )
         .subcommand(
-            cursed::docs::add_doc_commands(Command::new("doc"))
+            documentation::add_documentation_commands(Command::new("doc"))
                 .about("Generate comprehensive documentation")
         )
         .subcommand(
             package_manager::add_package_commands(Command::new("package"))
                 .about("Package management commands")
                 .alias("pkg")
+        )
+        .subcommand(
+            optimization_commands::add_optimization_commands(Command::new("optimize"))
+                .about("Performance optimization and compilation speed analysis")
+                .alias("opt")
         )
         .subcommand(
             Command::new("test")
@@ -455,9 +473,24 @@ async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn st
     let file = matches.get_one::<String>("file").unwrap();
     let _args = matches.get_many::<String>("args");
     let watch = matches.get_flag("watch");
+    let opt_level = matches.get_one::<String>("opt-level").unwrap();
+    let profile = matches.get_flag("profile");
+    let time_passes = matches.get_flag("time-passes");
+    let jobs = matches.get_one::<String>("jobs").unwrap();
+    let target_cpu = matches.get_one::<String>("target-cpu");
+    let target_features = matches.get_one::<String>("target-features");
+    let enable_lto = matches.get_flag("enable-lto");
+    let enhanced_passes = matches.get_flag("enhanced-passes");
+    let disable_enhanced_passes = matches.get_flag("disable-enhanced-passes");
 
     if watch {
         handle_watch_run_command(matches).await
+    } else if profile || time_passes || opt_level != "2" || enable_lto || enhanced_passes || disable_enhanced_passes {
+        // Use optimized execution path when optimization flags are provided
+        handle_single_run_command_with_options(
+            file, opt_level, profile, time_passes, jobs, 
+            target_cpu, target_features, enable_lto, enhanced_passes, disable_enhanced_passes
+        ).await
     } else {
         handle_single_run_command(file).await
     }
@@ -487,12 +520,21 @@ async fn handle_single_run_command_with_options(
     target_cpu: Option<&str>,
     target_features: Option<&str>,
     enable_lto: bool,
+    enhanced_passes: bool,
+    disable_enhanced_passes: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     use cursed::codegen::llvm::optimization::{OptimizationLevel, utils::create_config_from_args};
     use cursed::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
     use cursed::core::performance_pipeline::{PerformancePipeline, utils};
     
-    println!("🚀 Running CURSED program: {} (O{})", file, opt_level);
+    let passes_info = if enhanced_passes {
+        " (enhanced passes)"
+    } else if disable_enhanced_passes {
+        " (standard passes)"
+    } else {
+        ""
+    };
+    println!("🚀 Running CURSED program: {} (O{}{})", file, opt_level, passes_info);
     
     // Check if file exists
     if !std::path::Path::new(file).exists() {
@@ -539,8 +581,17 @@ async fn handle_single_run_command_with_options(
         monitor.start_phase(CompilationPhase::Total)?;
     }
 
+    // Determine which passes to use
+    let use_enhanced = if disable_enhanced_passes {
+        false
+    } else if enhanced_passes {
+        true
+    } else {
+        true // Default to enhanced passes
+    };
+    
     // Execute the file with optimization
-    cursed::run_file_optimized(file, opt_config)?;
+    cursed::run_file_enhanced(file, opt_config, use_enhanced)?;
 
     if let Some(mut monitor) = performance_monitor {
         monitor.finalize()?;
@@ -603,7 +654,8 @@ async fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn 
     if watch {
         handle_watch_build_command(matches).await
     } else {
-        handle_single_build_command(file, output, emit, optimize).await
+        let opt_level = matches.get_one::<String>("opt-level").unwrap();
+        handle_single_build_command(file, output, emit, optimize, opt_level).await
     }
 }
 
@@ -611,7 +663,8 @@ async fn handle_single_build_command(
     file: &str, 
     output: Option<&String>, 
     emit: &str, 
-    optimize: bool
+    optimize: bool,
+    opt_level: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("🔨 Building CURSED program: {}", file);
     
@@ -635,14 +688,15 @@ async fn handle_single_build_command(
     
     match emit.as_ref() {
         "llvm-ir" => {
-            let ir = cursed::compile_to_ir(&source)?;
+            // Use the optimization level passed to function
+            let ir = cursed::compile_to_ir_with_optimization(&source, Some(opt_level))?;
             
             let default_output = format!("{}.ll", file);
             let output_file = output.map(|s| s.as_str())
                 .unwrap_or(&default_output);
             
             std::fs::write(output_file, ir)?;
-            println!("✅ LLVM IR written to: {}", output_file);
+            println!("✅ Optimized LLVM IR written to: {} (level: O{})", output_file, opt_level);
         }
         "exe" => {
             // For now, just check the source
@@ -675,7 +729,8 @@ async fn handle_watch_build_command(matches: &clap::ArgMatches) -> Result<(), Bo
     println!("   Debounce: {}ms", debounce_ms);
 
     // Build initially
-    if let Err(e) = handle_single_build_command(file, output, emit, optimize).await {
+    let opt_level = matches.get_one::<String>("opt-level").unwrap();
+    if let Err(e) = handle_single_build_command(file, output, emit, optimize, opt_level).await {
         eprintln!("Initial build failed: {}", e);
     }
 
@@ -904,12 +959,16 @@ async fn handle_directory_formatting(
 }
 
 async fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    // Use the comprehensive documentation system
-    cursed::docs::handle_doc_command(matches).await.map_err(|e| e.into())
+    // Use the enhanced documentation system
+    documentation::handle_documentation_command(matches).await.map_err(|e| e.into())
 }
 
 async fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     package_manager::handle_package_command(matches)
+}
+
+async fn handle_optimize_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    optimization_commands::handle_optimization_command(matches).await
 }
 
 async fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {

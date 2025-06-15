@@ -7,8 +7,8 @@ use super::nonce_generator::*;
 use chacha20poly1305::{
     aead::{Aead, KeyInit, Payload},
     ChaCha20Poly1305 as ChaCha20Poly1305Impl,
-    Nonce as ChaCha20Nonce as ChaChaLib20Nonce,
-    Key as ChaCha20Key as ChaChaLib20Key,
+    Nonce as ChaChaLib20Nonce,
+    Key as ChaChaLib20Key,
 };
 
 /// ChaCha20-Poly1305 authenticated encryption cipher

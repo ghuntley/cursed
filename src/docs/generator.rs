@@ -66,6 +66,7 @@ pub enum DocFormat {
     Html,
     Markdown,
     Json,
+    Xml,
 }
 
 impl std::fmt::Display for DocFormat {
@@ -74,6 +75,7 @@ impl std::fmt::Display for DocFormat {
             DocFormat::Html => write!(f, "html"),
             DocFormat::Markdown => write!(f, "markdown"),
             DocFormat::Json => write!(f, "json"),
+            DocFormat::Xml => write!(f, "xml"),
         }
     }
 }
@@ -86,6 +88,7 @@ impl std::str::FromStr for DocFormat {
             "html" => Ok(DocFormat::Html),
             "markdown" | "md" => Ok(DocFormat::Markdown),
             "json" => Ok(DocFormat::Json),
+            "xml" => Ok(DocFormat::Xml),
             _ => Err(format!("Unsupported format: {}", s)),
         }
     }
@@ -131,6 +134,7 @@ impl DocumentationGenerator {
             DocFormat::Html => self.generate_html_output(),
             DocFormat::Markdown => self.generate_markdown_output(),
             DocFormat::Json => self.generate_json_output(),
+            DocFormat::Xml => self.generate_xml_output(),
         }
     }
 
@@ -353,6 +357,21 @@ impl DocumentationGenerator {
         
         Ok(())
     }
+
+    /// Generate XML documentation output
+    fn generate_xml_output(&self) -> Result<(), Error> {
+        fs::create_dir_all(&self.config.output_dir).map_err(Error::Io)?;
+        
+        let xml_generator = XmlGenerator::new(&self.config);
+        
+        // Generate comprehensive XML documentation
+        xml_generator.generate_documentation(&self.extracted_docs, &self.config.output_dir)?;
+        
+        // Generate search index
+        xml_generator.generate_search_index(&self.search_index, &self.config.output_dir)?;
+        
+        Ok(())
+    }
 }
 
 /// Documentation extracted from source code
@@ -466,12 +485,18 @@ pub struct SourceInfo {
 
 /// Documentation extractor
 pub struct DocumentationExtractor {
-    // Future: Add configuration for extraction behavior
+    config: DocGeneratorConfig,
 }
 
 impl DocumentationExtractor {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            config: DocGeneratorConfig::default(),
+        }
+    }
+
+    pub fn with_config(config: DocGeneratorConfig) -> Self {
+        Self { config }
     }
 
     /// Extract documentation from source code
@@ -522,113 +547,201 @@ impl DocumentationExtractor {
 
     /// Extract documentation from a statement
     fn extract_from_statement(&self, statement: &Statement, module: &str) -> Result<Option<DocumentationItem>, Error> {
-        // For now, return empty documentation until we can properly match AST types
-        // This is a simplified implementation that would need to be enhanced
-        // based on the actual AST structure in the CURSED codebase
+        use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
+        use crate::ast::statements::variable::VariableStatement;
         
-        // Create a default documentation item
+        let any_stmt = statement.as_any();
         let location = SourceLocation { line: 1, column: 1, file: None };
-        let item = DocumentationItem {
-            name: "placeholder".to_string(),
-            kind: ItemKind::Function,
-            visibility: Visibility::Public,
-            module: module.to_string(),
-            summary: "Placeholder documentation".to_string(),
-            description: "This is a placeholder until proper AST integration is completed".to_string(),
-            signature: None,
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location,
-            source_code: None,
-        };
         
-        Ok(Some(item))
+        // Function declarations (slay keyword)
+        if let Some(func_stmt) = any_stmt.downcast_ref::<FunctionStatement>() {
+            return Ok(Some(self.extract_function_documentation(func_stmt, module, &location)?));
+        }
+        
+        // Struct declarations (squad keyword)
+        if let Some(struct_stmt) = any_stmt.downcast_ref::<SquadStatement>() {
+            return Ok(Some(self.extract_struct_documentation(struct_stmt, module, &location)?));
+        }
+        
+        // Interface declarations (collab keyword)
+        if let Some(interface_stmt) = any_stmt.downcast_ref::<CollabStatement>() {
+            return Ok(Some(self.extract_interface_documentation(interface_stmt, module, &location)?));
+        }
+        
+        // Variable declarations (sus/facts keywords)
+        if let Some(var_stmt) = any_stmt.downcast_ref::<VariableStatement>() {
+            return Ok(Some(self.extract_variable_documentation(var_stmt, module, &location)?));
+        }
+        
+        // TODO: Add extraction for additional statement types:
+        // - Module declarations
+        // - Type aliases
+        // - Constant declarations
+        // - Import statements with documentation
+        
+        // For other statement types, return None (not documentable)
+        Ok(None)
     }
 
-    /// Extract documentation from function declaration (simplified)
-    fn extract_function_docs(&self, _func: &dyn std::any::Any, module: &str) -> Result<DocumentationItem, Error> {
-        // Simplified implementation - would need proper AST integration
-        let location = SourceLocation { line: 1, column: 1, file: None };
+    /// Extract documentation from function declaration
+    fn extract_function_documentation(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        use crate::ast::traits::Node;
+        
+        let func_name = func.name.value.clone();
+        let signature = self.build_function_signature(func);
+        
+        // Extract parameter documentation
+        let mut parameters = self.extract_function_parameters(&func.parameters)?;
+        
+        // Extract generic parameters if present
+        if !func.type_parameters.is_empty() {
+            let mut generic_params = self.extract_generic_parameters(&func.type_parameters)?;
+            parameters.append(&mut generic_params);
+        }
+        
+        // Extract return type
+        let return_type = func.return_type.as_ref().map(|rt| rt.string());
+        
+        // Extract source code if configured
+        let source_code = if self.config.include_examples {
+            Some(func.string())
+        } else {
+            None
+        };
         
         Ok(DocumentationItem {
-            name: "example_function".to_string(),
+            name: func_name.clone(),
             kind: ItemKind::Function,
-            visibility: Visibility::Public,
+            visibility: Visibility::Public, // Functions are typically public in CURSED
             module: module.to_string(),
-            summary: "Example function documentation".to_string(),
-            description: "This is placeholder documentation for a function".to_string(),
-            signature: Some("slay example_function() -> void".to_string()),
-            parameters: Vec::new(),
-            return_type: Some("void".to_string()),
+            summary: format!("Function {}", func_name),
+            description: format!("CURSED function declaration using the 'slay' keyword"),
+            signature: Some(signature),
+            parameters,
+            return_type,
             examples: Vec::new(),
             tags: HashMap::new(),
-            location,
-            source_code: None,
+            location: location.clone(),
+            source_code,
         })
     }
 
-    /// Extract documentation from struct declaration (simplified)
-    fn extract_struct_docs(&self, _struct_stmt: &dyn std::any::Any, module: &str) -> Result<DocumentationItem, Error> {
-        let location = SourceLocation { line: 1, column: 1, file: None };
+    /// Extract documentation from struct declaration
+    fn extract_struct_documentation(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        use crate::ast::traits::Node;
+        
+        let struct_name = struct_stmt.name.value.clone();
+        let signature = self.build_struct_signature(struct_stmt);
+        
+        // Extract field documentation
+        let mut parameters = self.extract_struct_fields(&struct_stmt.fields)?;
+        
+        // Extract generic parameters if present
+        if !struct_stmt.type_parameters.is_empty() {
+            let mut generic_params = self.extract_generic_parameters(&struct_stmt.type_parameters)?;
+            parameters.append(&mut generic_params);
+        }
+        
+        // Extract associated methods if available
+        let mut associated_methods = self.extract_associated_methods(struct_stmt)?;
+        parameters.append(&mut associated_methods);
+        
+        // Extract source code if configured
+        let source_code = if self.config.include_examples {
+            Some(struct_stmt.string())
+        } else {
+            None
+        };
         
         Ok(DocumentationItem {
-            name: "example_struct".to_string(),
+            name: struct_name.clone(),
             kind: ItemKind::Struct,
             visibility: Visibility::Public,
             module: module.to_string(),
-            summary: "Example struct documentation".to_string(),
-            description: "This is placeholder documentation for a struct".to_string(),
-            signature: Some("squad example_struct".to_string()),
-            parameters: Vec::new(),
+            summary: format!("Struct {}", struct_name),
+            description: format!("CURSED struct declaration using the 'squad' keyword"),
+            signature: Some(signature),
+            parameters,
             return_type: None,
             examples: Vec::new(),
             tags: HashMap::new(),
-            location,
-            source_code: None,
+            location: location.clone(),
+            source_code,
         })
     }
 
-    /// Extract documentation from interface declaration (simplified)
-    fn extract_interface_docs(&self, _interface_stmt: &dyn std::any::Any, module: &str) -> Result<DocumentationItem, Error> {
-        let location = SourceLocation { line: 1, column: 1, file: None };
+    /// Extract documentation from interface declaration
+    fn extract_interface_documentation(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        use crate::ast::traits::Node;
+        
+        let interface_name = interface_stmt.name.value.clone();
+        let signature = self.build_interface_signature(interface_stmt);
+        
+        // Extract method documentation as parameters
+        let parameters = self.extract_interface_methods(&interface_stmt.methods)?;
+        
+        // Extract source code if configured
+        let source_code = if self.config.include_examples {
+            Some(interface_stmt.string())
+        } else {
+            None
+        };
         
         Ok(DocumentationItem {
-            name: "example_interface".to_string(),
+            name: interface_name.clone(),
             kind: ItemKind::Interface,
             visibility: Visibility::Public,
             module: module.to_string(),
-            summary: "Example interface documentation".to_string(),
-            description: "This is placeholder documentation for an interface".to_string(),
-            signature: Some("collab example_interface".to_string()),
-            parameters: Vec::new(),
+            summary: format!("Interface {}", interface_name),
+            description: format!("CURSED interface declaration using the 'collab' keyword"),
+            signature: Some(signature),
+            parameters,
             return_type: None,
             examples: Vec::new(),
             tags: HashMap::new(),
-            location,
-            source_code: None,
+            location: location.clone(),
+            source_code,
         })
     }
 
-    /// Extract documentation from variable declaration (simplified)
-    fn extract_variable_docs(&self, _var: &dyn std::any::Any, module: &str) -> Result<DocumentationItem, Error> {
-        let location = SourceLocation { line: 1, column: 1, file: None };
+    /// Extract documentation from variable declaration
+    fn extract_variable_documentation(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        use crate::ast::traits::Node;
+        
+        let var_name = var_stmt.name.clone();
+        let signature = self.build_variable_signature(var_stmt);
+        
+        // Determine if variable or constant based on mutability
+        let kind = if var_stmt.is_mutable {
+            ItemKind::Variable
+        } else {
+            ItemKind::Constant
+        };
+        
+        // Extract source code if configured
+        let source_code = if self.config.include_examples {
+            Some(var_stmt.string())
+        } else {
+            None
+        };
+        
+        let keyword = if var_stmt.is_mutable { "sus" } else { "facts" };
         
         Ok(DocumentationItem {
-            name: "example_variable".to_string(),
-            kind: ItemKind::Variable,
-            visibility: Visibility::Private,
+            name: var_name.clone(),
+            kind,
+            visibility: Visibility::Private, // Variables are typically private unless exported
             module: module.to_string(),
-            summary: "Example variable documentation".to_string(),
-            description: "This is placeholder documentation for a variable".to_string(),
-            signature: Some("sus example_variable".to_string()),
+            summary: format!("{} {}", if var_stmt.is_mutable { "Variable" } else { "Constant" }, var_name),
+            description: format!("CURSED {} declaration using the '{}' keyword", 
+                               if var_stmt.is_mutable { "variable" } else { "constant" }, keyword),
+            signature: Some(signature),
             parameters: Vec::new(),
-            return_type: Some("i32".to_string()),
+            return_type: var_stmt.var_type.clone(),
             examples: Vec::new(),
             tags: HashMap::new(),
-            location,
-            source_code: None,
+            location: location.clone(),
+            source_code,
         })
     }
 
@@ -681,6 +794,531 @@ impl DocumentationExtractor {
             encoding: "UTF-8".to_string(),
         })
     }
+
+    /// Build function signature string
+    fn build_function_signature(&self, func: &crate::ast::declarations::FunctionStatement) -> String {
+        use crate::ast::traits::Node;
+        
+        let mut sig = String::new();
+        sig.push_str("slay ");
+        sig.push_str(&func.name.value);
+        
+        // Add type parameters if present
+        if !func.type_parameters.is_empty() {
+            sig.push('<');
+            let type_params: Vec<String> = func.type_parameters.iter()
+                .map(|p| p.string())
+                .collect();
+            sig.push_str(&type_params.join(", "));
+            sig.push('>');
+        }
+        
+        // Add parameters
+        sig.push('(');
+        let param_strs: Vec<String> = func.parameters.iter()
+            .map(|p| p.string())
+            .collect();
+        sig.push_str(&param_strs.join(", "));
+        sig.push(')');
+        
+        // Add return type if present
+        if let Some(return_type) = &func.return_type {
+            sig.push_str(" -> ");
+            sig.push_str(&return_type.string());
+        }
+        
+        sig
+    }
+
+    /// Build struct signature string
+    fn build_struct_signature(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> String {
+        let mut sig = String::new();
+        sig.push_str("squad ");
+        sig.push_str(&struct_stmt.name.value);
+        
+        // Add type parameters if present
+        if !struct_stmt.type_parameters.is_empty() {
+            sig.push('<');
+            let type_params: Vec<String> = struct_stmt.type_parameters.iter()
+                .map(|p| p.string())
+                .collect();
+            sig.push_str(&type_params.join(", "));
+            sig.push('>');
+        }
+        
+        sig
+    }
+
+    /// Build interface signature string
+    fn build_interface_signature(&self, interface_stmt: &crate::ast::declarations::CollabStatement) -> String {
+        let mut sig = String::new();
+        sig.push_str("collab ");
+        sig.push_str(&interface_stmt.name.value);
+        
+        // Add type parameters if present
+        if !interface_stmt.type_parameters.is_empty() {
+            sig.push('<');
+            let type_params: Vec<String> = interface_stmt.type_parameters.iter()
+                .map(|p| p.string())
+                .collect();
+            sig.push_str(&type_params.join(", "));
+            sig.push('>');
+        }
+        
+        sig
+    }
+
+    /// Build variable signature string
+    fn build_variable_signature(&self, var_stmt: &crate::ast::statements::variable::VariableStatement) -> String {
+        use crate::ast::traits::Node;
+        
+        let keyword = if var_stmt.is_mutable { "sus" } else { "facts" };
+        let mut sig = format!("{} {}", keyword, var_stmt.name);
+        
+        if let Some(var_type) = &var_stmt.var_type {
+            sig.push_str(&format!(" {}", var_type));
+        }
+        
+        sig
+    }
+
+    /// Extract function parameters with enhanced optional parameter detection
+    fn extract_function_parameters(&self, parameters: &[crate::ast::expressions::Parameter]) -> Result<Vec<Parameter>, Error> {
+        use crate::ast::traits::Node;
+        
+        let mut param_docs = Vec::new();
+        
+        for param in parameters {
+            // Detect if parameter is optional
+            let is_optional = param.default_value.is_some() || 
+                param.param_type.as_ref().map_or(false, |t| self.is_optional_type(&t.string()));
+            
+            // Enhanced description with optional/required status
+            let description = if is_optional && param.default_value.is_some() {
+                format!("Optional parameter {} with default value", param.name)
+            } else if is_optional {
+                format!("Optional parameter {}", param.name)
+            } else {
+                format!("Required parameter {}", param.name)
+            };
+            
+            let param_doc = Parameter {
+                name: param.name.clone(),
+                type_name: param.param_type.as_ref().map(|t| t.string()),
+                description,
+                default_value: param.default_value.as_ref().map(|v| v.string()),
+            };
+            param_docs.push(param_doc);
+        }
+        
+        Ok(param_docs)
+    }
+
+    /// Detect if a type is optional (ends with ? or is Option<T>)
+    fn is_optional_type(&self, type_str: &str) -> bool {
+        type_str.ends_with('?') || type_str.starts_with("Option<")
+    }
+
+    /// Extract struct fields with visibility detection and default values
+    fn extract_struct_fields(&self, fields: &[crate::ast::declarations::FieldStatement]) -> Result<Vec<Parameter>, Error> {
+        use crate::ast::traits::Node;
+        
+        let mut field_docs = Vec::new();
+        
+        for field in fields {
+            // Detect field visibility (public fields typically start with uppercase in CURSED)
+            let is_public = field.name.value.chars().next().map_or(false, |c| c.is_uppercase());
+            let visibility = if is_public { "public" } else { "private" };
+            
+            // Enhanced field description with visibility
+            let description = format!("{} field {} of type {}", 
+                visibility, 
+                field.name.value, 
+                field.type_name.value
+            );
+            
+            // Extract default value if present (from field initialization)
+            let default_value = field.default_value.as_ref().map(|v| v.string());
+            
+            let field_doc = Parameter {
+                name: field.name.value.clone(),
+                type_name: Some(field.type_name.value.clone()),
+                description,
+                default_value,
+            };
+            field_docs.push(field_doc);
+        }
+        
+        Ok(field_docs)
+    }
+
+    /// Extract interface methods as parameters
+    fn extract_interface_methods(&self, methods: &[crate::ast::declarations::MethodDeclaration]) -> Result<Vec<Parameter>, Error> {
+        use crate::ast::traits::Node;
+        
+        let mut method_docs = Vec::new();
+        
+        for method in methods {
+            let method_sig = format!("{}({})", 
+                method.name.value,
+                method.parameters.iter()
+                    .map(|p| p.string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+            
+            let method_doc = Parameter {
+                name: method.name.value.clone(),
+                type_name: method.return_type.as_ref().map(|t| t.string()),
+                description: format!("Method {}", method.name.value),
+                default_value: Some(method_sig),
+            };
+            method_docs.push(method_doc);
+        }
+        
+        Ok(method_docs)
+    }
+
+    /// Extract generic parameters from type parameter list
+    fn extract_generic_parameters(&self, type_params: &[crate::ast::types::TypeParameter]) -> Result<Vec<Parameter>, Error> {
+        use crate::ast::traits::Node;
+        
+        let mut generic_docs = Vec::new();
+        
+        for type_param in type_params {
+            // Extract constraints if present
+            let constraints = if !type_param.constraints.is_empty() {
+                let constraint_names: Vec<String> = type_param.constraints.iter()
+                    .map(|c| c.string())
+                    .collect();
+                Some(format!("where {}", constraint_names.join(" + ")))
+            } else {
+                None
+            };
+            
+            let description = if let Some(constraints) = &constraints {
+                format!("Generic type parameter {} with constraints: {}", type_param.name.value, constraints)
+            } else {
+                format!("Generic type parameter {}", type_param.name.value)
+            };
+            
+            let generic_doc = Parameter {
+                name: type_param.name.value.clone(),
+                type_name: Some("Type".to_string()),
+                description,
+                default_value: constraints,
+            };
+            generic_docs.push(generic_doc);
+        }
+        
+        Ok(generic_docs)
+    }
+
+    /// Extract submodules from module statements
+    fn extract_submodules(&self, statements: &[Statement]) -> Result<Vec<DocumentationItem>, Error> {
+        let mut submodules = Vec::new();
+        let location = SourceLocation { line: 1, column: 1, file: None };
+        
+        for statement in statements {
+            // Check for module declarations (when available in AST)
+            // For now, we look for import statements that might indicate submodules
+            if let Some(any_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::import::ImportStatement>() {
+                // If import is relative, it might be a submodule
+                if any_stmt.path.starts_with("./") || any_stmt.path.starts_with("../") {
+                    let module_name = any_stmt.path.trim_start_matches("./").replace("/", "::");
+                    
+                    let submodule = DocumentationItem {
+                        name: module_name.clone(),
+                        kind: ItemKind::Module,
+                        visibility: Visibility::Public,
+                        module: module_name,
+                        summary: format!("Submodule imported from {}", any_stmt.path),
+                        description: format!("External module imported from path {}", any_stmt.path),
+                        signature: Some(format!("import \"{}\"", any_stmt.path)),
+                        parameters: Vec::new(),
+                        return_type: None,
+                        examples: Vec::new(),
+                        tags: HashMap::new(),
+                        location: location.clone(),
+                        source_code: None,
+                    };
+                    submodules.push(submodule);
+                }
+            }
+        }
+        
+        Ok(submodules)
+    }
+
+    /// Extract constants from constant declarations
+    fn extract_constants(&self, statements: &[Statement]) -> Result<Vec<DocumentationItem>, Error> {
+        let mut constants = Vec::new();
+        let location = SourceLocation { line: 1, column: 1, file: None };
+        
+        for statement in statements {
+            // Look for variable statements that are constants (facts keyword)
+            if let Some(var_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::variable::VariableStatement>() {
+                if !var_stmt.is_mutable {
+                    let constant = DocumentationItem {
+                        name: var_stmt.name.clone(),
+                        kind: ItemKind::Constant,
+                        visibility: Visibility::Public,
+                        module: "main".to_string(),
+                        summary: format!("Constant {}", var_stmt.name),
+                        description: format!("CURSED constant declaration using the 'facts' keyword"),
+                        signature: Some(format!("facts {}", var_stmt.name)),
+                        parameters: Vec::new(),
+                        return_type: var_stmt.var_type.clone(),
+                        examples: Vec::new(),
+                        tags: HashMap::new(),
+                        location: location.clone(),
+                        source_code: if self.config.include_examples {
+                            Some(format!("facts {} = <value>;", var_stmt.name))
+                        } else {
+                            None
+                        },
+                    };
+                    constants.push(constant);
+                }
+            }
+        }
+        
+        Ok(constants)
+    }
+
+    /// Extract interface implementations
+    fn extract_interface_implementations(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> Result<Vec<String>, Error> {
+        let mut implementations = Vec::new();
+        
+        // Check if the struct has interface implementations (when available in AST)
+        // For now, we'll look for interface-like field patterns or method blocks
+        
+        // Check field names for interface patterns (fields that end with interface-like suffixes)
+        for field in &struct_stmt.fields {
+            let field_name = &field.name.value;
+            let type_name = &field.type_name.value;
+            
+            // If field type looks like an interface (capitalized, might have Interface suffix)
+            if type_name.chars().next().map_or(false, |c| c.is_uppercase()) &&
+               (type_name.ends_with("Interface") || type_name.ends_with("Trait")) {
+                implementations.push(format!("implements {}", type_name));
+            }
+            
+            // Check for common interface patterns
+            if field_name.starts_with("impl_") || field_name.contains("interface") {
+                implementations.push(format!("implements {} via field {}", type_name, field_name));
+            }
+        }
+        
+        // Look for interface implementation comments or annotations in field descriptions
+        // This would be enhanced when proper interface implementation syntax is added to AST
+        
+        Ok(implementations)
+    }
+
+    /// Extract associated methods for structs
+    fn extract_associated_methods(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> Result<Vec<Parameter>, Error> {
+        let mut methods = Vec::new();
+        
+        // For now, we'll create placeholder methods based on common patterns
+        // This will be enhanced when method implementation blocks are available in AST
+        
+        let struct_name = &struct_stmt.name.value;
+        
+        // Generate common constructor method
+        let constructor = Parameter {
+            name: "new".to_string(),
+            type_name: Some(struct_name.clone()),
+            description: format!("Creates a new instance of {}", struct_name),
+            default_value: Some(format!("slay new() -> {}", struct_name)),
+        };
+        methods.push(constructor);
+        
+        // Generate getter methods for each field
+        for field in &struct_stmt.fields {
+            let field_name = &field.name.value;
+            let field_type = &field.type_name.value;
+            
+            // Only create getters for public fields (assuming capitalized names are public)
+            if field_name.chars().next().map_or(false, |c| c.is_lowercase()) {
+                let getter = Parameter {
+                    name: format!("get_{}", field_name),
+                    type_name: Some(field_type.clone()),
+                    description: format!("Gets the value of field {}", field_name),
+                    default_value: Some(format!("slay get_{}(self) -> {}", field_name, field_type)),
+                };
+                methods.push(getter);
+                
+                // Create setter for mutable fields (basic heuristic)
+                if !field_type.starts_with("const") {
+                    let setter = Parameter {
+                        name: format!("set_{}", field_name),
+                        type_name: Some("()".to_string()),
+                        description: format!("Sets the value of field {}", field_name),
+                        default_value: Some(format!("slay set_{}(sus self, value: {})", field_name, field_type)),
+                    };
+                    methods.push(setter);
+                }
+            }
+        }
+        
+        // Generate common utility methods
+        if !struct_stmt.fields.is_empty() {
+            let clone_method = Parameter {
+                name: "clone".to_string(),
+                type_name: Some(struct_name.clone()),
+                description: format!("Creates a copy of the {} instance", struct_name),
+                default_value: Some(format!("slay clone(self) -> {}", struct_name)),
+            };
+            methods.push(clone_method);
+            
+            let debug_method = Parameter {
+                name: "debug".to_string(),
+                type_name: Some("string".to_string()),
+                description: format!("Returns a debug representation of the {} instance", struct_name),
+                default_value: Some("slay debug(self) -> string".to_string()),
+            };
+            methods.push(debug_method);
+        }
+        
+        Ok(methods)
+    }
+
+    /// Extract documentation comments from source location
+    fn extract_documentation_comments(&self, source: &str, location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<Example>), Error> {
+        let lines = source.lines().collect::<Vec<_>>();
+        let mut summary = String::new();
+        let mut description = String::new();
+        let mut tags = HashMap::new();
+        let mut examples = Vec::new();
+        
+        // Start looking for comments before the location
+        let start_line = if location.line > 10 { location.line - 10 } else { 1 };
+        let end_line = location.line;
+        
+        let mut doc_lines = Vec::new();
+        let mut in_doc_block = false;
+        
+        // Scan for documentation comments (/// style)
+        for line_num in start_line..=end_line {
+            if let Some(line) = lines.get((line_num - 1) as usize) {
+                let trimmed = line.trim();
+                
+                if trimmed.starts_with("///") {
+                    in_doc_block = true;
+                    let content = trimmed.trim_start_matches("///").trim();
+                    if !content.is_empty() {
+                        doc_lines.push(content.to_string());
+                    }
+                } else if trimmed.starts_with("//!") {
+                    in_doc_block = true;
+                    let content = trimmed.trim_start_matches("//!").trim();
+                    if !content.is_empty() {
+                        doc_lines.push(content.to_string());
+                    }
+                } else if in_doc_block && (trimmed.is_empty() || trimmed.starts_with("//")) {
+                    // Continue doc block through empty lines or regular comments
+                    if trimmed.starts_with("//") && !trimmed.starts_with("///") {
+                        let content = trimmed.trim_start_matches("//").trim();
+                        if !content.is_empty() {
+                            doc_lines.push(content.to_string());
+                        }
+                    }
+                } else if in_doc_block && !trimmed.starts_with("//") {
+                    // End of doc block
+                    break;
+                }
+            }
+        }
+        
+        // Parse the documentation lines
+        let mut current_example: Option<Example> = None;
+        let mut in_example_code = false;
+        let mut example_code = String::new();
+        
+        for (i, line) in doc_lines.iter().enumerate() {
+            if line.starts_with('@') {
+                // Handle tags
+                if let Some(space_pos) = line.find(' ') {
+                    let tag_name = &line[1..space_pos];
+                    let tag_value = &line[space_pos + 1..];
+                    
+                    match tag_name {
+                        "param" | "parameter" => {
+                            tags.entry("parameters".to_string())
+                                .or_insert_with(Vec::new)
+                                .push(tag_value.to_string());
+                        }
+                        "return" | "returns" => {
+                            tags.entry("returns".to_string())
+                                .or_insert_with(Vec::new)
+                                .push(tag_value.to_string());
+                        }
+                        "example" => {
+                            // Start a new example
+                            if let Some(example) = current_example.take() {
+                                examples.push(example);
+                            }
+                            current_example = Some(Example {
+                                title: Some(tag_value.to_string()),
+                                description: None,
+                                code: String::new(),
+                                language: "cursed".to_string(),
+                                output: None,
+                            });
+                            in_example_code = false;
+                        }
+                        "code" => {
+                            in_example_code = true;
+                            example_code.clear();
+                        }
+                        "output" => {
+                            if let Some(ref mut example) = current_example {
+                                example.output = Some(tag_value.to_string());
+                            }
+                        }
+                        _ => {
+                            tags.entry(tag_name.to_string())
+                                .or_insert_with(Vec::new)
+                                .push(tag_value.to_string());
+                        }
+                    }
+                }
+            } else if in_example_code {
+                // Accumulate example code
+                example_code.push_str(line);
+                example_code.push('\n');
+            } else {
+                // Regular documentation text
+                if i == 0 && summary.is_empty() {
+                    summary = line.clone();
+                } else {
+                    if !description.is_empty() {
+                        description.push('\n');
+                    }
+                    description.push_str(line);
+                }
+            }
+        }
+        
+        // Finalize current example
+        if let Some(mut example) = current_example {
+            if !example_code.is_empty() {
+                example.code = example_code.trim().to_string();
+            }
+            examples.push(example);
+        }
+        
+        // Use fallbacks if no documentation found
+        if summary.is_empty() {
+            summary = "Auto-generated summary".to_string();
+        }
+        if description.is_empty() {
+            description = "Auto-generated description".to_string();
+        }
+        
+        Ok((summary, description, tags, examples))
+    }
 }
 
 /// HTML documentation generator
@@ -694,3 +1332,4 @@ mod json_generator;
 use html_generator::HtmlGenerator;
 use markdown_generator::MarkdownGenerator;
 use json_generator::JsonGenerator;
+use xml_generator::XmlGenerator;

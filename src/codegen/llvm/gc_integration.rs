@@ -495,12 +495,77 @@ fn allocate_object_internal(
 
 // safe_point_internal removed - using goroutine.rs implementation
 
-fn write_barrier_internal(_object: *mut u8, _field: *mut u8, _value: *mut u8) {
-    // Placeholder for write barrier implementation
-    // In real implementation:
-    // 1. Check if value is a pointer to GC object
-    // 2. Update generational GC metadata
-    // 3. Mark card table if needed
+fn write_barrier_internal(object: *mut u8, field: *mut u8, value: *mut u8) {
+    // Enhanced write barrier implementation
+    if object.is_null() || field.is_null() {
+        return;
+    }
+    
+    debug!(object = ?object, field = ?field, value = ?value, "Write barrier internal implementation");
+    
+    // Check if value is a pointer to a GC object
+    if !value.is_null() {
+        // Extract type information from object header
+        unsafe {
+            let obj_header = object as *const ObjectHeader;
+            let obj_type_id = (*obj_header).type_id;
+            
+            // Check if the value being assigned is also a GC object
+            if is_gc_object(value) {
+                let value_header = value as *const ObjectHeader;
+                let value_type_id = (*value_header).type_id;
+                
+                debug!(
+                    obj_type_id = obj_type_id,
+                    value_type_id = value_type_id,
+                    "Recording cross-reference in write barrier"
+                );
+                
+                // Record the cross-reference for cycle detection
+                record_object_reference(obj_type_id, value_type_id);
+            }
+        }
+    }
+    
+    // Update generational GC metadata if needed
+    if is_cross_generational_reference(object, value) {
+        mark_remembered_set(object, field);
+    }
+}
+
+/// Check if a pointer points to a GC-managed object
+fn is_gc_object(ptr: *mut u8) -> bool {
+    if ptr.is_null() {
+        return false;
+    }
+    
+    // Basic validation: check if the memory looks like an object header
+    unsafe {
+        let header = ptr as *const ObjectHeader;
+        let type_id = (*header).type_id;
+        let size = (*header).size;
+        
+        // Basic sanity checks
+        type_id != 0 && size > std::mem::size_of::<ObjectHeader>() && size < 1024 * 1024 * 1024 // < 1GB
+    }
+}
+
+/// Check if this is a cross-generational reference
+fn is_cross_generational_reference(object: *mut u8, value: *mut u8) -> bool {
+    // Simplified: assume any non-null assignment might be cross-generational
+    !object.is_null() && !value.is_null()
+}
+
+/// Mark object in remembered set for generational GC
+fn mark_remembered_set(object: *mut u8, field: *mut u8) {
+    debug!(object = ?object, field = ?field, "Marking object in remembered set");
+    // In real implementation, this would update the remembered set data structure
+}
+
+/// Record object reference for cycle detection
+fn record_object_reference(from_type_id: u64, to_type_id: u64) {
+    debug!(from_type_id = from_type_id, to_type_id = to_type_id, "Recording object reference");
+    // In real implementation, this would update the reference graph for cycle detection
 }
 
 fn collect_garbage_internal() {

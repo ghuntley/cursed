@@ -378,22 +378,48 @@ impl LazyLoader {
         &self,
         entity: &T,
         relationship: &Relationship,
-        _db: Arc<DB>,
+        db: Arc<DB>,
     ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
-        // Placeholder implementation - would execute actual SQL
+        debug!(
+            relationship_type = ?relationship.relationship_type,
+            "Executing relationship query"
+        );
+        
         match &relationship.relationship_type {
             RelationshipType::HasMany { foreign_key, .. } => {
                 let local_value = entity.primary_key_value()
                     .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key"))?;
 
-                let mut row = HashMap::new();
-                row.insert("id".to_string(), SqlValue::Integer(1));
-                row.insert(foreign_key.clone(), local_value);
-                row.insert("name".to_string(), SqlValue::String("Lazy Loaded".to_string()));
+                let sql = format!(
+                    "SELECT * FROM {} WHERE {} = $1",
+                    relationship.target_entity,
+                    foreign_key
+                );
                 
-                Ok(Vec::from([row]))
+                debug!(sql = %sql, foreign_key = foreign_key, local_value = ?local_value, "Executing HasMany query");
+                
+                let rows = db.map_query(sql, Vec::from([local_value]))?;
+                Ok(rows)
             }
-            _ => Ok(Vec::new())
+            RelationshipType::BelongsTo { foreign_key, owner_key } => {
+                let foreign_value = entity.to_fields().get(foreign_key).cloned()
+                    .ok_or_else(|| DatabaseError::validation_error(&format!("Foreign key '{}' not found in entity", foreign_key)))?;
+
+                let sql = format!(
+                    "SELECT * FROM {} WHERE {} = $1",
+                    relationship.target_entity,
+                    owner_key
+                );
+                
+                debug!(sql = %sql, owner_key = owner_key, foreign_value = ?foreign_value, "Executing BelongsTo query");
+                
+                let rows = db.map_query(sql, Vec::from([foreign_value]))?;
+                Ok(rows)
+            }
+            _ => {
+                warn!("Relationship type not yet implemented for lazy loading: {:?}", relationship.relationship_type);
+                Ok(Vec::new())
+            }
         }
     }
 
@@ -504,22 +530,48 @@ impl EagerLoader {
         &self,
         entity: &T,
         relationship: &Relationship,
-        _db: Arc<DB>,
+        db: Arc<DB>,
     ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
-        // Placeholder implementation
+        debug!(
+            relationship_type = ?relationship.relationship_type,
+            "Batch loading relationship for single entity"
+        );
+        
         match &relationship.relationship_type {
             RelationshipType::HasMany { foreign_key, .. } => {
                 let local_value = entity.primary_key_value()
                     .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key"))?;
 
-                let mut row = HashMap::new();
-                row.insert("id".to_string(), SqlValue::Integer(1));
-                row.insert(foreign_key.clone(), local_value);
-                row.insert("name".to_string(), SqlValue::String("Eager Loaded".to_string()));
+                let sql = format!(
+                    "SELECT * FROM {} WHERE {} = $1",
+                    relationship.target_entity,
+                    foreign_key
+                );
                 
-                Ok(Vec::from([row]))
+                debug!(sql = %sql, foreign_key = foreign_key, local_value = ?local_value, "Executing eager HasMany query");
+                
+                let rows = db.map_query(sql, Vec::from([local_value]))?;
+                Ok(rows)
             }
-            _ => Ok(Vec::new())
+            RelationshipType::BelongsTo { foreign_key, owner_key } => {
+                let foreign_value = entity.to_fields().get(foreign_key).cloned()
+                    .ok_or_else(|| DatabaseError::validation_error(&format!("Foreign key '{}' not found in entity", foreign_key)))?;
+
+                let sql = format!(
+                    "SELECT * FROM {} WHERE {} = $1",
+                    relationship.target_entity,
+                    owner_key
+                );
+                
+                debug!(sql = %sql, owner_key = owner_key, foreign_value = ?foreign_value, "Executing eager BelongsTo query");
+                
+                let rows = db.map_query(sql, Vec::from([foreign_value]))?;
+                Ok(rows)
+            }
+            _ => {
+                warn!("Relationship type not yet implemented for eager loading: {:?}", relationship.relationship_type);
+                Ok(Vec::new())
+            }
         }
     }
 
@@ -528,7 +580,7 @@ impl EagerLoader {
         &self,
         relationship: &Relationship,
         primary_keys: &[SqlValue],
-        _db: Arc<DB>,
+        db: Arc<DB>,
     ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
         debug!(
             relationship = %relationship.name,
@@ -536,23 +588,53 @@ impl EagerLoader {
             "Executing batch query"
         );
 
-        // Placeholder implementation
-        let mut results = Vec::new();
-        
-        for (i, pk) in primary_keys.iter().enumerate() {
-            match &relationship.relationship_type {
-                RelationshipType::HasMany { foreign_key, .. } => {
-                    let mut row = HashMap::new();
-                    row.insert("id".to_string(), SqlValue::Integer(i as i64 + 1));
-                    row.insert(foreign_key.clone(), pk.clone());
-                    row.insert("name".to_string(), SqlValue::String(format!("Batch Loaded {}", i)));
-                    results.push(row);
-                }
-                _ => {}
-            }
+        if primary_keys.is_empty() {
+            return Ok(Vec::new());
         }
 
-        Ok(results)
+        match &relationship.relationship_type {
+            RelationshipType::HasMany { foreign_key, .. } => {
+                // Build IN clause for efficient batch loading
+                let placeholders: Vec<String> = (1..=primary_keys.len())
+                    .map(|i| format!("${}", i))
+                    .collect();
+                
+                let sql = format!(
+                    "SELECT * FROM {} WHERE {} IN ({})",
+                    relationship.target_entity,
+                    foreign_key,
+                    placeholders.join(", ")
+                );
+                
+                debug!(sql = %sql, key_count = primary_keys.len(), "Executing batch HasMany query");
+                
+                let rows = db.map_query(sql, primary_keys.to_vec())?;
+                Ok(rows)
+            }
+            RelationshipType::BelongsTo { foreign_key, owner_key } => {
+                // For BelongsTo, we need to get foreign key values first, then batch load
+                // This is more complex and would typically require a different approach
+                let placeholders: Vec<String> = (1..=primary_keys.len())
+                    .map(|i| format!("${}", i))
+                    .collect();
+                
+                let sql = format!(
+                    "SELECT * FROM {} WHERE {} IN ({})",
+                    relationship.target_entity,
+                    owner_key,
+                    placeholders.join(", ")
+                );
+                
+                debug!(sql = %sql, key_count = primary_keys.len(), "Executing batch BelongsTo query");
+                
+                let rows = db.map_query(sql, primary_keys.to_vec())?;
+                Ok(rows)
+            }
+            _ => {
+                warn!("Batch query not implemented for relationship type: {:?}", relationship.relationship_type);
+                Ok(Vec::new())
+            }
+        }
     }
 }
 

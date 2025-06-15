@@ -186,32 +186,33 @@ impl Default for HealthCheckConfig {
 
 impl PerformanceHistory {
     /// Create new performance history
-    pub fn new(pid: u32, max_size: usize) -> Self {
+    pub fn new(pid: u32, max_samples: usize) -> Self {
         Self {
             pid,
-            metrics: Vec::with_capacity(max_size),
-            max_size,
+            max_samples,
+            samples: Vec::with_capacity(max_samples),
+            created_at: SystemTime::now(),
         }
     }
     
     /// Add new performance metrics
     pub fn add_metrics(&mut self, metrics: PerformanceMetrics) {
-        self.metrics.push(metrics);
+        self.samples.push(metrics);
         
         // Keep only the most recent metrics
-        if self.metrics.len() > self.max_size {
-            self.metrics.remove(0);
+        if self.samples.len() > self.max_samples {
+            self.samples.remove(0);
         }
     }
     
     /// Get latest metrics
     pub fn latest(&self) -> Option<&PerformanceMetrics> {
-        self.metrics.last()
+        self.samples.last()
     }
     
     /// Get metrics within time range
     pub fn get_range(&self, start: SystemTime, end: SystemTime) -> Vec<&PerformanceMetrics> {
-        self.metrics
+        self.samples
             .iter()
             .filter(|m| m.timestamp >= start && m.timestamp <= end)
             .collect()
@@ -220,7 +221,7 @@ impl PerformanceHistory {
     /// Calculate average CPU usage over time period
     pub fn average_cpu(&self, duration: Duration) -> Option<f64> {
         let cutoff = SystemTime::now().checked_sub(duration)?;
-        let recent_metrics: Vec<_> = self.metrics
+        let recent_metrics: Vec<_> = self.samples
             .iter()
             .filter(|m| m.timestamp >= cutoff)
             .collect();
@@ -236,7 +237,7 @@ impl PerformanceHistory {
     /// Calculate average memory usage over time period
     pub fn average_memory(&self, duration: Duration) -> Option<u64> {
         let cutoff = SystemTime::now().checked_sub(duration)?;
-        let recent_metrics: Vec<_> = self.metrics
+        let recent_metrics: Vec<_> = self.samples
             .iter()
             .filter(|m| m.timestamp >= cutoff)
             .collect();
@@ -251,12 +252,12 @@ impl PerformanceHistory {
     
     /// Get peak memory usage
     pub fn peak_memory(&self) -> Option<u64> {
-        self.metrics.iter().map(|m| m.memory_bytes).max()
+        self.samples.iter().map(|m| m.memory_bytes).max()
     }
     
     /// Get peak CPU usage
     pub fn peak_cpu(&self) -> Option<f64> {
-        self.metrics.iter().map(|m| m.cpu_percent).fold(None, |acc, x| {
+        self.samples.iter().map(|m| m.cpu_percent).fold(None, |acc, x| {
             Some(acc.map_or(x, |y| if x > y { x } else { y }))
         })
     }
@@ -398,7 +399,7 @@ impl ProcessMonitor {
             .map_err(|_| ProcessError::SystemError(-1, "Failed to acquire read lock".to_string()))?;
         
         processes.get(&pid)
-            .map(|p| p.performance_history.metrics.clone())
+            .map(|p| p.performance_history.samples.clone())
             .ok_or_else(|| ProcessError::ProcessNotFound(pid))
     }
     
@@ -1433,31 +1434,6 @@ impl ProcessMonitor {
 impl Drop for ProcessMonitor {
     fn drop(&mut self) {
         self.stop();
-    }
-}
-
-impl Default for ResourceThresholds {
-    fn default() -> Self {
-        Self {
-            max_cpu_percent: 80.0,
-            max_memory_bytes: 1024 * 1024 * 1024, // 1GB
-            max_file_descriptors: 1000,
-            max_threads: 100,
-            max_execution_time: None,
-        }
-    }
-}
-
-impl Default for HealthCheckConfig {
-    fn default() -> Self {
-        Self {
-            check_interval: Duration::from_secs(30),
-            thresholds: ResourceThresholds::default(),
-            failure_threshold: 3,
-            success_threshold: 2,
-            check_responsiveness: true,
-            responsiveness_timeout: Duration::from_secs(5),
-        }
     }
 }
 

@@ -13,6 +13,7 @@ pub mod question_mark;
 pub mod result_types;
 pub mod error_propagation_enhanced;
 pub mod error_propagation;
+pub mod async_await;
 
 use crate::ast::*;
 use crate::error::{Error, SourceLocation};
@@ -80,6 +81,8 @@ impl Parser {
                 TokenType::Bestie,    // for
                 TokenType::Periodt,   // while
                 TokenType::Yolo,      // return
+                TokenType::Async,     // async
+                TokenType::Await,     // await
             ],
         })
     }

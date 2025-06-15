@@ -12,6 +12,7 @@ use serde::{Serialize, Deserialize};
 use tracing::{info, debug, warn, instrument};
 use sha2::{Sha256, Digest};
 use tokio::net::TcpStream;
+use chrono;
 
 use crate::error::{CursedError, Result};
 
@@ -702,25 +703,91 @@ impl AdvancedCache {
 
     /// Update statistics for cache store operation
     fn update_statistics_store(&self, entry: &CacheEntry, duration: Duration) -> Result<()> {
-        // TODO: Update detailed statistics
+        let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+        stats.total_entries += 1;
+        stats.total_size_mb += entry.size_bytes as f64 / (1024.0 * 1024.0);
+        
+        // Update compression ratio if compression is enabled
+        if self.config.compression_enabled {
+            // Estimate compression savings (simplified)
+            let estimated_uncompressed = entry.size_bytes as f64 * 1.5;
+            stats.compression_ratio = (entry.size_bytes as f64) / estimated_uncompressed;
+        }
+        
+        debug!(
+            entry_key = entry.key,
+            store_duration_ms = duration.as_millis(),
+            total_entries = stats.total_entries,
+            "Updated store statistics"
+        );
+        
         Ok(())
     }
 
     /// Update statistics for cache hit
     fn update_statistics_hit(&self, duration: Duration) -> Result<()> {
-        // TODO: Update hit statistics
+        let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+        
+        // Update hit rate calculation
+        let total_requests = stats.cache_hits + stats.cache_misses + 1;
+        stats.cache_hits += 1;
+        stats.hit_rate = stats.cache_hits as f64 / total_requests as f64;
+        stats.miss_rate = stats.cache_misses as f64 / total_requests as f64;
+        
+        // Update average lookup time
+        let total_lookups = stats.cache_hits + stats.cache_misses;
+        stats.average_lookup_time_ms = (stats.average_lookup_time_ms * (total_lookups - 1) as f64 + duration.as_millis() as f64) / total_lookups as f64;
+        
+        debug!(
+            hit_duration_ms = duration.as_millis(),
+            hit_rate = stats.hit_rate,
+            "Updated hit statistics"
+        );
+        
         Ok(())
     }
 
     /// Update statistics for cache miss
     fn update_statistics_miss(&self, duration: Duration) -> Result<()> {
-        // TODO: Update miss statistics
+        let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+        
+        // Update miss rate calculation
+        let total_requests = stats.cache_hits + stats.cache_misses + 1;
+        stats.cache_misses += 1;
+        stats.hit_rate = stats.cache_hits as f64 / total_requests as f64;
+        stats.miss_rate = stats.cache_misses as f64 / total_requests as f64;
+        
+        // Update average lookup time
+        let total_lookups = stats.cache_hits + stats.cache_misses;
+        stats.average_lookup_time_ms = (stats.average_lookup_time_ms * (total_lookups - 1) as f64 + duration.as_millis() as f64) / total_lookups as f64;
+        
+        debug!(
+            miss_duration_ms = duration.as_millis(),
+            miss_rate = stats.miss_rate,
+            "Updated miss statistics"
+        );
+        
         Ok(())
     }
 
     /// Update statistics for network hit
     fn update_statistics_network_hit(&self, duration: Duration) -> Result<()> {
-        // TODO: Update network hit statistics
+        let mut stats = self.statistics.lock().map_err(|_| CursedError::system_error("Failed to lock statistics"))?;
+        
+        stats.network_hits += 1;
+        
+        // Update hit rate to include network hits
+        let total_requests = stats.cache_hits + stats.cache_misses + stats.network_hits + stats.network_misses;
+        let total_hits = stats.cache_hits + stats.network_hits;
+        stats.hit_rate = total_hits as f64 / total_requests as f64;
+        
+        debug!(
+            network_hit_duration_ms = duration.as_millis(),
+            network_hits = stats.network_hits,
+            total_hit_rate = stats.hit_rate,
+            "Updated network hit statistics"
+        );
+        
         Ok(())
     }
 
@@ -741,9 +808,172 @@ impl AdvancedCache {
 
     /// Precompute file for cache warming
     fn precompute_file(&self, file: &str) -> Result<bool> {
-        // TODO: Implement file precomputation
-        debug!(file, "Precomputing file for cache warming");
-        Ok(true)
+        debug!(file, "Starting precomputation for cache warming");
+        
+        let file_path = PathBuf::from(file);
+        if !file_path.exists() {
+            debug!(file, "File does not exist, skipping precomputation");
+            return Ok(false);
+        }
+        
+        // Calculate file hash for cache key
+        let file_hash = self.calculate_file_hash(&file_path)?;
+        let cache_key = format!("precomputed_{}", file_hash);
+        
+        // Check if already cached
+        if self.is_in_cache(&cache_key)? {
+            debug!(file, "File already precomputed and cached");
+            return Ok(true);
+        }
+        
+        // Determine precomputation strategy based on file type
+        let precomputation_result = if file.ends_with(".csd") {
+            self.precompute_cursed_file(&file_path)?
+        } else if file.ends_with(".rs") {
+            self.precompute_rust_file(&file_path)?
+        } else {
+            self.precompute_generic_file(&file_path)?
+        };
+        
+        if let Some((data, metadata)) = precomputation_result {
+            // Store precomputed result in cache
+            self.store(&cache_key, data, metadata)?;
+            info!(file, cache_key, "File precomputed and cached successfully");
+            Ok(true)
+        } else {
+            debug!(file, "Precomputation not applicable for this file");
+            Ok(false)
+        }
+    }
+    
+    /// Calculate hash for a file
+    fn calculate_file_hash(&self, file_path: &PathBuf) -> Result<String> {
+        use std::io::Read;
+        
+        let mut file = std::fs::File::open(file_path)?;
+        let mut hasher = sha2::Sha256::new();
+        let mut buffer = [0; 8192];
+        
+        loop {
+            let bytes_read = file.read(&mut buffer)?;
+            if bytes_read == 0 {
+                break;
+            }
+            hasher.update(&buffer[..bytes_read]);
+        }
+        
+        Ok(format!("{:x}", hasher.finalize()))
+    }
+    
+    /// Precompute CURSED source file
+    fn precompute_cursed_file(&self, file_path: &PathBuf) -> Result<Option<(CacheData, CacheMetadata)>> {
+        // Read and parse the CURSED file for precomputation
+        let content = std::fs::read_to_string(file_path)?;
+        let metadata = std::fs::metadata(file_path)?;
+        
+        // Simulate AST parsing and analysis (in real implementation, would use actual parser)
+        let preprocessed_content = self.preprocess_cursed_source(&content)?;
+        
+        let cache_metadata = CacheMetadata {
+            file_path: file_path.clone(),
+            last_modified: metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs(),
+            file_size: metadata.len(),
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            compilation_flags: vec!["--precompute".to_string()],
+            source_hash: self.calculate_file_hash(file_path)?,
+            dependency_hashes: HashMap::new(),
+        };
+        
+        let cache_data = CacheData::Ast(preprocessed_content);
+        
+        Ok(Some((cache_data, cache_metadata)))
+    }
+    
+    /// Precompute Rust source file
+    fn precompute_rust_file(&self, file_path: &PathBuf) -> Result<Option<(CacheData, CacheMetadata)>> {
+        let content = std::fs::read_to_string(file_path)?;
+        let metadata = std::fs::metadata(file_path)?;
+        
+        // Preprocess Rust file for analysis
+        let analysis_result = self.analyze_rust_dependencies(&content)?;
+        
+        let cache_metadata = CacheMetadata {
+            file_path: file_path.clone(),
+            last_modified: metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs(),
+            file_size: metadata.len(),
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            compilation_flags: vec!["--precompute".to_string()],
+            source_hash: self.calculate_file_hash(file_path)?,
+            dependency_hashes: HashMap::new(),
+        };
+        
+        let cache_data = CacheData::Analysis(analysis_result);
+        
+        Ok(Some((cache_data, cache_metadata)))
+    }
+    
+    /// Precompute generic file
+    fn precompute_generic_file(&self, file_path: &PathBuf) -> Result<Option<(CacheData, CacheMetadata)>> {
+        let metadata = std::fs::metadata(file_path)?;
+        
+        // For generic files, just cache metadata for faster access
+        let cache_metadata = CacheMetadata {
+            file_path: file_path.clone(),
+            last_modified: metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs(),
+            file_size: metadata.len(),
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            compilation_flags: vec!["--precompute".to_string()],
+            source_hash: self.calculate_file_hash(file_path)?,
+            dependency_hashes: HashMap::new(),
+        };
+        
+        let file_info = serde_json::to_string(&cache_metadata)?;
+        let cache_data = CacheData::Metadata(file_info);
+        
+        Ok(Some((cache_data, cache_metadata)))
+    }
+    
+    /// Preprocess CURSED source code
+    fn preprocess_cursed_source(&self, content: &str) -> Result<String> {
+        let mut preprocessed = String::new();
+        
+        for line in content.lines() {
+            let trimmed = line.trim();
+            
+            // Skip comments and empty lines for faster parsing
+            if trimmed.starts_with("//") || trimmed.is_empty() {
+                continue;
+            }
+            
+            // Normalize whitespace
+            preprocessed.push_str(&format!("{}\n", trimmed));
+        }
+        
+        Ok(preprocessed)
+    }
+    
+    /// Analyze Rust dependencies
+    fn analyze_rust_dependencies(&self, content: &str) -> Result<String> {
+        let mut dependencies = Vec::new();
+        let mut uses = Vec::new();
+        
+        for line in content.lines() {
+            let trimmed = line.trim();
+            
+            if trimmed.starts_with("use ") {
+                uses.push(trimmed.to_string());
+            } else if trimmed.starts_with("extern crate ") {
+                dependencies.push(trimmed.to_string());
+            }
+        }
+        
+        let analysis = serde_json::json!({
+            "dependencies": dependencies,
+            "uses": uses,
+            "analyzed_at": chrono::Utc::now().timestamp()
+        });
+        
+        Ok(analysis.to_string())
     }
 
     /// Get current cache size in bytes

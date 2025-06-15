@@ -262,19 +262,29 @@ impl<T: Entity> Repository<T> {
         let pk_value = entity.primary_key_value()
             .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key for deletion"))?;
         
-        let query = format!(
-            "DELETE FROM {} WHERE {} = ?",
+        let sql = format!(
+            "DELETE FROM {} WHERE {} = $1",
             T::table_name(),
             T::primary_key_name()
         );
         
-        // Execute deletion
-        // Note: Actual database execution would happen here
+        debug!(sql = %sql, pk_value = ?pk_value, "Executing DELETE");
         
-        // Invalidate caches
-        self.invalidate_caches(entity).await?;
+        // Execute deletion with real database execution
+        let result = self.db.exec(sql, Vec::from([pk_value]))?;
         
-        Ok(true)
+        let rows_affected = result.rows_affected()?;
+        let deleted = rows_affected > 0;
+        
+        if deleted {
+            info!(rows_affected = rows_affected, "Entity deleted successfully");
+            // Invalidate caches
+            self.invalidate_caches(entity).await?;
+        } else {
+            warn!("No entity was deleted - entity may not exist");
+        }
+        
+        Ok(deleted)
     }
 
     /// highkey Create fluent query builder
@@ -308,11 +318,50 @@ impl<T: Entity> Repository<T> {
         let mut tx = self.db.begin_tx(ctx, None)?;
         
         let mut results = Vec::new();
-        for entity in entities {
-            let result = self.create_entity(entity).await?;
-            results.push(result);
+        
+        // Get field structure from first entity
+        let first_fields = entities[0].to_fields();
+        let field_names: Vec<String> = first_fields.keys().cloned().collect();
+        
+        // Build batch INSERT statement
+        let placeholders_per_row: Vec<String> = (1..=field_names.len())
+            .map(|i| format!("${}", i))
+            .collect();
+        
+        for (entity_index, entity) in entities.iter().enumerate() {
+            let fields = entity.to_fields();
+            let field_values: Vec<SqlValue> = field_names.iter()
+                .map(|name| fields.get(name).cloned().unwrap_or(SqlValue::Null))
+                .collect();
+            
+            // Build INSERT for this entity
+            let sql = format!(
+                "INSERT INTO {} ({}) VALUES ({})",
+                T::table_name(),
+                field_names.join(", "),
+                placeholders_per_row.join(", ")
+            );
+            
+            debug!(
+                entity_index = entity_index,
+                sql = %sql,
+                values = ?field_values,
+                "Executing batch INSERT"
+            );
+            
+            // Execute insert within transaction
+            let result = tx.exec(sql, field_values)?;
+            
+            // Get the inserted ID if available
+            let mut created_entity = entity.clone();
+            if let Ok(insert_id) = result.last_insert_id() {
+                created_entity.set_primary_key_value(SqlValue::Integer(insert_id));
+            }
+            
+            results.push(created_entity);
         }
         
+        // Commit transaction
         tx.commit()?;
         
         // Clear relevant caches
@@ -362,13 +411,81 @@ impl<T: Entity> Repository<T> {
 
     // Helper methods
     async fn create_entity(&self, entity: &T) -> Result<T, DatabaseError> {
-        // Implementation for creating new entity
-        Ok(entity.clone()) // Placeholder
+        debug!(entity = T::table_name(), "Creating new entity");
+        
+        let fields = entity.to_fields();
+        let field_names: Vec<String> = fields.keys().cloned().collect();
+        let field_values: Vec<SqlValue> = fields.values().cloned().collect();
+        
+        // Build INSERT statement
+        let placeholders: Vec<String> = (1..=field_names.len())
+            .map(|i| format!("${}", i))
+            .collect();
+        
+        let sql = format!(
+            "INSERT INTO {} ({}) VALUES ({})",
+            T::table_name(),
+            field_names.join(", "),
+            placeholders.join(", ")
+        );
+        
+        debug!(sql = %sql, values = ?field_values, "Executing INSERT");
+        
+        // Execute insert
+        let result = self.db.exec(sql, field_values)?;
+        
+        // Get the inserted ID if available
+        let mut created_entity = entity.clone();
+        if let Ok(insert_id) = result.last_insert_id() {
+            created_entity.set_primary_key_value(SqlValue::Integer(insert_id));
+        }
+        
+        info!("Entity created successfully");
+        Ok(created_entity)
     }
     
     async fn update_entity(&self, entity: &T) -> Result<T, DatabaseError> {
-        // Implementation for updating existing entity
-        Ok(entity.clone()) // Placeholder
+        debug!(entity = T::table_name(), "Updating existing entity");
+        
+        let pk_value = entity.primary_key_value()
+            .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key for update"))?;
+        
+        let fields = entity.to_fields();
+        let mut field_assignments = Vec::new();
+        let mut field_values = Vec::new();
+        let mut param_index = 1;
+        
+        // Build SET clause
+        for (field_name, field_value) in fields.iter() {
+            if field_name != T::primary_key_name() {  // Skip primary key
+                field_assignments.push(format!("{} = ${}", field_name, param_index));
+                field_values.push(field_value.clone());
+                param_index += 1;
+            }
+        }
+        
+        // Add primary key value for WHERE clause
+        field_values.push(pk_value);
+        
+        let sql = format!(
+            "UPDATE {} SET {} WHERE {} = ${}",
+            T::table_name(),
+            field_assignments.join(", "),
+            T::primary_key_name(),
+            param_index
+        );
+        
+        debug!(sql = %sql, values = ?field_values, "Executing UPDATE");
+        
+        // Execute update
+        let result = self.db.exec(sql, field_values)?;
+        
+        if result.rows_affected()? == 0 {
+            return Err(DatabaseError::not_found("No rows were updated"));
+        }
+        
+        info!("Entity updated successfully");
+        Ok(entity.clone())
     }
     
     async fn invalidate_caches(&self, entity: &T) -> Result<(), DatabaseError> {

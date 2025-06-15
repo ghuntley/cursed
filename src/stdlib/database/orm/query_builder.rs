@@ -292,8 +292,22 @@ impl<T: Entity> FluentQueryBuilder<T> {
         let sql = self.build_sql()?;
         debug!(sql = %sql, "Generated count SQL");
         
-        // Execute count query (simplified)
-        let count = 42u64; // Placeholder
+        // Execute count query with real database execution
+        let rows = self.execute_sql(&sql).await?;
+        
+        let count = if let Some(first_row) = rows.first() {
+            if let Some(count_value) = first_row.values().next() {
+                match count_value {
+                    SqlValue::Integer(i) => *i as u64,
+                    SqlValue::Float(f) => *f as u64,
+                    _ => 0u64,
+                }
+            } else {
+                0u64
+            }
+        } else {
+            0u64
+        };
         
         info!(count = count, "Count query executed");
         Ok(count)
@@ -384,13 +398,15 @@ impl<T: Entity> FluentQueryBuilder<T> {
         Ok(sql)
     }
 
-    /// facts Execute SQL and return raw rows (placeholder)
-    async fn execute_sql(&self, _sql: &str) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
-        // Placeholder implementation - would execute actual SQL
-        let mut row = HashMap::new();
-        row.insert("id".to_string(), SqlValue::Integer(1));
-        row.insert("name".to_string(), SqlValue::String("Test".to_string()));
-        Ok(Vec::from([row]))
+    /// facts Execute SQL and return raw rows with real database execution
+    async fn execute_sql(&self, sql: &str) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+        debug!(sql = %sql, params = ?self.parameters, "Executing SQL query");
+        
+        // Execute query with parameters using the connection pool
+        let rows = self.db.map_query(sql.to_string(), self.parameters.clone())?;
+        
+        debug!(rows_count = rows.len(), "SQL execution completed");
+        Ok(rows)
     }
 }
 

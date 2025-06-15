@@ -964,6 +964,235 @@ pub extern "C" fn cursed_panic_message(
     cursed_panic_with_message(message);
 }
 
+// ===== ADDITIONAL FFI FUNCTIONS FOR LLVM INTEGRATION =====
+
+/// Convert a generic value to string representation
+#[no_mangle]
+pub extern "C" fn cursed_value_to_string(value_ptr: *const u8) -> *const u8 {
+    if value_ptr.is_null() {
+        return std::ptr::null();
+    }
+    
+    // For now, return a static string
+    // In a full implementation, this would convert the value based on its type
+    let result = "converted_value_string";
+    result.as_ptr()
+}
+
+/// Enter recovery mode for the current thread
+#[no_mangle]
+pub extern "C" fn cursed_enter_recovery_mode() {
+    if let Some(runtime) = get_panic_runtime() {
+        // Mark thread as entering recovery mode
+        // This would be implemented in the full runtime
+        tracing::debug!("Entering recovery mode");
+    }
+}
+
+/// Exit recovery mode for the current thread
+#[no_mangle]
+pub extern "C" fn cursed_exit_recovery_mode() {
+    if let Some(runtime) = get_panic_runtime() {
+        // Mark thread as exiting recovery mode
+        // This would be implemented in the full runtime
+        tracing::debug!("Exiting recovery mode");
+    }
+}
+
+/// Execute a protected block of code
+#[no_mangle]
+pub extern "C" fn cursed_execute_protected_block() -> *const u8 {
+    tracing::debug!("Executing protected block");
+    // In a full implementation, this would execute the protected code
+    // and return a result pointer
+    std::ptr::null()
+}
+
+/// Execute a recovery block of code
+#[no_mangle]
+pub extern "C" fn cursed_execute_recovery_block() -> *const u8 {
+    tracing::debug!("Executing recovery block");
+    // In a full implementation, this would execute the recovery handler
+    // and return a result pointer
+    std::ptr::null()
+}
+
+/// Mark a recovery entry point
+#[no_mangle]
+pub extern "C" fn cursed_mark_recovery_entry() {
+    tracing::debug!("Marking recovery entry point");
+    // This would be used for stack trace and debugging purposes
+}
+
+/// Bind an error value to a variable in recovery context
+#[no_mangle]
+pub extern "C" fn cursed_bind_error_variable(error_ptr: *const u8) {
+    if !error_ptr.is_null() {
+        tracing::debug!("Binding error variable");
+        // In a full implementation, this would bind the error to the recovery context
+    }
+}
+
+/// Clear the current panic state
+#[no_mangle]
+pub extern "C" fn cursed_clear_panic_state() {
+    if let Some(runtime) = get_panic_runtime() {
+        tracing::debug!("Clearing panic state");
+        // This would clear the panic state for the current thread
+    }
+}
+
+/// Log an unhandled panic
+#[no_mangle]
+pub extern "C" fn cursed_log_unhandled_panic() {
+    tracing::error!("Unhandled panic occurred");
+    // This would log detailed panic information
+}
+
+/// Perform default recovery action
+#[no_mangle]
+pub extern "C" fn cursed_default_recovery() -> *const u8 {
+    tracing::info!("Performing default recovery");
+    // In a full implementation, this would execute the default recovery action
+    std::ptr::null()
+}
+
+/// Record recovery completion
+#[no_mangle]
+pub extern "C" fn cursed_record_recovery_completion() {
+    tracing::debug!("Recording recovery completion");
+    // This would update statistics and cleanup recovery state
+}
+
+/// Mark a safe point for GC coordination
+#[no_mangle]
+pub extern "C" fn cursed_mark_safe_point() {
+    tracing::trace!("Marking safe point");
+    // This would coordinate with the GC system
+}
+
+/// Record error context for debugging
+#[no_mangle]
+pub extern "C" fn cursed_record_error_context(
+    line: u32,
+    column: u32,
+    context_ptr: *const u8,
+) {
+    tracing::debug!(line = line, column = column, "Recording error context");
+    // This would store error context for stack traces
+}
+
+/// Perform error propagation
+#[no_mangle]
+pub extern "C" fn cursed_error_propagation(
+    error_ptr: *const u8,
+    line: u32,
+    column: u32,
+) {
+    tracing::debug!(line = line, column = column, "Performing error propagation");
+    // This would handle the `?` operator functionality
+}
+
+/// Enhanced recovery with result value
+#[no_mangle]
+pub extern "C" fn cursed_recover_with_result() -> u8 {
+    if let Some(runtime) = get_panic_runtime() {
+        if let Ok(stats) = runtime.get_statistics() {
+            if stats.successful_recoveries > 0 {
+                return 1; // Recovery successful
+            }
+        }
+    }
+    0 // Recovery failed or not available
+}
+
+/// Get enhanced panic information
+#[no_mangle]
+pub extern "C" fn cursed_get_panic_info(
+    buffer: *mut u8,
+    buffer_len: usize,
+) -> usize {
+    if buffer.is_null() || buffer_len == 0 {
+        return 0;
+    }
+
+    let info = if let Some(runtime) = get_panic_runtime() {
+        if let Some(_panic_info) = runtime.get_current_panic() {
+            "Enhanced panic information would be here"
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    };
+
+    let info_bytes = info.as_bytes();
+    let copy_len = std::cmp::min(info_bytes.len(), buffer_len);
+    
+    unsafe {
+        std::ptr::copy_nonoverlapping(info_bytes.as_ptr(), buffer, copy_len);
+    }
+    
+    copy_len
+}
+
+/// Register a custom recovery handler
+#[no_mangle]
+pub extern "C" fn cursed_register_recovery_handler(
+    handler_ptr: extern "C" fn(*const u8) -> u8,
+) -> u8 {
+    if let Some(runtime) = get_panic_runtime() {
+        tracing::debug!("Registering custom recovery handler");
+        // In a full implementation, this would register the handler function
+        return 1; // Success
+    }
+    0 // Failed
+}
+
+/// Enhanced panic with source location
+#[no_mangle]
+pub extern "C" fn cursed_panic_with_location(
+    message_ptr: *const u8,
+    message_len: usize,
+    file_ptr: *const u8,
+    file_len: usize,
+    line: u32,
+    column: u32,
+) -> ! {
+    let message = if message_ptr.is_null() || message_len == 0 {
+        "Unknown panic"
+    } else {
+        unsafe {
+            let slice = std::slice::from_raw_parts(message_ptr, message_len);
+            std::str::from_utf8(slice).unwrap_or("Invalid message")
+        }
+    };
+    
+    let file_name = if file_ptr.is_null() || file_len == 0 {
+        "unknown"
+    } else {
+        unsafe {
+            let slice = std::slice::from_raw_parts(file_ptr, file_len);
+            std::str::from_utf8(slice).unwrap_or("unknown")
+        }
+    };
+    
+    let source_location = SourceLocation::new(line as usize, column as usize)
+        .with_file(file_name);
+    
+    let panic_info = CursedPanicInfo::new(
+        message.to_string(),
+        PanicSeverity::Critical,
+        PanicCategory::User
+    ).with_location(source_location);
+    
+    if let Some(runtime) = get_panic_runtime() {
+        runtime.panic(panic_info);
+    } else {
+        panic!("CURSED panic at {}:{}:{}: {}", file_name, line, column, message);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

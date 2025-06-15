@@ -669,12 +669,104 @@ impl TestOutputParser {
         let assertion_count = if assertion_count > 0 { Some(assertion_count) } else { None };
         
         TestMetrics {
-            compilation_time: None, // TODO: Extract from cargo output
+            compilation_time: self.extract_compilation_time(output),
             execution_time,
             peak_memory,
             assertion_count,
             custom_metrics,
         }
+    }
+    
+    /// Extract compilation time from cargo output
+    fn extract_compilation_time(&self, output: &str) -> Option<Duration> {
+        use regex::Regex;
+        
+        // Look for compilation timing in cargo output
+        let compile_regex = Regex::new(r"Compiling .+ \((.+)\)").ok()?;
+        let finished_regex = Regex::new(r"Finished .+ target\(s\) in (.+)s").ok()?;
+        
+        // Try to extract from "Finished" line first (most accurate)
+        for line in output.lines() {
+            if let Some(captures) = finished_regex.captures(line) {
+                if let Some(time_str) = captures.get(1) {
+                    if let Ok(seconds) = time_str.as_str().parse::<f64>() {
+                        return Some(Duration::from_secs_f64(seconds));
+                    }
+                }
+            }
+        }
+        
+        // Fallback: try to extract from individual compilation lines
+        let mut total_time = 0.0;
+        let mut compilation_count = 0;
+        
+        for line in output.lines() {
+            if line.contains("Compiling") && line.contains("(") {
+                // Extract time from compilation status
+                if let Some(time_part) = line.split('(').nth(1) {
+                    if let Some(time_str) = time_part.split(')').next() {
+                        // Parse time formats like "1.2s", "345ms", etc.
+                        if let Some(duration) = self.parse_duration_string(time_str) {
+                            total_time += duration.as_secs_f64();
+                            compilation_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if compilation_count > 0 {
+            Some(Duration::from_secs_f64(total_time))
+        } else {
+            None
+        }
+    }
+    
+    /// Parse duration string like "1.2s", "345ms", "1m 30s"
+    fn parse_duration_string(&self, duration_str: &str) -> Option<Duration> {
+        let trimmed = duration_str.trim();
+        
+        // Handle simple cases: "1.2s", "345ms"
+        if trimmed.ends_with("ms") {
+            let num_str = &trimmed[..trimmed.len() - 2];
+            if let Ok(ms) = num_str.parse::<f64>() {
+                return Some(Duration::from_millis(ms as u64));
+            }
+        } else if trimmed.ends_with('s') {
+            let num_str = &trimmed[..trimmed.len() - 1];
+            if let Ok(seconds) = num_str.parse::<f64>() {
+                return Some(Duration::from_secs_f64(seconds));
+            }
+        } else if trimmed.ends_with('m') {
+            let num_str = &trimmed[..trimmed.len() - 1];
+            if let Ok(minutes) = num_str.parse::<f64>() {
+                return Some(Duration::from_secs_f64(minutes * 60.0));
+            }
+        }
+        
+        // Handle complex cases: "1m 30s"
+        if trimmed.contains('m') && trimmed.contains('s') {
+            let parts: Vec<&str> = trimmed.split_whitespace().collect();
+            let mut total_seconds = 0.0;
+            
+            for part in parts {
+                if part.ends_with('m') {
+                    if let Ok(minutes) = part[..part.len() - 1].parse::<f64>() {
+                        total_seconds += minutes * 60.0;
+                    }
+                } else if part.ends_with('s') {
+                    if let Ok(seconds) = part[..part.len() - 1].parse::<f64>() {
+                        total_seconds += seconds;
+                    }
+                }
+            }
+            
+            if total_seconds > 0.0 {
+                return Some(Duration::from_secs_f64(total_seconds));
+            }
+        }
+        
+        None
     }
 }
 
