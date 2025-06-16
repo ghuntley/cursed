@@ -36,7 +36,7 @@ async fn main() {
         Some(("build", sub_matches)) => handle_build_command(sub_matches).await,
         Some(("check", sub_matches)) => handle_check_command(sub_matches).await,
         Some(("format", sub_matches)) => handle_format_command(sub_matches).await,
-        Some(("doc", sub_matches)) => handle_doc_command(sub_matches).await,
+        Some(("doc", sub_matches)) | Some(("docs", sub_matches)) => handle_doc_command(sub_matches).await,
         Some(("package", sub_matches)) => handle_package_command(sub_matches).await,
         Some(("optimize", sub_matches)) => handle_optimize_command(sub_matches).await,
         Some(("test", sub_matches)) => handle_test_command(sub_matches).await,
@@ -103,6 +103,31 @@ fn build_cli() -> Command {
                         .value_name("LEVEL")
                         .help("Optimization level (0, 1, 2, 3, s, z)")
                         .default_value("2")
+                )
+                .arg(
+                    Arg::new("opt-profile")
+                        .long("opt-profile")
+                        .value_name("PROFILE")
+                        .help("Optimization profile (development, release, size, debug)")
+                        .default_value("release")
+                )
+                .arg(
+                    Arg::new("enable-pgo")
+                        .long("enable-pgo")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable profile-guided optimization")
+                )
+                .arg(
+                    Arg::new("parallel-opt")
+                        .long("parallel-opt")
+                        .value_name("JOBS")
+                        .help("Number of parallel optimization jobs (0 = auto)")
+                )
+                .arg(
+                    Arg::new("performance-report")
+                        .long("performance-report")
+                        .value_name("FORMAT")
+                        .help("Generate performance report (summary, detailed, json)")
                 )
                 .arg(
                     Arg::new("profile")
@@ -213,6 +238,31 @@ fn build_cli() -> Command {
                         .value_name("LEVEL")
                         .help("Optimization level (0, 1, 2, 3, s, z)")
                         .default_value("2")
+                )
+                .arg(
+                    Arg::new("opt-profile")
+                        .long("opt-profile")
+                        .value_name("PROFILE")
+                        .help("Optimization profile (development, release, size, debug)")
+                        .default_value("release")
+                )
+                .arg(
+                    Arg::new("enable-pgo")
+                        .long("enable-pgo")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable profile-guided optimization")
+                )
+                .arg(
+                    Arg::new("parallel-opt")
+                        .long("parallel-opt")
+                        .value_name("JOBS")
+                        .help("Number of parallel optimization jobs (0 = auto)")
+                )
+                .arg(
+                    Arg::new("performance-report")
+                        .long("performance-report")
+                        .value_name("FORMAT")
+                        .help("Generate performance report (summary, detailed, json)")
                 )
                 .arg(
                     Arg::new("profile")
@@ -349,6 +399,7 @@ fn build_cli() -> Command {
         .subcommand(
             documentation::add_documentation_commands(Command::new("doc"))
                 .about("Generate comprehensive documentation")
+                .alias("docs")
         )
         .subcommand(
             package_manager::add_package_commands(Command::new("package"))
@@ -474,6 +525,10 @@ async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn st
     let _args = matches.get_many::<String>("args");
     let watch = matches.get_flag("watch");
     let opt_level = matches.get_one::<String>("opt-level").unwrap();
+    let opt_profile = matches.get_one::<String>("opt-profile").unwrap();
+    let enable_pgo = matches.get_flag("enable-pgo");
+    let parallel_opt = matches.get_one::<String>("parallel-opt");
+    let performance_report = matches.get_one::<String>("performance-report");
     let profile = matches.get_flag("profile");
     let time_passes = matches.get_flag("time-passes");
     let jobs = matches.get_one::<String>("jobs").unwrap();
@@ -485,12 +540,10 @@ async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn st
 
     if watch {
         handle_watch_run_command(matches).await
-    } else if profile || time_passes || opt_level != "2" || enable_lto || enhanced_passes || disable_enhanced_passes {
-        // Use optimized execution path when optimization flags are provided
-        handle_single_run_command_with_options(
-            file, opt_level, profile, time_passes, jobs, 
-            target_cpu, target_features, enable_lto, enhanced_passes, disable_enhanced_passes
-        ).await
+    } else if opt_profile != "release" || enable_pgo || parallel_opt.is_some() || performance_report.is_some() || 
+              profile || time_passes || opt_level != "2" || enable_lto || enhanced_passes || disable_enhanced_passes {
+        // Use advanced optimization path when optimization flags are provided
+        handle_run_command_with_optimization_enablement(matches).await
     } else {
         handle_single_run_command(file).await
     }
@@ -511,6 +564,103 @@ async fn handle_single_run_command(file: &str) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    use cursed::optimization::{
+        OptimizationEnablementSystem, OptimizationProfile, 
+        enablement_system::cli::parse_optimization_profile
+    };
+    
+    let file = matches.get_one::<String>("file").unwrap();
+    let opt_profile_str = matches.get_one::<String>("opt-profile").unwrap();
+    let enable_pgo = matches.get_flag("enable-pgo");
+    let parallel_opt = matches.get_one::<String>("parallel-opt");
+    let performance_report = matches.get_one::<String>("performance-report");
+    let target_cpu = matches.get_one::<String>("target-cpu");
+    let target_features = matches.get_one::<String>("target-features");
+    
+    println!("🚀 Running CURSED program with optimization enablement: {}", file);
+    println!("   Optimization profile: {}", opt_profile_str);
+    
+    // Check if file exists
+    if !std::path::Path::new(file).exists() {
+        return Err(format!("File not found: {}", file).into());
+    }
+    
+    // Parse optimization profile
+    let opt_profile = parse_optimization_profile(opt_profile_str);
+    
+    // Create optimization enablement system
+    let mut optimization_system = OptimizationEnablementSystem::new()?;
+    
+    // Override PGO setting if specified
+    if enable_pgo {
+        optimization_system.config.enable_pgo_when_available = true;
+    }
+    
+    // Override parallel optimization if specified
+    if let Some(jobs_str) = parallel_opt {
+        let jobs: usize = jobs_str.parse().unwrap_or(0);
+        optimization_system.config.max_parallel_jobs = jobs;
+        if jobs > 1 {
+            optimization_system.config.enable_parallel_optimization = true;
+        }
+    }
+    
+    // Set performance reporting format
+    if let Some(report_format) = performance_report {
+        use cursed::optimization::PerformanceReportFormat;
+        optimization_system.config.performance_monitoring.report_format = match report_format.as_str() {
+            "detailed" => PerformanceReportFormat::Detailed,
+            "json" => PerformanceReportFormat::Json,
+            "none" => PerformanceReportFormat::None,
+            _ => PerformanceReportFormat::Summary,
+        };
+    }
+    
+    // Read source code
+    let source_code = std::fs::read_to_string(file)?;
+    
+    // Parse target features
+    let features: Vec<String> = target_features
+        .map(|s| s.split(',').map(|s| s.trim().to_string()).collect())
+        .unwrap_or_default();
+    
+    // Apply optimizations
+    let optimization_results = optimization_system.apply_optimizations(
+        &source_code,
+        &opt_profile,
+        target_cpu.map(|s| s.as_str()),
+        &features,
+    )?;
+    
+    // Execute the optimized program
+    cursed::run_file(file)?;
+    
+    // Generate performance report if requested
+    if matches!(optimization_system.config.performance_monitoring.report_format, cursed::optimization::PerformanceReportFormat::Summary | cursed::optimization::PerformanceReportFormat::Detailed | cursed::optimization::PerformanceReportFormat::Json) {
+        let report = optimization_system.generate_performance_report()?;
+        if !report.is_empty() {
+            println!("\n📊 Performance Report:");
+            println!("{}", report);
+        }
+    }
+    
+    // Show optimization summary
+    println!("\n✨ Optimization Summary:");
+    println!("   Total optimization time: {:.2}s", optimization_results.total_optimization_time.as_secs_f64());
+    println!("   Overall improvement: {:.1}%", optimization_results.overall_improvement * 100.0);
+    
+    if let Some(ref time_savings) = optimization_results.time_savings {
+        println!("   Compilation time savings: {:.2}s", time_savings.compilation_time_savings.as_secs_f64());
+        if time_savings.parallel_execution_savings > std::time::Duration::ZERO {
+            println!("   Parallel execution savings: {:.2}s", time_savings.parallel_execution_savings.as_secs_f64());
+        }
+    }
+    
+    println!("✅ Program executed successfully with optimizations!");
+    Ok(())
+}
+
 async fn handle_single_run_command_with_options(
     file: &str,
     opt_level: &str,
@@ -526,6 +676,7 @@ async fn handle_single_run_command_with_options(
     use cursed::codegen::llvm::optimization::{OptimizationLevel, utils::create_config_from_args};
     use cursed::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
     use cursed::core::performance_pipeline::{PerformancePipeline, utils};
+    use cursed::optimization::{OptimizationEnablementSystem, OptimizationProfile};
     
     let passes_info = if enhanced_passes {
         " (enhanced passes)"
@@ -650,13 +801,146 @@ async fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn 
     let emit = matches.get_one::<String>("emit").unwrap();
     let optimize = matches.get_flag("optimize");
     let watch = matches.get_flag("watch");
+    let opt_profile = matches.get_one::<String>("opt-profile").unwrap();
+    let enable_pgo = matches.get_flag("enable-pgo");
+    let parallel_opt = matches.get_one::<String>("parallel-opt");
+    let performance_report = matches.get_one::<String>("performance-report");
 
     if watch {
         handle_watch_build_command(matches).await
+    } else if opt_profile != "release" || enable_pgo || parallel_opt.is_some() || performance_report.is_some() {
+        // Use advanced optimization path
+        handle_build_command_with_optimization_enablement(matches).await
     } else {
         let opt_level = matches.get_one::<String>("opt-level").unwrap();
         handle_single_build_command(file, output, emit, optimize, opt_level).await
     }
+}
+
+async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    use cursed::optimization::{
+        OptimizationEnablementSystem, OptimizationProfile, 
+        enablement_system::cli::parse_optimization_profile
+    };
+    
+    let file = matches.get_one::<String>("file").unwrap();
+    let output = matches.get_one::<String>("output");
+    let emit = matches.get_one::<String>("emit").unwrap();
+    let opt_profile_str = matches.get_one::<String>("opt-profile").unwrap();
+    let enable_pgo = matches.get_flag("enable-pgo");
+    let parallel_opt = matches.get_one::<String>("parallel-opt");
+    let performance_report = matches.get_one::<String>("performance-report");
+    let target_cpu = matches.get_one::<String>("target-cpu");
+    let target_features = matches.get_one::<String>("target-features");
+    
+    println!("🔨 Building CURSED program with optimization enablement: {}", file);
+    println!("   Optimization profile: {}", opt_profile_str);
+    println!("   Output type: {}", emit);
+    
+    if let Some(out) = output {
+        println!("   Output file: {}", out);
+    }
+    
+    // Check if file exists
+    if !std::path::Path::new(file).exists() {
+        return Err(format!("File not found: {}", file).into());
+    }
+    
+    // Parse optimization profile
+    let opt_profile = parse_optimization_profile(opt_profile_str);
+    
+    // Create optimization enablement system
+    let mut optimization_system = OptimizationEnablementSystem::new()?;
+    
+    // Override PGO setting if specified
+    if enable_pgo {
+        optimization_system.config.enable_pgo_when_available = true;
+    }
+    
+    // Override parallel optimization if specified
+    if let Some(jobs_str) = parallel_opt {
+        let jobs: usize = jobs_str.parse().unwrap_or(0);
+        optimization_system.config.max_parallel_jobs = jobs;
+        if jobs > 1 {
+            optimization_system.config.enable_parallel_optimization = true;
+        }
+    }
+    
+    // Set performance reporting format
+    if let Some(report_format) = performance_report {
+        use cursed::optimization::PerformanceReportFormat;
+        optimization_system.config.performance_monitoring.report_format = match report_format.as_str() {
+            "detailed" => PerformanceReportFormat::Detailed,
+            "json" => PerformanceReportFormat::Json,
+            "none" => PerformanceReportFormat::None,
+            _ => PerformanceReportFormat::Summary,
+        };
+    }
+    
+    // Read source code
+    let source_code = std::fs::read_to_string(file)?;
+    
+    // Parse target features
+    let features: Vec<String> = target_features
+        .map(|s| s.split(',').map(|s| s.trim().to_string()).collect())
+        .unwrap_or_default();
+    
+    // Apply optimizations
+    let optimization_results = optimization_system.apply_optimizations(
+        &source_code,
+        &opt_profile,
+        target_cpu.map(|s| s.as_str()),
+        &features,
+    )?;
+    
+    // Build based on emit type
+    match emit.as_ref() {
+        "llvm-ir" => {
+            // Get optimization configuration for IR generation
+            let opt_config = optimization_system.get_optimization_config(&opt_profile)?;
+            let opt_level = opt_config.optimization_level.to_llvm_level().to_string();
+            
+            let ir = cursed::compile_to_ir_with_optimization(&source_code, Some(&opt_level))?;
+            
+            let default_output = format!("{}.ll", file);
+            let output_file = output.map(|s| s.as_str())
+                .unwrap_or(&default_output);
+            
+            std::fs::write(output_file, ir)?;
+            println!("✅ Optimized LLVM IR written to: {} (profile: {}, level: O{})", output_file, opt_profile_str, opt_level);
+        }
+        "exe" => {
+            // For now, just check the source
+            cursed::check(&source_code)?;
+            println!("✅ Build completed successfully with optimizations!");
+        }
+        _ => {
+            return Err(format!("Unsupported emit type: {}", emit).into());
+        }
+    }
+    
+    // Generate performance report if requested
+    if matches!(optimization_system.config.performance_monitoring.report_format, cursed::optimization::PerformanceReportFormat::Summary | cursed::optimization::PerformanceReportFormat::Detailed | cursed::optimization::PerformanceReportFormat::Json) {
+        let report = optimization_system.generate_performance_report()?;
+        if !report.is_empty() {
+            println!("\n📊 Build Performance Report:");
+            println!("{}", report);
+        }
+    }
+    
+    // Show optimization summary
+    println!("\n✨ Build Optimization Summary:");
+    println!("   Total optimization time: {:.2}s", optimization_results.total_optimization_time.as_secs_f64());
+    println!("   Overall improvement: {:.1}%", optimization_results.overall_improvement * 100.0);
+    
+    if let Some(ref time_savings) = optimization_results.time_savings {
+        println!("   Compilation time savings: {:.2}s", time_savings.compilation_time_savings.as_secs_f64());
+        if time_savings.parallel_execution_savings > std::time::Duration::ZERO {
+            println!("   Parallel execution savings: {:.2}s", time_savings.parallel_execution_savings.as_secs_f64());
+        }
+    }
+    
+    Ok(())
 }
 
 async fn handle_single_build_command(

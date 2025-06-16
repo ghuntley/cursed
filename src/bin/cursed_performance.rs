@@ -11,11 +11,14 @@ use anyhow::{Result, Context};
 use serde_json;
 
 use cursed::optimization::{
+    performance_optimization_system::{
+        PerformanceOptimizationSystem, SmartCompilationResults,
+    },
     performance_system::{
-        PerformanceOptimizationSystem, PerformanceSystemConfig, PerformanceMonitoringLevel,
+        PerformanceSystemConfig, PerformanceMonitoringLevel,
         ParallelConfig, CacheConfig,
     },
-    BuildProfile,
+    build_profiles::BuildProfile,
     benchmarking::BenchmarkType,
     compilation_speed::CompilationUnit,
 };
@@ -316,8 +319,38 @@ fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
     // Compare with previous results if specified
     if let Some(compare_file) = compare {
         println!("\n📊 Comparison with previous results:");
-        // TODO: Implement comparison logic
-        println!("   Comparison feature coming soon...");
+        
+        // Load previous results
+        if let Ok(json_data) = std::fs::read_to_string(compare_file) {
+            if let Ok(previous_results) = serde_json::from_str::<BenchmarkResults>(&json_data) {
+                // Calculate performance differences
+                let time_diff = ((results.statistics.mean_time_ms - previous_results.statistics.mean_time_ms) 
+                                / previous_results.statistics.mean_time_ms) * 100.0;
+                let throughput_diff = ((results.statistics.throughput_ops_per_sec - previous_results.statistics.throughput_ops_per_sec) 
+                                      / previous_results.statistics.throughput_ops_per_sec) * 100.0;
+                
+                println!("   Previous average time: {:.2}ms", previous_results.statistics.mean_time_ms);
+                println!("   Current average time: {:.2}ms", results.statistics.mean_time_ms);
+                println!("   Time difference: {:.1}% {}", time_diff.abs(), if time_diff > 0.0 { "(slower)" } else { "(faster)" });
+                
+                println!("   Previous throughput: {:.1} ops/sec", previous_results.statistics.throughput_ops_per_sec);
+                println!("   Current throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
+                println!("   Throughput difference: {:.1}% {}", throughput_diff.abs(), if throughput_diff > 0.0 { "(faster)" } else { "(slower)" });
+                
+                // Determine overall result
+                if time_diff < -5.0 || throughput_diff > 5.0 {
+                    println!("   🚀 Performance improved!");
+                } else if time_diff > 5.0 || throughput_diff < -5.0 {
+                    println!("   ⚠️  Performance regression detected!");
+                } else {
+                    println!("   ✅ Performance is stable");
+                }
+            } else {
+                println!("   ❌ Could not parse previous results file");
+            }
+        } else {
+            println!("   ❌ Could not read previous results file: {}", compare_file);
+        }
     }
 
     Ok(())

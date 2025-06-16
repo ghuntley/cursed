@@ -1,0 +1,99 @@
+/* GitHub theme for CURSED syntax highlighting */
+
+.code-block {
+    background-color: #f6f8fa;
+    color: #24292e;
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+    padding: 1rem;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.line-number {
+    color: #959da5;
+    padding-right: 1rem;
+    user-select: none;
+}
+
+.highlighted-line {
+    background-color: #fff5b4;
+    display: block;
+    padding: 0 0.5rem;
+    margin: 0 -0.5rem;
+}
+
+/* CURSED syntax highlighting */
+.keyword {
+    color: #d73a49;
+    font-weight: bold;
+}
+
+.string {
+    color: #032f62;
+}
+
+.comment {
+    color: #6a737d;
+    font-style: italic;
+}
+
+.number {
+    color: #005cc5;
+}
+
+.identifier {
+    color: #6f42c1;
+}
+
+.operator {
+    color: #d73a49;
+}
+
+.function {
+    color: #6f42c1;
+}
+
+.type {
+    color: #005cc5;
+}
+
+.variable {
+    color: #e36209;
+}
+
+.constant {
+    color: #005cc5;
+    font-weight: bold;
+}
+
+/* Interactive features */
+.fold-toggle {
+    color: #6a737d;
+    cursor: pointer;
+    user-select: none;
+    font-family: monospace;
+}
+
+.fold-toggle:hover {
+    color: #24292e;
+}
+
+.copy-button {
+    background: #fafbfc;
+    border: 1px solid #e1e4e8;
+    color: #586069;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    float: right;
+    margin-top: -0.5rem;
+    margin-right: 0.5rem;
+}
+
+.copy-button:hover {
+    background: #0366d6;
+    color: #ffffff;
+    border-color: #0366d6;
+}

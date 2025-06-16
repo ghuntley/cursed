@@ -51,19 +51,21 @@ pub struct OptimizationConfig {
 
 impl Default for OptimizationConfig {
     fn default() -> Self {
+        let cpu_count = num_cpus::get();
+        
         Self {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::Default, // Balanced default for better dev experience
             debug_mode: false,
             profile_guided: false,
-            parallel_workers: num_cpus::get(),
-            enable_parallel: true,
+            parallel_workers: cpu_count.max(2), // Ensure at least 2 workers for parallel benefits
+            enable_parallel: cpu_count > 1, // Enable parallel only if beneficial
             enable_incremental: true,
             dependency_tracking: true,
             cache_directory: None,
-            cache_max_size: 1024, // 1GB default
-            llvm_passes: LlvmPassConfig::default(),
-            target_cpu: None,
-            target_features: Vec::new(),
+            cache_max_size: 2048, // 2GB default for better caching
+            llvm_passes: LlvmPassConfig::enhanced_default(),
+            target_cpu: Self::detect_target_cpu(),
+            target_features: Self::detect_target_features(),
             enable_profiling: true,
             profile_output_dir: None,
             profile_data_dir: None,
@@ -144,6 +146,13 @@ pub struct LlvmPassConfig {
     pub enable_tail_call_optimization: bool,
     pub enable_link_time_optimization: bool,
     pub enable_memory_optimization: bool,
+    pub enable_interprocedural_analysis: bool,
+    pub enable_advanced_vectorization: bool,
+    pub enable_loop_fusion: bool,
+    pub enable_prefetch_insertion: bool,
+    pub enable_struct_layout_optimization: bool,
+    pub enable_stack_layout_optimization: bool,
+    pub enable_numa_optimization: bool,
 }
 
 impl Default for LlvmPassConfig {
@@ -169,6 +178,138 @@ impl Default for LlvmPassConfig {
             enable_tail_call_optimization: true,
             enable_link_time_optimization: true,
             enable_memory_optimization: true,
+            enable_interprocedural_analysis: true,
+            enable_advanced_vectorization: true,
+            enable_loop_fusion: true,
+            enable_prefetch_insertion: true,
+            enable_struct_layout_optimization: true,
+            enable_stack_layout_optimization: true,
+            enable_numa_optimization: false, // Disabled by default as not all systems are NUMA
+        }
+    }
+}
+
+impl LlvmPassConfig {
+    /// Enhanced default configuration with more aggressive optimizations
+    pub fn enhanced_default() -> Self {
+        Self {
+            function_passes: vec![
+                "instcombine".to_string(),
+                "reassociate".to_string(),
+                "gvn".to_string(),
+                "simplifycfg".to_string(),
+                "sroa".to_string(),          // Scalar replacement of aggregates
+                "mem2reg".to_string(),       // Promote memory to register
+                "licm".to_string(),          // Loop invariant code motion
+                "indvars".to_string(),       // Canonicalize induction variables
+                "loop-unroll".to_string(),   // Loop unrolling
+                "early-cse".to_string(),     // Early common subexpression elimination
+            ],
+            module_passes: vec![
+                "globalopt".to_string(),
+                "globaldce".to_string(),
+                "constmerge".to_string(),
+                "deadargelim".to_string(),   // Dead argument elimination
+                "function-attrs".to_string(), // Function attribute inference
+                "inline".to_string(),        // Function inlining
+                "argpromotion".to_string(),  // Argument promotion
+                "sccp".to_string(),          // Sparse conditional constant propagation
+            ],
+            enable_vectorization: true,
+            enable_loop_unrolling: true,
+            enable_inlining: true,
+            enable_constant_folding: true,
+            enable_dead_code_elimination: true,
+            enable_common_subexpression_elimination: true,
+            enable_tail_call_optimization: true,
+            enable_link_time_optimization: false, // LTO can be expensive, disabled by default
+            enable_memory_optimization: true,
+            enable_interprocedural_analysis: true,
+            enable_advanced_vectorization: true,
+            enable_loop_fusion: true,
+            enable_prefetch_insertion: false, // Conservative for enhanced default
+            enable_struct_layout_optimization: true,
+            enable_stack_layout_optimization: true,
+            enable_numa_optimization: false,
+        }
+    }
+    
+    /// Lightweight configuration for debug builds
+    pub fn debug_friendly() -> Self {
+        Self {
+            function_passes: vec![
+                "mem2reg".to_string(),
+                "simplifycfg".to_string(),
+            ],
+            module_passes: vec![
+                "globaldce".to_string(),
+            ],
+            enable_vectorization: false,
+            enable_loop_unrolling: false,
+            enable_inlining: false,
+            enable_constant_folding: true,
+            enable_dead_code_elimination: true,
+            enable_common_subexpression_elimination: false,
+            enable_tail_call_optimization: false,
+            enable_link_time_optimization: false,
+            enable_memory_optimization: false,
+            enable_interprocedural_analysis: false, // Disabled for debug builds
+            enable_advanced_vectorization: false,
+            enable_loop_fusion: false,
+            enable_prefetch_insertion: false,
+            enable_struct_layout_optimization: false,
+            enable_stack_layout_optimization: false,
+            enable_numa_optimization: false,
+        }
+    }
+    
+    /// Aggressive configuration for release builds
+    pub fn aggressive_release() -> Self {
+        Self {
+            function_passes: vec![
+                "instcombine".to_string(),
+                "reassociate".to_string(),
+                "gvn".to_string(),
+                "simplifycfg".to_string(),
+                "sroa".to_string(),
+                "mem2reg".to_string(),
+                "licm".to_string(),
+                "indvars".to_string(),
+                "loop-unroll".to_string(),
+                "early-cse".to_string(),
+                "loop-vectorize".to_string(),
+                "slp-vectorizer".to_string(),
+                "jump-threading".to_string(),
+                "correlated-propagation".to_string(),
+            ],
+            module_passes: vec![
+                "globalopt".to_string(),
+                "globaldce".to_string(),
+                "constmerge".to_string(),
+                "deadargelim".to_string(),
+                "function-attrs".to_string(),
+                "inline".to_string(),
+                "argpromotion".to_string(),
+                "sccp".to_string(),
+                "ipcp".to_string(),
+                "always-inline".to_string(),
+            ],
+            enable_vectorization: true,
+            enable_loop_unrolling: true,
+            enable_inlining: true,
+            enable_constant_folding: true,
+            enable_dead_code_elimination: true,
+            enable_common_subexpression_elimination: true,
+            enable_tail_call_optimization: true,
+            enable_link_time_optimization: true,
+            enable_memory_optimization: true,
+            enable_interprocedural_analysis: true,
+            enable_advanced_vectorization: true,
+            enable_loop_fusion: true,
+            enable_prefetch_insertion: true, // Aggressive mode enables all optimizations
+            enable_struct_layout_optimization: true,
+            enable_stack_layout_optimization: true,
+            enable_numa_optimization: true, // Enable for aggressive release builds
         }
     }
 }
@@ -422,7 +563,142 @@ impl OptimizationConfig {
         self.report_output_dir.clone()
             .unwrap_or_else(|| PathBuf::from(".cursed_reports"))
     }
-}
+    
+    /// Detect target CPU for optimizations
+    fn detect_target_cpu() -> Option<String> {
+        // Try to detect the native CPU for better optimization
+        if let Ok(cpu_info) = std::env::var("CURSED_TARGET_CPU") {
+            Some(cpu_info)
+        } else {
+            // Use native detection on supported platforms
+            #[cfg(target_arch = "x86_64")]
+            {
+                Some("x86-64".to_string())
+            }
+            #[cfg(target_arch = "aarch64")]
+            {
+                Some("generic".to_string())
+            }
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            {
+                None
+            }
+        }
+    }
+    
+    /// Detect target features for optimizations
+    fn detect_target_features() -> Vec<String> {
+        let mut features = Vec::new();
+        
+        // Check environment variable first
+        if let Ok(features_str) = std::env::var("CURSED_TARGET_FEATURES") {
+            return features_str.split(',').map(|s| s.trim().to_string()).collect();
+        }
+        
+        // Detect common features based on architecture
+        #[cfg(target_arch = "x86_64")]
+        {
+            features.extend_from_slice(&[
+                "sse2".to_string(),
+                "sse3".to_string(),
+                "ssse3".to_string(),
+                "sse4.1".to_string(),
+                "sse4.2".to_string(),
+            ]);
+            
+            // Check for additional features based on CPUID (simplified)
+            if std::env::var("CURSED_ENABLE_AVX").is_ok() {
+                features.push("avx".to_string());
+                features.push("avx2".to_string());
+            }
+        }
+        
+        #[cfg(target_arch = "aarch64")]
+        {
+            features.extend_from_slice(&[
+                "neon".to_string(),
+                "crypto".to_string(),
+            ]);
+        }
+        
+        features
+    }
+    
+    /// Create optimized configuration for the current environment
+    pub fn for_environment() -> Self {
+        let mut config = Self::default();
+        
+        // Adjust based on available resources
+        let cpu_count = num_cpus::get();
+        config.parallel_workers = match cpu_count {
+            1 => 1,
+            2..=4 => cpu_count,
+            5..=8 => cpu_count - 1, // Leave one core for OS
+            _ => cpu_count / 2,     // Don't overwhelm on high-core systems
+        };
+        
+        // Adjust cache size based on available memory (simplified)
+        if let Ok(memory_info) = std::env::var("CURSED_MEMORY_HINT") {
+            if let Ok(memory_gb) = memory_info.parse::<usize>() {
+                config.cache_max_size = match memory_gb {
+                    0..=4 => 512,   // 512MB cache for low memory
+                    5..=8 => 1024,  // 1GB cache for medium memory
+                    9..=16 => 2048, // 2GB cache for high memory
+                    _ => 4096,      // 4GB cache for very high memory
+                };
+            }
+        }
+        
+        // Enable LTO only for release builds with sufficient resources
+        if cpu_count >= 4 && !config.debug_mode {
+            config.llvm_passes.enable_link_time_optimization = true;
+        }
+        
+        config
+    }
+    
+    /// Create configuration optimized for fast development cycles
+    pub fn for_development() -> Self {
+        let mut config = OptimizationProfile::Development.to_config();
+        
+        // Use enhanced LLVM passes but keep them lightweight
+        config.llvm_passes = LlvmPassConfig::debug_friendly();
+        
+        // Optimize for fast incremental builds
+        config.enable_incremental = true;
+        config.dependency_tracking = true;
+        config.enable_parallel = true;
+        config.parallel_workers = num_cpus::get().min(4); // Cap workers for development
+        
+        // Smaller cache for faster iteration
+        config.cache_max_size = 512;
+        
+        config
+    }
+    
+    /// Create configuration optimized for production builds
+    pub fn for_production() -> Self {
+        let mut config = OptimizationProfile::Performance.to_config();
+        
+        // Use aggressive LLVM passes for maximum performance
+        config.llvm_passes = LlvmPassConfig::aggressive_release();
+        
+        // Enable all optimizations
+        config.enable_parallel = true;
+        config.parallel_workers = num_cpus::get();
+        config.enable_incremental = true; // Still beneficial for large projects
+        config.profile_guided = true;
+        
+        // Large cache for complex optimizations
+        config.cache_max_size = 4096;
+        
+        // Enable comprehensive profiling and reporting
+        config.enable_profiling = true;
+        config.generate_reports = true;
+        config.benchmark_iterations = 5;
+        
+        config
+    }
 
 /// Command line arguments for optimization
 #[derive(Debug, Clone)]

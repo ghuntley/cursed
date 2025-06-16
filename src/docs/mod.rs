@@ -13,10 +13,23 @@ pub mod markdown_generator;
 pub mod json_generator;
 pub mod xml_generator;
 pub mod comment_parser;
+pub mod api_extractor;
+pub mod examples;
+pub mod cli;
+pub mod publisher;
+pub mod server;
+pub mod registry;
+pub mod testing;
+
+// Enhanced documentation system modules
+pub mod coverage_analyzer;
+pub mod advanced_examples;
+pub mod enhanced_output;
+pub mod cross_reference;
+pub mod quality_system;
 
 // Re-export main generator
 pub use generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
-pub mod cli;
 
 // Re-export public API
 pub use generator::{
@@ -26,6 +39,20 @@ pub use generator::{
 };
 
 pub use comment_parser::{CommentParser, ParsedDocumentation};
+pub use api_extractor::ApiExtractor;
+pub use examples::ExampleGenerator;
+pub use cli::DocsCommand;
+pub use publisher::{DocumentationPublisher, PublishConfig, PublishTarget, PublicationMetadata};
+pub use server::{DocumentationServer, ServerConfig, SearchQuery, SearchResponse};
+pub use registry::{DocumentationRegistry, RegistryConfig, PackageDocumentation, RegistrySearchQuery};
+pub use testing::{DocumentationTester, TestingConfig, TestResults, TestIssue};
+
+// Enhanced system exports
+pub use coverage_analyzer::{CoverageAnalyzer, CoverageConfig, CoverageReport, CoverageStatistics};
+pub use advanced_examples::{AdvancedExampleGenerator, ExampleConfig, ExamplesDatabase, ExtractedExample};
+pub use enhanced_output::{EnhancedOutputGenerator, OutputConfig, GenerationResults, HtmlGenerationResult};
+pub use cross_reference::{CrossReferenceAnalyzer, CrossReferenceConfig, CrossReferenceResult, DependencyGraph};
+pub use quality_system::{DocumentationQualityAnalyzer, QualityConfig, QualityAnalysisResult, QualityRating};
 
 use crate::error::{Error, SourceLocation};
 use std::collections::HashMap;

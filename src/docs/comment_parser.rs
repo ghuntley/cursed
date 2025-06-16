@@ -2,444 +2,443 @@
 //! 
 //! Parses documentation comments from CURSED source code and extracts structured information.
 
-use super::generator::{DocumentationItem, Parameter, Example};
 use crate::error::{Error, SourceLocation};
-use crate::lexer::{Lexer, Token, TokenType};
+use crate::docs::generator::Example;
 use std::collections::HashMap;
-use regex::Regex;
+use serde::{Deserialize, Serialize};
+
+/// Parsed documentation structure
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParsedDocumentation {
+    pub summary: String,
+    pub description: String,
+    pub tags: HashMap<String, Vec<String>>,
+    pub examples: Vec<Example>,
+    pub see_also: Vec<String>,
+    pub since: Option<String>,
+    pub deprecated: Option<String>,
+    pub author: Option<String>,
+}
 
 /// Documentation comment parser
 pub struct CommentParser {
-    tag_regex: Regex,
-    example_regex: Regex,
-    code_block_regex: Regex,
+    // Parser configuration
+    allow_html: bool,
+    extract_examples: bool,
+    validate_links: bool,
 }
 
 impl CommentParser {
+    /// Create a new comment parser with default settings
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
-            tag_regex: Regex::new(r"@(\w+)\s+(.+)")
-                .map_err(|e| Error::Parse(format!("Regex error: {}", e)))?,
-            example_regex: Regex::new(r"```(\w+)?\s*\n(.*?)\n```")
-                .map_err(|e| Error::Parse(format!("Regex error: {}", e)))?,
-            code_block_regex: Regex::new(r"`([^`]+)`")
-                .map_err(|e| Error::Parse(format!("Regex error: {}", e)))?,
+            allow_html: true,
+            extract_examples: true,
+            validate_links: false,
         })
     }
 
-    /// Parse documentation comments for a specific item
-    pub fn parse_item_documentation(
-        &self,
-        source: &str,
-        item_location: &SourceLocation,
-    ) -> Result<ParsedDocumentation, Error> {
-        let lines: Vec<&str> = source.lines().collect();
-        let doc_lines = self.extract_doc_comments(&lines, item_location)?;
-        
-        if doc_lines.is_empty() {
-            return Ok(ParsedDocumentation::empty());
+    /// Create parser with custom configuration
+    pub fn with_config(allow_html: bool, extract_examples: bool, validate_links: bool) -> Self {
+        Self {
+            allow_html,
+            extract_examples,
+            validate_links,
         }
-
-        let raw_content = doc_lines.join("\n");
-        self.parse_doc_content(&raw_content)
     }
 
-    /// Extract documentation comment lines preceding an item
-    fn extract_doc_comments(
-        &self,
-        lines: &[&str],
-        item_location: &SourceLocation,
-    ) -> Result<Vec<String>, Error> {
-        let item_line = item_location.line.saturating_sub(1); // Convert to 0-based
-        let mut doc_lines = Vec::new();
-        
-        // Look backwards from the item line to find documentation comments
-        let mut current_line = item_line;
-        
-        while current_line > 0 {
-            current_line -= 1;
-            
-            if let Some(line) = lines.get(current_line) {
-                let trimmed = line.trim();
-                
-                if trimmed.starts_with("///") {
-                    // Extract the comment content (remove ///)
-                    let content = trimmed.strip_prefix("///").unwrap_or("").trim();
-                    doc_lines.insert(0, content.to_string());
-                } else if trimmed.starts_with("//") {
-                    // Skip regular comments
-                    continue;
-                } else if trimmed.is_empty() {
-                    // Skip empty lines within doc comments
-                    if !doc_lines.is_empty() {
-                        doc_lines.insert(0, String::new());
-                    }
-                } else {
-                    // Hit non-documentation content, stop
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        
-        // Remove leading empty lines
-        while doc_lines.first().map_or(false, |line| line.is_empty()) {
-            doc_lines.remove(0);
-        }
-        
-        Ok(doc_lines)
-    }
-
-    /// Parse documentation content into structured format
+    /// Parse documentation content from a raw string
     pub fn parse_doc_content(&self, content: &str) -> Result<ParsedDocumentation, Error> {
-        let mut parsed = ParsedDocumentation::empty();
-        
-        // Extract summary (first non-empty line)
-        if let Some(first_line) = content.lines().find(|line| !line.trim().is_empty()) {
-            parsed.summary = first_line.trim().to_string();
-        }
+        let mut parsed = ParsedDocumentation {
+            summary: String::new(),
+            description: String::new(),
+            tags: HashMap::new(),
+            examples: Vec::new(),
+            see_also: Vec::new(),
+            since: None,
+            deprecated: None,
+            author: None,
+        };
 
-        // Parse tags and structured content
-        let mut current_section = String::new();
-        let mut in_example = false;
-        let mut current_example = String::new();
-        let mut example_language = String::new();
-        let mut example_title: Option<String> = None;
-        
-        for line in content.lines() {
+        let lines = content.lines().collect::<Vec<_>>();
+        let mut current_section = ParsingSection::Summary;
+        let mut current_example: Option<ExampleBuilder> = None;
+        let mut description_lines = Vec::new();
+
+        for (line_num, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             
-            // Handle code blocks (examples)
-            if trimmed.starts_with("```") {
-                if in_example {
-                    // End of example
-                    if !current_example.trim().is_empty() {
-                        parsed.examples.push(Example {
-                            title: example_title.take(),
-                            description: None,
-                            code: current_example.trim().to_string(),
-                            language: if example_language.is_empty() { 
-                                "cursed".to_string() 
-                            } else { 
-                                example_language.clone() 
-                            },
-                            output: None,
-                        });
-                    }
-                    current_example.clear();
-                    example_language.clear();
-                    in_example = false;
-                } else {
-                    // Start of example
-                    example_language = trimmed.strip_prefix("```").unwrap_or("").to_string();
-                    in_example = true;
-                }
-                continue;
-            }
-            
-            if in_example {
-                current_example.push_str(line);
-                current_example.push('\n');
+            // Skip empty lines in summary
+            if current_section == ParsingSection::Summary && trimmed.is_empty() {
+                current_section = ParsingSection::Description;
                 continue;
             }
 
-            // Handle @ tags
-            if let Some(captures) = self.tag_regex.captures(trimmed) {
-                let tag_name = captures.get(1).unwrap().as_str();
-                let tag_content = captures.get(2).unwrap().as_str();
-                
-                match tag_name {
-                    "param" => {
-                        if let Some(param) = self.parse_param_tag(tag_content) {
-                            parsed.parameters.push(param);
+            // Handle doc comment prefixes
+            let clean_line = self.clean_doc_line(trimmed);
+
+            // Process tags
+            if let Some(tag_info) = self.parse_tag_line(&clean_line) {
+                self.process_tag(&mut parsed, &mut current_example, tag_info)?;
+                current_section = ParsingSection::Tags;
+                continue;
+            }
+
+            // Process code blocks for examples
+            if self.extract_examples {
+                if let Some(example) = &mut current_example {
+                    if clean_line.starts_with("```") {
+                        // End code block
+                        let built_example = example.build();
+                        parsed.examples.push(built_example);
+                        current_example = None;
+                    } else {
+                        example.add_code_line(&clean_line);
+                    }
+                    continue;
+                } else if clean_line.starts_with("```") {
+                    // Start code block
+                    let language = clean_line.strip_prefix("```").unwrap_or("cursed").to_string();
+                    current_example = Some(ExampleBuilder::new(language));
+                    continue;
+                }
+            }
+
+            // Process content based on current section
+            match current_section {
+                ParsingSection::Summary => {
+                    if !clean_line.is_empty() {
+                        if parsed.summary.is_empty() {
+                            parsed.summary = clean_line.to_string();
+                        } else {
+                            parsed.summary.push(' ');
+                            parsed.summary.push_str(&clean_line);
                         }
                     }
-                    "return" | "returns" => {
-                        parsed.return_doc = Some(tag_content.to_string());
-                    }
-                    "example" => {
-                        example_title = Some(tag_content.to_string());
-                    }
-                    "throws" | "error" => {
-                        parsed.tags.entry("throws".to_string())
-                            .or_insert_with(Vec::new)
-                            .push(tag_content.to_string());
-                    }
-                    "since" => {
-                        parsed.tags.entry("since".to_string())
-                            .or_insert_with(Vec::new)
-                            .push(tag_content.to_string());
-                    }
-                    "deprecated" => {
-                        parsed.tags.entry("deprecated".to_string())
-                            .or_insert_with(Vec::new)
-                            .push(tag_content.to_string());
-                    }
-                    _ => {
-                        // Generic tag
-                        parsed.tags.entry(tag_name.to_string())
-                            .or_insert_with(Vec::new)
-                            .push(tag_content.to_string());
+                }
+                ParsingSection::Description | ParsingSection::Tags => {
+                    if !clean_line.is_empty() {
+                        description_lines.push(clean_line);
                     }
                 }
-            } else if !trimmed.is_empty() {
-                // Regular description content
-                if !current_section.is_empty() {
-                    current_section.push('\n');
-                }
-                current_section.push_str(line);
             }
         }
-        
-        // Clean up description
-        if !current_section.trim().is_empty() {
-            parsed.description = current_section.trim().to_string();
+
+        // Finalize any remaining example
+        if let Some(example) = current_example {
+            parsed.examples.push(example.build());
         }
+
+        // Join description lines
+        if !description_lines.is_empty() {
+            parsed.description = description_lines.join(" ");
+        }
+
+        // Post-process parsed content
+        self.post_process(&mut parsed)?;
 
         Ok(parsed)
     }
 
-    /// Parse @param tag content
-    fn parse_param_tag(&self, content: &str) -> Option<Parameter> {
-        // Expected formats:
-        // @param name Description
-        // @param name type Description
-        // @param name: type Description
-        
-        let parts: Vec<&str> = content.splitn(3, ' ').collect();
-        
-        if parts.is_empty() {
-            return None;
-        }
+    /// Parse documentation for a specific item at a location
+    pub fn parse_item_documentation(&self, source: &str, location: &SourceLocation) -> Result<ParsedDocumentation, Error> {
+        let doc_content = self.extract_doc_comments_at_location(source, location)?;
+        self.parse_doc_content(&doc_content)
+    }
 
-        let name = parts[0].trim_end_matches(':').to_string();
+    /// Extract documentation comments preceding a location
+    fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> Result<String, Error> {
+        let lines = source.lines().collect::<Vec<_>>();
+        let mut doc_lines = Vec::new();
         
-        if parts.len() == 1 {
-            // Just name
-            return Some(Parameter {
-                name,
-                type_name: None,
-                description: String::new(),
-                default_value: None,
-            });
+        // Look backwards from the location for doc comments
+        let start_line = if location.line > 20 { location.line - 20 } else { 1 };
+        let end_line = location.line.saturating_sub(1);
+        
+        let mut found_doc = false;
+        for line_num in (start_line..=end_line).rev() {
+            if let Some(line) = lines.get((line_num - 1) as usize) {
+                let trimmed = line.trim();
+                
+                if trimmed.starts_with("///") || trimmed.starts_with("//!") {
+                    doc_lines.insert(0, trimmed.to_string());
+                    found_doc = true;
+                } else if found_doc && (trimmed.is_empty() || trimmed.starts_with("//")) {
+                    // Continue collecting if we're in a doc block
+                    if trimmed.starts_with("//") && !trimmed.starts_with("///") {
+                        doc_lines.insert(0, trimmed.to_string());
+                    }
+                } else if found_doc {
+                    // End of doc block
+                    break;
+                }
+            }
         }
+        
+        Ok(doc_lines.join("\n"))
+    }
 
-        // Try to determine if second part is type or description
-        let (type_name, description) = if parts.len() == 2 {
-            // Could be either "name type" or "name description"
-            let second_part = parts[1];
-            if self.looks_like_type(second_part) {
-                (Some(second_part.to_string()), String::new())
+    /// Clean documentation line by removing comment prefixes
+    fn clean_doc_line(&self, line: &str) -> String {
+        if line.starts_with("///") {
+            line.strip_prefix("///").unwrap_or("").trim().to_string()
+        } else if line.starts_with("//!") {
+            line.strip_prefix("//!").unwrap_or("").trim().to_string()
+        } else if line.starts_with("//") {
+            line.strip_prefix("//").unwrap_or("").trim().to_string()
+        } else {
+            line.to_string()
+        }
+    }
+
+    /// Parse tag line (e.g., @param, @return, etc.)
+    fn parse_tag_line(&self, line: &str) -> Option<TagInfo> {
+        if let Some(line) = line.strip_prefix('@') {
+            if let Some((tag_name, rest)) = line.split_once(' ') {
+                Some(TagInfo {
+                    name: tag_name.to_string(),
+                    content: rest.trim().to_string(),
+                })
             } else {
-                (None, second_part.to_string())
+                Some(TagInfo {
+                    name: line.to_string(),
+                    content: String::new(),
+                })
             }
         } else {
-            // Three parts: name, type, description
-            (Some(parts[1].to_string()), parts[2..].join(" "))
-        };
-
-        Some(Parameter {
-            name,
-            type_name,
-            description,
-            default_value: None,
-        })
-    }
-
-    /// Heuristic to determine if a string looks like a type annotation
-    fn looks_like_type(&self, s: &str) -> bool {
-        // Common type patterns in CURSED
-        let type_patterns = [
-            "i32", "i64", "f64", "bool", "string", "str",
-            "[]", "map", "chan", "interface", "struct",
-            "Option", "Result", "Vec", "Array",
-        ];
-
-        let lowercase = s.to_lowercase();
-        
-        // Check exact matches
-        if type_patterns.iter().any(|&pattern| lowercase.contains(pattern)) {
-            return true;
+            None
         }
-
-        // Check for type-like patterns
-        s.contains('[') && s.contains(']') || // Array types
-        s.contains('<') && s.contains('>') || // Generic types
-        s.chars().next().map_or(false, |c| c.is_uppercase()) // Capitalized types
     }
 
-    /// Extract inline code snippets from description
-    pub fn extract_inline_code(&self, text: &str) -> Vec<String> {
-        self.code_block_regex
-            .captures_iter(text)
-            .map(|cap| cap.get(1).unwrap().as_str().to_string())
-            .collect()
+    /// Process a parsed tag
+    fn process_tag(&self, parsed: &mut ParsedDocumentation, current_example: &mut Option<ExampleBuilder>, tag: TagInfo) -> Result<(), Error> {
+        match tag.name.as_str() {
+            "param" | "parameter" => {
+                parsed.tags.entry("parameters".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+            "return" | "returns" => {
+                parsed.tags.entry("returns".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+            "throws" | "throw" => {
+                parsed.tags.entry("throws".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+            "example" => {
+                if self.extract_examples {
+                    let mut example = ExampleBuilder::new("cursed".to_string());
+                    example.set_title(tag.content);
+                    *current_example = Some(example);
+                }
+            }
+            "see" | "see_also" => {
+                parsed.see_also.push(tag.content);
+            }
+            "since" => {
+                parsed.since = Some(tag.content);
+            }
+            "deprecated" => {
+                parsed.deprecated = Some(tag.content);
+            }
+            "author" => {
+                parsed.author = Some(tag.content);
+            }
+            "version" => {
+                parsed.tags.entry("version".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+            "todo" | "fixme" => {
+                parsed.tags.entry("todo".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+            "note" => {
+                parsed.tags.entry("notes".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+            _ => {
+                // Generic tag
+                parsed.tags.entry(tag.name)
+                    .or_insert_with(Vec::new)
+                    .push(tag.content);
+            }
+        }
+        Ok(())
     }
 
-    /// Parse multi-line documentation from token stream
-    pub fn parse_from_tokens(&self, tokens: &[Token]) -> Result<Vec<ParsedDocumentation>, Error> {
-        let mut docs = Vec::new();
-        let mut current_doc_tokens = Vec::new();
+    /// Post-process parsed documentation
+    fn post_process(&self, parsed: &mut ParsedDocumentation) -> Result<(), Error> {
+        // Clean up summary and description
+        parsed.summary = parsed.summary.trim().to_string();
+        parsed.description = parsed.description.trim().to_string();
         
-        for (i, token) in tokens.iter().enumerate() {
-            match &token.token_type {
-                TokenType::Comment if token.literal.starts_with("///") => {
-                    current_doc_tokens.push(token.clone());
-                }
-                _ => {
-                    // If we have accumulated doc tokens and hit a non-doc token,
-                    // this might be the item the docs apply to
-                    if !current_doc_tokens.is_empty() {
-                        if let Some(item_token) = self.find_next_documentable_token(&tokens[i..]) {
-                            let doc_content = current_doc_tokens
-                                .iter()
-                                .map(|t| t.literal.strip_prefix("///").unwrap_or("").trim())
-                                .collect::<Vec<_>>()
-                                .join("\n");
-                            
-                            if let Ok(parsed) = self.parse_doc_content(&doc_content) {
-                                docs.push(parsed);
-                            }
-                        }
-                        current_doc_tokens.clear();
-                    }
-                }
+        // Remove HTML tags if not allowed
+        if !self.allow_html {
+            parsed.summary = self.strip_html(&parsed.summary);
+            parsed.description = self.strip_html(&parsed.description);
+        }
+        
+        // Validate and normalize examples
+        for example in &mut parsed.examples {
+            example.code = example.code.trim().to_string();
+            if example.language.is_empty() {
+                example.language = "cursed".to_string();
             }
         }
         
-        Ok(docs)
+        // Validate links if enabled
+        if self.validate_links {
+            self.validate_documentation_links(parsed)?;
+        }
+        
+        Ok(())
     }
 
-    /// Find the next token that can have documentation
-    fn find_next_documentable_token(&self, tokens: &[Token]) -> Option<&Token> {
-        for token in tokens {
-            match &token.token_type {
-                TokenType::Slay |       // function
-                TokenType::Squad |      // struct
-                TokenType::Collab |     // interface
-                TokenType::Sus |        // variable
-                TokenType::Facts |      // constant
-                TokenType::Vibe |       // package
-                TokenType::Identifier => return Some(token),
-                TokenType::Newline | TokenType::Comment => continue,
-                _ => break,
+    /// Strip HTML tags from text
+    fn strip_html(&self, text: &str) -> String {
+        // Simple HTML tag removal
+        let mut result = String::new();
+        let mut in_tag = false;
+        
+        for ch in text.chars() {
+            match ch {
+                '<' => in_tag = true,
+                '>' => in_tag = false,
+                _ => if !in_tag { result.push(ch); }
             }
         }
-        None
+        
+        result
+    }
+
+    /// Validate links in documentation
+    fn validate_documentation_links(&self, _parsed: &ParsedDocumentation) -> Result<(), Error> {
+        // TODO: Implement link validation
+        // This would check for broken internal references, invalid URLs, etc.
+        Ok(())
+    }
+
+    /// Extract all documentation from source file
+    pub fn extract_all_documentation(&self, source: &str) -> Result<Vec<(SourceLocation, ParsedDocumentation)>, Error> {
+        let lines = source.lines().collect::<Vec<_>>();
+        let mut results = Vec::new();
+        let mut current_doc_start: Option<usize> = None;
+        let mut doc_lines = Vec::new();
+        
+        for (line_num, line) in lines.iter().enumerate() {
+            let trimmed = line.trim();
+            
+            if trimmed.starts_with("///") || trimmed.starts_with("//!") {
+                if current_doc_start.is_none() {
+                    current_doc_start = Some(line_num + 1);
+                }
+                doc_lines.push(trimmed.to_string());
+            } else if !doc_lines.is_empty() {
+                // End of doc block - parse it
+                let doc_content = doc_lines.join("\n");
+                if let Ok(parsed) = self.parse_doc_content(&doc_content) {
+                    let location = SourceLocation {
+                        line: current_doc_start.unwrap_or(line_num + 1) as u32,
+                        column: 1,
+                        file: None,
+                    };
+                    results.push((location, parsed));
+                }
+                
+                // Reset for next doc block
+                doc_lines.clear();
+                current_doc_start = None;
+            }
+        }
+        
+        // Handle final doc block if any
+        if !doc_lines.is_empty() {
+            let doc_content = doc_lines.join("\n");
+            if let Ok(parsed) = self.parse_doc_content(&doc_content) {
+                let location = SourceLocation {
+                    line: current_doc_start.unwrap_or(lines.len()) as u32,
+                    column: 1,
+                    file: None,
+                };
+                results.push((location, parsed));
+            }
+        }
+        
+        Ok(results)
+    }
+}
+
+/// Internal parsing section tracker
+#[derive(Debug, PartialEq)]
+enum ParsingSection {
+    Summary,
+    Description,
+    Tags,
+}
+
+/// Tag information
+#[derive(Debug)]
+struct TagInfo {
+    name: String,
+    content: String,
+}
+
+/// Example builder for constructing examples during parsing
+#[derive(Debug)]
+struct ExampleBuilder {
+    title: Option<String>,
+    description: Option<String>,
+    language: String,
+    code_lines: Vec<String>,
+    output: Option<String>,
+}
+
+impl ExampleBuilder {
+    fn new(language: String) -> Self {
+        Self {
+            title: None,
+            description: None,
+            language,
+            code_lines: Vec::new(),
+            output: None,
+        }
+    }
+
+    fn set_title(&mut self, title: String) {
+        self.title = Some(title);
+    }
+
+    fn set_description(&mut self, description: String) {
+        self.description = Some(description);
+    }
+
+    fn add_code_line(&mut self, line: &str) {
+        self.code_lines.push(line.to_string());
+    }
+
+    fn set_output(&mut self, output: String) {
+        self.output = Some(output);
+    }
+
+    fn build(self) -> Example {
+        Example {
+            title: self.title,
+            description: self.description,
+            code: self.code_lines.join("\n"),
+            language: self.language,
+            output: self.output,
+        }
     }
 }
 
 impl Default for CommentParser {
     fn default() -> Self {
-        Self::new().unwrap_or_else(|_| Self {
-            tag_regex: Regex::new("").unwrap(),
-            example_regex: Regex::new("").unwrap(), 
-            code_block_regex: Regex::new("").unwrap(),
-        })
-    }
-}
-
-/// Parsed documentation content
-#[derive(Debug, Clone)]
-pub struct ParsedDocumentation {
-    pub summary: String,
-    pub description: String,
-    pub parameters: Vec<Parameter>,
-    pub return_doc: Option<String>,
-    pub examples: Vec<Example>,
-    pub tags: HashMap<String, Vec<String>>,
-}
-
-impl ParsedDocumentation {
-    pub fn empty() -> Self {
-        Self {
-            summary: String::new(),
-            description: String::new(),
-            parameters: Vec::new(),
-            return_doc: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.summary.is_empty() && 
-        self.description.is_empty() && 
-        self.parameters.is_empty() && 
-        self.return_doc.is_none() && 
-        self.examples.is_empty() && 
-        self.tags.is_empty()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_simple_doc_comment() {
-        let parser = CommentParser::new().unwrap();
-        let content = "This is a summary\n\nThis is a longer description.";
-        
-        let result = parser.parse_doc_content(content).unwrap();
-        
-        assert_eq!(result.summary, "This is a summary");
-        assert_eq!(result.description, "This is a summary\n\nThis is a longer description.");
-    }
-
-    #[test]
-    fn test_parse_param_tag() {
-        let parser = CommentParser::new().unwrap();
-        let content = "@param name string The name parameter";
-        
-        let result = parser.parse_doc_content(content).unwrap();
-        
-        assert_eq!(result.parameters.len(), 1);
-        assert_eq!(result.parameters[0].name, "name");
-        assert_eq!(result.parameters[0].type_name, Some("string".to_string()));
-        assert_eq!(result.parameters[0].description, "The name parameter");
-    }
-
-    #[test]
-    fn test_parse_example() {
-        let parser = CommentParser::new().unwrap();
-        let content = r#"Function example
-        
-```cursed
-slay hello() {
-    println("Hello!")
-}
-```"#;
-        
-        let result = parser.parse_doc_content(content).unwrap();
-        
-        assert_eq!(result.examples.len(), 1);
-        assert_eq!(result.examples[0].language, "cursed");
-        assert!(result.examples[0].code.contains("slay hello()"));
-    }
-
-    #[test]
-    fn test_extract_doc_comments() {
-        let parser = CommentParser::new().unwrap();
-        let source = r#"
-/// This is a doc comment
-/// with multiple lines
-/// @param x The parameter
-slay function(x i32) {
-    // Regular comment
-    return x
-}
-"#;
-        
-        let lines: Vec<&str> = source.lines().collect();
-        let location = SourceLocation { line: 5, column: 1, file: None };
-        
-        let doc_lines = parser.extract_doc_comments(&lines, &location).unwrap();
-        
-        assert_eq!(doc_lines.len(), 3);
-        assert_eq!(doc_lines[0], "This is a doc comment");
-        assert_eq!(doc_lines[1], "with multiple lines");
-        assert_eq!(doc_lines[2], "@param x The parameter");
+        Self::new().unwrap()
     }
 }

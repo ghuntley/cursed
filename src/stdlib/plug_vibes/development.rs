@@ -5,6 +5,28 @@ use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
 use crate::stdlib::plug_vibes::plug::{PlugInfo, HostInfo};
 use crate::stdlib::value::Value;
 
+/// Development configuration
+#[derive(Debug, Clone)]
+pub struct DevelopmentConfig {
+    pub hot_reload: bool,
+    pub debug_symbols: bool,
+    pub reload_watch_dirs: Vec<String>,
+    pub auto_rebuild: bool,
+    pub test_mode: bool,
+}
+
+impl Default for DevelopmentConfig {
+    fn default() -> Self {
+        Self {
+            hot_reload: true,
+            debug_symbols: true,
+            reload_watch_dirs: vec![],
+            auto_rebuild: false,
+            test_mode: false,
+        }
+    }
+}
+
 /// Global plugin exports registry
 static PLUGIN_EXPORTS: OnceLock<Arc<Mutex<HashMap<String, Value>>>> = OnceLock::new();
 
@@ -434,6 +456,28 @@ pub mod testing {
     pub fn simulate_plugin_unload(context: &mut PluginContext) -> PluginResult<()> {
         cleanup_plugin(context)
     }
+}
+
+/// Scaffold a new plugin with the given name and directory
+pub fn scaffold_plugin(name: &str, target_dir: &str) -> PluginResult<PlugInfo> {
+    // Create basic plugin info
+    let info = PlugInfo {
+        name: name.to_string(),
+        version: "0.1.0".to_string(),
+        api: "1.0".to_string(),
+        author: "Plugin Developer".to_string(),
+        description: format!("A CURSED plugin named {}", name),
+        ..Default::default()
+    };
+    
+    // In a real implementation, this would create:
+    // - Plugin directory structure
+    // - Template files (main.cursed, Cargo.toml, etc.)
+    // - Build scripts
+    // - Documentation templates
+    
+    // For now, just return the plugin info
+    Ok(info)
 }
 
 #[cfg(test)]

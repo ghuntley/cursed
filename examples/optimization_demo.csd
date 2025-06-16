@@ -1,109 +1,72 @@
-// CURSED Optimization Demo
-// This example demonstrates various code patterns that benefit from optimization
+// Optimization Enablement System Demo
+// This program demonstrates various optimization scenarios
 
-import "stdlib::math";
-import "stdlib::io";
+import "stdlib::math::basic";
+import "stdlib::collections::vector";
+import "stdlib::io::console";
 
-// Function with loops - benefits from loop optimization
-slay factorial_loop(sus n: i32) -> i32 {
-    sus result = 1;
-    
-    // This loop benefits from loop unrolling and optimization
-    lowkey (sus i = 1; i <= n; i++) {
-        result = result * i;
-        
-        // Yield point for goroutine optimization
-        yolo;
+// Function with potential for inlining optimization
+slay calculate_fibonacci(sus n: i32) -> i32 {
+    lowkey (n <= 1) {
+        return n;
     }
-    
+    return calculate_fibonacci(n - 1) + calculate_fibonacci(n - 2);
+}
+
+// Function with potential for loop optimization
+slay sum_vector(facts vec: vector<i32>) -> i32 {
+    sus sum = 0;
+    lowkey (sus i = 0; i < vec.len(); i++) {
+        sum += vec.get(i);
+    }
+    return sum;
+}
+
+// Function with potential for vectorization
+slay multiply_arrays(facts a: vector<f64>, facts b: vector<f64>) -> vector<f64> {
+    sus result = vector::new<f64>();
+    lowkey (sus i = 0; i < min(a.len(), b.len()); i++) {
+        result.push(a.get(i) * b.get(i));
+    }
     return result;
 }
 
-// Recursive function - benefits from inlining
-slay factorial_recursive(sus n: i32) -> i32 {
-    lowkey (n <= 1) {
-        return 1;
-    } highkey {
-        return n * factorial_recursive(n - 1);
-    }
-}
-
-// Math-intensive function - benefits from vectorization
-slay compute_stats(sus numbers: [f64]) -> (f64, f64, f64) {
-    sus sum = 0.0;
-    sus min_val = numbers[0];
-    sus max_val = numbers[0];
-    
-    // Math operations that can be vectorized
-    lowkey (sus i = 0; i < numbers.length; i++) {
-        sum = sum + numbers[i];
-        
-        lowkey (numbers[i] < min_val) {
-            min_val = numbers[i];
-        }
-        
-        lowkey (numbers[i] > max_val) {
-            max_val = numbers[i];
+// Complex computation for optimization testing
+slay complex_computation() -> f64 {
+    sus result = 0.0;
+    lowkey (sus i = 0; i < 1000; i++) {
+        lowkey (sus j = 0; j < 100; j++) {
+            result += sqrt(i as f64) * pow(j as f64, 2.0);
         }
     }
-    
-    sus avg = sum / numbers.length as f64;
-    return (min_val, max_val, avg);
+    return result;
 }
 
-// Memory allocation patterns - benefits from GC-aware optimization
-slay process_large_data() -> [i32] {
-    sus large_array = [0; 10000];
-    
-    // Pattern that benefits from memory optimization
-    lowkey (sus i = 0; i < 10000; i++) {
-        large_array[i] = i * i;
-    }
-    
-    return large_array;
-}
-
-// Goroutine usage - benefits from goroutine optimization
-slay concurrent_processing() {
-    // Spawn multiple goroutines
-    lowkey (sus i = 0; i < 10; i++) {
-        stan process_item(i);
-    }
-}
-
-slay process_item(sus id: i32) {
-    println(&format!("Processing item {}", id))?;
-    
-    // Simulate some work
-    sus result = factorial_loop(id + 5);
-    println(&format!("Item {} result: {}", id, result))?;
-}
-
-// Main function showcasing different optimization scenarios
-slay main() -> CursedResult<()> {
+slay main() {
     println("🚀 CURSED Optimization Demo")?;
     
-    // Test factorial functions
-    sus n = 10;
-    sus loop_result = factorial_loop(n);
-    sus recursive_result = factorial_recursive(n);
+    // Test function inlining optimization
+    println("Testing Fibonacci calculation (inlining candidate)...")?;
+    facts fib_result = calculate_fibonacci(15);
+    println(&format!("Fibonacci(15) = {}", fib_result))?;
     
-    println(&format!("Factorial of {} (loop): {}", n, loop_result))?;
-    println(&format!("Factorial of {} (recursive): {}", n, recursive_result))?;
+    // Test loop optimization
+    println("Testing vector sum (loop optimization candidate)...")?;
+    sus test_vec = vector::from([1, 2, 3, 4, 5]);
+    facts sum_result = sum_vector(test_vec);
+    println(&format!("Sum = {}", sum_result))?;
     
-    // Test math operations
-    sus test_data = [1.0, 5.0, 3.0, 9.0, 2.0, 7.0, 4.0, 8.0, 6.0];
-    sus (min_val, max_val, avg) = compute_stats(test_data);
+    // Test vectorization optimization
+    println("Testing array multiplication (vectorization candidate)...")?;
+    sus vec_a = vector::from([1.0, 2.0, 3.0, 4.0]);
+    sus vec_b = vector::from([2.0, 3.0, 4.0, 5.0]);
+    facts mult_result = multiply_arrays(vec_a, vec_b);
+    println(&format!("Multiplication result length: {}", mult_result.len()))?;
     
-    println(&format!("Stats - Min: {}, Max: {}, Avg: {}", min_val, max_val, avg))?;
+    // Test complex computation for aggressive optimization
+    println("Testing complex computation (aggressive optimization candidate)...")?;
+    facts complex_result = complex_computation();
+    println(&format!("Complex computation result: {:.2}", complex_result))?;
     
-    // Test memory operations
-    sus processed_data = process_large_data();
-    println(&format!("Processed {} elements", processed_data.length))?;
-    
-    // Test concurrent processing
-    concurrent_processing();
-    
-    println("✅ Demo completed successfully!")?;
-    return Ok(());
+    println("✅ Optimization demo completed!")?;
 }

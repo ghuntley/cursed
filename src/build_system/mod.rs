@@ -67,7 +67,7 @@ pub use dependency_optimizer::{
     DependencyOptimizer, DependencyOptimizerConfig, AnalysisResult, OptimizationStats
 };
 pub use advanced_cache::{
-    AdvancedCache, AdvancedCacheConfig, CacheEntry, CacheData, CacheStatistics
+    AdvancedCache, AdvancedCacheConfig, CacheEntry as AdvancedCacheEntry, CacheData, CacheStatistics
 };
 pub use distributed_compilation::{
     DistributedCompilationSystem, DistributedCompilationConfig, CompilationTask, CompilationResult
@@ -79,13 +79,13 @@ pub use memory_optimizer::{
     MemoryOptimizer, MemoryOptimizerConfig, MemoryAwareTask, MemoryStats
 };
 pub use performance_tracker::{
-    BuildPerformanceTracker, PerformanceConfig, BuildPerformanceReport, PerformanceStatistics
+    BuildPerformanceTracker, PerformanceConfig, BuildPerformanceReport, PerformanceStatistics as BuildPerformanceStatistics
 };
 
 // Re-export new advanced features
 pub use parallel_compilation::{
     ParallelCompiler, ParallelCompilationConfig, ParallelCompilationResult,
-    CompilationTask, TaskPriority, SchedulingStrategy, WorkerStatistics
+    CompilationTask as ParallelCompilationTask, TaskPriority, SchedulingStrategy, WorkerStatistics
 };
 pub use incremental_optimization::{
     IncrementalOptimizer, IncrementalConfig, IncrementalBuildPlan,

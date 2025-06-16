@@ -1,0 +1,97 @@
+/* Monokai theme for CURSED syntax highlighting */
+
+.code-block {
+    background-color: #272822;
+    color: #f8f8f2;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.line-number {
+    color: #7e7e7e;
+    padding-right: 1rem;
+    user-select: none;
+}
+
+.highlighted-line {
+    background-color: #3e3d32;
+    display: block;
+    padding: 0 0.5rem;
+    margin: 0 -0.5rem;
+}
+
+/* CURSED syntax highlighting */
+.keyword {
+    color: #f92672;
+    font-weight: bold;
+}
+
+.string {
+    color: #e6db74;
+}
+
+.comment {
+    color: #75715e;
+    font-style: italic;
+}
+
+.number {
+    color: #ae81ff;
+}
+
+.identifier {
+    color: #a6e22e;
+}
+
+.operator {
+    color: #f92672;
+}
+
+.function {
+    color: #a6e22e;
+}
+
+.type {
+    color: #66d9ef;
+}
+
+.variable {
+    color: #fd971f;
+}
+
+.constant {
+    color: #ae81ff;
+    font-weight: bold;
+}
+
+/* Interactive features */
+.fold-toggle {
+    color: #75715e;
+    cursor: pointer;
+    user-select: none;
+    font-family: monospace;
+}
+
+.fold-toggle:hover {
+    color: #f8f8f2;
+}
+
+.copy-button {
+    background: #49483e;
+    border: 1px solid #75715e;
+    color: #f8f8f2;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    float: right;
+    margin-top: -0.5rem;
+    margin-right: 0.5rem;
+}
+
+.copy-button:hover {
+    background: #66d9ef;
+    color: #272822;
+}

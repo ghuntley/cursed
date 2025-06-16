@@ -12,6 +12,8 @@ use tracing::{info, debug, warn, instrument};
 
 use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use crate::error::{Error, Result};
+use crate::optimization::baseline_storage::{BaselineStorage, BaselineStorageConfig, BaselineType};
+use crate::optimization::regression_analyzer::{RegressionAnalyzer, RegressionAnalysisConfig, DetailedRegressionAnalysis};
 
 /// Benchmark configuration for performance testing
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,6 +199,10 @@ pub struct BenchmarkRunner {
     work_dir: PathBuf,
     /// Enable verbose output
     verbose: bool,
+    /// Baseline storage manager
+    baseline_storage: Option<BaselineStorage>,
+    /// Regression analyzer
+    regression_analyzer: Option<RegressionAnalyzer>,
 }
 
 impl BenchmarkRunner {
@@ -206,7 +212,21 @@ impl BenchmarkRunner {
             compiler_path,
             work_dir,
             verbose: false,
+            baseline_storage: None,
+            regression_analyzer: None,
         }
+    }
+
+    /// Create a new benchmark runner with baseline storage
+    pub fn with_baseline_storage(mut self, storage_config: BaselineStorageConfig) -> Result<Self> {
+        let baseline_storage = BaselineStorage::new(storage_config)?;
+        self.baseline_storage = Some(baseline_storage);
+        
+        // Initialize regression analyzer if we have baseline storage
+        let regression_config = RegressionAnalysisConfig::default();
+        self.regression_analyzer = Some(RegressionAnalyzer::new(regression_config));
+        
+        Ok(self)
     }
 
     /// Enable verbose output
@@ -218,7 +238,7 @@ impl BenchmarkRunner {
     /// Run a complete benchmark suite
     #[instrument(skip(self, configs))]
     pub async fn run_benchmark_suite(
-        &self,
+        &mut self,
         suite_name: &str,
         configs: &[BenchmarkConfig],
     ) -> Result<BenchmarkSuiteResult> {
@@ -442,6 +462,40 @@ impl BenchmarkRunner {
 
     /// Analyze performance regressions
     async fn analyze_regressions(
+        &mut self,
+        results: &[BenchmarkResult],
+        configs: &[BenchmarkConfig],
+    ) -> Result<RegressionAnalysis> {
+        // If we have the new regression analyzer, use it for comprehensive analysis
+        if let (Some(ref baseline_storage), Some(ref mut regression_analyzer)) = 
+            (&self.baseline_storage, &mut self.regression_analyzer) {
+            
+            // Find the best baseline for comparison
+            let baseline = baseline_storage.get_default_baseline()
+                .or_else(|| {
+                    // Find the most recent baseline that has overlapping benchmarks
+                    baseline_storage.list_baselines()
+                        .into_iter()
+                        .filter(|b| results.iter().any(|r| b.benchmarks.contains_key(&r.name)))
+                        .max_by_key(|b| b.created_at)
+                });
+
+            let detailed_analysis = regression_analyzer.analyze_regressions(results, baseline)?;
+            
+            // Convert detailed analysis to the expected format
+            Ok(RegressionAnalysis {
+                has_regressions: detailed_analysis.has_critical_regressions || !detailed_analysis.regressions.is_empty(),
+                regressions: detailed_analysis.regressions,
+                baseline_comparison: detailed_analysis.baseline_comparison,
+            })
+        } else {
+            // Fallback to legacy analysis
+            self.analyze_regressions_legacy(results, configs).await
+        }
+    }
+
+    /// Legacy regression analysis (fallback when baseline storage is not available)
+    async fn analyze_regressions_legacy(
         &self,
         results: &[BenchmarkResult],
         configs: &[BenchmarkConfig],
@@ -453,8 +507,8 @@ impl BenchmarkRunner {
                 continue;
             }
 
-            // Check compilation time regression
-            let baseline_compile_time = Duration::from_secs(1); // TODO: Load from baseline
+            // Check compilation time regression with conservative baseline estimate
+            let baseline_compile_time = Duration::from_secs(2); // Conservative baseline estimate
             let compile_time_increase = (result.compile_time.as_secs_f64() / baseline_compile_time.as_secs_f64() - 1.0) * 100.0;
             
             if compile_time_increase > config.performance_thresholds.max_compile_time_increase {
@@ -471,20 +525,72 @@ impl BenchmarkRunner {
                     actual_value: compile_time_increase,
                     expected_value: config.performance_thresholds.max_compile_time_increase,
                     description: format!(
-                        "Compilation time increased by {:.1}%, exceeding threshold of {:.1}%",
+                        "Compilation time increased by {:.1}% (estimated baseline), exceeding threshold of {:.1}%",
                         compile_time_increase,
                         config.performance_thresholds.max_compile_time_increase
                     ),
                 });
             }
 
-            // TODO: Add more regression checks for binary size, memory usage, etc.
+            // Basic binary size regression check
+            if result.binary_size > 0 {
+                let estimated_baseline_size = 1000; // Conservative estimate
+                let size_increase = ((result.binary_size as f64 - estimated_baseline_size as f64) / estimated_baseline_size as f64) * 100.0;
+                
+                if size_increase > config.performance_thresholds.max_size_increase {
+                    regressions.push(PerformanceRegression {
+                        benchmark_name: format!("{}_size", result.name),
+                        regression_type: RegressionType::BinarySize,
+                        severity: if size_increase > 200.0 {
+                            RegressionSeverity::Critical
+                        } else if size_increase > 100.0 {
+                            RegressionSeverity::Major
+                        } else {
+                            RegressionSeverity::Minor
+                        },
+                        actual_value: size_increase,
+                        expected_value: config.performance_thresholds.max_size_increase,
+                        description: format!(
+                            "Binary size increased by {:.1}% (estimated baseline), exceeding threshold of {:.1}%",
+                            size_increase,
+                            config.performance_thresholds.max_size_increase
+                        ),
+                    });
+                }
+            }
+
+            // Basic memory usage regression check
+            if result.peak_memory_usage > 0 {
+                let estimated_baseline_memory = 5000; // Conservative estimate in bytes
+                let memory_increase = ((result.peak_memory_usage as f64 - estimated_baseline_memory as f64) / estimated_baseline_memory as f64) * 100.0;
+                
+                if memory_increase > config.performance_thresholds.max_memory_increase {
+                    regressions.push(PerformanceRegression {
+                        benchmark_name: format!("{}_memory", result.name),
+                        regression_type: RegressionType::MemoryUsage,
+                        severity: if memory_increase > 150.0 {
+                            RegressionSeverity::Critical
+                        } else if memory_increase > 100.0 {
+                            RegressionSeverity::Major
+                        } else {
+                            RegressionSeverity::Minor
+                        },
+                        actual_value: memory_increase,
+                        expected_value: config.performance_thresholds.max_memory_increase,
+                        description: format!(
+                            "Memory usage increased by {:.1}% (estimated baseline), exceeding threshold of {:.1}%",
+                            memory_increase,
+                            config.performance_thresholds.max_memory_increase
+                        ),
+                    });
+                }
+            }
         }
 
         Ok(RegressionAnalysis {
             has_regressions: !regressions.is_empty(),
             regressions,
-            baseline_comparison: None, // TODO: Implement baseline comparison
+            baseline_comparison: None,
         })
     }
 
@@ -761,6 +867,79 @@ impl BenchmarkRunner {
         }
         
         report
+    }
+
+    /// Create a new baseline from benchmark results
+    pub fn create_baseline(
+        &mut self,
+        name: String,
+        baseline_type: BaselineType,
+        suite_result: &BenchmarkSuiteResult,
+        git_commit: Option<String>,
+        version: Option<String>,
+    ) -> Result<Option<String>> {
+        if let Some(ref mut storage) = self.baseline_storage {
+            let baseline_id = storage.create_baseline(
+                name,
+                baseline_type,
+                suite_result,
+                git_commit,
+                version,
+            )?;
+            Ok(Some(baseline_id))
+        } else {
+            warn!("Baseline storage not available - cannot create baseline");
+            Ok(None)
+        }
+    }
+
+    /// Load a specific baseline
+    pub fn load_baseline(&mut self, baseline_id: &str) -> Result<bool> {
+        if let Some(ref mut storage) = self.baseline_storage {
+            let baseline = storage.load_baseline(baseline_id)?;
+            Ok(baseline.is_some())
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Set the default baseline for comparisons
+    pub fn set_default_baseline(&mut self, baseline_id: String) -> Result<()> {
+        if let Some(ref mut storage) = self.baseline_storage {
+            storage.set_default_baseline(baseline_id)
+        } else {
+            Err(Error::Other("Baseline storage not available".to_string()))
+        }
+    }
+
+    /// List all available baselines
+    pub fn list_baselines(&self) -> Vec<String> {
+        if let Some(ref storage) = self.baseline_storage {
+            storage.list_baselines()
+                .into_iter()
+                .map(|b| b.baseline_id.clone())
+                .collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// Export baselines to a file
+    pub fn export_baselines(&self, export_path: &Path, baseline_ids: Option<Vec<String>>) -> Result<()> {
+        if let Some(ref storage) = self.baseline_storage {
+            storage.export_baselines(export_path, baseline_ids)
+        } else {
+            Err(Error::Other("Baseline storage not available".to_string()))
+        }
+    }
+
+    /// Import baselines from a file
+    pub fn import_baselines(&mut self, import_path: &Path, overwrite_existing: bool) -> Result<usize> {
+        if let Some(ref mut storage) = self.baseline_storage {
+            storage.import_baselines(import_path, overwrite_existing)
+        } else {
+            Err(Error::Other("Baseline storage not available".to_string()))
+        }
     }
 }
 

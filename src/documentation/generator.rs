@@ -2377,8 +2377,457 @@ impl DocumentationGenerator {
         }
     }
 
-    /// Extract associated methods for a type
+    /// Extract associated methods for a type using enhanced AST-based parsing
     fn extract_associated_methods(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
+        let mut methods = Vec::new();
+        
+        // Use the enhanced AST extractor for better parsing
+        if let Ok(ast_extractor) = crate::documentation::extractors::AstExtractor::new(
+            crate::documentation::extractors::ExtractionConfig {
+                include_private: self.generator_config.include_private,
+                include_source: self.generator_config.include_source,
+                include_generics: true,
+                include_relationships: true,
+                max_type_depth: self.generator_config.max_type_depth,
+                include_implementations: true,
+                include_error_types: true,
+            }
+        ) {
+            // Parse the source code to get method information
+            if let Ok(parsed_methods) = self.parse_impl_methods_from_source(type_name, source_code) {
+                for method_info in parsed_methods {
+                    methods.push(method_info);
+                }
+            }
+        }
+        
+        // Fallback to line-based parsing if AST parsing fails
+        if methods.is_empty() {
+            methods = self.extract_methods_line_based(type_name, source_code)?;
+        }
+        
+        Ok(methods)
+    }
+
+    /// Parse implementation methods from source code using enhanced parsing
+    fn parse_impl_methods_from_source(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
+        let mut methods = Vec::new();
+        let lines: Vec<&str> = source_code.lines().collect();
+        
+        // Look for impl blocks for this type
+        for (idx, line) in lines.iter().enumerate() {
+            if line.trim().starts_with("impl") && line.contains(type_name) {
+                // Found an impl block, extract methods with enhanced parsing
+                let impl_methods = self.parse_impl_block_methods(&lines, idx, type_name)?;
+                methods.extend(impl_methods);
+            }
+        }
+        
+        Ok(methods)
+    }
+
+    /// Parse methods within an impl block with full AST-based parameter and return type extraction
+    fn parse_impl_block_methods(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<Vec<FunctionDoc>, Error> {
+        let mut methods = Vec::new();
+        let mut brace_count = 0;
+        let mut in_impl = false;
+        let mut current_method_start = None;
+        
+        for (relative_idx, line) in lines[start_idx..].iter().enumerate() {
+            let absolute_idx = start_idx + relative_idx;
+            
+            // Track brace nesting to stay within impl block
+            for ch in line.chars() {
+                match ch {
+                    '{' => {
+                        brace_count += 1;
+                        in_impl = true;
+                    }
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 && in_impl {
+                            // End of impl block
+                            return Ok(methods);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            
+            // Look for function definitions within the impl block
+            if in_impl && (line.trim().starts_with("fn ") || line.trim().starts_with("async fn ") || 
+                          line.trim().starts_with("pub fn ") || line.trim().starts_with("pub async fn ")) {
+                current_method_start = Some(absolute_idx);
+                
+                // Parse the complete method signature
+                if let Ok(method_doc) = self.parse_method_signature(lines, absolute_idx, type_name) {
+                    methods.push(method_doc);
+                }
+            }
+        }
+        
+        Ok(methods)
+    }
+
+    /// Parse a complete method signature including parameters and return type
+    fn parse_method_signature(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<FunctionDoc, Error> {
+        let mut signature_lines = Vec::new();
+        let mut paren_count = 0;
+        let mut brace_count = 0;
+        let mut found_opening_brace = false;
+        
+        // Collect the complete method signature (may span multiple lines)
+        for line in &lines[start_idx..] {
+            signature_lines.push(line.to_string());
+            
+            for ch in line.chars() {
+                match ch {
+                    '(' => paren_count += 1,
+                    ')' => paren_count -= 1,
+                    '{' => {
+                        brace_count += 1;
+                        found_opening_brace = true;
+                    }
+                    _ => {}
+                }
+            }
+            
+            // Stop when we've closed all parentheses and found the opening brace
+            if paren_count == 0 && found_opening_brace {
+                break;
+            }
+            
+            // Safety check to avoid infinite loops
+            if signature_lines.len() > 20 {
+                break;
+            }
+        }
+        
+        let full_signature = signature_lines.join(" ");
+        
+        // Extract method components using enhanced parsing
+        let method_info = self.extract_method_components(&full_signature, start_idx, type_name)?;
+        
+        Ok(method_info)
+    }
+
+    /// Extract method components (name, parameters, return type) from signature
+    fn extract_method_components(&self, signature: &str, line_number: usize, type_name: &str) -> Result<FunctionDoc, Error> {
+        // Parse method visibility and modifiers
+        let is_async = signature.contains("async");
+        let is_public = signature.contains("pub");
+        
+        // Extract method name
+        let method_name = self.extract_method_name(signature)?;
+        
+        // Extract parameters using enhanced parsing
+        let parameters = self.extract_method_parameters(signature)?;
+        
+        // Extract return type
+        let return_type = self.extract_method_return_type(signature)?;
+        
+        // Extract generic parameters
+        let generic_params = self.extract_method_generics(signature)?;
+        
+        // Extract documentation comment if available
+        let description = Some(format!("Method of {}", type_name));
+        
+        Ok(FunctionDoc {
+            name: method_name,
+            description,
+            parameters,
+            return_type,
+            examples: Vec::new(),
+            location: SourceLocation {
+                file: "".to_string(),
+                line: line_number + 1,
+                column: 1,
+            },
+            source_code: if self.generator_config.include_source {
+                Some(signature.to_string())
+            } else {
+                None
+            },
+            visibility: if is_public { "public" } else { "private" }.to_string(),
+            is_async,
+            generic_params,
+        })
+    }
+
+    /// Extract method name from signature
+    fn extract_method_name(&self, signature: &str) -> Result<String, Error> {
+        // Handle various function declaration patterns
+        let patterns = [
+            "pub async fn ",
+            "async fn ",
+            "pub fn ",
+            "fn ",
+        ];
+        
+        for pattern in &patterns {
+            if let Some(fn_start) = signature.find(pattern) {
+                let after_fn = &signature[fn_start + pattern.len()..];
+                
+                // Find the method name (everything before < or ()
+                let end_pos = after_fn.find('<')
+                    .or_else(|| after_fn.find('('))
+                    .unwrap_or(after_fn.len());
+                    
+                let method_name = after_fn[..end_pos].trim().to_string();
+                if !method_name.is_empty() {
+                    return Ok(method_name);
+                }
+            }
+        }
+        
+        Err(Error::ParseError("Failed to extract method name".to_string()))
+    }
+
+    /// Extract method parameters with enhanced type parsing
+    fn extract_method_parameters(&self, signature: &str) -> Result<Vec<ParameterDoc>, Error> {
+        let mut parameters = Vec::new();
+        
+        // Find the parameter list between parentheses
+        if let Some(params_start) = signature.find('(') {
+            if let Some(params_end) = signature.rfind(')') {
+                let params_str = &signature[params_start + 1..params_end];
+                
+                if !params_str.trim().is_empty() {
+                    // Split parameters by commas, handling nested generics
+                    let param_parts = self.split_parameters_smart(params_str)?;
+                    
+                    for param_part in param_parts {
+                        if let Ok(param_doc) = self.parse_parameter(param_part.trim()) {
+                            parameters.push(param_doc);
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(parameters)
+    }
+
+    /// Smart parameter splitting that handles nested generics and complex types
+    fn split_parameters_smart(&self, params_str: &str) -> Result<Vec<String>, Error> {
+        let mut parameters = Vec::new();
+        let mut current_param = String::new();
+        let mut angle_bracket_depth = 0;
+        let mut paren_depth = 0;
+        let mut in_string = false;
+        
+        for ch in params_str.chars() {
+            match ch {
+                '<' if !in_string => angle_bracket_depth += 1,
+                '>' if !in_string => angle_bracket_depth -= 1,
+                '(' if !in_string => paren_depth += 1,
+                ')' if !in_string => paren_depth -= 1,
+                '"' => in_string = !in_string,
+                ',' if !in_string && angle_bracket_depth == 0 && paren_depth == 0 => {
+                    if !current_param.trim().is_empty() {
+                        parameters.push(current_param.trim().to_string());
+                    }
+                    current_param.clear();
+                    continue;
+                }
+                _ => {}
+            }
+            current_param.push(ch);
+        }
+        
+        // Add the last parameter
+        if !current_param.trim().is_empty() {
+            parameters.push(current_param.trim().to_string());
+        }
+        
+        Ok(parameters)
+    }
+
+    /// Parse individual parameter with type and default value
+    fn parse_parameter(&self, param_str: &str) -> Result<ParameterDoc, Error> {
+        // Handle different parameter patterns:
+        // name: Type
+        // name: Type = default
+        // mut name: Type
+        // &self, &mut self, self
+        
+        // Handle self parameters
+        if param_str == "self" || param_str == "&self" || param_str == "&mut self" {
+            return Ok(ParameterDoc {
+                name: "self".to_string(),
+                param_type: "Self".to_string(),
+                description: Some("The instance being operated on".to_string()),
+                is_optional: false,
+                default_value: None,
+            });
+        }
+        
+        // Split by = to check for default values
+        let (param_part, default_value) = if let Some(eq_pos) = param_str.find('=') {
+            let param = param_str[..eq_pos].trim();
+            let default = param_str[eq_pos + 1..].trim();
+            (param, Some(default.to_string()))
+        } else {
+            (param_str, None)
+        };
+        
+        // Split by : to separate name and type
+        if let Some(colon_pos) = param_part.find(':') {
+            let name_part = param_part[..colon_pos].trim();
+            let type_part = param_part[colon_pos + 1..].trim();
+            
+            // Handle mut keyword
+            let param_name = if name_part.starts_with("mut ") {
+                name_part[4..].trim().to_string()
+            } else {
+                name_part.to_string()
+            };
+            
+            Ok(ParameterDoc {
+                name: param_name,
+                param_type: type_part.to_string(),
+                description: None, // Could be enhanced with doc comment parsing
+                is_optional: default_value.is_some(),
+                default_value,
+            })
+        } else {
+            // Parameter without explicit type (rare but possible)
+            Ok(ParameterDoc {
+                name: param_str.to_string(),
+                param_type: "Any".to_string(),
+                description: None,
+                is_optional: false,
+                default_value: None,
+            })
+        }
+    }
+
+    /// Extract return type from method signature
+    fn extract_method_return_type(&self, signature: &str) -> Result<Option<TypeDoc>, Error> {
+        // Look for -> return_type pattern
+        if let Some(arrow_pos) = signature.find("->") {
+            let after_arrow = &signature[arrow_pos + 2..];
+            
+            // Find the return type (everything before { or where)
+            let end_pos = after_arrow.find('{')
+                .or_else(|| after_arrow.find("where"))
+                .unwrap_or(after_arrow.len());
+                
+            let return_type_str = after_arrow[..end_pos].trim();
+            
+            if !return_type_str.is_empty() {
+                return Ok(Some(TypeDoc {
+                    name: return_type_str.to_string(),
+                    description: None,
+                    type_def: "return".to_string(),
+                    fields: Vec::new(),
+                    methods: Vec::new(),
+                    location: SourceLocation {
+                        file: "".to_string(),
+                        line: 1,
+                        column: 1,
+                    },
+                    source_code: None,
+                    visibility: "public".to_string(),
+                    generic_params: self.extract_type_generics(return_type_str)?,
+                }));
+            }
+        }
+        
+        Ok(None)
+    }
+
+    /// Extract generic parameters from method signature
+    fn extract_method_generics(&self, signature: &str) -> Result<Vec<String>, Error> {
+        let mut generics = Vec::new();
+        
+        // Look for generic parameters after function name
+        if let Some(fn_pos) = signature.find("fn ") {
+            let after_fn = &signature[fn_pos + 3..];
+            if let Some(name_end) = after_fn.find('(') {
+                let name_and_generics = &after_fn[..name_end];
+                
+                if let Some(generic_start) = name_and_generics.find('<') {
+                    if let Some(generic_end) = name_and_generics.find('>') {
+                        let generic_str = &name_and_generics[generic_start + 1..generic_end];
+                        
+                        // Split generic parameters by comma
+                        for generic in generic_str.split(',') {
+                            let generic_name = generic.trim();
+                            if !generic_name.is_empty() {
+                                // Extract just the generic name (before any constraints)
+                                let name = generic_name.split(':').next()
+                                    .unwrap_or(generic_name)
+                                    .trim()
+                                    .to_string();
+                                generics.push(name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(generics)
+    }
+
+    /// Extract generic parameters from type string
+    fn extract_type_generics(&self, type_str: &str) -> Result<Vec<String>, Error> {
+        let mut generics = Vec::new();
+        
+        if let Some(generic_start) = type_str.find('<') {
+            if let Some(generic_end) = type_str.rfind('>') {
+                let generic_str = &type_str[generic_start + 1..generic_end];
+                
+                // Split generic parameters, handling nested generics
+                let generic_parts = self.split_generics_smart(generic_str)?;
+                for generic in generic_parts {
+                    if !generic.trim().is_empty() {
+                        generics.push(generic.trim().to_string());
+                    }
+                }
+            }
+        }
+        
+        Ok(generics)
+    }
+
+    /// Smart generic splitting that handles nested generics
+    fn split_generics_smart(&self, generics_str: &str) -> Result<Vec<String>, Error> {
+        let mut generics = Vec::new();
+        let mut current_generic = String::new();
+        let mut angle_bracket_depth = 0;
+        
+        for ch in generics_str.chars() {
+            match ch {
+                '<' => {
+                    angle_bracket_depth += 1;
+                    current_generic.push(ch);
+                }
+                '>' => {
+                    angle_bracket_depth -= 1;
+                    current_generic.push(ch);
+                }
+                ',' if angle_bracket_depth == 0 => {
+                    if !current_generic.trim().is_empty() {
+                        generics.push(current_generic.trim().to_string());
+                    }
+                    current_generic.clear();
+                }
+                _ => current_generic.push(ch),
+            }
+        }
+        
+        // Add the last generic
+        if !current_generic.trim().is_empty() {
+            generics.push(current_generic.trim().to_string());
+        }
+        
+        Ok(generics)
+    }
+
+    /// Fallback line-based method extraction (legacy support)
+    fn extract_methods_line_based(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
         let mut methods = Vec::new();
         let lines: Vec<&str> = source_code.lines().collect();
         
@@ -2389,7 +2838,7 @@ impl DocumentationGenerator {
                 let mut brace_count = 0;
                 let mut in_impl = false;
                 
-                for impl_line in &lines[idx..] {
+                for (line_idx, impl_line) in lines[idx..].iter().enumerate() {
                     for ch in impl_line.chars() {
                         match ch {
                             '{' => {
@@ -2415,16 +2864,16 @@ impl DocumentationGenerator {
                             if let Some(paren_pos) = after_fn.find('(') {
                                 let method_name = after_fn[..paren_pos].trim().to_string();
                                 
-                                // Create a basic method documentation
+                                // Create a basic method documentation with minimal parsing
                                 methods.push(FunctionDoc {
                                     name: method_name,
                                     description: Some(format!("Method of {}", type_name)),
-                                    parameters: Vec::new(), // TODO: Parse method parameters
-                                    return_type: None, // TODO: Parse return type
+                                    parameters: Vec::new(), // Basic fallback
+                                    return_type: None, // Basic fallback
                                     examples: Vec::new(),
                                     location: SourceLocation {
                                         file: "".to_string(),
-                                        line: idx + 1,
+                                        line: idx + line_idx + 1,
                                         column: 1,
                                     },
                                     source_code: Some(impl_line.to_string()),

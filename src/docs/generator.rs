@@ -12,6 +12,9 @@ use std::path::{Path, PathBuf};
 use std::fs;
 use serde::{Deserialize, Serialize};
 
+// For enhanced cross-reference detection
+extern crate regex;
+
 /// Configuration for documentation generation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocGeneratorConfig {
@@ -202,7 +205,7 @@ impl DocumentationGenerator {
         self.cross_references = refs;
     }
 
-    /// Find references in a documentation item
+    /// Find references in a documentation item using enhanced semantic analysis
     fn find_references_in_item(
         &self,
         item: &DocumentationItem,
@@ -210,33 +213,221 @@ impl DocumentationGenerator {
     ) -> Vec<CrossReference> {
         let mut references = Vec::new();
         
-        // Search in description
-        for word in item.description.split_whitespace() {
-            let clean_word = word.trim_matches(&['.', ',', '(', ')', '[', ']', '{', '}'][..]);
-            if symbols.contains_key(clean_word) {
-                references.push(CrossReference {
-                    target: clean_word.to_string(),
-                    context: format!("Referenced in {}", item.name),
-                    location: item.location.clone(),
-                });
+        // Enhanced text analysis for references
+        references.extend(self.find_references_in_text(&item.description, &item.name, &item.location, symbols, "description"));
+        references.extend(self.find_references_in_text(&item.summary, &item.name, &item.location, symbols, "summary"));
+        
+        // Search in type signatures with better parsing
+        if let Some(ref signature) = item.signature {
+            references.extend(self.find_references_in_signature(signature, &item.name, &item.location, symbols));
+        }
+        
+        // Search in examples
+        for (i, example) in item.examples.iter().enumerate() {
+            references.extend(self.find_references_in_text(&example.code, &item.name, &item.location, symbols, &format!("example_{}", i)));
+        }
+        
+        // Search in parameter types
+        for param in &item.parameters {
+            if let Some(ref type_name) = param.type_name {
+                references.extend(self.find_references_in_type(type_name, &item.name, &item.location, symbols));
             }
         }
         
-        // Search in type signatures
-        if let Some(ref signature) = item.signature {
-            for word in signature.split_whitespace() {
-                let clean_word = word.trim_matches(&['.', ',', '(', ')', '[', ']', '{', '}'][..]);
-                if symbols.contains_key(clean_word) {
+        // Search in return type
+        if let Some(ref return_type) = item.return_type {
+            references.extend(self.find_references_in_type(return_type, &item.name, &item.location, symbols));
+        }
+        
+        // Search in documentation tags
+        for (tag_name, tag_values) in &item.tags {
+            for tag_value in tag_values {
+                references.extend(self.find_references_in_text(tag_value, &item.name, &item.location, symbols, &format!("tag_{}", tag_name)));
+            }
+        }
+        
+        references
+    }
+
+    /// Find references in text with context-aware parsing
+    fn find_references_in_text(
+        &self,
+        text: &str, 
+        source_name: &str, 
+        location: &SourceLocation, 
+        symbols: &HashMap<String, DocumentationItem>,
+        context_type: &str
+    ) -> Vec<CrossReference> {
+        let mut references = Vec::new();
+        
+        // Split by various delimiters while preserving word boundaries
+        let words: Vec<&str> = text
+            .split(&[' ', '\t', '\n', '.', ',', '(', ')', '[', ']', '{', '}', '<', '>', ':', ';', '!', '?'])
+            .filter(|w| !w.is_empty())
+            .collect();
+        
+        for word in words {
+            let clean_word = word.trim();
+            
+            // Skip very short words, common words, and keywords
+            if clean_word.len() < 2 || self.is_common_word(clean_word) || self.is_cursed_keyword(clean_word) {
+                continue;
+            }
+            
+            // Check for exact matches first
+            if symbols.contains_key(clean_word) {
+                references.push(CrossReference {
+                    target: clean_word.to_string(),
+                    context: format!("Referenced in {} {}", source_name, context_type),
+                    location: location.clone(),
+                });
+            }
+            
+            // Check for partial matches (e.g., for generic types like Vec<String>)
+            for symbol_name in symbols.keys() {
+                if clean_word.contains(symbol_name) && symbol_name.len() > 3 {
                     references.push(CrossReference {
-                        target: clean_word.to_string(),
-                        context: format!("Type reference in {}", item.name),
-                        location: item.location.clone(),
+                        target: symbol_name.clone(),
+                        context: format!("Type reference in {} {}", source_name, context_type),
+                        location: location.clone(),
                     });
                 }
             }
         }
         
         references
+    }
+
+    /// Find references in type signatures with better parsing
+    fn find_references_in_signature(
+        &self,
+        signature: &str,
+        source_name: &str,
+        location: &SourceLocation,
+        symbols: &HashMap<String, DocumentationItem>
+    ) -> Vec<CrossReference> {
+        let mut references = Vec::new();
+        
+        // Parse common type patterns
+        let type_patterns = vec![
+            r":\s*(\w+)",           // parameter types
+            r"->\s*(\w+)",          // return types  
+            r"<(\w+)>",             // generic types
+            r"Vec<(\w+)>",          // vector types
+            r"Option<(\w+)>",       // option types
+            r"Result<(\w+),\s*(\w+)>", // result types
+        ];
+        
+        for pattern in type_patterns {
+            if let Ok(regex) = regex::Regex::new(pattern) {
+                for captures in regex.captures_iter(signature) {
+                    for i in 1..captures.len() {
+                        if let Some(type_name) = captures.get(i) {
+                            let type_str = type_name.as_str();
+                            if symbols.contains_key(type_str) {
+                                references.push(CrossReference {
+                                    target: type_str.to_string(),
+                                    context: format!("Type signature in {}", source_name),
+                                    location: location.clone(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback to simple word-based parsing
+        if references.is_empty() {
+            references.extend(self.find_references_in_text(signature, source_name, location, symbols, "signature"));
+        }
+        
+        references
+    }
+
+    /// Find references in type names
+    fn find_references_in_type(
+        &self,
+        type_name: &str,
+        source_name: &str,
+        location: &SourceLocation,
+        symbols: &HashMap<String, DocumentationItem>
+    ) -> Vec<CrossReference> {
+        let mut references = Vec::new();
+        
+        // Extract base type from complex types
+        let base_types = self.extract_base_types(type_name);
+        
+        for base_type in base_types {
+            if symbols.contains_key(&base_type) {
+                references.push(CrossReference {
+                    target: base_type,
+                    context: format!("Type declaration in {}", source_name),
+                    location: location.clone(),
+                });
+            }
+        }
+        
+        references
+    }
+
+    /// Extract base types from complex type expressions
+    fn extract_base_types(&self, type_expr: &str) -> Vec<String> {
+        let mut types = Vec::new();
+        
+        // Remove common type decorators
+        let clean_expr = type_expr
+            .replace("Vec<", "")
+            .replace("Option<", "")
+            .replace("Result<", "")
+            .replace("&", "")
+            .replace("mut ", "")
+            .replace(">", "")
+            .replace(",", " ");
+        
+        // Split by whitespace and collect valid type names
+        for word in clean_expr.split_whitespace() {
+            let trimmed = word.trim();
+            if !trimmed.is_empty() && !self.is_primitive_type(trimmed) {
+                types.push(trimmed.to_string());
+            }
+        }
+        
+        types
+    }
+
+    /// Check if a word is a common English word that shouldn't be linked
+    fn is_common_word(&self, word: &str) -> bool {
+        matches!(word.to_lowercase().as_str(),
+            "a" | "an" | "and" | "or" | "but" | "in" | "on" | "at" | "to" | "for" | "of" | "with" | 
+            "by" | "from" | "up" | "about" | "into" | "through" | "during" | "before" | "after" |
+            "above" | "below" | "between" | "among" | "through" | "during" | "if" | "unless" |
+            "while" | "when" | "where" | "how" | "why" | "what" | "which" | "who" | "whom" |
+            "this" | "that" | "these" | "those" | "the" | "is" | "are" | "was" | "were" | "be" |
+            "been" | "being" | "have" | "has" | "had" | "do" | "does" | "did" | "will" | "would" |
+            "could" | "should" | "may" | "might" | "must" | "can" | "cannot" | "not" | "no"
+        )
+    }
+
+    /// Check if a word is a CURSED keyword
+    fn is_cursed_keyword(&self, word: &str) -> bool {
+        matches!(word.to_lowercase().as_str(),
+            "slay" | "yolo" | "sus" | "facts" | "periodt" | "lowkey" | "highkey" | "bestie" | 
+            "flex" | "cap" | "nocap" | "fr" | "ong" | "bet" | "say" | "less" | "stan" | "vibe" |
+            "yeet" | "squad" | "collab" | "mood" | "basic" | "salty" | "tea" | "spill" | "ghost" |
+            "clap" | "back" | "left" | "right" | "up" | "down" | "fire" | "lit" | "fam" | "sis" |
+            "bro" | "bestie" | "queen" | "king" | "icon" | "legend" | "main" | "character"
+        )
+    }
+
+    /// Check if a type is a primitive type
+    fn is_primitive_type(&self, type_name: &str) -> bool {
+        matches!(type_name,
+            "i8" | "i16" | "i32" | "i64" | "i128" | "isize" |
+            "u8" | "u16" | "u32" | "u64" | "u128" | "usize" |
+            "f32" | "f64" | "bool" | "char" | "str" | "String" |
+            "int" | "float" | "string" | "boolean" | "void" | "()"
+        )
     }
 
     /// Build search index for generated documentation
@@ -518,9 +709,14 @@ impl DocumentationExtractor {
         // Extract documentation items
         let mut items = Vec::new();
         for statement in &program.statements {
-            if let Some(item) = self.extract_from_statement(statement, &module_name)? {
+            if let Some(item) = self.extract_from_statement_with_docs(statement, &module_name, source)? {
                 items.push(item);
             }
+        }
+
+        // Extract module-level documentation
+        if let Ok(module_docs) = self.extract_module_level_docs(source, &module_name) {
+            items.extend(module_docs);
         }
 
         // Gather source file information
@@ -545,46 +741,72 @@ impl DocumentationExtractor {
             .to_string()
     }
 
-    /// Extract documentation from a statement
-    fn extract_from_statement(&self, statement: &Statement, module: &str) -> Result<Option<DocumentationItem>, Error> {
+    /// Extract documentation from a statement with documentation comments
+    fn extract_from_statement_with_docs(&self, statement: &Statement, module: &str, source: &str) -> Result<Option<DocumentationItem>, Error> {
         use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
         use crate::ast::statements::variable::VariableStatement;
+        use crate::ast::traits::Locatable;
         
         let any_stmt = statement.as_any();
-        let location = SourceLocation { line: 1, column: 1, file: None };
+        
+        // Get location if available
+        let location = if let Some(locatable) = any_stmt.downcast_ref::<dyn Locatable>() {
+            locatable.location().unwrap_or(SourceLocation { line: 1, column: 1, file: None })
+        } else {
+            SourceLocation { line: 1, column: 1, file: None }
+        };
         
         // Function declarations (slay keyword)
         if let Some(func_stmt) = any_stmt.downcast_ref::<FunctionStatement>() {
-            return Ok(Some(self.extract_function_documentation(func_stmt, module, &location)?));
+            return Ok(Some(self.extract_function_documentation_with_docs(func_stmt, module, &location, source)?));
         }
         
         // Struct declarations (squad keyword)
         if let Some(struct_stmt) = any_stmt.downcast_ref::<SquadStatement>() {
-            return Ok(Some(self.extract_struct_documentation(struct_stmt, module, &location)?));
+            return Ok(Some(self.extract_struct_documentation_with_docs(struct_stmt, module, &location, source)?));
         }
         
         // Interface declarations (collab keyword)
         if let Some(interface_stmt) = any_stmt.downcast_ref::<CollabStatement>() {
-            return Ok(Some(self.extract_interface_documentation(interface_stmt, module, &location)?));
+            return Ok(Some(self.extract_interface_documentation_with_docs(interface_stmt, module, &location, source)?));
         }
         
         // Variable declarations (sus/facts keywords)
         if let Some(var_stmt) = any_stmt.downcast_ref::<VariableStatement>() {
-            return Ok(Some(self.extract_variable_documentation(var_stmt, module, &location)?));
+            return Ok(Some(self.extract_variable_documentation_with_docs(var_stmt, module, &location, source)?));
         }
         
-        // TODO: Add extraction for additional statement types:
-        // - Module declarations
-        // - Type aliases
-        // - Constant declarations
-        // - Import statements with documentation
+        // Package declarations (vibe keyword)
+        if let Some(pkg_stmt) = any_stmt.downcast_ref::<PackageStatement>() {
+            return Ok(Some(self.extract_package_documentation(pkg_stmt, module, &location, source)?));
+        }
+        
+        // Import statements (yeet keyword)
+        if let Some(import_stmt) = any_stmt.downcast_ref::<ImportStatement>() {
+            return Ok(Some(self.extract_import_documentation(import_stmt, module, &location, source)?));
+        }
+        
+        // Type aliases and constant declarations
+        if let Some(item) = self.extract_type_alias_documentation(any_stmt, module, &location, source)? {
+            return Ok(Some(item));
+        }
+        
+        if let Some(item) = self.extract_constant_documentation(any_stmt, module, &location, source)? {
+            return Ok(Some(item));
+        }
         
         // For other statement types, return None (not documentable)
         Ok(None)
     }
 
-    /// Extract documentation from function declaration
-    fn extract_function_documentation(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    /// Extract documentation from a statement (legacy method)
+    fn extract_from_statement(&self, statement: &Statement, module: &str) -> Result<Option<DocumentationItem>, Error> {
+        // Fallback to old method without source context
+        self.extract_from_statement_with_docs(statement, module, "")
+    }
+
+    /// Extract documentation from function declaration with doc comments
+    fn extract_function_documentation_with_docs(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
         use crate::ast::traits::Node;
         
         let func_name = func.name.value.clone();
@@ -602,6 +824,22 @@ impl DocumentationExtractor {
         // Extract return type
         let return_type = func.return_type.as_ref().map(|rt| rt.string());
         
+        // Extract documentation comments
+        let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+        
+        // Use extracted documentation or fallback to auto-generated
+        let final_summary = if summary.is_empty() {
+            format!("Function {}", func_name)
+        } else {
+            summary
+        };
+        
+        let final_description = if description.is_empty() {
+            format!("CURSED function declaration using the 'slay' keyword")
+        } else {
+            description
+        };
+        
         // Extract source code if configured
         let source_code = if self.config.include_examples {
             Some(func.string())
@@ -614,20 +852,25 @@ impl DocumentationExtractor {
             kind: ItemKind::Function,
             visibility: Visibility::Public, // Functions are typically public in CURSED
             module: module.to_string(),
-            summary: format!("Function {}", func_name),
-            description: format!("CURSED function declaration using the 'slay' keyword"),
+            summary: final_summary,
+            description: final_description,
             signature: Some(signature),
             parameters,
             return_type,
-            examples: Vec::new(),
-            tags: HashMap::new(),
+            examples,
+            tags,
             location: location.clone(),
             source_code,
         })
     }
 
-    /// Extract documentation from struct declaration
-    fn extract_struct_documentation(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    /// Extract documentation from function declaration (legacy method)
+    fn extract_function_documentation(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        self.extract_function_documentation_with_docs(func, module, location, "")
+    }
+
+    /// Extract documentation from struct declaration with doc comments
+    fn extract_struct_documentation_with_docs(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
         use crate::ast::traits::Node;
         
         let struct_name = struct_stmt.name.value.clone();
@@ -646,6 +889,22 @@ impl DocumentationExtractor {
         let mut associated_methods = self.extract_associated_methods(struct_stmt)?;
         parameters.append(&mut associated_methods);
         
+        // Extract documentation comments
+        let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+        
+        // Use extracted documentation or fallback to auto-generated
+        let final_summary = if summary.is_empty() {
+            format!("Struct {}", struct_name)
+        } else {
+            summary
+        };
+        
+        let final_description = if description.is_empty() {
+            format!("CURSED struct declaration using the 'squad' keyword")
+        } else {
+            description
+        };
+        
         // Extract source code if configured
         let source_code = if self.config.include_examples {
             Some(struct_stmt.string())
@@ -658,20 +917,25 @@ impl DocumentationExtractor {
             kind: ItemKind::Struct,
             visibility: Visibility::Public,
             module: module.to_string(),
-            summary: format!("Struct {}", struct_name),
-            description: format!("CURSED struct declaration using the 'squad' keyword"),
+            summary: final_summary,
+            description: final_description,
             signature: Some(signature),
             parameters,
             return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
+            examples,
+            tags,
             location: location.clone(),
             source_code,
         })
     }
 
-    /// Extract documentation from interface declaration
-    fn extract_interface_documentation(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    /// Extract documentation from struct declaration (legacy method)
+    fn extract_struct_documentation(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        self.extract_struct_documentation_with_docs(struct_stmt, module, location, "")
+    }
+
+    /// Extract documentation from interface declaration with doc comments
+    fn extract_interface_documentation_with_docs(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
         use crate::ast::traits::Node;
         
         let interface_name = interface_stmt.name.value.clone();
@@ -679,6 +943,22 @@ impl DocumentationExtractor {
         
         // Extract method documentation as parameters
         let parameters = self.extract_interface_methods(&interface_stmt.methods)?;
+        
+        // Extract documentation comments
+        let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+        
+        // Use extracted documentation or fallback to auto-generated
+        let final_summary = if summary.is_empty() {
+            format!("Interface {}", interface_name)
+        } else {
+            summary
+        };
+        
+        let final_description = if description.is_empty() {
+            format!("CURSED interface declaration using the 'collab' keyword")
+        } else {
+            description
+        };
         
         // Extract source code if configured
         let source_code = if self.config.include_examples {
@@ -692,20 +972,25 @@ impl DocumentationExtractor {
             kind: ItemKind::Interface,
             visibility: Visibility::Public,
             module: module.to_string(),
-            summary: format!("Interface {}", interface_name),
-            description: format!("CURSED interface declaration using the 'collab' keyword"),
+            summary: final_summary,
+            description: final_description,
             signature: Some(signature),
             parameters,
             return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
+            examples,
+            tags,
             location: location.clone(),
             source_code,
         })
     }
 
-    /// Extract documentation from variable declaration
-    fn extract_variable_documentation(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    /// Extract documentation from interface declaration (legacy method)
+    fn extract_interface_documentation(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        self.extract_interface_documentation_with_docs(interface_stmt, module, location, "")
+    }
+
+    /// Extract documentation from variable declaration with doc comments
+    fn extract_variable_documentation_with_docs(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
         use crate::ast::traits::Node;
         
         let var_name = var_stmt.name.clone();
@@ -718,6 +1003,25 @@ impl DocumentationExtractor {
             ItemKind::Constant
         };
         
+        // Extract documentation comments
+        let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+        
+        let keyword = if var_stmt.is_mutable { "sus" } else { "facts" };
+        
+        // Use extracted documentation or fallback to auto-generated
+        let final_summary = if summary.is_empty() {
+            format!("{} {}", if var_stmt.is_mutable { "Variable" } else { "Constant" }, var_name)
+        } else {
+            summary
+        };
+        
+        let final_description = if description.is_empty() {
+            format!("CURSED {} declaration using the '{}' keyword", 
+                   if var_stmt.is_mutable { "variable" } else { "constant" }, keyword)
+        } else {
+            description
+        };
+        
         // Extract source code if configured
         let source_code = if self.config.include_examples {
             Some(var_stmt.string())
@@ -725,27 +1029,191 @@ impl DocumentationExtractor {
             None
         };
         
-        let keyword = if var_stmt.is_mutable { "sus" } else { "facts" };
-        
         Ok(DocumentationItem {
             name: var_name.clone(),
             kind,
             visibility: Visibility::Private, // Variables are typically private unless exported
             module: module.to_string(),
-            summary: format!("{} {}", if var_stmt.is_mutable { "Variable" } else { "Constant" }, var_name),
-            description: format!("CURSED {} declaration using the '{}' keyword", 
-                               if var_stmt.is_mutable { "variable" } else { "constant" }, keyword),
+            summary: final_summary,
+            description: final_description,
             signature: Some(signature),
             parameters: Vec::new(),
             return_type: var_stmt.var_type.clone(),
-            examples: Vec::new(),
-            tags: HashMap::new(),
+            examples,
+            tags,
             location: location.clone(),
             source_code,
         })
     }
 
-    /// Extract documentation from constant declaration (simplified)
+    /// Extract documentation from variable declaration (legacy method)
+    fn extract_variable_documentation(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+        self.extract_variable_documentation_with_docs(var_stmt, module, location, "")
+    }
+
+    /// Extract documentation from package declaration
+    fn extract_package_documentation(&self, pkg_stmt: &PackageStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+        use crate::ast::traits::Node;
+        
+        // Extract documentation comments
+        let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+        
+        let final_summary = if summary.is_empty() {
+            format!("Package {}", pkg_stmt.name)
+        } else {
+            summary
+        };
+        
+        let final_description = if description.is_empty() {
+            format!("CURSED package declaration using the 'vibe' keyword")
+        } else {
+            description
+        };
+        
+        Ok(DocumentationItem {
+            name: pkg_stmt.name.clone(),
+            kind: ItemKind::Module,
+            visibility: Visibility::Public,
+            module: module.to_string(),
+            summary: final_summary,
+            description: final_description,
+            signature: Some(pkg_stmt.string()),
+            parameters: Vec::new(),
+            return_type: None,
+            examples,
+            tags,
+            location: location.clone(),
+            source_code: if self.config.include_examples { Some(pkg_stmt.string()) } else { None },
+        })
+    }
+
+    /// Extract documentation from import declaration
+    fn extract_import_documentation(&self, import_stmt: &ImportStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+        use crate::ast::traits::Node;
+        
+        // Extract documentation comments
+        let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+        
+        let import_name = import_stmt.alias.as_ref().unwrap_or(&import_stmt.path);
+        
+        let final_summary = if summary.is_empty() {
+            format!("Import {}", import_name)
+        } else {
+            summary
+        };
+        
+        let final_description = if description.is_empty() {
+            format!("CURSED import declaration using the 'yeet' keyword for path '{}'", import_stmt.path)
+        } else {
+            description
+        };
+        
+        Ok(DocumentationItem {
+            name: import_name.clone(),
+            kind: ItemKind::Module,
+            visibility: Visibility::Public,
+            module: module.to_string(),
+            summary: final_summary,
+            description: final_description,
+            signature: Some(import_stmt.string()),
+            parameters: Vec::new(),
+            return_type: None,
+            examples,
+            tags,
+            location: location.clone(),
+            source_code: if self.config.include_examples { Some(import_stmt.string()) } else { None },
+        })
+    }
+
+    /// Extract documentation from type alias declarations
+    fn extract_type_alias_documentation(&self, any_stmt: &dyn std::any::Any, module: &str, location: &SourceLocation, source: &str) -> Result<Option<DocumentationItem>, Error> {
+        // In a full implementation, this would check for type alias statements
+        // For now, we'll create a placeholder that can be extended when type alias AST nodes are available
+        if let Some(_type_alias) = any_stmt.downcast_ref::<()>() { // Placeholder type - replace with actual type alias AST node
+            let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+            
+            Ok(Some(DocumentationItem {
+                name: "type_alias".to_string(),
+                kind: ItemKind::Type,
+                visibility: Visibility::Public,
+                module: module.to_string(),
+                summary: if summary.is_empty() { "Type alias".to_string() } else { summary },
+                description: if description.is_empty() { "Type alias declaration".to_string() } else { description },
+                signature: Some("type TypeAlias = SomeType".to_string()),
+                parameters: Vec::new(),
+                return_type: None,
+                examples,
+                tags,
+                location: location.clone(),
+                source_code: None,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Extract documentation from constant declarations
+    fn extract_constant_documentation(&self, any_stmt: &dyn std::any::Any, module: &str, location: &SourceLocation, source: &str) -> Result<Option<DocumentationItem>, Error> {
+        // In a full implementation, this would check for constant declaration statements
+        // For now, we'll create a placeholder that can be extended when constant AST nodes are available
+        if let Some(_const_stmt) = any_stmt.downcast_ref::<()>() { // Placeholder type - replace with actual constant AST node
+            let (summary, description, tags, examples) = self.extract_doc_comments(source, location)?;
+            
+            Ok(Some(DocumentationItem {
+                name: "constant".to_string(),
+                kind: ItemKind::Constant,
+                visibility: Visibility::Public,
+                module: module.to_string(),
+                summary: if summary.is_empty() { "Constant".to_string() } else { summary },
+                description: if description.is_empty() { "Constant declaration".to_string() } else { description },
+                signature: Some("facts CONSTANT = value".to_string()),
+                parameters: Vec::new(),
+                return_type: None,
+                examples,
+                tags,
+                location: location.clone(),
+                source_code: None,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Extract module-level documentation
+    fn extract_module_level_docs(&self, source: &str, module_name: &str) -> Result<Vec<DocumentationItem>, Error> {
+        use crate::docs::comment_parser::CommentParser;
+        
+        let parser = CommentParser::new()?;
+        let all_docs = parser.extract_all_documentation(source)?;
+        
+        let mut module_items = Vec::new();
+        
+        // Look for module-level documentation at the top of the file
+        for (location, parsed_doc) in all_docs {
+            if location.line <= 10 && !parsed_doc.summary.is_empty() {
+                // This appears to be module-level documentation
+                module_items.push(DocumentationItem {
+                    name: format!("{}_module", module_name),
+                    kind: ItemKind::Module,
+                    visibility: Visibility::Public,
+                    module: module_name.to_string(),
+                    summary: parsed_doc.summary,
+                    description: parsed_doc.description,
+                    signature: None,
+                    parameters: Vec::new(),
+                    return_type: None,
+                    examples: parsed_doc.examples,
+                    tags: parsed_doc.tags,
+                    location,
+                    source_code: None,
+                });
+            }
+        }
+        
+        Ok(module_items)
+    }
+
+    /// Extract documentation from constant declaration (simplified - legacy method)
     fn extract_constant_docs(&self, _const_stmt: &dyn std::any::Any, module: &str) -> Result<DocumentationItem, Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
@@ -766,15 +1234,18 @@ impl DocumentationExtractor {
         })
     }
 
-    /// Extract documentation comments (simplified implementation)
-    fn extract_doc_comments(&self, _location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<Example>), Error> {
-        // In a real implementation, this would parse doc comments from the token stream
-        // For now, return empty values
+    /// Extract documentation comments from source at a specific location
+    fn extract_doc_comments(&self, source: &str, location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<Example>), Error> {
+        use crate::docs::comment_parser::CommentParser;
+        
+        let parser = CommentParser::new()?;
+        let parsed_docs = parser.parse_item_documentation(source, location)?;
+        
         Ok((
-            String::new(),
-            String::new(),
-            HashMap::new(),
-            Vec::new(),
+            parsed_docs.summary,
+            parsed_docs.description,
+            parsed_docs.tags,
+            parsed_docs.examples,
         ))
     }
 

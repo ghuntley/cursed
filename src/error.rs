@@ -80,6 +80,10 @@ pub enum Error {
     UnsupportedFormat(String),
     /// Documentation generation error
     GenerationError(String),
+    /// Invalid input provided to a function
+    InvalidInput(String),
+    /// Invalid state detected during operation
+    InvalidState(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -137,6 +141,8 @@ impl Clone for Error {
             Error::SerializationError(msg) => Error::SerializationError(msg.clone()),
             Error::UnsupportedFormat(msg) => Error::UnsupportedFormat(msg.clone()),
             Error::GenerationError(msg) => Error::GenerationError(msg.clone()),
+            Error::InvalidInput(msg) => Error::InvalidInput(msg.clone()),
+            Error::InvalidState(msg) => Error::InvalidState(msg.clone()),
         }
     }
 }
@@ -213,6 +219,8 @@ impl fmt::Display for Error {
             Error::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
             Error::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
             Error::GenerationError(msg) => write!(f, "Generation error: {}", msg),
+            Error::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+            Error::InvalidState(msg) => write!(f, "Invalid state: {}", msg),
         }
     }
 }

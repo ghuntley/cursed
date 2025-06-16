@@ -1,557 +1,317 @@
 //! JSON Documentation Generator
 //! 
-//! Generates structured JSON documentation for API integration,
-//! tooling support, and programmatic documentation consumption.
+//! Generates comprehensive JSON documentation for API consumption and tooling integration.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, SearchIndexEntry};
 use crate::error::Error;
-use std::path::{Path, PathBuf};
+use serde_json;
 use std::fs;
-use serde_json::{json, Value};
+use std::path::Path;
 
-pub struct JsonGenerator<'a> {
-    config: &'a DocGeneratorConfig,
+/// JSON documentation generator
+pub struct JsonGenerator {
+    config: DocGeneratorConfig,
 }
 
-impl<'a> JsonGenerator<'a> {
-    pub fn new(config: &'a DocGeneratorConfig) -> Self {
-        Self { config }
+impl JsonGenerator {
+    pub fn new(config: &DocGeneratorConfig) -> Self {
+        Self {
+            config: config.clone(),
+        }
     }
 
     /// Generate comprehensive JSON documentation
     pub fn generate_documentation(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
-        let doc_path = output_dir.join("documentation.json");
+        let json_path = output_dir.join("documentation.json");
         
-        let json_doc = json!({
-            "project": {
-                "name": self.config.title,
+        // Create comprehensive documentation structure
+        let doc_data = serde_json::json!({
+            "metadata": {
+                "title": self.config.title,
                 "description": self.config.description,
                 "version": self.config.version,
                 "authors": self.config.authors,
-                "base_url": self.config.base_url,
                 "generated_at": chrono::Utc::now().to_rfc3339(),
-                "generator": "CURSED Documentation Generator",
+                "generator": "CURSED Documentation System",
                 "format_version": "1.0.0"
             },
             "configuration": {
-                "include_private": self.config.include_private,
                 "include_examples": self.config.include_examples,
+                "include_private": self.config.include_private,
                 "generate_cross_refs": self.config.generate_cross_refs,
-                "output_format": "json"
+                "base_url": self.config.base_url
             },
-            "statistics": self.generate_statistics(docs),
-            "modules": self.generate_modules_json(docs),
-            "api_reference": self.generate_api_reference(docs),
-            "type_definitions": self.generate_type_definitions(docs),
-            "examples": self.generate_examples_json(docs),
-            "keywords_guide": self.generate_keywords_guide(),
-            "metadata": {
-                "total_files": docs.len(),
+            "statistics": {
+                "total_modules": docs.len(),
                 "total_items": docs.iter().map(|d| d.items.len()).sum::<usize>(),
-                "language": "CURSED",
-                "slang_style": "Gen Z"
-            }
+                "total_functions": docs.iter().map(|d| 
+                    d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()
+                ).sum::<usize>(),
+                "total_structs": docs.iter().map(|d| 
+                    d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count()
+                ).sum::<usize>(),
+                "total_interfaces": docs.iter().map(|d| 
+                    d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count()
+                ).sum::<usize>(),
+                "total_constants": docs.iter().map(|d| 
+                    d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Constant)).count()
+                ).sum::<usize>(),
+                "total_variables": docs.iter().map(|d| 
+                    d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Variable)).count()
+                ).sum::<usize>()
+            },
+            "modules": docs
         });
         
-        let formatted_json = serde_json::to_string_pretty(&json_doc)
-            .map_err(|e| Error::General(format!("JSON serialization failed: {}", e)))?;
+        let json_content = serde_json::to_string_pretty(&doc_data)
+            .map_err(|e| Error::General(format!("Failed to serialize documentation: {}", e)))?;
         
-        fs::write(doc_path, formatted_json).map_err(Error::Io)?;
+        fs::write(json_path, json_content).map_err(Error::Io)?;
+        
+        // Generate individual module files
+        for doc in docs {
+            let module_path = output_dir.join(format!("{}.json", self.sanitize_module_name(&doc.module_name)));
+            let module_json = serde_json::to_string_pretty(doc)
+                .map_err(|e| Error::General(format!("Failed to serialize module {}: {}", doc.module_name, e)))?;
+            fs::write(module_path, module_json).map_err(Error::Io)?;
+        }
+        
         Ok(())
     }
 
     /// Generate search index JSON
-    pub fn generate_search_index(&self, index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
-        let index_path = output_dir.join("search_index.json");
+    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
+        let search_path = output_dir.join("search_index.json");
         
-        let search_json = json!({
-            "search_index": {
-                "version": "1.0.0",
+        let search_data = serde_json::json!({
+            "metadata": {
                 "generated_at": chrono::Utc::now().to_rfc3339(),
-                "total_entries": index.len(),
-                "entries": index.iter().map(|entry| {
-                    json!({
-                        "name": entry.name,
-                        "kind": entry.kind.to_string(),
-                        "description": entry.description,
-                        "module": entry.module,
-                        "url": entry.url,
-                        "keywords": entry.keywords,
-                        "search_weight": self.calculate_search_weight(entry)
-                    })
-                }).collect::<Vec<_>>()
+                "total_entries": search_index.len(),
+                "version": "1.0.0"
             },
-            "search_config": {
-                "fuzzy_matching": true,
-                "case_sensitive": false,
-                "max_results": 50,
-                "search_fields": ["name", "description", "keywords", "module"]
-            }
+            "index": search_index
         });
         
-        let formatted_json = serde_json::to_string_pretty(&search_json)
-            .map_err(|e| Error::General(format!("Search index JSON serialization failed: {}", e)))?;
+        let json_content = serde_json::to_string_pretty(&search_data)
+            .map_err(|e| Error::General(format!("Failed to serialize search index: {}", e)))?;
         
-        fs::write(index_path, formatted_json).map_err(Error::Io)?;
+        fs::write(search_path, json_content).map_err(Error::Io)?;
         Ok(())
     }
 
-    /// Generate module-specific JSON files
-    pub fn generate_module_json(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
-        let module_file = format!("{}.json", doc.module_name.replace("::", "_"));
-        let module_path = output_dir.join(module_file);
+    /// Generate API schema for tooling integration
+    pub fn generate_api_schema(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+        let schema_path = output_dir.join("api_schema.json");
         
-        let module_json = json!({
-            "module": {
-                "name": doc.module_name,
-                "package": doc.package_name,
-                "file_path": doc.file_path.to_string_lossy(),
-                "source_info": {
-                    "file_size": doc.source_info.file_size,
-                    "line_count": doc.source_info.line_count,
-                    "encoding": doc.source_info.encoding,
-                    "last_modified": doc.source_info.last_modified.map(|t| {
-                        chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339()
-                    })
-                },
-                "imports": doc.imports,
-                "statistics": {
-                    "total_items": doc.items.len(),
-                    "functions": doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count(),
-                    "structs": doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count(),
-                    "interfaces": doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count(),
-                    "variables": doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Variable)).count(),
-                    "constants": doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Constant)).count()
-                },
-                "items": doc.items.iter().map(|item| self.item_to_json(item)).collect::<Vec<_>>()
-            }
-        });
-        
-        let formatted_json = serde_json::to_string_pretty(&module_json)
-            .map_err(|e| Error::General(format!("Module JSON serialization failed: {}", e)))?;
-        
-        fs::write(module_path, formatted_json).map_err(Error::Io)?;
-        Ok(())
-    }
-
-    /// Convert documentation item to JSON
-    fn item_to_json(&self, item: &crate::docs::generator::DocumentationItem) -> Value {
-        json!({
-            "name": item.name,
-            "kind": item.kind.to_string(),
-            "visibility": format!("{:?}", item.visibility).to_lowercase(),
-            "module": item.module,
-            "summary": item.summary,
-            "description": item.description,
-            "signature": item.signature,
-            "parameters": item.parameters.iter().map(|param| {
-                json!({
-                    "name": param.name,
-                    "type": param.type_name,
-                    "description": param.description,
-                    "default_value": param.default_value,
-                    "is_optional": param.default_value.is_some()
-                })
-            }).collect::<Vec<_>>(),
-            "return_type": item.return_type,
-            "examples": item.examples.iter().map(|example| {
-                json!({
-                    "title": example.title,
-                    "description": example.description,
-                    "code": example.code,
-                    "language": example.language,
-                    "output": example.output
-                })
-            }).collect::<Vec<_>>(),
-            "tags": item.tags,
-            "location": {
-                "line": item.location.line,
-                "column": item.location.column,
-                "file": item.location.file
-            },
-            "source_code": if self.config.include_examples { item.source_code.clone() } else { None },
-            "cursed_features": self.extract_cursed_features(item)
-        })
-    }
-
-    /// Generate project statistics
-    fn generate_statistics(&self, docs: &[ExtractedDocumentation]) -> Value {
-        let total_items = docs.iter().map(|d| d.items.len()).sum::<usize>();
-        let total_functions = docs.iter().map(|d| {
-            d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()
-        }).sum::<usize>();
-        let total_structs = docs.iter().map(|d| {
-            d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count()
-        }).sum::<usize>();
-        let total_interfaces = docs.iter().map(|d| {
-            d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count()
-        }).sum::<usize>();
-        let total_lines = docs.iter().map(|d| d.source_info.line_count).sum::<usize>();
-        
-        json!({
-            "modules": docs.len(),
-            "total_items": total_items,
-            "functions": total_functions,
-            "structs": total_structs,
-            "interfaces": total_interfaces,
-            "lines_of_code": total_lines,
-            "average_items_per_module": if docs.is_empty() { 0 } else { total_items / docs.len() },
-            "largest_module": docs.iter().max_by_key(|d| d.items.len())
-                .map(|d| json!({
-                    "name": d.module_name,
-                    "items": d.items.len()
-                })),
-            "complexity_metrics": {
-                "average_parameters_per_function": self.calculate_avg_parameters(docs),
-                "functions_with_generics": self.count_generic_functions(docs),
-                "interfaces_count": total_interfaces
-            }
-        })
-    }
-
-    /// Generate modules JSON structure
-    fn generate_modules_json(&self, docs: &[ExtractedDocumentation]) -> Value {
-        json!(docs.iter().map(|doc| {
-            json!({
-                "name": doc.module_name,
-                "package": doc.package_name,
-                "file_path": doc.file_path.to_string_lossy(),
-                "items_count": doc.items.len(),
-                "imports": doc.imports,
-                "exported_items": doc.items.iter()
-                    .filter(|item| matches!(item.visibility, crate::docs::generator::Visibility::Public))
-                    .map(|item| item.name.clone())
-                    .collect::<Vec<_>>()
-            })
-        }).collect::<Vec<_>>())
-    }
-
-    /// Generate API reference
-    fn generate_api_reference(&self, docs: &[ExtractedDocumentation]) -> Value {
-        let mut api_ref = json!({
-            "functions": [],
-            "structs": [],
-            "interfaces": [],
-            "constants": [],
-            "types": []
-        });
+        // Extract API-like items (functions, interfaces)
+        let mut api_endpoints = Vec::new();
+        let mut type_definitions = Vec::new();
         
         for doc in docs {
             for item in &doc.items {
-                let item_json = self.item_to_json(item);
-                
                 match item.kind {
                     crate::docs::generator::ItemKind::Function => {
-                        api_ref["functions"].as_array_mut().unwrap().push(item_json);
+                        let endpoint = serde_json::json!({
+                            "name": item.name,
+                            "module": item.module,
+                            "signature": item.signature,
+                            "parameters": item.parameters,
+                            "return_type": item.return_type,
+                            "description": item.description,
+                            "examples": item.examples
+                        });
+                        api_endpoints.push(endpoint);
                     }
-                    crate::docs::generator::ItemKind::Struct => {
-                        api_ref["structs"].as_array_mut().unwrap().push(item_json);
-                    }
+                    crate::docs::generator::ItemKind::Struct | 
                     crate::docs::generator::ItemKind::Interface => {
-                        api_ref["interfaces"].as_array_mut().unwrap().push(item_json);
-                    }
-                    crate::docs::generator::ItemKind::Constant => {
-                        api_ref["constants"].as_array_mut().unwrap().push(item_json);
-                    }
-                    crate::docs::generator::ItemKind::Type => {
-                        api_ref["types"].as_array_mut().unwrap().push(item_json);
+                        let type_def = serde_json::json!({
+                            "name": item.name,
+                            "kind": item.kind,
+                            "module": item.module,
+                            "signature": item.signature,
+                            "fields": item.parameters,
+                            "description": item.description
+                        });
+                        type_definitions.push(type_def);
                     }
                     _ => {}
                 }
             }
         }
         
-        api_ref
+        let schema = serde_json::json!({
+            "api_version": "1.0.0",
+            "generated_at": chrono::Utc::now().to_rfc3339(),
+            "language": "cursed",
+            "endpoints": api_endpoints,
+            "types": type_definitions,
+            "metadata": {
+                "title": self.config.title,
+                "description": self.config.description,
+                "version": self.config.version
+            }
+        });
+        
+        let schema_content = serde_json::to_string_pretty(&schema)
+            .map_err(|e| Error::General(format!("Failed to serialize API schema: {}", e)))?;
+        
+        fs::write(schema_path, schema_content).map_err(Error::Io)?;
+        Ok(())
     }
 
-    /// Generate type definitions
-    fn generate_type_definitions(&self, docs: &[ExtractedDocumentation]) -> Value {
-        let mut types = json!({});
+    /// Generate metrics and analytics data
+    pub fn generate_metrics(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+        let metrics_path = output_dir.join("metrics.json");
+        
+        let mut module_metrics = Vec::new();
+        let mut complexity_scores = Vec::new();
         
         for doc in docs {
-            for item in &doc.items {
-                if matches!(item.kind, crate::docs::generator::ItemKind::Struct | crate::docs::generator::ItemKind::Interface) {
-                    types[&item.name] = json!({
-                        "name": item.name,
-                        "kind": item.kind.to_string(),
-                        "module": item.module,
-                        "fields": item.parameters.iter().map(|param| {
-                            json!({
-                                "name": param.name,
-                                "type": param.type_name,
-                                "optional": param.default_value.is_some()
-                            })
-                        }).collect::<Vec<_>>(),
-                        "signature": item.signature
-                    });
+            let functions_count = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count();
+            let structs_count = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count();
+            let interfaces_count = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count();
+            
+            // Calculate complexity score (simple heuristic)
+            let complexity = self.calculate_module_complexity(doc);
+            
+            let module_metric = serde_json::json!({
+                "module": doc.module_name,
+                "package": doc.package_name,
+                "file_path": doc.file_path,
+                "metrics": {
+                    "total_items": doc.items.len(),
+                    "functions": functions_count,
+                    "structs": structs_count,
+                    "interfaces": interfaces_count,
+                    "lines_of_code": doc.source_info.line_count,
+                    "file_size_bytes": doc.source_info.file_size,
+                    "complexity_score": complexity,
+                    "documentation_coverage": self.calculate_documentation_coverage(doc)
                 }
-            }
+            });
+            
+            module_metrics.push(module_metric);
+            complexity_scores.push(complexity);
         }
         
-        types
+        let total_complexity: f64 = complexity_scores.iter().sum();
+        let avg_complexity = if !complexity_scores.is_empty() {
+            total_complexity / complexity_scores.len() as f64
+        } else {
+            0.0
+        };
+        
+        let metrics = serde_json::json!({
+            "generated_at": chrono::Utc::now().to_rfc3339(),
+            "summary": {
+                "total_modules": docs.len(),
+                "total_lines": docs.iter().map(|d| d.source_info.line_count).sum::<usize>(),
+                "total_size_bytes": docs.iter().map(|d| d.source_info.file_size).sum::<u64>(),
+                "average_complexity": avg_complexity,
+                "max_complexity": complexity_scores.iter().cloned().fold(0.0, f64::max),
+                "min_complexity": complexity_scores.iter().cloned().fold(f64::INFINITY, f64::min)
+            },
+            "modules": module_metrics,
+            "recommendations": self.generate_recommendations(docs)
+        });
+        
+        let metrics_content = serde_json::to_string_pretty(&metrics)
+            .map_err(|e| Error::General(format!("Failed to serialize metrics: {}", e)))?;
+        
+        fs::write(metrics_path, metrics_content).map_err(Error::Io)?;
+        Ok(())
     }
 
-    /// Generate examples JSON
-    fn generate_examples_json(&self, docs: &[ExtractedDocumentation]) -> Value {
-        let mut examples = Vec::new();
+    /// Calculate module complexity score
+    fn calculate_module_complexity(&self, doc: &ExtractedDocumentation) -> f64 {
+        let mut score = 0.0;
         
-        // Getting started example
-        examples.push(json!({
-            "title": "Hello World",
-            "description": "Basic CURSED program that prints a greeting",
-            "code": "slay main() {\n    println(\"Hello, world! This is lowkey fire! 🔥\")\n}",
-            "language": "cursed",
-            "category": "basics",
-            "tags": ["hello-world", "getting-started"]
-        }));
+        // Base complexity from number of items
+        score += doc.items.len() as f64 * 0.5;
         
-        // Variables example
-        examples.push(json!({
-            "title": "Variables and Constants",
-            "description": "Demonstrating CURSED variable declaration with Gen Z slang",
-            "code": "sus name = \"bestie\"        // mutable variable\nfacts pi = 3.14159         // constant",
-            "language": "cursed",
-            "category": "variables",
-            "tags": ["sus", "facts", "variables", "constants"]
-        }));
-        
-        // Function example
-        examples.push(json!({
-            "title": "Function Definition",
-            "description": "Creating functions with the 'slay' keyword",
-            "code": "slay greet(name: string) {\n    println(\"Hey \" + name + \"! You're serving looks! ✨\")\n}",
-            "language": "cursed",
-            "category": "functions",
-            "tags": ["slay", "functions", "parameters"]
-        }));
-        
-        // Control flow example
-        examples.push(json!({
-            "title": "Control Flow",
-            "description": "Using lowkey/highkey for conditional statements",
-            "code": "lowkey (age >= 18) {\n    println(\"You're an adult, bestie!\")\n} highkey {\n    println(\"Still a baby, no cap\")\n}",
-            "language": "cursed",
-            "category": "control-flow",
-            "tags": ["lowkey", "highkey", "conditionals"]
-        }));
-        
-        json!(examples)
-    }
-
-    /// Generate Gen Z keywords guide
-    fn generate_keywords_guide(&self) -> Value {
-        json!({
-            "description": "CURSED uses Gen Z slang for keywords because traditional programming is cheugy",
-            "keywords": [
-                {
-                    "cursed": "slay",
-                    "traditional": ["fn", "function"],
-                    "description": "Declares a function that absolutely slays",
-                    "example": "slay greet() { println(\"Hey bestie!\") }"
-                },
-                {
-                    "cursed": "sus",
-                    "traditional": ["let mut", "var"],
-                    "description": "Declares a mutable variable (kinda sus if you ask me)",
-                    "example": "sus count = 0"
-                },
-                {
-                    "cursed": "facts",
-                    "traditional": ["let", "const"],
-                    "description": "Declares a constant/immutable value (straight facts)",
-                    "example": "facts pi = 3.14159"
-                },
-                {
-                    "cursed": "lowkey",
-                    "traditional": ["if"],
-                    "description": "Conditional statement (lowkey checking this condition)",
-                    "example": "lowkey (x > 0) { println(\"positive vibes\") }"
-                },
-                {
-                    "cursed": "highkey",
-                    "traditional": ["else"],
-                    "description": "Else clause (highkey the alternative)",
-                    "example": "highkey { println(\"different energy\") }"
-                },
-                {
-                    "cursed": "periodt",
-                    "traditional": ["while"],
-                    "description": "While loop (keeps going, periodt)",
-                    "example": "periodt (condition) { /* do work */ }"
-                },
-                {
-                    "cursed": "bestie",
-                    "traditional": ["for"],
-                    "description": "For loop (going through this together, bestie)",
-                    "example": "bestie (item in list) { println(item) }"
-                },
-                {
-                    "cursed": "flex",
-                    "traditional": ["break"],
-                    "description": "Break statement (flexing out of this loop)",
-                    "example": "flex"
-                },
-                {
-                    "cursed": "squad",
-                    "traditional": ["struct", "class"],
-                    "description": "Struct definition (organizing the squad)",
-                    "example": "squad Person { name: string, age: i32 }"
-                },
-                {
-                    "cursed": "collab",
-                    "traditional": ["interface", "trait"],
-                    "description": "Interface definition (collaborative vibes)",
-                    "example": "collab Drawable { slay draw(self) }"
-                },
-                {
-                    "cursed": "stan",
-                    "traditional": ["async", "spawn"],
-                    "description": "Spawn async operation/goroutine (we stan this concurrency)",
-                    "example": "stan async_task()"
-                },
-                {
-                    "cursed": "yolo",
-                    "traditional": ["yield", "await"],
-                    "description": "Yield/await operation (yolo, just sending it)",
-                    "example": "yolo some_future"
+        // Complexity from function parameters
+        for item in &doc.items {
+            if matches!(item.kind, crate::docs::generator::ItemKind::Function) {
+                score += item.parameters.len() as f64 * 0.3;
+                
+                // Add complexity for return types
+                if item.return_type.is_some() {
+                    score += 0.2;
                 }
-            ],
-            "style_guide": {
-                "philosophy": "CURSED embraces Gen Z culture and slang to make programming more expressive and fun",
-                "naming_conventions": {
-                    "functions": "snake_case with descriptive Gen Z terms",
-                    "variables": "snake_case with vibes-based names",
-                    "constants": "SCREAMING_SNAKE_CASE for that main character energy",
-                    "types": "PascalCase because types deserve respect"
-                },
-                "cultural_notes": {
-                    "no_cap": "When something is true/honest",
-                    "lowkey": "Sort of/kind of/secretly",
-                    "highkey": "Definitely/obviously/openly",
-                    "periodt": "End of discussion, no arguments",
-                    "bestie": "Close friend, used for iteration/collaboration",
-                    "slay": "To do something exceptionally well",
-                    "sus": "Suspicious/questionable (perfect for mutable variables)",
-                    "facts": "Absolutely true (perfect for constants)"
-                }
+                
+                // Add complexity for examples (indicates complex usage)
+                score += item.examples.len() as f64 * 0.1;
             }
-        })
+        }
+        
+        // Normalize by file size
+        if doc.source_info.line_count > 0 {
+            score = score / (doc.source_info.line_count as f64 / 100.0).max(1.0);
+        }
+        
+        score
     }
 
-    /// Extract CURSED-specific features from an item
-    fn extract_cursed_features(&self, item: &crate::docs::generator::DocumentationItem) -> Value {
-        let mut features = Vec::new();
-        
-        if let Some(signature) = &item.signature {
-            if signature.contains("slay") {
-                features.push("uses_slay_keyword");
-            }
-            if signature.contains("sus") {
-                features.push("uses_sus_keyword");
-            }
-            if signature.contains("facts") {
-                features.push("uses_facts_keyword");
-            }
-            if signature.contains("squad") {
-                features.push("uses_squad_keyword");
-            }
-            if signature.contains("collab") {
-                features.push("uses_collab_keyword");
-            }
-        }
-        
-        // Check for Gen Z naming patterns
-        let name_lower = item.name.to_lowercase();
-        if name_lower.contains("vibes") || name_lower.contains("energy") || name_lower.contains("mood") {
-            features.push("gen_z_naming");
-        }
-        
-        // Check for emoji usage
-        if item.description.chars().any(|c| c as u32 > 127) {
-            features.push("uses_emojis");
-        }
-        
-        json!({
-            "features": features,
-            "slang_level": self.calculate_slang_level(item),
-            "gen_z_score": features.len()
-        })
-    }
-
-    /// Calculate search weight for an entry
-    fn calculate_search_weight(&self, entry: &SearchIndexEntry) -> f64 {
-        let mut weight = 1.0;
-        
-        // Function items get higher weight
-        if matches!(entry.kind, crate::docs::generator::ItemKind::Function) {
-            weight += 0.5;
-        }
-        
-        // Public items get higher weight
-        weight += 0.3;
-        
-        // Items with more keywords get higher weight
-        weight += entry.keywords.len() as f64 * 0.1;
-        
-        // Short names are often more important
-        if entry.name.len() < 10 {
-            weight += 0.2;
-        }
-        
-        weight
-    }
-
-    /// Calculate average parameters per function
-    fn calculate_avg_parameters(&self, docs: &[ExtractedDocumentation]) -> f64 {
-        let functions: Vec<_> = docs.iter()
-            .flat_map(|d| &d.items)
-            .filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function))
-            .collect();
-        
-        if functions.is_empty() {
+    /// Calculate documentation coverage percentage
+    fn calculate_documentation_coverage(&self, doc: &ExtractedDocumentation) -> f64 {
+        if doc.items.is_empty() {
             return 0.0;
         }
         
-        let total_params: usize = functions.iter().map(|f| f.parameters.len()).sum();
-        total_params as f64 / functions.len() as f64
-    }
-
-    /// Count functions with generic parameters
-    fn count_generic_functions(&self, docs: &[ExtractedDocumentation]) -> usize {
-        docs.iter()
-            .flat_map(|d| &d.items)
-            .filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function))
-            .filter(|i| {
-                i.signature.as_ref().map_or(false, |s| s.contains('<') && s.contains('>'))
-            })
-            .count()
-    }
-
-    /// Calculate slang level for an item
-    fn calculate_slang_level(&self, item: &crate::docs::generator::DocumentationItem) -> String {
-        let slang_keywords = ["slay", "sus", "facts", "lowkey", "highkey", "periodt", "bestie", "flex", "squad", "collab", "stan", "yolo"];
-        let mut slang_count = 0;
+        let documented_items = doc.items.iter()
+            .filter(|item| !item.summary.is_empty() || !item.description.is_empty())
+            .count();
         
-        if let Some(signature) = &item.signature {
-            for keyword in &slang_keywords {
-                if signature.contains(keyword) {
-                    slang_count += 1;
-                }
+        (documented_items as f64 / doc.items.len() as f64) * 100.0
+    }
+
+    /// Generate recommendations based on analysis
+    fn generate_recommendations(&self, docs: &[ExtractedDocumentation]) -> Vec<serde_json::Value> {
+        let mut recommendations = Vec::new();
+        
+        for doc in docs {
+            let coverage = self.calculate_documentation_coverage(doc);
+            
+            if coverage < 50.0 {
+                recommendations.push(serde_json::json!({
+                    "type": "documentation",
+                    "severity": "warning",
+                    "module": doc.module_name,
+                    "message": format!("Low documentation coverage: {:.1}%", coverage),
+                    "suggestion": "Add documentation comments to functions and types"
+                }));
+            }
+            
+            let complexity = self.calculate_module_complexity(doc);
+            if complexity > 20.0 {
+                recommendations.push(serde_json::json!({
+                    "type": "complexity",
+                    "severity": "info",
+                    "module": doc.module_name,
+                    "message": format!("High complexity score: {:.1}", complexity),
+                    "suggestion": "Consider breaking down large functions or reducing parameter counts"
+                }));
+            }
+            
+            if doc.items.len() > 50 {
+                recommendations.push(serde_json::json!({
+                    "type": "organization",
+                    "severity": "info",
+                    "module": doc.module_name,
+                    "message": format!("Large module with {} items", doc.items.len()),
+                    "suggestion": "Consider splitting into smaller, more focused modules"
+                }));
             }
         }
         
-        // Check description for slang
-        for keyword in &slang_keywords {
-            if item.description.to_lowercase().contains(keyword) {
-                slang_count += 1;
-            }
-        }
-        
-        match slang_count {
-            0 => "basic".to_string(),
-            1..=2 => "lowkey".to_string(),
-            3..=4 => "highkey".to_string(),
-            _ => "absolutely_iconic".to_string(),
-        }
+        recommendations
+    }
+
+    /// Sanitize module name for filename
+    fn sanitize_module_name(&self, name: &str) -> String {
+        name.replace("::", "_")
+            .replace(" ", "_")
+            .replace("/", "_")
+            .to_lowercase()
     }
 }

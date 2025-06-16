@@ -427,7 +427,7 @@ pub struct DependencyAnalyzer {
 
 /// Optimization pipeline for LTO
 pub struct OptimizationPipeline {
-    passes: Vec<LtoOptimizationPass>,
+    passes: Vec<Box<dyn LtoOptimizationPass>>,
     pass_manager: PassManager,
 }
 

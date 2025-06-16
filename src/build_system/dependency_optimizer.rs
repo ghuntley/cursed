@@ -608,10 +608,4 @@ impl DependencyOptimizer {
     }
 }
 
-// Export public API
-pub use self::{
-    DependencyOptimizerConfig,
-    CompilationUnit,
-    AnalysisResult,
-    OptimizationStats,
-};
+// Types are exported directly via pub struct/pub enum definitions above

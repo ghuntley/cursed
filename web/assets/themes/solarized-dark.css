@@ -1,0 +1,97 @@
+/* Solarized Dark theme for CURSED syntax highlighting */
+
+.code-block {
+    background-color: #002b36;
+    color: #839496;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.line-number {
+    color: #586e75;
+    padding-right: 1rem;
+    user-select: none;
+}
+
+.highlighted-line {
+    background-color: #073642;
+    display: block;
+    padding: 0 0.5rem;
+    margin: 0 -0.5rem;
+}
+
+/* CURSED syntax highlighting */
+.keyword {
+    color: #859900;
+    font-weight: bold;
+}
+
+.string {
+    color: #2aa198;
+}
+
+.comment {
+    color: #586e75;
+    font-style: italic;
+}
+
+.number {
+    color: #d33682;
+}
+
+.identifier {
+    color: #b58900;
+}
+
+.operator {
+    color: #859900;
+}
+
+.function {
+    color: #268bd2;
+}
+
+.type {
+    color: #cb4b16;
+}
+
+.variable {
+    color: #b58900;
+}
+
+.constant {
+    color: #d33682;
+    font-weight: bold;
+}
+
+/* Interactive features */
+.fold-toggle {
+    color: #586e75;
+    cursor: pointer;
+    user-select: none;
+    font-family: monospace;
+}
+
+.fold-toggle:hover {
+    color: #839496;
+}
+
+.copy-button {
+    background: #073642;
+    border: 1px solid #586e75;
+    color: #839496;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    float: right;
+    margin-top: -0.5rem;
+    margin-right: 0.5rem;
+}
+
+.copy-button:hover {
+    background: #268bd2;
+    color: #002b36;
+}

@@ -15,7 +15,7 @@ use tracing::{debug, info, warn, instrument, span, Level};
 use inkwell::{
     context::Context,
     module::Module,
-    passes::{PassManager, PassManagerBuilder},
+    passes::PassManager,
     targets::{Target, TargetMachine, RelocMode, CodeModel, FileType},
     OptimizationLevel as InkwellOptLevel,
 };

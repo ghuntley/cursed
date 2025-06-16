@@ -8,9 +8,14 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::*;
+use crate::optimization::pgo::optimization_integration::{
+    OptimizationResult, IssueSeverity
+};
+use crate::codegen::LlvmCodeGenerator;
 use clap::{Parser, Subcommand, Args};
 use std::path::PathBuf;
 use std::time::Duration;
+use std::fs;
 use tracing::{debug, info, warn, error};
 
 /// PGO (Profile-Guided Optimization) command-line interface
@@ -531,11 +536,14 @@ fn execute_optimize_command(args: OptimizeArgs, cmd: &PgoCommand) -> Result<()> 
     // Initialize for optimization
     pgo_system.initialize_optimization(&args.profile)?;
     
-    // TODO: In a real implementation, would load and optimize the LLVM module
-    // For now, simulate the optimization process
+    // Load and optimize LLVM module
+    let optimization_result = optimize_llvm_module(&args, &mut pgo_system)?;
+    
     println!("Optimization completed successfully!");
     println!("Optimization level: {}", args.level);
     println!("Profile used: {}", args.profile.display());
+    println!("Effectiveness score: {:.2}", optimization_result.effectiveness_score);
+    println!("Optimization time: {:?}", optimization_result.optimization_time);
     
     if args.inlining {
         println!("✓ Function inlining enabled");
@@ -601,8 +609,28 @@ fn execute_manage_command(args: ManageArgs, cmd: &PgoCommand) -> Result<()> {
         
         ManageSubcommand::Info { profile, detailed } => {
             println!("Profile information for: {}", profile);
-            // TODO: Implement profile info display
-            println!("Profile details would be shown here");
+            
+            // Load and display profile information
+            let mut storage = ProfileStorage::new(ProfileStorageConfig::from_pgo_config(&config))?;
+            if let Ok(profile_data) = storage.load_profile(&PathBuf::from(&profile)) {
+                println!("✅ Profile loaded successfully");
+                println!("  Created: {:?}", profile_data.metadata.created_at);
+                println!("  Quality score: {:.2}", profile_data.metadata.quality_score);
+                println!("  Collection duration: {:?}", profile_data.collection_duration);
+                println!("  Functions profiled: {}", profile_data.function_profiles.len());
+                println!("  Branches profiled: {}", profile_data.branch_profiles.len());
+                println!("  Loops profiled: {}", profile_data.loop_profiles.len());
+                
+                if detailed {
+                    println!("\nDetailed Statistics:");
+                    println!("  Total events: {}", profile_data.collection_stats.total_events);
+                    println!("  Events per second: {:.2}", profile_data.collection_stats.events_per_second);
+                    println!("  Memory usage: {} bytes", profile_data.collection_stats.memory_usage);
+                    println!("  Data size: {} bytes", profile_data.data_size);
+                }
+            } else {
+                println!("❌ Profile '{}' not found or could not be loaded", profile);
+            }
         }
         
         ManageSubcommand::Delete { profile, force } => {
@@ -620,25 +648,72 @@ fn execute_manage_command(args: ManageArgs, cmd: &PgoCommand) -> Result<()> {
                 }
             }
             
-            // TODO: Implement profile deletion
-            println!("Profile '{}' deleted successfully.", profile);
+            // Implement profile deletion
+            let mut storage = ProfileStorage::new(ProfileStorageConfig::from_pgo_config(&config))?;
+            let profile_path = PathBuf::from(&profile);
+            
+            if profile_path.exists() {
+                std::fs::remove_file(&profile_path)?;
+                println!("✅ Profile '{}' deleted successfully.", profile);
+            } else {
+                println!("❌ Profile '{}' not found.", profile);
+            }
         }
         
         ManageSubcommand::Rename { old_name, new_name } => {
-            // TODO: Implement profile renaming
-            println!("Renamed profile '{}' to '{}'", old_name, new_name);
+            // Implement profile renaming
+            let old_path = PathBuf::from(&old_name);
+            let new_path = PathBuf::from(&new_name);
+            
+            if old_path.exists() {
+                std::fs::rename(&old_path, &new_path)?;
+                println!("✅ Renamed profile '{}' to '{}'", old_name, new_name);
+            } else {
+                println!("❌ Profile '{}' not found.", old_name);
+            }
         }
         
         ManageSubcommand::Export { profile, output, format } => {
-            // TODO: Implement profile export
-            println!("Exported profile '{}' to {} (format: {})", profile, output.display(), format);
+            // Implement profile export
+            let mut storage = ProfileStorage::new(ProfileStorageConfig::from_pgo_config(&config))?;
+            let profile_path = PathBuf::from(&profile);
+            
+            if let Ok(profile_data) = storage.load_profile(&profile_path) {
+                match format.as_str() {
+                    "json" => {
+                        let json_data = serde_json::to_string_pretty(&profile_data)?;
+                        std::fs::write(&output, json_data)?;
+                        println!("✅ Exported profile '{}' to {} (JSON format)", profile, output.display());
+                    }
+                    _ => {
+                        println!("❌ Unsupported format: {}. Supported formats: json", format);
+                    }
+                }
+            } else {
+                println!("❌ Profile '{}' not found or could not be loaded", profile);
+            }
         }
         
         ManageSubcommand::Import { input, name, format } => {
-            // TODO: Implement profile import
-            println!("Imported profile from {} (format: {})", input.display(), format);
-            if let Some(name) = name {
-                println!("Profile name: {}", name);
+            // Implement profile import
+            let mut storage = ProfileStorage::new(ProfileStorageConfig::from_pgo_config(&config))?;
+            
+            match format.as_str() {
+                "json" => {
+                    let json_data = std::fs::read_to_string(&input)?;
+                    let profile_data: ProfileData = serde_json::from_str(&json_data)?;
+                    
+                    let output_name = name.unwrap_or_else(|| {
+                        input.file_stem().unwrap_or_default().to_string_lossy().to_string()
+                    });
+                    
+                    storage.store_profile(&profile_data)?;
+                    println!("✅ Imported profile from {} (JSON format)", input.display());
+                    println!("Profile name: {}", output_name);
+                }
+                _ => {
+                    println!("❌ Unsupported format: {}. Supported formats: json", format);
+                }
             }
         }
     }
@@ -846,13 +921,104 @@ fn execute_cleanup_command(args: CleanupArgs, cmd: &PgoCommand) -> Result<()> {
         }
     }
     
-    // TODO: Implement actual profile deletion
-    let deleted_count = candidates_for_deletion.len();
+    // Implement actual profile deletion
+    let mut deleted_count = 0;
+    let mut storage = ProfileStorage::new(ProfileStorageConfig::from_pgo_config(&config))?;
+    
+    for profile in candidates_for_deletion {
+        // Try to delete the profile file
+        let profile_path = PathBuf::from(&profile.profile_name);
+        if profile_path.exists() {
+            if let Err(e) = std::fs::remove_file(&profile_path) {
+                warn!("Failed to delete profile {}: {}", profile.profile_name, e);
+            } else {
+                deleted_count += 1;
+            }
+        }
+    }
     
     println!("Cleanup completed successfully!");
     println!("Deleted {} profiles", deleted_count);
     
     Ok(())
+}
+
+/// Optimize LLVM module using PGO data
+fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Result<OptimizationResult> {
+    info!("Loading and optimizing LLVM module: {}", args.source_file.display());
+    
+    // Read source file
+    let source_code = fs::read_to_string(&args.source_file)
+        .map_err(|e| Error::Io(std::sync::Arc::new(e)))?;
+    
+    // Create LLVM code generator and compile source to module
+    let mut codegen = LlvmCodeGenerator::new()?;
+    
+    // Enable optimizations based on the optimization level
+    match args.level.as_str() {
+        "conservative" => {
+            // Basic optimizations for safety
+            info!("Applying conservative optimizations");
+        }
+        "moderate" => {
+            // Standard optimizations
+            codegen.enable_release_optimizations()?;
+            info!("Applying moderate optimizations");
+        }
+        "aggressive" | "experimental" => {
+            // Maximum optimizations
+            codegen.enable_release_optimizations()?;
+            info!("Applying aggressive optimizations");
+        }
+        _ => {
+            codegen.enable_release_optimizations()?;
+        }
+    }
+    
+    // Compile source code to LLVM IR first
+    let _llvm_ir = codegen.compile(&source_code, Some(&args.source_file))?;
+    
+    // Get the compiled LLVM module
+    let module_ref = codegen.get_module();
+    let module_guard = module_ref.lock()
+        .map_err(|_| Error::Other("Failed to lock LLVM module".to_string()))?;
+    
+    // Use the existing PGO system's optimize_with_profile method
+    let optimization_result = pgo_system.optimize_with_profile(&*module_guard)?;
+    
+    // Save optimized module if output path specified
+    if let Some(output_path) = &args.output {
+        // Generate optimized LLVM IR
+        let optimized_ir = module_guard.print_to_string().to_string();
+        fs::write(output_path, optimized_ir)
+            .map_err(|e| Error::Io(std::sync::Arc::new(e)))?;
+        
+        info!("Optimized module saved to: {}", output_path.display());
+    }
+    
+    // Display optimization details
+    if !optimization_result.optimizations_applied.is_empty() {
+        info!("Applied optimizations:");
+        for opt in &optimization_result.optimizations_applied {
+            info!("  {} on {} (improvement: {:.1}%)", 
+                  opt.optimization_name, opt.target, opt.estimated_improvement * 100.0);
+        }
+    }
+    
+    if !optimization_result.issues.is_empty() {
+        warn!("Optimization issues encountered:");
+        for issue in &optimization_result.issues {
+            let level = match issue.severity {
+                IssueSeverity::Info => "INFO",
+                IssueSeverity::Warning => "WARN", 
+                IssueSeverity::Error => "ERROR",
+                IssueSeverity::Critical => "CRITICAL",
+            };
+            warn!("  [{}] {}", level, issue.description);
+        }
+    }
+    
+    Ok(optimization_result)
 }
 
 // Helper functions for displaying and saving results

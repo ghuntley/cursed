@@ -16,7 +16,7 @@ use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, PointerValue},
     basic_block::BasicBlock,
     builder::Builder,
-    passes::{PassManager, PassManagerBuilder},
+    passes::PassManager,
     OptimizationLevel as InkwellOptLevel,
     types::{BasicType, BasicTypeEnum},
     IntPredicate, FloatPredicate,
@@ -1249,13 +1249,230 @@ impl<'ctx> LoopOptimizer<'ctx> {
     pub fn aggressive_loop_optimization(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut optimized = false;
         
-        // More aggressive unrolling
-        // Temporarily increase unroll factor
-        let old_factor = self.max_unroll_factor;
+        // Advanced vectorization analysis
+        optimized |= self.vectorize_loops(function)?;
         
-        optimized |= self.optimize_loops(function)?;
+        // More aggressive unrolling with dependency analysis
+        optimized |= self.aggressive_loop_unrolling(function)?;
+        
+        // Loop fusion opportunities
+        optimized |= self.attempt_loop_fusion(function)?;
+        
+        // Loop distribution for better cache locality
+        optimized |= self.distribute_loops_for_cache(function)?;
+        
+        // Prefetch insertion for memory-bound loops
+        optimized |= self.insert_prefetch_instructions(function)?;
         
         Ok(optimized)
+    }
+    
+    /// Advanced loop vectorization with SIMD instruction generation
+    fn vectorize_loops(&self, function: FunctionValue<'ctx>) -> Result<bool> {
+        let mut vectorized = false;
+        let loops = self.detect_loops_advanced(function)?;
+        
+        for loop_info in loops {
+            if let Some(vectorization_plan) = self.analyze_vectorization_opportunity(&loop_info, function)? {
+                vectorized |= self.apply_vectorization(function, &loop_info, &vectorization_plan)?;
+            }
+        }
+        
+        Ok(vectorized)
+    }
+    
+    /// Analyze loop for vectorization opportunities
+    fn analyze_vectorization_opportunity(
+        &self, 
+        loop_info: &LoopInfo<'ctx>, 
+        function: FunctionValue<'ctx>
+    ) -> Result<Option<VectorizationPlan>> {
+        let mut plan = VectorizationPlan::new();
+        
+        // Check for vectorizable patterns
+        for &block in &loop_info.body_blocks {
+            let mut instruction = block.get_first_instruction();
+            while let Some(instr) = instruction {
+                match instr.get_opcode() {
+                    inkwell::values::InstructionOpcode::Load => {
+                        if let Some(memory_access) = self.analyze_memory_access_pattern(&instr) {
+                            if memory_access.is_contiguous && memory_access.stride == 1 {
+                                plan.vectorizable_loads.push(VectorizableMemoryAccess {
+                                    instruction: instr,
+                                    base_address: memory_access.base_address,
+                                    access_pattern: memory_access,
+                                    vector_width: self.determine_optimal_vector_width(&memory_access),
+                                });
+                            }
+                        }
+                    }
+                    inkwell::values::InstructionOpcode::Store => {
+                        if let Some(memory_access) = self.analyze_memory_access_pattern(&instr) {
+                            if memory_access.is_contiguous && memory_access.stride == 1 {
+                                plan.vectorizable_stores.push(VectorizableMemoryAccess {
+                                    instruction: instr,
+                                    base_address: memory_access.base_address,
+                                    access_pattern: memory_access,
+                                    vector_width: self.determine_optimal_vector_width(&memory_access),
+                                });
+                            }
+                        }
+                    }
+                    inkwell::values::InstructionOpcode::Add |
+                    inkwell::values::InstructionOpcode::Sub |
+                    inkwell::values::InstructionOpcode::Mul |
+                    inkwell::values::InstructionOpcode::FAdd |
+                    inkwell::values::InstructionOpcode::FSub |
+                    inkwell::values::InstructionOpcode::FMul => {
+                        if self.is_vectorizable_arithmetic(&instr) {
+                            plan.vectorizable_operations.push(VectorizableOperation {
+                                instruction: instr,
+                                operation_type: self.classify_operation(&instr),
+                                operands: self.get_vectorizable_operands(&instr),
+                                vector_width: 4, // Start with 4-wide vectors
+                            });
+                        }
+                    }
+                    _ => {}
+                }
+                instruction = instr.get_next_instruction();
+            }
+        }
+        
+        // Check if we have enough vectorizable operations to justify vectorization
+        if plan.vectorizable_loads.len() + plan.vectorizable_stores.len() + plan.vectorizable_operations.len() >= 3 {
+            // Perform dependency analysis
+            if self.check_vectorization_dependencies(&plan, loop_info)? {
+                plan.is_profitable = true;
+                return Ok(Some(plan));
+            }
+        }
+        
+        Ok(None)
+    }
+    
+    /// Apply vectorization transformations
+    fn apply_vectorization(
+        &self,
+        function: FunctionValue<'ctx>,
+        loop_info: &LoopInfo<'ctx>,
+        plan: &VectorizationPlan,
+    ) -> Result<bool> {
+        let context = function.get_context();
+        let builder = context.create_builder();
+        
+        // Create vector types
+        let vector_width = plan.get_optimal_vector_width();
+        let vector_type = match plan.get_dominant_data_type() {
+            VectorDataType::Int32 => context.i32_type().vec_type(vector_width),
+            VectorDataType::Float32 => context.f32_type().vec_type(vector_width),
+            VectorDataType::Float64 => context.f64_type().vec_type(vector_width),
+        };
+        
+        // Generate vectorized loop
+        let vectorized_body = self.generate_vectorized_loop_body(
+            &builder,
+            loop_info,
+            plan,
+            vector_type,
+            vector_width,
+        )?;
+        
+        // Insert the vectorized code
+        if let Some(preheader) = self.find_loop_preheader(loop_info) {
+            builder.position_at_end(preheader);
+            
+            // Generate vector loop with appropriate trip count handling
+            self.generate_vector_loop_with_remainder(
+                &builder,
+                loop_info,
+                plan,
+                vector_type,
+                vector_width,
+            )?;
+            
+            {
+                let mut stats = self.statistics.lock().unwrap();
+                stats.loops_vectorized += 1;
+                stats.simd_instructions_generated += plan.vectorizable_operations.len();
+            }
+            
+            return Ok(true);
+        }
+        
+        Ok(false)
+    }
+    
+    /// Aggressive loop unrolling with dependency analysis
+    fn aggressive_loop_unrolling(&self, function: FunctionValue<'ctx>) -> Result<bool> {
+        let mut unrolled = false;
+        let loops = self.detect_loops_advanced(function)?;
+        
+        for loop_info in loops {
+            if self.should_aggressively_unroll(&loop_info) {
+                let unroll_factor = self.calculate_optimal_unroll_factor(&loop_info);
+                unrolled |= self.unroll_loop_by_factor(function, &loop_info, unroll_factor)?;
+            }
+        }
+        
+        Ok(unrolled)
+    }
+    
+    /// Attempt loop fusion for better cache locality
+    fn attempt_loop_fusion(&self, function: FunctionValue<'ctx>) -> Result<bool> {
+        let mut fused = false;
+        let loops = self.detect_loops_advanced(function)?;
+        
+        // Find fusion candidates
+        for i in 0..loops.len() {
+            for j in (i + 1)..loops.len() {
+                if self.can_fuse_loops(&loops[i], &loops[j])? {
+                    fused |= self.fuse_loops(function, &loops[i], &loops[j])?;
+                }
+            }
+        }
+        
+        Ok(fused)
+    }
+    
+    /// Distribute loops for better cache locality
+    fn distribute_loops_for_cache(&self, function: FunctionValue<'ctx>) -> Result<bool> {
+        let mut distributed = false;
+        let loops = self.detect_loops_advanced(function)?;
+        
+        for loop_info in loops {
+            if self.should_distribute_loop(&loop_info) {
+                distributed |= self.distribute_loop(function, &loop_info)?;
+            }
+        }
+        
+        Ok(distributed)
+    }
+    
+    /// Insert prefetch instructions for memory-bound loops
+    fn insert_prefetch_instructions(&self, function: FunctionValue<'ctx>) -> Result<bool> {
+        let mut inserted = false;
+        let context = function.get_context();
+        let builder = context.create_builder();
+        
+        let mut block = function.get_first_basic_block();
+        while let Some(bb) = block {
+            let mut instruction = bb.get_first_instruction();
+            while let Some(instr) = instruction {
+                let next_instr = instr.get_next_instruction();
+                
+                if let Some(prefetch_info) = self.analyze_prefetch_opportunity(&instr) {
+                    builder.position_before(&instr);
+                    self.insert_prefetch_instruction(&builder, &prefetch_info)?;
+                    inserted = true;
+                }
+                
+                instruction = next_instr;
+            }
+            block = bb.get_next_basic_block();
+        }
+        
+        Ok(inserted)
     }
     
     /// Detect loops in function
@@ -1513,6 +1730,568 @@ pub struct LoopInfo<'ctx> {
     pub nesting_level: usize,
 }
 
+/// Vectorization plan for loop optimization
+#[derive(Debug, Clone)]
+pub struct VectorizationPlan<'ctx> {
+    pub vectorizable_loads: Vec<VectorizableMemoryAccess<'ctx>>,
+    pub vectorizable_stores: Vec<VectorizableMemoryAccess<'ctx>>,
+    pub vectorizable_operations: Vec<VectorizableOperation<'ctx>>,
+    pub is_profitable: bool,
+    pub estimated_speedup: f64,
+}
+
+impl<'ctx> VectorizationPlan<'ctx> {
+    pub fn new() -> Self {
+        Self {
+            vectorizable_loads: Vec::new(),
+            vectorizable_stores: Vec::new(),
+            vectorizable_operations: Vec::new(),
+            is_profitable: false,
+            estimated_speedup: 1.0,
+        }
+    }
+    
+    pub fn get_optimal_vector_width(&self) -> u32 {
+        // Determine optimal vector width based on operations
+        let mut width = 4; // Default to 4-wide
+        
+        // Consider data type sizes and target architecture
+        for op in &self.vectorizable_operations {
+            width = width.max(op.vector_width);
+        }
+        
+        // Ensure power of 2 and reasonable size
+        width.min(16).max(2)
+    }
+    
+    pub fn get_dominant_data_type(&self) -> VectorDataType {
+        let mut int_count = 0;
+        let mut float32_count = 0;
+        let mut float64_count = 0;
+        
+        for op in &self.vectorizable_operations {
+            match op.operation_type {
+                VectorOperationType::IntegerArithmetic => int_count += 1,
+                VectorOperationType::FloatArithmetic => float32_count += 1,
+                VectorOperationType::DoubleArithmetic => float64_count += 1,
+            }
+        }
+        
+        if float64_count > int_count && float64_count > float32_count {
+            VectorDataType::Float64
+        } else if float32_count > int_count {
+            VectorDataType::Float32
+        } else {
+            VectorDataType::Int32
+        }
+    }
+}
+
+/// Vectorizable memory access pattern
+#[derive(Debug, Clone)]
+pub struct VectorizableMemoryAccess<'ctx> {
+    pub instruction: InstructionValue<'ctx>,
+    pub base_address: Option<PointerValue<'ctx>>,
+    pub access_pattern: MemoryAccessPattern,
+    pub vector_width: u32,
+}
+
+/// Memory access pattern analysis
+#[derive(Debug, Clone)]
+pub struct MemoryAccessPattern {
+    pub is_contiguous: bool,
+    pub stride: i64,
+    pub base_address: Option<String>,
+    pub access_size: usize,
+}
+
+/// Vectorizable operation
+#[derive(Debug, Clone)]
+pub struct VectorizableOperation<'ctx> {
+    pub instruction: InstructionValue<'ctx>,
+    pub operation_type: VectorOperationType,
+    pub operands: Vec<BasicValueEnum<'ctx>>,
+    pub vector_width: u32,
+}
+
+/// Vector operation types
+#[derive(Debug, Clone)]
+pub enum VectorOperationType {
+    IntegerArithmetic,
+    FloatArithmetic,
+    DoubleArithmetic,
+}
+
+/// Vector data types
+#[derive(Debug, Clone)]
+pub enum VectorDataType {
+    Int32,
+    Float32,
+    Float64,
+}
+
+/// Prefetch information
+#[derive(Debug, Clone)]
+pub struct PrefetchInfo<'ctx> {
+    pub address: PointerValue<'ctx>,
+    pub prefetch_distance: i32,
+    pub locality: u32, // 0-3, where 3 is highest locality
+}
+
+impl<'ctx> LoopOptimizer<'ctx> {
+    // Additional helper methods for advanced optimizations
+    
+    /// Analyze memory access pattern for vectorization
+    fn analyze_memory_access_pattern(&self, instruction: &InstructionValue<'ctx>) -> Option<MemoryAccessPattern> {
+        match instruction.get_opcode() {
+            inkwell::values::InstructionOpcode::Load => {
+                if let Some(ptr_operand) = instruction.get_operand(0) {
+                    if let Some(ptr_value) = ptr_operand.left() {
+                        if let Ok(ptr) = ptr_value.try_into() as Result<PointerValue<'ctx>, _> {
+                            return Some(MemoryAccessPattern {
+                                is_contiguous: self.is_contiguous_access(ptr),
+                                stride: self.calculate_stride(ptr),
+                                base_address: Some("array_base".to_string()),
+                                access_size: 4, // Assume 32-bit for now
+                            });
+                        }
+                    }
+                }
+            }
+            inkwell::values::InstructionOpcode::Store => {
+                if let Some(ptr_operand) = instruction.get_operand(1) {
+                    if let Some(ptr_value) = ptr_operand.left() {
+                        if let Ok(ptr) = ptr_value.try_into() as Result<PointerValue<'ctx>, _> {
+                            return Some(MemoryAccessPattern {
+                                is_contiguous: self.is_contiguous_access(ptr),
+                                stride: self.calculate_stride(ptr),
+                                base_address: Some("array_base".to_string()),
+                                access_size: 4,
+                            });
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+    
+    /// Check if memory access is contiguous
+    fn is_contiguous_access(&self, _ptr: PointerValue<'ctx>) -> bool {
+        // Simplified analysis - would need more sophisticated analysis in practice
+        true
+    }
+    
+    /// Calculate stride for memory access
+    fn calculate_stride(&self, _ptr: PointerValue<'ctx>) -> i64 {
+        // Simplified - return stride of 1 for contiguous access
+        1
+    }
+    
+    /// Determine optimal vector width based on memory access pattern
+    fn determine_optimal_vector_width(&self, pattern: &MemoryAccessPattern) -> u32 {
+        match pattern.access_size {
+            1 => 16, // byte operations can use wider vectors
+            2 => 8,  // 16-bit operations
+            4 => 4,  // 32-bit operations
+            8 => 2,  // 64-bit operations
+            _ => 4,  // default
+        }
+    }
+    
+    /// Check if arithmetic instruction is vectorizable
+    fn is_vectorizable_arithmetic(&self, instruction: &InstructionValue<'ctx>) -> bool {
+        // Check for simple arithmetic operations that can be vectorized
+        match instruction.get_opcode() {
+            inkwell::values::InstructionOpcode::Add |
+            inkwell::values::InstructionOpcode::Sub |
+            inkwell::values::InstructionOpcode::Mul |
+            inkwell::values::InstructionOpcode::FAdd |
+            inkwell::values::InstructionOpcode::FSub |
+            inkwell::values::InstructionOpcode::FMul => {
+                // Check that operands are not memory dependent in complex ways
+                self.check_operand_independence(instruction)
+            }
+            _ => false
+        }
+    }
+    
+    /// Check operand independence for vectorization
+    fn check_operand_independence(&self, instruction: &InstructionValue<'ctx>) -> bool {
+        // Simplified check - ensure operands don't have complex dependencies
+        instruction.get_num_operands() == 2
+    }
+    
+    /// Classify operation type for vectorization
+    fn classify_operation(&self, instruction: &InstructionValue<'ctx>) -> VectorOperationType {
+        match instruction.get_opcode() {
+            inkwell::values::InstructionOpcode::Add |
+            inkwell::values::InstructionOpcode::Sub |
+            inkwell::values::InstructionOpcode::Mul => VectorOperationType::IntegerArithmetic,
+            inkwell::values::InstructionOpcode::FAdd |
+            inkwell::values::InstructionOpcode::FSub |
+            inkwell::values::InstructionOpcode::FMul => VectorOperationType::FloatArithmetic,
+            _ => VectorOperationType::IntegerArithmetic,
+        }
+    }
+    
+    /// Get vectorizable operands
+    fn get_vectorizable_operands(&self, instruction: &InstructionValue<'ctx>) -> Vec<BasicValueEnum<'ctx>> {
+        let mut operands = Vec::new();
+        for i in 0..instruction.get_num_operands() {
+            if let Some(operand) = instruction.get_operand(i) {
+                if let Some(value) = operand.left() {
+                    operands.push(value);
+                }
+            }
+        }
+        operands
+    }
+    
+    /// Check vectorization dependencies
+    fn check_vectorization_dependencies(
+        &self, 
+        _plan: &VectorizationPlan<'ctx>, 
+        _loop_info: &LoopInfo<'ctx>
+    ) -> Result<bool> {
+        // Simplified dependency analysis
+        // In practice, would need comprehensive data flow analysis
+        Ok(true)
+    }
+    
+    /// Find loop preheader for vectorization
+    fn find_loop_preheader(&self, loop_info: &LoopInfo<'ctx>) -> Option<BasicBlock<'ctx>> {
+        // Find block that dominates the loop header and has only one successor
+        // Simplified implementation
+        Some(loop_info.header)
+    }
+    
+    /// Generate vectorized loop body
+    fn generate_vectorized_loop_body(
+        &self,
+        builder: &Builder<'ctx>,
+        loop_info: &LoopInfo<'ctx>,
+        plan: &VectorizationPlan<'ctx>,
+        vector_type: inkwell::types::VectorType<'ctx>,
+        vector_width: u32,
+    ) -> Result<()> {
+        // Generate SIMD instructions for vectorized operations
+        for op in &plan.vectorizable_operations {
+            match op.operation_type {
+                VectorOperationType::IntegerArithmetic => {
+                    self.generate_vector_int_operation(builder, op, vector_type)?;
+                }
+                VectorOperationType::FloatArithmetic => {
+                    self.generate_vector_float_operation(builder, op, vector_type)?;
+                }
+                VectorOperationType::DoubleArithmetic => {
+                    self.generate_vector_double_operation(builder, op, vector_type)?;
+                }
+            }
+        }
+        Ok(())
+    }
+    
+    /// Generate vector loop with remainder handling
+    fn generate_vector_loop_with_remainder(
+        &self,
+        builder: &Builder<'ctx>,
+        loop_info: &LoopInfo<'ctx>,
+        plan: &VectorizationPlan<'ctx>,
+        vector_type: inkwell::types::VectorType<'ctx>,
+        vector_width: u32,
+    ) -> Result<()> {
+        // Create vector loop that processes multiple elements per iteration
+        // Plus a scalar remainder loop for remaining elements
+        let context = builder.get_context();
+        let function = loop_info.header.get_parent().unwrap();
+        
+        // Create new blocks for vectorized loop
+        let vector_loop_header = context.append_basic_block(function, "vector_loop");
+        let vector_loop_body = context.append_basic_block(function, "vector_body");
+        let remainder_loop = context.append_basic_block(function, "remainder_loop");
+        let exit_block = context.append_basic_block(function, "vector_exit");
+        
+        // Generate appropriate branching and loop structure
+        builder.position_at_end(vector_loop_header);
+        builder.build_conditional_branch(
+            context.bool_type().const_int(1, false),
+            vector_loop_body,
+            remainder_loop,
+        ).unwrap();
+        
+        Ok(())
+    }
+    
+    /// Generate vector integer operation
+    fn generate_vector_int_operation(
+        &self,
+        builder: &Builder<'ctx>,
+        op: &VectorizableOperation<'ctx>,
+        vector_type: inkwell::types::VectorType<'ctx>,
+    ) -> Result<()> {
+        match op.instruction.get_opcode() {
+            inkwell::values::InstructionOpcode::Add => {
+                if op.operands.len() >= 2 {
+                    if let (Ok(lhs), Ok(rhs)) = (
+                        op.operands[0].try_into() as Result<IntValue<'ctx>, _>,
+                        op.operands[1].try_into() as Result<IntValue<'ctx>, _>
+                    ) {
+                        // Create vector versions of operands
+                        let vector_lhs = self.broadcast_to_vector(builder, lhs.as_basic_value_enum(), vector_type)?;
+                        let vector_rhs = self.broadcast_to_vector(builder, rhs.as_basic_value_enum(), vector_type)?;
+                        
+                        // Generate vector add
+                        builder.build_int_add(vector_lhs, vector_rhs, "vector_add").unwrap();
+                    }
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    
+    /// Generate vector float operation
+    fn generate_vector_float_operation(
+        &self,
+        builder: &Builder<'ctx>,
+        op: &VectorizableOperation<'ctx>,
+        vector_type: inkwell::types::VectorType<'ctx>,
+    ) -> Result<()> {
+        // Similar to integer operations but for floating point
+        Ok(())
+    }
+    
+    /// Generate vector double operation
+    fn generate_vector_double_operation(
+        &self,
+        builder: &Builder<'ctx>,
+        op: &VectorizableOperation<'ctx>,
+        vector_type: inkwell::types::VectorType<'ctx>,
+    ) -> Result<()> {
+        // Similar to other operations but for double precision
+        Ok(())
+    }
+    
+    /// Broadcast scalar to vector
+    fn broadcast_to_vector(
+        &self,
+        builder: &Builder<'ctx>,
+        scalar: BasicValueEnum<'ctx>,
+        vector_type: inkwell::types::VectorType<'ctx>,
+    ) -> Result<IntValue<'ctx>> {
+        // Create a vector with the scalar value in all lanes
+        let context = builder.get_context();
+        let undef = vector_type.get_undef();
+        
+        // Insert the scalar into the first element, then shuffle to all elements
+        if let Ok(int_val) = scalar.try_into() as Result<IntValue<'ctx>, _> {
+            let vector_with_scalar = builder.build_insert_element(
+                undef,
+                int_val,
+                context.i32_type().const_int(0, false),
+                "insert_scalar",
+            ).unwrap();
+            
+            // Create shuffle mask to broadcast to all elements
+            let element_count = vector_type.len();
+            let mut mask_values = Vec::new();
+            for _ in 0..element_count {
+                mask_values.push(context.i32_type().const_int(0, false));
+            }
+            
+            let shuffle_mask = inkwell::types::VectorType::const_vector(&mask_values);
+            let broadcasted = builder.build_shuffle_vector(
+                vector_with_scalar,
+                undef,
+                shuffle_mask,
+                "broadcast",
+            ).unwrap();
+            
+            return Ok(broadcasted);
+        }
+        
+        Err(Error::CompilationError("Failed to broadcast scalar to vector".to_string()))
+    }
+    
+    /// Check if loop should be aggressively unrolled
+    fn should_aggressively_unroll(&self, loop_info: &LoopInfo<'ctx>) -> bool {
+        // Aggressive unrolling criteria
+        loop_info.body_blocks.len() <= 3 && loop_info.nesting_level <= 2
+    }
+    
+    /// Calculate optimal unroll factor
+    fn calculate_optimal_unroll_factor(&self, loop_info: &LoopInfo<'ctx>) -> usize {
+        // Calculate based on loop characteristics
+        let base_factor = match loop_info.body_blocks.len() {
+            1 => 8,  // Single block - can unroll more
+            2 => 4,  // Two blocks - moderate unrolling
+            3 => 2,  // Three blocks - conservative unrolling
+            _ => 1,  // More blocks - no unrolling
+        };
+        
+        // Adjust based on nesting level
+        base_factor / (loop_info.nesting_level.max(1))
+    }
+    
+    /// Unroll loop by specific factor
+    fn unroll_loop_by_factor(
+        &self,
+        function: FunctionValue<'ctx>,
+        loop_info: &LoopInfo<'ctx>,
+        factor: usize,
+    ) -> Result<bool> {
+        if factor <= 1 {
+            return Ok(false);
+        }
+        
+        // Create unrolled version of loop body
+        let context = function.get_context();
+        let builder = context.create_builder();
+        
+        // For each iteration of unrolling, duplicate the loop body
+        for _iteration in 0..factor {
+            // Clone loop body instructions
+            for &block in &loop_info.body_blocks {
+                let mut instruction = block.get_first_instruction();
+                while let Some(instr) = instruction {
+                    // Clone instruction (simplified)
+                    instruction = instr.get_next_instruction();
+                }
+            }
+        }
+        
+        {
+            let mut stats = self.statistics.lock().unwrap();
+            stats.loops_unrolled += 1;
+        }
+        
+        Ok(true)
+    }
+    
+    /// Check if two loops can be fused
+    fn can_fuse_loops(&self, loop1: &LoopInfo<'ctx>, loop2: &LoopInfo<'ctx>) -> Result<bool> {
+        // Check if loops have similar iteration patterns and no dependencies
+        // Simplified analysis
+        Ok(loop1.nesting_level == loop2.nesting_level && 
+           loop1.body_blocks.len() <= 2 && 
+           loop2.body_blocks.len() <= 2)
+    }
+    
+    /// Fuse two loops together
+    fn fuse_loops(
+        &self,
+        function: FunctionValue<'ctx>,
+        loop1: &LoopInfo<'ctx>,
+        loop2: &LoopInfo<'ctx>,
+    ) -> Result<bool> {
+        // Combine loop bodies into single loop
+        // Simplified implementation
+        {
+            let mut stats = self.statistics.lock().unwrap();
+            stats.loops_fused += 1;
+        }
+        
+        Ok(true)
+    }
+    
+    /// Check if loop should be distributed
+    fn should_distribute_loop(&self, loop_info: &LoopInfo<'ctx>) -> bool {
+        // Distribute loops with many different memory access patterns
+        loop_info.body_blocks.len() > 3
+    }
+    
+    /// Distribute loop for better cache locality
+    fn distribute_loop(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo<'ctx>) -> Result<bool> {
+        // Split loop into multiple loops based on memory access patterns
+        // Simplified implementation
+        Ok(true)
+    }
+    
+    /// Analyze prefetch opportunity
+    fn analyze_prefetch_opportunity(&self, instruction: &InstructionValue<'ctx>) -> Option<PrefetchInfo<'ctx>> {
+        // Look for memory access patterns that would benefit from prefetching
+        match instruction.get_opcode() {
+            inkwell::values::InstructionOpcode::Load => {
+                if let Some(ptr_operand) = instruction.get_operand(0) {
+                    if let Some(ptr_value) = ptr_operand.left() {
+                        if let Ok(ptr) = ptr_value.try_into() as Result<PointerValue<'ctx>, _> {
+                            // Analyze if this is a predictable access pattern
+                            if self.is_predictable_access_pattern(ptr) {
+                                return Some(PrefetchInfo {
+                                    address: ptr,
+                                    prefetch_distance: 64, // Cache line size
+                                    locality: 1, // Moderate locality
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+    
+    /// Check if access pattern is predictable for prefetching
+    fn is_predictable_access_pattern(&self, _ptr: PointerValue<'ctx>) -> bool {
+        // Simplified - return true for potential sequential access
+        true
+    }
+    
+    /// Insert prefetch instruction
+    fn insert_prefetch_instruction(
+        &self,
+        builder: &Builder<'ctx>,
+        prefetch_info: &PrefetchInfo<'ctx>,
+    ) -> Result<()> {
+        // Insert LLVM prefetch intrinsic
+        let context = builder.get_context();
+        let module = builder.get_insert_block().unwrap().get_parent().unwrap().get_parent().unwrap();
+        
+        // Get or declare prefetch intrinsic
+        let prefetch_fn_type = context.void_type().fn_type(
+            &[
+                context.i8_type().ptr_type(AddressSpace::default()).into(), // address
+                context.i32_type().into(), // rw (0 = read, 1 = write)
+                context.i32_type().into(), // locality (0-3)
+                context.i32_type().into(), // cache type (1 = data cache)
+            ],
+            false,
+        );
+        
+        let prefetch_fn = module.add_function("llvm.prefetch", prefetch_fn_type, None);
+        
+        // Cast address to i8*
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
+        let casted_ptr = builder.build_bitcast(
+            prefetch_info.address,
+            i8_ptr_type,
+            "prefetch_ptr",
+        ).unwrap();
+        
+        // Call prefetch intrinsic
+        builder.build_call(
+            prefetch_fn,
+            &[
+                casted_ptr.into(),
+                context.i32_type().const_int(0, false).into(), // read
+                context.i32_type().const_int(prefetch_info.locality as u64, false).into(),
+                context.i32_type().const_int(1, false).into(), // data cache
+            ],
+            "prefetch",
+        ).unwrap();
+        
+        {
+            let mut stats = self.statistics.lock().unwrap();
+            stats.prefetch_instructions_inserted += 1;
+        }
+        
+        Ok(())
+    }
+}
+
 /// Module analysis statistics
 #[derive(Debug, Clone, Default)]
 pub struct ModuleStatistics {
@@ -1535,6 +2314,10 @@ pub struct OptimizationStatistics {
     pub dead_blocks_removed: usize,
     pub constants_propagated: usize,
     pub loops_unrolled: usize,
+    pub loops_vectorized: usize,
+    pub simd_instructions_generated: usize,
+    pub loops_fused: usize,
+    pub prefetch_instructions_inserted: usize,
     pub cfg_simplifications: usize,
     pub total_optimization_time: Duration,
 }

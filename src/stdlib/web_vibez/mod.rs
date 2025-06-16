@@ -38,6 +38,7 @@ pub mod security;
 pub mod static_files;
 pub mod templates;
 pub mod utils;
+pub mod runtime;
 
 // Re-export main types for easy access
 pub use router::{Router, Route, RouteGroup, RoutePriority};
@@ -73,6 +74,14 @@ pub use static_files::{StaticFileServer, StaticFileCache, StaticFileResponse, St
 pub use templates::{TemplateEngine, Template, TemplateContext, TemplateValue, TemplateError};
 pub use utils::{ConnectionPool as UtilsConnectionPool, UrlEncoder, HttpHeaders, MimeTypes};
 pub use session_enhanced::{EnhancedSessionManager, SessionOptions, SessionSecurity};
+
+// Runtime functions for LLVM integration
+pub use runtime::{
+    web_vibez_listen_and_serve, web_vibez_listen_and_serve_tls, web_vibez_handle_func,
+    web_vibez_get, web_vibez_post, web_vibez_head, web_vibez_delete, web_vibez_client_timeout,
+    web_vibez_request_url, web_vibez_request_method, web_vibez_request_body,
+    web_vibez_response_write, web_vibez_response_write_header, web_vibez_free_string
+};
 
 /// HTTP methods supported by the router
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -1,0 +1,85 @@
+# CURSED Documentation Server Configuration
+#
+# This file demonstrates how to configure the documentation server
+# for hosting CURSED documentation with advanced features.
+
+# Server bind address
+bind_address = "0.0.0.0:8080"
+
+# Document root directory
+document_root = "./docs"
+
+# Enable HTTPS
+enable_https = false
+
+# SSL configuration (if HTTPS enabled)
+[ssl_config]
+cert_path = "/etc/ssl/certs/docs.cursed.dev.pem"
+key_path = "/etc/ssl/private/docs.cursed.dev.key"
+chain_path = "/etc/ssl/certs/chain.pem"
+
+# CORS configuration
+[cors_config]
+allowed_origins = ["*"]
+allowed_methods = ["GET", "POST", "OPTIONS"]
+allowed_headers = ["Content-Type", "Authorization", "X-Requested-With"]
+allow_credentials = false
+
+# Rate limiting
+[rate_limiting]
+requests_per_minute = 60
+burst_capacity = 10
+enabled = true
+
+# Cache configuration
+[cache_config]
+enabled = true
+static_cache_duration = 3600     # 1 hour
+api_cache_duration = 300         # 5 minutes
+max_cache_size = 104857600       # 100MB
+
+# Search configuration
+[search_config]
+enabled = true
+max_results = 100
+index_refresh_interval = 300     # 5 minutes
+full_text_search = true
+
+# Analytics configuration
+[analytics_config]
+enabled = true
+retention_days = 30
+track_page_views = true
+track_search_queries = true
+track_downloads = true
+
+# Example production configuration for reverse proxy
+[production]
+# Use this with nginx/apache reverse proxy
+bind_address = "127.0.0.1:8080"
+enable_https = false  # SSL terminated at proxy
+document_root = "/var/www/cursed-docs"
+
+[production.cors_config]
+allowed_origins = ["https://cursed.dev", "https://www.cursed.dev"]
+allowed_methods = ["GET", "OPTIONS"]
+allowed_headers = ["Content-Type"]
+allow_credentials = false
+
+[production.rate_limiting]
+requests_per_minute = 120
+burst_capacity = 20
+enabled = true
+
+[production.cache_config]
+enabled = true
+static_cache_duration = 86400    # 24 hours
+api_cache_duration = 600         # 10 minutes
+max_cache_size = 1073741824      # 1GB
+
+[production.analytics_config]
+enabled = true
+retention_days = 90
+track_page_views = true
+track_search_queries = true
+track_downloads = true

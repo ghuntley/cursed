@@ -181,7 +181,7 @@ impl MLOptimizationCoordinator {
     }
     
     /// Record optimization outcome for learning
-    #[instrument(skip(self, strategy, metrics))]
+    #[instrument(skip(self, strategy, compilation_metrics))]
     pub fn record_optimization_outcome(
         &mut self,
         source_code: &str,

@@ -40,6 +40,29 @@ pub mod csv;
 pub mod regex_vibez;
 pub mod chaos_mode;
 pub mod embed_that;
+pub mod vibez;
+pub mod glyph_gang;
+pub mod glowup_http;
+pub mod no_cap;
+
+// ================================
+// GEN Z STDLIB MODULES (CURSED NAMING CONVENTIONS)
+// ================================
+
+/// StringZ - Tea manipulation functions with Gen Z flair
+pub mod stringz;
+
+/// MathZ - Mathematical functions with CURSED types and Gen Z naming  
+pub mod mathz;
+
+/// ConcurrenZ - Synchronization primitives with Gen Z flair
+pub mod concurrenz;
+
+/// DropZ - Basic I/O primitives with Gen Z naming
+pub mod dropz;
+
+/// VibeLife - OS functionality with Gen Z flair
+pub mod vibe_life;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -385,13 +408,13 @@ pub use process::{
     reset_signal_handler,
     
     // Process communication and IPC
-    ProcessChannels, ProcessCommunication, NamedPipe, SharedMemory, MessageQueue,
+    ProcessChannels, ProcessCommunication,
     IpcType, CommunicationConfig, create_process_communication, create_pipe,
     execute_with_communication, send_and_receive, create_daemon, monitor_process_output,
     
     // Process monitoring and health checks
     HealthStatus, ResourceThresholds, HealthCheckConfig, PerformanceMetrics,
-    PerformanceHistory, ProcessMonitor, MonitoredProcess, ProcessWatchdog,
+    PerformanceHistory, ProcessMonitor as IpcProcessMonitor, MonitoredProcess, ProcessWatchdog,
     collect_performance_metrics, create_process_monitor, monitor_process_once,
     get_system_resource_summary,
     
@@ -464,7 +487,7 @@ pub use atomic_drip::{
     MEMORY_ORDER_ACQUIRE_RELEASE, MEMORY_ORDER_SEQUENTIALLY_CONSISTENT,
     
     // Memory fence operations
-    fence::memory_fence, fence::compiler_fence, fence::full_barrier, 
+    fence::memory_fence as atomic_memory_fence, fence::compiler_fence as atomic_compiler_fence, fence::full_barrier, 
     fence::acquire_barrier, fence::release_barrier,
     
     // Module initialization
@@ -493,7 +516,7 @@ pub use ipc::{
     SharedMemory, SharedMemorySegment, SharedMemoryConfig, SharedMemoryStats,
     
     // Semaphores
-    Semaphore, NamedSemaphore, SemaphoreConfig, SemaphoreValue,
+    Semaphore as IpcSemaphore, NamedSemaphore, SemaphoreConfig, SemaphoreValue,
     
     // Unix Domain Sockets
     UnixSocket, UnixSocketServer, UnixSocketClient, UnixSocketConfig, UnixSocketType,
@@ -573,24 +596,24 @@ pub use profiler::{
     ProfilerError, ProfilerResult,
     
     // CPU profiling
-    CpuProfiler, CpuProfile, CpuSample, FunctionProfile, CallGraph, 
+    CpuProfiler, CpuProfile as ProfilerCpuProfile, CpuSample, FunctionProfile, CallGraph, 
     ProfileData, SamplingConfig, ProfilerConfig,
     start_cpu_profiling, stop_cpu_profiling, get_cpu_profile,
     
     // Memory profiling
-    MemoryProfiler, MemoryProfile, AllocationProfile, AllocationSite,
-    MemoryStats, HeapProfile, GcProfile, MemoryTracker,
+    MemoryProfiler, MemoryProfile as ProfilerMemoryProfile, AllocationProfile, AllocationSite,
+    MemoryStats as ProfilerMemoryStats, HeapProfile, GcProfile, MemoryTracker,
     start_memory_profiling, stop_memory_profiling, get_memory_profile,
     track_allocation, track_deallocation, get_memory_stats,
     
     // Benchmark framework
-    Benchmark, BenchmarkResult, BenchmarkSuite, BenchmarkConfig,
+    Benchmark as ProfilingBenchmark, BenchmarkResult as ProfilingBenchmarkResult, BenchmarkSuite, BenchmarkConfig,
     BenchmarkRunner, BenchmarkReport, ComparisonResult,
     benchmark_function, benchmark_with_setup, run_benchmark_suite,
     generate_benchmark_report,
     
     // Performance metrics
-    PerformanceMetrics, MetricsCollector, MetricType, MetricValue,
+    PerformanceMetrics as ProfilerPerformanceMetrics, MetricsCollector, MetricType, MetricValue,
     CounterMetric, GaugeMetric, HistogramMetric, TimerMetric,
     collect_metrics, start_metrics_collection, stop_metrics_collection,
     get_current_metrics, export_metrics,
@@ -609,7 +632,7 @@ pub use profiler::{
 pub use test_vibes::{
     // Core testing types
     VibeTest, VibeBench, VibeTestingManager, TestMain,
-    VibeTestState, VibeBenchState, TestResult, BenchmarkResult,
+    VibeTestState, VibeBenchState, TestResult as VibeTestResult, BenchmarkResult as TestingBenchmarkResult,
     
     // Comprehensive assertion framework
     Assert, AssertEqual, AssertNotEqual, AssertNil, AssertNotNil,
@@ -743,13 +766,13 @@ pub use vibe_net::{
 // exec_vibez command execution re-exports - Enhanced external command execution
 pub use exec_vibez::{
     // Core command execution types
-    Cmd, Process, ProcessState, Command, CommandContext,
+    Cmd, Process as ExecProcess, ProcessState, Command, CommandContext,
     
     // Error handling
     ExecError, ExecResult,
     
     // Process context and timeout support
-    VibeContext, ProcessContext, ContextError,
+    VibeContext as ExecVibeContext, ProcessContext, ContextError,
     
     // Process groups and coordination
     ProcessGroup, ProcessGroupOptions, NewProcessGroup,
@@ -764,7 +787,7 @@ pub use exec_vibez::{
     RunWithTimeout, TimeoutConfig,
     
     // Enhanced features
-    LookPath, ProcessMonitor, ResourceLimits, SecurityOptions,
+    LookPath, ProcessMonitor as ExecProcessMonitor, ResourceLimits as ExecResourceLimits, SecurityOptions,
     ProcessPool, ProcessQueue, BatchRunner,
     PlatformFeatures, CrossPlatformUtils,
     
@@ -865,7 +888,7 @@ pub use regex_vibez::{
     // Utility functions
     is_valid_pattern, validate_pattern, count_capture_groups, extract_literals,
     find_common_prefix, find_common_suffix, strings_to_alternation, optimize_string_list,
-    test_patterns, benchmark_pattern, BenchmarkResult, escape_replacement,
+    test_patterns, benchmark_pattern, BenchmarkResult as RegexBenchmarkResult, escape_replacement,
     parse_replacement_references, glob_to_regex, glob_match, find_regex_patterns,
     create_line_filter, split_keep_delimiter,
     
@@ -879,11 +902,11 @@ pub use chaos_mode::{
     ChaosError, ChaosResult,
     
     // Core runtime functions
-    num_cpu, num_goroutine, yield_processor, gosched, gc, gomaxprocs,
-    set_gc_percent, set_max_heap,
+    num_cpu as chaos_num_cpu, num_goroutine as chaos_num_goroutine, yield_processor, gosched, gc, gomaxprocs as chaos_gomaxprocs,
+    set_gc_percent as chaos_set_gc_percent, set_max_heap,
     
     // Memory management and statistics
-    MemoryStats, mem_stats, read_mem_stats, set_gc_enabled, free_os_memory,
+    MemoryStats as ChaosMemoryStats, mem_stats, read_mem_stats as chaos_read_mem_stats, set_gc_enabled, free_os_memory as chaos_free_os_memory,
     set_mem_profile_rate,
     
     // Memory debugging features
@@ -895,7 +918,7 @@ pub use chaos_mode::{
     pc_to_file_and_line, pc_to_func_name, goroutine_stack,
     
     // Enhanced goroutine management
-    GoroutineData, goroutine_info, set_goroutine_label, goroutines_by_label,
+    GoroutineData, goroutine_info as chaos_goroutine_info, set_goroutine_label, goroutines_by_label,
     goroutines_by_state, kill_goroutine,
     
     // Profiling and tracing
@@ -903,7 +926,7 @@ pub use chaos_mode::{
     start_cpu_profile, stop_cpu_profile,
     
     // Runtime information
-    version, goarch, goos, compiler, runtime_stats, goroot,
+    version as chaos_version, goarch as chaos_goarch, goos as chaos_goos, compiler as chaos_compiler, runtime_stats, goroot,
     
     // Enhanced garbage collection
     GCMode, set_gc_mode, get_gc_mode, start_gc, wait_for_gc,
@@ -928,7 +951,7 @@ pub use embed_that::{
     
     // Core types for embedded files
     ThatFile, ThatFiles, ThatString, ThatBytes,
-    FileSystemVibe, DirEntry, FileInfo, EmbeddedFileSystem,
+    FileSystemVibe, DirEntry as VibeDirEntry, FileInfo, EmbeddedFileSystem,
     
     // Resource loading functions
     load_that_file, load_that_dir, load_that_pattern, file_exists, get_embed_statistics,
@@ -971,6 +994,353 @@ pub use embed_that::{
         DEFAULT_CACHE_EXPIRY_SECONDS, DEFAULT_CACHE_MAX_SIZE, DEFAULT_CACHE_CLEANUP_INTERVAL_SECONDS,
         MIN_COMPRESSION_SIZE, COMPRESSION_RATIO_THRESHOLD
     }
+};
+
+// Vibez formatting and printing re-exports - Core formatting functionality with Gen Z flair
+pub use vibez::{
+    // Core printing functions
+    print, println, eprint, eprintln, print_to, println_to,
+    print_styled, println_styled, print_colored, println_colored,
+    PrintStyle, PrintColor,
+    
+    // Spill functions - Essential Gen Z I/O operations
+    spillstr, scan, scanln,
+    
+    // Advanced formatting
+    format, format_args, format_with_context, interpolate,
+    FormatError, FormatResult, FormatContext, FormatOptions,
+    FormatPlaceholder, FormatSpec, PlaceholderType, FormatAlignment, FormatSign,
+    
+    // Printf-style formatting
+    sprintf, snprintf, sprintf_to_writer,
+    SprintfError, SprintfResult, FormatSpecifier,
+    validate_format_string, count_format_specifiers,
+    
+    // Debug utilities
+    debug_print, debug_println, debug_format, pretty_print,
+    debug_dump, debug_inspect, debug_trace,
+    DebugOptions, DebugStyle, DebugLevel,
+    set_debug_level, get_debug_level, is_debug_enabled,
+    
+    // Module management
+    initialize as initialize_vibez, version as vibez_version, capabilities as vibez_capabilities
+};
+
+// GlyphGang Unicode processing re-exports - Comprehensive Unicode support with CURSED flair
+pub use glyph_gang::{
+    // Error handling system
+    GlyphGangError, GlyphGangResult,
+    unicode_error, normalization_error, encoding_error, range_error as glyph_range_error,
+    
+    // Character classification functions
+    is_letter, is_digit, is_number, is_space, is_punct, is_symbol, is_mark,
+    is_control, is_graphic, is_print, is_upper, is_lower, is_title,
+    
+    // Advanced character classifications
+    is_emoji, is_emoji_modifier, is_emoji_component, is_currency, is_math,
+    is_format, is_private_use, is_surrogate, is_ascii as glyph_is_ascii,
+    
+    // Character conversion functions
+    to_upper, to_lower, to_title, to_ascii, simple_fold,
+    
+    // Range and character set functions
+    is_in_range, is_in_ranges, is_one_of,
+    
+    // Character properties and information
+    get_character_name, find_character_by_name, get_block_name,
+    get_category, get_properties, get_code_point, get_canonical_equivalent,
+    
+    // Unicode range tables and properties
+    RangeTable, Range16, Range32,
+    LETTER, UPPERCASE_LETTER, LOWERCASE_LETTER, TITLECASE_LETTER,
+    MODIFIER_LETTER, OTHER_LETTER, NUMBER, DECIMAL_NUMBER, LETTER_NUMBER,
+    OTHER_NUMBER, PUNCT, CONNECTOR_PUNCTUATION, DASH_PUNCTUATION,
+    OPEN_PUNCTUATION, CLOSE_PUNCTUATION, INITIAL_PUNCTUATION,
+    FINAL_PUNCTUATION, OTHER_PUNCTUATION, SYMBOL, MATH_SYMBOL,
+    CURRENCY_SYMBOL, MODIFIER_SYMBOL, OTHER_SYMBOL, MARK,
+    NON_SPACING_MARK, SPACING_MARK, ENCLOSING_MARK, SPACE,
+    CONTROL, FORMAT, SURROGATE, PRIVATE, UNASSIGNED,
+    LATIN, GREEK, CYRILLIC, HEBREW, ARABIC, DEVANAGARI, THAI,
+    HAN, HIRAGANA, KATAKANA, HANGUL,
+    EMOJI, EMOJI_PRESENTATION, EMOJI_MODIFIER, EMOJI_MODIFIER_BASE,
+    EMOJI_COMPONENT, EXTENDED_PICTOGRAPHIC,
+    
+    // Enhanced Unicode-aware string operations
+    to_upper_string, to_lower_string, to_title_string, normalize_string,
+    NormalizationForm, NFC, NFD, NFKC, NFKD,
+    rune_count, first_rune, last_rune, rune_at, rune_indices,
+    string_width, truncate_string, wrap_text as glyph_wrap_text, reverse_string,
+    word_boundaries, sentence_boundaries, line_break_opportunities,
+    fold_string, equal_fold, get_char_width, get_string_width,
+    truncate_with_ellipsis,
+    
+    // Emoji support and detection
+    is_emoji_sequence, contains_emoji, extract_emojis, replace_emojis,
+    get_emoji_name, find_emoji_by_name, emoji_categories, emojis_in_category,
+    
+    // Bidirectional text support
+    Direction, LTR, RTL, MIXED,
+    get_direction, get_string_direction, is_rtl, is_ltr, is_mixed,
+    
+    // Script detection and analysis
+    Script, SCRIPT_UNKNOWN, SCRIPT_LATIN, SCRIPT_GREEK, SCRIPT_CYRILLIC,
+    detect_script, get_script_name, get_languages_by_script,
+    
+    // Module management
+    initialize as initialize_glyph_gang, version as glyph_gang_version, 
+    unicode_version, capabilities as glyph_gang_capabilities
+};
+
+// NoCap string conversion re-exports - CURSED string conversion utilities with Gen Z flair
+pub use no_cap::{
+    // Error handling system
+    NoCapError, NoCapResult, ErrSyntax, ErrRange,
+    
+    // Type aliases
+    Tea, Lit, Normie,
+    
+    // Core parsing functions (String to Value)
+    FactsCheck, YoinkInt, YoinkUint, YoinkFloat,
+    
+    // Core formatting functions (Value to String)
+    YeetBool, YeetInt, YeetUint, YeetFloat, SussyFloat,
+    
+    // Convenience functions
+    Atoi, Itoa,
+    
+    // Enhanced utility functions
+    utils::{
+        AutoYoinkInt, AutoYoinkUint, AutoYoinkFloat,
+        IsValidInt, IsValidFloat, IsValidBool,
+        ConvertBase, FormatWithSeparators, ParseWithSeparators,
+        FormatBoolCustom, LooksLikeNumber, GetNumberType, NumberType
+    },
+    
+    // Module management
+    init_no_cap, get_no_cap_stats, NoCap
+};
+
+// ================================
+// GEN Z STDLIB MODULE RE-EXPORTS (CURSED CONVENTIONS)
+// ================================
+
+// StringZ - Tea manipulation functions with Gen Z flair
+pub use stringz::{
+    // Core tea manipulation
+    string_length, is_empty_tea, concat_tea, repeat_tea, reverse_tea, char_at_index,
+    
+    // Search and replace  
+    contains_tea, starts_with_tea, ends_with_tea, find_tea, find_last_tea,
+    replace_all_tea, replace_first_tea, count_tea,
+    
+    // Transformations
+    substring_tea, trim_tea, trim_start_tea, trim_end_tea,
+    to_lowercase_tea, to_uppercase_tea, to_title_case_tea, to_camel_case_tea,
+    to_pascal_case_tea, to_snake_case_tea, to_kebab_case_tea, capitalize_tea,
+    
+    // Splitting and joining
+    split_tea, split_tea_n, split_lines_tea, split_whitespace_tea,
+    join_tea, join_owned_tea,
+    
+    // Validation
+    is_numeric_tea, is_integer_tea, is_alphabetic_tea, is_alphanumeric_tea,
+    is_whitespace_tea, is_uppercase_tea, is_lowercase_tea, is_email_tea,
+    is_url_tea, is_palindrome_tea,
+    
+    // Formatting
+    pad_left_tea, pad_right_tea, center_tea, truncate_tea, wrap_text_tea,
+    escape_html_tea, escape_json_tea,
+    
+    // Enhanced operations
+    tea_to_bytes, bytes_to_tea, tea_chars, is_ascii_tea,
+    insert_at_tea, remove_range_tea,
+    
+    // Utility functions
+    partition_tea, rpartition_tea, chunk_tea, add_line_numbers_tea,
+    indent_lines_tea, has_balanced_parentheses_tea, has_balanced_brackets_tea,
+    
+    // Module functions
+    init_stringz, get_stringz_stats,
+    
+    // Error types
+    StringzError, StringzResult
+};
+
+// MathZ - Mathematical functions with CURSED types and Gen Z naming
+pub use mathz::{
+    // CURSED type aliases
+    Thicc, Smol, Chonky,
+    
+    // Normie (i32) operations
+    abs_normie, min_normie, max_normie, clamp_normie, sign_normie,
+    is_even_normie, is_odd_normie, gcd_normie, lcm_normie,
+    
+    // Thicc (i64) operations  
+    abs_thicc, min_thicc, max_thicc, clamp_thicc, sign_thicc,
+    is_even_thicc, is_odd_thicc,
+    
+    // Chonky (f64) operations
+    abs_chonky, min_chonky, max_chonky, clamp_chonky, sign_chonky,
+    floor_chonky, ceil_chonky, round_chonky, truncate_chonky, fract_chonky,
+    is_zero_chonky, is_equal_chonky,
+    
+    // Power and root functions
+    pow_chonky, powi_chonky, square_chonky, cube_chonky,
+    sqrt_chonky, cbrt_chonky, nth_root_chonky, hypot_chonky, reciprocal_chonky,
+    
+    // Logarithmic and exponential
+    ln_chonky, log10_chonky, log2_chonky, log_chonky,
+    exp_chonky, exp2_chonky, exp10_chonky,
+    
+    // Trigonometric functions
+    sin_chonky, cos_chonky, tan_chonky, asin_chonky, acos_chonky,
+    atan_chonky, atan2_chonky, sinh_chonky, cosh_chonky, tanh_chonky,
+    
+    // Mathematical constants
+    PI_CHONKY, TAU_CHONKY, E_CHONKY, PHI_CHONKY, SQRT_2_CHONKY,
+    LN_2_CHONKY, LN_10_CHONKY,
+    
+    // Random number generation
+    random_chonky, random_range_chonky, random_normie,
+    
+    // Interpolation functions
+    lerp_chonky, inverse_lerp_chonky, smooth_step_chonky, smoother_step_chonky,
+    map_range_chonky,
+    
+    // Utility functions
+    is_valid_chonky, round_to_decimals_chonky, average_chonky,
+    geometric_mean_chonky, harmonic_mean_chonky,
+    
+    // Module functions
+    init_mathz, get_mathz_stats,
+    
+    // Error types
+    MathzError, MathzResult
+};
+
+// ConcurrenZ - Synchronization primitives with Gen Z flair
+pub use concurrenz::{
+    // Mutex operations
+    MutexVibes, new_mutex_vibes,
+    
+    // Read-Write Lock operations
+    RwLockVibes, new_rwlock_vibes,
+    
+    // Atomic operations
+    AtomicBoolVibes, AtomicIntVibes, new_atomic_bool_vibes, new_atomic_int_vibes,
+    
+    // Channel operations
+    SenderVibes, ReceiverVibes, channel_vibes,
+    
+    // Thread operations
+    ThreadHandleVibes, spawn_thread_vibes, spawn_named_thread_vibes,
+    sleep_vibes, yield_vibes, current_thread_id_vibes, current_thread_name_vibes,
+    
+    // Barrier operations
+    BarrierVibes, new_barrier_vibes,
+    
+    // Condition variable operations
+    CondVarVibes, new_condvar_vibes,
+    
+    // Once operations
+    OnceVibes, new_once_vibes,
+    
+    // Utility functions
+    num_cpus_vibes, park_vibes, park_timeout_vibes, unpark_thread_vibes,
+    
+    // Module functions
+    init_concurrenz, get_concurrenz_stats,
+    
+    // Error types
+    ConcurrenzError, ConcurrenzResult
+};
+
+// DropZ - Basic I/O primitives with Gen Z naming
+pub use dropz::{
+    // Basic output operations
+    drop_tea, drop_line_tea, drop_error_tea, drop_error_line_tea,
+    drop_formatted_tea, flush_drops,
+    
+    // Basic input operations
+    catch_line_tea, catch_char_vibes, catch_until_vibes, catch_all_tea,
+    
+    // Interactive input operations
+    vibe_check_tea, vibe_check_bool, vibe_check_secret,
+    vibe_check_choice, vibe_check_multiple,
+    
+    // Number input operations
+    catch_normie_vibes, catch_thicc_vibes, catch_chonky_vibes,
+    
+    // Buffered I/O operations
+    StreamCatcherVibes, StreamDropperVibes,
+    
+    // Progress operations
+    ProgressVibes, new_progress_vibes,
+    
+    // Paginated output
+    paginate_drops,
+    
+    // Utility functions
+    clear_drops, move_cursor_vibes, hide_cursor_vibes, show_cursor_vibes,
+    get_terminal_size_vibes, set_text_color_vibes, reset_text_color_vibes,
+    
+    // Module functions
+    init_dropz, get_dropz_stats,
+    
+    // Error types
+    DropzError, DropzResult
+};
+
+// VibeLife - OS functionality with Gen Z flair
+pub use vibe_life::{
+    // CURSED type aliases (Tea, Normie, Thicc imported from other modules)
+    
+    // Environment variable operations
+    get_env_vibe, set_env_vibe, remove_env_vibe, get_env_vibe_or,
+    env_exists_vibe, get_all_env_vibes, clear_all_env_vibes,
+    
+    // Directory operations
+    get_current_vibe, get_home_vibe, get_temp_vibe, change_directory_vibe,
+    create_directory_vibe, create_directory_tree_vibe, remove_directory_vibe,
+    remove_directory_tree_vibe, list_directory_vibe,
+    
+    // File operations
+    path_exists_vibe, is_file_vibe, is_directory_vibe, get_file_size_vibe,
+    copy_file_vibe, move_file_vibe, delete_file_vibe,
+    read_file_vibe, write_file_vibe, append_file_vibe,
+    
+    // Process operations
+    get_current_process_vibe, get_parent_process_vibe, is_process_alive_vibe,
+    kill_process_vibe, force_kill_process_vibe, run_command_vibe,
+    run_command_timeout_vibe, command_exists_vibe, which_command_vibe,
+    
+    // System information
+    get_username_vibe, get_hostname_vibe, get_os_name_vibe,
+    get_architecture_vibe, get_cpu_count_vibe, get_system_uptime_vibe,
+    get_load_average_vibe,
+    
+    // Time operations
+    get_timestamp_vibe, get_timestamp_millis_vibe, sleep_vibe,
+    sleep_seconds_vibe, sleep_millis_vibe,
+    
+    // Path operations
+    join_path_vibe, get_parent_vibe, get_filename_vibe, get_extension_vibe,
+    get_absolute_path_vibe, normalize_path_vibe,
+    
+    // Signal operations
+    exit_vibe, exit_success_vibe, exit_error_vibe, abort_vibe,
+    
+    // Memory operations
+    get_memory_info_vibe, MemoryInfo as VibeMemoryInfo,
+    
+    // Utility functions
+    get_path_separator_vibe, is_unix_vibe, is_windows_vibe, is_case_sensitive_vibe,
+    
+    // Module functions
+    init_vibe_life, get_vibe_life_stats,
+    
+    // Error types
+    VibeLifeError, VibeLifeResult
 };
 
 
