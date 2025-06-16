@@ -710,8 +710,511 @@ impl FeatureExtractor {
     }
     
     pub fn extract_features(&mut self, function_ir: &str, profiling_data: Option<&ProfilingData>) -> Result<FeatureVector> {
-        // Implementation would analyze the IR and extract relevant features
-        Ok(FeatureVector::default())
+        // Check cache first
+        if let Some(cached) = self.cache.get(function_ir) {
+            self.extraction_stats.cache_hit_rate = 
+                (self.cache.len() as f64) / (self.cache.len() as f64 + 1.0);
+            return Ok(cached.clone());
+        }
+        
+        let start_time = std::time::Instant::now();
+        
+        // Extract function-level features from IR
+        let function_features = self.extract_function_features(function_ir)?;
+        
+        // Extract code-level features
+        let code_features = self.extract_code_features(function_ir)?;
+        
+        // Extract performance features from profiling data
+        let performance_features = if let Some(profiling) = profiling_data {
+            PerformanceFeatures {
+                execution_frequency: profiling.execution_frequency,
+                cache_miss_rate: profiling.cache_miss_rate,
+                branch_prediction_accuracy: profiling.branch_prediction_accuracy,
+                instruction_level_parallelism: self.estimate_ilp(function_ir),
+                memory_bandwidth_utilization: self.estimate_memory_bandwidth(function_ir),
+                energy_consumption_estimate: self.estimate_energy_consumption(function_ir),
+                critical_path_length: self.calculate_critical_path(function_ir),
+            }
+        } else {
+            PerformanceFeatures::default()
+        };
+        
+        // Extract target architecture features
+        let target_features = self.extract_target_features()?;
+        
+        // Extract CURSED-specific features
+        let cursed_features = self.extract_cursed_features(function_ir)?;
+        
+        let feature_vector = FeatureVector {
+            function_features,
+            code_features,
+            performance_features,
+            target_features,
+            cursed_features,
+        };
+        
+        // Cache the result
+        self.cache.insert(function_ir.to_string(), feature_vector.clone());
+        
+        // Update statistics
+        self.extraction_stats.features_extracted += 1;
+        self.extraction_stats.extraction_time += start_time.elapsed();
+        
+        Ok(feature_vector)
+    }
+    
+    /// Extract function-level features from IR
+    fn extract_function_features(&self, function_ir: &str) -> Result<FunctionFeatures> {
+        let lines: Vec<&str> = function_ir.lines().collect();
+        let size_in_bytes = function_ir.len();
+        
+        // Count different types of operations
+        let mut instruction_count = 0;
+        let mut basic_block_count = 0;
+        let mut call_count = 0;
+        let mut loop_count = 0;
+        let mut branch_count = 0;
+        let mut memory_operations = 0;
+        let mut arithmetic_operations = 0;
+        let mut has_recursion = false;
+        let mut max_call_depth = 0;
+        
+        for line in &lines {
+            let trimmed = line.trim();
+            
+            // Count basic blocks (labels)
+            if trimmed.ends_with(':') && !trimmed.contains("entry:") {
+                basic_block_count += 1;
+            }
+            
+            // Count instructions
+            if trimmed.contains("=") || trimmed.starts_with("call") || 
+               trimmed.starts_with("br") || trimmed.starts_with("ret") {
+                instruction_count += 1;
+            }
+            
+            // Count specific operations
+            if trimmed.contains("call") {
+                call_count += 1;
+                // Check for recursion
+                if trimmed.contains("@") {
+                    let function_name = self.extract_function_name(function_ir);
+                    if trimmed.contains(&function_name) {
+                        has_recursion = true;
+                    }
+                }
+            }
+            
+            if trimmed.contains("loop") || trimmed.contains("for.") || 
+               trimmed.contains("while.") {
+                loop_count += 1;
+            }
+            
+            if trimmed.contains("br i1") || trimmed.contains("switch") {
+                branch_count += 1;
+            }
+            
+            if trimmed.contains("load") || trimmed.contains("store") ||
+               trimmed.contains("getelementptr") {
+                memory_operations += 1;
+            }
+            
+            if trimmed.contains("add") || trimmed.contains("sub") ||
+               trimmed.contains("mul") || trimmed.contains("div") ||
+               trimmed.contains("fadd") || trimmed.contains("fsub") ||
+               trimmed.contains("fmul") || trimmed.contains("fdiv") {
+                arithmetic_operations += 1;
+            }
+        }
+        
+        // Estimate call depth based on nested calls
+        max_call_depth = self.estimate_call_depth(function_ir);
+        
+        Ok(FunctionFeatures {
+            size_in_bytes,
+            instruction_count,
+            basic_block_count,
+            call_count,
+            loop_count,
+            branch_count,
+            memory_operations,
+            arithmetic_operations,
+            has_recursion,
+            max_call_depth,
+        })
+    }
+    
+    /// Extract code complexity features
+    fn extract_code_features(&self, function_ir: &str) -> Result<CodeFeatures> {
+        let cyclomatic_complexity = self.calculate_cyclomatic_complexity(function_ir);
+        let data_dependency_count = self.count_data_dependencies(function_ir);
+        let control_dependency_count = self.count_control_dependencies(function_ir);
+        let live_range_pressure = self.estimate_live_range_pressure(function_ir);
+        let memory_access_patterns = self.analyze_memory_access_patterns(function_ir);
+        let constant_propagation_opportunities = self.count_constant_propagation_opportunities(function_ir);
+        let dead_code_percentage = self.estimate_dead_code_percentage(function_ir);
+        
+        Ok(CodeFeatures {
+            cyclomatic_complexity,
+            data_dependency_count,
+            control_dependency_count,
+            live_range_pressure,
+            memory_access_patterns,
+            constant_propagation_opportunities,
+            dead_code_percentage,
+        })
+    }
+    
+    /// Extract target architecture features
+    fn extract_target_features(&self) -> Result<TargetFeatures> {
+        // Detect target architecture from environment
+        let target_arch = std::env::consts::ARCH;
+        
+        let (available_registers, vector_unit_width, pipeline_depth) = match target_arch {
+            "x86_64" => (16, 8, 14),    // x86-64 with AVX2
+            "aarch64" => (31, 4, 12),   // ARM64 with NEON
+            "arm" => (16, 4, 8),        // ARM32
+            _ => (16, 4, 10),           // Default values
+        };
+        
+        let cache_hierarchy = vec![
+            CacheLevel { level: 1, size: 32768, associativity: 8, line_size: 64 },
+            CacheLevel { level: 2, size: 262144, associativity: 8, line_size: 64 },
+            CacheLevel { level: 3, size: 8388608, associativity: 16, line_size: 64 },
+        ];
+        
+        let mut instruction_costs = HashMap::new();
+        instruction_costs.insert("add".to_string(), 0.25);
+        instruction_costs.insert("mul".to_string(), 1.0);
+        instruction_costs.insert("div".to_string(), 10.0);
+        instruction_costs.insert("load".to_string(), 3.0);
+        instruction_costs.insert("store".to_string(), 1.0);
+        instruction_costs.insert("branch".to_string(), 1.0);
+        
+        Ok(TargetFeatures {
+            available_registers,
+            vector_unit_width,
+            cache_hierarchy,
+            instruction_costs,
+            pipeline_depth,
+            branch_predictor_type: "two-level".to_string(),
+        })
+    }
+    
+    /// Extract CURSED-specific language features
+    fn extract_cursed_features(&self, function_ir: &str) -> Result<CursedSpecificFeatures> {
+        let goroutine_usage = self.analyze_goroutine_usage(function_ir);
+        let channel_usage = self.analyze_channel_usage(function_ir);
+        let gen_z_slang_patterns = self.analyze_gen_z_slang(function_ir);
+        let interface_complexity = self.analyze_interface_complexity(function_ir);
+        let error_propagation_usage = self.analyze_error_propagation(function_ir);
+        
+        Ok(CursedSpecificFeatures {
+            goroutine_usage,
+            channel_usage,
+            gen_z_slang_patterns,
+            interface_complexity,
+            error_propagation_usage,
+        })
+    }
+    
+    // Helper methods for feature extraction
+    
+    fn extract_function_name(&self, function_ir: &str) -> String {
+        for line in function_ir.lines() {
+            if line.trim().starts_with("define") {
+                if let Some(name_start) = line.find('@') {
+                    if let Some(name_end) = line[name_start..].find('(') {
+                        return line[name_start+1..name_start+name_end].to_string();
+                    }
+                }
+            }
+        }
+        "unknown".to_string()
+    }
+    
+    fn estimate_call_depth(&self, function_ir: &str) -> usize {
+        // Simple heuristic: count nested function calls
+        let mut max_depth = 0;
+        let mut current_depth = 0;
+        
+        for line in function_ir.lines() {
+            let trimmed = line.trim();
+            if trimmed.contains("call") {
+                current_depth += 1;
+                max_depth = max_depth.max(current_depth);
+            }
+            if trimmed.contains("ret") {
+                current_depth = current_depth.saturating_sub(1);
+            }
+        }
+        
+        max_depth
+    }
+    
+    fn calculate_cyclomatic_complexity(&self, function_ir: &str) -> f64 {
+        // McCabe's cyclomatic complexity: M = E - N + 2P
+        // Simplified: count decision points
+        let mut complexity = 1.0; // Base complexity
+        
+        for line in function_ir.lines() {
+            let trimmed = line.trim();
+            if trimmed.contains("br i1") || trimmed.contains("switch") ||
+               trimmed.contains("select") {
+                complexity += 1.0;
+            }
+        }
+        
+        complexity
+    }
+    
+    fn count_data_dependencies(&self, function_ir: &str) -> usize {
+        // Count def-use chains
+        let mut def_count = 0;
+        
+        for line in function_ir.lines() {
+            if line.trim().contains("=") && !line.trim().starts_with(";") {
+                def_count += 1;
+            }
+        }
+        
+        def_count
+    }
+    
+    fn count_control_dependencies(&self, function_ir: &str) -> usize {
+        // Count control flow dependencies
+        let mut control_deps = 0;
+        
+        for line in function_ir.lines() {
+            if line.trim().contains("br") || line.trim().contains("switch") {
+                control_deps += 1;
+            }
+        }
+        
+        control_deps
+    }
+    
+    fn estimate_live_range_pressure(&self, function_ir: &str) -> f64 {
+        // Estimate register pressure based on variable count
+        let mut variable_count = 0;
+        
+        for line in function_ir.lines() {
+            if line.trim().contains("%") {
+                variable_count += 1;
+            }
+        }
+        
+        // Normalize by typical register count
+        (variable_count as f64) / 16.0
+    }
+    
+    fn analyze_memory_access_patterns(&self, function_ir: &str) -> Vec<AccessPattern> {
+        let mut patterns = Vec::new();
+        
+        // Simple pattern detection
+        for line in function_ir.lines() {
+            if line.contains("getelementptr") {
+                if line.contains("inbounds") {
+                    patterns.push(AccessPattern::Sequential);
+                } else {
+                    patterns.push(AccessPattern::Random);
+                }
+            }
+        }
+        
+        patterns
+    }
+    
+    fn count_constant_propagation_opportunities(&self, function_ir: &str) -> usize {
+        let mut opportunities = 0;
+        
+        for line in function_ir.lines() {
+            // Look for operations with constant operands
+            if (line.contains("add") || line.contains("mul") || line.contains("sub")) &&
+               (line.contains("i32 ") || line.contains("i64 ")) {
+                opportunities += 1;
+            }
+        }
+        
+        opportunities
+    }
+    
+    fn estimate_dead_code_percentage(&self, function_ir: &str) -> f64 {
+        // Heuristic: look for unreachable blocks
+        let total_blocks = function_ir.lines()
+            .filter(|line| line.trim().ends_with(':'))
+            .count();
+        
+        let reachable_blocks = function_ir.lines()
+            .filter(|line| line.contains("br label") || line.contains("entry:"))
+            .count();
+        
+        if total_blocks > 0 {
+            ((total_blocks - reachable_blocks.min(total_blocks)) as f64 / total_blocks as f64) * 100.0
+        } else {
+            0.0
+        }
+    }
+    
+    fn estimate_ilp(&self, function_ir: &str) -> f64 {
+        // Estimate instruction-level parallelism
+        let mut independent_ops = 0;
+        let mut total_ops = 0;
+        
+        for line in function_ir.lines() {
+            if line.contains("=") && !line.contains("load") && !line.contains("store") {
+                total_ops += 1;
+                // Assume arithmetic operations can be parallelized
+                if line.contains("add") || line.contains("mul") || line.contains("fadd") {
+                    independent_ops += 1;
+                }
+            }
+        }
+        
+        if total_ops > 0 {
+            (independent_ops as f64) / (total_ops as f64) * 4.0 // Assume 4-wide
+        } else {
+            1.0
+        }
+    }
+    
+    fn estimate_memory_bandwidth(&self, function_ir: &str) -> f64 {
+        let memory_ops = function_ir.lines()
+            .filter(|line| line.contains("load") || line.contains("store"))
+            .count();
+        
+        let total_ops = function_ir.lines()
+            .filter(|line| line.contains("="))
+            .count();
+        
+        if total_ops > 0 {
+            (memory_ops as f64) / (total_ops as f64)
+        } else {
+            0.0
+        }
+    }
+    
+    fn estimate_energy_consumption(&self, function_ir: &str) -> f64 {
+        // Simple energy model based on operation types
+        let mut energy = 0.0;
+        
+        for line in function_ir.lines() {
+            if line.contains("add") || line.contains("sub") {
+                energy += 0.1;
+            } else if line.contains("mul") {
+                energy += 0.5;
+            } else if line.contains("div") {
+                energy += 2.0;
+            } else if line.contains("load") || line.contains("store") {
+                energy += 1.0;
+            }
+        }
+        
+        energy
+    }
+    
+    fn calculate_critical_path(&self, function_ir: &str) -> usize {
+        // Simplified critical path calculation
+        let mut path_length = 0;
+        
+        for line in function_ir.lines() {
+            if line.contains("=") {
+                path_length += 1;
+            }
+        }
+        
+        path_length
+    }
+    
+    fn analyze_goroutine_usage(&self, function_ir: &str) -> GoroutineUsageFeatures {
+        let goroutine_spawn_count = function_ir.lines()
+            .filter(|line| line.contains("stan") || line.contains("goroutine"))
+            .count();
+        
+        GoroutineUsageFeatures {
+            goroutine_spawn_count,
+            average_goroutine_lifetime: Duration::from_millis(100),
+            stack_size_requirements: 65536,
+            synchronization_primitives: function_ir.lines()
+                .filter(|line| line.contains("mutex") || line.contains("channel"))
+                .count(),
+            concurrent_execution_factor: if goroutine_spawn_count > 0 { 
+                (goroutine_spawn_count as f64).min(8.0) 
+            } else { 
+                1.0 
+            },
+        }
+    }
+    
+    fn analyze_channel_usage(&self, function_ir: &str) -> ChannelUsageFeatures {
+        let channel_count = function_ir.lines()
+            .filter(|line| line.contains("channel") || line.contains("chan"))
+            .count();
+        
+        ChannelUsageFeatures {
+            channel_count,
+            buffer_sizes: vec![0, 1, 10],
+            send_receive_ratio: 1.0,
+            select_statement_usage: function_ir.lines()
+                .filter(|line| line.contains("select"))
+                .count(),
+            channel_closing_patterns: function_ir.lines()
+                .filter(|line| line.contains("close"))
+                .count(),
+        }
+    }
+    
+    fn analyze_gen_z_slang(&self, function_ir: &str) -> GenZSlangFeatures {
+        GenZSlangFeatures {
+            slay_function_usage: function_ir.lines()
+                .filter(|line| line.contains("slay"))
+                .count(),
+            yolo_expression_count: function_ir.lines()
+                .filter(|line| line.contains("yolo"))
+                .count(),
+            sus_variable_patterns: function_ir.lines()
+                .filter(|line| line.contains("sus"))
+                .count(),
+            facts_declaration_style: function_ir.contains("facts"),
+            periodt_termination_usage: function_ir.lines()
+                .filter(|line| line.contains("periodt"))
+                .count(),
+            vibe_check_complexity: if function_ir.contains("vibe_check") { 2.0 } else { 0.0 },
+        }
+    }
+    
+    fn analyze_interface_complexity(&self, function_ir: &str) -> InterfaceComplexityFeatures {
+        let interface_count = function_ir.lines()
+            .filter(|line| line.contains("interface") || line.contains("collab"))
+            .count();
+        
+        InterfaceComplexityFeatures {
+            interface_count,
+            method_count_per_interface: vec![3, 5, 2],
+            inheritance_depth: 2,
+            dynamic_dispatch_frequency: 0.3,
+            type_assertion_count: function_ir.lines()
+                .filter(|line| line.contains(".(") && line.contains(")?"))
+                .count(),
+        }
+    }
+    
+    fn analyze_error_propagation(&self, function_ir: &str) -> ErrorPropagationFeatures {
+        ErrorPropagationFeatures {
+            question_mark_operator_usage: function_ir.lines()
+                .filter(|line| line.contains("?"))
+                .count(),
+            error_handling_blocks: function_ir.lines()
+                .filter(|line| line.contains("catch") || line.contains("error"))
+                .count(),
+            panic_recovery_usage: function_ir.lines()
+                .filter(|line| line.contains("panic") || line.contains("recover"))
+                .count(),
+            error_conversion_patterns: function_ir.lines()
+                .filter(|line| line.contains("into()") || line.contains("from()"))
+                .count(),
+        }
     }
 }
 

@@ -791,7 +791,6 @@ impl LlvmCodeGenerator {
 
 /// FFI function implementations for async runtime integration
 use crate::runtime::r#async::{get_async_runtime, spawn, TaskHandle};
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 /// Global future registry for tracking async operations

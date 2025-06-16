@@ -27,6 +27,7 @@ log = "0.4"  # Logging facade
 env_logger = "0.10"  # Logging implementation
 dirs = "5.0"  # For finding home directory
 num-traits = "0.2"  # For numerical traits
+num_cpus = "1.16"    # For detecting CPU core count
 libc = "0.2"  # For C functions like strlen
 inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 atty = "0.2"  # For checking if stdin/stdout is a terminal
@@ -74,6 +75,8 @@ hkdf = "0.12.3"   # HMAC-based Key Derivation Function
 subtle = "2.5.0"  # Constant-time utilities
 zeroize = "1.7.0" # Secure memory zeroing
 num-bigint = "0.4"  # Big integer arithmetic for RSA operations
+num-rational = "0.4" # Rational number arithmetic for big_mood module
+num-complex = "0.4"  # Complex number arithmetic for big_mood module
 signature = "2.1"   # Digital signature traits
 elliptic-curve = "0.13"  # Elliptic curve traits and utilities
 
@@ -127,7 +130,7 @@ tokio = { version = "1.0", features = ["full"] }  # Async runtime
 indicatif = "0.17"  # Progress bars for CLI
 
 # Optimization system dependencies
-num_cpus = "1.16"         # For detecting number of CPU cores
+# num_cpus = "1.16"         # For detecting number of CPU cores (already included above)
 crossbeam = "0.8"          # For optimization system parallel processing
 crossbeam-channel = "0.5" # For thread communication in parallel compilation
 tracing = "0.1"           # For structured logging and instrumentation
@@ -374,5 +377,10 @@ required-features = ["benchmarks"]
 
 [[bench]]
 name = "compression_benchmark"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "system_monitoring_benchmark"
 harness = false
 required-features = ["benchmarks"]

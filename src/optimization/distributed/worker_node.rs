@@ -661,9 +661,14 @@ impl WorkerNodeManager {
     /// Broadcast discovery message
     async fn broadcast_discovery(&self) -> Result<()> {
         if let Some(socket) = &self.discovery_socket {
+            let local_address = std::env::var("CURSED_COORDINATOR_ADDRESS")
+                .unwrap_or_else(|_| "127.0.0.1:9000".to_string())
+                .parse()
+                .unwrap_or_else(|_| "127.0.0.1:9000".parse().unwrap());
+                
             let message = WorkerMessage::DiscoveryBroadcast {
                 coordinator_id: self.coordinator_id.clone(),
-                coordinator_address: "127.0.0.1:9000".parse().unwrap(), // TODO: use actual address
+                coordinator_address: local_address,
             };
 
             let serialized = bincode::serialize(&message)
@@ -793,20 +798,95 @@ struct WorkerManagerHandle {
 
 impl WorkerManagerHandle {
     async fn run_discovery_broadcast(&self) {
-        // Implementation moved to WorkerNodeManager
+        while self.is_running.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Err(e) = self.broadcast_discovery().await {
+                warn!(error = ?e, "Discovery broadcast failed");
+            }
+
+            tokio::time::sleep(self.config.discovery_interval).await;
+        }
     }
 
     async fn run_heartbeat_monitor(&self) {
-        // Implementation moved to WorkerNodeManager  
+        while self.is_running.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Err(e) = self.check_worker_heartbeats().await {
+                warn!(error = ?e, "Heartbeat check failed");
+            }
+
+            tokio::time::sleep(self.config.heartbeat_interval).await;
+        }
     }
 
     async fn broadcast_discovery(&self) -> Result<()> {
-        // Would implement actual discovery broadcast
+        let local_address = std::env::var("CURSED_COORDINATOR_ADDRESS")
+            .unwrap_or_else(|_| "127.0.0.1:9000".to_string())
+            .parse()
+            .unwrap_or_else(|_| "127.0.0.1:9000".parse().unwrap());
+            
+        let message = WorkerMessage::DiscoveryBroadcast {
+            coordinator_id: self.coordinator_id.clone(),
+            coordinator_address: local_address,
+        };
+
+        let serialized = bincode::serialize(&message)
+            .map_err(|e| CursedError::system_error(&format!("Serialization failed: {}", e)))?;
+
+        // Create UDP socket for broadcasting
+        let socket = UdpSocket::bind("0.0.0.0:0").await
+            .map_err(|e| CursedError::system_error(&format!("Failed to bind discovery socket: {}", e)))?;
+        
+        socket.set_broadcast(true)
+            .map_err(|e| CursedError::system_error(&format!("Failed to enable broadcast: {}", e)))?;
+
+        // Broadcast to common subnets
+        let broadcast_addresses = [
+            "192.168.1.255:9001",
+            "192.168.0.255:9001", 
+            "10.0.0.255:9001",
+            "172.16.255.255:9001",
+        ];
+
+        for addr_str in &broadcast_addresses {
+            if let Ok(addr) = addr_str.parse::<SocketAddr>() {
+                let _ = socket.send_to(&serialized, addr).await;
+            }
+        }
+
+        debug!("Discovery broadcast sent");
         Ok(())
     }
 
     async fn check_worker_heartbeats(&self) -> Result<()> {
-        // Would implement heartbeat checking
+        let max_heartbeat_age = self.config.heartbeat_interval
+            * self.config.max_missed_heartbeats as u32;
+
+        let mut stale_workers = Vec::new();
+
+        {
+            let workers = self.workers.lock()
+                .map_err(|_| CursedError::system_error("Failed to lock workers"))?;
+            
+            for (worker_id, worker) in workers.iter() {
+                if worker.is_heartbeat_stale(max_heartbeat_age) {
+                    stale_workers.push(worker_id.clone());
+                }
+            }
+        }
+
+        // Mark stale workers as offline
+        for worker_id in stale_workers {
+            // Update worker status to offline
+            {
+                let mut workers = self.workers.lock()
+                    .map_err(|_| CursedError::system_error("Failed to lock workers"))?;
+                
+                if let Some(worker) = workers.get_mut(&worker_id) {
+                    worker.status = WorkerStatus::Offline;
+                }
+            }
+            warn!(worker_id, "Worker marked offline due to stale heartbeat");
+        }
+
         Ok(())
     }
 }

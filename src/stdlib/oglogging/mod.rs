@@ -5,7 +5,7 @@ pub mod standard;
 
 use std::sync::{Arc, Mutex};
 use std::io::Write;
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use crate::error::CursedError;
 
 // Re-export main types and functions

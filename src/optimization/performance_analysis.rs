@@ -1,985 +1,732 @@
-/// Performance Analysis and Reporting
+/// Performance Analysis System
 /// 
-/// Provides comprehensive performance analysis capabilities including:
-/// - Optimization result analysis
-/// - Performance trend tracking
-/// - Benchmark comparison
-/// - Detailed reporting and visualization
+/// Provides comprehensive performance analysis and regression detection
+/// for optimization effectiveness measurement.
 
 use crate::error::{Error, Result};
-use crate::optimization::{OptimizationResult, OptimizationManagerStats};
+use crate::optimization::config::OptimizationLevel;
 use std::collections::{HashMap, VecDeque};
-use std::time::{Duration, Instant};
-use serde::{Serialize, Deserialize};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use serde::{Deserialize, Serialize};
+use tracing::{debug, info, warn, instrument};
 
-/// Performance analyzer for optimization results
+/// Performance analyzer for measuring optimization effectiveness
 pub struct PerformanceAnalyzer {
-    historical_data: VecDeque<PerformanceDataPoint>,
-    benchmarks: HashMap<String, BenchmarkSuite>,
-    analysis_cache: HashMap<String, CachedAnalysis>,
-    stats: PerformanceAnalysisStats,
+    baseline_data: Option<PerformanceBaseline>,
+    trending_data: VecDeque<PerformanceDataPoint>,
+    regression_detector: RegressionDetector,
 }
 
+/// Performance baseline for comparison
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerformanceBaseline {
+    pub timestamp: SystemTime,
+    pub optimization_level: OptimizationLevel,
+    pub compilation_time: Duration,
+    pub runtime_performance: f64,
+    pub memory_usage: u64,
+    pub code_size: u64,
+    pub metadata: HashMap<String, String>,
+}
+
+/// Performance data point for trending analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceDataPoint {
-    pub timestamp: u64,
-    pub optimization_level: String,
+    pub timestamp: SystemTime,
     pub compilation_time: Duration,
-    pub execution_time: Option<Duration>,
-    pub memory_usage: Option<u64>,
-    pub code_size: Option<u64>,
-    pub performance_improvement: f64,
-    pub optimization_passes: Vec<String>,
+    pub runtime_improvement: f64,
+    pub size_reduction: f64,
+    pub memory_reduction: f64,
+    pub optimization_level: OptimizationLevel,
+    pub confidence_score: f64,
 }
 
+/// Performance trends analysis
 #[derive(Debug, Clone)]
-pub struct BenchmarkSuite {
-    pub name: String,
-    pub benchmarks: Vec<Benchmark>,
-    pub baseline_results: Option<BenchmarkResults>,
-    pub last_updated: Instant,
-}
-
-#[derive(Debug, Clone)]
-pub struct Benchmark {
-    pub name: String,
-    pub category: BenchmarkCategory,
-    pub expected_performance: Option<Duration>,
-    pub weight: f64,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BenchmarkCategory {
-    Compilation,
-    Runtime,
-    Memory,
-    CodeSize,
-    Throughput,
-}
-
-#[derive(Debug, Clone)]
-pub struct BenchmarkResults {
-    pub suite_name: String,
-    pub results: HashMap<String, BenchmarkResult>,
-    pub overall_score: f64,
-    pub timestamp: Instant,
-}
-
-#[derive(Debug, Clone)]
-pub struct BenchmarkResult {
-    pub benchmark_name: String,
-    pub value: f64,
-    pub unit: String,
-    pub improvement_percentage: f64,
-    pub performance_regression: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct CachedAnalysis {
-    pub analysis_type: String,
-    pub results: AnalysisResults,
-    pub created_at: Instant,
-    pub expires_at: Instant,
-}
-
-#[derive(Debug, Clone)]
-pub struct AnalysisResults {
-    pub trends: TrendAnalysis,
-    pub performance_insights: Vec<PerformanceInsight>,
-    pub optimization_recommendations: Vec<OptimizationRecommendation>,
-    pub statistical_summary: StatisticalSummary,
-}
-
-#[derive(Debug, Clone)]
-pub struct TrendAnalysis {
+pub struct PerformanceTrends {
+    pub trend_direction: TrendDirection,
+    pub average_improvement: f64,
+    pub improvement_variance: f64,
     pub compilation_time_trend: TrendDirection,
-    pub performance_improvement_trend: TrendDirection,
-    pub memory_usage_trend: TrendDirection,
-    pub code_size_trend: TrendDirection,
-    pub optimization_effectiveness: f64,
-    pub trend_confidence: f64,
+    pub stability_score: f64,
+    pub data_points: usize,
+    pub confidence_interval: (f64, f64),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Trend direction for performance metrics
+#[derive(Debug, Clone, PartialEq)]
 pub enum TrendDirection {
     Improving,
     Stable,
     Degrading,
-    Volatile,
-    InsufficientData,
+    Insufficient_Data,
 }
 
+/// Regression detection results
 #[derive(Debug, Clone)]
-pub struct PerformanceInsight {
-    pub insight_type: InsightType,
-    pub severity: InsightSeverity,
-    pub description: String,
-    pub impact_score: f64,
-    pub suggested_actions: Vec<String>,
+pub struct RegressionDetectionResult {
+    pub has_regression: bool,
+    pub regression_type: RegressionType,
+    pub affected_metrics: Vec<AffectedMetric>,
+    pub severity: RegressionSeverity,
+    pub confidence: f64,
+    pub root_cause_analysis: RootCauseAnalysis,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InsightType {
-    PerformanceRegression,
-    OptimizationOpportunity,
-    MemoryIssue,
-    CompilationBottleneck,
-    ConfigurationIssue,
-    TrendAlert,
+/// Type of performance regression
+#[derive(Debug, Clone, PartialEq)]
+pub enum RegressionType {
+    Compilation_Time,
+    Runtime_Performance,
+    Memory_Usage,
+    Code_Size,
+    Stability,
+    Multiple,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum InsightSeverity {
-    Info,
-    Warning,
-    Critical,
-}
-
+/// Affected performance metric
 #[derive(Debug, Clone)]
-pub struct OptimizationRecommendation {
-    pub recommendation_type: RecommendationType,
-    pub priority: RecommendationPriority,
-    pub description: String,
-    pub estimated_impact: f64,
-    pub implementation_effort: ImplementationEffort,
-    pub configuration_changes: Vec<ConfigurationChange>,
+pub struct AffectedMetric {
+    pub metric_name: String,
+    pub baseline_value: f64,
+    pub current_value: f64,
+    pub percentage_change: f64,
+    pub threshold_exceeded: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum RecommendationType {
-    IncreaseOptimizationLevel,
-    DecreaseOptimizationLevel,
-    EnableSpecificPass,
-    DisableSpecificPass,
-    AdjustTimeouts,
-    ChangeStrategy,
-    HardwareUpgrade,
+/// Regression severity levels
+#[derive(Debug, Clone, PartialEq)]
+pub enum RegressionSeverity {
+    Critical,    // >20% degradation
+    Major,       // 10-20% degradation  
+    Minor,       // 5-10% degradation
+    Negligible,  // <5% degradation
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum RecommendationPriority {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ImplementationEffort {
-    Trivial,
-    Easy,
-    Moderate,
-    Difficult,
-    Complex,
-}
-
+/// Root cause analysis for regressions
 #[derive(Debug, Clone)]
-pub struct ConfigurationChange {
-    pub parameter: String,
-    pub current_value: String,
-    pub recommended_value: String,
-    pub rationale: String,
+pub struct RootCauseAnalysis {
+    pub likely_causes: Vec<String>,
+    pub optimization_changes: Vec<String>,
+    pub environment_factors: Vec<String>,
+    pub recommendations: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
-pub struct StatisticalSummary {
-    pub mean_compilation_time: Duration,
-    pub median_compilation_time: Duration,
-    pub std_dev_compilation_time: Duration,
-    pub mean_performance_improvement: f64,
-    pub median_performance_improvement: f64,
-    pub success_rate: f64,
-    pub total_samples: usize,
-    pub confidence_interval: (f64, f64),
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct PerformanceAnalysisStats {
-    pub analyses_performed: u64,
-    pub insights_generated: u64,
-    pub recommendations_made: u64,
-    pub cache_hits: u64,
-    pub cache_misses: u64,
-    pub total_analysis_time: Duration,
-}
-
-/// Comprehensive optimization report
-#[derive(Debug, Clone, Serialize)]
-pub struct OptimizationReport {
-    pub report_id: String,
-    pub generated_at: u64,
-    pub summary: OptimizationSummary,
-    pub detailed_analysis: AnalysisResults,
-    pub benchmark_comparison: Option<BenchmarkComparison>,
-    pub historical_trends: TrendAnalysis,
-    pub performance_insights: Vec<PerformanceInsight>,
-    pub recommendations: Vec<OptimizationRecommendation>,
-    pub statistical_data: StatisticalSummary,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct OptimizationSummary {
-    pub total_optimizations: u64,
-    pub successful_optimizations: u64,
-    pub average_improvement: f64,
-    pub total_time_saved: Duration,
-    pub most_effective_passes: Vec<String>,
-    pub overall_grade: PerformanceGrade,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct BenchmarkComparison {
-    pub current_results: BenchmarkResults,
-    pub baseline_results: BenchmarkResults,
-    pub improvements: HashMap<String, f64>,
-    pub regressions: HashMap<String, f64>,
-    pub overall_change: f64,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub enum PerformanceGrade {
-    Excellent,
-    Good,
-    Average,
-    Poor,
-    Critical,
+/// Regression detector using statistical analysis
+pub struct RegressionDetector {
+    sensitivity_threshold: f64,
+    min_samples: usize,
+    confidence_level: f64,
 }
 
 impl PerformanceAnalyzer {
+    /// Create new performance analyzer
     pub fn new() -> Self {
         Self {
-            historical_data: VecDeque::with_capacity(1000),
-            benchmarks: HashMap::new(),
-            analysis_cache: HashMap::new(),
-            stats: PerformanceAnalysisStats::default(),
+            baseline_data: None,
+            trending_data: VecDeque::new(),
+            regression_detector: RegressionDetector::new(),
         }
     }
-
-    /// Add performance data point for analysis
-    pub fn add_performance_data(&mut self, data_point: PerformanceDataPoint) {
-        self.historical_data.push_back(data_point);
+    
+    /// Set performance baseline
+    #[instrument(skip(self))]
+    pub fn set_baseline(&mut self, baseline: PerformanceBaseline) -> Result<()> {
+        info!("Setting performance baseline for optimization level {:?}", baseline.optimization_level);
+        self.baseline_data = Some(baseline);
+        Ok(())
+    }
+    
+    /// Record performance data point
+    #[instrument(skip(self))]
+    pub fn record_performance(&mut self, data_point: PerformanceDataPoint) -> Result<()> {
+        debug!("Recording performance data point: {:.1}% improvement", data_point.runtime_improvement);
         
-        // Keep only recent data (last 1000 points)
-        while self.historical_data.len() > 1000 {
-            self.historical_data.pop_front();
-        }
-
-        // Invalidate relevant cached analyses
-        self.invalidate_cache("trend_analysis");
-        self.invalidate_cache("statistical_summary");
-    }
-
-    /// Analyze optimization results and generate insights
-    pub fn analyze_optimization_results(&mut self, results: &[OptimizationResult]) -> Result<AnalysisResults> {
-        let start_time = Instant::now();
+        self.trending_data.push_back(data_point);
         
-        tracing::info!(
-            results_count = results.len(),
-            "Starting optimization results analysis"
-        );
-
-        // Check cache first
-        let cache_key = self.generate_cache_key("optimization_analysis", results);
-        if let Some(cached) = self.get_cached_analysis(&cache_key) {
-            self.stats.cache_hits += 1;
-            return Ok(cached.results);
+        // Limit trending data history
+        if self.trending_data.len() > 1000 {
+            self.trending_data.pop_front();
         }
-
-        self.stats.cache_misses += 1;
-
-        // Convert results to data points
-        for result in results {
-            let data_point = PerformanceDataPoint {
-                timestamp: chrono::Utc::now().timestamp() as u64,
-                optimization_level: "default".to_string(), // Would extract from result
-                compilation_time: result.optimization_time,
-                execution_time: None,
-                memory_usage: None,
-                code_size: Some(result.code_size_change.abs() as u64),
-                performance_improvement: result.performance_improvement,
-                optimization_passes: result.passes_applied.clone(),
-            };
-            self.add_performance_data(data_point);
-        }
-
-        // Perform analysis
-        let trends = self.analyze_trends()?;
-        let insights = self.generate_insights(&trends)?;
-        let recommendations = self.generate_recommendations(&trends, &insights)?;
-        let statistics = self.calculate_statistics()?;
-
-        let analysis_results = AnalysisResults {
-            trends,
-            performance_insights: insights,
-            optimization_recommendations: recommendations,
-            statistical_summary: statistics,
-        };
-
-        // Cache the results
-        self.cache_analysis(cache_key, analysis_results.clone());
-
-        self.stats.analyses_performed += 1;
-        self.stats.total_analysis_time += start_time.elapsed();
-
-        tracing::info!(
-            analysis_time_ms = start_time.elapsed().as_millis(),
-            insights_generated = analysis_results.performance_insights.len(),
-            recommendations_made = analysis_results.optimization_recommendations.len(),
-            "Optimization analysis completed"
-        );
-
-        Ok(analysis_results)
+        
+        Ok(())
     }
-
+    
     /// Analyze performance trends
-    fn analyze_trends(&self) -> Result<TrendAnalysis> {
-        if self.historical_data.len() < 5 {
-            return Ok(TrendAnalysis {
-                compilation_time_trend: TrendDirection::InsufficientData,
-                performance_improvement_trend: TrendDirection::InsufficientData,
-                memory_usage_trend: TrendDirection::InsufficientData,
-                code_size_trend: TrendDirection::InsufficientData,
-                optimization_effectiveness: 0.0,
-                trend_confidence: 0.0,
-            });
-        }
-
-        let recent_data: Vec<_> = self.historical_data.iter().rev().take(20).collect();
-        
-        // Analyze compilation time trend
-        let compilation_times: Vec<f64> = recent_data.iter()
-            .map(|d| d.compilation_time.as_millis() as f64)
-            .collect();
-        let compilation_time_trend = self.calculate_trend_direction(&compilation_times);
-
-        // Analyze performance improvement trend
-        let performance_improvements: Vec<f64> = recent_data.iter()
-            .map(|d| d.performance_improvement)
-            .collect();
-        let performance_improvement_trend = self.calculate_trend_direction(&performance_improvements);
-
-        // Analyze memory usage trend (if available)
-        let memory_usage_trend = if recent_data.iter().any(|d| d.memory_usage.is_some()) {
-            let memory_usages: Vec<f64> = recent_data.iter()
-                .filter_map(|d| d.memory_usage.map(|m| m as f64))
-                .collect();
-            self.calculate_trend_direction(&memory_usages)
-        } else {
-            TrendDirection::InsufficientData
-        };
-
-        // Analyze code size trend
-        let code_size_trend = if recent_data.iter().any(|d| d.code_size.is_some()) {
-            let code_sizes: Vec<f64> = recent_data.iter()
-                .filter_map(|d| d.code_size.map(|s| s as f64))
-                .collect();
-            self.calculate_trend_direction(&code_sizes)
-        } else {
-            TrendDirection::InsufficientData
-        };
-
-        // Calculate optimization effectiveness
-        let avg_improvement = performance_improvements.iter().sum::<f64>() / performance_improvements.len() as f64;
-        let optimization_effectiveness = (avg_improvement / 100.0).min(1.0).max(0.0);
-
-        // Calculate trend confidence based on data consistency
-        let trend_confidence = self.calculate_trend_confidence(&recent_data);
-
-        Ok(TrendAnalysis {
-            compilation_time_trend,
-            performance_improvement_trend,
-            memory_usage_trend,
-            code_size_trend,
-            optimization_effectiveness,
-            trend_confidence,
-        })
-    }
-
-    /// Calculate trend direction from numeric data
-    fn calculate_trend_direction(&self, data: &[f64]) -> TrendDirection {
-        if data.len() < 3 {
-            return TrendDirection::InsufficientData;
-        }
-
-        // Simple linear regression to determine trend
-        let n = data.len() as f64;
-        let x_mean = (data.len() - 1) as f64 / 2.0;
-        let y_mean = data.iter().sum::<f64>() / n;
-
-        let mut numerator = 0.0;
-        let mut denominator = 0.0;
-
-        for (i, &y) in data.iter().enumerate() {
-            let x = i as f64;
-            numerator += (x - x_mean) * (y - y_mean);
-            denominator += (x - x_mean) * (x - x_mean);
-        }
-
-        if denominator == 0.0 {
-            return TrendDirection::Stable;
-        }
-
-        let slope = numerator / denominator;
-        let slope_threshold = y_mean * 0.05; // 5% threshold
-
-        // Calculate variance to detect volatility
-        let variance = data.iter()
-            .map(|&y| (y - y_mean).powi(2))
-            .sum::<f64>() / n;
-        let coefficient_of_variation = if y_mean != 0.0 {
-            variance.sqrt() / y_mean.abs()
-        } else {
-            0.0
-        };
-
-        if coefficient_of_variation > 0.3 {
-            TrendDirection::Volatile
-        } else if slope.abs() < slope_threshold {
-            TrendDirection::Stable
-        } else if slope > 0.0 {
-            TrendDirection::Improving
-        } else {
-            TrendDirection::Degrading
-        }
-    }
-
-    /// Calculate trend confidence score
-    fn calculate_trend_confidence(&self, data: &[&PerformanceDataPoint]) -> f64 {
-        if data.len() < 5 {
-            return 0.0;
-        }
-
-        // Confidence based on data consistency and sample size
-        let sample_size_factor = (data.len() as f64 / 20.0).min(1.0);
-        
-        // Check consistency of optimization passes
-        let pass_consistency = self.calculate_pass_consistency(data);
-        
-        // Overall confidence
-        (sample_size_factor + pass_consistency) / 2.0
-    }
-
-    /// Calculate optimization pass consistency
-    fn calculate_pass_consistency(&self, data: &[&PerformanceDataPoint]) -> f64 {
-        if data.is_empty() {
-            return 0.0;
-        }
-
-        let first_passes = &data[0].optimization_passes;
-        let consistent_count = data.iter()
-            .filter(|d| d.optimization_passes == *first_passes)
-            .count();
-
-        consistent_count as f64 / data.len() as f64
-    }
-
-    /// Generate performance insights
-    fn generate_insights(&mut self, trends: &TrendAnalysis) -> Result<Vec<PerformanceInsight>> {
-        let mut insights = Vec::new();
-
-        // Compilation time insights
-        match trends.compilation_time_trend {
-            TrendDirection::Degrading => {
-                insights.push(PerformanceInsight {
-                    insight_type: InsightType::CompilationBottleneck,
-                    severity: InsightSeverity::Warning,
-                    description: "Compilation times are increasing over recent builds".to_string(),
-                    impact_score: 0.7,
-                    suggested_actions: vec![
-                        "Review enabled optimization passes".to_string(),
-                        "Consider parallel compilation".to_string(),
-                        "Check for incremental compilation issues".to_string(),
-                    ],
-                });
-            }
-            TrendDirection::Volatile => {
-                insights.push(PerformanceInsight {
-                    insight_type: InsightType::TrendAlert,
-                    severity: InsightSeverity::Info,
-                    description: "Compilation times are highly variable".to_string(),
-                    impact_score: 0.4,
-                    suggested_actions: vec![
-                        "Investigate build environment consistency".to_string(),
-                        "Check for resource contention".to_string(),
-                    ],
-                });
-            }
-            _ => {}
-        }
-
-        // Performance improvement insights
-        if trends.optimization_effectiveness < 0.1 {
-            insights.push(PerformanceInsight {
-                insight_type: InsightType::OptimizationOpportunity,
-                severity: InsightSeverity::Warning,
-                description: "Optimizations are providing minimal benefit".to_string(),
-                impact_score: 0.8,
-                suggested_actions: vec![
-                    "Consider increasing optimization level".to_string(),
-                    "Enable profile-guided optimization".to_string(),
-                    "Review optimization pass selection".to_string(),
-                ],
-            });
-        } else if trends.optimization_effectiveness > 0.8 {
-            insights.push(PerformanceInsight {
-                insight_type: InsightType::OptimizationOpportunity,
-                severity: InsightSeverity::Info,
-                description: "Optimizations are highly effective".to_string(),
-                impact_score: 0.9,
-                suggested_actions: vec![
-                    "Current optimization strategy is working well".to_string(),
-                    "Consider sharing configuration with other projects".to_string(),
-                ],
-            });
-        }
-
-        // Memory usage insights
-        match trends.memory_usage_trend {
-            TrendDirection::Degrading => {
-                insights.push(PerformanceInsight {
-                    insight_type: InsightType::MemoryIssue,
-                    severity: InsightSeverity::Critical,
-                    description: "Memory usage is increasing significantly".to_string(),
-                    impact_score: 0.9,
-                    suggested_actions: vec![
-                        "Review memory optimization passes".to_string(),
-                        "Check for memory leaks in optimization pipeline".to_string(),
-                        "Consider memory-focused optimization level".to_string(),
-                    ],
-                });
-            }
-            _ => {}
-        }
-
-        // Trend confidence insights
-        if trends.trend_confidence < 0.5 {
-            insights.push(PerformanceInsight {
-                insight_type: InsightType::ConfigurationIssue,
-                severity: InsightSeverity::Info,
-                description: "Optimization results are inconsistent, possibly due to varying configurations".to_string(),
-                impact_score: 0.5,
-                suggested_actions: vec![
-                    "Standardize optimization configuration".to_string(),
-                    "Ensure consistent build environment".to_string(),
-                ],
-            });
-        }
-
-        self.stats.insights_generated += insights.len() as u64;
-        Ok(insights)
-    }
-
-    /// Generate optimization recommendations
-    fn generate_recommendations(&mut self, trends: &TrendAnalysis, insights: &[PerformanceInsight]) -> Result<Vec<OptimizationRecommendation>> {
-        let mut recommendations = Vec::new();
-
-        // Recommendations based on trends
-        if trends.compilation_time_trend == TrendDirection::Degrading {
-            recommendations.push(OptimizationRecommendation {
-                recommendation_type: RecommendationType::DecreaseOptimizationLevel,
-                priority: RecommendationPriority::Medium,
-                description: "Consider reducing optimization level to improve compilation times".to_string(),
-                estimated_impact: 0.6,
-                implementation_effort: ImplementationEffort::Easy,
-                configuration_changes: vec![
-                    ConfigurationChange {
-                        parameter: "optimization_level".to_string(),
-                        current_value: "O3".to_string(),
-                        recommended_value: "O2".to_string(),
-                        rationale: "Reduce compilation time while maintaining reasonable performance".to_string(),
-                    }
-                ],
-            });
-        }
-
-        if trends.optimization_effectiveness < 0.2 {
-            recommendations.push(OptimizationRecommendation {
-                recommendation_type: RecommendationType::EnableSpecificPass,
-                priority: RecommendationPriority::High,
-                description: "Enable profile-guided optimization for better results".to_string(),
-                estimated_impact: 0.8,
-                implementation_effort: ImplementationEffort::Moderate,
-                configuration_changes: vec![
-                    ConfigurationChange {
-                        parameter: "pgo.enabled".to_string(),
-                        current_value: "false".to_string(),
-                        recommended_value: "true".to_string(),
-                        rationale: "PGO can significantly improve optimization effectiveness".to_string(),
-                    }
-                ],
-            });
-        }
-
-        // Recommendations based on insights
-        for insight in insights {
-            match insight.insight_type {
-                InsightType::CompilationBottleneck => {
-                    recommendations.push(OptimizationRecommendation {
-                        recommendation_type: RecommendationType::ChangeStrategy,
-                        priority: RecommendationPriority::Medium,
-                        description: "Enable parallel compilation to reduce build times".to_string(),
-                        estimated_impact: 0.7,
-                        implementation_effort: ImplementationEffort::Easy,
-                        configuration_changes: vec![
-                            ConfigurationChange {
-                                parameter: "parallel_compilation.enabled".to_string(),
-                                current_value: "false".to_string(),
-                                recommended_value: "true".to_string(),
-                                rationale: "Parallel compilation can significantly reduce total build time".to_string(),
-                            }
-                        ],
-                    });
-                }
-                InsightType::MemoryIssue => {
-                    recommendations.push(OptimizationRecommendation {
-                        recommendation_type: RecommendationType::EnableSpecificPass,
-                        priority: RecommendationPriority::High,
-                        description: "Enable memory optimization passes".to_string(),
-                        estimated_impact: 0.8,
-                        implementation_effort: ImplementationEffort::Easy,
-                        configuration_changes: vec![
-                            ConfigurationChange {
-                                parameter: "memory_optimization.enabled".to_string(),
-                                current_value: "false".to_string(),
-                                recommended_value: "true".to_string(),
-                                rationale: "Memory optimization can reduce runtime memory usage".to_string(),
-                            }
-                        ],
-                    });
-                }
-                _ => {}
-            }
-        }
-
-        self.stats.recommendations_made += recommendations.len() as u64;
-        Ok(recommendations)
-    }
-
-    /// Calculate statistical summary
-    fn calculate_statistics(&self) -> Result<StatisticalSummary> {
-        if self.historical_data.is_empty() {
-            return Ok(StatisticalSummary {
-                mean_compilation_time: Duration::ZERO,
-                median_compilation_time: Duration::ZERO,
-                std_dev_compilation_time: Duration::ZERO,
-                mean_performance_improvement: 0.0,
-                median_performance_improvement: 0.0,
-                success_rate: 0.0,
-                total_samples: 0,
+    #[instrument(skip(self))]
+    pub fn analyze_trends(&self) -> Result<PerformanceTrends> {
+        if self.trending_data.len() < 3 {
+            return Ok(PerformanceTrends {
+                trend_direction: TrendDirection::Insufficient_Data,
+                average_improvement: 0.0,
+                improvement_variance: 0.0,
+                compilation_time_trend: TrendDirection::Insufficient_Data,
+                stability_score: 0.0,
+                data_points: self.trending_data.len(),
                 confidence_interval: (0.0, 0.0),
             });
         }
-
-        let data: Vec<_> = self.historical_data.iter().collect();
         
-        // Compilation time statistics
-        let mut compilation_times: Vec<_> = data.iter()
-            .map(|d| d.compilation_time.as_millis() as f64)
+        let improvements: Vec<f64> = self.trending_data
+            .iter()
+            .map(|dp| dp.runtime_improvement)
             .collect();
-        compilation_times.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-        let mean_compilation_ms = compilation_times.iter().sum::<f64>() / compilation_times.len() as f64;
-        let median_compilation_ms = if compilation_times.len() % 2 == 0 {
-            (compilation_times[compilation_times.len() / 2 - 1] + compilation_times[compilation_times.len() / 2]) / 2.0
-        } else {
-            compilation_times[compilation_times.len() / 2]
-        };
-
-        let variance = compilation_times.iter()
-            .map(|&x| (x - mean_compilation_ms).powi(2))
-            .sum::<f64>() / compilation_times.len() as f64;
-        let std_dev_compilation_ms = variance.sqrt();
-
-        // Performance improvement statistics
-        let mut performance_improvements: Vec<_> = data.iter()
-            .map(|d| d.performance_improvement)
+        
+        let compilation_times: Vec<f64> = self.trending_data
+            .iter()
+            .map(|dp| dp.compilation_time.as_secs_f64())
             .collect();
-        performance_improvements.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-        let mean_performance_improvement = performance_improvements.iter().sum::<f64>() / performance_improvements.len() as f64;
-        let median_performance_improvement = if performance_improvements.len() % 2 == 0 {
-            (performance_improvements[performance_improvements.len() / 2 - 1] + performance_improvements[performance_improvements.len() / 2]) / 2.0
-        } else {
-            performance_improvements[performance_improvements.len() / 2]
-        };
-
-        // Success rate (assuming all current data points represent successful optimizations)
-        let success_rate = 1.0; // Would be calculated from actual success/failure data
-
-        // Confidence interval for performance improvement (95% CI)
-        let n = performance_improvements.len() as f64;
-        let std_error = (variance / n).sqrt();
-        let t_value = 1.96; // Approximate for 95% CI with large sample
-        let margin_of_error = t_value * std_error;
-        let confidence_interval = (
-            mean_performance_improvement - margin_of_error,
-            mean_performance_improvement + margin_of_error,
-        );
-
-        Ok(StatisticalSummary {
-            mean_compilation_time: Duration::from_millis(mean_compilation_ms as u64),
-            median_compilation_time: Duration::from_millis(median_compilation_ms as u64),
-            std_dev_compilation_time: Duration::from_millis(std_dev_compilation_ms as u64),
-            mean_performance_improvement,
-            median_performance_improvement,
-            success_rate,
-            total_samples: data.len(),
+        
+        // Calculate trend statistics
+        let average_improvement = improvements.iter().sum::<f64>() / improvements.len() as f64;
+        let improvement_variance = self.calculate_variance(&improvements, average_improvement);
+        
+        let trend_direction = self.determine_trend_direction(&improvements);
+        let compilation_time_trend = self.determine_compilation_time_trend(&compilation_times);
+        let stability_score = self.calculate_stability_score(&improvements);
+        let confidence_interval = self.calculate_confidence_interval(&improvements, 0.95);
+        
+        Ok(PerformanceTrends {
+            trend_direction,
+            average_improvement,
+            improvement_variance,
+            compilation_time_trend,
+            stability_score,
+            data_points: self.trending_data.len(),
             confidence_interval,
         })
     }
-
-    /// Generate comprehensive optimization report
-    pub fn generate_comprehensive_report(
-        &self,
-        optimization_history: &[OptimizationResult],
-        manager_stats: &OptimizationManagerStats,
-    ) -> Result<OptimizationReport> {
-        let report_id = format!("opt_report_{}", chrono::Utc::now().timestamp());
+    
+    /// Detect performance regressions
+    #[instrument(skip(self))]
+    pub fn detect_regressions(&self) -> Result<RegressionDetectionResult> {
+        if let Some(baseline) = &self.baseline_data {
+            if !self.trending_data.is_empty() {
+                let latest = self.trending_data.back().unwrap();
+                return self.regression_detector.detect_regression(baseline, latest);
+            }
+        }
         
-        tracing::info!(
-            report_id = report_id,
-            "Generating comprehensive optimization report"
-        );
-
-        // Create summary
-        let summary = OptimizationSummary {
-            total_optimizations: manager_stats.total_optimizations_run,
-            successful_optimizations: manager_stats.successful_optimizations,
-            average_improvement: optimization_history.iter()
-                .map(|r| r.performance_improvement)
-                .sum::<f64>() / optimization_history.len().max(1) as f64,
-            total_time_saved: Duration::from_secs(0), // Would calculate from actual data
-            most_effective_passes: self.find_most_effective_passes(optimization_history),
-            overall_grade: self.calculate_overall_grade(manager_stats),
-        };
-
-        // Perform detailed analysis
-        let mut analyzer = self.clone();
-        let detailed_analysis = analyzer.analyze_optimization_results(optimization_history)?;
-
-        // Generate benchmark comparison if available
-        let benchmark_comparison = self.generate_benchmark_comparison()?;
-
-        let report = OptimizationReport {
-            report_id,
-            generated_at: chrono::Utc::now().timestamp() as u64,
-            summary,
-            detailed_analysis: detailed_analysis.clone(),
-            benchmark_comparison,
-            historical_trends: detailed_analysis.trends,
-            performance_insights: detailed_analysis.performance_insights,
-            recommendations: detailed_analysis.optimization_recommendations,
-            statistical_data: detailed_analysis.statistical_summary,
-        };
-
-        tracing::info!(
-            report_id = report.report_id,
-            insights_count = report.performance_insights.len(),
-            recommendations_count = report.recommendations.len(),
-            "Comprehensive optimization report generated"
-        );
-
-        Ok(report)
+        // No baseline or data - no regression detected
+        Ok(RegressionDetectionResult {
+            has_regression: false,
+            regression_type: RegressionType::Runtime_Performance,
+            affected_metrics: Vec::new(),
+            severity: RegressionSeverity::Negligible,
+            confidence: 0.0,
+            root_cause_analysis: RootCauseAnalysis {
+                likely_causes: vec!["Insufficient data for regression analysis".to_string()],
+                optimization_changes: Vec::new(),
+                environment_factors: Vec::new(),
+                recommendations: vec!["Collect more performance data".to_string()],
+            },
+        })
     }
-
-    /// Find most effective optimization passes
-    fn find_most_effective_passes(&self, optimization_history: &[OptimizationResult]) -> Vec<String> {
-        let mut pass_effectiveness = HashMap::new();
-
-        for result in optimization_history {
-            if result.success && result.performance_improvement > 0.0 {
-                for pass in &result.passes_applied {
-                    let entry = pass_effectiveness.entry(pass.clone()).or_insert((0.0, 0));
-                    entry.0 += result.performance_improvement;
-                    entry.1 += 1;
+    
+    /// Generate comprehensive performance report
+    pub fn generate_performance_report(&self) -> Result<String> {
+        let mut report = String::new();
+        
+        report.push_str("# Performance Analysis Report\n\n");
+        
+        // Baseline information
+        if let Some(baseline) = &self.baseline_data {
+            report.push_str("## Baseline Performance\n");
+            report.push_str(&format!("- Timestamp: {:?}\n", baseline.timestamp));
+            report.push_str(&format!("- Optimization Level: {:?}\n", baseline.optimization_level));
+            report.push_str(&format!("- Compilation Time: {:?}\n", baseline.compilation_time));
+            report.push_str(&format!("- Runtime Performance: {:.2}\n", baseline.runtime_performance));
+            report.push_str(&format!("- Memory Usage: {} bytes\n", baseline.memory_usage));
+            report.push_str(&format!("- Code Size: {} bytes\n\n", baseline.code_size));
+        }
+        
+        // Trend analysis
+        let trends = self.analyze_trends()?;
+        report.push_str("## Performance Trends\n");
+        report.push_str(&format!("- Trend Direction: {:?}\n", trends.trend_direction));
+        report.push_str(&format!("- Average Improvement: {:.2}%\n", trends.average_improvement));
+        report.push_str(&format!("- Improvement Variance: {:.4}\n", trends.improvement_variance));
+        report.push_str(&format!("- Compilation Time Trend: {:?}\n", trends.compilation_time_trend));
+        report.push_str(&format!("- Stability Score: {:.2}\n", trends.stability_score));
+        report.push_str(&format!("- Data Points: {}\n", trends.data_points));
+        report.push_str(&format!("- Confidence Interval: ({:.2}%, {:.2}%)\n\n", 
+                               trends.confidence_interval.0, trends.confidence_interval.1));
+        
+        // Regression analysis
+        let regression_result = self.detect_regressions()?;
+        report.push_str("## Regression Analysis\n");
+        report.push_str(&format!("- Has Regression: {}\n", regression_result.has_regression));
+        if regression_result.has_regression {
+            report.push_str(&format!("- Regression Type: {:?}\n", regression_result.regression_type));
+            report.push_str(&format!("- Severity: {:?}\n", regression_result.severity));
+            report.push_str(&format!("- Confidence: {:.1}%\n", regression_result.confidence * 100.0));
+            
+            if !regression_result.affected_metrics.is_empty() {
+                report.push_str("\n### Affected Metrics\n");
+                for metric in &regression_result.affected_metrics {
+                    report.push_str(&format!("- {}: {:.2} → {:.2} ({:+.1}%)\n",
+                                           metric.metric_name, metric.baseline_value, 
+                                           metric.current_value, metric.percentage_change));
+                }
+            }
+            
+            if !regression_result.root_cause_analysis.likely_causes.is_empty() {
+                report.push_str("\n### Likely Causes\n");
+                for cause in &regression_result.root_cause_analysis.likely_causes {
+                    report.push_str(&format!("- {}\n", cause));
+                }
+            }
+            
+            if !regression_result.root_cause_analysis.recommendations.is_empty() {
+                report.push_str("\n### Recommendations\n");
+                for rec in &regression_result.root_cause_analysis.recommendations {
+                    report.push_str(&format!("- {}\n", rec));
                 }
             }
         }
-
-        let mut effective_passes: Vec<_> = pass_effectiveness.into_iter()
-            .map(|(pass, (total_improvement, count))| (pass, total_improvement / count as f64))
-            .collect();
         
-        effective_passes.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        effective_passes.into_iter().take(5).map(|(pass, _)| pass).collect()
-    }
-
-    /// Calculate overall performance grade
-    fn calculate_overall_grade(&self, stats: &OptimizationManagerStats) -> PerformanceGrade {
-        let success_rate = if stats.total_optimizations_run > 0 {
-            stats.successful_optimizations as f64 / stats.total_optimizations_run as f64
-        } else {
-            0.0
-        };
-
-        let avg_improvement = if !stats.performance_improvements.is_empty() {
-            stats.performance_improvements.values().sum::<f64>() / stats.performance_improvements.len() as f64
-        } else {
-            0.0
-        };
-
-        let score = (success_rate * 0.4 + (avg_improvement / 100.0).min(1.0) * 0.6) * 100.0;
-
-        match score as u32 {
-            90..=100 => PerformanceGrade::Excellent,
-            75..=89 => PerformanceGrade::Good,
-            50..=74 => PerformanceGrade::Average,
-            25..=49 => PerformanceGrade::Poor,
-            _ => PerformanceGrade::Critical,
-        }
-    }
-
-    /// Generate benchmark comparison
-    fn generate_benchmark_comparison(&self) -> Result<Option<BenchmarkComparison>> {
-        // Placeholder - would implement actual benchmark comparison
-        Ok(None)
-    }
-
-    // Cache management methods
-    fn generate_cache_key(&self, analysis_type: &str, data: &[OptimizationResult]) -> String {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-
-        let mut hasher = DefaultHasher::new();
-        analysis_type.hash(&mut hasher);
-        data.len().hash(&mut hasher);
-        
-        // Hash key properties of the data
-        for result in data {
-            result.optimization_time.as_nanos().hash(&mut hasher);
-            result.performance_improvement.to_bits().hash(&mut hasher);
-            result.passes_applied.len().hash(&mut hasher);
-        }
-
-        format!("{}_{:x}", analysis_type, hasher.finish())
-    }
-
-    fn get_cached_analysis(&self, key: &str) -> Option<&CachedAnalysis> {
-        if let Some(cached) = self.analysis_cache.get(key) {
-            if cached.expires_at > Instant::now() {
-                return Some(cached);
+        // Recent performance data
+        if !self.trending_data.is_empty() {
+            report.push_str("\n## Recent Performance Data\n");
+            let recent_data: Vec<_> = self.trending_data.iter().rev().take(5).collect();
+            for (i, data) in recent_data.iter().enumerate() {
+                report.push_str(&format!("{}. Runtime: {:.1}%, Size: {:.1}%, Memory: {:.1}% ({})\n",
+                                       i + 1, data.runtime_improvement, data.size_reduction,
+                                       data.memory_reduction, data.optimization_level.as_str()));
             }
         }
-        None
+        
+        Ok(report)
     }
-
-    fn cache_analysis(&mut self, key: String, results: AnalysisResults) {
-        let cached_analysis = CachedAnalysis {
-            analysis_type: key.clone(),
-            results,
-            created_at: Instant::now(),
-            expires_at: Instant::now() + Duration::from_secs(300), // 5 minute cache
+    
+    /// Get performance statistics summary
+    pub fn get_performance_summary(&self) -> PerformanceSummary {
+        let trends = self.analyze_trends().unwrap_or_else(|_| PerformanceTrends {
+            trend_direction: TrendDirection::Insufficient_Data,
+            average_improvement: 0.0,
+            improvement_variance: 0.0,
+            compilation_time_trend: TrendDirection::Insufficient_Data,
+            stability_score: 0.0,
+            data_points: 0,
+            confidence_interval: (0.0, 0.0),
+        });
+        
+        let regression_result = self.detect_regressions().unwrap_or_else(|_| RegressionDetectionResult {
+            has_regression: false,
+            regression_type: RegressionType::Runtime_Performance,
+            affected_metrics: Vec::new(),
+            severity: RegressionSeverity::Negligible,
+            confidence: 0.0,
+            root_cause_analysis: RootCauseAnalysis {
+                likely_causes: Vec::new(),
+                optimization_changes: Vec::new(),
+                environment_factors: Vec::new(),
+                recommendations: Vec::new(),
+            },
+        });
+        
+        PerformanceSummary {
+            has_baseline: self.baseline_data.is_some(),
+            data_points_count: self.trending_data.len(),
+            average_improvement: trends.average_improvement,
+            trend_direction: trends.trend_direction,
+            stability_score: trends.stability_score,
+            has_regressions: regression_result.has_regression,
+            regression_severity: regression_result.severity,
+        }
+    }
+    
+    // Helper methods
+    
+    fn calculate_variance(&self, values: &[f64], mean: f64) -> f64 {
+        if values.len() <= 1 {
+            return 0.0;
+        }
+        
+        let sum_squares: f64 = values.iter()
+            .map(|x| (x - mean).powi(2))
+            .sum();
+        
+        sum_squares / (values.len() - 1) as f64
+    }
+    
+    fn determine_trend_direction(&self, values: &[f64]) -> TrendDirection {
+        if values.len() < 3 {
+            return TrendDirection::Insufficient_Data;
+        }
+        
+        // Simple linear regression approach
+        let n = values.len() as f64;
+        let x_values: Vec<f64> = (0..values.len()).map(|i| i as f64).collect();
+        
+        let x_mean = x_values.iter().sum::<f64>() / n;
+        let y_mean = values.iter().sum::<f64>() / n;
+        
+        let numerator: f64 = x_values.iter().zip(values.iter())
+            .map(|(x, y)| (x - x_mean) * (y - y_mean))
+            .sum();
+        
+        let denominator: f64 = x_values.iter()
+            .map(|x| (x - x_mean).powi(2))
+            .sum();
+        
+        if denominator.abs() < f64::EPSILON {
+            return TrendDirection::Stable;
+        }
+        
+        let slope = numerator / denominator;
+        
+        if slope > 0.1 {
+            TrendDirection::Improving
+        } else if slope < -0.1 {
+            TrendDirection::Degrading
+        } else {
+            TrendDirection::Stable
+        }
+    }
+    
+    fn determine_compilation_time_trend(&self, times: &[f64]) -> TrendDirection {
+        // Similar to performance trend but inverted (lower is better)
+        let trend = self.determine_trend_direction(times);
+        match trend {
+            TrendDirection::Improving => TrendDirection::Degrading, // Increasing time is bad
+            TrendDirection::Degrading => TrendDirection::Improving, // Decreasing time is good
+            other => other,
+        }
+    }
+    
+    fn calculate_stability_score(&self, values: &[f64]) -> f64 {
+        if values.len() < 2 {
+            return 0.0;
+        }
+        
+        let mean = values.iter().sum::<f64>() / values.len() as f64;
+        let variance = self.calculate_variance(values, mean);
+        let coefficient_of_variation = if mean.abs() > f64::EPSILON {
+            (variance.sqrt() / mean.abs()).min(1.0)
+        } else {
+            1.0
         };
         
-        self.analysis_cache.insert(key, cached_analysis);
+        // Higher stability score means more stable (less variation)
+        1.0 - coefficient_of_variation
     }
-
-    fn invalidate_cache(&mut self, analysis_type: &str) {
-        self.analysis_cache.retain(|key, _| !key.starts_with(analysis_type));
-    }
-
-    pub fn get_stats(&self) -> &PerformanceAnalysisStats {
-        &self.stats
+    
+    fn calculate_confidence_interval(&self, values: &[f64], confidence_level: f64) -> (f64, f64) {
+        if values.len() < 2 {
+            return (0.0, 0.0);
+        }
+        
+        let mean = values.iter().sum::<f64>() / values.len() as f64;
+        let variance = self.calculate_variance(values, mean);
+        let std_error = variance.sqrt() / (values.len() as f64).sqrt();
+        
+        // Simplified confidence interval (using normal approximation)
+        let z_score = if confidence_level >= 0.95 { 1.96 } else { 1.645 };
+        let margin = z_score * std_error;
+        
+        (mean - margin, mean + margin)
     }
 }
 
-impl Clone for PerformanceAnalyzer {
-    fn clone(&self) -> Self {
+impl RegressionDetector {
+    pub fn new() -> Self {
         Self {
-            historical_data: self.historical_data.clone(),
-            benchmarks: self.benchmarks.clone(),
-            analysis_cache: HashMap::new(), // Don't clone cache
-            stats: self.stats.clone(),
+            sensitivity_threshold: 0.05, // 5% threshold
+            min_samples: 3,
+            confidence_level: 0.8,
         }
+    }
+    
+    pub fn detect_regression(
+        &self, 
+        baseline: &PerformanceBaseline, 
+        current: &PerformanceDataPoint
+    ) -> Result<RegressionDetectionResult> {
+        let mut affected_metrics = Vec::new();
+        let mut regression_types = Vec::new();
+        
+        // Check compilation time regression
+        let baseline_compile_time = baseline.compilation_time.as_secs_f64();
+        let current_compile_time = current.compilation_time.as_secs_f64();
+        let compile_time_change = (current_compile_time - baseline_compile_time) / baseline_compile_time;
+        
+        if compile_time_change > self.sensitivity_threshold {
+            affected_metrics.push(AffectedMetric {
+                metric_name: "Compilation Time".to_string(),
+                baseline_value: baseline_compile_time,
+                current_value: current_compile_time,
+                percentage_change: compile_time_change * 100.0,
+                threshold_exceeded: true,
+            });
+            regression_types.push(RegressionType::Compilation_Time);
+        }
+        
+        // Check runtime performance regression
+        let runtime_change = -current.runtime_improvement / 100.0; // Convert improvement to change
+        if runtime_change > self.sensitivity_threshold {
+            affected_metrics.push(AffectedMetric {
+                metric_name: "Runtime Performance".to_string(),
+                baseline_value: baseline.runtime_performance,
+                current_value: baseline.runtime_performance + runtime_change,
+                percentage_change: runtime_change * 100.0,
+                threshold_exceeded: true,
+            });
+            regression_types.push(RegressionType::Runtime_Performance);
+        }
+        
+        // Determine overall regression result
+        let has_regression = !affected_metrics.is_empty();
+        let regression_type = if regression_types.len() > 1 {
+            RegressionType::Multiple
+        } else {
+            regression_types.first().cloned().unwrap_or(RegressionType::Runtime_Performance)
+        };
+        
+        let severity = self.determine_regression_severity(&affected_metrics);
+        let confidence = current.confidence_score;
+        
+        let root_cause_analysis = self.analyze_root_causes(&regression_type, &affected_metrics);
+        
+        Ok(RegressionDetectionResult {
+            has_regression,
+            regression_type,
+            affected_metrics,
+            severity,
+            confidence,
+            root_cause_analysis,
+        })
+    }
+    
+    fn determine_regression_severity(&self, metrics: &[AffectedMetric]) -> RegressionSeverity {
+        if metrics.is_empty() {
+            return RegressionSeverity::Negligible;
+        }
+        
+        let max_degradation = metrics.iter()
+            .map(|m| m.percentage_change.abs())
+            .fold(0.0, f64::max);
+        
+        if max_degradation > 20.0 {
+            RegressionSeverity::Critical
+        } else if max_degradation > 10.0 {
+            RegressionSeverity::Major
+        } else if max_degradation > 5.0 {
+            RegressionSeverity::Minor
+        } else {
+            RegressionSeverity::Negligible
+        }
+    }
+    
+    fn analyze_root_causes(&self, regression_type: &RegressionType, _metrics: &[AffectedMetric]) -> RootCauseAnalysis {
+        let mut likely_causes = Vec::new();
+        let mut optimization_changes = Vec::new();
+        let mut environment_factors = Vec::new();
+        let mut recommendations = Vec::new();
+        
+        match regression_type {
+            RegressionType::Compilation_Time => {
+                likely_causes.push("Increased code complexity".to_string());
+                likely_causes.push("Additional optimization passes".to_string());
+                optimization_changes.push("More aggressive optimization settings".to_string());
+                recommendations.push("Consider reducing optimization level for development builds".to_string());
+            }
+            RegressionType::Runtime_Performance => {
+                likely_causes.push("Suboptimal optimization decisions".to_string());
+                likely_causes.push("Changed inlining thresholds".to_string());
+                optimization_changes.push("Modified function inlining criteria".to_string());
+                recommendations.push("Review inlining profitability calculations".to_string());
+            }
+            RegressionType::Memory_Usage => {
+                likely_causes.push("Increased memory allocations".to_string());
+                likely_causes.push("Less effective dead code elimination".to_string());
+                recommendations.push("Review memory optimization passes".to_string());
+            }
+            RegressionType::Code_Size => {
+                likely_causes.push("Aggressive function inlining".to_string());
+                likely_causes.push("Disabled size optimizations".to_string());
+                recommendations.push("Enable size-focused optimization passes".to_string());
+            }
+            RegressionType::Multiple => {
+                likely_causes.push("Systematic optimization changes".to_string());
+                recommendations.push("Comprehensive optimization review needed".to_string());
+            }
+            _ => {}
+        }
+        
+        environment_factors.push("Compiler version differences".to_string());
+        environment_factors.push("Target platform changes".to_string());
+        environment_factors.push("Build environment variations".to_string());
+        
+        RootCauseAnalysis {
+            likely_causes,
+            optimization_changes,
+            environment_factors,
+            recommendations,
+        }
+    }
+}
+
+/// Performance summary for quick overview
+#[derive(Debug, Clone)]
+pub struct PerformanceSummary {
+    pub has_baseline: bool,
+    pub data_points_count: usize,
+    pub average_improvement: f64,
+    pub trend_direction: TrendDirection,
+    pub stability_score: f64,
+    pub has_regressions: bool,
+    pub regression_severity: RegressionSeverity,
+}
+
+impl Default for PerformanceAnalyzer {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    
     #[test]
     fn test_performance_analyzer_creation() {
         let analyzer = PerformanceAnalyzer::new();
-        assert_eq!(analyzer.historical_data.len(), 0);
-        assert_eq!(analyzer.stats.analyses_performed, 0);
+        let summary = analyzer.get_performance_summary();
+        
+        assert!(!summary.has_baseline);
+        assert_eq!(summary.data_points_count, 0);
+        assert_eq!(summary.trend_direction, TrendDirection::Insufficient_Data);
     }
-
+    
     #[test]
-    fn test_add_performance_data() {
+    fn test_baseline_setting() {
+        let mut analyzer = PerformanceAnalyzer::new();
+        
+        let baseline = PerformanceBaseline {
+            timestamp: SystemTime::now(),
+            optimization_level: OptimizationLevel::Default,
+            compilation_time: Duration::from_secs(5),
+            runtime_performance: 100.0,
+            memory_usage: 1024 * 1024,
+            code_size: 50000,
+            metadata: HashMap::new(),
+        };
+        
+        analyzer.set_baseline(baseline).unwrap();
+        
+        let summary = analyzer.get_performance_summary();
+        assert!(summary.has_baseline);
+    }
+    
+    #[test]
+    fn test_performance_data_recording() {
         let mut analyzer = PerformanceAnalyzer::new();
         
         let data_point = PerformanceDataPoint {
-            timestamp: chrono::Utc::now().timestamp() as u64,
-            optimization_level: "O2".to_string(),
-            compilation_time: Duration::from_millis(1000),
-            execution_time: Some(Duration::from_millis(500)),
-            memory_usage: Some(1024),
-            code_size: Some(2048),
-            performance_improvement: 10.0,
-            optimization_passes: vec!["inlining".to_string(), "dce".to_string()],
+            timestamp: SystemTime::now(),
+            compilation_time: Duration::from_secs(4),
+            runtime_improvement: 15.0,
+            size_reduction: 10.0,
+            memory_reduction: 5.0,
+            optimization_level: OptimizationLevel::Default,
+            confidence_score: 0.9,
         };
-
-        analyzer.add_performance_data(data_point);
-        assert_eq!(analyzer.historical_data.len(), 1);
-    }
-
-    #[test]
-    fn test_trend_calculation() {
-        let analyzer = PerformanceAnalyzer::new();
         
-        // Test improving trend
-        let improving_data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let trend = analyzer.calculate_trend_direction(&improving_data);
-        assert_eq!(trend, TrendDirection::Improving);
-
-        // Test degrading trend
-        let degrading_data = vec![5.0, 4.0, 3.0, 2.0, 1.0];
-        let trend = analyzer.calculate_trend_direction(&degrading_data);
-        assert_eq!(trend, TrendDirection::Degrading);
-
-        // Test stable trend
-        let stable_data = vec![3.0, 3.1, 2.9, 3.0, 3.1];
-        let trend = analyzer.calculate_trend_direction(&stable_data);
-        assert_eq!(trend, TrendDirection::Stable);
+        analyzer.record_performance(data_point).unwrap();
+        
+        let summary = analyzer.get_performance_summary();
+        assert_eq!(summary.data_points_count, 1);
     }
-
+    
     #[test]
-    fn test_statistical_summary() {
+    fn test_trend_analysis() {
+        let mut analyzer = PerformanceAnalyzer::new();
+        
+        // Add multiple data points with improving trend
+        for i in 0..5 {
+            let data_point = PerformanceDataPoint {
+                timestamp: SystemTime::now(),
+                compilation_time: Duration::from_secs(5 - i / 2), // Slightly improving
+                runtime_improvement: 10.0 + i as f64 * 2.0, // Improving
+                size_reduction: 5.0,
+                memory_reduction: 3.0,
+                optimization_level: OptimizationLevel::Default,
+                confidence_score: 0.8,
+            };
+            analyzer.record_performance(data_point).unwrap();
+        }
+        
+        let trends = analyzer.analyze_trends().unwrap();
+        assert!(trends.average_improvement > 10.0);
+        assert!(trends.data_points >= 5);
+    }
+    
+    #[test]
+    fn test_regression_detection() {
+        let mut analyzer = PerformanceAnalyzer::new();
+        
+        // Set baseline
+        let baseline = PerformanceBaseline {
+            timestamp: SystemTime::now(),
+            optimization_level: OptimizationLevel::Default,
+            compilation_time: Duration::from_secs(3),
+            runtime_performance: 100.0,
+            memory_usage: 1024 * 1024,
+            code_size: 50000,
+            metadata: HashMap::new(),
+        };
+        analyzer.set_baseline(baseline).unwrap();
+        
+        // Add a data point showing regression
+        let regression_point = PerformanceDataPoint {
+            timestamp: SystemTime::now(),
+            compilation_time: Duration::from_secs(6), // 2x slower compilation
+            runtime_improvement: -10.0, // Performance regression
+            size_reduction: 0.0,
+            memory_reduction: 0.0,
+            optimization_level: OptimizationLevel::Default,
+            confidence_score: 0.9,
+        };
+        analyzer.record_performance(regression_point).unwrap();
+        
+        let regression_result = analyzer.detect_regressions().unwrap();
+        assert!(regression_result.has_regression);
+        assert!(!regression_result.affected_metrics.is_empty());
+    }
+    
+    #[test]
+    fn test_performance_report_generation() {
         let mut analyzer = PerformanceAnalyzer::new();
         
         // Add some test data
-        for i in 1..=10 {
-            let data_point = PerformanceDataPoint {
-                timestamp: chrono::Utc::now().timestamp() as u64,
-                optimization_level: "O2".to_string(),
-                compilation_time: Duration::from_millis(i * 100),
-                execution_time: None,
-                memory_usage: None,
-                code_size: None,
-                performance_improvement: i as f64,
-                optimization_passes: vec![],
-            };
-            analyzer.add_performance_data(data_point);
-        }
-
-        let stats = analyzer.calculate_statistics().unwrap();
-        assert_eq!(stats.total_samples, 10);
-        assert!(stats.mean_performance_improvement > 0.0);
-    }
-
-    #[test]
-    fn test_performance_grade_calculation() {
-        let analyzer = PerformanceAnalyzer::new();
-        
-        let stats = OptimizationManagerStats {
-            total_optimizations_run: 100,
-            successful_optimizations: 95,
-            performance_improvements: vec![("test".to_string(), 50.0)].into_iter().collect(),
-            ..Default::default()
+        let baseline = PerformanceBaseline {
+            timestamp: SystemTime::now(),
+            optimization_level: OptimizationLevel::Default,
+            compilation_time: Duration::from_secs(4),
+            runtime_performance: 100.0,
+            memory_usage: 1024 * 1024,
+            code_size: 50000,
+            metadata: HashMap::new(),
         };
-
-        let grade = analyzer.calculate_overall_grade(&stats);
-        assert!(matches!(grade, PerformanceGrade::Excellent | PerformanceGrade::Good));
+        analyzer.set_baseline(baseline).unwrap();
+        
+        let data_point = PerformanceDataPoint {
+            timestamp: SystemTime::now(),
+            compilation_time: Duration::from_secs(3),
+            runtime_improvement: 20.0,
+            size_reduction: 15.0,
+            memory_reduction: 10.0,
+            optimization_level: OptimizationLevel::Default,
+            confidence_score: 0.95,
+        };
+        analyzer.record_performance(data_point).unwrap();
+        
+        let report = analyzer.generate_performance_report().unwrap();
+        
+        assert!(report.contains("Performance Analysis Report"));
+        assert!(report.contains("Baseline Performance"));
+        assert!(report.contains("Performance Trends"));
+        assert!(report.contains("Regression Analysis"));
     }
 }

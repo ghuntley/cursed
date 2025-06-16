@@ -40,6 +40,7 @@ pub use algorithms::kyber_real::*;
 pub use algorithms::dilithium_real::*;
 pub use algorithms::lms_real::*;
 pub use algorithms::falcon_real::*;
+pub use algorithms::sphincs_real::*;
 pub use algorithms::mceliece_real::*;
 
 // Re-export placeholder implementations for compatibility

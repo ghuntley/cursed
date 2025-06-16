@@ -1088,12 +1088,12 @@ pub struct QueueStats {
 /// Convenience functions for enhanced GenZ features
 
 /// Create a YeetHandler for emergency shutdown
-pub fn yeet_on_signal(signals: Vec<BoostSignal>) -> YeetHandler {
+pub fn yeet_on_signals(signals: Vec<BoostSignal>) -> YeetHandler {
     YeetHandler::new(signals)
 }
 
 /// Create a NoCapReloadManager for config reloading
-pub fn no_cap_reload_config<P: Into<PathBuf>>(config_path: P, signal: BoostSignal) -> NoCapReloadManager {
+pub fn no_cap_reload_config_with_signal<P: Into<PathBuf>>(config_path: P, signal: BoostSignal) -> NoCapReloadManager {
     NoCapReloadManager::new(config_path, signal)
 }
 

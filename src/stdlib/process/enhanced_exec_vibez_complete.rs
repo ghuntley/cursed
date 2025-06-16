@@ -448,25 +448,94 @@ impl EnhancedCmd {
         Ok(combined)
     }
     
-    /// Get stdin pipe
+    /// Get stdin pipe for writing to process
     #[instrument(skip(self))]
     pub fn stdin_pipe(&mut self) -> VibezResult<Box<dyn Write + Send>> {
-        // This would create a real stdin pipe
-        Err(CursedError::RuntimeError("stdin_pipe not yet implemented".to_string()))
+        debug!("Creating stdin pipe for process");
+        
+        // Ensure stdin is configured for piping
+        self.stdin(ProcessStdin::Pipe);
+        
+        // Start the process if not already started
+        if !self.is_running()? {
+            self.spawn()?;
+        }
+        
+        let mut state = self.state.lock()
+            .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
+        
+        if let Some(ref mut process) = state.process {
+            if let Some(stdin) = process.stdin.take() {
+                debug!("Successfully created stdin pipe");
+                Ok(Box::new(stdin))
+            } else {
+                error!("Stdin not available - pipe not configured");
+                Err(CursedError::RuntimeError("Stdin not available - pipe not configured".to_string()))
+            }
+        } else {
+            error!("Process not started");
+            Err(CursedError::RuntimeError("Process not started".to_string()))
+        }
     }
     
-    /// Get stdout pipe
+    /// Get stdout pipe for reading from process
     #[instrument(skip(self))]
     pub fn stdout_pipe(&mut self) -> VibezResult<Box<dyn Read + Send>> {
-        // This would create a real stdout pipe
-        Err(CursedError::RuntimeError("stdout_pipe not yet implemented".to_string()))
+        debug!("Creating stdout pipe for process");
+        
+        // Ensure stdout is configured for piping
+        self.stdout(ProcessStdout::Pipe);
+        
+        // Start the process if not already started
+        if !self.is_running()? {
+            self.spawn()?;
+        }
+        
+        let mut state = self.state.lock()
+            .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
+        
+        if let Some(ref mut process) = state.process {
+            if let Some(stdout) = process.stdout.take() {
+                debug!("Successfully created stdout pipe");
+                Ok(Box::new(stdout))
+            } else {
+                error!("Stdout not available - pipe not configured");
+                Err(CursedError::RuntimeError("Stdout not available - pipe not configured".to_string()))
+            }
+        } else {
+            error!("Process not started");
+            Err(CursedError::RuntimeError("Process not started".to_string()))
+        }
     }
     
-    /// Get stderr pipe
+    /// Get stderr pipe for reading from process
     #[instrument(skip(self))]
     pub fn stderr_pipe(&mut self) -> VibezResult<Box<dyn Read + Send>> {
-        // This would create a real stderr pipe
-        Err(CursedError::RuntimeError("stderr_pipe not yet implemented".to_string()))
+        debug!("Creating stderr pipe for process");
+        
+        // Ensure stderr is configured for piping
+        self.stderr(ProcessStderr::Pipe);
+        
+        // Start the process if not already started
+        if !self.is_running()? {
+            self.spawn()?;
+        }
+        
+        let mut state = self.state.lock()
+            .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
+        
+        if let Some(ref mut process) = state.process {
+            if let Some(stderr) = process.stderr.take() {
+                debug!("Successfully created stderr pipe");
+                Ok(Box::new(stderr))
+            } else {
+                error!("Stderr not available - pipe not configured");
+                Err(CursedError::RuntimeError("Stderr not available - pipe not configured".to_string()))
+            }
+        } else {
+            error!("Process not started");
+            Err(CursedError::RuntimeError("Process not started".to_string()))
+        }
     }
     
     /// Get process handle

@@ -63,6 +63,9 @@ pub use optimization::{
     MemoryLayoutOptimizer, AllocationOptimizer, PerformanceProfiler, PerformanceAnalyzer,
     LlvmPassManager, LtoManager, PgoManager, PassStatistics,
     LevelConfig, OptimizationSettings, ProfileCategory,
+    OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
+    CoordinatorOptimizationLevel, OptimizationFeature, IncrementalSavings, 
+    ParallelPerformance, CachePerformance, OverallImprovement,
 };
 
 pub mod stdlib;
@@ -84,8 +87,7 @@ pub mod repl;
 // Language Server Protocol
 pub mod lsp;
 
-// Development tools
-pub mod tools;
+// Development tools (already declared above)
 
 // Testing framework
 pub mod testing;
@@ -210,8 +212,19 @@ pub fn run_file_enhanced(
         // Set enhanced passes preference
         codegen.set_use_enhanced_passes(use_enhanced_passes);
         
+        // Enable comprehensive optimization
+        let preset = match optimization_config.optimization_level.as_str() {
+            "O0" => crate::codegen::llvm::OptimizationPreset::Development,
+            "O3" => crate::codegen::llvm::OptimizationPreset::Release,
+            _ => crate::codegen::llvm::OptimizationPreset::Balanced,
+        };
+        codegen.enable_comprehensive_optimization(preset)?;
+        
+        // Apply comprehensive optimization to source before compilation
+        let optimized_source = codegen.apply_comprehensive_optimization(&source)?;
+        
         // Compile with automatic package resolution and optimization
-        let _ir = codegen.compile_with_packages(&source, Some(std::path::Path::new(path))).await?;
+        let _ir = codegen.compile_with_packages(&optimized_source, Some(std::path::Path::new(path))).await?;
         
         // Log optimization statistics based on which passes were used
         if use_enhanced_passes {

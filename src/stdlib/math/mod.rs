@@ -21,6 +21,7 @@ pub mod utilities;
 pub mod complex;
 pub mod advanced;
 pub mod matrix;
+pub mod big_mood;
 
 // Re-export core mathematical functions with explicit imports to avoid conflicts
 // BASIC OPERATIONS - Fundamental arithmetic and utility functions
@@ -244,6 +245,23 @@ pub use matrix::{
     EigenDecomposition, eigen_decomposition,
     // Matrix utilities
     vector_dot, vector_norm, matrix_norm, matrix_inverse,
+};
+
+// BIG MOOD - Arbitrary precision arithmetic operations
+pub use big_mood::{
+    // Core arbitrary precision types
+    BigInt, BigRat, BigFloat, Decimal, BigComplex,
+    // Accuracy and rounding control
+    Accuracy, RoundingMode,
+    // Parsing functions
+    parse_int, parse_rat, parse_float,
+    // Utility functions
+    gcd as big_gcd, binomial as big_binomial,
+    // Mathematical functions for big numbers
+    sqrt as big_sqrt, cbrt as big_cbrt, nth_root as big_nth_root,
+    ln as big_ln, exp as big_exp, sin as big_sin, cos as big_cos, tan as big_tan,
+    // Performance optimizations
+    fast_mul, rand_prime,
 };
 
 /// Error types for mathematical operations

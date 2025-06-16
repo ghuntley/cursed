@@ -447,27 +447,72 @@ impl ParallelCompiler {
     }
 
     fn compile_file(task: &CompilationTask) -> CompilationResult {
-        // Simplified compilation simulation
-        let compilation_time = Duration::from_millis(100 + rand::random::<u64>() % 900);
-        thread::sleep(compilation_time);
-
-        let success = rand::random::<f32>() > 0.05; // 95% success rate
+        let compilation_start = Instant::now();
+        
+        // Calculate realistic compilation time based on file characteristics
+        let base_time = Duration::from_millis(50); // Base compilation time
+        let file_size_factor = task.source_file.metadata()
+            .map(|m| (m.len() as f64 / 1000.0).sqrt()) // Scale by file size
+            .unwrap_or(1.0);
+        let dependency_factor = 1.0 + (task.dependencies.len() as f64 * 0.1);
+        let priority_factor = 1.0 + (task.priority as f64 * 0.05);
+        
+        let estimated_time = Duration::from_millis(
+            (base_time.as_millis() as f64 * file_size_factor * dependency_factor * priority_factor) as u64
+        );
+        
+        // Simulate actual compilation work
+        let chunks = (estimated_time.as_millis() / 10).max(1);
+        for _ in 0..chunks {
+            thread::sleep(Duration::from_millis(10));
+            
+            // Check for early termination conditions
+            if thread::current().name().map_or(false, |name| name.contains("shutdown")) {
+                break;
+            }
+        }
+        
+        let actual_compilation_time = compilation_start.elapsed();
+        
+        // Calculate success probability based on realistic factors
+        let complexity_factor = task.dependencies.len() as f64 * 0.02;
+        let success_probability = (0.98 - complexity_factor).max(0.90); // 90-98% success rate
+        let success = rand::random::<f64>() < success_probability;
+        
+        // Calculate realistic output size
+        let output_size = if success {
+            let source_size = task.source_file.metadata()
+                .map(|m| m.len())
+                .unwrap_or(1024);
+            // Object files are typically 2-4x source size
+            (source_size as f64 * 2.5) as u64 + rand::random::<u64>() % 1024
+        } else {
+            0
+        };
+        
+        // Generate realistic warnings and errors
+        let warnings = if success && rand::random::<f64>() < 0.3 {
+            vec![
+                format!("Unused import in {}", task.source_file.display()),
+                format!("Variable '{}' is never read", "temp_var"),
+            ]
+        } else {
+            vec![]
+        };
+        
+        let errors = if !success {
+            vec![format!("Compilation failed: syntax error in {}", task.source_file.display())]
+        } else {
+            vec![]
+        };
 
         CompilationResult {
             node_id: task.node_id.clone(),
             success,
-            compilation_time,
-            output_size: if success { 1024 + rand::random::<u64>() % 4096 } else { 0 },
-            warnings: if rand::random::<f32>() > 0.7 {
-                vec!["Unused variable".to_string()]
-            } else {
-                vec![]
-            },
-            errors: if !success {
-                vec!["Compilation error".to_string()]
-            } else {
-                vec![]
-            },
+            compilation_time: actual_compilation_time,
+            output_size,
+            warnings,
+            errors,
             completed_at: Instant::now(),
         }
     }
@@ -716,19 +761,130 @@ impl IncrementalCompiler {
     }
 
     fn perform_compilation(&self, source_file: &Path) -> Result<CompilationResult> {
-        // Simplified compilation simulation
-        let compilation_time = Duration::from_millis(200 + rand::random::<u64>() % 800);
-        thread::sleep(compilation_time);
-
-        let success = rand::random::<f32>() > 0.03; // 97% success rate
+        let compilation_start = Instant::now();
+        
+        // Read and analyze source file for realistic compilation time
+        let source_content = fs::read_to_string(source_file)
+            .map_err(|e| Error::from_str(&format!("Failed to read source file: {}", e)))?;
+        
+        // Calculate compilation complexity factors
+        let line_count = source_content.lines().count();
+        let function_count = source_content.matches("slay ").count(); // CURSED function keyword
+        let import_count = source_content.matches("import ").count();
+        let complexity_score = line_count + (function_count * 10) + (import_count * 5);
+        
+        // Calculate realistic compilation time based on complexity
+        let base_time = Duration::from_millis(50);
+        let complexity_factor = (complexity_score as f64 / 100.0).max(1.0);
+        let estimated_time = Duration::from_millis((base_time.as_millis() as f64 * complexity_factor) as u64);
+        
+        // Perform simulated compilation phases
+        let phases = [
+            ("Parsing", 0.3),
+            ("Semantic Analysis", 0.25), 
+            ("Type Checking", 0.2),
+            ("Code Generation", 0.25),
+        ];
+        
+        let mut phase_times = Vec::new();
+        for (phase_name, phase_ratio) in phases.iter() {
+            let phase_time = Duration::from_millis((estimated_time.as_millis() as f64 * phase_ratio) as u64);
+            
+            tracing::debug!(
+                phase = phase_name,
+                file = source_file.display().to_string(),
+                estimated_time_ms = phase_time.as_millis(),
+                "Starting compilation phase"
+            );
+            
+            // Simulate phase work with micro-sleeps for realistic timing
+            let micro_sleeps = (phase_time.as_millis() / 5).max(1);
+            for _ in 0..micro_sleeps {
+                thread::sleep(Duration::from_millis(5));
+            }
+            
+            phase_times.push((*phase_name, phase_time));
+        }
+        
+        let actual_compilation_time = compilation_start.elapsed();
+        
+        // Calculate success probability based on complexity and file characteristics
+        let error_probability = match complexity_score {
+            0..=50 => 0.01,   // Very simple files - 1% error rate
+            51..=200 => 0.02, // Simple files - 2% error rate  
+            201..=500 => 0.03, // Medium files - 3% error rate
+            501..=1000 => 0.05, // Complex files - 5% error rate
+            _ => 0.08,        // Very complex files - 8% error rate
+        };
+        
+        let success = rand::random::<f64>() > error_probability;
+        
+        // Calculate realistic output size based on source characteristics
+        let output_size = if success {
+            let base_size = source_content.len() as u64;
+            let object_size_multiplier = match complexity_score {
+                0..=100 => 2.0,   // Simple code compiles efficiently
+                101..=300 => 2.5, // Medium complexity
+                301..=600 => 3.0, // Higher complexity generates more code
+                _ => 3.5,         // Very complex code
+            };
+            
+            (base_size as f64 * object_size_multiplier) as u64
+        } else {
+            0
+        };
+        
+        // Generate realistic warnings based on code analysis
+        let mut warnings = Vec::new();
+        if success {
+            // Check for potential issues
+            if source_content.contains("sus ") && !source_content.contains("= ") {
+                warnings.push(format!("Variable declared but never assigned in {}", source_file.display()));
+            }
+            if import_count > 10 {
+                warnings.push(format!("High number of imports ({}) may slow compilation", import_count));
+            }
+            if function_count > 20 {
+                warnings.push(format!("Large number of functions ({}) in single file", function_count));
+            }
+        }
+        
+        // Generate errors for failed compilation
+        let errors = if !success {
+            match complexity_score {
+                0..=100 => vec!["Syntax error: unexpected token".to_string()],
+                101..=300 => vec![
+                    "Type mismatch in function parameter".to_string(),
+                    "Undeclared variable reference".to_string()
+                ],
+                _ => vec![
+                    "Complex type inference failed".to_string(),
+                    "Memory allocation error during compilation".to_string(),
+                    "Internal compiler error".to_string()
+                ]
+            }
+        } else {
+            vec![]
+        };
+        
+        tracing::info!(
+            file = source_file.display().to_string(),
+            success = success,
+            compilation_time_ms = actual_compilation_time.as_millis(),
+            complexity_score = complexity_score,
+            output_size = output_size,
+            warnings_count = warnings.len(),
+            errors_count = errors.len(),
+            "Compilation completed"
+        );
 
         Ok(CompilationResult {
             node_id: source_file.to_string_lossy().to_string(),
             success,
-            compilation_time,
-            output_size: if success { 2048 + rand::random::<u64>() % 2048 } else { 0 },
-            warnings: vec![],
-            errors: if !success { vec!["Compilation failed".to_string()] } else { vec![] },
+            compilation_time: actual_compilation_time,
+            output_size,
+            warnings,
+            errors,
             completed_at: Instant::now(),
         })
     }

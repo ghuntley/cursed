@@ -482,23 +482,30 @@ impl PassRegistry {
         let start_time = Instant::now();
         let _span = span!(Level::DEBUG, "execute_function_pass", pass = pass_name).entered();
         
-        // Get initial instruction count
-        let initial_instruction_count = function.get_basic_blocks()
-            .map(|bb| bb.get_instructions().count())
-            .sum::<usize>();
+        // Get detailed initial metrics
+        let initial_metrics = self.collect_function_metrics(function);
         
-        // Execute the pass
+        // Pre-execution validation
+        if !function.verify(false) {
+            warn!("Function {} failed verification before pass {}", 
+                  function.get_name().to_str().unwrap_or("unknown"), pass_name);
+        }
+        
+        // Execute the pass with comprehensive monitoring
         let success = if config.enable_pass_timing {
-            // Execute with timeout
+            // Execute with timeout monitoring
             let timeout = config.max_pass_execution_time;
-            let start = Instant::now();
+            let execution_start = Instant::now();
             
+            // Actual pass execution
             let result = pass_manager.run_on(function);
             
-            if start.elapsed() > timeout {
-                warn!("Pass {} exceeded timeout of {:?}", pass_name, timeout);
+            let actual_time = execution_start.elapsed();
+            if actual_time > timeout {
+                warn!("Pass {} exceeded timeout of {:?} (took {:?})", pass_name, timeout, actual_time);
                 false
             } else {
+                debug!("Pass {} completed in {:?}", pass_name, actual_time);
                 result
             }
         } else {
@@ -507,21 +514,36 @@ impl PassRegistry {
         
         let execution_time = start_time.elapsed();
         
-        // Get final instruction count
-        let final_instruction_count = function.get_basic_blocks()
-            .map(|bb| bb.get_instructions().count())
-            .sum::<usize>();
+        // Post-execution validation
+        let post_execution_valid = function.verify(false);
+        if !post_execution_valid {
+            warn!("Function {} failed verification after pass {}", 
+                  function.get_name().to_str().unwrap_or("unknown"), pass_name);
+        }
         
-        let instructions_added = final_instruction_count as i32 - initial_instruction_count as i32;
+        // Get detailed final metrics
+        let final_metrics = self.collect_function_metrics(function);
+        
+        // Calculate comprehensive changes
+        let instructions_added = final_metrics.instruction_count as i32 - initial_metrics.instruction_count as i32;
         let instructions_removed = -instructions_added.min(0);
-        let changes_made = instructions_added != 0;
+        let changes_made = instructions_added != 0 || 
+                          final_metrics.basic_block_count != initial_metrics.basic_block_count;
         
-        // Estimate performance impact
+        // Calculate realistic performance impact based on actual changes
         let estimated_performance_impact = if let Some(pass) = self.get_pass(pass_name) {
             if changes_made {
-                pass.estimated_improvement
+                // Adjust estimated improvement based on actual instruction reduction
+                let instruction_reduction_factor = if initial_metrics.instruction_count > 0 {
+                    instructions_removed as f64 / initial_metrics.instruction_count as f64
+                } else {
+                    0.0
+                };
+                
+                // Scale base improvement by actual reduction achieved
+                pass.estimated_improvement * (1.0 + instruction_reduction_factor * 0.5)
             } else {
-                1.0
+                1.0 // No changes, no improvement
             }
         } else {
             1.0
@@ -530,26 +552,70 @@ impl PassRegistry {
         let result = PassResult {
             pass_name: pass_name.to_string(),
             execution_time,
-            success,
+            success: success && post_execution_valid,
             changes_made,
             instructions_added,
             instructions_removed,
             functions_modified: if changes_made { 1 } else { 0 },
             estimated_performance_impact,
-            error_message: if success { None } else { Some("Pass execution failed".to_string()) },
+            error_message: if success && post_execution_valid { 
+                None 
+            } else { 
+                Some(format!("Pass execution {} or validation failed", 
+                           if success { "succeeded but" } else { "" }))
+            },
         };
         
-        // Record result
+        // Record detailed result
         self.record_pass_result(&result);
         
         debug!(
             pass = pass_name,
             execution_time = ?execution_time,
             changes_made = changes_made,
+            instructions_before = initial_metrics.instruction_count,
+            instructions_after = final_metrics.instruction_count,
+            blocks_before = initial_metrics.basic_block_count,
+            blocks_after = final_metrics.basic_block_count,
+            performance_impact = estimated_performance_impact,
             "Function pass execution complete"
         );
         
         result
+    }
+    
+    /// Collect comprehensive function metrics
+    fn collect_function_metrics(&self, function: &FunctionValue) -> FunctionMetrics {
+        let mut instruction_count = 0;
+        let mut basic_block_count = 0;
+        let mut call_count = 0;
+        let mut load_store_count = 0;
+        let mut branch_count = 0;
+        
+        for basic_block in function.get_basic_blocks() {
+            basic_block_count += 1;
+            
+            for instruction in basic_block.get_instructions() {
+                instruction_count += 1;
+                
+                match instruction.get_opcode() {
+                    inkwell::values::InstructionOpcode::Call => call_count += 1,
+                    inkwell::values::InstructionOpcode::Load | 
+                    inkwell::values::InstructionOpcode::Store => load_store_count += 1,
+                    inkwell::values::InstructionOpcode::Br | 
+                    inkwell::values::InstructionOpcode::Switch => branch_count += 1,
+                    _ => {}
+                }
+            }
+        }
+        
+        FunctionMetrics {
+            instruction_count,
+            basic_block_count,
+            call_count,
+            load_store_count,
+            branch_count,
+        }
     }
     
     /// Record pass execution result
@@ -639,6 +705,16 @@ impl PassRegistry {
             }
         }
     }
+}
+
+/// Function metrics for detailed analysis
+#[derive(Debug, Clone)]
+pub struct FunctionMetrics {
+    pub instruction_count: usize,
+    pub basic_block_count: usize,
+    pub call_count: usize,
+    pub load_store_count: usize,
+    pub branch_count: usize,
 }
 
 impl Default for PassRegistry {

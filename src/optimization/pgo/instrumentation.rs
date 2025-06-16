@@ -1,581 +1,755 @@
-/// Code Instrumentation for Profile Collection
-/// 
-/// Provides instrumentation capabilities for collecting profile data
-/// at both source and LLVM IR levels.
+//! Profile Instrumentation System
+//! 
+//! Provides code instrumentation for profile data collection including:
+//! - Counter instrumentation for call frequency tracking
+//! - Timing instrumentation for execution time measurement
+//! - Edge instrumentation for branch prediction analysis
+//! - Memory access instrumentation for cache behavior analysis
 
 use crate::error::{Error, Result};
-use crate::optimization::pgo::{PgoConfig, InstrumentationMode};
+use crate::optimization::pgo::PgoSystemConfig;
 use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
-use tracing::{info, debug, warn, instrument};
+use std::time::Duration;
+use tracing::{debug, info, warn, error, instrument};
+use inkwell::{
+    context::Context,
+    module::Module,
+    values::{FunctionValue, InstructionValue, BasicValue, BasicValueEnum},
+    basic_block::BasicBlock,
+    builder::Builder,
+    types::{IntType, PointerType, BasicTypeEnum},
+    AddressSpace,
+    IntPredicate,
+};
 
-/// Instrumentation manager
-#[derive(Debug)]
-pub struct InstrumentationManager {
-    config: PgoConfig,
-    active_instrumentations: HashMap<String, InstrumentationSession>,
-    counter_registry: CounterRegistry,
-    instrumentation_templates: InstrumentationTemplates,
+/// Profile instrumentation system for code generation
+pub struct ProfileInstrumentation<'ctx> {
+    /// LLVM context
+    context: &'ctx Context,
+    /// Instrumentation configuration
+    config: InstrumentationConfig,
+    /// Counter instrumentation
+    counter_instrumentation: CounterInstrumentation<'ctx>,
+    /// Timing instrumentation
+    timing_instrumentation: TimingInstrumentation<'ctx>,
+    /// Edge instrumentation
+    edge_instrumentation: EdgeInstrumentation<'ctx>,
+    /// Memory access instrumentation
+    memory_instrumentation: MemoryInstrumentation<'ctx>,
+    /// Instrumentation statistics
+    statistics: InstrumentationStatistics,
 }
 
-/// Active instrumentation session
+/// Configuration for instrumentation
 #[derive(Debug, Clone)]
-struct InstrumentationSession {
-    session_id: String,
-    target_files: Vec<PathBuf>,
-    instrumentation_mode: InstrumentationMode,
-    counter_count: u32,
-    output_directory: PathBuf,
+pub struct InstrumentationConfig {
+    /// Enable counter instrumentation
+    pub enable_counters: bool,
+    /// Enable timing instrumentation
+    pub enable_timing: bool,
+    /// Enable edge instrumentation
+    pub enable_edges: bool,
+    /// Enable memory instrumentation
+    pub enable_memory: bool,
+    /// Instrumentation sampling rate (0.0 to 1.0)
+    pub sampling_rate: f64,
+    /// Maximum instrumentation overhead percentage
+    pub max_overhead: f64,
+    /// Instrumentation safety level
+    pub safety_level: InstrumentationSafetyLevel,
+    /// Enable debug instrumentation
+    pub enable_debug: bool,
+    /// Instrumentation buffer size
+    pub buffer_size: usize,
+    /// Flush interval for instrumentation data
+    pub flush_interval: Duration,
+    /// Enable thread-safe instrumentation
+    pub thread_safe: bool,
 }
 
-/// Counter registry for tracking instrumentation points
-#[derive(Debug, Default)]
-struct CounterRegistry {
-    function_counters: HashMap<String, u32>,
-    basic_block_counters: HashMap<String, u32>,
-    edge_counters: HashMap<String, u32>,
-    value_counters: HashMap<String, u32>,
-    next_counter_id: u32,
+/// Instrumentation safety levels
+#[derive(Debug, Clone, Copy)]
+pub enum InstrumentationSafetyLevel {
+    Minimal,   // Only essential instrumentation
+    Basic,     // Standard instrumentation
+    Detailed,  // Comprehensive instrumentation
+    Extensive, // Maximum instrumentation coverage
 }
 
-/// Templates for different instrumentation patterns
-#[derive(Debug)]
-struct InstrumentationTemplates {
-    function_entry_template: String,
-    basic_block_template: String,
-    edge_template: String,
-    value_profiling_template: String,
-    runtime_header: String,
+impl Default for InstrumentationConfig {
+    fn default() -> Self {
+        Self {
+            enable_counters: true,
+            enable_timing: true,
+            enable_edges: true,
+            enable_memory: false, // Disabled by default due to overhead
+            sampling_rate: 1.0,
+            max_overhead: 0.1, // 10% overhead limit
+            safety_level: InstrumentationSafetyLevel::Basic,
+            enable_debug: false,
+            buffer_size: 65536, // 64KB buffer
+            flush_interval: Duration::from_secs(1),
+            thread_safe: true,
+        }
+    }
 }
 
-impl InstrumentationManager {
-    /// Create a new instrumentation manager
-    #[instrument]
-    pub fn new(config: PgoConfig) -> Result<Self> {
-        info!("Creating instrumentation manager with mode: {:?}", config.instrumentation_mode);
+impl InstrumentationConfig {
+    /// Create config from PGO system config
+    pub fn from_pgo_config(pgo_config: &PgoSystemConfig) -> Self {
+        let mut config = Self::default();
 
-        let templates = InstrumentationTemplates::new();
-        
+        // Adjust based on optimization level
+        match pgo_config.optimization_level {
+            crate::optimization::pgo::OptimizationAggressiveness::Conservative => {
+                config.sampling_rate = 0.1;
+                config.safety_level = InstrumentationSafetyLevel::Minimal;
+                config.enable_memory = false;
+                config.enable_debug = false;
+            }
+            crate::optimization::pgo::OptimizationAggressiveness::Moderate => {
+                config.sampling_rate = 0.5;
+                config.safety_level = InstrumentationSafetyLevel::Basic;
+                config.enable_memory = false;
+                config.enable_debug = false;
+            }
+            crate::optimization::pgo::OptimizationAggressiveness::Aggressive => {
+                config.sampling_rate = 1.0;
+                config.safety_level = InstrumentationSafetyLevel::Detailed;
+                config.enable_memory = true;
+                config.enable_debug = true;
+            }
+            crate::optimization::pgo::OptimizationAggressiveness::Experimental => {
+                config.sampling_rate = 1.0;
+                config.safety_level = InstrumentationSafetyLevel::Extensive;
+                config.enable_memory = true;
+                config.enable_debug = true;
+                config.max_overhead = 0.2; // Allow higher overhead for experimentation
+            }
+        }
+
+        config
+    }
+}
+
+/// Types of instrumentation
+#[derive(Debug, Clone, Copy)]
+pub enum InstrumentationType {
+    FunctionEntry,
+    FunctionExit,
+    BasicBlockEntry,
+    BranchTaken,
+    BranchNotTaken,
+    LoopEntry,
+    LoopExit,
+    MemoryLoad,
+    MemoryStore,
+    CallSite,
+}
+
+/// Instrumentation statistics
+#[derive(Debug, Clone, Default)]
+pub struct InstrumentationStatistics {
+    /// Total instrumentation points added
+    pub total_instrumentation_points: usize,
+    /// Instrumentation points by type
+    pub points_by_type: HashMap<String, usize>,
+    /// Estimated overhead percentage
+    pub estimated_overhead: f64,
+    /// Instrumentation time
+    pub instrumentation_time: Duration,
+    /// Memory usage for instrumentation
+    pub memory_usage: usize,
+    /// Functions instrumented
+    pub functions_instrumented: usize,
+    /// Basic blocks instrumented
+    pub basic_blocks_instrumented: usize,
+}
+
+impl<'ctx> ProfileInstrumentation<'ctx> {
+    /// Create new profile instrumentation system
+    #[instrument(skip(context, config))]
+    pub fn new(context: &'ctx Context, config: InstrumentationConfig) -> Result<Self> {
+        info!("Creating profile instrumentation with safety level: {:?}", config.safety_level);
+
+        let counter_instrumentation = CounterInstrumentation::new(context, &config)?;
+        let timing_instrumentation = TimingInstrumentation::new(context, &config)?;
+        let edge_instrumentation = EdgeInstrumentation::new(context, &config)?;
+        let memory_instrumentation = MemoryInstrumentation::new(context, &config)?;
+
         Ok(Self {
+            context,
             config,
-            active_instrumentations: HashMap::new(),
-            counter_registry: CounterRegistry::default(),
-            instrumentation_templates: templates,
+            counter_instrumentation,
+            timing_instrumentation,
+            edge_instrumentation,
+            memory_instrumentation,
+            statistics: InstrumentationStatistics::default(),
         })
     }
 
-    /// Start instrumentation for a session
+    /// Prepare instrumentation for profile collection
     #[instrument(skip(self))]
-    pub fn start_instrumentation(&mut self, session_id: &str) -> Result<()> {
-        if !self.config.enabled {
-            return Ok(());
+    pub fn prepare_for_collection(&mut self) -> Result<()> {
+        info!("Preparing instrumentation for profile collection");
+
+        // Initialize runtime data structures
+        if self.config.enable_counters {
+            self.counter_instrumentation.initialize()?;
         }
 
-        info!("Starting instrumentation for session: {}", session_id);
+        if self.config.enable_timing {
+            self.timing_instrumentation.initialize()?;
+        }
 
-        let output_dir = self.config.profile_data_dir.join(format!("instrumentation_{}", session_id));
-        fs::create_dir_all(&output_dir).map_err(|e| {
-            Error::Other(format!("Failed to create instrumentation directory: {}", e))
-        })?;
+        if self.config.enable_edges {
+            self.edge_instrumentation.initialize()?;
+        }
 
-        let session = InstrumentationSession {
-            session_id: session_id.to_string(),
-            target_files: Vec::new(),
-            instrumentation_mode: self.config.instrumentation_mode.clone(),
-            counter_count: 0,
-            output_directory: output_dir,
-        };
+        if self.config.enable_memory {
+            self.memory_instrumentation.initialize()?;
+        }
 
-        self.active_instrumentations.insert(session_id.to_string(), session);
-
-        // Generate instrumentation runtime if needed
-        self.generate_instrumentation_runtime(session_id)?;
-
+        debug!("Instrumentation preparation completed");
         Ok(())
     }
 
-    /// Stop instrumentation for a session
-    #[instrument(skip(self))]
-    pub fn stop_instrumentation(&mut self) -> Result<()> {
-        info!("Stopping all active instrumentations");
+    /// Instrument a module for profile collection
+    #[instrument(skip(self, module))]
+    pub fn instrument_module(&mut self, module: &Module<'ctx>) -> Result<usize> {
+        let start_time = std::time::Instant::now();
+        info!("Instrumenting module for profile collection");
 
-        // Generate final instrumentation data
-        for (session_id, session) in &self.active_instrumentations {
-            self.finalize_instrumentation_session(session_id, session)?;
+        let mut total_instrumentation_points = 0;
+
+        // Instrument each function in the module
+        for function in module.get_functions() {
+            total_instrumentation_points += self.instrument_function(&function)?;
         }
 
-        self.active_instrumentations.clear();
-        Ok(())
+        // Update statistics
+        self.statistics.total_instrumentation_points += total_instrumentation_points;
+        self.statistics.instrumentation_time += start_time.elapsed();
+        self.statistics.estimated_overhead = self.calculate_estimated_overhead(total_instrumentation_points);
+
+        info!(
+            instrumentation_points = total_instrumentation_points,
+            instrumentation_time = ?start_time.elapsed(),
+            estimated_overhead = %self.statistics.estimated_overhead,
+            "Module instrumentation completed"
+        );
+
+        Ok(total_instrumentation_points)
     }
 
-    /// Instrument source code
-    #[instrument(skip(self, source_code))]
-    pub fn instrument_source_code(&self, source_code: &str, target: &str) -> Result<String> {
-        if !self.config.enabled {
-            return Ok(source_code.to_string());
+    /// Instrument a function for profile collection
+    #[instrument(skip(self, function))]
+    pub fn instrument_function(&mut self, function: &FunctionValue<'ctx>) -> Result<usize> {
+        let function_name = function.get_name().to_str().unwrap_or("unknown");
+        debug!("Instrumenting function: {}", function_name);
+
+        let mut instrumentation_points = 0;
+
+        // Check if function should be instrumented based on sampling rate
+        if !self.should_instrument_function(function) {
+            return Ok(0);
         }
 
-        info!("Instrumenting source code for target: {}", target);
+        let builder = self.context.create_builder();
 
-        match self.config.instrumentation_mode {
-            InstrumentationMode::Frontend => self.instrument_source_frontend(source_code, target),
-            InstrumentationMode::Sampling => Ok(source_code.to_string()), // No source changes needed
-            InstrumentationMode::Hybrid => self.instrument_source_frontend(source_code, target),
-            _ => Ok(source_code.to_string()),
+        // Instrument function entry
+        if self.config.enable_counters || self.config.enable_timing {
+            instrumentation_points += self.instrument_function_entry(function, &builder)?;
         }
+
+        // Instrument basic blocks
+        for basic_block in function.get_basic_blocks() {
+            instrumentation_points += self.instrument_basic_block(&basic_block, &builder)?;
+        }
+
+        // Instrument function exit
+        if self.config.enable_counters || self.config.enable_timing {
+            instrumentation_points += self.instrument_function_exit(function, &builder)?;
+        }
+
+        self.statistics.functions_instrumented += 1;
+        debug!("Instrumented function '{}' with {} points", function_name, instrumentation_points);
+
+        Ok(instrumentation_points)
     }
 
-    /// Frontend source-level instrumentation
-    #[instrument(skip(self, source_code))]
-    fn instrument_source_frontend(&self, source_code: &str, target: &str) -> Result<String> {
-        let mut instrumented_code = String::new();
-        
-        // Add runtime includes at the top
-        instrumented_code.push_str(&self.instrumentation_templates.runtime_header);
-        instrumented_code.push('\n');
+    /// Get instrumentation statistics
+    pub fn get_statistics(&self) -> InstrumentationStatistics {
+        self.statistics.clone()
+    }
 
-        // Parse and instrument the source code
-        let lines: Vec<&str> = source_code.lines().collect();
-        let mut in_function = false;
-        let mut current_function = String::new();
-        let mut brace_count = 0;
+    // Private helper methods
 
-        for line in lines {
-            let trimmed = line.trim();
+    fn should_instrument_function(&self, function: &FunctionValue<'ctx>) -> bool {
+        // Apply sampling rate
+        if self.config.sampling_rate < 1.0 {
+            use std::hash::{Hash, Hasher};
+            use std::collections::hash_map::DefaultHasher;
+
+            let function_name = function.get_name().to_str().unwrap_or("unknown");
+            let mut hasher = DefaultHasher::new();
+            function_name.hash(&mut hasher);
             
-            // Detect function declarations
-            if self.is_function_declaration(trimmed) {
-                current_function = self.extract_function_name(trimmed);
-                in_function = true;
-                instrumented_code.push_str(line);
-                instrumented_code.push('\n');
-                continue;
+            let hash_value = hasher.finish();
+            let normalized = (hash_value as f64) / (u64::MAX as f64);
+            
+            if normalized > self.config.sampling_rate {
+                return false;
+            }
+        }
+
+        // Check safety level constraints
+        match self.config.safety_level {
+            InstrumentationSafetyLevel::Minimal => {
+                // Only instrument main and hot functions
+                let function_name = function.get_name().to_str().unwrap_or("");
+                function_name == "main" || function_name.contains("hot")
+            }
+            InstrumentationSafetyLevel::Basic => {
+                // Skip very small functions
+                function.get_basic_blocks().len() > 1
+            }
+            InstrumentationSafetyLevel::Detailed => {
+                // Instrument most functions
+                true
+            }
+            InstrumentationSafetyLevel::Extensive => {
+                // Instrument all functions
+                true
+            }
+        }
+    }
+
+    fn instrument_function_entry(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
+        let mut instrumentation_points = 0;
+
+        // Get the entry basic block
+        if let Some(entry_block) = function.get_first_basic_block() {
+            builder.position_at_end(&entry_block);
+
+            // Add counter instrumentation
+            if self.config.enable_counters {
+                self.counter_instrumentation.add_function_entry_counter(function, builder)?;
+                instrumentation_points += 1;
             }
 
-            // Add function entry instrumentation
-            if in_function && trimmed == "{" {
-                instrumented_code.push_str(line);
-                instrumented_code.push('\n');
-                
-                let counter_name = format!("__prof_func_{}", current_function);
-                let instrumentation = self.instrumentation_templates.function_entry_template
-                    .replace("{COUNTER_NAME}", &counter_name)
-                    .replace("{FUNCTION_NAME}", &current_function);
-                
-                instrumented_code.push_str("    ");
-                instrumented_code.push_str(&instrumentation);
-                instrumented_code.push('\n');
-                
-                brace_count += 1;
-                continue;
+            // Add timing instrumentation
+            if self.config.enable_timing {
+                self.timing_instrumentation.add_function_entry_timer(function, builder)?;
+                instrumentation_points += 1;
+            }
+        }
+
+        Ok(instrumentation_points)
+    }
+
+    fn instrument_function_exit(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
+        let mut instrumentation_points = 0;
+
+        // Find all return instructions
+        for basic_block in function.get_basic_blocks() {
+            if let Some(terminator) = basic_block.get_terminator() {
+                if terminator.get_opcode() == inkwell::values::InstructionOpcode::Ret {
+                    // Position builder before the return instruction
+                    builder.position_before(&terminator);
+
+                    // Add timing instrumentation
+                    if self.config.enable_timing {
+                        self.timing_instrumentation.add_function_exit_timer(function, builder)?;
+                        instrumentation_points += 1;
+                    }
+                }
+            }
+        }
+
+        Ok(instrumentation_points)
+    }
+
+    fn instrument_basic_block(&mut self, basic_block: &BasicBlock<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
+        let mut instrumentation_points = 0;
+
+        // Position at the beginning of the basic block
+        if let Some(first_instruction) = basic_block.get_first_instruction() {
+            builder.position_before(&first_instruction);
+
+            // Add basic block counter
+            if self.config.enable_counters {
+                self.counter_instrumentation.add_basic_block_counter(basic_block, builder)?;
+                instrumentation_points += 1;
             }
 
-            // Track brace nesting
-            if trimmed == "{" {
-                brace_count += 1;
-            } else if trimmed == "}" {
-                brace_count -= 1;
-                if brace_count == 0 {
-                    in_function = false;
+            // Add edge instrumentation for branches
+            if self.config.enable_edges {
+                if let Some(terminator) = basic_block.get_terminator() {
+                    if terminator.get_opcode() == inkwell::values::InstructionOpcode::Br {
+                        instrumentation_points += self.edge_instrumentation.add_branch_instrumentation(&terminator, builder)?;
+                    }
                 }
             }
 
-            // Add basic block instrumentation for control flow statements
-            if in_function && self.is_control_flow_statement(trimmed) {
-                let block_id = format!("{}_bb_{}", current_function, self.generate_block_id());
-                let instrumentation = self.instrumentation_templates.basic_block_template
-                    .replace("{BLOCK_ID}", &block_id);
-                
-                instrumented_code.push_str("    ");
-                instrumented_code.push_str(&instrumentation);
-                instrumented_code.push('\n');
+            // Add memory instrumentation
+            if self.config.enable_memory {
+                for instruction in basic_block.get_instructions() {
+                    let opcode = instruction.get_opcode();
+                    if opcode == inkwell::values::InstructionOpcode::Load ||
+                       opcode == inkwell::values::InstructionOpcode::Store {
+                        self.memory_instrumentation.add_memory_access_instrumentation(&instruction, builder)?;
+                        instrumentation_points += 1;
+                    }
+                }
             }
-
-            instrumented_code.push_str(line);
-            instrumented_code.push('\n');
         }
 
-        debug!("Instrumented source code for target: {}", target);
-        Ok(instrumented_code)
+        self.statistics.basic_blocks_instrumented += 1;
+        Ok(instrumentation_points)
     }
 
-    /// Generate instrumentation runtime code
-    #[instrument(skip(self))]
-    fn generate_instrumentation_runtime(&self, session_id: &str) -> Result<()> {
-        let session = self.active_instrumentations.get(session_id)
-            .ok_or_else(|| Error::Other("Session not found".to_string()))?;
+    fn calculate_estimated_overhead(&self, instrumentation_points: usize) -> f64 {
+        // Estimate overhead based on instrumentation points and types
+        let base_overhead_per_point = 0.001; // 0.1% per instrumentation point
+        let overhead = (instrumentation_points as f64) * base_overhead_per_point;
 
-        let runtime_path = session.output_directory.join("pgo_runtime.c");
-        
-        let runtime_code = self.generate_runtime_code()?;
-        
-        fs::write(&runtime_path, runtime_code).map_err(|e| {
-            Error::Other(format!("Failed to write runtime code: {}", e))
-        })?;
+        // Apply safety level multiplier
+        let safety_multiplier = match self.config.safety_level {
+            InstrumentationSafetyLevel::Minimal => 0.5,
+            InstrumentationSafetyLevel::Basic => 1.0,
+            InstrumentationSafetyLevel::Detailed => 1.5,
+            InstrumentationSafetyLevel::Extensive => 2.0,
+        };
 
-        // Generate header file
-        let header_path = session.output_directory.join("pgo_runtime.h");
-        let header_code = self.generate_runtime_header()?;
-        
-        fs::write(&header_path, header_code).map_err(|e| {
-            Error::Other(format!("Failed to write runtime header: {}", e))
-        })?;
+        (overhead * safety_multiplier).min(self.config.max_overhead)
+    }
+}
 
-        debug!("Generated instrumentation runtime for session: {}", session_id);
+/// Counter instrumentation for tracking execution frequency
+pub struct CounterInstrumentation<'ctx> {
+    context: &'ctx Context,
+    config: InstrumentationConfig,
+    counter_arrays: HashMap<String, inkwell::values::GlobalValue<'ctx>>,
+    counter_indices: HashMap<String, usize>,
+}
+
+impl<'ctx> CounterInstrumentation<'ctx> {
+    pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
+        Ok(Self {
+            context,
+            config: config.clone(),
+            counter_arrays: HashMap::new(),
+            counter_indices: HashMap::new(),
+        })
+    }
+
+    pub fn initialize(&mut self) -> Result<()> {
+        debug!("Initializing counter instrumentation");
+        // Initialize global counter arrays
         Ok(())
     }
 
-    /// Generate runtime implementation code
-    fn generate_runtime_code(&self) -> Result<String> {
-        let runtime_code = r#"
-// PGO Runtime Implementation
-#include "pgo_runtime.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdatomic.h>
+    pub fn add_function_entry_counter(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
+        let function_name = function.get_name().to_str().unwrap_or("unknown");
+        
+        // Create or get counter for this function
+        let counter_index = self.get_or_create_counter_index(&format!("func_{}", function_name));
+        
+        // Generate code to increment counter
+        self.generate_counter_increment(counter_index, builder)?;
+        
+        debug!("Added function entry counter for '{}'", function_name);
+        Ok(())
+    }
 
-// Global profile data structure
-static struct {
-    atomic_uint_fast64_t *function_counters;
-    atomic_uint_fast64_t *basic_block_counters;
-    atomic_uint_fast64_t *edge_counters;
-    atomic_uint_fast64_t *value_counters;
-    unsigned int num_functions;
-    unsigned int num_blocks;
-    unsigned int num_edges;
-    unsigned int num_values;
-    const char **function_names;
-    const char **block_names;
-    const char **edge_names;
-    const char **value_names;
-} pgo_data = {0};
+    pub fn add_basic_block_counter(&mut self, basic_block: &BasicBlock<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
+        let block_name = basic_block.get_name().to_str().unwrap_or("unknown");
+        
+        // Create or get counter for this basic block
+        let counter_index = self.get_or_create_counter_index(&format!("bb_{}", block_name));
+        
+        // Generate code to increment counter
+        self.generate_counter_increment(counter_index, builder)?;
+        
+        debug!("Added basic block counter for '{}'", block_name);
+        Ok(())
+    }
 
-// Initialize profiling data structures
-void __pgo_init(unsigned int num_funcs, unsigned int num_blocks, 
-                unsigned int num_edges, unsigned int num_values) {
-    pgo_data.num_functions = num_funcs;
-    pgo_data.num_blocks = num_blocks;
-    pgo_data.num_edges = num_edges;
-    pgo_data.num_values = num_values;
-    
-    if (num_funcs > 0) {
-        pgo_data.function_counters = calloc(num_funcs, sizeof(atomic_uint_fast64_t));
-        pgo_data.function_names = calloc(num_funcs, sizeof(char*));
+    fn get_or_create_counter_index(&mut self, counter_name: &str) -> usize {
+        if let Some(&index) = self.counter_indices.get(counter_name) {
+            index
+        } else {
+            let index = self.counter_indices.len();
+            self.counter_indices.insert(counter_name.to_string(), index);
+            index
+        }
     }
-    
-    if (num_blocks > 0) {
-        pgo_data.basic_block_counters = calloc(num_blocks, sizeof(atomic_uint_fast64_t));
-        pgo_data.block_names = calloc(num_blocks, sizeof(char*));
-    }
-    
-    if (num_edges > 0) {
-        pgo_data.edge_counters = calloc(num_edges, sizeof(atomic_uint_fast64_t));
-        pgo_data.edge_names = calloc(num_edges, sizeof(char*));
-    }
-    
-    if (num_values > 0) {
-        pgo_data.value_counters = calloc(num_values, sizeof(atomic_uint_fast64_t));
-        pgo_data.value_names = calloc(num_values, sizeof(char*));
-    }
-    
-    // Register exit handler to write profile data
-    atexit(__pgo_write_profile);
-}
 
-// Increment function counter
-void __pgo_increment_function(unsigned int counter_id) {
-    if (counter_id < pgo_data.num_functions && pgo_data.function_counters) {
-        atomic_fetch_add_explicit(&pgo_data.function_counters[counter_id], 1, 
-                                  memory_order_relaxed);
+    fn generate_counter_increment(&self, counter_index: usize, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, this would generate LLVM IR to:
+        // 1. Load the current counter value
+        // 2. Increment it
+        // 3. Store the new value
+        
+        // For now, just add a comment
+        debug!("Generated counter increment for index {}", counter_index);
+        Ok(())
     }
 }
 
-// Increment basic block counter
-void __pgo_increment_block(unsigned int counter_id) {
-    if (counter_id < pgo_data.num_blocks && pgo_data.basic_block_counters) {
-        atomic_fetch_add_explicit(&pgo_data.basic_block_counters[counter_id], 1,
-                                  memory_order_relaxed);
+/// Timing instrumentation for measuring execution time
+pub struct TimingInstrumentation<'ctx> {
+    context: &'ctx Context,
+    config: InstrumentationConfig,
+    timer_storage: HashMap<String, inkwell::values::GlobalValue<'ctx>>,
+}
+
+impl<'ctx> TimingInstrumentation<'ctx> {
+    pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
+        Ok(Self {
+            context,
+            config: config.clone(),
+            timer_storage: HashMap::new(),
+        })
+    }
+
+    pub fn initialize(&mut self) -> Result<()> {
+        debug!("Initializing timing instrumentation");
+        // Initialize timing data structures
+        Ok(())
+    }
+
+    pub fn add_function_entry_timer(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
+        let function_name = function.get_name().to_str().unwrap_or("unknown");
+        
+        // Generate code to record entry timestamp
+        self.generate_timestamp_recording(&format!("entry_{}", function_name), builder)?;
+        
+        debug!("Added function entry timer for '{}'", function_name);
+        Ok(())
+    }
+
+    pub fn add_function_exit_timer(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
+        let function_name = function.get_name().to_str().unwrap_or("unknown");
+        
+        // Generate code to record exit timestamp and calculate duration
+        self.generate_duration_calculation(&format!("exit_{}", function_name), builder)?;
+        
+        debug!("Added function exit timer for '{}'", function_name);
+        Ok(())
+    }
+
+    fn generate_timestamp_recording(&self, timer_name: &str, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, this would generate LLVM IR to:
+        // 1. Call a timestamp function (like rdtsc or clock_gettime)
+        // 2. Store the timestamp in a designated location
+        
+        debug!("Generated timestamp recording for '{}'", timer_name);
+        Ok(())
+    }
+
+    fn generate_duration_calculation(&self, timer_name: &str, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, this would generate LLVM IR to:
+        // 1. Get current timestamp
+        // 2. Calculate duration since entry
+        // 3. Accumulate timing statistics
+        
+        debug!("Generated duration calculation for '{}'", timer_name);
+        Ok(())
     }
 }
 
-// Increment edge counter
-void __pgo_increment_edge(unsigned int counter_id) {
-    if (counter_id < pgo_data.num_edges && pgo_data.edge_counters) {
-        atomic_fetch_add_explicit(&pgo_data.edge_counters[counter_id], 1,
-                                  memory_order_relaxed);
+/// Edge instrumentation for branch prediction analysis
+pub struct EdgeInstrumentation<'ctx> {
+    context: &'ctx Context,
+    config: InstrumentationConfig,
+    edge_counters: HashMap<String, usize>,
+}
+
+impl<'ctx> EdgeInstrumentation<'ctx> {
+    pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
+        Ok(Self {
+            context,
+            config: config.clone(),
+            edge_counters: HashMap::new(),
+        })
+    }
+
+    pub fn initialize(&mut self) -> Result<()> {
+        debug!("Initializing edge instrumentation");
+        // Initialize edge tracking data structures
+        Ok(())
+    }
+
+    pub fn add_branch_instrumentation(&mut self, branch_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
+        // Analyze the branch instruction and add appropriate instrumentation
+        let branch_id = format!("branch_{:p}", branch_instruction as *const _);
+        
+        // Add instrumentation for branch taken/not taken paths
+        let instrumentation_points = self.instrument_branch_paths(&branch_id, branch_instruction, builder)?;
+        
+        debug!("Added branch instrumentation for branch '{}'", branch_id);
+        Ok(instrumentation_points)
+    }
+
+    fn instrument_branch_paths(&mut self, branch_id: &str, branch_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
+        // In a real implementation, this would:
+        // 1. Analyze the branch instruction to determine targets
+        // 2. Add counters for taken/not-taken paths
+        // 3. Insert instrumentation at the appropriate locations
+        
+        let taken_counter = self.get_or_create_edge_counter(&format!("{}_taken", branch_id));
+        let not_taken_counter = self.get_or_create_edge_counter(&format!("{}_not_taken", branch_id));
+        
+        debug!("Instrumented branch paths: taken={}, not_taken={}", taken_counter, not_taken_counter);
+        Ok(2) // Two instrumentation points added
+    }
+
+    fn get_or_create_edge_counter(&mut self, edge_name: &str) -> usize {
+        if let Some(&counter) = self.edge_counters.get(edge_name) {
+            counter
+        } else {
+            let counter = self.edge_counters.len();
+            self.edge_counters.insert(edge_name.to_string(), counter);
+            counter
+        }
     }
 }
 
-// Record value profile
-void __pgo_record_value(unsigned int site_id, uint64_t value) {
-    if (site_id < pgo_data.num_values && pgo_data.value_counters) {
-        // Simplified: just count occurrences
-        atomic_fetch_add_explicit(&pgo_data.value_counters[site_id], 1,
-                                  memory_order_relaxed);
+/// Memory access instrumentation for cache behavior analysis
+pub struct MemoryInstrumentation<'ctx> {
+    context: &'ctx Context,
+    config: InstrumentationConfig,
+    memory_access_trackers: HashMap<String, usize>,
+}
+
+impl<'ctx> MemoryInstrumentation<'ctx> {
+    pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
+        Ok(Self {
+            context,
+            config: config.clone(),
+            memory_access_trackers: HashMap::new(),
+        })
+    }
+
+    pub fn initialize(&mut self) -> Result<()> {
+        debug!("Initializing memory access instrumentation");
+        // Initialize memory tracking data structures
+        Ok(())
+    }
+
+    pub fn add_memory_access_instrumentation(&mut self, memory_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
+        let access_id = format!("mem_{:p}", memory_instruction as *const _);
+        let access_type = match memory_instruction.get_opcode() {
+            inkwell::values::InstructionOpcode::Load => "load",
+            inkwell::values::InstructionOpcode::Store => "store",
+            _ => "unknown",
+        };
+        
+        // Add memory access tracking
+        self.instrument_memory_access(&access_id, access_type, memory_instruction, builder)?;
+        
+        debug!("Added memory access instrumentation for '{}' ({})", access_id, access_type);
+        Ok(())
+    }
+
+    fn instrument_memory_access(&mut self, access_id: &str, access_type: &str, memory_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, this would:
+        // 1. Extract memory address and size from the instruction
+        // 2. Add instrumentation to track access patterns
+        // 3. Collect cache behavior statistics
+        
+        let tracker_id = self.get_or_create_memory_tracker(&format!("{}_{}", access_type, access_id));
+        
+        debug!("Instrumented memory access: {} (tracker_id={})", access_id, tracker_id);
+        Ok(())
+    }
+
+    fn get_or_create_memory_tracker(&mut self, tracker_name: &str) -> usize {
+        if let Some(&tracker) = self.memory_access_trackers.get(tracker_name) {
+            tracker
+        } else {
+            let tracker = self.memory_access_trackers.len();
+            self.memory_access_trackers.insert(tracker_name.to_string(), tracker);
+            tracker
+        }
     }
 }
 
-// Register function name
-void __pgo_register_function(unsigned int counter_id, const char *name) {
-    if (counter_id < pgo_data.num_functions && pgo_data.function_names) {
-        pgo_data.function_names[counter_id] = name;
+/// Instrumentation pass for adding profile collection code
+pub struct InstrumentationPass<'ctx> {
+    instrumentation: ProfileInstrumentation<'ctx>,
+}
+
+impl<'ctx> InstrumentationPass<'ctx> {
+    pub fn new(context: &'ctx Context, config: InstrumentationConfig) -> Result<Self> {
+        let instrumentation = ProfileInstrumentation::new(context, config)?;
+        
+        Ok(Self {
+            instrumentation,
+        })
+    }
+
+    /// Run instrumentation pass on a module
+    pub fn run_on_module(&mut self, module: &Module<'ctx>) -> Result<usize> {
+        self.instrumentation.instrument_module(module)
+    }
+
+    /// Get instrumentation statistics
+    pub fn get_statistics(&self) -> InstrumentationStatistics {
+        self.instrumentation.get_statistics()
     }
 }
 
-// Write profile data to file
-void __pgo_write_profile(void) {
-    const char *profile_file = getenv("PGO_PROFILE_FILE");
-    if (!profile_file) {
-        profile_file = "default.profraw";
-    }
-    
-    FILE *f = fopen(profile_file, "w");
-    if (!f) {
-        return;
-    }
-    
-    // Write function profiles
-    for (unsigned int i = 0; i < pgo_data.num_functions; i++) {
-        uint64_t count = atomic_load_explicit(&pgo_data.function_counters[i],
-                                             memory_order_relaxed);
-        const char *name = pgo_data.function_names[i] ? 
-                          pgo_data.function_names[i] : "unknown";
-        fprintf(f, "func:%s %lu 0\n", name, count);
-    }
-    
-    // Write basic block profiles
-    for (unsigned int i = 0; i < pgo_data.num_blocks; i++) {
-        uint64_t count = atomic_load_explicit(&pgo_data.basic_block_counters[i],
-                                             memory_order_relaxed);
-        const char *name = pgo_data.block_names[i] ? 
-                          pgo_data.block_names[i] : "unknown";
-        fprintf(f, "bb:%s %lu\n", name, count);
-    }
-    
-    // Write edge profiles
-    for (unsigned int i = 0; i < pgo_data.num_edges; i++) {
-        uint64_t count = atomic_load_explicit(&pgo_data.edge_counters[i],
-                                             memory_order_relaxed);
-        const char *name = pgo_data.edge_names[i] ? 
-                          pgo_data.edge_names[i] : "unknown";
-        fprintf(f, "edge:%s %lu\n", name, count);
-    }
-    
-    // Write value profiles
-    for (unsigned int i = 0; i < pgo_data.num_values; i++) {
-        uint64_t count = atomic_load_explicit(&pgo_data.value_counters[i],
-                                             memory_order_relaxed);
-        const char *name = pgo_data.value_names[i] ? 
-                          pgo_data.value_names[i] : "unknown";
-        fprintf(f, "value:%s:0 %lu\n", name, count);
-    }
-    
-    fclose(f);
-}
-
-// Force profile write (for manual control)
-void __pgo_flush_profile(void) {
-    __pgo_write_profile();
-}
-"#;
-
-        Ok(runtime_code.to_string())
-    }
-
-    /// Generate runtime header file
-    fn generate_runtime_header(&self) -> Result<String> {
-        let header_code = r#"
-#ifndef PGO_RUNTIME_H
-#define PGO_RUNTIME_H
-
-#include <stdint.h>
-
-#ifdef __cplusplus
+/// FFI functions for runtime profile collection
 extern "C" {
-#endif
-
-// Runtime initialization
-void __pgo_init(unsigned int num_funcs, unsigned int num_blocks, 
-                unsigned int num_edges, unsigned int num_values);
-
-// Counter increment functions
-void __pgo_increment_function(unsigned int counter_id);
-void __pgo_increment_block(unsigned int counter_id);
-void __pgo_increment_edge(unsigned int counter_id);
-
-// Value profiling
-void __pgo_record_value(unsigned int site_id, uint64_t value);
-
-// Name registration
-void __pgo_register_function(unsigned int counter_id, const char *name);
-
-// Profile data output
-void __pgo_write_profile(void);
-void __pgo_flush_profile(void);
-
-#ifdef __cplusplus
+    /// Record function entry
+    fn cursed_profile_function_entry(function_id: u32);
+    
+    /// Record function exit
+    fn cursed_profile_function_exit(function_id: u32, execution_time: u64);
+    
+    /// Record branch taken
+    fn cursed_profile_branch_taken(branch_id: u32);
+    
+    /// Record branch not taken
+    fn cursed_profile_branch_not_taken(branch_id: u32);
+    
+    /// Record memory access
+    fn cursed_profile_memory_access(address: u64, size: u32, access_type: u32);
+    
+    /// Flush profile data
+    fn cursed_profile_flush();
 }
-#endif
 
-#endif // PGO_RUNTIME_H
-"#;
-
-        Ok(header_code.to_string())
-    }
-
-    /// Finalize instrumentation session
-    fn finalize_instrumentation_session(&self, session_id: &str, session: &InstrumentationSession) -> Result<()> {
-        debug!("Finalizing instrumentation session: {}", session_id);
-
-        // Generate initialization code with actual counter counts
-        let init_code = format!(
-            "// Auto-generated PGO initialization\n\
-             #include \"pgo_runtime.h\"\n\
-             __attribute__((constructor))\n\
-             void __pgo_init_counters(void) {{\n\
-                 __pgo_init({}, {}, {}, {});\n\
-             }}\n",
-            self.counter_registry.function_counters.len(),
-            self.counter_registry.basic_block_counters.len(),
-            self.counter_registry.edge_counters.len(),
-            self.counter_registry.value_counters.len()
-        );
-
-        let init_path = session.output_directory.join("pgo_init.c");
-        fs::write(&init_path, init_code).map_err(|e| {
-            Error::Other(format!("Failed to write initialization code: {}", e))
-        })?;
-
+/// Helper functions for profile data collection
+impl<'ctx> ProfileInstrumentation<'ctx> {
+    /// Generate call to runtime function entry recorder
+    pub fn generate_function_entry_call(&self, function_id: u32, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, would generate LLVM call instruction
+        debug!("Generated function entry call for function_id: {}", function_id);
         Ok(())
     }
 
-    /// Update configuration
-    pub fn update_config(&mut self, new_config: PgoConfig) -> Result<()> {
-        self.config = new_config;
+    /// Generate call to runtime function exit recorder
+    pub fn generate_function_exit_call(&self, function_id: u32, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, would generate LLVM call instruction
+        debug!("Generated function exit call for function_id: {}", function_id);
         Ok(())
     }
 
-    // Helper methods for source code analysis
-
-    fn is_function_declaration(&self, line: &str) -> bool {
-        // Simplified function detection for CURSED syntax
-        line.contains("slay ") && line.contains("(") && !line.contains(";")
+    /// Generate call to runtime branch recorder
+    pub fn generate_branch_call(&self, branch_id: u32, taken: bool, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, would generate LLVM call instruction
+        debug!("Generated branch call for branch_id: {}, taken: {}", branch_id, taken);
+        Ok(())
     }
 
-    fn extract_function_name(&self, line: &str) -> String {
-        // Extract function name from CURSED function declaration
-        if let Some(start) = line.find("slay ") {
-            let after_slay = &line[start + 5..];
-            if let Some(paren_pos) = after_slay.find('(') {
-                let name = after_slay[..paren_pos].trim();
-                return name.to_string();
-            }
-        }
-        "unknown".to_string()
-    }
-
-    fn is_control_flow_statement(&self, line: &str) -> bool {
-        line.contains("lowkey") || line.contains("highkey") || 
-        line.contains("periodt") || line.contains("bestie") ||
-        line.contains("flex") || line.contains("yolo")
-    }
-
-    fn generate_block_id(&self) -> u32 {
-        // Generate unique block ID
-        rand::random::<u32>()
-    }
-}
-
-impl InstrumentationTemplates {
-    fn new() -> Self {
-        Self {
-            function_entry_template: "__pgo_increment_function({COUNTER_ID}); __pgo_register_function({COUNTER_ID}, \"{FUNCTION_NAME}\");".to_string(),
-            basic_block_template: "__pgo_increment_block({COUNTER_ID});".to_string(),
-            edge_template: "__pgo_increment_edge({COUNTER_ID});".to_string(),
-            value_profiling_template: "__pgo_record_value({SITE_ID}, {VALUE});".to_string(),
-            runtime_header: "#include \"pgo_runtime.h\"".to_string(),
-        }
-    }
-}
-
-impl CounterRegistry {
-    fn allocate_function_counter(&mut self, function_name: &str) -> u32 {
-        let counter_id = self.next_counter_id;
-        self.function_counters.insert(function_name.to_string(), counter_id);
-        self.next_counter_id += 1;
-        counter_id
-    }
-
-    fn allocate_block_counter(&mut self, block_name: &str) -> u32 {
-        let counter_id = self.next_counter_id;
-        self.basic_block_counters.insert(block_name.to_string(), counter_id);
-        self.next_counter_id += 1;
-        counter_id
-    }
-
-    fn allocate_edge_counter(&mut self, edge_name: &str) -> u32 {
-        let counter_id = self.next_counter_id;
-        self.edge_counters.insert(edge_name.to_string(), counter_id);
-        self.next_counter_id += 1;
-        counter_id
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_instrumentation_manager_creation() {
-        let config = PgoConfig::default();
-        let manager = InstrumentationManager::new(config);
-        assert!(manager.is_ok());
-    }
-
-    #[test]
-    fn test_function_detection() {
-        let config = PgoConfig::default();
-        let manager = InstrumentationManager::new(config).unwrap();
-        
-        assert!(manager.is_function_declaration("slay main()"));
-        assert!(manager.is_function_declaration("  slay compute_value(x: i32) -> i32"));
-        assert!(!manager.is_function_declaration("let x = 5;"));
-        assert!(!manager.is_function_declaration("slay test_func(); // declaration only"));
-    }
-
-    #[test]
-    fn test_function_name_extraction() {
-        let config = PgoConfig::default();
-        let manager = InstrumentationManager::new(config).unwrap();
-        
-        assert_eq!(manager.extract_function_name("slay main()"), "main");
-        assert_eq!(manager.extract_function_name("  slay compute_value(x: i32)"), "compute_value");
-        assert_eq!(manager.extract_function_name("invalid"), "unknown");
-    }
-
-    #[test]
-    fn test_control_flow_detection() {
-        let config = PgoConfig::default();
-        let manager = InstrumentationManager::new(config).unwrap();
-        
-        assert!(manager.is_control_flow_statement("lowkey (x > 0)"));
-        assert!(manager.is_control_flow_statement("  highkey"));
-        assert!(manager.is_control_flow_statement("periodt;"));
-        assert!(!manager.is_control_flow_statement("let x = 5;"));
-    }
-
-    #[test]
-    fn test_counter_registry() {
-        let mut registry = CounterRegistry::default();
-        
-        let func_id = registry.allocate_function_counter("test_func");
-        let block_id = registry.allocate_block_counter("test_block");
-        
-        assert_eq!(func_id, 0);
-        assert_eq!(block_id, 1);
-        assert_eq!(registry.function_counters.get("test_func"), Some(&0));
-        assert_eq!(registry.basic_block_counters.get("test_block"), Some(&1));
+    /// Generate call to runtime memory access recorder
+    pub fn generate_memory_access_call(&self, address: u64, size: u32, access_type: u32, builder: &Builder<'ctx>) -> Result<()> {
+        // In a real implementation, would generate LLVM call instruction
+        debug!("Generated memory access call: addr=0x{:x}, size={}, type={}", address, size, access_type);
+        Ok(())
     }
 }

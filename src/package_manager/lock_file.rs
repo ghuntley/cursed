@@ -397,6 +397,26 @@ impl LockFileManager {
         
         summary
     }
+    
+    /// Check if lock file exists on disk
+    pub fn exists(&self) -> bool {
+        self.lock_file_path.exists()
+    }
+    
+    /// Load lock file from disk
+    pub fn load(&mut self) -> Result<(), PackageManagerError> {
+        self.load_from_disk()?;
+        Ok(())
+    }
+    
+    /// Get locked version for a package
+    pub fn get_locked_version(&self, package_name: &str) -> Option<LockedPackage> {
+        self.current_lock.as_ref()?
+            .packages
+            .iter()
+            .find(|pkg| pkg.name == package_name)
+            .cloned()
+    }
 }
 
 /// Export format options for lock files

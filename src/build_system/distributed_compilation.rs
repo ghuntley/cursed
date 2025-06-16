@@ -1263,7 +1263,6 @@ fn current_timestamp() -> u64 {
 
 // Export public API
 pub use self::{
-    DistributedCompilationSystem,
     DistributedCompilationConfig,
     CompilationTask,
     CompilationTarget,
@@ -1271,5 +1270,5 @@ pub use self::{
     CompilationResult,
     DistributedCompilationStats,
     LoadBalancingStrategy,
-    create_compilation_task,
+
 };

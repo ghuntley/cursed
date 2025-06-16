@@ -1,6 +1,6 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex};
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::formatter::format_log_entry;
 use super::flags::LstdFlags;

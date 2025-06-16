@@ -308,36 +308,28 @@ impl EnhancedSymbolProvider {
         uri: &Url,
     ) {
         for statement in &ast.statements {
-            match statement {
-                Statement::FunctionDeclaration(func_decl) => {
-                    let symbol = self.create_function_symbol(func_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                Statement::StructDeclaration(struct_decl) => {
-                    let symbol = self.create_struct_symbol(struct_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                Statement::InterfaceDeclaration(interface_decl) => {
-                    let symbol = self.create_interface_symbol(interface_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                Statement::VariableDeclaration(var_decl) => {
-                    let symbol = self.create_variable_symbol(var_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                Statement::ConstantDeclaration(const_decl) => {
-                    let symbol = self.create_constant_symbol(const_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                Statement::ImportDeclaration(import_decl) => {
-                    let symbol = self.create_import_symbol(import_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                Statement::PackageDeclaration(package_decl) => {
-                    let symbol = self.create_package_symbol(package_decl, uri).await;
-                    symbols.push(symbol);
-                }
-                _ => {}
+            if let Some(func_decl) = statement.as_any().downcast_ref::<FunctionStatement>() {
+                let symbol = self.create_function_symbol(func_decl, uri).await;
+                symbols.push(symbol);
+            } else if let Some(struct_decl) = statement.as_any().downcast_ref::<SquadStatement>() {
+                let symbol = self.create_struct_symbol(struct_decl, uri).await;
+                symbols.push(symbol);
+            } else if let Some(interface_decl) = statement.as_any().downcast_ref::<CollabStatement>() {
+                let symbol = self.create_interface_symbol(interface_decl, uri).await;
+                symbols.push(symbol);
+            } else if let Some(var_decl) = statement.as_any().downcast_ref::<VariableStatement>() {
+                let symbol = self.create_variable_symbol(var_decl, uri).await;
+                symbols.push(symbol);
+            // TODO: Fix ConstantDeclaration when proper type is available
+            // } else if let Some(const_decl) = statement.as_any().downcast_ref::<ConstantStatement>() {
+            //     let symbol = self.create_constant_symbol(const_decl, uri).await;
+            //     symbols.push(symbol);
+            } else if let Some(import_decl) = statement.as_any().downcast_ref::<ImportStatement>() {
+                let symbol = self.create_import_symbol(import_decl, uri).await;
+                symbols.push(symbol);
+            } else if let Some(package_decl) = statement.as_any().downcast_ref::<PackageStatement>() {
+                let symbol = self.create_package_symbol(package_decl, uri).await;
+                symbols.push(symbol);
             }
         }
     }
@@ -584,18 +576,16 @@ impl EnhancedSymbolProvider {
     /// Extract local symbols from block statement
     async fn extract_local_symbols(&mut self, block: &BlockStatement, parent: &mut CursedSymbol, uri: &Url) {
         for statement in &block.statements {
-            match statement {
-                Statement::VariableDeclaration(var_decl) => {
-                    let symbol = self.create_variable_symbol(var_decl, uri).await;
-                    parent.add_child(symbol);
-                }
-                Statement::ConstantDeclaration(const_decl) => {
-                    let symbol = self.create_constant_symbol(const_decl, uri).await;
-                    parent.add_child(symbol);
-                }
-                // Add more local symbol types as needed
-                _ => {}
+            if let Some(var_decl) = statement.as_any().downcast_ref::<VariableStatement>() {
+                let symbol = self.create_variable_symbol(var_decl, uri).await;
+                parent.add_child(symbol);
             }
+            // TODO: Add ConstantDeclaration when available
+            // if let Some(const_decl) = statement.as_any().downcast_ref::<ConstantStatement>() {
+            //     let symbol = self.create_constant_symbol(const_decl, uri).await;
+            //     parent.add_child(symbol);
+            // }
+            // Add more local symbol types as needed
         }
     }
     

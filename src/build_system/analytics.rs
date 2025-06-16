@@ -1133,7 +1133,7 @@ fn current_timestamp() -> u64 {
 
 // Export public API
 pub use self::{
-    BuildAnalytics,
+
     BuildAnalyticsConfig,
     BuildEvent,
     BuildEventType,
@@ -1145,5 +1145,5 @@ pub use self::{
     PerformanceAlert,
     AlertType,
     AlertSeverity,
-    create_build_event,
+
 };

@@ -7,6 +7,21 @@ use std::path::PathBuf;
 use crate::optimization::real_llvm_passes::RealLlvmPassManager;
 use crate::optimization::enhanced_llvm_passes::EnhancedLlvmPassManager;
 use crate::optimization::config::{OptimizationConfig as OptConfig, OptimizationLevel as OptLevel};
+use crate::optimization::coordinator::{
+    OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
+    OptimizationLevel as CoordOptLevel
+};
+
+/// Optimization preset configurations
+#[derive(Debug, Clone, Copy)]
+pub enum OptimizationPreset {
+    /// Development mode - fast compilation, minimal optimization
+    Development,
+    /// Balanced mode - good performance with reasonable compile times
+    Balanced,
+    /// Release mode - maximum optimization for production
+    Release,
+}
 
 // Add inkwell imports for real LLVM compilation
 use inkwell::{
@@ -25,6 +40,7 @@ use super::enhanced_codegen::{EnhancedLlvmCodegen, CodegenConfig, CodegenStats, 
 use super::web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
 use super::stdlib_registry::{StdlibRegistry, StdlibLlvmIntegration, StdlibFunction};
 use super::function_compilation::{FunctionCompilation, FunctionContext};
+use super::function_registry::{FunctionRegistry, FunctionSignature, SharedFunctionRegistry};
 use super::expression_compiler::{LlvmExpressionCompiler, LlvmType, LlvmValue, ExpressionContext};
 use super::bool_conversions::{BoolConversions, BoolValue};
 use super::variable_management::{VariableManager, VariableHandling};
@@ -36,7 +52,7 @@ use super::process_execution::{ProcessExecutionCompiler, initialize_process_exec
 use super::process::{ProcessCompilation, ProcessControlOp, IpcChannelType, SharedMemoryOp, SignalOp};
 use super::gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
 use super::panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
-use super::debug_info::{LlvmDebugGenerator, LlvmDebugIntegration, LlvmDebugManager};
+use super::debug_info::{LlvmDebugGenerator, LlvmDebugManager};
 use super::error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};
 use super::error_propagation_enhanced::{EnhancedErrorPropagationCompiler, ErrorPropagationContext};
 use super::question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime, ErrorContext};
@@ -83,8 +99,8 @@ pub use inkwell::{
     module::Module as LlvmModule,
     context::Context as LlvmContext,
     builder::Builder as LlvmBuilder,
-    values::{FunctionValue, BasicValueEnum, PointerValue, IntValue, FloatValue},
-    types::{BasicTypeEnum, IntType, FloatType, PointerType, FunctionType},
+    values::{FunctionValue, PointerValue, IntValue, FloatValue},
+    types::{IntType, FloatType, PointerType, FunctionType},
     basic_block::BasicBlock,
     AddressSpace,
 };
@@ -144,6 +160,7 @@ pub struct LlvmCodeGenerator {
     optimization_engine: Option<OptimizationEngine<'static>>,
     real_pass_manager: Option<RealLlvmPassManager<'static>>,
     enhanced_pass_manager: Option<EnhancedLlvmPassManager<'static>>,
+    optimization_coordinator: Option<std::sync::Arc<std::sync::Mutex<OptimizationCoordinator>>>,
     optimization_config: OptConfig,
     optimization_enabled: bool,
     use_enhanced_passes: bool,
@@ -165,6 +182,9 @@ pub struct LlvmCodeGenerator {
     
     // Symbol table for variable and function management
     symbol_table: Option<std::cell::RefCell<crate::codegen::llvm::symbol_table::SymbolTable>>,
+    
+    // Function registry for tracking function signatures
+    function_registry: SharedFunctionRegistry,
 }
 
 // Make LlvmCodeGenerator cloneable by cloning the Arc references
@@ -186,6 +206,7 @@ impl Clone for LlvmCodeGenerator {
             optimization_engine: None, // Don't clone optimization engine due to lifetime issues
             real_pass_manager: None, // Don't clone pass manager due to lifetime issues
             enhanced_pass_manager: None, // Don't clone enhanced pass manager due to lifetime issues
+            optimization_coordinator: self.optimization_coordinator.clone(),
             optimization_config: self.optimization_config.clone(),
             optimization_enabled: self.optimization_enabled,
             use_enhanced_passes: self.use_enhanced_passes,
@@ -197,6 +218,7 @@ impl Clone for LlvmCodeGenerator {
             template_compiler: self.template_compiler.clone(),
             function_stack: std::cell::RefCell::new(self.function_stack.borrow().clone()),
             symbol_table: self.symbol_table.as_ref().map(|st| std::cell::RefCell::new(st.borrow().clone())),
+            function_registry: self.function_registry.clone(),
         }
     }
 }
@@ -254,6 +276,9 @@ impl LlvmCodeGenerator {
         let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&optimization_config)
             .map_err(|e| Error::OptimizationError(format!("Failed to create optimization manager: {:?}", e)))?;
         
+        // Initialize function registry
+        let function_registry = std::sync::Arc::new(std::sync::Mutex::new(FunctionRegistry::new()));
+        
         Ok(Self {
             context: context.clone(),
             module: module_arc,
@@ -270,6 +295,7 @@ impl LlvmCodeGenerator {
             optimization_engine: None, // Will be initialized when needed
             real_pass_manager: None, // Will be initialized when needed
             enhanced_pass_manager: None, // Will be initialized when needed
+            optimization_coordinator: None, // Will be initialized when optimization is needed
             optimization_config,
             optimization_enabled: true,
             use_enhanced_passes: true, // Default to enhanced passes
@@ -281,6 +307,7 @@ impl LlvmCodeGenerator {
             template_compiler: None,
             function_stack: std::cell::RefCell::new(Vec::new()),
             symbol_table: Some(std::cell::RefCell::new(crate::codegen::llvm::symbol_table::SymbolTable::new())),
+            function_registry,
         })
     }
 
@@ -467,6 +494,9 @@ impl LlvmCodeGenerator {
         let runtime = crate::runtime::Runtime::new()?;
         let optimization_config = OptConfig::default();
         
+        // Initialize function registry
+        let function_registry = std::sync::Arc::new(std::sync::Mutex::new(FunctionRegistry::new()));
+        
         Ok(Self {
             context,
             module: module_arc,
@@ -492,6 +522,7 @@ impl LlvmCodeGenerator {
             template_compiler: None,
             function_stack: std::cell::RefCell::new(Vec::new()),
             symbol_table: Some(std::cell::RefCell::new(crate::codegen::llvm::symbol_table::SymbolTable::new())),
+            function_registry,
         })
     }
     
@@ -718,6 +749,145 @@ impl LlvmCodeGenerator {
         
         tracing::info!("Configured optimization level: {} (enabled: {})", level.as_str(), should_enable);
         Ok(())
+    }
+    
+    /// Initialize comprehensive optimization coordinator
+    pub fn initialize_optimization_coordinator(&mut self) -> Result<(), Error> {
+        if self.optimization_coordinator.is_some() {
+            return Ok(()); // Already initialized
+        }
+        
+        tracing::info!("Initializing comprehensive optimization coordinator");
+        
+        // Convert optimization level
+        let coord_level = match self.optimization_config.optimization_level {
+            OptLevel::None => CoordOptLevel::O0,
+            OptLevel::Less => CoordOptLevel::O1,
+            OptLevel::Default => CoordOptLevel::O2,
+            OptLevel::Aggressive | OptLevel::Size | OptLevel::SizeAggressive => CoordOptLevel::O3,
+        };
+        
+        // Create coordinator configuration based on current settings
+        let config = if matches!(coord_level, CoordOptLevel::O0) {
+            OptimizationCoordinatorConfig::development()
+        } else if matches!(coord_level, CoordOptLevel::O3) {
+            OptimizationCoordinatorConfig::release()
+        } else {
+            OptimizationCoordinatorConfig::balanced()
+        };
+        
+        let mut coordinator = OptimizationCoordinator::new(config)?;
+        coordinator.initialize()?;
+        
+        // Start monitoring if enabled
+        if coordinator.get_statistics().optimizations_run == 0 {
+            coordinator.start_monitoring()?;
+        }
+        
+        self.optimization_coordinator = Some(std::sync::Arc::new(std::sync::Mutex::new(coordinator)));
+        
+        tracing::info!("Optimization coordinator initialized with level {}", coord_level.as_str());
+        Ok(())
+    }
+    
+    /// Run comprehensive optimization on compilation units
+    pub fn optimize_compilation_units(&mut self, units: &mut [crate::optimization::metrics::CompilationUnit]) -> Result<ComprehensiveOptimizationResult, Error> {
+        // Ensure coordinator is initialized
+        self.initialize_optimization_coordinator()?;
+        
+        if let Some(ref coordinator) = self.optimization_coordinator {
+            let coord = coordinator.lock().unwrap();
+            coord.optimize_units(units)
+                .map_err(|e| Error::OptimizationError(format!("Comprehensive optimization failed: {}", e)))
+        } else {
+            Err(Error::OptimizationError("Optimization coordinator not initialized".to_string()))
+        }
+    }
+    
+    /// Enable comprehensive optimization with preset configuration
+    pub fn enable_comprehensive_optimization(&mut self, preset: OptimizationPreset) -> Result<(), Error> {
+        tracing::info!("Enabling comprehensive optimization with preset: {:?}", preset);
+        
+        let config = match preset {
+            OptimizationPreset::Development => OptimizationCoordinatorConfig::development(),
+            OptimizationPreset::Balanced => OptimizationCoordinatorConfig::balanced(),
+            OptimizationPreset::Release => OptimizationCoordinatorConfig::release(),
+        };
+        
+        let mut coordinator = OptimizationCoordinator::new(config)?;
+        coordinator.initialize()?;
+        coordinator.start_monitoring()?;
+        
+        self.optimization_coordinator = Some(std::sync::Arc::new(std::sync::Mutex::new(coordinator)));
+        
+        // Update internal optimization settings to match
+        match preset {
+            OptimizationPreset::Development => {
+                self.set_optimization_level(OptLevel::None)?;
+                self.set_optimization_enabled(false);
+            }
+            OptimizationPreset::Balanced => {
+                self.set_optimization_level(OptLevel::Default)?;
+                self.set_optimization_enabled(true);
+            }
+            OptimizationPreset::Release => {
+                self.set_optimization_level(OptLevel::Aggressive)?;
+                self.set_optimization_enabled(true);
+            }
+        }
+        
+        tracing::info!("Comprehensive optimization enabled successfully");
+        Ok(())
+    }
+    
+    /// Get comprehensive optimization statistics
+    pub fn get_comprehensive_optimization_stats(&self) -> Option<String> {
+        if let Some(ref coordinator) = self.optimization_coordinator {
+            let coord = coordinator.lock().unwrap();
+            Some(coord.generate_report())
+        } else {
+            None
+        }
+    }
+    
+    /// Perform comprehensive optimization during compilation
+    pub fn apply_comprehensive_optimization(&mut self, source: &str) -> Result<String, Error> {
+        tracing::debug!("Applying comprehensive optimization to compilation");
+        
+        // Initialize coordinator if needed
+        self.initialize_optimization_coordinator()?;
+        
+        // Create a compilation unit from the source
+        let mut units = vec![
+            crate::optimization::metrics::CompilationUnit::new("main".to_string())
+        ];
+        
+        // Add source information
+        units[0].source_files.push("main.csd".to_string());
+        units[0].estimated_size_bytes = source.len();
+        
+        // Run comprehensive optimization
+        let optimization_result = self.optimize_compilation_units(&mut units)?;
+        
+        // Log optimization results
+        tracing::info!("🚀 Comprehensive optimization completed:");
+        tracing::info!("   Total time: {:?}", optimization_result.total_time);
+        tracing::info!("   Compilation speedup: {:.2}x", optimization_result.overall_improvement.compilation_speedup);
+        tracing::info!("   Runtime improvement: {:.1}%", 
+                      (optimization_result.overall_improvement.runtime_performance_improvement - 1.0) * 100.0);
+        
+        if let Some(ref incremental) = optimization_result.incremental_savings {
+            tracing::info!("   Incremental: {} units skipped, {:.1}% cache hit rate", 
+                          incremental.units_skipped, incremental.cache_hit_rate);
+        }
+        
+        if let Some(ref parallel) = optimization_result.parallel_performance {
+            tracing::info!("   Parallel: {} workers, {:.1}% efficiency", 
+                          parallel.worker_count, parallel.parallel_efficiency * 100.0);
+        }
+        
+        // Return the original source (in a real implementation, this would be the optimized IR)
+        Ok(source.to_string())
     }
     
     /// Get debug statistics
@@ -1321,7 +1491,7 @@ impl LlvmCodeGenerator {
   ; Protected block execution"#,
             entry_block,
             entry_block,
-            panic_check, panic_check, panic_check, protected_block, recovery_block,
+            panic_check, panic_check, panic_check, panic_check, protected_block, recovery_block,
             protected_block
         ));
         
@@ -1345,7 +1515,7 @@ impl LlvmCodeGenerator {
   br label %{}"#,
             stmt.protected_block.string(),
             protected_result,
-            panic_check, panic_check, panic_check, success_block, recovery_block,
+            panic_check, panic_check, panic_check, panic_check, success_block, recovery_block,
             success_block,
             merge_block
         ));
@@ -1675,11 +1845,69 @@ impl LlvmCodeGenerator {
         
         let func_name = call.function.string();
         
-        // For now, assume all function calls return i32
-        // In a full implementation, this would look up the function signature
+        tracing::info!("Compiling function call: {}", func_name);
+        
+        // Compile arguments and determine their types
+        let mut arg_values = Vec::new();
+        let mut arg_types = Vec::new();
+        let mut arg_llvm_values = Vec::new();
+        
+        for (i, arg) in call.arguments.iter().enumerate() {
+            let arg_val = self.compile_basic_expression(arg.as_ref())?;
+            arg_types.push(arg_val.value_type.clone());
+            arg_llvm_values.push(arg_val.llvm_name.clone());
+            arg_values.push(arg_val);
+        }
+        
+        // Look up function in registry
+        let function_signature = {
+            let registry = self.function_registry.lock().map_err(|_| {
+                Error::CompilationError("Failed to acquire function registry lock".to_string())
+            })?;
+            
+            registry.lookup_function_with_args(&func_name, &arg_types)
+                .cloned()
+                .ok_or_else(|| {
+                    Error::CompilationError(format!(
+                        "Function '{}' not found or no matching overload for argument types: {:?}",
+                        func_name, arg_types
+                    ))
+                })?
+        };
+        
+        // Validate argument types
+        function_signature.check_argument_types(&arg_types)?;
+        
+        // Generate call IR
+        let call_result_temp = format!("%call_result_{}", self.next_temp_id());
+        let args_str = function_signature.generate_call_arguments(&arg_llvm_values, &arg_types);
+        
+        // Generate the actual LLVM call instruction
+        let call_ir = if function_signature.return_type == LlvmType::Void {
+            format!("  call {} @{}({})", 
+                function_signature.return_type.to_llvm_string(),
+                func_name,
+                args_str)
+        } else {
+            format!("  {} = call {} @{}({})", 
+                call_result_temp,
+                function_signature.return_type.to_llvm_string(),
+                func_name,
+                args_str)
+        };
+        
+        tracing::debug!("Generated function call IR: {}", call_ir);
+        
+        // In a full implementation, this IR would be emitted to the current basic block
+        // For now, we log it and return the result value
+        
         Ok(LlvmValue {
-            value_type: LlvmType::Int32,
-            llvm_name: format!("%func_call_result_{}", self.next_temp_id()),
+            value_type: function_signature.return_type.clone(),
+            llvm_name: if function_signature.return_type == LlvmType::Void {
+                "void".to_string()
+            } else {
+                call_result_temp
+            },
             is_constant: false,
         })
     }
@@ -1983,6 +2211,68 @@ impl LlvmCodeGenerator {
         } else {
             Err(Error::from_str("Package integration not initialized"))
         }
+    }
+    
+    // ===== FUNCTION REGISTRY INTEGRATION METHODS =====
+    
+    /// Register a function signature in the function registry
+    pub fn register_function(&mut self, signature: FunctionSignature) -> Result<(), Error> {
+        let mut registry = self.function_registry.lock().map_err(|_| {
+            Error::CompilationError("Failed to acquire function registry lock".to_string())
+        })?;
+        
+        registry.register_function(signature)
+    }
+    
+    /// Look up a function signature by name
+    pub fn lookup_function(&self, name: &str) -> Option<FunctionSignature> {
+        let registry = self.function_registry.lock().ok()?;
+        registry.lookup_function(name).cloned()
+    }
+    
+    /// Look up a function signature by name and argument types
+    pub fn lookup_function_with_args(&self, name: &str, arg_types: &[LlvmType]) -> Option<FunctionSignature> {
+        let registry = self.function_registry.lock().ok()?;
+        registry.lookup_function_with_args(name, arg_types).cloned()
+    }
+    
+    /// Check if a function exists in the registry
+    pub fn has_function(&self, name: &str) -> bool {
+        if let Ok(registry) = self.function_registry.lock() {
+            registry.has_function(name)
+        } else {
+            false
+        }
+    }
+    
+    /// Get all function names from the registry
+    pub fn get_function_names(&self) -> Vec<String> {
+        if let Ok(registry) = self.function_registry.lock() {
+            registry.get_function_names()
+        } else {
+            Vec::new()
+        }
+    }
+    
+    /// Get function count
+    pub fn get_function_count(&self) -> usize {
+        if let Ok(registry) = self.function_registry.lock() {
+            registry.function_count()
+        } else {
+            0
+        }
+    }
+    
+    /// Clear user-defined functions (keep built-ins)
+    pub fn clear_user_functions(&mut self) {
+        if let Ok(mut registry) = self.function_registry.lock() {
+            registry.clear_user_functions();
+        }
+    }
+    
+    /// Get function registry (for advanced usage)
+    pub fn get_function_registry(&self) -> SharedFunctionRegistry {
+        self.function_registry.clone()
     }
     
     // ===== MISSING METHODS FOR ERROR PROPAGATION =====

@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::error::CryptoError;
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
 use crate::stdlib::packages::crypto_zk::merkle_trees::{MerkleTree, MerkleProof};
 use crate::stdlib::packages::crypto_zk::polynomial_commitment::PolynomialCommitment;

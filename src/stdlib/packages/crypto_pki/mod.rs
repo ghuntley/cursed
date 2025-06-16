@@ -243,40 +243,7 @@ pub mod pki {
     }
 }
 
-/// fr fr PKI utilities and helper functions
-pub mod utils {
-    use super::*;
-    
-    /// slay Convert certificate to PEM format
-    pub fn cert_to_pem(cert: &Certificate) -> PkiResult<String> {
-        encode_certificate_pem(cert)
-    }
-    
-    /// slay Convert certificate from PEM format  
-    pub fn cert_from_pem(pem: &str) -> PkiResult<Certificate> {
-        decode_certificate_pem(pem)
-    }
-    
-    /// slay Get certificate fingerprint (SHA-256)
-    pub fn get_cert_fingerprint(cert: &Certificate) -> PkiResult<String> {
-        cert.fingerprint()
-    }
-    
-    /// slay Check if certificate is self-signed
-    pub fn is_self_signed(cert: &Certificate) -> bool {
-        cert.is_self_signed()
-    }
-    
-    /// slay Get certificate expiry days
-    pub fn days_until_expiry(cert: &Certificate) -> PkiResult<i64> {
-        cert.days_until_expiry()
-    }
-    
-    /// slay Validate certificate hostname
-    pub fn validate_hostname(cert: &Certificate, hostname: &str) -> bool {
-        cert.validate_hostname(hostname)
-    }
-}
+
 
 /// fr fr Initialize the crypto_pki package
 pub fn init_crypto_pki() -> Result<(), CursedError> {

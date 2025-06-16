@@ -83,7 +83,7 @@ pub fn convert_to_sql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
             // Convert MySQL TIME to string representation
             let sign = if is_negative { "-" } else { "" };
             let time_str = if days > 0 {
-                format!("{}{}:{:02}:{:02}:{:02}.{:06}", sign, days * 24 + hours as u32, minutes, seconds, microseconds)
+                format!("{}{:02}:{:02}:{:02}.{:06}", sign, days * 24 + hours as u32, minutes, seconds, microseconds)
             } else {
                 format!("{}{:02}:{:02}:{:02}.{:06}", sign, hours, minutes, seconds, microseconds)
             };

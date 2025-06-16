@@ -8,7 +8,7 @@
 /// - Cross-format conversion utilities
 
 use crate::error::CursedError;
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use std::collections::HashMap;
 
 // RSA key handling
@@ -1136,8 +1136,4 @@ impl From<PrivateKeyFormat> for PublicKeyFormat {
     }
 }
 
-/// fr fr Export enhanced conversion functions
-pub use self::{
-    convert_public_key_format_enhanced,
-    convert_private_key_format_enhanced,
-};
+// Enhanced conversion functions are defined above and automatically available

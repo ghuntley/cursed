@@ -1,0 +1,538 @@
+/// Profiling and tracing functionality for ChaosMode
+/// 
+/// Provides runtime profiling, tracing, and performance monitoring capabilities
+
+use crate::stdlib::chaos_mode::error::{ChaosResult, profiling_error, system_error};
+use crate::stdlib::vibecheck;
+use std::collections::VecDeque;
+use std::io::Write;
+use std::sync::{Arc, Mutex};
+use std::time::{Instant, SystemTime};
+
+static PROFILING_MANAGER: Mutex<Option<ProfilingManager>> = Mutex::new(None);
+
+struct ProfilingManager {
+    trace_enabled: bool,
+    trace_data: VecDeque<TraceEvent>,
+    traceback_limit: i32,
+    cpu_profile_rate: i32,
+    cpu_profiling_active: bool,
+    trace_start_time: Option<Instant>,
+}
+
+#[derive(Debug, Clone)]
+struct TraceEvent {
+    timestamp: SystemTime,
+    event_type: String,
+    goroutine_id: u64,
+    function_name: String,
+    duration_ns: u64,
+}
+
+impl ProfilingManager {
+    fn new() -> Self {
+        Self {
+            trace_enabled: false,
+            trace_data: VecDeque::new(),
+            traceback_limit: 100, // Default traceback limit
+            cpu_profile_rate: 100, // Default 100Hz
+            cpu_profiling_active: false,
+            trace_start_time: None,
+        }
+    }
+    
+    fn start_trace(&mut self) -> ChaosResult<String> {
+        if self.trace_enabled {
+            return Err(profiling_error("Tracing is already enabled"));
+        }
+        
+        self.trace_enabled = true;
+        self.trace_start_time = Some(Instant::now());
+        self.trace_data.clear();
+        
+        // Add initial trace event
+        self.trace_data.push_back(TraceEvent {
+            timestamp: SystemTime::now(),
+            event_type: "trace_start".to_string(),
+            goroutine_id: 1,
+            function_name: "chaos_mode::start_trace".to_string(),
+            duration_ns: 0,
+        });
+        
+        Ok("Tracing started".to_string())
+    }
+    
+    fn stop_trace(&mut self) -> ChaosResult<String> {
+        if !self.trace_enabled {
+            return Err(profiling_error("Tracing is not enabled"));
+        }
+        
+        self.trace_enabled = false;
+        
+        // Add final trace event
+        self.trace_data.push_back(TraceEvent {
+            timestamp: SystemTime::now(),
+            event_type: "trace_stop".to_string(),
+            goroutine_id: 1,
+            function_name: "chaos_mode::stop_trace".to_string(),
+            duration_ns: self.trace_start_time
+                .map(|start| start.elapsed().as_nanos() as u64)
+                .unwrap_or(0),
+        });
+        
+        self.trace_start_time = None;
+        
+        Ok("Tracing stopped".to_string())
+    }
+    
+    fn read_trace(&self) -> Vec<u8> {
+        // Generate a simple trace format
+        let mut trace_output = String::new();
+        trace_output.push_str("# Chaos Mode Trace Data\n");
+        trace_output.push_str(&format!("# Events: {}\n", self.trace_data.len()));
+        trace_output.push_str("# Format: timestamp,type,goroutine,function,duration_ns\n");
+        
+        for event in &self.trace_data {
+            let timestamp = event.timestamp
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            
+            trace_output.push_str(&format!(
+                "{},{},{},{},{}\n",
+                timestamp,
+                event.event_type,
+                event.goroutine_id,
+                event.function_name,
+                event.duration_ns
+            ));
+        }
+        
+        trace_output.into_bytes()
+    }
+    
+    fn add_trace_event(&mut self, event_type: &str, function_name: &str, duration_ns: u64) {
+        if !self.trace_enabled {
+            return;
+        }
+        
+        // Limit trace data size to prevent memory issues
+        if self.trace_data.len() >= 10000 {
+            self.trace_data.pop_front();
+        }
+        
+        self.trace_data.push_back(TraceEvent {
+            timestamp: SystemTime::now(),
+            event_type: event_type.to_string(),
+            goroutine_id: vibecheck::go_id(),
+            function_name: function_name.to_string(),
+            duration_ns,
+        });
+    }
+}
+
+pub fn initialize() -> ChaosResult<()> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error during initialization: {}", e)))?;
+    
+    if manager_guard.is_none() {
+        *manager_guard = Some(ProfilingManager::new());
+    }
+    
+    Ok(())
+}
+
+pub fn cleanup() -> ChaosResult<()> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error during cleanup: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        // Stop any active profiling
+        if manager.trace_enabled {
+            let _ = manager.stop_trace();
+        }
+        manager.cpu_profiling_active = false;
+    }
+    
+    *manager_guard = None;
+    Ok(())
+}
+
+/// StartTrace enables runtime tracing
+pub fn start_trace() -> ChaosResult<String> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        manager.start_trace()
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// StopTrace stops runtime tracing
+pub fn stop_trace() -> ChaosResult<String> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        manager.stop_trace()
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// ReadTrace returns the current trace data
+pub fn read_trace() -> ChaosResult<Vec<u8>> {
+    let manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref manager) = *manager_guard {
+        Ok(manager.read_trace())
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// SetTracebackLimit sets the maximum length of a traceback
+pub fn set_traceback_limit(limit: i32) -> ChaosResult<()> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        if limit < 0 {
+            return Err(profiling_error("Traceback limit cannot be negative"));
+        }
+        manager.traceback_limit = limit;
+        Ok(())
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// Sets CPU profiling rate
+pub fn set_cpu_profile_rate(hz: i32) -> ChaosResult<()> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        if hz < 0 {
+            return Err(profiling_error("CPU profile rate cannot be negative"));
+        }
+        manager.cpu_profile_rate = hz;
+        
+        // Update vibecheck CPU profile rate if available
+        vibecheck::set_cpu_profile_rate(hz);
+        
+        Ok(())
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// Starts CPU profiling
+pub fn start_cpu_profile<W: Write + Send + 'static>(writer: W) -> ChaosResult<String> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        if manager.cpu_profiling_active {
+            return Err(profiling_error("CPU profiling is already active"));
+        }
+        
+        manager.cpu_profiling_active = true;
+        
+        // In a real implementation, this would start the CPU profiler
+        // For now, we'll use vibecheck's CPU profiling if available
+        let profile = vibecheck::cpu_profile();
+        
+        // Simulate writing profile data
+        std::thread::spawn(move || {
+            let mut writer = writer;
+            let profile_data = format!("CPU Profile Data\nSamples: {}\nDuration: {}ms\n", 
+                                     profile.samples, profile.duration_ms);
+            let _ = writer.write_all(profile_data.as_bytes());
+        });
+        
+        Ok("CPU profiling started".to_string())
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// Stops CPU profiling
+pub fn stop_cpu_profile() -> ChaosResult<()> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        if !manager.cpu_profiling_active {
+            return Err(profiling_error("CPU profiling is not active"));
+        }
+        
+        manager.cpu_profiling_active = false;
+        Ok(())
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// Get current traceback limit
+pub fn get_traceback_limit() -> ChaosResult<i32> {
+    let manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref manager) = *manager_guard {
+        Ok(manager.traceback_limit)
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// Get current CPU profile rate
+pub fn get_cpu_profile_rate() -> ChaosResult<i32> {
+    let manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref manager) = *manager_guard {
+        Ok(manager.cpu_profile_rate)
+    } else {
+        Err(profiling_error("Profiling manager not initialized"))
+    }
+}
+
+/// Check if tracing is enabled
+pub fn is_trace_enabled() -> ChaosResult<bool> {
+    let manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref manager) = *manager_guard {
+        Ok(manager.trace_enabled)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Check if CPU profiling is active
+pub fn is_cpu_profiling_active() -> ChaosResult<bool> {
+    let manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref manager) = *manager_guard {
+        Ok(manager.cpu_profiling_active)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Add a trace event (internal function for runtime use)
+pub fn add_trace_event(event_type: &str, function_name: &str, duration_ns: u64) -> ChaosResult<()> {
+    let mut manager_guard = PROFILING_MANAGER.lock()
+        .map_err(|e| system_error(&format!("Lock error: {}", e)))?;
+    
+    if let Some(ref mut manager) = *manager_guard {
+        manager.add_trace_event(event_type, function_name, duration_ns);
+        Ok(())
+    } else {
+        // If not initialized, silently ignore
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn test_initialize_cleanup() {
+        assert!(initialize().is_ok());
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_start_stop_trace() {
+        assert!(initialize().is_ok());
+        
+        let result = start_trace();
+        assert!(result.is_ok());
+        
+        let message = result.unwrap();
+        assert!(message.contains("started"));
+        
+        // Verify tracing is enabled
+        assert!(is_trace_enabled().unwrap());
+        
+        let result2 = stop_trace();
+        assert!(result2.is_ok());
+        
+        let message2 = result2.unwrap();
+        assert!(message2.contains("stopped"));
+        
+        // Verify tracing is disabled
+        assert!(!is_trace_enabled().unwrap());
+        
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_start_trace_twice() {
+        assert!(initialize().is_ok());
+        
+        assert!(start_trace().is_ok());
+        
+        // Starting trace again should fail
+        let result = start_trace();
+        assert!(result.is_err());
+        
+        assert!(stop_trace().is_ok());
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_stop_trace_without_start() {
+        assert!(initialize().is_ok());
+        
+        let result = stop_trace();
+        assert!(result.is_err());
+        
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_read_trace() {
+        assert!(initialize().is_ok());
+        
+        assert!(start_trace().is_ok());
+        
+        // Add some trace events
+        assert!(add_trace_event("function_enter", "test_function", 0).is_ok());
+        assert!(add_trace_event("function_exit", "test_function", 1000).is_ok());
+        
+        let result = read_trace();
+        assert!(result.is_ok());
+        
+        let trace_data = result.unwrap();
+        let trace_str = String::from_utf8(trace_data).unwrap();
+        
+        assert!(trace_str.contains("Chaos Mode Trace Data"));
+        assert!(trace_str.contains("trace_start"));
+        assert!(trace_str.contains("test_function"));
+        
+        assert!(stop_trace().is_ok());
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_set_traceback_limit() {
+        assert!(initialize().is_ok());
+        
+        let result = set_traceback_limit(50);
+        assert!(result.is_ok());
+        
+        let limit = get_traceback_limit().unwrap();
+        assert_eq!(limit, 50);
+        
+        // Test negative limit
+        let result2 = set_traceback_limit(-1);
+        assert!(result2.is_err());
+        
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_set_cpu_profile_rate() {
+        assert!(initialize().is_ok());
+        
+        let result = set_cpu_profile_rate(200);
+        assert!(result.is_ok());
+        
+        let rate = get_cpu_profile_rate().unwrap();
+        assert_eq!(rate, 200);
+        
+        // Test negative rate
+        let result2 = set_cpu_profile_rate(-1);
+        assert!(result2.is_err());
+        
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_start_stop_cpu_profile() {
+        assert!(initialize().is_ok());
+        
+        let buffer = Cursor::new(Vec::new());
+        let result = start_cpu_profile(buffer);
+        assert!(result.is_ok());
+        
+        let message = result.unwrap();
+        assert!(message.contains("started"));
+        
+        // Verify CPU profiling is active
+        assert!(is_cpu_profiling_active().unwrap());
+        
+        let result2 = stop_cpu_profile();
+        assert!(result2.is_ok());
+        
+        // Verify CPU profiling is inactive
+        assert!(!is_cpu_profiling_active().unwrap());
+        
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_start_cpu_profile_twice() {
+        assert!(initialize().is_ok());
+        
+        let buffer1 = Cursor::new(Vec::new());
+        assert!(start_cpu_profile(buffer1).is_ok());
+        
+        // Starting CPU profiling again should fail
+        let buffer2 = Cursor::new(Vec::new());
+        let result = start_cpu_profile(buffer2);
+        assert!(result.is_err());
+        
+        assert!(stop_cpu_profile().is_ok());
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_stop_cpu_profile_without_start() {
+        assert!(initialize().is_ok());
+        
+        let result = stop_cpu_profile();
+        assert!(result.is_err());
+        
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_add_trace_event() {
+        assert!(initialize().is_ok());
+        
+        assert!(start_trace().is_ok());
+        
+        let result = add_trace_event("test_event", "test_function", 1234);
+        assert!(result.is_ok());
+        
+        let trace_data = read_trace().unwrap();
+        let trace_str = String::from_utf8(trace_data).unwrap();
+        assert!(trace_str.contains("test_event"));
+        assert!(trace_str.contains("test_function"));
+        assert!(trace_str.contains("1234"));
+        
+        assert!(stop_trace().is_ok());
+        assert!(cleanup().is_ok());
+    }
+
+    #[test]
+    fn test_trace_without_initialization() {
+        // Test that functions handle uninitialized manager gracefully
+        let result = add_trace_event("test", "test", 0);
+        assert!(result.is_ok()); // Should silently ignore
+        
+        let result2 = is_trace_enabled();
+        assert!(result2.is_ok());
+        assert!(!result2.unwrap()); // Should return false
+    }
+}

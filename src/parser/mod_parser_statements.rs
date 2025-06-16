@@ -130,6 +130,7 @@ impl Parser {
         // Parse function parameters
         self.expect_token(TokenType::LeftParen)?;
         let mut parameters = Vec::new();
+        let mut param_names = Vec::new();
         
         if !self.current_token_is(&TokenType::RightParen) {
             loop {
@@ -144,6 +145,7 @@ impl Parser {
                     "".to_string() // Inferred type
                 };
                 
+                param_names.push(format!("{}: {}", param_name, param_type));
                 parameters.push(Parameter::new(param_name, param_type));
                 
                 if self.current_token_is(&TokenType::Comma) {
@@ -157,14 +159,24 @@ impl Parser {
         self.expect_token(TokenType::RightParen)?;
         
         // Parse return type if present
-        let return_type = if self.current_token_is(&TokenType::Identifier) {
+        let return_type_name = if self.current_token_is(&TokenType::Identifier) {
             let ret_type_name = self.current_token.literal.clone();
             self.advance_token()?;
+            ret_type_name
+        } else {
+            "()".to_string() // Unit type default
+        };
+
+        let return_type = if return_type_name != "()" {
             // Convert to Expression - for now using a simple identifier expression
-            Some(Box::new(Identifier::new(ret_type_name.clone(), ret_type_name)) as Box<dyn Expression>)
+            Some(Box::new(Identifier::new(return_type_name.clone(), return_type_name.clone())) as Box<dyn Expression>)
         } else {
             None
         };
+        
+        // Enter function context for error propagation tracking
+        // Note: This would need to be properly integrated with the Parser struct
+        // For now, we'll add a method call that would be implemented in error_propagation.rs
         
         // Parse function body
         let body = self.parse_block_statement()?;

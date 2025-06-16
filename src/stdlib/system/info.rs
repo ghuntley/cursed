@@ -26,6 +26,8 @@ pub enum SystemError {
     PermissionDenied(String),
     /// System call failed
     SystemCallFailed(i32, String),
+    /// Monitoring error occurred
+    MonitoringError(String),
 }
 
 impl std::fmt::Display for SystemError {
@@ -37,6 +39,7 @@ impl std::fmt::Display for SystemError {
             SystemError::ParseError(msg) => write!(f, "Parse error: {}", msg),
             SystemError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
             SystemError::SystemCallFailed(code, msg) => write!(f, "System call failed ({}): {}", code, msg),
+            SystemError::MonitoringError(msg) => write!(f, "Monitoring error: {}", msg),
         }
     }
 }

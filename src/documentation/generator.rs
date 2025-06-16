@@ -249,7 +249,7 @@ impl DocumentationGenerator {
         })
     }
 
-    /// Extract documentation from an AST
+    /// Extract documentation from an AST with enhanced integration
     #[instrument(skip(self, ast, source_code))]
     pub async fn extract_from_ast(
         &self,
@@ -283,8 +283,59 @@ impl DocumentationGenerator {
             },
         };
         
-        // Extract documentation based on AST node type
-        self.extract_from_node(ast, &mut extracted, source_code).await?;
+        // Use enhanced AST extractor for comprehensive documentation
+        use crate::documentation::extractors::{AstExtractor, ExtractionConfig};
+        
+        let extraction_config = ExtractionConfig {
+            include_private: self.generator_config.include_private,
+            include_source: self.generator_config.include_source,
+            include_generics: true,
+            include_relationships: self.generator_config.generate_cross_refs,
+            max_type_depth: self.generator_config.max_type_depth,
+            include_implementations: true,
+            include_error_types: true,
+        };
+        
+        let ast_extractor = AstExtractor::new(extraction_config)?;
+        let enhanced_items = ast_extractor.extract_complete_documentation(ast, file_path, source_code).await?;
+        
+        // Convert enhanced items to legacy format for compatibility
+        for enhanced_item in enhanced_items {
+            match enhanced_item.base.kind {
+                super::ItemKind::Function => {
+                    let func_doc = self.convert_to_function_doc(&enhanced_item, source_code)?;
+                    extracted.functions.push(func_doc);
+                }
+                super::ItemKind::Type | super::ItemKind::Struct | super::ItemKind::Interface | super::ItemKind::Enum => {
+                    let type_doc = self.convert_to_type_doc(&enhanced_item, source_code)?;
+                    extracted.types.push(type_doc);
+                }
+                super::ItemKind::Constant => {
+                    extracted.constants.push(enhanced_item.base);
+                }
+                super::ItemKind::Variable => {
+                    extracted.variables.push(enhanced_item.base);
+                }
+                super::ItemKind::Module => {
+                    let module_doc = self.convert_to_module_doc(&enhanced_item)?;
+                    if extracted.module_doc.is_none() {
+                        extracted.module_doc = Some(module_doc);
+                    } else {
+                        extracted.submodules.push(module_doc);
+                    }
+                }
+                _ => {
+                    // Handle other item types as generic documentation items
+                    warn!("Unhandled item type: {:?}", enhanced_item.base.kind);
+                }
+            }
+        }
+        
+        // Fallback to legacy extraction if no enhanced items found
+        if extracted.functions.is_empty() && extracted.types.is_empty() && 
+           extracted.constants.is_empty() && extracted.variables.is_empty() {
+            self.extract_from_node(ast, &mut extracted, source_code).await?;
+        }
         
         let processing_time = start_time.elapsed();
         extracted.metadata.processing_time_ms = processing_time.as_millis() as u64;
@@ -434,15 +485,19 @@ impl DocumentationGenerator {
         // Extract parameters
         let mut parameters = Vec::new();
         for param in &func_decl.parameters {
+            // Extract parameter documentation from preceding comment
+            let param_description = self.extract_param_documentation(&param.name, &func_decl.location, source_code)?;
+            
             parameters.push(ParameterDoc {
                 name: param.name.clone(),
                 param_type: param.param_type.as_ref()
                     .map(|t| self.format_type(t))
                     .unwrap_or_else(|| "Any".to_string()),
-                description: None, // TODO: Extract from param documentation
+                description: param_description,
                 is_optional: param.default_value.is_some(),
                 default_value: param.default_value.as_ref()
-                    .map(|_| "TODO".to_string()), // TODO: Format default value
+                    .map(|expr| self.format_default_value(expr))
+                    .flatten(),
             });
         }
         
@@ -499,14 +554,17 @@ impl DocumentationGenerator {
         // Extract fields
         let mut fields = Vec::new();
         for field in &struct_decl.fields {
+            // Extract field documentation from preceding comment
+            let field_description = self.extract_field_documentation(&field.name, &struct_decl.location, source_code)?;
+            
             fields.push(FieldDoc {
                 name: field.name.clone(),
                 field_type: field.field_type.as_ref()
                     .map(|t| self.format_type(t))
                     .unwrap_or_else(|| "Any".to_string()),
-                description: None, // TODO: Extract field documentation
-                visibility: "public".to_string(), // TODO: Handle field visibility
-                is_optional: false, // TODO: Handle optional fields
+                description: field_description,
+                visibility: self.determine_field_visibility(field),
+                is_optional: self.is_field_optional(field),
             });
         }
         
@@ -516,12 +574,15 @@ impl DocumentationGenerator {
             None
         };
         
+        // Extract associated methods
+        let methods = self.extract_associated_methods(&struct_decl.name, source_code)?;
+
         Ok(Some(TypeDoc {
             name: struct_decl.name.clone(),
             description,
             type_def: "struct".to_string(),
             fields,
-            methods: Vec::new(), // TODO: Extract methods
+            methods,
             location: struct_decl.location.clone(),
             source_code: source_code_snippet,
             visibility: if struct_decl.is_public { "public" } else { "private" }.to_string(),
@@ -650,14 +711,51 @@ impl DocumentationGenerator {
             return Ok(None);
         }
         
-        // Extract the line where the declaration starts
-        // TODO: This is a simplified implementation - ideally we'd extract
-        // the full declaration including multi-line constructs
+        // Extract the full declaration including multi-line constructs
         let start_line = location.line.saturating_sub(1);
-        let snippet = lines.get(start_line)
-            .map(|line| line.to_string());
+        let mut snippet_lines = Vec::new();
+        let mut current_line = start_line;
+        let mut brace_count = 0;
+        let mut paren_count = 0;
+        let mut in_declaration = false;
         
-        Ok(snippet)
+        while current_line < lines.len() {
+            let line = lines[current_line];
+            snippet_lines.push(line);
+            
+            // Track braces and parentheses to determine end of declaration
+            for ch in line.chars() {
+                match ch {
+                    '{' => {
+                        brace_count += 1;
+                        in_declaration = true;
+                    }
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 && in_declaration {
+                            return Ok(Some(snippet_lines.join("\n")));
+                        }
+                    }
+                    '(' => paren_count += 1,
+                    ')' => paren_count -= 1,
+                    ';' => {
+                        if brace_count == 0 && paren_count == 0 {
+                            return Ok(Some(snippet_lines.join("\n")));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            
+            current_line += 1;
+            
+            // Limit to reasonable number of lines to avoid including too much
+            if snippet_lines.len() > 50 {
+                break;
+            }
+        }
+        
+        Ok(Some(snippet_lines.join("\n")))
     }
 
     /// Extract examples from documentation description
@@ -705,24 +803,448 @@ impl DocumentationGenerator {
         Ok(examples)
     }
 
+    /// Convert enhanced documentation item to function documentation
+    #[instrument(skip(self, enhanced_item, source_code))]
+    fn convert_to_function_doc(
+        &self,
+        enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
+        source_code: &str,
+    ) -> Result<FunctionDoc, Error> {
+        use crate::documentation::extractors::ast_extractor::{TypeKind, CompleteTypeInfo};
+        
+        let base = &enhanced_item.base;
+        
+        // Extract parameters from enhanced type information
+        let mut parameters = Vec::new();
+        if let Some(ref type_info) = enhanced_item.type_info {
+            if type_info.type_kind == TypeKind::Function {
+                // Extract parameter information from nested types
+                for (i, nested_type) in type_info.nested_types.iter().enumerate() {
+                    if i < type_info.nested_types.len() - 1 { // Last one is return type
+                        parameters.push(ParameterDoc {
+                            name: format!("param{}", i + 1), // Would need actual parameter names
+                            param_type: nested_type.type_name.clone(),
+                            description: None,
+                            is_optional: false,
+                            default_value: None,
+                        });
+                    }
+                }
+            }
+        }
+
+        // Extract return type information
+        let return_type = enhanced_item.type_info.as_ref()
+            .and_then(|ti| ti.nested_types.last())
+            .map(|nested_type| TypeDoc {
+                name: nested_type.type_name.clone(),
+                description: None,
+                type_def: "return".to_string(),
+                fields: Vec::new(),
+                methods: Vec::new(),
+                location: base.location.clone(),
+                source_code: None,
+                visibility: "public".to_string(),
+                generic_params: nested_type.type_parameters.clone(),
+            });
+
+        // Extract examples from description
+        let examples = if self.generator_config.include_examples {
+            self.extract_examples_from_description(&base.description)?
+        } else {
+            Vec::new()
+        };
+
+        // Extract generic parameters
+        let generic_params = enhanced_item.generic_info.as_ref()
+            .map(|gi| gi.parameters.iter().map(|p| p.name.clone()).collect())
+            .unwrap_or_default();
+
+        Ok(FunctionDoc {
+            name: base.name.clone(),
+            description: base.description.clone(),
+            parameters,
+            return_type,
+            examples,
+            location: base.location.clone(),
+            source_code: base.source_code.clone(),
+            visibility: base.visibility.clone(),
+            is_async: base.metadata.get("is_async")
+                .map(|v| v == "true")
+                .unwrap_or(false),
+            generic_params,
+        })
+    }
+
+    /// Convert enhanced documentation item to type documentation
+    #[instrument(skip(self, enhanced_item, source_code))]
+    fn convert_to_type_doc(
+        &self,
+        enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
+        source_code: &str,
+    ) -> Result<TypeDoc, Error> {
+        use crate::documentation::extractors::ast_extractor::TypeKind;
+        
+        let base = &enhanced_item.base;
+        
+        // Determine type definition string
+        let type_def = enhanced_item.type_info.as_ref()
+            .map(|ti| match ti.type_kind {
+                TypeKind::Struct => "struct".to_string(),
+                TypeKind::Interface => "interface".to_string(),
+                TypeKind::Enum => "enum".to_string(),
+                TypeKind::Union => "union".to_string(),
+                TypeKind::Custom => "type".to_string(),
+                _ => "unknown".to_string(),
+            })
+            .unwrap_or_else(|| "type".to_string());
+
+        // Extract field information from metadata or type info
+        let fields = self.extract_fields_from_enhanced_item(enhanced_item)?;
+
+        // Extract method information
+        let methods = self.extract_methods_from_enhanced_item(enhanced_item, source_code)?;
+
+        // Extract generic parameters
+        let generic_params = enhanced_item.generic_info.as_ref()
+            .map(|gi| gi.parameters.iter().map(|p| p.name.clone()).collect())
+            .unwrap_or_default();
+
+        Ok(TypeDoc {
+            name: base.name.clone(),
+            description: base.description.clone(),
+            type_def,
+            fields,
+            methods,
+            location: base.location.clone(),
+            source_code: base.source_code.clone(),
+            visibility: base.visibility.clone(),
+            generic_params,
+        })
+    }
+
+    /// Convert enhanced documentation item to module documentation
+    #[instrument(skip(self, enhanced_item))]
+    fn convert_to_module_doc(
+        &self,
+        enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
+    ) -> Result<ModuleDoc, Error> {
+        let base = &enhanced_item.base;
+        
+        // Extract exports from relationships
+        let exports = enhanced_item.relationships.iter()
+            .filter_map(|rel| {
+                use crate::documentation::extractors::ast_extractor::RelationshipType;
+                match rel.relationship_type {
+                    RelationshipType::Contains | RelationshipType::References => {
+                        Some(rel.target.clone())
+                    }
+                    _ => None,
+                }
+            })
+            .collect();
+
+        // Extract submodules from relationships
+        let submodules = enhanced_item.relationships.iter()
+            .filter_map(|rel| {
+                use crate::documentation::extractors::ast_extractor::RelationshipType;
+                match rel.relationship_type {
+                    RelationshipType::Contains => {
+                        Some(rel.target.clone())
+                    }
+                    _ => None,
+                }
+            })
+            .collect();
+
+        Ok(ModuleDoc {
+            name: base.name.clone(),
+            description: base.description.clone(),
+            path: std::path::PathBuf::from(&base.location.file),
+            exports,
+            submodules,
+            location: base.location.clone(),
+        })
+    }
+
+    /// Extract field information from enhanced documentation item
+    fn extract_fields_from_enhanced_item(
+        &self,
+        enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
+    ) -> Result<Vec<FieldDoc>, Error> {
+        let mut fields = Vec::new();
+
+        // Extract fields from type information
+        if let Some(ref type_info) = enhanced_item.type_info {
+            // For structs and other composite types, nested types might represent fields
+            for (i, nested_type) in type_info.nested_types.iter().enumerate() {
+                fields.push(FieldDoc {
+                    name: format!("field{}", i + 1), // Would need actual field names from AST
+                    field_type: nested_type.type_name.clone(),
+                    description: None,
+                    visibility: "public".to_string(), // Default visibility
+                    is_optional: false, // Would need to extract from AST
+                });
+            }
+        }
+
+        Ok(fields)
+    }
+
+    /// Extract method information from enhanced documentation item
+    fn extract_methods_from_enhanced_item(
+        &self,
+        enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
+        source_code: &str,
+    ) -> Result<Vec<FunctionDoc>, Error> {
+        let mut methods = Vec::new();
+
+        // Extract methods from implementations
+        for impl_info in &enhanced_item.implementations {
+            for method_name in &impl_info.methods {
+                // Create a basic method documentation
+                methods.push(FunctionDoc {
+                    name: method_name.clone(),
+                    description: Some(format!("Method from {} implementation", impl_info.interface_name)),
+                    parameters: Vec::new(), // Would need to extract from AST
+                    return_type: None,
+                    examples: Vec::new(),
+                    location: enhanced_item.base.location.clone(),
+                    source_code: None,
+                    visibility: "public".to_string(),
+                    is_async: false,
+                    generic_params: Vec::new(),
+                });
+            }
+        }
+
+        Ok(methods)
+    }
+
     /// Format a type for documentation
     fn format_type(&self, type_expr: &Expression) -> String {
-        // This is a simplified implementation
-        // TODO: Implement proper type formatting based on expression type
         match &type_expr.expr_type {
             ExpressionType::Identifier(id) => id.name.clone(),
+            ExpressionType::ArrayAccess(arr) => {
+                format!("{}[]", self.format_type(&arr.array))
+            }
+            ExpressionType::FunctionCall(call) => {
+                let args = call.arguments.iter()
+                    .map(|arg| self.format_type(arg))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("{}({})", self.format_type(&call.function), args)
+            }
+            ExpressionType::MemberAccess(member) => {
+                format!("{}.{}", self.format_type(&member.object), member.member)
+            }
+            ExpressionType::BinaryExpression(bin) => {
+                // For generic types like Map<K, V>
+                if bin.operator == "<" {
+                    format!("{}<{}>", self.format_type(&bin.left), self.format_type(&bin.right))
+                } else {
+                    format!("({} {} {})", 
+                        self.format_type(&bin.left), 
+                        bin.operator, 
+                        self.format_type(&bin.right))
+                }
+            }
+            ExpressionType::Literal(lit) => {
+                match lit {
+                    Literal::String(s) => format!("\"{}\"", s),
+                    Literal::Number(n) => n.to_string(),
+                    Literal::Boolean(b) => b.to_string(),
+                    Literal::Null => "null".to_string(),
+                    Literal::Array(arr) => {
+                        let elements = arr.iter()
+                            .map(|elem| self.format_type(elem))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        format!("[{}]", elements)
+                    }
+                    Literal::Object(obj) => {
+                        let fields = obj.iter()
+                            .map(|(k, v)| format!("{}: {}", k, self.format_type(v)))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        format!("{{{}}}", fields)
+                    }
+                }
+            }
+            ExpressionType::ConditionalExpression(cond) => {
+                format!("{} ? {} : {}", 
+                    self.format_type(&cond.condition),
+                    self.format_type(&cond.true_expr),
+                    self.format_type(&cond.false_expr))
+            }
+            ExpressionType::UnaryExpression(unary) => {
+                format!("{}{}", unary.operator, self.format_type(&unary.operand))
+            }
+            ExpressionType::ParenthesizedExpression(paren) => {
+                format!("({})", self.format_type(&paren.expression))
+            }
+            ExpressionType::AssignmentExpression(assign) => {
+                format!("{} = {}", self.format_type(&assign.left), self.format_type(&assign.right))
+            }
+            ExpressionType::UpdateExpression(update) => {
+                if update.prefix {
+                    format!("{}{}", update.operator, self.format_type(&update.operand))
+                } else {
+                    format!("{}{}", self.format_type(&update.operand), update.operator)
+                }
+            }
+            ExpressionType::AwaitExpression(await_expr) => {
+                format!("await {}", self.format_type(&await_expr.expression))
+            }
+            ExpressionType::YieldExpression(yield_expr) => {
+                if let Some(ref arg) = yield_expr.argument {
+                    format!("yield {}", self.format_type(arg))
+                } else {
+                    "yield".to_string()
+                }
+            }
+            ExpressionType::NewExpression(new_expr) => {
+                let args = new_expr.arguments.iter()
+                    .map(|arg| self.format_type(arg))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("new {}({})", self.format_type(&new_expr.callee), args)
+            }
+            ExpressionType::ThisExpression => "this".to_string(),
+            ExpressionType::Super => "super".to_string(),
+            ExpressionType::ArrowFunction(arrow) => {
+                let params = arrow.parameters.iter()
+                    .map(|param| param.name.clone())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("({}) => {}", params, self.format_type(&arrow.body))
+            }
+            ExpressionType::TypeAssertion(assertion) => {
+                format!("{}.({})", self.format_type(&assertion.expression), self.format_type(&assertion.type_annotation))
+            }
+            ExpressionType::TypeAssertionQuestion(assertion) => {
+                format!("{}.({})?", self.format_type(&assertion.expression), self.format_type(&assertion.type_annotation))
+            }
             _ => "Any".to_string(),
         }
     }
 
     /// Get child nodes from an AST node
     fn get_child_nodes(&self, node: &AstNode) -> Option<Vec<&AstNode>> {
-        // This is a simplified implementation
-        // TODO: Implement proper child node extraction for all AST node types
         match &node.node_type {
             AstNodeType::Program(program) => {
                 Some(program.statements.iter().collect())
             }
+            AstNodeType::BlockStatement(block) => {
+                Some(block.statements.iter().collect())
+            }
+            AstNodeType::IfStatement(if_stmt) => {
+                let mut children = vec![&if_stmt.test, &if_stmt.consequent];
+                if let Some(ref alternate) = if_stmt.alternate {
+                    children.push(alternate);
+                }
+                Some(children)
+            }
+            AstNodeType::WhileStatement(while_stmt) => {
+                Some(vec![&while_stmt.test, &while_stmt.body])
+            }
+            AstNodeType::ForStatement(for_stmt) => {
+                let mut children = Vec::new();
+                if let Some(ref init) = for_stmt.init {
+                    children.push(init);
+                }
+                if let Some(ref test) = for_stmt.test {
+                    children.push(test);
+                }
+                if let Some(ref update) = for_stmt.update {
+                    children.push(update);
+                }
+                children.push(&for_stmt.body);
+                Some(children)
+            }
+            AstNodeType::ForInStatement(for_in) => {
+                Some(vec![&for_in.left, &for_in.right, &for_in.body])
+            }
+            AstNodeType::DoWhileStatement(do_while) => {
+                Some(vec![&do_while.body, &do_while.test])
+            }
+            AstNodeType::SwitchStatement(switch) => {
+                let mut children = vec![&switch.discriminant];
+                children.extend(switch.cases.iter().map(|case| &case.node));
+                Some(children)
+            }
+            AstNodeType::TryStatement(try_stmt) => {
+                let mut children = vec![&try_stmt.block];
+                if let Some(ref handler) = try_stmt.handler {
+                    children.push(&handler.body);
+                }
+                if let Some(ref finalizer) = try_stmt.finalizer {
+                    children.push(finalizer);
+                }
+                Some(children)
+            }
+            AstNodeType::FunctionDeclaration(func) => {
+                Some(vec![&func.body])
+            }
+            AstNodeType::VariableDeclaration(var_decl) => {
+                if let Some(ref init) = var_decl.init {
+                    Some(vec![init])
+                } else {
+                    None
+                }
+            }
+            AstNodeType::ReturnStatement(ret) => {
+                if let Some(ref argument) = ret.argument {
+                    Some(vec![argument])
+                } else {
+                    None
+                }
+            }
+            AstNodeType::ThrowStatement(throw) => {
+                Some(vec![&throw.argument])
+            }
+            AstNodeType::ExpressionStatement(expr_stmt) => {
+                Some(vec![&expr_stmt.expression])
+            }
+            AstNodeType::ImportStatement(import) => {
+                // Import statements don't typically have child nodes in the AST sense
+                None
+            }
+            AstNodeType::StructDeclaration(_) => {
+                // Struct declarations contain field information but not child AST nodes
+                None
+            }
+            AstNodeType::InterfaceDeclaration(interface) => {
+                // Interface methods are already handled in extract_interface_doc
+                let method_nodes: Vec<&AstNode> = interface.methods.iter()
+                    .map(|method| &method.node)
+                    .collect();
+                if method_nodes.is_empty() {
+                    None
+                } else {
+                    Some(method_nodes)
+                }
+            }
+            AstNodeType::EnumDeclaration(_) => {
+                // Enum declarations contain variant information but not child AST nodes
+                None
+            }
+            AstNodeType::TypeAliasDeclaration(_) => {
+                // Type aliases don't have child nodes
+                None
+            }
+            AstNodeType::ModuleDeclaration(module) => {
+                if let Some(ref body) = module.body {
+                    match &body.node_type {
+                        AstNodeType::Program(program) => Some(program.statements.iter().collect()),
+                        AstNodeType::BlockStatement(block) => Some(block.statements.iter().collect()),
+                        _ => Some(vec![body]),
+                    }
+                } else {
+                    None
+                }
+            }
+            // Expression nodes generally don't have children we want to extract documentation from
             _ => None,
         }
     }
@@ -1305,9 +1827,34 @@ impl DocumentationGenerator {
 
     /// Generate LaTeX documentation
     async fn generate_latex_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<Vec<PathBuf>, Error> {
-        // TODO: Implement LaTeX generation
-        warn!("LaTeX output format not yet implemented");
-        Ok(Vec::new())
+        info!("Generating LaTeX documentation for {} files using enhanced LaTeX generator", extracted_docs.len());
+        
+        // Use the enhanced LaTeX generator
+        use crate::documentation::generators::{LaTeXGenerator, LaTeXConfig, DocumentClass};
+        
+        // Create LaTeX configuration based on documentation config
+        let latex_config = LaTeXConfig {
+            document_class: if extracted_docs.len() > 10 {
+                DocumentClass::Book
+            } else if extracted_docs.len() > 5 {
+                DocumentClass::Report
+            } else {
+                DocumentClass::Article
+            },
+            generate_toc: true,
+            generate_index: true,
+            generate_bibliography: true,
+            include_code_listings: self.generator_config.include_source,
+            generate_cross_refs: self.generator_config.generate_cross_refs,
+            ..LaTeXConfig::default()
+        };
+        
+        // Create and use the LaTeX generator
+        let mut latex_generator = LaTeXGenerator::new(latex_config);
+        let output_files = latex_generator.generate_documentation(extracted_docs, &self.config.output_dir)?;
+        
+        info!("Generated {} LaTeX documentation files using enhanced generator", output_files.len());
+        Ok(output_files)
     }
 
     /// Build main XML documentation structure
@@ -1434,13 +1981,14 @@ impl DocumentationGenerator {
                     xml.push_str(&format!("      <description>{}</description>\n", 
                         self.escape_xml(description)));
                 }
-                if let Some(signature) = &func.signature {
-                    xml.push_str(&format!("      <signature>{}</signature>\n", 
-                        self.escape_xml(signature)));
-                }
+                // Generate function signature
+                let signature = self.generate_function_signature(func);
+                xml.push_str(&format!("      <signature>{}</signature>\n", 
+                    self.escape_xml(&signature)));
+                
                 if let Some(return_type) = &func.return_type {
                     xml.push_str(&format!("      <return_type>{}</return_type>\n", 
-                        self.escape_xml(return_type)));
+                        self.escape_xml(&return_type.name)));
                 }
                 
                 // Function location
@@ -1456,10 +2004,8 @@ impl DocumentationGenerator {
                         xml.push_str("        <parameter>\n");
                         xml.push_str(&format!("          <name>{}</name>\n", 
                             self.escape_xml(&param.name)));
-                        if let Some(param_type) = &param.param_type {
-                            xml.push_str(&format!("          <type>{}</type>\n", 
-                                self.escape_xml(param_type)));
-                        }
+                        xml.push_str(&format!("          <type>{}</type>\n", 
+                            self.escape_xml(&param.param_type)));
                         if let Some(description) = &param.description {
                             xml.push_str(&format!("          <description>{}</description>\n", 
                                 self.escape_xml(description)));
@@ -1490,7 +2036,7 @@ impl DocumentationGenerator {
                 xml.push_str("    <type>\n");
                 xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&type_doc.name)));
                 xml.push_str(&format!("      <kind>{}</kind>\n", 
-                    self.escape_xml(&type_doc.kind.to_string())));
+                    self.escape_xml(&type_doc.type_def)));
                 if let Some(description) = &type_doc.description {
                     xml.push_str(&format!("      <description>{}</description>\n", 
                         self.escape_xml(description)));
@@ -1514,9 +2060,11 @@ impl DocumentationGenerator {
                 xml.push_str("    <constant>\n");
                 xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&constant.name)));
                 xml.push_str(&format!("      <kind>{}</kind>\n", 
-                    constant.kind.to_string()));
-                xml.push_str(&format!("      <summary>{}</summary>\n", 
-                    self.escape_xml(&constant.summary)));
+                    self.escape_xml(&constant.kind.to_string())));
+                if let Some(description) = &constant.description {
+                    xml.push_str(&format!("      <description>{}</description>\n", 
+                        self.escape_xml(description)));
+                }
                 
                 // Constant location
                 xml.push_str("      <location>\n");
@@ -1575,7 +2123,7 @@ impl DocumentationGenerator {
                 xml.push_str("    <type_ref>\n");
                 xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&type_doc.name)));
                 xml.push_str(&format!("      <kind>{}</kind>\n", 
-                    self.escape_xml(&type_doc.kind.to_string())));
+                    self.escape_xml(&type_doc.type_def)));
                 xml.push_str(&format!("      <file>{}</file>\n", 
                     self.escape_xml(&doc.source_file.display().to_string())));
                 xml.push_str(&format!("      <file_ref>{}.xml#{}</file_ref>\n", 
@@ -1679,12 +2227,629 @@ impl DocumentationGenerator {
     /// Copy static files (CSS, JS, etc.) for HTML output
     fn copy_static_files(&self, output_dir: &Path) -> Result<(), Error> {
         // Create basic CSS file
-        let css_content = include_str!("../../../docs/styles.css");
+        let css_content = include_str!("../../docs/styles.css");
         let css_path = output_dir.join("styles.css");
         std::fs::write(&css_path, css_content)
             .map_err(|e| Error::FileWriteError(css_path.clone(), e.to_string()))?;
         
         Ok(())
+    }
+
+    /// Extract parameter documentation from function documentation
+    fn extract_param_documentation(&self, param_name: &str, func_location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
+        let lines: Vec<&str> = source_code.lines().collect();
+        
+        if func_location.line <= 1 || func_location.line > lines.len() {
+            return Ok(None);
+        }
+        
+        // Look for documentation comments before the function
+        let mut line_idx = func_location.line - 2;
+        
+        while line_idx < lines.len() {
+            let line = lines[line_idx].trim();
+            
+            if line.starts_with("///") {
+                let comment = line.trim_start_matches("///").trim();
+                // Look for @param or parameter documentation
+                if comment.starts_with(&format!("@param {}", param_name)) ||
+                   comment.starts_with(&format!("{} -", param_name)) ||
+                   comment.starts_with(&format!("{}: ", param_name)) {
+                    let description = comment.split_once('-')
+                        .or_else(|| comment.split_once(':'))
+                        .map(|(_, desc)| desc.trim().to_string())
+                        .or_else(|| {
+                            // Extract after @param param_name
+                            if comment.starts_with("@param") {
+                                let parts: Vec<&str> = comment.split_whitespace().collect();
+                                if parts.len() > 2 && parts[1] == param_name {
+                                    Some(parts[2..].join(" "))
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        });
+                    return Ok(description);
+                }
+            } else if !line.starts_with("//") && !line.is_empty() {
+                break;
+            }
+            
+            if line_idx == 0 {
+                break;
+            }
+            line_idx -= 1;
+        }
+        
+        Ok(None)
+    }
+
+    /// Format default value expression
+    fn format_default_value(&self, expr: &Expression) -> Option<String> {
+        match &expr.expr_type {
+            ExpressionType::Literal(lit) => {
+                match lit {
+                    Literal::String(s) => Some(format!("\"{}\"", s)),
+                    Literal::Number(n) => Some(n.to_string()),
+                    Literal::Boolean(b) => Some(b.to_string()),
+                    Literal::Null => Some("null".to_string()),
+                    _ => Some("(complex)".to_string()),
+                }
+            }
+            ExpressionType::Identifier(id) => Some(id.name.clone()),
+            _ => Some("(expression)".to_string()),
+        }
+    }
+
+    /// Extract field documentation
+    fn extract_field_documentation(&self, field_name: &str, struct_location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
+        let lines: Vec<&str> = source_code.lines().collect();
+        
+        // Find the struct definition and look for field comments
+        let struct_start = struct_location.line.saturating_sub(1);
+        let mut in_struct = false;
+        
+        for (idx, line) in lines.iter().enumerate().skip(struct_start) {
+            if line.contains(&format!("{} {{", "struct")) || in_struct {
+                in_struct = true;
+                
+                // Look for field definition
+                if line.contains(field_name) && (line.contains(':') || line.contains(',') || line.contains('}')) {
+                    // Check if there's a comment on the same line
+                    if let Some(comment_start) = line.find("//") {
+                        let comment = line[comment_start + 2..].trim();
+                        if !comment.is_empty() {
+                            return Ok(Some(comment.to_string()));
+                        }
+                    }
+                    
+                    // Check the line above for a comment
+                    if idx > 0 {
+                        let prev_line = lines[idx - 1].trim();
+                        if prev_line.starts_with("///") {
+                            let comment = prev_line.trim_start_matches("///").trim();
+                            return Ok(Some(comment.to_string()));
+                        }
+                    }
+                }
+                
+                if line.contains('}') {
+                    break;
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    /// Determine field visibility
+    fn determine_field_visibility(&self, field: &crate::ast::StructField) -> String {
+        // CURSED doesn't have explicit field visibility modifiers like Rust
+        // All struct fields are public by default in most cases
+        "public".to_string()
+    }
+
+    /// Check if field is optional
+    fn is_field_optional(&self, field: &crate::ast::StructField) -> bool {
+        // Check if the field type indicates optionality
+        if let Some(ref field_type) = field.field_type {
+            match &field_type.expr_type {
+                ExpressionType::Identifier(id) => {
+                    // Check for Option<T> or similar optional type patterns
+                    id.name.starts_with("Option") || 
+                    id.name.starts_with("Maybe") ||
+                    id.name.contains("?")
+                }
+                ExpressionType::FunctionCall(call) => {
+                    // Check for Option(T) or Maybe(T) patterns
+                    if let ExpressionType::Identifier(id) = &call.function.expr_type {
+                        id.name == "Option" || id.name == "Maybe"
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            }
+        } else {
+            false
+        }
+    }
+
+    /// Extract associated methods for a type
+    fn extract_associated_methods(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
+        let mut methods = Vec::new();
+        let lines: Vec<&str> = source_code.lines().collect();
+        
+        // Look for impl blocks for this type
+        for (idx, line) in lines.iter().enumerate() {
+            if line.trim().starts_with("impl") && line.contains(type_name) {
+                // Found an impl block, extract methods
+                let mut brace_count = 0;
+                let mut in_impl = false;
+                
+                for impl_line in &lines[idx..] {
+                    for ch in impl_line.chars() {
+                        match ch {
+                            '{' => {
+                                brace_count += 1;
+                                in_impl = true;
+                            }
+                            '}' => {
+                                brace_count -= 1;
+                                if brace_count == 0 && in_impl {
+                                    // End of impl block
+                                    return Ok(methods);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    
+                    // Look for function definitions within the impl block
+                    if in_impl && impl_line.trim().starts_with("fn ") {
+                        // Extract method name
+                        if let Some(fn_start) = impl_line.find("fn ") {
+                            let after_fn = &impl_line[fn_start + 3..];
+                            if let Some(paren_pos) = after_fn.find('(') {
+                                let method_name = after_fn[..paren_pos].trim().to_string();
+                                
+                                // Create a basic method documentation
+                                methods.push(FunctionDoc {
+                                    name: method_name,
+                                    description: Some(format!("Method of {}", type_name)),
+                                    parameters: Vec::new(), // TODO: Parse method parameters
+                                    return_type: None, // TODO: Parse return type
+                                    examples: Vec::new(),
+                                    location: SourceLocation {
+                                        file: "".to_string(),
+                                        line: idx + 1,
+                                        column: 1,
+                                    },
+                                    source_code: Some(impl_line.to_string()),
+                                    visibility: "public".to_string(),
+                                    is_async: impl_line.contains("async"),
+                                    generic_params: Vec::new(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(methods)
+    }
+
+    /// Extract exports from source code
+    fn extract_exports(&self, source_code: &str) -> Result<Vec<String>, Error> {
+        let mut exports = Vec::new();
+        
+        for line in source_code.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("export ") || trimmed.starts_with("pub ") {
+                // Extract export name
+                if let Some(space_pos) = trimmed[6..].find(' ') {
+                    let export_name = trimmed[6..6 + space_pos].trim();
+                    if !export_name.is_empty() {
+                        exports.push(export_name.to_string());
+                    }
+                }
+            }
+        }
+        
+        Ok(exports)
+    }
+
+    /// Extract submodules from source code
+    fn extract_submodules(&self, source_code: &str) -> Result<Vec<String>, Error> {
+        let mut submodules = Vec::new();
+        
+        for line in source_code.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("mod ") || trimmed.starts_with("module ") {
+                // Extract module name
+                let start_pos = if trimmed.starts_with("mod ") { 4 } else { 7 };
+                if let Some(space_pos) = trimmed[start_pos..].find(' ') {
+                    let module_name = trimmed[start_pos..start_pos + space_pos].trim();
+                    if !module_name.is_empty() {
+                        submodules.push(module_name.to_string());
+                    }
+                } else if let Some(semicolon_pos) = trimmed[start_pos..].find(';') {
+                    let module_name = trimmed[start_pos..start_pos + semicolon_pos].trim();
+                    if !module_name.is_empty() {
+                        submodules.push(module_name.to_string());
+                    }
+                }
+            }
+        }
+        
+        Ok(submodules)
+    }
+
+    /// Build main LaTeX document
+    fn build_main_latex_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+        let mut latex = String::new();
+        
+        // Document preamble
+        latex.push_str(r#"\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\geometry{margin=1in}
+\pagestyle{fancy}
+
+% Code listing style
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{cursedstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=cursedstyle}
+
+"#);
+
+        // Title page
+        latex.push_str(&format!(r#"\title{{{} Documentation}}
+\author{{{}}}
+\date{{\today}}
+
+\begin{{document}}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+"#, 
+            self.escape_latex(&self.config.project.name),
+            self.config.project.authors.join(", ")));
+
+        // Introduction section
+        latex.push_str(r#"\section{Introduction}
+
+"#);
+        
+        if let Some(ref description) = self.config.project.description {
+            latex.push_str(&format!("{}\n\n", self.escape_latex(description)));
+        }
+
+        latex.push_str(&format!(r#"This documentation covers {} modules with comprehensive API reference.
+
+\subsection{{Project Information}}
+
+\begin{{itemize}}
+\item \textbf{{Version:}} {}
+\item \textbf{{Modules:}} {}
+\item \textbf{{Total Functions:}} {}
+\item \textbf{{Total Types:}} {}
+\end{{itemize}}
+
+"#,
+            docs.len(),
+            self.escape_latex(&self.config.project.version),
+            docs.len(),
+            docs.iter().map(|d| d.functions.len()).sum::<usize>(),
+            docs.iter().map(|d| d.types.len()).sum::<usize>()));
+
+        // Module sections
+        for doc in docs {
+            let module_name = doc.source_file.file_stem()
+                .unwrap_or_default()
+                .to_string_lossy();
+            
+            latex.push_str(&format!(r#"\section{{Module: {}}}
+
+"#, self.escape_latex(&module_name)));
+
+            // Module description
+            if let Some(ref module_doc) = doc.module_doc {
+                if let Some(ref description) = module_doc.description {
+                    latex.push_str(&format!("{}\n\n", self.escape_latex(description)));
+                }
+            }
+
+            // Functions
+            if !doc.functions.is_empty() {
+                latex.push_str(r#"\subsection{Functions}
+
+"#);
+                for func in &doc.functions {
+                    latex.push_str(&self.format_function_latex(func)?);
+                }
+            }
+
+            // Types
+            if !doc.types.is_empty() {
+                latex.push_str(r#"\subsection{Types}
+
+"#);
+                for type_doc in &doc.types {
+                    latex.push_str(&self.format_type_latex(type_doc)?);
+                }
+            }
+        }
+
+        latex.push_str(r#"
+\end{document}
+"#);
+
+        Ok(latex)
+    }
+
+    /// Build module-specific LaTeX document
+    fn build_module_latex_doc(&self, doc: &super::ExtractedDocumentation) -> Result<String, Error> {
+        let module_name = doc.source_file.file_stem()
+            .unwrap_or_default()
+            .to_string_lossy();
+
+        let mut latex = format!(r#"\section{{Module: {}}}
+
+"#, self.escape_latex(&module_name));
+
+        if let Some(ref module_doc) = doc.module_doc {
+            if let Some(ref description) = module_doc.description {
+                latex.push_str(&format!("{}\n\n", self.escape_latex(description)));
+            }
+        }
+
+        // Add module content...
+        if !doc.functions.is_empty() {
+            latex.push_str(r#"\subsection{Functions}
+
+"#);
+            for func in &doc.functions {
+                latex.push_str(&self.format_function_latex(func)?);
+            }
+        }
+
+        Ok(latex)
+    }
+
+    /// Format function for LaTeX
+    fn format_function_latex(&self, func: &FunctionDoc) -> Result<String, Error> {
+        let mut latex = format!(r#"\subsubsection{{{}}}
+
+"#, self.escape_latex(&func.name));
+
+        if let Some(ref description) = func.description {
+            latex.push_str(&format!("{}\n\n", self.escape_latex(description)));
+        }
+
+        // Parameters
+        if !func.parameters.is_empty() {
+            latex.push_str(r#"\paragraph{Parameters:}
+\begin{itemize}
+"#);
+            for param in &func.parameters {
+                latex.push_str(&format!(r#"\item \texttt{{{}}} ({}){}"#,
+                    self.escape_latex(&param.name),
+                    self.escape_latex(&param.param_type),
+                    param.description.as_ref()
+                        .map(|d| format!(" -- {}", self.escape_latex(d)))
+                        .unwrap_or_default()));
+                latex.push_str("\n");
+            }
+            latex.push_str(r#"\end{itemize}
+
+"#);
+        }
+
+        // Return type
+        if let Some(ref return_type) = func.return_type {
+            latex.push_str(&format!(r#"\paragraph{{Returns:}} \texttt{{{}}}
+
+"#, self.escape_latex(&return_type.name)));
+        }
+
+        // Examples
+        if !func.examples.is_empty() {
+            latex.push_str(r#"\paragraph{Examples:}
+
+"#);
+            for example in &func.examples {
+                latex.push_str(&format!(r#"\begin{{lstlisting}}[language=C]
+{}
+\end{{lstlisting}}
+
+"#, example.code));
+            }
+        }
+
+        Ok(latex)
+    }
+
+    /// Format type for LaTeX
+    fn format_type_latex(&self, type_doc: &TypeDoc) -> Result<String, Error> {
+        let mut latex = format!(r#"\subsubsection{{{} ({})}}
+
+"#, 
+            self.escape_latex(&type_doc.name),
+            self.escape_latex(&type_doc.type_def));
+
+        if let Some(ref description) = type_doc.description {
+            latex.push_str(&format!("{}\n\n", self.escape_latex(description)));
+        }
+
+        // Fields
+        if !type_doc.fields.is_empty() {
+            latex.push_str(r#"\paragraph{Fields:}
+\begin{itemize}
+"#);
+            for field in &type_doc.fields {
+                latex.push_str(&format!(r#"\item \texttt{{{}}} ({})"#,
+                    self.escape_latex(&field.name),
+                    self.escape_latex(&field.field_type)));
+                latex.push_str("\n");
+            }
+            latex.push_str(r#"\end{itemize}
+
+"#);
+        }
+
+        Ok(latex)
+    }
+
+    /// Build bibliography
+    fn build_bibliography(&self, _docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+        let bib = format!(r#"@misc{{cursed_docs,
+    title={{CURSED Programming Language Documentation}},
+    author={{{}}},
+    year={{2024}},
+    note={{Generated documentation for version {}}}
+}}
+"#, 
+            self.config.project.authors.join(" and "),
+            self.config.project.version);
+
+        Ok(bib)
+    }
+
+    /// Build LaTeX Makefile
+    fn build_latex_makefile(&self) -> Result<String, Error> {
+        let makefile = r#"# LaTeX Documentation Makefile
+
+MAIN = documentation
+LATEX = pdflatex
+BIBTEX = bibtex
+
+.PHONY: all clean
+
+all: $(MAIN).pdf
+
+$(MAIN).pdf: $(MAIN).tex
+	$(LATEX) $(MAIN).tex
+	$(BIBTEX) $(MAIN)
+	$(LATEX) $(MAIN).tex
+	$(LATEX) $(MAIN).tex
+
+clean:
+	rm -f *.aux *.bbl *.blg *.log *.out *.toc *.pdf
+
+view: $(MAIN).pdf
+	open $(MAIN).pdf
+
+help:
+	@echo "Available targets:"
+	@echo "  all    - Build PDF documentation"
+	@echo "  clean  - Remove generated files"
+	@echo "  view   - Open PDF documentation"
+	@echo "  help   - Show this help"
+"#;
+
+        Ok(makefile.to_string())
+    }
+
+    /// Escape LaTeX special characters
+    fn escape_latex(&self, text: &str) -> String {
+        text.replace('\\', r#"\textbackslash{}"#)
+            .replace('{', r#"\{"#)
+            .replace('}', r#"\}"#)
+            .replace('$', r#"\$"#)
+            .replace('&', r#"\&"#)
+            .replace('%', r#"\%"#)
+            .replace('#', r#"\#"#)
+            .replace('^', r#"\textasciicircum{}"#)
+            .replace('_', r#"\_"#)
+            .replace('~', r#"\textasciitilde{}"#)
+    }
+
+    /// Generate function signature for documentation
+    fn generate_function_signature(&self, func: &FunctionDoc) -> String {
+        let mut signature = String::new();
+        
+        // Add async keyword if applicable
+        if func.is_async {
+            signature.push_str("async ");
+        }
+        
+        // Add function name
+        signature.push_str("fn ");
+        signature.push_str(&func.name);
+        
+        // Add generic parameters if any
+        if !func.generic_params.is_empty() {
+            signature.push('<');
+            signature.push_str(&func.generic_params.join(", "));
+            signature.push('>');
+        }
+        
+        // Add parameters
+        signature.push('(');
+        let param_strings: Vec<String> = func.parameters.iter()
+            .map(|param| {
+                let mut param_str = param.name.clone();
+                param_str.push_str(": ");
+                param_str.push_str(&param.param_type);
+                if param.is_optional {
+                    if let Some(ref default) = param.default_value {
+                        param_str.push_str(" = ");
+                        param_str.push_str(default);
+                    }
+                }
+                param_str
+            })
+            .collect();
+        signature.push_str(&param_strings.join(", "));
+        signature.push(')');
+        
+        // Add return type if any
+        if let Some(ref return_type) = func.return_type {
+            signature.push_str(" -> ");
+            signature.push_str(&return_type.name);
+        }
+        
+        signature
     }
 }
 

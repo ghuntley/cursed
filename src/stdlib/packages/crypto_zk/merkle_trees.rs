@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::error::CryptoError;
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use sha3::{Digest, Sha3_256};
 
 /// Merkle tree node

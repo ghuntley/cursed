@@ -2102,20 +2102,8 @@ use crate::stdlib::process::error::platform_error;
 
 /// Shell command execution functions
 
-/// Run a shell command directly (RunShell from spec)
-pub fn run_shell(cmd_string: &str) -> ProcessResult<()> {
-    let mut cmd = get_shell_command(cmd_string);
-    cmd.run()
-}
-
-/// Run a shell command and return output (ShellOutput from spec)
-pub fn shell_output(cmd_string: &str) -> ProcessResult<Vec<u8>> {
-    let mut cmd = get_shell_command(cmd_string);
-    cmd.output()
-}
-
-/// Run a shell command with environment variables (RunShellWithEnv from spec)
-pub fn run_shell_with_env(cmd_string: &str, env: HashMap<String, String>) -> ProcessResult<()> {
+/// Run a shell command with environment variables (alternative implementation)
+pub fn run_shell_with_env_alt(cmd_string: &str, env: HashMap<String, String>) -> ProcessResult<()> {
     let mut cmd = get_shell_command(cmd_string);
     
     // Convert HashMap to Vec<String> in KEY=VALUE format
@@ -2128,14 +2116,14 @@ pub fn run_shell_with_env(cmd_string: &str, env: HashMap<String, String>) -> Pro
 }
 
 /// Run a shell command in a specific directory (RunShellInDir from spec)
-pub fn run_shell_in_dir(cmd_string: &str, dir: &str) -> ProcessResult<()> {
+pub fn run_shell_in_dir_alt(cmd_string: &str, dir: &str) -> ProcessResult<()> {
     let mut cmd = get_shell_command(cmd_string);
     cmd.set_dir(dir);
     cmd.run()
 }
 
-/// Run a command with timeout and return output (OutputWithTimeout from spec)
-pub fn output_with_timeout(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<Vec<u8>> {
+/// Run a command with timeout and return output (alternative implementation)
+pub fn output_with_timeout_alt(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<Vec<u8>> {
     cmd.set_stdout(ProcessStdout::Pipe);
     cmd.start()?;
     
@@ -2176,8 +2164,8 @@ pub fn output_with_timeout(mut cmd: SlayCommand, timeout: Duration) -> ProcessRe
     Err(timeout_error("output_with_timeout", timeout, "Command output timed out"))
 }
 
-/// Run a command with timeout and return combined output (CombinedOutputWithTimeout from spec)
-pub fn combined_output_with_timeout(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<Vec<u8>> {
+/// Run a command with timeout and return combined output (alternative implementation)
+pub fn combined_output_with_timeout_alt(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<Vec<u8>> {
     cmd.set_stdout(ProcessStdout::Pipe);
     cmd.set_stderr(ProcessStderr::Pipe);
     cmd.start()?;

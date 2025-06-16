@@ -661,7 +661,11 @@ impl DependencyResolver {
                 let resolved_dep = ResolvedDependency {
                     package: metadata.clone(),
                     depth: context.depth,
-                    required_by: vec![required_by.to_string()],
+                    required_by: {
+                        let mut vec = Vec::new();
+                        vec.push(required_by.to_string());
+                        vec
+                    },
                     constraint: version_constraint.to_string(),
                     resolved_version: selected_version.version,
                     is_dev_dependency: is_dev,
@@ -724,7 +728,11 @@ impl DependencyResolver {
         
         Ok(VersionSelection {
             version: selected_version,
-            satisfies: vec![version_req.to_string()],
+            satisfies: {
+                let mut vec = Vec::new();
+                vec.push(version_req.to_string());
+                vec
+            },
             conflicts,
         })
     }
@@ -1553,6 +1561,11 @@ impl ConstraintState {
     /// Get domain values ordered by least constraining value heuristic
     pub fn get_ordered_values(&self, package: &str) -> Vec<Version> {
         self.domains.get(package).cloned().unwrap_or_default()
+    }
+    
+    /// Set the package registry
+    pub fn set_registry(&mut self, registry: Arc<Mutex<PackageRegistry>>) {
+        self.registry = Some(registry);
     }
 }
 

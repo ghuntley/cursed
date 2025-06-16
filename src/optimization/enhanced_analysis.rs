@@ -4,7 +4,7 @@
 //! optimization opportunities, and providing actionable recommendations.
 
 use crate::error::{Error, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument, warn};
@@ -839,13 +839,54 @@ impl EnhancedPerformanceAnalyzer {
                 previous_timestamp: previous.timestamp,
                 performance_trend: trend,
                 time_change_percentage: time_change,
-                memory_change_percentage: 0.0, // Placeholder
+                memory_change_percentage: self.calculate_memory_change_percentage(&current, &previous),
                 new_issues: Vec::new(),
                 resolved_issues: Vec::new(),
             }))
         } else {
             Ok(None)
         }
+    }
+
+    /// Calculate memory change percentage between two analysis results
+    fn calculate_memory_change_percentage(&self, current: &AnalysisResult, previous: &AnalysisResult) -> f64 {
+        // Calculate estimated memory usage based on analysis metrics
+        let current_memory_estimate = self.estimate_memory_usage(current);
+        let previous_memory_estimate = self.estimate_memory_usage(previous);
+        
+        if previous_memory_estimate > 0.0 {
+            ((current_memory_estimate - previous_memory_estimate) / previous_memory_estimate) * 100.0
+        } else {
+            0.0
+        }
+    }
+
+    /// Estimate memory usage based on analysis result metrics
+    fn estimate_memory_usage(&self, result: &AnalysisResult) -> f64 {
+        // Base memory usage
+        let mut memory_estimate = 1000.0; // Base memory in KB
+        
+        // Add memory based on optimization metrics
+        if let Some(metrics) = &result.optimization_metrics {
+            // Function count affects memory
+            memory_estimate += metrics.functions_optimized as f64 * 10.0;
+            
+            // Optimizations might reduce or increase memory usage
+            memory_estimate += metrics.optimizations_applied as f64 * 5.0;
+            
+            // Performance improvements might indicate better memory usage
+            memory_estimate -= metrics.estimated_performance_improvement * 100.0;
+        }
+        
+        // Add memory based on compilation metrics
+        if let Some(metrics) = &result.compilation_metrics {
+            // Compilation time can indicate complexity and memory usage
+            if let Some(compile_time) = metrics.total_compile_time {
+                memory_estimate += compile_time.as_secs_f64() * 20.0;
+            }
+        }
+        
+        memory_estimate.max(100.0) // Minimum memory usage
     }
 
     /// Calculate efficiency score for a phase
@@ -1301,11 +1342,106 @@ impl RecommendationEngine {
     }
 
     fn create_default_rules() -> Vec<RecommendationRule> {
-        Vec::new() // Placeholder
+        vec![
+            RecommendationRule {
+                rule_id: "slow_parsing_rule".to_string(),
+                condition: RuleCondition::PhaseTimeExceeds(CompilationPhase::Parsing, Duration::from_millis(200)),
+                recommendation: OptimizationRecommendation {
+                    id: "parsing_optimization".to_string(),
+                    title: "Optimize Parsing Performance".to_string(),
+                    description: "Enable parser optimization passes and consider syntax simplification".to_string(),
+                    priority: 8,
+                    expected_improvement: 0.25,
+                    effort_level: EffortLevel::Medium,
+                    actions: vec![
+                        RecommendationAction {
+                            action_type: ActionType::EnableOptimization,
+                            description: "Enable fast parsing mode".to_string(),
+                            parameters: HashMap::from([
+                                ("fast_mode".to_string(), "true".to_string()),
+                                ("skip_comments".to_string(), "true".to_string())
+                            ]),
+                        }
+                    ],
+                    related_passes: vec!["FastParser".to_string(), "SyntaxSimplifier".to_string()],
+                    confidence: 0.85,
+                },
+            },
+            RecommendationRule {
+                rule_id: "high_memory_rule".to_string(),
+                condition: RuleCondition::MemoryUsageExceeds(1_000_000_000), // 1GB
+                recommendation: OptimizationRecommendation {
+                    id: "memory_optimization".to_string(),
+                    title: "Reduce Memory Usage".to_string(),
+                    description: "Enable memory optimization passes and reduce compilation unit size".to_string(),
+                    priority: 7,
+                    expected_improvement: 0.30,
+                    effort_level: EffortLevel::Low,
+                    actions: vec![
+                        RecommendationAction {
+                            action_type: ActionType::ConfigureParameter,
+                            description: "Enable memory-efficient compilation".to_string(),
+                            parameters: HashMap::from([
+                                ("memory_limit".to_string(), "512MB".to_string()),
+                                ("streaming_compilation".to_string(), "true".to_string())
+                            ]),
+                        }
+                    ],
+                    related_passes: vec!["MemoryOptimizer".to_string(), "StreamingCompiler".to_string()],
+                    confidence: 0.90,
+                },
+            },
+            RecommendationRule {
+                rule_id: "llvm_bottleneck_rule".to_string(),
+                condition: RuleCondition::PhaseTimeExceeds(CompilationPhase::LLVMOptimization, Duration::from_millis(500)),
+                recommendation: OptimizationRecommendation {
+                    id: "llvm_optimization".to_string(),
+                    title: "Optimize LLVM Performance".to_string(),
+                    description: "Reduce LLVM optimization level or enable selective optimization".to_string(),
+                    priority: 6,
+                    expected_improvement: 0.20,
+                    effort_level: EffortLevel::Medium,
+                    actions: vec![
+                        RecommendationAction {
+                            action_type: ActionType::ChangeStrategy,
+                            description: "Use selective LLVM optimization".to_string(),
+                            parameters: HashMap::from([
+                                ("optimization_level".to_string(), "O2".to_string()),
+                                ("selective_optimization".to_string(), "true".to_string())
+                            ]),
+                        }
+                    ],
+                    related_passes: vec!["SelectiveOptimizer".to_string(), "FastLLVM".to_string()],
+                    confidence: 0.75,
+                },
+            },
+        ]
     }
 
     fn create_default_weights() -> HashMap<String, f64> {
-        HashMap::new() // Placeholder
+        HashMap::from([
+            // Compilation phase weights
+            ("parsing_weight".to_string(), 1.0),
+            ("semantic_analysis_weight".to_string(), 1.2),
+            ("llvm_optimization_weight".to_string(), 0.8),
+            ("code_generation_weight".to_string(), 1.1),
+            
+            // Performance metric weights
+            ("compilation_time_weight".to_string(), 2.0),
+            ("memory_usage_weight".to_string(), 1.5),
+            ("cache_hit_rate_weight".to_string(), 1.8),
+            ("optimization_effectiveness_weight".to_string(), 1.3),
+            
+            // Quality metric weights
+            ("code_size_weight".to_string(), 0.9),
+            ("runtime_performance_weight".to_string(), 2.5),
+            ("build_time_weight".to_string(), 2.2),
+            
+            // Advanced metric weights
+            ("parallel_efficiency_weight".to_string(), 1.6),
+            ("incremental_compilation_weight".to_string(), 1.4),
+            ("regression_detection_weight".to_string(), 1.7),
+        ])
     }
 }
 
@@ -1382,18 +1518,103 @@ impl MLOptimizationModel {
         
         for (feature, &weight) in &self.feature_weights {
             if let Some(&value) = features.get(feature) {
-                // Normalize feature value (simple approach)
-                let normalized_value = value / (value + 1.0);
-                score += normalized_value * weight;
+                // Apply feature-specific normalization and scoring
+                let normalized_score = match feature.as_str() {
+                    "total_time_ms" => {
+                        // Lower compilation times are better (inverse relationship)
+                        let optimal_time = 1000.0; // 1 second optimal
+                        (optimal_time / (value + optimal_time)).max(0.0).min(1.0)
+                    },
+                    "peak_memory_mb" => {
+                        // Lower memory usage is better
+                        let optimal_memory = 100.0; // 100MB optimal
+                        (optimal_memory / (value + optimal_memory)).max(0.0).min(1.0)
+                    },
+                    "parsing_time_ratio" | "llvm_optimization_ratio" => {
+                        // Ratios should be balanced (not too high)
+                        let optimal_ratio = 0.3;
+                        if value <= optimal_ratio {
+                            1.0 - (value / optimal_ratio) * 0.5 // Scale from 1.0 to 0.5
+                        } else {
+                            (optimal_ratio / value).max(0.0).min(0.5)
+                        }
+                    },
+                    "memory_efficiency" => {
+                        // Higher efficiency is better (direct relationship)
+                        value.max(0.0).min(1.0)
+                    },
+                    "io_operations_count" => {
+                        // Fewer I/O operations are better
+                        let optimal_io = 100.0;
+                        (optimal_io / (value + optimal_io)).max(0.0).min(1.0)
+                    },
+                    _ => {
+                        // Default normalization for unknown features
+                        (value / (value + 1.0)).max(0.0).min(1.0)
+                    }
+                };
+                
+                score += normalized_score * weight;
                 total_weight += weight.abs();
             }
         }
         
         if total_weight > 0.0 {
-            score / total_weight
+            let weighted_score = score / total_weight;
+            
+            // Apply additional scoring based on feature combinations
+            let complexity_penalty = self.calculate_complexity_penalty(features);
+            let efficiency_bonus = self.calculate_efficiency_bonus(features);
+            
+            (weighted_score - complexity_penalty + efficiency_bonus).max(0.0).min(1.0)
         } else {
             0.0
         }
+    }
+    
+    fn calculate_complexity_penalty(&self, features: &HashMap<String, f64>) -> f64 {
+        let mut penalty = 0.0;
+        
+        // Penalty for high complexity combinations
+        if let (Some(&parsing_time), Some(&total_time)) = 
+            (features.get("parsing_time_ms"), features.get("total_time_ms")) {
+            if total_time > 0.0 {
+                let parsing_ratio = parsing_time / total_time;
+                if parsing_ratio > 0.4 { // Parsing takes more than 40% of total time
+                    penalty += 0.1 * (parsing_ratio - 0.4);
+                }
+            }
+        }
+        
+        // Penalty for memory inefficiency
+        if let Some(&memory_efficiency) = features.get("memory_efficiency") {
+            if memory_efficiency < 0.5 {
+                penalty += 0.15 * (0.5 - memory_efficiency);
+            }
+        }
+        
+        penalty.min(0.3) // Cap penalty at 30%
+    }
+    
+    fn calculate_efficiency_bonus(&self, features: &HashMap<String, f64>) -> f64 {
+        let mut bonus = 0.0;
+        
+        // Bonus for efficient compilation patterns
+        if let (Some(&total_time), Some(&peak_memory)) = 
+            (features.get("total_time_ms"), features.get("peak_memory_mb")) {
+            if total_time < 500.0 && peak_memory < 200.0 {
+                bonus += 0.1; // Fast and memory-efficient
+            }
+        }
+        
+        // Bonus for balanced optimization ratios
+        if let Some(&llvm_ratio) = features.get("llvm_optimization_ratio") {
+            if llvm_ratio >= 0.2 && llvm_ratio <= 0.4 {
+                bonus += 0.05; // Good LLVM optimization balance
+            }
+        }
+        
+        bonus.min(0.2) // Cap bonus at 20%
     }
 
     pub fn add_training_sample(&mut self, features: HashMap<String, f64>, target: String, outcome_score: f64) {

@@ -515,25 +515,85 @@ impl EnhancedSlayCommand {
         Ok(combined)
     }
     
-    /// Get stdout pipe
+    /// Get stdout pipe for reading from process
     #[instrument(skip(self))]
     pub fn stdout_pipe(&mut self) -> SlayResult<Box<dyn Read + Send>> {
-        // This would be implemented with real pipe creation
-        Err(CursedError::RuntimeError("stdout_pipe not yet implemented".to_string()))
+        debug!("Creating stdout pipe for process");
+        
+        // Configure stdout for piping and start process
+        self.stdout = Some(ProcessStdout::Pipe);
+        
+        // Start process if not already running
+        if self.child.is_none() {
+            self.spawn()?;
+        }
+        
+        if let Some(ref mut child) = self.child {
+            if let Some(stdout) = child.stdout.take() {
+                debug!("Successfully created stdout pipe");
+                Ok(Box::new(stdout))
+            } else {
+                error!("Stdout not available - pipe not configured");
+                Err(CursedError::RuntimeError("Stdout not available - pipe not configured".to_string()))
+            }
+        } else {
+            error!("Process not started");
+            Err(CursedError::RuntimeError("Process not started".to_string()))
+        }
     }
     
-    /// Get stderr pipe
+    /// Get stderr pipe for reading from process
     #[instrument(skip(self))]
     pub fn stderr_pipe(&mut self) -> SlayResult<Box<dyn Read + Send>> {
-        // This would be implemented with real pipe creation
-        Err(CursedError::RuntimeError("stderr_pipe not yet implemented".to_string()))
+        debug!("Creating stderr pipe for process");
+        
+        // Configure stderr for piping and start process
+        self.stderr = Some(ProcessStderr::Pipe);
+        
+        // Start process if not already running
+        if self.child.is_none() {
+            self.spawn()?;
+        }
+        
+        if let Some(ref mut child) = self.child {
+            if let Some(stderr) = child.stderr.take() {
+                debug!("Successfully created stderr pipe");
+                Ok(Box::new(stderr))
+            } else {
+                error!("Stderr not available - pipe not configured");
+                Err(CursedError::RuntimeError("Stderr not available - pipe not configured".to_string()))
+            }
+        } else {
+            error!("Process not started");
+            Err(CursedError::RuntimeError("Process not started".to_string()))
+        }
     }
     
-    /// Get stdin pipe
+    /// Get stdin pipe for writing to process
     #[instrument(skip(self))]
     pub fn stdin_pipe(&mut self) -> SlayResult<Box<dyn Write + Send>> {
-        // This would be implemented with real pipe creation
-        Err(CursedError::RuntimeError("stdin_pipe not yet implemented".to_string()))
+        debug!("Creating stdin pipe for process");
+        
+        // Configure stdin for piping and start process
+        self.stdin = Some(ProcessStdin::Pipe);
+        
+        // Start process if not already running
+        if self.child.is_none() {
+            self.spawn()?;
+        }
+        
+        if let Some(ref mut child) = self.child {
+            if let Some(stdin) = child.stdin.take() {
+                debug!("Successfully created stdin pipe");
+                Ok(Box::new(stdin))
+            } else {
+                error!("Stdin not available - pipe not configured");
+                Err(CursedError::RuntimeError("Stdin not available - pipe not configured".to_string()))
+            }
+        } else {
+            error!("Process not started");
+            Err(CursedError::RuntimeError("Process not started".to_string()))
+        }
     }
     
     /// Set working directory

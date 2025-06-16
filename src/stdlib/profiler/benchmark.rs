@@ -595,7 +595,7 @@ where
     };
     
     let mut metadata = HashMap::new();
-    metadata.insert("rust_version".to_string(), env!("RUSTC_VERSION").to_string());
+    metadata.insert("rust_version".to_string(), option_env!("RUSTC_VERSION").unwrap_or("unknown").to_string());
     metadata.insert("target".to_string(), std::env::consts::ARCH.to_string());
     
     BENCHMARK_COUNT.fetch_add(1, Ordering::Relaxed);

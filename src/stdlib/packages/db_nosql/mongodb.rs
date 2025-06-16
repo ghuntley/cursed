@@ -29,7 +29,7 @@ use mongodb::{
 };
 use futures::stream::TryStreamExt;
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use crate::error::{CursedError, ErrorKind};
 
 /// MongoDB-specific error types
@@ -980,17 +980,12 @@ impl MongoDbTransaction {
     }
 }
 
-/// Export public API
-pub use {
-    MongoDbDriver, MongoDbConnection, MongoDbDatabase, MongoDbCollection,
-    MongoDbConfig, MongoDbError, MongoDbQueryBuilder, MongoDbTransaction,
-    AggregationPipelineBuilder, WriteConcernConfig,
-};
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::value::Value;
+    use crate::stdlib::value::Value;
     use std::collections::HashMap;
 
     #[test]

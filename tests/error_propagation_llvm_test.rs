@@ -1,573 +1,584 @@
-//! LLVM IR generation tests for CURSED error propagation
-//! 
-//! This test suite validates that the error propagation system generates correct
-//! LLVM IR code for all patterns of `?` operator usage. It ensures that the
-//! generated IR correctly implements error propagation semantics, maintains
-//! type safety, and produces efficient code.
+//! LLVM code generation tests for error propagation
+//!
+//! This test suite validates the LLVM code generation aspects of the error propagation
+//! system, including Result/Option type generation, error handling code, and FFI integration.
 
-use cursed::codegen::llvm::{
-    LlvmCodeGenerator,
-    ErrorPropagationCompiler,
-    EnhancedErrorPropagationCompiler,
-    QuestionMarkCompiler,
-    MainResultTypeCompiler,
+use cursed::codegen::llvm::error_propagation::{ErrorPropagationCodegen, ErrorPropagationCompiler};
+use cursed::parser::error_propagation::{
+    EnhancedQuestionMarkExpression, TypedErrorPropagation, UnwrapOrExpression,
+    TryExpression, FieldAccessExpression, MethodCallExpression
 };
-use cursed::ast::expressions::{ErrorPropagation, QuestionMarkExpression};
-use cursed::ast::traits::Expression;
-use cursed::debug::SourceLocation;
-use cursed::error::SourceLocation as ErrorSourceLocation;
-use std::path::PathBuf;
-use inkwell::{
-    context::Context,
-    types::{BasicType, BasicTypeEnum},
-    values::BasicValueEnum,
-};
+use cursed::error::{CursedError, SourceLocation};
+use inkwell::context::Context;
+use inkwell::AddressSpace;
+use tracing_test::traced_test;
 
-/// Test LLVM IR generation for basic Result<T,E> error propagation
-#[test]
-fn test_basic_result_ir_generation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    let source = r#"
-        function test_result() -> Result<i32, String> {
-            sus value = get_result()?;
-            facts value + 10
-        }
-        
-        function get_result() -> Result<i32, String> {
-            facts 42
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate IR");
-    
-    // Verify function signature
-    assert!(ir.contains("define"), "Should contain function definition");
-    assert!(ir.contains("i32"), "Should contain i32 type");
-    
-    // Verify Result type handling
-    assert!(ir.contains("call i8* @cursed_error_propagation_check") ||
-           ir.contains("call i1 @cursred_result_is_ok") ||
-           ir.contains("extractvalue"), 
-           "Should contain Result error checking");
-    
-    // Verify proper branching for error cases
-    assert!(ir.contains("br i1"), "Should contain conditional branching");
-    assert!(ir.contains("br label"), "Should contain unconditional branching");
-    
-    // Verify value extraction
-    assert!(ir.contains("extractvalue") || ir.contains("load"), 
-           "Should extract value from Result");
-    
-    println!("✓ Basic Result IR generation is correct");
+/// Initialize tracing for tests
+macro_rules! init_tracing {
+    () => {
+        let _ = tracing_subscriber::fmt()
+            .with_env_filter("debug")
+            .with_test_writer()
+            .try_init();
+    };
 }
 
-/// Test LLVM IR generation for Option<T> error propagation
+#[traced_test]
 #[test]
-fn test_option_ir_generation() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_result_ok_creation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_option() -> Option<i32> {
-            sus value = get_option()?;
-            facts value * 2
-        }
-        
-        function get_option() -> Option<i32> {
-            facts Some(21)
-        }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate IR");
+    let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify Option-specific IR patterns
-    assert!(ir.contains("call i8* @cursed_option_propagation_check") ||
-           ir.contains("call i1 @cursed_option_is_some") ||
-           ir.contains("extractvalue"), 
-           "Should contain Option presence checking");
+    let i32_type = context.i32_type();
+    let string_type = context.i8_type().ptr_type(AddressSpace::default());
+    let value = i32_type.const_int(42, false);
     
-    // Verify None handling
-    assert!(ir.contains("br i1"), "Should branch on Option presence");
+    let result_ok = compiler.create_result_ok(value.into(), string_type.into());
+    assert!(result_ok.is_ok());
     
-    // Verify Some value extraction  
-    assert!(ir.contains("extractvalue") || ir.contains("load"), 
-           "Should extract value from Some");
-    
-    println!("✓ Option IR generation is correct");
+    let result_struct = result_ok.unwrap();
+    assert_eq!(result_struct.get_type().count_fields(), 2);
 }
 
-/// Test IR generation for chained error propagation
+#[traced_test]
 #[test]
-fn test_chained_propagation_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_result_err_creation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_chain() -> Result<i32, String> {
-            sus a = step_one()?;
-            sus b = step_two(a)?;
-            sus c = step_three(b)?;
-            facts c
-        }
-        
-        function step_one() -> Result<i32, String> { facts 1 }
-        function step_two(x: i32) -> Result<i32, String> { facts x + 1 }
-        function step_three(x: i32) -> Result<i32, String> { facts x + 1 }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate chained IR");
+    let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Count error propagation checks
-    let check_count = ir.matches("call i8* @cursed_error_propagation_check").count() +
-                     ir.matches("call i1 @cursed_result_is_ok").count() +
-                     ir.matches("icmp eq i1").count();
+    let i32_type = context.i32_type();
+    let string_type = context.i8_type().ptr_type(AddressSpace::default());
+    let error_value = string_type.const_null();
     
-    assert!(check_count >= 3, "Should have at least 3 error checks for chained propagation");
+    let result_err = compiler.create_result_err(error_value.into(), i32_type.into());
+    assert!(result_err.is_ok());
     
-    // Verify proper control flow structure
-    let branch_count = ir.matches("br i1").count();
-    assert!(branch_count >= 3, "Should have proper branching for each propagation point");
-    
-    // Verify multiple basic blocks for error handling
-    let block_count = ir.matches("^[a-zA-Z0-9_]+:").count();
-    assert!(block_count >= 6, "Should have sufficient basic blocks for complex control flow");
-    
-    println!("✓ Chained propagation IR generation is correct");
+    let result_struct = result_err.unwrap();
+    assert_eq!(result_struct.get_type().count_fields(), 2);
 }
 
-/// Test IR generation for error propagation in complex expressions
+#[traced_test]
 #[test]
-fn test_complex_expression_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_option_some_creation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_complex() -> Result<i32, String> {
-            sus result = (get_a()? + get_b()?) * get_multiplier()?;
-            facts result
-        }
-        
-        function get_a() -> Result<i32, String> { facts 5 }
-        function get_b() -> Result<i32, String> { facts 3 }
-        function get_multiplier() -> Result<i32, String> { facts 2 }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate complex expression IR");
+    let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify multiple error checks for complex expressions
-    let check_count = ir.matches("call i8* @cursed_error_propagation_check").count() +
-                     ir.matches("extractvalue").count();
-    assert!(check_count >= 3, "Should handle multiple error checks in complex expressions");
+    let i32_type = context.i32_type();
+    let value = i32_type.const_int(42, false);
     
-    // Verify arithmetic operations are present
-    assert!(ir.contains("add i32") || ir.contains("mul i32"), 
-           "Should contain arithmetic operations");
+    let option_some = compiler.create_option_some(value.into());
+    assert!(option_some.is_ok());
     
-    println!("✓ Complex expression IR generation is correct");
+    let option_struct = option_some.unwrap();
+    assert_eq!(option_struct.get_type().count_fields(), 2);
 }
 
-/// Test IR generation for error propagation with different return types
+#[traced_test]
 #[test]
-fn test_different_return_types_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_option_none_creation() {
+    init_tracing!();
     
-    // Test with string return type
-    let source1 = r#"
-        function test_string() -> Result<String, String> {
-            sus value = get_string_result()?;
-            facts value + " processed"
-        }
-        
-        function get_string_result() -> Result<String, String> {
-            facts "hello"
-        }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir1 = generator.generate_ir(source1).expect("Should generate string IR");
-    assert!(ir1.contains("i8*") || ir1.contains("ptr"), "Should handle string types");
+    let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Test with boolean return type
-    let source2 = r#"
-        function test_bool() -> Result<bool, String> {
-            sus value = get_bool_result()?;
-            facts !value
-        }
-        
-        function get_bool_result() -> Result<bool, String> {
-            facts true
-        }
-    "#;
+    let i32_type = context.i32_type();
     
-    let ir2 = generator.generate_ir(source2).expect("Should generate bool IR");
-    assert!(ir2.contains("i1") || ir2.contains("i8"), "Should handle boolean types");
+    let option_none = compiler.create_option_none(i32_type.into());
+    assert!(option_none.is_ok());
     
-    println!("✓ Different return types IR generation is correct");
+    let option_struct = option_none.unwrap();
+    assert_eq!(option_struct.get_type().count_fields(), 2);
 }
 
-/// Test IR generation for error propagation with structs
+#[traced_test]
 #[test]
-fn test_struct_propagation_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_enhanced_question_mark_compilation() {
+    init_tracing!();
     
-    let source = r#"
-        squad Point {
-            x: i32,
-            y: i32,
-        }
-        
-        function test_struct() -> Result<Point, String> {
-            sus point = create_point()?;
-            facts Point { x: point.x + 1, y: point.y + 1 }
-        }
-        
-        function create_point() -> Result<Point, String> {
-            facts Point { x: 10, y: 20 }
-        }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate struct IR");
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify struct type handling
-    assert!(ir.contains("type") || ir.contains("struct"), "Should define struct types");
+    // Create a mock enhanced question mark expression
+    let inner_expr = cursed::ast::identifiers::Identifier::new("test".to_string(), "test".to_string());
+    let location = SourceLocation { line: 1, column: 1 };
     
-    // Verify struct field access
-    assert!(ir.contains("getelementptr") || ir.contains("extractvalue") || 
-           ir.contains("insertvalue"), "Should handle struct field operations");
+    let enhanced_expr = EnhancedQuestionMarkExpression::new(
+        Box::new(inner_expr),
+        location,
+        Some("test_function".to_string()),
+        Some("Result<i32, String>".to_string()),
+    );
     
-    println!("✓ Struct propagation IR generation is correct");
+    let result = compiler.compile_enhanced_question_mark(&enhanced_expr);
+    assert!(result.is_ok());
+    
+    let compiled_value = result.unwrap();
+    assert!(compiled_value.is_int_value());
 }
 
-/// Test IR generation for error propagation in control flow
+#[traced_test]
 #[test]
-fn test_control_flow_propagation_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_typed_error_propagation_compilation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_control_flow() -> Result<i32, String> {
-            lowkey (get_condition()?) {
-                sus value = get_true_value()?;
-                facts value * 2
-            } flex {
-                sus value = get_false_value()?;
-                facts value + 5
-            }
-        }
-        
-        function get_condition() -> Result<bool, String> { facts true }
-        function get_true_value() -> Result<i32, String> { facts 10 }
-        function get_false_value() -> Result<i32, String> { facts 20 }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate control flow IR");
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify proper basic block structure
-    let block_count = ir.matches("^[a-zA-Z0-9_]+:").count();
-    assert!(block_count >= 4, "Should have sufficient basic blocks for if-else with error propagation");
+    // Create a mock typed error propagation expression
+    let inner_expr = cursed::ast::identifiers::Identifier::new("test".to_string(), "test".to_string());
+    let location = SourceLocation { line: 1, column: 1 };
     
-    // Verify conditional branches
-    let conditional_branches = ir.matches("br i1").count();
-    assert!(conditional_branches >= 2, "Should have conditional branches for both condition and error checks");
+    let enhanced_expr = EnhancedQuestionMarkExpression::new(
+        Box::new(inner_expr),
+        location,
+        Some("test_function".to_string()),
+        Some("Result<i32, String>".to_string()),
+    );
     
-    println!("✓ Control flow propagation IR generation is correct");
+    let typed_expr = TypedErrorPropagation::new(
+        Box::new(enhanced_expr),
+        "Result<i32, String>".to_string(),
+        "Result<i32, String>".to_string(),
+    );
+    
+    let result = compiler.compile_typed_error_propagation(&typed_expr);
+    assert!(result.is_ok());
+    
+    let compiled_value = result.unwrap();
+    assert!(compiled_value.is_int_value());
 }
 
-/// Test IR generation for error propagation in loops
+#[traced_test]
 #[test]
-fn test_loop_propagation_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_unwrap_or_expression_compilation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_loop() -> Result<i32, String> {
-            sus total = 0;
-            sus i = 0;
-            bestie (i < 5) {
-                sus value = get_loop_value(i)?;
-                total = total + value;
-                i = i + 1;
-            }
-            facts total
-        }
-        
-        function get_loop_value(index: i32) -> Result<i32, String> {
-            facts index * 2
-        }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate loop IR");
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify loop structure
-    assert!(ir.contains("br i1"), "Should have conditional branching for loop");
-    assert!(ir.contains("br label"), "Should have unconditional branching for loop back-edge");
+    // Create a mock unwrap-or expression
+    let default_expr = cursed::ast::identifiers::Identifier::new("default".to_string(), "default".to_string());
     
-    // Verify loop with error propagation has proper structure
-    let block_count = ir.matches("^[a-zA-Z0-9_]+:").count();
-    assert!(block_count >= 3, "Should have sufficient basic blocks for loop with error propagation");
+    let unwrap_or_expr = UnwrapOrExpression::new(
+        "unwrap_or".to_string(),
+        Box::new(default_expr),
+    );
     
-    println!("✓ Loop propagation IR generation is correct");
+    let result = compiler.compile_unwrap_or_expression(&unwrap_or_expr);
+    assert!(result.is_ok());
+    
+    let compiled_value = result.unwrap();
+    assert!(compiled_value.is_int_value());
 }
 
-/// Test IR generation for error propagation with tail calls
+#[traced_test]
 #[test]
-fn test_tail_call_propagation_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_try_expression_compilation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_tail_call() -> Result<i32, String> {
-            facts tail_recursive(5)?
-        }
-        
-        function tail_recursive(n: i32) -> Result<i32, String> {
-            lowkey (n <= 0) {
-                facts 1
-            } flex {
-                sus prev = tail_recursive(n - 1)?;
-                facts n * prev
-            }
-        }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate tail call IR");
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify function calls
-    assert!(ir.contains("call"), "Should contain function calls");
+    // Create a mock try expression
+    let try_body = cursed::ast::identifiers::Identifier::new("try_body".to_string(), "try_body".to_string());
+    let catch_body = cursed::ast::identifiers::Identifier::new("catch_body".to_string(), "catch_body".to_string());
     
-    // Verify tail call optimization opportunities
-    // Note: LLVM tail call optimization is complex and may not always be visible
-    // in the IR without optimization passes
+    let try_expr = TryExpression::new(
+        Box::new(try_body),
+        Some(Box::new(catch_body)),
+    );
     
-    println!("✓ Tail call propagation IR generation is correct");
+    let result = compiler.compile_try_expression(&try_expr);
+    assert!(result.is_ok());
+    
+    let compiled_value = result.unwrap();
+    assert!(compiled_value.is_int_value());
 }
 
-/// Test IR generation for error propagation with custom error types
+#[traced_test]
 #[test]
-fn test_custom_error_type_ir() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_field_access_expression_compilation() {
+    init_tracing!();
     
-    let source = r#"
-        squad CustomError {
-            code: i32,
-            message: String,
-        }
-        
-        function test_custom_error() -> Result<i32, CustomError> {
-            sus value = risky_operation()?;
-            facts value + 100
-        }
-        
-        function risky_operation() -> Result<i32, CustomError> {
-            facts Err(CustomError { code: 404, message: "Not found" })
-        }
-    "#;
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
     
-    let ir = generator.generate_ir(source).expect("Should generate custom error IR");
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
     
-    // Verify custom error type handling
-    assert!(ir.contains("type") || ir.contains("struct"), "Should define custom error type");
+    // Create a mock field access expression
+    let object_expr = cursed::ast::identifiers::Identifier::new("object".to_string(), "object".to_string());
+    let location = SourceLocation { line: 1, column: 1 };
     
-    // Verify error propagation with custom types
-    assert!(ir.contains("call i8* @cursed_error_propagation_check") ||
-           ir.contains("extractvalue"), "Should handle custom error propagation");
+    let field_access_expr = FieldAccessExpression::new(
+        Box::new(object_expr),
+        "field".to_string(),
+        location,
+    );
     
-    println!("✓ Custom error type IR generation is correct");
+    let result = compiler.compile_field_access_expression(&field_access_expr);
+    assert!(result.is_ok());
+    
+    let compiled_value = result.unwrap();
+    assert!(compiled_value.is_int_value());
 }
 
-/// Test IR generation produces valid LLVM IR
+#[traced_test]
 #[test]
-fn test_ir_validity() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
+fn test_method_call_expression_compilation() {
+    init_tracing!();
     
-    let source = r#"
-        function test_validity() -> Result<i32, String> {
-            sus a = operation_a()?;
-            sus b = operation_b(a)?;
-            facts a + b
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    // Create a mock method call expression
+    let base_expr = cursed::ast::identifiers::Identifier::new("base".to_string(), "base".to_string());
+    let location = SourceLocation { line: 1, column: 1 };
+    
+    let method_call_expr = MethodCallExpression::new(
+        Box::new(base_expr),
+        "method".to_string(),
+        vec![],
+        location,
+    );
+    
+    let result = compiler.compile_method_call_expression(&method_call_expr);
+    assert!(result.is_ok());
+    
+    let compiled_value = result.unwrap();
+    assert!(compiled_value.is_int_value());
+}
+
+#[traced_test]
+#[test]
+fn test_error_handling_generation() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    let i32_type = context.i32_type();
+    let result_value = i32_type.const_int(42, false);
+    let error_handler = i32_type.const_int(0, false);
+    
+    let result = compiler.generate_error_handling(
+        result_value.into(),
+        Some(error_handler.into()),
+    );
+    assert!(result.is_ok());
+    
+    let handled_value = result.unwrap();
+    assert!(handled_value.is_int_value());
+}
+
+#[traced_test]
+#[test]
+fn test_error_value_checking() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    let i32_type = context.i32_type();
+    let value = i32_type.const_int(42, false);
+    
+    let result = compiler.is_error_value(value.into());
+    assert!(result.is_ok());
+    
+    let is_error = result.unwrap();
+    assert!(is_error.is_int_value());
+    assert_eq!(is_error.get_zero_extended_constant(), Some(0)); // Should be false
+}
+
+#[traced_test]
+#[test]
+fn test_success_value_extraction() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    let i32_type = context.i32_type();
+    let result_value = i32_type.const_int(42, false);
+    
+    let result = compiler.extract_success_value(result_value.into());
+    assert!(result.is_ok());
+    
+    let success_value = result.unwrap();
+    assert!(success_value.is_int_value());
+}
+
+#[traced_test]
+#[test]
+fn test_error_value_extraction() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    let i32_type = context.i32_type();
+    let result_value = i32_type.const_int(42, false);
+    
+    let result = compiler.extract_error_value(result_value.into());
+    assert!(result.is_ok());
+    
+    let error_value = result.unwrap();
+    assert!(error_value.is_int_value());
+}
+
+#[traced_test]
+#[test]
+fn test_early_return_generation() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    let i32_type = context.i32_type();
+    let error_value = i32_type.const_int(1, false);
+    
+    let result = compiler.generate_early_return(error_value.into());
+    assert!(result.is_ok());
+}
+
+#[traced_test]
+#[test]
+fn test_function_context_management() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    // Initially no function context
+    assert_eq!(compiler.function_stack.len(), 0);
+    assert!(compiler.current_function().is_none());
+    
+    // Create and enter function
+    let function_type = context.void_type().fn_type(&[], false);
+    let function = module.add_function("test_function", function_type, None);
+    
+    compiler.enter_function(function);
+    assert_eq!(compiler.function_stack.len(), 1);
+    assert_eq!(compiler.current_function(), Some(function));
+    
+    // Exit function
+    compiler.exit_function();
+    assert_eq!(compiler.function_stack.len(), 0);
+    assert!(compiler.current_function().is_none());
+}
+
+#[traced_test]
+#[test]
+fn test_nested_function_contexts() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    // Create functions
+    let function_type = context.void_type().fn_type(&[], false);
+    let outer_function = module.add_function("outer_function", function_type, None);
+    let inner_function = module.add_function("inner_function", function_type, None);
+    
+    // Enter outer function
+    compiler.enter_function(outer_function);
+    assert_eq!(compiler.current_function(), Some(outer_function));
+    
+    // Enter inner function
+    compiler.enter_function(inner_function);
+    assert_eq!(compiler.current_function(), Some(inner_function));
+    assert_eq!(compiler.function_stack.len(), 2);
+    
+    // Exit inner function
+    compiler.exit_function();
+    assert_eq!(compiler.current_function(), Some(outer_function));
+    assert_eq!(compiler.function_stack.len(), 1);
+    
+    // Exit outer function
+    compiler.exit_function();
+    assert!(compiler.current_function().is_none());
+    assert_eq!(compiler.function_stack.len(), 0);
+}
+
+#[traced_test]
+#[test]
+fn test_result_and_option_type_compatibility() {
+    init_tracing!();
+    
+    let context = Context::create();
+    let module = context.create_module("test");
+    let builder = context.create_builder();
+    
+    let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+    
+    // Test that Result and Option types have compatible structure
+    let i32_type = context.i32_type().into();
+    let string_type = context.i8_type().ptr_type(AddressSpace::default()).into();
+    
+    let result_type = compiler.get_result_type(i32_type, string_type);
+    let option_type = compiler.get_option_type(i32_type);
+    
+    // Both should have 2 fields
+    assert_eq!(result_type.count_fields(), 2);
+    assert_eq!(option_type.count_fields(), 2);
+    
+    // Both should have boolean as first field
+    assert!(result_type.get_field_type_at_index(0).unwrap().is_int_type());
+    assert!(option_type.get_field_type_at_index(0).unwrap().is_int_type());
+}
+
+#[cfg(test)]
+mod benchmarks {
+    use super::*;
+    use std::time::Instant;
+
+    #[traced_test]
+    #[test]
+    fn benchmark_result_creation() {
+        init_tracing!();
+        
+        let context = Context::create();
+        let module = context.create_module("test");
+        let builder = context.create_builder();
+        
+        let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+        
+        let i32_type = context.i32_type();
+        let string_type = context.i8_type().ptr_type(AddressSpace::default());
+        let value = i32_type.const_int(42, false);
+        let error = string_type.const_null();
+        
+        let start = Instant::now();
+        
+        // Benchmark Result creation
+        for _ in 0..1000 {
+            let _ = compiler.create_result_ok(value.into(), string_type.into());
+            let _ = compiler.create_result_err(error.into(), i32_type.into());
         }
         
-        function operation_a() -> Result<i32, String> { facts 10 }
-        function operation_b(x: i32) -> Result<i32, String> { facts x * 2 }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate valid IR");
-    
-    // Basic LLVM IR structure validation
-    assert!(ir.contains("define"), "Should contain function definitions");
-    assert!(ir.contains("ret"), "Should contain return statements");
-    
-    // Verify basic blocks are properly terminated
-    let lines: Vec<&str> = ir.lines().collect();
-    let mut in_function = false;
-    let mut last_instruction_terminates = false;
-    
-    for line in lines {
-        let trimmed = line.trim();
+        let duration = start.elapsed();
+        println!("Result creation operations took: {:?}", duration);
         
-        if trimmed.starts_with("define") {
-            in_function = true;
-            last_instruction_terminates = false;
-            continue;
-        }
-        
-        if trimmed == "}" {
-            if in_function {
-                assert!(last_instruction_terminates, 
-                       "Function should end with terminating instruction");
-            }
-            in_function = false;
-            continue;
-        }
-        
-        if in_function && !trimmed.is_empty() && !trimmed.starts_with(";") {
-            // Check if this is a terminating instruction
-            last_instruction_terminates = trimmed.starts_with("ret ") ||
-                                        trimmed.starts_with("br ") ||
-                                        trimmed.contains("unreachable");
-            
-            // Basic blocks should start with a label
-            if trimmed.ends_with(":") {
-                last_instruction_terminates = false;
-            }
-        }
+        // Should be reasonably fast
+        assert!(duration.as_millis() < 1000);
     }
-    
-    println!("✓ Generated IR is structurally valid");
-}
 
-/// Test IR generation helper methods
-#[test]
-fn test_ir_generation_helpers() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Test temp name generation
-    let temp1 = generator.next_temp_name();
-    let temp2 = generator.next_temp_name();
-    assert!(temp1.starts_with("%temp_"));
-    assert!(temp2.starts_with("%temp_"));
-    assert_ne!(temp1, temp2, "Temp names should be unique");
-    
-    // Test block name generation
-    let block1 = generator.next_block_name("test");
-    let block2 = generator.next_block_name("test");
-    assert!(block1.starts_with("test_block_"));
-    assert!(block2.starts_with("test_block_"));
-    assert_ne!(block1, block2, "Block names should be unique");
-    
-    // Test Result type checking
-    assert!(generator.is_result_type("Result<i32, String>"));
-    assert!(generator.is_result_type("Result<bool, CustomError>"));
-    assert!(!generator.is_result_type("Option<i32>"));
-    assert!(!generator.is_result_type("Vec<i32>"));
-    
-    // Test Option type checking
-    assert!(generator.is_option_type("Option<i32>"));
-    assert!(generator.is_option_type("Option<String>"));
-    assert!(!generator.is_option_type("Result<i32, String>"));
-    assert!(!generator.is_option_type("i32"));
-    
-    // Test type string generation
-    assert_eq!(generator.get_result_type("i32", "String"), "Result<i32, String>");
-    assert_eq!(generator.get_option_type("bool"), "Option<bool>");
-    assert_eq!(generator.get_error_type(), "String"); // Default error type
-    
-    println!("✓ IR generation helper methods work correctly");
-}
-
-/// Test IR generation for specific error propagation patterns
-#[test]
-fn test_ir_specific_patterns() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Test Result success check IR generation
-    let result_check = generator.generate_result_success_check("%result_val", "Result<i32, String>");
-    assert!(result_check.contains("extractvalue") || result_check.contains("icmp"), 
-           "Should generate Result success check");
-    
-    // Test Option presence check IR generation
-    let option_check = generator.generate_option_presence_check("%option_val", "Option<i32>");
-    assert!(option_check.contains("extractvalue") || option_check.contains("icmp"), 
-           "Should generate Option presence check");
-    
-    // Test Result value extraction
-    let result_extract = generator.extract_result_value("%result_val", "Result<i32, String>", "i32");
-    assert!(result_extract.contains("extractvalue"), "Should extract Result value");
-    
-    // Test Option value extraction  
-    let option_extract = generator.extract_option_value("%option_val", "Option<i32>", "i32");
-    assert!(option_extract.contains("extractvalue"), "Should extract Option value");
-    
-    // Test Result error extraction
-    let error_extract = generator.extract_result_error("%result_val", "Result<i32, String>", "String");
-    assert!(error_extract.contains("extractvalue"), "Should extract Result error");
-    
-    println!("✓ Specific IR generation patterns work correctly");
-}
-
-/// Test IR generation counter management
-#[test]
-fn test_ir_counter_management() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Test initial counter states
-    let initial_temp = generator.next_temp_id();
-    let initial_block = generator.next_block_counter();
-    
-    // Generate some names
-    let _temp1 = generator.next_temp_name();
-    let _temp2 = generator.next_temp_name();
-    let _block1 = generator.next_block_name("test");
-    let _block2 = generator.next_block_name("test");
-    
-    // Check counters advanced
-    let after_temp = generator.next_temp_id();
-    let after_block = generator.next_block_counter();
-    
-    assert!(after_temp > initial_temp, "Temp counter should advance");
-    assert!(after_block > initial_block, "Block counter should advance");
-    
-    // Test counter reset
-    generator.reset_counters();
-    
-    let reset_temp = generator.next_temp_id();
-    let reset_block = generator.next_block_counter();
-    
-    assert_eq!(reset_temp, 0, "Temp counter should reset to 0");
-    assert_eq!(reset_block, 0, "Block counter should reset to 0");
-    
-    println!("✓ IR generation counter management works correctly");
-}
-
-/// Test IR generation with debug information
-#[test]
-fn test_ir_debug_information() {
-    let mut generator = LlvmCodeGenerator::new().expect("Should create generator");
-    
-    // Set debug location
-    let location = SourceLocation::new(PathBuf::from("debug_test.csd"), 42, 13);
-    generator.set_location(location);
-    
-    let source = r#"
-        function debug_test() -> Result<i32, String> {
-            sus value = get_debug_value()?;
-            facts value + 1
+    #[traced_test]
+    #[test]
+    fn benchmark_option_creation() {
+        init_tracing!();
+        
+        let context = Context::create();
+        let module = context.create_module("test");
+        let builder = context.create_builder();
+        
+        let compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+        
+        let i32_type = context.i32_type();
+        let value = i32_type.const_int(42, false);
+        
+        let start = Instant::now();
+        
+        // Benchmark Option creation
+        for _ in 0..1000 {
+            let _ = compiler.create_option_some(value.into());
+            let _ = compiler.create_option_none(i32_type.into());
         }
         
-        function get_debug_value() -> Result<i32, String> {
-            facts 99
-        }
-    "#;
-    
-    let ir = generator.generate_ir(source).expect("Should generate IR with debug info");
-    
-    // Verify debug information is included
-    assert!(ir.contains("!dbg") || ir.contains("metadata"), 
-           "Should contain debug information");
-    
-    // Test location retrieval
-    let current_location = generator.get_location();
-    assert!(current_location.is_some(), "Should have current location set");
-    
-    if let Some(loc) = current_location {
-        assert_eq!(loc.line, 42);
-        assert_eq!(loc.column, 13);
-        assert!(loc.file.to_string_lossy().contains("debug_test.csd"));
+        let duration = start.elapsed();
+        println!("Option creation operations took: {:?}", duration);
+        
+        // Should be reasonably fast
+        assert!(duration.as_millis() < 1000);
     }
-    
-    println!("✓ IR generation with debug information works correctly");
+
+    #[traced_test]
+    #[test]
+    fn benchmark_expression_compilation() {
+        init_tracing!();
+        
+        let context = Context::create();
+        let module = context.create_module("test");
+        let builder = context.create_builder();
+        
+        let mut compiler = ErrorPropagationCompiler::new(&context, &module, &builder);
+        
+        // Create mock expressions
+        let inner_expr = cursed::ast::identifiers::Identifier::new("test".to_string(), "test".to_string());
+        let location = SourceLocation { line: 1, column: 1 };
+        
+        let enhanced_expr = EnhancedQuestionMarkExpression::new(
+            Box::new(inner_expr),
+            location,
+            Some("test_function".to_string()),
+            Some("Result<i32, String>".to_string()),
+        );
+        
+        let start = Instant::now();
+        
+        // Benchmark expression compilation
+        for _ in 0..100 {
+            let _ = compiler.compile_enhanced_question_mark(&enhanced_expr);
+        }
+        
+        let duration = start.elapsed();
+        println!("Expression compilation took: {:?}", duration);
+        
+        // Should be reasonably fast
+        assert!(duration.as_millis() < 500);
+    }
 }

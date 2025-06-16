@@ -784,16 +784,125 @@ impl PerformanceMonitor {
     
     /// Load baseline metrics from file
     fn load_baseline_metrics(&self, path: &PathBuf) -> Result<()> {
-        // TODO: Implement file loading
         info!("Loading baseline metrics from: {:?}", path);
+        
+        if !path.exists() {
+            warn!("Baseline metrics file does not exist: {:?}", path);
+            return Ok(());
+        }
+        
+        match std::fs::read_to_string(path) {
+            Ok(content) => {
+                match serde_json::from_str::<BaselineMetrics>(&content) {
+                    Ok(loaded_baseline) => {
+                        if let Ok(mut baseline) = self.baseline_metrics.write() {
+                            *baseline = loaded_baseline;
+                            info!("Successfully loaded baseline metrics with {} samples", baseline.sample_count);
+                        } else {
+                            return Err(Error::Other("Failed to acquire baseline metrics lock".to_string()));
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Failed to parse baseline metrics JSON: {}", e);
+                        return Err(Error::Other(format!("Invalid baseline metrics format: {}", e)));
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Failed to read baseline metrics file: {}", e);
+                return Err(Error::Other(format!("File read error: {}", e)));
+            }
+        }
+        
         Ok(())
     }
     
     /// Save baseline metrics to file
     pub fn save_baseline_metrics(&self, path: &PathBuf) -> Result<()> {
-        // TODO: Implement file saving
         info!("Saving baseline metrics to: {:?}", path);
+        
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| Error::Other(format!("Failed to create directory: {}", e)))?;
+            }
+        }
+        
+        let baseline = self.baseline_metrics.read()
+            .map_err(|_| Error::Other("Failed to acquire baseline metrics lock".to_string()))?;
+        
+        let json_content = serde_json::to_string_pretty(&*baseline)
+            .map_err(|e| Error::Other(format!("Failed to serialize baseline metrics: {}", e)))?;
+        
+        std::fs::write(path, json_content)
+            .map_err(|e| Error::Other(format!("Failed to write baseline metrics file: {}", e)))?;
+        
+        info!("Successfully saved baseline metrics with {} samples", baseline.sample_count);
         Ok(())
+    }
+    
+    /// Export performance report to file
+    pub fn export_performance_report(&self, path: &PathBuf) -> Result<()> {
+        let report = self.generate_performance_report()?;
+        
+        // Create parent directory if needed
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| Error::Other(format!("Failed to create directory: {}", e)))?;
+            }
+        }
+        
+        let json_content = serde_json::to_string_pretty(&report)
+            .map_err(|e| Error::Other(format!("Failed to serialize performance report: {}", e)))?;
+        
+        std::fs::write(path, json_content)
+            .map_err(|e| Error::Other(format!("Failed to write performance report: {}", e)))?;
+        
+        info!("Exported performance report to: {:?}", path);
+        Ok(())
+    }
+    
+    /// Import performance samples from file
+    pub fn import_performance_samples(&self, path: &PathBuf) -> Result<usize> {
+        info!("Importing performance samples from: {:?}", path);
+        
+        if !path.exists() {
+            return Err(Error::Other(format!("Import file does not exist: {:?}", path)));
+        }
+        
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| Error::Other(format!("Failed to read import file: {}", e)))?;
+        
+        let imported_samples: Vec<PerformanceSample> = serde_json::from_str(&content)
+            .map_err(|e| Error::Other(format!("Failed to parse performance samples: {}", e)))?;
+        
+        let import_count = imported_samples.len();
+        
+        if let Ok(mut samples) = self.samples.lock() {
+            for sample in imported_samples {
+                samples.push_back(sample);
+            }
+            
+            // Maintain retention policy
+            let retention_cutoff = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .saturating_sub(self.config.history_retention_days as u64 * 24 * 3600);
+            
+            while let Some(front) = samples.front() {
+                if front.timestamp < retention_cutoff {
+                    samples.pop_front();
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        info!("Successfully imported {} performance samples", import_count);
+        Ok(import_count)
     }
     
     /// Get current performance statistics

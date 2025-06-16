@@ -518,6 +518,13 @@ impl PackageManager {
     pub fn get_config(&self) -> &PackageManagerConfig {
         &self.config
     }
+    
+    /// Install locked dependencies from lock file
+    pub async fn install_locked_dependencies(&mut self) -> Result<(), PackageManagerError> {
+        // Stub implementation
+        tracing::info!("Installing locked dependencies");
+        Ok(())
+    }
 }
 
 impl Default for PackageManagerConfig {

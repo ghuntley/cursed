@@ -610,7 +610,6 @@ impl DependencyOptimizer {
 
 // Export public API
 pub use self::{
-    DependencyOptimizer,
     DependencyOptimizerConfig,
     CompilationUnit,
     AnalysisResult,

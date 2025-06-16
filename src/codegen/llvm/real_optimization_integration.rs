@@ -134,25 +134,47 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         let start_time = Instant::now();
         info!("Starting comprehensive LLVM module optimization");
         
-        // Phase 1: Pre-optimization analysis and CURSED-specific optimizations
-        self.cursed_aware_optimizer.pre_optimization_analysis(module)?;
-        
-        // Phase 2: CURSED language-specific optimizations
-        self.optimize_cursed_language_constructs(module)?;
-        
-        // Phase 3: Our custom real passes (function inlining, DCE, etc.)
-        self.real_pass_manager.optimize_module(module)?;
-        
-        // Phase 4: Built-in LLVM optimization passes
-        if let Some(ref pass_manager) = self.inkwell_pass_manager {
-            debug!("Running built-in LLVM optimization passes");
-            pass_manager.run_on(module);
+        // Validate module before optimization
+        if let Err(error_msg) = module.verify() {
+            return Err(Error::Other(format!("Module verification failed before optimization: {}", error_msg)));
         }
         
-        // Phase 5: Post-optimization cleanup and verification
-        self.cursed_aware_optimizer.post_optimization_cleanup(module)?;
+        // Phase 1: Pre-optimization analysis and CURSED-specific optimizations
+        let analysis_start = Instant::now();
+        self.cursed_aware_optimizer.pre_optimization_analysis(module)?;
+        debug!("Pre-optimization analysis completed in {:?}", analysis_start.elapsed());
         
-        // Update statistics
+        // Phase 2: CURSED language-specific optimizations
+        let cursed_opt_start = Instant::now();
+        self.optimize_cursed_language_constructs(module)?;
+        debug!("CURSED-specific optimizations completed in {:?}", cursed_opt_start.elapsed());
+        
+        // Phase 3: Our custom real passes (function inlining, DCE, etc.)
+        let custom_passes_start = Instant::now();
+        self.real_pass_manager.optimize_module(module)?;
+        debug!("Custom optimization passes completed in {:?}", custom_passes_start.elapsed());
+        
+        // Phase 4: Built-in LLVM optimization passes
+        let llvm_passes_start = Instant::now();
+        if let Some(ref pass_manager) = self.inkwell_pass_manager {
+            debug!("Running built-in LLVM optimization passes");
+            
+            // Run standard optimization passes in order
+            self.run_standard_optimization_sequence(module, pass_manager)?;
+        }
+        debug!("Built-in LLVM passes completed in {:?}", llvm_passes_start.elapsed());
+        
+        // Phase 5: Post-optimization cleanup and verification
+        let cleanup_start = Instant::now();
+        self.cursed_aware_optimizer.post_optimization_cleanup(module)?;
+        debug!("Post-optimization cleanup completed in {:?}", cleanup_start.elapsed());
+        
+        // Final verification
+        if let Err(error_msg) = module.verify() {
+            return Err(Error::Other(format!("Module verification failed after optimization: {}", error_msg)));
+        }
+        
+        // Update comprehensive statistics
         let optimization_time = start_time.elapsed();
         let real_stats = self.real_pass_manager.get_statistics();
         
@@ -165,10 +187,57 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
             stats.dead_blocks_removed += real_stats.dead_blocks_removed;
             stats.constants_propagated += real_stats.constants_propagated;
             stats.loops_unrolled += real_stats.loops_unrolled;
+            
+            // Track optimization effectiveness
+            let instruction_count_before = self.count_instructions_in_module(module);
+            let optimization_effectiveness = if instruction_count_before > 0 {
+                (real_stats.instructions_eliminated as f64 / instruction_count_before as f64) * 100.0
+            } else {
+                0.0
+            };
+            
+            info!("Optimization effectiveness: {:.2}% instruction reduction", optimization_effectiveness);
         }
         
         info!("LLVM module optimization completed in {:?}", optimization_time);
         Ok(())
+    }
+    
+    /// Run standard LLVM optimization sequence with proper ordering
+    fn run_standard_optimization_sequence(&self, module: &Module<'ctx>, pass_manager: &PassManager<Module<'ctx>>) -> Result<()> {
+        debug!("Running standard optimization sequence");
+        
+        // Run the pass manager on the module
+        let optimization_result = pass_manager.run_on(module);
+        
+        if optimization_result {
+            debug!("Standard optimization passes completed successfully");
+        } else {
+            warn!("Some standard optimization passes may have failed");
+        }
+        
+        Ok(())
+    }
+    
+    /// Count instructions in module for optimization metrics
+    fn count_instructions_in_module(&self, module: &Module<'ctx>) -> usize {
+        let mut instruction_count = 0;
+        
+        for function in module.get_functions() {
+            if function.get_first_basic_block().is_some() {
+                let mut block = function.get_first_basic_block();
+                while let Some(bb) = block {
+                    let mut instruction = bb.get_first_instruction();
+                    while let Some(_instr) = instruction {
+                        instruction_count += 1;
+                        instruction = _instr.get_next_instruction();
+                    }
+                    block = bb.get_next_basic_block();
+                }
+            }
+        }
+        
+        instruction_count
     }
     
     /// Optimize CURSED language-specific constructs

@@ -108,26 +108,42 @@ impl Default for OptimizationCliConfig {
         profiles.insert("systems".to_string(), ProjectProfile::systems());
         profiles.insert("ml".to_string(), ProjectProfile::ml());
         profiles.insert("game".to_string(), ProjectProfile::game());
+        profiles.insert("release".to_string(), ProjectProfile::release());
+        profiles.insert("dev".to_string(), ProjectProfile::dev());
         
         Self {
-            default_level: OptimizationLevel::O2,
+            default_level: OptimizationLevel::O3, // Changed to O3 for aggressive optimization by default
             enabled_passes: vec![
                 "inline".to_string(),
+                "aggressive-inline".to_string(), // Added aggressive inlining
                 "dce".to_string(),
                 "mem2reg".to_string(),
                 "gvn".to_string(),
+                "loop-unroll".to_string(), // Added loop unrolling
+                "vectorize".to_string(), // Added vectorization
+                "slp-vectorize".to_string(), // Added SLP vectorization
+                "math-optimize".to_string(), // Added math optimization
+                "pgo-optimize".to_string(), // Added PGO optimization
             ],
             disabled_passes: vec![],
-            custom_params: HashMap::new(),
+            custom_params: {
+                let mut params = HashMap::new();
+                params.insert("lto".to_string(), "true".to_string()); // Enable LTO by default
+                params.insert("parallel".to_string(), "true".to_string());
+                params.insert("target-cpu".to_string(), "native".to_string()); // Use native CPU
+                params.insert("pgo-path".to_string(), "target/pgo-data".to_string()); // Default PGO path
+                params.insert("enhanced-passes".to_string(), "true".to_string()); // Enable enhanced passes
+                params
+            },
             benchmark_config: BenchmarkConfig {
-                iterations: 5,
-                timeout_seconds: 300,
-                warmup_iterations: 2,
+                iterations: 10, // Increased for better accuracy
+                timeout_seconds: 600, // Increased timeout for aggressive optimization
+                warmup_iterations: 3, // Increased warmup
                 test_files: vec![],
             },
             profiling_config: ProfilingConfig {
                 detailed_timing: true,
-                memory_tracking: false,
+                memory_tracking: true, // Enable memory tracking by default
                 sample_rate: 1000,
                 output_format: "markdown".to_string(),
             },
@@ -279,6 +295,86 @@ impl ProjectProfile {
                 lto: false,
                 target_cpu: Some("x86-64-v3".to_string()),
                 target_features: vec!["sse4.2".to_string(), "popcnt".to_string()],
+            },
+        }
+    }
+    
+    /// Release profile - maximum performance optimization (new default)
+    pub fn release() -> Self {
+        Self {
+            name: "release".to_string(),
+            description: "Maximum performance optimization - aggressive settings for production".to_string(),
+            optimization_level: OptimizationLevel::O3,
+            enabled_passes: vec![
+                "inline".to_string(),
+                "aggressive-inline".to_string(),
+                "dce".to_string(),
+                "mem2reg".to_string(),
+                "gvn".to_string(),
+                "loop-unroll".to_string(),
+                "vectorize".to_string(),
+                "slp-vectorize".to_string(),
+                "math-optimize".to_string(),
+                "pgo-optimize".to_string(),
+                "interprocedural".to_string(),
+            ],
+            disabled_passes: vec![],
+            parameters: {
+                let mut params = HashMap::new();
+                params.insert("inline-threshold".to_string(), "1000".to_string());
+                params.insert("performance-priority".to_string(), "true".to_string());
+                params.insert("pgo-enabled".to_string(), "true".to_string());
+                params.insert("lto-mode".to_string(), "fat".to_string());
+                params
+            },
+            build_config: BuildConfig {
+                parallel: true,
+                jobs: None,
+                incremental: false, // Disable for maximum optimization
+                lto: true,
+                target_cpu: Some("native".to_string()),
+                target_features: vec![
+                    "sse4.2".to_string(), 
+                    "popcnt".to_string(),
+                    "avx".to_string(),
+                    "avx2".to_string(),
+                    "fma".to_string()
+                ],
+            },
+        }
+    }
+    
+    /// Development profile - fast compilation for debugging
+    pub fn dev() -> Self {
+        Self {
+            name: "dev".to_string(),
+            description: "Fast compilation for development - minimal optimization".to_string(),
+            optimization_level: OptimizationLevel::O1,
+            enabled_passes: vec![
+                "mem2reg".to_string(),
+                "dce".to_string(),
+                "gvn".to_string(),
+            ],
+            disabled_passes: vec![
+                "aggressive-inline".to_string(),
+                "loop-unroll".to_string(),
+                "vectorize".to_string(),
+                "pgo-optimize".to_string(),
+            ],
+            parameters: {
+                let mut params = HashMap::new();
+                params.insert("inline-threshold".to_string(), "25".to_string());
+                params.insert("debug-mode".to_string(), "true".to_string());
+                params.insert("fast-compile".to_string(), "true".to_string());
+                params
+            },
+            build_config: BuildConfig {
+                parallel: true,
+                jobs: Some(4),
+                incremental: true, // Enable for faster builds
+                lto: false, // Disable for faster linking
+                target_cpu: None,
+                target_features: vec![],
             },
         }
     }
@@ -587,7 +683,32 @@ pub fn add_optimization_commands(cmd: Command) -> Command {
                     Arg::new("disable-enhanced-passes")
                         .long("disable-enhanced-passes")
                         .action(ArgAction::SetTrue)
-                        .help("Disable enhanced LLVM optimization passes")
+                        .help("Disable enhanced LLVM optimization passes (enabled by default)")
+                )
+                .arg(
+                    Arg::new("disable-pgo")
+                        .long("disable-pgo")
+                        .action(ArgAction::SetTrue)
+                        .help("Disable profile-guided optimization (enabled by default)")
+                )
+                .arg(
+                    Arg::new("disable-lto")
+                        .long("disable-lto")
+                        .action(ArgAction::SetTrue)
+                        .help("Disable link-time optimization (enabled by default)")
+                )
+                .arg(
+                    Arg::new("pgo-path")
+                        .long("pgo-path")
+                        .value_name("PATH")
+                        .help("Path to profile-guided optimization data")
+                        .default_value("target/pgo-data")
+                )
+                .arg(
+                    Arg::new("dev-mode")
+                        .long("dev-mode")
+                        .action(ArgAction::SetTrue)
+                        .help("Use development optimization profile (fast compilation)")
                 )
         )
         .subcommand(

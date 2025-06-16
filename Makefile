@@ -46,9 +46,375 @@ BLUE := \033[34m
 MAGENTA := \033[35m
 CYAN := \033[36m
 
+# Optimization System Integration
+# =============================================================================
+
+# Optimization test targets
+.PHONY: optimization-test optimization-test-quick optimization-test-all
+.PHONY: optimization-test-unit optimization-test-integration optimization-test-stress 
+.PHONY: optimization-test-performance optimization-test-regression
+.PHONY: optimization-test-coverage optimization-test-report optimization-help
+
+# Performance optimization test targets
+.PHONY: performance-test performance-test-quick performance-test-all
+.PHONY: performance-test-gc performance-test-conversions performance-test-channels
+.PHONY: performance-test-comprehensive performance-test-coverage performance-test-report
+.PHONY: performance-help
+
+# Error Propagation System Integration
+# =============================================================================
+
+# Error propagation test targets
+.PHONY: error-propagation-test error-propagation-test-quick error-propagation-test-all
+.PHONY: error-propagation-test-integration error-propagation-test-llvm
+.PHONY: error-propagation-test-parser error-propagation-test-coverage
+.PHONY: error-propagation-help
+
+# Quick optimization validation tests
+optimization-test-quick:
+	@echo "$(CYAN)Running quick optimization tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --quick
+
+# Standard optimization test suite
+optimization-test:
+	@echo "$(CYAN)Running standard optimization tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh
+
+# Complete optimization test suite (including stress tests)
+optimization-test-all:
+	@echo "$(CYAN)Running complete optimization test suite...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --ignored
+
+# Individual optimization test categories
+optimization-test-unit:
+	@echo "$(CYAN)Running optimization unit tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --test unit
+
+optimization-test-integration:
+	@echo "$(CYAN)Running optimization integration tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --test integration
+
+optimization-test-stress:
+	@echo "$(CYAN)Running optimization stress tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --test stress --ignored
+
+optimization-test-performance:
+	@echo "$(CYAN)Running optimization performance tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --test performance --ignored
+
+optimization-test-regression:
+	@echo "$(CYAN)Running optimization regression tests...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --test regression
+
+# Optimization test coverage and reporting
+optimization-test-coverage:
+	@echo "$(CYAN)Generating optimization test coverage...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --coverage --report
+
+optimization-test-report:
+	@echo "$(CYAN)Generating optimization test report...$(RESET)"
+	$(AT)./tests/run_optimization_tests.sh --report --verbose
+
+# New optimization system tests
+test-optimization-baseline:
+	@echo "$(CYAN)Running optimization baseline comparison tests...$(RESET)"
+	$(FIX_LINKING) cargo test --test optimization_baseline_comparison_test
+
+test-optimization-time-savings:
+	@echo "$(CYAN)Running optimization time savings tests...$(RESET)"
+	$(FIX_LINKING) cargo test --test optimization_time_savings_test
+
+test-optimization-complete:
+	@echo "$(CYAN)Running complete optimization system tests...$(RESET)"
+	$(FIX_LINKING) cargo test --test optimization_baseline_comparison_test
+	$(FIX_LINKING) cargo test --test optimization_time_savings_test
+
+# LTO optimization testing targets
+test-lto:
+	@echo "$(CYAN)Running LTO optimization integration tests...$(RESET)"
+	$(FIX_LINKING) cargo test --test lto_optimization_integration_test
+
+test-lto-verbose:
+	@echo "$(CYAN)Running LTO optimization tests with verbose output...$(RESET)"
+	$(FIX_LINKING) cargo test --test lto_optimization_integration_test -- --nocapture
+
+test-lto-ignored:
+	@echo "$(CYAN)Running ignored LTO optimization tests...$(RESET)"
+	$(FIX_LINKING) cargo test --test lto_optimization_integration_test -- --ignored
+
+# Run optimization examples
+demo-optimization:
+	@echo "$(CYAN)Running optimization system demo...$(RESET)"
+	$(FIX_LINKING) cargo run --example optimization_usage_demo
+
+# Optimization system help
+# Performance optimization test targets
+performance-test-quick:
+	@echo "$(CYAN)Running quick performance validation tests...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --quick
+
+performance-test:
+	@echo "$(CYAN)Running standard performance optimization tests...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh
+
+performance-test-all:
+	@echo "$(CYAN)Running complete performance optimization test suite...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --full
+
+performance-test-gc:
+	@echo "$(CYAN)Running GC performance tests...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --test gc
+
+performance-test-conversions:
+	@echo "$(CYAN)Running type conversion performance tests...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --test type_conversion
+
+performance-test-channels:
+	@echo "$(CYAN)Running channels performance tests...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --test channels
+
+performance-test-comprehensive:
+	@echo "$(CYAN)Running comprehensive optimization tests...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --test comprehensive
+
+performance-test-coverage:
+	@echo "$(CYAN)Generating performance test coverage...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --coverage --report performance_coverage.md
+
+performance-test-report:
+	@echo "$(CYAN)Generating performance test report...$(RESET)"
+	$(AT)./scripts/run_performance_optimization_tests.sh --report performance_report.md --verbose
+
+performance-help:
+	@echo "$(CYAN)Performance Optimization Test Targets:$(RESET)"
+	@echo "  $(GREEN)performance-test-quick$(RESET)         - Quick performance validation"
+	@echo "  $(GREEN)performance-test$(RESET)               - Standard performance test suite"
+	@echo "  $(GREEN)performance-test-all$(RESET)           - Complete performance test suite"
+	@echo "  $(GREEN)performance-test-gc$(RESET)            - GC performance tests"
+	@echo "  $(GREEN)performance-test-conversions$(RESET)   - Type conversion performance tests"
+	@echo "  $(GREEN)performance-test-channels$(RESET)      - Channel performance tests"
+	@echo "  $(GREEN)performance-test-comprehensive$(RESET) - Comprehensive optimization tests"
+	@echo "  $(GREEN)performance-test-coverage$(RESET)      - Generate coverage report"
+	@echo "  $(GREEN)performance-test-report$(RESET)        - Generate detailed test report"
+	@echo "  $(GREEN)performance-help$(RESET)               - Show this help message"
+
+optimization-help:
+	@echo "$(CYAN)Optimization System Test Targets:$(RESET)"
+	@echo "  $(GREEN)optimization-test-quick$(RESET)      - Quick validation tests"
+	@echo "  $(GREEN)optimization-test$(RESET)            - Standard test suite"
+	@echo "  $(GREEN)optimization-test-all$(RESET)        - Complete test suite with stress tests"
+	@echo "  $(GREEN)optimization-test-unit$(RESET)       - Unit tests for optimization components"
+	@echo "  $(GREEN)optimization-test-integration$(RESET) - Integration tests for complete pipeline"
+	@echo "  $(GREEN)optimization-test-stress$(RESET)     - Stress tests under extreme conditions"
+	@echo "  $(GREEN)optimization-test-performance$(RESET) - Performance benchmarking tests"
+	@echo "  $(GREEN)optimization-test-regression$(RESET) - Regression detection tests"
+	@echo "  $(GREEN)optimization-test-coverage$(RESET)   - Generate coverage report"
+	@echo "  $(GREEN)optimization-test-report$(RESET)     - Generate detailed test report"
+	@echo "  $(GREEN)test-optimization-baseline$(RESET)   - Test baseline comparison system"
+	@echo "  $(GREEN)test-optimization-time-savings$(RESET) - Test time savings calculations"
+	@echo "  $(GREEN)test-optimization-complete$(RESET)   - Test complete optimization system"
+	@echo "  $(GREEN)demo-optimization$(RESET)            - Run optimization demo"
+	@echo "  $(GREEN)optimization-help$(RESET)            - Show this help message"
+
 # Performance Optimization Integration
 # =============================================================================
+
+# Optimization Configuration
+OPT_LEVEL ?= release
+OPT_FLAGS ?= --enable-enhanced-passes --enable-lto --enable-pgo
+BENCHMARK_ITERATIONS ?= 5
+BENCHMARK_WARMUP ?= 2
+
+# Optimization targets
+.PHONY: optimize-build optimize-benchmark optimize-profile optimize-validate
+.PHONY: optimization-report optimization-help
+
+# Enhanced optimization build with maximum performance
+optimize-build: ## Build with maximum optimization (enhanced passes, LTO, PGO)
+	@echo -e "$(CYAN)Building CURSED with enhanced optimization...$(RESET)"
+	$(AT)$(CARGO_CMD) build --release $(OPT_FLAGS) $(V)
+	@echo -e "$(GREEN)✓ Enhanced optimization build completed$(RESET)"
+
+# Run comprehensive optimization benchmarks
+optimize-benchmark: ## Run performance benchmarks to validate optimizations
+	@echo -e "$(CYAN)Running optimization performance benchmarks...$(RESET)"
+	$(AT)./scripts/run_optimization_benchmarks.sh -i $(BENCHMARK_ITERATIONS) -w $(BENCHMARK_WARMUP) $(V)
+	@echo -e "$(GREEN)✓ Benchmark suite completed$(RESET)"
+
+# Run optimization benchmarks with baseline comparison
+optimize-benchmark-compare: ## Run benchmarks and compare with baseline
+	@echo -e "$(CYAN)Running benchmarks with baseline comparison...$(RESET)"
+	$(AT)if [ -f "benchmark_results/baseline.json" ]; then \
+		./scripts/run_optimization_benchmarks.sh -c benchmark_results/baseline.json; \
+	else \
+		echo -e "$(YELLOW)⚠ No baseline found, running standard benchmarks$(RESET)"; \
+		make optimize-benchmark; \
+	fi
+
+# Create performance baseline
+optimize-baseline: ## Create performance baseline for regression testing
+	@echo -e "$(CYAN)Creating performance baseline...$(RESET)"
+	$(AT)./scripts/run_optimization_benchmarks.sh --baseline $(V)
+	@echo -e "$(GREEN)✓ Performance baseline created$(RESET)"
+
+# Profile optimization performance
+optimize-profile: ## Profile the optimization system performance
+	@echo -e "$(CYAN)Profiling optimization performance...$(RESET)"
+	$(AT)$(CARGO_CMD) test --release optimization --features profiling -- --nocapture $(V)
+	@echo -e "$(GREEN)✓ Optimization profiling completed$(RESET)"
+
+# Validate optimization improvements
+optimize-validate: ## Validate that optimizations meet performance expectations
+	@echo -e "$(CYAN)Validating optimization performance...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test optimization_performance_test --release $(V)
+	@echo -e "$(GREEN)✓ Optimization validation completed$(RESET)"
+
+# Generate optimization analysis report
+optimization-report: ## Generate comprehensive optimization analysis report
+	@echo -e "$(CYAN)Generating optimization analysis report...$(RESET)"
+	$(AT)mkdir -p $(OUTPUT_DIR)
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize analyze --format markdown \
+		--output $(OUTPUT_DIR)/optimization_report.md benchmarks/ 2>/dev/null || \
+		echo -e "$(YELLOW)⚠ CLI analysis not available, generating basic report$(RESET)"
+	@echo -e "$(GREEN)✓ Optimization report generated in $(OUTPUT_DIR)/$(RESET)"
+
+# CLI optimization commands
+optimize-interactive: ## Run interactive optimization wizard
+	@echo -e "$(CYAN)Starting interactive optimization wizard...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize interactive $(V)
+
+optimize-config-show: ## Show current optimization configuration
+	@echo -e "$(CYAN)Current optimization configuration:$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize config --show 2>/dev/null || \
+		echo -e "$(YELLOW)⚠ CLI not available, showing default configuration$(RESET)"
+
+optimize-enable-enhanced: ## Enable enhanced optimization passes
+	@echo -e "$(CYAN)Enabling enhanced optimization passes...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize enable aggressive-inline,vectorize,loop-unroll,math-optimize --global
+
+optimize-disable-enhanced: ## Disable enhanced optimization passes for debugging
+	@echo -e "$(CYAN)Disabling enhanced optimization passes...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize disable aggressive-inline,vectorize,loop-unroll --global
+
+optimize-reset-config: ## Reset optimization configuration to defaults
+	@echo -e "$(CYAN)Resetting optimization configuration...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize reset --global --confirm
+
+# Development vs Release optimization profiles
+optimize-dev: ## Configure for development (fast compilation)
+	@echo -e "$(CYAN)Configuring for development optimization...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize apply --profile dev --dev-mode
+
+optimize-release: ## Configure for release (maximum performance)
+	@echo -e "$(CYAN)Configuring for release optimization...$(RESET)"
+	$(AT)$(CARGO_CMD) run --bin cursed -- optimize apply --profile release --aggressive
+
+# Performance regression testing
+optimize-regression-test: ## Run performance regression tests
+	@echo -e "$(CYAN)Running performance regression tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test optimization_performance_test -- --ignored $(V)
+	@echo -e "$(GREEN)✓ Performance regression tests completed$(RESET)"
+
+# Quick optimization validation
+optimize-quick: ## Quick optimization validation (fast benchmarks)
+	@echo -e "$(CYAN)Running quick optimization validation...$(RESET)"
+	$(AT)./scripts/run_optimization_benchmarks.sh -i 2 -w 1 --timeout 60
+	@echo -e "$(GREEN)✓ Quick validation completed$(RESET)"
+
+# Help for optimization targets
+optimization-help: ## Show detailed help for optimization targets
+	@echo -e "$(BOLD)$(CYAN)CURSED Optimization System Help$(RESET)"
+	@echo -e "$(BOLD)================================$(RESET)"
+	@echo ""
+	@echo -e "$(BOLD)Enhanced Optimization Features:$(RESET)"
+	@echo -e "  • Aggressive optimization (O3) enabled by default"
+	@echo -e "  • Enhanced LLVM passes (vectorization, loop unrolling, aggressive inlining)"
+	@echo -e "  • Link-time optimization (LTO) enabled by default"
+	@echo -e "  • Profile-guided optimization (PGO) when data available"
+	@echo -e "  • CURSED-specific optimizations for language constructs"
+	@echo ""
+	@echo -e "$(BOLD)Quick Start:$(RESET)"
+	@echo -e "  make optimize-build      # Build with maximum optimization"
+	@echo -e "  make optimize-benchmark  # Validate performance improvements"
+	@echo -e "  make optimize-validate   # Run performance tests"
+	@echo ""
+	@echo -e "$(BOLD)Development Workflow:$(RESET)"
+	@echo -e "  make optimize-dev        # Fast compilation for development"
+	@echo -e "  make optimize-release    # Maximum performance for production"
+	@echo -e "  make optimize-quick      # Quick performance check"
+	@echo ""
+	@echo -e "$(BOLD)Performance Analysis:$(RESET)"
+	@echo -e "  make optimize-baseline   # Create performance baseline"
+	@echo -e "  make optimize-profile    # Profile optimization system"
+	@echo -e "  make optimization-report # Generate analysis report"
+	@echo ""
+	@echo -e "$(BOLD)Configuration Management:$(RESET)"
+	@echo -e "  make optimize-config-show      # Show current settings"
+	@echo -e "  make optimize-enable-enhanced  # Enable enhanced passes"
+	@echo -e "  make optimize-disable-enhanced # Disable for debugging"
+	@echo -e "  make optimize-interactive      # Interactive configuration"
+	@echo ""
+	@echo -e "$(BOLD)Regression Testing:$(RESET)"
+	@echo -e "  make optimize-regression-test  # Run regression tests"
+	@echo -e "  make optimize-benchmark-compare # Compare with baseline"
+	@echo ""
+
+# Performance Optimization Integration
 include Makefile.performance
+
+# Error Propagation Test Implementation
+# =============================================================================
+
+# Quick error propagation validation tests
+error-propagation-test-quick: ## Quick error propagation validation tests
+	@echo "$(CYAN)Running quick error propagation tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test error_propagation_integration_test
+
+# Standard error propagation test suite
+error-propagation-test: ## Standard error propagation test suite
+	@echo "$(CYAN)Running error propagation tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test error_propagation_integration_test
+	$(AT)$(CARGO_CMD) test --test error_propagation_llvm_test
+
+# Complete error propagation test suite
+error-propagation-test-all: ## Complete error propagation test suite
+	@echo "$(CYAN)Running complete error propagation test suite...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test error_propagation_integration_test
+	$(AT)$(CARGO_CMD) test --test error_propagation_llvm_test
+	$(AT)$(CARGO_CMD) test --lib parser::error_propagation::tests
+
+# Integration tests for error propagation parsing
+error-propagation-test-integration: ## Error propagation integration tests
+	@echo "$(CYAN)Running error propagation integration tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test error_propagation_integration_test
+
+# LLVM code generation tests for error propagation
+error-propagation-test-llvm: ## Error propagation LLVM tests
+	@echo "$(CYAN)Running error propagation LLVM tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test error_propagation_llvm_test
+
+# Parser tests for error propagation
+error-propagation-test-parser: ## Error propagation parser tests
+	@echo "$(CYAN)Running error propagation parser tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test --lib parser::error_propagation::tests
+
+# Error propagation test coverage
+error-propagation-test-coverage: ## Generate error propagation test coverage
+	@echo "$(CYAN)Generating error propagation test coverage...$(RESET)"
+	$(AT)$(CARGO_CMD) tarpaulin --out Html --output-dir $(COVERAGE_DIR) \
+		--tests error_propagation_integration_test,error_propagation_llvm_test \
+		--lib parser::error_propagation,codegen::llvm::error_propagation
+
+# Error propagation help
+error-propagation-help: ## Show error propagation test help
+	@echo "$(CYAN)Error Propagation Test Help:$(RESET)"
+	@echo "  error-propagation-test-quick      - Quick validation tests"
+	@echo "  error-propagation-test           - Standard test suite"
+	@echo "  error-propagation-test-all       - Complete test suite"
+	@echo "  error-propagation-test-integration - Integration tests"
+	@echo "  error-propagation-test-llvm      - LLVM code generation tests"
+	@echo "  error-propagation-test-parser    - Parser unit tests"
+	@echo "  error-propagation-test-coverage  - Generate test coverage report"
 
 # Core Build Targets
 # =============================================================================
@@ -231,6 +597,57 @@ bench-optimization-passes-baseline: build ## Create performance baseline for opt
 bench-optimization-passes-compare: build ## Compare optimization pass performance against baseline
 	$(AT)echo -e "$(YELLOW)📈 Comparing optimization pass performance...$(RESET)"
 	$(AT)$(CARGO_CMD) bench --bench optimization_passes_bench -- --load-baseline optimization_baseline
+
+# Advanced LLVM Integration Testing
+# =============================================================================
+.PHONY: advanced-llvm-test advanced-llvm-test-quick advanced-llvm-test-all
+.PHONY: advanced-llvm-benchmark advanced-llvm-help
+
+advanced-llvm-test: build ## Run advanced LLVM integration tests
+	$(AT)echo -e "$(BLUE)🔧 Running Advanced LLVM Integration Tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) --test advanced_llvm_integration_test
+
+advanced-llvm-test-quick: build ## Run quick advanced LLVM integration tests
+	$(AT)echo -e "$(BLUE)🔧 Running Quick Advanced LLVM Integration Tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) --test advanced_llvm_integration_test test_instruction_cloner_creation test_cfg_manipulator_creation test_function_inlining_validation
+
+advanced-llvm-test-all: build ## Run all advanced LLVM tests including comprehensive
+	$(AT)echo -e "$(BLUE)🔧 Running All Advanced LLVM Integration Tests...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) --test advanced_llvm_integration_test
+	$(AT)echo -e "$(GREEN)✅ Advanced LLVM Integration Tests Complete$(RESET)"
+
+advanced-llvm-benchmark: build ## Run advanced LLVM performance benchmarks
+	$(AT)echo -e "$(YELLOW)⚡ Running Advanced LLVM Performance Benchmarks...$(RESET)"
+	$(AT)$(CARGO_CMD) test $(V) --test advanced_llvm_integration_test test_performance_benchmarks --release
+
+advanced-llvm-test-verbose: build ## Run advanced LLVM tests with verbose output
+	$(AT)echo -e "$(BLUE)🔧 Running Advanced LLVM Tests (verbose)...$(RESET)"
+	$(AT)$(CARGO_CMD) test --test advanced_llvm_integration_test -- --nocapture
+
+advanced-llvm-help: ## Show advanced LLVM integration help
+	$(AT)echo -e "$(CYAN)$(BOLD)Advanced LLVM Integration Test Commands$(RESET)"
+	$(AT)echo ""
+	$(AT)echo -e "$(YELLOW)Available targets:$(RESET)"
+	$(AT)echo "  advanced-llvm-test           - Run all advanced LLVM integration tests"
+	$(AT)echo "  advanced-llvm-test-quick     - Run quick validation tests"
+	$(AT)echo "  advanced-llvm-test-all       - Run comprehensive test suite"
+	$(AT)echo "  advanced-llvm-benchmark      - Run performance benchmark tests"
+	$(AT)echo "  advanced-llvm-test-verbose   - Run tests with detailed output"
+	$(AT)echo "  advanced-llvm-help           - Show this help"
+	$(AT)echo ""
+	$(AT)echo -e "$(YELLOW)What gets tested:$(RESET)"
+	$(AT)echo "  • Instruction cloning and CFG manipulation"
+	$(AT)echo "  • Function inlining validation and execution"
+	$(AT)echo "  • Loop detection and vectorization analysis"
+	$(AT)echo "  • Memory safety and error handling"
+	$(AT)echo "  • Performance benchmarks and optimization"
+	$(AT)echo "  • Integration with real LLVM optimization passes"
+	$(AT)echo ""
+	$(AT)echo -e "$(YELLOW)Examples:$(RESET)"
+	$(AT)echo "  make advanced-llvm-test              # Run all tests"
+	$(AT)echo "  make advanced-llvm-test-quick        # Quick validation"
+	$(AT)echo "  make advanced-llvm-benchmark         # Performance tests"
+	$(AT)echo "  VERBOSE=1 make advanced-llvm-test    # Verbose output"
 
 test-coverage: ## Generate test coverage report
 	$(AT)echo -e "$(MAGENTA)📊 Generating coverage report...$(RESET)"
@@ -1005,7 +1422,7 @@ help: ## Show this help message
 	$(AT)echo -e "$(BOLD)Module Testing:$(RESET)"
 	$(AT)grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}' | \
-		grep -E "(math|crypto|gc|collections|type-system)" | head -10
+		grep -E "(math|crypto|gc|collections|type-system|advanced-llvm)" | head -10
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Development:$(RESET)"
 	$(AT)grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -1876,6 +2293,58 @@ compression-help:
 	@echo ""
 
 
+# Cache Optimization System Testing Commands
+# =============================================================================
+.PHONY: cache-opt-test cache-opt-test-quick cache-opt-test-integration cache-opt-test-performance cache-opt-test-all cache-opt-test-coverage cache-opt-help
+
+cache-opt-test-quick: ## Run quick cache optimization tests
+	$(AT)echo -e "$(CYAN)🗄️  Running quick cache optimization tests...$(RESET)"
+	$(LINKING_FIX) $(CARGO_CMD) test --test cache_optimization_test cache_optimization_tests::test_cache_structure_analysis
+	$(LINKING_FIX) $(CARGO_CMD) test --test cache_optimization_test cache_optimization_tests::test_stale_entry_detection
+	$(LINKING_FIX) $(CARGO_CMD) test --test cache_optimization_test cache_optimization_tests::test_duplicate_detection
+
+cache-opt-test: ## Run standard cache optimization tests
+	$(AT)echo -e "$(CYAN)🗄️  Running cache optimization tests...$(RESET)"
+	$(LINKING_FIX) $(CARGO_CMD) test --test cache_optimization_test cache_optimization_tests
+
+cache-opt-test-integration: ## Run cache optimization integration tests
+	$(AT)echo -e "$(CYAN)🔗 Running cache optimization integration tests...$(RESET)"
+	$(LINKING_FIX) $(CARGO_CMD) test --test cache_optimization_test integration_tests
+
+cache-opt-test-performance: ## Run cache optimization performance tests
+	$(AT)echo -e "$(CYAN)⚡ Running cache optimization performance tests...$(RESET)"
+	$(LINKING_FIX) $(CARGO_CMD) test --test cache_optimization_test performance_tests --release
+
+cache-opt-test-all: cache-opt-test cache-opt-test-integration cache-opt-test-performance ## Run comprehensive cache optimization tests
+	$(AT)echo -e "$(GREEN)✅ All cache optimization tests completed$(RESET)"
+
+cache-opt-test-coverage: ## Run cache optimization tests with coverage
+	$(AT)echo -e "$(CYAN)📊 Running cache optimization tests with coverage...$(RESET)"
+	$(LINKING_FIX) cargo tarpaulin --test cache_optimization_test --out Html --output-dir $(COVERAGE_DIR)/cache_optimization
+
+cache-opt-help: ## Show cache optimization testing help
+	@echo "CURSED Cache Optimization Testing Commands:"
+	@echo ""
+	@echo "  cache-opt-test-quick       - Run quick validation tests"
+	@echo "  cache-opt-test             - Run standard cache optimization tests"
+	@echo "  cache-opt-test-integration - Run integration tests"
+	@echo "  cache-opt-test-performance - Run performance tests"
+	@echo "  cache-opt-test-all         - Run comprehensive test suite"
+	@echo "  cache-opt-test-coverage    - Run tests with coverage analysis"
+	@echo "  cache-opt-help             - Show this help message"
+	@echo ""
+	@echo "Cache optimization features tested:"
+	@echo "  - Cache structure analysis and reporting"
+	@echo "  - Stale entry detection and removal"
+	@echo "  - Duplicate file detection and deduplication"
+	@echo "  - Compression candidate identification"
+	@echo "  - Fragmentation analysis and optimization"
+	@echo "  - Size limit enforcement and cleanup"
+	@echo "  - Cache metadata management"
+	@echo "  - Performance monitoring and statistics"
+	@echo ""
+
+
 # Post-Quantum Cryptography Hybrid System Testing Commands
 # =============================================================================
 .PHONY: pqc-hybrid-test-quick pqc-hybrid-test pqc-hybrid-test-all pqc-hybrid-test-integration pqc-hybrid-test-security pqc-hybrid-test-performance pqc-hybrid-example pqc-hybrid-build-check pqc-hybrid-doc pqc-hybrid-help
@@ -1933,4 +2402,234 @@ pqc-hybrid-help: ## Show PQC hybrid system help
 	$(AT)echo -e "  $(YELLOW)pqc-hybrid-example$(RESET)         - Run demo example"
 	$(AT)echo -e "  $(YELLOW)pqc-hybrid-build-check$(RESET)     - Check compilation"
 	$(AT)echo -e "  $(YELLOW)pqc-hybrid-doc$(RESET)             - Generate documentation"
+
+# Distributed optimization testing targets
+# =============================================================================
+.PHONY: distributed-opt-test distributed-opt-test-network distributed-opt-test-workers distributed-opt-test-parallel
+.PHONY: distributed-opt-test-ml distributed-opt-test-pgo distributed-opt-benchmark distributed-opt-demo
+.PHONY: distributed-opt-validate distributed-opt-clean distributed-opt-help
+
+distributed-opt-test: ## Run distributed optimization tests
+	$(AT)echo -e "$(CYAN)🔧 Running distributed optimization tests...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test distributed_optimization_integration_test $(V)
+
+distributed-opt-test-network: ## Test network optimization
+	$(AT)echo -e "$(CYAN)🌐 Testing network optimization...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --lib cursed::optimization::distributed::network_optimizer::tests $(V)
+
+distributed-opt-test-workers: ## Test worker node management  
+	$(AT)echo -e "$(CYAN)👥 Testing worker node management...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --lib cursed::optimization::distributed::worker_node::tests $(V)
+
+distributed-opt-test-parallel: ## Test parallel compilation
+	$(AT)echo -e "$(CYAN)⚡ Testing parallel compilation...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --lib cursed::optimization::parallel::tests $(V)
+
+distributed-opt-test-ml: ## Test ML optimization engine
+	$(AT)echo -e "$(CYAN)🤖 Testing ML optimization engine...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --lib cursed::optimization::ml_optimization::tests $(V)
+
+distributed-opt-test-pgo: ## Test PGO LLVM integration
+	$(AT)echo -e "$(CYAN)📊 Testing PGO LLVM integration...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --lib cursed::optimization::pgo::llvm_integration::tests $(V)
+
+distributed-opt-benchmark: ## Run distributed optimization benchmarks
+	$(AT)echo -e "$(CYAN)🏃 Running distributed optimization benchmarks...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test distributed_compilation_workflow --release -- --ignored $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test ml_optimization_integration --release -- --ignored $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test parallel_compilation_load_balancing --release -- --ignored $(V)
+
+distributed-opt-demo: ## Run distributed optimization demo
+	$(AT)echo -e "$(CYAN)🎭 Running distributed optimization demo...$(RESET)"
+	$(AT)echo "Setting up demo environment..."
+	$(AT)CURSED_COORDINATOR_ADDRESS="127.0.0.1:9000" \
+	    CURSED_COMPILER="echo" \
+	    CURSED_ML_OPTIMIZATION_ENABLED=true \
+	    $(LINKING_FIX) $(CARGO_CMD) test test_distributed_compilation_workflow -- --nocapture $(V)
+
+distributed-opt-validate: ## Validate distributed optimization implementation
+	$(AT)echo -e "$(CYAN)✅ Validating distributed optimization implementation...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) check --lib $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test distributed_optimization_integration_test --no-run $(V)
+	$(AT)echo -e "$(GREEN)✅ Distributed optimization system validated$(RESET)"
+
+distributed-opt-clean: ## Clean distributed optimization artifacts
+	$(AT)echo -e "$(YELLOW)🧹 Cleaning distributed optimization artifacts...$(RESET)"
+	$(AT)rm -rf target/debug/build/cursed-*/out/distributed_*
+	$(AT)rm -rf /tmp/cursed_distributed_test_*
+
+distributed-opt-help: ## Show distributed optimization help
+	$(AT)echo -e "$(CYAN)📖 Available distributed optimization targets:$(RESET)"
+	$(AT)echo "  distributed-opt-test          - Run all distributed optimization tests"
+	$(AT)echo "  distributed-opt-test-network  - Test network optimization"
+	$(AT)echo "  distributed-opt-test-workers  - Test worker node management"
+	$(AT)echo "  distributed-opt-test-parallel - Test parallel compilation"
+	$(AT)echo "  distributed-opt-test-ml       - Test ML optimization engine"
+	$(AT)echo "  distributed-opt-test-pgo      - Test PGO LLVM integration"
+	$(AT)echo "  distributed-opt-benchmark     - Run performance benchmarks"
+	$(AT)echo "  distributed-opt-demo          - Run distributed optimization demo"
+	$(AT)echo "  distributed-opt-validate      - Validate implementation"
+	$(AT)echo "  distributed-opt-clean         - Clean artifacts"
+	$(AT)echo "  distributed-opt-help          - Show this help"
+
+# Profile-Guided Optimization (PGO) System
+# =============================================================================
+
+.PHONY: pgo-test pgo-test-quick pgo-test-integration pgo-test-performance pgo-test-all \
+        pgo-validate pgo-demo pgo-benchmark pgo-clean pgo-help
+
+pgo-test: ## Run PGO integration tests
+	$(AT)echo -e "$(CYAN)📊 Running PGO integration tests...$(RESET)"
+	$(AT)./tests/run_pgo_tests.sh --integration $(V)
+
+pgo-test-quick: ## Run quick PGO validation tests
+	$(AT)echo -e "$(CYAN)⚡ Running quick PGO validation...$(RESET)"
+	$(AT)./tests/run_pgo_tests.sh --quick $(V)
+
+pgo-test-integration: ## Run comprehensive PGO integration tests
+	$(AT)echo -e "$(CYAN)🔧 Running PGO integration tests...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test pgo_integration_test $(V)
+
+pgo-test-performance: ## Run PGO performance tests
+	$(AT)echo -e "$(CYAN)🏃 Running PGO performance tests...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test pgo_performance_test --release $(V)
+
+pgo-test-all: ## Run all PGO tests including performance
+	$(AT)echo -e "$(CYAN)🚀 Running all PGO tests...$(RESET)"
+	$(AT)./tests/run_pgo_tests.sh --all --verbose $(V)
+
+pgo-benchmark: ## Run PGO benchmarks and performance tests
+	$(AT)echo -e "$(CYAN)🏁 Running PGO benchmarks...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test pgo_performance_test --release -- --ignored $(V)
+	$(AT)./tests/run_pgo_tests.sh --performance --report pgo_benchmark_report.md
+
+pgo-demo: ## Run PGO demonstration workflow
+	$(AT)echo -e "$(CYAN)🎭 Running PGO demonstration...$(RESET)"
+	$(AT)echo "Creating sample CURSED program for PGO demo..."
+	$(AT)mkdir -p examples/pgo_demo
+	$(AT)echo 'slay main() { println("PGO Demo"); }' > examples/pgo_demo/demo.csd
+	$(AT)echo "PGO workflow demonstration:"
+	$(AT)echo "1. Generate instrumented binary: cursed pgo generate examples/pgo_demo/demo.csd"
+	$(AT)echo "2. Collect profile data: cursed pgo collect ./instrumented_binary"
+	$(AT)echo "3. Apply optimizations: cursed pgo apply examples/pgo_demo/demo.csd --profile=profile.data"
+	$(AT)echo "4. Full workflow: cursed pgo workflow examples/pgo_demo/demo.csd"
+
+pgo-validate: ## Validate PGO implementation
+	$(AT)echo -e "$(CYAN)✅ Validating PGO implementation...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) check --lib $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test pgo_integration_test --no-run $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test --test pgo_performance_test --no-run $(V)
+	$(AT)./tests/run_pgo_tests.sh --quick
+	$(AT)echo -e "$(GREEN)✅ PGO system validated$(RESET)"
+
+pgo-report: ## Generate comprehensive PGO test report
+	$(AT)echo -e "$(CYAN)📋 Generating PGO test report...$(RESET)"
+	$(AT)./tests/run_pgo_tests.sh --all --report pgo_comprehensive_report.md
+	$(AT)echo -e "$(GREEN)📋 PGO report generated: pgo_comprehensive_report.md$(RESET)"
+
+pgo-coverage: ## Generate PGO test coverage report
+	$(AT)echo -e "$(CYAN)📊 Generating PGO coverage report...$(RESET)"
+	$(AT)$(LINKING_FIX) cargo tarpaulin --out Html --output-dir coverage/pgo \
+		--include-tests --timeout 300 \
+		--test pgo_integration_test --test pgo_performance_test $(V)
+	$(AT)echo -e "$(GREEN)📊 PGO coverage report: coverage/pgo/tarpaulin-report.html$(RESET)"
+
+pgo-stress: ## Run PGO stress tests
+	$(AT)echo -e "$(CYAN)💪 Running PGO stress tests...$(RESET)"
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test test_scalability_limits --release -- --ignored $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test test_memory_usage_efficiency --release -- --ignored $(V)
+	$(AT)$(LINKING_FIX) $(CARGO_CMD) test test_concurrent_collection_performance --release -- --ignored $(V)
+
+pgo-clean: ## Clean PGO artifacts and test data
+	$(AT)echo -e "$(YELLOW)🧹 Cleaning PGO artifacts...$(RESET)"
+	$(AT)rm -rf pgo_profiles/
+	$(AT)rm -rf examples/pgo_demo/
+	$(AT)rm -f pgo_*.md pgo_*.txt pgo_*.json
+	$(AT)rm -rf target/profraw target/profdata
+	$(AT)rm -rf coverage/pgo/
+
+pgo-help: ## Show PGO system help
+	$(AT)echo -e "$(CYAN)📖 CURSED Profile-Guided Optimization (PGO) System$(RESET)"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Available PGO targets:$(RESET)"
+	$(AT)echo "  pgo-test                - Run PGO integration tests"
+	$(AT)echo "  pgo-test-quick          - Run quick PGO validation"
+	$(AT)echo "  pgo-test-integration    - Run comprehensive integration tests"
+	$(AT)echo "  pgo-test-performance    - Run PGO performance tests"
+	$(AT)echo "  pgo-test-all            - Run all PGO tests"
+	$(AT)echo "  pgo-benchmark           - Run PGO benchmarks"
+	$(AT)echo "  pgo-demo                - Run PGO demonstration"
+	$(AT)echo "  pgo-validate            - Validate PGO implementation"
+	$(AT)echo "  pgo-report              - Generate comprehensive test report"
+	$(AT)echo "  pgo-coverage            - Generate test coverage report"
+	$(AT)echo "  pgo-stress              - Run stress tests"
+	$(AT)echo "  pgo-clean               - Clean PGO artifacts"
+	$(AT)echo "  pgo-help                - Show this help"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)PGO CLI Commands:$(RESET)"
+	$(AT)echo "  cursed pgo generate <files>     - Generate instrumented binary"
+	$(AT)echo "  cursed pgo collect <binary>     - Collect profile data"
+	$(AT)echo "  cursed pgo analyze <profile>    - Analyze profile data"
+	$(AT)echo "  cursed pgo apply <files>        - Apply PGO optimizations"
+	$(AT)echo "  cursed pgo workflow <files>     - Full PGO workflow"
+	$(AT)echo "  cursed pgo stats                - Show PGO statistics"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Usage Examples:$(RESET)"
+	$(AT)echo "  make pgo-test               # Basic PGO testing"
+	$(AT)echo "  make pgo-benchmark          # Performance validation"
+	$(AT)echo "  make pgo-demo               # See PGO in action"
+	$(AT)echo "  make pgo-report             # Generate detailed report"
+
+# Performance Optimization System Testing Commands
+# =============================================================================
+.PHONY: performance-optimization-test performance-optimization-benchmarks performance-optimization-test-all performance-optimization-help
+
+performance-optimization-test: ## Run comprehensive performance optimization tests
+	$(AT)echo -e "$(MAGENTA)🔧 Running comprehensive performance optimization tests...$(RESET)"
+	$(AT)$(MAKE_WITH_LINKING) test --test comprehensive_performance_optimization_test
+
+performance-optimization-benchmarks: ## Run performance optimization benchmarks
+	$(AT)echo -e "$(MAGENTA)📊 Running performance optimization benchmarks...$(RESET)"
+	$(AT)$(MAKE_WITH_LINKING) test --test performance_optimization_benchmarks
+
+performance-optimization-test-all: performance-optimization-test performance-optimization-benchmarks ## Run all performance optimization tests
+	$(AT)echo -e "$(GREEN)✅ All performance optimization tests completed$(RESET)"
+
+performance-optimization-help: ## Show performance optimization test commands
+	$(AT)echo -e "$(CYAN)Performance Optimization System Test Commands:$(RESET)"
+	$(AT)echo -e "  $(GREEN)performance-optimization-test$(RESET)         - Run comprehensive optimization tests"
+	$(AT)echo -e "  $(GREEN)performance-optimization-benchmarks$(RESET)   - Run performance benchmarks"
+	$(AT)echo -e "  $(GREEN)performance-optimization-test-all$(RESET)     - Run all optimization tests"
+
+
+
+# ================================================================================================
+# Advanced LLVM Optimization System Tests
+# ================================================================================================
+
+.PHONY: advanced-opt-test advanced-opt-test-quick advanced-opt-test-verbose advanced-opt-test-report advanced-opt-help
+
+advanced-opt-test: ## Run advanced LLVM optimization system tests
+	@echo "🚀 Running Advanced LLVM Optimization System Tests"
+	./tests/run_advanced_optimization_tests.sh
+
+advanced-opt-test-quick: ## Run quick advanced optimization tests
+	@echo "⚡ Running Quick Advanced Optimization Tests"
+	./tests/run_advanced_optimization_tests.sh --quick
+
+advanced-opt-test-verbose: ## Run advanced optimization tests with verbose output
+	@echo "📝 Running Advanced Optimization Tests (Verbose)"
+	./tests/run_advanced_optimization_tests.sh --verbose
+
+advanced-opt-test-report: ## Generate advanced optimization test report
+	@echo "📊 Generating Advanced Optimization Test Report"
+	./tests/run_advanced_optimization_tests.sh --report advanced_optimization_report.md
+
+advanced-opt-help: ## Show advanced optimization test help
+	@echo "Advanced LLVM Optimization Test Commands:"
+	@echo "  advanced-opt-test         - Run all advanced optimization tests"
+	@echo "  advanced-opt-test-quick   - Run quick tests only"
+	@echo "  advanced-opt-test-verbose - Run tests with verbose output"
+	@echo "  advanced-opt-test-report  - Generate detailed test report"
+	@echo "  advanced-opt-help         - Show this help message"
 

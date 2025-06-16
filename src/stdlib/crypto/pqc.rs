@@ -1320,9 +1320,9 @@ impl PqcBenchmark {
 // ============================================================================
 
 /// Quantum resistance assessment utilities
-pub struct QuantumResistanceAssessment;
+pub struct QuantumResistanceAssessmentUtility;
 
-impl QuantumResistanceAssessment {
+impl QuantumResistanceAssessmentUtility {
     /// Assess the quantum resistance of all supported algorithms
     pub fn assess_all_algorithms() -> Vec<crate::stdlib::crypto::pqc::QuantumResistanceAssessment> {
         vec![

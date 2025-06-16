@@ -1,21 +1,9 @@
 #!/bin/bash
 
-# Advanced Optimization Test Runner for CURSED Compiler
-# 
-# Comprehensive test execution for all advanced optimization features:
-# - Register allocation algorithms
-# - Instruction scheduling
-# - CURSED-specific optimizations
-# - GC-aware optimizations
-# - Performance debugging
-# - Target-specific optimizations
+# Advanced LLVM Optimization System Test Runner
+# Comprehensive testing for the CURSED advanced optimization system
 
 set -e
-
-# Script directory and linking fix
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-LINKING_FIX="$PROJECT_DIR/fix_linking.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -24,402 +12,330 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
+# Test configuration
 QUICK_MODE=false
 VERBOSE=false
 GENERATE_REPORT=false
-REPORT_FILE="advanced_optimization_test_report.md"
-IGNORED_TESTS=false
+REPORT_FILE=""
+TEST_FILTER=""
 
-# Test categories
-UNIT_TESTS=(
-    "test_advanced_register_allocation"
-    "test_instruction_scheduling"
-    "test_cursed_optimizations"
-    "test_gc_aware_optimizations"
-    "test_performance_debugging"
-    "test_target_specific_optimizations"
-)
-
-INTEGRATION_TESTS=(
-    "test_register_allocation_with_interference"
-    "test_instruction_scheduling_with_dependencies"
-    "test_optimization_integration"
-)
-
-PERFORMANCE_TESTS=(
-    "test_performance_regression_detection"
-    "test_optimization_performance_benchmark"
-)
-
-# Functions
-print_header() {
-    echo -e "${BLUE}================================================${NC}"
-    echo -e "${BLUE}  CURSED Advanced Optimization Test Suite${NC}"
-    echo -e "${BLUE}================================================${NC}"
-    echo
-}
-
-print_section() {
-    echo -e "${YELLOW}--- $1 ---${NC}"
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
-print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
-}
-
-show_help() {
+# Function to show usage
+show_usage() {
     cat << EOF
-Advanced Optimization Test Runner
+Usage: $0 [OPTIONS]
 
-USAGE:
-    $0 [OPTIONS]
+Test runner for the Advanced LLVM Optimization System
 
 OPTIONS:
-    --quick             Run only basic unit tests
-    --verbose           Show detailed output
-    --report            Generate markdown test report
-    --ignored           Run performance tests (normally ignored)
-    --test <category>   Run specific test category
-    -h, --help          Show this help message
-
-TEST CATEGORIES:
-    unit                Basic unit tests for individual components
-    integration         Integration tests for multiple components
-    performance         Performance and benchmark tests
-    all                 All tests (default)
+    --quick             Run quick tests only (skip stress tests)
+    --verbose           Enable verbose output
+    --report FILE       Generate test report to FILE
+    --test FILTER       Run only tests matching FILTER
+    --help              Show this help message
 
 EXAMPLES:
-    $0                          # Run all standard tests
-    $0 --quick                  # Run only unit tests
-    $0 --test unit --verbose   # Run unit tests with verbose output
-    $0 --ignored --report       # Run all tests including performance
-    $0 --test performance       # Run only performance tests
+    $0                           # Run all tests
+    $0 --quick                   # Run quick tests only
+    $0 --verbose --report report.md
+    $0 --test loop_detection     # Run loop detection tests only
 
 EOF
 }
 
-check_prerequisites() {
-    print_section "Checking Prerequisites"
-    
-    # Check if linking fix script exists
-    if [[ ! -f "$LINKING_FIX" ]]; then
-        print_error "Linking fix script not found: $LINKING_FIX"
-        exit 1
-    fi
-    
-    # Make linking fix executable
-    chmod +x "$LINKING_FIX"
-    
-    print_success "Prerequisites validated"
-    echo
-}
-
-run_test_category() {
-    local category="$1"
-    local tests_array_name="$2"
-    local test_flags="$3"
-    
-    print_section "Running $category Tests"
-    
-    # Get test array by name
-    declare -n test_array=$tests_array_name
-    
-    local passed=0
-    local failed=0
-    local total=${#test_array[@]}
-    
-    if [[ $total -eq 0 ]]; then
-        print_info "No tests in category: $category"
-        return 0
-    fi
-    
-    for test_name in "${test_array[@]}"; do
-        echo -n "  Running $test_name... "
-        
-        if [[ "$VERBOSE" == "true" ]]; then
-            echo # New line for verbose output
-            if "$LINKING_FIX" cargo test --test advanced_optimization_test $test_flags -- $test_name; then
-                print_success "$test_name passed"
-                ((passed++))
-            else
-                print_error "$test_name failed"
-                ((failed++))
-            fi
-        else
-            if "$LINKING_FIX" cargo test --test advanced_optimization_test $test_flags -- $test_name --quiet > /dev/null 2>&1; then
-                echo -e "${GREEN}PASS${NC}"
-                ((passed++))
-            else
-                echo -e "${RED}FAIL${NC}"
-                ((failed++))
-            fi
-        fi
-    done
-    
-    echo
-    echo "  $category Tests: $passed passed, $failed failed (total: $total)"
-    echo
-    
-    return $failed
-}
-
-run_all_tests() {
-    local total_failed=0
-    
-    # Unit tests
-    run_test_category "Unit" "UNIT_TESTS" ""
-    total_failed=$((total_failed + $?))
-    
-    if [[ "$QUICK_MODE" != "true" ]]; then
-        # Integration tests
-        run_test_category "Integration" "INTEGRATION_TESTS" ""
-        total_failed=$((total_failed + $?))
-        
-        # Performance tests (if explicitly requested)
-        if [[ "$IGNORED_TESTS" == "true" ]]; then
-            run_test_category "Performance" "PERFORMANCE_TESTS" "--ignored"
-            total_failed=$((total_failed + $?))
-        fi
-    fi
-    
-    return $total_failed
-}
-
-run_specific_category() {
-    local category="$1"
-    local failed=0
-    
-    case "$category" in
-        "unit")
-            run_test_category "Unit" "UNIT_TESTS" ""
-            failed=$?
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --quick)
+            QUICK_MODE=true
+            shift
             ;;
-        "integration")
-            run_test_category "Integration" "INTEGRATION_TESTS" ""
-            failed=$?
+        --verbose)
+            VERBOSE=true
+            shift
             ;;
-        "performance")
-            run_test_category "Performance" "PERFORMANCE_TESTS" "--ignored"
-            failed=$?
+        --report)
+            GENERATE_REPORT=true
+            REPORT_FILE="$2"
+            shift 2
             ;;
-        "all")
-            run_all_tests
-            failed=$?
+        --test)
+            TEST_FILTER="$2"
+            shift 2
+            ;;
+        --help)
+            show_usage
+            exit 0
             ;;
         *)
-            print_error "Unknown test category: $category"
+            print_error "Unknown option: $1"
+            show_usage
             exit 1
             ;;
     esac
-    
-    return $failed
-}
+done
 
-generate_test_report() {
-    print_section "Generating Test Report"
+# Check if linking fix is available
+if [[ -f "./fix_linking.sh" ]]; then
+    print_status "Using linking fix for Nix environment"
+    CARGO_CMD="./fix_linking.sh cargo"
+else
+    CARGO_CMD="cargo"
+fi
+
+# Set up environment
+export RUST_LOG=${RUST_LOG:-"debug"}
+export RUST_BACKTRACE=${RUST_BACKTRACE:-"1"}
+
+if [[ "$VERBOSE" == "true" ]]; then
+    export RUST_LOG="trace"
+fi
+
+# Initialize report if requested
+if [[ "$GENERATE_REPORT" == "true" ]]; then
+    if [[ -z "$REPORT_FILE" ]]; then
+        REPORT_FILE="advanced_optimization_test_report_$(date +%Y%m%d_%H%M%S).md"
+    fi
     
     cat > "$REPORT_FILE" << EOF
-# CURSED Advanced Optimization Test Report
+# Advanced LLVM Optimization System Test Report
 
 **Generated:** $(date)
-**Test Suite:** Advanced Optimization Features
+**System:** $(uname -a)
+**Rust Version:** $(rustc --version)
 
-## Test Summary
+## Test Configuration
+- Quick Mode: $QUICK_MODE
+- Verbose: $VERBOSE
+- Test Filter: ${TEST_FILTER:-"(all tests)"}
 
-This report covers the comprehensive testing of CURSED's advanced optimization features.
-
-## Test Categories
-
-### Unit Tests
-Basic functionality tests for individual optimization components:
-EOF
-
-    for test in "${UNIT_TESTS[@]}"; do
-        echo "- \`$test\`" >> "$REPORT_FILE"
-    done
-
-    cat >> "$REPORT_FILE" << EOF
-
-### Integration Tests
-Tests for multiple optimization components working together:
-EOF
-
-    for test in "${INTEGRATION_TESTS[@]}"; do
-        echo "- \`$test\`" >> "$REPORT_FILE"
-    done
-
-    cat >> "$REPORT_FILE" << EOF
-
-### Performance Tests
-Performance and benchmark tests:
-EOF
-
-    for test in "${PERFORMANCE_TESTS[@]}"; do
-        echo "- \`$test\`" >> "$REPORT_FILE"
-    done
-
-    cat >> "$REPORT_FILE" << EOF
-
-## Features Tested
-
-### Advanced Register Allocation
-- Graph coloring algorithm
-- Register interference analysis
-- Spill cost calculation
-- Coalescing optimization
-
-### Instruction Scheduling
-- Dependency analysis
-- Pipeline-aware scheduling
-- Critical path optimization
-- Resource conflict resolution
-
-### CURSED-Specific Optimizations
-- Gen Z slang keyword optimizations
-- Error propagation optimization (\`?\` operator)
-- Goroutine operation optimizations
-- Channel operation optimizations
-- Memory layout optimizations
-
-### GC-Aware Optimizations
-- Object lifetime analysis
-- Memory pressure monitoring
-- Write barrier optimization
-- Allocation optimization
-
-### Performance Debugging
-- Pass execution tracing
-- Performance profiling
-- Adaptive pass ordering
-- Regression testing
-
-### Target-Specific Optimizations
-- Architecture-specific passes
-- Vectorization optimization
-- Cache-aware optimizations
-- Platform-specific optimizations
-
-## Test Execution
-
-To run these tests:
-
-\`\`\`bash
-# All tests
-./tests/run_advanced_optimization_tests.sh
-
-# Quick unit tests only
-./tests/run_advanced_optimization_tests.sh --quick
-
-# Specific category
-./tests/run_advanced_optimization_tests.sh --test unit
-
-# With performance tests
-./tests/run_advanced_optimization_tests.sh --ignored
-\`\`\`
-
-## Performance Characteristics
-
-The advanced optimization system is designed to:
-- Process large programs efficiently
-- Minimize optimization overhead
-- Provide significant performance improvements
-- Scale with program complexity
-
-## Integration Status
-
-All advanced optimization features are:
-- ✅ Fully integrated with the compiler pipeline
-- ✅ Compatible with existing optimization infrastructure
-- ✅ Thread-safe for concurrent compilation
-- ✅ Configurable through optimization levels
-- ✅ Thoroughly tested and validated
+## Test Results
 
 EOF
+    print_status "Test report will be written to: $REPORT_FILE"
+fi
 
-    print_success "Test report generated: $REPORT_FILE"
-}
-
-main() {
-    # Parse command line arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --quick)
-                QUICK_MODE=true
-                shift
-                ;;
-            --verbose)
-                VERBOSE=true
-                shift
-                ;;
-            --report)
-                GENERATE_REPORT=true
-                shift
-                ;;
-            --ignored)
-                IGNORED_TESTS=true
-                shift
-                ;;
-            --test)
-                TEST_CATEGORY="$2"
-                shift 2
-                ;;
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
-        esac
-    done
-    
-    print_header
-    check_prerequisites
-    
-    # Change to project directory
-    cd "$PROJECT_DIR"
-    
-    local start_time=$(date +%s)
-    local failed=0
-    
-    if [[ -n "${TEST_CATEGORY:-}" ]]; then
-        run_specific_category "$TEST_CATEGORY"
-        failed=$?
-    else
-        run_all_tests
-        failed=$?
-    fi
-    
-    local end_time=$(date +%s)
-    local duration=$((end_time - start_time))
-    
-    echo
-    print_section "Test Results Summary"
-    
-    if [[ $failed -eq 0 ]]; then
-        print_success "All tests passed! (${duration}s)"
-    else
-        print_error "$failed test(s) failed (${duration}s)"
-    fi
+# Function to log test result
+log_test_result() {
+    local test_name="$1"
+    local status="$2"
+    local duration="$3"
+    local output="$4"
     
     if [[ "$GENERATE_REPORT" == "true" ]]; then
-        generate_test_report
+        cat >> "$REPORT_FILE" << EOF
+### $test_name
+- **Status:** $status
+- **Duration:** $duration
+- **Output:**
+\`\`\`
+$output
+\`\`\`
+
+EOF
     fi
-    
-    echo
-    exit $failed
 }
 
-# Run main function with all arguments
+# Function to run a test with error handling
+run_test() {
+    local test_name="$1"
+    local test_command="$2"
+    
+    print_status "Running test: $test_name"
+    
+    local start_time=$(date +%s)
+    
+    if [[ "$VERBOSE" == "true" ]]; then
+        local output
+        if output=$(eval "$test_command" 2>&1); then
+            local end_time=$(date +%s)
+            local duration=$((end_time - start_time))
+            print_success "$test_name completed in ${duration}s"
+            log_test_result "$test_name" "PASSED" "${duration}s" "$output"
+            return 0
+        else
+            local end_time=$(date +%s)
+            local duration=$((end_time - start_time))
+            print_error "$test_name failed after ${duration}s"
+            log_test_result "$test_name" "FAILED" "${duration}s" "$output"
+            return 1
+        fi
+    else
+        if eval "$test_command" > /dev/null 2>&1; then
+            local end_time=$(date +%s)
+            local duration=$((end_time - start_time))
+            print_success "$test_name completed in ${duration}s"
+            log_test_result "$test_name" "PASSED" "${duration}s" "(output suppressed)"
+            return 0
+        else
+            local end_time=$(date +%s)
+            local duration=$((end_time - start_time))
+            print_error "$test_name failed after ${duration}s"
+            log_test_result "$test_name" "FAILED" "${duration}s" "(output suppressed)"
+            return 1
+        fi
+    fi
+}
+
+# Function to check test dependencies
+check_dependencies() {
+    print_status "Checking test dependencies..."
+    
+    # Check if LLVM is available
+    if ! command -v llvm-config &> /dev/null; then
+        print_warning "LLVM not found in PATH, some tests may fail"
+    fi
+    
+    # Check Rust toolchain
+    if ! command -v rustc &> /dev/null; then
+        print_error "Rust compiler not found"
+        exit 1
+    fi
+    
+    # Check if we can compile
+    if ! $CARGO_CMD check --quiet 2>/dev/null; then
+        print_error "Project does not compile, cannot run tests"
+        exit 1
+    fi
+    
+    print_success "All dependencies check passed"
+}
+
+# Main test execution
+main() {
+    local total_tests=0
+    local passed_tests=0
+    local failed_tests=0
+    
+    print_status "Starting Advanced LLVM Optimization System Tests"
+    print_status "Quick mode: $QUICK_MODE, Verbose: $VERBOSE"
+    
+    # Check dependencies first
+    check_dependencies
+    
+    # Define test categories
+    declare -A test_categories
+    
+    # Core optimization tests
+    test_categories["loop_detection"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_loop_detection_and_analysis"
+    test_categories["vectorization"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_vectorization_analysis"
+    test_categories["target_optimization"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_target_specific_optimizations"
+    test_categories["enhanced_optimizer"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_enhanced_llvm_optimizer"
+    
+    # Performance and monitoring tests
+    test_categories["performance_monitoring"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_performance_monitoring"
+    test_categories["optimization_effectiveness"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_optimization_effectiveness"
+    test_categories["adaptive_optimization"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_adaptive_optimization"
+    test_categories["memory_optimization"]="${CARGO_CMD} test --test advanced_optimization_integration_test test_memory_usage_optimization"
+    
+    # Advanced integration tests (may be skipped in quick mode)
+    if [[ "$QUICK_MODE" != "true" ]]; then
+        test_categories["stress_optimization"]="${CARGO_CMD} test --test advanced_optimization_integration_test --release -- --ignored"
+        test_categories["performance_benchmark"]="${CARGO_CMD} test --bench optimization_benchmarks"
+    fi
+    
+    # Unit tests for individual components
+    test_categories["advanced_llvm_unit"]="${CARGO_CMD} test --lib optimization::advanced_llvm_integration"
+    test_categories["target_optimization_unit"]="${CARGO_CMD} test --lib optimization::target_optimization"
+    test_categories["enhanced_llvm_unit"]="${CARGO_CMD} test --lib optimization::enhanced_llvm_optimization"
+    
+    # Filter tests if requested
+    if [[ -n "$TEST_FILTER" ]]; then
+        declare -A filtered_tests
+        for test_name in "${!test_categories[@]}"; do
+            if [[ "$test_name" == *"$TEST_FILTER"* ]]; then
+                filtered_tests["$test_name"]="${test_categories[$test_name]}"
+            fi
+        done
+        test_categories=()
+        for test_name in "${!filtered_tests[@]}"; do
+            test_categories["$test_name"]="${filtered_tests[$test_name]}"
+        done
+        
+        if [[ ${#test_categories[@]} -eq 0 ]]; then
+            print_error "No tests match filter: $TEST_FILTER"
+            exit 1
+        fi
+    fi
+    
+    # Run tests
+    for test_name in "${!test_categories[@]}"; do
+        total_tests=$((total_tests + 1))
+        
+        if run_test "$test_name" "${test_categories[$test_name]}"; then
+            passed_tests=$((passed_tests + 1))
+        else
+            failed_tests=$((failed_tests + 1))
+        fi
+    done
+    
+    # Print summary
+    echo
+    print_status "Test Summary:"
+    print_status "  Total tests: $total_tests"
+    print_success "  Passed: $passed_tests"
+    
+    if [[ $failed_tests -gt 0 ]]; then
+        print_error "  Failed: $failed_tests"
+    else
+        print_status "  Failed: $failed_tests"
+    fi
+    
+    # Calculate success rate
+    local success_rate=0
+    if [[ $total_tests -gt 0 ]]; then
+        success_rate=$((passed_tests * 100 / total_tests))
+    fi
+    
+    print_status "  Success rate: ${success_rate}%"
+    
+    # Finalize report
+    if [[ "$GENERATE_REPORT" == "true" ]]; then
+        cat >> "$REPORT_FILE" << EOF
+
+## Summary
+- **Total Tests:** $total_tests
+- **Passed:** $passed_tests
+- **Failed:** $failed_tests
+- **Success Rate:** ${success_rate}%
+
+## Conclusion
+EOF
+        
+        if [[ $failed_tests -eq 0 ]]; then
+            echo "✅ All tests passed successfully!" >> "$REPORT_FILE"
+        else
+            echo "❌ Some tests failed. Review the failed tests above for details." >> "$REPORT_FILE"
+        fi
+        
+        print_success "Test report written to: $REPORT_FILE"
+    fi
+    
+    # Exit with appropriate code
+    if [[ $failed_tests -gt 0 ]]; then
+        print_error "Some tests failed!"
+        exit 1
+    else
+        print_success "All tests passed!"
+        exit 0
+    fi
+}
+
+# Run the main function
 main "$@"

@@ -29,6 +29,7 @@ pub mod error_propagation;
 pub mod error_propagation_enhanced;
 pub mod expression_compiler;
 pub mod function_compilation;
+pub mod function_registry;
 pub mod gc_integration;
 pub mod goroutine;
 pub mod ipc;

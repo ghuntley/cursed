@@ -1,583 +1,497 @@
-//! Performance metrics collection and analysis
+/// Optimization Metrics and Compilation Units
+/// 
+/// Defines structures for tracking compilation units and their optimization metrics.
 
-use crate::error::{Result, CursedError};
-use crate::optimization::PerformanceConfig;
 use std::collections::HashMap;
-use std::time::{Duration, Instant, SystemTime};
-use std::sync::{Arc, Mutex};
-use std::thread;
-use tracing::{info, debug, warn, instrument};
+use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
-/// Level of resource monitoring detail
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum ResourceMonitoringLevel {
-    /// Basic monitoring - CPU and memory only
-    Basic,
-    /// Detailed monitoring - includes I/O and network
-    Detailed,
-    /// Comprehensive monitoring - all metrics with high frequency
-    Comprehensive,
-}
-
-impl Default for ResourceMonitoringLevel {
-    fn default() -> Self {
-        Self::Basic
-    }
-}
-
 /// Compilation unit for optimization tracking
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompilationUnit {
+    /// Unique name/identifier for the compilation unit
     pub name: String,
+    
+    /// Source files that make up this unit
     pub source_files: Vec<String>,
+    
+    /// Dependencies on other compilation units
     pub dependencies: Vec<String>,
+    
+    /// Estimated size in bytes
     pub estimated_size_bytes: usize,
-    pub compilation_start_time: Option<Instant>,
-    pub last_modified: Option<SystemTime>,
+    
+    /// Optimization metadata
+    pub optimization_metadata: HashMap<String, String>,
+    
+    /// Compilation timing information
+    pub timing_info: Option<CompilationTiming>,
+    
+    /// Unit type (library, binary, test, etc.)
+    pub unit_type: CompilationUnitType,
+    
+    /// Target platform information
+    pub target_info: Option<TargetInfo>,
+}
+
+/// Type of compilation unit
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CompilationUnitType {
+    /// Binary executable
+    Binary,
+    /// Library
+    Library,
+    /// Test suite
+    Test,
+    /// Example code
+    Example,
+    /// Benchmark
+    Benchmark,
+}
+
+/// Target platform information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TargetInfo {
+    /// Target architecture (x86_64, aarch64, etc.)
+    pub architecture: String,
+    /// Target operating system
+    pub operating_system: String,
+    /// Additional target features
+    pub features: Vec<String>,
+}
+
+/// Compilation timing information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompilationTiming {
+    /// Total compilation time
+    pub total_time: Duration,
+    /// Time spent on parsing
+    pub parse_time: Duration,
+    /// Time spent on type checking
+    pub typecheck_time: Duration,
+    /// Time spent on optimization
+    pub optimization_time: Duration,
+    /// Time spent on code generation
+    pub codegen_time: Duration,
+    /// Time spent on linking
+    pub link_time: Duration,
 }
 
 impl CompilationUnit {
-    /// Create a new compilation unit
+    /// Create a new compilation unit with the given name
     pub fn new(name: String) -> Self {
         Self {
             name,
             source_files: Vec::new(),
             dependencies: Vec::new(),
-            estimated_size_bytes: 10000, // Default estimate
-            compilation_start_time: None,
-            last_modified: None,
+            estimated_size_bytes: 0,
+            optimization_metadata: HashMap::new(),
+            timing_info: None,
+            unit_type: CompilationUnitType::Binary,
+            target_info: None,
         }
     }
-
-    /// Add a source file to this compilation unit
+    
+    /// Create a library compilation unit
+    pub fn new_library(name: String) -> Self {
+        Self {
+            unit_type: CompilationUnitType::Library,
+            ..Self::new(name)
+        }
+    }
+    
+    /// Create a test compilation unit
+    pub fn new_test(name: String) -> Self {
+        Self {
+            unit_type: CompilationUnitType::Test,
+            ..Self::new(name)
+        }
+    }
+    
+    /// Add a source file to this unit
     pub fn add_source_file(&mut self, file_path: String) {
         self.source_files.push(file_path);
-        // Increase estimated size based on file count
-        self.estimated_size_bytes += 5000;
     }
-
-    /// Add a dependency to this compilation unit
+    
+    /// Add a dependency on another unit
     pub fn add_dependency(&mut self, dependency: String) {
         self.dependencies.push(dependency);
     }
-
-    /// Start compilation timing
-    pub fn start_compilation(&mut self) {
-        self.compilation_start_time = Some(Instant::now());
+    
+    /// Set optimization metadata
+    pub fn set_metadata(&mut self, key: String, value: String) {
+        self.optimization_metadata.insert(key, value);
     }
-
-    /// Get compilation time if started
-    pub fn compilation_time(&self) -> Option<Duration> {
-        self.compilation_start_time.map(|start| start.elapsed())
+    
+    /// Get optimization metadata
+    pub fn get_metadata(&self, key: &str) -> Option<&String> {
+        self.optimization_metadata.get(key)
+    }
+    
+    /// Set timing information
+    pub fn set_timing(&mut self, timing: CompilationTiming) {
+        self.timing_info = Some(timing);
+    }
+    
+    /// Calculate total dependency count (recursive)
+    pub fn total_dependency_count(&self, all_units: &[CompilationUnit]) -> usize {
+        let mut visited = std::collections::HashSet::new();
+        self.count_dependencies_recursive(all_units, &mut visited)
+    }
+    
+    fn count_dependencies_recursive(
+        &self,
+        all_units: &[CompilationUnit],
+        visited: &mut std::collections::HashSet<String>,
+    ) -> usize {
+        if visited.contains(&self.name) {
+            return 0; // Avoid cycles
+        }
+        
+        visited.insert(self.name.clone());
+        let mut count = self.dependencies.len();
+        
+        for dep_name in &self.dependencies {
+            if let Some(dep_unit) = all_units.iter().find(|u| u.name == *dep_name) {
+                count += dep_unit.count_dependencies_recursive(all_units, visited);
+            }
+        }
+        
+        count
+    }
+    
+    /// Check if this unit depends on another unit (directly or indirectly)
+    pub fn depends_on(&self, target: &str, all_units: &[CompilationUnit]) -> bool {
+        let mut visited = std::collections::HashSet::new();
+        self.depends_on_recursive(target, all_units, &mut visited)
+    }
+    
+    fn depends_on_recursive(
+        &self,
+        target: &str,
+        all_units: &[CompilationUnit],
+        visited: &mut std::collections::HashSet<String>,
+    ) -> bool {
+        if visited.contains(&self.name) {
+            return false; // Avoid cycles
+        }
+        
+        visited.insert(self.name.clone());
+        
+        // Direct dependency
+        if self.dependencies.contains(&target.to_string()) {
+            return true;
+        }
+        
+        // Indirect dependency
+        for dep_name in &self.dependencies {
+            if let Some(dep_unit) = all_units.iter().find(|u| u.name == *dep_name) {
+                if dep_unit.depends_on_recursive(target, all_units, visited) {
+                    return true;
+                }
+            }
+        }
+        
+        false
+    }
+    
+    /// Estimate compilation complexity
+    pub fn estimate_complexity(&self) -> CompilationComplexity {
+        let source_file_count = self.source_files.len();
+        let dependency_count = self.dependencies.len();
+        let size_factor = self.estimated_size_bytes / 1000; // KB
+        
+        let complexity_score = source_file_count + dependency_count * 2 + size_factor;
+        
+        match complexity_score {
+            0..=10 => CompilationComplexity::Low,
+            11..=50 => CompilationComplexity::Medium,
+            51..=200 => CompilationComplexity::High,
+            _ => CompilationComplexity::VeryHigh,
+        }
+    }
+    
+    /// Get unit statistics
+    pub fn get_statistics(&self) -> CompilationUnitStats {
+        CompilationUnitStats {
+            source_file_count: self.source_files.len(),
+            dependency_count: self.dependencies.len(),
+            estimated_size_bytes: self.estimated_size_bytes,
+            complexity: self.estimate_complexity(),
+            has_timing_info: self.timing_info.is_some(),
+            metadata_count: self.optimization_metadata.len(),
+        }
     }
 }
 
-/// System-wide optimization statistics
-#[derive(Debug, Default, Clone)]
-pub struct SystemStatistics {
-    pub optimizations_completed: usize,
-    pub total_units_optimized: usize,
-    pub benchmark_runs: usize,
-    pub cache_hits: usize,
-    pub cache_misses: usize,
-    pub errors_encountered: usize,
-    pub total_compilation_time: Duration,
-    pub average_compilation_time: Duration,
+/// Compilation complexity levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CompilationComplexity {
+    Low,
+    Medium,
+    High,
+    VeryHigh,
 }
 
-/// Resource usage statistics
-#[derive(Debug, Clone)]
-pub struct ResourceStatistics {
-    pub peak_memory_mb: f64,
-    pub average_memory_mb: f64,
-    pub peak_cpu_percent: f64,
-    pub average_cpu_percent: f64,
-    pub total_io_operations: u64,
-    pub network_bytes_sent: u64,
-    pub network_bytes_received: u64,
-    pub monitoring_uptime: Duration,
-    pub sample_count: usize,
+impl CompilationComplexity {
+    /// Get the complexity as a string
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CompilationComplexity::Low => "Low",
+            CompilationComplexity::Medium => "Medium",
+            CompilationComplexity::High => "High",
+            CompilationComplexity::VeryHigh => "Very High",
+        }
+    }
+    
+    /// Get estimated compilation time multiplier
+    pub fn time_multiplier(&self) -> f64 {
+        match self {
+            CompilationComplexity::Low => 1.0,
+            CompilationComplexity::Medium => 2.0,
+            CompilationComplexity::High => 4.0,
+            CompilationComplexity::VeryHigh => 8.0,
+        }
+    }
 }
 
-impl Default for ResourceStatistics {
+/// Statistics about a compilation unit
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompilationUnitStats {
+    pub source_file_count: usize,
+    pub dependency_count: usize,
+    pub estimated_size_bytes: usize,
+    pub complexity: CompilationComplexity,
+    pub has_timing_info: bool,
+    pub metadata_count: usize,
+}
+
+impl Default for CompilationUnitType {
+    fn default() -> Self {
+        CompilationUnitType::Binary
+    }
+}
+
+impl Default for TargetInfo {
     fn default() -> Self {
         Self {
-            peak_memory_mb: 0.0,
-            average_memory_mb: 0.0,
-            peak_cpu_percent: 0.0,
-            average_cpu_percent: 0.0,
-            total_io_operations: 0,
-            network_bytes_sent: 0,
-            network_bytes_received: 0,
-            monitoring_uptime: Duration::from_secs(0),
-            sample_count: 0,
+            architecture: "x86_64".to_string(),
+            operating_system: std::env::consts::OS.to_string(),
+            features: Vec::new(),
         }
     }
 }
 
-/// Resource sample point
+impl Default for CompilationTiming {
+    fn default() -> Self {
+        Self {
+            total_time: Duration::from_secs(0),
+            parse_time: Duration::from_secs(0),
+            typecheck_time: Duration::from_secs(0),
+            optimization_time: Duration::from_secs(0),
+            codegen_time: Duration::from_secs(0),
+            link_time: Duration::from_secs(0),
+        }
+    }
+}
+
+/// Collection of compilation units for analysis
 #[derive(Debug, Clone)]
-struct ResourceSample {
-    timestamp: Instant,
-    memory_mb: f64,
-    cpu_percent: f64,
-    io_operations: u64,
-    network_sent: u64,
-    network_received: u64,
+pub struct CompilationUnitCollection {
+    units: Vec<CompilationUnit>,
 }
 
-/// Performance metrics collector
-#[derive(Debug)]
-pub struct MetricsCollector {
-    config: PerformanceConfig,
-    system_stats: Arc<Mutex<SystemStatistics>>,
-    resource_samples: Arc<Mutex<Vec<ResourceSample>>>,
-    monitoring_active: Arc<Mutex<bool>>,
-    monitoring_start_time: Arc<Mutex<Option<Instant>>>,
-    monitoring_thread: Option<thread::JoinHandle<()>>,
-}
-
-impl MetricsCollector {
-    /// Create a new metrics collector
-    #[instrument]
-    pub fn new(config: PerformanceConfig) -> Result<Self> {
-        info!("Creating metrics collector with monitoring level {:?}", config.resource_monitoring_level);
-        
-        Ok(Self {
-            config,
-            system_stats: Arc::new(Mutex::new(SystemStatistics::default())),
-            resource_samples: Arc::new(Mutex::new(Vec::new())),
-            monitoring_active: Arc::new(Mutex::new(false)),
-            monitoring_start_time: Arc::new(Mutex::new(None)),
-            monitoring_thread: None,
-        })
-    }
-
-    /// Start real-time monitoring
-    #[instrument(skip(self))]
-    pub fn start_monitoring(&self) -> Result<()> {
-        let mut active = self.monitoring_active.lock().map_err(|_| {
-            CursedError::optimization_error("Failed to acquire monitoring lock")
-        })?;
-
-        if *active {
-            warn!("Monitoring is already active");
-            return Ok(());
+impl CompilationUnitCollection {
+    /// Create new collection
+    pub fn new() -> Self {
+        Self {
+            units: Vec::new(),
         }
-
-        *active = true;
+    }
+    
+    /// Add a compilation unit
+    pub fn add_unit(&mut self, unit: CompilationUnit) {
+        self.units.push(unit);
+    }
+    
+    /// Get all units
+    pub fn units(&self) -> &[CompilationUnit] {
+        &self.units
+    }
+    
+    /// Get mutable units
+    pub fn units_mut(&mut self) -> &mut [CompilationUnit] {
+        &mut self.units
+    }
+    
+    /// Find unit by name
+    pub fn find_unit(&self, name: &str) -> Option<&CompilationUnit> {
+        self.units.iter().find(|u| u.name == name)
+    }
+    
+    /// Find unit by name (mutable)
+    pub fn find_unit_mut(&mut self, name: &str) -> Option<&mut CompilationUnit> {
+        self.units.iter_mut().find(|u| u.name == name)
+    }
+    
+    /// Get collection statistics
+    pub fn get_statistics(&self) -> CollectionStats {
+        let total_units = self.units.len();
+        let total_source_files: usize = self.units.iter().map(|u| u.source_files.len()).sum();
+        let total_dependencies: usize = self.units.iter().map(|u| u.dependencies.len()).sum();
+        let total_size: usize = self.units.iter().map(|u| u.estimated_size_bytes).sum();
         
-        let mut start_time = self.monitoring_start_time.lock().map_err(|_| {
-            CursedError::optimization_error("Failed to acquire start time lock")
-        })?;
-        *start_time = Some(Instant::now());
-
-        info!("Started performance monitoring");
-        Ok(())
-    }
-
-    /// Stop real-time monitoring
-    #[instrument(skip(self))]
-    pub fn stop_monitoring(&self) -> Result<()> {
-        let mut active = self.monitoring_active.lock().map_err(|_| {
-            CursedError::optimization_error("Failed to acquire monitoring lock")
-        })?;
-
-        if !*active {
-            warn!("Monitoring is not currently active");
-            return Ok(());
-        }
-
-        *active = false;
-        info!("Stopped performance monitoring");
-        Ok(())
-    }
-
-    /// Get current system statistics
-    pub fn get_system_statistics(&self) -> SystemStatistics {
-        self.system_stats.lock()
-            .unwrap_or_else(|_| std::sync::PoisonError::into_inner)
-            .clone()
-    }
-
-    /// Get current resource statistics
-    pub fn get_resource_statistics(&self) -> Result<ResourceStatistics> {
-        let samples = self.resource_samples.lock().map_err(|_| {
-            CursedError::optimization_error("Failed to acquire resource samples lock")
-        })?;
-
-        if samples.is_empty() {
-            return Ok(ResourceStatistics::default());
-        }
-
-        let start_time = self.monitoring_start_time.lock().map_err(|_| {
-            CursedError::optimization_error("Failed to acquire start time lock")
-        })?;
-
-        let monitoring_uptime = start_time.map(|start| start.elapsed()).unwrap_or_default();
-
-        // Calculate statistics from samples
-        let sample_count = samples.len();
-        let peak_memory_mb = samples.iter().map(|s| s.memory_mb).fold(0.0, f64::max);
-        let average_memory_mb = samples.iter().map(|s| s.memory_mb).sum::<f64>() / sample_count as f64;
-        let peak_cpu_percent = samples.iter().map(|s| s.cpu_percent).fold(0.0, f64::max);
-        let average_cpu_percent = samples.iter().map(|s| s.cpu_percent).sum::<f64>() / sample_count as f64;
-        
-        let total_io_operations = samples.last().map(|s| s.io_operations).unwrap_or(0);
-        let network_bytes_sent = samples.last().map(|s| s.network_sent).unwrap_or(0);
-        let network_bytes_received = samples.last().map(|s| s.network_received).unwrap_or(0);
-
-        Ok(ResourceStatistics {
-            peak_memory_mb,
-            average_memory_mb,
-            peak_cpu_percent,
-            average_cpu_percent,
-            total_io_operations,
-            network_bytes_sent,
-            network_bytes_received,
-            monitoring_uptime,
-            sample_count,
-        })
-    }
-
-    /// Record an optimization completion
-    pub fn record_optimization_completion(&self, units_optimized: usize, compilation_time: Duration) {
-        if let Ok(mut stats) = self.system_stats.lock() {
-            stats.optimizations_completed += 1;
-            stats.total_units_optimized += units_optimized;
-            stats.total_compilation_time += compilation_time;
-            
-            // Update average
-            if stats.optimizations_completed > 0 {
-                stats.average_compilation_time = 
-                    stats.total_compilation_time / stats.optimizations_completed as u32;
+        let complexity_counts = self.units.iter().fold(
+            HashMap::new(),
+            |mut acc, unit| {
+                let complexity = unit.estimate_complexity();
+                *acc.entry(complexity).or_insert(0) += 1;
+                acc
             }
+        );
+        
+        let units_with_timing = self.units.iter().filter(|u| u.timing_info.is_some()).count();
+        
+        CollectionStats {
+            total_units,
+            total_source_files,
+            total_dependencies,
+            total_estimated_size_bytes: total_size,
+            complexity_distribution: complexity_counts,
+            units_with_timing_info: units_with_timing,
+            average_dependencies_per_unit: if total_units > 0 {
+                total_dependencies as f64 / total_units as f64
+            } else {
+                0.0
+            },
         }
     }
-
-    /// Record a benchmark run
-    pub fn record_benchmark_run(&self) {
-        if let Ok(mut stats) = self.system_stats.lock() {
-            stats.benchmark_runs += 1;
-        }
-    }
-
-    /// Record a cache hit
-    pub fn record_cache_hit(&self) {
-        if let Ok(mut stats) = self.system_stats.lock() {
-            stats.cache_hits += 1;
-        }
-    }
-
-    /// Record a cache miss
-    pub fn record_cache_miss(&self) {
-        if let Ok(mut stats) = self.system_stats.lock() {
-            stats.cache_misses += 1;
-        }
-    }
-
-    /// Record an error
-    pub fn record_error(&self) {
-        if let Ok(mut stats) = self.system_stats.lock() {
-            stats.errors_encountered += 1;
-        }
-    }
-
-    /// Simulate collecting system resource data
-    fn collect_resource_sample(&self) -> ResourceSample {
-        // Simulate realistic resource usage data
-        let base_memory = 100.0;
-        let memory_variation = (rand::random::<f64>() - 0.5) * 50.0;
-        let memory_mb = (base_memory + memory_variation).max(50.0).min(500.0);
-
-        let base_cpu = 25.0;
-        let cpu_variation = (rand::random::<f64>() - 0.5) * 40.0;
-        let cpu_percent = (base_cpu + cpu_variation).max(0.0).min(100.0);
-
-        let io_operations = (rand::random::<u64>() % 1000) + 100;
-        let network_sent = (rand::random::<u64>() % 10000) + 1000;
-        let network_received = (rand::random::<u64>() % 8000) + 800;
-
-        ResourceSample {
-            timestamp: Instant::now(),
-            memory_mb,
-            cpu_percent,
-            io_operations,
-            network_sent,
-            network_received,
-        }
-    }
-
-    /// Start the monitoring thread
-    fn start_monitoring_thread(&mut self) {
-        let config = self.config.clone();
-        let samples = Arc::clone(&self.resource_samples);
-        let active = Arc::clone(&self.monitoring_active);
-
-        let handle = thread::spawn(move || {
-            let interval = Duration::from_millis(config.monitoring_interval_ms);
+    
+    /// Sort units by compilation order (dependencies first)
+    pub fn sort_by_compilation_order(&mut self) {
+        // Simple topological sort
+        let mut sorted = Vec::new();
+        let mut remaining: Vec<_> = self.units.drain(..).collect();
+        
+        while !remaining.is_empty() {
+            let mut progress = false;
             
-            while *active.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) {
-                let sample = ResourceSample {
-                    timestamp: Instant::now(),
-                    memory_mb: Self::get_memory_usage_mb(),
-                    cpu_percent: Self::get_cpu_usage_percent(),
-                    io_operations: Self::get_io_operations(),
-                    network_sent: Self::get_network_sent(),
-                    network_received: Self::get_network_received(),
-                };
-
-                if let Ok(mut samples_guard) = samples.lock() {
-                    samples_guard.push(sample);
-                    
-                    // Keep only recent samples to avoid memory growth
-                    if samples_guard.len() > 10000 {
-                        samples_guard.drain(0..5000);
-                    }
+            remaining.retain(|unit| {
+                // Check if all dependencies are already sorted
+                let deps_satisfied = unit.dependencies.iter().all(|dep| {
+                    sorted.iter().any(|sorted_unit: &CompilationUnit| sorted_unit.name == *dep)
+                });
+                
+                if deps_satisfied {
+                    sorted.push(unit.clone());
+                    progress = true;
+                    false // Remove from remaining
+                } else {
+                    true // Keep in remaining
                 }
-
-                thread::sleep(interval);
-            }
-        });
-
-        self.monitoring_thread = Some(handle);
-    }
-
-    /// Get current memory usage in MB (simulated)
-    fn get_memory_usage_mb() -> f64 {
-        // Try to get real memory usage, fall back to simulation
-        if let Ok(usage) = Self::get_process_memory_usage() {
-            usage
-        } else {
-            // Fallback simulation
-            100.0 + (rand::random::<f64>() * 50.0)
-        }
-    }
-    
-    /// Get real process memory usage in MB
-    fn get_process_memory_usage() -> Result<f64> {
-        #[cfg(target_os = "linux")]
-        {
-            let status = std::fs::read_to_string("/proc/self/status").map_err(|e| {
-                CursedError::optimization_error(&format!("Failed to read /proc/self/status: {}", e))
-            })?;
+            });
             
-            for line in status.lines() {
-                if line.starts_with("VmRSS:") {
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if parts.len() >= 2 {
-                        if let Ok(kb) = parts[1].parse::<f64>() {
-                            return Ok(kb / 1024.0); // Convert KB to MB
-                        }
-                    }
-                }
+            // If no progress, there might be circular dependencies
+            if !progress && !remaining.is_empty() {
+                // Add remaining units anyway to avoid infinite loop
+                sorted.extend(remaining.drain(..));
+                break;
             }
         }
         
-        #[cfg(target_os = "macos")]
-        {
-            // Use task_info on macOS
-            // This is a simplified version - real implementation would use mach APIs
-            return Err(CursedError::optimization_error("macOS memory monitoring not implemented"));
-        }
-        
-        #[cfg(target_os = "windows")]
-        {
-            // Use GetProcessMemoryInfo on Windows
-            // This is a simplified version - real implementation would use Windows APIs
-            return Err(CursedError::optimization_error("Windows memory monitoring not implemented"));
-        }
-        
-        Err(CursedError::optimization_error("Memory monitoring not supported on this platform"))
-    }
-
-    /// Get current CPU usage percentage (simulated)
-    fn get_cpu_usage_percent() -> f64 {
-        // Try to get real CPU usage, fall back to simulation
-        if let Ok(usage) = Self::get_process_cpu_usage() {
-            usage
-        } else {
-            // Fallback simulation
-            20.0 + (rand::random::<f64>() * 30.0)
-        }
-    }
-    
-    /// Get real process CPU usage percentage
-    fn get_process_cpu_usage() -> Result<f64> {
-        #[cfg(target_os = "linux")]
-        {
-            let stat = std::fs::read_to_string("/proc/self/stat").map_err(|e| {
-                CursedError::optimization_error(&format!("Failed to read /proc/self/stat: {}", e))
-            })?;
-            
-            let fields: Vec<&str> = stat.split_whitespace().collect();
-            if fields.len() >= 17 {
-                // Fields 13 and 14 contain user and system time in clock ticks
-                if let (Ok(utime), Ok(stime)) = (fields[13].parse::<u64>(), fields[14].parse::<u64>()) {
-                    let total_time = utime + stime;
-                    
-                    // Get system uptime
-                    if let Ok(uptime_str) = std::fs::read_to_string("/proc/uptime") {
-                        let uptime_parts: Vec<&str> = uptime_str.split_whitespace().collect();
-                        if let Ok(uptime_seconds) = uptime_parts[0].parse::<f64>() {
-                            let clock_ticks_per_second = 100.0; // Typical value
-                            let process_time_seconds = total_time as f64 / clock_ticks_per_second;
-                            let cpu_usage = (process_time_seconds / uptime_seconds) * 100.0;
-                            return Ok(cpu_usage.min(100.0));
-                        }
-                    }
-                }
-            }
-        }
-        
-        #[cfg(target_os = "macos")]
-        {
-            // Use task_info on macOS - simplified
-            return Err(CursedError::optimization_error("macOS CPU monitoring not implemented"));
-        }
-        
-        #[cfg(target_os = "windows")]
-        {
-            // Use GetProcessTimes on Windows - simplified
-            return Err(CursedError::optimization_error("Windows CPU monitoring not implemented"));
-        }
-        
-        Err(CursedError::optimization_error("CPU monitoring not supported on this platform"))
-    }
-
-    /// Get I/O operations count (simulated)
-    fn get_io_operations() -> u64 {
-        // Simulate I/O operations measurement
-        rand::random::<u64>() % 1000
-    }
-
-    /// Get network bytes sent (simulated)
-    fn get_network_sent() -> u64 {
-        // Simulate network sent measurement
-        rand::random::<u64>() % 10000
-    }
-
-    /// Get network bytes received (simulated)
-    fn get_network_received() -> u64 {
-        // Simulate network received measurement
-        rand::random::<u64>() % 8000
-    }
-
-    /// Get performance analysis for a time period
-    pub fn get_performance_analysis(&self, _duration: Duration) -> Result<crate::optimization::analysis::PerformanceAnalysis> {
-        let stats = self.get_system_statistics();
-        
-        Ok(crate::optimization::analysis::PerformanceAnalysis {
-            units_optimized: stats.total_units_optimized,
-            total_optimization_time: stats.total_compilation_time,
-            total_size_reduction: 1000, // Simulated
-            optimization_efficiency: 0.85, // Simulated
-            recommendations: vec![
-                "Consider enabling parallel compilation for better performance".to_string(),
-                "Cache hit rate could be improved".to_string(),
-            ],
-        })
-    }
-
-    /// Update metrics collector configuration
-    pub fn update_config(&mut self, new_config: PerformanceConfig) -> Result<()> {
-        info!("Updating metrics collector configuration");
-        self.config = new_config;
-        Ok(())
-    }
-
-    /// Reset all collected metrics
-    pub fn reset_metrics(&self) -> Result<()> {
-        if let Ok(mut stats) = self.system_stats.lock() {
-            *stats = SystemStatistics::default();
-        }
-        
-        if let Ok(mut samples) = self.resource_samples.lock() {
-            samples.clear();
-        }
-
-        info!("Reset all metrics");
-        Ok(())
+        self.units = sorted;
     }
 }
 
-impl Drop for MetricsCollector {
-    fn drop(&mut self) {
-        // Stop monitoring when dropped
-        let _ = self.stop_monitoring();
-        
-        // Wait for monitoring thread to finish
-        if let Some(handle) = self.monitoring_thread.take() {
-            let _ = handle.join();
-        }
-    }
+/// Statistics about a collection of compilation units
+#[derive(Debug, Clone)]
+pub struct CollectionStats {
+    pub total_units: usize,
+    pub total_source_files: usize,
+    pub total_dependencies: usize,
+    pub total_estimated_size_bytes: usize,
+    pub complexity_distribution: HashMap<CompilationComplexity, usize>,
+    pub units_with_timing_info: usize,
+    pub average_dependencies_per_unit: f64,
 }
 
-// Simple random number generation for simulation
-mod rand {
-    use std::cell::Cell;
-    
-    thread_local! {
-        static RNG_STATE: Cell<u64> = Cell::new(1);
-    }
-    
-    pub fn random<T>() -> T 
-    where 
-        T: From<u64>
-    {
-        RNG_STATE.with(|state| {
-            let current = state.get();
-            let next = current.wrapping_mul(1103515245).wrapping_add(12345);
-            state.set(next);
-            T::from(next)
-        })
+impl Default for CompilationUnitCollection {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    
     #[test]
     fn test_compilation_unit_creation() {
         let unit = CompilationUnit::new("test_unit".to_string());
         assert_eq!(unit.name, "test_unit");
-        assert_eq!(unit.estimated_size_bytes, 10000);
         assert!(unit.source_files.is_empty());
+        assert!(unit.dependencies.is_empty());
     }
-
+    
     #[test]
-    fn test_metrics_collector_creation() {
-        let config = PerformanceConfig::default();
-        let collector = MetricsCollector::new(config);
-        assert!(collector.is_ok());
+    fn test_compilation_unit_dependencies() {
+        let mut main_unit = CompilationUnit::new("main".to_string());
+        let mut utils_unit = CompilationUnit::new("utils".to_string());
+        let core_unit = CompilationUnit::new("core".to_string());
+        
+        main_unit.add_dependency("utils".to_string());
+        utils_unit.add_dependency("core".to_string());
+        
+        let all_units = vec![main_unit.clone(), utils_unit, core_unit];
+        
+        assert!(main_unit.depends_on("utils", &all_units));
+        assert!(main_unit.depends_on("core", &all_units));
+        assert_eq!(main_unit.total_dependency_count(&all_units), 2);
     }
-
+    
     #[test]
-    fn test_system_statistics_recording() {
-        let config = PerformanceConfig::default();
-        let collector = MetricsCollector::new(config).unwrap();
+    fn test_complexity_estimation() {
+        let mut unit = CompilationUnit::new("complex_unit".to_string());
+        unit.add_source_file("file1.csd".to_string());
+        unit.add_source_file("file2.csd".to_string());
+        unit.add_dependency("dep1".to_string());
+        unit.estimated_size_bytes = 50000; // 50KB
         
-        collector.record_optimization_completion(3, Duration::from_millis(100));
-        collector.record_benchmark_run();
-        collector.record_cache_hit();
-        collector.record_cache_miss();
-        
-        let stats = collector.get_system_statistics();
-        assert_eq!(stats.optimizations_completed, 1);
-        assert_eq!(stats.total_units_optimized, 3);
-        assert_eq!(stats.benchmark_runs, 1);
-        assert_eq!(stats.cache_hits, 1);
-        assert_eq!(stats.cache_misses, 1);
+        let complexity = unit.estimate_complexity();
+        assert!(matches!(complexity, CompilationComplexity::Medium | CompilationComplexity::High));
     }
-
+    
     #[test]
-    fn test_monitoring_start_stop() {
-        let config = PerformanceConfig::default();
-        let collector = MetricsCollector::new(config).unwrap();
+    fn test_compilation_unit_collection() {
+        let mut collection = CompilationUnitCollection::new();
         
-        assert!(collector.start_monitoring().is_ok());
-        assert!(collector.stop_monitoring().is_ok());
+        let unit1 = CompilationUnit::new("unit1".to_string());
+        let unit2 = CompilationUnit::new("unit2".to_string());
+        
+        collection.add_unit(unit1);
+        collection.add_unit(unit2);
+        
+        let stats = collection.get_statistics();
+        assert_eq!(stats.total_units, 2);
+    }
+    
+    #[test]
+    fn test_collection_sorting() {
+        let mut collection = CompilationUnitCollection::new();
+        
+        let mut main_unit = CompilationUnit::new("main".to_string());
+        let utils_unit = CompilationUnit::new("utils".to_string());
+        
+        main_unit.add_dependency("utils".to_string());
+        
+        collection.add_unit(main_unit);
+        collection.add_unit(utils_unit);
+        
+        collection.sort_by_compilation_order();
+        
+        // utils should come before main
+        let units = collection.units();
+        assert_eq!(units[0].name, "utils");
+        assert_eq!(units[1].name, "main");
     }
 }

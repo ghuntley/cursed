@@ -37,15 +37,31 @@ pub struct LlvmValue {
     pub value_type: LlvmType,
     pub llvm_value: BasicValueEnum<'static>,
     pub is_constant: bool,
+    pub llvm_name: String, // Add llvm_name field for backward compatibility
 }
 
 impl LlvmValue {
     /// Create a new LLVM value with actual LLVM value
     pub fn new(value_type: LlvmType, llvm_value: BasicValueEnum<'static>, is_constant: bool) -> Self {
+        // Generate a name based on the value type and properties
+        let llvm_name = format!("%temp_val_{}", 
+            if is_constant { "const" } else { "var" });
+        
         Self {
             value_type,
             llvm_value,
             is_constant,
+            llvm_name,
+        }
+    }
+    
+    /// Create a new LLVM value with explicit name
+    pub fn new_with_name(value_type: LlvmType, llvm_value: BasicValueEnum<'static>, is_constant: bool, llvm_name: String) -> Self {
+        Self {
+            value_type,
+            llvm_value,
+            is_constant,
+            llvm_name,
         }
     }
     
@@ -747,23 +763,112 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     fn compile_call_expression(&mut self, call: &CallExpression) -> Result<LlvmValue, Error> {
         debug!("Compiling function call: {}", call.function.string());
         
-        // For now, implement a simplified function call system
-        // This will be enhanced when function compilation is fully integrated
+        let func_name = call.function.string();
         
-        // Compile arguments
-        let mut _arg_values = Vec::new();
+        // Compile arguments and determine their types
+        let mut arg_values = Vec::new();
+        let mut arg_types = Vec::new();
+        let mut arg_llvm_names = Vec::new();
+        
         for arg in &call.arguments {
             let arg_val = self.compile_expression(arg.as_ref())?;
-            _arg_values.push(arg_val);
+            arg_types.push(arg_val.value_type.clone());
+            arg_llvm_names.push(arg_val.llvm_name.clone());
+            arg_values.push(arg_val);
         }
         
-        // For now, return a placeholder result - this will be enhanced
-        // when the function compilation system is fully integrated
-        warn!("Function call compilation not fully implemented yet: {}", call.function.string());
+        // For now, we'll use a simplified approach since we don't have access to the function registry
+        // In a full implementation, this would integrate with the function registry from the main generator
         
-        // Return a default integer value as placeholder
-        let zero = self.llvm_context.i64_type().const_zero();
-        Ok(LlvmValue::new(LlvmType::Int64, zero.into(), false))
+        // Check for built-in functions
+        let (return_type, llvm_return_type) = match func_name.as_str() {
+            "print" | "println" => (LlvmType::Void, self.llvm_context.void_type().into()),
+            "malloc" => (LlvmType::Pointer(Box::new(LlvmType::Void)), self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
+            "strlen" => (LlvmType::Int64, self.llvm_context.i64_type().into()),
+            "abs" => (LlvmType::Int32, self.llvm_context.i32_type().into()),
+            "sqrt" | "fabs" | "pow" => (LlvmType::Float64, self.llvm_context.f64_type().into()),
+            _ => {
+                info!("Unknown function '{}', assuming i32 return type", func_name);
+                (LlvmType::Int32, self.llvm_context.i32_type().into())
+            }
+        };
+        
+        // Generate function call IR
+        let call_temp = self.context.next_temp();
+        let call_temp_name = format!("%call_{}", call_temp);
+        
+        // Get or declare the function
+        let func_type = self.get_or_create_function_type(&func_name, &arg_types, &return_type)?;
+        let function = self.module.get_function(&func_name)
+            .unwrap_or_else(|| {
+                // Declare external function if not found
+                self.module.add_function(&func_name, func_type, None)
+            });
+        
+        // Build arguments for the call
+        let call_args: Vec<BasicValueEnum> = arg_values.iter()
+            .map(|arg| arg.llvm_value)
+            .collect();
+        
+        // Build the function call
+        let call_result = self.builder.build_call(function, &call_args, &call_temp_name)
+            .map_err(|e| Error::Compile(format!("Failed to build function call: {:?}", e)))?;
+        
+        debug!("Function call '{}' compiled successfully", func_name);
+        
+        // Return the call result
+        if return_type == LlvmType::Void {
+            // For void functions, return a dummy value
+            let dummy_value = self.llvm_context.i32_type().const_zero();
+            Ok(LlvmValue::new_with_name(LlvmType::Void, dummy_value.into(), false, call_temp_name))
+        } else {
+            let result_value = call_result.try_as_basic_value().left()
+                .ok_or_else(|| Error::Compile("Function call did not return a value".to_string()))?;
+            Ok(LlvmValue::new_with_name(return_type, result_value, false, call_temp_name))
+        }
+    }
+    
+    /// Get or create function type
+    fn get_or_create_function_type(&self, func_name: &str, arg_types: &[LlvmType], return_type: &LlvmType) -> Result<inkwell::types::FunctionType, Error> {
+        // Convert LLVM types to inkwell types
+        let param_types: Result<Vec<_>, _> = arg_types.iter()
+            .map(|arg_type| self.llvm_type_to_inkwell_type(arg_type))
+            .collect();
+        let param_types = param_types?;
+        
+        let return_inkwell_type = self.llvm_type_to_inkwell_type(return_type)?;
+        
+        // Create function type
+        match return_inkwell_type {
+            inkwell::types::BasicTypeEnum::ArrayType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::FloatType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::IntType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::PointerType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::StructType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::VectorType(t) => Ok(t.fn_type(&param_types, false)),
+        }
+    }
+    
+    /// Convert LlvmType to inkwell BasicTypeEnum
+    fn llvm_type_to_inkwell_type(&self, llvm_type: &LlvmType) -> Result<inkwell::types::BasicTypeEnum, Error> {
+        match llvm_type {
+            LlvmType::Int32 => Ok(self.llvm_context.i32_type().into()),
+            LlvmType::Int64 => Ok(self.llvm_context.i64_type().into()),
+            LlvmType::Float64 => Ok(self.llvm_context.f64_type().into()),
+            LlvmType::Boolean => Ok(self.llvm_context.bool_type().into()),
+            LlvmType::String => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
+            LlvmType::Pointer(_) => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
+            LlvmType::Array => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
+            LlvmType::Object => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
+            LlvmType::Void => {
+                // For void types, we'll return i32 as a placeholder since BasicTypeEnum doesn't include void
+                Ok(self.llvm_context.i32_type().into())
+            },
+            LlvmType::Function { .. } => {
+                // Function types are represented as function pointers
+                Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into())
+            }
+        }
     }
     
     /// Compile assignment expressions

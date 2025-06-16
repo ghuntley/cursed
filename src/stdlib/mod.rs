@@ -37,6 +37,9 @@ pub mod json_tea;
 pub mod oglogging;
 pub mod plug_vibes;
 pub mod csv;
+pub mod regex_vibez;
+pub mod chaos_mode;
+pub mod embed_that;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
@@ -584,7 +587,7 @@ pub use profiler::{
     Benchmark, BenchmarkResult, BenchmarkSuite, BenchmarkConfig,
     BenchmarkRunner, BenchmarkReport, ComparisonResult,
     benchmark_function, benchmark_with_setup, run_benchmark_suite,
-    compare_benchmarks, generate_benchmark_report,
+    generate_benchmark_report,
     
     // Performance metrics
     PerformanceMetrics, MetricsCollector, MetricType, MetricValue,
@@ -679,7 +682,7 @@ pub use signal_boost::{
 // VibeNet networking re-exports - Complete networking package with CURSED flair
 pub use vibe_net::{
     // Core types and result handling
-    NetResult, VibeContext,
+    VibeContext,
     
     // IP addressing
     IPVibe, IPNetVibe, IPMaskVibe,
@@ -716,8 +719,8 @@ pub use vibe_net::{
     dial_tcp, dial_udp, dial_unix,
     
     // DNS functions
-    lookup_host, lookup_ip, lookup_port, lookup_cname,
-    lookup_srv, lookup_mx, lookup_ns, lookup_txt, lookup_addr,
+    lookup_host, lookup_ip, lookup_port,
+    lookup_srv, lookup_ns, lookup_addr,
     
     // IPv6 support
     is_ipv6_enabled, prefer_ipv6, set_prefer_ipv6, ipv6_interface_addrs,
@@ -732,7 +735,7 @@ pub use vibe_net::{
     error::{
         NetError as VibeNetError, address_resolution_error, connection_failed_error, timeout_error as vibe_net_timeout_error,
         invalid_protocol_error, dns_resolution_error, interface_error, socket_error, tls_error,
-        protocol_error, rate_limit_error, circuit_breaker_error, pool_exhausted_error,
+        rate_limit_error, circuit_breaker_error, pool_exhausted_error,
         io_error as vibe_net_io_error, permission_denied_error, resource_unavailable_error, invalid_config_error
     }
 };
@@ -835,6 +838,139 @@ pub use csv::{
     // Utility functions
     read_all_from_string, write_all_to_string,
     validate_csv_data, transform_csv_data,
+};
+
+// RegexVibez - Regular expression processing re-exports
+pub use regex_vibez::{
+    // Error handling system
+    RegexVibesError, RegexVibesResult,
+    
+    // Core regex types
+    VibePattern, VibeGroups, PatternBuilder,
+    
+    // Compilation functions
+    compile, must_compile, compile_posix, must_compile_posix,
+    
+    // Helper functions
+    r#match, match_string, quote_meta, new_pattern_builder,
+    
+    // Common patterns library
+    EMAIL_PATTERN, URL_PATTERN, DATE_PATTERN, TIME_PATTERN,
+    USERNAME_PATTERN, PASSWORD_PATTERN, PHONE_PATTERN, ZIP_CODE_PATTERN,
+    HASHTAG_PATTERN, EMOJI_PATTERN, IPV4_PATTERN, IPV6_PATTERN,
+    CREDIT_CARD_PATTERN, HEX_COLOR_PATTERN, UUID_PATTERN, HTML_TAG_PATTERN,
+    JSON_STRING_PATTERN, BASE64_PATTERN, MAC_ADDRESS_PATTERN, SSN_PATTERN,
+    CURRENCY_PATTERN, VERSION_PATTERN, CommonPatterns,
+    
+    // Utility functions
+    is_valid_pattern, validate_pattern, count_capture_groups, extract_literals,
+    find_common_prefix, find_common_suffix, strings_to_alternation, optimize_string_list,
+    test_patterns, benchmark_pattern, BenchmarkResult, escape_replacement,
+    parse_replacement_references, glob_to_regex, glob_match, find_regex_patterns,
+    create_line_filter, split_keep_delimiter,
+    
+    // Groups functionality
+    GroupStatistics, GroupValidationResult,
+};
+
+// ChaosMode runtime system re-exports - Comprehensive runtime control with Gen Z flair
+pub use chaos_mode::{
+    // Error handling system
+    ChaosError, ChaosResult,
+    
+    // Core runtime functions
+    num_cpu, num_goroutine, yield_processor, gosched, gc, gomaxprocs,
+    set_gc_percent, set_max_heap,
+    
+    // Memory management and statistics
+    MemoryStats, mem_stats, read_mem_stats, set_gc_enabled, free_os_memory,
+    set_mem_profile_rate,
+    
+    // Memory debugging features
+    allocation_size_histogram, top_allocated_types, TypeAllocationInfo,
+    is_valid_pointer, get_object_size, get_pointer_info, PointerInfo,
+    
+    // Goroutine and stack management
+    stack_trace, all_goroutine_ids, all_goroutine_stacks, callers,
+    pc_to_file_and_line, pc_to_func_name, goroutine_stack,
+    
+    // Enhanced goroutine management
+    GoroutineData, goroutine_info, set_goroutine_label, goroutines_by_label,
+    goroutines_by_state, kill_goroutine,
+    
+    // Profiling and tracing
+    start_trace, stop_trace, read_trace, set_traceback_limit,
+    start_cpu_profile, stop_cpu_profile,
+    
+    // Runtime information
+    version, goarch, goos, compiler, runtime_stats, goroot,
+    
+    // Enhanced garbage collection
+    GCMode, set_gc_mode, get_gc_mode, start_gc, wait_for_gc,
+    register_gc_notification,
+    
+    // Performance tuning
+    SchedulerMode, set_max_threads, num_threads, set_cpu_frequency,
+    set_thread_priority, set_scheduler_mode, get_scheduler_mode,
+    
+    // Module management
+    initialize as initialize_chaos_mode, cleanup as cleanup_chaos_mode,
+    chaos_stats,
+};
+
+// EmbedThat file embedding re-exports - Comprehensive embedded file management
+pub use embed_that::{
+    // Error handling system
+    EmbedError, EmbedResult,
+    file_not_found, invalid_format, compression_error, decompression_error,
+    template_parsing_error, image_loading_error, cache_error, mime_type_error,
+    config_parsing_error, resource_limit_exceeded, invalid_pattern, general_error,
+    
+    // Core types for embedded files
+    ThatFile, ThatFiles, ThatString, ThatBytes,
+    FileSystemVibe, DirEntry, FileInfo, EmbeddedFileSystem,
+    
+    // Resource loading functions
+    load_that_file, load_that_dir, load_that_pattern, file_exists, get_embed_statistics,
+    ResourceLoader, EmbedStatistics, EmbedManifest, ManifestItem,
+    initialize_resource_loader,
+    
+    // Template integration
+    parse_templates, parse_templates_with_funcs, validate_all_templates,
+    get_default_template_helpers, TemplateIntegration, ValidationReport, TemplateHelpers,
+    
+    // Specific file type loaders
+    load_image, load_image_fs, load_json, load_yaml, load_toml, load_config,
+    load_text_file, load_binary_file, load_css, load_javascript, load_html,
+    load_font, load_audio, load_video,
+    ImageData, ImageType, CssData, JavaScriptData, HtmlData,
+    FontData, FontType, AudioData, AudioType, VideoData, VideoType,
+    
+    // Compression support
+    decompress_file, load_compressed_fs, compress_data, analyze_compression, get_compression_stats,
+    CompressionType, CompressionStats, CompressionResult, CompressionAnalysis,
+    CompressedEmbeddedFile,
+    
+    // Caching support
+    new_resource_cache, new_resource_cache_with_expiry, new_resource_cache_with_config,
+    get_global_cache, ResourceCache, CacheStatistics, CacheConfig,
+    
+    // Module management
+    initialize as initialize_embed_that, get_module_info as get_embed_module_info,
+    ModuleInfo as EmbedModuleInfo, ValidationSummary, MemoryUsageSummary,
+    
+    // Utility functions
+    utils::{
+        load_config_auto, load_directory_as_map, get_files_by_type,
+        validate_all_embedded_files, get_memory_usage_summary
+    },
+    
+    // Constants
+    constants::{
+        TEMPLATE_PATTERNS, STATIC_ASSET_PATTERNS, CONFIG_PATTERNS, DOCUMENTATION_PATTERNS,
+        DEFAULT_CACHE_EXPIRY_SECONDS, DEFAULT_CACHE_MAX_SIZE, DEFAULT_CACHE_CLEANUP_INTERVAL_SECONDS,
+        MIN_COMPRESSION_SIZE, COMPRESSION_RATIO_THRESHOLD
+    }
 };
 
 

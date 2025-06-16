@@ -388,21 +388,162 @@ impl ParallelCompiler {
         }
     }
     
-    /// Compile a single job (placeholder implementation)
+    /// Compile a single job (real implementation)
     fn compile_job(worker_id: usize, job: CompilationJob) -> Result<()> {
-        // This is a placeholder implementation
-        // In a real implementation, this would call the actual compiler
+        use std::process::Command;
+        use std::fs;
+        use std::io::Write;
         
         println!("Worker {} compiling: {}", worker_id, job.source_path.display());
         
-        // Simulate compilation time
-        thread::sleep(Duration::from_millis(100));
-        
-        // Simulate occasional failures
-        if job.source_path.to_string_lossy().contains("fail") {
-            return Err(Error::Other("Simulated compilation error".to_string()));
+        // Validate input file exists
+        if !job.source_path.exists() {
+            return Err(Error::Other(format!("Source file not found: {}", job.source_path.display())));
         }
         
+        // Create output directory if it doesn't exist
+        if let Some(output_dir) = job.output_path.parent() {
+            fs::create_dir_all(output_dir)
+                .map_err(|e| Error::Other(format!("Failed to create output directory: {}", e)))?;
+        }
+        
+        // Check if this is a CURSED source file
+        let source_extension = job.source_path.extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("");
+            
+        match source_extension {
+            "csd" => {
+                // Compile CURSED source file
+                Self::compile_cursed_file(worker_id, &job)
+            }
+            "rs" => {
+                // Compile Rust source file (fallback)
+                Self::compile_rust_file(worker_id, &job)
+            }
+            "c" | "cpp" | "cc" => {
+                // Compile C/C++ source file (fallback)
+                Self::compile_c_file(worker_id, &job)
+            }
+            _ => {
+                // Unknown file type, attempt generic compilation
+                Self::compile_generic_file(worker_id, &job)
+            }
+        }
+    }
+    
+    /// Compile CURSED source file
+    fn compile_cursed_file(worker_id: usize, job: &CompilationJob) -> Result<()> {
+        use std::process::Command;
+        
+        // Use the CURSED compiler binary
+        let cursed_binary = std::env::var("CURSED_COMPILER")
+            .unwrap_or_else(|_| "cursed".to_string());
+        
+        let mut cmd = Command::new(&cursed_binary);
+        cmd.arg("compile")
+            .arg(&job.source_path)
+            .arg("-o")
+            .arg(&job.output_path);
+        
+        // Add compilation flags
+        for flag in &job.compile_flags {
+            cmd.arg(flag);
+        }
+        
+        // Add dependency information
+        for dep in &job.dependencies {
+            cmd.arg("--dependency")
+                .arg(dep);
+        }
+        
+        // Execute compilation
+        let output = cmd.output()
+            .map_err(|e| Error::Other(format!("Failed to execute CURSED compiler: {}", e)))?;
+        
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::Other(format!("CURSED compilation failed: {}", stderr)));
+        }
+        
+        println!("Worker {} successfully compiled: {}", worker_id, job.source_path.display());
+        Ok(())
+    }
+    
+    /// Compile Rust source file (fallback)
+    fn compile_rust_file(worker_id: usize, job: &CompilationJob) -> Result<()> {
+        use std::process::Command;
+        
+        let mut cmd = Command::new("rustc");
+        cmd.arg(&job.source_path)
+            .arg("-o")
+            .arg(&job.output_path);
+        
+        // Add compilation flags
+        for flag in &job.compile_flags {
+            cmd.arg(flag);
+        }
+        
+        let output = cmd.output()
+            .map_err(|e| Error::Other(format!("Failed to execute rustc: {}", e)))?;
+        
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::Other(format!("Rust compilation failed: {}", stderr)));
+        }
+        
+        println!("Worker {} successfully compiled Rust file: {}", worker_id, job.source_path.display());
+        Ok(())
+    }
+    
+    /// Compile C/C++ source file (fallback)
+    fn compile_c_file(worker_id: usize, job: &CompilationJob) -> Result<()> {
+        use std::process::Command;
+        
+        let compiler = if job.source_path.extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| ext == "cpp" || ext == "cc")
+            .unwrap_or(false) {
+            "g++"
+        } else {
+            "gcc"
+        };
+        
+        let mut cmd = Command::new(compiler);
+        cmd.arg("-c")
+            .arg(&job.source_path)
+            .arg("-o")
+            .arg(&job.output_path);
+        
+        // Add compilation flags
+        for flag in &job.compile_flags {
+            cmd.arg(flag);
+        }
+        
+        let output = cmd.output()
+            .map_err(|e| Error::Other(format!("Failed to execute {}: {}", compiler, e)))?;
+        
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::Other(format!("C/C++ compilation failed: {}", stderr)));
+        }
+        
+        println!("Worker {} successfully compiled C/C++ file: {}", worker_id, job.source_path.display());
+        Ok(())
+    }
+    
+    /// Compile generic file (copy or transform)
+    fn compile_generic_file(worker_id: usize, job: &CompilationJob) -> Result<()> {
+        use std::fs;
+        
+        // For unknown file types, just copy to output location
+        fs::copy(&job.source_path, &job.output_path)
+            .map_err(|e| Error::Other(format!("Failed to copy file: {}", e)))?;
+        
+        println!("Worker {} copied file: {} -> {}", 
+                worker_id, 
+                job.source_path.display(), 
+                job.output_path.display());
         Ok(())
     }
     
