@@ -853,12 +853,12 @@ impl SemanticAnalyzer {
         Ok(())
     }
     
-    fn visit_statement(&mut self, _statement: &Statement) -> Result<()> {
+    fn visit_statement(&mut self, _statement: &dyn Statement) -> Result<()> {
         // Analyze statement for semantic features
         Ok(())
     }
     
-    fn visit_expression(&mut self, _expression: &Expression) -> Result<()> {
+    fn visit_expression(&mut self, _expression: &dyn Expression) -> Result<()> {
         // Analyze expression for semantic features
         self.constant_expressions += 1; // Simplified
         Ok(())

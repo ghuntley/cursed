@@ -15,7 +15,7 @@ use rsa::pkcs1::{EncodeRsaPrivateKey, DecodeRsaPrivateKey};
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey};
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey, SECRET_KEY_LENGTH as ED25519_SECRET_KEY_LENGTH};
-use x25519_dalek::{StaticSecret, PublicKey as X25519PublicKey};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use elliptic_curve::pkcs8::{EncodePrivateKey as EcEncodePrivateKey, DecodePrivateKey as EcDecodePrivateKey};
 
 /// Supported private key formats
@@ -326,7 +326,7 @@ fn generate_ed25519_private_key() -> Result<Value, CursedError> {
 /// Generate X25519 private key
 fn generate_x25519_private_key() -> Result<Value, CursedError> {
     let mut rng = OsRng;
-    let private_key = StaticSecret::random_from_rng(&mut rng);
+    let private_key = EphemeralSecret::random();
     let private_bytes = private_key.to_bytes();
     
     let info = PrivateKeyInfo::new(

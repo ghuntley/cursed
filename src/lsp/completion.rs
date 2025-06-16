@@ -258,14 +258,39 @@ impl CompletionProvider {
             .collect()
     }
 
-    /// Get variable completions
-    fn get_variable_completions(&self, content: &str, context: &CompletionContext) -> Vec<CompletionItem> {
+    /// Get variable completions with enhanced type information
+    async fn get_variable_completions_with_types(&self, content: &str, context: &CompletionContext, semantic_context: &SemanticContext) -> Vec<CompletionItem> {
         let mut completions = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
         
-        // Find variable declarations
+        // Use semantic context variables first (more accurate)
+        for (var_name, var_type) in &semantic_context.variables_in_scope {
+            if context.prefix.is_empty() || var_name.starts_with(&context.prefix) {
+                completions.push(CompletionItem {
+                    label: var_name.clone(),
+                    kind: Some(CompletionItemKind::VARIABLE),
+                    detail: Some(format!("Variable: {}", var_type)),
+                    documentation: Some(Documentation::String(format!(
+                        "Variable {} of type {} (from semantic analysis)",
+                        var_name, var_type
+                    ))),
+                    insert_text: Some(var_name.clone()),
+                    insert_text_format: Some(InsertTextFormat::PLAIN_TEXT),
+                    sort_text: Some(format!("1_{}", var_name)),
+                    filter_text: Some(var_name.clone()),
+                    ..CompletionItem::default()
+                });
+            }
+        }
+        
+        // Fallback to text-based parsing for variables not captured semantically
+        let lines: Vec<&str> = content.lines().collect();
         for line in lines {
             if let Some(var_name) = self.extract_variable_name(line) {
+                // Skip if already added from semantic context
+                if semantic_context.variables_in_scope.contains_key(&var_name) {
+                    continue;
+                }
+                
                 if context.prefix.is_empty() || var_name.starts_with(&context.prefix) {
                     let var_type = self.extract_variable_type(line).unwrap_or_else(|| "unknown".to_string());
                     
@@ -279,7 +304,7 @@ impl CompletionProvider {
                         ))),
                         insert_text: Some(var_name.clone()),
                         insert_text_format: Some(InsertTextFormat::PLAIN_TEXT),
-                        sort_text: Some(format!("1_{}", var_name)), // Lower priority than keywords
+                        sort_text: Some(format!("1_{}", var_name)),
                         filter_text: Some(var_name),
                         ..CompletionItem::default()
                     });
@@ -290,23 +315,67 @@ impl CompletionProvider {
         completions
     }
 
-    /// Get function completions
-    fn get_function_completions(&self, content: &str, context: &CompletionContext) -> Vec<CompletionItem> {
+    /// Get function completions with enhanced signature information
+    async fn get_function_completions_with_signatures(&self, content: &str, context: &CompletionContext, semantic_context: &SemanticContext) -> Vec<CompletionItem> {
         let mut completions = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
         
-        // Add built-in functions
+        // Enhanced built-in functions with more stdlib coverage
         let builtins = vec![
+            // Core functions
             ("print", "print(value)", "Print value to stdout"),
             ("println", "println(value)", "Print value with newline"),
+            ("eprint", "eprint(value)", "Print value to stderr"),
+            ("eprintln", "eprintln(value)", "Print value to stderr with newline"),
+            
+            // Type conversion functions
             ("len", "len(collection)", "Get length of collection"),
             ("str", "str(value)", "Convert value to string"),
             ("int", "int(value)", "Convert value to integer"),
             ("float", "float(value)", "Convert value to float"),
+            ("bool", "bool(value)", "Convert value to boolean"),
             ("type", "type(value)", "Get type of value"),
+            
+            // Control functions
             ("panic", "panic(message)", "Panic with message"),
+            ("assert", "assert(condition, message?)", "Assert condition is true"),
+            ("unreachable", "unreachable()", "Mark unreachable code"),
+            
+            // Collection functions
+            ("make", "make(type, size?)", "Create collection"),
+            ("append", "append(collection, item)", "Append item to collection"),
+            ("copy", "copy(collection)", "Create copy of collection"),
+            ("reverse", "reverse(collection)", "Reverse collection in place"),
+            ("sort", "sort(collection)", "Sort collection in place"),
+            
+            // Concurrency functions
             ("spawn", "spawn(function)", "Spawn goroutine"),
-            ("make", "make(type, size)", "Create collection"),
+            ("yield", "yield()", "Yield execution to scheduler"),
+            ("sleep", "sleep(duration)", "Sleep for duration"),
+            
+            // Math functions
+            ("abs", "abs(value)", "Absolute value"),
+            ("min", "min(a, b)", "Minimum of two values"),
+            ("max", "max(a, b)", "Maximum of two values"),
+            ("sqrt", "sqrt(value)", "Square root"),
+            ("pow", "pow(base, exponent)", "Power function"),
+            
+            // String functions
+            ("format", "format(template, ...args)", "Format string with arguments"),
+            ("split", "split(string, delimiter)", "Split string by delimiter"),
+            ("join", "join(strings, delimiter)", "Join strings with delimiter"),
+            ("trim", "trim(string)", "Trim whitespace from string"),
+            ("replace", "replace(string, old, new)", "Replace substring"),
+            
+            // Error handling
+            ("try", "try(expression)", "Try expression, return Result"),
+            ("unwrap", "unwrap(result)", "Unwrap Result or panic"),
+            ("expect", "expect(result, message)", "Unwrap Result or panic with message"),
+            
+            // Channel functions
+            ("make_channel", "make_channel(buffer_size?)", "Create channel"),
+            ("send", "send(channel, value)", "Send value to channel"),
+            ("recv", "recv(channel)", "Receive value from channel"),
+            ("close", "close(channel)", "Close channel"),
         ];
 
         for (name, signature, description) in builtins {
@@ -315,7 +384,10 @@ impl CompletionProvider {
                     label: name.to_string(),
                     kind: Some(CompletionItemKind::FUNCTION),
                     detail: Some(signature.to_string()),
-                    documentation: Some(Documentation::String(description.to_string())),
+                    documentation: Some(Documentation::String(format!(
+                        "{}\n\nBuilt-in function from CURSED standard library.",
+                        description
+                    ))),
                     insert_text: Some(format!("{}($0)", name)),
                     insert_text_format: Some(InsertTextFormat::SNIPPET),
                     sort_text: Some(format!("2_{}", name)),
@@ -325,9 +397,35 @@ impl CompletionProvider {
             }
         }
         
-        // Find user-defined functions
+        // Use semantic context functions first (more accurate)
+        for (func_name, signature) in &semantic_context.functions_in_scope {
+            if context.prefix.is_empty() || func_name.starts_with(&context.prefix) {
+                completions.push(CompletionItem {
+                    label: func_name.clone(),
+                    kind: Some(CompletionItemKind::FUNCTION),
+                    detail: Some(signature.clone()),
+                    documentation: Some(Documentation::String(format!(
+                        "Function: {} (from semantic analysis)",
+                        signature
+                    ))),
+                    insert_text: Some(format!("{}($0)", func_name)),
+                    insert_text_format: Some(InsertTextFormat::SNIPPET),
+                    sort_text: Some(format!("3_{}", func_name)),
+                    filter_text: Some(func_name.clone()),
+                    ..CompletionItem::default()
+                });
+            }
+        }
+        
+        // Fallback to text-based parsing for functions not captured semantically
+        let lines: Vec<&str> = content.lines().collect();
         for line in lines {
             if let Some((func_name, params, return_type)) = self.extract_function_signature(line) {
+                // Skip if already added from semantic context
+                if semantic_context.functions_in_scope.contains_key(&func_name) {
+                    continue;
+                }
+                
                 if context.prefix.is_empty() || func_name.starts_with(&context.prefix) {
                     let signature = format!("{}({})", func_name, params);
                     let detail = if !return_type.is_empty() {
@@ -346,7 +444,7 @@ impl CompletionProvider {
                         ))),
                         insert_text: Some(format!("{}($0)", func_name)),
                         insert_text_format: Some(InsertTextFormat::SNIPPET),
-                        sort_text: Some(format!("3_{}", func_name)),
+                        sort_text: Some(format!("4_{}", func_name)),
                         filter_text: Some(func_name),
                         ..CompletionItem::default()
                     });
@@ -651,6 +749,222 @@ impl CompletionProvider {
             }
         }
         None
+    }
+    
+    /// Get type completions with enhanced context awareness
+    async fn get_type_completions_enhanced(&self, context: &CompletionContext, semantic_context: &SemanticContext) -> Vec<CompletionItem> {
+        let mut completions = self.get_type_completions(context);
+        
+        // Add types based on expected type context
+        if let Some(expected_type) = &semantic_context.expected_type {
+            // Prioritize the expected type
+            for completion in &mut completions {
+                if completion.label == *expected_type {
+                    completion.sort_text = Some(format!("0_{}", completion.label));
+                    completion.documentation = Some(Documentation::String(format!(
+                        "Expected type: {} (suggested based on context)",
+                        expected_type
+                    )));
+                }
+            }
+        }
+        
+        // Add generic type parameters if we're in a generic context
+        if let Some(construct) = &semantic_context.containing_construct {
+            if construct.contains("generic") || construct.contains("template") {
+                let generic_types = vec!["T", "U", "V", "K", "E"];
+                for generic_type in generic_types {
+                    if context.prefix.is_empty() || generic_type.starts_with(&context.prefix) {
+                        completions.push(CompletionItem {
+                            label: generic_type.to_string(),
+                            kind: Some(CompletionItemKind::TYPE_PARAMETER),
+                            detail: Some(format!("Generic type parameter: {}", generic_type)),
+                            documentation: Some(Documentation::String(format!(
+                                "Generic type parameter {} for use in templates and generics",
+                                generic_type
+                            ))),
+                            insert_text: Some(generic_type.to_string()),
+                            insert_text_format: Some(InsertTextFormat::PLAIN_TEXT),
+                            sort_text: Some(format!("1_{}", generic_type)),
+                            filter_text: Some(generic_type.to_string()),
+                            ..CompletionItem::default()
+                        });
+                    }
+                }
+            }
+        }
+        
+        completions
+    }
+    
+    /// Get member completions with type-aware suggestions
+    async fn get_member_completions_typed(&self, content: &str, context: &CompletionContext, semantic_context: &SemanticContext) -> Vec<CompletionItem> {
+        let mut completions = Vec::new();
+        
+        // Extract the object being accessed (before the dot)
+        let before_dot = context.before_cursor.trim_end_matches('.');
+        if let Some(last_word_start) = before_dot.rfind(|c: char| !c.is_alphanumeric() && c != '_') {
+            let object_name = &before_dot[last_word_start + 1..];
+            
+            // Check if we know the type of this object
+            if let Some(object_type) = semantic_context.variables_in_scope.get(object_name) {
+                completions.extend(self.get_type_specific_members(object_type, context));
+            }
+        }
+        
+        // Fallback to generic member completions
+        if completions.is_empty() {
+            completions = self.get_member_completions(content, context);
+        }
+        
+        completions
+    }
+    
+    /// Get type-specific member completions
+    fn get_type_specific_members(&self, type_name: &str, context: &CompletionContext) -> Vec<CompletionItem> {
+        let mut completions = Vec::new();
+        
+        match type_name {
+            "string" | "str" => {
+                let string_members = vec![
+                    ("len", "Get string length", CompletionItemKind::PROPERTY),
+                    ("is_empty", "Check if string is empty", CompletionItemKind::METHOD),
+                    ("contains", "Check if string contains substring", CompletionItemKind::METHOD),
+                    ("starts_with", "Check if string starts with prefix", CompletionItemKind::METHOD),
+                    ("ends_with", "Check if string ends with suffix", CompletionItemKind::METHOD),
+                    ("split", "Split string by delimiter", CompletionItemKind::METHOD),
+                    ("replace", "Replace substring", CompletionItemKind::METHOD),
+                    ("trim", "Trim whitespace", CompletionItemKind::METHOD),
+                    ("to_upper", "Convert to uppercase", CompletionItemKind::METHOD),
+                    ("to_lower", "Convert to lowercase", CompletionItemKind::METHOD),
+                    ("chars", "Get character iterator", CompletionItemKind::METHOD),
+                    ("bytes", "Get byte iterator", CompletionItemKind::METHOD),
+                ];
+                
+                for (name, description, kind) in string_members {
+                    if context.prefix.is_empty() || name.starts_with(&context.prefix) {
+                        completions.push(self.create_member_completion(name, description, kind));
+                    }
+                }
+            }
+            "array" | "slice" | "Vec" => {
+                let array_members = vec![
+                    ("len", "Get array length", CompletionItemKind::PROPERTY),
+                    ("is_empty", "Check if array is empty", CompletionItemKind::METHOD),
+                    ("push", "Add item to end", CompletionItemKind::METHOD),
+                    ("pop", "Remove item from end", CompletionItemKind::METHOD),
+                    ("append", "Append another array", CompletionItemKind::METHOD),
+                    ("insert", "Insert item at index", CompletionItemKind::METHOD),
+                    ("remove", "Remove item at index", CompletionItemKind::METHOD),
+                    ("clear", "Clear all items", CompletionItemKind::METHOD),
+                    ("contains", "Check if contains item", CompletionItemKind::METHOD),
+                    ("iter", "Get iterator", CompletionItemKind::METHOD),
+                    ("sort", "Sort array in place", CompletionItemKind::METHOD),
+                    ("reverse", "Reverse array in place", CompletionItemKind::METHOD),
+                ];
+                
+                for (name, description, kind) in array_members {
+                    if context.prefix.is_empty() || name.starts_with(&context.prefix) {
+                        completions.push(self.create_member_completion(name, description, kind));
+                    }
+                }
+            }
+            "map" | "HashMap" => {
+                let map_members = vec![
+                    ("len", "Get map size", CompletionItemKind::PROPERTY),
+                    ("is_empty", "Check if map is empty", CompletionItemKind::METHOD),
+                    ("get", "Get value by key", CompletionItemKind::METHOD),
+                    ("set", "Set value for key", CompletionItemKind::METHOD),
+                    ("remove", "Remove key-value pair", CompletionItemKind::METHOD),
+                    ("contains_key", "Check if key exists", CompletionItemKind::METHOD),
+                    ("keys", "Get all keys", CompletionItemKind::METHOD),
+                    ("values", "Get all values", CompletionItemKind::METHOD),
+                    ("clear", "Clear all entries", CompletionItemKind::METHOD),
+                    ("iter", "Get iterator", CompletionItemKind::METHOD),
+                ];
+                
+                for (name, description, kind) in map_members {
+                    if context.prefix.is_empty() || name.starts_with(&context.prefix) {
+                        completions.push(self.create_member_completion(name, description, kind));
+                    }
+                }
+            }
+            "chan" | "channel" => {
+                let channel_members = vec![
+                    ("send", "Send value to channel", CompletionItemKind::METHOD),
+                    ("recv", "Receive value from channel", CompletionItemKind::METHOD),
+                    ("try_send", "Try to send without blocking", CompletionItemKind::METHOD),
+                    ("try_recv", "Try to receive without blocking", CompletionItemKind::METHOD),
+                    ("close", "Close channel", CompletionItemKind::METHOD),
+                    ("is_closed", "Check if channel is closed", CompletionItemKind::METHOD),
+                    ("len", "Get number of queued items", CompletionItemKind::PROPERTY),
+                    ("cap", "Get channel capacity", CompletionItemKind::PROPERTY),
+                ];
+                
+                for (name, description, kind) in channel_members {
+                    if context.prefix.is_empty() || name.starts_with(&context.prefix) {
+                        completions.push(self.create_member_completion(name, description, kind));
+                    }
+                }
+            }
+            _ => {
+                // Generic object members for unknown types
+                let generic_members = vec![
+                    ("clone", "Clone object", CompletionItemKind::METHOD),
+                    ("toString", "Convert to string", CompletionItemKind::METHOD),
+                    ("type", "Get object type", CompletionItemKind::METHOD),
+                ];
+                
+                for (name, description, kind) in generic_members {
+                    if context.prefix.is_empty() || name.starts_with(&context.prefix) {
+                        completions.push(self.create_member_completion(name, description, kind));
+                    }
+                }
+            }
+        }
+        
+        completions
+    }
+    
+    /// Helper to create member completion items
+    fn create_member_completion(&self, name: &str, description: &str, kind: CompletionItemKind) -> CompletionItem {
+        CompletionItem {
+            label: name.to_string(),
+            kind: Some(kind),
+            detail: Some(description.to_string()),
+            documentation: Some(Documentation::String(description.to_string())),
+            insert_text: Some(if kind == CompletionItemKind::METHOD {
+                format!("{}($0)", name)
+            } else {
+                name.to_string()
+            }),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            sort_text: Some(format!("5_{}", name)),
+            filter_text: Some(name.to_string()),
+            ..CompletionItem::default()
+        }
+    }
+    
+    /// Analyze semantic context from AST
+    fn analyze_semantic_context_from_ast(&self, ast: &Program, position: Position) -> SemanticContext {
+        let mut context = SemanticContext::default();
+        
+        // This is a simplified analysis - in a real implementation,
+        // you would traverse the AST to find the scope at the given position
+        // and extract variables, functions, and type information
+        
+        // For now, we'll provide a basic implementation that could be enhanced
+        // with proper AST traversal and scope analysis
+        
+        // TODO: Implement proper AST traversal to:
+        // 1. Find the current scope (function, struct, etc.) at position
+        // 2. Extract all variables in scope with their types
+        // 3. Extract all functions in scope with their signatures
+        // 4. Determine expected type based on context (assignments, parameters, etc.)
+        
+        context.containing_construct = Some("unknown".to_string());
+        
+        context
     }
 }
 

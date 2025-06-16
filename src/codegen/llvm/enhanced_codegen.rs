@@ -512,7 +512,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     fn compile_unary_operation(
         &mut self,
         operator: &crate::ast::UnaryOperator,
-        operand: &Expression,
+        operand: &dyn Expression,
         location: &SourceLocation,
     ) -> Result<BasicValueEnum<'ctx>, CursedError> {
         let operand_val = self.compile_expression(operand)?;
@@ -545,7 +545,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     fn compile_function_call(
         &mut self,
         name: &str,
-        arguments: &[Expression],
+        arguments: &[dyn Expression],
         location: &SourceLocation,
     ) -> Result<BasicValueEnum<'ctx>, CursedError> {
         let function = self.functions.get(name)
@@ -567,8 +567,8 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     /// Compile an assignment
     fn compile_assignment(
         &mut self,
-        target: &Expression,
-        value: &Expression,
+        target: &dyn Expression,
+        value: &dyn Expression,
         location: &SourceLocation,
     ) -> Result<BasicValueEnum<'ctx>, CursedError> {
         let value_result = self.compile_expression(value)?;
@@ -590,9 +590,9 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     /// Compile if statement
     fn compile_if_statement(
         &mut self,
-        condition: &Expression,
-        then_branch: &Statement,
-        else_branch: Option<&Statement>,
+        condition: &dyn Expression,
+        then_branch: &dyn Statement,
+        else_branch: Option<&dyn Statement>,
         location: &SourceLocation,
     ) -> Result<(), CursedError> {
         let condition_val = self.compile_expression(condition)?;
@@ -641,8 +641,8 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     /// Compile while statement
     fn compile_while_statement(
         &mut self,
-        condition: &Expression,
-        body: &Statement,
+        condition: &dyn Expression,
+        body: &dyn Statement,
         location: &SourceLocation,
     ) -> Result<(), CursedError> {
         let function = self.current_function
@@ -686,7 +686,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     /// Compile block statement
     fn compile_block_statement(
         &mut self,
-        statements: &[Statement],
+        statements: &[dyn Statement],
         location: &SourceLocation,
     ) -> Result<(), CursedError> {
         // Enter lexical scope if debug is enabled
@@ -890,7 +890,7 @@ impl<'ctx> LlvmDebugIntegration<'ctx> for EnhancedLlvmCodegen<'ctx> {
     
     fn generate_expression_debug(
         &mut self,
-        expr: &Expression,
+        expr: &dyn Expression,
         instruction: Option<InstructionValue<'ctx>>,
     ) -> Result<(), CursedError> {
         if let Some(debug) = &mut self.debug_metadata {

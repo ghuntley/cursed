@@ -16,6 +16,7 @@ pub mod io;
 pub mod string;
 pub mod math;
 pub mod time;
+pub mod packrat;
 pub mod collections;
 pub mod env;
 pub mod testing;
@@ -44,6 +45,7 @@ pub mod vibez;
 pub mod glyph_gang;
 pub mod glowup_http;
 pub mod no_cap;
+pub mod bytefit;
 
 // ================================
 // GEN Z STDLIB MODULES (CURSED NAMING CONVENTIONS)
@@ -998,8 +1000,8 @@ pub use embed_that::{
 
 // Vibez formatting and printing re-exports - Core formatting functionality with Gen Z flair
 pub use vibez::{
-    // Core printing functions
-    print, println, eprint, eprintln, print_to, println_to,
+    // Core printing functions (avoiding conflicts with io module)
+    print_to, println_to,
     print_styled, println_styled, print_colored, println_colored,
     PrintStyle, PrintColor,
     
@@ -1040,8 +1042,9 @@ pub use glyph_gang::{
     is_emoji, is_emoji_modifier, is_emoji_component, is_currency, is_math,
     is_format, is_private_use, is_surrogate, is_ascii as glyph_is_ascii,
     
-    // Character conversion functions
-    to_upper, to_lower, to_title, to_ascii, simple_fold,
+    // Character conversion functions (avoiding conflicts with string module)
+    to_upper as char_to_upper, to_lower as char_to_lower, to_title as char_to_title, 
+    to_ascii as char_to_ascii, simple_fold as char_simple_fold,
     
     // Range and character set functions
     is_in_range, is_in_ranges, is_one_of,
@@ -1065,14 +1068,17 @@ pub use glyph_gang::{
     EMOJI, EMOJI_PRESENTATION, EMOJI_MODIFIER, EMOJI_MODIFIER_BASE,
     EMOJI_COMPONENT, EXTENDED_PICTOGRAPHIC,
     
-    // Enhanced Unicode-aware string operations
-    to_upper_string, to_lower_string, to_title_string, normalize_string,
+    // Enhanced Unicode-aware string operations (avoiding conflicts with string module)
+    to_upper_string as unicode_to_upper_string, to_lower_string as unicode_to_lower_string, 
+    to_title_string as unicode_to_title_string, normalize_string as unicode_normalize_string,
     NormalizationForm, NFC, NFD, NFKC, NFKD,
     rune_count, first_rune, last_rune, rune_at, rune_indices,
-    string_width, truncate_string, wrap_text as glyph_wrap_text, reverse_string,
+    string_width as unicode_string_width, truncate_string as unicode_truncate_string, 
+    wrap_text as unicode_wrap_text, reverse_string as unicode_reverse_string,
     word_boundaries, sentence_boundaries, line_break_opportunities,
-    fold_string, equal_fold, get_char_width, get_string_width,
-    truncate_with_ellipsis,
+    fold_string as unicode_fold_string, equal_fold as unicode_equal_fold, 
+    get_char_width, get_string_width as unicode_get_string_width,
+    truncate_with_ellipsis as unicode_truncate_with_ellipsis,
     
     // Emoji support and detection
     is_emoji_sequence, contains_emoji, extract_emojis, replace_emojis,
@@ -1118,6 +1124,46 @@ pub use no_cap::{
     
     // Module management
     init_no_cap, get_no_cap_stats, NoCap
+};
+
+// ByteFit byte manipulation re-exports - Comprehensive byte slice operations
+pub use bytefit::{
+    // Error handling system
+    ByteFitError, ByteFitResult,
+    
+    // Basic operations (avoiding conflicts with string module)
+    compare as byte_compare, equal as byte_equal, repeat as byte_repeat, runes as byte_runes,
+    
+    // Search functions (avoiding conflicts with string module)  
+    contains_any as byte_contains_any, contains_rune as byte_contains_rune,
+    has_prefix as byte_has_prefix, has_suffix as byte_has_suffix,
+    index as byte_index, index_any as byte_index_any, index_byte, index_rune as byte_index_rune,
+    last_index as byte_last_index, last_index_any as byte_last_index_any, last_index_byte,
+    
+    // Transformation functions (avoiding conflicts with string module)
+    map as byte_map,
+    
+    // Splitting functions (avoiding conflicts with string module) 
+    split_after as byte_split_after, split_after_n as byte_split_after_n, 
+    fields as byte_fields, fields_func as byte_fields_func,
+    
+    // Trimming functions (avoiding conflicts with string module)
+    trim_left as byte_trim_left, trim_right as byte_trim_right, 
+    trim_space as byte_trim_space, trim_prefix as byte_trim_prefix, 
+    trim_suffix as byte_trim_suffix, trim_func as byte_trim_func,
+    
+    // Enhanced Buffer type
+    FitBuffer, new_fit_buffer,
+    
+    // Binary data manipulation
+    from_hex as byte_from_hex, to_hex as byte_to_hex, 
+    from_base64 as byte_from_base64, to_base64 as byte_to_base64,
+    and as byte_and, or as byte_or, xor as byte_xor, not as byte_not, 
+    shift_left as byte_shift_left, shift_right as byte_shift_right,
+    
+    // Pattern matching
+    wildcard_match as byte_wildcard_match, regex_match as byte_regex_match, 
+    regex_find_all as byte_regex_find_all, regex_replace as byte_regex_replace
 };
 
 // ================================

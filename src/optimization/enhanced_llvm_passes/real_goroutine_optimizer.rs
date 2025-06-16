@@ -20,7 +20,7 @@ use inkwell::{
     AddressSpace, IntPredicate,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Advanced goroutine optimizer with ML-driven decisions
 pub struct RealGoroutineOptimizer<'ctx> {

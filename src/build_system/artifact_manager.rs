@@ -904,36 +904,79 @@ impl ArtifactManager {
         }
     }
     
-    /// Compress data using configured algorithm
+    /// Compress data using configured algorithm with real implementations
     fn compress_data(&self, data: &[u8]) -> Result<Vec<u8>, ArtifactError> {
+        use std::io::Write;
+        
         match self.config.compression_algorithm {
             CompressionAlgorithm::None => Ok(data.to_vec()),
             CompressionAlgorithm::Gzip => {
-                // Placeholder for gzip compression
-                Ok(data.to_vec())
+                use flate2::{write::GzEncoder, Compression};
+                let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+                encoder.write_all(data)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Gzip compression failed: {}", e)))?;
+                encoder.finish()
+                    .map_err(|e| ArtifactError::CompressionError(format!("Gzip finalization failed: {}", e)))
             }
             CompressionAlgorithm::Zstd => {
-                // Placeholder for zstd compression
-                Ok(data.to_vec())
+                use zstd::stream::write::Encoder;
+                let mut encoder = Encoder::new(Vec::new(), 3)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Zstd encoder creation failed: {}", e)))?;
+                encoder.write_all(data)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Zstd compression failed: {}", e)))?;
+                encoder.finish()
+                    .map_err(|e| ArtifactError::CompressionError(format!("Zstd finalization failed: {}", e)))
             }
             CompressionAlgorithm::Lz4 => {
-                // Placeholder for lz4 compression
-                Ok(data.to_vec())
+                use lz4_flex::compress_prepend_size;
+                Ok(compress_prepend_size(data))
             }
             CompressionAlgorithm::Brotli => {
-                // Placeholder for brotli compression
-                Ok(data.to_vec())
+                use brotli::CompressorWriter;
+                let mut compressor = CompressorWriter::new(Vec::new(), 4096, 6, 22);
+                compressor.write_all(data)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Brotli compression failed: {}", e)))?;
+                compressor.into_inner()
+                    .map_err(|e| ArtifactError::CompressionError(format!("Brotli finalization failed: {}", e)))
             }
         }
     }
     
-    /// Decompress data
+    /// Decompress data with real implementations
     fn decompress_data(&self, data: &[u8]) -> Result<Vec<u8>, ArtifactError> {
+        use std::io::Read;
+        
         match self.config.compression_algorithm {
             CompressionAlgorithm::None => Ok(data.to_vec()),
-            _ => {
-                // Placeholder for decompression
-                Ok(data.to_vec())
+            CompressionAlgorithm::Gzip => {
+                use flate2::read::GzDecoder;
+                let mut decoder = GzDecoder::new(data);
+                let mut decompressed = Vec::new();
+                decoder.read_to_end(&mut decompressed)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Gzip decompression failed: {}", e)))?;
+                Ok(decompressed)
+            }
+            CompressionAlgorithm::Zstd => {
+                use zstd::stream::read::Decoder;
+                let mut decoder = Decoder::new(data)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Zstd decoder creation failed: {}", e)))?;
+                let mut decompressed = Vec::new();
+                decoder.read_to_end(&mut decompressed)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Zstd decompression failed: {}", e)))?;
+                Ok(decompressed)
+            }
+            CompressionAlgorithm::Lz4 => {
+                use lz4_flex::decompress_size_prepended;
+                decompress_size_prepended(data)
+                    .map_err(|e| ArtifactError::CompressionError(format!("LZ4 decompression failed: {}", e)))
+            }
+            CompressionAlgorithm::Brotli => {
+                use brotli::Decompressor;
+                let mut decompressor = Decompressor::new(data, 4096);
+                let mut decompressed = Vec::new();
+                decompressor.read_to_end(&mut decompressed)
+                    .map_err(|e| ArtifactError::CompressionError(format!("Brotli decompression failed: {}", e)))?;
+                Ok(decompressed)
             }
         }
     }

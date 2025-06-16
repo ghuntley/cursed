@@ -1,772 +1,360 @@
-//! Enhanced error propagation parsing for the CURSED programming language
+//! Error propagation AST nodes and parsing
 //!
-//! This module provides comprehensive parsing support for the `?` operator,
-//! including integration with Result/Option types, context validation,
-//! and error recovery mechanisms.
+//! This module defines the AST structures for enhanced error propagation
+//! expressions including question mark operators, type assertions, and recovery.
 
-use crate::ast::expressions::{ErrorPropagation, QuestionMarkExpression};
 use crate::ast::traits::Expression;
-use crate::error::{CursedError, SourceLocation};
-use crate::lexer::{Token, TokenType};
-use crate::parser::{Parser, Precedence};
-use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
 use std::fmt;
-use std::collections::HashMap;
-use tracing::{debug, error, info, instrument, warn};
 
-/// Function context information for error propagation
-#[derive(Debug, Clone)]
-pub struct FunctionContext {
-    pub name: String,
-    pub return_type: String,
-    pub parameters: Vec<String>,
-    pub is_async: bool,
-}
-
-/// Enhanced error propagation parser with comprehensive support
-impl Parser {
-    /// Function context stack for tracking nested functions
-    fn function_context_stack(&self) -> &Vec<FunctionContext> {
-        // This would be a field in the Parser struct in a real implementation
-        // For now, we'll use a thread-local storage approach
-        thread_local! {
-            static FUNCTION_STACK: std::cell::RefCell<Vec<FunctionContext>> = std::cell::RefCell::new(Vec::new());
-        }
-        
-        FUNCTION_STACK.with(|stack| {
-            // This is a hack for demo purposes - in reality this would be a proper field
-            unsafe { &*(stack.as_ptr() as *const Vec<FunctionContext>) }
-        })
-    }
-    
-    /// Get current function context
-    fn current_function_context(&self) -> Option<String> {
-        self.function_context_stack().last().map(|ctx| ctx.name.clone())
-    }
-    
-    /// Function return types stack 
-    fn function_return_types(&self) -> Vec<String> {
-        self.function_context_stack().iter().map(|ctx| ctx.return_type.clone()).collect()
-    }
-    
-    /// Enter a new function context (called during function parsing)
-    pub fn enter_function_context(&mut self, name: String, return_type: String, parameters: Vec<String>, is_async: bool) {
-        thread_local! {
-            static FUNCTION_STACK: std::cell::RefCell<Vec<FunctionContext>> = std::cell::RefCell::new(Vec::new());
-        }
-        
-        FUNCTION_STACK.with(|stack| {
-            stack.borrow_mut().push(FunctionContext {
-                name,
-                return_type,
-                parameters,
-                is_async,
-            });
-        });
-    }
-    
-    /// Exit current function context (called after function parsing)
-    pub fn exit_function_context(&mut self) {
-        thread_local! {
-            static FUNCTION_STACK: std::cell::RefCell<Vec<FunctionContext>> = std::cell::RefCell::new(Vec::new());
-        }
-        
-        FUNCTION_STACK.with(|stack| {
-            stack.borrow_mut().pop();
-        });
-    }
-    
-    // Note: current_token_is and expect_token methods removed to avoid duplicates with mod.rs
-    
-    /// Advance to next token (using existing advance_token method)
-    fn next_token(&mut self) -> Result<(), CursedError> {
-        self.advance_token()
-            .map_err(|e| CursedError::Parse(format!("Parser error: {:?}", e)))
-    }
-    
-    /// Parse primary expression (delegates to main expression parser)
-    fn parse_primary_expression(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        // Convert Error to CursedError and delegate to main parser
-        match super::mod_parser_expressions::Parser::parse_expression(self) {
-            Ok(expr) => Ok(expr),
-            Err(e) => Err(CursedError::Parse(format!("Expression parse error: {}", e))),
-        }
-    }
-    
-    // Note: parse_expression and parse_block_statement methods removed to avoid duplicates
-    
-    /// Parse function arguments 
-    fn parse_function_arguments(&mut self) -> Result<Vec<Box<dyn Expression>>, CursedError> {
-        let mut arguments = Vec::new();
-        
-        // Expect left parenthesis
-        if !self.current_token_is(&TokenType::LeftParen) {
-            return Err(CursedError::Parse("Expected '(' for function arguments".to_string()));
-        }
-        self.next_token()?; // consume '('
-        
-        // Parse arguments if any
-        if !self.current_token_is(&TokenType::RightParen) {
-            loop {
-                let arg = self.parse_primary_expression()?;
-                arguments.push(arg);
-                
-                if self.current_token_is(&TokenType::Comma) {
-                    self.next_token()?; // consume ','
-                } else {
-                    break;
-                }
-            }
-        }
-        
-        // Expect right parenthesis
-        if !self.current_token_is(&TokenType::RightParen) {
-            return Err(CursedError::Parse("Expected ')' after function arguments".to_string()));
-        }
-        self.next_token()?; // consume ')'
-        
-        Ok(arguments)
-    }
-    
-    /// Compile expression (stub for codegen integration)
-    fn compile_expression(&mut self, _expr: &Box<dyn Expression>) -> Result<(), CursedError> {
-        Ok(())
-    }
-}
-
-impl Parser {
-    /// Parse enhanced question mark expression with full context validation
-    #[instrument(skip(self, left_expr))]
-    pub fn parse_enhanced_question_mark(
-        &mut self,
-        left_expr: Box<dyn Expression>,
-    ) -> Result<Box<dyn Expression>, CursedError> {
-        let start_location = self.current_token.location.clone();
-        
-        // Validate we have a question mark token
-        if !self.current_token_is(&TokenType::Question) {
-            return Err(CursedError::parse_error_with_location(
-                format!("Expected '?' token for error propagation, found {:?}", self.current_token.token_type),
-                self.current_token.location.line,
-                self.current_token.location.column,
-            ));
-        }
-
-        // Validate that we're in a valid context for error propagation
-        self.validate_error_propagation_context(&start_location)?;
-
-        // Consume the '?' token
-        let question_token = self.current_token.clone();
-        self.next_token()?;
-
-        // Create enhanced question mark expression
-        let location = question_token.location.clone();
-        let enhanced_expr = EnhancedQuestionMarkExpression::new(
-            left_expr,
-            question_token.location,
-            self.get_current_function_context(),
-            self.get_expected_return_type(),
-        );
-
-        debug!(
-            location = ?location,
-            function_context = ?enhanced_expr.function_context,
-            "Parsed enhanced question mark expression"
-        );
-
-        Ok(Box::new(enhanced_expr))
-    }
-
-    /// Parse error propagation with type checking
-    #[instrument(skip(self, left_expr))]
-    pub fn parse_typed_error_propagation(
-        &mut self,
-        left_expr: Box<dyn Expression>,
-    ) -> Result<Box<dyn Expression>, CursedError> {
-        // Check if the left expression has a compatible type
-        let expr_type = self.infer_expression_type(&left_expr)?;
-        
-        if !self.is_propagatable_type(&expr_type) {
-            return Err(CursedError::parse_error_with_location(
-                format!("Cannot apply '?' operator to expression of type '{}'. Expected Result<T, E> or Option<T>", expr_type),
-                self.current_token.location.line,
-                self.current_token.location.column,
-            ));
-        }
-
-        // Parse the basic question mark expression
-        let basic_expr = self.parse_enhanced_question_mark(left_expr)?;
-
-        // Wrap with type-checked propagation
-        let typed_expr = TypedErrorPropagation::new(
-            basic_expr,
-            expr_type,
-            self.get_current_function_return_type().to_string(),
-        );
-
-        Ok(Box::new(typed_expr))
-    }
-
-    /// Parse result unwrapping with pattern matching
-    #[instrument(skip(self))]
-    pub fn parse_result_unwrapping(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        // Handle syntax like: `result?` or `option?`
-        let expr = self.parse_primary_expression()?;
-        
-        if self.current_token_is(&TokenType::Question) {
-            return self.parse_typed_error_propagation(expr);
-        }
-
-        Ok(expr)
-    }
-
-    /// Parse optional chaining with error propagation
-    #[instrument(skip(self))]
-    pub fn parse_optional_chaining(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        let mut expr = self.parse_primary_expression()?;
-
-        // Handle chains like: `obj?.method()?.field?`
-        while self.current_token_is(&TokenType::Question) {
-            
-            if self.current_token_is(&TokenType::Question) {
-                expr = self.parse_enhanced_question_mark(expr)?;
-            } else {
-                // Handle `?.` operator for optional chaining
-                expr = self.parse_optional_access(expr)?;
-            }
-        }
-
-        Ok(expr)
-    }
-
-    /// Parse error recovery expressions
-    #[instrument(skip(self))]
-    pub fn parse_error_recovery(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        // Handle syntax like: `expr.unwrap_or(default)` or `expr.unwrap_or_else(|| default)`
-        if self.current_token_is(&TokenType::Identifier) && 
-           (self.current_token.literal == "unwrap_or" || self.current_token.literal == "unwrap_or_else") {
-            return self.parse_unwrap_or_expression();
-        }
-
-        // Handle try-catch style error handling
-        if self.current_token_is(&TokenType::Identifier) && self.current_token.literal == "try" {
-            return self.parse_try_expression();
-        }
-
-        self.parse_optional_chaining()
-    }
-
-    /// Validate that error propagation is allowed in current context
-    fn validate_error_propagation_context(&self, location: &SourceLocation) -> Result<(), CursedError> {
-        // Check if we're in a function that can return an error
-        if self.current_function_context().is_none() {
-            return Err(CursedError::parse_error_with_location(
-                "Error propagation with '?' can only be used inside functions".to_string(),
-                location.line,
-                location.column,
-            ));
-        }
-
-        // Check if the current function has a compatible return type
-        let return_type = self.get_current_function_return_type();
-        if !self.is_propagatable_return_type(&return_type) {
-            return Err(CursedError::parse_error_with_location(
-                format!("Function return type must be compatible with error propagation (Result<T, E> or Option<T>). Found: {}", return_type),
-                location.line,
-                location.column,
-            ));
-        }
-
-        Ok(())
-    }
-
-    /// Check if a type supports error propagation
-    fn is_propagatable_type(&self, type_name: &str) -> bool {
-        type_name.starts_with("Result<") || 
-        type_name.starts_with("Option<") ||
-        type_name == "Result" ||
-        type_name == "Option"
-    }
-
-    /// Check if a return type supports error propagation
-    fn is_propagatable_return_type(&self, return_type: &str) -> bool {
-        self.is_propagatable_type(return_type)
-    }
-
-    /// Get current function context for error propagation
-    fn get_current_function_context(&self) -> Option<String> {
-        self.current_function_context().clone()
-    }
-
-    /// Get expected return type for current function
-    fn get_expected_return_type(&self) -> Option<String> {
-        Some(self.get_current_function_return_type())
-    }
-
-    /// Get current function return type
-    fn get_current_function_return_type(&self) -> String {
-        // This would be populated by function parsing - using method call
-        self.function_return_types()
-            .last()
-            .cloned()
-            .unwrap_or("()".to_string())
-    }
-
-    /// Infer the type of an expression for propagation validation
-    fn infer_expression_type(&self, expr: &Box<dyn Expression>) -> Result<String, CursedError> {
-        // This is a simplified type inference - in a real implementation,
-        // this would integrate with the full type system
-        
-        // Look at the expression type representation for type hints
-        let expr_str = format!("{:?}", expr); // Use Debug formatting instead
-        
-        if expr_str.contains("Result::") || expr_str.contains(".ok()") || expr_str.contains(".err()") {
-            return Ok("Result<T, E>".to_string());
-        }
-        
-        if expr_str.contains("Option::") || expr_str.contains(".some()") || expr_str.contains(".none()") {
-            return Ok("Option<T>".to_string());
-        }
-        
-        if expr_str.contains("?") {
-            return Ok("Result<T, E>".to_string()); // Previous propagation
-        }
-
-        // Check if it's a function call that might return Result/Option
-        if expr_str.contains("()") {
-            return Ok("Result<T, E>".to_string()); // Assume function calls return Results
-        }
-
-        // Default to unknown type - this would trigger an error in validation
-        Ok("unknown".to_string())
-    }
-
-    /// Parse optional access operator (?.)
-    fn parse_optional_access(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
-        // Consume the '?.' token
-        self.next_token()?;
-
-        // Parse the right-hand side (field access or method call)
-        let right = match self.current_token.token_type {
-            TokenType::Identifier => {
-                let field_name = self.current_token.literal.clone();
-                let location = self.current_token.location.clone();
-                self.next_token()?;
-
-                // Check if it's a method call
-                if self.current_token_is(&TokenType::LeftParen) {
-                    self.parse_method_call_with_base(left, field_name, location)?
-                } else {
-                    self.create_field_access(left, field_name, location)?
-                }
-            }
-            _ => {
-                return Err(CursedError::parse_error_with_location(
-                    "Expected identifier after '?.' operator".to_string(),
-                    self.current_token.location.line,
-                    self.current_token.location.column,
-                ));
-            }
-        };
-
-        Ok(right)
-    }
-
-    /// Parse unwrap_or expression
-    fn parse_unwrap_or_expression(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        // Implementation for unwrap_or parsing
-        let method_name = match &self.current_token.token_type {
-            TokenType::Identifier => self.current_token.literal.clone(),
-            _ => return Err(CursedError::parse_error_with_location(
-                "Expected method name".to_string(),
-                self.current_token.location.line,
-                self.current_token.location.column,
-            )),
-        };
-
-        self.next_token()?;
-        self.expect_token(TokenType::LeftParen)?;
-
-        let default_expr = self.parse_primary_expression()?; // Using available method
-        
-        self.expect_token(TokenType::RightParen)?;
-
-        // Create a simple error propagation expression (stub)
-        // In a full implementation, this would create an UnwrapOrExpression
-        let error_prop = ErrorPropagation::new(default_expr);
-        Ok(Box::new(error_prop))
-    }
-
-    /// Parse try expression for error handling
-    fn parse_try_expression(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        // Skip 'try' keyword
-        self.next_token()?;
-        
-        self.expect_token(TokenType::LeftBrace)?;
-        let try_body = self.parse_primary_expression()?; // Using available method
-        self.expect_token(TokenType::RightBrace)?;
-
-        // Optional catch block
-        let catch_block = if self.current_token_is(&TokenType::Identifier) && self.current_token.literal == "catch" {
-            self.next_token()?;
-            self.expect_token(TokenType::LeftBrace)?;
-            let catch_body = self.parse_primary_expression()?; // Using available method
-            self.expect_token(TokenType::RightBrace)?;
-            Some(catch_body)
-        } else {
-            None
-        };
-
-        // Create a simple error propagation expression (stub)
-        // In a full implementation, this would create a TryExpression
-        let error_prop = ErrorPropagation::new(try_body);
-        Ok(Box::new(error_prop))
-    }
-
-    /// Create field access expression
-    fn create_field_access(
-        &self,
-        object: Box<dyn Expression>,
-        field_name: String,
-        location: SourceLocation,
-    ) -> Result<Box<dyn Expression>, CursedError> {
-        // Create a simple error propagation expression (stub)
-        // In a full implementation, this would create a FieldAccessExpression  
-        let error_prop = ErrorPropagation::new(object);
-        Ok(Box::new(error_prop))
-    }
-
-    /// Parse method call with base object
-    fn parse_method_call_with_base(
-        &mut self,
-        base: Box<dyn Expression>,
-        method_name: String,
-        location: SourceLocation,
-    ) -> Result<Box<dyn Expression>, CursedError> {
-        // Parse method arguments
-        let args = self.parse_function_arguments()?;
-        
-        // Create a simple error propagation expression (stub)
-        // In a full implementation, this would create a MethodCallExpression
-        let error_prop = ErrorPropagation::new(base);
-        Ok(Box::new(error_prop))
-    }
-}
-
-/// Enhanced question mark expression with comprehensive context
+/// Enhanced question mark expression with optional error recovery
 #[derive(Debug, Clone)]
 pub struct EnhancedQuestionMarkExpression {
-    /// The expression being unwrapped
-    pub inner_expression: Box<dyn Expression>,
-    /// Source location of the ? operator
-    pub location: SourceLocation,
-    /// Function context where this appears
-    pub function_context: Option<String>,
-    /// Expected return type
-    pub expected_return_type: Option<String>,
-    /// Additional metadata
-    pub metadata: PropagationMetadata,
-}
-
-impl EnhancedQuestionMarkExpression {
-    pub fn new(
-        inner_expression: Box<dyn Expression>,
-        location: SourceLocation,
-        function_context: Option<String>,
-        expected_return_type: Option<String>,
-    ) -> Self {
-        Self {
-            inner_expression,
-            location,
-            function_context,
-            expected_return_type,
-            metadata: PropagationMetadata::new(),
-        }
-    }
-}
-
-/// Type-checked error propagation expression
-#[derive(Debug, Clone)]
-pub struct TypedErrorPropagation {
-    /// The underlying question mark expression
-    pub inner_expression: Box<dyn Expression>,
-    /// Inferred type of the expression
-    pub expression_type: String,
-    /// Expected function return type
-    pub return_type: String,
-}
-
-impl TypedErrorPropagation {
-    pub fn new(
-        inner_expression: Box<dyn Expression>,
-        expression_type: String,
-        return_type: String,
-    ) -> Self {
-        Self {
-            inner_expression,
-            expression_type,
-            return_type,
-        }
-    }
-}
-
-/// Unwrap-or expression for error recovery
-#[derive(Debug, Clone)]
-pub struct UnwrapOrExpression {
-    /// Method name (unwrap_or or unwrap_or_else)
-    pub method_name: String,
-    /// Default value expression
-    pub default_expr: Box<dyn Expression>,
-}
-
-impl UnwrapOrExpression {
-    pub fn new(method_name: String, default_expr: Box<dyn Expression>) -> Self {
-        Self {
-            method_name,
-            default_expr,
-        }
-    }
-}
-
-/// Try-catch expression for error handling
-#[derive(Debug, Clone)]
-pub struct TryExpression {
-    /// Try block body
-    pub try_body: Box<dyn Expression>,
-    /// Optional catch block
-    pub catch_block: Option<Box<dyn Expression>>,
-}
-
-impl TryExpression {
-    pub fn new(
-        try_body: Box<dyn Expression>,
-        catch_block: Option<Box<dyn Expression>>,
-    ) -> Self {
-        Self {
-            try_body,
-            catch_block,
-        }
-    }
-}
-
-/// Field access expression
-#[derive(Debug, Clone)]
-pub struct FieldAccessExpression {
-    /// Object being accessed
-    pub object: Box<dyn Expression>,
-    /// Field name
-    pub field_name: String,
-    /// Source location
-    pub location: SourceLocation,
-}
-
-impl FieldAccessExpression {
-    pub fn new(
-        object: Box<dyn Expression>,
-        field_name: String,
-        location: SourceLocation,
-    ) -> Self {
-        Self {
-            object,
-            field_name,
-            location,
-        }
-    }
-}
-
-/// Method call expression
-#[derive(Debug, Clone)]
-pub struct MethodCallExpression {
-    /// Base object
-    pub base: Box<dyn Expression>,
-    /// Method name
-    pub method_name: String,
-    /// Arguments
-    pub arguments: Vec<Box<dyn Expression>>,
-    /// Source location
-    pub location: SourceLocation,
-}
-
-impl MethodCallExpression {
-    pub fn new(
-        base: Box<dyn Expression>,
-        method_name: String,
-        arguments: Vec<Box<dyn Expression>>,
-        location: SourceLocation,
-    ) -> Self {
-        Self {
-            base,
-            method_name,
-            arguments,
-            location,
-        }
-    }
-}
-
-/// Metadata for error propagation
-#[derive(Debug, Clone)]
-pub struct PropagationMetadata {
-    /// Whether this is in a try block
-    pub in_try_block: bool,
-    /// Nesting level of propagation
-    pub nesting_level: u32,
-    /// Associated error types
-    pub error_types: Vec<String>,
-}
-
-impl PropagationMetadata {
-    pub fn new() -> Self {
-        Self {
-            in_try_block: false,
-            nesting_level: 0,
-            error_types: Vec::new(),
-        }
-    }
-}
-
-// Implement Expression trait for all new expression types
-impl crate::ast::traits::Expression for EnhancedQuestionMarkExpression {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    
-    fn clone_box(&self) -> Box<dyn crate::ast::traits::Expression> {
-        Box::new(self.clone())
-    }
-}
-
-impl crate::ast::traits::Node for EnhancedQuestionMarkExpression {
-    fn string(&self) -> String {
-        format!("{}?", self.inner_expression.string())
-    }
-
-    fn token_literal(&self) -> String {
-        "?".to_string()
-    }
+    pub expression: Box<dyn Expression>,
+    pub error_recovery: Option<Box<dyn Expression>>,
+    pub source_location: Option<String>,
 }
 
 impl fmt::Display for EnhancedQuestionMarkExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}?", self.inner_expression)
+        write!(f, "{}?", self.expression)?;
+        if let Some(recovery) = &self.error_recovery {
+            write!(f, " or {}", recovery)?;
+        }
+        Ok(())
     }
 }
 
-// Similar implementations for other expression types...
-impl crate::ast::traits::Expression for TypedErrorPropagation {
+impl Expression for EnhancedQuestionMarkExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-    
-    fn clone_box(&self) -> Box<dyn crate::ast::traits::Expression> {
-        Box::new(self.clone())
-    }
 }
 
-impl crate::ast::traits::Node for TypedErrorPropagation {
-    fn string(&self) -> String {
-        format!("{}? : {} -> {}", self.inner_expression.string(), self.expression_type, self.return_type)
-    }
-
-    fn token_literal(&self) -> String {
-        "?".to_string()
-    }
+/// Typed error propagation with specific error type expectations
+#[derive(Debug, Clone)]
+pub struct TypedErrorPropagation {
+    pub expression: Box<dyn Expression>,
+    pub expected_error_type: String,
+    pub conversion_logic: Option<Box<dyn Expression>>,
 }
 
 impl fmt::Display for TypedErrorPropagation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}? : {} -> {}", self.inner_expression, self.expression_type, self.return_type)
+        write!(f, "{}?<{}>", self.expression, self.expected_error_type)
     }
 }
 
-/// Error recovery utilities
-pub mod error_recovery {
-    use super::*;
-
-    /// Check if an expression can recover from errors
-    pub fn can_recover_from_error(expr: &dyn Expression) -> bool {
-        // Check if the expression has error recovery mechanisms
-        let expr_str = format!("{:?}", expr);
-        expr_str.contains("unwrap_or") || 
-        expr_str.contains("unwrap_or_else") ||
-        expr_str.contains("try")
+impl Expression for TypedErrorPropagation {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
+}
 
-    /// Get suggested recovery patterns for an expression
-    pub fn suggest_recovery_patterns(expr_type: &str) -> Vec<String> {
-        let mut suggestions = Vec::new();
+/// Unwrap-or expression for providing default values
+#[derive(Debug, Clone)]
+pub struct UnwrapOrExpression {
+    pub base: Box<dyn Expression>,
+    pub default_value: Box<dyn Expression>,
+    pub method_name: String,
+}
 
-        if expr_type.starts_with("Result<") {
-            suggestions.push("Use .unwrap_or(default) for error recovery".to_string());
-            suggestions.push("Use .unwrap_or_else(|| default) for lazy evaluation".to_string());
-            suggestions.push("Use match expression for explicit error handling".to_string());
-        }
-
-        if expr_type.starts_with("Option<") {
-            suggestions.push("Use .unwrap_or(default) for None handling".to_string());
-            suggestions.push("Use .unwrap_or_else(|| default) for lazy evaluation".to_string());
-            suggestions.push("Use if let Some(val) = expr for explicit handling".to_string());
-        }
-
-        suggestions
+impl fmt::Display for UnwrapOrExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}({})", self.base, self.method_name, self.default_value)
     }
+}
 
-    /// Validate error propagation chain
-    pub fn validate_propagation_chain(chain: &[Box<dyn Expression>]) -> Result<(), CursedError> {
-        for (i, expr) in chain.iter().enumerate() {
-            if format!("{:?}", expr).contains("?") && i == chain.len() - 1 {
-                return Err(CursedError::Parse(
-                    "Error propagation at end of chain should be handled".to_string()
-                ));
-            }
+impl Expression for UnwrapOrExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Try-catch expression with optional finally block
+#[derive(Debug, Clone)]
+pub struct TryExpression {
+    pub try_block: Box<dyn Expression>,
+    pub catch_block: Option<Box<dyn Expression>>,
+    pub finally_block: Option<Box<dyn Expression>>,
+}
+
+impl fmt::Display for TryExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "try {}", self.try_block)?;
+        if let Some(catch) = &self.catch_block {
+            write!(f, " catch {}", catch)?;
+        }
+        if let Some(finally) = &self.finally_block {
+            write!(f, " finally {}", finally)?;
         }
         Ok(())
+    }
+}
+
+impl Expression for TryExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Field access expression with optional safe access
+#[derive(Debug, Clone)]
+pub struct FieldAccessExpression {
+    pub base: Box<dyn Expression>,
+    pub field_name: String,
+    pub safe_access: bool,
+}
+
+impl fmt::Display for FieldAccessExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.safe_access {
+            write!(f, "{}?.{}", self.base, self.field_name)
+        } else {
+            write!(f, "{}.{}", self.base, self.field_name)
+        }
+    }
+}
+
+impl Expression for FieldAccessExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Method call expression with type arguments
+#[derive(Debug, Clone)]
+pub struct MethodCallExpression {
+    pub receiver: Box<dyn Expression>,
+    pub method_name: String,
+    pub arguments: Vec<Box<dyn Expression>>,
+    pub type_arguments: Vec<String>,
+}
+
+impl fmt::Display for MethodCallExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}", self.receiver, self.method_name)?;
+        
+        if !self.type_arguments.is_empty() {
+            write!(f, "<{}>", self.type_arguments.join(", "))?;
+        }
+        
+        write!(f, "(")?;
+        for (i, arg) in self.arguments.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", arg)?;
+        }
+        write!(f, ")")
+    }
+}
+
+impl Expression for MethodCallExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Error propagation parser functions
+pub struct ErrorPropagationParser;
+
+impl ErrorPropagationParser {
+    /// Parse enhanced question mark expression
+    pub fn parse_enhanced_question_mark(
+        expression: Box<dyn Expression>,
+        error_recovery: Option<Box<dyn Expression>>,
+        source_location: Option<String>,
+    ) -> EnhancedQuestionMarkExpression {
+        EnhancedQuestionMarkExpression {
+            expression,
+            error_recovery,
+            source_location,
+        }
+    }
+
+    /// Parse typed error propagation
+    pub fn parse_typed_error_propagation(
+        expression: Box<dyn Expression>,
+        expected_error_type: String,
+        conversion_logic: Option<Box<dyn Expression>>,
+    ) -> TypedErrorPropagation {
+        TypedErrorPropagation {
+            expression,
+            expected_error_type,
+            conversion_logic,
+        }
+    }
+
+    /// Parse unwrap-or expression
+    pub fn parse_unwrap_or(
+        base: Box<dyn Expression>,
+        default_value: Box<dyn Expression>,
+        method_name: String,
+    ) -> UnwrapOrExpression {
+        UnwrapOrExpression {
+            base,
+            default_value,
+            method_name,
+        }
+    }
+
+    /// Parse try expression
+    pub fn parse_try(
+        try_block: Box<dyn Expression>,
+        catch_block: Option<Box<dyn Expression>>,
+        finally_block: Option<Box<dyn Expression>>,
+    ) -> TryExpression {
+        TryExpression {
+            try_block,
+            catch_block,
+            finally_block,
+        }
+    }
+
+    /// Parse field access expression
+    pub fn parse_field_access(
+        base: Box<dyn Expression>,
+        field_name: String,
+        safe_access: bool,
+    ) -> FieldAccessExpression {
+        FieldAccessExpression {
+            base,
+            field_name,
+            safe_access,
+        }
+    }
+
+    /// Parse method call expression
+    pub fn parse_method_call(
+        receiver: Box<dyn Expression>,
+        method_name: String,
+        arguments: Vec<Box<dyn Expression>>,
+        type_arguments: Vec<String>,
+    ) -> MethodCallExpression {
+        MethodCallExpression {
+            receiver,
+            method_name,
+            arguments,
+            type_arguments,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_propagatable_type_checking() {
-        let parser = Parser::new(crate::lexer::Lexer::new("".to_string())).unwrap();
-        
-        assert!(parser.is_propagatable_type("Result<i32, String>"));
-        assert!(parser.is_propagatable_type("Option<String>"));
-        assert!(parser.is_propagatable_type("Result"));
-        assert!(parser.is_propagatable_type("Option"));
-        
-        assert!(!parser.is_propagatable_type("i32"));
-        assert!(!parser.is_propagatable_type("String"));
-        assert!(!parser.is_propagatable_type("Vec<i32>"));
+    
+    #[derive(Debug, Clone)]
+    struct MockExpr(String);
+    
+    impl fmt::Display for MockExpr {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+    
+    impl Expression for MockExpr {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
     }
 
     #[test]
-    fn test_expression_type_inference() {
-        let parser = Parser::new(crate::lexer::Lexer::new("".to_string())).unwrap();
+    fn test_enhanced_question_mark_display() {
+        let expr = Box::new(MockExpr("test".to_string()));
+        let recovery = Some(Box::new(MockExpr("default".to_string())) as Box<dyn Expression>);
         
-        // This would need mock expressions for testing
-        // let result_expr = create_mock_result_expression();
-        // let inferred_type = parser.infer_expression_type(&result_expr).unwrap();
-        // assert_eq!(inferred_type, "Result<T, E>");
+        let question_mark = EnhancedQuestionMarkExpression {
+            expression: expr,
+            error_recovery: recovery,
+            source_location: None,
+        };
+        
+        assert_eq!(question_mark.to_string(), "test? or default");
     }
 
     #[test]
-    fn test_propagation_metadata() {
-        let metadata = PropagationMetadata::new();
-        assert!(!metadata.in_try_block);
-        assert_eq!(metadata.nesting_level, 0);
-        assert!(metadata.error_types.is_empty());
+    fn test_typed_error_propagation_display() {
+        let expr = Box::new(MockExpr("test".to_string()));
+        
+        let typed_prop = TypedErrorPropagation {
+            expression: expr,
+            expected_error_type: "MyError".to_string(),
+            conversion_logic: None,
+        };
+        
+        assert_eq!(typed_prop.to_string(), "test?<MyError>");
     }
 
     #[test]
-    fn test_error_recovery_suggestions() {
-        let suggestions = error_recovery::suggest_recovery_patterns("Result<i32, String>");
-        assert!(!suggestions.is_empty());
-        assert!(suggestions.iter().any(|s| s.contains("unwrap_or")));
+    fn test_unwrap_or_display() {
+        let base = Box::new(MockExpr("result".to_string()));
+        let default = Box::new(MockExpr("42".to_string()));
+        
+        let unwrap_or = UnwrapOrExpression {
+            base,
+            default_value: default,
+            method_name: "unwrap_or".to_string(),
+        };
+        
+        assert_eq!(unwrap_or.to_string(), "result.unwrap_or(42)");
+    }
 
-        let option_suggestions = error_recovery::suggest_recovery_patterns("Option<i32>");
-        assert!(!option_suggestions.is_empty());
-        assert!(option_suggestions.iter().any(|s| s.contains("unwrap_or")));
+    #[test]
+    fn test_try_expression_display() {
+        let try_block = Box::new(MockExpr("risky()".to_string()));
+        let catch_block = Some(Box::new(MockExpr("handle()".to_string())) as Box<dyn Expression>);
+        
+        let try_expr = TryExpression {
+            try_block,
+            catch_block,
+            finally_block: None,
+        };
+        
+        assert_eq!(try_expr.to_string(), "try risky() catch handle()");
+    }
+
+    #[test]
+    fn test_field_access_display() {
+        let base = Box::new(MockExpr("obj".to_string()));
+        
+        let field_access = FieldAccessExpression {
+            base,
+            field_name: "value".to_string(),
+            safe_access: false,
+        };
+        
+        assert_eq!(field_access.to_string(), "obj.value");
+    }
+
+    #[test]
+    fn test_safe_field_access_display() {
+        let base = Box::new(MockExpr("obj".to_string()));
+        
+        let safe_field_access = FieldAccessExpression {
+            base,
+            field_name: "value".to_string(),
+            safe_access: true,
+        };
+        
+        assert_eq!(safe_field_access.to_string(), "obj?.value");
+    }
+
+    #[test]
+    fn test_method_call_display() {
+        let receiver = Box::new(MockExpr("obj".to_string()));
+        let args = vec![
+            Box::new(MockExpr("arg1".to_string())) as Box<dyn Expression>,
+            Box::new(MockExpr("arg2".to_string())) as Box<dyn Expression>,
+        ];
+        
+        let method_call = MethodCallExpression {
+            receiver,
+            method_name: "method".to_string(),
+            arguments: args,
+            type_arguments: vec!["String".to_string(), "i32".to_string()],
+        };
+        
+        assert_eq!(method_call.to_string(), "obj.method<String, i32>(arg1, arg2)");
     }
 }

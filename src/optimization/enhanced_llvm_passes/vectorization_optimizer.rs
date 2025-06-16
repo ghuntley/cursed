@@ -18,7 +18,7 @@ use inkwell::{
     IntPredicate, FloatPredicate,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Vectorization optimizer for SIMD instruction generation
 pub struct VectorizationOptimizer<'ctx> {

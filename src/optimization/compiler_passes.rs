@@ -125,7 +125,7 @@ impl DeadCodeEliminator {
         Ok(())
     }
 
-    fn has_side_effects(&self, expr: &Expression) -> bool {
+    fn has_side_effects(&self, expr: &dyn Expression) -> bool {
         match expr {
             Expression::FunctionCall(_) => true, // Function calls may have side effects
             Expression::Assignment(_) => true,   // Assignments have side effects
@@ -178,7 +178,7 @@ impl UsageAnalyzer {
         Ok(())
     }
 
-    fn collect_variable_definitions(&mut self, statements: &[Statement]) {
+    fn collect_variable_definitions(&mut self, statements: &[dyn Statement]) {
         for statement in statements {
             match statement {
                 Statement::VariableDeclaration(var_decl) => {
@@ -201,14 +201,14 @@ impl UsageAnalyzer {
         }
     }
 
-    fn analyze_statements(&mut self, statements: &[Statement]) -> Result<()> {
+    fn analyze_statements(&mut self, statements: &[dyn Statement]) -> Result<()> {
         for statement in statements {
             self.analyze_statement(statement)?;
         }
         Ok(())
     }
 
-    fn analyze_statement(&mut self, statement: &Statement) -> Result<()> {
+    fn analyze_statement(&mut self, statement: &dyn Statement) -> Result<()> {
         match statement {
             Statement::Expression(expr) => {
                 self.analyze_expression(expr)?;
@@ -251,7 +251,7 @@ impl UsageAnalyzer {
         Ok(())
     }
 
-    fn analyze_expression(&mut self, expr: &Expression) -> Result<()> {
+    fn analyze_expression(&mut self, expr: &dyn Expression) -> Result<()> {
         match expr {
             Expression::Identifier(name) => {
                 self.used_variables.insert(name.clone());
@@ -444,7 +444,7 @@ impl ConstantPropagator {
         Ok(())
     }
 
-    fn extract_literal_value(&self, expr: &Expression) -> Option<LiteralValue> {
+    fn extract_literal_value(&self, expr: &dyn Expression) -> Option<LiteralValue> {
         match expr {
             Expression::IntegerLiteral(value) => Some(LiteralValue::Integer(*value)),
             Expression::FloatLiteral(value) => Some(LiteralValue::Float(*value)),
@@ -868,7 +868,7 @@ impl InliningDecision {
         self.count_statements(&function.body)
     }
 
-    fn count_statements(&self, statements: &[Statement]) -> u32 {
+    fn count_statements(&self, statements: &[dyn Statement]) -> u32 {
         let mut count = statements.len() as u32;
         for statement in statements {
             count += match statement {
@@ -887,7 +887,7 @@ impl InliningDecision {
         count
     }
 
-    fn extract_function_calls(&self, statements: &[Statement]) -> Vec<String> {
+    fn extract_function_calls(&self, statements: &[dyn Statement]) -> Vec<String> {
         let mut calls = Vec::new();
         for statement in statements {
             self.extract_calls_from_statement(statement, &mut calls);
@@ -895,7 +895,7 @@ impl InliningDecision {
         calls
     }
 
-    fn extract_calls_from_statement(&self, statement: &Statement, calls: &mut Vec<String>) {
+    fn extract_calls_from_statement(&self, statement: &dyn Statement, calls: &mut Vec<String>) {
         match statement {
             Statement::Expression(expr) => {
                 self.extract_calls_from_expression(expr, calls);
@@ -937,7 +937,7 @@ impl InliningDecision {
         }
     }
 
-    fn extract_calls_from_expression(&self, expr: &Expression, calls: &mut Vec<String>) {
+    fn extract_calls_from_expression(&self, expr: &dyn Expression, calls: &mut Vec<String>) {
         match expr {
             Expression::FunctionCall(call) => {
                 calls.push(call.name.clone());
@@ -1088,7 +1088,7 @@ impl InliningDecision {
         Ok(None)
     }
 
-    fn extract_return_expression(&self, statements: &[Statement]) -> Option<&Expression> {
+    fn extract_return_expression(&self, statements: &[dyn Statement]) -> Option<&dyn Expression> {
         for statement in statements {
             if let Statement::Return(return_stmt) = statement {
                 return return_stmt.value.as_ref();
@@ -1097,14 +1097,14 @@ impl InliningDecision {
         None
     }
 
-    fn substitute_parameter(&self, statements: &mut Vec<Statement>, param_name: &str, arg: &Expression) -> Result<()> {
+    fn substitute_parameter(&self, statements: &mut Vec<Statement>, param_name: &str, arg: &dyn Expression) -> Result<()> {
         for statement in statements {
             self.substitute_parameter_in_statement(statement, param_name, arg)?;
         }
         Ok(())
     }
 
-    fn substitute_parameter_in_statement(&self, statement: &mut Statement, param_name: &str, arg: &Expression) -> Result<()> {
+    fn substitute_parameter_in_statement(&self, statement: &mut Statement, param_name: &str, arg: &dyn Expression) -> Result<()> {
         match statement {
             Statement::Expression(expr) => {
                 self.substitute_parameter_in_expression(expr, param_name, arg)?;
@@ -1147,7 +1147,7 @@ impl InliningDecision {
         Ok(())
     }
 
-    fn substitute_parameter_in_expression(&self, expr: &mut Expression, param_name: &str, arg: &Expression) -> Result<()> {
+    fn substitute_parameter_in_expression(&self, expr: &mut Expression, param_name: &str, arg: &dyn Expression) -> Result<()> {
         match expr {
             Expression::Identifier(name) => {
                 if name == param_name {
@@ -1278,7 +1278,7 @@ impl RegisterAllocator {
         Ok(())
     }
 
-    fn analyze_liveness(&mut self, statements: &[Statement]) -> Result<Vec<LiveRange>> {
+    fn analyze_liveness(&mut self, statements: &[dyn Statement]) -> Result<Vec<LiveRange>> {
         let mut live_ranges = Vec::new();
         let mut current_position = 0;
         let mut variable_definitions: HashMap<String, usize> = HashMap::new();
@@ -1308,7 +1308,7 @@ impl RegisterAllocator {
 
     fn collect_def_use(
         &self,
-        statements: &[Statement],
+        statements: &[dyn Statement],
         position: &mut usize,
         definitions: &mut HashMap<String, usize>,
         uses: &mut HashMap<String, Vec<usize>>,
@@ -1362,7 +1362,7 @@ impl RegisterAllocator {
         Ok(())
     }
 
-    fn collect_expression_uses(&self, expr: &Expression, position: &usize, uses: &mut HashMap<String, Vec<usize>>) {
+    fn collect_expression_uses(&self, expr: &dyn Expression, position: &usize, uses: &mut HashMap<String, Vec<usize>>) {
         match expr {
             Expression::Identifier(name) => {
                 uses.entry(name.clone()).or_insert_with(Vec::new).push(*position);

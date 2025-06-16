@@ -17,14 +17,14 @@ pub trait AsyncAwaitCompiler {
         &mut self,
         name: &str,
         parameters: &[String],
-        body: &[Statement],
+        body: &[dyn Statement],
         return_type: LLVMTypeRef,
     ) -> Result<LLVMValueRef, Error>;
 
     /// Compile an await expression
     fn compile_await_expression(
         &mut self,
-        future_expr: &Expression,
+        future_expr: &dyn Expression,
     ) -> Result<LLVMValueRef, Error>;
 
     /// Generate async runtime state machine
@@ -90,7 +90,7 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
         &mut self,
         name: &str,
         parameters: &[String],
-        body: &[Statement],
+        body: &[dyn Statement],
         return_type: LLVMTypeRef,
     ) -> Result<LLVMValueRef, Error> {
         unsafe {
@@ -147,7 +147,7 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
 
     fn compile_await_expression(
         &mut self,
-        future_expr: &Expression,
+        future_expr: &dyn Expression,
     ) -> Result<LLVMValueRef, Error> {
         unsafe {
             // Compile the future expression
@@ -450,7 +450,7 @@ impl LlvmCodeGenerator {
     fn create_state_machine_dispatcher(
         &mut self,
         async_context: &mut AsyncFunctionContext,
-        body: &[Statement],
+        body: &[dyn Statement],
     ) -> Result<(), Error> {
         // This would create the main dispatcher logic
         // For now, we'll create a simple version that processes the body
@@ -466,7 +466,7 @@ impl LlvmCodeGenerator {
     /// Analyze statement for await expressions
     fn analyze_statement_for_awaits(
         &mut self,
-        statement: &Statement,
+        statement: &dyn Statement,
         async_context: &mut AsyncFunctionContext,
     ) -> Result<(), Error> {
         // This would recursively analyze statements to find await expressions
@@ -488,7 +488,7 @@ impl LlvmCodeGenerator {
     /// Analyze expression for await expressions
     fn analyze_expression_for_awaits(
         &mut self,
-        expression: &Expression,
+        expression: &dyn Expression,
         async_context: &mut AsyncFunctionContext,
     ) -> Result<(), Error> {
         match expression {

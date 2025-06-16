@@ -18,7 +18,7 @@ use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey, ecdsa::{Signa
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey, ecdsa::{Signature as P384Signature, SigningKey as P384SigningKey, VerifyingKey as P384VerifyingKey}};
 use k256::{SecretKey as K256SecretKey, PublicKey as K256PublicKey, ecdsa::{Signature as K256Signature, SigningKey as K256SigningKey, VerifyingKey as K256VerifyingKey}};
 use ed25519_dalek::{Keypair as Ed25519Keypair, PublicKey as Ed25519PublicKeyInternal, SecretKey as Ed25519SecretKey, Signature as Ed25519SignatureInternal, Signer, Verifier as Ed25519Verifier};
-use x25519_dalek::{StaticSecret, PublicKey as X25519PublicKeyInternal};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKeyInternal};
 use signature::{Signer as SignatureSigner, Verifier as SignatureVerifier};
 use rand::{rngs::OsRng, RngCore};
 use base64::{Engine as _, engine::general_purpose};
@@ -211,7 +211,7 @@ pub struct X25519PublicKey {
 
 #[derive(Debug, Clone)]
 pub struct X25519PrivateKey {
-    pub secret: StaticSecret,
+    pub secret: EphemeralSecret,
 }
 
 /// fr fr Ed25519 digital signatures
@@ -656,7 +656,7 @@ impl AsymmetricCrypto {
     /// slay Generate X25519 key pair
     pub fn x25519_generate_keypair(&self) -> AsymmetricResult<X25519KeyPair> {
         let mut rng = OsRng;
-        let secret = StaticSecret::new(&mut rng);
+        let secret = EphemeralSecret::random();
         let public: X25519PublicKeyInternal = (&secret).into();
         
         Ok(X25519KeyPair {
@@ -1445,7 +1445,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
         .map_err(|_| CursedError::Runtime("Failed to convert private key to 32-byte array".to_string()))?;
     
     let private_key = X25519PrivateKey {
-        secret: StaticSecret::from(private_key_array),
+        secret: EphemeralSecret::from(private_key_array),
     };
     
     // Parse public key

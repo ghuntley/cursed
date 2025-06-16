@@ -353,7 +353,7 @@ impl CommonSubexpressionEliminationPass {
     }
     
     /// Build control flow graph from statements
-    fn build_cfg(&self, statements: &[Statement], context: &mut CseContext) -> Result<()> {
+    fn build_cfg(&self, statements: &[dyn Statement], context: &mut CseContext) -> Result<()> {
         let mut current_block = BasicBlock::new(0);
         let mut block_counter = 0;
         
@@ -416,7 +416,7 @@ impl CommonSubexpressionEliminationPass {
     }
     
     /// Build value numbering table for expressions
-    fn build_value_numbering(&mut self, statements: &[Statement], context: &mut CseContext, block_id: usize, start_stmt: usize) -> Result<()> {
+    fn build_value_numbering(&mut self, statements: &[dyn Statement], context: &mut CseContext, block_id: usize, start_stmt: usize) -> Result<()> {
         for (stmt_idx, statement) in statements.iter().enumerate() {
             let stmt_pos = start_stmt + stmt_idx;
             self.number_expressions_in_statement(statement, context, block_id, stmt_pos)?;
@@ -425,7 +425,7 @@ impl CommonSubexpressionEliminationPass {
     }
     
     /// Assign value numbers to expressions in a statement
-    fn number_expressions_in_statement(&mut self, statement: &Statement, context: &mut CseContext, block_id: usize, stmt_idx: usize) -> Result<()> {
+    fn number_expressions_in_statement(&mut self, statement: &dyn Statement, context: &mut CseContext, block_id: usize, stmt_idx: usize) -> Result<()> {
         match statement {
             Statement::VariableDeclaration(var_decl) => {
                 if let Some(ref init_expr) = var_decl.initializer {
@@ -479,7 +479,7 @@ impl CommonSubexpressionEliminationPass {
     }
     
     /// Assign value number to an expression
-    fn number_expression(&mut self, expr: &Expression, context: &mut CseContext, block_id: usize, stmt_idx: usize) -> Result<ValueNumber> {
+    fn number_expression(&mut self, expr: &dyn Expression, context: &mut CseContext, block_id: usize, stmt_idx: usize) -> Result<ValueNumber> {
         let signature = match expr {
             Expression::Literal(literal) => {
                 ExpressionSignature::Literal(LiteralValue::from(literal))

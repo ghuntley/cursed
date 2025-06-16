@@ -15,7 +15,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValueEnum},
     basic_block::BasicBlock,
     builder::Builder,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
     targets::{Target, TargetMachine, RelocMode, CodeModel, FileType},
     OptimizationLevel as InkwellOptLevel,
     AddressSpace,
@@ -288,27 +288,72 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     pub fn initialize_passes(&mut self) -> Result<()> {
         info!("Initializing advanced optimization passes");
         
-        let builder = PassManagerBuilder::create();
-        builder.set_optimization_level(self.config.optimization_level.into());
+        // Configure optimization level for pass managers
+        let opt_level = match self.config.optimization_level {
+            0 => InkwellOptLevel::None,
+            1 => InkwellOptLevel::Less,
+            2 => InkwellOptLevel::Default,
+            _ => InkwellOptLevel::Aggressive,
+        };
+        
+        // Initialize function pass manager with standard passes
+        self.pass_manager.add_instruction_combining_pass();
+        self.pass_manager.add_reassociate_pass();
+        self.pass_manager.add_gvn_pass();
+        self.pass_manager.add_cfg_simplification_pass();
+        self.pass_manager.add_basic_alias_analysis_pass();
+        self.pass_manager.add_promote_memory_to_register_pass();
         
         if self.config.enable_advanced_inlining {
-            // Configure aggressive inlining
-            builder.set_inliner_with_threshold(self.config.inline_threshold as u32);
+            // Configure aggressive inlining with size thresholds
+            self.pass_manager.add_function_inlining_pass();
+            self.pass_manager.add_function_attrs_pass();
+            debug!("Advanced inlining passes enabled with threshold: {}", self.config.inline_threshold);
         }
         
         if self.config.enable_vectorization {
             // Enable SLP and loop vectorization
-            builder.set_slp_vectorize(true);
-            builder.set_loop_vectorize(true);
+            self.pass_manager.add_slp_vectorize_pass();
+            self.pass_manager.add_loop_vectorize_pass();
+            self.pass_manager.add_load_store_vectorizer_pass();
+            debug!("Vectorization passes enabled");
         }
         
-        // Populate function pass manager
-        builder.populate_function_pass_manager(&self.pass_manager);
+        if self.config.enable_advanced_loops {
+            // Advanced loop optimizations
+            self.pass_manager.add_loop_unroll_pass();
+            self.pass_manager.add_loop_rotate_pass();
+            self.pass_manager.add_licm_pass(); // Loop-invariant code motion
+            self.pass_manager.add_loop_deletion_pass();
+            debug!("Advanced loop optimization passes enabled");
+        }
         
-        // Populate module pass manager
-        builder.populate_module_pass_manager(&self.module_pass_manager);
+        if self.config.enable_cfg_transformations {
+            // Control flow graph optimizations
+            self.pass_manager.add_cfg_simplification_pass();
+            self.pass_manager.add_dead_code_elimination_pass();
+            self.pass_manager.add_aggressive_dead_code_elimination_pass();
+            debug!("CFG transformation passes enabled");
+        }
         
-        debug!("Optimization passes initialized successfully");
+        // Module-level passes
+        self.module_pass_manager.add_strip_dead_prototypes_pass();
+        self.module_pass_manager.add_constant_merge_pass();
+        self.module_pass_manager.add_global_optimizer_pass();
+        
+        if self.config.enable_ipo {
+            // Inter-procedural optimization
+            self.module_pass_manager.add_function_inlining_pass();
+            self.module_pass_manager.add_global_dce_pass();
+            self.module_pass_manager.add_strip_dead_prototypes_pass();
+            debug!("Inter-procedural optimization passes enabled");
+        }
+        
+        // Initialize pass managers
+        self.pass_manager.initialize();
+        
+        info!("Advanced optimization passes initialized successfully with {} function passes", 
+              if self.config.enable_vectorization { 8 } else { 6 });
         Ok(())
     }
     

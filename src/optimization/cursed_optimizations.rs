@@ -538,7 +538,7 @@ impl ErrorPropagationOptimizer {
     }
     
     /// Analyze statements for error patterns
-    fn analyze_statement_for_errors(&self, stmt: &Statement, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
+    fn analyze_statement_for_errors(&self, stmt: &dyn Statement, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
         match stmt {
             Statement::Expression(expr) => {
                 self.analyze_expression_for_errors(expr, chains)?;
@@ -572,7 +572,7 @@ impl ErrorPropagationOptimizer {
     }
     
     /// Analyze expressions for error propagation patterns
-    fn analyze_expression_for_errors(&self, expr: &Expression, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
+    fn analyze_expression_for_errors(&self, expr: &dyn Expression, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
         match expr {
             Expression::QuestionMark(inner_expr) => {
                 // Found a ? operator - this is a key error propagation pattern
@@ -619,7 +619,7 @@ impl ErrorPropagationOptimizer {
     }
     
     /// Collect chained ? expressions for optimization
-    fn collect_chained_expressions(&self, expr: &Expression, chain: &mut Vec<Expression>) {
+    fn collect_chained_expressions(&self, expr: &dyn Expression, chain: &mut Vec<Expression>) {
         match expr {
             Expression::QuestionMark(inner) => {
                 chain.push(expr.clone());
@@ -637,7 +637,7 @@ impl ErrorPropagationOptimizer {
     }
     
     /// Check if expression is error checking related
-    fn is_error_checking_expression(&self, expr: &Expression) -> bool {
+    fn is_error_checking_expression(&self, expr: &dyn Expression) -> bool {
         match expr {
             Expression::QuestionMark(_) => true,
             Expression::FunctionCall { function_name, .. } => {
@@ -697,7 +697,7 @@ impl GoroutineOptimizer {
     }
     
     /// Analyze statements for goroutine spawn patterns
-    fn analyze_statement_for_spawns(&self, stmt: &Statement, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
+    fn analyze_statement_for_spawns(&self, stmt: &dyn Statement, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         match stmt {
             Statement::Expression(expr) => {
                 self.analyze_expression_for_spawns(expr, spawns)?;
@@ -738,7 +738,7 @@ impl GoroutineOptimizer {
     }
     
     /// Analyze expressions for goroutine spawn patterns
-    fn analyze_expression_for_spawns(&self, expr: &Expression, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
+    fn analyze_expression_for_spawns(&self, expr: &dyn Expression, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         match expr {
             Expression::FunctionCall { function_name, arguments, .. } => {
                 // Check for 'stan' keyword (CURSED goroutine spawn)
@@ -764,7 +764,7 @@ impl GoroutineOptimizer {
     }
     
     /// Analyze a specific goroutine spawn for optimization opportunities
-    fn analyze_goroutine_spawn(&self, arguments: &[Expression], spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
+    fn analyze_goroutine_spawn(&self, arguments: &[dyn Expression], spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         if arguments.is_empty() {
             return Ok(());
         }
@@ -794,7 +794,7 @@ impl GoroutineOptimizer {
     }
     
     /// Estimate the complexity of a function for optimization decisions
-    fn estimate_function_complexity(&self, expr: &Expression) -> f64 {
+    fn estimate_function_complexity(&self, expr: &dyn Expression) -> f64 {
         match expr {
             Expression::FunctionCall { arguments, .. } => {
                 5.0 + arguments.len() as f64 * 2.0 // Base cost + argument cost
@@ -814,7 +814,7 @@ impl GoroutineOptimizer {
     }
     
     /// Estimate complexity of a statement
-    fn estimate_statement_complexity(&self, stmt: &Statement) -> f64 {
+    fn estimate_statement_complexity(&self, stmt: &dyn Statement) -> f64 {
         match stmt {
             Statement::Expression(expr) => self.estimate_function_complexity(expr),
             Statement::Assignment { value, .. } => 2.0 + self.estimate_function_complexity(value),
@@ -837,7 +837,7 @@ impl GoroutineOptimizer {
     }
     
     /// Check if statement contains goroutine spawn
-    fn statement_contains_spawn(&self, stmt: &Statement) -> bool {
+    fn statement_contains_spawn(&self, stmt: &dyn Statement) -> bool {
         match stmt {
             Statement::Expression(expr) => self.expression_contains_spawn(expr),
             Statement::Assignment { value, .. } => self.expression_contains_spawn(value),
@@ -846,7 +846,7 @@ impl GoroutineOptimizer {
     }
     
     /// Check if expression contains goroutine spawn
-    fn expression_contains_spawn(&self, expr: &Expression) -> bool {
+    fn expression_contains_spawn(&self, expr: &dyn Expression) -> bool {
         match expr {
             Expression::FunctionCall { function_name, .. } => function_name == "stan",
             Expression::Binary { left, right, .. } => {
@@ -874,7 +874,7 @@ impl GoroutineOptimizer {
     }
     
     /// Analyze statements for yield points
-    fn analyze_statement_for_yields(&self, stmt: &Statement, yields: &mut Vec<YieldOptimization>) -> Result<()> {
+    fn analyze_statement_for_yields(&self, stmt: &dyn Statement, yields: &mut Vec<YieldOptimization>) -> Result<()> {
         match stmt {
             Statement::Expression(expr) => {
                 if let Expression::FunctionCall { function_name, .. } = expr {
@@ -917,7 +917,7 @@ impl GoroutineOptimizer {
     }
     
     /// Check if statement contains yield
-    fn statement_contains_yield(&self, stmt: &Statement) -> bool {
+    fn statement_contains_yield(&self, stmt: &dyn Statement) -> bool {
         match stmt {
             Statement::Expression(expr) => {
                 if let Expression::FunctionCall { function_name, .. } = expr {
@@ -1047,7 +1047,7 @@ impl SlangOptimizer {
     }
     
     /// Analyze statements for slang patterns
-    fn analyze_statement_for_slang(&self, stmt: &Statement, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
+    fn analyze_statement_for_slang(&self, stmt: &dyn Statement, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
         match stmt {
             Statement::FunctionDeclaration { name, .. } => {
                 if keyword == "slay" {
@@ -1112,7 +1112,7 @@ impl SlangOptimizer {
     }
     
     /// Analyze expressions for slang patterns
-    fn analyze_expression_for_slang(&self, expr: &Expression, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
+    fn analyze_expression_for_slang(&self, expr: &dyn Expression, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
         match expr {
             Expression::FunctionCall { function_name, arguments, .. } => {
                 if function_name == keyword {
@@ -1158,7 +1158,7 @@ impl SlangOptimizer {
     }
     
     /// Estimate call frequency
-    fn estimate_call_frequency(&self, function_name: &str, arguments: &[Expression]) -> f64 {
+    fn estimate_call_frequency(&self, function_name: &str, arguments: &[dyn Expression]) -> f64 {
         match function_name {
             "stan" => 0.3, // Goroutine spawns are less frequent
             "yolo" => 0.8, // Yields are frequent in concurrent code
@@ -1169,7 +1169,7 @@ impl SlangOptimizer {
     }
     
     /// Calculate optimization potential based on keyword and usage
-    fn calculate_optimization_potential(&self, keyword: &str, arguments: &[Expression]) -> f64 {
+    fn calculate_optimization_potential(&self, keyword: &str, arguments: &[dyn Expression]) -> f64 {
         match keyword {
             "slay" => {
                 // Function definitions: higher potential for small functions
@@ -1213,7 +1213,7 @@ impl SlangOptimizer {
     }
     
     /// Check if statement contains a specific keyword
-    fn statement_contains_keyword(&self, stmt: &Statement, keyword: &str) -> bool {
+    fn statement_contains_keyword(&self, stmt: &dyn Statement, keyword: &str) -> bool {
         match stmt {
             Statement::Expression(expr) => self.expression_contains_keyword(expr, keyword),
             Statement::Assignment { value, .. } => self.expression_contains_keyword(value, keyword),
@@ -1222,7 +1222,7 @@ impl SlangOptimizer {
     }
     
     /// Check if expression contains a specific keyword
-    fn expression_contains_keyword(&self, expr: &Expression, keyword: &str) -> bool {
+    fn expression_contains_keyword(&self, expr: &dyn Expression, keyword: &str) -> bool {
         match expr {
             Expression::FunctionCall { function_name, arguments, .. } => {
                 if function_name == keyword {

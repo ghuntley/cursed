@@ -16,7 +16,7 @@ use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, PointerValue},
     basic_block::BasicBlock,
     builder::Builder,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
     OptimizationLevel as InkwellOptLevel,
     types::{BasicType, BasicTypeEnum, FunctionType},
     IntPredicate, FloatPredicate,

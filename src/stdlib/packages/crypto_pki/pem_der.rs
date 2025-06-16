@@ -1110,13 +1110,13 @@ pub mod conversion {
 
     /// Convert PEM to DER
     pub fn pem_to_der(pem_data: &str) -> PemDerResult<Vec<u8>> {
-        let block = pem::parse_pem_single(pem_data)?;
+        let block = pem::parse_many_pem_single(pem_data)?;
         Ok(block.data)
     }
 
     /// Convert DER to PEM
     pub fn der_to_pem(der_data: &[u8], pem_type: PemType) -> String {
-        pem::encode_pem(pem_type, der_data)
+        pem::Pem::new_pem(pem_type, der_data)
     }
 
     /// Auto-detect format and convert to DER
@@ -1225,7 +1225,7 @@ pub mod validation {
             FormatType::Pem => {
                 let pem_str = std::str::from_utf8(data)
                     .map_err(|e| PemDerError::ValidationError(format!("Invalid UTF-8: {}", e)))?;
-                let blocks = pem::parse_pem(pem_str)?;
+                let blocks = pem::parse_many_pem(pem_str)?;
                 Ok(!blocks.is_empty())
             }
             FormatType::Der => {
@@ -1246,7 +1246,7 @@ pub mod encrypted {
         pem_data: &str,
         password: &str
     ) -> PemDerResult<PrivateKey> {
-        let block = pem::parse_pem_single(pem_data)?;
+        let block = pem::parse_many_pem_single(pem_data)?;
         
         if !block.is_encrypted() {
             return Err(PemDerError::EncryptionError("PEM block is not encrypted".to_string()));
@@ -1342,7 +1342,7 @@ pub mod bundle {
 
     /// Parse certificate bundle (multiple certificates)
     pub fn parse_certificate_bundle(data: &str) -> PemDerResult<Vec<Certificate>> {
-        pem::parse_certificate_chain(data)
+        pem::parse_many_certificate_chain(data)
     }
 
     /// Create certificate bundle PEM
@@ -1351,7 +1351,7 @@ pub mod bundle {
         
         for cert in certificates {
             if let Some(der_data) = &cert.der_encoded {
-                bundle.push_str(&pem::encode_pem(PemType::Certificate, der_data));
+                bundle.push_str(&pem::Pem::new_pem(PemType::Certificate, der_data));
                 bundle.push('\n');
             } else {
                 return Err(PemDerError::CertificateValidationError("Certificate missing DER data".to_string()));
@@ -1375,7 +1375,7 @@ pub fn parse_certificate(data: &[u8]) -> PemDerResult<Certificate> {
         FormatType::Pem => {
             let pem_str = std::str::from_utf8(data)
                 .map_err(|e| PemDerError::ValidationError(format!("Invalid UTF-8: {}", e)))?;
-            pem::parse_pem_certificate(pem_str)
+            pem::parse_many_pem_certificate(pem_str)
         }
         FormatType::Der => {
             der::parse_der_certificate(data)
@@ -1392,7 +1392,7 @@ pub fn parse_private_key(data: &[u8]) -> PemDerResult<PrivateKey> {
         FormatType::Pem => {
             let pem_str = std::str::from_utf8(data)
                 .map_err(|e| PemDerError::ValidationError(format!("Invalid UTF-8: {}", e)))?;
-            pem::parse_pem_private_key(pem_str)
+            pem::parse_many_pem_private_key(pem_str)
         }
         FormatType::Der => {
             der::parse_der_private_key(data)

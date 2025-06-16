@@ -79,6 +79,13 @@ pub enum WebError {
         duration_ms: u64,
     },
     
+    /// fr fr Rate limiting errors
+    RateLimit {
+        status_code: u16,
+        message: String,
+        retry_after: Option<u64>,
+    },
+    
     /// fr fr Custom application errors
     Custom {
         code: String,
@@ -233,6 +240,19 @@ impl WebError {
         }
     }
 
+    /// fr fr Create rate limit error - too many requests
+    pub fn rate_limit(
+        status_code: u16,
+        message: impl Into<String>,
+        retry_after: Option<u64>,
+    ) -> Self {
+        Self::RateLimit {
+            status_code,
+            message: message.into(),
+            retry_after,
+        }
+    }
+
     /// fr fr Create custom error - application-specific errors
     pub fn custom(
         code: impl Into<String>,
@@ -268,6 +288,9 @@ impl WebError {
             WebError::Json { .. } => StatusCode::BadRequest,
             WebError::Io { .. } => StatusCode::InternalServerError,
             WebError::Timeout { .. } => StatusCode::RequestTimeout,
+            WebError::RateLimit { status_code, .. } => {
+                StatusCode::from_u16(*status_code).unwrap_or(StatusCode::TooManyRequests)
+            }
             WebError::Custom { .. } => StatusCode::InternalServerError,
         }
     }
@@ -288,6 +311,7 @@ impl WebError {
             WebError::Timeout { operation, duration_ms } => {
                 format!("Operation '{}' timed out after {}ms", operation, duration_ms)
             }
+            WebError::RateLimit { message, .. } => message.clone(),
             WebError::Custom { message, .. } => message.clone(),
         }
     }
@@ -302,6 +326,7 @@ impl WebError {
                     | NetworkErrorKind::Other
             ),
             WebError::Timeout { .. } => true,
+            WebError::RateLimit { .. } => true,
             WebError::Http { status, .. } => matches!(
                 status,
                 StatusCode::TooManyRequests
@@ -328,6 +353,7 @@ impl WebError {
             WebError::Json { .. } => "json",
             WebError::Io { .. } => "io",
             WebError::Timeout { .. } => "timeout",
+            WebError::RateLimit { .. } => "rate_limit",
             WebError::Custom { .. } => "custom",
         }
     }
@@ -380,6 +406,13 @@ impl fmt::Display for WebError {
             }
             WebError::Timeout { operation, duration_ms } => {
                 write!(f, "Timeout: operation '{}' took longer than {}ms", operation, duration_ms)
+            }
+            WebError::RateLimit { status_code, message, retry_after } => {
+                write!(f, "Rate limit error ({}): {}", status_code, message)?;
+                if let Some(retry_after) = retry_after {
+                    write!(f, " (retry after {}s)", retry_after)?;
+                }
+                Ok(())
             }
             WebError::Custom { code, message, .. } => {
                 write!(f, "Custom error [{}]: {}", code, message)

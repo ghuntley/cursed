@@ -22,6 +22,9 @@ pub mod crypto_pqc;
 pub mod crypto_pki;
 pub mod crypto_protocols;
 
+// Testing and quality assurance packages
+pub mod quick_test;
+
 // Existing packages
 pub mod web_vibez;
 pub mod sql_vibes;
@@ -43,6 +46,9 @@ pub use crypto_zk::*;
 pub use crypto_pqc::*;
 pub use crypto_pki::*;
 pub use crypto_protocols::*;
+
+// Re-export testing packages for convenience
+pub use quick_test::*;
 
 // Re-export existing packages for convenience
 pub use web_vibez::*;

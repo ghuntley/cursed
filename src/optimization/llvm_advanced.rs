@@ -16,7 +16,7 @@ use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue},
     basic_block::BasicBlock,
     builder::Builder,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
     OptimizationLevel as InkwellOptLevel,
     targets::{Target, TargetMachine, InitializationConfig, TargetTriple},
     AddressSpace,

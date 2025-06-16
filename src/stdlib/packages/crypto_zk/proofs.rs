@@ -1,7 +1,7 @@
 /// General proof utilities and common proof patterns
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::error::CryptoError;
+use crate::error::CryptoError;
 use crate::stdlib::value::Value;
 use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
 use rand::RngCore;

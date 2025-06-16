@@ -18,7 +18,7 @@ use inkwell::{
     AddressSpace,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Cache optimizer for memory access pattern optimization
 pub struct CacheOptimizer<'ctx> {

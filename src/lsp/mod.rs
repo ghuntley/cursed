@@ -16,6 +16,7 @@ pub mod semantic_highlighting;
 pub mod code_lens;
 pub mod inlay_hints;
 pub mod enhanced_symbols;
+pub mod refactoring;
 
 pub use server::*;
 pub use backend::*;

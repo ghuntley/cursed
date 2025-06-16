@@ -3513,7 +3513,7 @@ impl<'ctx> ProcessCompilation for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_process_control(&mut self, pid_expr: &crate::ast::expressions::Expression, operation: ProcessControlOp) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_process_control(&mut self, pid_expr: &dyn crate::ast::traits::Expression, operation: ProcessControlOp) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         tracing::info!("Compiling process control operation");
         
         match operation {
@@ -3540,32 +3540,32 @@ impl<'ctx> ProcessCompilation for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_ipc_channel_create(&mut self, _channel_type: IpcChannelType, _config: &crate::ast::expressions::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_ipc_channel_create(&mut self, _channel_type: IpcChannelType, _config: &dyn crate::ast::traits::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("IPC channel creation not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_ipc_send(&mut self, _channel_expr: &crate::ast::expressions::Expression, _data_expr: &crate::ast::expressions::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_ipc_send(&mut self, _channel_expr: &dyn crate::ast::traits::Expression, _data_expr: &dyn crate::ast::traits::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("IPC send not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_ipc_receive(&mut self, _channel_expr: &crate::ast::expressions::Expression, _timeout_expr: Option<&crate::ast::expressions::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_ipc_receive(&mut self, _channel_expr: &dyn crate::ast::traits::Expression, _timeout_expr: Option<&dyn crate::ast::traits::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("IPC receive not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_shared_memory(&mut self, _operation: SharedMemoryOp, _args: &[&crate::ast::expressions::Expression]) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_shared_memory(&mut self, _operation: SharedMemoryOp, _args: &[&dyn crate::ast::traits::Expression]) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("Shared memory operations not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_signal_operation(&mut self, _operation: SignalOp, _args: &[&crate::ast::expressions::Expression]) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_signal_operation(&mut self, _operation: SignalOp, _args: &[&dyn crate::ast::traits::Expression]) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("Signal operations not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&crate::ast::expressions::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn crate::ast::traits::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         tracing::info!("Compiling slay command");
         
         // Use the ProcessExecutionCompiler trait
@@ -3577,7 +3577,7 @@ impl<'ctx> ProcessCompilation for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_slay_pipeline(&mut self, commands: &[&crate::ast::expressions::Expression], _options: Option<&crate::ast::expressions::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_slay_pipeline(&mut self, commands: &[&dyn crate::ast::traits::Expression], _options: Option<&dyn crate::ast::traits::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         tracing::info!("Compiling slay pipeline");
         
         // Convert expressions to command/args pairs (simplified)
@@ -3595,7 +3595,7 @@ impl<'ctx> ProcessCompilation for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_slay_background_task(&mut self, command_expr: &crate::ast::expressions::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_slay_background_task(&mut self, command_expr: &dyn crate::ast::traits::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         tracing::info!("Compiling slay background task");
         
         let handle = ProcessExecutionCompiler::compile_background_task(self, command_expr)?;
@@ -3606,7 +3606,7 @@ impl<'ctx> ProcessCompilation for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&crate::ast::expressions::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn crate::ast::traits::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         tracing::info!("Compiling vibez command");
         
         let result = ProcessExecutionCompiler::compile_exec_vibez(self, command, args, context)?;
@@ -3617,12 +3617,12 @@ impl<'ctx> ProcessCompilation for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_vibez_process_group(&mut self, _commands: &[&crate::ast::expressions::Expression], _config: Option<&crate::ast::expressions::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_vibez_process_group(&mut self, _commands: &[&dyn crate::ast::traits::Expression], _config: Option<&dyn crate::ast::traits::Expression>) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("Vibez process group not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_vibez_output_streaming(&mut self, _command_expr: &crate::ast::expressions::Expression, _callback: &crate::ast::expressions::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
+    fn compile_vibez_output_streaming(&mut self, _command_expr: &dyn crate::ast::traits::Expression, _callback: &dyn crate::ast::traits::Expression) -> Result<llvm_sys::prelude::LLVMValueRef, Error> {
         // Placeholder implementation
         Err(Error::Compile("Vibez output streaming not yet implemented for real LLVM generator".to_string()))
     }

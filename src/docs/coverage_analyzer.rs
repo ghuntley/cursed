@@ -335,7 +335,7 @@ impl CoverageAnalyzer {
     }
 
     /// Extract items from AST statement
-    fn extract_items_from_statement(&self, statement: &Statement, items: &mut Vec<DocumentationItem>) {
+    fn extract_items_from_statement(&self, statement: &dyn Statement, items: &mut Vec<DocumentationItem>) {
         match statement {
             Statement::FunctionDeclaration { name, location, .. } => {
                 items.push(DocumentationItem {

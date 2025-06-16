@@ -14,7 +14,7 @@ use tracing::{info, instrument, debug, warn};
 use inkwell::{
     context::Context,
     module::Module,
-    passes::{PassManager, PassManagerBuilder},
+    passes::PassManager,
     targets::{Target, TargetMachine, RelocMode, CodeModel, FileType},
     OptimizationLevel as InkwellOptLevel,
     values::{FunctionValue, BasicValueEnum, InstructionValue},
@@ -71,56 +71,53 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         
         // Initialize inkwell pass manager for built-in LLVM passes
         let pass_manager = PassManager::create_for_module();
-        let builder = PassManagerBuilder::create();
         
-        // Configure optimization level
-        let (opt_level, size_level) = match self.config.optimization_level {
-            OptimizationLevel::None => (InkwellOptLevel::None, 0),
-            OptimizationLevel::Less => (InkwellOptLevel::Less, 0),
-            OptimizationLevel::Default => (InkwellOptLevel::Default, 0),
-            OptimizationLevel::Aggressive => (InkwellOptLevel::Aggressive, 0),
-            OptimizationLevel::Size => (InkwellOptLevel::Default, 1),
-            OptimizationLevel::SizeAggressive => (InkwellOptLevel::Default, 2),
-        };
-        
-        builder.set_optimization_level(opt_level);
-        builder.set_size_level(size_level);
-        
-        // Configure inlining thresholds
-        let inline_threshold = match self.config.optimization_level {
-            OptimizationLevel::None => 0,
-            OptimizationLevel::Less => 25,
-            OptimizationLevel::Default => 225,
-            OptimizationLevel::Aggressive => 275,
-            OptimizationLevel::Size => 75,
-            OptimizationLevel::SizeAggressive => 25,
-        };
-        
-        if inline_threshold > 0 {
-            builder.set_inliner_with_threshold(inline_threshold);
-        }
-        
-        // Configure loop optimizations
+        // Add standard optimization passes based on optimization level
         match self.config.optimization_level {
-            OptimizationLevel::None | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
-                builder.set_disable_unroll_loops(true);
+            OptimizationLevel::None => {
+                // No optimizations
             }
-            _ => {
-                builder.set_disable_unroll_loops(false);
+            OptimizationLevel::Less => {
+                pass_manager.add_instruction_combining_pass();
+                pass_manager.add_basic_alias_analysis_pass();
+            }
+            OptimizationLevel::Default => {
+                // Standard O2-like optimizations
+                pass_manager.add_instruction_combining_pass();
+                pass_manager.add_reassociate_pass();
+                pass_manager.add_gvn_pass();
+                pass_manager.add_cfg_simplification_pass();
+                pass_manager.add_basic_alias_analysis_pass();
+                pass_manager.add_promote_memory_to_register_pass();
+                pass_manager.add_function_inlining_pass();
+                pass_manager.add_dead_store_elimination_pass();
+            }
+            OptimizationLevel::Aggressive => {
+                // Aggressive O3-like optimizations
+                pass_manager.add_instruction_combining_pass();
+                pass_manager.add_reassociate_pass();
+                pass_manager.add_gvn_pass();
+                pass_manager.add_cfg_simplification_pass();
+                pass_manager.add_basic_alias_analysis_pass();
+                pass_manager.add_promote_memory_to_register_pass();
+                pass_manager.add_function_inlining_pass();
+                pass_manager.add_dead_store_elimination_pass();
+                pass_manager.add_loop_unroll_pass();
+                pass_manager.add_loop_vectorize_pass();
+                pass_manager.add_slp_vectorize_pass();
+            }
+            OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+                // Size-focused optimizations
+                pass_manager.add_instruction_combining_pass();
+                pass_manager.add_cfg_simplification_pass();
+                pass_manager.add_dead_code_elimination_pass();
+                pass_manager.add_basic_alias_analysis_pass();
+                pass_manager.add_promote_memory_to_register_pass();
             }
         }
         
-        // Configure vectorization
-        if matches!(self.config.optimization_level, OptimizationLevel::Default | OptimizationLevel::Aggressive) {
-            builder.set_disable_unit_at_a_time(false);
-        }
-        
-        // Add target-specific passes if target machine is available
-        if let Some(ref target_machine) = self.target_machine {
-            builder.populate_module_pass_manager(&pass_manager);
-        } else {
-            builder.populate_module_pass_manager(&pass_manager);
-        }
+        // Initialize pass manager
+        pass_manager.initialize();
         
         self.inkwell_pass_manager = Some(pass_manager);
         

@@ -16,7 +16,7 @@ use inkwell::{
     context::Context,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Function specializer for creating optimized versions of functions
 pub struct FunctionSpecializer<'ctx> {

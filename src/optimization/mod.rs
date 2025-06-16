@@ -54,27 +54,26 @@ pub use intelligent_recommendations::{
 pub use comprehensive_performance_system::{
     ComprehensivePerformanceSystem, PerformanceConfig, OptimizationResults,
     LlvmOptimizationResults, PgoOptimizationResults, RuntimePerformanceMetrics,
-    PerformanceStatistics as ComprehensivePerformanceStatistics, BenchmarkResults,
+    PerformanceStatistics as SystemPerformanceStatistics, BenchmarkResults,
 };
 pub use real_llvm_passes::{
-    RealLlvmPassManager, OptimizationStatistics,
+    RealLlvmOptimizer, OptimizationResults, PerformanceImprovements, ModuleMetrics,
+    OptimizationStatistics, IntelligentInliner, AdvancedDeadCodeEliminator,
+    EnhancedLoopOptimizer, RealConstantPropagator,
 };
 pub use advanced_function_inlining::{
     AdvancedFunctionInliner, InliningStatistics, FunctionMetrics, CallSiteAnalysis,
     CallGraph, InlineDecision, InlineType,
 };
-pub use enhanced_llvm_passes::{
+pub use enhanced_llvm_passes_manager::{
     EnhancedLlvmPassManager, EnhancedOptimizationStatistics, IntelligentFunctionInliner,
-    AdvancedDeadCodeEliminator, EnhancedConstantPropagator, AdvancedLoopOptimizer,
-    ControlFlowGraphSimplifier, PerformanceAnalyzer, ModuleAnalysis, PerformanceImprovements,
+    AdvancedDeadCodeEliminator, EnhancedConstantPropagator, AdvancedLoopOptimizer as EnhancedAdvancedLoopOptimizer,
+    ControlFlowGraphSimplifier, PerformanceAnalyzer, ModuleAnalysis, PerformanceImprovements as EnhancedPerformanceImprovements,
 };
 pub use enhanced_llvm_optimization::{
-    EnhancedLlvmOptimizer, EnhancedOptimizationConfig, EnhancedOptimizationResults,
-    OptimizationFeedbackConfig, OptimizationFeedback, OptimizationPattern, FailedOptimization,
-    TargetOptimizationResults, CacheOptimizationResults,
-    VectorizationResults, PipelineOptimizationResults, OptimizationPipelineManager,
-    PipelineStage, StageType, ParallelOptimizationExecutor, PipelineDependencyManager,
-    PipelinePerformanceProfiler,
+    EnhancedLlvmOptimizationSystem, EnhancedOptimizationResults, ModuleCharacteristics,
+    ComprehensivePerformanceImprovements, PerformanceResult, PerformanceMonitoringResults,
+    RegressionAnalysis,
 };
 pub use interprocedural_analysis::{
     InterproceduralAnalyzer, CallGraph as InterproceduralCallGraph, FunctionInfo, CallSite, CallType,
@@ -88,8 +87,14 @@ pub use memory_layout_optimization::{
     AlignmentOptimizationResults, NumaOptimizationResults, StructLayoutOptimization, LayoutMetrics,
     StackAnalysis, StackAllocation, StackOptimizationPlan, AlignmentOptimization, AlignmentTarget,
     NumaAnalysis, NumaAllocationPattern, NumaAccessPattern, NumaOptimization, NumaPolicy,
-    MemoryOptimizationStatistics, VectorizationPlan, VectorizableMemoryAccess, MemoryAccessPattern,
-    VectorizableOperation, VectorOperationType, VectorDataType, PrefetchInfo,
+    MemoryOptimizationStatistics,
+};
+
+// Re-export performance analysis types with namespace qualification
+pub use performance_analysis::{
+    PerformanceAnalysisEngine, ComprehensivePerformanceAnalysis, BenchmarkComparisonResults,
+    TrendAnalysisResults, BottleneckAnalysisResults, RegressionAnalysisResults,
+    OverallPerformanceAssessment, PerformanceAnalysisStatistics,
 };
 pub use parallel_pass_manager::{
     ParallelPassManager, ParallelPassConfig, ParallelPassStatistics,
@@ -103,9 +108,9 @@ pub use time_savings::{
     CompilationTimingContext, TrendAnalysis,
 };
 pub use coordinator::{
-    OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
-    OptimizationLevel as CoordinatorOptimizationLevel, OptimizationFeature,
-    IncrementalSavings, ParallelPerformance, CachePerformance, OverallImprovement,
+    OptimizationCoordinator, CoordinatedOptimizationResults, RealCacheStatistics,
+    RealTimeSavings, OptimizationStrategy, CoordinatorStatistics, CacheBenefits,
+    ParallelBenefits, IncrementalBenefits, CoordinationMetadata,
 };
 pub use pgo::{
     PgoSystem, PgoSystemConfig, PgoSystemStatistics, ProfileData, ProfileAnalysisResult,
@@ -121,7 +126,7 @@ pub use build_profiles::{
 pub use enablement_system::{
     OptimizationEnablementSystem, OptimizationEnablementConfig, OptimizationProfile,
     PerformanceMonitoringConfig, PerformanceReportFormat, OptimizationResults as EnablementOptimizationResults,
-    PerformanceStatistics as EnablementPerformanceStatistics, LlvmImprovements, PgoImprovements, AdaptiveImprovements,
+    PerformanceStatistics as EnablementSystemPerformanceStatistics, LlvmImprovements, PgoImprovements, AdaptiveImprovements,
     TimeSavingsAnalysis as EnablementTimeSavingsAnalysis,
 };
 pub use configuration_manager::{
@@ -131,7 +136,7 @@ pub use configuration_manager::{
 
 // Real optimization implementations
 pub use real_optimization_implementation::{
-    RealPerformanceCalculator, PerformanceImprovements, BaselineMetrics, 
+    RealPerformanceCalculator, PerformanceImprovements as RealPerformanceImprovements, BaselineMetrics, 
     PerformanceTrends, AppliedOptimization,
 };
 pub use real_cpu_efficiency_estimator::{
@@ -178,6 +183,17 @@ pub use advanced_coordinator::{
     AdvancedOptimizationLevel, OptimizationPhase, AdvancedCoordinatorStatistics, AdvancedCodeUnit,
 };
 
+// Comprehensive optimization system exports
+pub use comprehensive_optimization_enablement::{
+    ComprehensiveOptimizationSystem, ComprehensiveOptimizationConfig, 
+    AdaptiveOptimizationLevel, PerformanceMonitor, AdaptiveOptimizationEngine,
+    OptimizationResults as ComprehensiveOptimizationResults,
+    PerformanceStatistics as ComprehensiveEnablementPerformanceStatistics,
+};
+pub use cli_optimization_interface::{
+    OptimizationCLI,
+};
+
 use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use crate::error::Result;
 use std::path::Path;
@@ -195,11 +211,49 @@ pub use ml::{
     OptimizationPass, CompilationContext, PerformanceStatistics as MLPerformanceStatistics,
 };
 
+// Advanced optimization passes
+pub mod alias_analysis;
+pub mod sroa;
+pub mod gvn;
+pub mod tail_call_optimization;
+pub mod jump_threading;
+pub mod code_motion;
+
+// Re-export advanced optimization types
+pub use alias_analysis::{
+    AdvancedAliasAnalyzer, AliasAnalysisResults, FunctionAliasAnalysis, AliasSet, AliasType,
+    PointerAnalysis, EscapeAnalysis, AliasOptimizationOpportunity, AliasAnalysisStatistics,
+};
+pub use sroa::{
+    SroaOptimizer, SroaOptimizationResults, FunctionSroaResults, AllocationSite, 
+    PromotionEligibility, ScalarReplacement, SroaStatistics,
+};
+pub use gvn::{
+    GvnOptimizer, GvnOptimizationResults, FunctionGvnResults, ValueNumbering, Expression,
+    GvnOptimization, PhiSimplification, LoadForwardingOpportunity, GvnStatistics,
+};
+pub use tail_call_optimization::{
+    TailCallOptimizer, TailCallOptimizationResults, FunctionTailCallResults, TailCallCandidate,
+    TailCallEligibility, TailCallOptimization, TailCallStatistics,
+};
+pub use jump_threading::{
+    JumpThreadingOptimizer, JumpThreadingResults, FunctionJumpThreadingResults, 
+    ThreadingOpportunity, ThreadingResult, ThreadingProfitability, JumpThreadingStatistics,
+};
+pub use code_motion::{
+    CodeMotionOptimizer, CodeMotionResults, FunctionCodeMotionResults, MotionOpportunity,
+    MotionResult, LicmResult, MotionSafety, CodeMotionStatistics,
+};
+
 // Real optimization implementations that replace placeholders
 pub mod real_optimization_implementation;
 pub mod real_cpu_efficiency_estimator;
 pub mod real_regression_detector;
 pub mod real_optimization_integration;
+
+// Comprehensive optimization system with all features enabled
+pub mod comprehensive_optimization_enablement;
+pub mod cli_optimization_interface;
 
 // Advanced optimization modules
 pub mod advanced_llvm_integration;

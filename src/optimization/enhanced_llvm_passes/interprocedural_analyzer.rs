@@ -16,7 +16,7 @@ use inkwell::{
     context::Context,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Interprocedural analyzer for cross-function optimization analysis
 pub struct InterproceduralAnalyzer<'ctx> {

@@ -693,6 +693,51 @@ rust-fmt-fix: ## Format Rust source files
 .PHONY: math-test math-basic-test math-trig-test math-stats-test math-logarithmic-test
 .PHONY: math-test-quick math-test-comprehensive
 
+# PackRat Archive Testing Commands
+# =============================================================================
+.PHONY: packrat-test packrat-test-quick packrat-test-unit packrat-test-integration
+.PHONY: packrat-test-stress packrat-test-examples packrat-test-all packrat-test-coverage packrat-help
+
+packrat-test: ## Run PackRat archive package tests
+	$(AT)echo -e "$(PURPLE)🐀 Running PackRat archive tests...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh
+
+packrat-test-quick: ## Run quick PackRat tests
+	$(AT)echo -e "$(PURPLE)🐀 Running quick PackRat tests...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --quick
+
+packrat-test-unit: ## Run PackRat unit tests
+	$(AT)echo -e "$(PURPLE)🐀 Running PackRat unit tests...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --test unit
+
+packrat-test-integration: ## Run PackRat integration tests
+	$(AT)echo -e "$(PURPLE)🐀 Running PackRat integration tests...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --test integration
+
+packrat-test-stress: ## Run PackRat stress tests
+	$(AT)echo -e "$(PURPLE)🐀 Running PackRat stress tests...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --test stress
+
+packrat-test-examples: ## Run PackRat example programs
+	$(AT)echo -e "$(PURPLE)🐀 Running PackRat examples...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --examples
+
+packrat-test-all: ## Run comprehensive PackRat test suite
+	$(AT)echo -e "$(PURPLE)🐀 Running comprehensive PackRat tests...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --all
+
+packrat-test-coverage: ## Generate PackRat test coverage report
+	$(AT)echo -e "$(PURPLE)🐀 Generating PackRat coverage report...$(RESET)"
+	$(AT)./tests/run_packrat_tests.sh --report test_results/packrat_coverage.md
+
+packrat-help: ## Show PackRat testing help
+	$(AT)./tests/run_packrat_tests.sh --help
+
+# Math Module Testing
+# =============================================================================
+.PHONY: math-test math-basic-test math-trig-test math-stats-test math-logarithmic-test
+.PHONY: math-test-quick math-test-comprehensive
+
 math-test: math-basic-test math-trig-test math-stats-test math-logarithmic-test ## Run all math tests
 
 math-basic-test: build ## Test basic math functions
@@ -2392,4 +2437,141 @@ parallel-compile-help: ## Show parallel compilation test help
 	@echo "  parallel-compile-benchmark   - Performance benchmarks"
 	@echo "  parallel-compile-stress      - Stress tests with high load"
 	@echo "  parallel-compile-help        - Show this help message"
+
+# Performance Debugging Testing
+.PHONY: test-performance-debug test-performance-debug-all test-performance-debug-unit test-performance-debug-integration test-performance-debug-help
+
+# Quick performance debugging tests
+test-performance-debug:
+	@echo "Running performance debugging tests..."
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_performance_debugger_creation --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_debug_session_lifecycle --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_pass_execution_tracer --verbose
+
+# Unit tests for performance debugging components
+test-performance-debug-unit:
+	@echo "Running performance debugging unit tests..."
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_performance_debugger_creation --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_pass_execution_tracer --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_optimization_profiler --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_adaptive_pass_manager --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_regression_tester --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_error_handling_in_tracing --verbose
+
+# Integration tests for performance debugging
+test-performance-debug-integration:
+	@echo "Running performance debugging integration tests..."
+	$(LINKING_FIX) cargo test --test performance_debugging_test integration_tests::test_real_world_optimization_scenario --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test integration_tests::test_performance_regression_detection --verbose
+	$(LINKING_FIX) cargo test --test performance_debugging_test tests::test_comprehensive_debugging_workflow --verbose
+
+# All performance debugging tests
+test-performance-debug-all: test-performance-debug-unit test-performance-debug-integration
+	@echo "Running all performance debugging tests..."
+	$(LINKING_FIX) cargo test --test performance_debugging_test --verbose
+
+# Performance debugging help
+test-performance-debug-help:
+	@echo "Performance Debugging Testing Help:"
+	@echo "  test-performance-debug           - Run quick performance debugging tests"
+	@echo "  test-performance-debug-unit      - Run performance debugging unit tests"
+	@echo "  test-performance-debug-integration - Run performance debugging integration tests"
+	@echo "  test-performance-debug-all       - Run all performance debugging tests"
+	@echo "  test-performance-debug-help      - Show this help message"
+
+# Comprehensive Performance Optimization System - COMPREHENSIVE ✅
+comprehensive-opt-test-quick:
+	@echo "Running comprehensive optimization quick tests..."
+	$(LINKING_FIX) cargo test --lib optimization::comprehensive_optimization_enablement::tests
+	$(LINKING_FIX) cargo test --test comprehensive_optimization_test
+
+comprehensive-opt-test:
+	@echo "Running comprehensive optimization standard tests..."
+	$(LINKING_FIX) cargo test --lib optimization::comprehensive_optimization_enablement::tests
+	$(LINKING_FIX) cargo test --test comprehensive_optimization_test
+	$(LINKING_FIX) cargo test --lib optimization::cli_optimization_interface::tests
+
+comprehensive-opt-test-all:
+	@echo "Running all comprehensive optimization tests..."
+	$(LINKING_FIX) cargo test --lib optimization::comprehensive_optimization_enablement::tests
+	$(LINKING_FIX) cargo test --test comprehensive_optimization_test
+	$(LINKING_FIX) cargo test --lib optimization::cli_optimization_interface::tests
+	$(LINKING_FIX) cargo test comprehensive_optimization_test::integration_tests -- --ignored
+
+comprehensive-opt-test-integration:
+	@echo "Running comprehensive optimization integration tests..."
+	$(LINKING_FIX) cargo test comprehensive_optimization_test::integration_tests -- --ignored
+
+comprehensive-opt-test-unit:
+	@echo "Running comprehensive optimization unit tests..."
+	$(LINKING_FIX) cargo test --lib optimization::comprehensive_optimization_enablement::tests
+	$(LINKING_FIX) cargo test --lib optimization::cli_optimization_interface::tests
+
+comprehensive-opt-test-cli:
+	@echo "Running CLI optimization interface tests..."
+	$(LINKING_FIX) cargo test --lib optimization::cli_optimization_interface::tests
+
+comprehensive-opt-benchmark:
+	@echo "Running optimization performance benchmarks..."
+	$(LINKING_FIX) cargo test test_optimization_performance_improvement -- --ignored
+	$(LINKING_FIX) cargo test test_parallel_compilation_efficiency -- --ignored
+	$(LINKING_FIX) cargo test test_different_optimization_levels_produce_different_results -- --ignored
+
+comprehensive-opt-demo:
+	@echo "Running comprehensive optimization demo..."
+	@echo "Creating test CURSED program..."
+	@mkdir -p /tmp/cursed-opt-demo
+	@cat > /tmp/cursed-opt-demo/test_program.csd << 'EOF'
+// Comprehensive optimization test program
+slay fibonacci(n: i32) -> i32 {
+    bestie (n <= 1) {
+        cap n;
+    } flex {
+        cap slay fibonacci(n-1) + slay fibonacci(n-2);
+    }
+}
+
+slay main() {
+    lowkey (sus i = 0; i < 20; i++) {
+        periodt;
+        sus fib = slay fibonacci(i);
+        lowkey (sus j = 0; j < 100; j++) {
+            periodt;
+            sus computation = j * j + 2 * j + 1;
+        }
+    }
+}
+EOF
+	@echo "Demo program created. Use with: cursed compile -O3 --max-performance /tmp/cursed-opt-demo/test_program.csd"
+
+comprehensive-opt-coverage:
+	@echo "Generating comprehensive optimization test coverage..."
+	$(LINKING_FIX) cargo tarpaulin --out html --output-dir coverage/comprehensive-opt \
+		--lib --test comprehensive_optimization_test
+
+comprehensive-opt-validate:
+	@echo "Validating comprehensive optimization system..."
+	@echo "Checking that all optimizations are enabled by default..."
+	$(LINKING_FIX) cargo test test_comprehensive_optimization_system_initialization
+	@echo "Checking optimization level configurations..."
+	$(LINKING_FIX) cargo test test_optimization_level_configurations
+	@echo "Checking adaptive optimization..."
+	$(LINKING_FIX) cargo test test_adaptive_optimization_selection
+	@echo "Checking performance improvements..."
+	$(LINKING_FIX) cargo test test_optimization_performance_improvement
+	@echo "All comprehensive optimization validations passed!"
+
+comprehensive-opt-help:
+	@echo "Comprehensive Performance Optimization Testing Commands:"
+	@echo "  comprehensive-opt-test-quick     - Quick validation tests"
+	@echo "  comprehensive-opt-test          - Standard test suite"
+	@echo "  comprehensive-opt-test-all      - All tests including integration"
+	@echo "  comprehensive-opt-test-integration - Integration tests only"
+	@echo "  comprehensive-opt-test-unit     - Unit tests only"
+	@echo "  comprehensive-opt-test-cli      - CLI interface tests only"
+	@echo "  comprehensive-opt-benchmark     - Performance benchmarks"
+	@echo "  comprehensive-opt-demo          - Create demo optimization program"
+	@echo "  comprehensive-opt-coverage      - Generate test coverage report"
+	@echo "  comprehensive-opt-validate      - Validate optimization system"
+	@echo "  comprehensive-opt-help          - Show this help"
 

@@ -6,11 +6,23 @@ pub mod core;
 pub mod value;
 /// Memory ordering types and constants
 pub mod memory_order;
+/// Wait group for goroutine synchronization
+pub mod wait_group;
+/// Atomic bitfield operations
+pub mod bitfield;
+/// Atomic collections (queue, stack, counter)
+pub mod collections;
+/// Specialized atomic flags with extended operations
+pub mod flags;
 
 // Re-export all public types and functions
 pub use core::*;
 pub use value::*;
 pub use memory_order::*;
+pub use wait_group::*;
+pub use bitfield::*;
+pub use collections::*;
+pub use flags::*;
 
 /// atomic_drip module provides low-level atomic memory operations for synchronization across goroutines.
 /// These operations ensure that concurrent modifications to shared memory are performed without race conditions.

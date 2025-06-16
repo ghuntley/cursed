@@ -1006,6 +1006,7 @@ dependencies = [
  "chrono",
  "clap",
  "colored",
+ "crc32fast",
  "criterion",
  "crossbeam",
  "crossbeam-channel",
@@ -3052,6 +3053,7 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
+ "rand 0.8.5",
 ]
 
 [[package]]

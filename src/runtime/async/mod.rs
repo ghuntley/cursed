@@ -17,7 +17,7 @@ pub use future::{Future, FutureState, FutureResult, FutureError, BoxFuture, Loca
 pub use promise::{Promise, PromiseResolver, PromiseRejecter, PromiseState};
 pub use executor::{AsyncExecutor, ExecutorConfig, ExecutorStatistics, TaskQueue};
 pub use runtime::{AsyncRuntime, AsyncRuntimeConfig, RuntimeStatistics, RuntimeCoordinator};
-pub use task::{Task, TaskId, TaskState, TaskHandle, TaskContext, TaskWaker};
+pub use task::{Task, TaskId, TaskState, TaskHandle, TaskContext, TaskWaker, TaskPriority, TaskStatistics, TaskManager, TaskHandleNotifier};
 pub use scheduler::{AsyncScheduler, SchedulerConfig as AsyncSchedulerConfig, WorkStealingQueue};
 pub use timer::{Timer, Delay, Timeout, Interval, TimerWheel, TimerHandle};
 pub use event_loop::{EventLoop, EventLoopConfig, EventLoopStats};

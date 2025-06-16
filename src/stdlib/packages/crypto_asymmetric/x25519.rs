@@ -5,20 +5,20 @@
 
 use std::collections::HashMap;
 use rand::rngs::OsRng;
-use x25519_dalek::{EphemeralSecret, PublicKey, StaticSecret, SharedSecret};
+use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
 use zeroize::Zeroizing;
 use crate::error::CursedError;
 
 /// fr fr X25519 key pair structure
 #[derive(Debug, Clone)]
 pub struct X25519KeyPair {
-    pub private_key: StaticSecret,
+    pub private_key: EphemeralSecret,
     pub public_key: PublicKey,
 }
 
 impl X25519KeyPair {
     /// slay Create new X25519 key pair from private key
-    pub fn from_private_key(private_key: StaticSecret) -> Self {
+    pub fn from_private_key(private_key: EphemeralSecret) -> Self {
         let public_key = PublicKey::from(&private_key);
         Self {
             private_key,
@@ -30,7 +30,7 @@ impl X25519KeyPair {
     pub fn from_public_key(public_key: PublicKey) -> Self {
         // For key exchange operations, we create a dummy private key
         // In practice, you'd use separate structures for public-key-only operations
-        let dummy_private = StaticSecret::new(OsRng);
+        let dummy_private = EphemeralSecret::random();
         Self {
             private_key: dummy_private,
             public_key,
@@ -133,7 +133,7 @@ impl X25519Engine {
     /// - Provides 128-bit security level
     /// - Suitable for long-term key storage
     pub fn generate_static_keypair(&mut self) -> X25519Result<X25519KeyPair> {
-        let private_key = StaticSecret::new(&mut self.rng);
+        let private_key = EphemeralSecret::random();
         Ok(X25519KeyPair::from_private_key(private_key))
     }
     
@@ -161,7 +161,7 @@ impl X25519Engine {
         let mut seed_array = [0u8; 32];
         seed_array.copy_from_slice(seed);
         
-        let private_key = StaticSecret::from(seed_array);
+        let private_key = EphemeralSecret::from(seed_array);
         Ok(X25519KeyPair::from_private_key(private_key))
     }
     
@@ -199,7 +199,7 @@ impl X25519Engine {
         
         let mut private_array = [0u8; 32];
         private_array.copy_from_slice(our_private_bytes);
-        let private_key = StaticSecret::from(private_array);
+        let private_key = EphemeralSecret::from(private_array);
         
         let mut public_array = [0u8; 32];
         public_array.copy_from_slice(their_public_bytes);
@@ -299,7 +299,7 @@ impl X25519Engine {
         let mut key_array = [0u8; 32];
         key_array.copy_from_slice(&key_bytes);
         
-        let private_key = StaticSecret::from(key_array);
+        let private_key = EphemeralSecret::from(key_array);
         Ok(X25519KeyPair::from_private_key(private_key))
     }
     
@@ -312,7 +312,7 @@ impl X25519Engine {
         let mut key_array = [0u8; 32];
         key_array.copy_from_slice(private_key_bytes);
         
-        let private_key = StaticSecret::from(key_array);
+        let private_key = EphemeralSecret::from(key_array);
         let public_key = PublicKey::from(&private_key);
         
         Ok(public_key.as_bytes().to_vec())

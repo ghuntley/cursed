@@ -41,7 +41,7 @@ use hkdf::Hkdf;
 use aes_gcm::{Aes256Gcm, Key, Nonce, Aead, NewAead};
 use chacha20poly1305::{ChaCha20Poly1305, XChaCha20Poly1305};
 use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar, constants::ED25519_BASEPOINT_TABLE};
-use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey, StaticSecret};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use ed25519_dalek::{Keypair as Ed25519Keypair, PublicKey as Ed25519PublicKey, SecretKey as Ed25519SecretKey, Signature as Ed25519Signature, Signer, Verifier};
 
 use crate::error::CursedError;
@@ -373,7 +373,7 @@ impl CryptoPrimitives {
 /// X25519 key exchange implementation
 #[derive(Debug, Clone)]
 pub struct X25519KeyExchange {
-    private_key: StaticSecret,
+    private_key: EphemeralSecret,
     public_key: X25519PublicKey,
     security_level: SecurityLevel,
 }
@@ -381,7 +381,7 @@ pub struct X25519KeyExchange {
 impl X25519KeyExchange {
     /// Create new X25519 key exchange instance
     pub fn new(security_level: SecurityLevel) -> Self {
-        let private_key = StaticSecret::new(OsRng);
+        let private_key = EphemeralSecret::random();
         let public_key = X25519PublicKey::from(&private_key);
         
         Self {

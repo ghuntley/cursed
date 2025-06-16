@@ -1352,7 +1352,7 @@ impl EnhancedAstExtractor {
     }
     
     /// Format type name for display
-    fn format_type_name(&self, type_expr: &Expression) -> String {
+    fn format_type_name(&self, type_expr: &dyn Expression) -> String {
         // This would format type expressions into readable strings
         // For now, return a placeholder
         match type_expr {
