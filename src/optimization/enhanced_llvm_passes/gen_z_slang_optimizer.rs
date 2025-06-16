@@ -14,7 +14,7 @@ use inkwell::{
     module::Module,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Gen Z slang optimizer for CURSED language constructs
 pub struct GenZSlangOptimizer<'ctx> {

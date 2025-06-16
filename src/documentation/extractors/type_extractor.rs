@@ -375,7 +375,7 @@ impl TypeExtractor {
     #[instrument(skip(self, expr))]
     pub fn extract_type_info_from_expression(
         &self,
-        expr: &Expression,
+        expr: &dyn Expression,
     ) -> Result<CompleteTypeInfo, Error> {
         match &expr.expr_type {
             ExpressionType::Identifier(id) => {
@@ -536,7 +536,7 @@ impl TypeExtractor {
 
     /// Format a type expression as a string
     #[instrument(skip(self, expr))]
-    pub fn format_type_expression(&self, expr: &Expression) -> Result<String, Error> {
+    pub fn format_type_expression(&self, expr: &dyn Expression) -> Result<String, Error> {
         match &expr.expr_type {
             ExpressionType::Identifier(id) => Ok(id.name.clone()),
             ExpressionType::ArrayAccess(arr) => {

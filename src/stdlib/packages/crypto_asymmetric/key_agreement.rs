@@ -8,7 +8,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rand::RngCore;
-use x25519_dalek::{StaticSecret, PublicKey as X25519PublicKey};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey, ecdh::EphemeralSecret as P256EphemeralSecret};
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey, ecdh::EphemeralSecret as P384EphemeralSecret};
 use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep};
@@ -297,7 +297,7 @@ pub fn x25519_agreement(args: &[Value]) -> Result<Value, CursedError> {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
     }
     
-    let private_key = StaticSecret::from(<[u8; 32]>::try_from(private_key_bytes)
+    let private_key = EphemeralSecret::from(<[u8; 32]>::try_from(private_key_bytes)
         .map_err(|_| CursedError::InvalidArgument("Invalid private key length".to_string()))?);
     
     let public_key = X25519PublicKey::from(<[u8; 32]>::try_from(public_key_bytes)

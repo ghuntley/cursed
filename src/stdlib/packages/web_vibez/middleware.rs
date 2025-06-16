@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::future::Future;
 use std::pin::Pin;
 use std::time::{Duration, Instant};
+use std::net::IpAddr;
 
 use crate::stdlib::packages::web_vibez::{
     request::HttpRequest,
@@ -507,68 +508,232 @@ impl Default for SecurityHeadersMiddleware {
     }
 }
 
-/// fr fr Rate limiting middleware - request throttling
+/// fr fr Rate limiting middleware - production-ready request throttling
+use crate::stdlib::packages::web_vibez::ratelimit::{
+    RateLimiter, RateLimitConfig, RateLimitDecision, InMemoryStore, FixedWindow,
+    extract_client_id, WindowConfig, BucketConfig, ClientIdentification, ErrorConfig,
+};
+
 #[derive(Clone)]
 pub struct RateLimitMiddleware {
-    max_requests: u32,
-    window_duration: Duration,
-    // In a real implementation, you'd have a store for tracking requests
-    // For now, this is a placeholder structure
+    limiter: Arc<RateLimiter>,
+    config: RateLimitConfig,
+    client_identification: ClientIdentification,
 }
 
 impl RateLimitMiddleware {
-    /// fr fr Create new rate limit middleware - request throttling
-    pub fn new(max_requests: u32, window_duration: Duration) -> Self {
+    /// fr fr Create new rate limit middleware - comprehensive setup
+    pub fn new(config: RateLimitConfig) -> Self {
+        let store = Arc::new(InMemoryStore::new());
+        let algorithm = Arc::new(FixedWindow::new());
+        let limiter = Arc::new(RateLimiter::new(store, algorithm, config.clone()));
+        
         Self {
-            max_requests,
-            window_duration,
+            limiter,
+            client_identification: config.client_identification.clone(),
+            config,
+        }
+    }
+
+    /// fr fr Create with custom limiter - advanced setup
+    pub fn with_limiter(limiter: Arc<RateLimiter>, config: RateLimitConfig) -> Self {
+        Self {
+            limiter,
+            client_identification: config.client_identification.clone(),
+            config,
         }
     }
 
     /// fr fr Create rate limiter per minute - common setup
-    pub fn per_minute(max_requests: u32) -> Self {
-        Self::new(max_requests, Duration::from_secs(60))
+    pub fn per_minute(max_requests: u64) -> Self {
+        let config = RateLimitConfig::per_minute(max_requests);
+        Self::new(config)
     }
 
     /// fr fr Create rate limiter per hour - lenient setup
-    pub fn per_hour(max_requests: u32) -> Self {
-        Self::new(max_requests, Duration::from_secs(3600))
+    pub fn per_hour(max_requests: u64) -> Self {
+        let config = RateLimitConfig::per_hour(max_requests);
+        Self::new(config)
+    }
+
+    /// fr fr Create rate limiter per second - strict setup
+    pub fn per_second(max_requests: u64) -> Self {
+        let config = RateLimitConfig::per_second(max_requests);
+        Self::new(config)
+    }
+
+    /// fr fr Create sliding window rate limiter - smooth limiting
+    pub fn sliding_window(max_requests: u64, duration: Duration) -> Self {
+        let config = RateLimitConfig::new(max_requests, duration)
+            .with_sliding_window(duration);
+        Self::new(config)
+    }
+
+    /// fr fr Create token bucket rate limiter - burst-friendly
+    pub fn token_bucket(max_requests: u64, window: Duration, capacity: f64, refill_rate: f64) -> Self {
+        let config = RateLimitConfig::new(max_requests, window)
+            .with_token_bucket(capacity, refill_rate);
+        Self::new(config)
+    }
+
+    /// fr fr Extract client identifier from request - configurable identification
+    fn extract_client_id(&self, request: &HttpRequest) -> String {
+        match &self.client_identification {
+            ClientIdentification::IpAddress => {
+                extract_client_id(request.client_ip())
+            }
+            ClientIdentification::Header { name } => {
+                request.header(name)
+                    .map(|h| h.clone())
+                    .unwrap_or_else(|| extract_client_id(request.client_ip()))
+            }
+            ClientIdentification::Composite { factors } => {
+                let mut parts = Vec::new();
+                for factor in factors {
+                    match factor {
+                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::IpAddress => {
+                            parts.push(extract_client_id(request.client_ip()));
+                        }
+                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::Header { name } => {
+                            if let Some(value) = request.header(name) {
+                                parts.push(value.clone());
+                            }
+                        }
+                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::UserAgent => {
+                            if let Some(ua) = request.header("user-agent") {
+                                parts.push(ua.clone());
+                            }
+                        }
+                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::Custom { name: _, extractor: _ } => {
+                            // Custom extractors would be implemented here
+                            parts.push("custom".to_string());
+                        }
+                    }
+                }
+                if parts.is_empty() {
+                    extract_client_id(request.client_ip())
+                } else {
+                    parts.join(":")
+                }
+            }
+            ClientIdentification::Custom { identifier } => {
+                // Custom identification logic would be implemented here
+                format!("custom:{}", identifier)
+            }
+        }
+    }
+
+    /// fr fr Add rate limit headers to response
+    fn add_rate_limit_headers(&self, response: &mut HttpResponse, decision: &RateLimitDecision, client_id: &str) {
+        if !self.config.error_config.include_headers {
+            return;
+        }
+
+        match decision {
+            RateLimitDecision::Allow { remaining, reset_time, .. } => {
+                response.headers.insert("x-ratelimit-limit".to_string(), self.config.max_requests.to_string());
+                response.headers.insert("x-ratelimit-remaining".to_string(), remaining.to_string());
+                response.headers.insert("x-ratelimit-reset".to_string(), reset_time.to_string());
+                response.headers.insert("x-ratelimit-policy".to_string(), format!("{};w={}", self.config.max_requests, match &self.config.window_config {
+                    WindowConfig::Fixed { duration } => duration.as_secs(),
+                    WindowConfig::Sliding { duration } => duration.as_secs(),
+                }));
+            }
+            RateLimitDecision::Deny { retry_after, reset_time } => {
+                response.headers.insert("x-ratelimit-limit".to_string(), self.config.max_requests.to_string());
+                response.headers.insert("x-ratelimit-remaining".to_string(), "0".to_string());
+                response.headers.insert("x-ratelimit-reset".to_string(), reset_time.to_string());
+                
+                if self.config.error_config.include_retry_after {
+                    response.headers.insert("retry-after".to_string(), retry_after.to_string());
+                }
+            }
+        }
+        
+        // Add client identifier for debugging (if not sensitive)
+        if matches!(self.client_identification, ClientIdentification::IpAddress) {
+            response.headers.insert("x-ratelimit-scope".to_string(), client_id.to_string());
+        }
+    }
+
+    /// fr fr Get rate limiter metrics - monitoring
+    pub async fn get_metrics(&self) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitMetrics {
+        self.limiter.get_metrics().await
+    }
+
+    /// fr fr Reset client rate limit - administrative function
+    pub async fn reset_client(&self, client_id: &str) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitResult<()> {
+        self.limiter.reset_client(client_id).await
     }
 }
 
 impl Middleware for RateLimitMiddleware {
     fn before_request<'a>(&'a self, request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
-        let max_requests = self.max_requests;
-        let window_duration = self.window_duration;
+        let client_id = self.extract_client_id(request);
+        let limiter = self.limiter.clone();
+        let error_config = self.config.error_config.clone();
         
         Box::pin(async move {
-            // In a real implementation, you would:
-            // 1. Get client IP or user ID
-            // 2. Check request count in the current window
-            // 3. Increment counter or return rate limit error
-            
-            let client_ip = request.client_ip()
-                .map(|ip| ip.to_string())
-                .unwrap_or_else(|| "unknown".to_string());
-
-            // Placeholder logic - in reality you'd use Redis or in-memory store
-            println!("Rate limit check for {}: {}/{} per {:?}", 
-                    client_ip, 1, max_requests, window_duration);
-
-            // For demo purposes, always allow (real implementation would track and limit)
-            Ok(())
+            match limiter.check_request(&client_id).await {
+                Ok(RateLimitDecision::Allow { .. }) => {
+                    // Request allowed, continue processing
+                    Ok(())
+                }
+                Ok(RateLimitDecision::Deny { retry_after, .. }) => {
+                    // Request denied, return rate limit error
+                    let error_response = if let Some(custom_response) = &error_config.custom_response {
+                        custom_response.clone()
+                    } else {
+                        serde_json::json!({
+                            "error": error_config.message,
+                            "code": "RATE_LIMIT_EXCEEDED",
+                            "retry_after": retry_after,
+                            "client_id": client_id
+                        }).to_string()
+                    };
+                    
+                    Err(WebError::RateLimit {
+                        status_code: error_config.status_code,
+                        message: error_response,
+                        retry_after: Some(retry_after),
+                    })
+                }
+                Err(rate_limit_error) => {
+                    // Internal error in rate limiting system
+                    eprintln!("Rate limiting error for client {}: {}", client_id, rate_limit_error);
+                    
+                    // Fail open - allow request but log error
+                    Ok(())
+                }
+            }
         })
     }
 
-    fn after_response<'a>(&'a self, _request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
-        let max_requests = self.max_requests;
-        let window_duration = self.window_duration;
+    fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+        let client_id = self.extract_client_id(request);
+        let limiter = self.limiter.clone();
+        let config = self.config.clone();
         
         Box::pin(async move {
-            // Add rate limit headers
-            response.headers.insert("x-ratelimit-limit".to_string(), max_requests.to_string());
-            response.headers.insert("x-ratelimit-remaining".to_string(), (max_requests - 1).to_string());
-            response.headers.insert("x-ratelimit-reset".to_string(), window_duration.as_secs().to_string());
+            // Get current rate limit status and add headers
+            if let Ok(context) = limiter.get_context(&client_id).await {
+                let decision = if context.remaining > 0 {
+                    RateLimitDecision::Allow {
+                        remaining: context.remaining,
+                        reset_time: context.reset_time,
+                        retry_after: context.retry_after,
+                    }
+                } else {
+                    RateLimitDecision::Deny {
+                        retry_after: context.retry_after.unwrap_or(60),
+                        reset_time: context.reset_time,
+                    }
+                };
+                
+                if config.error_config.include_headers {
+                    self.add_rate_limit_headers(response, &decision, &client_id);
+                }
+            }
             
             Ok(())
         })

@@ -6,7 +6,6 @@
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer, Verifier};
-use ed25519_dalek::pkcs8::{EncodePrivateKey, EncodePublicKey, DecodePrivateKey, DecodePublicKey, LineEnding};
 use zeroize::Zeroizing;
 use crate::error::CursedError;
 

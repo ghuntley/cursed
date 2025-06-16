@@ -48,6 +48,7 @@ regex = "1.10"      # Regular expressions for documentation quality checks
 
 # Basic cryptography dependencies
 hex = "0.4"     # Hex encoding/decoding
+crc32fast = "1.3"  # Fast CRC32 computation for ZIP archives
 rand = "0.8"    # Random number generation
 sha2 = "0.10"   # SHA-2 hashing for build cache
 base64 = "0.21" # Base64 encoding/decoding for database binary data
@@ -72,10 +73,10 @@ aes-gcm = "0.10"  # AES-GCM authenticated encryption
 chacha20 = "0.9" # ChaCha20 stream cipher
 chacha20poly1305 = "0.10.1"  # ChaCha20-Poly1305 authenticated encryption
 curve25519-dalek = "4.1.1"   # Curve25519 elliptic curve operations
+num-bigint = { version = "0.4", features = ["rand"] }   # Big integer arithmetic
 hkdf = "0.12.3"   # HMAC-based Key Derivation Function
 subtle = "2.5.0"  # Constant-time utilities
 zeroize = "1.7.0" # Secure memory zeroing
-num-bigint = "0.4"  # Big integer arithmetic for RSA operations
 num-rational = "0.4" # Rational number arithmetic for big_mood module
 num-complex = "0.4"  # Complex number arithmetic for big_mood module
 signature = "2.1"   # Digital signature traits
@@ -156,9 +157,6 @@ colored = "2.0"        # For colored terminal output
 
 # File system dependencies
 fs2 = "0.4"     # File locking support
-
-# Regex support
-regex = "1.10"  # Regular expression support
 html-escape = "0.2"  # HTML escaping for syntax highlighting
 urlencoding = "2.1"  # URL encoding/decoding
 
@@ -374,6 +372,10 @@ path = "src/bin/cursed_doc.rs"
 [[bin]]
 name = "cursed-compile-fast"
 path = "src/bin/cursed_compile_fast.rs"
+
+[[bin]]
+name = "minimal-demo"
+path = "examples/minimal_demo.rs"
 
 [[bench]]
 name = "optimization_benchmark"

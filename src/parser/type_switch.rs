@@ -5,7 +5,7 @@ use crate::parser::ModParser;
 use crate::ast::statements::control_flow::{SwitchStatement, SwitchCase};
 use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use crate::ast::traits::{Statement, Expression};
-use crate::ast::statements::block::BlockStatement;
+use crate::ast::block::BlockStatement;
 use crate::lexer::TokenType;
 use crate::error::Error;
 

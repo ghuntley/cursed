@@ -688,7 +688,7 @@ impl LlvmCodeGenerator {
     
     /// Optimize simple error checks by eliminating redundant patterns
     fn optimize_simple_error_checks(&mut self) -> Result<(), CursedError> {
-        use inkwell::passes::{PassManager, PassManagerBuilder};
+        use inkwell::passes::{PassManager};
         
         // Create a function pass manager for local optimizations
         let fpm = PassManager::create(&self.module);

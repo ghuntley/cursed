@@ -18,7 +18,7 @@ use inkwell::{
     AddressSpace,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Memory layout optimizer for struct packing and cache alignment
 pub struct MemoryLayoutOptimizer<'ctx> {

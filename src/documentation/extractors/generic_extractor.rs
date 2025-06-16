@@ -292,7 +292,7 @@ impl GenericExtractor {
     #[instrument(skip(self, expr))]
     fn extract_bounds_from_type_expression(
         &self,
-        expr: &Expression,
+        expr: &dyn Expression,
     ) -> Result<Vec<GenericBound>, Error> {
         let mut bounds = Vec::new();
 

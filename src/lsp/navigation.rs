@@ -188,20 +188,62 @@ impl NavigationProvider {
     /// Get built-in function information
     fn get_builtin_function_info(&self, symbol: &str) -> Option<String> {
         let builtins = HashMap::from([
-            ("print", "```cursed\nslay print(value: any)\n```\n\nPrints a value to stdout without a newline."),
-            ("println", "```cursed\nslay println(value: any)\n```\n\nPrints a value to stdout with a newline."),
-            ("len", "```cursed\nslay len(collection: array|string|map) -> int\n```\n\nReturns the length of a collection or string."),
-            ("str", "```cursed\nslay str(value: any) -> string\n```\n\nConverts a value to its string representation."),
-            ("int", "```cursed\nslay int(value: string|float) -> int\n```\n\nConverts a value to an integer."),
-            ("float", "```cursed\nslay float(value: string|int) -> float\n```\n\nConverts a value to a floating-point number."),
-            ("type", "```cursed\nslay type(value: any) -> string\n```\n\nReturns the type name of a value."),
-            ("panic", "```cursed\nslay panic(message: string)\n```\n\nTerminates the program with an error message."),
-            ("spawn", "```cursed\nslay spawn(function: () -> any)\n```\n\nSpawns a new goroutine to execute the given function."),
-            ("make", "```cursed\nslay make(type: Type, size?: int) -> Type\n```\n\nCreates a new instance of the specified collection type."),
-            ("append", "```cursed\nslay append(slice: []T, elements: ...T) -> []T\n```\n\nAppends elements to a slice and returns the result."),
-            ("copy", "```cursed\nslay copy(dst: []T, src: []T) -> int\n```\n\nCopies elements from src to dst and returns the number of elements copied."),
-            ("delete", "```cursed\nslay delete(map: map[K]V, key: K)\n```\n\nDeletes a key from a map."),
-            ("close", "```cursed\nslay close(channel: chan T)\n```\n\nCloses a channel."),
+            // Core I/O functions
+            ("print", "```cursed\nslay print(value: any)\n```\n\nPrints a value to stdout without a newline.\n\n**Example:**\n```cursed\nprint(\"Hello\")\nprint(42)\n```"),
+            ("println", "```cursed\nslay println(value: any)\n```\n\nPrints a value to stdout with a newline.\n\n**Example:**\n```cursed\nprintln(\"Hello World!\")\n```"),
+            ("eprint", "```cursed\nslay eprint(value: any)\n```\n\nPrints a value to stderr without a newline.\n\n**Example:**\n```cursed\neprint(\"Error: \")\n```"),
+            ("eprintln", "```cursed\nslay eprintln(value: any)\n```\n\nPrints a value to stderr with a newline.\n\n**Example:**\n```cursed\neprintln(\"Fatal error occurred!\")\n```"),
+            
+            // Type conversion functions
+            ("len", "```cursed\nslay len(collection: array|string|map|slice) -> int\n```\n\nReturns the length of a collection or string.\n\n**Example:**\n```cursed\nfacts arr = [1, 2, 3]\nprintln(len(arr)) // 3\n```"),
+            ("str", "```cursed\nslay str(value: any) -> string\n```\n\nConverts a value to its string representation.\n\n**Example:**\n```cursed\nfacts num = 42\nfacts text = str(num) // \"42\"\n```"),
+            ("int", "```cursed\nslay int(value: string|float|bool) -> int\n```\n\nConverts a value to an integer.\n\n**Example:**\n```cursed\nfacts num = int(\"42\") // 42\nfacts rounded = int(3.14) // 3\n```"),
+            ("float", "```cursed\nslay float(value: string|int) -> float\n```\n\nConverts a value to a floating-point number.\n\n**Example:**\n```cursed\nfacts pi = float(\"3.14\") // 3.14\n```"),
+            ("bool", "```cursed\nslay bool(value: any) -> bool\n```\n\nConverts a value to a boolean.\n\n**Example:**\n```cursed\nfacts truth = bool(1) // true\nfacts falsy = bool(\"\") // false\n```"),
+            ("type", "```cursed\nslay type(value: any) -> string\n```\n\nReturns the type name of a value.\n\n**Example:**\n```cursed\nprintln(type(42)) // \"int\"\nprintln(type(\"hello\")) // \"string\"\n```"),
+            
+            // Control flow functions
+            ("panic", "```cursed\nslay panic(message: string)\n```\n\nTerminates the program with an error message.\n\n**Example:**\n```cursed\nlowkey critical_error {\n    panic(\"Something went terribly wrong!\")\n}\n```"),
+            ("assert", "```cursed\nslay assert(condition: bool, message?: string)\n```\n\nAsserts that a condition is true, panics if false.\n\n**Example:**\n```cursed\nassert(len(arr) > 0, \"Array must not be empty\")\n```"),
+            ("unreachable", "```cursed\nslay unreachable() -> never\n```\n\nMarks code as unreachable. Panics if reached.\n\n**Example:**\n```cursed\nvibe_check state {\n    mood \"valid\":\n        bounce \"OK\"\n    basic:\n        unreachable() // This should never happen\n}\n```"),
+            
+            // Collection functions
+            ("make", "```cursed\nslay make(type: Type, size?: int, capacity?: int) -> Type\n```\n\nCreates a new instance of the specified collection type.\n\n**Example:**\n```cursed\nfacts arr = make([]int, 10) // Array of 10 ints\nfacts m = make(map[string]int) // Empty map\n```"),
+            ("append", "```cursed\nslay append(slice: []T, elements: ...T) -> []T\n```\n\nAppends elements to a slice and returns the result.\n\n**Example:**\n```cursed\nfacts arr = [1, 2]\nfacts extended = append(arr, 3, 4) // [1, 2, 3, 4]\n```"),
+            ("copy", "```cursed\nslay copy(dst: []T, src: []T) -> int\n```\n\nCopies elements from src to dst and returns the number of elements copied.\n\n**Example:**\n```cursed\nfacts src = [1, 2, 3]\nsus dst = make([]int, 3)\nfacts copied = copy(dst, src) // 3\n```"),
+            ("reverse", "```cursed\nslay reverse(slice: []T)\n```\n\nReverses a slice in place.\n\n**Example:**\n```cursed\nsus arr = [1, 2, 3]\nreverse(arr) // arr is now [3, 2, 1]\n```"),
+            ("sort", "```cursed\nslay sort(slice: []T)\n```\n\nSorts a slice in place.\n\n**Example:**\n```cursed\nsus arr = [3, 1, 2]\nsort(arr) // arr is now [1, 2, 3]\n```"),
+            ("delete", "```cursed\nslay delete(map: map[K]V, key: K)\n```\n\nDeletes a key from a map.\n\n**Example:**\n```cursed\nsus m = {\"a\": 1, \"b\": 2}\ndelete(m, \"a\") // m is now {\"b\": 2}\n```"),
+            
+            // Concurrency functions
+            ("spawn", "```cursed\nslay spawn(function: () -> any)\n```\n\nSpawns a new goroutine to execute the given function.\n\n**Example:**\n```cursed\nspawn {\n    println(\"Running in goroutine!\")\n}\n```"),
+            ("yield", "```cursed\nslay yield()\n```\n\nYields execution to the scheduler.\n\n**Example:**\n```cursed\nperiodt true {\n    println(\"Working...\")\n    yield() // Let other goroutines run\n}\n```"),
+            ("sleep", "```cursed\nslay sleep(duration: int)\n```\n\nSleeps for the specified duration in milliseconds.\n\n**Example:**\n```cursed\nsleep(1000) // Sleep for 1 second\n```"),
+            
+            // Channel functions
+            ("make_channel", "```cursed\nslay make_channel(buffer_size?: int) -> chan T\n```\n\nCreates a new channel.\n\n**Example:**\n```cursed\nfacts ch = make_channel(10) // Buffered channel\nfacts unbuffered = make_channel() // Unbuffered channel\n```"),
+            ("send", "```cursed\nslay send(channel: chan T, value: T)\n```\n\nSends a value to a channel.\n\n**Example:**\n```cursed\nfacts ch = make_channel()\nsend(ch, \"hello\")\n```"),
+            ("recv", "```cursed\nslay recv(channel: chan T) -> T\n```\n\nReceives a value from a channel.\n\n**Example:**\n```cursed\nfacts value = recv(ch)\n```"),
+            ("close", "```cursed\nslay close(channel: chan T)\n```\n\nCloses a channel.\n\n**Example:**\n```cursed\nclose(ch)\n```"),
+            
+            // Math functions
+            ("abs", "```cursed\nslay abs(value: int|float) -> int|float\n```\n\nReturns the absolute value.\n\n**Example:**\n```cursed\nfacts result = abs(-42) // 42\n```"),
+            ("min", "```cursed\nslay min(a: T, b: T) -> T\n```\n\nReturns the minimum of two values.\n\n**Example:**\n```cursed\nfacts smaller = min(5, 3) // 3\n```"),
+            ("max", "```cursed\nslay max(a: T, b: T) -> T\n```\n\nReturns the maximum of two values.\n\n**Example:**\n```cursed\nfacts larger = max(5, 3) // 5\n```"),
+            ("sqrt", "```cursed\nslay sqrt(value: float) -> float\n```\n\nReturns the square root.\n\n**Example:**\n```cursed\nfacts root = sqrt(16.0) // 4.0\n```"),
+            ("pow", "```cursed\nslay pow(base: float, exponent: float) -> float\n```\n\nReturns base raised to the power of exponent.\n\n**Example:**\n```cursed\nfacts result = pow(2.0, 3.0) // 8.0\n```"),
+            
+            // String functions
+            ("format", "```cursed\nslay format(template: string, ...args: any) -> string\n```\n\nFormats a string with arguments.\n\n**Example:**\n```cursed\nfacts msg = format(\"Hello, {}! You are {} years old.\", name, age)\n```"),
+            ("split", "```cursed\nslay split(string: string, delimiter: string) -> []string\n```\n\nSplits a string by delimiter.\n\n**Example:**\n```cursed\nfacts parts = split(\"a,b,c\", \",\") // [\"a\", \"b\", \"c\"]\n```"),
+            ("join", "```cursed\nslay join(strings: []string, delimiter: string) -> string\n```\n\nJoins strings with delimiter.\n\n**Example:**\n```cursed\nfacts result = join([\"a\", \"b\", \"c\"], \",\") // \"a,b,c\"\n```"),
+            ("trim", "```cursed\nslay trim(string: string) -> string\n```\n\nTrims whitespace from both ends.\n\n**Example:**\n```cursed\nfacts clean = trim(\"  hello  \") // \"hello\"\n```"),
+            ("replace", "```cursed\nslay replace(string: string, old: string, new: string) -> string\n```\n\nReplaces all occurrences of old with new.\n\n**Example:**\n```cursed\nfacts result = replace(\"hello world\", \"world\", \"CURSED\") // \"hello CURSED\"\n```"),
+            
+            // Error handling functions
+            ("try", "```cursed\nslay try(expression: T) -> Result<T, Error>\n```\n\nTries an expression and returns a Result.\n\n**Example:**\n```cursed\nfacts result = try(risky_operation())\n```"),
+            ("unwrap", "```cursed\nslay unwrap(result: Result<T, E>) -> T\n```\n\nUnwraps a Result or panics.\n\n**Example:**\n```cursed\nfacts value = unwrap(result)\n```"),
+            ("expect", "```cursed\nslay expect(result: Result<T, E>, message: string) -> T\n```\n\nUnwraps a Result or panics with message.\n\n**Example:**\n```cursed\nfacts value = expect(result, \"Failed to parse number\")\n```"),
         ]);
 
         builtins.get(symbol).map(|info| info.to_string())

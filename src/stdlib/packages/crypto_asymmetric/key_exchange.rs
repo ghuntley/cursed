@@ -8,10 +8,11 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rand::RngCore;
-use x25519_dalek::{StaticSecret, PublicKey as X25519PublicKey, EphemeralSecret};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use sha2::{Sha256, Digest};
 use hkdf::Hkdf;
-use num_bigint::{BigUint, RandBigInt};
+use num_bigint::BigUint;
+use rand::Rng;
 
 /// Supported key exchange algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -239,7 +240,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
     }
     
-    let private_key = StaticSecret::from(<[u8; 32]>::try_from(private_key_bytes)
+    let private_key = EphemeralSecret::from(<[u8; 32]>::try_from(private_key_bytes)
         .map_err(|_| CursedError::InvalidArgument("Invalid private key length".to_string()))?);
     
     let other_public_key = X25519PublicKey::from(<[u8; 32]>::try_from(public_key_bytes)
@@ -266,7 +267,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 /// Generate X25519 key pair
 pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
     let mut rng = OsRng;
-    let private_key = StaticSecret::random_from_rng(&mut rng);
+    let private_key = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&private_key);
     
     let mut map = HashMap::new();
@@ -281,7 +282,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> 
 /// Generate ephemeral X25519 key pair
 pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
     let mut rng = OsRng;
-    let ephemeral_secret = EphemeralSecret::random_from_rng(&mut rng);
+    let ephemeral_secret = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&ephemeral_secret);
     
     // Note: Ephemeral keys are typically used immediately and not stored

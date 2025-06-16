@@ -14,7 +14,7 @@ use inkwell::{
     module::Module,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Channel optimizer for CURSED channel operations
 pub struct ChannelOptimizer<'ctx> {

@@ -11,7 +11,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValueEnum, PhiValue},
     basic_block::BasicBlock,
     builder::Builder,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
     targets::{Target, TargetMachine, RelocMode, CodeModel, FileType},
     OptimizationLevel as InkwellOptLevel,
     AddressSpace,

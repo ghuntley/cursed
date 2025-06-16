@@ -1536,15 +1536,15 @@ This represents the next evolution of the CURSED examples system."#;
 
         // Title cell
         cells.push(format!(
-            r#"{{
-   "cell_type": "markdown",
-   "metadata": {{}},
-   "source": [
-    "# CURSED {:?} Examples\n",
-    "\n",
-    "This notebook contains examples demonstrating {:?} features of the CURSED programming language.\n"
+            "{{
+   \"cell_type\": \"markdown\",
+   \"metadata\": {{}},
+   \"source\": [
+    \"# CURSED {:?} Examples\\n\",
+    \"\\n\",
+    \"This notebook contains examples demonstrating {:?} features of the CURSED programming language.\\n\"
    ]
-}}"#,
+}}",
             category, category
         ));
 
@@ -1553,18 +1553,18 @@ This represents the next evolution of the CURSED examples system."#;
             if let Some(example) = self.examples_db.examples.get(example_id) {
                 // Description cell
                 cells.push(format!(
-                    r#"{{
-   "cell_type": "markdown",
-   "metadata": {{}},
-   "source": [
-    "## {}\n",
-    "\n",
-    "{}\n",
-    "\n",
-    "**Difficulty**: {:?}  \n",
-    "**Topics**: {}  \n"
+                    "{{
+   \"cell_type\": \"markdown\",
+   \"metadata\": {{}},
+   \"source\": [
+    \"## {}\\n\",
+    \"\\n\",
+    \"{}\\n\",
+    \"\\n\",
+    \"**Difficulty**: {:?}  \\n\",
+    \"**Topics**: {}  \\n\"
    ]
-}}"#,
+}}",
                     example.title,
                     example.description,
                     example.difficulty,
@@ -1574,15 +1574,15 @@ This represents the next evolution of the CURSED examples system."#;
                 // Code cell
                 let escaped_code = example.code.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n\",\n    \"");
                 cells.push(format!(
-                    r#"{{
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {{}},
-   "outputs": [],
-   "source": [
-    "{}"
+                    "{{
+   \"cell_type\": \"code\",
+   \"execution_count\": null,
+   \"metadata\": {{}},
+   \"outputs\": [],
+   \"source\": [
+    \"{}\"
    ]
-}}"#,
+}}",
                     escaped_code
                 ));
             }

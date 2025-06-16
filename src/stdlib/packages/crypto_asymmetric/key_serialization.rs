@@ -13,7 +13,7 @@ use rsa::pkcs1::{EncodeRsaPrivateKey, EncodeRsaPublicKey, DecodeRsaPrivateKey, D
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey};
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey};
-use x25519_dalek::{StaticSecret, PublicKey as X25519PublicKey};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use elliptic_curve::pkcs8::{EncodePrivateKey as EcEncodePrivateKey, EncodePublicKey as EcEncodePublicKey};
 use elliptic_curve::pkcs8::{DecodePrivateKey as EcDecodePrivateKey, DecodePublicKey as EcDecodePublicKey};
 use serde_json;
@@ -751,7 +751,7 @@ fn create_x25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError>
 fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
     let key_array: [u8; 32] = key_data.try_into()
         .map_err(|_| CursedError::InvalidArgument("Invalid X25519 private key length".to_string()))?;
-    let private_key = StaticSecret::from(key_array);
+    let private_key = EphemeralSecret::from(key_array);
     let public_key = X25519PublicKey::from(&private_key);
     
     let d_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);

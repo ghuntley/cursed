@@ -1022,7 +1022,7 @@ impl DocumentationGenerator {
     }
 
     /// Format a type for documentation
-    fn format_type(&self, type_expr: &Expression) -> String {
+    fn format_type(&self, type_expr: &dyn Expression) -> String {
         match &type_expr.expr_type {
             ExpressionType::Identifier(id) => id.name.clone(),
             ExpressionType::ArrayAccess(arr) => {
@@ -2287,7 +2287,7 @@ impl DocumentationGenerator {
     }
 
     /// Format default value expression
-    fn format_default_value(&self, expr: &Expression) -> Option<String> {
+    fn format_default_value(&self, expr: &dyn Expression) -> Option<String> {
         match &expr.expr_type {
             ExpressionType::Literal(lit) => {
                 match lit {

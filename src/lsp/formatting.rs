@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use tower_lsp::lsp_types::*;
 use tracing::{debug, error, instrument, warn};
 
-use crate::tools::formatter::{FormatterConfig, BraceStyle};
+use crate::tools::formatter::{FormatterConfig, BraceStyle, CursedFormatter, OperatorSpacing, CommaSpacing};
 use crate::stdlib::string::{split_join, core as string_core, transform, search};
 
 /// Formatting provider for the LSP server
@@ -29,9 +29,27 @@ impl FormattingProvider {
     pub async fn format_document(&self, content: &str) -> Result<String, Box<dyn std::error::Error>> {
         debug!("Formatting document");
         
-        // For now, return the content as-is (placeholder implementation)
-        // TODO: Integrate with actual CURSED formatter when API is available
-        Ok(content.to_string())
+        // Create formatter with default config
+        let mut formatter = CursedFormatter::new(self.default_config.clone());
+        
+        // Format the document
+        match formatter.format(content) {
+            Ok(result) => {
+                if !result.formatting_errors.is_empty() {
+                    warn!("Formatting completed with {} errors", result.formatting_errors.len());
+                    for error in &result.formatting_errors {
+                        warn!("Formatting error: {}", error);
+                    }
+                }
+                debug!("Document formatted successfully, changes_made: {}", result.changes_made);
+                Ok(result.formatted_code)
+            }
+            Err(e) => {
+                error!("Failed to format document: {}", e);
+                // Return original content on formatting error
+                Ok(content.to_string())
+            }
+        }
     }
 
     /// Format document and return text edits
@@ -44,11 +62,52 @@ impl FormattingProvider {
         debug!("Getting document format edits");
         
         // Convert LSP formatting options to CURSED formatter config
-        let _config = self.lsp_options_to_config(options);
+        let config = self.lsp_options_to_config(options);
         
-        // For now, return no edits (placeholder implementation)
-        // TODO: Implement actual formatting with CURSED formatter
-        Some(vec![])
+        // Create formatter with LSP-converted config
+        let mut formatter = CursedFormatter::new(config);
+        
+        // Format the document
+        match formatter.format(content) {
+            Ok(result) => {
+                if !result.changes_made {
+                    debug!("No formatting changes needed");
+                    return Some(vec![]);
+                }
+                
+                if !result.formatting_errors.is_empty() {
+                    warn!("Formatting completed with {} errors", result.formatting_errors.len());
+                    for error in &result.formatting_errors {
+                        warn!("Formatting error: {}", error);
+                    }
+                }
+                
+                // Calculate the range that covers the entire document
+                let lines = content.lines().collect::<Vec<_>>();
+                let end_line = lines.len().saturating_sub(1);
+                let end_character = lines.get(end_line).map(|line| line.len()).unwrap_or(0);
+                
+                let full_range = Range {
+                    start: Position { line: 0, character: 0 },
+                    end: Position { 
+                        line: end_line as u32, 
+                        character: end_character as u32 
+                    },
+                };
+                
+                debug!("Document formatted successfully, {} lines changed", result.lines_changed);
+                
+                // Return a single edit that replaces the entire document
+                Some(vec![TextEdit {
+                    range: full_range,
+                    new_text: result.formatted_code,
+                }])
+            }
+            Err(e) => {
+                error!("Failed to format document: {}", e);
+                None
+            }
+        }
     }
 
     /// Format range of document
@@ -68,11 +127,46 @@ impl FormattingProvider {
         }
 
         // Convert LSP formatting options to CURSED formatter config
-        let _config = self.lsp_options_to_config(options);
+        let config = self.lsp_options_to_config(options);
         
-        // For now, return no edits (placeholder implementation)
-        // TODO: Implement actual range formatting
-        Some(vec![])
+        // For range formatting, we need to format the entire document to maintain consistency
+        // CURSED's formatter works at the AST level and needs full context
+        let mut formatter = CursedFormatter::new(config);
+        
+        match formatter.format(content) {
+            Ok(result) => {
+                if !result.changes_made {
+                    debug!("No formatting changes needed in range");
+                    return Some(vec![]);
+                }
+                
+                if !result.formatting_errors.is_empty() {
+                    warn!("Range formatting completed with {} errors", result.formatting_errors.len());
+                    for error in &result.formatting_errors {
+                        warn!("Formatting error: {}", error);
+                    }
+                }
+                
+                // Extract the corresponding range from the formatted content
+                let formatted_range_content = self.extract_range_content(&result.formatted_code, range);
+                
+                // Only apply the edit if the range content actually changed
+                if formatted_range_content != range_content {
+                    debug!("Range formatting applied changes");
+                    Some(vec![TextEdit {
+                        range,
+                        new_text: formatted_range_content,
+                    }])
+                } else {
+                    debug!("Range content unchanged after formatting");
+                    Some(vec![])
+                }
+            }
+            Err(e) => {
+                error!("Failed to format range: {}", e);
+                None
+            }
+        }
     }
 
     /// Format on type (triggered by specific characters)
@@ -210,12 +304,43 @@ impl FormattingProvider {
         // Map LSP options to CURSED formatter config
         config.indent_size = options.tab_size as usize;
         
-        // Handle additional options
-        for (_key, _value) in &options.properties {
-            // Note: properties is HashMap<String, FormattingProperty> in newer versions
-            // This is a simplified version for compatibility
-            config.line_width = 120; // Default fallback
-            config.brace_style = BraceStyle::SameLine;
+        // Handle additional options from properties
+        for (key, value) in &options.properties {
+            match key.as_str() {
+                "lineWidth" | "line_width" => {
+                    if let Ok(width) = value.to_string().parse::<usize>() {
+                        config.line_width = width;
+                    }
+                }
+                "braceStyle" | "brace_style" => {
+                    match value.to_string().to_lowercase().as_str() {
+                        "sameline" | "same_line" => config.brace_style = BraceStyle::SameLine,
+                        "nextline" | "next_line" => config.brace_style = BraceStyle::NextLine,
+                        "nextlineunindented" | "next_line_unindented" => config.brace_style = BraceStyle::NextLineUnindented,
+                        _ => {} // Keep default
+                    }
+                }
+                "operatorSpacing" | "operator_spacing" => {
+                    match value.to_string().to_lowercase().as_str() {
+                        "withspaces" | "with_spaces" | "true" => config.operator_spacing = OperatorSpacing::WithSpaces,
+                        "withoutspaces" | "without_spaces" | "false" => config.operator_spacing = OperatorSpacing::WithoutSpaces,
+                        _ => {} // Keep default
+                    }
+                }
+                "commaSpacing" | "comma_spacing" => {
+                    match value.to_string().to_lowercase().as_str() {
+                        "withspaces" | "with_spaces" | "true" => config.comma_spacing = CommaSpacing::WithSpaces,
+                        "withoutspaces" | "without_spaces" | "false" => config.comma_spacing = CommaSpacing::WithoutSpaces,
+                        _ => {} // Keep default
+                    }
+                }
+                "maxEmptyLines" | "max_empty_lines" => {
+                    if let Ok(max_lines) = value.to_string().parse::<usize>() {
+                        config.max_empty_lines = max_lines;
+                    }
+                }
+                _ => {} // Ignore unknown properties
+            }
         }
         
         config
@@ -381,6 +506,11 @@ mod tests {
         
         let formatted = provider.format_document(content).await;
         assert!(formatted.is_ok());
+        
+        let result = formatted.unwrap();
+        // Should contain properly formatted CURSED code
+        assert!(result.contains("slay main()"));
+        assert!(result.contains("facts x = 42"));
     }
 
     #[tokio::test]
@@ -398,6 +528,14 @@ mod tests {
         
         let edits = provider.format_document_edits(content, options).await;
         assert!(edits.is_some());
+        
+        let edits = edits.unwrap();
+        if !edits.is_empty() {
+            // If there are edits, they should be valid
+            assert!(edits.len() >= 1);
+            let edit = &edits[0];
+            assert!(edit.new_text.contains("slay main()"));
+        }
     }
 
     #[test]
@@ -432,5 +570,85 @@ mod tests {
         
         let formatted = provider.format_line_spacing("func(a,b,c)", &config);
         assert_eq!(formatted, "func(a, b, c)");
+    }
+
+    #[tokio::test]
+    async fn test_format_range() {
+        let provider = FormattingProvider::new();
+        let content = "slay main(){facts x=42;\nprint(x);}";
+        let range = Range {
+            start: Position { line: 0, character: 12 },
+            end: Position { line: 1, character: 8 },
+        };
+        let options = FormattingOptions {
+            tab_size: 4,
+            insert_spaces: true,
+            properties: HashMap::new(),
+            trim_trailing_whitespace: Some(true),
+            insert_final_newline: Some(true),
+            trim_final_newlines: Some(true),
+        };
+        
+        let edits = provider.format_range(content, range, options).await;
+        assert!(edits.is_some());
+    }
+
+    #[test]
+    fn test_lsp_options_to_config() {
+        let provider = FormattingProvider::new();
+        
+        let mut properties = HashMap::new();
+        properties.insert("lineWidth".to_string(), "120".into());
+        properties.insert("braceStyle".to_string(), "nextLine".into());
+        properties.insert("operatorSpacing".to_string(), "withoutSpaces".into());
+        
+        let options = FormattingOptions {
+            tab_size: 2,
+            insert_spaces: true,
+            properties,
+            trim_trailing_whitespace: Some(true),
+            insert_final_newline: Some(true),
+            trim_final_newlines: Some(true),
+        };
+        
+        let config = provider.lsp_options_to_config(options);
+        
+        assert_eq!(config.indent_size, 2);
+        assert_eq!(config.line_width, 120);
+        assert_eq!(config.brace_style, BraceStyle::NextLine);
+        assert_eq!(config.operator_spacing, OperatorSpacing::WithoutSpaces);
+    }
+
+    #[tokio::test]
+    async fn test_formatter_error_handling() {
+        let provider = FormattingProvider::new();
+        let invalid_content = "slay main() { this is not valid cursed syntax +++";
+        
+        // Should not panic and return something (original content or formatted attempt)
+        let result = provider.format_document(invalid_content).await;
+        assert!(result.is_ok());
+        
+        // Should return None for edits on invalid syntax
+        let options = FormattingOptions::default();
+        let edits = provider.format_document_edits(invalid_content, options).await;
+        // May be None or empty vec depending on error handling
+        if let Some(edits) = edits {
+            // If we get edits, they should be safe
+            assert!(edits.len() <= 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_is_formatter_available() {
+        let provider = FormattingProvider::new();
+        assert!(provider.is_formatter_available().await);
+    }
+
+    #[tokio::test]
+    async fn test_get_formatter_version() {
+        let provider = FormattingProvider::new();
+        let version = provider.get_formatter_version().await;
+        assert!(version.is_some());
+        assert_eq!(version.unwrap(), "0.1.0");
     }
 }

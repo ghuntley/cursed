@@ -14,7 +14,7 @@ use inkwell::{
     module::Module,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Error propagation optimizer for CURSED error handling
 pub struct ErrorPropagationOptimizer<'ctx> {

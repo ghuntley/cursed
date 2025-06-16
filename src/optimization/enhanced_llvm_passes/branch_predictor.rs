@@ -9,7 +9,8 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info, instrument};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, BasicBlock as InkwellBasicBlock},
+    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue},
+    basic_block::BasicBlock as InkwellBasicBlock,
     basic_block::BasicBlock,
     builder::Builder,
     context::Context,
@@ -17,7 +18,7 @@ use inkwell::{
     IntPredicate,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Branch predictor optimizer for control flow optimization
 pub struct BranchPredictor<'ctx> {

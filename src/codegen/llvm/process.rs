@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use llvm_sys::core::*;
 use llvm_sys::prelude::*;
 
-use crate::ast::expressions::Expression;
+use crate::ast::traits::Expression;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::{CursedError, Result as CursedResult};
 
@@ -19,40 +19,40 @@ pub trait ProcessCompilation {
     fn compile_process_spawn(&mut self, command: &str, args: &[String]) -> CursedResult<LLVMValueRef>;
     
     /// Compile process control operation
-    fn compile_process_control(&mut self, pid_expr: &Expression, operation: ProcessControlOp) -> CursedResult<LLVMValueRef>;
+    fn compile_process_control(&mut self, pid_expr: &dyn Expression, operation: ProcessControlOp) -> CursedResult<LLVMValueRef>;
     
     /// Compile IPC channel creation
-    fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, config: &Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, config: &dyn Expression) -> CursedResult<LLVMValueRef>;
     
     /// Compile IPC send operation
-    fn compile_ipc_send(&mut self, channel_expr: &Expression, data_expr: &Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_ipc_send(&mut self, channel_expr: &dyn Expression, data_expr: &dyn Expression) -> CursedResult<LLVMValueRef>;
     
     /// Compile IPC receive operation
-    fn compile_ipc_receive(&mut self, channel_expr: &Expression, timeout_expr: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_ipc_receive(&mut self, channel_expr: &dyn Expression, timeout_expr: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
     
     /// Compile shared memory operations
-    fn compile_shared_memory(&mut self, operation: SharedMemoryOp, args: &[&Expression]) -> CursedResult<LLVMValueRef>;
+    fn compile_shared_memory(&mut self, operation: SharedMemoryOp, args: &[&dyn Expression]) -> CursedResult<LLVMValueRef>;
     
     /// Compile signal operations
-    fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&Expression]) -> CursedResult<LLVMValueRef>;
+    fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&dyn Expression]) -> CursedResult<LLVMValueRef>;
     
     /// Compile exec_slay command operations
-    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
     
     /// Compile exec_slay pipeline operations
-    fn compile_slay_pipeline(&mut self, commands: &[&Expression], options: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_slay_pipeline(&mut self, commands: &[&dyn Expression], options: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
     
     /// Compile exec_slay background task operations
-    fn compile_slay_background_task(&mut self, command_expr: &Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_slay_background_task(&mut self, command_expr: &dyn Expression) -> CursedResult<LLVMValueRef>;
     
     /// Compile exec_vibez command operations
-    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
     
     /// Compile exec_vibez process group operations
-    fn compile_vibez_process_group(&mut self, commands: &[&Expression], config: Option<&Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_vibez_process_group(&mut self, commands: &[&dyn Expression], config: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
     
     /// Compile exec_vibez output streaming operations
-    fn compile_vibez_output_streaming(&mut self, command_expr: &Expression, callback: &Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_vibez_output_streaming(&mut self, command_expr: &dyn Expression, callback: &dyn Expression) -> CursedResult<LLVMValueRef>;
 }
 
 /// Process control operations
@@ -132,7 +132,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_process_control(&mut self, pid_expr: &Expression, operation: ProcessControlOp) -> CursedResult<LLVMValueRef> {
+    fn compile_process_control(&mut self, pid_expr: &dyn Expression, operation: ProcessControlOp) -> CursedResult<LLVMValueRef> {
         // Compile the PID expression
         let pid_value = self.compile_expression(pid_expr)?;
         
@@ -166,7 +166,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, config: &Expression) -> CursedResult<LLVMValueRef> {
+    fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, config: &dyn Expression) -> CursedResult<LLVMValueRef> {
         // Compile configuration
         let config_value = self.compile_expression(config)?;
         
@@ -196,7 +196,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_ipc_send(&mut self, channel_expr: &Expression, data_expr: &Expression) -> CursedResult<LLVMValueRef> {
+    fn compile_ipc_send(&mut self, channel_expr: &dyn Expression, data_expr: &dyn Expression) -> CursedResult<LLVMValueRef> {
         // Compile channel and data expressions
         let channel_value = self.compile_expression(channel_expr)?;
         let data_value = self.compile_expression(data_expr)?;
@@ -220,7 +220,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_ipc_receive(&mut self, channel_expr: &Expression, timeout_expr: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+    fn compile_ipc_receive(&mut self, channel_expr: &dyn Expression, timeout_expr: Option<&dyn Expression>) -> CursedResult<LLVMValueRef> {
         // Compile channel expression
         let channel_value = self.compile_expression(channel_expr)?;
         
@@ -251,7 +251,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_shared_memory(&mut self, operation: SharedMemoryOp, args: &[&Expression]) -> CursedResult<LLVMValueRef> {
+    fn compile_shared_memory(&mut self, operation: SharedMemoryOp, args: &[&dyn Expression]) -> CursedResult<LLVMValueRef> {
         // Compile all argument expressions
         let mut arg_values = Vec::new();
         for arg in args {
@@ -286,7 +286,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&Expression]) -> CursedResult<LLVMValueRef> {
+    fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&dyn Expression]) -> CursedResult<LLVMValueRef> {
         // Compile all argument expressions
         let mut arg_values = Vec::new();
         for arg in args {
@@ -318,7 +318,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> CursedResult<LLVMValueRef> {
         // Get or create the slay command function
         let slay_cmd_fn = self.get_or_create_slay_command_function()?;
         
@@ -353,7 +353,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_slay_pipeline(&mut self, commands: &[&Expression], options: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+    fn compile_slay_pipeline(&mut self, commands: &[&dyn Expression], options: Option<&dyn Expression>) -> CursedResult<LLVMValueRef> {
         // Get or create the slay pipeline function
         let pipeline_fn = self.get_or_create_slay_pipeline_function()?;
         
@@ -390,7 +390,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_slay_background_task(&mut self, command_expr: &Expression) -> CursedResult<LLVMValueRef> {
+    fn compile_slay_background_task(&mut self, command_expr: &dyn Expression) -> CursedResult<LLVMValueRef> {
         // Get or create the background task function
         let bg_task_fn = self.get_or_create_slay_background_function()?;
         
@@ -413,7 +413,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> CursedResult<LLVMValueRef> {
         // Get or create the vibez command function
         let vibez_cmd_fn = self.get_or_create_vibez_command_function()?;
         
@@ -447,7 +447,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_vibez_process_group(&mut self, commands: &[&Expression], config: Option<&Expression>) -> CursedResult<LLVMValueRef> {
+    fn compile_vibez_process_group(&mut self, commands: &[&dyn Expression], config: Option<&dyn Expression>) -> CursedResult<LLVMValueRef> {
         // Get or create the process group function
         let group_fn = self.get_or_create_vibez_process_group_function()?;
         
@@ -484,7 +484,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
         Ok(result)
     }
 
-    fn compile_vibez_output_streaming(&mut self, command_expr: &Expression, callback: &Expression) -> CursedResult<LLVMValueRef> {
+    fn compile_vibez_output_streaming(&mut self, command_expr: &dyn Expression, callback: &dyn Expression) -> CursedResult<LLVMValueRef> {
         // Get or create the output streaming function
         let stream_fn = self.get_or_create_vibez_streaming_function()?;
         

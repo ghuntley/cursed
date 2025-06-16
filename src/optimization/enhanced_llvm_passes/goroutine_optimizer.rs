@@ -15,7 +15,7 @@ use inkwell::{
     IntPredicate,
 };
 
-use super::EnhancedOptimizationStatistics;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Goroutine optimizer for CURSED concurrent operations
 pub struct GoroutineOptimizer<'ctx> {

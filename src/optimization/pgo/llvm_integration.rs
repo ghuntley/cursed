@@ -12,7 +12,7 @@ use tracing::{info, debug, warn, instrument};
 use inkwell::{
     context::Context,
     module::Module,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
     values::{FunctionValue, BasicValueEnum},
     types::{IntType, PointerType},
     builder::Builder,
@@ -189,8 +189,7 @@ impl LlvmPgoIntegration {
         let pass_manager_builder = PassManagerBuilder::create();
 
         // Configure pass manager for PGO
-        pass_manager_builder.set_optimization_level(inkwell::OptimizationLevel::Aggressive);
-        pass_manager_builder.set_inliner_with_threshold(275); // Aggressive inlining threshold
+        pass_manager_        pass_manager_builder.set_inliner_with_threshold(275); // Aggressive inlining threshold
 
         // Add PGO-specific passes
         if self.profile_data_loaded {
@@ -209,8 +208,7 @@ impl LlvmPgoIntegration {
             pass_manager.add_slp_vectorize_pass();
         }
 
-        pass_manager_builder.populate_function_pass_manager(&pass_manager);
-        pass_manager.initialize();
+        pass_manager_        pass_manager.initialize();
 
         debug!("Created PGO-optimized pass manager");
         Ok(pass_manager)

@@ -12,7 +12,10 @@ pub mod frodo;
 // Real implementations (production-ready)
 pub mod kyber_real;
 pub mod dilithium_real;
+pub mod ntru_real;
+pub mod frodo_real;
 pub mod lms_real;
+pub mod xmss_real;
 pub mod falcon_real;
 pub mod sphincs_real;
 pub mod mceliece_real;

@@ -60,7 +60,7 @@ mod tests {
             Ok(temp)
         }
         
-        fn compile_process_control(&mut self, _pid_expr: &Expression, operation: ProcessControlOp) -> Result<MockLLVMValueRef, Error> {
+        fn compile_process_control(&mut self, _pid_expr: &dyn Expression, operation: ProcessControlOp) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling process control: {:?}", operation);
             
@@ -80,7 +80,7 @@ mod tests {
             Ok(temp)
         }
         
-        fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, _config: &Expression) -> Result<MockLLVMValueRef, Error> {
+        fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, _config: &dyn Expression) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling IPC channel creation: {:?}", channel_type);
             
@@ -97,21 +97,21 @@ mod tests {
             Ok(temp)
         }
         
-        fn compile_ipc_send(&mut self, _channel_expr: &Expression, _data_expr: &Expression) -> Result<MockLLVMValueRef, Error> {
+        fn compile_ipc_send(&mut self, _channel_expr: &dyn Expression, _data_expr: &dyn Expression) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling IPC send");
             self.register_function("cursed_ipc_send", "i32 (i8*, i8*)");
             Ok(temp)
         }
         
-        fn compile_ipc_receive(&mut self, _channel_expr: &Expression, _timeout_expr: Option<&Expression>) -> Result<MockLLVMValueRef, Error> {
+        fn compile_ipc_receive(&mut self, _channel_expr: &dyn Expression, _timeout_expr: Option<&dyn Expression>) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling IPC receive");
             self.register_function("cursed_ipc_receive", "i8* (i8*, i64)");
             Ok(temp)
         }
         
-        fn compile_shared_memory(&mut self, operation: SharedMemoryOp, _args: &[&Expression]) -> Result<MockLLVMValueRef, Error> {
+        fn compile_shared_memory(&mut self, operation: SharedMemoryOp, _args: &[&dyn Expression]) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling shared memory operation: {:?}", operation);
             
@@ -128,7 +128,7 @@ mod tests {
             Ok(temp)
         }
         
-        fn compile_signal_operation(&mut self, operation: SignalOp, _args: &[&Expression]) -> Result<MockLLVMValueRef, Error> {
+        fn compile_signal_operation(&mut self, operation: SignalOp, _args: &[&dyn Expression]) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling signal operation: {:?}", operation);
             
@@ -145,42 +145,42 @@ mod tests {
             Ok(temp)
         }
         
-        fn compile_slay_command(&mut self, command: &str, args: &[String], _options: Option<&Expression>) -> Result<MockLLVMValueRef, Error> {
+        fn compile_slay_command(&mut self, command: &str, args: &[String], _options: Option<&dyn Expression>) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling slay command: {} with args: {:?}", command, args);
             self.register_function("cursed_exec_slay", "i32 (i8*, i8**, i32, i8*)");
             Ok(temp)
         }
         
-        fn compile_slay_pipeline(&mut self, commands: &[&Expression], _options: Option<&Expression>) -> Result<MockLLVMValueRef, Error> {
+        fn compile_slay_pipeline(&mut self, commands: &[&dyn Expression], _options: Option<&dyn Expression>) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling slay pipeline with {} commands", commands.len());
             self.register_function("cursed_slay_pipeline", "i8* (i8**, i32, i8*)");
             Ok(temp)
         }
         
-        fn compile_slay_background_task(&mut self, _command_expr: &Expression) -> Result<MockLLVMValueRef, Error> {
+        fn compile_slay_background_task(&mut self, _command_expr: &dyn Expression) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling slay background task");
             self.register_function("cursed_slay_background", "i8* (i8*)");
             Ok(temp)
         }
         
-        fn compile_vibez_command(&mut self, command: &str, args: &[String], _context: Option<&Expression>) -> Result<MockLLVMValueRef, Error> {
+        fn compile_vibez_command(&mut self, command: &str, args: &[String], _context: Option<&dyn Expression>) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling vibez command: {} with args: {:?}", command, args);
             self.register_function("cursed_exec_vibez", "i32 (i8*, i8**, i32, i8*)");
             Ok(temp)
         }
         
-        fn compile_vibez_process_group(&mut self, commands: &[&Expression], _config: Option<&Expression>) -> Result<MockLLVMValueRef, Error> {
+        fn compile_vibez_process_group(&mut self, commands: &[&dyn Expression], _config: Option<&dyn Expression>) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling vibez process group with {} commands", commands.len());
             self.register_function("cursed_vibez_process_group", "i8* (i8**, i32, i8*)");
             Ok(temp)
         }
         
-        fn compile_vibez_output_streaming(&mut self, _command_expr: &Expression, _callback: &Expression) -> Result<MockLLVMValueRef, Error> {
+        fn compile_vibez_output_streaming(&mut self, _command_expr: &dyn Expression, _callback: &dyn Expression) -> Result<MockLLVMValueRef, Error> {
             let temp = self.next_temp();
             println!("Compiling vibez output streaming");
             self.register_function("cursed_vibez_streaming", "i8* (i8*, i8*)");

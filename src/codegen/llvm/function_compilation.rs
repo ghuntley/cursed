@@ -505,8 +505,10 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     
     /// Compile an expression body
     fn compile_expression_body(&mut self, expr: &Box<dyn Expression>) -> Result<String, Error> {
-        use crate::ast::expressions::{Literal, LiteralValue, Identifier, Binary, CallExpression};
-        use crate::ast::calls::CallExpression as CallExpr;
+        use crate::ast::expressions::{Literal, LiteralValue};
+        use crate::ast::identifiers::Identifier;
+        use crate::ast::operators::BinaryExpression;
+        use crate::ast::calls::CallExpression;
         
         let mut ir = String::new();
         
@@ -515,11 +517,9 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             ir.push_str(&self.compile_literal_expression(literal)?);
         } else if let Some(identifier) = expr.as_any().downcast_ref::<Identifier>() {
             ir.push_str(&self.compile_identifier_expression(identifier)?);
-        } else if let Some(binary) = expr.as_any().downcast_ref::<Binary>() {
+        } else if let Some(binary) = expr.as_any().downcast_ref::<BinaryExpression>() {
             ir.push_str(&self.compile_binary_expression(binary)?);
         } else if let Some(call) = expr.as_any().downcast_ref::<CallExpression>() {
-            ir.push_str(&self.compile_call_expression(call)?);
-        } else if let Some(call) = expr.as_any().downcast_ref::<CallExpr>() {
             ir.push_str(&self.compile_function_call(call)?);
         } else {
             // For unknown expression types, generate a placeholder
@@ -585,7 +585,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile a binary expression
-    fn compile_binary_expression(&mut self, binary: &crate::ast::expressions::Binary) -> Result<String, Error> {
+    fn compile_binary_expression(&mut self, binary: &crate::ast::operators::BinaryExpression) -> Result<String, Error> {
         let mut ir = String::new();
         
         // Compile left operand
@@ -623,7 +623,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile a call expression
-    fn compile_call_expression(&mut self, call: &crate::ast::expressions::CallExpression) -> Result<String, Error> {
+    fn compile_call_expression(&mut self, call: &crate::ast::calls::CallExpression) -> Result<String, Error> {
         let func_name = call.function.string();
         
         // Compile arguments

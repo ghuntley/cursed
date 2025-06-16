@@ -742,7 +742,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a statement with documentation comments
-    fn extract_from_statement_with_docs(&self, statement: &Statement, module: &str, source: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_from_statement_with_docs(&self, statement: &dyn Statement, module: &str, source: &str) -> Result<Option<DocumentationItem>, Error> {
         use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
         use crate::ast::statements::variable::VariableStatement;
         use crate::ast::traits::Locatable;
@@ -800,7 +800,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a statement (legacy method)
-    fn extract_from_statement(&self, statement: &Statement, module: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_from_statement(&self, statement: &dyn Statement, module: &str) -> Result<Option<DocumentationItem>, Error> {
         // Fallback to old method without source context
         self.extract_from_statement_with_docs(statement, module, "")
     }
@@ -1486,7 +1486,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract submodules from module statements
-    fn extract_submodules(&self, statements: &[Statement]) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_submodules(&self, statements: &[dyn Statement]) -> Result<Vec<DocumentationItem>, Error> {
         let mut submodules = Vec::new();
         let location = SourceLocation { line: 1, column: 1, file: None };
         
@@ -1522,7 +1522,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract constants from constant declarations
-    fn extract_constants(&self, statements: &[Statement]) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_constants(&self, statements: &[dyn Statement]) -> Result<Vec<DocumentationItem>, Error> {
         let mut constants = Vec::new();
         let location = SourceLocation { line: 1, column: 1, file: None };
         

@@ -632,7 +632,7 @@ impl TailCallOptimizationPass {
         self.find_tail_calls(&function.body, &function.name, result);
     }
     
-    fn find_tail_calls(&mut self, statements: &[Statement], function_name: &str, result: &mut PassResult) {
+    fn find_tail_calls(&mut self, statements: &[dyn Statement], function_name: &str, result: &mut PassResult) {
         if let Some(Statement::Return(return_stmt)) = statements.last() {
             if let Some(Expression::FunctionCall(call)) = &return_stmt.value {
                 if call.function_name == function_name {

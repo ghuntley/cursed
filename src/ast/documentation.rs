@@ -158,7 +158,7 @@ impl DocumentationExtractor {
     /// Extract documentation from individual statements
     pub fn extract_statement_documentation(&mut self, statement: &dyn Statement, module: &str) -> Result<Option<DocElement>, Error> {
         use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
-        use crate::ast::statements::variable::VariableStatement;
+        use crate::ast::VariableStatement;
         
         // Try to downcast to specific statement types for detailed extraction
         let any_stmt = statement.as_any();

@@ -69,6 +69,9 @@ pub use optimization::{
 };
 
 pub mod stdlib;
+
+// Re-export ByteFit for easy access
+pub use stdlib::bytefit;
 pub mod profiling;
 pub mod docs;
 pub mod documentation;

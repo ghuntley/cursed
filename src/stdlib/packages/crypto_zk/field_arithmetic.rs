@@ -2,7 +2,7 @@
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div, Neg};
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::error::CryptoError;
+use crate::error::CursedError;
 use crate::stdlib::value::Value;
 
 /// Prime field element for BN254 curve

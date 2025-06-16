@@ -490,6 +490,14 @@ mod pipeline_tests {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
+    use cursed::optimization::{
+        alias_analysis::AdvancedAliasAnalyzer,
+        sroa::SroaOptimizer, 
+        gvn::GvnOptimizer,
+        tail_call_optimization::TailCallOptimizer,
+        jump_threading::JumpThreadingOptimizer,
+        code_motion::CodeMotionOptimizer,
+    };
     
     #[test]
     fn test_advanced_optimization_integration() {
@@ -512,9 +520,181 @@ mod integration_tests {
         let llvm_optimizer = MemoryLayoutOptimizer::new(&context, OptimizationLevel::Default);
         let interprocedural_analyzer = InterproceduralAnalyzer::new(&context, OptimizationLevel::Default);
         
+        // Test new advanced optimization passes
+        let alias_analyzer = AdvancedAliasAnalyzer::new(&context, OptimizationLevel::Default);
+        let sroa_optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let gvn_optimizer = GvnOptimizer::new(&context, OptimizationLevel::Default);
+        let tail_call_optimizer = TailCallOptimizer::new(&context, OptimizationLevel::Default);
+        let jump_threading_optimizer = JumpThreadingOptimizer::new(&context, OptimizationLevel::Default);
+        let code_motion_optimizer = CodeMotionOptimizer::new(&context, OptimizationLevel::Default);
+        
         // All components should be successfully created
         assert_eq!(llvm_optimizer.get_statistics().struct_replacements, 0);
         assert_eq!(interprocedural_analyzer.get_statistics().total_functions_analyzed, 0);
+        assert_eq!(alias_analyzer.get_statistics().total_pointers_analyzed, 0);
+        assert_eq!(sroa_optimizer.get_statistics().aggregates_analyzed, 0);
+        assert_eq!(gvn_optimizer.get_statistics().values_numbered, 0);
+        assert_eq!(tail_call_optimizer.get_statistics().functions_analyzed, 0);
+        assert_eq!(jump_threading_optimizer.get_statistics().threads_created, 0);
+        assert_eq!(code_motion_optimizer.get_statistics().instructions_hoisted, 0);
+    }
+    
+    #[test]
+    fn test_alias_analysis_integration() {
+        let context = Context::create();
+        let module = context.create_module("alias_test");
+        let builder = context.create_builder();
+        
+        // Create function with pointer operations
+        let function_type = context.void_type().fn_type(&[], false);
+        let function = module.add_function("pointer_func", function_type, None);
+        let basic_block = context.append_basic_block(function, "entry");
+        builder.position_at_end(basic_block);
+        
+        // Add pointer allocations and operations
+        let i32_type = context.i32_type();
+        let ptr1 = builder.build_alloca(i32_type, "ptr1").unwrap();
+        let ptr2 = builder.build_alloca(i32_type, "ptr2").unwrap();
+        
+        builder.build_return(None).unwrap();
+        
+        let mut alias_analyzer = AdvancedAliasAnalyzer::new(&context, OptimizationLevel::Default);
+        let result = alias_analyzer.analyze_module(&module);
+        assert!(result.is_ok());
+        
+        let alias_result = result.unwrap();
+        assert!(alias_result.statistics.functions_analyzed > 0);
+    }
+    
+    #[test]
+    fn test_sroa_integration() {
+        let context = Context::create();
+        let module = context.create_module("sroa_test");
+        let builder = context.create_builder();
+        
+        // Create function with struct allocations
+        let function_type = context.void_type().fn_type(&[], false);
+        let function = module.add_function("struct_func", function_type, None);
+        let basic_block = context.append_basic_block(function, "entry");
+        builder.position_at_end(basic_block);
+        
+        // Create struct type and allocation
+        let i32_type = context.i32_type();
+        let struct_type = context.struct_type(&[i32_type.into(), i32_type.into()], false);
+        let struct_alloca = builder.build_alloca(struct_type, "my_struct").unwrap();
+        
+        builder.build_return(None).unwrap();
+        
+        let mut sroa_optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let result = sroa_optimizer.optimize_module(&module);
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_gvn_integration() {
+        let context = Context::create();
+        let module = context.create_module("gvn_test");
+        let builder = context.create_builder();
+        
+        // Create function with redundant computations
+        let function_type = context.i32_type().fn_type(&[], false);
+        let function = module.add_function("math_func", function_type, None);
+        let basic_block = context.append_basic_block(function, "entry");
+        builder.position_at_end(basic_block);
+        
+        // Add redundant arithmetic operations
+        let i32_type = context.i32_type();
+        let const_1 = i32_type.const_int(1, false);
+        let const_2 = i32_type.const_int(2, false);
+        let add1 = builder.build_int_add(const_1, const_2, "add1").unwrap();
+        let add2 = builder.build_int_add(const_1, const_2, "add2").unwrap(); // Redundant
+        
+        builder.build_return(Some(&add1)).unwrap();
+        
+        let mut gvn_optimizer = GvnOptimizer::new(&context, OptimizationLevel::Default);
+        let result = gvn_optimizer.optimize_module(&module);
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_tail_call_optimization_integration() {
+        let context = Context::create();
+        let module = context.create_module("tail_call_test");
+        let builder = context.create_builder();
+        
+        // Create recursive function
+        let function_type = context.i32_type().fn_type(&[context.i32_type().into()], false);
+        let function = module.add_function("factorial", function_type, None);
+        let basic_block = context.append_basic_block(function, "entry");
+        builder.position_at_end(basic_block);
+        
+        // Simple return for testing
+        let param = function.get_nth_param(0).unwrap().into_int_value();
+        builder.build_return(Some(&param)).unwrap();
+        
+        let mut tail_call_optimizer = TailCallOptimizer::new(&context, OptimizationLevel::Default);
+        let result = tail_call_optimizer.optimize_module(&module);
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_jump_threading_integration() {
+        let context = Context::create();
+        let module = context.create_module("jump_threading_test");
+        let builder = context.create_builder();
+        
+        // Create function with conditional branches
+        let function_type = context.void_type().fn_type(&[context.i1_type().into()], false);
+        let function = module.add_function("branch_func", function_type, None);
+        let entry_block = context.append_basic_block(function, "entry");
+        let then_block = context.append_basic_block(function, "then");
+        let else_block = context.append_basic_block(function, "else");
+        
+        builder.position_at_end(entry_block);
+        let condition = function.get_nth_param(0).unwrap().into_int_value();
+        builder.build_conditional_branch(condition, then_block, else_block).unwrap();
+        
+        builder.position_at_end(then_block);
+        builder.build_return(None).unwrap();
+        
+        builder.position_at_end(else_block);
+        builder.build_return(None).unwrap();
+        
+        let mut jump_threading_optimizer = JumpThreadingOptimizer::new(&context, OptimizationLevel::Default);
+        let result = jump_threading_optimizer.optimize_module(&module);
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_code_motion_integration() {
+        let context = Context::create();
+        let module = context.create_module("code_motion_test");
+        let builder = context.create_builder();
+        
+        // Create function with loop
+        let function_type = context.void_type().fn_type(&[], false);
+        let function = module.add_function("loop_func", function_type, None);
+        let entry_block = context.append_basic_block(function, "entry");
+        let loop_block = context.append_basic_block(function, "loop");
+        let exit_block = context.append_basic_block(function, "exit");
+        
+        builder.position_at_end(entry_block);
+        builder.build_unconditional_branch(loop_block).unwrap();
+        
+        builder.position_at_end(loop_block);
+        // Add loop-invariant computation
+        let i32_type = context.i32_type();
+        let const_1 = i32_type.const_int(1, false);
+        let const_2 = i32_type.const_int(2, false);
+        let add = builder.build_int_add(const_1, const_2, "invariant").unwrap();
+        builder.build_unconditional_branch(exit_block).unwrap();
+        
+        builder.position_at_end(exit_block);
+        builder.build_return(None).unwrap();
+        
+        let mut code_motion_optimizer = CodeMotionOptimizer::new(&context, OptimizationLevel::Default);
+        let result = code_motion_optimizer.optimize_module(&module);
+        assert!(result.is_ok());
     }
     
     #[test]

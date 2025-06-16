@@ -20,7 +20,7 @@ use inkwell::{
     builder::Builder,
     types::{BasicType, BasicTypeEnum, FunctionType},
     IntPredicate, FloatPredicate,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
 };
 
 /// Advanced function inlining optimizer with real cost-benefit analysis

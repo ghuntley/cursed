@@ -219,7 +219,7 @@ impl PostgresStatement {
     }
 
     /// Get underlying tokio-postgres statement
-    pub fn inner(&self) -> &Statement {
+    pub fn inner(&self) -> &dyn Statement {
         &self.statement
     }
 }

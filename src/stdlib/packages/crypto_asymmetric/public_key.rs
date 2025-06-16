@@ -13,7 +13,7 @@ use rsa::pkcs1::{EncodeRsaPublicKey, DecodeRsaPublicKey};
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey};
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey, PUBLIC_KEY_LENGTH as ED25519_PUBLIC_KEY_LENGTH};
-use x25519_dalek::{StaticSecret, PublicKey as X25519PublicKey};
+use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use elliptic_curve::pkcs8::{EncodePublicKey as EcEncodePublicKey, DecodePublicKey as EcDecodePublicKey};
 
 /// Supported public key formats
@@ -281,7 +281,7 @@ fn extract_x25519_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedEr
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
     }
     
-    let private_key = StaticSecret::from(
+    let private_key = EphemeralSecret::from(
         <[u8; 32]>::try_from(private_key_bytes)
             .map_err(|_| CursedError::InvalidArgument("Invalid X25519 private key length".to_string()))?
     );

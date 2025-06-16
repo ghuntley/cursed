@@ -610,7 +610,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Analyze semantics of a statement
-    fn analyze_statement_semantics(&mut self, statement: &Statement) -> Result<(), Error> {
+    fn analyze_statement_semantics(&mut self, statement: &dyn Statement) -> Result<(), Error> {
         match statement {
             Statement::FunctionDeclaration { name, location, .. } => {
                 self.semantic_analyzer.symbol_table.add_symbol(Symbol {

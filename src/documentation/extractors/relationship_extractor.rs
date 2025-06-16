@@ -204,7 +204,7 @@ impl RelationshipExtractor {
     fn extract_type_usage_relationships(
         &self,
         source_name: &str,
-        type_expr: &Expression,
+        type_expr: &dyn Expression,
         relationship_type: RelationshipType,
     ) -> Result<Vec<RelationshipInfo>, Error> {
         let mut relationships = Vec::new();
@@ -336,7 +336,7 @@ impl RelationshipExtractor {
     /// Extract function calls from an expression
     fn extract_calls_from_expression(
         &self,
-        expr: &Expression,
+        expr: &dyn Expression,
         caller_name: &str,
         relationships: &mut Vec<RelationshipInfo>,
     ) -> Result<(), Error> {

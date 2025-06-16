@@ -14,6 +14,7 @@ pub mod stacks;
 pub mod heap_slay;
 pub mod iterators_simple;
 pub mod advanced;
+pub mod sorta_fresh;
 
 // Re-export all public types and functions for easy access
 pub use sets::*;
@@ -22,6 +23,7 @@ pub use stacks::*;
 pub use heap_slay::*;
 pub use iterators_simple::*;
 pub use advanced::*;
+pub use sorta_fresh::*;
 
 // Collections result type
 pub type CollectionsResult<T> = Result<T, CollectionsError>;

@@ -21,7 +21,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::FunctionValue,
-    passes::{PassManager, PassManagerBuilder},
+    passes::{PassManager},
     OptimizationLevel as InkwellOptLevel,
     targets::{Target, TargetMachine},
 };
