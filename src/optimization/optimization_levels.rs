@@ -97,9 +97,9 @@ impl LevelConfig {
             },
             memory_optimization: MemoryOptimizationLevel::Basic,
             debug_info_level: DebugInfoLevel::Standard,
-            vectorization_settings: VectorizationSettings::disabled(),
+            vectorization_settings: VectorizationSettings::conservative(),
             inlining_settings: InliningSettings::conservative(),
-            loop_optimization: LoopOptimizationSettings::basic(),
+            loop_optimization: LoopOptimizationSettings::enhanced(),
             target_specific: TargetSpecificSettings::optimized(),
         }
     }
@@ -120,6 +120,9 @@ impl LevelConfig {
                     "reassociate".to_string(),
                     "gvn".to_string(),
                     "basic-aa".to_string(),
+                    "sccp".to_string(),
+                    "licm".to_string(),
+                    "loop-rotate".to_string(),
                 ],
                 module_passes: vec![
                     "globalopt".to_string(),
@@ -140,7 +143,7 @@ impl LevelConfig {
             debug_info_level: DebugInfoLevel::Standard,
             vectorization_settings: VectorizationSettings::standard(),
             inlining_settings: InliningSettings::standard(),
-            loop_optimization: LoopOptimizationSettings::standard(),
+            loop_optimization: LoopOptimizationSettings::enhanced_standard(),
             target_specific: TargetSpecificSettings::optimized(),
         }
     }
@@ -164,6 +167,11 @@ impl LevelConfig {
                     "aggressive-instcombine".to_string(),
                     "licm".to_string(),
                     "indvars".to_string(),
+                    "sccp".to_string(),
+                    "loop-rotate".to_string(),
+                    "loop-unroll".to_string(),
+                    "loop-vectorize".to_string(),
+                    "slp-vectorizer".to_string(),
                 ],
                 module_passes: vec![
                     "globalopt".to_string(),
@@ -187,7 +195,7 @@ impl LevelConfig {
             debug_info_level: DebugInfoLevel::Minimal,
             vectorization_settings: VectorizationSettings::aggressive(),
             inlining_settings: InliningSettings::aggressive(),
-            loop_optimization: LoopOptimizationSettings::aggressive(),
+            loop_optimization: LoopOptimizationSettings::super_aggressive(),
             target_specific: TargetSpecificSettings::aggressive(),
         }
     }
@@ -215,8 +223,8 @@ impl LevelConfig {
                     "mergefunc".to_string(),
                     "strip".to_string(),
                 ],
-                enable_vectorization: true,
-                enable_loop_unrolling: true,
+                enable_vectorization: false,
+                enable_loop_unrolling: false,
                 enable_inlining: true,
                 enable_constant_folding: true,
                 enable_dead_code_elimination: true,
@@ -256,8 +264,8 @@ impl LevelConfig {
                     "strip".to_string(),
                     "strip-debug-declare".to_string(),
                 ],
-                enable_vectorization: true,
-                enable_loop_unrolling: true,
+                enable_vectorization: false,
+                enable_loop_unrolling: false,
                 enable_inlining: true,
                 enable_constant_folding: true,
                 enable_dead_code_elimination: true,
@@ -463,6 +471,15 @@ impl VectorizationSettings {
         }
     }
     
+    pub fn conservative() -> Self {
+        Self {
+            enable_loop_vectorization: true,
+            enable_slp_vectorization: false,
+            vectorization_threshold: 8,
+            max_vector_width: 8,
+        }
+    }
+    
     pub fn standard() -> Self {
         Self {
             enable_loop_vectorization: true,
@@ -584,6 +601,15 @@ impl LoopOptimizationSettings {
         }
     }
     
+    pub fn enhanced() -> Self {
+        Self {
+            enable_loop_unrolling: true,
+            unroll_threshold: 75,
+            enable_loop_interchange: false,
+            enable_loop_rotation: true,
+        }
+    }
+    
     pub fn standard() -> Self {
         Self {
             enable_loop_unrolling: true,
@@ -593,10 +619,28 @@ impl LoopOptimizationSettings {
         }
     }
     
+    pub fn enhanced_standard() -> Self {
+        Self {
+            enable_loop_unrolling: true,
+            unroll_threshold: 200,
+            enable_loop_interchange: true,
+            enable_loop_rotation: true,
+        }
+    }
+    
     pub fn aggressive() -> Self {
         Self {
             enable_loop_unrolling: true,
             unroll_threshold: 300,
+            enable_loop_interchange: true,
+            enable_loop_rotation: true,
+        }
+    }
+    
+    pub fn super_aggressive() -> Self {
+        Self {
+            enable_loop_unrolling: true,
+            unroll_threshold: 500,
             enable_loop_interchange: true,
             enable_loop_rotation: true,
         }

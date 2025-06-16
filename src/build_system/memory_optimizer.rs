@@ -915,7 +915,6 @@ pub fn create_memory_aware_task(
 
 // Export public API
 pub use self::{
-    MemoryOptimizer,
     MemoryOptimizerConfig,
     MemoryAwareTask,
     MemoryStrategy,
@@ -924,5 +923,4 @@ pub use self::{
     SchedulingDecision,
     SchedulingAction,
     TaskPriority,
-    create_memory_aware_task,
 };

@@ -1425,7 +1425,7 @@ impl DependencyOptimizer {
                 TemplateNode::Include { template_name: include_name, .. } => {
                     if include_name == template_name {
                         // Estimate bytes saved (original include syntax vs inlined content)
-                        *bytes_saved += format!("{% include \"{}\" %}", template_name).len();
+                        *bytes_saved += format!("{{%% include \"{}\" %%}}", template_name).len();
                         *node = replacement.clone();
                     }
                 }

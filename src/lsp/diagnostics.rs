@@ -216,7 +216,7 @@ impl DiagnosticsProvider {
         self.create_diagnostic_impl(
             Range {
                 start: Position { line, character },
-                end: Position { line, character + 1 },
+                end: Position { line, character: character + 1 },
             },
             DiagnosticSeverity::ERROR,
             format!("Lexical error: {}", error),
@@ -231,7 +231,7 @@ impl DiagnosticsProvider {
         self.create_diagnostic_impl(
             Range {
                 start: Position { line, character },
-                end: Position { line, character + 10 },
+                end: Position { line, character: character + 10 },
             },
             DiagnosticSeverity::ERROR,
             format!("Syntax error: {}", error),

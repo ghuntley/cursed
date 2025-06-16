@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <img src="/static/logo.png" alt="Logo" class="logo">
+        <h1>{{title}}</h1>
+    </header>
+    
+    <main>
+        <div class="hero">
+            <h2>{{message}}</h2>
+            <p>Welcome to the EmbedThat demonstration!</p>
+        </div>
+        
+        <section class="features">
+            <h3>Features</h3>
+            <ul>
+                {{#each features}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+        </section>
+        
+        <section class="stats">
+            <h3>System Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Embedded Files</h4>
+                    <p id="file-count">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Memory Usage</h4>
+                    <p id="memory-usage">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Cache Entries</h4>
+                    <p id="cache-count">Loading...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>Powered by CURSED EmbedThat Module 🔥</p>
+    </footer>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>

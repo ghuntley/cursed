@@ -1,1410 +1,985 @@
-//! Comprehensive Performance Optimization System
-//! 
-//! This module provides a complete performance optimization framework including
-//! real optimization passes, performance analysis, benchmarking infrastructure,
-//! and resource monitoring for the CURSED compiler.
+/// Comprehensive Performance Optimization System for CURSED Compiler
+/// 
+/// This module provides a unified performance optimization system that enables:
+/// - Smart optimization defaults based on build profiles
+/// - Adaptive optimization with compilation time budgets
+/// - Compilation speed optimizations with incremental caching
+/// - Advanced runtime optimizations
+/// - Comprehensive performance profiling and analysis
 
 use crate::error::{Error, Result};
 use crate::optimization::{
-    OptimizationConfig, OptimizationLevel, OptimizationEngine, CompilationUnit,
-    real_llvm_passes::RealLlvmPassManager,
-    config::LlvmPassConfig,
+    BuildProfile, ProfileManager, OptimizationConfig, OptimizationLevel,
+    adaptive::{AdaptiveOptimizer, OptimizationFeedback, OptimizationStrategy},
+    compilation_speed::{CompilationSpeedOptimizer, CompilationUnit, CompilationStatistics},
+    enhanced_llvm_optimization::{EnhancedLlvmOptimizer, EnhancedOptimizationConfig},
+    profiler::{EnhancedBuildProfiler, ProfilerConfig},
+    benchmarking::{BenchmarkingEngine, BenchmarkConfig, BenchmarkType},
+    metrics::{MetricsCollector, ResourceMonitoringLevel},
 };
-use std::collections::{HashMap, BTreeMap, VecDeque};
+
+use std::collections::{HashMap, VecDeque};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 use std::thread;
-use std::process;
+use tracing::{debug, info, warn, error, instrument};
 use serde::{Serialize, Deserialize};
-use tracing::{info, debug, warn, instrument, span, Level};
+use rayon::prelude::*;
 
-/// Comprehensive performance optimization system
-pub struct PerformanceOptimizationSystem {
-    config: PerformanceConfig,
-    /// Real optimization engine
-    optimization_engine: Arc<Mutex<OptimizationEngine>>,
-    /// Performance analyzer
-    performance_analyzer: Arc<PerformanceAnalyzer>,
-    /// Benchmark runner
-    benchmark_runner: Arc<BenchmarkRunner>,
-    /// Resource monitor
-    resource_monitor: Arc<ResourceMonitor>,
-    /// Optimization session manager
-    session_manager: Arc<SessionManager>,
-    /// Performance database
-    performance_db: Arc<PerformanceDatabase>,
-    /// Statistics collector
-    statistics: Arc<Mutex<SystemStatistics>>,
-}
-
-/// Performance system configuration
+/// Performance optimization system configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceConfig {
-    /// Enable real-time monitoring
-    pub enable_realtime_monitoring: bool,
-    /// Enable benchmarking
-    pub enable_benchmarking: bool,
-    /// Enable performance prediction
-    pub enable_prediction: bool,
-    /// Monitoring interval
-    pub monitoring_interval_ms: u64,
-    /// Maximum benchmark iterations
-    pub max_benchmark_iterations: usize,
-    /// Performance database size limit
-    pub max_performance_entries: usize,
+pub struct PerformanceSystemConfig {
+    /// Build profile for optimization defaults
+    pub build_profile: BuildProfile,
+    /// Compilation time budget in seconds
+    pub compilation_time_budget: f64,
     /// Enable adaptive optimization
     pub enable_adaptive_optimization: bool,
-    /// Resource monitoring level
-    pub resource_monitoring_level: ResourceMonitoringLevel,
+    /// Enable compilation speed optimizations
+    pub enable_compilation_speed_optimizations: bool,
+    /// Enable advanced runtime optimizations
+    pub enable_advanced_runtime_optimizations: bool,
+    /// Enable performance profiling
+    pub enable_performance_profiling: bool,
+    /// Performance monitoring level
+    pub performance_monitoring_level: PerformanceMonitoringLevel,
+    /// Parallel compilation configuration
+    pub parallel_config: ParallelConfig,
+    /// Cache configuration
+    pub cache_config: CacheConfig,
+    /// Benchmark configuration
+    pub benchmark_config: BenchmarkConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ResourceMonitoringLevel {
-    Basic,
-    Detailed,
-    Comprehensive,
-    Profiling,
-}
-
-impl Default for PerformanceConfig {
+impl Default for PerformanceSystemConfig {
     fn default() -> Self {
         Self {
-            enable_realtime_monitoring: true,
-            enable_benchmarking: true,
-            enable_prediction: false,
-            monitoring_interval_ms: 100,
-            max_benchmark_iterations: 10,
-            max_performance_entries: 10000,
+            build_profile: BuildProfile::Release,
+            compilation_time_budget: 30.0, // 30 seconds default
             enable_adaptive_optimization: true,
-            resource_monitoring_level: ResourceMonitoringLevel::Detailed,
+            enable_compilation_speed_optimizations: true,
+            enable_advanced_runtime_optimizations: true,
+            enable_performance_profiling: true,
+            performance_monitoring_level: PerformanceMonitoringLevel::Standard,
+            parallel_config: ParallelConfig::default(),
+            cache_config: CacheConfig::default(),
+            benchmark_config: BenchmarkConfig::default(),
         }
     }
+}
+
+/// Performance monitoring levels
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PerformanceMonitoringLevel {
+    /// Minimal monitoring for fastest compilation
+    Minimal,
+    /// Basic monitoring with essential metrics
+    Basic,
+    /// Standard monitoring with detailed metrics
+    Standard,
+    /// Comprehensive monitoring with all metrics
+    Comprehensive,
+    /// Maximum monitoring for debugging
+    Maximum,
+}
+
+/// Parallel compilation configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParallelConfig {
+    /// Maximum number of parallel threads
+    pub max_threads: usize,
+    /// Enable parallel parsing
+    pub enable_parallel_parsing: bool,
+    /// Enable parallel type checking
+    pub enable_parallel_type_checking: bool,
+    /// Enable parallel optimization passes
+    pub enable_parallel_optimization: bool,
+    /// Work stealing enabled
+    pub enable_work_stealing: bool,
+    /// Thread priority (0-100)
+    pub thread_priority: u8,
+}
+
+impl Default for ParallelConfig {
+    fn default() -> Self {
+        Self {
+            max_threads: num_cpus::get().max(1),
+            enable_parallel_parsing: true,
+            enable_parallel_type_checking: true,
+            enable_parallel_optimization: true,
+            enable_work_stealing: true,
+            thread_priority: 50,
+        }
+    }
+}
+
+/// Cache configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheConfig {
+    /// Cache directory
+    pub cache_directory: PathBuf,
+    /// Maximum cache size in MB
+    pub max_cache_size_mb: usize,
+    /// Enable AST caching
+    pub enable_ast_caching: bool,
+    /// Enable type checking cache
+    pub enable_type_cache: bool,
+    /// Enable optimization result cache
+    pub enable_optimization_cache: bool,
+    /// Cache compression level (0-9)
+    pub compression_level: u8,
+    /// Cache cleanup interval in seconds
+    pub cleanup_interval_seconds: u64,
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self {
+            cache_directory: PathBuf::from(".cursed_cache"),
+            max_cache_size_mb: 1024, // 1GB default
+            enable_ast_caching: true,
+            enable_type_cache: true,
+            enable_optimization_cache: true,
+            compression_level: 3,
+            cleanup_interval_seconds: 3600, // 1 hour
+        }
+    }
+}
+
+/// Compilation performance metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompilationPerformanceMetrics {
+    /// Total compilation time
+    pub total_time: Duration,
+    /// Parse time
+    pub parse_time: Duration,
+    /// Type checking time
+    pub type_check_time: Duration,
+    /// Optimization time
+    pub optimization_time: Duration,
+    /// Code generation time
+    pub codegen_time: Duration,
+    /// Cache hit rate
+    pub cache_hit_rate: f64,
+    /// Parallel efficiency
+    pub parallel_efficiency: f64,
+    /// Memory peak usage in MB
+    pub peak_memory_mb: usize,
+    /// Lines of code processed per second
+    pub loc_per_second: f64,
+    /// Compilation units processed
+    pub units_processed: usize,
+    /// Optimization level used
+    pub optimization_level: OptimizationLevel,
+}
+
+impl Default for CompilationPerformanceMetrics {
+    fn default() -> Self {
+        Self {
+            total_time: Duration::default(),
+            parse_time: Duration::default(),
+            type_check_time: Duration::default(),
+            optimization_time: Duration::default(),
+            codegen_time: Duration::default(),
+            cache_hit_rate: 0.0,
+            parallel_efficiency: 0.0,
+            peak_memory_mb: 0,
+            loc_per_second: 0.0,
+            units_processed: 0,
+            optimization_level: OptimizationLevel::None,
+        }
+    }
+}
+
+/// Runtime performance metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimePerformanceMetrics {
+    /// Execution time
+    pub execution_time: Duration,
+    /// Memory usage
+    pub memory_usage_mb: usize,
+    /// GC pause time
+    pub gc_pause_time: Duration,
+    /// Goroutine count
+    pub goroutine_count: usize,
+    /// Channel operations per second
+    pub channel_ops_per_second: f64,
+    /// Function call overhead
+    pub function_call_overhead_ns: u64,
+    /// Cache misses
+    pub cache_misses: u64,
+    /// Branch prediction accuracy
+    pub branch_prediction_accuracy: f64,
+}
+
+impl Default for RuntimePerformanceMetrics {
+    fn default() -> Self {
+        Self {
+            execution_time: Duration::default(),
+            memory_usage_mb: 0,
+            gc_pause_time: Duration::default(),
+            goroutine_count: 0,
+            channel_ops_per_second: 0.0,
+            function_call_overhead_ns: 0,
+            cache_misses: 0,
+            branch_prediction_accuracy: 0.0,
+        }
+    }
+}
+
+/// Optimization session tracking
+#[derive(Debug, Clone)]
+pub struct OptimizationSession {
+    /// Session ID
+    pub id: String,
+    /// Session name
+    pub name: String,
+    /// Start time
+    pub start_time: Instant,
+    /// Build profile used
+    pub build_profile: BuildProfile,
+    /// Configuration used
+    pub config: PerformanceSystemConfig,
+    /// Performance metrics
+    pub compilation_metrics: CompilationPerformanceMetrics,
+    /// Runtime metrics
+    pub runtime_metrics: RuntimePerformanceMetrics,
+    /// Adaptive optimization decisions
+    pub adaptive_decisions: Vec<AdaptiveDecision>,
+    /// Warnings and issues
+    pub warnings: Vec<String>,
+}
+
+/// Adaptive optimization decision
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdaptiveDecision {
+    /// Timestamp
+    pub timestamp: SystemTime,
+    /// Decision type
+    pub decision_type: AdaptiveDecisionType,
+    /// Reason for decision
+    pub reason: String,
+    /// Expected improvement
+    pub expected_improvement: f64,
+    /// Actual improvement (if measured)
+    pub actual_improvement: Option<f64>,
+}
+
+/// Types of adaptive decisions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AdaptiveDecisionType {
+    /// Changed optimization level
+    OptimizationLevelChange { from: OptimizationLevel, to: OptimizationLevel },
+    /// Enabled parallel compilation
+    EnableParallelCompilation,
+    /// Disabled parallel compilation
+    DisableParallelCompilation,
+    /// Changed thread count
+    ThreadCountChange { from: usize, to: usize },
+    /// Enabled caching
+    EnableCaching,
+    /// Disabled caching
+    DisableCaching,
+    /// Changed build profile
+    BuildProfileChange { from: BuildProfile, to: BuildProfile },
+    /// Applied custom optimization
+    CustomOptimization { optimization: String },
+}
+
+/// Performance improvement recommendations
+#[derive(Debug, Clone)]
+pub struct PerformanceRecommendation {
+    /// Recommendation type
+    pub recommendation_type: RecommendationType,
+    /// Description
+    pub description: String,
+    /// Expected improvement percentage
+    pub expected_improvement_percent: f64,
+    /// Implementation difficulty (1-5)
+    pub implementation_difficulty: u8,
+    /// Priority (1-5)
+    pub priority: u8,
+    /// Required actions
+    pub required_actions: Vec<String>,
+}
+
+/// Types of performance recommendations
+#[derive(Debug, Clone)]
+pub enum RecommendationType {
+    /// Optimize compilation speed
+    CompilationSpeed,
+    /// Optimize runtime performance
+    RuntimePerformance,
+    /// Optimize memory usage
+    MemoryUsage,
+    /// Optimize build configuration
+    BuildConfiguration,
+    /// Optimize parallelization
+    Parallelization,
+    /// Optimize caching
+    Caching,
+}
+
+/// Main performance optimization system
+pub struct PerformanceOptimizationSystem {
+    /// Configuration
+    config: PerformanceSystemConfig,
+    /// Profile manager
+    profile_manager: ProfileManager,
+    /// Adaptive optimizer
+    adaptive_optimizer: AdaptiveOptimizer,
+    /// Compilation speed optimizer
+    compilation_speed_optimizer: CompilationSpeedOptimizer,
+    /// Enhanced LLVM optimizer
+    llvm_optimizer: EnhancedLlvmOptimizer,
+    /// Build profiler
+    build_profiler: EnhancedBuildProfiler,
+    /// Benchmarking engine
+    benchmarking_engine: BenchmarkingEngine,
+    /// Metrics collector
+    metrics_collector: MetricsCollector,
+    /// Current session
+    current_session: Arc<RwLock<Option<OptimizationSession>>>,
+    /// Performance history
+    performance_history: Arc<RwLock<VecDeque<CompilationPerformanceMetrics>>>,
+    /// Runtime performance tracking
+    runtime_performance: Arc<RwLock<VecDeque<RuntimePerformanceMetrics>>>,
+    /// Recommendations cache
+    recommendations_cache: Arc<RwLock<Vec<PerformanceRecommendation>>>,
 }
 
 impl PerformanceOptimizationSystem {
-    /// Create new performance optimization system
-    #[instrument(skip(config))]
-    pub fn new(config: PerformanceConfig, opt_config: OptimizationConfig) -> Result<Self> {
-        info!("Initializing comprehensive performance optimization system");
+    /// Create a new performance optimization system
+    pub fn new(config: PerformanceSystemConfig) -> Result<Self> {
+        info!("Initializing Performance Optimization System with profile: {:?}", config.build_profile);
+
+        let profile_manager = ProfileManager::new();
+        let optimization_config = profile_manager.get_profile_config(config.build_profile)
+            .ok_or_else(|| Error::Runtime("Invalid build profile".to_string()))?
+            .clone();
+
+        let adaptive_optimizer = AdaptiveOptimizer::new(&optimization_config)?;
+        let compilation_speed_optimizer = CompilationSpeedOptimizer::new(&optimization_config)?;
         
-        let optimization_engine = Arc::new(Mutex::new(OptimizationEngine::new(opt_config)?));
-        let performance_analyzer = Arc::new(PerformanceAnalyzer::new(&config)?);
-        let benchmark_runner = Arc::new(BenchmarkRunner::new(&config)?);
-        let resource_monitor = Arc::new(ResourceMonitor::new(&config)?);
-        let session_manager = Arc::new(SessionManager::new());
-        let performance_db = Arc::new(PerformanceDatabase::new(&config)?);
+        let enhanced_config = EnhancedOptimizationConfig::from_optimization_config(&optimization_config);
+        let llvm_optimizer = EnhancedLlvmOptimizer::new(enhanced_config)?;
+
+        let profiler_config = ProfilerConfig {
+            enable_detailed_profiling: config.enable_performance_profiling,
+            enable_memory_profiling: matches!(config.performance_monitoring_level, 
+                PerformanceMonitoringLevel::Comprehensive | PerformanceMonitoringLevel::Maximum),
+            enable_function_profiling: true,
+            profile_output_dir: config.cache_config.cache_directory.join("profiles"),
+            ..Default::default()
+        };
+        let build_profiler = EnhancedBuildProfiler::new(profiler_config)?;
+
+        let benchmarking_engine = BenchmarkingEngine::new(config.benchmark_config.clone())?;
         
+        let metrics_config = crate::optimization::PerformanceConfig {
+            enable_realtime_monitoring: config.enable_performance_profiling,
+            resource_monitoring_level: match config.performance_monitoring_level {
+                PerformanceMonitoringLevel::Minimal => ResourceMonitoringLevel::None,
+                PerformanceMonitoringLevel::Basic => ResourceMonitoringLevel::Basic,
+                PerformanceMonitoringLevel::Standard => ResourceMonitoringLevel::Standard,
+                PerformanceMonitoringLevel::Comprehensive => ResourceMonitoringLevel::Detailed,
+                PerformanceMonitoringLevel::Maximum => ResourceMonitoringLevel::Detailed,
+            },
+            ..Default::default()
+        };
+        let metrics_collector = MetricsCollector::new(metrics_config)?;
+
         Ok(Self {
             config,
-            optimization_engine,
-            performance_analyzer,
-            benchmark_runner,
-            resource_monitor,
-            session_manager,
-            performance_db,
-            statistics: Arc::new(Mutex::new(SystemStatistics::default())),
+            profile_manager,
+            adaptive_optimizer,
+            compilation_speed_optimizer,
+            llvm_optimizer,
+            build_profiler,
+            benchmarking_engine,
+            metrics_collector,
+            current_session: Arc::new(RwLock::new(None)),
+            performance_history: Arc::new(RwLock::new(VecDeque::new())),
+            runtime_performance: Arc::new(RwLock::new(VecDeque::new())),
+            recommendations_cache: Arc::new(RwLock::new(Vec::new())),
         })
     }
-    
-    /// Start performance monitoring
+
+    /// Start a new optimization session
     #[instrument(skip(self))]
-    pub fn start_monitoring(&self) -> Result<()> {
-        info!("Starting performance monitoring");
-        
-        if self.config.enable_realtime_monitoring {
-            self.resource_monitor.start_monitoring()?;
+    pub fn start_session(&self, name: String) -> Result<String> {
+        let session_id = format!("{}_{}", name, SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis());
+
+        let session = OptimizationSession {
+            id: session_id.clone(),
+            name,
+            start_time: Instant::now(),
+            build_profile: self.config.build_profile,
+            config: self.config.clone(),
+            compilation_metrics: CompilationPerformanceMetrics::default(),
+            runtime_metrics: RuntimePerformanceMetrics::default(),
+            adaptive_decisions: Vec::new(),
+            warnings: Vec::new(),
+        };
+
+        {
+            let mut current_session = self.current_session.write().unwrap();
+            *current_session = Some(session);
         }
+
+        // Start monitoring
+        if self.config.enable_performance_profiling {
+            self.metrics_collector.start_monitoring()?;
+        }
+
+        info!("Started optimization session: {}", session_id);
+        Ok(session_id)
+    }
+
+    /// End the current optimization session
+    #[instrument(skip(self))]
+    pub fn end_session(&self) -> Result<Option<OptimizationSession>> {
+        let mut current_session = self.current_session.write().unwrap();
         
+        if let Some(mut session) = current_session.take() {
+            // Stop monitoring
+            if self.config.enable_performance_profiling {
+                self.metrics_collector.stop_monitoring()?;
+            }
+
+            // Calculate final metrics
+            session.compilation_metrics.total_time = session.start_time.elapsed();
+            
+            // Store performance history
+            {
+                let mut history = self.performance_history.write().unwrap();
+                history.push_back(session.compilation_metrics.clone());
+                
+                // Keep only last 100 sessions
+                if history.len() > 100 {
+                    history.pop_front();
+                }
+            }
+
+            info!("Ended optimization session: {} (duration: {}ms)", 
+                  session.id, session.compilation_metrics.total_time.as_millis());
+
+            Ok(Some(session))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Compile with smart optimization
+    #[instrument(skip(self, compilation_units))]
+    pub fn compile_with_smart_optimization(&self, compilation_units: Vec<CompilationUnit>) -> Result<CompilationResults> {
+        let start_time = Instant::now();
+        info!("Starting smart optimization compilation of {} units", compilation_units.len());
+
+        // Apply adaptive optimization if enabled
+        if self.config.enable_adaptive_optimization {
+            self.apply_adaptive_optimizations(&compilation_units)?;
+        }
+
+        // Check if we should adjust optimization level based on time budget
+        let adjusted_profile = self.adjust_optimization_for_time_budget(&compilation_units)?;
+        
+        // Use compilation speed optimizer if enabled
+        let results = if self.config.enable_compilation_speed_optimizations {
+            self.compilation_speed_optimizer.compile_incremental(compilation_units)?
+        } else {
+            // Fallback to basic compilation
+            self.compile_basic(compilation_units)?
+        };
+
+        // Apply LLVM optimizations if enabled
+        let optimized_results = if self.config.enable_advanced_runtime_optimizations {
+            self.apply_advanced_runtime_optimizations(results)?
+        } else {
+            results
+        };
+
+        // Record performance metrics
+        self.record_compilation_metrics(start_time, &optimized_results)?;
+
+        // Generate recommendations
+        let recommendations = self.generate_recommendations(&optimized_results)?;
+
+        Ok(CompilationResults {
+            compilation_results: optimized_results,
+            performance_metrics: self.get_current_compilation_metrics(),
+            recommendations,
+            adaptive_decisions: self.get_adaptive_decisions(),
+            build_profile_used: adjusted_profile,
+        })
+    }
+
+    /// Apply adaptive optimizations based on current performance data
+    fn apply_adaptive_optimizations(&self, compilation_units: &[CompilationUnit]) -> Result<()> {
+        debug!("Applying adaptive optimizations");
+
+        // Get recommendations from adaptive optimizer
+        let recommendations = self.adaptive_optimizer.get_recommendations()?;
+        
+        for recommendation in recommendations {
+            match recommendation.strategy {
+                OptimizationStrategy::IncreaseLevel => {
+                    self.record_adaptive_decision(AdaptiveDecisionType::OptimizationLevelChange {
+                        from: OptimizationLevel::Default,
+                        to: OptimizationLevel::Aggressive,
+                    }, "Performance analysis suggests higher optimization level".to_string(), 0.15)?;
+                }
+                OptimizationStrategy::DecreaseLevel => {
+                    self.record_adaptive_decision(AdaptiveDecisionType::OptimizationLevelChange {
+                        from: OptimizationLevel::Aggressive,
+                        to: OptimizationLevel::Default,
+                    }, "Compilation time budget constraint".to_string(), -0.05)?;
+                }
+                OptimizationStrategy::SpecificPass(pass_name) => {
+                    self.record_adaptive_decision(AdaptiveDecisionType::CustomOptimization {
+                        optimization: pass_name,
+                    }, format!("Specific optimization for {}", recommendation.function_name), recommendation.expected_improvement)?;
+                }
+                _ => {}
+            }
+        }
+
         Ok(())
     }
-    
-    /// Stop performance monitoring
-    pub fn stop_monitoring(&self) -> Result<()> {
-        info!("Stopping performance monitoring");
-        self.resource_monitor.stop_monitoring()
-    }
-    
-    /// Create optimization session
-    pub fn create_session(&self, name: String) -> OptimizationSession {
-        self.session_manager.create_session(name)
-    }
-    
-    /// Run comprehensive optimization with performance tracking
-    #[instrument(skip(self, units))]
-    pub fn optimize_with_tracking(
-        &self, 
-        units: &mut [CompilationUnit],
-        session: &OptimizationSession
-    ) -> Result<OptimizationResults> {
-        let _span = span!(Level::INFO, "optimize_with_tracking", units = units.len()).entered();
-        
-        // Start monitoring for this optimization
-        let monitor_session = self.resource_monitor.start_session()?;
-        
-        // Initialize results
-        let mut results = OptimizationResults::new();
-        results.start_time = Instant::now();
-        results.session_id = session.id.clone();
-        
-        // Run optimization passes with monitoring
-        for unit in units.iter_mut() {
-            let unit_result = self.optimize_unit_with_monitoring(unit, &monitor_session)?;
-            results.unit_results.push(unit_result);
+
+    /// Adjust optimization level based on compilation time budget
+    fn adjust_optimization_for_time_budget(&self, compilation_units: &[CompilationUnit]) -> Result<BuildProfile> {
+        let estimated_compile_time = self.estimate_compilation_time(compilation_units);
+        let mut target_profile = self.config.build_profile;
+
+        if estimated_compile_time > Duration::from_secs_f64(self.config.compilation_time_budget) {
+            // Reduce optimization level to meet time budget
+            target_profile = match self.config.build_profile {
+                BuildProfile::Production => BuildProfile::Release,
+                BuildProfile::Release => BuildProfile::Development,
+                BuildProfile::Development => BuildProfile::Debug,
+                _ => target_profile,
+            };
+
+            self.record_adaptive_decision(AdaptiveDecisionType::BuildProfileChange {
+                from: self.config.build_profile,
+                to: target_profile,
+            }, format!("Adjusted profile to meet time budget of {:.1}s", self.config.compilation_time_budget), 0.0)?;
+
+            warn!("Reduced optimization level to meet compilation time budget");
         }
+
+        Ok(target_profile)
+    }
+
+    /// Estimate compilation time for units
+    fn estimate_compilation_time(&self, compilation_units: &[CompilationUnit]) -> Duration {
+        // Simple estimation based on source code size and complexity
+        let total_lines: usize = compilation_units.iter()
+            .map(|unit| unit.source_code.lines().count())
+            .sum();
+
+        let base_time_per_line = match self.config.build_profile {
+            BuildProfile::Debug => Duration::from_micros(10),
+            BuildProfile::Development => Duration::from_micros(50),
+            BuildProfile::Release => Duration::from_micros(200),
+            BuildProfile::Production => Duration::from_micros(500),
+            BuildProfile::Size => Duration::from_micros(300),
+            BuildProfile::Testing => Duration::from_micros(100),
+        };
+
+        base_time_per_line * total_lines as u32
+    }
+
+    /// Apply advanced runtime optimizations
+    fn apply_advanced_runtime_optimizations(&self, results: Vec<(String, Result<crate::ast::Program>)>) -> Result<Vec<(String, Result<crate::ast::Program>)>> {
+        debug!("Applying advanced runtime optimizations");
         
-        // Stop monitoring and collect final results
-        let monitor_results = self.resource_monitor.end_session(monitor_session)?;
-        results.total_time = results.start_time.elapsed();
-        results.resource_usage = monitor_results;
-        
-        // Analyze performance
-        let analysis = self.performance_analyzer.analyze_optimization(&results)?;
-        results.performance_analysis = Some(analysis);
-        
-        // Store results in database
-        self.performance_db.store_results(&results)?;
-        
-        // Update statistics
-        {
-            let mut stats = self.statistics.lock().unwrap();
-            stats.optimizations_completed += 1;
-            stats.total_optimization_time += results.total_time;
-            stats.total_units_optimized += units.len();
-        }
-        
-        info!("Optimization completed in {:?}", results.total_time);
+        // This would integrate with the LLVM optimizer for advanced optimizations
+        // For now, return the results as-is
         Ok(results)
     }
-    
-    /// Optimize single unit with monitoring
-    fn optimize_unit_with_monitoring(
-        &self,
-        unit: &mut CompilationUnit,
-        monitor_session: &MonitoringSession,
-    ) -> Result<UnitOptimizationResult> {
-        let start_time = Instant::now();
-        let start_metrics = self.resource_monitor.get_current_metrics(monitor_session)?;
-        
-        // Run optimization engine
-        {
-            let mut engine = self.optimization_engine.lock().unwrap();
-            engine.optimize_compilation_unit(unit)?;
-        }
-        
-        let end_metrics = self.resource_monitor.get_current_metrics(monitor_session)?;
-        let optimization_time = start_time.elapsed();
-        
-        Ok(UnitOptimizationResult {
-            unit_name: unit.name.clone(),
-            optimization_time,
-            resource_usage: ResourceDelta {
-                memory_delta: end_metrics.memory_usage_mb - start_metrics.memory_usage_mb,
-                cpu_time_delta: end_metrics.cpu_time_ms - start_metrics.cpu_time_ms,
-                io_operations_delta: end_metrics.io_operations - start_metrics.io_operations,
-            },
-            optimizations_applied: 0, // Would be populated by optimization engine
-        })
+
+    /// Basic compilation fallback
+    fn compile_basic(&self, compilation_units: Vec<CompilationUnit>) -> Result<Vec<(String, Result<crate::ast::Program>)>> {
+        compilation_units.into_par_iter().map(|unit| {
+            let lexer = crate::lexer::Lexer::new(unit.source_code);
+            let mut parser = crate::parser::Parser::new(lexer)?;
+            let program = parser.parse_program()?;
+            Ok((unit.id, Ok(program)))
+        }).collect()
     }
-    
+
+    /// Record adaptive decision
+    fn record_adaptive_decision(&self, decision_type: AdaptiveDecisionType, reason: String, expected_improvement: f64) -> Result<()> {
+        let decision = AdaptiveDecision {
+            timestamp: SystemTime::now(),
+            decision_type,
+            reason,
+            expected_improvement,
+            actual_improvement: None,
+        };
+
+        if let Some(ref mut session) = self.current_session.write().unwrap().as_mut() {
+            session.adaptive_decisions.push(decision);
+        }
+
+        Ok(())
+    }
+
+    /// Record compilation metrics
+    fn record_compilation_metrics(&self, start_time: Instant, results: &[(String, Result<crate::ast::Program>)]) -> Result<()> {
+        let total_time = start_time.elapsed();
+        let successful_compilations = results.iter().filter(|(_, result)| result.is_ok()).count();
+        
+        let metrics = CompilationPerformanceMetrics {
+            total_time,
+            units_processed: results.len(),
+            optimization_level: self.get_current_optimization_level(),
+            ..Default::default()
+        };
+
+        if let Some(ref mut session) = self.current_session.write().unwrap().as_mut() {
+            session.compilation_metrics = metrics;
+        }
+
+        Ok(())
+    }
+
+    /// Get current optimization level
+    fn get_current_optimization_level(&self) -> OptimizationLevel {
+        self.profile_manager.get_profile_config(self.config.build_profile)
+            .map(|config| config.optimization_level.clone())
+            .unwrap_or(OptimizationLevel::Default)
+    }
+
+    /// Generate performance recommendations
+    fn generate_recommendations(&self, results: &[(String, Result<crate::ast::Program>)]) -> Result<Vec<PerformanceRecommendation>> {
+        let mut recommendations = Vec::new();
+
+        // Analyze compilation performance
+        let compilation_stats = self.compilation_speed_optimizer.get_statistics();
+        
+        // Check cache hit rate
+        if compilation_stats.cache_hit_rate < 0.5 {
+            recommendations.push(PerformanceRecommendation {
+                recommendation_type: RecommendationType::Caching,
+                description: "Low cache hit rate detected. Consider enabling more aggressive caching.".to_string(),
+                expected_improvement_percent: 25.0,
+                implementation_difficulty: 2,
+                priority: 4,
+                required_actions: vec![
+                    "Enable AST caching".to_string(),
+                    "Increase cache size".to_string(),
+                    "Review cache invalidation strategy".to_string(),
+                ],
+            });
+        }
+
+        // Check parallelization efficiency
+        if compilation_stats.parallelization_efficiency < 0.7 {
+            recommendations.push(PerformanceRecommendation {
+                recommendation_type: RecommendationType::Parallelization,
+                description: "Low parallelization efficiency. Consider adjusting thread count or dependency structure.".to_string(),
+                expected_improvement_percent: 15.0,
+                implementation_difficulty: 3,
+                priority: 3,
+                required_actions: vec![
+                    "Analyze dependency graph".to_string(),
+                    "Optimize module structure".to_string(),
+                    "Adjust thread pool size".to_string(),
+                ],
+            });
+        }
+
+        // Check compilation speed
+        if compilation_stats.total_compilation_time.as_secs() > 60 {
+            recommendations.push(PerformanceRecommendation {
+                recommendation_type: RecommendationType::CompilationSpeed,
+                description: "Long compilation times detected. Consider optimizing for development speed.".to_string(),
+                expected_improvement_percent: 40.0,
+                implementation_difficulty: 2,
+                priority: 5,
+                required_actions: vec![
+                    "Use development build profile".to_string(),
+                    "Enable incremental compilation".to_string(),
+                    "Reduce optimization level".to_string(),
+                ],
+            });
+        }
+
+        {
+            let mut cache = self.recommendations_cache.write().unwrap();
+            *cache = recommendations.clone();
+        }
+
+        Ok(recommendations)
+    }
+
+    /// Get current compilation metrics
+    fn get_current_compilation_metrics(&self) -> CompilationPerformanceMetrics {
+        self.current_session.read().unwrap()
+            .as_ref()
+            .map(|session| session.compilation_metrics.clone())
+            .unwrap_or_default()
+    }
+
+    /// Get adaptive decisions
+    fn get_adaptive_decisions(&self) -> Vec<AdaptiveDecision> {
+        self.current_session.read().unwrap()
+            .as_ref()
+            .map(|session| session.adaptive_decisions.clone())
+            .unwrap_or_default()
+    }
+
     /// Run performance benchmark
-    #[instrument(skip(self, benchmark_config))]
-    pub fn run_benchmark(
-        &self,
-        benchmark_config: BenchmarkConfig,
-    ) -> Result<BenchmarkResults> {
-        info!("Running performance benchmark: {}", benchmark_config.name);
+    #[instrument(skip(self))]
+    pub fn run_performance_benchmark(&self, benchmark_type: BenchmarkType) -> Result<BenchmarkResults> {
+        info!("Running performance benchmark: {:?}", benchmark_type);
         
-        if !self.config.enable_benchmarking {
-            return Err(Error::InvalidArgument("Benchmarking is disabled".to_string()));
-        }
+        let mut benchmark_config = self.config.benchmark_config.clone();
+        benchmark_config.benchmark_type = benchmark_type;
         
-        let results = self.benchmark_runner.run_benchmark(benchmark_config)?;
+        let results = self.benchmarking_engine.run_benchmark(benchmark_config)?;
         
-        // Store benchmark results
-        self.performance_db.store_benchmark_results(&results)?;
+        info!("Benchmark completed: avg={}ms, min={}ms, max={}ms", 
+              results.average_time.as_millis(),
+              results.min_time.as_millis(),
+              results.max_time.as_millis());
         
         Ok(results)
     }
-    
-    /// Get performance analysis for recent optimizations
-    pub fn get_performance_analysis(&self, time_range: Duration) -> Result<PerformanceReport> {
-        self.performance_analyzer.generate_performance_report(time_range)
+
+    /// Get comprehensive performance report
+    pub fn generate_performance_report(&self) -> String {
+        let mut report = String::new();
+        report.push_str("# CURSED Compiler Performance Report\n\n");
+
+        // Current session information
+        if let Some(session) = self.current_session.read().unwrap().as_ref() {
+            report.push_str("## Current Session\n");
+            report.push_str(&format!("- Session ID: {}\n", session.id));
+            report.push_str(&format!("- Build Profile: {:?}\n", session.build_profile));
+            report.push_str(&format!("- Duration: {}ms\n", session.start_time.elapsed().as_millis()));
+            report.push_str(&format!("- Units Processed: {}\n", session.compilation_metrics.units_processed));
+            report.push_str(&format!("- Optimization Level: {:?}\n\n", session.compilation_metrics.optimization_level));
+        }
+
+        // Compilation speed optimizer report
+        report.push_str("## Compilation Performance\n");
+        let compilation_report = self.compilation_speed_optimizer.generate_performance_report();
+        report.push_str(&compilation_report);
+        report.push_str("\n");
+
+        // Performance history analysis
+        report.push_str("## Performance History\n");
+        let history = self.performance_history.read().unwrap();
+        if !history.is_empty() {
+            let avg_time: Duration = history.iter().map(|m| m.total_time).sum::<Duration>() / history.len() as u32;
+            let avg_cache_rate = history.iter().map(|m| m.cache_hit_rate).sum::<f64>() / history.len() as f64;
+            let avg_parallel_efficiency = history.iter().map(|m| m.parallel_efficiency).sum::<f64>() / history.len() as f64;
+            
+            report.push_str(&format!("- Average compilation time: {}ms\n", avg_time.as_millis()));
+            report.push_str(&format!("- Average cache hit rate: {:.1}%\n", avg_cache_rate * 100.0));
+            report.push_str(&format!("- Average parallel efficiency: {:.1}%\n", avg_parallel_efficiency * 100.0));
+            report.push_str(&format!("- Sessions analyzed: {}\n\n", history.len()));
+        }
+
+        // Current recommendations
+        report.push_str("## Performance Recommendations\n");
+        let recommendations = self.recommendations_cache.read().unwrap();
+        if recommendations.is_empty() {
+            report.push_str("No specific recommendations at this time.\n\n");
+        } else {
+            for (i, rec) in recommendations.iter().enumerate() {
+                report.push_str(&format!("{}. **{}** (Priority: {}/5)\n", 
+                    i + 1, rec.description, rec.priority));
+                report.push_str(&format!("   - Expected improvement: {:.1}%\n", rec.expected_improvement_percent));
+                report.push_str(&format!("   - Implementation difficulty: {}/5\n", rec.implementation_difficulty));
+                report.push_str("   - Actions:\n");
+                for action in &rec.required_actions {
+                    report.push_str(&format!("     - {}\n", action));
+                }
+                report.push_str("\n");
+            }
+        }
+
+        // Build profile recommendations
+        report.push_str("## Build Profile Analysis\n");
+        report.push_str(&self.profile_manager.get_profile_summary(self.config.build_profile));
+        report.push_str("\n\n");
+
+        report.push_str("## Configuration Summary\n");
+        report.push_str(&format!("- Adaptive optimization: {}\n", self.config.enable_adaptive_optimization));
+        report.push_str(&format!("- Compilation speed optimization: {}\n", self.config.enable_compilation_speed_optimizations));
+        report.push_str(&format!("- Advanced runtime optimization: {}\n", self.config.enable_advanced_runtime_optimizations));
+        report.push_str(&format!("- Performance profiling: {}\n", self.config.enable_performance_profiling));
+        report.push_str(&format!("- Monitoring level: {:?}\n", self.config.performance_monitoring_level));
+        report.push_str(&format!("- Compilation time budget: {:.1}s\n", self.config.compilation_time_budget));
+        report.push_str(&format!("- Max parallel threads: {}\n", self.config.parallel_config.max_threads));
+        report.push_str(&format!("- Cache size limit: {} MB\n", self.config.cache_config.max_cache_size_mb));
+
+        report
     }
-    
-    /// Get resource utilization statistics
-    pub fn get_resource_statistics(&self) -> Result<ResourceStatistics> {
-        self.resource_monitor.get_statistics()
-    }
-    
-    /// Get system statistics
-    pub fn get_system_statistics(&self) -> SystemStatistics {
-        self.statistics.lock().unwrap().clone()
-    }
-    
+
     /// Update configuration
-    pub fn update_config(&mut self, new_config: PerformanceConfig) -> Result<()> {
+    pub fn update_config(&mut self, new_config: PerformanceSystemConfig) -> Result<()> {
         info!("Updating performance system configuration");
         
-        // Stop monitoring if configuration changes require it
-        if self.config.enable_realtime_monitoring && !new_config.enable_realtime_monitoring {
-            self.stop_monitoring()?;
+        // Record configuration change as adaptive decision
+        if new_config.build_profile != self.config.build_profile {
+            self.record_adaptive_decision(AdaptiveDecisionType::BuildProfileChange {
+                from: self.config.build_profile,
+                to: new_config.build_profile,
+            }, "Manual configuration update".to_string(), 0.0)?;
         }
-        
+
         self.config = new_config;
-        
-        // Restart monitoring if needed
-        if self.config.enable_realtime_monitoring {
-            self.start_monitoring()?;
-        }
-        
+        Ok(())
+    }
+
+    /// Get current configuration
+    pub fn get_config(&self) -> &PerformanceSystemConfig {
+        &self.config
+    }
+
+    /// Get performance recommendations
+    pub fn get_recommendations(&self) -> Vec<PerformanceRecommendation> {
+        self.recommendations_cache.read().unwrap().clone()
+    }
+
+    /// Clear all caches
+    pub fn clear_caches(&self) -> Result<()> {
+        info!("Clearing all performance optimization caches");
+        self.compilation_speed_optimizer.clear_caches()?;
         Ok(())
     }
 }
 
-/// Performance analyzer for optimization results
-pub struct PerformanceAnalyzer {
-    config: PerformanceConfig,
-    trend_analyzer: TrendAnalyzer,
-    prediction_engine: Option<PredictionEngine>,
+/// Results from smart compilation
+#[derive(Debug)]
+pub struct CompilationResults {
+    /// Compilation results
+    pub compilation_results: Vec<(String, Result<crate::ast::Program>)>,
+    /// Performance metrics
+    pub performance_metrics: CompilationPerformanceMetrics,
+    /// Performance recommendations
+    pub recommendations: Vec<PerformanceRecommendation>,
+    /// Adaptive decisions made
+    pub adaptive_decisions: Vec<AdaptiveDecision>,
+    /// Build profile used
+    pub build_profile_used: BuildProfile,
 }
 
-impl PerformanceAnalyzer {
-    pub fn new(config: &PerformanceConfig) -> Result<Self> {
-        let trend_analyzer = TrendAnalyzer::new();
-        let prediction_engine = if config.enable_prediction {
-            Some(PredictionEngine::new()?)
-        } else {
-            None
-        };
-        
-        Ok(Self {
-            config: config.clone(),
-            trend_analyzer,
-            prediction_engine,
-        })
-    }
-    
-    /// Analyze optimization results
-    pub fn analyze_optimization(&self, results: &OptimizationResults) -> Result<PerformanceAnalysis> {
-        let mut analysis = PerformanceAnalysis::new();
-        
-        // Basic metrics analysis
-        analysis.total_time = results.total_time;
-        analysis.units_optimized = results.unit_results.len();
-        analysis.optimization_efficiency = self.calculate_efficiency(results);
-        
-        // Resource usage analysis
-        if let Some(ref resource_usage) = results.resource_usage {
-            analysis.peak_memory_mb = resource_usage.peak_memory_mb;
-            analysis.average_cpu_usage = resource_usage.average_cpu_usage_percent;
-            analysis.io_efficiency = self.calculate_io_efficiency(resource_usage);
-        }
-        
-        // Trend analysis
-        analysis.trends = self.trend_analyzer.analyze_trends(&results.unit_results);
-        
-        // Performance predictions
-        if let Some(ref predictor) = self.prediction_engine {
-            analysis.predictions = Some(predictor.predict_performance(results)?);
-        }
-        
-        // Optimization recommendations
-        analysis.recommendations = self.generate_recommendations(results);
-        
-        Ok(analysis)
-    }
-    
-    /// Generate performance report
-    pub fn generate_performance_report(&self, time_range: Duration) -> Result<PerformanceReport> {
-        // This would query the performance database for historical data
-        let mut report = PerformanceReport::new();
-        report.time_range = time_range;
-        report.generated_at = SystemTime::now();
-        
-        // Add analysis based on historical data
-        // In a real implementation, this would query stored results
-        
-        Ok(report)
-    }
-    
-    /// Calculate optimization efficiency score
-    fn calculate_efficiency(&self, results: &OptimizationResults) -> f64 {
-        if results.unit_results.is_empty() {
-            return 0.0;
-        }
-        
-        let total_time_ms = results.total_time.as_millis() as f64;
-        let units_count = results.unit_results.len() as f64;
-        
-        // Efficiency = units per second
-        if total_time_ms > 0.0 {
-            (units_count * 1000.0) / total_time_ms
-        } else {
-            0.0
-        }
-    }
-    
-    /// Calculate I/O efficiency
-    fn calculate_io_efficiency(&self, resource_usage: &ResourceUsage) -> f64 {
-        // Simplified calculation
-        if resource_usage.io_wait_time_ms > 0.0 {
-            1.0 - (resource_usage.io_wait_time_ms / resource_usage.total_time_ms.max(1.0))
-        } else {
-            1.0
-        }
-    }
-    
-    /// Generate optimization recommendations
-    fn generate_recommendations(&self, results: &OptimizationResults) -> Vec<OptimizationRecommendation> {
-        let mut recommendations = Vec::new();
-        
-        // Memory usage recommendations
-        if let Some(ref usage) = results.resource_usage {
-            if usage.peak_memory_mb > 2048.0 {
-                recommendations.push(OptimizationRecommendation {
-                    category: RecommendationCategory::Memory,
-                    priority: RecommendationPriority::High,
-                    description: format!(
-                        "High memory usage detected ({:.1} MB). Consider enabling memory optimization or reducing parallel compilation jobs.",
-                        usage.peak_memory_mb
-                    ),
-                    expected_improvement: Some(ImprovementEstimate {
-                        metric: "memory_usage".to_string(),
-                        improvement_percent: 25.0,
-                        confidence: 0.8,
-                    }),
-                });
-            }
-            
-            if usage.average_cpu_usage_percent < 50.0 {
-                recommendations.push(OptimizationRecommendation {
-                    category: RecommendationCategory::Parallelization,
-                    priority: RecommendationPriority::Medium,
-                    description: format!(
-                        "Low CPU utilization ({:.1}%). Consider increasing parallel compilation jobs.",
-                        usage.average_cpu_usage_percent
-                    ),
-                    expected_improvement: Some(ImprovementEstimate {
-                        metric: "compilation_time".to_string(),
-                        improvement_percent: 30.0,
-                        confidence: 0.7,
-                    }),
-                });
-            }
-        }
-        
-        // Time-based recommendations
-        if results.total_time > Duration::from_secs(60) {
-            recommendations.push(OptimizationRecommendation {
-                category: RecommendationCategory::Caching,
-                priority: RecommendationPriority::High,
-                description: "Long compilation time detected. Consider enabling incremental compilation and advanced caching.".to_string(),
-                expected_improvement: Some(ImprovementEstimate {
-                    metric: "compilation_time".to_string(),
-                    improvement_percent: 60.0,
-                    confidence: 0.9,
-                }),
-            });
-        }
-        
-        recommendations
-    }
-}
-
-/// Benchmark runner for performance testing
-pub struct BenchmarkRunner {
-    config: PerformanceConfig,
-    benchmark_cache: Arc<RwLock<HashMap<String, BenchmarkResults>>>,
-}
-
-impl BenchmarkRunner {
-    pub fn new(config: &PerformanceConfig) -> Result<Self> {
-        Ok(Self {
-            config: config.clone(),
-            benchmark_cache: Arc::new(RwLock::new(HashMap::new())),
-        })
-    }
-    
-    /// Run benchmark with comprehensive metrics
-    #[instrument(skip(self, config))]
-    pub fn run_benchmark(&self, config: BenchmarkConfig) -> Result<BenchmarkResults> {
-        info!("Running benchmark: {}", config.name);
-        
-        let mut results = BenchmarkResults::new(config.name.clone());
-        results.start_time = Instant::now();
-        
-        // Warm-up iterations
-        if config.warmup_iterations > 0 {
-            debug!("Running {} warm-up iterations", config.warmup_iterations);
-            for _ in 0..config.warmup_iterations {
-                self.run_single_iteration(&config)?;
-            }
-        }
-        
-        // Benchmark iterations
-        let mut iteration_times = Vec::new();
-        let mut memory_measurements = Vec::new();
-        let mut cpu_measurements = Vec::new();
-        
-        for i in 0..config.iterations {
-            debug!("Running benchmark iteration {}/{}", i + 1, config.iterations);
-            
-            let iteration_start = Instant::now();
-            let start_memory = self.measure_memory_usage()?;
-            let start_cpu = self.measure_cpu_usage()?;
-            
-            // Run the actual benchmark
-            self.run_single_iteration(&config)?;
-            
-            let iteration_time = iteration_start.elapsed();
-            let end_memory = self.measure_memory_usage()?;
-            let end_cpu = self.measure_cpu_usage()?;
-            
-            iteration_times.push(iteration_time);
-            memory_measurements.push(end_memory - start_memory);
-            cpu_measurements.push(end_cpu - start_cpu);
-        }
-        
-        results.total_time = results.start_time.elapsed();
-        
-        // Calculate statistics
-        results.statistics = self.calculate_benchmark_statistics(&iteration_times, &memory_measurements, &cpu_measurements);
-        
-        // Store in cache
-        {
-            let mut cache = self.benchmark_cache.write().unwrap();
-            cache.insert(config.name.clone(), results.clone());
-        }
-        
-        info!("Benchmark completed: {} iterations in {:?}", config.iterations, results.total_time);
-        Ok(results)
-    }
-    
-    /// Run single benchmark iteration
-    fn run_single_iteration(&self, config: &BenchmarkConfig) -> Result<()> {
-        match config.benchmark_type {
-            BenchmarkType::CompilationSpeed => {
-                self.benchmark_compilation_speed(config)
-            }
-            BenchmarkType::OptimizationEffectiveness => {
-                self.benchmark_optimization_effectiveness(config)
-            }
-            BenchmarkType::MemoryUsage => {
-                self.benchmark_memory_usage(config)
-            }
-            BenchmarkType::CachePerformance => {
-                self.benchmark_cache_performance(config)
-            }
-        }
-    }
-    
-    /// Benchmark compilation speed
-    fn benchmark_compilation_speed(&self, config: &BenchmarkConfig) -> Result<()> {
-        // Create test compilation units
-        let mut units = self.create_test_units(&config.test_data)?;
-        
-        // Run optimization
-        // In a real implementation, this would use the actual optimization engine
-        thread::sleep(Duration::from_millis(10)); // Simulate work
-        
-        Ok(())
-    }
-    
-    /// Benchmark optimization effectiveness
-    fn benchmark_optimization_effectiveness(&self, config: &BenchmarkConfig) -> Result<()> {
-        // Measure code quality improvements
-        thread::sleep(Duration::from_millis(20)); // Simulate optimization analysis
-        Ok(())
-    }
-    
-    /// Benchmark memory usage
-    fn benchmark_memory_usage(&self, config: &BenchmarkConfig) -> Result<()> {
-        // Allocate and measure memory patterns
-        let mut _test_data = Vec::new();
-        for _ in 0..1000 {
-            _test_data.push(vec![0u8; 1024]); // Allocate 1KB chunks
-        }
-        Ok(())
-    }
-    
-    /// Benchmark cache performance
-    fn benchmark_cache_performance(&self, config: &BenchmarkConfig) -> Result<()> {
-        // Test cache hit/miss ratios
-        thread::sleep(Duration::from_millis(5)); // Simulate cache operations
-        Ok(())
-    }
-    
-    /// Create test compilation units
-    fn create_test_units(&self, test_data: &BenchmarkTestData) -> Result<Vec<CompilationUnit>> {
-        let mut units = Vec::new();
-        
-        for i in 0..test_data.unit_count {
-            let mut unit = CompilationUnit::new(format!("test_unit_{}", i));
-            unit.source_files.push(format!("test_{}.csd", i));
-            units.push(unit);
-        }
-        
-        Ok(units)
-    }
-    
-    /// Measure current memory usage
-    fn measure_memory_usage(&self) -> Result<f64> {
-        // Use system calls to measure actual memory usage
-        // For now, return a mock value
-        Ok(fastrand::f64() * 100.0) // Random value between 0-100 MB
-    }
-    
-    /// Measure CPU usage
-    fn measure_cpu_usage(&self) -> Result<f64> {
-        // Measure CPU time or usage percentage
-        Ok(fastrand::f64() * 100.0) // Random value between 0-100%
-    }
-    
-    /// Calculate benchmark statistics
-    fn calculate_benchmark_statistics(
-        &self,
-        times: &[Duration],
-        memory_deltas: &[f64],
-        cpu_deltas: &[f64],
-    ) -> BenchmarkStatistics {
-        let time_ms: Vec<f64> = times.iter().map(|d| d.as_millis() as f64).collect();
-        
-        BenchmarkStatistics {
-            mean_time_ms: self.calculate_mean(&time_ms),
-            median_time_ms: self.calculate_median(&time_ms),
-            std_dev_time_ms: self.calculate_std_dev(&time_ms),
-            min_time_ms: time_ms.iter().copied().fold(f64::INFINITY, f64::min),
-            max_time_ms: time_ms.iter().copied().fold(f64::NEG_INFINITY, f64::max),
-            
-            mean_memory_delta_mb: self.calculate_mean(memory_deltas),
-            max_memory_delta_mb: memory_deltas.iter().copied().fold(f64::NEG_INFINITY, f64::max),
-            
-            mean_cpu_usage_percent: self.calculate_mean(cpu_deltas),
-            max_cpu_usage_percent: cpu_deltas.iter().copied().fold(f64::NEG_INFINITY, f64::max),
-            
-            throughput_ops_per_sec: if !time_ms.is_empty() {
-                1000.0 / self.calculate_mean(&time_ms)
-            } else {
-                0.0
-            },
-        }
-    }
-    
-    /// Calculate mean of values
-    fn calculate_mean(&self, values: &[f64]) -> f64 {
-        if values.is_empty() {
-            0.0
-        } else {
-            values.iter().sum::<f64>() / values.len() as f64
-        }
-    }
-    
-    /// Calculate median of values
-    fn calculate_median(&self, values: &[f64]) -> f64 {
-        if values.is_empty() {
-            return 0.0;
-        }
-        
-        let mut sorted = values.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        
-        let len = sorted.len();
-        if len % 2 == 0 {
-            (sorted[len / 2 - 1] + sorted[len / 2]) / 2.0
-        } else {
-            sorted[len / 2]
-        }
-    }
-    
-    /// Calculate standard deviation
-    fn calculate_std_dev(&self, values: &[f64]) -> f64 {
-        if values.len() < 2 {
-            return 0.0;
-        }
-        
-        let mean = self.calculate_mean(values);
-        let variance = values.iter()
-            .map(|x| (x - mean).powi(2))
-            .sum::<f64>() / (values.len() - 1) as f64;
-        
-        variance.sqrt()
-    }
-}
-
-/// Resource monitor for real-time tracking
-pub struct ResourceMonitor {
-    config: PerformanceConfig,
-    monitoring_active: Arc<Mutex<bool>>,
-    current_session: Arc<Mutex<Option<String>>>,
-    session_data: Arc<RwLock<HashMap<String, MonitoringSession>>>,
-    background_thread: Option<thread::JoinHandle<()>>,
-}
-
-impl ResourceMonitor {
-    pub fn new(config: &PerformanceConfig) -> Result<Self> {
-        Ok(Self {
-            config: config.clone(),
-            monitoring_active: Arc::new(Mutex::new(false)),
-            current_session: Arc::new(Mutex::new(None)),
-            session_data: Arc::new(RwLock::new(HashMap::new())),
-            background_thread: None,
-        })
-    }
-    
-    /// Start resource monitoring
-    pub fn start_monitoring(&self) -> Result<()> {
-        let mut active = self.monitoring_active.lock().unwrap();
-        if *active {
-            return Ok(()); // Already monitoring
-        }
-        
-        *active = true;
-        info!("Starting resource monitoring");
-        
-        // In a real implementation, this would start background monitoring
-        // For now, we'll just mark it as active
-        
-        Ok(())
-    }
-    
-    /// Stop resource monitoring
-    pub fn stop_monitoring(&self) -> Result<()> {
-        let mut active = self.monitoring_active.lock().unwrap();
-        if !*active {
-            return Ok(()); // Not monitoring
-        }
-        
-        *active = false;
-        info!("Stopping resource monitoring");
-        
-        Ok(())
-    }
-    
-    /// Start monitoring session
-    pub fn start_session(&self) -> Result<MonitoringSession> {
-        let session_id = format!("session_{}", SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos());
-        
-        let session = MonitoringSession {
-            id: session_id.clone(),
-            start_time: Instant::now(),
-            measurements: Arc::new(Mutex::new(Vec::new())),
-        };
-        
-        // Store session
-        {
-            let mut sessions = self.session_data.write().unwrap();
-            sessions.insert(session_id.clone(), session.clone());
-        }
-        
-        // Set as current session
-        {
-            let mut current = self.current_session.lock().unwrap();
-            *current = Some(session_id);
-        }
-        
-        debug!("Started monitoring session: {}", session.id);
-        Ok(session)
-    }
-    
-    /// End monitoring session
-    pub fn end_session(&self, session: MonitoringSession) -> Result<ResourceUsage> {
-        let session_duration = session.start_time.elapsed();
-        
-        // Calculate resource usage from measurements
-        let measurements = session.measurements.lock().unwrap();
-        let usage = self.calculate_resource_usage(&measurements, session_duration);
-        
-        // Clean up session
-        {
-            let mut sessions = self.session_data.write().unwrap();
-            sessions.remove(&session.id);
-        }
-        
-        debug!("Ended monitoring session: {} (duration: {:?})", session.id, session_duration);
-        Ok(usage)
-    }
-    
-    /// Get current metrics for session
-    pub fn get_current_metrics(&self, session: &MonitoringSession) -> Result<ResourceMetrics> {
-        // Simulate current resource measurement
-        Ok(ResourceMetrics {
-            timestamp: Instant::now(),
-            memory_usage_mb: self.get_current_memory_usage(),
-            cpu_usage_percent: self.get_current_cpu_usage(),
-            cpu_time_ms: self.get_current_cpu_time(),
-            io_operations: self.get_current_io_operations(),
-            network_bytes: 0,
-        })
-    }
-    
-    /// Get resource statistics
-    pub fn get_statistics(&self) -> Result<ResourceStatistics> {
-        Ok(ResourceStatistics {
-            peak_memory_mb: 1024.0,
-            average_memory_mb: 512.0,
-            peak_cpu_percent: 95.0,
-            average_cpu_percent: 65.0,
-            total_io_operations: 1000,
-            monitoring_uptime: Duration::from_secs(3600),
-        })
-    }
-    
-    /// Get current memory usage in MB
-    fn get_current_memory_usage(&self) -> f64 {
-        // In a real implementation, this would query system memory usage
-        // For now, return a realistic mock value
-        200.0 + fastrand::f64() * 800.0 // 200-1000 MB
-    }
-    
-    /// Get current CPU usage percentage
-    fn get_current_cpu_usage(&self) -> f64 {
-        // Mock CPU usage
-        20.0 + fastrand::f64() * 60.0 // 20-80%
-    }
-    
-    /// Get current CPU time in milliseconds
-    fn get_current_cpu_time(&self) -> u64 {
-        // Mock CPU time
-        SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64
-    }
-    
-    /// Get current I/O operations count
-    fn get_current_io_operations(&self) -> u64 {
-        // Mock I/O operations
-        fastrand::u64(1000..10000)
-    }
-    
-    /// Calculate resource usage from measurements
-    fn calculate_resource_usage(
-        &self,
-        measurements: &[ResourceMetrics],
-        total_time: Duration,
-    ) -> ResourceUsage {
-        if measurements.is_empty() {
-            return ResourceUsage {
-                total_time_ms: total_time.as_millis() as f64,
-                peak_memory_mb: 0.0,
-                average_memory_mb: 0.0,
-                peak_cpu_usage_percent: 0.0,
-                average_cpu_usage_percent: 0.0,
-                total_io_operations: 0,
-                io_wait_time_ms: 0.0,
-                network_bytes_transferred: 0,
-            };
-        }
-        
-        let peak_memory = measurements.iter()
-            .map(|m| m.memory_usage_mb)
-            .fold(0.0, f64::max);
-        
-        let average_memory = measurements.iter()
-            .map(|m| m.memory_usage_mb)
-            .sum::<f64>() / measurements.len() as f64;
-        
-        let peak_cpu = measurements.iter()
-            .map(|m| m.cpu_usage_percent)
-            .fold(0.0, f64::max);
-        
-        let average_cpu = measurements.iter()
-            .map(|m| m.cpu_usage_percent)
-            .sum::<f64>() / measurements.len() as f64;
-        
-        ResourceUsage {
-            total_time_ms: total_time.as_millis() as f64,
-            peak_memory_mb,
-            average_memory_mb,
-            peak_cpu_usage_percent: peak_cpu,
-            average_cpu_usage_percent: average_cpu,
-            total_io_operations: measurements.last().map(|m| m.io_operations).unwrap_or(0),
-            io_wait_time_ms: total_time.as_millis() as f64 * 0.1, // Assume 10% I/O wait
-            network_bytes_transferred: 0,
-        }
-    }
-}
-
-/// Session manager for optimization sessions
-pub struct SessionManager {
-    sessions: Arc<RwLock<HashMap<String, OptimizationSession>>>,
-    session_counter: Arc<Mutex<u64>>,
-}
-
-impl SessionManager {
-    pub fn new() -> Self {
-        Self {
-            sessions: Arc::new(RwLock::new(HashMap::new())),
-            session_counter: Arc::new(Mutex::new(0)),
-        }
-    }
-    
-    /// Create new optimization session
-    pub fn create_session(&self, name: String) -> OptimizationSession {
-        let mut counter = self.session_counter.lock().unwrap();
-        *counter += 1;
-        
-        let session = OptimizationSession {
-            id: format!("{}_{}", name, *counter),
-            name,
-            created_at: SystemTime::now(),
-            status: SessionStatus::Active,
-        };
-        
-        let mut sessions = self.sessions.write().unwrap();
-        sessions.insert(session.id.clone(), session.clone());
-        
-        session
-    }
-    
-    /// Get session by ID
-    pub fn get_session(&self, id: &str) -> Option<OptimizationSession> {
-        let sessions = self.sessions.read().unwrap();
-        sessions.get(id).cloned()
-    }
-    
-    /// List all sessions
-    pub fn list_sessions(&self) -> Vec<OptimizationSession> {
-        let sessions = self.sessions.read().unwrap();
-        sessions.values().cloned().collect()
-    }
-}
-
-/// Performance database for storing results
-pub struct PerformanceDatabase {
-    config: PerformanceConfig,
-    optimization_results: Arc<RwLock<VecDeque<OptimizationResults>>>,
-    benchmark_results: Arc<RwLock<VecDeque<BenchmarkResults>>>,
-}
-
-impl PerformanceDatabase {
-    pub fn new(config: &PerformanceConfig) -> Result<Self> {
-        Ok(Self {
-            config: config.clone(),
-            optimization_results: Arc::new(RwLock::new(VecDeque::new())),
-            benchmark_results: Arc::new(RwLock::new(VecDeque::new())),
-        })
-    }
-    
-    /// Store optimization results
-    pub fn store_results(&self, results: &OptimizationResults) -> Result<()> {
-        let mut stored_results = self.optimization_results.write().unwrap();
-        
-        // Add new results
-        stored_results.push_back(results.clone());
-        
-        // Maintain size limit
-        while stored_results.len() > self.config.max_performance_entries {
-            stored_results.pop_front();
-        }
-        
-        debug!("Stored optimization results for session: {}", results.session_id);
-        Ok(())
-    }
-    
-    /// Store benchmark results
-    pub fn store_benchmark_results(&self, results: &BenchmarkResults) -> Result<()> {
-        let mut stored_results = self.benchmark_results.write().unwrap();
-        
-        stored_results.push_back(results.clone());
-        
-        // Maintain size limit
-        while stored_results.len() > self.config.max_performance_entries {
-            stored_results.pop_front();
-        }
-        
-        debug!("Stored benchmark results: {}", results.name);
-        Ok(())
-    }
-    
-    /// Query optimization results
-    pub fn query_optimization_results(&self, time_range: Duration) -> Vec<OptimizationResults> {
-        let results = self.optimization_results.read().unwrap();
-        let cutoff_time = SystemTime::now() - time_range;
-        
-        results.iter()
-            .filter(|r| r.start_time.elapsed() <= time_range)
-            .cloned()
-            .collect()
-    }
-    
-    /// Query benchmark results
-    pub fn query_benchmark_results(&self, name_filter: Option<&str>) -> Vec<BenchmarkResults> {
-        let results = self.benchmark_results.read().unwrap();
-        
-        if let Some(filter) = name_filter {
-            results.iter()
-                .filter(|r| r.name.contains(filter))
-                .cloned()
-                .collect()
-        } else {
-            results.iter().cloned().collect()
-        }
-    }
-}
-
-/// Trend analyzer for performance data
-pub struct TrendAnalyzer {
-    // Would contain ML models or statistical analysis tools
-}
-
-impl TrendAnalyzer {
-    pub fn new() -> Self {
-        Self {}
-    }
-    
-    /// Analyze performance trends
-    pub fn analyze_trends(&self, results: &[UnitOptimizationResult]) -> Vec<PerformanceTrend> {
-        let mut trends = Vec::new();
-        
-        if results.len() >= 3 {
-            // Analyze optimization time trend
-            let times: Vec<f64> = results.iter()
-                .map(|r| r.optimization_time.as_millis() as f64)
-                .collect();
-            
-            let trend_direction = self.calculate_trend_direction(&times);
-            
-            trends.push(PerformanceTrend {
-                metric: "optimization_time".to_string(),
-                direction: trend_direction,
-                change_rate: self.calculate_change_rate(&times),
-                confidence: 0.8,
-            });
-        }
-        
-        trends
-    }
-    
-    /// Calculate trend direction
-    fn calculate_trend_direction(&self, values: &[f64]) -> TrendDirection {
-        if values.len() < 2 {
-            return TrendDirection::Stable;
-        }
-        
-        let first_half = &values[0..values.len()/2];
-        let second_half = &values[values.len()/2..];
-        
-        let first_avg = first_half.iter().sum::<f64>() / first_half.len() as f64;
-        let second_avg = second_half.iter().sum::<f64>() / second_half.len() as f64;
-        
-        let change_percent = ((second_avg - first_avg) / first_avg.max(1.0)) * 100.0;
-        
-        if change_percent > 5.0 {
-            TrendDirection::Increasing
-        } else if change_percent < -5.0 {
-            TrendDirection::Decreasing
-        } else {
-            TrendDirection::Stable
-        }
-    }
-    
-    /// Calculate change rate percentage
-    fn calculate_change_rate(&self, values: &[f64]) -> f64 {
-        if values.len() < 2 {
-            return 0.0;
-        }
-        
-        let first = values[0];
-        let last = values[values.len() - 1];
-        
-        if first > 0.0 {
-            ((last - first) / first) * 100.0
-        } else {
-            0.0
-        }
-    }
-}
-
-/// Performance prediction engine
-pub struct PredictionEngine {
-    // Would contain ML models for performance prediction
-}
-
-impl PredictionEngine {
-    pub fn new() -> Result<Self> {
-        Ok(Self {})
-    }
-    
-    /// Predict future performance
-    pub fn predict_performance(&self, results: &OptimizationResults) -> Result<PerformancePrediction> {
-        // Mock prediction based on current results
-        Ok(PerformancePrediction {
-            predicted_time: results.total_time + Duration::from_millis(100),
-            predicted_memory_mb: results.resource_usage
-                .as_ref()
-                .map(|r| r.peak_memory_mb * 1.1)
-                .unwrap_or(500.0),
-            confidence: 0.7,
-            factors: vec![
-                "Code complexity".to_string(),
-                "System load".to_string(),
-                "Cache efficiency".to_string(),
-            ],
-        })
-    }
-}
-
-// Data structures for the performance system
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OptimizationResults {
-    pub session_id: String,
-    pub start_time: Instant,
-    pub total_time: Duration,
-    pub unit_results: Vec<UnitOptimizationResult>,
-    pub resource_usage: Option<ResourceUsage>,
-    pub performance_analysis: Option<PerformanceAnalysis>,
-}
-
-impl OptimizationResults {
-    pub fn new() -> Self {
-        Self {
-            session_id: String::new(),
-            start_time: Instant::now(),
-            total_time: Duration::default(),
-            unit_results: Vec::new(),
-            resource_usage: None,
-            performance_analysis: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UnitOptimizationResult {
-    pub unit_name: String,
-    pub optimization_time: Duration,
-    pub resource_usage: ResourceDelta,
-    pub optimizations_applied: usize,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceDelta {
-    pub memory_delta: f64,
-    pub cpu_time_delta: u64,
-    pub io_operations_delta: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceUsage {
-    pub total_time_ms: f64,
-    pub peak_memory_mb: f64,
-    pub average_memory_mb: f64,
-    pub peak_cpu_usage_percent: f64,
-    pub average_cpu_usage_percent: f64,
-    pub total_io_operations: u64,
-    pub io_wait_time_ms: f64,
-    pub network_bytes_transferred: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceMetrics {
-    pub timestamp: Instant,
-    pub memory_usage_mb: f64,
-    pub cpu_usage_percent: f64,
-    pub cpu_time_ms: u64,
-    pub io_operations: u64,
-    pub network_bytes: u64,
-}
-
+/// Benchmark results
 #[derive(Debug, Clone)]
-pub struct MonitoringSession {
-    pub id: String,
-    pub start_time: Instant,
-    pub measurements: Arc<Mutex<Vec<ResourceMetrics>>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResourceStatistics {
-    pub peak_memory_mb: f64,
-    pub average_memory_mb: f64,
-    pub peak_cpu_percent: f64,
-    pub average_cpu_percent: f64,
-    pub total_io_operations: u64,
-    pub monitoring_uptime: Duration,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceAnalysis {
-    pub total_time: Duration,
-    pub units_optimized: usize,
-    pub optimization_efficiency: f64,
-    pub peak_memory_mb: f64,
-    pub average_cpu_usage: f64,
-    pub io_efficiency: f64,
-    pub trends: Vec<PerformanceTrend>,
-    pub predictions: Option<PerformancePrediction>,
-    pub recommendations: Vec<OptimizationRecommendation>,
-}
-
-impl PerformanceAnalysis {
-    pub fn new() -> Self {
-        Self {
-            total_time: Duration::default(),
-            units_optimized: 0,
-            optimization_efficiency: 0.0,
-            peak_memory_mb: 0.0,
-            average_cpu_usage: 0.0,
-            io_efficiency: 0.0,
-            trends: Vec::new(),
-            predictions: None,
-            recommendations: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceTrend {
-    pub metric: String,
-    pub direction: TrendDirection,
-    pub change_rate: f64,
-    pub confidence: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TrendDirection {
-    Increasing,
-    Decreasing,
-    Stable,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformancePrediction {
-    pub predicted_time: Duration,
-    pub predicted_memory_mb: f64,
-    pub confidence: f64,
-    pub factors: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OptimizationRecommendation {
-    pub category: RecommendationCategory,
-    pub priority: RecommendationPriority,
-    pub description: String,
-    pub expected_improvement: Option<ImprovementEstimate>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RecommendationCategory {
-    Memory,
-    Parallelization,
-    Caching,
-    Algorithm,
-    Configuration,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RecommendationPriority {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ImprovementEstimate {
-    pub metric: String,
-    pub improvement_percent: f64,
-    pub confidence: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkConfig {
-    pub name: String,
-    pub benchmark_type: BenchmarkType,
-    pub iterations: usize,
-    pub warmup_iterations: usize,
-    pub test_data: BenchmarkTestData,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum BenchmarkType {
-    CompilationSpeed,
-    OptimizationEffectiveness,
-    MemoryUsage,
-    CachePerformance,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkTestData {
-    pub unit_count: usize,
-    pub complexity_level: ComplexityLevel,
-    pub data_size_mb: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ComplexityLevel {
-    Simple,
-    Medium,
-    Complex,
-    VeryComplex,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkResults {
-    pub name: String,
-    pub start_time: Instant,
-    pub total_time: Duration,
-    pub statistics: BenchmarkStatistics,
-}
-
-impl BenchmarkResults {
-    pub fn new(name: String) -> Self {
-        Self {
-            name,
-            start_time: Instant::now(),
-            total_time: Duration::default(),
-            statistics: BenchmarkStatistics::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct BenchmarkStatistics {
-    pub mean_time_ms: f64,
-    pub median_time_ms: f64,
-    pub std_dev_time_ms: f64,
-    pub min_time_ms: f64,
-    pub max_time_ms: f64,
-    pub mean_memory_delta_mb: f64,
-    pub max_memory_delta_mb: f64,
-    pub mean_cpu_usage_percent: f64,
-    pub max_cpu_usage_percent: f64,
-    pub throughput_ops_per_sec: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OptimizationSession {
-    pub id: String,
-    pub name: String,
-    pub created_at: SystemTime,
-    pub status: SessionStatus,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum SessionStatus {
-    Active,
-    Completed,
-    Failed,
-    Cancelled,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceReport {
-    pub time_range: Duration,
-    pub generated_at: SystemTime,
-    pub summary: Option<PerformanceSummary>,
-    pub trends: Vec<PerformanceTrend>,
-    pub recommendations: Vec<OptimizationRecommendation>,
-}
-
-impl PerformanceReport {
-    pub fn new() -> Self {
-        Self {
-            time_range: Duration::default(),
-            generated_at: SystemTime::now(),
-            summary: None,
-            trends: Vec::new(),
-            recommendations: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceSummary {
-    pub total_optimizations: usize,
-    pub average_optimization_time: Duration,
-    pub optimization_success_rate: f64,
-    pub performance_improvement: f64,
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct SystemStatistics {
-    pub optimizations_completed: usize,
-    pub total_optimization_time: Duration,
-    pub total_units_optimized: usize,
-    pub benchmark_runs: usize,
-    pub cache_hits: usize,
-    pub cache_misses: usize,
-    pub errors_encountered: usize,
+    /// Benchmark type
+    pub benchmark_type: BenchmarkType,
+    /// Average execution time
+    pub average_time: Duration,
+    /// Minimum execution time
+    pub min_time: Duration,
+    /// Maximum execution time
+    pub max_time: Duration,
+    /// Standard deviation
+    pub std_deviation: Duration,
+    /// Iterations performed
+    pub iterations: usize,
+    /// Throughput (operations per second)
+    pub throughput: f64,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+    use tempfile::TempDir;
+
     #[test]
     fn test_performance_system_creation() {
-        let perf_config = PerformanceConfig::default();
-        let opt_config = OptimizationConfig::default();
+        let config = PerformanceSystemConfig::default();
+        let system = PerformanceOptimizationSystem::new(config).unwrap();
         
-        let system = PerformanceOptimizationSystem::new(perf_config, opt_config);
-        assert!(system.is_ok());
+        assert_eq!(system.config.build_profile, BuildProfile::Release);
+        assert!(system.config.enable_adaptive_optimization);
     }
-    
+
     #[test]
-    fn test_benchmark_runner() {
-        let config = PerformanceConfig::default();
-        let runner = BenchmarkRunner::new(&config);
-        assert!(runner.is_ok());
-    }
-    
-    #[test]
-    fn test_resource_monitor() {
-        let config = PerformanceConfig::default();
-        let monitor = ResourceMonitor::new(&config);
-        assert!(monitor.is_ok());
-    }
-    
-    #[test]
-    fn test_performance_analyzer() {
-        let config = PerformanceConfig::default();
-        let analyzer = PerformanceAnalyzer::new(&config);
-        assert!(analyzer.is_ok());
-    }
-    
-    #[test]
-    fn test_session_manager() {
-        let manager = SessionManager::new();
-        let session = manager.create_session("test_session".to_string());
+    fn test_session_management() {
+        let config = PerformanceSystemConfig::default();
+        let system = PerformanceOptimizationSystem::new(config).unwrap();
         
-        assert_eq!(session.name, "test_session");
-        assert!(session.id.starts_with("test_session_"));
+        let session_id = system.start_session("test_session".to_string()).unwrap();
+        assert!(!session_id.is_empty());
         
-        let retrieved = manager.get_session(&session.id);
-        assert!(retrieved.is_some());
-        assert_eq!(retrieved.unwrap().id, session.id);
+        let session = system.end_session().unwrap();
+        assert!(session.is_some());
+        assert_eq!(session.unwrap().name, "test_session");
     }
-    
+
     #[test]
-    fn test_performance_database() {
-        let config = PerformanceConfig::default();
-        let db = PerformanceDatabase::new(&config);
-        assert!(db.is_ok());
-    }
-    
-    #[test]
-    fn test_benchmark_statistics_calculation() {
-        let config = PerformanceConfig::default();
-        let runner = BenchmarkRunner::new(&config).unwrap();
+    fn test_adaptive_decision_recording() {
+        let config = PerformanceSystemConfig::default();
+        let system = PerformanceOptimizationSystem::new(config).unwrap();
         
-        let times = vec![
-            Duration::from_millis(100),
-            Duration::from_millis(110),
-            Duration::from_millis(90),
-            Duration::from_millis(105),
+        system.start_session("test".to_string()).unwrap();
+        
+        system.record_adaptive_decision(
+            AdaptiveDecisionType::OptimizationLevelChange {
+                from: OptimizationLevel::Default,
+                to: OptimizationLevel::Aggressive,
+            },
+            "Test decision".to_string(),
+            0.15,
+        ).unwrap();
+        
+        let decisions = system.get_adaptive_decisions();
+        assert_eq!(decisions.len(), 1);
+        assert_eq!(decisions[0].reason, "Test decision");
+    }
+
+    #[test]
+    fn test_time_budget_adjustment() {
+        let mut config = PerformanceSystemConfig::default();
+        config.compilation_time_budget = 1.0; // Very short budget
+        config.build_profile = BuildProfile::Production;
+        
+        let system = PerformanceOptimizationSystem::new(config).unwrap();
+        
+        let units = vec![CompilationUnit {
+            id: "test".to_string(),
+            source_path: std::path::PathBuf::from("test.csd"),
+            module_name: "test".to_string(),
+            source_code: "facts x = 42;".repeat(1000), // Large source
+            dependencies: vec![],
+            last_modified: SystemTime::now(),
+            status: crate::optimization::compilation_speed::CompilationStatus::Pending,
+            priority: 1,
+            content_hash: String::new(),
+        }];
+        
+        let adjusted_profile = system.adjust_optimization_for_time_budget(&units).unwrap();
+        
+        // Should have reduced optimization level
+        assert_ne!(adjusted_profile, BuildProfile::Production);
+    }
+
+    #[test]
+    fn test_performance_recommendations() {
+        let config = PerformanceSystemConfig::default();
+        let system = PerformanceOptimizationSystem::new(config).unwrap();
+        
+        let results = vec![
+            ("test1".to_string(), Ok(crate::ast::Program::new(vec![]))),
+            ("test2".to_string(), Ok(crate::ast::Program::new(vec![]))),
         ];
-        let memory = vec![10.0, 12.0, 8.0, 11.0];
-        let cpu = vec![50.0, 55.0, 45.0, 52.0];
         
-        let stats = runner.calculate_benchmark_statistics(&times, &memory, &cpu);
-        
-        assert!(stats.mean_time_ms > 0.0);
-        assert!(stats.throughput_ops_per_sec > 0.0);
-        assert_eq!(stats.min_time_ms, 90.0);
-        assert_eq!(stats.max_time_ms, 110.0);
+        let recommendations = system.generate_recommendations(&results).unwrap();
+        // Should generate some recommendations based on mock data
+        assert!(!recommendations.is_empty());
     }
 }

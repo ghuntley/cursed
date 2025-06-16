@@ -308,13 +308,8 @@ impl SelfCompilationVerifier {
                 result.errors.push(String::from_utf8_lossy(&output.stderr).to_string());
             }
             Err(e) => {
-                // Stage 2 compilation not available yet - simulate success for now
-                println!("⚠️  Stage 2 compilation not yet implemented, simulating success");
-                result.success = true;
-                result.binary_checksum = "simulated_stage2_checksum".to_string();
-                let simulated_binary = self.config.work_dir.join("cursed_v2_simulated");
-                fs::write(&simulated_binary, b"simulated binary")?;
-                result.output_files.push(simulated_binary);
+                result.errors.push(format!("Failed to execute Stage 1 compiler: {}", e));
+                println!("❌ Stage 2 compilation failed: {}", e);
             }
         }
 

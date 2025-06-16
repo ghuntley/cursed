@@ -430,12 +430,12 @@ impl AuthenticatedEncryption for Aes256Gcm {
     }
 }
 
-/// fr fr ChaCha20 stream cipher implementation
-pub struct ChaCha20 {
+/// fr fr ChaCha20 stream cipher wrapper
+pub struct ChaCha20Cipher {
     key: EncryptionKey,
 }
 
-impl ChaCha20 {
+impl ChaCha20Cipher {
     /// slay Create new ChaCha20 cipher
     pub fn new(key: &[u8]) -> CryptoResult<Self> {
         if key.len() != 32 {
@@ -760,7 +760,7 @@ mod tests {
     #[test]
     fn test_chacha20_creation() {
         let key = vec![0u8; 32];
-        let cipher = ChaCha20::new(&key);
+        let cipher = ChaCha20Cipher::new(&key);
         assert!(cipher.is_ok());
         
         let cipher = cipher.unwrap();
@@ -810,7 +810,7 @@ mod tests {
         
         // Test invalid ChaCha20 key size
         let key = vec![0u8; 16];
-        assert!(ChaCha20::new(&key).is_err());
+        assert!(ChaCha20Cipher::new(&key).is_err());
         assert!(ChaCha20Poly1305Aead::new(&key).is_err());
     }
     

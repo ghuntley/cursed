@@ -1,0 +1,73 @@
+# LaTeX Beamer Presentation Configuration Example
+# Configuration for generating presentation slides from CURSED documentation
+
+[project]
+name = "CURSED Language Overview"
+version = "1.0.0"
+description = "Presentation on CURSED programming language features"
+authors = ["CURSED Development Team"]
+
+[latex]
+# Use Beamer for presentations
+document_class = "beamer"
+
+# Beamer-specific options
+document_options = ["11pt", "aspectratio=169"]
+
+# Presentation settings
+generate_toc = true
+generate_lof = false
+generate_lot = false
+toc_depth = 2
+
+# Technical features for presentations
+include_code_listings = true
+generate_cross_refs = false  # Usually not needed in presentations
+math_support = true
+unicode_support = true
+custom_headers = false  # Beamer handles headers/footers
+
+# No index or bibliography for presentations
+generate_index = false
+generate_bibliography = false
+
+[latex.syntax_highlighting]
+# Use listings for better compatibility in presentations
+use_minted = false
+show_line_numbers = false  # Usually cleaner without line numbers
+line_number_style = "none"
+tab_size = 2
+break_lines = true
+
+[latex.syntax_highlighting.color_scheme]
+background = "lightgray"
+comment = "darkgreen"
+keyword = "blue"
+string = "red"
+number = "purple"
+function = "darkblue"
+type_name = "brown"
+
+[latex.packages]
+# Minimal packages for presentations
+standard_packages = [
+    "inputenc",
+    "fontenc",
+    "listings",
+    "xcolor",
+    "graphicx",
+    "amsmath",
+    "amsfonts"
+]
+
+[latex.packages.additional_packages]
+"inputenc" = ["utf8"]
+"fontenc" = ["T1"]
+
+# Beamer-specific definitions
+custom_definitions = [
+    "\\usetheme{Madrid}",
+    "\\usecolortheme{beaver}",
+    "\\setbeamertemplate{navigation symbols}{}",
+    "\\newcommand{\\cursed}[1]{\\textcolor{blue}{\\texttt{#1}}}"
+]

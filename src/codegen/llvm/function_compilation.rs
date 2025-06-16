@@ -4,7 +4,10 @@ use crate::ast::calls::CallExpression;
 use crate::ast::statements::ReturnStatement;
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::error::Error;
+use crate::codegen::llvm::function_registry::{FunctionRegistry, FunctionSignature, SharedFunctionRegistry};
+use crate::codegen::llvm::expression_compiler::LlvmType;
 use std::collections::HashMap;
+use tracing::{debug, info, warn, error, instrument};
 
 /// Function compilation trait for LLVM code generation
 pub trait FunctionCompilation {
@@ -119,10 +122,19 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
 }
 
 impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
+    #[instrument(skip(self, func))]
     fn compile_function_declaration(&mut self, func: &FunctionStatement) -> Result<String, Error> {
         let func_name = func.name.string();
         
-        // Determine return type (default to void/i32 if not specified)
+        info!("Compiling function declaration: {}", func_name);
+        
+        // Create function signature from AST
+        let function_signature = FunctionSignature::from_function_statement(func)?;
+        
+        // Register function in the function registry
+        self.register_function(function_signature.clone())?;
+        
+        // Determine return type (default to void if not specified)
         let return_type = if let Some(ret_type) = &func.return_type {
             self.map_cursed_type_to_llvm(&ret_type.string())
         } else {
@@ -149,66 +161,108 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
         // Generate LLVM IR
         let mut ir = String::new();
         
-        // Function declaration
+        // Function declaration with proper linkage
+        let linkage = if function_signature.is_builtin {
+            "declare"
+        } else {
+            "define"
+        };
+        
         ir.push_str(&format!("\n; Function: {} (slay keyword)\n", func_name));
-        ir.push_str(&format!("define {} @{}({}) {{\n", return_type, func_name, args));
+        ir.push_str(&format!("{} {} @{}({}) {{\n", linkage, return_type, func_name, args));
         
-        // Entry block
-        ir.push_str(&format!("{}:\n", self.current_function().unwrap().entry_block));
-        
-        // Allocate space for parameters if needed
-        for param in &func.parameters {
-            let param_type_str = if param.param_type.is_empty() { "any" } else { &param.param_type };
-            let param_type = self.map_cursed_type_to_llvm(param_type_str);
-            let alloca = format!("  %{}_addr = alloca {}, align 8\n", param.name, param_type);
-            ir.push_str(&alloca);
+        // Only generate body for non-builtin functions
+        if !function_signature.is_builtin {
+            // Entry block
+            ir.push_str(&format!("{}:\n", self.current_function().unwrap().entry_block));
             
-            let store = format!("  store {} %{}, {}* %{}_addr, align 8\n", 
-                param_type, param.name, param_type, param.name);
-            ir.push_str(&store);
-        }
-        
-        // Compile function body
-        let body_ir = self.compile_block_statement(&func.body)?;
-        ir.push_str(&body_ir);
-        
-        // Add implicit return if no explicit return at end
-        if !body_ir.trim_end().ends_with("ret ") {
-            if return_type == "void" {
-                ir.push_str("  ret void\n");
-            } else if return_type == "i32" {
-                ir.push_str("  ret i32 0\n");
-            } else {
-                ir.push_str(&format!("  ret {} zeroinitializer\n", return_type));
+            // Allocate space for parameters if needed
+            for param in &func.parameters {
+                let param_type_str = if param.param_type.is_empty() { "any" } else { &param.param_type };
+                let param_type = self.map_cursed_type_to_llvm(param_type_str);
+                let alloca = format!("  %{}_addr = alloca {}, align 8\n", param.name, param_type);
+                ir.push_str(&alloca);
+                
+                let store = format!("  store {} %{}, {}* %{}_addr, align 8\n", 
+                    param_type, param.name, param_type, param.name);
+                ir.push_str(&store);
             }
+            
+            // Compile function body
+            let body_ir = self.compile_block_statement(&func.body)?;
+            ir.push_str(&body_ir);
+            
+            // Add implicit return if no explicit return at end
+            if !body_ir.trim_end().ends_with("ret ") {
+                if return_type == "void" {
+                    ir.push_str("  ret void\n");
+                } else if return_type == "i32" {
+                    ir.push_str("  ret i32 0\n");
+                } else {
+                    ir.push_str(&format!("  ret {} zeroinitializer\n", return_type));
+                }
+            }
+            
+            ir.push_str("}\n");
         }
-        
-        ir.push_str("}\n");
         
         self.pop_function_context();
         
+        debug!("Function '{}' compiled successfully", func_name);
         Ok(ir)
     }
     
+    #[instrument(skip(self, call))]
     fn compile_function_call(&mut self, call: &CallExpression) -> Result<String, Error> {
         let func_name = call.function.string();
         
-        // Generate arguments
-        let args_ir = self.generate_call_arguments(&call.arguments)?;
+        info!("Compiling function call: {}", func_name);
         
-        // Get or generate function type (simplified for now)
-        let func_type = "i32 (...)".to_string(); // Variadic for simplicity
+        // Compile arguments and determine their types
+        let mut arg_types = Vec::new();
+        let mut arg_llvm_names = Vec::new();
         
-        // Generate call instruction
-        let temp = if let Some(context) = self.current_function() {
-            context.next_temp()
-        } else {
-            "%temp0".to_string()
-        };
+        for arg in &call.arguments {
+            // For now, we'll use simplified expression compilation
+            // In a full implementation, this would integrate with the expression compiler
+            let arg_ir = self.compile_expression_body(arg)?;
+            arg_types.push(LlvmType::Int32); // Simplified - would infer actual type
+            arg_llvm_names.push("%temp_arg".to_string()); // Simplified
+        }
+        
+        // Look up function signature in registry
+        let function_signature = self.lookup_function_with_args(&func_name, &arg_types)
+            .ok_or_else(|| {
+                Error::CompilationError(format!(
+                    "Function '{}' not found or no matching overload for {} arguments",
+                    func_name, arg_types.len()
+                ))
+            })?;
+        
+        // Validate argument types
+        function_signature.check_argument_types(&arg_types)?;
+        
+        // Generate call IR
+        let call_result_temp = format!("%call_result_{}", self.next_temp_id());
+        let args_str = function_signature.generate_call_arguments(&arg_llvm_names, &arg_types);
         
         let mut ir = String::new();
-        ir.push_str(&format!("  {} = call {} @{}({})\n", temp, func_type.split(' ').next().unwrap_or("i32"), func_name, args_ir));
         
+        // Generate the actual LLVM call instruction
+        if function_signature.return_type == LlvmType::Void {
+            ir.push_str(&format!("  call {} @{}({})\n", 
+                function_signature.return_type.to_llvm_string(),
+                func_name,
+                args_str));
+        } else {
+            ir.push_str(&format!("  {} = call {} @{}({})\n", 
+                call_result_temp,
+                function_signature.return_type.to_llvm_string(),
+                func_name,
+                args_str));
+        }
+        
+        debug!("Function call '{}' compiled successfully", func_name);
         Ok(ir)
     }
     

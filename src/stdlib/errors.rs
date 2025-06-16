@@ -9,7 +9,7 @@ use crate::error::types::{
     ErrorManager, ErrorManagerConfig, error_constructors
 };
 use crate::types::result::{Result as CursedResultType, Option as CursedOptionType, error_patterns};
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use crate::stdlib::io::error::IoError as StdlibIoError;
 
 use std::collections::HashMap;

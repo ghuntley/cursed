@@ -5,6 +5,7 @@
 
 pub mod function_specializer;
 pub mod goroutine_optimizer;
+pub mod real_goroutine_optimizer;
 pub mod channel_optimizer;
 pub mod memory_layout_optimizer;
 pub mod gen_z_slang_optimizer;
@@ -16,6 +17,7 @@ pub mod branch_predictor;
 
 pub use function_specializer::FunctionSpecializer;
 pub use goroutine_optimizer::GoroutineOptimizer;
+pub use real_goroutine_optimizer::RealGoroutineOptimizer;
 pub use channel_optimizer::ChannelOptimizer;
 pub use memory_layout_optimizer::MemoryLayoutOptimizer;
 pub use gen_z_slang_optimizer::GenZSlangOptimizer;

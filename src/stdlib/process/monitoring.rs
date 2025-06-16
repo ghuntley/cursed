@@ -1437,13 +1437,8 @@ impl Drop for ProcessMonitor {
     }
 }
 
-/// Create a simple process monitor with default configuration
-pub fn create_process_monitor() -> ProcessMonitor {
-    ProcessMonitor::new(HealthCheckConfig::default())
-}
-
 /// Monitor a single process and return its current metrics
-pub fn monitor_process_once(pid: u32) -> ProcessResult<PerformanceMetrics> {
+pub fn monitor_process_stats(pid: u32) -> ProcessResult<PerformanceMetrics> {
     let info = super::info::get_process_info(pid)?;
     
     Ok(PerformanceMetrics {

@@ -181,9 +181,9 @@ pub fn build_info() -> BuildInfo {
         compiler: compiler(),
         architecture: goarch(),
         os: goos(),
-        build_time: env!("VERGEN_BUILD_TIMESTAMP").unwrap_or("unknown").to_string(),
-        commit_hash: env!("VERGEN_GIT_SHA").unwrap_or("unknown").to_string(),
-        rust_version: env!("VERGEN_RUSTC_SEMVER").unwrap_or("unknown").to_string(),
+        build_time: option_env!("VERGEN_BUILD_TIMESTAMP").unwrap_or("unknown").to_string(),
+        commit_hash: option_env!("VERGEN_GIT_SHA").unwrap_or("unknown").to_string(),
+        rust_version: option_env!("VERGEN_RUSTC_SEMVER").unwrap_or("unknown").to_string(),
         llvm_version: get_llvm_version(),
     }
 }

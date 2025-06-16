@@ -11,19 +11,69 @@ use crate::lexer::{Token, TokenType};
 use crate::parser::{Parser, Precedence};
 use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
 use std::fmt;
+use std::collections::HashMap;
 use tracing::{debug, error, info, instrument, warn};
 
+/// Function context information for error propagation
+#[derive(Debug, Clone)]
+pub struct FunctionContext {
+    pub name: String,
+    pub return_type: String,
+    pub parameters: Vec<String>,
+    pub is_async: bool,
+}
+
 /// Enhanced error propagation parser with comprehensive support
-// Stub implementations for missing Parser methods
 impl Parser {
-    /// Get current function context (stub implementation)
-    fn current_function_context(&self) -> Option<String> {
-        None // Placeholder - would be populated by function parsing
+    /// Function context stack for tracking nested functions
+    fn function_context_stack(&self) -> &Vec<FunctionContext> {
+        // This would be a field in the Parser struct in a real implementation
+        // For now, we'll use a thread-local storage approach
+        thread_local! {
+            static FUNCTION_STACK: std::cell::RefCell<Vec<FunctionContext>> = std::cell::RefCell::new(Vec::new());
+        }
+        
+        FUNCTION_STACK.with(|stack| {
+            // This is a hack for demo purposes - in reality this would be a proper field
+            unsafe { &*(stack.as_ptr() as *const Vec<FunctionContext>) }
+        })
     }
     
-    /// Function return types stack (stub implementation) 
+    /// Get current function context
+    fn current_function_context(&self) -> Option<String> {
+        self.function_context_stack().last().map(|ctx| ctx.name.clone())
+    }
+    
+    /// Function return types stack 
     fn function_return_types(&self) -> Vec<String> {
-        Vec::new() // Placeholder - would be populated by function parsing
+        self.function_context_stack().iter().map(|ctx| ctx.return_type.clone()).collect()
+    }
+    
+    /// Enter a new function context (called during function parsing)
+    pub fn enter_function_context(&mut self, name: String, return_type: String, parameters: Vec<String>, is_async: bool) {
+        thread_local! {
+            static FUNCTION_STACK: std::cell::RefCell<Vec<FunctionContext>> = std::cell::RefCell::new(Vec::new());
+        }
+        
+        FUNCTION_STACK.with(|stack| {
+            stack.borrow_mut().push(FunctionContext {
+                name,
+                return_type,
+                parameters,
+                is_async,
+            });
+        });
+    }
+    
+    /// Exit current function context (called after function parsing)
+    pub fn exit_function_context(&mut self) {
+        thread_local! {
+            static FUNCTION_STACK: std::cell::RefCell<Vec<FunctionContext>> = std::cell::RefCell::new(Vec::new());
+        }
+        
+        FUNCTION_STACK.with(|stack| {
+            stack.borrow_mut().pop();
+        });
     }
     
     // Note: current_token_is and expect_token methods removed to avoid duplicates with mod.rs
@@ -34,76 +84,48 @@ impl Parser {
             .map_err(|e| CursedError::Parse(format!("Parser error: {:?}", e)))
     }
     
-    /// Parse primary expression
+    /// Parse primary expression (delegates to main expression parser)
     fn parse_primary_expression(&mut self) -> Result<Box<dyn Expression>, CursedError> {
-        use crate::ast::expressions::{Literal, LiteralValue};
-        use crate::ast::identifiers::Identifier;
-        use crate::lexer::TokenType;
-        
-        match &self.current_token.token_type {
-            TokenType::IntLiteral => {
-                let value = self.current_token.literal.parse::<i64>()
-                    .map_err(|_| CursedError::Parse("Invalid integer literal".to_string()))?;
-                let literal = Literal::new(LiteralValue::Integer(value));
-                self.next_token()?;
-                Ok(Box::new(literal))
-            },
-            TokenType::FloatLiteral => {
-                let value = self.current_token.literal.parse::<f64>()
-                    .map_err(|_| CursedError::Parse("Invalid float literal".to_string()))?;
-                let literal = Literal::new(LiteralValue::Float(value));
-                self.next_token()?;
-                Ok(Box::new(literal))
-            },
-            TokenType::StringLiteral => {
-                let value = self.current_token.literal.clone();
-                let literal = Literal::new(LiteralValue::String(value));
-                self.next_token()?;
-                Ok(Box::new(literal))
-            },
-            TokenType::True => {
-                let literal = Literal::new(LiteralValue::Boolean(true));
-                self.next_token()?;
-                Ok(Box::new(literal))
-            },
-            TokenType::False => {
-                let literal = Literal::new(LiteralValue::Boolean(false));
-                self.next_token()?;
-                Ok(Box::new(literal))
-            },
-            TokenType::Nil => {
-                let literal = Literal::new(LiteralValue::Nil);
-                self.next_token()?;
-                Ok(Box::new(literal))
-            },
-            TokenType::Identifier => {
-                let name = self.current_token.literal.clone();
-                let identifier = Identifier::new(name.clone(), name);
-                self.next_token()?;
-                Ok(Box::new(identifier))
-            },
-            TokenType::LeftParen => {
-                // Grouped expression
-                self.next_token()?; // consume '('
-                let expr = self.parse_primary_expression()?;
-                self.expect_token(TokenType::RightParen)?;
-                Ok(expr)
-            },
-            _ => {
-                Err(CursedError::parse_error_with_location(
-                    format!("Unexpected token in primary expression: {:?}", self.current_token.token_type),
-                    self.current_token.location.line,
-                    self.current_token.location.column,
-                ))
-            }
+        // Convert Error to CursedError and delegate to main parser
+        match super::mod_parser_expressions::Parser::parse_expression(self) {
+            Ok(expr) => Ok(expr),
+            Err(e) => Err(CursedError::Parse(format!("Expression parse error: {}", e))),
         }
     }
     
     // Note: parse_expression and parse_block_statement methods removed to avoid duplicates
     
-    /// Parse function arguments (stub)
+    /// Parse function arguments 
     fn parse_function_arguments(&mut self) -> Result<Vec<Box<dyn Expression>>, CursedError> {
-        Ok(Vec::new())
+        let mut arguments = Vec::new();
+        
+        // Expect left parenthesis
+        if !self.current_token_is(&TokenType::LeftParen) {
+            return Err(CursedError::Parse("Expected '(' for function arguments".to_string()));
+        }
+        self.next_token()?; // consume '('
+        
+        // Parse arguments if any
+        if !self.current_token_is(&TokenType::RightParen) {
+            loop {
+                let arg = self.parse_primary_expression()?;
+                arguments.push(arg);
+                
+                if self.current_token_is(&TokenType::Comma) {
+                    self.next_token()?; // consume ','
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        // Expect right parenthesis
+        if !self.current_token_is(&TokenType::RightParen) {
+            return Err(CursedError::Parse("Expected ')' after function arguments".to_string()));
+        }
+        self.next_token()?; // consume ')'
+        
+        Ok(arguments)
     }
     
     /// Compile expression (stub for codegen integration)

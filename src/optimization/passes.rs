@@ -8,6 +8,8 @@ use crate::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
+pub mod cse;
+
 /// Custom optimization pass manager for CURSED
 pub struct CursedOptimizationPasses {
     passes: Vec<Box<dyn OptimizationPass>>,
@@ -516,14 +518,23 @@ impl ConstantFoldingPass {
     }
 }
 
-/// Common subexpression elimination pass
+/// Common subexpression elimination pass - now using complete implementation
 pub struct CommonSubexpressionEliminationPass {
-    eliminated_count: usize,
+    inner_pass: cse::CommonSubexpressionEliminationPass,
 }
 
 impl CommonSubexpressionEliminationPass {
     pub fn new() -> Self {
-        Self { eliminated_count: 0 }
+        Self { 
+            inner_pass: cse::CommonSubexpressionEliminationPass::new()
+        }
+    }
+    
+    /// Create CSE pass with configuration
+    pub fn with_config(global_cse: bool, debug_mode: bool) -> Self {
+        Self {
+            inner_pass: cse::CommonSubexpressionEliminationPass::with_config(global_cse, debug_mode)
+        }
     }
 }
 
@@ -533,26 +544,37 @@ impl OptimizationPass for CommonSubexpressionEliminationPass {
     }
     
     fn description(&self) -> &str {
-        "Eliminates redundant computations by reusing previously computed values"
+        "Eliminates redundant computations using advanced value numbering and dominance analysis"
     }
     
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
-        self.eliminated_count = 0;
         
-        // This is a simplified CSE implementation
-        // A full implementation would require more sophisticated analysis
+        match self.inner_pass.eliminate_common_subexpressions(ast) {
+            Ok(eliminated_count) => {
+                result.changed = eliminated_count > 0;
+                result.transformations = eliminated_count;
+                
+                if eliminated_count > 0 {
+                    result.messages.push(format!("Eliminated {} redundant expressions", eliminated_count));
+                }
+            }
+            Err(e) => {
+                result.messages.push(format!("CSE error: {}", e));
+            }
+        }
         
         result.execution_time = start_time.elapsed();
-        result.changed = self.eliminated_count > 0;
-        result.transformations = self.eliminated_count;
-        
         Ok(result)
     }
     
     fn dependencies(&self) -> Vec<String> {
         vec!["constant-folding".to_string()]
+    }
+    
+    fn is_repeatable(&self) -> bool {
+        true // CSE can benefit from multiple passes
     }
 }
 

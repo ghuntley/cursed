@@ -14,6 +14,8 @@ pub mod kyber_real;
 pub mod dilithium_real;
 pub mod lms_real;
 pub mod falcon_real;
+pub mod sphincs_real;
+pub mod mceliece_real;
 
 // Hash-based signatures
 pub mod sphincs;

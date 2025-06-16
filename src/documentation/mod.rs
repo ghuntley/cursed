@@ -16,7 +16,9 @@ use tracing::{debug, info, instrument, error, warn};
 
 // Sub-modules
 pub mod generator;
+pub mod generators;
 pub mod comment_parser;
+pub mod extractors;
 
 // Re-export from main implementation
 pub use main::*;

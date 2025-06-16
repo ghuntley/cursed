@@ -1,298 +1,453 @@
-//! Performance Optimization System for CURSED
+//! Optimization module for the CURSED language
 //! 
-//! This module provides comprehensive performance optimization capabilities including:
-//! - LLVM optimization pass management
-//! - Compilation speed improvements through caching and parallelization
-//! - Performance analysis and metrics collection
-//! - Runtime optimizations for goroutines and GC
-//! - Automated benchmarking and profiling
+//! Provides comprehensive optimization infrastructure including:
+//! - Performance benchmarking and validation
+//! - Profile-guided optimization (PGO) support
+//! - Advanced optimization pass management
+//! - Performance regression testing
+//! - Comprehensive performance optimization system
+//! - Real LLVM optimization passes
+//! - Build performance optimization
 
-use crate::error::Result;
-use std::time::Duration;
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
-
-// Core modules
-pub mod llvm_optimizer;
-pub mod optimization_config;
-pub mod pass_manager;
-pub mod profile_guided;
-pub mod incremental;
-pub mod cache_manager;
-pub mod parallel_compilation;
-pub mod dependency_analyzer;
-pub mod profiler;
-pub mod metrics;
-pub mod benchmarking;
-pub mod analysis;
+pub mod benchmarks;
+pub mod intelligent_recommendations;
+pub mod ast_analyzer;
+pub mod comprehensive_performance_system;
+pub mod real_llvm_passes;
+pub mod advanced_function_inlining;
+pub mod enhanced_llvm_passes;
+pub mod enhanced_llvm_passes_manager;
+pub mod enhanced_llvm_optimization;
+pub mod performance_analysis;
+pub mod parallel_pass_manager;
+pub mod baseline_comparison;
+pub mod time_savings;
 pub mod coordinator;
-pub mod build_integration;
-pub mod cli_integration;
-pub mod jit_optimization;
-pub mod build_profiles;
-pub mod optimization_levels;
-pub mod config;
-
-// PGO modules
 pub mod pgo;
 
-// CURSED-specific optimization integration
-pub mod cursed_integration;
-
-// Distributed compilation system
-pub mod distributed;
-
-// Additional exports for analysis module
-pub use analysis::PerformanceAnalysis;
-
-// Re-export main types
-pub use optimization_config::{OptimizationConfig, OptimizationLevel};
-pub use profiler::{EnhancedBuildProfiler, ProfilerConfig, ReportFormat};
-pub use benchmarking::{BenchmarkConfig, BenchmarkType, BenchmarkTestData, ComplexityLevel};
-pub use metrics::{ResourceMonitoringLevel, CompilationUnit};
-pub use build_profiles::{BuildProfile, ProfileManager};
-pub use config::{OptimizationProfile, LlvmPassConfig};
-pub use distributed::{DistributedCompilationSystem, DistributedConfig, DistributedStats};
-
-// Enhanced LLVM optimization system
-pub mod enhanced_llvm_optimization;
+pub use benchmarks::{
+    BenchmarkRunner, BenchmarkConfig, BenchmarkResult, BenchmarkSuiteResult,
+    PerformanceThresholds, RegressionAnalysis, create_default_benchmarks,
+};
+pub use intelligent_recommendations::{
+    CodeAnalysisEngine, AnalysisConfig, DetailedRecommendation, AnalysisPattern,
+    PatternType, PatternSeverity, PerformanceImpact, OptimizationAction,
+    ActionType, ActionPriority, ConfigChange, CodeSuggestion,
+};
+pub use comprehensive_performance_system::{
+    ComprehensivePerformanceSystem, PerformanceConfig, OptimizationResults,
+    LlvmOptimizationResults, PgoOptimizationResults, RuntimePerformanceMetrics,
+    PerformanceStatistics, BenchmarkResults,
+};
+pub use real_llvm_passes::{
+    RealLlvmPassManager, OptimizationStatistics,
+};
+pub use advanced_function_inlining::{
+    AdvancedFunctionInliner, InliningStatistics, FunctionMetrics, CallSiteAnalysis,
+    CallGraph, InlineDecision, InlineType,
+};
+pub use enhanced_llvm_passes::{
+    EnhancedLlvmPassManager, EnhancedOptimizationStatistics, IntelligentFunctionInliner,
+    AdvancedDeadCodeEliminator, EnhancedConstantPropagator, AdvancedLoopOptimizer,
+    ControlFlowGraphSimplifier, PerformanceAnalyzer, ModuleAnalysis, PerformanceImprovements,
+};
 pub use enhanced_llvm_optimization::{
     EnhancedLlvmOptimizer, EnhancedOptimizationConfig, EnhancedOptimizationResults,
-    PerformanceImprovements, OptimizationFeedback, TargetOptimizationResults,
+    OptimizationFeedbackConfig, OptimizationFeedback, OptimizationPattern, FailedOptimization,
+    TargetOptimizationResults, CacheOptimizationResults,
+    VectorizationResults,
+};
+pub use parallel_pass_manager::{
+    ParallelPassManager, ParallelPassConfig, ParallelPassStatistics,
+};
+pub use baseline_comparison::{
+    BaselineComparator, BaselineData, BaselineComparisonResult, BenchmarkComparison,
+    BaselineComparisonConfig, BaselineMetadata, EnvironmentInfo,
+};
+pub use time_savings::{
+    TimeSavingsCalculator, TimeSavingsAnalysis, OptimizationSavings, TimeSavingsConfig,
+    CompilationTimingContext, TrendAnalysis,
+};
+pub use coordinator::{
+    OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
+    OptimizationLevel as CoordinatorOptimizationLevel, OptimizationFeature,
+    IncrementalSavings, ParallelPerformance, CachePerformance, OverallImprovement,
+};
+pub use pgo::{
+    PgoSystem, PgoSystemConfig, PgoSystemStatistics, ProfileData, ProfileAnalysisResult,
+    OptimizationOpportunity, ProfileInsight, ExecutionContext, PgoError,
+    OptimizationAggressiveness, PerformanceMetrics, OptimizationResult,
 };
 
-// Performance Integration System
-pub mod performance_integration;
-pub use performance_integration::{
-    PerformanceIntegrationSystem, PerformanceIntegrationConfig, PerformanceTargets,
-    IntegratedOptimizationResults, AdaptiveOptimizer, PerformanceMonitor,
-    ProjectCharacteristics, OptimizationRecord, OptimizationRecommendation,
-    RecommendationCategory, ImplementationEffort, PerformanceStatistics,
+// Real optimization implementations
+pub use real_optimization_implementation::{
+    RealPerformanceCalculator, PerformanceImprovements, BaselineMetrics, 
+    PerformanceTrends, AppliedOptimization,
+};
+pub use real_cpu_efficiency_estimator::{
+    CpuEfficiencyEstimator, CpuEfficiencyEstimation, CpuArchitectureModel,
+    PerformanceBottleneck, BottleneckType,
+};
+pub use real_regression_detector::{
+    RegressionDetector, RegressionDetectionResult, PerformanceDataPoint,
+    RegressionType, AffectedMetric, RootCauseAnalysis,
+};
+pub use real_optimization_integration::{
+    RealOptimizationManager, RealOptimizationResult, OptimizationSession,
+    DetailedPerformanceMetrics, OptimizationEffectivenessAnalysis,
+    RecommendationType,
 };
 
-// Machine Learning driven optimization system
+// Advanced optimization exports
+pub use advanced_llvm_integration::{
+    AdvancedLlvmIntegration, AdvancedLlvmConfig, AdvancedOptimizationStatistics,
+    CfgTransformationStatistics, LoopOptimizationStatistics as AdvancedLoopStats,
+    VectorizationStatistics, TargetSpecificStatistics, FunctionComplexity,
+};
+pub use target_optimization::{
+    TargetOptimizationManager, TargetOptimizationConfig, CpuArchitecture,
+    CpuInfo, CpuFeature, SimdCapabilities, OptimizationStrategy,
+    TargetOptimizationStatistics as TargetStats, CodeUnit,
+};
+pub use advanced_loop_optimization::{
+    AdvancedLoopOptimizer, LoopOptimizationConfig as AdvancedLoopConfig,
+    LoopOptimizationStatistics, LoopInfo, OptimizationOpportunity as LoopOpportunity,
+    CodeUnit as LoopCodeUnit,
+};
+pub use profile_guided_optimization::{
+    ProfileGuidedOptimizer, PgoConfig, PgoOptimizationResult,
+    ProfileCollectionMethod, PgoOptimizationLevel, PgoStatistics,
+    OptimizationOpportunity as PgoOpportunity, CodeUnit as PgoCodeUnit,
+};
+pub use link_time_optimization::{
+    LinkTimeOptimizer, LtoConfig, LtoOptimizationResult,
+    LtoOptimizationLevel, ModuleInfo, FunctionInfo, LtoStatistics,
+};
+pub use advanced_coordinator::{
+    AdvancedOptimizationCoordinator, AdvancedCoordinatorConfig, AdvancedOptimizationResult,
+    AdvancedOptimizationLevel, OptimizationPhase, AdvancedCoordinatorStatistics, AdvancedCodeUnit,
+};
+
+use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
+use crate::error::Result;
+use std::path::Path;
+
+// ML-Guided Optimization System
 pub mod ml_optimization;
+pub mod ml;
+
+// Re-export ML optimization types
 pub use ml_optimization::{
-    MLOptimizationEngine, MLOptimizationConfig, FeatureVector, OptimizationDecision,
-    TrainingSample, PerformanceMetrics, CursedOptType, LoopOptType, RegAllocStrategy,
+    MLOptimizationEngine, MLOptimizationConfig, ProfilingData,
+};
+pub use ml::{
+    MLOptimizationCoordinator, OptimizationStrategy, OptimizationLevel as MLOptimizationLevel,
+    OptimizationPass, CompilationContext, PerformanceStatistics,
 };
 
-/// Main performance optimization system coordinator
-#[derive(Debug)]
-pub struct PerformanceOptimizationSystem {
-    performance_config: PerformanceConfig,
-    optimization_config: OptimizationConfig,
-    llvm_optimizer: llvm_optimizer::LlvmOptimizer,
-    cache_manager: cache_manager::CacheManager,
-    profiler: profiler::EnhancedBuildProfiler,
-    metrics_collector: metrics::MetricsCollector,
-    benchmarking_engine: benchmarking::BenchmarkingEngine,
+// Real optimization implementations that replace placeholders
+pub mod real_optimization_implementation;
+pub mod real_cpu_efficiency_estimator;
+pub mod real_regression_detector;
+pub mod real_optimization_integration;
+
+// Advanced optimization modules
+pub mod advanced_llvm_integration;
+pub mod target_optimization;
+pub mod advanced_loop_optimization;
+pub mod profile_guided_optimization;
+pub mod link_time_optimization;
+pub mod advanced_coordinator;
+
+/// High-level optimization manager that coordinates all optimization features
+pub struct OptimizationManager {
+    /// Default optimization configuration
+    pub default_config: OptimizationConfig,
+    /// Benchmark runner for performance testing
+    pub benchmark_runner: Option<BenchmarkRunner>,
+    /// Enable performance regression testing
+    pub enable_regression_testing: bool,
+    /// Baseline comparator for regression detection
+    pub baseline_comparator: Option<BaselineComparator>,
+    /// Time savings calculator for performance analysis
+    pub time_savings_calculator: TimeSavingsCalculator,
 }
 
-/// Configuration for performance optimization system
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceConfig {
-    pub enable_realtime_monitoring: bool,
-    pub enable_benchmarking: bool,
-    pub enable_prediction: bool,
-    pub monitoring_interval_ms: u64,
-    pub max_benchmark_iterations: usize,
-    pub max_performance_entries: usize,
-    pub resource_monitoring_level: ResourceMonitoringLevel,
-}
-
-impl Default for PerformanceConfig {
-    fn default() -> Self {
+impl OptimizationManager {
+    /// Create a new optimization manager with default settings
+    pub fn new() -> Self {
         Self {
-            enable_realtime_monitoring: true,
-            enable_benchmarking: true,
-            enable_prediction: false,
-            monitoring_interval_ms: 100,
-            max_benchmark_iterations: 10,
-            max_performance_entries: 10000,
-            resource_monitoring_level: ResourceMonitoringLevel::Basic,
+            default_config: OptimizationConfig::release_config(),
+            benchmark_runner: None,
+            enable_regression_testing: true,
+            baseline_comparator: None,
+            time_savings_calculator: TimeSavingsCalculator::new(TimeSavingsConfig::default()),
         }
     }
-}
 
-/// Optimization session for tracking related operations
-#[derive(Debug, Clone)]
-pub struct OptimizationSession {
-    pub id: String,
-    pub name: String,
-    pub created_at: std::time::Instant,
-}
-
-/// Results from optimization with tracking
-#[derive(Debug)]
-pub struct OptimizationResults {
-    pub session_id: String,
-    pub unit_results: Vec<OptimizationUnitResult>,
-    pub total_time: Duration,
-    pub performance_analysis: Option<analysis::PerformanceAnalysis>,
-}
-
-/// Results for a single compilation unit optimization
-#[derive(Debug)]
-pub struct OptimizationUnitResult {
-    pub unit_name: String,
-    pub optimization_time: Duration,
-    pub before_size: usize,
-    pub after_size: usize,
-    pub optimization_level: OptimizationLevel,
-}
-
-impl PerformanceOptimizationSystem {
-    /// Create a new performance optimization system
-    pub fn new(
-        performance_config: PerformanceConfig,
-        optimization_config: OptimizationConfig,
-    ) -> Result<Self> {
-        let llvm_optimizer = llvm_optimizer::LlvmOptimizer::new(optimization_config.clone())?;
-        let cache_manager = cache_manager::CacheManager::new()?;
-        
-        let profiler_config = profiler::ProfilerConfig::default();
-        let profiler = profiler::EnhancedBuildProfiler::new(profiler_config)?;
-        
-        let metrics_collector = metrics::MetricsCollector::new(performance_config.clone())?;
-        let benchmarking_engine = benchmarking::BenchmarkingEngine::new(performance_config.clone())?;
-
-        Ok(Self {
-            performance_config,
-            optimization_config,
-            llvm_optimizer,
-            cache_manager,
-            profiler,
-            metrics_collector,
-            benchmarking_engine,
-        })
+    /// Create optimization manager for development
+    pub fn for_development() -> Self {
+        Self {
+            default_config: OptimizationConfig::dev_config(),
+            benchmark_runner: None,
+            enable_regression_testing: false,
+            baseline_comparator: None,
+            time_savings_calculator: TimeSavingsCalculator::new(TimeSavingsConfig::default()),
+        }
     }
 
-    /// Start real-time monitoring
-    pub fn start_monitoring(&self) -> Result<()> {
-        if self.performance_config.enable_realtime_monitoring {
-            self.metrics_collector.start_monitoring()
+    /// Create optimization manager with custom configuration
+    pub fn with_config(config: OptimizationConfig) -> Self {
+        Self {
+            default_config: config,
+            benchmark_runner: None,
+            enable_regression_testing: true,
+            baseline_comparator: None,
+            time_savings_calculator: TimeSavingsCalculator::new(TimeSavingsConfig::default()),
+        }
+    }
+
+    /// Enable benchmarking with specified compiler path and work directory
+    pub fn with_benchmarking<P: AsRef<Path>>(
+        mut self,
+        compiler_path: P,
+        work_dir: P,
+    ) -> Self {
+        self.benchmark_runner = Some(BenchmarkRunner::new(
+            compiler_path.as_ref().to_path_buf(),
+            work_dir.as_ref().to_path_buf(),
+        ));
+        self
+    }
+
+    /// Enable baseline comparison with storage path
+    pub fn with_baseline_comparison<P: AsRef<Path>>(
+        mut self,
+        storage_path: P,
+        config: BaselineComparisonConfig,
+    ) -> Self {
+        self.baseline_comparator = Some(BaselineComparator::new(storage_path, config));
+        self
+    }
+
+    /// Configure time savings calculation
+    pub fn with_time_savings_config(mut self, config: TimeSavingsConfig) -> Self {
+        self.time_savings_calculator = TimeSavingsCalculator::new(config);
+        self
+    }
+
+    /// Get the current optimization configuration
+    pub fn get_config(&self) -> &OptimizationConfig {
+        &self.default_config
+    }
+
+    /// Update the optimization configuration
+    pub fn set_config(&mut self, config: OptimizationConfig) {
+        self.default_config = config;
+    }
+
+    /// Run performance benchmarks if available
+    pub async fn run_benchmarks(&self, suite_name: &str) -> Result<Option<BenchmarkSuiteResult>> {
+        if let Some(ref runner) = self.benchmark_runner {
+            let configs = create_default_benchmarks();
+            let results = runner.run_benchmark_suite(suite_name, &configs).await?;
+            Ok(Some(results))
         } else {
-            Ok(())
+            Ok(None)
         }
     }
 
-    /// Stop real-time monitoring
-    pub fn stop_monitoring(&self) -> Result<()> {
-        self.metrics_collector.stop_monitoring()
-    }
-
-    /// Create a new optimization session
-    pub fn create_session(&self, name: String) -> OptimizationSession {
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis();
-        
-        OptimizationSession {
-            id: format!("{}_{}", name, timestamp),
-            name,
-            created_at: std::time::Instant::now(),
+    /// Validate performance against regression thresholds
+    pub async fn validate_performance(&self, baseline_path: Option<&Path>) -> Result<bool> {
+        if !self.enable_regression_testing {
+            return Ok(true);
         }
-    }
 
-    /// Optimize compilation units with tracking
-    pub fn optimize_with_tracking(
-        &self,
-        units: &mut [CompilationUnit],
-        session: &OptimizationSession,
-    ) -> Result<OptimizationResults> {
-        let start_time = std::time::Instant::now();
-        let mut unit_results = Vec::new();
-
-        for unit in units.iter_mut() {
-            let unit_start = std::time::Instant::now();
-            let before_size = unit.estimated_size_bytes;
-
-            // Perform optimization
-            self.llvm_optimizer.optimize_unit(unit)?;
+        if let Some(ref runner) = self.benchmark_runner {
+            let configs = create_default_benchmarks();
+            let results = runner.run_benchmark_suite("regression_test", &configs).await?;
             
-            let after_size = unit.estimated_size_bytes;
-            let optimization_time = unit_start.elapsed();
+            // Check for regressions
+            if let Some(ref regression_analysis) = results.regression_analysis {
+                if regression_analysis.has_regressions {
+                    tracing::warn!("Performance regressions detected!");
+                    for regression in &regression_analysis.regressions {
+                        tracing::warn!("Regression in {}: {}", 
+                                     regression.benchmark_name, 
+                                     regression.description);
+                    }
+                    return Ok(false);
+                }
+            }
 
-            unit_results.push(OptimizationUnitResult {
-                unit_name: unit.name.clone(),
-                optimization_time,
-                before_size,
-                after_size,
-                optimization_level: self.optimization_config.optimization_level.clone(),
-            });
+            // Compare against baseline if provided
+            if let Some(baseline_path) = baseline_path {
+                if baseline_path.exists() {
+                    let baseline = runner.load_baseline(baseline_path)?;
+                    // Perform real baseline comparison
+                    if let Some(ref comparator) = self.baseline_comparator {
+                        let comparison_result = comparator.compare_against_baseline(&results, &baseline)?;
+                        
+                        if comparison_result.has_regressions {
+                            tracing::error!("Baseline comparison detected regressions!");
+                            tracing::error!("{}", comparison_result.summary);
+                            return Ok(false);
+                        } else if comparison_result.has_improvements {
+                            tracing::info!("Baseline comparison detected improvements!");
+                            tracing::info!("{}", comparison_result.summary);
+                        } else {
+                            tracing::info!("Performance is stable compared to baseline");
+                        }
+                    }
+                }
+            }
+
+            Ok(true)
+        } else {
+            Ok(true) // No benchmarking configured, assume OK
         }
-
-        let total_time = start_time.elapsed();
-        
-        // Generate performance analysis if enabled
-        let performance_analysis = if self.performance_config.enable_prediction {
-            Some(self.generate_performance_analysis(&unit_results)?)
-        } else {
-            None
-        };
-
-        Ok(OptimizationResults {
-            session_id: session.id.clone(),
-            unit_results,
-            total_time,
-            performance_analysis,
-        })
     }
 
-    /// Run a benchmark
-    pub fn run_benchmark(&self, config: BenchmarkConfig) -> Result<benchmarking::BenchmarkResults> {
-        self.benchmarking_engine.run_benchmark(config)
+    /// Generate optimization recommendations based on code analysis
+    pub fn generate_recommendations(&self, source_code: &str) -> Vec<OptimizationRecommendation> {
+        // Use the intelligent recommendations system
+        match self.generate_intelligent_recommendations(source_code) {
+            Ok(detailed_recommendations) => {
+                // Convert detailed recommendations to basic format for backward compatibility
+                detailed_recommendations.into_iter().map(|detailed| {
+                    OptimizationRecommendation {
+                        category: detailed.category,
+                        priority: detailed.priority,
+                        description: detailed.description,
+                        suggested_config: detailed.suggested_config,
+                    }
+                }).collect()
+            }
+            Err(e) => {
+                tracing::warn!("Failed to generate intelligent recommendations: {}", e);
+                // Fallback to basic recommendations
+                vec![
+                    OptimizationRecommendation {
+                        category: OptimizationCategory::Performance,
+                        priority: RecommendationPriority::High,
+                        description: "Enable aggressive optimization for production builds".to_string(),
+                        suggested_config: OptimizationConfig::release_config(),
+                    },
+                    OptimizationRecommendation {
+                        category: OptimizationCategory::CompileTime,
+                        priority: RecommendationPriority::Medium,
+                        description: "Use development optimization for faster iteration".to_string(),
+                        suggested_config: OptimizationConfig::dev_config(),
+                    },
+                ]
+            }
+        }
     }
 
-    /// Get system statistics
-    pub fn get_system_statistics(&self) -> metrics::SystemStatistics {
-        self.metrics_collector.get_system_statistics()
+    /// Generate detailed intelligent recommendations with comprehensive analysis
+    pub fn generate_intelligent_recommendations(&self, source_code: &str) -> Result<Vec<intelligent_recommendations::DetailedRecommendation>> {
+        let mut analysis_engine = intelligent_recommendations::CodeAnalysisEngine::new();
+        analysis_engine.analyze_code(source_code)
     }
 
-    /// Get resource statistics
-    pub fn get_resource_statistics(&self) -> Result<metrics::ResourceStatistics> {
-        self.metrics_collector.get_resource_statistics()
+    /// Generate recommendations with custom analysis configuration
+    pub fn generate_recommendations_with_config(
+        &self, 
+        source_code: &str, 
+        analysis_config: intelligent_recommendations::AnalysisConfig
+    ) -> Result<Vec<intelligent_recommendations::DetailedRecommendation>> {
+        let mut analysis_engine = intelligent_recommendations::CodeAnalysisEngine::with_config(analysis_config);
+        analysis_engine.analyze_code(source_code)
     }
 
-    /// Get performance analysis for a time period
-    pub fn get_performance_analysis(&self, duration: Duration) -> Result<analysis::PerformanceAnalysis> {
-        self.metrics_collector.get_performance_analysis(duration)
-    }
-
-    /// Update system configuration
-    pub fn update_config(&mut self, new_config: PerformanceConfig) -> Result<()> {
-        self.performance_config = new_config.clone();
-        self.metrics_collector.update_config(new_config)?;
-        Ok(())
-    }
-
-    /// Generate performance analysis from optimization results
-    fn generate_performance_analysis(
+    /// Create a baseline from current benchmark results
+    pub fn create_baseline(
         &self,
-        unit_results: &[OptimizationUnitResult],
-    ) -> Result<analysis::PerformanceAnalysis> {
-        let total_optimization_time: Duration = unit_results.iter()
-            .map(|r| r.optimization_time)
-            .sum();
-
-        let total_size_reduction: i64 = unit_results.iter()
-            .map(|r| r.before_size as i64 - r.after_size as i64)
-            .sum();
-
-        let optimization_efficiency = if total_optimization_time.as_millis() > 0 {
-            total_size_reduction as f64 / total_optimization_time.as_millis() as f64
+        version: String,
+        commit_hash: Option<String>,
+        notes: Option<String>,
+    ) -> Result<Option<BaselineData>> {
+        if let (Some(ref runner), Some(ref comparator)) = (&self.benchmark_runner, &self.baseline_comparator) {
+            let configs = create_default_benchmarks();
+            let results = runner.run_benchmark_suite("baseline_creation", &configs)?;
+            
+            let metadata = BaselineMetadata {
+                commit_hash,
+                environment: BaselineComparator::get_current_environment(),
+                compiler_config: format!("{:?}", self.default_config),
+                notes,
+            };
+            
+            let baseline = comparator.create_baseline(&results, version, metadata)?;
+            Ok(Some(baseline))
         } else {
-            0.0
-        };
-
-        Ok(analysis::PerformanceAnalysis {
-            units_optimized: unit_results.len(),
-            total_optimization_time,
-            total_size_reduction,
-            optimization_efficiency,
-            recommendations: Vec::new(),
-        })
+            Ok(None)
+        }
     }
+
+    /// Get time savings analysis for recent compilation
+    pub fn get_time_savings_analysis(&self) -> Option<TrendAnalysis> {
+        self.time_savings_calculator.get_trend_analysis()
+    }
+
+    /// Start timing measurement for compilation
+    pub fn start_timing_measurement(&mut self) -> CompilationTimingContext {
+        self.time_savings_calculator.start_measurement()
+    }
+
+    /// Calculate time savings from compilation timing
+    pub fn calculate_time_savings(
+        &mut self,
+        context: &CompilationTimingContext,
+        units_compiled: usize,
+        units_from_cache: usize,
+        units_from_incremental: usize,
+        parallel_efficiency: f64,
+    ) -> Result<TimeSavingsAnalysis> {
+        self.time_savings_calculator.calculate_time_savings(
+            context,
+            units_compiled,
+            units_from_cache,
+            units_from_incremental,
+            parallel_efficiency,
+        )
+    }
+}
+
+impl Default for OptimizationManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Optimization recommendation generated by analysis
+#[derive(Debug, Clone)]
+pub struct OptimizationRecommendation {
+    /// Category of optimization
+    pub category: OptimizationCategory,
+    /// Priority level
+    pub priority: RecommendationPriority,
+    /// Human-readable description
+    pub description: String,
+    /// Suggested configuration to apply
+    pub suggested_config: OptimizationConfig,
+}
+
+/// Category of optimization recommendation
+#[derive(Debug, Clone)]
+pub enum OptimizationCategory {
+    Performance,
+    CompileTime,
+    BinarySize,
+    MemoryUsage,
+    Debugging,
+}
+
+/// Priority level for recommendations
+#[derive(Debug, Clone)]
+pub enum RecommendationPriority {
+    Critical,
+    High,
+    Medium,
+    Low,
 }

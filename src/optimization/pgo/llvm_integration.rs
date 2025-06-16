@@ -440,16 +440,202 @@ impl LlvmPgoIntegration {
 
     /// Measure function performance metrics
     fn measure_function_performance<'ctx>(&self, function: &FunctionValue<'ctx>) -> PerformanceMetrics {
-        // This would measure actual performance metrics
-        // For now, we'll return placeholder values
+        // Calculate realistic performance metrics based on function analysis
+        let basic_block_count = function.count_basic_blocks();
+        let instruction_count = self.count_function_instructions(function);
+        let memory_ops = self.count_memory_operations(function);
+        let branch_count = self.count_branch_instructions(function);
+        
+        // Estimate execution time based on instruction complexity
+        let base_cycles = instruction_count as u64 * 2; // Assume 2 cycles per instruction
+        let memory_penalty = memory_ops as u64 * 10; // Memory ops are expensive
+        let branch_penalty = branch_count as u64 * 3; // Branch misprediction penalty
+        let total_cycles = base_cycles + memory_penalty + branch_penalty;
+        
+        // Assume 3GHz processor
+        let execution_time = Duration::from_nanos(total_cycles * 333); // 333ns per cycle at 3GHz
+        
+        // Estimate cache misses based on memory access patterns
+        let cache_misses = self.estimate_cache_misses(function, memory_ops);
+        
+        // Estimate branch mispredictions based on control flow complexity
+        let branch_mispredictions = self.estimate_branch_mispredictions(function, branch_count);
+        
+        // Estimate memory usage based on local variables and stack usage
+        let memory_usage = self.estimate_memory_usage(function);
+        
+        // Estimate energy consumption based on operation types
+        let energy_consumption = self.estimate_energy_consumption(function);
+        
         PerformanceMetrics {
-            execution_time: Duration::from_millis(100),
-            instructions_executed: function.count_basic_blocks() as u64 * 10,
-            cache_misses: 100,
-            branch_mispredictions: 10,
-            memory_usage: 1024,
-            energy_consumption: 0.1,
+            execution_time,
+            instructions_executed: instruction_count as u64,
+            cache_misses,
+            branch_mispredictions,
+            memory_usage,
+            energy_consumption,
         }
+    }
+    
+    /// Count instructions in a function
+    fn count_function_instructions<'ctx>(&self, function: &FunctionValue<'ctx>) -> usize {
+        let mut count = 0;
+        for basic_block in function.get_basic_blocks() {
+            for _instruction in basic_block.get_instructions() {
+                count += 1;
+            }
+        }
+        count
+    }
+    
+    /// Count memory operations in a function
+    fn count_memory_operations<'ctx>(&self, function: &FunctionValue<'ctx>) -> usize {
+        let mut count = 0;
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                let opcode = instruction.get_opcode();
+                if opcode == inkwell::values::InstructionOpcode::Load ||
+                   opcode == inkwell::values::InstructionOpcode::Store ||
+                   opcode == inkwell::values::InstructionOpcode::GetElementPtr {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+    
+    /// Count branch instructions in a function
+    fn count_branch_instructions<'ctx>(&self, function: &FunctionValue<'ctx>) -> usize {
+        let mut count = 0;
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                let opcode = instruction.get_opcode();
+                if opcode == inkwell::values::InstructionOpcode::Br ||
+                   opcode == inkwell::values::InstructionOpcode::Switch ||
+                   opcode == inkwell::values::InstructionOpcode::Call {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+    
+    /// Estimate cache misses based on memory access patterns
+    fn estimate_cache_misses<'ctx>(&self, function: &FunctionValue<'ctx>, memory_ops: usize) -> usize {
+        // Simple cache miss estimation
+        let function_size = self.count_function_instructions(function);
+        
+        // Assume L1 cache hit rate based on function size
+        let cache_hit_rate = if function_size < 100 {
+            0.95 // Small functions likely to fit in L1
+        } else if function_size < 500 {
+            0.85 // Medium functions may cause some L1 misses
+        } else {
+            0.70 // Large functions likely to cause more misses
+        };
+        
+        let miss_rate = 1.0 - cache_hit_rate;
+        (memory_ops as f64 * miss_rate) as usize
+    }
+    
+    /// Estimate branch mispredictions
+    fn estimate_branch_mispredictions<'ctx>(&self, function: &FunctionValue<'ctx>, branch_count: usize) -> usize {
+        // Estimate branch prediction accuracy based on control flow complexity
+        let basic_block_count = function.count_basic_blocks();
+        
+        // More complex control flow leads to worse branch prediction
+        let prediction_accuracy = if basic_block_count <= 5 {
+            0.95 // Simple control flow
+        } else if basic_block_count <= 20 {
+            0.85 // Moderate complexity
+        } else {
+            0.75 // Complex control flow
+        };
+        
+        let misprediction_rate = 1.0 - prediction_accuracy;
+        (branch_count as f64 * misprediction_rate) as usize
+    }
+    
+    /// Estimate memory usage for a function
+    fn estimate_memory_usage<'ctx>(&self, function: &FunctionValue<'ctx>) -> usize {
+        let mut memory_usage = 0;
+        
+        // Base stack frame
+        memory_usage += 64; // Basic stack frame overhead
+        
+        // Count allocas (local variables)
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                if instruction.get_opcode() == inkwell::values::InstructionOpcode::Alloca {
+                    // Estimate size based on type
+                    if let Some(alloca_inst) = instruction.as_instruction_value() {
+                        // Rough estimate: assume 8 bytes per local variable
+                        memory_usage += 8;
+                    }
+                }
+            }
+        }
+        
+        // Add memory for function calls (call stack growth)
+        let call_count = self.count_call_instructions(function);
+        memory_usage += call_count * 32; // Assume 32 bytes per call frame
+        
+        memory_usage
+    }
+    
+    /// Count call instructions
+    fn count_call_instructions<'ctx>(&self, function: &FunctionValue<'ctx>) -> usize {
+        let mut count = 0;
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                if instruction.get_opcode() == inkwell::values::InstructionOpcode::Call {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+    
+    /// Estimate energy consumption
+    fn estimate_energy_consumption<'ctx>(&self, function: &FunctionValue<'ctx>) -> f64 {
+        let mut energy = 0.0;
+        
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                // Energy costs based on instruction type (in arbitrary units)
+                match instruction.get_opcode() {
+                    inkwell::values::InstructionOpcode::Add |
+                    inkwell::values::InstructionOpcode::Sub |
+                    inkwell::values::InstructionOpcode::And |
+                    inkwell::values::InstructionOpcode::Or |
+                    inkwell::values::InstructionOpcode::Xor => energy += 0.1,
+                    
+                    inkwell::values::InstructionOpcode::Mul |
+                    inkwell::values::InstructionOpcode::Shl |
+                    inkwell::values::InstructionOpcode::LShr => energy += 0.3,
+                    
+                    inkwell::values::InstructionOpcode::UDiv |
+                    inkwell::values::InstructionOpcode::SDiv |
+                    inkwell::values::InstructionOpcode::URem |
+                    inkwell::values::InstructionOpcode::SRem => energy += 2.0,
+                    
+                    inkwell::values::InstructionOpcode::Load => energy += 1.0,
+                    inkwell::values::InstructionOpcode::Store => energy += 0.8,
+                    
+                    inkwell::values::InstructionOpcode::Call => energy += 2.0,
+                    inkwell::values::InstructionOpcode::Br => energy += 0.2,
+                    
+                    inkwell::values::InstructionOpcode::FAdd |
+                    inkwell::values::InstructionOpcode::FSub => energy += 0.4,
+                    inkwell::values::InstructionOpcode::FMul => energy += 0.8,
+                    inkwell::values::InstructionOpcode::FDiv => energy += 3.0,
+                    
+                    _ => energy += 0.1, // Default cost for other instructions
+                }
+            }
+        }
+        
+        energy
     }
 
     /// Calculate performance improvement percentage

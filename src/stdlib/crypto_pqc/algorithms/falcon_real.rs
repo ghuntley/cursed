@@ -597,7 +597,7 @@ impl DigitalSignature for RealFalcon {
     }
 
     fn algorithm_type() -> AlgorithmType {
-        AlgorithmType::Dilithium // Using Dilithium as placeholder since Falcon not in enum
+        AlgorithmType::Dilithium // Note: Using Dilithium temporarily - FALCON should be added to AlgorithmType enum
     }
 }
 

@@ -1097,7 +1097,6 @@ fn current_timestamp() -> u64 {
 
 // Export public API
 pub use self::{
-    AdvancedCache,
     AdvancedCacheConfig,
     CacheEntry,
     CacheData,

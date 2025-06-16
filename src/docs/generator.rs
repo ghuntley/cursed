@@ -1321,15 +1321,8 @@ impl DocumentationExtractor {
     }
 }
 
-/// HTML documentation generator
-mod html_generator;
-/// Markdown documentation generator  
-mod markdown_generator;
-/// JSON documentation generator
-mod json_generator;
-
-// Re-export generators
-use html_generator::HtmlGenerator;
-use markdown_generator::MarkdownGenerator;
-use json_generator::JsonGenerator;
-use xml_generator::XmlGenerator;
+// Re-export generators from the docs module
+use crate::docs::html_generator::HtmlGenerator;
+use crate::docs::markdown_generator::MarkdownGenerator;
+use crate::docs::json_generator::JsonGenerator;
+use crate::docs::xml_generator::XmlGenerator;

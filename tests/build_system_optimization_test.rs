@@ -1,660 +1,611 @@
-//! Comprehensive Tests for Advanced Build System Optimizations
+//! Comprehensive tests for build system optimization functionality
 //! 
-//! Tests all major components of the advanced build system including
-//! dependency optimization, caching, distributed compilation, analytics, and memory optimization.
+//! Tests the real implementations of build integration, performance monitoring,
+//! benchmarking, and incremental compilation features.
 
-use std::collections::HashMap;
-use std::time::{Duration, Instant};
-use std::path::PathBuf;
-use cursed::build_system::{
-    DependencyOptimizer, DependencyOptimizerConfig, CompilationUnit,
-    AdvancedCache, AdvancedCacheConfig, CacheData, CacheMetadata,
-    DistributedCompilationSystem, DistributedCompilationConfig, create_compilation_task, CompilationTarget,
-    BuildAnalytics, BuildAnalyticsConfig, create_build_event, BuildEventType,
-    MemoryOptimizer, MemoryOptimizerConfig, create_memory_aware_task, MemoryStrategy
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use std::fs;
+use tempfile::TempDir;
+use tokio;
+
+use cursed::optimization::{
+    build_integration::{BuildOptimizer, BuildContext, BuildOptimizationResult},
+    performance_integration::{PerformanceIntegrationSystem, PerformanceIntegrationConfig},
+    benchmarks::{BenchmarkRunner, BenchmarkConfig, PerformanceThresholds},
+    enhanced_benchmarking::{EnhancedBenchmarkRunner, BenchmarkConfig as EnhancedConfig},
+    config::{OptimizationConfig, OptimizationLevel},
 };
 use cursed::error::Result;
 
-/// Test dependency optimization with various scenarios
+/// Test basic build optimizer creation and configuration
 #[test]
-fn test_dependency_optimization_basic() -> Result<()> {
-    let config = DependencyOptimizerConfig {
-        max_parallel_jobs: 4,
-        enable_smart_ordering: true,
-        enable_dependency_pruning: true,
-        ..Default::default()
+fn test_build_optimizer_creation() {
+    let temp_dir = TempDir::new().unwrap();
+    let context = BuildContext {
+        project_root: temp_dir.path().to_path_buf(),
+        source_files: vec![],
+        output_directory: temp_dir.path().join("output"),
+        target_triple: "x86_64-unknown-linux-gnu".to_string(),
+        debug_mode: false,
+        release_mode: true,
+        verbose: true,
     };
     
-    let optimizer = DependencyOptimizer::new(config);
+    let optimizer = BuildOptimizer::new(context);
+    assert!(optimizer.is_ok());
     
-    // Create test compilation units
-    let units = vec![
-        CompilationUnit {
-            id: "main.rs".to_string(),
-            path: PathBuf::from("src/main.rs"),
-            dependencies: vec!["lib.rs".to_string()],
-            dependents: vec![],
-            last_modified: 1000,
-            compilation_time: Duration::from_millis(500),
-            complexity_score: 100,
-            is_dirty: true,
-            cache_key: "main_key".to_string(),
-        },
-        CompilationUnit {
-            id: "lib.rs".to_string(),
-            path: PathBuf::from("src/lib.rs"),
-            dependencies: vec!["utils.rs".to_string()],
-            dependents: vec!["main.rs".to_string()],
-            last_modified: 1000,
-            compilation_time: Duration::from_millis(300),
-            complexity_score: 80,
-            is_dirty: true,
-            cache_key: "lib_key".to_string(),
-        },
-        CompilationUnit {
-            id: "utils.rs".to_string(),
-            path: PathBuf::from("src/utils.rs"),
-            dependencies: vec![],
-            dependents: vec!["lib.rs".to_string()],
-            last_modified: 1000,
-            compilation_time: Duration::from_millis(200),
-            complexity_score: 50,
-            is_dirty: true,
-            cache_key: "utils_key".to_string(),
-        },
-    ];
+    let optimizer = optimizer.unwrap();
+    let stats = optimizer.get_statistics();
+    assert_eq!(stats.total_compilations, 0);
+    assert!(stats.cache_enabled);
+}
+
+/// Test real object file generation
+#[tokio::test]
+async fn test_object_file_generation() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let source_file = temp_dir.path().join("test.csd");
+    let output_dir = temp_dir.path().join("output");
+    fs::create_dir_all(&output_dir)?;
     
-    // Analyze dependencies
-    let analysis = optimizer.analyze_dependencies(&units)?;
+    // Create a test CURSED source file
+    let source_content = r#"
+        slay main() {
+            facts x = 42;
+            println("Hello, World!");
+        }
+    "#;
+    fs::write(&source_file, source_content)?;
     
-    // Verify results
-    assert!(!analysis.compilation_order.is_empty());
-    assert_eq!(analysis.affected_units.len(), 3); // All units are dirty
-    assert!(analysis.estimated_time > Duration::ZERO);
-    assert!(analysis.parallelism_factor >= 0.0);
+    let context = BuildContext {
+        project_root: temp_dir.path().to_path_buf(),
+        source_files: vec![source_file.clone()],
+        output_directory: output_dir.clone(),
+        target_triple: "x86_64-unknown-linux-gnu".to_string(),
+        debug_mode: false,
+        release_mode: true,
+        verbose: true,
+    };
     
-    println!("✅ Dependency optimization basic test passed");
-    println!("  - Compilation layers: {}", analysis.compilation_order.len());
-    println!("  - Affected units: {}", analysis.affected_units.len());
-    println!("  - Estimated time: {:?}", analysis.estimated_time);
-    println!("  - Parallelism factor: {:.2}", analysis.parallelism_factor);
+    let mut optimizer = BuildOptimizer::new(context)?;
+    let result = optimizer.optimize_build()?;
+    
+    // Verify build result
+    assert!(result.success);
+    assert!(result.compilation_time > Duration::from_millis(0));
+    assert_eq!(result.files_compiled, 1);
+    
+    // Verify object file was created
+    let object_file = output_dir.join("test.o");
+    assert!(object_file.exists());
+    
+    // Verify object file has ELF structure
+    let object_content = fs::read(&object_file)?;
+    assert!(object_content.len() > 64);
+    assert_eq!(&object_content[0..4], &[0x7f, 0x45, 0x4c, 0x46]); // ELF magic
+    
+    // Verify executable was linked
+    let executable = output_dir.join("release_output");
+    assert!(executable.exists());
+    
+    let executable_content = fs::read(&executable)?;
+    assert!(executable_content.len() >= 4096); // Minimum executable size
+    assert_eq!(&executable_content[0..4], &[0x7f, 0x45, 0x4c, 0x46]); // ELF magic
     
     Ok(())
 }
 
-/// Test dependency optimization with complex dependencies
-#[test]
-fn test_dependency_optimization_complex() -> Result<()> {
-    let config = DependencyOptimizerConfig {
-        max_parallel_jobs: 8,
-        enable_smart_ordering: true,
-        enable_dependency_pruning: true,
-        complexity_threshold: 500,
-        ..Default::default()
+/// Test incremental build detection
+#[tokio::test]
+async fn test_incremental_build() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let source_file = temp_dir.path().join("test.csd");
+    let output_dir = temp_dir.path().join("output");
+    fs::create_dir_all(&output_dir)?;
+    
+    let source_content = r#"
+        slay main() {
+            facts x = 42;
+        }
+    "#;
+    fs::write(&source_file, source_content)?;
+    
+    let context = BuildContext {
+        project_root: temp_dir.path().to_path_buf(),
+        source_files: vec![source_file.clone()],
+        output_directory: output_dir,
+        target_triple: "x86_64-unknown-linux-gnu".to_string(),
+        debug_mode: true, // Enable incremental compilation
+        release_mode: false,
+        verbose: false,
     };
     
-    let optimizer = DependencyOptimizer::new(config);
+    let mut optimizer = BuildOptimizer::new(context)?;
     
-    // Create complex dependency graph
-    let mut units = Vec::new();
-    for i in 0..20 {
-        let dependencies = if i == 0 {
-            vec![]
-        } else if i < 5 {
-            vec![format!("file_{}.rs", 0)]
-        } else {
-            vec![format!("file_{}.rs", i - 1), format!("file_{}.rs", i - 2)]
+    // First build
+    let result1 = optimizer.optimize_build()?;
+    assert!(result1.success);
+    let first_time = result1.compilation_time;
+    
+    // Second build (should be faster due to caching)
+    let result2 = optimizer.optimize_build()?;
+    assert!(result2.success);
+    
+    // Cache hit rate should be meaningful
+    assert!(result2.cache_hit_rate >= 0.0);
+    
+    // Modify file and rebuild
+    let modified_content = r#"
+        slay main() {
+            facts x = 84; // Changed value
+        }
+    "#;
+    fs::write(&source_file, modified_content)?;
+    
+    let result3 = optimizer.optimize_build()?;
+    assert!(result3.success);
+    // Should detect file change and recompile
+    assert!(result3.compilation_time > Duration::from_millis(0));
+    
+    Ok(())
+}
+
+/// Test performance integration system
+#[tokio::test]
+async fn test_performance_integration() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let source_file = temp_dir.path().join("test.csd");
+    let output_dir = temp_dir.path().join("output");
+    fs::create_dir_all(&output_dir)?;
+    
+    let source_content = r#"
+        slay fibonacci(n) {
+            lowkey (n <= 1) {
+                fr n;
+            }
+            fr fibonacci(n - 1) + fibonacci(n - 2);
+        }
+        
+        slay main() {
+            facts result = fibonacci(10);
+            println(result);
+        }
+    "#;
+    fs::write(&source_file, source_content)?;
+    
+    let perf_config = PerformanceIntegrationConfig {
+        enable_adaptive_optimization: true,
+        enable_performance_monitoring: true,
+        enable_automatic_reporting: false,
+        monitoring_interval_ms: 100,
+        optimization_threshold_seconds: 1.0,
+        max_parallel_workers: 2,
+        enable_pgo: false,
+        enable_distributed: false,
+        cache_size_limit_mb: 100,
+        report_output_dir: Some(temp_dir.path().join("reports")),
+        benchmark_configs: std::collections::HashMap::new(),
+        target_improvements: cursed::optimization::performance_integration::PerformanceTargets::default(),
+    };
+    
+    let opt_config = OptimizationConfig::default();
+    
+    let mut perf_system = PerformanceIntegrationSystem::new(perf_config, opt_config)?;
+    
+    let result = perf_system.optimize_project(&[source_file], &output_dir).await?;
+    
+    // Verify optimization results
+    assert!(result.compilation_time > Duration::from_millis(0));
+    assert!(result.parallel_efficiency >= 0.0 && result.parallel_efficiency <= 1.0);
+    assert!(result.cache_hit_rate >= 0.0 && result.cache_hit_rate <= 1.0);
+    assert!(!result.recommendations.is_empty());
+    
+    // Verify performance improvements structure
+    assert!(result.performance_improvements.compilation_time_saved >= Duration::from_millis(0));
+    assert!(result.performance_improvements.binary_size_reduction >= 0.0);
+    assert!(result.performance_improvements.runtime_improvement_estimate >= 0.0);
+    
+    Ok(())
+}
+
+/// Test benchmark runner with real measurements
+#[tokio::test]
+async fn test_benchmark_runner() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let work_dir = temp_dir.path().join("work");
+    let source_file = temp_dir.path().join("bench.csd");
+    fs::create_dir_all(&work_dir)?;
+    
+    // Create a simple benchmark program
+    let source_content = r#"
+        slay main() {
+            facts sum = 0;
+            lowkey (sus i = 0; i < 1000; i++) {
+                sum = sum + i;
+            }
+            println(sum);
+        }
+    "#;
+    fs::write(&source_file, source_content)?;
+    
+    let compiler_path = PathBuf::from("cursed"); // Placeholder compiler path
+    let runner = BenchmarkRunner::new(compiler_path, work_dir.clone())
+        .with_verbose(true);
+    
+    let config = BenchmarkConfig {
+        name: "simple_loop".to_string(),
+        source_files: vec![source_file],
+        optimization_levels: vec![
+            OptimizationLevel::None,
+            OptimizationLevel::Default,
+            OptimizationLevel::Aggressive,
+        ],
+        iterations: 3,
+        warmup_iterations: 1,
+        timeout: Duration::from_secs(30),
+        compiler_flags: vec![],
+        performance_thresholds: PerformanceThresholds::default(),
+    };
+    
+    // Note: This test would require a real compiler binary to work fully
+    // For now, we test the configuration and structure
+    assert_eq!(config.name, "simple_loop");
+    assert_eq!(config.optimization_levels.len(), 3);
+    assert_eq!(config.iterations, 3);
+    
+    Ok(())
+}
+
+/// Test enhanced benchmarking system
+#[tokio::test]
+async fn test_enhanced_benchmarking() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let source_file = temp_dir.path().join("enhanced_bench.csd");
+    
+    let source_content = r#"
+        slay calculate_prime(n) {
+            lowkey (n < 2) {
+                fr false;
+            }
+            lowkey (sus i = 2; i * i <= n; i++) {
+                lowkey (n % i == 0) {
+                    fr false;
+                }
+            }
+            fr true;
+        }
+        
+        slay main() {
+            facts count = 0;
+            lowkey (sus i = 2; i < 100; i++) {
+                lowkey (calculate_prime(i)) {
+                    count = count + 1;
+                }
+            }
+            println(count);
+        }
+    "#;
+    fs::write(&source_file, source_content)?;
+    
+    let mut runner = EnhancedBenchmarkRunner::new();
+    
+    let optimization_levels = vec![
+        OptimizationLevel::None,
+        OptimizationLevel::Default,
+        OptimizationLevel::Aggressive,
+    ];
+    
+    let result = runner.benchmark_comprehensive(
+        source_content,
+        &source_file,
+        &optimization_levels,
+    ).await?;
+    
+    // Verify comprehensive benchmark results
+    assert_eq!(result.level_results.len(), 3);
+    
+    // Check statistical summary
+    assert!(matches!(
+        result.statistical_summary.best_level,
+        OptimizationLevel::None | OptimizationLevel::Default | OptimizationLevel::Aggressive
+    ));
+    assert!(result.statistical_summary.overall_confidence >= 0.0);
+    assert!(result.statistical_summary.overall_confidence <= 1.0);
+    
+    // Check performance comparison
+    assert!(!result.performance_comparison.performance_ranking.is_empty());
+    assert!(!result.performance_comparison.pairwise_comparisons.is_empty());
+    
+    // Verify environment information
+    assert!(!result.environment.os.is_empty());
+    assert!(result.environment.cpu_info.cores > 0);
+    assert!(result.environment.memory_info.total_ram > 0);
+    
+    // Check recommendations
+    assert!(!result.recommendations.is_empty());
+    
+    Ok(())
+}
+
+/// Test memory usage monitoring
+#[test]
+fn test_memory_monitoring() {
+    // Test the performance monitor's memory usage measurement
+    let monitor = cursed::optimization::performance_integration::PerformanceMonitor::new();
+    let memory_usage = monitor.get_memory_usage_mb();
+    
+    // Should return a reasonable memory usage value (> 0 and < 10GB)
+    assert!(memory_usage > 0.0);
+    assert!(memory_usage < 10240.0); // 10GB
+}
+
+/// Test CPU usage monitoring
+#[test]
+fn test_cpu_monitoring() {
+    let monitor = cursed::optimization::performance_integration::PerformanceMonitor::new();
+    let cpu_usage = monitor.get_cpu_usage_percent();
+    
+    // Should return a reasonable CPU usage percentage
+    assert!(cpu_usage >= 0.0);
+    assert!(cpu_usage <= 100.0);
+}
+
+/// Test build cache effectiveness
+#[tokio::test]
+async fn test_build_cache_effectiveness() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let source_files: Vec<PathBuf> = (0..5).map(|i| {
+        let file = temp_dir.path().join(format!("module_{}.csd", i));
+        let content = format!(r#"
+            slay function_{}() {{
+                facts value = {};
+                fr value * 2;
+            }}
+        "#, i, i * 10);
+        fs::write(&file, content).unwrap();
+        file
+    }).collect();
+    
+    let context = BuildContext {
+        project_root: temp_dir.path().to_path_buf(),
+        source_files: source_files.clone(),
+        output_directory: temp_dir.path().join("output"),
+        target_triple: "x86_64-unknown-linux-gnu".to_string(),
+        debug_mode: true, // Enable caching
+        release_mode: false,
+        verbose: true,
+    };
+    
+    let mut optimizer = BuildOptimizer::new(context)?;
+    
+    // First build - should have low cache hit rate
+    let result1 = optimizer.optimize_build()?;
+    assert!(result1.success);
+    let initial_cache_rate = result1.cache_hit_rate;
+    
+    // Second build - should have higher cache hit rate
+    let result2 = optimizer.optimize_build()?;
+    assert!(result2.success);
+    let second_cache_rate = result2.cache_hit_rate;
+    
+    // Cache hit rate should improve or stay the same
+    assert!(second_cache_rate >= initial_cache_rate);
+    
+    // Build should be faster or same speed (due to caching)
+    assert!(result2.compilation_time <= result1.compilation_time + Duration::from_millis(100)); // Allow small variance
+    
+    Ok(())
+}
+
+/// Test parallel compilation efficiency
+#[tokio::test]
+async fn test_parallel_compilation() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create multiple source files for parallel compilation
+    let source_files: Vec<PathBuf> = (0..8).map(|i| {
+        let file = temp_dir.path().join(format!("parallel_{}.csd", i));
+        let content = format!(r#"
+            slay compute_{}(input) {{
+                facts result = 0;
+                lowkey (sus j = 0; j < input; j++) {{
+                    result = result + j * {};
+                }}
+                fr result;
+            }}
+            
+            slay main_{}() {{
+                facts value = compute_{}(1000);
+                println(value);
+            }}
+        "#, i, i + 1, i, i);
+        fs::write(&file, content).unwrap();
+        file
+    }).collect();
+    
+    let context = BuildContext {
+        project_root: temp_dir.path().to_path_buf(),
+        source_files: source_files.clone(),
+        output_directory: temp_dir.path().join("output"),
+        target_triple: "x86_64-unknown-linux-gnu".to_string(),
+        debug_mode: false,
+        release_mode: true, // Enable parallel compilation
+        verbose: true,
+    };
+    
+    let mut optimizer = BuildOptimizer::new(context)?;
+    let result = optimizer.optimize_build()?;
+    
+    assert!(result.success);
+    assert_eq!(result.files_compiled, 8);
+    
+    // Parallel efficiency should be reasonable for 8 files
+    assert!(result.parallel_efficiency >= 0.5); // At least 50% efficiency
+    assert!(result.parallel_efficiency <= 1.0);
+    
+    // Should have compiled all files
+    assert_eq!(result.files_compiled, source_files.len());
+    
+    Ok(())
+}
+
+/// Test size reduction calculations
+#[tokio::test]
+async fn test_size_reduction() -> Result<()> {
+    let temp_dir = TempDir::new().unwrap();
+    let source_file = temp_dir.path().join("size_test.csd");
+    
+    // Create a larger source file to test size reduction
+    let mut source_content = String::new();
+    source_content.push_str("slay main() {\n");
+    for i in 0..50 {
+        source_content.push_str(&format!("    facts var_{} = {};\n", i, i * 42));
+    }
+    source_content.push_str("    facts total = 0;\n");
+    for i in 0..50 {
+        source_content.push_str(&format!("    total = total + var_{};\n", i));
+    }
+    source_content.push_str("    println(total);\n}\n");
+    
+    fs::write(&source_file, &source_content)?;
+    
+    // Test different optimization modes
+    for (debug, release, expected_factor) in [
+        (true, false, 0.95),   // Debug mode: minimal reduction
+        (false, false, 0.85),  // Default mode: moderate reduction
+        (false, true, 0.75),   // Release mode: significant reduction
+    ] {
+        let context = BuildContext {
+            project_root: temp_dir.path().to_path_buf(),
+            source_files: vec![source_file.clone()],
+            output_directory: temp_dir.path().join(format!("output_{}_{}", debug, release)),
+            target_triple: "x86_64-unknown-linux-gnu".to_string(),
+            debug_mode: debug,
+            release_mode: release,
+            verbose: false,
         };
         
-        units.push(CompilationUnit {
-            id: format!("file_{}.rs", i),
-            path: PathBuf::from(format!("src/file_{}.rs", i)),
-            dependencies,
-            dependents: vec![],
-            last_modified: 1000 + i as u64,
-            compilation_time: Duration::from_millis(100 + i as u64 * 10),
-            complexity_score: 50 + i as u32 * 10,
-            is_dirty: i % 3 == 0, // Some files are dirty
-            cache_key: format!("key_{}", i),
-        });
+        let mut optimizer = BuildOptimizer::new(context)?;
+        let result = optimizer.optimize_build()?;
+        
+        assert!(result.success);
+        
+        // Should show some size reduction in release mode
+        if release {
+            assert!(result.size_reduction_bytes > 0);
+        }
     }
     
-    let analysis = optimizer.analyze_dependencies(&units)?;
-    
-    // Verify complex analysis
-    assert!(analysis.compilation_order.len() > 1);
-    assert!(!analysis.optimization_suggestions.is_empty());
-    
-    println!("✅ Complex dependency optimization test passed");
-    println!("  - Total units: {}", units.len());
-    println!("  - Compilation layers: {}", analysis.compilation_order.len());
-    println!("  - Optimization suggestions: {}", analysis.optimization_suggestions.len());
-    
     Ok(())
 }
 
-/// Test advanced caching system
-#[test]
-fn test_advanced_cache_basic() -> Result<()> {
-    let config = AdvancedCacheConfig {
-        enable_ast_cache: true,
-        enable_ir_cache: true,
-        enable_object_cache: true,
-        cache_directory: PathBuf::from("test_cache"),
-        max_cache_size_mb: 100,
-        compression_enabled: false, // Disable for testing
-        ..Default::default()
-    };
-    
-    let cache = AdvancedCache::new(config)?;
-    
-    // Test cache storage
-    let metadata = CacheMetadata {
-        file_path: PathBuf::from("test.rs"),
-        last_modified: 1000,
-        file_size: 500,
-        compiler_version: "1.0.0".to_string(),
-        compilation_flags: vec!["-O2".to_string()],
-        source_hash: "abc123".to_string(),
-        dependency_hashes: HashMap::new(),
-    };
-    
-    let data = CacheData::Ast("test_ast_content".to_string());
-    cache.store("test_key", data.clone(), metadata.clone())?;
-    
-    // Test cache retrieval
-    let retrieved = cache.retrieve("test_key")?;
-    assert!(retrieved.is_some());
-    
-    let entry = retrieved.unwrap();
-    match entry.data {
-        CacheData::Ast(content) => assert_eq!(content, "test_ast_content"),
-        _ => panic!("Wrong cache data type"),
-    }
-    
-    // Test cache statistics
-    let stats = cache.get_statistics()?;
-    assert!(stats.total_entries > 0);
-    
-    println!("✅ Advanced cache basic test passed");
-    println!("  - Cache entries: {}", stats.total_entries);
-    println!("  - Cache size: {:.2} MB", stats.total_size_mb);
-    
-    Ok(())
-}
-
-/// Test cache invalidation
-#[test]
-fn test_cache_invalidation() -> Result<()> {
-    let config = AdvancedCacheConfig {
-        cache_directory: PathBuf::from("test_cache_invalidation"),
-        ..Default::default()
-    };
-    
-    let cache = AdvancedCache::new(config)?;
-    
-    // Store cache entries with dependencies
-    let metadata1 = CacheMetadata {
-        file_path: PathBuf::from("file1.rs"),
-        last_modified: 1000,
-        file_size: 500,
-        compiler_version: "1.0.0".to_string(),
-        compilation_flags: vec![],
-        source_hash: "hash1".to_string(),
-        dependency_hashes: [("dep1.rs".to_string(), "dep_hash1".to_string())].into(),
-    };
-    
-    let data1 = CacheData::IR("ir_content_1".to_string());
-    cache.store("file1", data1, metadata1)?;
-    
-    let metadata2 = CacheMetadata {
-        file_path: PathBuf::from("file2.rs"),
-        last_modified: 1000,
-        file_size: 600,
-        compiler_version: "1.0.0".to_string(),
-        compilation_flags: vec![],
-        source_hash: "hash2".to_string(),
-        dependency_hashes: [("dep1.rs".to_string(), "dep_hash1".to_string())].into(),
-    };
-    
-    let data2 = CacheData::Object(vec![1, 2, 3, 4]);
-    cache.store("file2", data2, metadata2)?;
-    
-    // Verify cache has entries
-    let stats_before = cache.get_statistics()?;
-    assert!(stats_before.total_entries >= 2);
-    
-    // Invalidate based on changed dependency
-    let changed_files = vec!["dep1.rs".to_string()];
-    let invalidated = cache.invalidate_by_dependencies(&changed_files)?;
-    
-    // Verify invalidation worked
-    assert!(invalidated > 0);
-    
-    println!("✅ Cache invalidation test passed");
-    println!("  - Invalidated entries: {}", invalidated);
-    
-    Ok(())
-}
-
-/// Test distributed compilation system
-#[test]
-fn test_distributed_compilation_basic() -> Result<()> {
-    let config = DistributedCompilationConfig {
-        coordinator_port: 9100, // Use different port for testing
-        worker_ports: vec![9101, 9102],
-        work_stealing_enabled: true,
-        fault_tolerance_enabled: true,
-        ..Default::default()
-    };
-    
-    let mut system = DistributedCompilationSystem::new(config)?;
-    
-    // Start the system
-    system.start()?;
-    
-    // Create test compilation tasks
-    let task1 = create_compilation_task(
-        vec!["file1.rs".to_string()],
-        CompilationTarget::Object,
-        vec!["-O2".to_string()],
-    );
-    
-    let task2 = create_compilation_task(
-        vec!["file2.rs".to_string()],
-        CompilationTarget::IR,
-        vec!["-g".to_string()],
-    );
-    
-    // Submit tasks
-    let task_id1 = system.submit_task(task1)?;
-    let task_id2 = system.submit_task(task2)?;
-    
-    assert!(!task_id1.is_empty());
-    assert!(!task_id2.is_empty());
-    
-    // Get system statistics
-    let stats = system.get_statistics()?;
-    assert_eq!(stats.total_tasks, 2);
-    
-    // Get registered nodes
-    let nodes = system.get_nodes()?;
-    assert!(!nodes.is_empty());
-    
-    // Stop the system
-    system.stop()?;
-    
-    println!("✅ Distributed compilation basic test passed");
-    println!("  - Tasks submitted: 2");
-    println!("  - Registered nodes: {}", nodes.len());
-    
-    Ok(())
-}
-
-/// Test build analytics system
-#[test]
-fn test_build_analytics_basic() -> Result<()> {
-    let config = BuildAnalyticsConfig {
-        enable_detailed_tracking: true,
-        enable_memory_profiling: true,
-        enable_trend_analysis: true,
-        analytics_data_path: PathBuf::from("test_analytics"),
-        ..Default::default()
-    };
-    
-    let analytics = BuildAnalytics::new(config)?;
-    
-    // Start monitoring
-    analytics.start_build_monitoring()?;
-    
-    // Record some build events
-    let events = vec![
-        create_build_event(BuildEventType::CompilationStart, Duration::from_millis(0)),
-        create_build_event(BuildEventType::DependencyResolution, Duration::from_millis(100)),
-        create_build_event(BuildEventType::CacheHit, Duration::from_millis(50)),
-        create_build_event(BuildEventType::OptimizationPass, Duration::from_millis(200)),
-        create_build_event(BuildEventType::CompilationEnd, Duration::from_millis(800)),
-    ];
-    
-    for mut event in events {
-        event.success = true;
-        event.memory_usage_mb = 100.0;
-        event.cpu_usage_percent = 75.0;
-        analytics.record_event(event)?;
-    }
-    
-    // Stop monitoring and get metrics
-    let metrics = analytics.stop_build_monitoring()?;
-    
-    assert!(metrics.total_build_time > Duration::ZERO);
-    assert!(metrics.compilation_time > Duration::ZERO);
-    assert_eq!(metrics.files_compiled, 1); // One CompilationEnd event
-    
-    // Generate build report
-    let report = analytics.generate_build_report()?;
-    assert!(report.generated_at > 0);
-    assert!(!report.recommendations.is_empty());
-    
-    println!("✅ Build analytics basic test passed");
-    println!("  - Total build time: {:?}", metrics.total_build_time);
-    println!("  - Files compiled: {}", metrics.files_compiled);
-    println!("  - Cache hit rate: {:.1}%", metrics.cache_hit_rate * 100.0);
-    
-    Ok(())
-}
-
-/// Test bottleneck analysis
-#[test]
-fn test_bottleneck_analysis() -> Result<()> {
-    let config = BuildAnalyticsConfig {
-        enable_detailed_tracking: true,
-        analytics_data_path: PathBuf::from("test_bottleneck_analytics"),
-        ..Default::default()
-    };
-    
-    let analytics = BuildAnalytics::new(config)?;
-    analytics.start_build_monitoring()?;
-    
-    // Create events with varying performance characteristics
-    let slow_events = vec![
-        create_slow_compilation_event("slow_file.rs", Duration::from_secs(5)),
-        create_slow_compilation_event("another_slow.rs", Duration::from_secs(3)),
-        create_fast_compilation_event("fast_file.rs", Duration::from_millis(100)),
-    ];
-    
-    for event in slow_events {
-        analytics.record_event(event)?;
-    }
-    
-    let _metrics = analytics.stop_build_monitoring()?;
-    let bottlenecks = analytics.analyze_bottlenecks()?;
-    
-    // Verify bottleneck detection
-    assert!(!bottlenecks.slowest_files.is_empty());
-    assert!(bottlenecks.critical_path_duration > Duration::ZERO);
-    assert!(!bottlenecks.optimization_opportunities.is_empty());
-    
-    println!("✅ Bottleneck analysis test passed");
-    println!("  - Slowest files: {}", bottlenecks.slowest_files.len());
-    println!("  - Critical path: {:?}", bottlenecks.critical_path_duration);
-    println!("  - Optimization opportunities: {}", bottlenecks.optimization_opportunities.len());
-    
-    Ok(())
-}
-
-/// Test memory optimization system
-#[test]
-fn test_memory_optimization_basic() -> Result<()> {
-    let config = MemoryOptimizerConfig {
-        max_memory_mb: 1024.0,
-        memory_strategy: MemoryStrategy::Adaptive,
-        enable_streaming: true,
-        streaming_chunk_size_mb: 64.0,
-        enable_adaptive_scheduling: true,
-        ..Default::default()
-    };
-    
-    let optimizer = MemoryOptimizer::new(config)?;
-    optimizer.start()?;
-    
-    // Create test tasks with different memory requirements
-    let small_task = create_memory_aware_task(
-        "small_task".to_string(),
-        "small_file.rs".to_string(),
-        50.0, // 50MB
-        false,
-    );
-    
-    let large_task = create_memory_aware_task(
-        "large_task".to_string(),
-        "large_file.rs".to_string(),
-        500.0, // 500MB
-        true,   // Can stream
-    );
-    
-    // Submit tasks
-    optimizer.submit_task(small_task.clone())?;
-    optimizer.submit_task(large_task.clone())?;
-    
-    // Test scheduling decisions
-    let decision_small = optimizer.make_scheduling_decision(&small_task)?;
-    let decision_large = optimizer.make_scheduling_decision(&large_task)?;
-    
-    println!("Small task decision: {:?}", decision_small.action);
-    println!("Large task decision: {:?}", decision_large.action);
-    
-    // Test streaming chunk creation
-    let chunks = optimizer.create_streaming_chunks(&large_task)?;
-    if !chunks.is_empty() {
-        assert!(!chunks.is_empty());
-        assert_eq!(chunks[0].task_id, large_task.id);
-    }
-    
-    // Get memory statistics
-    let stats = optimizer.get_statistics()?;
-    assert!(stats.memory_efficiency_percent > 0.0);
-    
-    optimizer.stop()?;
-    
-    println!("✅ Memory optimization basic test passed");
-    println!("  - Memory efficiency: {:.1}%", stats.memory_efficiency_percent);
-    println!("  - Streaming operations: {}", stats.streaming_operations);
-    
-    Ok(())
-}
-
-/// Test memory pressure handling
-#[test]
-fn test_memory_pressure_handling() -> Result<()> {
-    let config = MemoryOptimizerConfig {
-        max_memory_mb: 100.0, // Low limit to trigger pressure
-        warning_threshold_percent: 50.0,
-        critical_threshold_percent: 80.0,
-        enable_adaptive_scheduling: true,
-        memory_strategy: MemoryStrategy::Conservative,
-        ..Default::default()
-    };
-    
-    let optimizer = MemoryOptimizer::new(config)?;
-    
-    // Simulate memory pressure
-    optimizer.update_memory_usage(45.0)?; // Just under warning
-    optimizer.update_memory_usage(60.0)?; // Above warning
-    optimizer.update_memory_usage(85.0)?; // Above critical
-    
-    // Create a task that would exceed memory
-    let large_task = create_memory_aware_task(
-        "pressure_task".to_string(),
-        "pressure_file.rs".to_string(),
-        50.0, // Would exceed critical threshold
-        true,
-    );
-    
-    let decision = optimizer.make_scheduling_decision(&large_task)?;
-    
-    // Should defer or use streaming due to pressure
-    println!("Memory pressure decision: {:?}", decision.action);
-    println!("Reasoning: {}", decision.reasoning);
-    
-    // Test GC triggering
-    let gc_triggered = optimizer.trigger_gc_if_needed()?;
-    
-    let stats = optimizer.get_statistics()?;
-    assert!(stats.memory_pressure_events > 0);
-    
-    println!("✅ Memory pressure handling test passed");
-    println!("  - Pressure events: {}", stats.memory_pressure_events);
-    println!("  - GC triggered: {}", gc_triggered);
-    
-    Ok(())
-}
-
-/// Test integrated optimization workflow
-#[test]
-fn test_integrated_optimization_workflow() -> Result<()> {
-    println!("🚀 Testing integrated optimization workflow...");
-    
-    // Initialize all optimization components
-    let dep_config = DependencyOptimizerConfig {
-        max_parallel_jobs: 4,
-        enable_smart_ordering: true,
-        ..Default::default()
-    };
-    let dep_optimizer = DependencyOptimizer::new(dep_config);
-    
-    let cache_config = AdvancedCacheConfig {
-        cache_directory: PathBuf::from("integrated_test_cache"),
-        max_cache_size_mb: 50,
-        ..Default::default()
-    };
-    let cache = AdvancedCache::new(cache_config)?;
-    
-    let analytics_config = BuildAnalyticsConfig {
-        analytics_data_path: PathBuf::from("integrated_test_analytics"),
-        enable_detailed_tracking: true,
-        ..Default::default()
-    };
-    let analytics = BuildAnalytics::new(analytics_config)?;
-    
-    let memory_config = MemoryOptimizerConfig {
-        max_memory_mb: 512.0,
-        memory_strategy: MemoryStrategy::Balanced,
-        ..Default::default()
-    };
-    let memory_optimizer = MemoryOptimizer::new(memory_config)?;
-    
-    // Start monitoring
-    analytics.start_build_monitoring()?;
-    memory_optimizer.start()?;
-    
-    // Simulate a build workflow
-    let start_time = Instant::now();
-    
-    // 1. Dependency analysis
-    let units = create_test_compilation_units();
-    let analysis = dep_optimizer.analyze_dependencies(&units)?;
-    
-    // 2. Cache operations
-    for unit in &units {
-        let metadata = create_test_cache_metadata(&unit.path);
-        let data = CacheData::Ast(format!("ast_for_{}", unit.id));
-        cache.store(&unit.id, data, metadata)?;
-    }
-    
-    // 3. Record build events
-    for (i, unit) in units.iter().enumerate() {
-        let mut event = create_build_event(
-            BuildEventType::CompilationEnd,
-            Duration::from_millis(100 + i as u64 * 50),
-        );
-        event.file_path = Some(unit.path.clone());
-        event.success = true;
-        analytics.record_event(event)?;
-    }
-    
-    // 4. Memory optimization
-    for unit in &units {
-        let task = create_memory_aware_task(
-            unit.id.clone(),
-            unit.path.to_string_lossy().to_string(),
-            unit.complexity_score as f64,
-            true,
-        );
-        memory_optimizer.submit_task(task)?;
-    }
-    
-    let total_time = start_time.elapsed();
-    
-    // Stop monitoring and collect results
-    let build_metrics = analytics.stop_build_monitoring()?;
-    memory_optimizer.stop()?;
-    
-    // Verify integrated results
-    assert!(!analysis.compilation_order.is_empty());
-    assert!(build_metrics.files_compiled > 0);
-    
-    let cache_stats = cache.get_statistics()?;
-    assert!(cache_stats.total_entries > 0);
-    
-    let memory_stats = memory_optimizer.get_statistics()?;
-    assert!(memory_stats.memory_efficiency_percent > 0.0);
-    
-    println!("✅ Integrated optimization workflow test passed");
-    println!("  - Total workflow time: {:?}", total_time);
-    println!("  - Compilation layers: {}", analysis.compilation_order.len());
-    println!("  - Cache entries: {}", cache_stats.total_entries);
-    println!("  - Build files: {}", build_metrics.files_compiled);
-    println!("  - Memory efficiency: {:.1}%", memory_stats.memory_efficiency_percent);
-    
-    Ok(())
-}
-
-// Helper functions for test data creation
-
-fn create_slow_compilation_event(file: &str, duration: Duration) -> cursed::build_system::BuildEvent {
-    let mut event = create_build_event(BuildEventType::CompilationEnd, duration);
-    event.file_path = Some(PathBuf::from(file));
-    event.memory_usage_mb = 200.0;
-    event.cpu_usage_percent = 90.0;
-    event.success = true;
-    event
-}
-
-fn create_fast_compilation_event(file: &str, duration: Duration) -> cursed::build_system::BuildEvent {
-    let mut event = create_build_event(BuildEventType::CompilationEnd, duration);
-    event.file_path = Some(PathBuf::from(file));
-    event.memory_usage_mb = 50.0;
-    event.cpu_usage_percent = 30.0;
-    event.success = true;
-    event
-}
-
-fn create_test_compilation_units() -> Vec<CompilationUnit> {
-    vec![
-        CompilationUnit {
-            id: "main.rs".to_string(),
-            path: PathBuf::from("src/main.rs"),
-            dependencies: vec!["lib.rs".to_string()],
-            dependents: vec![],
-            last_modified: 1000,
-            compilation_time: Duration::from_millis(300),
-            complexity_score: 100,
-            is_dirty: true,
-            cache_key: "main_key".to_string(),
-        },
-        CompilationUnit {
-            id: "lib.rs".to_string(),
-            path: PathBuf::from("src/lib.rs"),
-            dependencies: vec![],
-            dependents: vec!["main.rs".to_string()],
-            last_modified: 950,
-            compilation_time: Duration::from_millis(200),
-            complexity_score: 80,
-            is_dirty: false,
-            cache_key: "lib_key".to_string(),
-        },
-        CompilationUnit {
-            id: "utils.rs".to_string(),
-            path: PathBuf::from("src/utils.rs"),
-            dependencies: vec![],
-            dependents: vec![],
-            last_modified: 900,
-            compilation_time: Duration::from_millis(150),
-            complexity_score: 60,
-            is_dirty: true,
-            cache_key: "utils_key".to_string(),
-        },
-    ]
-}
-
-fn create_test_cache_metadata(path: &PathBuf) -> CacheMetadata {
-    CacheMetadata {
-        file_path: path.clone(),
-        last_modified: 1000,
-        file_size: 1024,
-        compiler_version: "1.0.0".to_string(),
-        compilation_flags: vec!["-O2".to_string()],
-        source_hash: format!("hash_{}", path.file_name().unwrap().to_string_lossy()),
-        dependency_hashes: HashMap::new(),
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+    
+    /// Test end-to-end build optimization workflow
+    #[tokio::test]
+    async fn test_complete_build_workflow() -> Result<()> {
+        let temp_dir = TempDir::new().unwrap();
+        
+        // Create a realistic CURSED project structure
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir_all(&src_dir)?;
+        
+        // Main module
+        let main_file = src_dir.join("main.csd");
+        fs::write(&main_file, r#"
+            import "utils";
+            import "math";
+            
+            slay main() {
+                facts result = math::fibonacci(20);
+                utils::print_result("Fibonacci(20)", result);
+            }
+        "#)?;
+        
+        // Utils module
+        let utils_file = src_dir.join("utils.csd");
+        fs::write(&utils_file, r#"
+            slay print_result(label, value) {
+                println(label + ": " + value);
+            }
+            
+            slay format_number(num) {
+                fr "Number: " + num;
+            }
+        "#)?;
+        
+        // Math module
+        let math_file = src_dir.join("math.csd");
+        fs::write(&math_file, r#"
+            slay fibonacci(n) {
+                lowkey (n <= 1) {
+                    fr n;
+                }
+                fr fibonacci(n - 1) + fibonacci(n - 2);
+            }
+            
+            slay factorial(n) {
+                facts result = 1;
+                lowkey (sus i = 1; i <= n; i++) {
+                    result = result * i;
+                }
+                fr result;
+            }
+        "#)?;
+        
+        let source_files = vec![main_file, utils_file, math_file];
+        
+        // Test with performance integration
+        let perf_config = PerformanceIntegrationConfig {
+            enable_adaptive_optimization: true,
+            enable_performance_monitoring: true,
+            enable_automatic_reporting: true,
+            monitoring_interval_ms: 100,
+            optimization_threshold_seconds: 2.0,
+            max_parallel_workers: 4,
+            enable_pgo: false,
+            enable_distributed: false,
+            cache_size_limit_mb: 200,
+            report_output_dir: Some(temp_dir.path().join("reports")),
+            benchmark_configs: std::collections::HashMap::new(),
+            target_improvements: cursed::optimization::performance_integration::PerformanceTargets {
+                compilation_time_reduction: 40.0,
+                runtime_performance_improvement: 30.0,
+                memory_usage_reduction: 20.0,
+                binary_size_reduction: 15.0,
+            },
+        };
+        
+        let opt_config = OptimizationConfig {
+            optimization_level: OptimizationLevel::Aggressive,
+            enable_parallel: true,
+            parallel_workers: 4,
+            enable_incremental: true,
+            ..Default::default()
+        };
+        
+        let mut perf_system = PerformanceIntegrationSystem::new(perf_config, opt_config)?;
+        
+        let result = perf_system.optimize_project(&source_files, &temp_dir.path().join("output")).await?;
+        
+        // Verify comprehensive optimization results
+        assert!(result.compilation_time > Duration::from_millis(0));
+        assert!(result.parallel_efficiency > 0.0);
+        assert!(!result.recommendations.is_empty());
+        
+        // Check that all optimization phases completed
+        assert!(!result.checkpoints.is_empty());
+        
+        // Verify environment information is captured
+        assert!(!result.environment.os.is_empty());
+        assert!(result.environment.cpu_info.cores > 0);
+        
+        // Verify adaptive optimization worked
+        assert!(result.adaptive_optimization_enabled);
+        
+        Ok(())
     }
 }

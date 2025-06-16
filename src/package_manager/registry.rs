@@ -466,6 +466,13 @@ impl PackageRegistry {
     pub fn set_auth_token(&mut self, token: Option<String>) {
         self.config.auth_token = token;
     }
+    
+    /// Search for packages matching name and version
+    pub async fn search_package(&self, name: &str, version: &str) -> Result<Vec<PackageInfo>, PackageManagerError> {
+        // Stub implementation
+        tracing::info!("Searching for package: {} version: {}", name, version);
+        Ok(vec![])
+    }
 }
 
 #[cfg(test)]

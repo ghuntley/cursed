@@ -1,7 +1,7 @@
 /// Documentation generation for CURSED
-//! 
-//! Comprehensive documentation generation system supporting HTML, Markdown, and JSON output formats.
-//! Features include cross-reference generation, search functionality, and comprehensive AST extraction.
+/// 
+/// Comprehensive documentation generation system supporting HTML, Markdown, and JSON output formats.
+/// Features include cross-reference generation, search functionality, and comprehensive AST extraction.
 
 // External dependencies
 use serde::{Deserialize, Serialize};
@@ -9,73 +9,31 @@ use serde::{Deserialize, Serialize};
 // Re-export main components
 pub mod generator;
 pub mod html_generator;
-pub mod markdown_generator;
+pub mod markdown_generator; 
 pub mod json_generator;
 pub mod xml_generator;
 pub mod comment_parser;
+
+// Re-export main generator
+pub use generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
 pub mod cli;
 
 // Re-export public API
 pub use generator::{
-    DocumentationGenerator, DocGeneratorConfig, DocFormat, ExtractedDocumentation,
+    ExtractedDocumentation,
     DocumentationItem, ItemKind, Visibility, Parameter, Example, CrossReference,
     SearchIndexEntry, SourceInfo, DocumentationExtractor
 };
 
 pub use comment_parser::{CommentParser, ParsedDocumentation};
-pub use cli::{add_doc_commands, handle_doc_command, generate_sample_config};
 
 use crate::error::{Error, SourceLocation};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-/// Legacy documentation generator for backward compatibility
-pub struct DocumentationGenerator {
-    inner: generator::DocumentationGenerator,
-}
+// DocumentationGenerator is re-exported from generator module above
 
-impl DocumentationGenerator {
-    pub fn new() -> Self {
-        let config = generator::DocGeneratorConfig::default();
-        Self {
-            inner: generator::DocumentationGenerator::new(config),
-        }
-    }
-    
-    /// Generate documentation from source directory
-    pub fn generate_docs(&mut self, source_dir: &str, output_dir: &str) -> Result<(), Error> {
-        let source_path = Path::new(source_dir);
-        let mut config = generator::DocGeneratorConfig::default();
-        config.output_dir = PathBuf::from(output_dir);
-        
-        self.inner = generator::DocumentationGenerator::new(config);
-        self.inner.generate_from_directory(source_path)
-    }
-
-    /// Generate documentation with custom configuration
-    pub fn generate_with_config(&mut self, config: generator::DocGeneratorConfig) -> Result<(), Error> {
-        self.inner = generator::DocumentationGenerator::new(config.clone());
-        
-        // Use current directory as default source
-        let source_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        self.inner.generate_from_directory(&source_dir)
-    }
-
-    /// Generate documentation from specific files
-    pub fn generate_from_files(&mut self, files: Vec<PathBuf>, output_dir: &str) -> Result<(), Error> {
-        let mut config = generator::DocGeneratorConfig::default();
-        config.output_dir = PathBuf::from(output_dir);
-        
-        self.inner = generator::DocumentationGenerator::new(config);
-        self.inner.generate_from_files(files)
-    }
-}
-
-impl Default for DocumentationGenerator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// Legacy implementations removed - use generator::DocumentationGenerator directly
 
 /// Legacy code example structure for backward compatibility
 #[derive(Debug, Clone, Serialize, Deserialize)]

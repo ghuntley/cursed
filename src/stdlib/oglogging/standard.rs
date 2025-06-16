@@ -35,7 +35,7 @@
 
 use std::sync::{Arc, Mutex};
 use std::io::{Write, stdout, stderr};
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::logger::Logger;
 use super::flags::LstdFlags;
@@ -440,7 +440,7 @@ pub fn get_standard_logger() -> Result<Logger, CursedError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::value::Value;
+    use crate::stdlib::value::Value;
     use std::io::Cursor;
     use super::super::flags::{Ldate, Ltime};
 

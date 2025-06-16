@@ -1233,7 +1233,6 @@ pub extern "C" fn cursed_signal_wait(signal: i32, _target: i64, _handler: *const
 
 // Global IPC handle registries
 use std::sync::Mutex;
-use std::collections::HashMap;
 use crate::stdlib::ipc::{SharedMemory, NamedPipe, MessageQueue, Semaphore};
 
 lazy_static::lazy_static! {

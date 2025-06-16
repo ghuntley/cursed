@@ -81,7 +81,7 @@ pub use timestamping::{
 };
 pub use rsa_pss::{
     RsaPssManager, RsaKeyPair, RsaPublicKey, RsaPrivateKey, RsaPssParams, 
-    RsaKeySize, SaltLength, RsaPssSignature
+    SaltLength, RsaPssSignature
 };
 pub use eddsa::{
     EdDsaManager, EdDsaKeyPair, EdDsaSignature, EdDsaParams, EdDsaCurve, 

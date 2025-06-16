@@ -29,30 +29,46 @@ squad CompilerConfig {
 
 // Main compiler entry point
 slay main(args: tea[]) -> normie {
-    sus config = parse_args(args)?;
-    
-    bestie (config.verbose) {
-        io::println("🚀 CURSED Stage 2 Compiler - Self-Hosting Edition");
-        io::println("Input: " + config.input_file);
-        io::println("Output: " + config.output_file);
-    }
-    
-    // Read source file
-    sus source_content = fs::read_to_string(config.input_file)?;
-    
-    // Compilation pipeline
-    sus result = compile_program(source_content, config)?;
-    
-    bestie (result.success) {
+    // Handle argument parsing with error handling
+    lowkey {
+        sus config = parse_args(args)?;
+        
         bestie (config.verbose) {
-            io::println("✅ Compilation successful!");
+            io::println("🚀 CURSED Stage 2 Compiler - Self-Hosting Edition");
+            io::println("Input: " + config.input_file);
+            io::println("Output: " + config.output_file);
+            io::println("Optimization Level: O" + config.optimization_level.to_string());
         }
-        yolo 0;
-    } highkey {
-        io::eprintln("❌ Compilation failed:");
-        lowkey (sus error in result.errors) {
-            io::eprintln("  " + error);
+        
+        // Verify input file exists
+        bestie (!fs::exists(config.input_file)) {
+            error::fatal("Input file does not exist: " + config.input_file);
         }
+        
+        // Read source file
+        sus source_content = fs::read_to_string(config.input_file)?;
+        bestie (source_content.length() == 0) {
+            error::fatal("Input file is empty: " + config.input_file);
+        }
+        
+        // Compilation pipeline
+        sus result = compile_program(source_content, config)?;
+        
+        bestie (result.success) {
+            bestie (config.verbose) {
+                io::println("✅ Compilation successful!");
+                io::println("Output written to: " + config.output_file);
+            }
+            yolo 0;
+        } highkey {
+            io::eprintln("❌ Compilation failed:");
+            lowkey (sus error in result.errors) {
+                io::eprintln("  " + error);
+            }
+            yolo 1;
+        }
+    } catch (sus e) {
+        io::eprintln("❌ Fatal error: " + e.to_string());
         yolo 1;
     }
 }
@@ -91,8 +107,23 @@ slay parse_args(args: tea[]) -> CompilerConfig? {
                 }
             }
             
+            mood "--output" {
+                // Long form output specification
+                bestie (i + 1 < args.length()) {
+                    config.output_file = args[i + 1];
+                    i = i + 2;
+                } highkey {
+                    error::fatal("Missing output file after --output");
+                }
+            }
+            
             mood "-O0" {
                 config.optimization_level = 0;
+                i = i + 1;
+            }
+            
+            mood "-O1" {
+                config.optimization_level = 1;
                 i = i + 1;
             }
             
@@ -101,7 +132,17 @@ slay parse_args(args: tea[]) -> CompilerConfig? {
                 i = i + 1;
             }
             
+            mood "-O3" {
+                config.optimization_level = 3;
+                i = i + 1;
+            }
+            
             mood "--debug" {
+                config.debug_mode = truth;
+                i = i + 1;
+            }
+            
+            mood "-d" {
                 config.debug_mode = truth;
                 i = i + 1;
             }
@@ -111,14 +152,33 @@ slay parse_args(args: tea[]) -> CompilerConfig? {
                 i = i + 1;
             }
             
+            mood "-v" {
+                config.verbose = truth;
+                i = i + 1;
+            }
+            
             mood "--help" {
                 print_help();
                 process::exit(0);
             }
             
+            mood "-h" {
+                print_help();
+                process::exit(0);
+            }
+            
+            mood "--version" {
+                io::println("CURSED Stage 2 Self-Hosting Compiler v1.0.0");
+                process::exit(0);
+            }
+            
             basic {
-                bestie (config.input_file == "") {
+                bestie (args[i].starts_with("-")) {
+                    error::fatal("Unknown option: " + args[i]);
+                } highkey bestie (config.input_file == "") {
                     config.input_file = args[i];
+                } highkey {
+                    error::fatal("Unexpected argument: " + args[i]);
                 }
                 i = i + 1;
             }
@@ -140,23 +200,32 @@ slay parse_args(args: tea[]) -> CompilerConfig? {
 
 // Print help information
 slay print_help() {
-    io::println("CURSED Stage 2 Self-Hosting Compiler");
+    io::println("CURSED Stage 2 Self-Hosting Compiler v1.0.0");
+    io::println("A complete CURSED compiler written in CURSED itself");
     io::println("");
     io::println("USAGE:");
     io::println("    cursed compile <input.csd> [OPTIONS]");
+    io::println("    cursed [input.csd] [OPTIONS]");
     io::println("");
     io::println("OPTIONS:");
-    io::println("    -o <file>     Specify output file");
-    io::println("    -O0           No optimization (default)");
-    io::println("    -O2           Enable optimizations");
-    io::println("    --debug       Enable debug information");
-    io::println("    --verbose     Verbose output");
-    io::println("    --help        Show this help message");
+    io::println("    -o, --output <file>    Specify output file");
+    io::println("    -O0                    No optimization (default)");
+    io::println("    -O1                    Basic optimizations");
+    io::println("    -O2                    Standard optimizations");
+    io::println("    -O3                    Aggressive optimizations");
+    io::println("    -d, --debug            Enable debug information");
+    io::println("    -v, --verbose          Verbose output");
+    io::println("    -h, --help             Show this help message");
+    io::println("    --version              Show version information");
     io::println("");
     io::println("EXAMPLES:");
     io::println("    cursed compile hello.csd");
-    io::println("    cursed compile main.csd -o my_program");
-    io::println("    cursed compile app.csd -O2 --debug");
+    io::println("    cursed hello.csd -o hello");
+    io::println("    cursed main.csd -o my_program -O2");
+    io::println("    cursed app.csd -O2 --debug --verbose");
+    io::println("");
+    io::println("The Stage 2 compiler implements self-hosting capability,");
+    io::println("allowing CURSED to compile itself for true language independence.");
 }
 
 // Compilation result
@@ -176,60 +245,98 @@ slay compile_program(source: tea, config: CompilerConfig) -> CompilationResult? 
         output_file: config.output_file,
     };
     
-    // Stage 1: Lexical Analysis
-    bestie (config.verbose) {
-        io::println("🔍 Stage 1: Lexical Analysis");
-    }
-    
-    sus tokens = lexer::tokenize(source)?;
-    bestie (tokens.length() == 0) {
-        result.errors.push("No tokens found in source code");
-        yolo result;
-    }
-    
-    // Stage 2: Parsing
-    bestie (config.verbose) {
-        io::println("🔧 Stage 2: Parsing");
-    }
-    
-    sus ast = parser::parse(tokens)?;
-    bestie (ast == nocap) {
-        result.errors.push("Failed to parse source code");
-        yolo result;
-    }
-    
-    // Stage 3: Type Checking
-    bestie (config.verbose) {
-        io::println("🧠 Stage 3: Type Checking");
-    }
-    
-    sus type_result = type_checker::check(ast)?;
-    bestie (!type_result.success) {
-        result.errors.extend(type_result.errors);
-        yolo result;
-    }
-    
-    // Stage 4: Code Generation
-    bestie (config.verbose) {
-        io::println("⚡ Stage 4: Code Generation");
-    }
-    
-    sus codegen_result = codegen::generate(ast, config)?;
-    bestie (!codegen_result.success) {
-        result.errors.extend(codegen_result.errors);
-        yolo result;
-    }
-    
-    // Stage 5: Write Output
-    bestie (config.verbose) {
-        io::println("💾 Stage 5: Writing Output");
-    }
-    
-    fs::write(config.output_file, codegen_result.output)?;
-    
-    result.success = truth;
-    bestie (config.verbose) {
-        io::println("✨ Compilation completed successfully!");
+    lowkey {
+        // Stage 1: Lexical Analysis
+        bestie (config.verbose) {
+            io::println("🔍 Stage 1: Lexical Analysis");
+        }
+        
+        sus tokens = lexer::tokenize(source)?;
+        bestie (tokens.length() == 0) {
+            result.errors.push("No tokens found in source code");
+            yolo result;
+        }
+        
+        bestie (config.verbose) {
+            io::println("   Found " + tokens.length().to_string() + " tokens");
+        }
+        
+        // Stage 2: Parsing
+        bestie (config.verbose) {
+            io::println("🔧 Stage 2: Parsing");
+        }
+        
+        sus ast = parser::parse(tokens)?;
+        bestie (ast == nocap) {
+            result.errors.push("Failed to parse source code");
+            yolo result;
+        }
+        
+        bestie (config.verbose) {
+            io::println("   AST generated successfully");
+        }
+        
+        // Stage 3: Type Checking
+        bestie (config.verbose) {
+            io::println("🧠 Stage 3: Type Checking");
+        }
+        
+        sus type_result = type_checker::check(ast)?;
+        bestie (!type_result.success) {
+            result.errors.extend(type_result.errors);
+            yolo result;
+        }
+        
+        // Collect warnings from type checker
+        bestie (type_result.warnings.length() > 0) {
+            result.warnings.extend(type_result.warnings);
+        }
+        
+        bestie (config.verbose) {
+            io::println("   Type checking passed");
+            bestie (result.warnings.length() > 0) {
+                io::println("   With " + result.warnings.length().to_string() + " warnings");
+            }
+        }
+        
+        // Stage 4: Code Generation
+        bestie (config.verbose) {
+            io::println("⚡ Stage 4: Code Generation (O" + config.optimization_level.to_string() + ")");
+        }
+        
+        sus codegen_result = codegen::generate(ast, config)?;
+        bestie (!codegen_result.success) {
+            result.errors.extend(codegen_result.errors);
+            yolo result;
+        }
+        
+        // Collect warnings from code generator
+        bestie (codegen_result.warnings.length() > 0) {
+            result.warnings.extend(codegen_result.warnings);
+        }
+        
+        bestie (config.verbose) {
+            io::println("   LLVM IR generated (" + codegen_result.output.length().to_string() + " characters)");
+        }
+        
+        // Stage 5: Write Output
+        bestie (config.verbose) {
+            io::println("💾 Stage 5: Writing Output");
+        }
+        
+        fs::write(config.output_file, codegen_result.output)?;
+        
+        result.success = truth;
+        bestie (config.verbose) {
+            io::println("✨ Compilation completed successfully!");
+            bestie (result.warnings.length() > 0) {
+                io::println("   Total warnings: " + result.warnings.length().to_string());
+            }
+        }
+        
+    } catch (sus e) {
+        result.errors.push("Internal compiler error: " + e.to_string());
+        result.success = facts;
     }
     
     yolo result;

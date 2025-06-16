@@ -440,48 +440,66 @@ impl Cmd {
         Ok(combined)
     }
 
-    /// Get stdin pipe
+    /// Get stdin pipe for writing to process
     pub fn stdin_pipe(&mut self) -> ProcessResult<Box<dyn Write + Send>> {
+        // Ensure stdin is configured for piping
+        self.stdin = Some(ProcessStdin::Pipe);
+        
+        // Start the process if not already started
         self.start()?;
         
         if let Some(child_arc) = &self.child {
-            let mut child = child_arc.lock().unwrap();
+            let mut child = child_arc.lock()
+                .map_err(|_| invalid_arguments("stdin_pipe", "lock", "Failed to acquire child process lock"))?;
+            
             if let Some(stdin) = child.stdin.take() {
                 Ok(Box::new(stdin))
             } else {
-                Err(invalid_arguments("stdin_pipe", "stdin", "Stdin not available"))
+                Err(invalid_arguments("stdin_pipe", "stdin", "Stdin not available - pipe not configured"))
             }
         } else {
             Err(invalid_arguments("stdin_pipe", "command", "Command not started"))
         }
     }
 
-    /// Get stdout pipe
+    /// Get stdout pipe for reading from process
     pub fn stdout_pipe(&mut self) -> ProcessResult<Box<dyn Read + Send>> {
+        // Ensure stdout is configured for piping
+        self.stdout = Some(ProcessStdout::Pipe);
+        
+        // Start the process if not already started
         self.start()?;
         
         if let Some(child_arc) = &self.child {
-            let mut child = child_arc.lock().unwrap();
+            let mut child = child_arc.lock()
+                .map_err(|_| invalid_arguments("stdout_pipe", "lock", "Failed to acquire child process lock"))?;
+            
             if let Some(stdout) = child.stdout.take() {
                 Ok(Box::new(stdout))
             } else {
-                Err(invalid_arguments("stdout_pipe", "stdout", "Stdout not available"))
+                Err(invalid_arguments("stdout_pipe", "stdout", "Stdout not available - pipe not configured"))
             }
         } else {
             Err(invalid_arguments("stdout_pipe", "command", "Command not started"))
         }
     }
 
-    /// Get stderr pipe
+    /// Get stderr pipe for reading from process
     pub fn stderr_pipe(&mut self) -> ProcessResult<Box<dyn Read + Send>> {
+        // Ensure stderr is configured for piping
+        self.stderr = Some(ProcessStderr::Pipe);
+        
+        // Start the process if not already started
         self.start()?;
         
         if let Some(child_arc) = &self.child {
-            let mut child = child_arc.lock().unwrap();
+            let mut child = child_arc.lock()
+                .map_err(|_| invalid_arguments("stderr_pipe", "lock", "Failed to acquire child process lock"))?;
+            
             if let Some(stderr) = child.stderr.take() {
                 Ok(Box::new(stderr))
             } else {
-                Err(invalid_arguments("stderr_pipe", "stderr", "Stderr not available"))
+                Err(invalid_arguments("stderr_pipe", "stderr", "Stderr not available - pipe not configured"))
             }
         } else {
             Err(invalid_arguments("stderr_pipe", "command", "Command not started"))

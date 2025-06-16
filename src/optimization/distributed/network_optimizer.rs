@@ -560,14 +560,88 @@ impl NetworkOptimizer {
 
     /// LZ4 compression
     async fn compress_lz4(&self, data: &[u8]) -> Result<Vec<u8>> {
-        // Simplified implementation - in practice use lz4 crate
-        Ok(data.to_vec()) // Placeholder
+        use std::io::Write;
+        
+        // Fast compression implementation
+        let mut compressed = Vec::new();
+        
+        // Simple run-length encoding for demonstration
+        // In production, would use lz4_flex or similar crate
+        let mut i = 0;
+        while i < data.len() {
+            let current_byte = data[i];
+            let mut count = 1;
+            
+            // Count consecutive bytes
+            while i + count < data.len() && 
+                  data[i + count] == current_byte && 
+                  count < 255 {
+                count += 1;
+            }
+            
+            if count > 3 {
+                // Use run-length encoding
+                compressed.push(0xFF); // Escape byte
+                compressed.push(count as u8);
+                compressed.push(current_byte);
+            } else {
+                // Store raw bytes
+                for _ in 0..count {
+                    compressed.push(current_byte);
+                }
+            }
+            
+            i += count;
+        }
+        
+        // Add compression header
+        let mut result = Vec::with_capacity(compressed.len() + 8);
+        result.extend_from_slice(&(data.len() as u32).to_le_bytes()); // Original size
+        result.extend_from_slice(&(compressed.len() as u32).to_le_bytes()); // Compressed size
+        result.extend_from_slice(&compressed);
+        
+        Ok(result)
     }
 
     /// LZ4 decompression
     async fn decompress_lz4(&self, data: &[u8]) -> Result<Vec<u8>> {
-        // Simplified implementation - in practice use lz4 crate
-        Ok(data.to_vec()) // Placeholder
+        if data.len() < 8 {
+            return Err(CursedError::system_error("Invalid compressed data"));
+        }
+        
+        let original_size = u32::from_le_bytes([data[0], data[1], data[2], data[3]]) as usize;
+        let compressed_size = u32::from_le_bytes([data[4], data[5], data[6], data[7]]) as usize;
+        
+        if data.len() != compressed_size + 8 {
+            return Err(CursedError::system_error("Compressed data size mismatch"));
+        }
+        
+        let compressed_data = &data[8..];
+        let mut decompressed = Vec::with_capacity(original_size);
+        
+        let mut i = 0;
+        while i < compressed_data.len() {
+            if compressed_data[i] == 0xFF && i + 2 < compressed_data.len() {
+                // Run-length encoded sequence
+                let count = compressed_data[i + 1] as usize;
+                let byte_value = compressed_data[i + 2];
+                
+                for _ in 0..count {
+                    decompressed.push(byte_value);
+                }
+                i += 3;
+            } else {
+                // Raw byte
+                decompressed.push(compressed_data[i]);
+                i += 1;
+            }
+        }
+        
+        if decompressed.len() != original_size {
+            return Err(CursedError::system_error("Decompression size mismatch"));
+        }
+        
+        Ok(decompressed)
     }
 
     /// Zstd compression
@@ -789,22 +863,133 @@ impl NetworkOptimizer {
 
     /// Start bandwidth monitoring task
     async fn start_bandwidth_monitor(&self) -> Result<()> {
-        // In a real implementation, this would spawn a background task
-        // to monitor and enforce bandwidth limits
+        let bandwidth_trackers = self.bandwidth_trackers.clone();
+        let config = self.config.clone();
+        let is_running = self.is_running.clone();
+        
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(config.bandwidth.monitoring_interval);
+            
+            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+                interval.tick().await;
+                
+                // Update bandwidth statistics
+                let mut trackers = match bandwidth_trackers.lock() {
+                    Ok(t) => t,
+                    Err(_) => continue,
+                };
+                
+                let now = Instant::now();
+                for (worker_id, tracker) in trackers.iter_mut() {
+                    let time_elapsed = now.duration_since(tracker.last_reset).as_secs_f64();
+                    
+                    if time_elapsed > 0.0 {
+                        tracker.current_rate_out = tracker.bytes_sent as f64 / time_elapsed;
+                        tracker.current_rate_in = tracker.bytes_received as f64 / time_elapsed;
+                        
+                        // Reset counters for next interval
+                        tracker.bytes_sent = 0;
+                        tracker.bytes_received = 0;
+                        tracker.last_reset = now;
+                        
+                        debug!(
+                            worker_id = worker_id,
+                            rate_out_mbps = tracker.current_rate_out / 1_000_000.0,
+                            rate_in_mbps = tracker.current_rate_in / 1_000_000.0,
+                            "Bandwidth monitoring update"
+                        );
+                    }
+                }
+            }
+        });
+        
+        info!("Bandwidth monitoring task started");
         Ok(())
     }
 
     /// Start connection manager task
     async fn start_connection_manager(&self) -> Result<()> {
-        // In a real implementation, this would spawn a background task
-        // to manage connection lifecycle and cleanup
+        let connection_pool = self.connection_pool.clone();
+        let config = self.config.clone();
+        let is_running = self.is_running.clone();
+        
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(config.connection_pool.keep_alive_interval);
+            
+            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+                interval.tick().await;
+                
+                // Clean up idle connections
+                let mut pool = match connection_pool.lock() {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                
+                let now = Instant::now();
+                for (worker_id, connections) in pool.iter_mut() {
+                    connections.retain(|conn| {
+                        let is_fresh = now.duration_since(conn.last_used) < config.connection_pool.idle_timeout;
+                        if !is_fresh {
+                            debug!(worker_id = worker_id, connection_id = conn.connection_id, "Cleaning up idle connection");
+                        }
+                        is_fresh
+                    });
+                }
+                
+                // Remove empty worker entries
+                pool.retain(|_, connections| !connections.is_empty());
+            }
+        });
+        
+        info!("Connection manager task started");
         Ok(())
     }
 
     /// Start message processor task
     async fn start_message_processor(&self) -> Result<()> {
-        // In a real implementation, this would spawn a background task
-        // to process the priority message queue
+        let message_queue = self.message_queue.clone();
+        let network_optimizer = NetworkOptimizer {
+            config: self.config.clone(),
+            connection_pool: self.connection_pool.clone(),
+            bandwidth_trackers: self.bandwidth_trackers.clone(),
+            compression_cache: self.compression_cache.clone(),
+            stats: self.stats.clone(),
+            bandwidth_semaphore: self.bandwidth_semaphore.clone(),
+            message_queue: self.message_queue.clone(),
+            is_running: self.is_running.clone(),
+        };
+        let is_running = self.is_running.clone();
+        
+        tokio::spawn(async move {
+            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+                // Process priority queue
+                let message_to_send = {
+                    let mut queue = match message_queue.lock() {
+                        Ok(q) => q,
+                        Err(_) => {
+                            tokio::time::sleep(Duration::from_millis(10)).await;
+                            continue;
+                        }
+                    };
+                    
+                    queue.pop()
+                };
+                
+                if let Some(prioritized_message) = message_to_send {
+                    let destination = prioritized_message.message.destination.clone();
+                    
+                    // Send message immediately
+                    if let Err(e) = network_optimizer.send_immediate(&destination, prioritized_message.message).await {
+                        warn!(error = ?e, destination = destination, "Failed to send queued message");
+                    }
+                } else {
+                    // No messages in queue, sleep briefly
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+            }
+        });
+        
+        info!("Message processor task started");
         Ok(())
     }
 

@@ -30,7 +30,6 @@ pub enum TlsCipherSuite {
     // TLS 1.3
     Aes128GcmSha256,
     Aes256GcmSha384,
-    ChaCha20Poly1305Sha256,
     Aes128CcmSha256,
     Aes128Ccm8Sha256,
 }

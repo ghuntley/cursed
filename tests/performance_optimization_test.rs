@@ -1,662 +1,609 @@
-//! Comprehensive tests for the Performance Optimization System
-//! 
-//! This test suite validates the complete performance optimization infrastructure
-//! including real optimization passes, resource monitoring, benchmarking, and reporting.
+/// Comprehensive Performance Optimization System Tests
+/// 
+/// Tests all aspects of the performance optimization system including:
+/// - Smart optimization defaults
+/// - Adaptive optimization
+/// - Compilation speed improvements
+/// - Runtime optimizations
+/// - Performance profiling
 
 use cursed::optimization::{
-    PerformanceOptimizationSystem, PerformanceConfig, OptimizationConfig, OptimizationLevel,
-    EnhancedBuildProfiler, ProfilerConfig, ReportFormat,
-    BenchmarkConfig, BenchmarkType, BenchmarkTestData, ComplexityLevel,
-    CompilationUnit, ResourceMonitoringLevel,
+    performance_system::{
+        PerformanceOptimizationSystem, PerformanceSystemConfig, PerformanceMonitoringLevel,
+        ParallelConfig, CacheConfig, AdaptiveDecisionType, RecommendationType,
+    },
+    BuildProfile, OptimizationLevel,
+    compilation_speed::{CompilationUnit, CompilationStatus},
+    benchmarking::BenchmarkType,
 };
-use cursed::error::Result;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use std::path::PathBuf;
+use tempfile::TempDir;
 
 #[test]
-fn test_performance_optimization_system_creation() {
-    let perf_config = PerformanceConfig::default();
-    let opt_config = OptimizationConfig::default();
+fn test_performance_system_initialization() {
+    let config = PerformanceSystemConfig::default();
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
     
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config);
-    assert!(system.is_ok(), "Should create performance optimization system successfully");
+    assert_eq!(system.get_config().build_profile, BuildProfile::Release);
+    assert!(system.get_config().enable_adaptive_optimization);
+    assert!(system.get_config().enable_compilation_speed_optimizations);
+    assert!(system.get_config().enable_advanced_runtime_optimizations);
 }
 
 #[test]
-fn test_performance_optimization_system_monitoring() {
-    let perf_config = PerformanceConfig {
-        enable_realtime_monitoring: true,
-        monitoring_interval_ms: 50,
+fn test_build_profile_optimization_defaults() {
+    // Test development profile
+    let dev_config = PerformanceSystemConfig {
+        build_profile: BuildProfile::Development,
         ..Default::default()
     };
-    let opt_config = OptimizationConfig::default();
-    
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    // Test monitoring start/stop
-    assert!(system.start_monitoring().is_ok());
-    assert!(system.stop_monitoring().is_ok());
-}
+    let dev_system = PerformanceOptimizationSystem::new(dev_config).unwrap();
+    assert_eq!(dev_system.get_config().build_profile, BuildProfile::Development);
 
-#[test]
-fn test_optimization_session_management() {
-    let perf_config = PerformanceConfig::default();
-    let opt_config = OptimizationConfig::default();
-    
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    // Create optimization session
-    let session = system.create_session("test_session".to_string());
-    assert_eq!(session.name, "test_session");
-    assert!(session.id.starts_with("test_session_"));
-}
-
-#[test]
-fn test_optimization_with_tracking() {
-    let perf_config = PerformanceConfig {
-        enable_realtime_monitoring: true,
-        enable_benchmarking: false,
-        monitoring_interval_ms: 10,
+    // Test production profile
+    let prod_config = PerformanceSystemConfig {
+        build_profile: BuildProfile::Production,
         ..Default::default()
     };
-    let opt_config = OptimizationConfig::default();
+    let prod_system = PerformanceOptimizationSystem::new(prod_config).unwrap();
+    assert_eq!(prod_system.get_config().build_profile, BuildProfile::Production);
+
+    // Test debug profile
+    let debug_config = PerformanceSystemConfig {
+        build_profile: BuildProfile::Debug,
+        ..Default::default()
+    };
+    let debug_system = PerformanceOptimizationSystem::new(debug_config).unwrap();
+    assert_eq!(debug_system.get_config().build_profile, BuildProfile::Debug);
+}
+
+#[test]
+fn test_compilation_time_budget_adaptation() {
+    let temp_dir = TempDir::new().unwrap();
     
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    let session = system.create_session("tracking_test".to_string());
+    let config = PerformanceSystemConfig {
+        build_profile: BuildProfile::Production,
+        compilation_time_budget: 1.0, // Very short budget (1 second)
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
     
-    // Create test compilation units
-    let mut units = vec![
-        CompilationUnit::new("test_unit_1".to_string()),
-        CompilationUnit::new("test_unit_2".to_string()),
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
+    
+    // Create a large compilation unit that would exceed budget
+    let large_unit = CompilationUnit {
+        id: "large_module".to_string(),
+        source_path: PathBuf::from("large.csd"),
+        module_name: "large".to_string(),
+        source_code: generate_large_source_code(10000), // 10k lines
+        dependencies: vec![],
+        last_modified: SystemTime::now(),
+        status: CompilationStatus::Pending,
+        priority: 1,
+        content_hash: String::new(),
+    };
+    
+    let session_id = system.start_session("budget_test".to_string()).unwrap();
+    
+    // Compile with time budget constraint
+    let results = system.compile_with_smart_optimization(vec![large_unit]).unwrap();
+    
+    // Should have made adaptive decisions to meet budget
+    assert!(!results.adaptive_decisions.is_empty());
+    
+    // Check if build profile was adjusted
+    let has_profile_change = results.adaptive_decisions.iter().any(|decision| {
+        matches!(decision.decision_type, AdaptiveDecisionType::BuildProfileChange { .. })
+    });
+    assert!(has_profile_change);
+    
+    system.end_session().unwrap();
+}
+
+#[test]
+fn test_adaptive_optimization_learning() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    let config = PerformanceSystemConfig {
+        enable_adaptive_optimization: true,
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
+    
+    // Simulate multiple compilation sessions to train adaptive system
+    for i in 0..5 {
+        let session_id = system.start_session(format!("adaptive_test_{}", i)).unwrap();
+        
+        let unit = CompilationUnit {
+            id: format!("module_{}", i),
+            source_path: PathBuf::from(format!("test_{}.csd", i)),
+            module_name: format!("test_{}", i),
+            source_code: generate_test_source_code(i * 100 + 50),
+            dependencies: vec![],
+            last_modified: SystemTime::now(),
+            status: CompilationStatus::Pending,
+            priority: 1,
+            content_hash: String::new(),
+        };
+        
+        let results = system.compile_with_smart_optimization(vec![unit]).unwrap();
+        
+        // System should learn and make adaptive decisions
+        if i > 2 {
+            // After a few iterations, should start making adaptive decisions
+            assert!(!results.adaptive_decisions.is_empty());
+        }
+        
+        system.end_session().unwrap();
+    }
+}
+
+#[test]
+fn test_parallel_compilation_optimization() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    let config = PerformanceSystemConfig {
+        enable_compilation_speed_optimizations: true,
+        parallel_config: ParallelConfig {
+            max_threads: 4,
+            enable_parallel_parsing: true,
+            enable_parallel_type_checking: true,
+            enable_parallel_optimization: true,
+            ..Default::default()
+        },
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
+    
+    // Create multiple independent compilation units
+    let units: Vec<CompilationUnit> = (0..8).map(|i| {
+        CompilationUnit {
+            id: format!("parallel_module_{}", i),
+            source_path: PathBuf::from(format!("parallel_{}.csd", i)),
+            module_name: format!("parallel_{}", i),
+            source_code: generate_test_source_code(200),
+            dependencies: vec![], // Independent units for parallel compilation
+            last_modified: SystemTime::now(),
+            status: CompilationStatus::Pending,
+            priority: 1,
+            content_hash: String::new(),
+        }
+    }).collect();
+    
+    let session_id = system.start_session("parallel_test".to_string()).unwrap();
+    
+    let start_time = std::time::Instant::now();
+    let results = system.compile_with_smart_optimization(units).unwrap();
+    let compilation_time = start_time.elapsed();
+    
+    // Compilation should complete successfully
+    assert_eq!(results.compilation_results.len(), 8);
+    
+    // All compilations should succeed
+    let successful_compilations = results.compilation_results.iter()
+        .filter(|(_, result)| result.is_ok())
+        .count();
+    assert_eq!(successful_compilations, 8);
+    
+    // Parallel efficiency should be reasonable
+    assert!(results.performance_metrics.parallel_efficiency > 0.0);
+    
+    system.end_session().unwrap();
+}
+
+#[test]
+fn test_incremental_compilation_caching() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    let config = PerformanceSystemConfig {
+        enable_compilation_speed_optimizations: true,
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            enable_ast_caching: true,
+            enable_type_cache: true,
+            enable_optimization_cache: true,
+            max_cache_size_mb: 100,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
+    
+    let unit = CompilationUnit {
+        id: "cache_test".to_string(),
+        source_path: PathBuf::from("cache_test.csd"),
+        module_name: "cache_test".to_string(),
+        source_code: generate_test_source_code(500),
+        dependencies: vec![],
+        last_modified: SystemTime::now(),
+        status: CompilationStatus::Pending,
+        priority: 1,
+        content_hash: String::new(),
+    };
+    
+    // First compilation - should populate cache
+    let session1_id = system.start_session("cache_test_1".to_string()).unwrap();
+    let results1 = system.compile_with_smart_optimization(vec![unit.clone()]).unwrap();
+    let first_compile_time = results1.performance_metrics.total_time;
+    system.end_session().unwrap();
+    
+    // Second compilation - should use cache
+    let session2_id = system.start_session("cache_test_2".to_string()).unwrap();
+    let results2 = system.compile_with_smart_optimization(vec![unit]).unwrap();
+    let second_compile_time = results2.performance_metrics.total_time;
+    system.end_session().unwrap();
+    
+    // Second compilation should be faster due to caching
+    assert!(second_compile_time < first_compile_time);
+    
+    // Cache hit rate should be reasonable
+    assert!(results2.performance_metrics.cache_hit_rate > 0.0);
+}
+
+#[test]
+fn test_performance_monitoring_levels() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Test minimal monitoring
+    let minimal_config = PerformanceSystemConfig {
+        performance_monitoring_level: PerformanceMonitoringLevel::Minimal,
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().join("minimal"),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let minimal_system = PerformanceOptimizationSystem::new(minimal_config).unwrap();
+    
+    // Test comprehensive monitoring
+    let comprehensive_config = PerformanceSystemConfig {
+        performance_monitoring_level: PerformanceMonitoringLevel::Comprehensive,
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().join("comprehensive"),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let comprehensive_system = PerformanceOptimizationSystem::new(comprehensive_config).unwrap();
+    
+    // Both should initialize successfully
+    assert_eq!(minimal_system.get_config().performance_monitoring_level, PerformanceMonitoringLevel::Minimal);
+    assert_eq!(comprehensive_system.get_config().performance_monitoring_level, PerformanceMonitoringLevel::Comprehensive);
+}
+
+#[test]
+fn test_performance_recommendations_generation() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    let config = PerformanceSystemConfig {
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
+    
+    // Create compilation scenario that would generate recommendations
+    let units = vec![
+        CompilationUnit {
+            id: "slow_module".to_string(),
+            source_path: PathBuf::from("slow.csd"),
+            module_name: "slow".to_string(),
+            source_code: generate_large_source_code(5000), // Large enough to be slow
+            dependencies: vec![],
+            last_modified: SystemTime::now(),
+            status: CompilationStatus::Pending,
+            priority: 1,
+            content_hash: String::new(),
+        }
     ];
     
-    // Add some test data
-    units[0].source_files.push("test1.csd".to_string());
-    units[1].source_files.push("test2.csd".to_string());
+    let session_id = system.start_session("recommendation_test".to_string()).unwrap();
+    let results = system.compile_with_smart_optimization(units).unwrap();
+    system.end_session().unwrap();
     
-    // Run optimization with tracking
-    let results = system.optimize_with_tracking(&mut units, &session);
-    assert!(results.is_ok(), "Optimization with tracking should succeed");
+    // Should generate performance recommendations
+    assert!(!results.recommendations.is_empty());
     
-    let results = results.unwrap();
-    assert_eq!(results.unit_results.len(), 2);
-    assert!(results.total_time > Duration::from_millis(0));
-    assert_eq!(results.session_id, session.id);
+    // Check recommendation types
+    let has_compilation_speed_rec = results.recommendations.iter().any(|rec| {
+        matches!(rec.recommendation_type, RecommendationType::CompilationSpeed)
+    });
+    let has_caching_rec = results.recommendations.iter().any(|rec| {
+        matches!(rec.recommendation_type, RecommendationType::Caching)
+    });
+    
+    // Should have at least one useful recommendation
+    assert!(has_compilation_speed_rec || has_caching_rec);
 }
 
 #[test]
-fn test_compilation_speed_benchmark() {
-    let perf_config = PerformanceConfig {
-        enable_benchmarking: true,
-        max_benchmark_iterations: 5,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
+fn test_benchmark_integration() {
+    let temp_dir = TempDir::new().unwrap();
     
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    let benchmark_config = BenchmarkConfig {
-        name: "test_compilation_speed".to_string(),
-        benchmark_type: BenchmarkType::CompilationSpeed,
-        iterations: 3,
-        warmup_iterations: 1,
-        test_data: BenchmarkTestData {
-            unit_count: 10,
-            complexity_level: ComplexityLevel::Simple,
-            data_size_mb: 1.0,
+    let config = PerformanceSystemConfig {
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
         },
+        ..Default::default()
     };
     
-    let results = system.run_benchmark(benchmark_config);
-    assert!(results.is_ok(), "Compilation speed benchmark should succeed");
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
     
-    let results = results.unwrap();
-    assert_eq!(results.name, "test_compilation_speed");
-    assert!(results.statistics.mean_time_ms > 0.0);
-    assert!(results.statistics.throughput_ops_per_sec > 0.0);
+    // Run compilation benchmark
+    let benchmark_results = system.run_performance_benchmark(BenchmarkType::Compilation).unwrap();
+    
+    // Benchmark should complete successfully
+    assert!(benchmark_results.iterations > 0);
+    assert!(benchmark_results.average_time > Duration::from_nanos(1));
+    assert!(benchmark_results.throughput >= 0.0);
 }
 
 #[test]
-fn test_memory_usage_benchmark() {
-    let perf_config = PerformanceConfig {
-        enable_benchmarking: true,
-        max_benchmark_iterations: 5,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
+fn test_performance_report_generation() {
+    let temp_dir = TempDir::new().unwrap();
     
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    let benchmark_config = BenchmarkConfig {
-        name: "test_memory_usage".to_string(),
-        benchmark_type: BenchmarkType::MemoryUsage,
-        iterations: 3,
-        warmup_iterations: 0,
-        test_data: BenchmarkTestData {
-            unit_count: 50,
-            complexity_level: ComplexityLevel::Medium,
-            data_size_mb: 5.0,
+    let config = PerformanceSystemConfig {
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
         },
+        ..Default::default()
     };
     
-    let results = system.run_benchmark(benchmark_config);
-    assert!(results.is_ok(), "Memory usage benchmark should succeed");
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
     
-    let results = results.unwrap();
-    assert_eq!(results.name, "test_memory_usage");
-    assert!(results.statistics.mean_memory_delta_mb >= 0.0);
+    // Run a compilation session
+    let session_id = system.start_session("report_test".to_string()).unwrap();
+    
+    let unit = CompilationUnit {
+        id: "report_module".to_string(),
+        source_path: PathBuf::from("report.csd"),
+        module_name: "report".to_string(),
+        source_code: generate_test_source_code(100),
+        dependencies: vec![],
+        last_modified: SystemTime::now(),
+        status: CompilationStatus::Pending,
+        priority: 1,
+        content_hash: String::new(),
+    };
+    
+    let results = system.compile_with_smart_optimization(vec![unit]).unwrap();
+    system.end_session().unwrap();
+    
+    // Generate performance report
+    let report = system.generate_performance_report();
+    
+    // Report should contain key sections
+    assert!(report.contains("# CURSED Compiler Performance Report"));
+    assert!(report.contains("## Current Session"));
+    assert!(report.contains("## Compilation Performance"));
+    assert!(report.contains("## Performance Recommendations"));
+    assert!(report.contains("## Build Profile Analysis"));
+    assert!(report.contains("## Configuration Summary"));
 }
 
 #[test]
-fn test_optimization_effectiveness_benchmark() {
-    let perf_config = PerformanceConfig {
-        enable_benchmarking: true,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
+fn test_cache_management() {
+    let temp_dir = TempDir::new().unwrap();
     
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    let benchmark_config = BenchmarkConfig {
-        name: "test_optimization_effectiveness".to_string(),
-        benchmark_type: BenchmarkType::OptimizationEffectiveness,
-        iterations: 2,
-        warmup_iterations: 1,
-        test_data: BenchmarkTestData {
-            unit_count: 20,
-            complexity_level: ComplexityLevel::Complex,
-            data_size_mb: 2.0,
+    let config = PerformanceSystemConfig {
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            max_cache_size_mb: 50, // Small cache for testing
+            enable_ast_caching: true,
+            enable_type_cache: true,
+            enable_optimization_cache: true,
+            ..Default::default()
         },
+        ..Default::default()
     };
     
-    let results = system.run_benchmark(benchmark_config);
-    assert!(results.is_ok(), "Optimization effectiveness benchmark should succeed");
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
     
-    let results = results.unwrap();
-    assert_eq!(results.name, "test_optimization_effectiveness");
+    // Populate cache with multiple compilations
+    for i in 0..5 {
+        let session_id = system.start_session(format!("cache_test_{}", i)).unwrap();
+        
+        let unit = CompilationUnit {
+            id: format!("cache_module_{}", i),
+            source_path: PathBuf::from(format!("cache_{}.csd", i)),
+            module_name: format!("cache_{}", i),
+            source_code: generate_test_source_code(200),
+            dependencies: vec![],
+            last_modified: SystemTime::now(),
+            status: CompilationStatus::Pending,
+            priority: 1,
+            content_hash: String::new(),
+        };
+        
+        let results = system.compile_with_smart_optimization(vec![unit]).unwrap();
+        system.end_session().unwrap();
+    }
+    
+    // Clear caches
+    system.clear_caches().unwrap();
+    
+    // Should succeed without errors
 }
 
 #[test]
-fn test_cache_performance_benchmark() {
-    let perf_config = PerformanceConfig {
-        enable_benchmarking: true,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
+fn test_session_lifecycle() {
+    let temp_dir = TempDir::new().unwrap();
     
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    let benchmark_config = BenchmarkConfig {
-        name: "test_cache_performance".to_string(),
-        benchmark_type: BenchmarkType::CachePerformance,
-        iterations: 3,
-        warmup_iterations: 1,
-        test_data: BenchmarkTestData {
-            unit_count: 30,
-            complexity_level: ComplexityLevel::Medium,
-            data_size_mb: 3.0,
+    let config = PerformanceSystemConfig {
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
         },
-    };
-    
-    let results = system.run_benchmark(benchmark_config);
-    assert!(results.is_ok(), "Cache performance benchmark should succeed");
-    
-    let results = results.unwrap();
-    assert_eq!(results.name, "test_cache_performance");
-}
-
-#[test]
-fn test_enhanced_build_profiler_creation() {
-    let config = ProfilerConfig::default();
-    let profiler = EnhancedBuildProfiler::new(config);
-    assert!(profiler.is_ok(), "Should create enhanced build profiler successfully");
-}
-
-#[test]
-fn test_enhanced_build_profiler_session() {
-    let config = ProfilerConfig {
-        enable_realtime_monitoring: true,
-        enable_memory_profiling: true,
-        enable_cpu_profiling: true,
-        enable_io_profiling: true,
-        monitoring_interval_ms: 10,
         ..Default::default()
     };
     
-    let profiler = EnhancedBuildProfiler::new(config).unwrap();
+    let system = PerformanceOptimizationSystem::new(config).unwrap();
     
-    // Start profiling session
-    let session = profiler.start_build_session("test_profiling_session".to_string());
-    assert!(session.is_ok(), "Should start profiling session successfully");
+    // Start session
+    let session_id = system.start_session("lifecycle_test".to_string()).unwrap();
+    assert!(!session_id.is_empty());
+    assert!(session_id.contains("lifecycle_test"));
+    
+    // Perform some work
+    let unit = CompilationUnit {
+        id: "lifecycle_module".to_string(),
+        source_path: PathBuf::from("lifecycle.csd"),
+        module_name: "lifecycle".to_string(),
+        source_code: "facts x = 42;".to_string(),
+        dependencies: vec![],
+        last_modified: SystemTime::now(),
+        status: CompilationStatus::Pending,
+        priority: 1,
+        content_hash: String::new(),
+    };
+    
+    let results = system.compile_with_smart_optimization(vec![unit]).unwrap();
+    assert_eq!(results.compilation_results.len(), 1);
+    
+    // End session
+    let session = system.end_session().unwrap();
+    assert!(session.is_some());
     
     let session = session.unwrap();
-    assert_eq!(session.name, "test_profiling_session");
-    assert!(session.id.contains("test_profiling_session"));
-    
-    // End profiling session
-    let report = profiler.end_build_session(session);
-    assert!(report.is_ok(), "Should end profiling session successfully");
-    
-    let report = report.unwrap();
-    assert!(report.total_duration > Duration::from_millis(0));
-    assert!(report.performance_summary.overall_performance_score >= 0.0);
+    assert_eq!(session.name, "lifecycle_test");
+    assert!(session.start_time.elapsed() > Duration::from_nanos(1));
 }
 
 #[test]
-fn test_build_profiler_compilation_unit_profiling() {
-    let config = ProfilerConfig {
-        enable_memory_profiling: true,
-        enable_cpu_profiling: true,
-        enable_io_profiling: true,
+fn test_configuration_updates() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    let initial_config = PerformanceSystemConfig {
+        build_profile: BuildProfile::Development,
+        compilation_time_budget: 10.0,
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        },
         ..Default::default()
     };
     
-    let profiler = EnhancedBuildProfiler::new(config).unwrap();
-    let session = profiler.start_build_session("unit_profiling_test".to_string()).unwrap();
-    
-    // Create test compilation unit
-    let mut unit = CompilationUnit::new("test_unit".to_string());
-    unit.source_files.push("test.csd".to_string());
-    
-    // Profile compilation unit
-    let result = profiler.profile_compilation_unit(&unit, &session);
-    assert!(result.is_ok(), "Should profile compilation unit successfully");
-    
-    let result = result.unwrap();
-    assert_eq!(result.unit_name, "test_unit");
-    assert!(result.compilation_time > Duration::from_millis(0));
-    assert!(result.peak_memory_mb >= 0.0);
-}
-
-#[test]
-fn test_profiler_report_generation() {
-    let config = ProfilerConfig {
-        report_format: ReportFormat::Json,
-        output_directory: Some(PathBuf::from("/tmp")),
-        ..Default::default()
-    };
-    
-    let profiler = EnhancedBuildProfiler::new(config).unwrap();
-    let session = profiler.start_build_session("report_test".to_string()).unwrap();
-    
-    // Generate report
-    let report = profiler.end_build_session(session).unwrap();
-    
-    // Test report content
-    assert!(!report.session_id.is_empty());
-    assert!(!report.session_name.is_empty());
-    assert!(report.total_duration >= Duration::from_millis(0));
-    assert!(report.performance_summary.overall_performance_score >= 0.0);
-    assert!(report.system_metrics.peak_memory_mb >= 0.0);
-    assert!(report.system_metrics.average_cpu_percent >= 0.0);
-}
-
-#[test]
-fn test_profiler_report_export_json() {
-    let config = ProfilerConfig::default();
-    let profiler = EnhancedBuildProfiler::new(config).unwrap();
-    let session = profiler.start_build_session("export_test".to_string()).unwrap();
-    
-    let report = profiler.end_build_session(session).unwrap();
-    
-    // Test JSON export
-    let temp_path = PathBuf::from("/tmp/test_report.json");
-    let result = profiler.export_report(&report, ReportFormat::Json, temp_path.clone());
-    assert!(result.is_ok(), "Should export JSON report successfully");
-    
-    // Clean up
-    let _ = std::fs::remove_file(temp_path);
-}
-
-#[test]
-fn test_profiler_report_export_html() {
-    let config = ProfilerConfig::default();
-    let profiler = EnhancedBuildProfiler::new(config).unwrap();
-    let session = profiler.start_build_session("html_export_test".to_string()).unwrap();
-    
-    let report = profiler.end_build_session(session).unwrap();
-    
-    // Test HTML export
-    let temp_path = PathBuf::from("/tmp/test_report.html");
-    let result = profiler.export_report(&report, ReportFormat::Html, temp_path.clone());
-    assert!(result.is_ok(), "Should export HTML report successfully");
-    
-    // Clean up
-    let _ = std::fs::remove_file(temp_path);
-}
-
-#[test]
-fn test_profiler_report_export_markdown() {
-    let config = ProfilerConfig::default();
-    let profiler = EnhancedBuildProfiler::new(config).unwrap();
-    let session = profiler.start_build_session("markdown_export_test".to_string()).unwrap();
-    
-    let report = profiler.end_build_session(session).unwrap();
-    
-    // Test Markdown export
-    let temp_path = PathBuf::from("/tmp/test_report.md");
-    let result = profiler.export_report(&report, ReportFormat::Markdown, temp_path.clone());
-    assert!(result.is_ok(), "Should export Markdown report successfully");
-    
-    // Clean up
-    let _ = std::fs::remove_file(temp_path);
-}
-
-#[test]
-fn test_performance_config_validation() {
-    // Test default configuration
-    let config = PerformanceConfig::default();
-    assert!(config.enable_realtime_monitoring);
-    assert!(config.enable_benchmarking);
-    assert_eq!(config.monitoring_interval_ms, 100);
-    assert_eq!(config.max_benchmark_iterations, 10);
-    assert_eq!(config.max_performance_entries, 10000);
-    
-    // Test custom configuration
-    let custom_config = PerformanceConfig {
-        enable_realtime_monitoring: false,
-        enable_benchmarking: true,
-        monitoring_interval_ms: 50,
-        max_benchmark_iterations: 5,
-        resource_monitoring_level: ResourceMonitoringLevel::Comprehensive,
-        ..Default::default()
-    };
-    
-    assert!(!custom_config.enable_realtime_monitoring);
-    assert_eq!(custom_config.monitoring_interval_ms, 50);
-    assert_eq!(custom_config.max_benchmark_iterations, 5);
-}
-
-#[test]
-fn test_profiler_config_validation() {
-    // Test default configuration
-    let config = ProfilerConfig::default();
-    assert!(config.enable_realtime_monitoring);
-    assert!(config.enable_memory_profiling);
-    assert!(config.enable_cpu_profiling);
-    assert!(config.enable_io_profiling);
-    assert_eq!(config.monitoring_interval_ms, 100);
-    assert_eq!(config.max_profile_entries, 1000);
-    
-    // Test custom configuration
-    let custom_config = ProfilerConfig {
-        enable_realtime_monitoring: false,
-        enable_memory_profiling: true,
-        enable_cpu_profiling: false,
-        enable_io_profiling: true,
-        monitoring_interval_ms: 200,
-        report_format: ReportFormat::Interactive,
-        output_directory: Some(PathBuf::from("/custom/output")),
-        ..Default::default()
-    };
-    
-    assert!(!custom_config.enable_realtime_monitoring);
-    assert!(!custom_config.enable_cpu_profiling);
-    assert_eq!(custom_config.monitoring_interval_ms, 200);
-    assert!(matches!(custom_config.report_format, ReportFormat::Interactive));
-}
-
-#[test]
-fn test_benchmark_test_data_creation() {
-    let test_data = BenchmarkTestData {
-        unit_count: 100,
-        complexity_level: ComplexityLevel::Complex,
-        data_size_mb: 50.0,
-    };
-    
-    assert_eq!(test_data.unit_count, 100);
-    assert!(matches!(test_data.complexity_level, ComplexityLevel::Complex));
-    assert_eq!(test_data.data_size_mb, 50.0);
-}
-
-#[test]
-fn test_system_statistics_tracking() {
-    let perf_config = PerformanceConfig::default();
-    let opt_config = OptimizationConfig::default();
-    
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    // Initial statistics should be zero
-    let stats = system.get_system_statistics();
-    assert_eq!(stats.optimizations_completed, 0);
-    assert_eq!(stats.total_units_optimized, 0);
-    assert_eq!(stats.benchmark_runs, 0);
-    assert_eq!(stats.cache_hits, 0);
-    assert_eq!(stats.cache_misses, 0);
-    assert_eq!(stats.errors_encountered, 0);
-}
-
-#[test]
-fn test_resource_statistics() {
-    let perf_config = PerformanceConfig {
-        enable_realtime_monitoring: true,
-        resource_monitoring_level: ResourceMonitoringLevel::Detailed,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
-    
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    let stats = system.get_resource_statistics();
-    assert!(stats.is_ok(), "Should get resource statistics successfully");
-    
-    let stats = stats.unwrap();
-    assert!(stats.peak_memory_mb >= 0.0);
-    assert!(stats.average_memory_mb >= 0.0);
-    assert!(stats.peak_cpu_percent >= 0.0);
-    assert!(stats.average_cpu_percent >= 0.0);
-    assert!(stats.total_io_operations >= 0);
-    assert!(stats.monitoring_uptime >= Duration::from_millis(0));
-}
-
-#[test]
-fn test_performance_analysis_generation() {
-    let perf_config = PerformanceConfig {
-        enable_prediction: true,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
-    
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    // Test performance analysis for recent optimizations
-    let analysis = system.get_performance_analysis(Duration::from_secs(3600));
-    assert!(analysis.is_ok(), "Should get performance analysis successfully");
-}
-
-#[test]
-fn test_multiple_benchmark_runs() {
-    let perf_config = PerformanceConfig {
-        enable_benchmarking: true,
-        max_benchmark_iterations: 3,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
-    
-    let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-    
-    // Run multiple benchmarks
-    let benchmark_types = vec![
-        BenchmarkType::CompilationSpeed,
-        BenchmarkType::MemoryUsage,
-        BenchmarkType::CachePerformance,
-    ];
-    
-    for (i, benchmark_type) in benchmark_types.into_iter().enumerate() {
-        let benchmark_config = BenchmarkConfig {
-            name: format!("multi_benchmark_{}", i),
-            benchmark_type,
-            iterations: 2,
-            warmup_iterations: 1,
-            test_data: BenchmarkTestData {
-                unit_count: 10,
-                complexity_level: ComplexityLevel::Simple,
-                data_size_mb: 1.0,
-            },
-        };
-        
-        let results = system.run_benchmark(benchmark_config);
-        assert!(results.is_ok(), "Each benchmark should succeed");
-        
-        let results = results.unwrap();
-        assert!(results.statistics.mean_time_ms >= 0.0);
-        assert!(results.statistics.throughput_ops_per_sec >= 0.0);
-    }
-}
-
-#[test]
-fn test_performance_system_configuration_update() {
-    let initial_config = PerformanceConfig {
-        enable_realtime_monitoring: false,
-        monitoring_interval_ms: 100,
-        ..Default::default()
-    };
-    let opt_config = OptimizationConfig::default();
-    
-    let mut system = PerformanceOptimizationSystem::new(initial_config, opt_config).unwrap();
+    let mut system = PerformanceOptimizationSystem::new(initial_config).unwrap();
     
     // Update configuration
-    let new_config = PerformanceConfig {
-        enable_realtime_monitoring: true,
-        monitoring_interval_ms: 50,
-        enable_prediction: true,
+    let updated_config = PerformanceSystemConfig {
+        build_profile: BuildProfile::Production,
+        compilation_time_budget: 60.0,
+        enable_adaptive_optimization: false,
+        cache_config: CacheConfig {
+            cache_directory: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        },
         ..Default::default()
     };
     
-    let result = system.update_config(new_config);
-    assert!(result.is_ok(), "Should update configuration successfully");
+    system.update_config(updated_config).unwrap();
+    
+    // Verify configuration was updated
+    assert_eq!(system.get_config().build_profile, BuildProfile::Production);
+    assert_eq!(system.get_config().compilation_time_budget, 60.0);
+    assert!(!system.get_config().enable_adaptive_optimization);
 }
 
-#[cfg(test)]
-mod integration_tests {
-    use super::*;
+// Helper functions for generating test code
+
+fn generate_test_source_code(lines: usize) -> String {
+    let mut code = String::new();
     
-    #[test]
-    fn test_end_to_end_optimization_with_profiling() {
-        // Create comprehensive system
-        let perf_config = PerformanceConfig {
-            enable_realtime_monitoring: true,
-            enable_benchmarking: true,
-            enable_prediction: false,
-            monitoring_interval_ms: 10,
-            max_benchmark_iterations: 3,
-            resource_monitoring_level: ResourceMonitoringLevel::Comprehensive,
-            ..Default::default()
-        };
-        let opt_config = OptimizationConfig {
-            optimization_level: OptimizationLevel::Default,
-            enable_parallel: true,
-            enable_profiling: true,
-            ..Default::default()
-        };
-        
-        let system = PerformanceOptimizationSystem::new(perf_config, opt_config).unwrap();
-        
-        // Start monitoring
-        assert!(system.start_monitoring().is_ok());
-        
-        // Create optimization session
-        let session = system.create_session("integration_test".to_string());
-        
-        // Create test compilation units
-        let mut units = vec![
-            CompilationUnit::new("integration_unit_1".to_string()),
-            CompilationUnit::new("integration_unit_2".to_string()),
-            CompilationUnit::new("integration_unit_3".to_string()),
-        ];
-        
-        for (i, unit) in units.iter_mut().enumerate() {
-            unit.source_files.push(format!("integration_test_{}.csd", i));
-            unit.dependencies.push("stdlib".to_string());
-        }
-        
-        // Run optimization with tracking
-        let optimization_results = system.optimize_with_tracking(&mut units, &session).unwrap();
-        
-        // Validate optimization results
-        assert_eq!(optimization_results.unit_results.len(), 3);
-        assert!(optimization_results.total_time > Duration::from_millis(0));
-        assert!(optimization_results.performance_analysis.is_some());
-        
-        let analysis = optimization_results.performance_analysis.unwrap();
-        assert_eq!(analysis.units_optimized, 3);
-        assert!(analysis.optimization_efficiency >= 0.0);
-        
-        // Run benchmark
-        let benchmark_config = BenchmarkConfig {
-            name: "integration_benchmark".to_string(),
-            benchmark_type: BenchmarkType::CompilationSpeed,
-            iterations: 3,
-            warmup_iterations: 1,
-            test_data: BenchmarkTestData {
-                unit_count: 10,
-                complexity_level: ComplexityLevel::Medium,
-                data_size_mb: 5.0,
-            },
-        };
-        
-        let benchmark_results = system.run_benchmark(benchmark_config).unwrap();
-        assert!(benchmark_results.statistics.mean_time_ms > 0.0);
-        assert!(benchmark_results.statistics.throughput_ops_per_sec > 0.0);
-        
-        // Get system statistics
-        let system_stats = system.get_system_statistics();
-        assert!(system_stats.optimizations_completed > 0);
-        assert!(system_stats.benchmark_runs > 0);
-        
-        // Stop monitoring
-        assert!(system.stop_monitoring().is_ok());
+    // Add some imports
+    code.push_str("// CURSED test module\n");
+    code.push_str("import \"stdlib::io\";\n");
+    code.push_str("import \"stdlib::math\";\n\n");
+    
+    // Add variable declarations
+    for i in 0..lines.min(50) {
+        code.push_str(&format!("facts var_{} = {};\n", i, i * 2));
     }
     
-    #[test]
-    fn test_build_profiler_with_performance_system_integration() {
-        // Create profiler
-        let profiler_config = ProfilerConfig {
-            enable_realtime_monitoring: true,
-            enable_memory_profiling: true,
-            enable_cpu_profiling: true,
-            enable_io_profiling: true,
-            monitoring_interval_ms: 10,
-            ..Default::default()
-        };
-        
-        let profiler = EnhancedBuildProfiler::new(profiler_config).unwrap();
-        
-        // Start profiling session
-        let session = profiler.start_build_session("integration_profiling".to_string()).unwrap();
-        
-        // Create and profile multiple compilation units
-        let units = vec![
-            CompilationUnit::new("profiled_unit_1".to_string()),
-            CompilationUnit::new("profiled_unit_2".to_string()),
-        ];
-        
-        let mut unit_results = Vec::new();
-        for unit in &units {
-            let result = profiler.profile_compilation_unit(unit, &session).unwrap();
-            unit_results.push(result);
-        }
-        
-        // End session and generate report
-        let report = profiler.end_build_session(session).unwrap();
-        
-        // Validate comprehensive report
-        assert!(!report.session_id.is_empty());
-        assert_eq!(report.session_name, "integration_profiling");
-        assert!(report.total_duration > Duration::from_millis(0));
-        assert!(report.performance_summary.overall_performance_score >= 0.0);
-        assert!(report.system_metrics.peak_memory_mb >= 0.0);
-        
-        // Test report export
-        let temp_dir = std::env::temp_dir();
-        let report_path = temp_dir.join("integration_report.html");
-        
-        assert!(profiler.export_report(&report, ReportFormat::Html, report_path.clone()).is_ok());
-        
-        // Verify file was created
-        assert!(report_path.exists());
-        
-        // Clean up
-        let _ = std::fs::remove_file(report_path);
+    code.push_str("\n");
+    
+    // Add function definitions
+    let func_count = (lines / 10).max(1);
+    for i in 0..func_count {
+        code.push_str(&format!(
+            "slay function_{}(x: i32) -> i32 {{\n    lowkey (x > 0) {{\n        return x * 2;\n    }} highkey {{\n        return 0;\n    }}\n}}\n\n",
+            i
+        ));
     }
+    
+    // Add a main function
+    code.push_str("slay main() {\n");
+    for i in 0..lines.min(20) {
+        code.push_str(&format!("    println(\"Line {}\");\n", i));
+    }
+    code.push_str("}\n");
+    
+    code
+}
+
+fn generate_large_source_code(lines: usize) -> String {
+    let mut code = String::new();
+    
+    // Generate a large amount of code to simulate real projects
+    code.push_str("// Large CURSED module for performance testing\n\n");
+    
+    // Add many variable declarations
+    for i in 0..lines / 4 {
+        code.push_str(&format!("facts large_var_{} = {} + {} * {};\n", i, i, i * 2, i % 100));
+    }
+    
+    code.push_str("\n");
+    
+    // Add many function definitions
+    for i in 0..(lines / 10) {
+        code.push_str(&format!(
+            "slay large_function_{}(a: i32, b: i32, c: i32) -> i32 {{\n",
+            i
+        ));
+        code.push_str("    facts result = 0;\n");
+        code.push_str("    lowkey (a > b) {\n");
+        code.push_str("        result = a + c;\n");
+        code.push_str("    } highkey lowkey (b > c) {\n");
+        code.push_str("        result = b + a;\n");
+        code.push_str("    } highkey {\n");
+        code.push_str("        result = c + a + b;\n");
+        code.push_str("    }\n");
+        code.push_str("    return result;\n");
+        code.push_str("}\n\n");
+    }
+    
+    // Add complex control structures
+    for i in 0..(lines / 20) {
+        code.push_str(&format!("slay complex_function_{}() {{\n", i));
+        code.push_str("    periodt (sus j = 0; j < 100; j++) {\n");
+        code.push_str("        lowkey (j % 2 == 0) {\n");
+        code.push_str("            println(\"Even\");\n");
+        code.push_str("        } highkey {\n");
+        code.push_str("            println(\"Odd\");\n");
+        code.push_str("        }\n");
+        code.push_str("    }\n");
+        code.push_str("}\n\n");
+    }
+    
+    code
 }
