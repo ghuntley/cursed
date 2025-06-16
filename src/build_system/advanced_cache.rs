@@ -1095,11 +1095,4 @@ fn current_timestamp() -> u64 {
         .as_secs()
 }
 
-// Export public API
-pub use self::{
-    AdvancedCacheConfig,
-    CacheEntry,
-    CacheData,
-    CacheMetadata,
-    CacheStatistics,
-};
+// Types are exported directly via pub struct/pub enum definitions above

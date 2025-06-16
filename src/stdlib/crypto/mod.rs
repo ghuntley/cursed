@@ -105,7 +105,7 @@ pub use pqc_production::{
 // Re-export unified crypto ecosystem
 pub use unified_api::{
     UnifiedCryptoError, UnifiedCryptoResult, UnifiedCryptoManager,
-    CryptoConfig, PerformanceMetrics, SecurityAuditResult, CryptoOperation,
+    CryptoConfig, PerformanceMetrics as UnifiedPerformanceMetrics, SecurityAuditResult, CryptoOperation,
     ComplianceLevel, global_crypto_manager, initialize_unified_crypto, quick_crypto_operation
 };
 

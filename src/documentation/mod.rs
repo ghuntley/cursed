@@ -19,6 +19,9 @@ pub mod generator;
 pub mod generators;
 pub mod comment_parser;
 pub mod extractors;
+pub mod interactive;
+pub mod live_server;
+pub mod testing;
 
 // Re-export from main implementation
 pub use main::*;

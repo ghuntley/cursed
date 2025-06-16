@@ -1,392 +1,465 @@
 //! XML Documentation Generator
 //! 
-//! Generates structured XML documentation for integration with
-//! documentation tools, IDEs, and automated processing systems.
+//! Generates comprehensive XML documentation compatible with various tools and IDEs.
 
-use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, SearchIndexEntry};
+use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, SearchIndexEntry};
 use crate::error::Error;
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 
-pub struct XmlGenerator<'a> {
-    config: &'a DocGeneratorConfig,
+/// XML documentation generator
+pub struct XmlGenerator {
+    config: DocGeneratorConfig,
 }
 
-impl<'a> XmlGenerator<'a> {
-    pub fn new(config: &'a DocGeneratorConfig) -> Self {
-        Self { config }
+impl XmlGenerator {
+    pub fn new(config: &DocGeneratorConfig) -> Self {
+        Self {
+            config: config.clone(),
+        }
     }
 
     /// Generate comprehensive XML documentation
     pub fn generate_documentation(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
-        let doc_path = output_dir.join("documentation.xml");
+        let xml_path = output_dir.join("documentation.xml");
         
-        let mut xml = String::new();
-        xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xml.push_str("<?xml-stylesheet type=\"text/xsl\" href=\"cursed-docs.xsl\"?>\n");
-        xml.push_str("<cursed-documentation xmlns=\"https://cursed-lang.org/documentation/v1\" version=\"1.0\">\n");
+        let mut content = String::new();
+        content.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        content.push_str("<documentation>\n");
         
-        // Project metadata
-        xml.push_str("  <project>\n");
-        xml.push_str(&format!("    <name>{}</name>\n", self.escape_xml(&self.config.title)));
-        if let Some(desc) = &self.config.description {
-            xml.push_str(&format!("    <description>{}</description>\n", self.escape_xml(desc)));
+        // Metadata section
+        content.push_str("  <metadata>\n");
+        content.push_str(&format!("    <title>{}</title>\n", self.xml_escape(&self.config.title)));
+        if let Some(description) = &self.config.description {
+            content.push_str(&format!("    <description>{}</description>\n", self.xml_escape(description)));
         }
         if let Some(version) = &self.config.version {
-            xml.push_str(&format!("    <version>{}</version>\n", self.escape_xml(version)));
+            content.push_str(&format!("    <version>{}</version>\n", self.xml_escape(version)));
         }
-        xml.push_str("    <authors>\n");
-        for author in &self.config.authors {
-            xml.push_str(&format!("      <author>{}</author>\n", self.escape_xml(author)));
-        }
-        xml.push_str("    </authors>\n");
-        xml.push_str(&format!("    <generated-at>{}</generated-at>\n", chrono::Utc::now().to_rfc3339()));
-        xml.push_str("    <generator>CURSED Documentation Generator</generator>\n");
-        xml.push_str("  </project>\n");
-
-        // Configuration
-        xml.push_str("  <configuration>\n");
-        xml.push_str(&format!("    <include-private>{}</include-private>\n", self.config.include_private));
-        xml.push_str(&format!("    <include-examples>{}</include-examples>\n", self.config.include_examples));
-        xml.push_str(&format!("    <generate-cross-refs>{}</generate-cross-refs>\n", self.config.generate_cross_refs));
-        xml.push_str("  </configuration>\n");
-
-        // Statistics
-        xml.push_str(&self.generate_statistics_xml(docs));
-
-        // Gen Z Keywords mapping
-        xml.push_str(&self.generate_keywords_xml());
-
-        // Modules
-        xml.push_str("  <modules>\n");
-        for doc in docs {
-            xml.push_str(&self.generate_module_xml(doc));
-        }
-        xml.push_str("  </modules>\n");
-
-        xml.push_str("</cursed-documentation>\n");
-        
-        fs::write(doc_path, xml).map_err(Error::Io)?;
-        Ok(())
-    }
-
-    /// Generate search index XML
-    pub fn generate_search_index(&self, index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
-        let index_path = output_dir.join("search_index.xml");
-        
-        let mut xml = String::new();
-        xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xml.push_str("<search-index xmlns=\"https://cursed-lang.org/documentation/v1\">\n");
-        xml.push_str("  <metadata>\n");
-        xml.push_str(&format!("    <generated-at>{}</generated-at>\n", chrono::Utc::now().to_rfc3339()));
-        xml.push_str(&format!("    <total-entries>{}</total-entries>\n", index.len()));
-        xml.push_str("    <version>1.0.0</version>\n");
-        xml.push_str("  </metadata>\n");
-        
-        xml.push_str("  <entries>\n");
-        for entry in index {
-            xml.push_str("    <entry>\n");
-            xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&entry.name)));
-            xml.push_str(&format!("      <kind>{}</kind>\n", entry.kind));
-            xml.push_str(&format!("      <description>{}</description>\n", self.escape_xml(&entry.description)));
-            xml.push_str(&format!("      <module>{}</module>\n", self.escape_xml(&entry.module)));
-            xml.push_str(&format!("      <url>{}</url>\n", self.escape_xml(&entry.url)));
-            xml.push_str("      <keywords>\n");
-            for keyword in &entry.keywords {
-                xml.push_str(&format!("        <keyword>{}</keyword>\n", self.escape_xml(keyword)));
+        if !self.config.authors.is_empty() {
+            content.push_str("    <authors>\n");
+            for author in &self.config.authors {
+                content.push_str(&format!("      <author>{}</author>\n", self.xml_escape(author)));
             }
-            xml.push_str("      </keywords>\n");
-            xml.push_str("    </entry>\n");
+            content.push_str("    </authors>\n");
         }
-        xml.push_str("  </entries>\n");
+        content.push_str(&format!("    <generated_at>{}</generated_at>\n", chrono::Utc::now().to_rfc3339()));
+        content.push_str("    <generator>CURSED Documentation System</generator>\n");
+        content.push_str("    <format_version>1.0.0</format_version>\n");
+        content.push_str("  </metadata>\n");
         
-        xml.push_str("</search-index>\n");
+        // Configuration section
+        content.push_str("  <configuration>\n");
+        content.push_str(&format!("    <include_examples>{}</include_examples>\n", self.config.include_examples));
+        content.push_str(&format!("    <include_private>{}</include_private>\n", self.config.include_private));
+        content.push_str(&format!("    <generate_cross_refs>{}</generate_cross_refs>\n", self.config.generate_cross_refs));
+        if let Some(base_url) = &self.config.base_url {
+            content.push_str(&format!("    <base_url>{}</base_url>\n", self.xml_escape(base_url)));
+        }
+        content.push_str("  </configuration>\n");
         
-        fs::write(index_path, xml).map_err(Error::Io)?;
+        // Statistics section
+        let total_items: usize = docs.iter().map(|d| d.items.len()).sum();
+        let total_functions = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()).sum::<usize>();
+        let total_structs = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count()).sum::<usize>();
+        
+        content.push_str("  <statistics>\n");
+        content.push_str(&format!("    <total_modules>{}</total_modules>\n", docs.len()));
+        content.push_str(&format!("    <total_items>{}</total_items>\n", total_items));
+        content.push_str(&format!("    <total_functions>{}</total_functions>\n", total_functions));
+        content.push_str(&format!("    <total_structs>{}</total_structs>\n", total_structs));
+        content.push_str("  </statistics>\n");
+        
+        // Modules section
+        content.push_str("  <modules>\n");
+        for doc in docs {
+            content.push_str(&self.generate_module_xml(doc)?);
+        }
+        content.push_str("  </modules>\n");
+        
+        content.push_str("</documentation>\n");
+        
+        fs::write(xml_path, content).map_err(Error::Io)?;
         Ok(())
     }
 
-    /// Generate statistics XML
-    fn generate_statistics_xml(&self, docs: &[ExtractedDocumentation]) -> String {
-        let mut xml = String::new();
+    /// Generate XML for a single module
+    fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> Result<String, Error> {
+        let mut content = String::new();
         
-        let total_items = docs.iter().map(|d| d.items.len()).sum::<usize>();
-        let total_functions = docs.iter().map(|d| {
-            d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()
-        }).sum::<usize>();
-        let total_structs = docs.iter().map(|d| {
-            d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count()
-        }).sum::<usize>();
-        let total_interfaces = docs.iter().map(|d| {
-            d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count()
-        }).sum::<usize>();
-        let total_lines = docs.iter().map(|d| d.source_info.line_count).sum::<usize>();
+        content.push_str(&format!("    <module name=\"{}\">\n", self.xml_escape(&doc.module_name)));
         
-        xml.push_str("  <statistics>\n");
-        xml.push_str(&format!("    <modules>{}</modules>\n", docs.len()));
-        xml.push_str(&format!("    <total-items>{}</total-items>\n", total_items));
-        xml.push_str(&format!("    <functions>{}</functions>\n", total_functions));
-        xml.push_str(&format!("    <structs>{}</structs>\n", total_structs));
-        xml.push_str(&format!("    <interfaces>{}</interfaces>\n", total_interfaces));
-        xml.push_str(&format!("    <lines-of-code>{}</lines-of-code>\n", total_lines));
-        
-        if !docs.is_empty() {
-            xml.push_str(&format!("    <average-items-per-module>{}</average-items-per-module>\n", total_items / docs.len()));
-        }
-        
-        if let Some(largest) = docs.iter().max_by_key(|d| d.items.len()) {
-            xml.push_str("    <largest-module>\n");
-            xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&largest.module_name)));
-            xml.push_str(&format!("      <items>{}</items>\n", largest.items.len()));
-            xml.push_str("    </largest-module>\n");
-        }
-        
-        xml.push_str("  </statistics>\n");
-        xml
-    }
-
-    /// Generate Gen Z keywords mapping XML
-    fn generate_keywords_xml(&self) -> String {
-        let mut xml = String::new();
-        
-        xml.push_str("  <gen-z-keywords>\n");
-        xml.push_str("    <description>CURSED uses Gen Z slang for keywords because traditional programming is cheugy</description>\n");
-        xml.push_str("    <mappings>\n");
-        
-        let keywords = [
-            ("slay", "fn, function", "Declares a function that absolutely slays"),
-            ("sus", "let mut, var", "Declares a mutable variable (kinda sus if you ask me)"),
-            ("facts", "let, const", "Declares a constant/immutable value (straight facts)"),
-            ("lowkey", "if", "Conditional statement (lowkey checking this condition)"),
-            ("highkey", "else", "Else clause (highkey the alternative)"),
-            ("periodt", "while", "While loop (keeps going, periodt)"),
-            ("bestie", "for", "For loop (going through this together, bestie)"),
-            ("flex", "break", "Break statement (flexing out of this loop)"),
-            ("squad", "struct, class", "Struct definition (organizing the squad)"),
-            ("collab", "interface, trait", "Interface definition (collaborative vibes)"),
-            ("stan", "async, spawn", "Spawn async operation/goroutine (we stan this concurrency)"),
-            ("yolo", "yield, await", "Yield/await operation (yolo, just sending it)"),
-        ];
-        
-        for (cursed, traditional, description) in keywords {
-            xml.push_str("      <mapping>\n");
-            xml.push_str(&format!("        <cursed>{}</cursed>\n", cursed));
-            xml.push_str(&format!("        <traditional>{}</traditional>\n", self.escape_xml(traditional)));
-            xml.push_str(&format!("        <description>{}</description>\n", self.escape_xml(description)));
-            xml.push_str("      </mapping>\n");
-        }
-        
-        xml.push_str("    </mappings>\n");
-        xml.push_str("  </gen-z-keywords>\n");
-        xml
-    }
-
-    /// Generate module XML
-    fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> String {
-        let mut xml = String::new();
-        
-        xml.push_str("    <module>\n");
-        xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&doc.module_name)));
+        // Module information
         if let Some(package) = &doc.package_name {
-            xml.push_str(&format!("      <package>{}</package>\n", self.escape_xml(package)));
+            content.push_str(&format!("      <package>{}</package>\n", self.xml_escape(package)));
         }
-        xml.push_str(&format!("      <file-path>{}</file-path>\n", self.escape_xml(&doc.file_path.to_string_lossy())));
+        content.push_str(&format!("      <file_path>{}</file_path>\n", self.xml_escape(&doc.file_path.display().to_string())));
         
-        // Source info
-        xml.push_str("      <source-info>\n");
-        xml.push_str(&format!("        <file-size>{}</file-size>\n", doc.source_info.file_size));
-        xml.push_str(&format!("        <line-count>{}</line-count>\n", doc.source_info.line_count));
-        xml.push_str(&format!("        <encoding>{}</encoding>\n", self.escape_xml(&doc.source_info.encoding)));
+        // Source information
+        content.push_str("      <source_info>\n");
+        content.push_str(&format!("        <file_size>{}</file_size>\n", doc.source_info.file_size));
+        content.push_str(&format!("        <line_count>{}</line_count>\n", doc.source_info.line_count));
+        content.push_str(&format!("        <encoding>{}</encoding>\n", self.xml_escape(&doc.source_info.encoding)));
         if let Some(last_modified) = doc.source_info.last_modified {
-            let timestamp = chrono::DateTime::<chrono::Utc>::from(last_modified).to_rfc3339();
-            xml.push_str(&format!("        <last-modified>{}</last-modified>\n", timestamp));
+            if let Ok(datetime) = last_modified.duration_since(std::time::UNIX_EPOCH) {
+                content.push_str(&format!("        <last_modified>{}</last_modified>\n", datetime.as_secs()));
+            }
         }
-        xml.push_str("      </source-info>\n");
+        content.push_str("      </source_info>\n");
         
         // Imports
         if !doc.imports.is_empty() {
-            xml.push_str("      <imports>\n");
+            content.push_str("      <imports>\n");
             for import in &doc.imports {
-                xml.push_str(&format!("        <import>{}</import>\n", self.escape_xml(import)));
+                content.push_str(&format!("        <import>{}</import>\n", self.xml_escape(import)));
             }
-            xml.push_str("      </imports>\n");
+            content.push_str("      </imports>\n");
         }
         
         // Items
-        xml.push_str("      <items>\n");
+        content.push_str("      <items>\n");
         for item in &doc.items {
-            xml.push_str(&self.generate_item_xml(item));
+            content.push_str(&self.generate_item_xml(item)?);
         }
-        xml.push_str("      </items>\n");
+        content.push_str("      </items>\n");
         
-        xml.push_str("    </module>\n");
-        xml
+        content.push_str("    </module>\n");
+        Ok(content)
     }
 
-    /// Generate item XML
-    fn generate_item_xml(&self, item: &crate::docs::generator::DocumentationItem) -> String {
-        let mut xml = String::new();
+    /// Generate XML for a single documentation item
+    fn generate_item_xml(&self, item: &DocumentationItem) -> Result<String, Error> {
+        let mut content = String::new();
         
-        xml.push_str("        <item>\n");
-        xml.push_str(&format!("          <name>{}</name>\n", self.escape_xml(&item.name)));
-        xml.push_str(&format!("          <kind>{}</kind>\n", item.kind));
-        xml.push_str(&format!("          <visibility>{:?}</visibility>\n", item.visibility));
-        xml.push_str(&format!("          <module>{}</module>\n", self.escape_xml(&item.module)));
-        xml.push_str(&format!("          <summary>{}</summary>\n", self.escape_xml(&item.summary)));
-        xml.push_str(&format!("          <description><![CDATA[{}]]></description>\n", item.description));
+        let kind_str = match item.kind {
+            crate::docs::generator::ItemKind::Function => "function",
+            crate::docs::generator::ItemKind::Struct => "struct",
+            crate::docs::generator::ItemKind::Interface => "interface",
+            crate::docs::generator::ItemKind::Variable => "variable",
+            crate::docs::generator::ItemKind::Constant => "constant",
+            crate::docs::generator::ItemKind::Type => "type",
+            crate::docs::generator::ItemKind::Module => "module",
+        };
         
+        let visibility_str = match item.visibility {
+            crate::docs::generator::Visibility::Public => "public",
+            crate::docs::generator::Visibility::Private => "private",
+        };
+        
+        content.push_str(&format!("        <item name=\"{}\" kind=\"{}\" visibility=\"{}\">\n", 
+            self.xml_escape(&item.name), kind_str, visibility_str));
+        
+        content.push_str(&format!("          <module>{}</module>\n", self.xml_escape(&item.module)));
+        content.push_str(&format!("          <summary>{}</summary>\n", self.xml_escape(&item.summary)));
+        content.push_str(&format!("          <description>{}</description>\n", self.xml_escape(&item.description)));
+        
+        // Signature
         if let Some(signature) = &item.signature {
-            xml.push_str(&format!("          <signature><![CDATA[{}]]></signature>\n", signature));
+            content.push_str(&format!("          <signature>{}</signature>\n", self.xml_escape(signature)));
         }
         
         // Parameters
         if !item.parameters.is_empty() {
-            xml.push_str("          <parameters>\n");
+            content.push_str("          <parameters>\n");
             for param in &item.parameters {
-                xml.push_str("            <parameter>\n");
-                xml.push_str(&format!("              <name>{}</name>\n", self.escape_xml(&param.name)));
+                content.push_str("            <parameter>\n");
+                content.push_str(&format!("              <name>{}</name>\n", self.xml_escape(&param.name)));
                 if let Some(type_name) = &param.type_name {
-                    xml.push_str(&format!("              <type>{}</type>\n", self.escape_xml(type_name)));
+                    content.push_str(&format!("              <type>{}</type>\n", self.xml_escape(type_name)));
                 }
-                xml.push_str(&format!("              <description>{}</description>\n", self.escape_xml(&param.description)));
-                if let Some(default) = &param.default_value {
-                    xml.push_str(&format!("              <default-value><![CDATA[{}]]></default-value>\n", default));
+                content.push_str(&format!("              <description>{}</description>\n", self.xml_escape(&param.description)));
+                if let Some(default_value) = &param.default_value {
+                    content.push_str(&format!("              <default_value>{}</default_value>\n", self.xml_escape(default_value)));
                 }
-                xml.push_str("            </parameter>\n");
+                content.push_str("            </parameter>\n");
             }
-            xml.push_str("          </parameters>\n");
+            content.push_str("          </parameters>\n");
         }
         
         // Return type
         if let Some(return_type) = &item.return_type {
-            xml.push_str(&format!("          <return-type>{}</return-type>\n", self.escape_xml(return_type)));
+            content.push_str(&format!("          <return_type>{}</return_type>\n", self.xml_escape(return_type)));
         }
         
         // Examples
         if !item.examples.is_empty() {
-            xml.push_str("          <examples>\n");
+            content.push_str("          <examples>\n");
             for example in &item.examples {
-                xml.push_str("            <example>\n");
+                content.push_str("            <example>\n");
                 if let Some(title) = &example.title {
-                    xml.push_str(&format!("              <title>{}</title>\n", self.escape_xml(title)));
+                    content.push_str(&format!("              <title>{}</title>\n", self.xml_escape(title)));
                 }
                 if let Some(description) = &example.description {
-                    xml.push_str(&format!("              <description>{}</description>\n", self.escape_xml(description)));
+                    content.push_str(&format!("              <description>{}</description>\n", self.xml_escape(description)));
                 }
-                xml.push_str(&format!("              <code><![CDATA[{}]]></code>\n", example.code));
-                xml.push_str(&format!("              <language>{}</language>\n", self.escape_xml(&example.language)));
+                content.push_str(&format!("              <language>{}</language>\n", self.xml_escape(&example.language)));
+                content.push_str(&format!("              <code><![CDATA[{}]]></code>\n", example.code));
                 if let Some(output) = &example.output {
-                    xml.push_str(&format!("              <output><![CDATA[{}]]></output>\n", output));
+                    content.push_str(&format!("              <output><![CDATA[{}]]></output>\n", output));
                 }
-                xml.push_str("            </example>\n");
+                content.push_str("            </example>\n");
             }
-            xml.push_str("          </examples>\n");
+            content.push_str("          </examples>\n");
         }
         
         // Tags
         if !item.tags.is_empty() {
-            xml.push_str("          <tags>\n");
+            content.push_str("          <tags>\n");
             for (tag_name, tag_values) in &item.tags {
-                xml.push_str(&format!("            <tag name=\"{}\">\n", self.escape_xml(tag_name)));
-                for value in tag_values {
-                    xml.push_str(&format!("              <value>{}</value>\n", self.escape_xml(value)));
+                for tag_value in tag_values {
+                    content.push_str(&format!("            <tag name=\"{}\">{}</tag>\n", 
+                        self.xml_escape(tag_name), self.xml_escape(tag_value)));
                 }
-                xml.push_str("            </tag>\n");
             }
-            xml.push_str("          </tags>\n");
+            content.push_str("          </tags>\n");
         }
         
         // Location
-        xml.push_str("          <location>\n");
-        xml.push_str(&format!("            <line>{}</line>\n", item.location.line));
-        xml.push_str(&format!("            <column>{}</column>\n", item.location.column));
+        content.push_str("          <location>\n");
+        content.push_str(&format!("            <line>{}</line>\n", item.location.line));
+        content.push_str(&format!("            <column>{}</column>\n", item.location.column));
         if let Some(file) = &item.location.file {
-            xml.push_str(&format!("            <file>{}</file>\n", self.escape_xml(file)));
+            content.push_str(&format!("            <file>{}</file>\n", self.xml_escape(file)));
         }
-        xml.push_str("          </location>\n");
+        content.push_str("          </location>\n");
         
         // Source code
-        if self.config.include_examples {
-            if let Some(source) = &item.source_code {
-                xml.push_str(&format!("          <source-code><![CDATA[{}]]></source-code>\n", source));
-            }
+        if self.config.include_examples && item.source_code.is_some() {
+            content.push_str(&format!("          <source_code><![CDATA[{}]]></source_code>\n", 
+                item.source_code.as_ref().unwrap()));
         }
         
-        // CURSED-specific features
-        xml.push_str(&self.generate_cursed_features_xml(item));
-        
-        xml.push_str("        </item>\n");
-        xml
+        content.push_str("        </item>\n");
+        Ok(content)
     }
 
-    /// Generate CURSED-specific features XML
-    fn generate_cursed_features_xml(&self, item: &crate::docs::generator::DocumentationItem) -> String {
-        let mut xml = String::new();
-        let mut features = Vec::new();
+    /// Generate search index XML
+    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
+        let search_path = output_dir.join("search_index.xml");
         
-        if let Some(signature) = &item.signature {
-            if signature.contains("slay") { features.push("uses-slay-keyword"); }
-            if signature.contains("sus") { features.push("uses-sus-keyword"); }
-            if signature.contains("facts") { features.push("uses-facts-keyword"); }
-            if signature.contains("squad") { features.push("uses-squad-keyword"); }
-            if signature.contains("collab") { features.push("uses-collab-keyword"); }
-        }
+        let mut content = String::new();
+        content.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        content.push_str("<search_index>\n");
         
-        let name_lower = item.name.to_lowercase();
-        if name_lower.contains("vibes") || name_lower.contains("energy") || name_lower.contains("mood") {
-            features.push("gen-z-naming");
-        }
+        content.push_str("  <metadata>\n");
+        content.push_str(&format!("    <generated_at>{}</generated_at>\n", chrono::Utc::now().to_rfc3339()));
+        content.push_str(&format!("    <total_entries>{}</total_entries>\n", search_index.len()));
+        content.push_str("    <version>1.0.0</version>\n");
+        content.push_str("  </metadata>\n");
         
-        if item.description.chars().any(|c| c as u32 > 127) {
-            features.push("uses-emojis");
-        }
-        
-        if !features.is_empty() {
-            xml.push_str("          <cursed-features>\n");
-            for feature in &features {
-                xml.push_str(&format!("            <feature>{}</feature>\n", feature));
-            }
-            xml.push_str(&format!("            <slang-level>{}</slang-level>\n", self.calculate_slang_level(item)));
-            xml.push_str(&format!("            <gen-z-score>{}</gen-z-score>\n", features.len()));
-            xml.push_str("          </cursed-features>\n");
-        }
-        
-        xml
-    }
-
-    /// Calculate slang level
-    fn calculate_slang_level(&self, item: &crate::docs::generator::DocumentationItem) -> String {
-        let slang_keywords = ["slay", "sus", "facts", "lowkey", "highkey", "periodt", "bestie", "flex", "squad", "collab", "stan", "yolo"];
-        let mut slang_count = 0;
-        
-        if let Some(signature) = &item.signature {
-            for keyword in &slang_keywords {
-                if signature.contains(keyword) {
-                    slang_count += 1;
+        content.push_str("  <entries>\n");
+        for entry in search_index {
+            content.push_str("    <entry>\n");
+            content.push_str(&format!("      <name>{}</name>\n", self.xml_escape(&entry.name)));
+            content.push_str(&format!("      <kind>{}</kind>\n", entry.kind.to_string()));
+            content.push_str(&format!("      <description>{}</description>\n", self.xml_escape(&entry.description)));
+            content.push_str(&format!("      <module>{}</module>\n", self.xml_escape(&entry.module)));
+            content.push_str(&format!("      <url>{}</url>\n", self.xml_escape(&entry.url)));
+            
+            if !entry.keywords.is_empty() {
+                content.push_str("      <keywords>\n");
+                for keyword in &entry.keywords {
+                    content.push_str(&format!("        <keyword>{}</keyword>\n", self.xml_escape(keyword)));
                 }
+                content.push_str("      </keywords>\n");
             }
+            
+            content.push_str("    </entry>\n");
         }
+        content.push_str("  </entries>\n");
         
-        for keyword in &slang_keywords {
-            if item.description.to_lowercase().contains(keyword) {
-                slang_count += 1;
-            }
-        }
+        content.push_str("</search_index>\n");
         
-        match slang_count {
-            0 => "basic",
-            1..=2 => "lowkey",
-            3..=4 => "highkey", 
-            _ => "absolutely-iconic",
-        }.to_string()
+        fs::write(search_path, content).map_err(Error::Io)?;
+        Ok(())
+    }
+
+    /// Generate XML schema definition
+    pub fn generate_schema(&self, output_dir: &Path) -> Result<(), Error> {
+        let schema_path = output_dir.join("documentation.xsd");
+        
+        let schema = r#"<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  
+  <!-- Root element -->
+  <xs:element name="documentation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="metadata" type="MetadataType"/>
+        <xs:element name="configuration" type="ConfigurationType"/>
+        <xs:element name="statistics" type="StatisticsType"/>
+        <xs:element name="modules" type="ModulesType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- Metadata type -->
+  <xs:complexType name="MetadataType">
+    <xs:sequence>
+      <xs:element name="title" type="xs:string"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="version" type="xs:string" minOccurs="0"/>
+      <xs:element name="authors" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="author" type="xs:string" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="generated_at" type="xs:dateTime"/>
+      <xs:element name="generator" type="xs:string"/>
+      <xs:element name="format_version" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Configuration type -->
+  <xs:complexType name="ConfigurationType">
+    <xs:sequence>
+      <xs:element name="include_examples" type="xs:boolean"/>
+      <xs:element name="include_private" type="xs:boolean"/>
+      <xs:element name="generate_cross_refs" type="xs:boolean"/>
+      <xs:element name="base_url" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Statistics type -->
+  <xs:complexType name="StatisticsType">
+    <xs:sequence>
+      <xs:element name="total_modules" type="xs:int"/>
+      <xs:element name="total_items" type="xs:int"/>
+      <xs:element name="total_functions" type="xs:int"/>
+      <xs:element name="total_structs" type="xs:int"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Modules type -->
+  <xs:complexType name="ModulesType">
+    <xs:sequence>
+      <xs:element name="module" type="ModuleType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Module type -->
+  <xs:complexType name="ModuleType">
+    <xs:sequence>
+      <xs:element name="package" type="xs:string" minOccurs="0"/>
+      <xs:element name="file_path" type="xs:string"/>
+      <xs:element name="source_info" type="SourceInfoType"/>
+      <xs:element name="imports" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="import" type="xs:string" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="items">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="item" type="ItemType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+  </xs:complexType>
+  
+  <!-- Source info type -->
+  <xs:complexType name="SourceInfoType">
+    <xs:sequence>
+      <xs:element name="file_size" type="xs:long"/>
+      <xs:element name="line_count" type="xs:int"/>
+      <xs:element name="encoding" type="xs:string"/>
+      <xs:element name="last_modified" type="xs:long" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Item type -->
+  <xs:complexType name="ItemType">
+    <xs:sequence>
+      <xs:element name="module" type="xs:string"/>
+      <xs:element name="summary" type="xs:string"/>
+      <xs:element name="description" type="xs:string"/>
+      <xs:element name="signature" type="xs:string" minOccurs="0"/>
+      <xs:element name="parameters" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="parameter" type="ParameterType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="return_type" type="xs:string" minOccurs="0"/>
+      <xs:element name="examples" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="example" type="ExampleType" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="tags" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="tag" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:simpleContent>
+                  <xs:extension base="xs:string">
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                  </xs:extension>
+                </xs:simpleContent>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="location" type="LocationType"/>
+      <xs:element name="source_code" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="kind" type="xs:string" use="required"/>
+    <xs:attribute name="visibility" type="xs:string" use="required"/>
+  </xs:complexType>
+  
+  <!-- Parameter type -->
+  <xs:complexType name="ParameterType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="type" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string"/>
+      <xs:element name="default_value" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Example type -->
+  <xs:complexType name="ExampleType">
+    <xs:sequence>
+      <xs:element name="title" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="language" type="xs:string"/>
+      <xs:element name="code" type="xs:string"/>
+      <xs:element name="output" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Location type -->
+  <xs:complexType name="LocationType">
+    <xs:sequence>
+      <xs:element name="line" type="xs:int"/>
+      <xs:element name="column" type="xs:int"/>
+      <xs:element name="file" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>"#;
+        
+        fs::write(schema_path, schema).map_err(Error::Io)?;
+        Ok(())
     }
 
     /// Escape XML special characters
-    fn escape_xml(&self, text: &str) -> String {
-        text.replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', "&quot;")
-            .replace('\'', "&apos;")
+    fn xml_escape(&self, text: &str) -> String {
+        text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
     }
 }

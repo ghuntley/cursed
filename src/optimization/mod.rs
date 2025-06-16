@@ -9,8 +9,10 @@
 //! - Real LLVM optimization passes
 //! - Build performance optimization
 
+pub mod baseline_storage;
 pub mod benchmarks;
 pub mod intelligent_recommendations;
+pub mod regression_analyzer;
 pub mod ast_analyzer;
 pub mod comprehensive_performance_system;
 pub mod real_llvm_passes;
@@ -18,16 +20,31 @@ pub mod advanced_function_inlining;
 pub mod enhanced_llvm_passes;
 pub mod enhanced_llvm_passes_manager;
 pub mod enhanced_llvm_optimization;
+pub mod interprocedural_analysis;
+pub mod memory_layout_optimization;
 pub mod performance_analysis;
 pub mod parallel_pass_manager;
 pub mod baseline_comparison;
 pub mod time_savings;
 pub mod coordinator;
 pub mod pgo;
+pub mod performance_optimization_system;
+pub mod build_profiles;
+pub mod benchmarking_types;
+pub mod enablement_system;
+pub mod configuration_manager;
 
+pub use baseline_storage::{
+    BaselineStorage, BaselineStorageConfig, PerformanceBaseline, BaselineType,
+    BaselineBenchmark, TimeMetrics,
+};
 pub use benchmarks::{
     BenchmarkRunner, BenchmarkConfig, BenchmarkResult, BenchmarkSuiteResult,
     PerformanceThresholds, RegressionAnalysis, create_default_benchmarks,
+};
+pub use regression_analyzer::{
+    RegressionAnalyzer, RegressionAnalysisConfig, DetailedRegressionAnalysis,
+    RegressionRecommendation, EffortLevel, ImpactLevel,
 };
 pub use intelligent_recommendations::{
     CodeAnalysisEngine, AnalysisConfig, DetailedRecommendation, AnalysisPattern,
@@ -37,7 +54,7 @@ pub use intelligent_recommendations::{
 pub use comprehensive_performance_system::{
     ComprehensivePerformanceSystem, PerformanceConfig, OptimizationResults,
     LlvmOptimizationResults, PgoOptimizationResults, RuntimePerformanceMetrics,
-    PerformanceStatistics, BenchmarkResults,
+    PerformanceStatistics as ComprehensivePerformanceStatistics, BenchmarkResults,
 };
 pub use real_llvm_passes::{
     RealLlvmPassManager, OptimizationStatistics,
@@ -55,7 +72,24 @@ pub use enhanced_llvm_optimization::{
     EnhancedLlvmOptimizer, EnhancedOptimizationConfig, EnhancedOptimizationResults,
     OptimizationFeedbackConfig, OptimizationFeedback, OptimizationPattern, FailedOptimization,
     TargetOptimizationResults, CacheOptimizationResults,
-    VectorizationResults,
+    VectorizationResults, PipelineOptimizationResults, OptimizationPipelineManager,
+    PipelineStage, StageType, ParallelOptimizationExecutor, PipelineDependencyManager,
+    PipelinePerformanceProfiler,
+};
+pub use interprocedural_analysis::{
+    InterproceduralAnalyzer, CallGraph as InterproceduralCallGraph, FunctionInfo, CallSite, CallType,
+    InferredAttributes, MemoryEffects, ReturnDependency, OptimizationOpportunity,
+    OpportunityType, InterproceduralResults, OptimizationResults as InterproceduralOptResults,
+    PerformanceImprovements as InterproceduralPerfImprovements, InterproceduralStatistics,
+};
+pub use memory_layout_optimization::{
+    MemoryLayoutOptimizer, StructLayoutAnalyzer, StackLayoutOptimizer, AlignmentOptimizer,
+    NumaOptimizer, MemoryOptimizationResults, StructOptimizationResults, StackOptimizationResults,
+    AlignmentOptimizationResults, NumaOptimizationResults, StructLayoutOptimization, LayoutMetrics,
+    StackAnalysis, StackAllocation, StackOptimizationPlan, AlignmentOptimization, AlignmentTarget,
+    NumaAnalysis, NumaAllocationPattern, NumaAccessPattern, NumaOptimization, NumaPolicy,
+    MemoryOptimizationStatistics, VectorizationPlan, VectorizableMemoryAccess, MemoryAccessPattern,
+    VectorizableOperation, VectorOperationType, VectorDataType, PrefetchInfo,
 };
 pub use parallel_pass_manager::{
     ParallelPassManager, ParallelPassConfig, ParallelPassStatistics,
@@ -75,8 +109,24 @@ pub use coordinator::{
 };
 pub use pgo::{
     PgoSystem, PgoSystemConfig, PgoSystemStatistics, ProfileData, ProfileAnalysisResult,
-    OptimizationOpportunity, ProfileInsight, ExecutionContext, PgoError,
+    OptimizationOpportunity as PgoOptimizationOpportunity, ProfileInsight, ExecutionContext, PgoError,
     OptimizationAggressiveness, PerformanceMetrics, OptimizationResult,
+};
+pub use performance_optimization_system::{
+    PerformanceOptimizationSystem as ProductionPerformanceOptimizationSystem, SmartCompilationResults,
+};
+pub use build_profiles::{
+    BuildProfile, ProfileManager,
+};
+pub use enablement_system::{
+    OptimizationEnablementSystem, OptimizationEnablementConfig, OptimizationProfile,
+    PerformanceMonitoringConfig, PerformanceReportFormat, OptimizationResults as EnablementOptimizationResults,
+    PerformanceStatistics as EnablementPerformanceStatistics, LlvmImprovements, PgoImprovements, AdaptiveImprovements,
+    TimeSavingsAnalysis as EnablementTimeSavingsAnalysis,
+};
+pub use configuration_manager::{
+    OptimizationConfigManager, ManagedOptimizationConfig, GlobalOptimizationSettings,
+    TargetOptimizationConfig,
 };
 
 // Real optimization implementations
@@ -105,8 +155,8 @@ pub use advanced_llvm_integration::{
     VectorizationStatistics, TargetSpecificStatistics, FunctionComplexity,
 };
 pub use target_optimization::{
-    TargetOptimizationManager, TargetOptimizationConfig, CpuArchitecture,
-    CpuInfo, CpuFeature, SimdCapabilities, OptimizationStrategy,
+    TargetOptimizationManager, TargetOptimizationConfig as TargetConfig, CpuArchitecture,
+    CpuInfo, CpuFeature, SimdCapabilities, OptimizationStrategy as TargetOptimizationStrategy,
     TargetOptimizationStatistics as TargetStats, CodeUnit,
 };
 pub use advanced_loop_optimization::{
@@ -121,7 +171,7 @@ pub use profile_guided_optimization::{
 };
 pub use link_time_optimization::{
     LinkTimeOptimizer, LtoConfig, LtoOptimizationResult,
-    LtoOptimizationLevel, ModuleInfo, FunctionInfo, LtoStatistics,
+    LtoOptimizationLevel, ModuleInfo, FunctionInfo as LtoFunctionInfo, LtoStatistics,
 };
 pub use advanced_coordinator::{
     AdvancedOptimizationCoordinator, AdvancedCoordinatorConfig, AdvancedOptimizationResult,
@@ -141,8 +191,8 @@ pub use ml_optimization::{
     MLOptimizationEngine, MLOptimizationConfig, ProfilingData,
 };
 pub use ml::{
-    MLOptimizationCoordinator, OptimizationStrategy, OptimizationLevel as MLOptimizationLevel,
-    OptimizationPass, CompilationContext, PerformanceStatistics,
+    MLOptimizationCoordinator, OptimizationStrategy as MLOptimizationStrategy, OptimizationLevel as MLOptimizationLevel,
+    OptimizationPass, CompilationContext, PerformanceStatistics as MLPerformanceStatistics,
 };
 
 // Real optimization implementations that replace placeholders

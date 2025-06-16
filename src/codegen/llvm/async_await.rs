@@ -5,7 +5,7 @@ use llvm_sys::{LLVMType, LLVMValue, LLVMBasicBlock, LLVMBuilder};
 use std::collections::HashMap;
 use std::ffi::CString;
 
-use crate::ast::expressions::Expression;
+use crate::ast::Expression;
 use crate::ast::statements::Statement;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::Error;

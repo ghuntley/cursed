@@ -4,7 +4,7 @@
 //! insights into compilation bottlenecks, resource utilization, timing analysis,
 //! and optimization recommendations for improved developer productivity.
 
-use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics};
+use crate::build_system::{BuildConfig, BuildTarget, BuildError, BuildResult, BuildStatistics};
 use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};

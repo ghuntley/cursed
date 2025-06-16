@@ -70,51 +70,6 @@ CYAN := \033[36m
 .PHONY: error-propagation-test-parser error-propagation-test-coverage
 .PHONY: error-propagation-help
 
-# Quick optimization validation tests
-optimization-test-quick:
-	@echo "$(CYAN)Running quick optimization tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --quick
-
-# Standard optimization test suite
-optimization-test:
-	@echo "$(CYAN)Running standard optimization tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh
-
-# Complete optimization test suite (including stress tests)
-optimization-test-all:
-	@echo "$(CYAN)Running complete optimization test suite...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --ignored
-
-# Individual optimization test categories
-optimization-test-unit:
-	@echo "$(CYAN)Running optimization unit tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --test unit
-
-optimization-test-integration:
-	@echo "$(CYAN)Running optimization integration tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --test integration
-
-optimization-test-stress:
-	@echo "$(CYAN)Running optimization stress tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --test stress --ignored
-
-optimization-test-performance:
-	@echo "$(CYAN)Running optimization performance tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --test performance --ignored
-
-optimization-test-regression:
-	@echo "$(CYAN)Running optimization regression tests...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --test regression
-
-# Optimization test coverage and reporting
-optimization-test-coverage:
-	@echo "$(CYAN)Generating optimization test coverage...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --coverage --report
-
-optimization-test-report:
-	@echo "$(CYAN)Generating optimization test report...$(RESET)"
-	$(AT)./tests/run_optimization_tests.sh --report --verbose
-
 # New optimization system tests
 test-optimization-baseline:
 	@echo "$(CYAN)Running optimization baseline comparison tests...$(RESET)"
@@ -148,56 +103,6 @@ demo-optimization:
 	$(FIX_LINKING) cargo run --example optimization_usage_demo
 
 # Optimization system help
-# Performance optimization test targets
-performance-test-quick:
-	@echo "$(CYAN)Running quick performance validation tests...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --quick
-
-performance-test:
-	@echo "$(CYAN)Running standard performance optimization tests...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh
-
-performance-test-all:
-	@echo "$(CYAN)Running complete performance optimization test suite...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --full
-
-performance-test-gc:
-	@echo "$(CYAN)Running GC performance tests...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --test gc
-
-performance-test-conversions:
-	@echo "$(CYAN)Running type conversion performance tests...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --test type_conversion
-
-performance-test-channels:
-	@echo "$(CYAN)Running channels performance tests...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --test channels
-
-performance-test-comprehensive:
-	@echo "$(CYAN)Running comprehensive optimization tests...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --test comprehensive
-
-performance-test-coverage:
-	@echo "$(CYAN)Generating performance test coverage...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --coverage --report performance_coverage.md
-
-performance-test-report:
-	@echo "$(CYAN)Generating performance test report...$(RESET)"
-	$(AT)./scripts/run_performance_optimization_tests.sh --report performance_report.md --verbose
-
-performance-help:
-	@echo "$(CYAN)Performance Optimization Test Targets:$(RESET)"
-	@echo "  $(GREEN)performance-test-quick$(RESET)         - Quick performance validation"
-	@echo "  $(GREEN)performance-test$(RESET)               - Standard performance test suite"
-	@echo "  $(GREEN)performance-test-all$(RESET)           - Complete performance test suite"
-	@echo "  $(GREEN)performance-test-gc$(RESET)            - GC performance tests"
-	@echo "  $(GREEN)performance-test-conversions$(RESET)   - Type conversion performance tests"
-	@echo "  $(GREEN)performance-test-channels$(RESET)      - Channel performance tests"
-	@echo "  $(GREEN)performance-test-comprehensive$(RESET) - Comprehensive optimization tests"
-	@echo "  $(GREEN)performance-test-coverage$(RESET)      - Generate coverage report"
-	@echo "  $(GREEN)performance-test-report$(RESET)        - Generate detailed test report"
-	@echo "  $(GREEN)performance-help$(RESET)               - Show this help message"
-
 optimization-help:
 	@echo "$(CYAN)Optimization System Test Targets:$(RESET)"
 	@echo "  $(GREEN)optimization-test-quick$(RESET)      - Quick validation tests"
@@ -321,8 +226,7 @@ optimize-quick: ## Quick optimization validation (fast benchmarks)
 	$(AT)./scripts/run_optimization_benchmarks.sh -i 2 -w 1 --timeout 60
 	@echo -e "$(GREEN)✓ Quick validation completed$(RESET)"
 
-# Help for optimization targets
-optimization-help: ## Show detailed help for optimization targets
+# Help for optimization targets (duplicate removed)
 	@echo -e "$(BOLD)$(CYAN)CURSED Optimization System Help$(RESET)"
 	@echo -e "$(BOLD)================================$(RESET)"
 	@echo ""
@@ -949,9 +853,7 @@ panic-recovery-test: build ## Test panic recovery
 	$(AT)echo -e "$(BLUE)🚨 Testing panic recovery...$(RESET)"
 	$(AT)$(CARGO_CMD) test $(V) panic_recovery
 
-optimization-test: build ## Test optimization system
-	$(AT)echo -e "$(BLUE)⚡ Testing optimization system...$(RESET)"
-	$(AT)$(CARGO_CMD) test $(V) optimization
+# optimization-test moved to later in file to avoid duplicate
 
 generics-test: build ## Test generics system
 	$(AT)echo -e "$(BLUE)🧬 Testing generics...$(RESET)"
@@ -1022,62 +924,75 @@ docs-serve: ## Serve Rust documentation locally
 docs-cursed: build ## Generate CURSED language documentation
 	$(AT)echo -e "$(MAGENTA)📚 Generating CURSED documentation...$(RESET)"
 	$(AT)mkdir -p docs/generated
-	$(AT)./target/debug/cursed doc . \
+	$(AT)./target/debug/cursed docs . \
 		--output docs/generated \
 		--format html \
 		--format markdown \
-		--include-examples \
-		--include-source \
-		--generate-search-index \
 		--title "CURSED Programming Language" \
 		--description "A complete programming language with Gen Z slang syntax" \
 		--version "1.0.0" || \
-		echo -e "$(YELLOW)⚠️  CURSED doc command not yet available - using placeholder$(RESET)"
+		echo -e "$(YELLOW)⚠️  CURSED docs command not yet available - using placeholder$(RESET)"
 
 docs-cursed-all: build ## Generate comprehensive CURSED documentation
 	$(AT)echo -e "$(MAGENTA)📚 Generating comprehensive CURSED documentation...$(RESET)"
 	$(AT)mkdir -p docs/comprehensive
-	$(AT)./target/debug/cursed doc . \
+	$(AT)./target/debug/cursed docs . \
 		--output docs/comprehensive \
 		--format html \
 		--format markdown \
 		--format json \
-		--include-examples \
-		--include-source \
 		--include-private \
-		--generate-cross-refs \
-		--generate-search-index \
 		--title "CURSED Programming Language - Complete Reference" \
 		--description "Complete documentation for the CURSED programming language" \
 		--version "1.0.0" || \
-		echo -e "$(YELLOW)⚠️  CURSED doc command not yet available - using placeholder$(RESET)"
+		echo -e "$(YELLOW)⚠️  CURSED docs command not yet available - using placeholder$(RESET)"
 
 docs-cursed-serve: docs-cursed ## Generate and serve CURSED documentation
 	$(AT)echo -e "$(MAGENTA)📚 Generating and serving CURSED documentation...$(RESET)"
 	$(AT)mkdir -p docs/serve
-	$(AT)./target/debug/cursed doc . \
+	$(AT)./target/debug/cursed docs . \
 		--output docs/serve \
 		--format html \
-		--include-examples \
-		--include-source \
 		--serve 8080 \
 		--open || \
-		(echo -e "$(YELLOW)⚠️  CURSED doc command not yet available$(RESET)" && \
+		(echo -e "$(YELLOW)⚠️  CURSED docs command not yet available$(RESET)" && \
 		 cd docs/generated 2>/dev/null && python3 -m http.server 8080 || \
 		 echo -e "$(RED)❌ No documentation to serve$(RESET)")
 
 docs-examples: ## Generate examples documentation
 	$(AT)echo -e "$(MAGENTA)📚 Generating examples documentation...$(RESET)"
 	$(AT)mkdir -p docs/examples
-	$(AT)./target/debug/cursed doc examples/comprehensive/ \
+	$(AT)./target/debug/cursed docs examples/ \
 		--output docs/examples \
 		--format html \
 		--format markdown \
-		--include-examples \
-		--include-source \
 		--title "CURSED Examples Collection" \
 		--description "Comprehensive examples demonstrating CURSED language features" || \
-		echo -e "$(YELLOW)⚠️  CURSED doc command not yet available - creating placeholder$(RESET)"
+		echo -e "$(YELLOW)⚠️  CURSED docs command not yet available - creating placeholder$(RESET)"
+
+# Documentation system tests
+.PHONY: doc-test doc-test-integration doc-test-unit doc-test-enhanced doc-test-all
+doc-test: ## Run basic documentation tests
+	$(AT)echo -e "$(CYAN)🧪 Running documentation system tests...$(RESET)"
+	./fix_linking.sh cargo test --test documentation_integration_test
+
+doc-test-integration: ## Run documentation integration tests
+	$(AT)echo -e "$(CYAN)🧪 Running documentation integration tests...$(RESET)"
+	./fix_linking.sh cargo test --test documentation_integration_test
+
+doc-test-unit: ## Run documentation unit tests
+	$(AT)echo -e "$(CYAN)🧪 Running documentation unit tests...$(RESET)"
+	./fix_linking.sh cargo test --lib documentation
+
+doc-test-enhanced: ## Run enhanced documentation generation tests
+	$(AT)echo -e "$(CYAN)🧪 Running enhanced documentation generation tests...$(RESET)"
+	./fix_linking.sh cargo test --test documentation_enhanced_test
+
+doc-test-all: ## Run all documentation tests
+	$(AT)echo -e "$(CYAN)🧪 Running all documentation tests...$(RESET)"
+	./fix_linking.sh cargo test --test documentation_integration_test
+	./fix_linking.sh cargo test --test documentation_enhanced_test
+	./fix_linking.sh cargo test --lib documentation
 
 docs-stdlib: ## Generate standard library documentation  
 	$(AT)echo -e "$(MAGENTA)📚 Generating standard library documentation...$(RESET)"
@@ -1264,18 +1179,7 @@ type-switch-help: ## Show type switch testing help
 .PHONY: performance-benchmark performance-benchmark-all performance-profiling-test performance-integration-test
 .PHONY: performance-help
 
-# Performance optimization tests
-performance-test: ## Run all performance optimization tests
-	$(AT)echo -e "$(BOLD)$(CYAN)Running Performance Optimization Tests$(RESET)"
-	$(CARGO_CMD) test --test performance_optimization_test $(V)
-
-performance-test-quick: ## Run performance tests in release mode
-	$(AT)echo -e "$(BOLD)$(CYAN)Running Quick Performance Tests$(RESET)"
-	$(CARGO_CMD) test --test performance_optimization_test --release $(V)
-
-performance-test-verbose: ## Run performance tests with output
-	$(AT)echo -e "$(BOLD)$(CYAN)Running Verbose Performance Tests$(RESET)"
-	$(CARGO_CMD) test --test performance_optimization_test -- --nocapture
+# Performance optimization tests (removed duplicates - using later definitions)
 
 # Performance system CLI tests
 performance-cli-test: ## Test CLI functionality
@@ -1301,18 +1205,7 @@ performance-integration-test: ## Run comprehensive integration tests
 	$(AT)echo -e "$(BOLD)$(CYAN)Running Performance Integration Tests$(RESET)"
 	$(CARGO_CMD) test --test performance_optimization_test integration_tests --release -- --nocapture
 
-# Performance optimization help
-performance-help: ## Show performance optimization help
-	$(AT)echo -e "$(BOLD)$(CYAN)Performance Optimization System Targets:$(RESET)"
-	$(AT)echo -e "  $(CYAN)performance-test              $(RESET)Run all performance optimization tests"
-	$(AT)echo -e "  $(CYAN)performance-test-quick        $(RESET)Run performance tests in release mode"
-	$(AT)echo -e "  $(CYAN)performance-test-verbose      $(RESET)Run performance tests with output"
-	$(AT)echo -e "  $(CYAN)performance-cli-test          $(RESET)Test CLI functionality"
-	$(AT)echo -e "  $(CYAN)performance-benchmark         $(RESET)Run benchmark tests"
-	$(AT)echo -e "  $(CYAN)performance-benchmark-all     $(RESET)Run all benchmark variations"
-	$(AT)echo -e "  $(CYAN)performance-profiling-test    $(RESET)Test build profiling functionality"
-	$(AT)echo -e "  $(CYAN)performance-integration-test  $(RESET)Run comprehensive integration tests"
-	$(AT)echo -e "  $(CYAN)performance-help              $(RESET)Show this help message"
+# Performance optimization help (duplicate removed - using later definition)
 
 # Enhanced Build System Testing Commands
 # =============================================================================
@@ -1558,9 +1451,7 @@ process-ipc-test-quick: ## Run process management and IPC quick validation tests
 	$(AT)echo -e "$(MAGENTA)🔧 Running Process/IPC quick tests...$(RESET)"
 	$(AT)./tests/run_process_ipc_comprehensive_tests.sh --quick
 
-process-ipc-test: ## Run process management and IPC standard tests
-	$(AT)echo -e "$(MAGENTA)🔧 Running Process/IPC standard tests...$(RESET)"
-	$(AT)./tests/run_process_ipc_comprehensive_tests.sh
+# process-ipc-test: Removed duplicate (using later definition)
 
 process-ipc-test-all: ## Run all process management and IPC tests including stress tests
 	$(AT)echo -e "$(MAGENTA)🔧 Running Process/IPC comprehensive tests...$(RESET)"
@@ -1623,44 +1514,7 @@ process-ipc-help: ## Show process management and IPC testing help
 	$(AT)echo "  make process-ipc-test-all    - Complete test suite"
 	$(AT)echo "  make process-ipc-test-report - Generate documentation"
 
-# Advanced Optimization testing targets
-advanced-opt-test-quick: ## Run quick advanced optimization tests
-	$(AT)echo -e "$(CYAN)🚀 Running quick advanced optimization tests...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --quick
-
-advanced-opt-test: ## Run advanced optimization tests
-	$(AT)echo -e "$(CYAN)🚀 Running advanced optimization tests...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --test unit --test integration
-
-advanced-opt-test-all: ## Run all advanced optimization tests (including performance)
-	$(AT)echo -e "$(CYAN)🚀 Running all advanced optimization tests (including performance)...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --ignored
-
-advanced-opt-test-unit: ## Run advanced optimization unit tests
-	$(AT)echo -e "$(CYAN)🚀 Running advanced optimization unit tests...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --test unit
-
-advanced-opt-test-integration: ## Run advanced optimization integration tests
-	$(AT)echo -e "$(CYAN)🚀 Running advanced optimization integration tests...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --test integration
-
-advanced-opt-test-performance: ## Run advanced optimization performance tests
-	$(AT)echo -e "$(CYAN)🚀 Running advanced optimization performance tests...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --test performance --ignored
-
-advanced-opt-test-report: ## Generate advanced optimization test report
-	$(AT)echo -e "$(MAGENTA)📋 Generating advanced optimization test report...$(RESET)"
-	$(AT)./tests/run_advanced_optimization_tests.sh --report
-
-advanced-opt-help: ## Show advanced optimization test commands
-	$(AT)echo -e "$(BOLD)Advanced Optimization Test Commands:$(RESET)"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test-quick$(RESET)      - Quick validation tests"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test$(RESET)            - Standard test suite"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test-all$(RESET)        - All tests including performance"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test-unit$(RESET)       - Unit tests only"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test-integration$(RESET) - Integration tests only"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test-performance$(RESET) - Performance tests only"
-	$(AT)echo -e "  $(YELLOW)advanced-opt-test-report$(RESET)     - Generate detailed report"
+# Advanced Optimization testing targets (removed duplicates - using later definitions)
 
 # =============================================================================
 # Enhanced Process Management and IPC Tests
@@ -1674,46 +1528,7 @@ process-ipc-test: build ## Run process management and IPC tests
 	$(AT)./tests/run_process_ipc_comprehensive_tests.sh
 	$(AT)echo -e "$(GREEN)✅ Process and IPC tests completed$(RESET)"
 
-process-ipc-test-all: build ## Run all process and IPC tests including stress tests
-	$(AT)echo -e "$(BLUE)🚀 Running comprehensive process and IPC tests...$(RESET)"
-	$(AT)./tests/run_process_ipc_comprehensive_tests.sh --stress
-	$(AT)echo -e "$(GREEN)✅ All process and IPC tests completed$(RESET)"
-
-process-ipc-test-quick: build ## Run quick process and IPC tests only
-	$(AT)echo -e "$(BLUE)⚡ Running quick process and IPC tests...$(RESET)"
-	$(AT)./tests/run_process_ipc_comprehensive_tests.sh --quick
-	$(AT)echo -e "$(GREEN)✅ Quick process and IPC tests completed$(RESET)"
-
-process-ipc-test-stress: build ## Run stress tests for process and IPC systems
-	$(AT)echo -e "$(BLUE)💪 Running process and IPC stress tests...$(RESET)"
-	$(AT)./tests/run_process_ipc_comprehensive_tests.sh --stress
-	$(AT)echo -e "$(GREEN)✅ Process and IPC stress tests completed$(RESET)"
-
-process-ipc-test-coverage: build ## Generate coverage report for process and IPC tests
-	$(AT)echo -e "$(BLUE)📊 Generating process and IPC test coverage...$(RESET)"
-	$(AT)./tests/run_process_ipc_comprehensive_tests.sh --coverage
-	$(AT)echo -e "$(GREEN)✅ Coverage report generated$(RESET)"
-
-process-ipc-test-report: build ## Generate detailed test report
-	$(AT)echo -e "$(BLUE)📋 Generating process and IPC test report...$(RESET)"
-	$(AT)./tests/run_process_ipc_comprehensive_tests.sh --report test_results/process_ipc_report.md
-	$(AT)echo -e "$(GREEN)✅ Test report generated$(RESET)"
-
-process-ipc-help: ## Show process and IPC testing help
-	$(AT)echo -e "$(CYAN)Process Management and IPC Testing Help$(RESET)"
-	$(AT)echo -e ""
-	$(AT)echo -e "Available targets:"
-	$(AT)echo -e "  $(YELLOW)process-ipc-test$(RESET)          - Run all standard tests"
-	$(AT)echo -e "  $(YELLOW)process-ipc-test-all$(RESET)      - Run all tests including stress tests"
-	$(AT)echo -e "  $(YELLOW)process-ipc-test-quick$(RESET)    - Run quick tests only"
-	$(AT)echo -e "  $(YELLOW)process-ipc-test-stress$(RESET)   - Run stress tests only"
-	$(AT)echo -e "  $(YELLOW)process-ipc-test-coverage$(RESET) - Generate coverage report"
-	$(AT)echo -e "  $(YELLOW)process-ipc-test-report$(RESET)   - Generate detailed report"
-	$(AT)echo -e ""
-	$(AT)echo -e "Test categories:"
-	$(AT)echo -e "  $(CYAN)Enhanced Process Management$(RESET) - Advanced command execution and monitoring"
-	$(AT)echo -e "  $(CYAN)Advanced IPC$(RESET)               - Comprehensive inter-process communication"
-	$(AT)echo -e "  $(CYAN)LLVM Integration$(RESET)           - Code generation and FFI support"
+# process-ipc targets removed (duplicates) - using later definitions
 
 # Enhanced Process Management Targets
 # =============================================================================
@@ -1875,89 +1690,7 @@ enhanced-process-ipc-help: ## Show enhanced process and IPC commands
 .PRECIOUS: $(BUILD_DIR)/ $(OUTPUT_DIR)/
 
 
-# Post-Quantum Cryptography Hybrid Testing Infrastructure - COMPREHENSIVE ✅
-# =============================================================================
-.PHONY: pqc-hybrid-test-quick pqc-hybrid-test pqc-hybrid-test-benchmark pqc-hybrid-test-all pqc-hybrid-cli-test pqc-hybrid-cli-build pqc-hybrid-benchmark pqc-hybrid-compatibility pqc-hybrid-migration pqc-hybrid-example pqc-hybrid-help
-
-# Quick PQC hybrid tests
-pqc-hybrid-test-quick: ## Run PQC hybrid quick tests
-	@echo "🔐 Running PQC hybrid quick tests..."
-	./fix_linking.sh cargo test --test crypto_pqc_hybrid_test --release
-
-# Standard PQC hybrid tests
-pqc-hybrid-test: ## Run PQC hybrid standard tests
-	@echo "🔐 Running PQC hybrid standard tests..."
-	./fix_linking.sh cargo test --test crypto_pqc_hybrid_test --release -- --nocapture
-
-# Performance and benchmark tests
-pqc-hybrid-test-benchmark: ## Run PQC hybrid benchmark tests
-	@echo "🔐 Running PQC hybrid benchmark tests..."
-	./fix_linking.sh cargo test --test crypto_pqc_hybrid_benchmark_test --release -- --nocapture --ignored
-
-# All PQC hybrid tests
-pqc-hybrid-test-all: ## Run comprehensive PQC hybrid tests
-	@echo "🔐 Running comprehensive PQC hybrid tests..."
-	./fix_linking.sh cargo test --test crypto_pqc_hybrid_test --release -- --nocapture
-	./fix_linking.sh cargo test --test crypto_pqc_hybrid_benchmark_test --release -- --nocapture
-
-# CLI tool testing
-pqc-hybrid-cli-test: ## Test PQC hybrid CLI tool
-	@echo "🔐 Testing PQC hybrid CLI tool..."
-	./fix_linking.sh cargo build --bin cursed_pqc_hybrid --release
-	./target/release/cursed_pqc_hybrid --help
-
-# Build PQC hybrid CLI tool
-pqc-hybrid-cli-build: ## Build PQC hybrid CLI tool
-	@echo "🔐 Building PQC hybrid CLI tool..."
-	./fix_linking.sh cargo build --bin cursed_pqc_hybrid --release
-
-# Performance benchmarks
-pqc-hybrid-benchmark: ## Run PQC hybrid performance benchmarks
-	@echo "🔐 Running PQC hybrid performance benchmarks..."
-	./fix_linking.sh cargo build --bin cursed_pqc_hybrid --release
-	./target/release/cursed_pqc_hybrid benchmark --iterations 5
-
-# Compatibility matrix
-pqc-hybrid-compatibility: ## Show PQC hybrid compatibility matrix
-	@echo "🔐 Showing PQC hybrid compatibility matrix..."
-	./fix_linking.sh cargo build --bin cursed_pqc_hybrid --release
-	./target/release/cursed_pqc_hybrid compatibility
-
-# Migration strategy
-pqc-hybrid-migration: ## Show PQC hybrid migration strategy
-	@echo "🔐 Showing PQC hybrid migration strategy..."
-	./fix_linking.sh cargo build --bin cursed_pqc_hybrid --release
-	./target/release/cursed_pqc_hybrid migration
-
-# Example workflow
-pqc-hybrid-example: ## Run PQC hybrid example workflow
-	@echo "🔐 Running PQC hybrid example workflow..."
-	./fix_linking.sh cargo build --bin cursed_pqc_hybrid --release
-	@echo "Generating hybrid key pair..."
-	./target/release/cursed_pqc_hybrid keygen --classical x25519 --pqc kyber --security-level level1 --public-key-out hybrid_pub.key --secret-key-out hybrid_sec.key
-	@echo "Performing encapsulation..."
-	./target/release/cursed_pqc_hybrid encaps --public-key hybrid_pub.key --ciphertext-out hybrid.ct --shared-secret-out hybrid_encaps.secret --classical x25519 --pqc kyber --security-level level1
-	@echo "Performing decapsulation..."
-	./target/release/cursed_pqc_hybrid decaps --secret-key hybrid_sec.key --ciphertext hybrid.ct --shared-secret-out hybrid_decaps.secret --classical x25519 --pqc kyber --security-level level1
-	@echo "Validating key pair..."
-	./target/release/cursed_pqc_hybrid validate --public-key hybrid_pub.key --secret-key hybrid_sec.key --classical x25519 --pqc kyber --security-level level1
-	@echo "Cleaning up..."
-	rm -f hybrid_pub.key hybrid_sec.key hybrid.ct hybrid_encaps.secret hybrid_decaps.secret
-
-# Help
-pqc-hybrid-help: ## Show PQC hybrid help
-	@echo "Post-Quantum Cryptography Hybrid Testing Commands:"
-	@echo "  pqc-hybrid-test-quick        - Run quick validation tests"
-	@echo "  pqc-hybrid-test             - Run standard test suite"
-	@echo "  pqc-hybrid-test-benchmark   - Run performance benchmark tests"
-	@echo "  pqc-hybrid-test-all         - Run comprehensive test suite"
-	@echo "  pqc-hybrid-cli-test         - Test CLI tool functionality"
-	@echo "  pqc-hybrid-cli-build        - Build CLI tool"
-	@echo "  pqc-hybrid-benchmark        - Run performance benchmarks"
-	@echo "  pqc-hybrid-compatibility    - Show algorithm compatibility matrix"
-	@echo "  pqc-hybrid-migration        - Show migration strategy"
-	@echo "  pqc-hybrid-example          - Run complete example workflow"
-	@echo "  pqc-hybrid-help             - Show this help message"
+# Post-Quantum Cryptography Hybrid Testing Infrastructure (duplicates removed - using later definitions)
 
 # Redis Database Driver Testing
 # =============================================================================
@@ -2632,4 +2365,31 @@ advanced-opt-help: ## Show advanced optimization test help
 	@echo "  advanced-opt-test-verbose - Run tests with verbose output"
 	@echo "  advanced-opt-test-report  - Generate detailed test report"
 	@echo "  advanced-opt-help         - Show this help message"
+
+# Enhanced Parallel Compilation Testing
+# =============================================================================
+
+parallel-compile-test: ## Run enhanced parallel compilation tests
+	@echo "$(CYAN)🔧 Running Enhanced Parallel Compilation Tests$(RESET)"
+	$(CARGO_CMD) test --test enhanced_parallel_compilation_test
+
+parallel-compile-demo: ## Run parallel compilation demo
+	@echo "$(GREEN)🚀 Running Parallel Compilation Demo$(RESET)"
+	$(CARGO_CMD) run --example parallel_compilation_demo
+
+parallel-compile-benchmark: ## Benchmark parallel compilation performance
+	@echo "$(YELLOW)⚡ Benchmarking Parallel Compilation Performance$(RESET)"
+	$(CARGO_CMD) test --release --test enhanced_parallel_compilation_test -- --ignored
+
+parallel-compile-stress: ## Run parallel compilation stress tests
+	@echo "$(RED)💪 Running Parallel Compilation Stress Tests$(RESET)"
+	$(CARGO_CMD) test --release parallel_compile_stress -- --ignored --test-threads=1
+
+parallel-compile-help: ## Show parallel compilation test help
+	@echo "$(BOLD)Enhanced Parallel Compilation Commands:$(RESET)"
+	@echo "  parallel-compile-test        - Run parallel compilation tests"
+	@echo "  parallel-compile-demo        - Run interactive demo"
+	@echo "  parallel-compile-benchmark   - Performance benchmarks"
+	@echo "  parallel-compile-stress      - Stress tests with high load"
+	@echo "  parallel-compile-help        - Show this help message"
 

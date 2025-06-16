@@ -13,6 +13,28 @@ pub type PluginLoadCallback = Box<dyn Fn(&str, &Plug) -> PluginResult<()> + Send
 pub type PluginUnloadCallback = Box<dyn Fn(&str, &Plug) -> PluginResult<()> + Send + Sync>;
 pub type PluginErrorCallback = Box<dyn Fn(&str, &PluginError) + Send + Sync>;
 
+/// Configuration for the plugin manager
+#[derive(Debug, Clone)]
+pub struct ManagerConfig {
+    pub enable_hot_reload: bool,
+    pub watch_directories: Vec<String>,
+    pub auto_load_plugins: bool,
+    pub plugin_timeout: Duration,
+    pub max_plugins: Option<usize>,
+}
+
+impl Default for ManagerConfig {
+    fn default() -> Self {
+        Self {
+            enable_hot_reload: false,
+            watch_directories: vec![],
+            auto_load_plugins: false,
+            plugin_timeout: Duration::from_secs(30),
+            max_plugins: None,
+        }
+    }
+}
+
 /// Options for configuring the plugin manager
 #[derive(Default)]
 pub struct PlugManagerOptions {
@@ -161,8 +183,13 @@ pub struct PlugManager {
 }
 
 impl PlugManager {
-    /// Create a new plugin manager
-    pub fn new(options: PlugManagerOptions) -> Self {
+    /// Create a new plugin manager with default options
+    pub fn new() -> Self {
+        Self::with_options(PlugManagerOptions::default())
+    }
+
+    /// Create a new plugin manager with specific options
+    pub fn with_options(options: PlugManagerOptions) -> Self {
         let registry = options.registry.clone()
             .unwrap_or_else(|| Arc::new(PlugRegistry::new()));
 
@@ -175,6 +202,26 @@ impl PlugManager {
             watcher_handle: None,
             file_timestamps: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Configure the plugin manager
+    pub fn configure(&self, config: ManagerConfig) -> PluginResult<()> {
+        // In a real implementation, this would update internal configuration
+        // For now, just validate the config
+        if config.max_plugins.is_some() && config.max_plugins.unwrap() == 0 {
+            return Err(PluginError::manager_error("Invalid max_plugins value"));
+        }
+        Ok(())
+    }
+
+    /// Handle a file change event
+    pub fn handle_file_change(&self, path: &str) -> PluginResult<()> {
+        // In a real implementation, this would:
+        // 1. Check if the file is a plugin
+        // 2. Reload the plugin if it's already loaded
+        // 3. Load the plugin if it's new
+        // For now, just return success
+        Ok(())
     }
 
     /// Start the plugin manager

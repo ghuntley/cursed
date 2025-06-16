@@ -44,6 +44,7 @@ toml = "0.8"        # TOML configuration files
 chrono = { version = "0.4", features = ["serde"] }  # Date/time handling
 async-trait = "0.1" # Async traits for output generators
 open = "5.0"        # Opening files/URLs in system applications
+regex = "1.10"      # Regular expressions for documentation quality checks
 
 # Basic cryptography dependencies
 hex = "0.4"     # Hex encoding/decoding
@@ -133,6 +134,8 @@ indicatif = "0.17"  # Progress bars for CLI
 # num_cpus = "1.16"         # For detecting number of CPU cores (already included above)
 crossbeam = "0.8"          # For optimization system parallel processing
 crossbeam-channel = "0.5" # For thread communication in parallel compilation
+rayon = "1.7"              # For enhanced parallel processing
+sysinfo = "0.30"           # For system resource monitoring
 tracing = "0.1"           # For structured logging and instrumentation
 tracing-subscriber = { version = "0.3", features = ["env-filter"] } # For tracing subscriber implementations
 
@@ -156,10 +159,11 @@ fs2 = "0.4"     # File locking support
 
 # Regex support
 regex = "1.10"  # Regular expression support
+html-escape = "0.2"  # HTML escaping for syntax highlighting
 urlencoding = "2.1"  # URL encoding/decoding
 
 # Build system analytics dependencies
-sysinfo = "0.29"    # System information and resource monitoring
+# sysinfo = "0.29"    # System information and resource monitoring (already included above with 0.30)
 
 # Terminal support
 # atty = "0.2"    # TTY detection - duplicate removed
@@ -176,7 +180,7 @@ serde_yaml = "0.9"  # YAML serialization/deserialization
 # chrono already defined above for documentation
 
 # Optimization system dependencies (num_cpus already included above)
-rayon = "1.8"           # For data parallelism in optimization
+# rayon = "1.8"           # For data parallelism in optimization (already included above with 1.7)
 tempfile = "3.8"        # For temporary files in incremental compilation
 bincode = "1.3"  # Binary serialization for profiling data
 thread_local = "1.1"  # Thread-local storage
@@ -256,6 +260,7 @@ bb8-postgres = "0.8"                               # PostgreSQL connection pool
 # Missing dependencies for web_vibez (uuid already defined above)
 
 httpdate = "1.0"                                   # For HTTP date formatting  
+warp = "0.3"                                       # HTTP server for documentation serving
 # async-trait already defined above for documentation
 
 # Language Server Protocol dependencies

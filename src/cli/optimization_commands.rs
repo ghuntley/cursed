@@ -1730,45 +1730,1192 @@ fn print_configuration(config: &OptimizationCliConfig, global: bool) {
     println!("     Sample Rate: {}Hz", config.profiling_config.sample_rate);
 }
 
-// Placeholder functions for report generation (to be implemented with actual optimization infrastructure)
+// Real report generation functions with comprehensive analysis and formatting
 fn generate_analysis_report(
-    _result: &cursed::optimization::analysis::AnalysisResult,
+    result: &cursed::optimization::analysis::AnalysisResult,
     format: &str,
-    _detailed: bool,
-    _suggestions: bool,
+    detailed: bool,
+    suggestions: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     match format {
-        "json" => Ok("{}".to_string()), // Placeholder JSON
-        "markdown" => Ok("# Performance Analysis Report\n\n*Analysis completed*".to_string()),
-        "table" => Ok("| Metric | Value |\n|--------|-------|\n| Status | Complete |".to_string()),
+        "json" => generate_json_analysis_report(result),
+        "markdown" => generate_markdown_analysis_report(result, detailed, suggestions),
+        "table" => generate_table_analysis_report(result),
         _ => Err(format!("Unsupported format: {}", format).into()),
     }
 }
 
-fn generate_benchmark_report(
-    _results: &HashMap<OptimizationLevel, cursed::optimization::analysis::BenchmarkResult>,
-    _previous: Option<&HashMap<OptimizationLevel, cursed::optimization::analysis::BenchmarkResult>>,
+fn generate_json_analysis_report(
+    result: &cursed::optimization::analysis::AnalysisResult,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    Ok("# Benchmark Report\n\n*Benchmark completed*".to_string())
+    let json_report = serde_json::json!({
+        "analysis_timestamp": result.analysis_timestamp,
+        "source_file": result.source_file,
+        "performance_summary": {
+            "total_compilation_time_ms": result.performance_summary.total_compilation_time.as_millis(),
+            "peak_memory_mb": result.performance_summary.total_memory_peak / (1024 * 1024),
+            "cpu_efficiency": result.performance_summary.cpu_efficiency,
+            "memory_efficiency": result.performance_summary.memory_efficiency,
+            "io_efficiency": result.performance_summary.io_efficiency,
+            "overall_score": result.performance_summary.overall_performance_score,
+            "optimization_opportunities": result.performance_summary.optimization_opportunities,
+            "critical_bottlenecks": result.performance_summary.critical_bottlenecks
+        },
+        "phases": result.phases.iter().map(|phase| {
+            serde_json::json!({
+                "name": phase.name,
+                "duration_ms": phase.duration.as_millis(),
+                "cpu_usage": phase.cpu_usage,
+                "memory_peak_mb": phase.memory_peak / (1024 * 1024),
+                "memory_average_mb": phase.memory_average / (1024 * 1024),
+                "efficiency_score": phase.efficiency_score,
+                "io_operations": {
+                    "read_ops": phase.io_operations.read_operations,
+                    "write_ops": phase.io_operations.write_operations,
+                    "bytes_read": phase.io_operations.bytes_read,
+                    "bytes_written": phase.io_operations.bytes_written
+                },
+                "bottlenecks": phase.bottlenecks
+            })
+        }).collect::<Vec<_>>(),
+        "bottlenecks": result.bottlenecks.iter().map(|bottleneck| {
+            serde_json::json!({
+                "type": format!("{:?}", bottleneck.bottleneck_type),
+                "severity": format!("{:?}", bottleneck.severity),
+                "location": {
+                    "phase": bottleneck.location.phase,
+                    "function": bottleneck.location.function,
+                    "line_number": bottleneck.location.line_number,
+                    "module": bottleneck.location.module
+                },
+                "description": bottleneck.description,
+                "impact_percentage": bottleneck.impact_percentage,
+                "time_spent_ms": bottleneck.time_spent.as_millis(),
+                "suggested_fixes": bottleneck.suggested_fixes
+            })
+        }).collect::<Vec<_>>(),
+        "recommendations": result.recommendations.iter().map(|rec| {
+            serde_json::json!({
+                "id": rec.recommendation_id,
+                "priority": rec.priority,
+                "category": format!("{:?}", rec.category),
+                "title": rec.title,
+                "summary": rec.summary,
+                "expected_improvement": {
+                    "compilation_time_reduction": rec.expected_improvement.compilation_time_reduction,
+                    "runtime_performance_gain": rec.expected_improvement.runtime_performance_gain,
+                    "memory_reduction": rec.expected_improvement.memory_reduction,
+                    "confidence_level": rec.expected_improvement.confidence_level
+                },
+                "effort_estimate": {
+                    "time_hours": rec.effort_estimate.time_hours,
+                    "complexity": format!("{:?}", rec.effort_estimate.complexity)
+                },
+                "implementation_steps": rec.implementation_steps,
+                "prerequisites": rec.prerequisites,
+                "risks": rec.risks
+            })
+        }).collect::<Vec<_>>(),
+        "detailed_metrics": {
+            "compilation_metrics": {
+                "lexing_time_ms": result.detailed_metrics.compilation_metrics.lexing_time.as_millis(),
+                "parsing_time_ms": result.detailed_metrics.compilation_metrics.parsing_time.as_millis(),
+                "semantic_analysis_time_ms": result.detailed_metrics.compilation_metrics.semantic_analysis_time.as_millis(),
+                "type_checking_time_ms": result.detailed_metrics.compilation_metrics.type_checking_time.as_millis(),
+                "ir_generation_time_ms": result.detailed_metrics.compilation_metrics.ir_generation_time.as_millis(),
+                "optimization_time_ms": result.detailed_metrics.compilation_metrics.optimization_time.as_millis(),
+                "code_generation_time_ms": result.detailed_metrics.compilation_metrics.code_generation_time.as_millis(),
+                "linking_time_ms": result.detailed_metrics.compilation_metrics.linking_time.as_millis(),
+                "total_frontend_time_ms": result.detailed_metrics.compilation_metrics.total_frontend_time.as_millis(),
+                "total_backend_time_ms": result.detailed_metrics.compilation_metrics.total_backend_time.as_millis()
+            },
+            "resource_metrics": {
+                "peak_memory_usage": result.detailed_metrics.resource_metrics.peak_memory_usage,
+                "average_memory_usage": result.detailed_metrics.resource_metrics.average_memory_usage,
+                "peak_cpu_usage": result.detailed_metrics.resource_metrics.peak_cpu_usage,
+                "average_cpu_usage": result.detailed_metrics.resource_metrics.average_cpu_usage,
+                "disk_reads": result.detailed_metrics.resource_metrics.disk_reads,
+                "disk_writes": result.detailed_metrics.resource_metrics.disk_writes,
+                "context_switches": result.detailed_metrics.resource_metrics.context_switches,
+                "page_faults": result.detailed_metrics.resource_metrics.page_faults
+            },
+            "instruction_counts": {
+                "total_instructions": result.detailed_metrics.instruction_counts.total_instructions,
+                "arithmetic_instructions": result.detailed_metrics.instruction_counts.arithmetic_instructions,
+                "memory_instructions": result.detailed_metrics.instruction_counts.memory_instructions,
+                "branch_instructions": result.detailed_metrics.instruction_counts.branch_instructions,
+                "floating_point_instructions": result.detailed_metrics.instruction_counts.floating_point_instructions,
+                "vector_instructions": result.detailed_metrics.instruction_counts.vector_instructions
+            },
+            "cache_performance": {
+                "l1_hit_rate": result.detailed_metrics.cache_performance.l1_hit_rate,
+                "l2_hit_rate": result.detailed_metrics.cache_performance.l2_hit_rate,
+                "l3_hit_rate": result.detailed_metrics.cache_performance.l3_hit_rate,
+                "cache_misses": result.detailed_metrics.cache_performance.cache_misses,
+                "cache_miss_penalty_ns": result.detailed_metrics.cache_performance.cache_miss_penalty.as_nanos()
+            },
+            "branch_prediction": {
+                "prediction_accuracy": result.detailed_metrics.branch_prediction.prediction_accuracy,
+                "mispredicted_branches": result.detailed_metrics.branch_prediction.mispredicted_branches,
+                "branch_penalty_ns": result.detailed_metrics.branch_prediction.branch_penalty.as_nanos(),
+                "indirect_branches": result.detailed_metrics.branch_prediction.indirect_branches
+            }
+        }
+    });
+
+    Ok(serde_json::to_string_pretty(&json_report)?)
+}
+
+fn generate_markdown_analysis_report(
+    result: &cursed::optimization::analysis::AnalysisResult,
+    detailed: bool,
+    suggestions: bool,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut report = String::new();
+    
+    // Header
+    report.push_str("# CURSED Compilation Performance Analysis Report\n\n");
+    report.push_str(&format!("**Analysis Date:** {}\n", result.analysis_timestamp.format("%Y-%m-%d %H:%M:%S UTC")));
+    report.push_str(&format!("**Source File:** `{}`\n\n", result.source_file));
+    
+    // Executive Summary
+    report.push_str("## 📊 Executive Summary\n\n");
+    report.push_str(&format!("- **Total Compilation Time:** {:.2}ms\n", result.performance_summary.total_compilation_time.as_millis()));
+    report.push_str(&format!("- **Peak Memory Usage:** {:.1}MB\n", result.performance_summary.total_memory_peak as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("- **Overall Performance Score:** {:.1}/100\n", result.performance_summary.overall_performance_score * 100.0));
+    report.push_str(&format!("- **CPU Efficiency:** {:.1}%\n", result.performance_summary.cpu_efficiency));
+    report.push_str(&format!("- **Memory Efficiency:** {:.1}%\n", result.performance_summary.memory_efficiency));
+    report.push_str(&format!("- **I/O Efficiency:** {:.1}%\n", result.performance_summary.io_efficiency));
+    report.push_str(&format!("- **Critical Bottlenecks:** {}\n", result.performance_summary.critical_bottlenecks));
+    report.push_str(&format!("- **Optimization Opportunities:** {}\n\n", result.performance_summary.optimization_opportunities));
+    
+    // Performance Grade
+    let grade = match result.performance_summary.overall_performance_score {
+        score if score >= 0.9 => "🟢 Excellent (A)",
+        score if score >= 0.8 => "🟡 Good (B)",
+        score if score >= 0.7 => "🟠 Fair (C)",
+        score if score >= 0.6 => "🔴 Poor (D)",
+        _ => "❌ Critical (F)",
+    };
+    report.push_str(&format!("**Performance Grade:** {}\n\n", grade));
+    
+    // Phase Analysis
+    report.push_str("## ⏱️ Compilation Phase Analysis\n\n");
+    report.push_str("| Phase | Duration | CPU Usage | Memory Peak | Efficiency | Bottlenecks |\n");
+    report.push_str("|-------|----------|-----------|-------------|------------|-------------|\n");
+    
+    for phase in &result.phases {
+        let bottleneck_count = phase.bottlenecks.len();
+        let bottleneck_indicator = if bottleneck_count > 0 { 
+            format!("⚠️ {}", bottleneck_count)
+        } else { 
+            "✅".to_string() 
+        };
+        
+        report.push_str(&format!(
+            "| {} | {:.1}ms | {:.1}% | {:.1}MB | {:.1}% | {} |\n",
+            phase.name,
+            phase.duration.as_millis(),
+            phase.cpu_usage,
+            phase.memory_peak as f64 / (1024.0 * 1024.0),
+            phase.efficiency_score * 100.0,
+            bottleneck_indicator
+        ));
+    }
+    report.push_str("\n");
+    
+    // Bottleneck Analysis
+    if !result.bottlenecks.is_empty() {
+        report.push_str("## 🚫 Performance Bottlenecks\n\n");
+        
+        for (i, bottleneck) in result.bottlenecks.iter().enumerate() {
+            let severity_emoji = match bottleneck.severity {
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "🔴",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::High => "🟠",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "🟡",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Low => "🟢",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "⚪",
+            };
+            
+            report.push_str(&format!("### {} Bottleneck #{}: {}\n\n", severity_emoji, i + 1, bottleneck.description));
+            report.push_str(&format!("- **Type:** {:?}\n", bottleneck.bottleneck_type));
+            report.push_str(&format!("- **Severity:** {:?}\n", bottleneck.severity));
+            report.push_str(&format!("- **Location:** {}", bottleneck.location.phase));
+            if let Some(ref function) = bottleneck.location.function {
+                report.push_str(&format!(" → {}", function));
+            }
+            if let Some(line) = bottleneck.location.line_number {
+                report.push_str(&format!(" (line {})", line));
+            }
+            report.push_str("\n");
+            report.push_str(&format!("- **Impact:** {:.1}% performance loss\n", bottleneck.impact_percentage));
+            report.push_str(&format!("- **Time Spent:** {:.2}ms\n\n", bottleneck.time_spent.as_millis()));
+            
+            if !bottleneck.suggested_fixes.is_empty() {
+                report.push_str("**Suggested Fixes:**\n");
+                for fix in &bottleneck.suggested_fixes {
+                    report.push_str(&format!("- {}\n", fix));
+                }
+                report.push_str("\n");
+            }
+        }
+    }
+    
+    // Optimization Recommendations
+    if suggestions && !result.recommendations.is_empty() {
+        report.push_str("## 💡 Optimization Recommendations\n\n");
+        
+        for (i, rec) in result.recommendations.iter().enumerate() {
+            let priority_emoji = match rec.priority {
+                9..=10 => "🔴",
+                7..=8 => "🟠", 
+                5..=6 => "🟡",
+                3..=4 => "🟢",
+                _ => "⚪",
+            };
+            
+            report.push_str(&format!("### {} Priority {}: {}\n\n", priority_emoji, rec.priority, rec.title));
+            report.push_str(&format!("**Category:** {:?}\n\n", rec.category));
+            report.push_str(&format!("{}\n\n", rec.summary));
+            
+            if detailed {
+                report.push_str(&format!("**Detailed Description:**\n{}\n\n", rec.detailed_description));
+            }
+            
+            report.push_str("**Expected Improvements:**\n");
+            report.push_str(&format!("- Compilation Time: -{:.1}%\n", rec.expected_improvement.compilation_time_reduction));
+            report.push_str(&format!("- Runtime Performance: +{:.1}%\n", rec.expected_improvement.runtime_performance_gain));
+            report.push_str(&format!("- Memory Usage: -{:.1}%\n", rec.expected_improvement.memory_reduction));
+            report.push_str(&format!("- Confidence: {:.0}%\n\n", rec.expected_improvement.confidence_level * 100.0));
+            
+            report.push_str("**Implementation Steps:**\n");
+            for (j, step) in rec.implementation_steps.iter().enumerate() {
+                report.push_str(&format!("{}. {}\n", j + 1, step));
+            }
+            report.push_str("\n");
+            
+            report.push_str(&format!("**Effort Estimate:** {:.1} hours ({:?})\n", rec.effort_estimate.time_hours, rec.effort_estimate.complexity));
+            
+            if !rec.prerequisites.is_empty() {
+                report.push_str("\n**Prerequisites:**\n");
+                for prereq in &rec.prerequisites {
+                    report.push_str(&format!("- {}\n", prereq));
+                }
+            }
+            
+            if !rec.risks.is_empty() {
+                report.push_str("\n**Risks:**\n");
+                for risk in &rec.risks {
+                    report.push_str(&format!("- {}\n", risk));
+                }
+            }
+            
+            report.push_str("\n");
+        }
+    }
+    
+    // Detailed Metrics
+    if detailed {
+        report.push_str("## 📈 Detailed Metrics\n\n");
+        
+        report.push_str("### Compilation Phase Breakdown\n\n");
+        report.push_str("| Phase | Time (ms) | Percentage |\n");
+        report.push_str("|-------|-----------|------------|\n");
+        
+        let total_time = result.detailed_metrics.compilation_metrics.total_frontend_time + 
+                        result.detailed_metrics.compilation_metrics.total_backend_time;
+        
+        let phases = vec![
+            ("Lexing", result.detailed_metrics.compilation_metrics.lexing_time),
+            ("Parsing", result.detailed_metrics.compilation_metrics.parsing_time),
+            ("Semantic Analysis", result.detailed_metrics.compilation_metrics.semantic_analysis_time),
+            ("Type Checking", result.detailed_metrics.compilation_metrics.type_checking_time),
+            ("IR Generation", result.detailed_metrics.compilation_metrics.ir_generation_time),
+            ("Optimization", result.detailed_metrics.compilation_metrics.optimization_time),
+            ("Code Generation", result.detailed_metrics.compilation_metrics.code_generation_time),
+            ("Linking", result.detailed_metrics.compilation_metrics.linking_time),
+        ];
+        
+        for (name, duration) in phases {
+            let percentage = if total_time.as_nanos() > 0 {
+                (duration.as_nanos() as f64 / total_time.as_nanos() as f64) * 100.0
+            } else {
+                0.0
+            };
+            report.push_str(&format!("| {} | {:.1} | {:.1}% |\n", name, duration.as_millis(), percentage));
+        }
+        report.push_str("\n");
+        
+        report.push_str("### Resource Utilization\n\n");
+        report.push_str(&format!("- **Peak Memory:** {:.1}MB\n", result.detailed_metrics.resource_metrics.peak_memory_usage as f64 / (1024.0 * 1024.0)));
+        report.push_str(&format!("- **Average Memory:** {:.1}MB\n", result.detailed_metrics.resource_metrics.average_memory_usage as f64 / (1024.0 * 1024.0)));
+        report.push_str(&format!("- **Peak CPU:** {:.1}%\n", result.detailed_metrics.resource_metrics.peak_cpu_usage));
+        report.push_str(&format!("- **Average CPU:** {:.1}%\n", result.detailed_metrics.resource_metrics.average_cpu_usage));
+        report.push_str(&format!("- **Disk Reads:** {}\n", result.detailed_metrics.resource_metrics.disk_reads));
+        report.push_str(&format!("- **Disk Writes:** {}\n", result.detailed_metrics.resource_metrics.disk_writes));
+        report.push_str(&format!("- **Context Switches:** {}\n", result.detailed_metrics.resource_metrics.context_switches));
+        report.push_str(&format!("- **Page Faults:** {}\n\n", result.detailed_metrics.resource_metrics.page_faults));
+        
+        report.push_str("### Instruction Analysis\n\n");
+        report.push_str(&format!("- **Total Instructions:** {}\n", result.detailed_metrics.instruction_counts.total_instructions));
+        report.push_str(&format!("- **Arithmetic Instructions:** {} ({:.1}%)\n", 
+            result.detailed_metrics.instruction_counts.arithmetic_instructions,
+            (result.detailed_metrics.instruction_counts.arithmetic_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
+        ));
+        report.push_str(&format!("- **Memory Instructions:** {} ({:.1}%)\n", 
+            result.detailed_metrics.instruction_counts.memory_instructions,
+            (result.detailed_metrics.instruction_counts.memory_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
+        ));
+        report.push_str(&format!("- **Branch Instructions:** {} ({:.1}%)\n", 
+            result.detailed_metrics.instruction_counts.branch_instructions,
+            (result.detailed_metrics.instruction_counts.branch_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
+        ));
+        report.push_str(&format!("- **Vector Instructions:** {} ({:.1}%)\n\n", 
+            result.detailed_metrics.instruction_counts.vector_instructions,
+            (result.detailed_metrics.instruction_counts.vector_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
+        ));
+        
+        report.push_str("### Cache Performance\n\n");
+        report.push_str(&format!("- **L1 Cache Hit Rate:** {:.1}%\n", result.detailed_metrics.cache_performance.l1_hit_rate * 100.0));
+        report.push_str(&format!("- **L2 Cache Hit Rate:** {:.1}%\n", result.detailed_metrics.cache_performance.l2_hit_rate * 100.0));
+        report.push_str(&format!("- **L3 Cache Hit Rate:** {:.1}%\n", result.detailed_metrics.cache_performance.l3_hit_rate * 100.0));
+        report.push_str(&format!("- **Total Cache Misses:** {}\n", result.detailed_metrics.cache_performance.cache_misses));
+        report.push_str(&format!("- **Cache Miss Penalty:** {}ns\n\n", result.detailed_metrics.cache_performance.cache_miss_penalty.as_nanos()));
+        
+        report.push_str("### Branch Prediction\n\n");
+        report.push_str(&format!("- **Prediction Accuracy:** {:.1}%\n", result.detailed_metrics.branch_prediction.prediction_accuracy * 100.0));
+        report.push_str(&format!("- **Mispredicted Branches:** {}\n", result.detailed_metrics.branch_prediction.mispredicted_branches));
+        report.push_str(&format!("- **Branch Penalty:** {}ns\n", result.detailed_metrics.branch_prediction.branch_penalty.as_nanos()));
+        report.push_str(&format!("- **Indirect Branches:** {}\n\n", result.detailed_metrics.branch_prediction.indirect_branches));
+    }
+    
+    // Trend Analysis
+    if let Some(ref trend_analysis) = result.trend_analysis {
+        report.push_str("## 📊 Performance Trends\n\n");
+        report.push_str(&format!("- **Trend Direction:** {:?}\n", trend_analysis.performance_trend));
+        report.push_str(&format!("- **Trend Strength:** {:.1}%\n", trend_analysis.trend_strength * 100.0));
+        report.push_str(&format!("- **Stability Score:** {:.1}%\n", trend_analysis.stability_score * 100.0));
+        
+        if trend_analysis.regression_detected {
+            report.push_str("- **⚠️ Performance Regression Detected**\n");
+        }
+        if trend_analysis.improvement_detected {
+            report.push_str("- **✅ Performance Improvement Detected**\n");
+        }
+        report.push_str("\n");
+    }
+    
+    // Footer
+    report.push_str("---\n\n");
+    report.push_str("*Generated by CURSED Compiler Performance Analysis System*\n");
+    report.push_str(&format!("*Report generated at: {}*", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")));
+    
+    Ok(report)
+}
+
+fn generate_table_analysis_report(
+    result: &cursed::optimization::analysis::AnalysisResult,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut report = String::new();
+    
+    report.push_str("CURSED COMPILATION PERFORMANCE ANALYSIS\n");
+    report.push_str("═══════════════════════════════════════════════════════════════\n\n");
+    
+    // Summary Table
+    report.push_str("PERFORMANCE SUMMARY\n");
+    report.push_str("───────────────────────────────────────────────────────────────\n");
+    report.push_str(&format!("Source File:             {}\n", result.source_file));
+    report.push_str(&format!("Analysis Date:           {}\n", result.analysis_timestamp.format("%Y-%m-%d %H:%M:%S UTC")));
+    report.push_str(&format!("Total Compilation Time:  {:.2}ms\n", result.performance_summary.total_compilation_time.as_millis()));
+    report.push_str(&format!("Peak Memory Usage:       {:.1}MB\n", result.performance_summary.total_memory_peak as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("CPU Efficiency:          {:.1}%\n", result.performance_summary.cpu_efficiency));
+    report.push_str(&format!("Memory Efficiency:       {:.1}%\n", result.performance_summary.memory_efficiency));
+    report.push_str(&format!("I/O Efficiency:          {:.1}%\n", result.performance_summary.io_efficiency));
+    report.push_str(&format!("Overall Score:           {:.1}/100\n", result.performance_summary.overall_performance_score * 100.0));
+    report.push_str(&format!("Critical Bottlenecks:    {}\n", result.performance_summary.critical_bottlenecks));
+    report.push_str(&format!("Optimization Opportunities: {}\n", result.performance_summary.optimization_opportunities));
+    report.push_str("\n");
+    
+    // Phase Breakdown Table
+    report.push_str("COMPILATION PHASE BREAKDOWN\n");
+    report.push_str("───────────────────────────────────────────────────────────────\n");
+    report.push_str("Phase                    Duration  CPU%    Memory    Efficiency\n");
+    report.push_str("                         (ms)              (MB)      Score     \n");
+    report.push_str("───────────────────────────────────────────────────────────────\n");
+    
+    for phase in &result.phases {
+        report.push_str(&format!(
+            "{:<24} {:>8.1} {:>6.1} {:>8.1} {:>10.1}%\n",
+            phase.name,
+            phase.duration.as_millis(),
+            phase.cpu_usage,
+            phase.memory_peak as f64 / (1024.0 * 1024.0),
+            phase.efficiency_score * 100.0
+        ));
+    }
+    report.push_str("\n");
+    
+    // Bottlenecks Table
+    if !result.bottlenecks.is_empty() {
+        report.push_str("PERFORMANCE BOTTLENECKS\n");
+        report.push_str("───────────────────────────────────────────────────────────────\n");
+        report.push_str("Type               Severity  Phase              Impact%    Time\n");
+        report.push_str("───────────────────────────────────────────────────────────────\n");
+        
+        for bottleneck in &result.bottlenecks {
+            let severity_str = match bottleneck.severity {
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "CRITICAL",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::High => "HIGH    ",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "MEDIUM  ",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Low => "LOW     ",
+                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "MINIMAL ",
+            };
+            
+            report.push_str(&format!(
+                "{:<18} {} {:<18} {:>6.1}% {:>7.1}ms\n",
+                format!("{:?}", bottleneck.bottleneck_type),
+                severity_str,
+                bottleneck.location.phase,
+                bottleneck.impact_percentage,
+                bottleneck.time_spent.as_millis()
+            ));
+        }
+        report.push_str("\n");
+    }
+    
+    // Top Recommendations Table
+    if !result.recommendations.is_empty() {
+        report.push_str("TOP OPTIMIZATION RECOMMENDATIONS\n");
+        report.push_str("───────────────────────────────────────────────────────────────\n");
+        report.push_str("Priority  Category           Improvement%  Effort(h)  Title\n");
+        report.push_str("───────────────────────────────────────────────────────────────\n");
+        
+        for rec in result.recommendations.iter().take(10) {
+            report.push_str(&format!(
+                "{:>8}  {:<17} {:>10.1}% {:>8.1}  {}\n",
+                rec.priority,
+                format!("{:?}", rec.category),
+                rec.expected_improvement.compilation_time_reduction + rec.expected_improvement.runtime_performance_gain,
+                rec.effort_estimate.time_hours,
+                if rec.title.len() > 25 { &rec.title[..25] } else { &rec.title }
+            ));
+        }
+        report.push_str("\n");
+    }
+    
+    // Resource Metrics Table
+    report.push_str("DETAILED RESOURCE METRICS\n");
+    report.push_str("───────────────────────────────────────────────────────────────\n");
+    report.push_str(&format!("Peak Memory Usage:       {:>10.1} MB\n", result.detailed_metrics.resource_metrics.peak_memory_usage as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("Average Memory Usage:    {:>10.1} MB\n", result.detailed_metrics.resource_metrics.average_memory_usage as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("Peak CPU Usage:          {:>10.1}%\n", result.detailed_metrics.resource_metrics.peak_cpu_usage));
+    report.push_str(&format!("Average CPU Usage:       {:>10.1}%\n", result.detailed_metrics.resource_metrics.average_cpu_usage));
+    report.push_str(&format!("Disk Read Operations:    {:>10}\n", result.detailed_metrics.resource_metrics.disk_reads));
+    report.push_str(&format!("Disk Write Operations:   {:>10}\n", result.detailed_metrics.resource_metrics.disk_writes));
+    report.push_str(&format!("Context Switches:        {:>10}\n", result.detailed_metrics.resource_metrics.context_switches));
+    report.push_str(&format!("Page Faults:             {:>10}\n", result.detailed_metrics.resource_metrics.page_faults));
+    report.push_str("\n");
+    
+    // Cache Performance Table
+    report.push_str("CACHE PERFORMANCE METRICS\n");
+    report.push_str("───────────────────────────────────────────────────────────────\n");
+    report.push_str(&format!("L1 Cache Hit Rate:       {:>10.1}%\n", result.detailed_metrics.cache_performance.l1_hit_rate * 100.0));
+    report.push_str(&format!("L2 Cache Hit Rate:       {:>10.1}%\n", result.detailed_metrics.cache_performance.l2_hit_rate * 100.0));
+    report.push_str(&format!("L3 Cache Hit Rate:       {:>10.1}%\n", result.detailed_metrics.cache_performance.l3_hit_rate * 100.0));
+    report.push_str(&format!("Total Cache Misses:      {:>10}\n", result.detailed_metrics.cache_performance.cache_misses));
+    report.push_str(&format!("Cache Miss Penalty:      {:>10}ns\n", result.detailed_metrics.cache_performance.cache_miss_penalty.as_nanos()));
+    report.push_str("\n");
+    
+    report.push_str("═══════════════════════════════════════════════════════════════\n");
+    report.push_str("Generated by CURSED Compiler Performance Analysis System\n");
+    
+    Ok(report)
+}
+
+fn generate_benchmark_report(
+    results: &HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>,
+    previous: Option<&HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut report = String::new();
+    
+    report.push_str("# CURSED Compiler Benchmark Report\n\n");
+    report.push_str(&format!("**Generated:** {}\n", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")));
+    report.push_str(&format!("**Optimization Levels Tested:** {}\n\n", results.len()));
+    
+    // Executive Summary
+    report.push_str("## 📊 Executive Summary\n\n");
+    
+    // Find best and worst performing levels
+    let mut performance_ranking: Vec<_> = results.iter()
+        .map(|(level, result)| {
+            let avg_time = result.level_results.values()
+                .map(|lr| lr.statistics.mean_time.as_millis())
+                .sum::<u128>() / result.level_results.len() as u128;
+            (*level, avg_time)
+        })
+        .collect();
+    
+    performance_ranking.sort_by_key(|(_, time)| *time);
+    
+    if let Some((best_level, best_time)) = performance_ranking.first() {
+        if let Some((worst_level, worst_time)) = performance_ranking.last() {
+            let speedup = *worst_time as f64 / *best_time as f64;
+            report.push_str(&format!("- **Best Performance:** {:?} ({:.1}ms average)\n", best_level, best_time));
+            report.push_str(&format!("- **Worst Performance:** {:?} ({:.1}ms average)\n", worst_level, worst_time));
+            report.push_str(&format!("- **Max Speedup:** {:.2}x faster\n\n", speedup));
+        }
+    }
+    
+    // Performance Comparison Table
+    report.push_str("## ⚡ Performance Comparison\n\n");
+    report.push_str("| Optimization Level | Mean Time | Std Dev | P95 Time | Memory Peak | Binary Size | Efficiency |\n");
+    report.push_str("|-------------------|-----------|---------|----------|-------------|-------------|------------|\n");
+    
+    for (level, time) in &performance_ranking {
+        if let Some(result) = results.get(level) {
+            let level_result = result.level_results.values().next().unwrap(); // Get first result for stats
+            report.push_str(&format!(
+                "| {:?} | {:.1}ms | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}KB | {:.1}% |\n",
+                level,
+                level_result.statistics.mean_time.as_millis(),
+                level_result.statistics.std_deviation.as_millis(),
+                level_result.statistics.p95_time.as_millis(),
+                level_result.resource_usage.memory.peak_usage as f64 / (1024.0 * 1024.0),
+                level_result.quality_metrics.binary_size.mean_size as f64 / 1024.0,
+                level_result.quality_metrics.optimization_effectiveness * 100.0
+            ));
+        }
+    }
+    report.push_str("\n");
+    
+    // Detailed Analysis per Level
+    report.push_str("## 🔍 Detailed Analysis by Optimization Level\n\n");
+    
+    for (level, result) in results {
+        report.push_str(&format!("### Optimization Level {:?}\n\n", level));
+        
+        if let Some(level_result) = result.level_results.get(level) {
+            report.push_str("**Performance Statistics:**\n");
+            report.push_str(&format!("- Mean compilation time: {:.2}ms\n", level_result.statistics.mean_time.as_millis()));
+            report.push_str(&format!("- Median compilation time: {:.2}ms\n", level_result.statistics.median_time.as_millis()));
+            report.push_str(&format!("- Standard deviation: {:.2}ms\n", level_result.statistics.std_deviation.as_millis()));
+            report.push_str(&format!("- 95th percentile: {:.2}ms\n", level_result.statistics.p95_time.as_millis()));
+            report.push_str(&format!("- 99th percentile: {:.2}ms\n", level_result.statistics.p99_time.as_millis()));
+            report.push_str(&format!("- Coefficient of variation: {:.3}\n", level_result.statistics.coefficient_of_variation));
+            report.push_str(&format!("- Sample size adequacy: {}\n\n", if level_result.statistics.significance_indicators.sample_size_adequacy { "✅" } else { "❌" }));
+            
+            report.push_str("**Resource Usage:**\n");
+            report.push_str(&format!("- Peak memory: {:.1}MB\n", level_result.resource_usage.memory.peak_usage as f64 / (1024.0 * 1024.0)));
+            report.push_str(&format!("- Average memory: {:.1}MB\n", level_result.resource_usage.memory.average_usage as f64 / (1024.0 * 1024.0)));
+            report.push_str(&format!("- CPU utilization: {:.1}%\n", level_result.resource_usage.cpu.utilization_percentage));
+            report.push_str(&format!("- Context switches: {}\n", level_result.resource_usage.cpu.context_switches));
+            report.push_str(&format!("- Cache misses: {}\n\n", level_result.resource_usage.cpu.cache_misses));
+            
+            report.push_str("**Quality Metrics:**\n");
+            report.push_str(&format!("- Binary size: {:.1}KB (avg)\n", level_result.quality_metrics.binary_size.mean_size as f64 / 1024.0));
+            report.push_str(&format!("- Optimization effectiveness: {:.1}%\n", level_result.quality_metrics.optimization_effectiveness * 100.0));
+            report.push_str(&format!("- Code quality score: {:.1}%\n", level_result.quality_metrics.code_quality_score * 100.0));
+            report.push_str(&format!("- Resource efficiency: {:.1}%\n\n", level_result.quality_metrics.performance_characteristics.resource_efficiency * 100.0));
+            
+            // Phase breakdown
+            if !level_result.phase_breakdown.is_empty() {
+                report.push_str("**Phase Breakdown:**\n");
+                for (phase, duration) in &level_result.phase_breakdown {
+                    report.push_str(&format!("- {}: {:.1}ms\n", phase, duration.as_millis()));
+                }
+                report.push_str("\n");
+            }
+        }
+    }
+    
+    // Statistical Analysis
+    report.push_str("## 📈 Statistical Analysis\n\n");
+    
+    if let Some(first_result) = results.values().next() {
+        report.push_str(&format!("**Overall Confidence:** {:.1}%\n", first_result.statistical_summary.overall_confidence * 100.0));
+        report.push_str(&format!("**Performance Spread:** {:.1}%\n", first_result.statistical_summary.performance_spread * 100.0));
+        report.push_str(&format!("**Optimization Variance:** {:.1}%\n", first_result.statistical_summary.optimization_variance * 100.0));
+        
+        if first_result.statistical_summary.power_analysis.power_adequate {
+            report.push_str("- ✅ Statistical power is adequate\n");
+        } else {
+            report.push_str("- ⚠️ Statistical power may be inadequate\n");
+        }
+        report.push_str(&format!("- Statistical power: {:.1}%\n", first_result.statistical_summary.power_analysis.statistical_power * 100.0));
+        report.push_str(&format!("- Effect size: {:.2}\n", first_result.statistical_summary.power_analysis.effect_size));
+        report.push_str(&format!("- Required sample size: {}\n", first_result.statistical_summary.power_analysis.required_sample_size));
+        report.push_str(&format!("- Observed sample size: {}\n\n", first_result.statistical_summary.power_analysis.observed_sample_size));
+    }
+    
+    // Comparison with Previous Results
+    if let Some(prev_results) = previous {
+        report.push_str("## 🔄 Comparison with Previous Results\n\n");
+        
+        for (level, current_result) in results {
+            if let Some(prev_result) = prev_results.get(level) {
+                if let (Some(current_lr), Some(prev_lr)) = (current_result.level_results.get(level), prev_result.level_results.get(level)) {
+                    let current_time = current_lr.statistics.mean_time.as_millis();
+                    let prev_time = prev_lr.statistics.mean_time.as_millis();
+                    
+                    let change_percent = if prev_time > 0 {
+                        ((current_time as f64 - prev_time as f64) / prev_time as f64) * 100.0
+                    } else {
+                        0.0
+                    };
+                    
+                    let change_indicator = if change_percent > 5.0 {
+                        "📈 Regression"
+                    } else if change_percent < -5.0 {
+                        "📉 Improvement"
+                    } else {
+                        "➡️ Stable"
+                    };
+                    
+                    report.push_str(&format!("**{:?}:** {} ({:+.1}%)\n", level, change_indicator, change_percent));
+                }
+            }
+        }
+        report.push_str("\n");
+    }
+    
+    // Recommendations
+    report.push_str("## 💡 Recommendations\n\n");
+    
+    if let Some(first_result) = results.values().next() {
+        for (i, rec) in first_result.recommendations.iter().enumerate() {
+            let priority_emoji = match rec.priority {
+                8..=10 => "🔴",
+                6..=7 => "🟠",
+                4..=5 => "🟡",
+                _ => "🟢",
+            };
+            
+            report.push_str(&format!("{}. {} **{}**\n", i + 1, priority_emoji, rec.description));
+            report.push_str(&format!("   - Expected impact: {:.1}%\n", rec.expected_impact * 100.0));
+            report.push_str(&format!("   - Action: {}\n\n", rec.action));
+        }
+    }
+    
+    // Environment Information
+    report.push_str("## 🖥️ Test Environment\n\n");
+    
+    if let Some(first_result) = results.values().next() {
+        report.push_str(&format!("- **Operating System:** {}\n", first_result.environment.os));
+        report.push_str(&format!("- **CPU:** {} ({} cores, {} threads)\n", 
+            first_result.environment.cpu_info.model,
+            first_result.environment.cpu_info.cores,
+            first_result.environment.cpu_info.threads
+        ));
+        report.push_str(&format!("- **CPU Frequency:** {}MHz\n", first_result.environment.cpu_info.frequency_mhz));
+        report.push_str(&format!("- **Total RAM:** {:.1}GB\n", first_result.environment.memory_info.total_ram as f64 / (1024.0 * 1024.0 * 1024.0)));
+        report.push_str(&format!("- **Available RAM:** {:.1}GB\n", first_result.environment.memory_info.available_ram as f64 / (1024.0 * 1024.0 * 1024.0)));
+        report.push_str(&format!("- **Compiler Version:** {}\n", first_result.environment.compiler_version));
+        report.push_str(&format!("- **LLVM Version:** {}\n", first_result.environment.llvm_version));
+        
+        // System load during benchmark
+        report.push_str(&format!("- **System Load (1m/5m/15m):** {:.2}/{:.2}/{:.2}\n", 
+            first_result.environment.system_load.load_average_1min,
+            first_result.environment.system_load.load_average_5min,
+            first_result.environment.system_load.load_average_15min
+        ));
+        report.push_str(&format!("- **CPU Usage during test:** {:.1}%\n", first_result.environment.system_load.cpu_usage_percentage));
+        report.push_str(&format!("- **Memory Usage during test:** {:.1}%\n\n", first_result.environment.system_load.memory_usage_percentage));
+    }
+    
+    report.push_str("---\n\n");
+    report.push_str("*Generated by CURSED Compiler Enhanced Benchmarking System*\n");
+    
+    Ok(report)
 }
 
 fn generate_profiling_report(
-    _result: &cursed::optimization::analysis::ProfileResult,
-    _flamegraph: bool,
+    result: &cursed::optimization::real_compilation_profiler::ProfileResult,
+    flamegraph: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    Ok("# Profiling Report\n\n*Profiling completed*".to_string())
+    let mut report = String::new();
+    
+    report.push_str("# CURSED Compilation Profiling Report\n\n");
+    report.push_str(&format!("**Profile ID:** `{}`\n", result.profile_id));
+    report.push_str(&format!("**Source File:** `{}`\n", result.source_file));
+    report.push_str(&format!("**Optimization Level:** {:?}\n", result.optimization_level));
+    report.push_str(&format!("**Profiling Date:** {}\n", result.timestamp.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()));
+    report.push_str(&format!("**Total Compilation Time:** {:.2}ms\n\n", result.total_compilation_time.as_millis()));
+    
+    // Executive Summary
+    report.push_str("## 📊 Executive Summary\n\n");
+    report.push_str(&format!("- **Total Compilation Time:** {:.2}ms\n", result.total_compilation_time.as_millis()));
+    report.push_str(&format!("- **CPU Efficiency:** {:.1}%\n", result.resource_usage.cpu_profile.average_utilization));
+    report.push_str(&format!("- **Memory Efficiency:** {:.1}%\n", result.resource_usage.memory_profile.memory_efficiency * 100.0));
+    report.push_str(&format!("- **Peak Memory Usage:** {:.1}MB\n", result.resource_usage.memory_profile.peak_usage as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("- **Critical Bottlenecks:** {}\n", result.bottleneck_analysis.identified_bottlenecks.len()));
+    report.push_str(&format!("- **Optimization Opportunities:** {}\n\n", result.optimization_opportunities.len()));
+    
+    // Performance Grade
+    let overall_efficiency = (result.performance_characteristics.efficiency_metrics.cpu_efficiency + 
+                             result.performance_characteristics.efficiency_metrics.memory_efficiency +
+                             result.performance_characteristics.efficiency_metrics.io_efficiency) / 3.0;
+    
+    let grade = match overall_efficiency {
+        eff if eff >= 0.9 => "🟢 Excellent (A)",
+        eff if eff >= 0.8 => "🟡 Good (B)", 
+        eff if eff >= 0.7 => "🟠 Fair (C)",
+        eff if eff >= 0.6 => "🔴 Poor (D)",
+        _ => "❌ Critical (F)",
+    };
+    report.push_str(&format!("**Performance Grade:** {}\n\n", grade));
+    
+    // Phase Breakdown
+    report.push_str("## ⏱️ Compilation Phase Breakdown\n\n");
+    
+    // Frontend phases
+    if !result.phase_breakdown.frontend_phases.is_empty() {
+        report.push_str("### Frontend Phases\n\n");
+        report.push_str("| Phase | Duration | CPU Time | Memory Peak | Efficiency | Parallelism |\n");
+        report.push_str("|-------|----------|----------|-------------|------------|-------------|\n");
+        
+        for phase in &result.phase_breakdown.frontend_phases {
+            report.push_str(&format!(
+                "| {} | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}% | {:.1}x |\n",
+                phase.phase_name,
+                phase.duration.as_millis(),
+                phase.cpu_time.as_millis(),
+                phase.memory_peak as f64 / (1024.0 * 1024.0),
+                phase.efficiency_score * 100.0,
+                phase.parallelism_factor
+            ));
+        }
+        report.push_str("\n");
+    }
+    
+    // Backend phases
+    if !result.phase_breakdown.backend_phases.is_empty() {
+        report.push_str("### Backend Phases\n\n");
+        report.push_str("| Phase | Duration | CPU Time | Memory Peak | Efficiency | Parallelism |\n");
+        report.push_str("|-------|----------|----------|-------------|------------|-------------|\n");
+        
+        for phase in &result.phase_breakdown.backend_phases {
+            report.push_str(&format!(
+                "| {} | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}% | {:.1}x |\n",
+                phase.phase_name,
+                phase.duration.as_millis(),
+                phase.cpu_time.as_millis(),
+                phase.memory_peak as f64 / (1024.0 * 1024.0),
+                phase.efficiency_score * 100.0,
+                phase.parallelism_factor
+            ));
+        }
+        report.push_str("\n");
+    }
+    
+    // Optimization phases
+    if !result.phase_breakdown.optimization_phases.is_empty() {
+        report.push_str("### Optimization Phases\n\n");
+        report.push_str("| Phase | Duration | CPU Time | Memory Peak | Efficiency | Parallelism |\n");
+        report.push_str("|-------|----------|----------|-------------|------------|-------------|\n");
+        
+        for phase in &result.phase_breakdown.optimization_phases {
+            report.push_str(&format!(
+                "| {} | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}% | {:.1}x |\n",
+                phase.phase_name,
+                phase.duration.as_millis(),
+                phase.cpu_time.as_millis(),
+                phase.memory_peak as f64 / (1024.0 * 1024.0),
+                phase.efficiency_score * 100.0,
+                phase.parallelism_factor
+            ));
+        }
+        report.push_str("\n");
+    }
+    
+    // Resource Usage Analysis
+    report.push_str("## 💾 Resource Usage Analysis\n\n");
+    
+    report.push_str("### CPU Usage\n");
+    report.push_str(&format!("- **Total CPU Time:** {:.2}ms\n", result.resource_usage.cpu_profile.total_cpu_time.as_millis()));
+    report.push_str(&format!("- **User Time:** {:.2}ms\n", result.resource_usage.cpu_profile.user_time.as_millis()));
+    report.push_str(&format!("- **System Time:** {:.2}ms\n", result.resource_usage.cpu_profile.system_time.as_millis()));
+    report.push_str(&format!("- **Peak Utilization:** {:.1}%\n", result.resource_usage.cpu_profile.peak_utilization));
+    report.push_str(&format!("- **Average Utilization:** {:.1}%\n", result.resource_usage.cpu_profile.average_utilization));
+    report.push_str(&format!("- **Context Switches:** {}\n", result.resource_usage.cpu_profile.context_switches));
+    report.push_str(&format!("- **Thread Efficiency:** {:.1}%\n\n", result.resource_usage.cpu_profile.thread_usage.thread_efficiency * 100.0));
+    
+    report.push_str("### Memory Usage\n");
+    report.push_str(&format!("- **Peak Usage:** {:.1}MB\n", result.resource_usage.memory_profile.peak_usage as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("- **Average Usage:** {:.1}MB\n", result.resource_usage.memory_profile.average_usage as f64 / (1024.0 * 1024.0)));
+    report.push_str(&format!("- **Allocations:** {}\n", result.resource_usage.memory_profile.allocation_count));
+    report.push_str(&format!("- **Deallocations:** {}\n", result.resource_usage.memory_profile.deallocation_count));
+    report.push_str(&format!("- **GC Collections:** {}\n", result.resource_usage.memory_profile.gc_collections));
+    report.push_str(&format!("- **GC Time:** {:.2}ms\n", result.resource_usage.memory_profile.gc_time.as_millis()));
+    report.push_str(&format!("- **Memory Efficiency:** {:.1}%\n", result.resource_usage.memory_profile.memory_efficiency * 100.0));
+    report.push_str(&format!("- **Fragmentation Ratio:** {:.1}%\n\n", result.resource_usage.memory_profile.fragmentation_ratio * 100.0));
+    
+    report.push_str("### I/O Usage\n");
+    report.push_str(&format!("- **Total Read:** {:.1}KB\n", result.resource_usage.io_profile.total_read_bytes as f64 / 1024.0));
+    report.push_str(&format!("- **Total Written:** {:.1}KB\n", result.resource_usage.io_profile.total_written_bytes as f64 / 1024.0));
+    report.push_str(&format!("- **Read Operations:** {}\n", result.resource_usage.io_profile.read_operations));
+    report.push_str(&format!("- **Write Operations:** {}\n", result.resource_usage.io_profile.write_operations));
+    report.push_str(&format!("- **I/O Wait Time:** {:.2}ms\n", result.resource_usage.io_profile.io_wait_time.as_millis()));
+    report.push_str(&format!("- **Bandwidth Utilization:** {:.1}%\n\n", result.resource_usage.io_profile.bandwidth_utilization * 100.0));
+    
+    // Cache Performance
+    report.push_str("### Cache Performance\n");
+    report.push_str(&format!("- **L1 Cache Hit Rate:** {:.1}%\n", result.resource_usage.cache_profile.l1_cache_stats.hit_rate * 100.0));
+    report.push_str(&format!("- **L2 Cache Hit Rate:** {:.1}%\n", result.resource_usage.cache_profile.l2_cache_stats.hit_rate * 100.0));
+    report.push_str(&format!("- **L3 Cache Hit Rate:** {:.1}%\n", result.resource_usage.cache_profile.l3_cache_stats.hit_rate * 100.0));
+    report.push_str(&format!("- **Cache Miss Penalty:** {}ns\n\n", result.resource_usage.cache_profile.cache_miss_penalty.as_nanos()));
+    
+    // Bottleneck Analysis
+    if !result.bottleneck_analysis.identified_bottlenecks.is_empty() {
+        report.push_str("## 🚫 Performance Bottlenecks\n\n");
+        
+        for (i, bottleneck) in result.bottleneck_analysis.identified_bottlenecks.iter().enumerate() {
+            report.push_str(&format!("### Bottleneck #{}: {}\n\n", i + 1, bottleneck.phase_name));
+            report.push_str(&format!("- **Type:** {}\n", bottleneck.bottleneck_type));
+            report.push_str(&format!("- **Severity:** {:.1}%\n", bottleneck.severity));
+            report.push_str(&format!("- **Impact Duration:** {:.2}ms\n", bottleneck.impact_duration.as_millis()));
+            report.push_str(&format!("- **Description:** {}\n", bottleneck.description));
+            report.push_str(&format!("- **Root Cause:** {}\n\n", bottleneck.root_cause));
+            
+            if !bottleneck.suggested_solutions.is_empty() {
+                report.push_str("**Suggested Solutions:**\n");
+                for solution in &bottleneck.suggested_solutions {
+                    report.push_str(&format!("- {}\n", solution));
+                }
+                report.push_str("\n");
+            }
+        }
+    }
+    
+    // Optimization Opportunities
+    if !result.optimization_opportunities.is_empty() {
+        report.push_str("## 💡 Optimization Opportunities\n\n");
+        
+        for (i, opportunity) in result.optimization_opportunities.iter().enumerate() {
+            report.push_str(&format!("### Opportunity #{}: {}\n\n", i + 1, opportunity.description));
+            report.push_str(&format!("- **Type:** {:?}\n", opportunity.opportunity_type));
+            report.push_str(&format!("- **Potential Time Reduction:** {:.1}%\n", opportunity.potential_improvement.time_reduction_percentage));
+            report.push_str(&format!("- **Resource Efficiency Gain:** {:.1}%\n", opportunity.potential_improvement.resource_efficiency_gain));
+            report.push_str(&format!("- **Confidence Level:** {:.1}%\n", opportunity.confidence_level * 100.0));
+            report.push_str(&format!("- **Implementation Complexity:** {:?}\n", opportunity.implementation_complexity));
+            
+            if !opportunity.related_phases.is_empty() {
+                report.push_str(&format!("- **Related Phases:** {}\n", opportunity.related_phases.join(", ")));
+            }
+            
+            if !opportunity.suggested_actions.is_empty() {
+                report.push_str("\n**Suggested Actions:**\n");
+                for action in &opportunity.suggested_actions {
+                    report.push_str(&format!("- {}\n", action));
+                }
+            }
+            report.push_str("\n");
+        }
+    }
+    
+    // Performance Characteristics
+    report.push_str("## 📈 Performance Characteristics\n\n");
+    
+    report.push_str("### Scalability Analysis\n");
+    report.push_str(&format!("- **CPU Scalability:** {:.1}%\n", result.performance_characteristics.scalability_analysis.cpu_scalability * 100.0));
+    report.push_str(&format!("- **Memory Scalability:** {:.1}%\n", result.performance_characteristics.scalability_analysis.memory_scalability * 100.0));
+    report.push_str(&format!("- **I/O Scalability:** {:.1}%\n", result.performance_characteristics.scalability_analysis.io_scalability * 100.0));
+    report.push_str(&format!("- **Parallel Efficiency:** {:.1}%\n", result.performance_characteristics.scalability_analysis.parallel_efficiency * 100.0));
+    report.push_str(&format!("- **Bottleneck Factor:** {:.1}%\n\n", result.performance_characteristics.scalability_analysis.bottleneck_factor * 100.0));
+    
+    report.push_str("### Efficiency Metrics\n");
+    report.push_str(&format!("- **CPU Efficiency:** {:.1}%\n", result.performance_characteristics.efficiency_metrics.cpu_efficiency * 100.0));
+    report.push_str(&format!("- **Memory Efficiency:** {:.1}%\n", result.performance_characteristics.efficiency_metrics.memory_efficiency * 100.0));
+    report.push_str(&format!("- **I/O Efficiency:** {:.1}%\n", result.performance_characteristics.efficiency_metrics.io_efficiency * 100.0));
+    report.push_str(&format!("- **Cache Efficiency:** {:.1}%\n", result.performance_characteristics.efficiency_metrics.cache_efficiency * 100.0));
+    report.push_str(&format!("- **Overall Efficiency:** {:.1}%\n\n", result.performance_characteristics.efficiency_metrics.overall_efficiency * 100.0));
+    
+    report.push_str("### Resource Utilization\n");
+    report.push_str(&format!("- **CPU Utilization:** {:.1}%\n", result.performance_characteristics.resource_utilization.cpu_utilization));
+    report.push_str(&format!("- **Memory Utilization:** {:.1}%\n", result.performance_characteristics.resource_utilization.memory_utilization));
+    report.push_str(&format!("- **I/O Utilization:** {:.1}%\n", result.performance_characteristics.resource_utilization.io_utilization));
+    report.push_str(&format!("- **Cache Utilization:** {:.1}%\n", result.performance_characteristics.resource_utilization.cache_utilization));
+    report.push_str(&format!("- **Utilization Balance:** {:.1}%\n\n", result.performance_characteristics.resource_utilization.utilization_balance * 100.0));
+    
+    // Comparison Analysis
+    if let Some(ref comparison) = result.comparison_analysis {
+        report.push_str("## 🔄 Comparison Analysis\n\n");
+        
+        report.push_str(&format!("- **Performance Delta:** {:+.1}%\n", comparison.baseline_comparison.performance_delta * 100.0));
+        report.push_str(&format!("- **Regression Detected:** {}\n", if comparison.baseline_comparison.regression_detected { "⚠️ Yes" } else { "✅ No" }));
+        
+        if !comparison.baseline_comparison.improvement_areas.is_empty() {
+            report.push_str("- **Improvement Areas:**\n");
+            for area in &comparison.baseline_comparison.improvement_areas {
+                report.push_str(&format!("  - {}\n", area));
+            }
+        }
+        
+        report.push_str(&format!("- **Trend Direction:** {}\n", comparison.trend_analysis.trend_direction));
+        report.push_str(&format!("- **Trend Strength:** {:.1}%\n", comparison.trend_analysis.trend_strength * 100.0));
+        report.push_str(&format!("- **Prediction Confidence:** {:.1}%\n\n", comparison.trend_analysis.prediction_confidence * 100.0));
+    }
+    
+    // Flamegraph section
+    if flamegraph {
+        report.push_str("## 🔥 Flamegraph Analysis\n\n");
+        report.push_str("*Note: Flamegraph data would be generated here in a real implementation.*\n");
+        report.push_str("*This would include interactive SVG flamegraphs showing call stack profiling data.*\n\n");
+    }
+    
+    // Detailed Metrics
+    report.push_str("## 📊 Detailed Metrics\n\n");
+    
+    report.push_str("### Compiler-Specific Metrics\n");
+    report.push_str(&format!("- **Lines Compiled:** {}\n", result.detailed_metrics.compiler_metrics.compilation_statistics.lines_compiled));
+    report.push_str(&format!("- **Functions Compiled:** {}\n", result.detailed_metrics.compiler_metrics.compilation_statistics.functions_compiled));
+    report.push_str(&format!("- **Optimizations Applied:** {}\n", result.detailed_metrics.compiler_metrics.compilation_statistics.optimizations_applied));
+    report.push_str(&format!("- **Errors Encountered:** {}\n\n", result.detailed_metrics.compiler_metrics.compilation_statistics.errors_encountered));
+    
+    report.push_str("### Instruction Metrics\n");
+    report.push_str(&format!("- **Total Instructions:** {}\n", result.detailed_metrics.instruction_metrics.instruction_count));
+    report.push_str(&format!("- **Instruction Efficiency:** {:.1}%\n\n", result.detailed_metrics.instruction_metrics.instruction_efficiency * 100.0));
+    
+    report.push_str("### System Metrics\n");
+    report.push_str(&format!("- **System Load:** {:.1}%\n", result.detailed_metrics.system_metrics.system_load * 100.0));
+    report.push_str(&format!("- **Memory Pressure:** {:.1}%\n", result.detailed_metrics.system_metrics.memory_pressure * 100.0));
+    report.push_str(&format!("- **I/O Pressure:** {:.1}%\n\n", result.detailed_metrics.system_metrics.io_pressure * 100.0));
+    
+    report.push_str("---\n\n");
+    report.push_str("*Generated by CURSED Compiler Real Compilation Profiler*\n");
+    
+    Ok(report)
 }
 
-fn load_benchmark_results(_file: &str) -> Result<Option<HashMap<OptimizationLevel, cursed::optimization::analysis::BenchmarkResult>>, Box<dyn std::error::Error>> {
-    Ok(None) // Placeholder
+fn load_benchmark_results(file: &str) -> Result<Option<HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>, Box<dyn std::error::Error>> {
+    use std::fs;
+    use std::path::Path;
+    
+    if !Path::new(file).exists() {
+        return Ok(None);
+    }
+    
+    let content = fs::read_to_string(file)?;
+    let results: HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult> = 
+        serde_json::from_str(&content)?;
+    
+    Ok(Some(results))
 }
 
-fn print_benchmark_summary(_results: &HashMap<OptimizationLevel, cursed::optimization::analysis::BenchmarkResult>) {
+fn print_benchmark_summary(results: &HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>) {
     println!("\n📊 Benchmark Summary:");
-    println!("   *Summary generation not yet implemented*");
+    
+    if results.is_empty() {
+        println!("   No benchmark results available");
+        return;
+    }
+    
+    // Find best and worst performing levels
+    let mut performance_data: Vec<_> = results.iter()
+        .filter_map(|(level, result)| {
+            result.level_results.get(level).map(|lr| {
+                (*level, lr.statistics.mean_time.as_millis())
+            })
+        })
+        .collect();
+    
+    performance_data.sort_by_key(|(_, time)| *time);
+    
+    if let Some((best_level, best_time)) = performance_data.first() {
+        if let Some((worst_level, worst_time)) = performance_data.last() {
+            let speedup = *worst_time as f64 / *best_time as f64;
+            
+            println!("   📈 Performance Rankings:");
+            for (i, (level, time)) in performance_data.iter().enumerate() {
+                let rank_emoji = match i {
+                    0 => "🥇",
+                    1 => "🥈", 
+                    2 => "🥉",
+                    _ => "📊",
+                };
+                println!("      {} {:?}: {:.1}ms", rank_emoji, level, time);
+            }
+            
+            println!("\n   🏆 Best Performance: {:?} ({:.1}ms)", best_level, best_time);
+            println!("   🐌 Worst Performance: {:?} ({:.1}ms)", worst_level, worst_time);
+            println!("   ⚡ Maximum Speedup: {:.2}x", speedup);
+            
+            // Performance improvement analysis
+            if speedup > 2.0 {
+                println!("   ✅ Significant optimization impact detected");
+            } else if speedup > 1.5 {
+                println!("   ✅ Moderate optimization impact detected");
+            } else {
+                println!("   ⚠️  Limited optimization impact detected");
+            }
+        }
+    }
+    
+    // Resource efficiency summary
+    if let Some(first_result) = results.values().next() {
+        println!("\n   💾 Resource Efficiency:");
+        
+        let mut total_memory = 0;
+        let mut total_efficiency = 0.0;
+        let mut count = 0;
+        
+        for (level, result) in results {
+            if let Some(level_result) = result.level_results.get(level) {
+                total_memory += level_result.resource_usage.memory.peak_usage;
+                total_efficiency += level_result.quality_metrics.optimization_effectiveness;
+                count += 1;
+            }
+        }
+        
+        if count > 0 {
+            let avg_memory = total_memory / count;
+            let avg_efficiency = total_efficiency / count as f64;
+            
+            println!("      Memory Usage: {:.1}MB (average)", avg_memory as f64 / (1024.0 * 1024.0));
+            println!("      Optimization Effectiveness: {:.1}%", avg_efficiency * 100.0);
+        }
+        
+        // Statistical confidence
+        println!("      Statistical Confidence: {:.1}%", first_result.statistical_summary.overall_confidence * 100.0);
+        
+        if first_result.statistical_summary.power_analysis.power_adequate {
+            println!("      ✅ Statistical power is adequate");
+        } else {
+            println!("      ⚠️  Statistical power may be inadequate - consider more iterations");
+        }
+    }
+    
+    // Recommendations summary
+    if let Some(first_result) = results.values().next() {
+        let high_priority_recs: Vec<_> = first_result.recommendations.iter()
+            .filter(|rec| rec.priority >= 7)
+            .collect();
+        
+        if !high_priority_recs.is_empty() {
+            println!("\n   💡 Top Recommendations:");
+            for rec in high_priority_recs.iter().take(3) {
+                println!("      • {} (Impact: {:.1}%)", rec.description, rec.expected_impact * 100.0);
+            }
+        }
+    }
 }
 
-fn print_profiling_summary(_result: &cursed::optimization::analysis::ProfileResult) {
+fn print_profiling_summary(result: &cursed::optimization::real_compilation_profiler::ProfileResult) {
     println!("\n📈 Profiling Summary:");
-    println!("   *Summary generation not yet implemented*");
+    
+    // Overall performance
+    println!("   🕒 Total Time: {:.2}ms", result.total_compilation_time.as_millis());
+    println!("   📊 Optimization Level: {:?}", result.optimization_level);
+    
+    // Resource utilization
+    println!("   💾 Peak Memory: {:.1}MB", result.resource_usage.memory_profile.peak_usage as f64 / (1024.0 * 1024.0));
+    println!("   ⚡ CPU Utilization: {:.1}%", result.resource_usage.cpu_profile.average_utilization);
+    println!("   💿 I/O Wait Time: {:.2}ms", result.resource_usage.io_profile.io_wait_time.as_millis());
+    
+    // Efficiency metrics
+    let overall_efficiency = (result.performance_characteristics.efficiency_metrics.cpu_efficiency + 
+                             result.performance_characteristics.efficiency_metrics.memory_efficiency +
+                             result.performance_characteristics.efficiency_metrics.io_efficiency) / 3.0;
+    
+    println!("   📈 Overall Efficiency: {:.1}%", overall_efficiency * 100.0);
+    
+    // Phase performance
+    let total_phases = result.phase_breakdown.frontend_phases.len() + 
+                      result.phase_breakdown.backend_phases.len() + 
+                      result.phase_breakdown.optimization_phases.len();
+    
+    println!("   🔧 Total Phases Profiled: {}", total_phases);
+    
+    // Find slowest phase
+    let mut slowest_phase = None;
+    let mut slowest_time = std::time::Duration::ZERO;
+    
+    for phase in &result.phase_breakdown.frontend_phases {
+        if phase.duration > slowest_time {
+            slowest_time = phase.duration;
+            slowest_phase = Some(&phase.phase_name);
+        }
+    }
+    
+    for phase in &result.phase_breakdown.backend_phases {
+        if phase.duration > slowest_time {
+            slowest_time = phase.duration;
+            slowest_phase = Some(&phase.phase_name);
+        }
+    }
+    
+    for phase in &result.phase_breakdown.optimization_phases {
+        if phase.duration > slowest_time {
+            slowest_time = phase.duration;
+            slowest_phase = Some(&phase.phase_name);
+        }
+    }
+    
+    if let Some(phase_name) = slowest_phase {
+        println!("   🐌 Slowest Phase: {} ({:.2}ms)", phase_name, slowest_time.as_millis());
+    }
+    
+    // Cache performance
+    let l1_hit_rate = result.resource_usage.cache_profile.l1_cache_stats.hit_rate * 100.0;
+    println!("   🎯 L1 Cache Hit Rate: {:.1}%", l1_hit_rate);
+    
+    if l1_hit_rate < 90.0 {
+        println!("   ⚠️  Cache performance could be improved");
+    }
+    
+    // Bottlenecks and opportunities
+    let bottleneck_count = result.bottleneck_analysis.identified_bottlenecks.len();
+    let opportunity_count = result.optimization_opportunities.len();
+    
+    println!("   🚫 Bottlenecks Identified: {}", bottleneck_count);
+    println!("   💡 Optimization Opportunities: {}", opportunity_count);
+    
+    if bottleneck_count > 0 {
+        // Show most severe bottleneck
+        if let Some(worst_bottleneck) = result.bottleneck_analysis.identified_bottlenecks.iter()
+            .max_by(|a, b| a.severity.partial_cmp(&b.severity).unwrap()) {
+            println!("      Most Severe: {} ({:.1}% impact)", worst_bottleneck.bottleneck_type, worst_bottleneck.severity);
+        }
+    }
+    
+    if opportunity_count > 0 {
+        // Show highest impact opportunity
+        if let Some(best_opportunity) = result.optimization_opportunities.iter()
+            .max_by(|a, b| a.potential_improvement.time_reduction_percentage.partial_cmp(&b.potential_improvement.time_reduction_percentage).unwrap()) {
+            println!("      Best Opportunity: {:.1}% potential improvement", best_opportunity.potential_improvement.time_reduction_percentage);
+        }
+    }
+    
+    // Performance grade
+    let grade = match overall_efficiency {
+        eff if eff >= 0.9 => "🟢 Excellent",
+        eff if eff >= 0.8 => "🟡 Good",
+        eff if eff >= 0.7 => "🟠 Fair", 
+        eff if eff >= 0.6 => "🔴 Poor",
+        _ => "❌ Critical",
+    };
+    println!("   🎖️  Performance Grade: {}", grade);
+    
+    // Parallelization potential
+    let avg_parallelism: f64 = result.phase_breakdown.frontend_phases.iter()
+        .chain(result.phase_breakdown.backend_phases.iter())
+        .chain(result.phase_breakdown.optimization_phases.iter())
+        .map(|p| p.parallelism_factor)
+        .sum::<f64>() / total_phases as f64;
+    
+    if avg_parallelism > 2.0 {
+        println!("   🔄 Good parallelization potential detected ({:.1}x average)", avg_parallelism);
+    } else {
+        println!("   ⚠️  Limited parallelization potential ({:.1}x average)", avg_parallelism);
+    }
+    
+    // Comparison analysis summary
+    if let Some(ref comparison) = result.comparison_analysis {
+        if comparison.baseline_comparison.regression_detected {
+            println!("   📉 Performance regression detected ({:+.1}%)", comparison.baseline_comparison.performance_delta * 100.0);
+        } else if comparison.baseline_comparison.performance_delta > 0.05 {
+            println!("   📈 Performance improvement detected ({:+.1}%)", comparison.baseline_comparison.performance_delta * 100.0);
+        } else {
+            println!("   ➡️  Performance is stable");
+        }
+    }
 }

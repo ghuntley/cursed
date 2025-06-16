@@ -4,12 +4,14 @@
 /// - Sets: HashSet, TreeSet, BitSet for element uniqueness
 /// - Queues: Queue, Deque, PriorityQueue, CircularQueue for FIFO/LIFO operations
 /// - Stacks: Stack, FixedStack, ThreadSafeStack, StackWithMin for LIFO operations
+/// - Heaps: Binary heap implementation with priority queue support (heap_slay)
 /// - Iterators: Comprehensive iterator system with lazy evaluation and functional programming
 /// - Iterator Utils: Advanced iterator operations, parallel processing, and utilities
 
 pub mod sets;
 pub mod queues;
 pub mod stacks;
+pub mod heap_slay;
 pub mod iterators_simple;
 pub mod advanced;
 
@@ -17,6 +19,7 @@ pub mod advanced;
 pub use sets::*;
 pub use queues::*;
 pub use stacks::*;
+pub use heap_slay::*;
 pub use iterators_simple::*;
 pub use advanced::*;
 

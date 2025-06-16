@@ -1,472 +1,336 @@
 //! Markdown Documentation Generator
 //! 
-//! Generates GitHub-compatible markdown documentation with proper formatting,
-//! cross-references, and table of contents.
+//! Generates comprehensive Markdown documentation for GitHub and other markdown platforms.
 
-use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, ItemKind};
+use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem};
 use crate::error::Error;
-use std::path::{Path, PathBuf};
 use std::fs;
-use std::collections::HashMap;
+use std::path::Path;
 
-pub struct MarkdownGenerator<'a> {
-    config: &'a DocGeneratorConfig,
+/// Markdown documentation generator
+pub struct MarkdownGenerator {
+    config: DocGeneratorConfig,
 }
 
-impl<'a> MarkdownGenerator<'a> {
-    pub fn new(config: &'a DocGeneratorConfig) -> Self {
-        Self { config }
+impl MarkdownGenerator {
+    pub fn new(config: &DocGeneratorConfig) -> Self {
+        Self {
+            config: config.clone(),
+        }
     }
 
-    /// Generate main README
+    /// Generate README.md file
     pub fn generate_readme(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
         let readme_path = output_dir.join("README.md");
         
-        let mut md = String::new();
+        let mut content = String::new();
         
-        // Project header
-        md.push_str(&format!("# {}\n\n", self.config.title));
+        // Title and description
+        content.push_str(&format!("# {}\n\n", self.config.title));
         
-        if let Some(desc) = &self.config.description {
-            md.push_str(&format!("{}\n\n", desc));
+        if let Some(description) = &self.config.description {
+            content.push_str(&format!("{}\n\n", description));
         }
         
-        // Badges
-        md.push_str("[![CURSED](https://img.shields.io/badge/language-CURSED-ff6b9d)](https://github.com/your-org/cursed)\n");
-        md.push_str("[![Gen%20Z](https://img.shields.io/badge/slang-Gen%20Z-4ecdc4)](https://github.com/your-org/cursed)\n");
-        md.push_str("[![No%20Cap](https://img.shields.io/badge/vibes-no%20cap-ffe66d)](https://github.com/your-org/cursed)\n\n");
-
-        // Project info
-        md.push_str("## 📋 Project Information\n\n");
+        // Project information
         if let Some(version) = &self.config.version {
-            md.push_str(&format!("- **Version**: {}\n", version));
+            content.push_str(&format!("**Version:** {}\n\n", version));
         }
+        
         if !self.config.authors.is_empty() {
-            md.push_str(&format!("- **Authors**: {}\n", self.config.authors.join(", ")));
+            content.push_str(&format!("**Authors:** {}\n\n", self.config.authors.join(", ")));
         }
-        if let Some(base_url) = &self.config.base_url {
-            md.push_str(&format!("- **Homepage**: {}\n", base_url));
-        }
-        md.push_str("\n");
-
-        // Getting started
-        md.push_str("## 🚀 Getting Started with CURSED\n\n");
-        md.push_str("CURSED is a programming language that speaks Gen Z. Here's how to get started:\n\n");
         
-        md.push_str("### Hello World Example\n\n");
-        md.push_str("```cursed\n");
-        md.push_str("// Hello world in CURSED - because we're iconic like that\n");
-        md.push_str("slay main() {\n");
-        md.push_str("    println(\"Hello, world! This is lowkey fire! 🔥\")\n");
-        md.push_str("}\n");
-        md.push_str("```\n\n");
-
-        // Gen Z Keywords Guide
-        md.push_str("### 📚 Gen Z Keywords Guide\n\n");
-        md.push_str("CURSED uses Gen Z slang for keywords because traditional programming languages are cheugy:\n\n");
-        md.push_str("| Traditional | CURSED | What it does |\n");
-        md.push_str("|-------------|--------|-------------|\n");
-        md.push_str("| `fn` / `function` | `slay` | Declares a function |\n");
-        md.push_str("| `let mut` | `sus` | Declares a mutable variable |\n");
-        md.push_str("| `let` / `const` | `facts` | Declares a constant/immutable |\n");
-        md.push_str("| `if` | `lowkey` | Conditional statement |\n");
-        md.push_str("| `else` | `highkey` | Else clause |\n");
-        md.push_str("| `while` | `periodt` | While loop |\n");
-        md.push_str("| `for` | `bestie` | For loop |\n");
-        md.push_str("| `break` | `flex` | Break statement |\n");
-        md.push_str("| `struct` | `squad` | Struct definition |\n");
-        md.push_str("| `interface` | `collab` | Interface definition |\n");
-        md.push_str("| `async` | `stan` | Async/goroutine spawn |\n");
-        md.push_str("| `yield` | `yolo` | Yield/await operation |\n\n");
-
-        // Quick examples
-        md.push_str("### 💫 Quick Examples\n\n");
-        
-        md.push_str("#### Variables and Constants\n");
-        md.push_str("```cursed\n");
-        md.push_str("sus name = \"bestie\"        // mutable variable\n");
-        md.push_str("facts pi = 3.14159         // constant\n");
-        md.push_str("```\n\n");
-        
-        md.push_str("#### Functions\n");
-        md.push_str("```cursed\n");
-        md.push_str("slay greet(name: string) {\n");
-        md.push_str("    println(\"Hey \" + name + \"! You're serving looks! ✨\")\n");
-        md.push_str("}\n");
-        md.push_str("```\n\n");
-        
-        md.push_str("#### Control Flow\n");
-        md.push_str("```cursed\n");
-        md.push_str("lowkey (age >= 18) {\n");
-        md.push_str("    println(\"You're an adult, bestie!\")\n");
-        md.push_str("} highkey {\n");
-        md.push_str("    println(\"Still a baby, no cap\")\n");
-        md.push_str("}\n");
-        md.push_str("```\n\n");
-
-        // Modules documentation
-        md.push_str("## 📁 Modules\n\n");
-        md.push_str("| Module | Items | Description |\n");
-        md.push_str("|--------|-------|-------------|\n");
-        
+        // Table of contents
+        content.push_str("## Table of Contents\n\n");
         for doc in docs {
-            let module_file = format!("{}.md", doc.module_name.replace("::", "_"));
-            md.push_str(&format!(
-                "| [{}]({}) | {} | {} |\n",
-                doc.module_name,
-                module_file,
-                doc.items.len(),
-                self.get_module_description(doc)
-            ));
+            content.push_str(&format!("- [{}]({})\n", doc.module_name, self.get_module_filename(&doc.module_name)));
         }
-        md.push_str("\n");
-
-        // API Overview
-        md.push_str("## 🔥 API Overview\n\n");
-        let total_functions = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, ItemKind::Function)).count()).sum::<usize>();
-        let total_structs = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, ItemKind::Struct)).count()).sum::<usize>();
-        let total_interfaces = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, ItemKind::Interface)).count()).sum::<usize>();
+        content.push_str("\n");
         
-        md.push_str(&format!("- 🎯 **{}** functions that absolutely slay\n", total_functions));
-        md.push_str(&format!("- 👥 **{}** squads (structs) for organizing your data\n", total_structs));
-        md.push_str(&format!("- 🤝 **{}** collabs (interfaces) for that polymorphic energy\n", total_interfaces));
-        md.push_str(&format!("- 📝 **{}** modules with comprehensive documentation\n", docs.len()));
-        md.push_str("\n");
-
-        // Installation (placeholder)
-        md.push_str("## 📦 Installation\n\n");
-        md.push_str("```bash\n");
-        md.push_str("# Clone the repo (it's giving main character energy)\n");
-        md.push_str("git clone https://github.com/your-org/cursed.git\n\n");
-        md.push_str("# Build with cargo (no cap, it just works)\n");
-        md.push_str("cd cursed\n");
-        md.push_str("cargo build --release\n\n");
-        md.push_str("# Run your first CURSED program\n");
-        md.push_str("./target/release/cursed examples/hello_world.csd\n");
-        md.push_str("```\n\n");
-
-        // Contributing
-        md.push_str("## 🤝 Contributing\n\n");
-        md.push_str("Want to contribute? That's very demure, very mindful of you! 💅\n\n");
-        md.push_str("1. Fork the repo (giving fork energy)\n");
-        md.push_str("2. Create your feature branch (`git checkout -b feature/absolute-unit`)\n");
-        md.push_str("3. Commit your changes (`git commit -m 'Add some fire features'`)\n");
-        md.push_str("4. Push to the branch (`git push origin feature/absolute-unit`)\n");
-        md.push_str("5. Open a Pull Request (and let's make this code slap)\n\n");
-
-        // Footer
-        md.push_str("---\n\n");
-        md.push_str("*Generated with 💖 by the CURSED Documentation Generator*\n\n");
-        md.push_str("*This project is serving looks and taking names. No cap! 🧢❌*\n");
+        // Module overview
+        content.push_str("## Modules\n\n");
+        for doc in docs {
+            content.push_str(&format!("### {}\n\n", doc.module_name));
+            
+            if let Some(package) = &doc.package_name {
+                content.push_str(&format!("**Package:** {}\n\n", package));
+            }
+            
+            content.push_str(&format!("**File:** `{}`\n\n", doc.file_path.display()));
+            content.push_str(&format!("**Items:** {}\n\n", doc.items.len()));
+            
+            // Brief item summary
+            let functions_count = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count();
+            let structs_count = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count();
+            let interfaces_count = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count();
+            
+            if functions_count > 0 {
+                content.push_str(&format!("- Functions: {}\n", functions_count));
+            }
+            if structs_count > 0 {
+                content.push_str(&format!("- Structs: {}\n", structs_count));
+            }
+            if interfaces_count > 0 {
+                content.push_str(&format!("- Interfaces: {}\n", interfaces_count));
+            }
+            content.push_str("\n");
+        }
         
-        fs::write(readme_path, md).map_err(Error::Io)?;
+        // Statistics
+        let total_items: usize = docs.iter().map(|d| d.items.len()).sum();
+        let total_functions = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()).sum::<usize>();
+        let total_structs = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count()).sum::<usize>();
+        
+        content.push_str("## Statistics\n\n");
+        content.push_str(&format!("- **Modules:** {}\n", docs.len()));
+        content.push_str(&format!("- **Total Items:** {}\n", total_items));
+        content.push_str(&format!("- **Functions:** {}\n", total_functions));
+        content.push_str(&format!("- **Structs:** {}\n", total_structs));
+        content.push_str("\n");
+        
+        // Usage example
+        content.push_str("## Usage\n\n");
+        content.push_str("```cursed\n");
+        content.push_str("// Example CURSED program\n");
+        content.push_str("slay main() {\n");
+        content.push_str("    println(\"Hello, CURSED!\")?;\n");
+        content.push_str("}\n");
+        content.push_str("```\n\n");
+        
+        // License and footer
+        content.push_str("## Documentation\n\n");
+        content.push_str("This documentation was generated automatically by the CURSED documentation system.\n\n");
+        
+        fs::write(readme_path, content).map_err(Error::Io)?;
         Ok(())
     }
 
-    /// Generate module documentation
+    /// Generate documentation for a single module
     pub fn generate_module_doc(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
-        let module_file = format!("{}.md", doc.module_name.replace("::", "_"));
-        let module_path = output_dir.join(module_file);
+        let module_path = output_dir.join(self.get_module_filename(&doc.module_name));
         
-        let mut md = String::new();
+        let mut content = String::new();
         
         // Module header
-        md.push_str(&format!("# {} Module\n\n", doc.module_name));
+        content.push_str(&format!("# Module: {}\n\n", doc.module_name));
         
         if let Some(package) = &doc.package_name {
-            md.push_str(&format!("**Package**: `{}`  \n", package));
+            content.push_str(&format!("**Package:** {}\n\n", package));
         }
-        md.push_str(&format!("**File**: `{}`  \n", doc.file_path.display()));
-        md.push_str(&format!("**Items**: {}  \n", doc.items.len()));
-        md.push_str(&format!("**Lines of Code**: {}  \n\n", doc.source_info.line_count));
-
-        // Navigation
-        md.push_str("[⬅️ Back to Index](README.md)\n\n");
-
-        // Module description
-        md.push_str("## 📖 Description\n\n");
-        md.push_str(&format!("{}\n\n", self.get_module_description(doc)));
-
-        // Quick stats
-        md.push_str("## 📊 Module Statistics\n\n");
-        let functions = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Function)).count();
-        let structs = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Struct)).count();
-        let interfaces = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Interface)).count();
-        let variables = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Variable)).count();
-        let constants = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Constant)).count();
         
-        md.push_str("| Type | Count | Description |\n");
-        md.push_str("|------|-------|-------------|\n");
-        md.push_str(&format!("| 🎯 Functions | {} | Functions that absolutely slay |\n", functions));
-        md.push_str(&format!("| 👥 Structs | {} | Squads for organizing data |\n", structs));
-        md.push_str(&format!("| 🤝 Interfaces | {} | Collabs for polymorphic vibes |\n", interfaces));
-        md.push_str(&format!("| 📝 Variables | {} | Sus (mutable) variables |\n", variables));
-        md.push_str(&format!("| 📌 Constants | {} | Facts (immutable) values |\n", constants));
-        md.push_str("\n");
-
+        // Module information
+        content.push_str("## Module Information\n\n");
+        content.push_str(&format!("- **File:** `{}`\n", doc.file_path.display()));
+        content.push_str(&format!("- **Lines:** {}\n", doc.source_info.line_count));
+        content.push_str(&format!("- **Size:** {} bytes\n", doc.source_info.file_size));
+        content.push_str(&format!("- **Encoding:** {}\n", doc.source_info.encoding));
+        content.push_str("\n");
+        
+        // Imports
+        if !doc.imports.is_empty() {
+            content.push_str("## Imports\n\n");
+            for import in &doc.imports {
+                content.push_str(&format!("- `{}`\n", import));
+            }
+            content.push_str("\n");
+        }
+        
         // Table of contents
-        md.push_str("## 📑 Table of Contents\n\n");
+        content.push_str("## Table of Contents\n\n");
         
-        // Group items by type
-        let mut functions_list = Vec::new();
-        let mut structs_list = Vec::new();
-        let mut interfaces_list = Vec::new();
-        let mut variables_list = Vec::new();
-        let mut constants_list = Vec::new();
+        // Group items by type for TOC
+        let mut functions = Vec::new();
+        let mut structs = Vec::new();
+        let mut interfaces = Vec::new();
+        let mut variables = Vec::new();
+        let mut constants = Vec::new();
         
         for item in &doc.items {
             match item.kind {
-                ItemKind::Function => functions_list.push(item),
-                ItemKind::Struct => structs_list.push(item),
-                ItemKind::Interface => interfaces_list.push(item),
-                ItemKind::Variable => variables_list.push(item),
-                ItemKind::Constant => constants_list.push(item),
+                crate::docs::generator::ItemKind::Function => functions.push(item),
+                crate::docs::generator::ItemKind::Struct => structs.push(item),
+                crate::docs::generator::ItemKind::Interface => interfaces.push(item),
+                crate::docs::generator::ItemKind::Variable => variables.push(item),
+                crate::docs::generator::ItemKind::Constant => constants.push(item),
                 _ => {}
             }
         }
         
-        if !functions_list.is_empty() {
-            md.push_str("### 🎯 Functions\n");
-            for item in &functions_list {
-                md.push_str(&format!("- [{}](#{}) - {}\n", item.name, self.anchor_name(&item.name), item.summary));
+        if !functions.is_empty() {
+            content.push_str("### Functions\n\n");
+            for func in &functions {
+                content.push_str(&format!("- [{0}](#{1})\n", func.name, self.generate_anchor(&func.name)));
             }
-            md.push_str("\n");
+            content.push_str("\n");
         }
         
-        if !structs_list.is_empty() {
-            md.push_str("### 👥 Structs (Squads)\n");
-            for item in &structs_list {
-                md.push_str(&format!("- [{}](#{}) - {}\n", item.name, self.anchor_name(&item.name), item.summary));
+        if !structs.is_empty() {
+            content.push_str("### Structs\n\n");
+            for struct_item in &structs {
+                content.push_str(&format!("- [{0}](#{1})\n", struct_item.name, self.generate_anchor(&struct_item.name)));
             }
-            md.push_str("\n");
+            content.push_str("\n");
         }
         
-        if !interfaces_list.is_empty() {
-            md.push_str("### 🤝 Interfaces (Collabs)\n");
-            for item in &interfaces_list {
-                md.push_str(&format!("- [{}](#{}) - {}\n", item.name, self.anchor_name(&item.name), item.summary));
+        if !interfaces.is_empty() {
+            content.push_str("### Interfaces\n\n");
+            for interface in &interfaces {
+                content.push_str(&format!("- [{0}](#{1})\n", interface.name, self.generate_anchor(&interface.name)));
             }
-            md.push_str("\n");
+            content.push_str("\n");
         }
         
-        if !variables_list.is_empty() {
-            md.push_str("### 📝 Variables\n");
-            for item in &variables_list {
-                md.push_str(&format!("- [{}](#{}) - {}\n", item.name, self.anchor_name(&item.name), item.summary));
+        if !constants.is_empty() {
+            content.push_str("### Constants\n\n");
+            for constant in &constants {
+                content.push_str(&format!("- [{0}](#{1})\n", constant.name, self.generate_anchor(&constant.name)));
             }
-            md.push_str("\n");
+            content.push_str("\n");
         }
         
-        if !constants_list.is_empty() {
-            md.push_str("### 📌 Constants\n");
-            for item in &constants_list {
-                md.push_str(&format!("- [{}](#{}) - {}\n", item.name, self.anchor_name(&item.name), item.summary));
+        if !variables.is_empty() {
+            content.push_str("### Variables\n\n");
+            for variable in &variables {
+                content.push_str(&format!("- [{0}](#{1})\n", variable.name, self.generate_anchor(&variable.name)));
             }
-            md.push_str("\n");
+            content.push_str("\n");
         }
-
-        // Detailed documentation
-        md.push_str("---\n\n");
-        md.push_str("## 📖 Detailed Documentation\n\n");
         
-        // Generate docs for each item type
-        if !functions_list.is_empty() {
-            md.push_str("### 🎯 Functions\n\n");
-            for item in &functions_list {
-                md.push_str(&self.generate_item_markdown(item));
+        // Generate sections for each type
+        if !functions.is_empty() {
+            content.push_str("## Functions\n\n");
+            for func in functions {
+                content.push_str(&self.generate_item_documentation(func)?);
             }
         }
         
-        if !structs_list.is_empty() {
-            md.push_str("### 👥 Structs (Squads)\n\n");
-            for item in &structs_list {
-                md.push_str(&self.generate_item_markdown(item));
+        if !structs.is_empty() {
+            content.push_str("## Structs\n\n");
+            for struct_item in structs {
+                content.push_str(&self.generate_item_documentation(struct_item)?);
             }
         }
         
-        if !interfaces_list.is_empty() {
-            md.push_str("### 🤝 Interfaces (Collabs)\n\n");
-            for item in &interfaces_list {
-                md.push_str(&self.generate_item_markdown(item));
+        if !interfaces.is_empty() {
+            content.push_str("## Interfaces\n\n");
+            for interface in interfaces {
+                content.push_str(&self.generate_item_documentation(interface)?);
             }
         }
         
-        if !variables_list.is_empty() {
-            md.push_str("### 📝 Variables\n\n");
-            for item in &variables_list {
-                md.push_str(&self.generate_item_markdown(item));
+        if !constants.is_empty() {
+            content.push_str("## Constants\n\n");
+            for constant in constants {
+                content.push_str(&self.generate_item_documentation(constant)?);
             }
         }
         
-        if !constants_list.is_empty() {
-            md.push_str("### 📌 Constants\n\n");
-            for item in &constants_list {
-                md.push_str(&self.generate_item_markdown(item));
+        if !variables.is_empty() {
+            content.push_str("## Variables\n\n");
+            for variable in variables {
+                content.push_str(&self.generate_item_documentation(variable)?);
             }
         }
-
-        // Footer
-        md.push_str("---\n\n");
-        md.push_str("*Generated with 💖 by the CURSED Documentation Generator*\n");
         
-        fs::write(module_path, md).map_err(Error::Io)?;
+        fs::write(module_path, content).map_err(Error::Io)?;
         Ok(())
     }
 
-    /// Generate markdown for a documentation item
-    fn generate_item_markdown(&self, item: &DocumentationItem) -> String {
-        let mut md = String::new();
+    /// Generate documentation for a single item
+    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<String, Error> {
+        let mut content = String::new();
         
         // Item header
-        let emoji = match item.kind {
-            ItemKind::Function => "🎯",
-            ItemKind::Struct => "👥",
-            ItemKind::Interface => "🤝",
-            ItemKind::Variable => "📝",
-            ItemKind::Constant => "📌",
-            _ => "📄",
-        };
-        
-        md.push_str(&format!("#### {} {} {}\n\n", emoji, item.name, self.get_kind_badge(&item.kind)));
+        content.push_str(&format!("### {}\n\n", item.name));
         
         // Signature
         if let Some(signature) = &item.signature {
-            md.push_str("**Signature:**\n");
-            md.push_str("```cursed\n");
-            md.push_str(signature);
-            md.push_str("\n```\n\n");
+            content.push_str("```cursed\n");
+            content.push_str(signature);
+            content.push_str("\n```\n\n");
         }
         
-        // Description
-        md.push_str("**Description:**  \n");
-        md.push_str(&format!("{}\n\n", item.description));
+        // Summary and description
+        content.push_str(&format!("{}\n\n", item.summary));
+        
+        if !item.description.is_empty() && item.description != item.summary {
+            content.push_str(&format!("{}\n\n", item.description));
+        }
         
         // Parameters
         if !item.parameters.is_empty() {
-            md.push_str("**Parameters:**\n\n");
-            md.push_str("| Name | Type | Description | Default |\n");
-            md.push_str("|------|------|-------------|----------|\n");
+            content.push_str("#### Parameters\n\n");
+            content.push_str("| Name | Type | Description | Default |\n");
+            content.push_str("|------|------|-------------|----------|\n");
             
             for param in &item.parameters {
-                let type_str = param.type_name.as_ref().map(|t| format!("`{}`", t)).unwrap_or_else(|| "—".to_string());
-                let default_str = param.default_value.as_ref().map(|d| format!("`{}`", d)).unwrap_or_else(|| "—".to_string());
-                md.push_str(&format!(
-                    "| `{}` | {} | {} | {} |\n",
-                    param.name, type_str, param.description, default_str
+                content.push_str(&format!(
+                    "| `{}` | `{}` | {} | {} |\n",
+                    param.name,
+                    param.type_name.as_deref().unwrap_or("unknown"),
+                    param.description,
+                    param.default_value.as_deref().unwrap_or("None")
                 ));
             }
-            md.push_str("\n");
+            content.push_str("\n");
         }
         
         // Return type
         if let Some(return_type) = &item.return_type {
-            md.push_str(&format!("**Returns:** `{}`\n\n", return_type));
+            content.push_str("#### Returns\n\n");
+            content.push_str(&format!("`{}`\n\n", return_type));
         }
         
-        // Source code example
-        if self.config.include_examples {
-            if let Some(source) = &item.source_code {
-                md.push_str("**Source:**\n");
-                md.push_str("```cursed\n");
-                md.push_str(source);
-                md.push_str("\n```\n\n");
-            }
-        }
-        
-        // Usage example
-        md.push_str(&self.generate_usage_example(item));
-        
-        md.push_str("---\n\n");
-        md
-    }
-
-    /// Generate usage example for an item
-    fn generate_usage_example(&self, item: &DocumentationItem) -> String {
-        let mut example = String::new();
-        
-        match item.kind {
-            ItemKind::Function => {
-                example.push_str("**Example:**\n");
-                example.push_str("```cursed\n");
-                
-                // Generate realistic function call
-                if item.parameters.is_empty() {
-                    example.push_str(&format!("{}()", item.name));
-                } else {
-                    let params: Vec<String> = item.parameters.iter().map(|p| {
-                        match p.type_name.as_deref() {
-                            Some("string") => "\"example\"".to_string(),
-                            Some("i32") | Some("int") => "42".to_string(),
-                            Some("f64") | Some("float") => "3.14".to_string(),
-                            Some("bool") => "facts".to_string(),
-                            _ => "value".to_string(),
-                        }
-                    }).collect();
-                    example.push_str(&format!("{}({})", item.name, params.join(", ")));
+        // Examples
+        if !item.examples.is_empty() {
+            content.push_str("#### Examples\n\n");
+            for example in &item.examples {
+                if let Some(title) = &example.title {
+                    content.push_str(&format!("**{}**\n\n", title));
                 }
-                
-                if item.return_type.is_some() {
-                    example.insert_str(0, "sus result = ");
+                if let Some(description) = &example.description {
+                    content.push_str(&format!("{}\n\n", description));
                 }
+                content.push_str(&format!("```{}\n", example.language));
+                content.push_str(&example.code);
+                content.push_str("\n```\n\n");
                 
-                example.push_str("\n```\n\n");
+                if let Some(output) = &example.output {
+                    content.push_str("Output:\n\n");
+                    content.push_str("```\n");
+                    content.push_str(output);
+                    content.push_str("\n```\n\n");
+                }
             }
-            ItemKind::Struct => {
-                example.push_str("**Example:**\n");
-                example.push_str("```cursed\n");
-                example.push_str(&format!("sus instance = {}::new()\n", item.name));
-                example.push_str("```\n\n");
-            }
-            ItemKind::Variable => {
-                example.push_str("**Example:**\n");
-                example.push_str("```cursed\n");
-                example.push_str(&format!("sus value = {}\n", item.name));
-                example.push_str("```\n\n");
-            }
-            ItemKind::Constant => {
-                example.push_str("**Example:**\n");
-                example.push_str("```cursed\n");
-                example.push_str(&format!("sus result = {} * 2\n", item.name));
-                example.push_str("```\n\n");
-            }
-            _ => {}
         }
         
-        example
-    }
-
-    /// Get module description
-    fn get_module_description(&self, doc: &ExtractedDocumentation) -> String {
-        if doc.items.is_empty() {
-            return "Empty module".to_string();
+        // Source code
+        if self.config.include_examples && item.source_code.is_some() {
+            content.push_str("<details>\n");
+            content.push_str("<summary>Source Code</summary>\n\n");
+            content.push_str("```cursed\n");
+            content.push_str(item.source_code.as_ref().unwrap());
+            content.push_str("\n```\n\n");
+            content.push_str("</details>\n\n");
         }
         
-        let functions = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Function)).count();
-        let structs = doc.items.iter().filter(|i| matches!(i.kind, ItemKind::Struct)).count();
+        // Add separator
+        content.push_str("---\n\n");
         
-        format!(
-            "Module containing {} function{} and {} struct{} with comprehensive CURSED language features",
-            functions,
-            if functions == 1 { "" } else { "s" },
-            structs,
-            if structs == 1 { "" } else { "s" }
-        )
+        Ok(content)
     }
 
-    /// Get kind badge
-    fn get_kind_badge(&self, kind: &ItemKind) -> String {
-        match kind {
-            ItemKind::Function => "![Function](https://img.shields.io/badge/-Function-ff6b9d)".to_string(),
-            ItemKind::Struct => "![Struct](https://img.shields.io/badge/-Squad-4ecdc4)".to_string(),
-            ItemKind::Interface => "![Interface](https://img.shields.io/badge/-Collab-ffe66d)".to_string(),
-            ItemKind::Variable => "![Variable](https://img.shields.io/badge/-Sus-orange)".to_string(),
-            ItemKind::Constant => "![Constant](https://img.shields.io/badge/-Facts-green)".to_string(),
-            _ => "![Other](https://img.shields.io/badge/-Other-gray)".to_string(),
-        }
+    /// Get filename for module documentation
+    fn get_module_filename(&self, module_name: &str) -> String {
+        format!("{}.md", module_name.replace("::", "_").to_lowercase())
     }
 
-    /// Generate anchor name for linking
-    fn anchor_name(&self, name: &str) -> String {
-        name.to_lowercase().replace(' ', "-")
+    /// Generate anchor link for markdown
+    fn generate_anchor(&self, name: &str) -> String {
+        name.to_lowercase()
+            .replace(" ", "-")
+            .replace("_", "-")
+            .replace("::", "-")
     }
 }

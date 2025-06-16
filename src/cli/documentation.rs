@@ -3,7 +3,7 @@
 //! Command-line interface for CURSED documentation generation with
 //! comprehensive options and integration with the documentation system.
 
-use crate::docs::generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
+use crate::docs::{DocumentationGenerator, DocGeneratorConfig, DocFormat, ApiExtractor, ExampleGenerator};
 use crate::error::Error;
 use clap::{ArgMatches, Command, Arg, ArgAction};
 use std::path::PathBuf;
@@ -95,11 +95,29 @@ pub fn add_documentation_commands(app: Command) -> Command {
                     .help("Watch files and regenerate on changes")
             )
             .arg(
-                Arg::new("serve")
-                    .long("serve")
-                    .value_name("PORT")
-                    .help("Serve documentation on HTTP server")
-                    .value_parser(clap::value_parser!(u16))
+            Arg::new("serve")
+            .long("serve")
+            .value_name("PORT")
+            .help("Serve documentation on HTTP server")
+            .value_parser(clap::value_parser!(u16))
+            )
+            .arg(
+                Arg::new("live")
+                .long("live")
+                .action(ArgAction::SetTrue)
+                .help("Enable live reload with hot documentation regeneration")
+            )
+            .arg(
+                Arg::new("playground")
+                .long("playground")
+                .action(ArgAction::SetTrue)
+                .help("Enable interactive code playground")
+            )
+            .arg(
+                Arg::new("api-explorer")
+                .long("api-explorer")
+                .action(ArgAction::SetTrue)
+                .help("Enable interactive API explorer")
             )
             .arg(
                 Arg::new("open")
@@ -209,8 +227,18 @@ pub async fn handle_documentation_command(matches: &ArgMatches) -> Result<(), Er
 
     // Handle serve mode
     if let Some(port) = matches.get_one::<u16>("serve") {
-        info!("🌐 Starting documentation server on port {}...", port);
-        return serve_documentation(&output_dir, *port).await;
+        let enable_live = matches.get_flag("live");
+        let enable_playground = matches.get_flag("playground");
+        let enable_api_explorer = matches.get_flag("api-explorer");
+        
+        if enable_live || enable_playground || enable_api_explorer {
+            info!("🌐 Starting live documentation server on port {}...", port);
+            return start_live_documentation_server(&input_path, &output_dir, *port, 
+                enable_live, enable_playground, enable_api_explorer).await;
+        } else {
+            info!("🌐 Starting documentation server on port {}...", port);
+            return serve_documentation(&output_dir, *port).await;
+        }
     }
 
     // Handle open browser
@@ -328,6 +356,40 @@ async fn serve_documentation(docs_dir: &PathBuf, port: u16) -> Result<(), Error>
         .run(([127, 0, 0, 1], port))
         .await;
 
+    Ok(())
+}
+
+/// Start live documentation server with hot reload and interactive features
+async fn start_live_documentation_server(
+    input_path: &PathBuf,
+    output_dir: &PathBuf,
+    port: u16,
+    enable_live: bool,
+    enable_playground: bool,
+    enable_api_explorer: bool,
+) -> Result<(), Error> {
+    use crate::documentation::live_server::{LiveDocumentationServer, LiveServerConfig};
+    use std::time::Duration;
+    
+    // Create live server configuration
+    let mut config = LiveServerConfig {
+        port,
+        host: "127.0.0.1".to_string(),
+        watch_debounce: Duration::from_millis(500),
+        enable_playground,
+        enable_api_explorer,
+        auto_open_browser: true,
+        ..Default::default()
+    };
+    
+    // Create and start live server
+    let mut server = LiveDocumentationServer::new(config)
+        .map_err(|e| Error::General(format!("Failed to create live server: {}", e)))?;
+    
+    // Start serving with hot reload
+    server.start_serving(&[input_path], output_dir).await
+        .map_err(|e| Error::General(format!("Failed to start live server: {}", e)))?;
+    
     Ok(())
 }
 

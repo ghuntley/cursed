@@ -9,6 +9,50 @@ use crate::stdlib::plug_vibes::registry::PlugRegistry;
 use crate::stdlib::plug_vibes::manager::PlugManager;
 use crate::stdlib::value::Value;
 
+/// LLVM plugin configuration
+#[derive(Debug, Clone)]
+pub struct LlvmPluginConfig {
+    pub jit_enabled: bool,
+    pub optimization_enabled: bool,
+    pub optimization_level: u32,
+    pub compile_to_memory: bool,
+    pub cache_compiled_plugins: bool,
+}
+
+impl Default for LlvmPluginConfig {
+    fn default() -> Self {
+        Self {
+            jit_enabled: true,
+            optimization_enabled: true,
+            optimization_level: 2,
+            compile_to_memory: true,
+            cache_compiled_plugins: true,
+        }
+    }
+}
+
+/// LLVM plugin compilation context
+#[derive(Debug, Clone)]
+pub struct LlvmPluginContext {
+    pub functions: HashMap<String, String>,
+    pub types: HashMap<String, String>,
+    pub globals: HashMap<String, String>,
+}
+
+impl LlvmPluginContext {
+    pub fn new() -> Self {
+        Self {
+            functions: HashMap::new(),
+            types: HashMap::new(),
+            globals: HashMap::new(),
+        }
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        self.functions.is_empty() && self.types.is_empty() && self.globals.is_empty()
+    }
+}
+
 /// LLVM plugin compilation context
 pub struct LLVMPluginContext {
     registry: Arc<PlugRegistry>,

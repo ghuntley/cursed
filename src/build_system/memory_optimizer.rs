@@ -914,13 +914,4 @@ pub fn create_memory_aware_task(
 }
 
 // Export public API
-pub use self::{
-    MemoryOptimizerConfig,
-    MemoryAwareTask,
-    MemoryStrategy,
-    MemoryPressure,
-    MemoryStats,
-    SchedulingDecision,
-    SchedulingAction,
-    TaskPriority,
-};
+// Types are exported directly via pub struct/pub enum definitions above

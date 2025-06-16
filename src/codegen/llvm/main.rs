@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 // Import real LLVM optimization passes
 use crate::optimization::real_llvm_passes::RealLlvmPassManager;
-use crate::optimization::enhanced_llvm_passes::EnhancedLlvmPassManager;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
 use crate::optimization::config::{OptimizationConfig as OptConfig, OptimizationLevel as OptLevel};
 use crate::optimization::coordinator::{
     OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
@@ -53,7 +53,7 @@ use super::process::{ProcessCompilation, ProcessControlOp, IpcChannelType, Share
 use super::gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
 use super::panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
 use super::debug_info::{LlvmDebugGenerator, LlvmDebugManager};
-use super::error_propagation::{ErrorPropagationCompiler, ErrorCheckResult, PropagationContext};
+use super::error_propagation::ErrorPropagationCompiler;
 use super::error_propagation_enhanced::{EnhancedErrorPropagationCompiler, ErrorPropagationContext};
 use super::question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime, ErrorContext};
 use super::package_integration::{
@@ -1717,8 +1717,10 @@ impl LlvmCodeGenerator {
 
     /// Compile a basic expression
     pub fn compile_basic_expression(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<LlvmValue, Error> {
-        use crate::ast::expressions::{Literal, LiteralValue, Identifier, Binary, CallExpression};
-        use crate::ast::calls::CallExpression as CallExpr;
+        use crate::ast::expressions::{Literal, LiteralValue};
+        use crate::ast::identifiers::Identifier;
+        use crate::ast::operators::BinaryExpression;
+        use crate::ast::calls::CallExpression;
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         // Try to downcast to specific expression types
@@ -1726,11 +1728,9 @@ impl LlvmCodeGenerator {
             self.compile_literal_value(literal)
         } else if let Some(identifier) = expr.as_any().downcast_ref::<Identifier>() {
             self.compile_identifier_value(identifier)
-        } else if let Some(binary) = expr.as_any().downcast_ref::<Binary>() {
+        } else if let Some(binary) = expr.as_any().downcast_ref::<BinaryExpression>() {
             self.compile_binary_value(binary)
         } else if let Some(call) = expr.as_any().downcast_ref::<CallExpression>() {
-            self.compile_call_value(call)
-        } else if let Some(call) = expr.as_any().downcast_ref::<CallExpr>() {
             self.compile_function_call_value(call)
         } else {
             // For unknown expression types, return a default value
@@ -1804,7 +1804,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile a binary expression value
-    fn compile_binary_value(&mut self, binary: &crate::ast::expressions::Binary) -> Result<LlvmValue, Error> {
+    fn compile_binary_value(&mut self, binary: &crate::ast::operators::BinaryExpression) -> Result<LlvmValue, Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         // Compile operands
@@ -1824,20 +1824,6 @@ impl LlvmCodeGenerator {
         })
     }
     
-    /// Compile a call expression value
-    fn compile_call_value(&mut self, call: &crate::ast::expressions::CallExpression) -> Result<LlvmValue, Error> {
-        use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
-        
-        let func_name = call.function.string();
-        
-        // For now, assume all function calls return i32
-        // In a full implementation, this would look up the function signature
-        Ok(LlvmValue {
-            value_type: LlvmType::Int32,
-            llvm_name: format!("%call_result_{}", self.next_temp_id()),
-            is_constant: false,
-        })
-    }
     
     /// Compile a function call value
     fn compile_function_call_value(&mut self, call: &crate::ast::calls::CallExpression) -> Result<LlvmValue, Error> {

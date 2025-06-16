@@ -15,7 +15,7 @@ use crate::stdlib::packages::crypto_pki::errors::*;
 
 // Re-export enhanced implementation
 pub use crate::stdlib::packages::crypto_pki::enhanced_main::{
-    Certificate, CertificateChain, TrustStore, CertificatePathValidator,
+    Certificate, CertificateChain, TrustStore as EnhancedTrustStore, CertificatePathValidator,
     ValidationPolicy, RevocationChecker, CsrProcessor, CertificateInfo,
     ValidationStatus, RevocationStatus, CertificateMetadata,
     parse_certificate_enhanced, validate_certificate_chain_enhanced,

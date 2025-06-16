@@ -1,737 +1,569 @@
 //! HTML Documentation Generator
 //! 
-//! Generates modern, responsive HTML documentation with search functionality,
-//! cross-references, and interactive examples.
+//! Generates comprehensive HTML documentation with navigation, search, and responsive design.
 
-use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, SearchIndexEntry};
+use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, SearchIndexEntry};
 use crate::error::Error;
-use std::path::{Path, PathBuf};
+use serde_json;
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 
-pub struct HtmlGenerator<'a> {
-    config: &'a DocGeneratorConfig,
+/// HTML documentation generator
+pub struct HtmlGenerator {
+    config: DocGeneratorConfig,
 }
 
-impl<'a> HtmlGenerator<'a> {
-    pub fn new(config: &'a DocGeneratorConfig) -> Self {
-        Self { config }
+impl HtmlGenerator {
+    pub fn new(config: &DocGeneratorConfig) -> Self {
+        Self {
+            config: config.clone(),
+        }
     }
 
     /// Generate main index page
     pub fn generate_index_page(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
         let index_path = output_dir.join("index.html");
         
-        let mut html = String::new();
-        html.push_str(&self.generate_html_header("Documentation Index"));
+        let mut content = String::new();
+        content.push_str(&self.get_html_header("CURSED Documentation", &self.config.title)?);
+        
+        // Main content
+        content.push_str("<main class=\"container\">\n");
+        content.push_str(&format!("<h1>{}</h1>\n", self.config.title));
+        
+        if let Some(description) = &self.config.description {
+            content.push_str(&format!("<p class=\"lead\">{}</p>\n", description));
+        }
         
         // Project information
-        html.push_str("<div class='project-info'>\n");
-        html.push_str(&format!("<h1>{}</h1>\n", self.config.title));
-        if let Some(desc) = &self.config.description {
-            html.push_str(&format!("<p class='description'>{}</p>\n", desc));
-        }
         if let Some(version) = &self.config.version {
-            html.push_str(&format!("<p class='version'>Version: {}</p>\n", version));
+            content.push_str(&format!("<p><strong>Version:</strong> {}</p>\n", version));
         }
-        html.push_str("</div>\n");
-
-        // Module list
-        html.push_str("<div class='module-list'>\n");
-        html.push_str("<h2>Modules</h2>\n");
-        html.push_str("<ul>\n");
+        
+        if !self.config.authors.is_empty() {
+            content.push_str(&format!("<p><strong>Authors:</strong> {}</p>\n", self.config.authors.join(", ")));
+        }
+        
+        // Module index
+        content.push_str("<h2>Modules</h2>\n");
+        content.push_str("<div class=\"module-grid\">\n");
         
         for doc in docs {
-            let module_file = format!("{}.html", doc.module_name.replace("::", "_"));
-            html.push_str(&format!(
-                "<li><a href='{}'>{}</a> - {} items</li>\n",
-                module_file, doc.module_name, doc.items.len()
-            ));
+            content.push_str("<div class=\"module-card\">\n");
+            content.push_str(&format!("<h3><a href=\"{}.html\">{}</a></h3>\n", 
+                self.sanitize_filename(&doc.module_name), doc.module_name));
+            
+            if let Some(package) = &doc.package_name {
+                content.push_str(&format!("<p><strong>Package:</strong> {}</p>\n", package));
+            }
+            
+            content.push_str(&format!("<p>{} items</p>\n", doc.items.len()));
+            content.push_str("</div>\n");
         }
         
-        html.push_str("</ul>\n");
-        html.push_str("</div>\n");
-
-        // Getting started section
-        html.push_str("<div class='getting-started'>\n");
-        html.push_str("<h2>Getting Started with CURSED</h2>\n");
-        html.push_str("<div class='example-code'>\n");
-        html.push_str("<h3>Hello World Example</h3>\n");
-        html.push_str("<pre><code class='language-cursed'>\n");
-        html.push_str("// Hello world in CURSED - because we're iconic like that\n");
-        html.push_str("slay main() {\n");
-        html.push_str("    println(\"Hello, world! This is lowkey fire! 🔥\")\n");
-        html.push_str("}\n");
-        html.push_str("</code></pre>\n");
-        html.push_str("</div>\n");
-
-        html.push_str("<div class='example-code'>\n");
-        html.push_str("<h3>CURSED Slang Keywords</h3>\n");
-        html.push_str("<pre><code class='language-cursed'>\n");
-        html.push_str("// Variables and constants\n");
-        html.push_str("sus name = \"bestie\"        // mutable variable\n");
-        html.push_str("facts pi = 3.14159         // constant\n\n");
-        html.push_str("// Functions\n");
-        html.push_str("slay greet(name: string) {\n");
-        html.push_str("    println(\"Hey \" + name + \"! You're serving looks! ✨\")\n");  
-        html.push_str("}\n\n");
-        html.push_str("// Control flow\n");
-        html.push_str("lowkey (age >= 18) {\n");
-        html.push_str("    println(\"You're an adult, bestie!\")\n");
-        html.push_str("} highkey {\n");
-        html.push_str("    println(\"Still a baby, no cap\")\n");
-        html.push_str("}\n");
-        html.push_str("</code></pre>\n");
-        html.push_str("</div>\n");
-        html.push_str("</div>\n");
-
-        html.push_str(&self.generate_html_footer());
+        content.push_str("</div>\n");
         
-        fs::write(index_path, html).map_err(Error::Io)?;
+        // Quick statistics
+        let total_items: usize = docs.iter().map(|d| d.items.len()).sum();
+        let total_functions = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()).sum::<usize>();
+        let total_structs = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count()).sum::<usize>();
+        
+        content.push_str("<h2>Statistics</h2>\n");
+        content.push_str("<div class=\"stats\">\n");
+        content.push_str(&format!("<div class=\"stat-item\"><strong>{}</strong> modules</div>\n", docs.len()));
+        content.push_str(&format!("<div class=\"stat-item\"><strong>{}</strong> total items</div>\n", total_items));
+        content.push_str(&format!("<div class=\"stat-item\"><strong>{}</strong> functions</div>\n", total_functions));
+        content.push_str(&format!("<div class=\"stat-item\"><strong>{}</strong> structs</div>\n", total_structs));
+        content.push_str("</div>\n");
+        
+        content.push_str("</main>\n");
+        content.push_str(&self.get_html_footer()?);
+        
+        fs::write(index_path, content).map_err(Error::Io)?;
         Ok(())
     }
 
-    /// Generate module page
+    /// Generate module documentation page
     pub fn generate_module_page(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
-        let module_file = format!("{}.html", doc.module_name.replace("::", "_"));
-        let module_path = output_dir.join(module_file);
+        let module_path = output_dir.join(format!("{}.html", self.sanitize_filename(&doc.module_name)));
         
-        let mut html = String::new();
-        html.push_str(&self.generate_html_header(&format!("{} Module", doc.module_name)));
+        let mut content = String::new();
+        content.push_str(&self.get_html_header(&format!("{} - Module", doc.module_name), &doc.module_name)?);
         
         // Module header
-        html.push_str("<div class='module-header'>\n");
-        html.push_str(&format!("<h1>Module: {}</h1>\n", doc.module_name));
+        content.push_str("<main class=\"container\">\n");
+        content.push_str(&format!("<h1>Module: {}</h1>\n", doc.module_name));
+        
         if let Some(package) = &doc.package_name {
-            html.push_str(&format!("<p class='package'>Package: {}</p>\n", package));
+            content.push_str(&format!("<p><strong>Package:</strong> {}</p>\n", package));
         }
-        html.push_str(&format!("<p class='file-path'>File: {}</p>\n", doc.file_path.display()));
-        html.push_str("</div>\n");
-
-        // Module statistics
-        html.push_str("<div class='module-stats'>\n");
-        html.push_str("<h2>Module Statistics</h2>\n");
-        let functions = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count();
-        let structs = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Struct)).count();
-        let interfaces = doc.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Interface)).count();
         
-        html.push_str(&format!("<ul>\n"));
-        html.push_str(&format!("<li>Functions: {}</li>\n", functions));
-        html.push_str(&format!("<li>Structs: {}</li>\n", structs));
-        html.push_str(&format!("<li>Interfaces: {}</li>\n", interfaces));
-        html.push_str(&format!("<li>Total Items: {}</li>\n", doc.items.len()));
-        html.push_str(&format!("<li>Lines of Code: {}</li>\n", doc.source_info.line_count));
-        html.push_str("</ul>\n");
-        html.push_str("</div>\n");
-
-        // Table of contents
-        html.push_str("<div class='toc'>\n");
-        html.push_str("<h2>Table of Contents</h2>\n");
-        html.push_str("<ul>\n");
-        for item in &doc.items {
-            html.push_str(&format!(
-                "<li><a href='#{}'>{} ({})</a></li>\n",
-                item.name.to_lowercase(), item.name, item.kind
-            ));
-        }
-        html.push_str("</ul>\n");
-        html.push_str("</div>\n");
-
-        // Items documentation
-        html.push_str("<div class='items'>\n");
-        for item in &doc.items {
-            html.push_str(&self.generate_item_html(item));
-        }
-        html.push_str("</div>\n");
-
-        html.push_str(&self.generate_html_footer());
+        // Module information
+        content.push_str("<div class=\"module-info\">\n");
+        content.push_str(&format!("<p><strong>File:</strong> {}</p>\n", doc.file_path.display()));
+        content.push_str(&format!("<p><strong>Lines:</strong> {}</p>\n", doc.source_info.line_count));
+        content.push_str(&format!("<p><strong>Size:</strong> {} bytes</p>\n", doc.source_info.file_size));
+        content.push_str("</div>\n");
         
-        fs::write(module_path, html).map_err(Error::Io)?;
+        // Imports
+        if !doc.imports.is_empty() {
+            content.push_str("<h2>Imports</h2>\n");
+            content.push_str("<ul class=\"imports-list\">\n");
+            for import in &doc.imports {
+                content.push_str(&format!("<li><code>{}</code></li>\n", import));
+            }
+            content.push_str("</ul>\n");
+        }
+        
+        // Group items by type
+        let mut functions = Vec::new();
+        let mut structs = Vec::new();
+        let mut interfaces = Vec::new();
+        let mut variables = Vec::new();
+        let mut constants = Vec::new();
+        
+        for item in &doc.items {
+            match item.kind {
+                crate::docs::generator::ItemKind::Function => functions.push(item),
+                crate::docs::generator::ItemKind::Struct => structs.push(item),
+                crate::docs::generator::ItemKind::Interface => interfaces.push(item),
+                crate::docs::generator::ItemKind::Variable => variables.push(item),
+                crate::docs::generator::ItemKind::Constant => constants.push(item),
+                _ => {}
+            }
+        }
+        
+        // Generate sections for each type
+        if !functions.is_empty() {
+            content.push_str("<h2>Functions</h2>\n");
+            for func in functions {
+                content.push_str(&self.generate_item_documentation(func)?);
+            }
+        }
+        
+        if !structs.is_empty() {
+            content.push_str("<h2>Structs</h2>\n");
+            for struct_item in structs {
+                content.push_str(&self.generate_item_documentation(struct_item)?);
+            }
+        }
+        
+        if !interfaces.is_empty() {
+            content.push_str("<h2>Interfaces</h2>\n");
+            for interface in interfaces {
+                content.push_str(&self.generate_item_documentation(interface)?);
+            }
+        }
+        
+        if !constants.is_empty() {
+            content.push_str("<h2>Constants</h2>\n");
+            for constant in constants {
+                content.push_str(&self.generate_item_documentation(constant)?);
+            }
+        }
+        
+        if !variables.is_empty() {
+            content.push_str("<h2>Variables</h2>\n");
+            for variable in variables {
+                content.push_str(&self.generate_item_documentation(variable)?);
+            }
+        }
+        
+        content.push_str("</main>\n");
+        content.push_str(&self.get_html_footer()?);
+        
+        fs::write(module_path, content).map_err(Error::Io)?;
         Ok(())
+    }
+
+    /// Generate documentation for a single item
+    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<String, Error> {
+        let mut content = String::new();
+        
+        content.push_str(&format!("<div class=\"item\" id=\"{}\">\n", item.name.to_lowercase()));
+        content.push_str(&format!("<h3>{}</h3>\n", item.name));
+        
+        // Signature
+        if let Some(signature) = &item.signature {
+            content.push_str("<div class=\"signature\">\n");
+            content.push_str(&format!("<pre><code>{}</code></pre>\n", signature));
+            content.push_str("</div>\n");
+        }
+        
+        // Summary and description
+        content.push_str(&format!("<p class=\"summary\">{}</p>\n", item.summary));
+        if !item.description.is_empty() && item.description != item.summary {
+            content.push_str(&format!("<div class=\"description\">{}</div>\n", self.format_description(&item.description)));
+        }
+        
+        // Parameters
+        if !item.parameters.is_empty() {
+            content.push_str("<h4>Parameters</h4>\n");
+            content.push_str("<table class=\"parameters\">\n");
+            content.push_str("<thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Default</th></tr></thead>\n");
+            content.push_str("<tbody>\n");
+            
+            for param in &item.parameters {
+                content.push_str("<tr>\n");
+                content.push_str(&format!("<td><code>{}</code></td>\n", param.name));
+                content.push_str(&format!("<td><code>{}</code></td>\n", param.type_name.as_deref().unwrap_or("unknown")));
+                content.push_str(&format!("<td>{}</td>\n", param.description));
+                content.push_str(&format!("<td><code>{}</code></td>\n", param.default_value.as_deref().unwrap_or("None")));
+                content.push_str("</tr>\n");
+            }
+            
+            content.push_str("</tbody>\n");
+            content.push_str("</table>\n");
+        }
+        
+        // Return type
+        if let Some(return_type) = &item.return_type {
+            content.push_str("<h4>Returns</h4>\n");
+            content.push_str(&format!("<p><code>{}</code></p>\n", return_type));
+        }
+        
+        // Examples
+        if !item.examples.is_empty() {
+            content.push_str("<h4>Examples</h4>\n");
+            for example in &item.examples {
+                if let Some(title) = &example.title {
+                    content.push_str(&format!("<h5>{}</h5>\n", title));
+                }
+                if let Some(description) = &example.description {
+                    content.push_str(&format!("<p>{}</p>\n", description));
+                }
+                content.push_str("<div class=\"example\">\n");
+                content.push_str(&format!("<pre><code class=\"language-{}\">{}</code></pre>\n", example.language, example.code));
+                content.push_str("</div>\n");
+                
+                if let Some(output) = &example.output {
+                    content.push_str("<div class=\"example-output\">\n");
+                    content.push_str("<h6>Output:</h6>\n");
+                    content.push_str(&format!("<pre><code>{}</code></pre>\n", output));
+                    content.push_str("</div>\n");
+                }
+            }
+        }
+        
+        // Source code
+        if self.config.include_examples && item.source_code.is_some() {
+            content.push_str("<details class=\"source-code\">\n");
+            content.push_str("<summary>Source Code</summary>\n");
+            content.push_str(&format!("<pre><code class=\"language-cursed\">{}</code></pre>\n", 
+                item.source_code.as_ref().unwrap()));
+            content.push_str("</details>\n");
+        }
+        
+        content.push_str("</div>\n");
+        Ok(content)
     }
 
     /// Generate search index
-    pub fn generate_search_index(&self, index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
-        let search_path = output_dir.join("search_index.js");
+    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
+        let search_path = output_dir.join("search.js");
         
-        let mut js = String::new();
-        js.push_str("// CURSED Documentation Search Index\n");
-        js.push_str("window.SEARCH_INDEX = [\n");
+        let json_index = serde_json::to_string_pretty(search_index)
+            .map_err(|e| Error::General(format!("Failed to serialize search index: {}", e)))?;
         
-        for (i, entry) in index.iter().enumerate() {
-            js.push_str("  {\n");
-            js.push_str(&format!("    name: \"{}\",\n", self.escape_js_string(&entry.name)));
-            js.push_str(&format!("    kind: \"{}\",\n", entry.kind));
-            js.push_str(&format!("    description: \"{}\",\n", self.escape_js_string(&entry.description)));
-            js.push_str(&format!("    module: \"{}\",\n", self.escape_js_string(&entry.module)));
-            js.push_str(&format!("    url: \"{}\",\n", self.escape_js_string(&entry.url)));
-            js.push_str("    keywords: [");
-            for (j, keyword) in entry.keywords.iter().enumerate() {
-                if j > 0 { js.push_str(", "); }
-                js.push_str(&format!("\"{}\"", self.escape_js_string(keyword)));
-            }
-            js.push_str("]\n");
-            js.push_str("  }");
-            if i < index.len() - 1 {
-                js.push_str(",");
-            }
-            js.push_str("\n");
-        }
+        let content = format!(
+            "window.searchIndex = {};\n\n// Search functionality will be loaded by script.js",
+            json_index
+        );
         
-        js.push_str("];\n");
-        js.push_str("\n");
-        js.push_str(&self.generate_search_js());
-        
-        fs::write(search_path, js).map_err(Error::Io)?;
+        fs::write(search_path, content).map_err(Error::Io)?;
         Ok(())
     }
 
     /// Copy static assets (CSS, JS, images)
     pub fn copy_static_assets(&self, output_dir: &Path) -> Result<(), Error> {
-        // Generate CSS
+        // Create CSS file
         let css_path = output_dir.join("styles.css");
-        fs::write(css_path, self.generate_css()).map_err(Error::Io)?;
+        let css_content = if let Some(custom_css) = &self.config.custom_css {
+            format!("{}\n\n{}", self.get_default_css(), custom_css)
+        } else {
+            self.get_default_css()
+        };
+        fs::write(css_path, css_content).map_err(Error::Io)?;
         
-        // Generate JavaScript
-        let js_path = output_dir.join("docs.js");
-        fs::write(js_path, self.generate_js()).map_err(Error::Io)?;
-        
-        // Copy custom CSS if provided
-        if let Some(custom_css) = &self.config.custom_css {
-            let custom_path = output_dir.join("custom.css");
-            fs::copy(custom_css, custom_path).map_err(Error::Io)?;
-        }
+        // Create JavaScript file
+        let js_path = output_dir.join("script.js");
+        fs::write(js_path, self.get_default_js()).map_err(Error::Io)?;
         
         Ok(())
     }
 
-    /// Generate HTML header
-    fn generate_html_header(&self, title: &str) -> String {
-        format!(r#"<!DOCTYPE html>
+    /// Get HTML header with navigation
+    fn get_html_header(&self, title: &str, current_module: &str) -> Result<String, Error> {
+        let header = format!(r#"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{} - {}</title>
+    <title>{}</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
-    <script src="docs.js"></script>
-    <script src="search_index.js"></script>
+    <script src="search.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <nav class="sidebar">
-        <div class="logo">
-            <h2>🔥 CURSED Docs</h2>
-        </div>
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search documentation...">
-            <div id="search-results"></div>
-        </div>
-        <div class="nav-links">
-            <a href="index.html">🏠 Home</a>
-        </div>
-    </nav>
-    <main class="content">
-"#, title, self.config.title)
+    <header class="header">
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <a href="index.html">{}</a>
+            </div>
+            <div class="navbar-nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search documentation..." />
+                    <div id="search-results" class="search-results"></div>
+                </div>
+            </div>
+        </nav>
+    </header>
+"#, title, self.config.title);
+        Ok(header)
     }
 
-    /// Generate HTML footer
-    fn generate_html_footer(&self) -> String {
-        format!(r#"    </main>
-    <footer>
-        <p>Generated by CURSED Documentation Generator</p>
-        {}
+    /// Get HTML footer
+    fn get_html_footer(&self) -> Result<String, Error> {
+        let footer = format!(r#"    <footer class="footer">
+        <div class="container">
+            <p>&copy; {} {}. Generated with CURSED documentation system.</p>
+        </div>
     </footer>
 </body>
-</html>
-"#, if !self.config.authors.is_empty() {
-            format!("<p>Authors: {}</p>", self.config.authors.join(", "))
+</html>"#, 
+            chrono::Utc::now().format("%Y"),
+            self.config.authors.first().unwrap_or(&"CURSED Project".to_string())
+        );
+        Ok(footer)
+    }
+
+    /// Format description with basic markdown support
+    fn format_description(&self, description: &str) -> String {
+        // Basic markdown formatting
+        let mut formatted = description.to_string();
+        
+        // Bold
+        formatted = formatted.replace("**", "<strong>").replace("**", "</strong>");
+        
+        // Italic
+        formatted = formatted.replace("*", "<em>").replace("*", "</em>");
+        
+        // Code inline
+        formatted = formatted.replace("`", "<code>").replace("`", "</code>");
+        
+        // Line breaks
+        formatted = formatted.replace("\n", "<br>");
+        
+        formatted
+    }
+
+    /// Sanitize filename for web use
+    fn sanitize_filename(&self, name: &str) -> String {
+        name.replace("::", "_")
+            .replace(" ", "_")
+            .replace("/", "_")
+            .to_lowercase()
+    }
+
+    /// Get default CSS content
+    fn get_default_css(&self) -> String {
+        // Read from template file if it exists, otherwise use embedded content
+        let template_path = Path::new("src/docs/templates/styles.css");
+        if template_path.exists() {
+            fs::read_to_string(template_path).unwrap_or_else(|_| self.get_embedded_css())
         } else {
-            String::new()
-        })
+            self.get_embedded_css()
+        }
     }
 
-    /// Generate HTML for a documentation item
-    fn generate_item_html(&self, item: &crate::docs::generator::DocumentationItem) -> String {
-        let mut html = String::new();
-        
-        html.push_str(&format!("<div class='item {}' id='{}'>\n", item.kind.to_string().to_lowercase(), item.name.to_lowercase()));
-        html.push_str(&format!("<h3>{} <span class='kind'>{}</span></h3>\n", item.name, item.kind));
-        
-        // Signature
-        if let Some(signature) = &item.signature {
-            html.push_str("<div class='signature'>\n");
-            html.push_str(&format!("<code>{}</code>\n", self.escape_html(signature)));
-            html.push_str("</div>\n");
+    /// Get default JavaScript content
+    fn get_default_js(&self) -> String {
+        // Read from template file if it exists, otherwise use embedded content
+        let template_path = Path::new("src/docs/templates/script.js");
+        if template_path.exists() {
+            fs::read_to_string(template_path).unwrap_or_else(|_| self.get_embedded_js())
+        } else {
+            self.get_embedded_js()
         }
-        
-        // Description
-        html.push_str("<div class='description'>\n");
-        html.push_str(&format!("<p>{}</p>\n", self.escape_html(&item.description)));
-        html.push_str("</div>\n");
-        
-        // Parameters
-        if !item.parameters.is_empty() {
-            html.push_str("<div class='parameters'>\n");
-            html.push_str("<h4>Parameters</h4>\n");
-            html.push_str("<ul>\n");
-            for param in &item.parameters {
-                html.push_str("<li>\n");
-                html.push_str(&format!("<code>{}</code>", self.escape_html(&param.name)));
-                if let Some(type_name) = &param.type_name {
-                    html.push_str(&format!(" : <code>{}</code>", self.escape_html(type_name)));
-                }
-                html.push_str(&format!(" - {}", self.escape_html(&param.description)));
-                if let Some(default) = &param.default_value {
-                    html.push_str(&format!(" (default: <code>{}</code>)", self.escape_html(default)));
-                }
-                html.push_str("</li>\n");
-            }
-            html.push_str("</ul>\n");
-            html.push_str("</div>\n");
-        }
-        
-        // Return type
-        if let Some(return_type) = &item.return_type {
-            html.push_str("<div class='return-type'>\n");
-            html.push_str(&format!("<h4>Returns</h4>\n<p><code>{}</code></p>\n", self.escape_html(return_type)));
-            html.push_str("</div>\n");
-        }
-        
-        // Source code
-        if self.config.include_examples {
-            if let Some(source) = &item.source_code {
-                html.push_str("<div class='source-code'>\n");
-                html.push_str("<h4>Source Code</h4>\n");
-                html.push_str("<pre><code class='language-cursed'>");
-                html.push_str(&self.escape_html(source));
-                html.push_str("</code></pre>\n");
-                html.push_str("</div>\n");
-            }
-        }
-        
-        html.push_str("</div>\n");
-        html
     }
 
-    /// Generate CSS styles
-    fn generate_css(&self) -> String {
-        r#"
-/* CURSED Documentation Styles */
+    /// Get embedded CSS content
+    fn get_embedded_css(&self) -> String {
+        r#"/* CURSED Documentation Styles */
 :root {
-    --primary-color: #ff6b9d;
-    --secondary-color: #4ecdc4;
-    --accent-color: #ffe66d;
-    --bg-color: #1a1a2e;
-    --text-color: #eee;
-    --sidebar-bg: #16213e;
-    --code-bg: #0f3460;
-    --border-color: #333;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    --primary-color: #6366f1;
+    --background-color: #ffffff;
+    --text-color: #1e293b;
+    --border-color: #e2e8f0;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--bg-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
     color: var(--text-color);
-    display: flex;
-    min-height: 100vh;
+    background-color: var(--background-color);
 }
 
-.sidebar {
-    width: 300px;
-    background: var(--sidebar-bg);
-    padding: 20px;
-    position: fixed;
-    height: 100vh;
-    overflow-y: auto;
-    border-right: 2px solid var(--border-color);
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
 }
 
-.logo h2 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.search-container {
-    margin-bottom: 20px;
-}
-
-#search-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    background: var(--code-bg);
-    color: var(--text-color);
-    font-size: 14px;
-}
-
-#search-results {
-    max-height: 200px;
-    overflow-y: auto;
-    margin-top: 10px;
-}
-
-.search-result {
-    padding: 8px;
-    border-radius: 4px;
-    margin: 4px 0;
-    background: var(--code-bg);
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.search-result:hover {
-    background: var(--primary-color);
-}
-
-.nav-links a {
-    display: block;
-    color: var(--secondary-color);
-    text-decoration: none;
-    padding: 10px 0;
+.header {
+    background-color: var(--background-color);
     border-bottom: 1px solid var(--border-color);
-    transition: color 0.2s;
+    padding: 1rem 0;
 }
 
-.nav-links a:hover {
-    color: var(--accent-color);
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.content {
-    margin-left: 300px;
-    padding: 20px;
-    flex: 1;
-    max-width: calc(100vw - 300px);
-}
-
-.project-info h1 {
-    color: var(--primary-color);
-    font-size: 2.5em;
-    margin-bottom: 10px;
-}
-
-.description {
-    font-size: 1.2em;
-    color: var(--secondary-color);
-    margin-bottom: 10px;
-}
-
-.version {
-    color: var(--accent-color);
+.navbar-brand a {
+    font-size: 1.5rem;
     font-weight: bold;
-}
-
-.module-list, .getting-started {
-    margin: 30px 0;
-    padding: 20px;
-    background: var(--sidebar-bg);
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-}
-
-.module-list h2, .getting-started h2 {
-    color: var(--secondary-color);
-    margin-bottom: 15px;
-}
-
-.module-list ul {
-    list-style: none;
-}
-
-.module-list li {
-    margin: 10px 0;
-    padding: 10px;
-    background: var(--code-bg);
-    border-radius: 5px;
-}
-
-.module-list a {
-    color: var(--accent-color);
+    color: var(--primary-color);
     text-decoration: none;
-    font-weight: bold;
 }
 
-.module-list a:hover {
-    color: var(--primary-color);
+h1, h2, h3 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
 }
 
-.example-code {
-    margin: 20px 0;
+code {
+    background-color: #f1f5f9;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
 }
 
-.example-code h3 {
-    color: var(--accent-color);
-    margin-bottom: 10px;
-}
-
-.example-code pre {
-    background: var(--code-bg);
-    padding: 15px;
-    border-radius: 8px;
+pre {
+    background-color: #f1f5f9;
+    padding: 1rem;
+    border-radius: 0.5rem;
     overflow-x: auto;
-    border-left: 4px solid var(--primary-color);
 }
 
 .item {
-    margin: 30px 0;
-    padding: 20px;
-    background: var(--sidebar-bg);
-    border-radius: 10px;
+    background-color: #f8fafc;
     border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    margin: 2rem 0;
 }
 
-.item h3 {
-    color: var(--primary-color);
-    margin-bottom: 15px;
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
 }
 
-.kind {
-    background: var(--secondary-color);
-    color: var(--bg-color);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: normal;
+.module-card {
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
 }
 
-.signature {
-    background: var(--code-bg);
-    padding: 10px;
-    border-radius: 5px;
-    margin: 10px 0;
-    border-left: 4px solid var(--accent-color);
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
 }
 
-.signature code {
-    color: var(--accent-color);
-    font-weight: bold;
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.parameters ul {
-    list-style: none;
-    margin: 10px 0;
+th {
+    background-color: #f8fafc;
+    font-weight: 600;
 }
 
-.parameters li {
-    margin: 8px 0;
-    padding: 8px;
-    background: var(--code-bg);
-    border-radius: 4px;
-}
-
-.parameters code, .return-type code {
-    background: var(--bg-color);
-    padding: 2px 6px;
-    border-radius: 3px;
-    color: var(--accent-color);
-}
-
-footer {
-    text-align: center;
-    padding: 20px;
-    color: var(--secondary-color);
+.footer {
+    background-color: #f8fafc;
     border-top: 1px solid var(--border-color);
-    margin-top: 50px;
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
+    padding: 2rem 0;
+    margin-top: 2rem;
+    text-align: center;
+    color: #64748b;
+}"#.to_string()
     }
+
+    /// Get embedded JavaScript content
+    fn get_embedded_js(&self) -> String {
+        r#"// CURSED Documentation JavaScript
+(function() {
+    'use strict';
     
-    .content {
-        margin-left: 0;
-        max-width: 100vw;
-    }
-}
-"#.to_string()
-    }
-
-    /// Generate JavaScript for interactivity
-    fn generate_js(&self) -> String {
-        r#"
-// CURSED Documentation JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    setupSearch();
-    setupCodeHighlighting();
-    setupScrollToTop();
-});
-
-function setupSearch() {
+    // Simple search functionality
+    let searchIndex = window.searchIndex || [];
     const searchInput = document.getElementById('search-input');
     const searchResults = document.getElementById('search-results');
     
-    if (!searchInput || !searchResults) return;
-    
-    searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        
-        if (query.length < 2) {
-            searchResults.innerHTML = '';
-            return;
-        }
-        
-        const results = searchIndex(query);
-        displaySearchResults(results, searchResults);
-    });
-}
-
-function searchIndex(query) {
-    if (!window.SEARCH_INDEX) return [];
-    
-    const results = [];
-    
-    for (const item of window.SEARCH_INDEX) {
-        let score = 0;
-        
-        // Name match (highest priority)
-        if (item.name.toLowerCase().includes(query)) {
-            score += 10;
-        }
-        
-        // Description match
-        if (item.description.toLowerCase().includes(query)) {
-            score += 5;
-        }
-        
-        // Keywords match
-        for (const keyword of item.keywords) {
-            if (keyword.toLowerCase().includes(query)) {
-                score += 3;
+    if (searchInput && searchResults) {
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim().toLowerCase();
+            
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
             }
-        }
-        
-        // Module match
-        if (item.module.toLowerCase().includes(query)) {
-            score += 2;
-        }
-        
-        if (score > 0) {
-            results.push({ ...item, score });
-        }
-    }
-    
-    return results.sort((a, b) => b.score - a.score).slice(0, 10);
-}
-
-function displaySearchResults(results, container) {
-    container.innerHTML = '';
-    
-    if (results.length === 0) {
-        container.innerHTML = '<div class="search-result">No results found 😢</div>';
-        return;
-    }
-    
-    for (const result of results) {
-        const div = document.createElement('div');
-        div.className = 'search-result';
-        div.innerHTML = `
-            <strong>${result.name}</strong> <span style="color: #4ecdc4;">(${result.kind})</span><br>
-            <small>${result.description}</small>
-        `;
-        div.addEventListener('click', () => {
-            window.location.href = result.url;
+            
+            const results = searchIndex.filter(item => 
+                item.name.toLowerCase().includes(query) ||
+                item.description.toLowerCase().includes(query)
+            ).slice(0, 10);
+            
+            if (results.length > 0) {
+                searchResults.innerHTML = results.map(result => `
+                    <div class="search-result">
+                        <div class="search-result-title">${result.name}</div>
+                        <div class="search-result-description">${result.description}</div>
+                        <div class="search-result-module">${result.module}</div>
+                    </div>
+                `).join('');
+                searchResults.style.display = 'block';
+            } else {
+                searchResults.innerHTML = '<div class="search-result">No results found</div>';
+                searchResults.style.display = 'block';
+            }
         });
-        container.appendChild(div);
+        
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
     }
-}
-
-function setupCodeHighlighting() {
-    // Custom CURSED language highlighting
-    if (typeof Prism !== 'undefined') {
-        Prism.languages.cursed = {
-            'comment': [
-                {
-                    pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,
-                    lookbehind: true
-                },
-                {
-                    pattern: /(^|[^\\:])\/\/.*/,
-                    lookbehind: true
-                }
-            ],
-            'string': {
-                pattern: /(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,
-                greedy: true
-            },
-            'keyword': /\b(?:slay|sus|facts|lowkey|highkey|periodt|bestie|flex|squad|collab|stan|yolo|vibe_check|mood|basic|no_cap|fr|bet|slaps|vibes|tea|spill|ghost|left_on_read|main_character|sending_me|lives_in_my_head|rent_free|say_less|understood_the_assignment|it_hits_different|the_way|i_|chef|kiss|absolutely|not|this_aint_it|chief|ok_boomer|and_i_oop|sksksk|vsco|girl|karen|wants|to|speak|to|your|manager|ok|millennial|zoomer|boomer|gen|alpha|sigma|based|cringe|ratio|cope|seethe|dilate|touch|grass|go|outside|terminally|online|extremely|online|very|online|moderately|online|barely|online|offline|irl|in|real|life|afk|away|from|keyboard|brb|be|right|back|omg|oh|my|god|lol|laugh|out|loud|lmao|laughing|ass|off|rofl|rolling|on|floor|wtf|what|the|fuck|smh|shaking|head|fml|fuck|life|tbh|to|be|honest|ngl|gonna|lie|imo|in|opinion|imho|humble|btw|by|way|fyi|for|your|information|tl|dr|too|long|didn|read|eli5|explain|like|five|years|old|til|today|learned|ama|ask|me|anything|dae|does|anyone|else|psa|public|service|announcement|nsfw|not|safe|work|sfw|nsfl|gore|trigger|warning|spoiler|alert|breaking|news|update|edit|deleted|removed|banned|suspended|shadowbanned|upvote|downvote|karma|gold|silver|bronze|platinum|wholesome|award|this|comment|made|day|username|checks|out|relevant|risky|click|fifty|percent|chance|its|porn|or|cute|animal|why|purple|link|blue|already|visited|site|today|reddit|moment|we|did|it|thanks|kind|stranger|now|top|all|time|front|page|locked|because|yall|cant|behave|mods|are|asleep|post|pictures|cats|dogs|beans|toes|blep|mlem|boop|snoot|doggo|pupper|floof|chonk|absolute|unit|thicc|dummy|smol|protecc|attacc|but|most|importantly|he|she|bacc|henlo|fren|doing|heck|bamboozle|schmackos|treats|zoomies|tippy|taps|sploot|danger|noodle|snek|no|take|only|throw|such|wow|much|doge|bonk|horny|jail|go|straight|do|not|pass|collect|two|hundred|dollars|monopoly|reference|i|understood|that|captain|america|civil|war|meme|perfectly|balanced|as|all|things|should|thanos|snap|half|universe|dusted|mr|stark|dont|feel|so|good|spider|man|infinity|gauntlet|stones|mind|soul|space|power|time|reality|whatever|costs|everything|small|price|pay|salvation|fun|isnt|something|one|considers|when|balancing|puts|smile|face|inevitable|iron|endgame|love|three|thousand|morgan|stark|daughter|tony|pepper|potts|happy|hogan|aunt|may|peter|parker|ned|leeds|mj|michelle|jones|flash|thompson|betty|brant|roger|harrington|julius|dell|brad|davis|jasmine|sinclair|sally|avril|charlie|murphy|jason|ionello|seymour|weems|william|ginter|riva|dmitri|smerdyakov|chameleon|quentin|beck|mysterio|nick|fury|maria|hill|jon|favreau|samuel|jackson|cobie|smulders|tom|holland|zendaya|coleman|jacob|batalon|tony|revolori|angourie|rice|martin|starr|jb|smoove|numan|acar|remy|hii|jorge|lendeborg|jr|isabella|amara|tyne|daly|hemky|madera|peter|billingsley|clare|grant|fabian|francis)\b/,
-            'number': /\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?[fl]?\b/i,
-            'operator': /[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,
-            'punctuation': /[{}[\];(),.:]/
-        };
-    }
-}
-
-function setupScrollToTop() {
-    const scrollBtn = document.createElement('button');
-    scrollBtn.innerHTML = '⬆️';
-    scrollBtn.className = 'scroll-to-top';
-    scrollBtn.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-        display: none;
-        z-index: 1000;
-        font-size: 20px;
-    `;
     
-    document.body.appendChild(scrollBtn);
-    
-    window.addEventListener('scroll', () => {
-        if (window.pageYOffset > 300) {
-            scrollBtn.style.display = 'block';
-        } else {
-            scrollBtn.style.display = 'none';
-        }
+    // Copy code blocks
+    document.querySelectorAll('pre code').forEach(code => {
+        const pre = code.parentElement;
+        const button = document.createElement('button');
+        button.textContent = 'Copy';
+        button.style.cssText = 'position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #6366f1; color: white; border: none; border-radius: 0.25rem; cursor: pointer;';
+        
+        pre.style.position = 'relative';
+        pre.appendChild(button);
+        
+        button.addEventListener('click', () => {
+            navigator.clipboard.writeText(code.textContent).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            });
+        });
     });
-    
-    scrollBtn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-}
-"#.to_string()
-    }
-
-    /// Generate search JavaScript
-    fn generate_search_js(&self) -> String {
-        // This is already included in the main JS generation
-        String::new()
-    }
-
-    /// Escape HTML special characters
-    fn escape_html(&self, text: &str) -> String {
-        text.replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', "&quot;")
-            .replace('\'', "&#39;")
-    }
-
-    /// Escape JavaScript string
-    fn escape_js_string(&self, text: &str) -> String {
-        text.replace('\\', "\\\\")
-            .replace('"', "\\\"")
-            .replace('\n', "\\n")
-            .replace('\r', "\\r")
-            .replace('\t', "\\t")
+})();"#.to_string()
     }
 }

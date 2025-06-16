@@ -303,7 +303,7 @@ impl TimeSavingsCalculator {
             parallel_efficiency,
             llvm_optimization_time: llvm_optimization_savings,
             cache_lookup_time: context.cache_timings.total_lookup_time,
-            incremental_analysis_time: Duration::from_secs(0), // TODO: Extract from context
+            incremental_analysis_time: self.extract_incremental_analysis_time(context),
             dependency_analysis_time: dependency_optimization_savings,
         };
         self.measurement_history.push(measurement);
@@ -477,6 +477,51 @@ impl TimeSavingsCalculator {
         }
         
         metadata
+    }
+
+    /// Extract incremental analysis time from compilation context
+    fn extract_incremental_analysis_time(&self, context: &CompilationTimingContext) -> Duration {
+        // Extract incremental analysis time from various sources in the context
+        
+        // Check if there are specific incremental compilation timings
+        let mut total_incremental_time = Duration::from_secs(0);
+        
+        // Look for incremental analysis in optimization timings
+        if let Some(&incremental_time) = context.optimization_timings.get("incremental_analysis") {
+            total_incremental_time += incremental_time;
+        }
+        
+        // Check for dependency analysis time (which is part of incremental compilation)
+        if let Some(&dependency_time) = context.optimization_timings.get("dependency_analysis") {
+            total_incremental_time += dependency_time;
+        }
+        
+        // Check for file change detection time
+        if let Some(&change_detection_time) = context.optimization_timings.get("change_detection") {
+            total_incremental_time += change_detection_time;
+        }
+        
+        // Check unit timings for incremental units
+        let incremental_unit_time: Duration = context.unit_timings.values()
+            .filter(|timing| timing.from_incremental)
+            .filter_map(|timing| timing.end_time.map(|end| end.duration_since(timing.start_time)))
+            .sum();
+        
+        total_incremental_time += incremental_unit_time;
+        
+        // If no specific incremental timings found, estimate based on configuration
+        if total_incremental_time == Duration::from_secs(0) {
+            // Check if any units were from incremental compilation
+            let has_incremental_units = context.unit_timings.values()
+                .any(|timing| timing.from_incremental);
+            
+            if has_incremental_units {
+                // Use configured incremental analysis time as estimate
+                return self.config.incremental_analysis_time;
+            }
+        }
+        
+        total_incremental_time
     }
 
     /// Get historical trend analysis

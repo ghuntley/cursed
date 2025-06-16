@@ -285,7 +285,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile a statement with debug information
     #[instrument(skip(self, stmt), fields(stmt_type = ?std::mem::discriminant(stmt)))]
-    pub fn compile_statement(&mut self, stmt: &Statement) -> Result<(), CursedError> {
+    pub fn compile_statement(&mut self, stmt: &dyn Statement) -> Result<(), CursedError> {
         let span = span!(Level::TRACE, "compile_statement");
         let _enter = span.enter();
         
@@ -375,7 +375,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile an expression with debug information
     #[instrument(skip(self, expr), fields(expr_type = ?std::mem::discriminant(expr)))]
-    pub fn compile_expression(&mut self, expr: &Expression) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<BasicValueEnum<'ctx>, CursedError> {
         let span = span!(Level::TRACE, "compile_expression");
         let _enter = span.enter();
         
@@ -451,9 +451,9 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     /// Compile a binary operation
     fn compile_binary_operation(
         &mut self,
-        left: &Expression,
+        left: &dyn Expression,
         operator: &crate::ast::BinaryOperator,
-        right: &Expression,
+        right: &dyn Expression,
         location: &SourceLocation,
     ) -> Result<BasicValueEnum<'ctx>, CursedError> {
         let left_val = self.compile_expression(left)?;

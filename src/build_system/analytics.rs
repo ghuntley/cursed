@@ -1132,18 +1132,4 @@ fn current_timestamp() -> u64 {
 }
 
 // Export public API
-pub use self::{
-
-    BuildAnalyticsConfig,
-    BuildEvent,
-    BuildEventType,
-    BuildMetrics,
-    BottleneckAnalysis,
-    BuildReport,
-    OptimizationOpportunity,
-    OptimizationCategory,
-    PerformanceAlert,
-    AlertType,
-    AlertSeverity,
-
-};
+// Types are exported directly via pub struct/pub enum definitions above

@@ -8,6 +8,28 @@ use crate::stdlib::plug_vibes::plug::PlugInfo;
 use crate::stdlib::plug_vibes::version::Version;
 use crate::stdlib::plug_vibes::security::AuthInfo;
 
+/// Distribution configuration
+#[derive(Debug, Clone)]
+pub struct DistributionConfig {
+    pub max_download_size: u64,
+    pub verify_checksums: bool,
+    pub allow_updates: bool,
+    pub repositories: Vec<String>,
+    pub cache_dir: Option<String>,
+}
+
+impl Default for DistributionConfig {
+    fn default() -> Self {
+        Self {
+            max_download_size: 100 * 1024 * 1024, // 100MB
+            verify_checksums: true,
+            allow_updates: true,
+            repositories: vec![],
+            cache_dir: None,
+        }
+    }
+}
+
 /// Plugin package for distribution
 pub struct PluginPackage {
     pub metadata: PackageMetadata,

@@ -34,6 +34,51 @@ pub struct CursedSymbol {
     pub implementations: Vec<Location>,
 }
 
+impl CursedSymbol {
+    pub fn new(
+        name: String,
+        kind: SymbolKind,
+        range: Range,
+        selection_range: Range,
+        cursed_kind: CursedSymbolKind,
+    ) -> Self {
+        Self {
+            name,
+            kind,
+            range,
+            selection_range,
+            detail: None,
+            tags: None,
+            children: Vec::new(),
+            cursed_kind,
+            visibility: Visibility::Public,
+            is_async: false,
+            is_generic: false,
+            type_info: None,
+            documentation: None,
+            references: Vec::new(),
+            implementations: Vec::new(),
+        }
+    }
+
+    pub fn add_child(&mut self, child: CursedSymbol) {
+        self.children.push(child);
+    }
+
+    pub fn to_workspace_symbol(&self, uri: &Url) -> WorkspaceSymbol {
+        WorkspaceSymbol {
+            name: self.name.clone(),
+            kind: self.kind,
+            tags: self.tags.clone(),
+            location: tower_lsp::lsp_types::OneOf::Left(Location {
+                uri: uri.clone(),
+                range: self.range,
+            }),
+            container_name: None,
+        }
+    }
+}
+
 /// CURSED-specific symbol kinds
 #[derive(Debug, Clone, PartialEq)]
 pub enum CursedSymbolKind {
@@ -523,15 +568,15 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_parameter_name_range(param);
         
         let mut symbol = CursedSymbol::new(
-            param.name.name.clone(),
+            param.name.clone(),
             SymbolKind::VARIABLE,
-            CursedSymbolKind::Parameter,
             range,
             selection_range,
+            CursedSymbolKind::Parameter,
         );
         
-        symbol.detail = Some(format!("{}: {:?}", param.name.name, param.type_annotation));
-        symbol.type_info = Some(format!("{:?}", param.type_annotation));
+        symbol.detail = Some(format!("{}: {}", param.name, param.param_type));
+        symbol.type_info = Some(param.param_type.clone());
         
         symbol
     }
