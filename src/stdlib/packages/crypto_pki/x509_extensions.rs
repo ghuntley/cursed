@@ -15,7 +15,7 @@ use std::net::IpAddr;
 use x509_parser::prelude::*;
 use x509_parser::extensions::*;
 use der::{Decode, Encode, Document, Sequence};
-use oid_registry::{OidRegistry, OID_REGISTRY};
+// use oid_registry::{OidRegistry, OID_REGISTRY}; // Commented out - not available
 
 /// fr fr X.509 Extension parser and validator
 #[derive(Debug)]
@@ -537,10 +537,11 @@ impl X509ExtensionProcessor {
             .map(|s| s.parse::<u32>())
             .collect();
         
-        if let Ok(oid_components) = components {
-            if let Some(entry) = OID_REGISTRY.get(&oid_components) {
-                return entry.description().map(|s| s.to_string());
-            }
+        if let Ok(_oid_components) = components {
+            // TODO: Implement OID description lookup when registry is available
+            // if let Some(entry) = OID_REGISTRY.get(&oid_components) {
+            //     return entry.description().map(|s| s.to_string());
+            // }
         }
         
         None

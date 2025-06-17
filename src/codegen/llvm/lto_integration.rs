@@ -92,7 +92,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
     /// Perform LTO optimization
     #[instrument(skip(self))]
-    pub fn perform_lto(&mut self) -> Result<LtoResult> {
+    pub fn perform_lto(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
         
         match self.config.level {
@@ -112,7 +112,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     }
 
     /// Perform per-module optimization (no LTO)
-    fn perform_per_module_optimization(&mut self) -> Result<LtoResult> {
+    fn perform_per_module_optimization(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
         let mut optimized_modules = Vec::new();
 
@@ -135,7 +135,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     }
 
     /// Perform Thin LTO optimization
-    fn perform_thin_lto(&mut self) -> Result<LtoResult> {
+    fn perform_thin_lto(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
         info!("Starting Thin LTO with {} modules", self.modules.len());
 
@@ -166,7 +166,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     }
 
     /// Perform Full LTO optimization
-    fn perform_full_lto(&mut self) -> Result<LtoResult> {
+    fn perform_full_lto(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
         info!("Starting Full LTO with {} modules", self.modules.len());
 
@@ -768,7 +768,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     }
 
     /// Optimize modules with imports
-    fn optimize_with_imports(&self, import_map: &ImportMap) -> Result<OptimizationResult> {
+    fn optimize_with_imports(&self, import_map: &ImportMap) -> Result<OptimizationResult<'ctx>> {
         let mut optimized_modules = Vec::new();
         let mut functions_inlined = 0;
 
@@ -1013,7 +1013,7 @@ pub type ImportMap = HashMap<String, Vec<ImportDecision>>;
 
 /// LTO optimization result
 #[derive(Debug)]
-pub struct LtoResult {
+pub struct LtoResult<'ctx> {
     pub optimized_modules: Vec<Module<'ctx>>,
     pub object_files: Vec<ObjectFile>,
     pub total_time: Duration,
@@ -1022,7 +1022,7 @@ pub struct LtoResult {
 
 /// Optimization result for Thin LTO
 #[derive(Debug)]
-pub struct OptimizationResult {
+pub struct OptimizationResult<'ctx> {
     pub optimized_modules: Vec<Module<'ctx>>,
     pub functions_inlined: usize,
     pub size_reduction: usize,
