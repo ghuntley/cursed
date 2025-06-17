@@ -15,7 +15,7 @@ use std::time::Duration;
 use tokio::signal;
 
 use cursed::prelude::*;
-use cursed::cli::{package_manager, optimization_commands, documentation};
+use cursed::cli::{package_manager, optimization_commands, documentation, bootstrap};
 
 /// Global flag for graceful shutdown
 static SHUTDOWN: AtomicBool = AtomicBool::new(false);
@@ -42,6 +42,7 @@ async fn main() {
         Some(("test", sub_matches)) => handle_test_command(sub_matches).await,
         Some(("repl", sub_matches)) => handle_repl_command(sub_matches).await,
         Some(("watch", sub_matches)) => handle_watch_command(sub_matches).await,
+        Some(("bootstrap", sub_matches)) => handle_bootstrap_command(sub_matches).await,
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             process::exit(1);
@@ -517,6 +518,9 @@ fn build_cli() -> Command {
                         .action(ArgAction::SetTrue)
                         .help("Run command once before watching for changes")
                 )
+        )
+        .subcommand(
+            bootstrap::bootstrap_command()
         )
 }
 
@@ -1385,6 +1389,10 @@ async fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn s
             Err(e.into())
         }
     }
+}
+
+async fn handle_bootstrap_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    bootstrap::handle_bootstrap_command(matches).await.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
 }
 
 async fn handle_watch_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
