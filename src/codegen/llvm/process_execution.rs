@@ -621,6 +621,60 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         tracing::info!("Successfully declared process execution runtime functions");
         Ok(())
     }
+    
+    fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> Result<BasicValueEnum<'ctx>, Error> {
+        tracing::info!("Compiling unified process IPC");
+        
+        // Ensure runtime functions are declared
+        self.declare_process_execution_runtime_functions()?;
+        
+        // Create command string constant
+        let command_str = self.create_global_string(command);
+        
+        // Create args array
+        let args_array = self.create_string_array(args)?;
+        
+        // Create IPC connections array (simplified for now)
+        let connections_count = self.context().i32_type().const_int(ipc_connections.len() as u64, false);
+        
+        // For now, return a placeholder success value
+        Ok(self.context().i32_type().const_int(0, false).into())
+    }
+
+    fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
+        tracing::info!("Compiling IPC connection");
+        
+        // Compile source and target process expressions
+        let _source_value = self.compile_expression(source_process)?;
+        let _target_value = self.compile_expression(target_process)?;
+        
+        // Create connection type and name string constants
+        let _conn_type_str = self.create_global_string(connection_type);
+        let _name_str = self.create_global_string(name);
+        
+        // For now, return a placeholder success value
+        Ok(self.context().i32_type().const_int(0, false).into())
+    }
+
+    fn compile_security_context(&mut self, process: &dyn Expression, _security_settings: &SecuritySpec) -> Result<BasicValueEnum<'ctx>, Error> {
+        tracing::info!("Compiling security context");
+        
+        // Compile process expression
+        let _process_value = self.compile_expression(process)?;
+        
+        // For now, return a placeholder success value
+        Ok(self.context().i32_type().const_int(0, false).into())
+    }
+
+    fn compile_resource_limits(&mut self, process: &dyn Expression, _limits: &ResourceLimitSpec) -> Result<BasicValueEnum<'ctx>, Error> {
+        tracing::info!("Compiling resource limits");
+        
+        // Compile process expression
+        let _process_value = self.compile_expression(process)?;
+        
+        // For now, return a placeholder success value
+        Ok(self.context().i32_type().const_int(0, false).into())
+    }
 }
 
 /// Helper implementations for LlvmCodeGeneratorReal
@@ -780,60 +834,6 @@ mod tests {
         
         // Clean up
         set_runtime_process_manager(std::ptr::null_mut());
-    }
-
-    fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> Result<BasicValueEnum<'ctx>, Error> {
-        tracing::info!("Compiling unified process IPC");
-        
-        // Ensure runtime functions are declared
-        self.declare_process_execution_runtime_functions()?;
-        
-        // Create command string constant
-        let command_str = self.create_global_string(command);
-        
-        // Create args array
-        let args_array = self.create_string_array(args);
-        
-        // Create IPC connections array (simplified for now)
-        let connections_count = self.context().i32_type().const_int(ipc_connections.len() as u64, false);
-        
-        // For now, return a placeholder success value
-        Ok(self.context().i32_type().const_int(0, false).into())
-    }
-
-    fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
-        tracing::info!("Compiling IPC connection");
-        
-        // Compile source and target process expressions
-        let _source_value = self.compile_expression(source_process)?;
-        let _target_value = self.compile_expression(target_process)?;
-        
-        // Create connection type and name string constants
-        let _conn_type_str = self.create_global_string(connection_type);
-        let _name_str = self.create_global_string(name);
-        
-        // For now, return a placeholder success value
-        Ok(self.context().i32_type().const_int(0, false).into())
-    }
-
-    fn compile_security_context(&mut self, process: &dyn Expression, _security_settings: &SecuritySpec) -> Result<BasicValueEnum<'ctx>, Error> {
-        tracing::info!("Compiling security context");
-        
-        // Compile process expression
-        let _process_value = self.compile_expression(process)?;
-        
-        // For now, return a placeholder success value
-        Ok(self.context().i32_type().const_int(0, false).into())
-    }
-
-    fn compile_resource_limits(&mut self, process: &dyn Expression, _limits: &ResourceLimitSpec) -> Result<BasicValueEnum<'ctx>, Error> {
-        tracing::info!("Compiling resource limits");
-        
-        // Compile process expression
-        let _process_value = self.compile_expression(process)?;
-        
-        // For now, return a placeholder success value
-        Ok(self.context().i32_type().const_int(0, false).into())
     }
     
     #[test]

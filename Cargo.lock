@@ -987,6 +987,7 @@ dependencies = [
  "aes",
  "aes-gcm",
  "argon2",
+ "arrayref",
  "asn1-rs",
  "async-trait",
  "atty",

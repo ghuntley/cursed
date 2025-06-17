@@ -246,6 +246,7 @@ ssh2 = { version = "0.9", features = ["vendored-openssl"] }  # SSH client librar
 
 # Force older version to avoid edition2024 requirement
 base64ct = "=1.6.0"     # Base64 encoding (force specific version)
+arrayref = "0.3"        # Array reference utilities for PKI
 
 # Database driver dependencies
 rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite

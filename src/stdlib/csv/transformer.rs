@@ -392,7 +392,7 @@ pub mod transforms {
     }
     
     /// Replace characters
-    pub fn replace(from: &str, to: &str) -> impl Fn(&str) -> CsvResult<String> + '_ {
+    pub fn replace<'a>(from: &'a str, to: &'a str) -> impl Fn(&str) -> CsvResult<String> + 'a {
         move |value: &str| Ok(value.replace(from, to))
     }
     

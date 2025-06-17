@@ -93,12 +93,14 @@ pub use pkcs::{
     encrypt_private_key, decrypt_private_key, PkcsError, PkcsResult
 };
 
-// X.509 specific functionality - FULLY IMPLEMENTED ✅
+// X.509 specific functionality - Limited implementation for compilation
 pub use x509::{
-    X509Certificate, X509CertificateRequest, X509Crl, X509Extensions,
-    X509Name, X509PublicKey, X509Signature, X509Time, X509Parser,
-    X509Builder, X509Validator, parse_x509_certificate, create_x509_certificate,
-    X509Error, X509Result, X509Format, X509Encoding
+    X509Operations, X509
+    // TODO: Add more X509 types when implemented:
+    // X509Certificate, X509CertificateRequest, X509Crl, X509Extensions,
+    // X509Name, X509PublicKey, X509Signature, X509Time, X509Parser,
+    // X509Builder, X509Validator, parse_x509_certificate, create_x509_certificate,
+    // X509Error, X509Result, X509Format, X509Encoding
 };
 
 // Certificate extensions - FULLY IMPLEMENTED ✅
