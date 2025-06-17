@@ -1001,6 +1001,7 @@ dependencies = [
  "brotli",
  "bson",
  "bytes",
+ "bzip2",
  "cbc",
  "chacha20",
  "chacha20poly1305",
