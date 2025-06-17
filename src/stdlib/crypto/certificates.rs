@@ -483,7 +483,7 @@ impl CertificateProcessor {
     
     /// slay Convert PEM to DER
     pub fn pem_to_der(&self, pem_data: &str) -> CertificateResult<Vec<u8>> {
-        let lines: Vec<&str> = pem_data.lines().collect();
+        let lines: Vec<&str> = pem_data.split("\n").collect();
         let mut in_cert = false;
         let mut base64_data = String::new();
         
@@ -633,7 +633,7 @@ impl CertificateProcessor {
     
     /// slay Convert CSR PEM to DER
     pub fn csr_pem_to_der(&self, pem_data: &str) -> CertificateResult<Vec<u8>> {
-        let lines: Vec<&str> = pem_data.lines().collect();
+        let lines: Vec<&str> = pem_data.split("\n").collect();
         let mut in_csr = false;
         let mut base64_data = String::new();
         

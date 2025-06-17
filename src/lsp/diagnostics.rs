@@ -529,7 +529,7 @@ impl DiagnosticsProvider {
         let mut diagnostics = Vec::new();
         
         // Basic type checking patterns
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         for (line_num, line) in lines.iter().enumerate() {
             // Check for type mismatches in variable assignments
             if line.contains("facts") && line.contains("=") {
@@ -552,7 +552,7 @@ impl DiagnosticsProvider {
     /// Check variable usage issues (internal implementation)
     fn check_variable_usage_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Check for unused variables
@@ -577,7 +577,7 @@ impl DiagnosticsProvider {
     /// Check function call issues (internal implementation)
     fn check_function_calls_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Check for undefined function calls
@@ -602,7 +602,7 @@ impl DiagnosticsProvider {
     /// Check import issues (internal implementation)
     fn check_imports_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             if line.trim().starts_with("use") || line.trim().starts_with("import") {
@@ -629,7 +629,7 @@ impl DiagnosticsProvider {
     /// Check style issues (internal implementation)
     fn check_style_issues_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Check for proper CURSED slang usage
@@ -665,7 +665,7 @@ impl DiagnosticsProvider {
     /// Check best practice issues (internal implementation)
     fn check_best_practices_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Check for magic numbers
@@ -701,7 +701,7 @@ impl DiagnosticsProvider {
     /// Check performance issues (internal implementation)
     fn check_performance_issues_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Check for inefficient string concatenation in loops
@@ -730,7 +730,7 @@ impl DiagnosticsProvider {
     /// Check security issues (internal implementation)
     fn check_security_issues_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Check for potential security issues

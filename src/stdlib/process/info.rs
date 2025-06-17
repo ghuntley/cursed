@@ -238,7 +238,7 @@ pub fn get_parent_pid() -> ProcessResult<u32> {
 
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
+            for line in stdout.split("\n") {
                 if line.starts_with("ParentProcessId=") {
                     if let Some(ppid_str) = line.split('=').nth(1) {
                         if let Ok(ppid) = ppid_str.trim().parse::<u32>() {
@@ -387,7 +387,7 @@ fn get_process_info_windows(pid: u32) -> ProcessResult<ProcessInfo> {
         .output()
     {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if let Some(line) = stdout.lines().nth(1) {
+        if let Some(line) = stdout.split("\n").nth(1) {
             parse_tasklist_output(line, &mut info)?;
         }
     }
@@ -398,7 +398,7 @@ fn get_process_info_windows(pid: u32) -> ProcessResult<ProcessInfo> {
         .output()
     {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if let Some(line) = stdout.lines().nth(1) {
+        if let Some(line) = stdout.split("\n").nth(1) {
             parse_wmic_output(line, &mut info)?;
         }
     }
@@ -464,7 +464,7 @@ fn get_process_details_powershell(pid: u32, info: &mut ProcessInfo) -> ProcessRe
 #[cfg(windows)]
 fn parse_powershell_json(json_str: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     // Simple JSON parsing - in production would use serde_json
-    let lines: Vec<&str> = json_str.lines().collect();
+    let lines: Vec<&str> = json_str.split("\n").collect();
     let json_content = lines.join("");
     
     // Extract values using simple string parsing
@@ -546,7 +546,7 @@ fn get_process_environment_windows(pid: u32) -> ProcessResult<HashMap<String, St
     
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        for line in stdout.lines() {
+        for line in stdout.split("\n") {
             if let Some(eq_pos) = line.find('=') {
                 let key = line[..eq_pos].trim().to_string();
                 let value = line[eq_pos + 1..].trim().to_string();
@@ -598,7 +598,7 @@ fn get_process_working_directory_windows(pid: u32) -> ProcessResult<String> {
 
 #[cfg(unix)]
 fn parse_proc_status(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
-    for line in content.lines() {
+    for line in content.split("\n") {
         if let Some(colon_pos) = line.find(':') {
             let key = &line[..colon_pos];
             let value = line[colon_pos + 1..].trim();
@@ -858,7 +858,7 @@ pub fn get_process_list() -> ProcessResult<Vec<ProcessListEntry>> {
             .output()
         {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            for (i, line) in stdout.lines().enumerate() {
+            for (i, line) in stdout.split("\n").enumerate() {
                 if i == 0 { continue; } // Skip header
                 
                 let fields: Vec<&str> = line.split(',').map(|s| s.trim_matches('"')).collect();
@@ -944,7 +944,7 @@ pub fn get_load_average() -> ProcessResult<(f64, f64, f64)> {
         .output()
     {
         if let Ok(output_str) = String::from_utf8(output.stdout) {
-            for line in output_str.lines() {
+            for line in output_str.split("\n") {
                 if line.contains("Processor Queue Length") {
                     let parts: Vec<&str> = line.split(',').collect();
                     if parts.len() >= 2 {
@@ -1017,7 +1017,7 @@ pub fn get_system_uptime() -> ProcessResult<Duration> {
     {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
+            for line in stdout.split("\n") {
                 if line.starts_with("LastBootUpTime=") {
                     // Parse WMI datetime format: YYYYMMDDHHMMSS.mmmmmm+UUU
                     if let Some(datetime_str) = line.split('=').nth(1) {

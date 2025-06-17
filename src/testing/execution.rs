@@ -121,8 +121,7 @@ struct CompiledTest {
 impl TestExecutor {
     /// Create new test executor
     pub fn new() -> TestingResult<Self> {
-        let codegen = LlvmCodeGenerator::new()
-            .map_err(|e| TestError::Framework(format!("Failed to create LLVM codegen: {}", e)))?;
+        let codegen = LlvmCodeGenerator::default();
         
         Ok(Self {
             codegen: Arc::new(codegen),
@@ -316,8 +315,7 @@ impl TestExecutor {
         let test_program = self.create_test_program(test_function, test_file)?;
         
         // Parse the test program
-        let mut parser = crate::parser::Parser::new(&test_program)
-            .map_err(|e| TestError::Compilation(format!("Parser creation failed: {}", e)))?;
+        let mut parser = crate::parser::Parser::from_source(&test_program);
         
         let program = parser.parse()
             .map_err(|e| TestError::Compilation(format!("Program parsing failed: {}", e)))?;
@@ -327,8 +325,7 @@ impl TestExecutor {
             let mut codegen = Arc::clone(&self.codegen);
             // We need to get a mutable reference, but Arc doesn't allow that directly
             // For now, let's use a simpler approach and create a new codegen instance
-            let mut temp_codegen = LlvmCodeGenerator::new()
-                .map_err(|e| TestError::Compilation(format!("Failed to create temp codegen: {}", e)))?;
+            let mut temp_codegen = LlvmCodeGenerator::default();
             temp_codegen.compile_program(&program, &test_program)
                 .map_err(|e| TestError::Compilation(format!("LLVM compilation failed: {}", e)))?
         };
@@ -539,7 +536,7 @@ impl TestExecutor {
         let mut imports = Vec::new();
         let mut package_decl = None;
         
-        for line in file_content.lines() {
+        for line in file_content.split("\n") {
             let trimmed = line.trim();
             if trimmed.starts_with("import ") {
                 imports.push(line.to_string());

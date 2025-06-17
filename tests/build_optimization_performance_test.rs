@@ -471,7 +471,7 @@ fn create_compilation_unit_for_perf(path: &PathBuf) -> Result<CompilationUnit> {
 fn extract_dependencies_for_perf(content: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
     
-    for line in content.lines() {
+    for line in content.split("\n") {
         let trimmed = line.trim();
         if trimmed.starts_with("import") {
             if let Some(start) = trimmed.find('"') {
@@ -492,10 +492,10 @@ fn calculate_complexity_for_perf(content: &str) -> u32 {
     let mut score = 0;
     
     // Base score from line count
-    score += content.lines().count() as u32;
+    score += content.split("\n").count() as u32;
     
     // Add complexity for various constructs
-    for line in content.lines() {
+    for line in content.split("\n") {
         let trimmed = line.trim();
         
         if trimmed.contains("fn ") { score += 10; }

@@ -313,7 +313,7 @@ impl AdvancedExampleGenerator {
     /// Extract examples from documentation comments
     fn extract_doc_examples(&mut self, content: &str, file_path: &Path) -> Result<usize, Error> {
         let mut count = 0;
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
 
         let mut in_doc_block = false;
         let mut current_example = String::new();
@@ -449,7 +449,7 @@ impl AdvancedExampleGenerator {
     /// Extract code following a comment
     fn extract_code_after_comment(&self, content: &str, start_pos: usize) -> Option<String> {
         let remaining = &content[start_pos..];
-        let lines: Vec<&str> = remaining.lines().collect();
+        let lines: Vec<&str> = remaining.split("\n").collect();
         
         let mut code_lines = Vec::new();
         let mut found_code = false;
@@ -508,7 +508,7 @@ impl AdvancedExampleGenerator {
 
     /// Extract metadata from file header
     fn extract_file_metadata(&self, content: &str) -> (String, String, ExampleCategory, DifficultyLevel) {
-        let lines: Vec<&str> = content.lines().take(20).collect(); // Check first 20 lines
+        let lines: Vec<&str> = content.split("\n").take(20).collect(); // Check first 20 lines
         let mut title = String::new();
         let mut description = String::new();
         let mut category = ExampleCategory::Basic;
@@ -608,7 +608,7 @@ impl AdvancedExampleGenerator {
         let mut count = 0;
 
         // Look for test functions and extract their content as examples
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let mut in_test_function = false;
         let mut test_code = Vec::new();
         let mut test_name = String::new();
@@ -773,7 +773,7 @@ impl AdvancedExampleGenerator {
         let mut dependencies = Vec::new();
         
         // Look for import statements
-        for line in code.lines() {
+        for line in code.split("\n") {
             let trimmed = line.trim();
             if trimmed.starts_with("import ") {
                 if let Some(quote_start) = trimmed.find('"') {

@@ -42,7 +42,7 @@ mod tests {
         
         // Test parsing of question mark expressions
         let source = "result?".to_string();
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         
         // Get first token to verify lexer works
         let first_token = lexer.next_token().unwrap();
@@ -63,7 +63,7 @@ mod tests {
         info!("Testing parser integration with error propagation");
         
         let source = "sus x = result?".to_string();
-        let lexer = Lexer::new(source);
+        let lexer = Lexer::new(source.to_string());
         let parser = Parser::new(lexer);
         
         // Verify parser construction works
@@ -191,7 +191,7 @@ mod tests {
         // 4. Verify error handling integration
         
         let source = "sus result = getValue()?\nfacts value = result".to_string();
-        let lexer = Lexer::new(source);
+        let lexer = Lexer::new(source.to_string());
         
         // Test tokenization includes question mark
         let mut tokens = Vec::new();

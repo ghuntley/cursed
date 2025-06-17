@@ -927,7 +927,7 @@ impl DocumentationTester {
         let mut code_block_start = 0;
         let mut expected_output = None;
         
-        for (line_num, line) in content.lines().enumerate() {
+        for (line_num, line) in content.split("\n").enumerate() {
             let line_num_1based = line_num + 1;
             
             if line.trim().starts_with("```cursed") || line.trim().starts_with("```csd") {
@@ -1004,7 +1004,7 @@ impl DocumentationTester {
         let html_link_regex = regex::Regex::new(r#"<a\s+[^>]*href\s*=\s*["']([^"']+)["'][^>]*>"#).unwrap();
         let markdown_link_regex = regex::Regex::new(r"\[([^\]]+)\]\(([^)]+)\)").unwrap();
         
-        for (line_num, line) in content.lines().enumerate() {
+        for (line_num, line) in content.split("\n").enumerate() {
             let line_num_1based = line_num + 1;
             
             // Extract HTML links

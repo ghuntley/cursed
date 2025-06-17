@@ -607,7 +607,7 @@ fn create_compilation_unit_simple(path: &PathBuf) -> Result<CompilationUnit> {
 fn extract_dependencies_simple(content: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
     
-    for line in content.lines() {
+    for line in content.split("\n") {
         let trimmed = line.trim();
         if trimmed.starts_with("import") {
             if let Some(module) = extract_module_name_simple(trimmed) {
@@ -632,9 +632,9 @@ fn extract_module_name_simple(line: &str) -> Option<String> {
 }
 
 fn calculate_complexity_simple(content: &str) -> u32 {
-    let mut score = content.lines().count() as u32;
+    let mut score = content.split("\n").count() as u32;
     
-    for line in content.lines() {
+    for line in content.split("\n") {
         if line.contains("fn ") { score += 5; }
         if line.contains("lowkey") || line.contains("highkey") { score += 3; }
         if line.contains("squad") { score += 4; }

@@ -154,7 +154,7 @@ impl ApiExtractor {
     /// Parse Rust source code for documentable items
     fn parse_rust_source(&self, source: &str) -> Result<Vec<DocumentationItem>, Error> {
         let mut items = Vec::new();
-        let lines: Vec<&str> = source.lines().collect();
+        let lines: Vec<&str> = source.split("\n").collect();
         
         let mut i = 0;
         while i < lines.len() {
@@ -547,7 +547,7 @@ impl ApiExtractor {
 
     /// Parse documentation content
     fn parse_doc_content(&self, content: &str) -> Result<(String, String, Vec<Example>), Error> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let mut summary = String::new();
         let mut description_lines = Vec::new();
         let mut examples = Vec::new();
@@ -597,7 +597,7 @@ impl ApiExtractor {
     fn extract_imports(&self, source: &str) -> Vec<String> {
         let mut imports = Vec::new();
         
-        for line in source.lines() {
+        for line in source.split("\n") {
             let line = line.trim();
             if line.starts_with("use ") && line.ends_with(';') {
                 let import = line[4..line.len() - 1].trim(); // Remove "use " and ";"
@@ -633,7 +633,7 @@ impl ApiExtractor {
     /// Gather source file information
     fn gather_source_info(&self, source: &str, file_path: &Path) -> Result<SourceInfo, Error> {
         let file_size = source.len() as u64;
-        let line_count = source.lines().count();
+        let line_count = source.split("\n").count();
         
         let last_modified = fs::metadata(file_path)
             .ok()

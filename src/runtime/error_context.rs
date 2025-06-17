@@ -389,7 +389,7 @@ impl SourceLocationMapper {
 
     /// Add file content for mapping
     pub fn add_file(&mut self, file_path: PathBuf, content: String) {
-        let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let lines: Vec<String> = content.split("\n").map(|s| s.to_string()).collect();
         self.line_caches.insert(file_path.clone(), lines);
         self.file_contents.insert(file_path, content);
     }

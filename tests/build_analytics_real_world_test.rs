@@ -218,7 +218,7 @@ async fn simulate_parallel_compilation(
             analytics.record_event(compile_start).unwrap();
             
             // Parsing phase
-            let parse_duration = Duration::from_millis((content.lines().count() * 2) as u64);
+            let parse_duration = Duration::from_millis((content.split("\n").count() * 2) as u64);
             let parse_event = create_build_event(BuildEventType::Parsing, parse_duration);
             analytics.record_event(parse_event).unwrap();
             

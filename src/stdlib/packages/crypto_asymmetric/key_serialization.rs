@@ -1127,7 +1127,7 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
 /// Parse PEM to raw bytes
 fn parse_pem_to_bytes(pem_data: &str) -> Result<Vec<u8>, CursedError> {
     // Remove PEM headers and decode base64 content
-    let lines: Vec<&str> = pem_data.lines().collect();
+    let lines: Vec<&str> = pem_data.split("\n").collect();
     
     // Find content between -----BEGIN and -----END lines
     let mut start_idx = None;

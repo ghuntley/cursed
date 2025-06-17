@@ -23,7 +23,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -43,7 +43,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -64,7 +64,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -88,7 +88,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -114,7 +114,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -138,7 +138,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -162,7 +162,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -192,7 +192,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -212,7 +212,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -234,7 +234,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -254,7 +254,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -274,7 +274,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();

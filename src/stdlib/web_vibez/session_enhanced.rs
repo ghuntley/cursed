@@ -4,7 +4,7 @@ use std::fmt;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::config::{SessionConfig, SessionStoreType, SameSitePolicy};
+use crate::stdlib::web_vibez::config::{SessionConfig, SessionStoreType, SameSitePolicy};
 
 /// Session data structure
 #[derive(Debug, Clone)]

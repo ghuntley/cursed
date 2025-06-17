@@ -711,7 +711,7 @@ impl PerformanceAnalyzer {
     async fn simulate_lexing_phase(&self, source: &str) -> Result<PhaseResult> {
         // Simulate realistic lexing performance based on source code characteristics
         let char_count = source.chars().count();
-        let line_count = source.lines().count();
+        let line_count = source.split("\n").count();
         
         // Base timing: ~10ns per character
         let base_time = Duration::from_nanos(char_count as u64 * 10);
@@ -863,7 +863,7 @@ impl PerformanceAnalyzer {
     }
 
     async fn simulate_ir_generation_phase(&self, source: &str) -> Result<PhaseResult> {
-        let instruction_estimate = source.lines().count() * 3; // ~3 IR instructions per line
+        let instruction_estimate = source.split("\n").count() * 3; // ~3 IR instructions per line
         
         let memory_peak = instruction_estimate * 128; // IR instruction structures
         let memory_average = memory_peak * 6 / 10;
@@ -932,7 +932,7 @@ impl PerformanceAnalyzer {
     }
 
     async fn simulate_codegen_phase(&self, source: &str) -> Result<PhaseResult> {
-        let instruction_count = source.lines().count() * 4; // Estimated machine instructions
+        let instruction_count = source.split("\n").count() * 4; // Estimated machine instructions
         
         let memory_peak = instruction_count * 64; // Code buffer
         let memory_average = memory_peak * 8 / 10;

@@ -719,7 +719,7 @@ impl ResourceMonitor {
         let mut resident_memory = 0u64;
         let mut virtual_memory = 0u64;
         
-        for line in status_content.lines() {
+        for line in status_content.split("\n") {
             if line.starts_with("VmSize:") {
                 if let Some(value) = line.split_whitespace().nth(1) {
                     virtual_memory = value.parse::<u64>().unwrap_or(0) * 1024; // Convert KB to bytes

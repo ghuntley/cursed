@@ -59,7 +59,7 @@ impl FormatterResult {
     pub fn new(formatted_code: String, original: &str) -> Self {
         let changes_made = formatted_code != original;
         let lines_changed = if changes_made {
-            formatted_code.lines().count()
+            formatted_code.split("\n").count()
         } else {
             0
         };
@@ -102,7 +102,7 @@ impl CursedFormatter {
         self.errors.clear();
         
         // Parse the source code
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
         

@@ -3312,7 +3312,7 @@ impl TemplateFormatRenderer {
                 if let CursedObject::Array(enum_list) = nested_enums {
                     for enum_def in enum_list {
                         let enum_str = self.render_protobuf_enum(enum_def)?;
-                        let indented_enum = enum_str.lines()
+                        let indented_enum = enum_str.split("\n")
                             .map(|line| format!("{}  {}", indent, line))
                             .collect::<Vec<_>>()
                             .join("\n");
@@ -4273,7 +4273,7 @@ impl TemplateFormatRenderer {
                     build_rs.push_str("    // Custom build logic\n");
                     let custom_str = self.render_text(custom)?;
                     // Add proper indentation to custom code
-                    for line in custom_str.lines() {
+                    for line in custom_str.split("\n") {
                         if !line.trim().is_empty() {
                             build_rs.push_str(&format!("    {}\n", line));
                         } else {
@@ -5696,12 +5696,12 @@ impl TemplateFormatRenderer {
                     if run_str.contains('\n') {
                         if has_content {
                             result.push_str(&format!("{}  run: |\n", indent));
-                            for line in run_str.lines() {
+                            for line in run_str.split("\n") {
                                 result.push_str(&format!("{}    {}\n", indent, line));
                             }
                         } else {
                             result.push_str("run: |\n");
-                            for line in run_str.lines() {
+                            for line in run_str.split("\n") {
                                 result.push_str(&format!("{}  {}\n", indent, line));
                             }
                             has_content = true;
@@ -5794,7 +5794,7 @@ impl TemplateFormatRenderer {
                     if value_str.contains('$') || value_str.contains('{') || value_str.contains('\n') || value_str.contains(':') {
                         if value_str.contains('\n') {
                             result.push_str(&format!("{}{}: |\n", indent, key));
-                            for line in value_str.lines() {
+                            for line in value_str.split("\n") {
                                 result.push_str(&format!("{}  {}\n", indent, line));
                             }
                         } else {
@@ -6708,7 +6708,7 @@ impl FormatDetector {
         }
         
         // Check for YAML
-        if content.lines().any(|line| {
+        if content.split("\n").any(|line| {
             let line = line.trim();
             line.contains(':') && !line.starts_with('#') && 
             !line.contains('=') && !line.contains('<')
@@ -6717,11 +6717,11 @@ impl FormatDetector {
         }
         
         // Check for specific formats by content patterns
-        if content.lines().any(|line| line.trim().starts_with("FROM ")) {
+        if content.split("\n").any(|line| line.trim().starts_with("FROM ")) {
             return Some(TemplateFormat::Config(ConfigFormat::Dockerfile));
         }
         
-        if content.lines().any(|line| line.trim().starts_with("server {")) {
+        if content.split("\n").any(|line| line.trim().starts_with("server {")) {
             return Some(TemplateFormat::Config(ConfigFormat::Nginx));
         }
         

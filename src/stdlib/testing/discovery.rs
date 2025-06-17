@@ -458,7 +458,7 @@ impl TestDiscovery {
             .map_err(|e| TestError::DiscoveryError(format!("Failed to read file '{}': {}", file_path.display(), e)))?;
         
         let mut tests = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         // Extract module name from file path
         let module = self.extract_module_name(file_path);

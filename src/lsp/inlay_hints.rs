@@ -235,7 +235,7 @@ impl InlayHintsProvider {
         let mut hints = Vec::new();
         
         // Parse the content
-        let mut lexer = Lexer::new(content);
+        let mut lexer = Lexer::new(content.to_string());
         let mut parser = Parser::new(lexer);
         
         match parser.parse() {
@@ -567,7 +567,7 @@ impl InlayHintsProvider {
         range: Range,
         hints: &mut Vec<CursedInlayHint>,
     ) {
-        let mut lexer = Lexer::new(content);
+        let mut lexer = Lexer::new(content.to_string());
         
         loop {
             match lexer.next_token() {

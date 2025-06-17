@@ -63,7 +63,7 @@ fn test_that_string_and_bytes() {
     assert_eq!(that_string.string(), content);
     assert_eq!(that_string.bytes(), content.as_bytes().to_vec());
     
-    let lines = that_string.lines();
+    let lines = that_string.split("\n");
     assert_eq!(lines.len(), 1);
     assert_eq!(lines[0], content);
     

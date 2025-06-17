@@ -365,7 +365,7 @@ impl FeatureExtractor {
     
     /// Extract syntax-level features
     fn extract_syntax_features(&self, source_code: &str) -> Result<SyntaxFeatures> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         let lines_of_code = lines.len();
         
         // Count different syntactic elements

@@ -347,7 +347,7 @@ impl WorkspaceManager {
     /// Extract basic symbols as fallback when semantic analysis fails
     pub fn extract_basic_symbols(&self, content: &str, uri: &Url) -> Vec<WorkspaceSymbol> {
         let mut symbols = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Extract function declarations  

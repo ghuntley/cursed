@@ -351,7 +351,7 @@ impl ThatString {
     
     /// Split the content into lines
     pub fn lines(&self) -> Vec<tea> {
-        self.content.lines().map(|s| s.to_string()).collect()
+        self.content.split("\n").map(|s| s.to_string()).collect()
     }
     
     /// Split the content by a separator

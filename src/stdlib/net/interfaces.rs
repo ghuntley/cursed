@@ -354,7 +354,7 @@ impl InterfaceManager {
     fn parse_ip_addr_output(&mut self, output: &str) -> NetResult<()> {
         let mut current_interface: Option<NetworkInterface> = None;
         
-        for line in output.lines() {
+        for line in output.split("\n") {
             let line = line.trim();
             
             // New interface line: "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500"
@@ -450,7 +450,7 @@ impl InterfaceManager {
     }
     
     fn parse_proc_net_dev(&mut self, contents: &str) -> NetResult<()> {
-        for (index, line) in contents.lines().enumerate().skip(2) { // Skip header lines
+        for (index, line) in contents.split("\n").enumerate().skip(2) { // Skip header lines
             if let Some(colon_pos) = line.find(':') {
                 let name = line[..colon_pos].trim().to_string();
                 let mut iface = NetworkInterface::new(name.clone(), index as u32);
@@ -481,7 +481,7 @@ impl InterfaceManager {
         let mut current_interface: Option<NetworkInterface> = None;
         let mut index = 0u32;
         
-        for line in output.lines() {
+        for line in output.split("\n") {
             let line = line.trim();
             
             // New adapter line

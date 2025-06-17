@@ -725,7 +725,7 @@ impl CrossReferenceAnalyzer {
             .map_err(|e| Error::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
 
         // Simple dependency extraction (would be more sophisticated in practice)
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         for (line_num, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             

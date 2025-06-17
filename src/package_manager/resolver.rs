@@ -1011,28 +1011,19 @@ impl DependencyResolver {
                         Err(e) => {
                             warn!("Failed to fetch versions for {}: {}. Using fallback versions.", package_name, e);
                             // Fallback to basic versions if registry fails
-                            vec![
-                                Version::parse("0.1.0").unwrap(),
-                                Version::parse("1.0.0").unwrap(),
-                            ]
+                            vec![Version::parse("0.1.0").unwrap(), Version::parse("1.0.0").unwrap()]
                         }
                     }
                 }
                 Err(e) => {
                     warn!("Failed to lock registry for {}: {}. Using fallback versions.", package_name, e);
-                    vec![
-                        Version::parse("0.1.0").unwrap(),
-                        Version::parse("1.0.0").unwrap(),
-                    ]
+                    vec![Version::parse("0.1.0").unwrap(), Version::parse("1.0.0").unwrap()]
                 }
             }
         } else {
             warn!("No registry configured, using fallback versions for {}", package_name);
             // Fallback when no registry is available
-            vec![
-                Version::parse("0.1.0").unwrap(),
-                Version::parse("1.0.0").unwrap(),
-            ]
+            vec![Version::parse("0.1.0").unwrap(), Version::parse("1.0.0").unwrap()]
         };
 
         // Cache the result

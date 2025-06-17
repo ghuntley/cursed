@@ -160,7 +160,7 @@ fn test_pem_block_encoding() {
     assert!(encoded.contains("Serial: 12345\n"));
     
     // Verify base64 content is present
-    let lines: Vec<&str> = encoded.lines().collect();
+    let lines: Vec<&str> = encoded.split("\n").collect();
     let mut base64_lines = Vec::new();
     let mut in_data = false;
     

@@ -310,7 +310,7 @@ impl BuildIntegration {
         let mut version = "0.1.0".to_string();
         let mut description = None;
 
-        for line in content.lines() {
+        for line in content.split("\n") {
             if let Some(name_val) = line.strip_prefix("name = ") {
                 name = name_val.trim_matches('"').to_string();
             } else if let Some(version_val) = line.strip_prefix("version = ") {

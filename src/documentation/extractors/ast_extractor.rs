@@ -984,7 +984,7 @@ impl AstExtractor {
         location: &SourceLocation,
         source_code: &str,
     ) -> Result<Option<String>, Error> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line > lines.len() {
             return Ok(None);

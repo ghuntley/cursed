@@ -1252,7 +1252,7 @@ impl DocumentationExtractor {
     /// Gather source file information
     fn gather_source_info(&self, source: &str, file_path: &Path) -> Result<SourceInfo, Error> {
         let file_size = source.len() as u64;
-        let line_count = source.lines().count();
+        let line_count = source.split("\n").count();
         
         let last_modified = fs::metadata(file_path)
             .ok()
@@ -1657,7 +1657,7 @@ impl DocumentationExtractor {
 
     /// Extract documentation comments from source location
     fn extract_documentation_comments(&self, source: &str, location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<Example>), Error> {
-        let lines = source.lines().collect::<Vec<_>>();
+        let lines = source.split("\n").collect::<Vec<_>>();
         let mut summary = String::new();
         let mut description = String::new();
         let mut tags = HashMap::new();

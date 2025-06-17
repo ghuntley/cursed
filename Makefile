@@ -2521,26 +2521,26 @@ comprehensive-opt-demo:
 	@echo "Running comprehensive optimization demo..."
 	@echo "Creating test CURSED program..."
 	@mkdir -p /tmp/cursed-opt-demo
-	@cat > /tmp/cursed-opt-demo/test_program.csd << 'EOF'
-// Comprehensive optimization test program
-slay fibonacci(n: i32) -> i32 {
-    bestie (n <= 1) {
-        cap n;
-    } flex {
-        cap slay fibonacci(n-1) + slay fibonacci(n-2);
-    }
-}
-
-slay main() {
-    lowkey (sus i = 0; i < 20; i++) {
-        periodt;
-        sus fib = slay fibonacci(i);
-        lowkey (sus j = 0; j < 100; j++) {
-            periodt;
-            sus computation = j * j + 2 * j + 1;
-        }
-    }
-}
+	@cat > /tmp/cursed-opt-demo/test_program.csd <<EOF ;\
+// Comprehensive optimization test program\
+slay fibonacci(n: i32) -> i32 {\
+    bestie (n <= 1) {\
+        cap n;\
+    } flex {\
+        cap slay fibonacci(n-1) + slay fibonacci(n-2);\
+    }\
+}\
+\
+slay main() {\
+    lowkey (sus i = 0; i < 20; i++) {\
+        periodt;\
+        sus fib = slay fibonacci(i);\
+        lowkey (sus j = 0; j < 100; j++) {\
+            periodt;\
+            sus computation = j * j + 2 * j + 1;\
+        }\
+    }\
+}\
 EOF
 	@echo "Demo program created. Use with: cursed compile -O3 --max-performance /tmp/cursed-opt-demo/test_program.csd"
 

@@ -441,7 +441,7 @@ impl BuildOptimizer {
         let mut dependencies = Vec::new();
         
         // Simple import analysis for CURSED files
-        for line in content.lines() {
+        for line in content.split("\n") {
             let trimmed = line.trim();
             
             // Look for import statements

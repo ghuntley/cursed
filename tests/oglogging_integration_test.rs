@@ -204,7 +204,7 @@ mod oglogging_integration_tests {
         }
         
         let final_output = get_output_string(output.clone());
-        let lines: Vec<&str> = final_output.lines().collect();
+        let lines: Vec<&str> = final_output.split("\n").collect();
         
         // Should have 55 lines total (5 components * 11 messages each)
         assert_eq!(lines.len(), 55, "Should have correct number of log lines");
@@ -257,7 +257,7 @@ mod oglogging_integration_tests {
         assert!(final_output.contains("Multiple words in one call"), "Should join multiple words");
         
         // Count total lines (should be at least 1003: unicode + long + 1000 rapid + plain + formatted + multiple)
-        let line_count = final_output.lines().count();
+        let line_count = final_output.split("\n").count();
         assert!(line_count >= 1003, "Should have at least 1003 lines, got {}", line_count);
     }
 

@@ -31,7 +31,7 @@ impl SourceMapper {
         let content = fs::read_to_string(file_path)
             .map_err(|e| CursedError::Io(e.into()))?;
 
-        let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let lines: Vec<String> = content.split("\n").map(|s| s.to_string()).collect();
 
         {
             let mut source_cache = self.source_cache.write()

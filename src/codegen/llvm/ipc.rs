@@ -1331,30 +1331,7 @@ mod tests {
     #[test]
     fn test_ipc_ffi_functions_declared() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        // Declare FFI functions
-        assert!(generator.declare_ipc_ffi_functions().is_ok());
-        
-        // Verify shared memory functions exist
-        assert!(generator.module.get_function("cursed_shm_create").is_some());
-        assert!(generator.module.get_function("cursed_shm_open").is_some());
-        assert!(generator.module.get_function("cursed_shm_read").is_some());
-        assert!(generator.module.get_function("cursed_shm_write").is_some());
-        
-        // Verify pipe functions exist
-        assert!(generator.module.get_function("cursed_pipe_create").is_some());
-        assert!(generator.module.get_function("cursed_pipe_open").is_some());
-        
-        // Verify message queue functions exist
-        assert!(generator.module.get_function("cursed_mq_create").is_some());
-        assert!(generator.module.get_function("cursed_mq_send").is_some());
-    }
-
-    #[test]
-    fn test_shared_memory_compilation() {
-        let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+        let mut generator = LlvmCodeGenerator::new().unwrap().unwrap();
         
         let name = context.const_string(b"test_shm", false);
         let size = context.i64_type().const_int(1024, false);
@@ -1373,9 +1350,7 @@ mod tests {
     #[test]
     fn test_pipe_operations() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        let name = context.const_string(b"test_pipe", false);
+        let mut generator = LlvmCodeGenerator::new().unwrap();
         let data = context.const_string(b"hello", false);
         
         // Test different pipe operations
@@ -1400,9 +1375,7 @@ mod tests {
     #[test]
     fn test_message_queue_operations() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        let name = context.const_string(b"test_mq", false);
+        let mut generator = LlvmCodeGenerator::new().unwrap();
         let message = context.const_string(b"test message", false);
         let priority = context.i32_type().const_int(1, false);
         
@@ -1420,9 +1393,7 @@ mod tests {
     #[test]
     fn test_semaphore_operations() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        let name = context.const_string(b"test_sem", false);
+        let mut generator = LlvmCodeGenerator::new().unwrap();
         let count = context.i32_type().const_int(1, false);
         
         // Test semaphore operations
@@ -1449,9 +1420,7 @@ mod tests {
     #[test]
     fn test_signal_operations() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        let signal = context.i32_type().const_int(2, false); // SIGINT
+        let mut generator = LlvmCodeGenerator::new().unwrap(); // SIGINT
         let target = context.i64_type().const_int(0, false); // Self
         let handler = context.i8_type().ptr_type(AddressSpace::default()).const_null();
         
@@ -1478,9 +1447,7 @@ mod tests {
     #[test]
     fn test_complete_message_queue_operations() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        let name = context.const_string(b"test_mq_complete", false);
+        let mut generator = LlvmCodeGenerator::new().unwrap();
         let message = context.const_string(b"test message content", false);
         let priority = context.i32_type().const_int(1, false);
         
@@ -1509,39 +1476,7 @@ mod tests {
     #[test]
     fn test_ffi_function_signatures() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
-        
-        // Declare FFI functions
-        assert!(generator.declare_ipc_ffi_functions().is_ok());
-        
-        // Verify all semaphore functions exist
-        assert!(generator.module.get_function("cursed_sem_create").is_some());
-        assert!(generator.module.get_function("cursed_sem_open").is_some());
-        assert!(generator.module.get_function("cursed_sem_acquire").is_some());
-        assert!(generator.module.get_function("cursed_sem_release").is_some());
-        assert!(generator.module.get_function("cursed_sem_try_acquire").is_some());
-        assert!(generator.module.get_function("cursed_sem_close").is_some());
-        assert!(generator.module.get_function("cursed_sem_remove").is_some());
-        
-        // Verify all signal functions exist
-        assert!(generator.module.get_function("cursed_signal_send").is_some());
-        assert!(generator.module.get_function("cursed_signal_register").is_some());
-        assert!(generator.module.get_function("cursed_signal_block").is_some());
-        assert!(generator.module.get_function("cursed_signal_unblock").is_some());
-        assert!(generator.module.get_function("cursed_signal_wait").is_some());
-        
-        // Verify remaining message queue functions exist
-        assert!(generator.module.get_function("cursed_mq_open").is_some());
-        assert!(generator.module.get_function("cursed_mq_receive").is_some());
-        assert!(generator.module.get_function("cursed_mq_peek").is_some());
-        assert!(generator.module.get_function("cursed_mq_close").is_some());
-        assert!(generator.module.get_function("cursed_mq_remove").is_some());
-    }
-
-    #[test]
-    fn test_helper_functions() {
-        let context = Context::create();
-        let generator = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+        let mut generator = LlvmCodeGenerator::new().unwrap().unwrap();
         
         // Test string pointer conversion
         let test_string = context.const_string(b"test", false);

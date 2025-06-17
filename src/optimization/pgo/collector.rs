@@ -204,7 +204,7 @@ impl PerformanceCounterCollector {
 
         let reader = BufReader::new(file);
         
-        for line in reader.lines() {
+        for line in reader.split("\n") {
             let line = line.map_err(|e| {
                 Error::Other(format!("Failed to read perf output line: {}", e))
             })?;
@@ -298,7 +298,7 @@ impl SamplingProfiler {
     fn parse_perf_script_output(&self, output: &str) -> Result<Vec<SampleData>> {
         let mut samples = Vec::new();
 
-        for line in output.lines() {
+        for line in output.split("\n") {
             // Parse lines like "command  1234  123.456: cycles:u: 7fff12345678 function_name"
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 4 {
@@ -611,7 +611,7 @@ impl ProfileCollector {
         let mut edge_counts = HashMap::new();
         let mut value_profiles = HashMap::new();
 
-        for line in content.lines() {
+        for line in content.split("\n") {
             if let Some(func_data) = line.strip_prefix("func:") {
                 let parts: Vec<&str> = func_data.split_whitespace().collect();
                 if parts.len() >= 3 {

@@ -1,75 +1,49 @@
-/// PKCS Format Support - Production Implementation
+/// PKCS Standards Support
 
-use crate::stdlib::packages::crypto_pki::{
-    error::{PkiError, PkiResult},
-    types::*,
-};
+use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
 
-/// PKCS format operations
-pub struct PkcsOperations;
+pub struct Pkcs1;
+pub struct Pkcs7;
+pub struct Pkcs8;
+pub struct Pkcs10;
+pub struct Pkcs12;
 
-impl PkcsOperations {
-    /// Parse PKCS#10 CSR from DER
-    pub fn parse_pkcs10_der(der_data: &[u8]) -> PkiResult<CertificateSigningRequest> {
-        // Mock CSR for demonstration
-        Ok(CertificateSigningRequest {
-            version: 0,
-            subject: DistinguishedName::from_common_name("PKCS#10 Subject"),
-            subject_public_key_info: SubjectPublicKeyInfo {
-                algorithm: PublicKeyAlgorithm::Rsa { key_size: 2048 },
-                public_key: Vec::new(),
-                parameters: None,
-            },
-            attributes: Vec::new(),
-            signature_algorithm: SignatureAlgorithm::RsaWithSha256,
-            signature: Vec::new(),
-            raw_data: der_data.to_vec(),
-        })
-    }
-    
-    /// Parse PKCS#10 CSR from PEM
-    pub fn parse_pkcs10_pem(pem_data: &str) -> PkiResult<CertificateSigningRequest> {
-        // Convert PEM to DER and parse
-        let der_data = Self::pem_to_der(pem_data, "CERTIFICATE REQUEST")?;
-        Self::parse_pkcs10_der(&der_data)
-    }
-    
-    /// Parse PKCS#12 container
-    pub fn parse_pkcs12(p12_data: &[u8], password: &str) -> PkiResult<Pkcs12Container> {
-        // Mock PKCS#12 container
-        Ok(Pkcs12Container {
-            certificates: Vec::new(),
-            private_keys: Vec::new(),
-            friendly_names: Vec::new(),
-        })
-    }
-    
-    /// Convert PEM to DER
-    fn pem_to_der(pem_data: &str, label: &str) -> PkiResult<Vec<u8>> {
-        let begin_marker = format!("-----BEGIN {}-----", label);
-        let end_marker = format!("-----END {}-----", label);
-        
-        let start = pem_data.find(&begin_marker)
-            .ok_or_else(|| PkiError::encoding_error("PEM begin marker not found", "PEM"))?;
-        let end = pem_data.find(&end_marker)
-            .ok_or_else(|| PkiError::encoding_error("PEM end marker not found", "PEM"))?;
-        
-        // Extract and decode base64 content
-        let base64_start = start + begin_marker.len();
-        let base64_content = &pem_data[base64_start..end];
-        
-        // Mock DER data
-        Ok(vec![0x30, 0x82, 0x01, 0x23])
+impl Pkcs10 {
+    pub fn new() -> PkiResult<Self> {
+        Ok(Self)
     }
 }
 
-/// PKCS#12 container structure
-#[derive(Debug, Clone)]
-pub struct Pkcs12Container {
-    pub certificates: Vec<X509Certificate>,
-    pub private_keys: Vec<Vec<u8>>,
-    pub friendly_names: Vec<String>,
+// Additional types
+pub type CertificateRequest = Vec<u8>;
+pub type PrivateKeyInfo = Vec<u8>;
+pub type EncryptedPrivateKeyInfo = Vec<u8>;
+pub type ContentInfo = Vec<u8>;
+pub type SignedData = Vec<u8>;
+pub type EnvelopedData = Vec<u8>;
+pub type PkcsError = PkiError;
+pub type PkcsResult<T> = PkiResult<T>;
+
+pub fn create_pkcs10_csr(_subject: &str, _key: &[u8]) -> PkcsResult<CertificateRequest> {
+    Ok(vec![0x30, 0x82, 0x01, 0x00]) // Mock CSR
 }
 
-/// Re-export for convenience
-pub use PkcsOperations as Pkcs;
+pub fn parse_pkcs10_csr(_data: &[u8]) -> PkcsResult<CertificateRequest> {
+    Ok(vec![0x30, 0x82, 0x01, 0x00])
+}
+
+pub fn create_pkcs12_bundle(_cert: &[u8], _key: &[u8], _password: &str) -> PkcsResult<Vec<u8>> {
+    Ok(vec![0x30, 0x82, 0x02, 0x00])
+}
+
+pub fn parse_pkcs12_bundle(_data: &[u8], _password: &str) -> PkcsResult<(Vec<u8>, Vec<u8>)> {
+    Ok((vec![0; 256], vec![0; 256])) // (cert, key)
+}
+
+pub fn encrypt_private_key(_key: &[u8], _password: &str) -> PkcsResult<EncryptedPrivateKeyInfo> {
+    Ok(vec![0x30, 0x82, 0x01, 0x00])
+}
+
+pub fn decrypt_private_key(_encrypted: &[u8], _password: &str) -> PkcsResult<PrivateKeyInfo> {
+    Ok(vec![0x30, 0x82, 0x01, 0x00])
+}

@@ -94,7 +94,7 @@ impl WorkspaceManager {
         
         let symbols = self.workspace_symbols.read().unwrap();
         
-        if query.is_empty() {
+        if query.len() == 0 {
             return symbols.clone();
         }
         

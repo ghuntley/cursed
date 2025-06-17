@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn test_basic_tokens() {
         let source = "sus x = 42;";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         assert!(!tokens.is_empty());
@@ -18,7 +18,7 @@ mod tests {
     #[test]
     fn test_keywords() {
         let source = "sus facts cap slay lowkey highkey flex periodt bestie yolo stan";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should recognize all CURSED keywords
@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn test_string_literals() {
         let source = r#""hello world" "another string""#;
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize string literals correctly
@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn test_numbers() {
         let source = "42 3.14 0 -123";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize numeric literals
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn test_operators() {
         let source = "+ - * / == != < > <= >= && || !";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize all operators
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn test_punctuation() {
         let source = "( ) { } [ ] , ; : .";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize punctuation marks
@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn test_identifiers() {
         let source = "variable_name someFunction CamelCase snake_case";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize identifiers
@@ -87,7 +87,7 @@ mod tests {
             }
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize a complex function definition
@@ -104,7 +104,7 @@ mod tests {
             sus y = 24;
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Comments should be ignored in tokenization
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn test_whitespace_handling() {
         let source = "   sus    x   =   42   ;   ";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Whitespace should be ignored
@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn test_type_annotations() {
         let source = "sus x: i64 = 42; sus y: String = \"hello\";";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize type annotations
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_array_syntax() {
         let source = "sus arr: [i64] = [1, 2, 3];";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize array syntax
@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn test_generic_syntax() {
         let source = "slay identity<T>(x: T) -> T { x }";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize generic function syntax
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn test_channel_syntax() {
         let source = "sus ch = make(chan i64); ch <- 42; sus val = <-ch;";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize channel operations
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_error_propagation_syntax() {
         let source = "sus result = some_function()?;";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize error propagation operator
@@ -180,7 +180,7 @@ mod tests {
             }
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize struct definition
@@ -195,7 +195,7 @@ mod tests {
             }
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should tokenize interface definition
@@ -205,7 +205,7 @@ mod tests {
     #[test]
     fn test_empty_input() {
         let source = "";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Empty input should result in empty token list
@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn test_unicode_support() {
         let source = r#"sus message = "Hello 世界";"#;
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         
         // Should handle Unicode in string literals
@@ -225,7 +225,7 @@ mod tests {
     #[test]
     fn test_lexer_error_handling() {
         let source = r#"sus x = "unterminated string"#;
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let result = lexer.tokenize();
         
         // Should handle lexer errors gracefully

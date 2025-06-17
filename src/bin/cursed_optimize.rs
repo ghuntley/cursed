@@ -784,7 +784,7 @@ fn analyze_source_file(path: &std::path::Path) -> Result<SourceFileStats> {
         .map_err(|e| Error::Other(format!("Failed to read file {}: {}", path.display(), e)))?;
     
     let size = content.len();
-    let lines = content.lines().count();
+    let lines = content.split("\n").count();
     
     // Simple heuristics for CURSED language constructs
     let functions = content.matches("slay ").count() + content.matches("fn ").count();
@@ -851,7 +851,7 @@ fn get_memory_usage() -> usize {
     #[cfg(target_os = "linux")]
     {
         if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
-            for line in status.lines() {
+            for line in status.split("\n") {
                 if line.starts_with("VmRSS:") {
                     if let Some(kb_str) = line.split_whitespace().nth(1) {
                         if let Ok(kb) = kb_str.parse::<usize>() {

@@ -670,7 +670,7 @@ impl BenchmarkRunner {
         #[cfg(target_os = "linux")]
         {
             if let Ok(content) = std::fs::read_to_string("/proc/self/status") {
-                for line in content.lines() {
+                for line in content.split("\n") {
                     if line.starts_with("VmPeak:") {
                         if let Some(kb_str) = line.split_whitespace().nth(1) {
                             if let Ok(kb) = kb_str.parse::<usize>() {

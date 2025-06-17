@@ -937,7 +937,7 @@ impl AdvancedCache {
     fn preprocess_cursed_source(&self, content: &str) -> Result<String> {
         let mut preprocessed = String::new();
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             let trimmed = line.trim();
             
             // Skip comments and empty lines for faster parsing
@@ -957,7 +957,7 @@ impl AdvancedCache {
         let mut dependencies = Vec::new();
         let mut uses = Vec::new();
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             let trimmed = line.trim();
             
             if trimmed.starts_with("use ") {

@@ -177,7 +177,7 @@ impl DebugContext {
 
         let file = File::open(file_path).ok()?;
         let reader = BufReader::new(file);
-        let lines: Result<Vec<String>, std::io::Error> = reader.lines().collect();
+        let lines: Result<Vec<String>, std::io::Error> = reader.split("\n").collect();
         let lines = lines.ok()?;
 
         let target_line = line.saturating_sub(1) as usize;

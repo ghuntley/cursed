@@ -53,7 +53,7 @@ impl DebugUtils {
     pub fn parse_stack_trace(trace_output: &str) -> Vec<StackFrame> {
         let mut frames = Vec::new();
         
-        for line in trace_output.lines() {
+        for line in trace_output.split("\n") {
             if let Some(frame) = Self::parse_stack_frame(line) {
                 frames.push(frame);
             }
@@ -239,7 +239,7 @@ impl DebugUtils {
     pub fn extract_variable_values(debugger_output: &str) -> HashMap<String, String> {
         let mut variables = HashMap::new();
         
-        for line in debugger_output.lines() {
+        for line in debugger_output.split("\n") {
             // Parse various debugger output formats
             // GDB: variable_name = value
             // LLDB: (type) variable_name = value

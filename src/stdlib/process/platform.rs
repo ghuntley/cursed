@@ -198,7 +198,7 @@ pub mod windows {
                 let mut env_vars = HashMap::new();
                 let output_str = String::from_utf8_lossy(&result.stdout);
                 
-                for line in output_str.lines() {
+                for line in output_str.split("\n") {
                     if let Some(eq_pos) = line.find('=') {
                         let key = line[..eq_pos].trim().to_string();
                         let value = line[eq_pos + 1..].trim().to_string();
@@ -723,7 +723,7 @@ pub mod unix {
         
         let mut flags = 0u32;
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             if line.starts_with("flags:") {
                 if let Some(flags_str) = line.split_whitespace().nth(1) {
                     // Parse octal flags (e.g., "02000002")
@@ -887,7 +887,7 @@ pub mod linux {
         
         let mut cgroups = Vec::new();
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             let parts: Vec<&str> = line.split(':').collect();
             if parts.len() >= 3 {
                 cgroups.push(CgroupInfo {

@@ -216,7 +216,7 @@ fn make_http_request(
     let response_str = String::from_utf8_lossy(&response);
     
     // Parse response
-    let mut lines = response_str.lines();
+    let mut lines = response_str.split("\n");
     let status_line = lines.next().unwrap_or("");
     
     let mut response_headers = HashMap::new();

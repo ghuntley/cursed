@@ -251,7 +251,7 @@ fn handle_connection(mut stream: TcpStream) -> Result<(), ServerError> {
     debug!("Received request: {}", request_str);
     
     // Parse the HTTP request (basic implementation)
-    let lines: Vec<&str> = request_str.lines().collect();
+    let lines: Vec<&str> = request_str.split("\n").collect();
     if lines.is_empty() {
         return Err(ServerError::ParseError("Empty request".to_string()));
     }

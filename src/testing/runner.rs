@@ -322,6 +322,121 @@ impl TestRunner {
         Ok(test_suites)
     }
 
+    /// Print discovery summary
+    fn print_discovery_summary(&self, test_suites: &[TestSuite]) {
+        println!("📋 Test Discovery Summary");
+        println!("========================");
+        
+        for suite in test_suites {
+            println!("📦 Suite: {}", suite.name);
+            println!("   Files: {}", suite.test_files.len());
+            println!("   Tests: {}", suite.total_tests);
+            
+            if self.config.test_config.verbose {
+                for test_file in &suite.test_files {
+                    println!("   📄 {}", test_file.path.display());
+                    for test_func in &test_file.test_functions {
+                        println!("      🧪 {} ({}:{})", 
+                                 test_func.name, 
+                                 test_func.line_number, 
+                                 test_func.column_number);
+                    }
+                }
+            }
+            println!();
+        }
+    }
+
+    /// Randomize test execution order
+    fn randomize_test_order(&self, test_suites: &mut Vec<TestSuite>) {
+        use rand::{Rng, SeedableRng};
+        use rand::rngs::StdRng;
+        
+        let mut rng = if let Some(seed) = self.config.random_seed {
+            StdRng::seed_from_u64(seed)
+        } else {
+            StdRng::from_entropy()
+        };
+
+        // Shuffle test suites
+        for i in (1..test_suites.len()).rev() {
+            let j = rng.gen_range(0..=i);
+            test_suites.swap(i, j);
+        }
+
+        // Shuffle tests within each suite
+        for suite in test_suites.iter_mut() {
+            for test_file in suite.test_files.iter_mut() {
+                for i in (1..test_file.test_functions.len()).rev() {
+                    let j = rng.gen_range(0..=i);
+                    test_file.test_functions.swap(i, j);
+                }
+            }
+        }
+
+        info!("Randomized test execution order (seed: {:?})", self.config.random_seed);
+    }
+
+    /// Setup signal handlers for graceful shutdown
+    pub async fn setup_signal_handlers(&self) {
+        let shutdown = self.shutdown.clone();
+        
+        tokio::spawn(async move {
+            match signal::ctrl_c().await {
+                Ok(()) => {
+                    println!("\n🛑 Received interrupt signal, stopping test execution...");
+                    if let Ok(mut shutdown_flag) = shutdown.lock() {
+                        *shutdown_flag = true;
+                    }
+                }
+                Err(err) => {
+                    error!("Unable to listen for shutdown signal: {}", err);
+                }
+            }
+        });
+    }
+
+    /// Check if shutdown was requested
+    pub fn should_shutdown(&self) -> bool {
+        self.shutdown.lock()
+            .map(|flag| *flag)
+            .unwrap_or(false)
+    }
+
+    /// Report progress for a completed test suite
+    pub fn report_suite_progress(&self, suite_result: &TestSuiteResult) {
+        let passed = suite_result.test_results.iter()
+            .filter(|r| r.status == super::execution::TestStatus::Passed)
+            .count();
+        let failed = suite_result.test_results.iter()
+            .filter(|r| matches!(r.status, super::execution::TestStatus::Failed | 
+                                             super::execution::TestStatus::Panicked |
+                                             super::execution::TestStatus::CompilationError))
+            .count();
+
+        let status_symbol = if failed > 0 { "❌" } else { "✅" };
+        
+        println!("{} {} - {} passed, {} failed ({:.2}s)",
+                 status_symbol,
+                 suite_result.suite_name,
+                 passed,
+                 failed,
+                 suite_result.duration.as_secs_f64());
+
+        // Show individual test failures in real-time
+        if failed > 0 && self.config.test_config.verbose {
+            for test_result in &suite_result.test_results {
+                if matches!(test_result.status, super::execution::TestStatus::Failed | 
+                                               super::execution::TestStatus::Panicked |
+                                               super::execution::TestStatus::CompilationError) {
+                    println!("    ❌ {}: {}", 
+                             test_result.test_function.name,
+                             test_result.error_message.as_deref().unwrap_or("unknown error"));
+                }
+            }
+        }
+    }
+
     /// Execute all test suites
     async fn execute_test_suites(&mut self, test_suites: Vec<TestSuite>) -> TestingResult<Vec<TestSuiteResult>> {
         let mut suite_results = Vec::new();
@@ -387,120 +502,7 @@ impl TestRunner {
         Ok(suite_results)
     }
 
-    /// Print discovery summary
-    fn print_discovery_summary(&self, test_suites: &[TestSuite]) {
-        println!("📋 Test Discovery Summary");
-        println!("========================");
-        
-        for suite in test_suites {
-            println!("📦 Suite: {}", suite.name);
-            println!("   Files: {}", suite.test_files.len());
-            println!("   Tests: {}", suite.total_tests);
-            
-            if self.config.test_config.verbose {
-                for test_file in &suite.test_files {
-                    println!("   📄 {}", test_file.path.display());
-                    for test_func in &test_file.test_functions {
-                        println!("      🧪 {} ({}:{})", 
-                                 test_func.name, 
-                                 test_func.line_number, 
-                                 test_func.column_number);
-                    }
-                }
-            }
-            println!();
-        }
-    }
 
-    /// Randomize test execution order
-    fn randomize_test_order(&self, test_suites: &mut Vec<TestSuite>) {
-        use rand::{Rng, SeedableRng};
-        use rand::rngs::StdRng;
-        
-        let mut rng = if let Some(seed) = self.config.random_seed {
-            StdRng::seed_from_u64(seed)
-        } else {
-            StdRng::from_entropy()
-        };
-
-        // Shuffle test suites
-        for i in (1..test_suites.len()).rev() {
-            let j = rng.gen_range(0..=i);
-            test_suites.swap(i, j);
-        }
-
-        // Shuffle tests within each suite
-        for suite in test_suites.iter_mut() {
-            for test_file in suite.test_files.iter_mut() {
-                for i in (1..test_file.test_functions.len()).rev() {
-                    let j = rng.gen_range(0..=i);
-                    test_file.test_functions.swap(i, j);
-                }
-            }
-        }
-
-        info!("Randomized test execution order (seed: {:?})", self.config.random_seed);
-    }
-
-    /// Report progress for a completed test suite
-    pub fn report_suite_progress(&self, suite_result: &TestSuiteResult) {
-        let passed = suite_result.test_results.iter()
-            .filter(|r| r.status == super::execution::TestStatus::Passed)
-            .count();
-        let failed = suite_result.test_results.iter()
-            .filter(|r| matches!(r.status, super::execution::TestStatus::Failed | 
-                                             super::execution::TestStatus::Panicked |
-                                             super::execution::TestStatus::CompilationError))
-            .count();
-
-        let status_symbol = if failed > 0 { "❌" } else { "✅" };
-        
-        println!("{} {} - {} passed, {} failed ({:.2}s)",
-                 status_symbol,
-                 suite_result.suite_name,
-                 passed,
-                 failed,
-                 suite_result.duration.as_secs_f64());
-
-        // Show individual test failures in real-time
-        if failed > 0 && self.config.test_config.verbose {
-            for test_result in &suite_result.test_results {
-                if matches!(test_result.status, super::execution::TestStatus::Failed | 
-                                               super::execution::TestStatus::Panicked |
-                                               super::execution::TestStatus::CompilationError) {
-                    println!("    ❌ {}: {}", 
-                             test_result.test_function.name,
-                             test_result.error_message.as_deref().unwrap_or("unknown error"));
-                }
-            }
-        }
-    }
-
-    /// Setup signal handlers for graceful shutdown
-    pub async fn setup_signal_handlers(&self) {
-        let shutdown = self.shutdown.clone();
-        
-        tokio::spawn(async move {
-            match signal::ctrl_c().await {
-                Ok(()) => {
-                    println!("\n🛑 Received interrupt signal, stopping test execution...");
-                    if let Ok(mut shutdown_flag) = shutdown.lock() {
-                        *shutdown_flag = true;
-                    }
-                }
-                Err(err) => {
-                    error!("Unable to listen for shutdown signal: {}", err);
-                }
-            }
-        });
-    }
-
-    /// Check if shutdown was requested
-    pub fn should_shutdown(&self) -> bool {
-        self.shutdown.lock()
-            .map(|flag| *flag)
-            .unwrap_or(false)
-    }
 
     /// Get test runner configuration
     pub fn config(&self) -> &TestRunnerConfig {

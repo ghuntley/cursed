@@ -29,7 +29,7 @@ fn test_generic_type_instantiation() {Type::Struct(name, type_args) => {assert_e
                 _ => panic!("Expected struct type, got {:?}, type_args[0]),},"
         _ => panic!("";
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     // We should have one statement - a FunctionStatement

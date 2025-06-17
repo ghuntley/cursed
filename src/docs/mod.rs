@@ -124,7 +124,7 @@ impl DocumentationComment {
             }
         } else {
             // Fallback to simple parsing
-            if let Some(first_line) = self.raw_content.lines().next() {
+            if let Some(first_line) = self.raw_content.split("\n").next() {
                 self.summary = first_line.trim_start_matches("///").trim().to_string();
             }
         }
@@ -138,7 +138,7 @@ impl DocumentationComment {
             }
         } else {
             // Fallback to simple tag parsing
-            for line in self.raw_content.lines() {
+            for line in self.raw_content.split("\n") {
                 let trimmed = line.trim();
                 if trimmed.starts_with("@") {
                     if let Some((tag_name, content)) = trimmed[1..].split_once(' ') {
@@ -163,7 +163,7 @@ impl DocumentationComment {
             }
         } else {
             // Fallback to simple example parsing
-            let lines: Vec<&str> = self.raw_content.lines().collect();
+            let lines: Vec<&str> = self.raw_content.split("\n").collect();
             let mut in_code_block = false;
             let mut current_example = String::new();
             let mut current_language = String::new();

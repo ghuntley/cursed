@@ -831,7 +831,7 @@ impl EnhancedSlayCommand {
                     
                     if let Some(pipe) = stdout_pipe {
                         let reader = BufReader::new(pipe);
-                        for line_result in reader.lines() {
+                        for line_result in reader.split("\n") {
                             if let Ok(line) = line_result {
                                 callback(line.into_bytes());
                             } else {
@@ -852,7 +852,7 @@ impl EnhancedSlayCommand {
                     
                     if let Some(pipe) = stderr_pipe {
                         let reader = BufReader::new(pipe);
-                        for line_result in reader.lines() {
+                        for line_result in reader.split("\n") {
                             if let Ok(line) = line_result {
                                 callback(line.into_bytes());
                             } else {

@@ -237,7 +237,7 @@ fn extract_dependencies(source_code: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
     
     // Simple pattern matching for import statements
-    for line in source_code.lines() {
+    for line in source_code.split("\n") {
         let line = line.trim();
         if line.starts_with("import ") {
             // Extract module name from import statement

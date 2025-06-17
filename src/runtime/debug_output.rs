@@ -402,7 +402,7 @@ impl DebugFormatter {
         if !self.source_cache.contains_key(&file_path) {
             match std::fs::read_to_string(&file_path) {
                 Ok(content) => {
-                    let lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
+                    let lines: Vec<String> = content.split("\n").map(|l| l.to_string()).collect();
                     self.source_cache.insert(file_path.clone(), lines);
                 }
                 Err(_) => {

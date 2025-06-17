@@ -1916,7 +1916,7 @@ fn extract_warnings(output: &str) -> Vec<String> {
 /// Count lines of code in a file
 fn count_lines(path: &Path) -> Result<usize, BuildError> {
     let content = std::fs::read_to_string(path)?;
-    Ok(content.lines().count())
+    Ok(content.split("\n").count())
 }
 
 /// Memory monitoring for compilation
@@ -2006,7 +2006,7 @@ impl MemoryMonitor {
 fn extract_compilation_metrics(output: &str) -> HashMap<String, f64> {
     let mut metrics = HashMap::new();
     
-    for line in output.lines() {
+    for line in output.split("\n") {
         if line.starts_with("METRIC:") {
             let parts: Vec<&str> = line.split(':').collect();
             if parts.len() >= 3 {
@@ -2019,7 +2019,7 @@ fn extract_compilation_metrics(output: &str) -> HashMap<String, f64> {
     }
     
     // Parse common patterns from compiler output
-    if let Some(lines_match) = output.lines().find(|line| line.contains("lines compiled")) {
+    if let Some(lines_match) = output.split("\n").find(|line| line.contains("lines compiled")) {
         if let Some(num_str) = lines_match.split_whitespace().next() {
             if let Ok(lines) = num_str.parse::<f64>() {
                 metrics.insert("lines_compiled".to_string(), lines);
@@ -2028,7 +2028,7 @@ fn extract_compilation_metrics(output: &str) -> HashMap<String, f64> {
     }
     
     // Parse timing information from verbose output
-    for line in output.lines() {
+    for line in output.split("\n") {
         if line.contains("parsing took") {
             extract_time_from_line(line, "parsing_time", &mut metrics);
         } else if line.contains("analysis took") {

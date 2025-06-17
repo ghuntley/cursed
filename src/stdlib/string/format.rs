@@ -151,7 +151,7 @@ pub fn format_table(rows: &[Vec<&str>], separator: &str) -> StringResult<Vec<Str
 
 /// Add line numbers to text
 pub fn add_line_numbers(s: &str, start_number: usize, separator: &str) -> String {
-    let lines: Vec<&str> = s.lines().collect();
+    let lines: Vec<&str> = s.split("\n").collect();
     let max_digits = (start_number + lines.len()).to_string().len();
     
     lines.iter()
@@ -167,7 +167,7 @@ pub fn add_line_numbers(s: &str, start_number: usize, separator: &str) -> String
 /// Indent all lines by specified amount
 pub fn indent_lines(s: &str, indent: usize, indent_char: char) -> String {
     let indent_str = indent_char.to_string().repeat(indent);
-    s.lines()
+    s.split("\n")
         .map(|line| format!("{}{}", indent_str, line))
         .collect::<Vec<String>>()
         .join("\n")
@@ -175,7 +175,7 @@ pub fn indent_lines(s: &str, indent: usize, indent_char: char) -> String {
 
 /// Remove common indentation from all lines
 pub fn dedent(s: &str) -> String {
-    let lines: Vec<&str> = s.lines().collect();
+    let lines: Vec<&str> = s.split("\n").collect();
     if lines.is_empty() {
         return String::new();
     }

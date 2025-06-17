@@ -526,7 +526,7 @@ impl StackTraceCapture {
             .map_err(|e| CursedError::Runtime(format!("Failed to open source file {}: {}", file_path.display(), e)))?;
 
         let reader = BufReader::new(file);
-        let lines: Result<Vec<String>, std::io::Error> = reader.lines().collect();
+        let lines: Result<Vec<String>, std::io::Error> = reader.split("\n").collect();
         let lines = lines
             .map_err(|e| CursedError::Runtime(format!("Failed to read source file: {}", e)))?;
 

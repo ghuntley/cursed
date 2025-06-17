@@ -12,8 +12,7 @@ mod tests {
     fn setup_llvm() -> (Context, Module<'static>, LlvmCodeGenerator<'static>) {
         let context = Context::create();
         let module = context.create_module("test");
-        let codegen = LlvmCodeGenerator::new(&context, &module);
-        (context, module, codegen)
+        let codegen = LlvmCodeGenerator::new().unwrap()
     }
 
     #[test]
@@ -43,7 +42,7 @@ mod tests {
     #[test]
     fn test_binary_arithmetic_compilation() {
         let source = "42 + 24";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let expr = parser.parse_expression().unwrap();
@@ -81,7 +80,7 @@ mod tests {
             add(10, 20)
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -104,7 +103,7 @@ mod tests {
     #[test]
     fn test_boolean_expression_compilation() {
         let source = "facts && lowkey";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let expr = parser.parse_expression().unwrap();
@@ -118,7 +117,7 @@ mod tests {
     #[test]
     fn test_array_access_compilation() {
         let source = "arr[0]";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let expr = parser.parse_expression().unwrap();
@@ -142,7 +141,7 @@ mod tests {
     #[test]
     fn test_struct_field_access_compilation() {
         let source = "point.x";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let expr = parser.parse_expression().unwrap();
@@ -157,7 +156,7 @@ mod tests {
     #[test]
     fn test_complex_nested_expression() {
         let source = "(a + b) * (c - d)";
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let expr = parser.parse_expression().unwrap();

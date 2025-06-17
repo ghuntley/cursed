@@ -244,7 +244,7 @@ fn get_real_memory_info(pid: u32) -> ProcessResult<RealMemoryInfo> {
         let mut vm_size = 0u64;
         let mut vm_rss = 0u64;
         
-        for line in status_content.lines() {
+        for line in status_content.split("\n") {
             if line.starts_with("VmRSS:") {
                 if let Some(value_str) = line.split_whitespace().nth(1) {
                     current_rss = value_str.parse::<u64>().unwrap_or(0) * 1024; // Convert KB to bytes
@@ -811,7 +811,7 @@ fn get_unix_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
     let mut shared_memory = 0;
     
     if let Ok(status_content) = fs::read_to_string(&status_path) {
-        for line in status_content.lines() {
+        for line in status_content.split("\n") {
             if line.starts_with("VmHWM:") {
                 if let Some(value) = extract_kb_value(line) {
                     peak_rss = value * 1024;
@@ -967,7 +967,7 @@ fn get_io_stats(pid: u32) -> (u64, u64) {
         let mut read_bytes = 0;
         let mut write_bytes = 0;
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             if line.starts_with("read_bytes:") {
                 if let Some(value) = line.split_whitespace().nth(1) {
                     read_bytes = value.parse().unwrap_or(0);
@@ -1012,7 +1012,7 @@ fn get_boot_time() -> SystemTime {
     use std::fs;
     
     if let Ok(content) = fs::read_to_string("/proc/stat") {
-        for line in content.lines() {
+        for line in content.split("\n") {
             if line.starts_with("btime ") {
                 if let Some(value) = line.split_whitespace().nth(1) {
                     if let Ok(boot_timestamp) = value.parse::<u64>() {
@@ -1051,7 +1051,7 @@ fn count_network_connections(pid: u32) -> Option<u32> {
     
     // Check TCP connections
     if let Ok(content) = fs::read_to_string("/proc/net/tcp") {
-        for line in content.lines().skip(1) { // Skip header
+        for line in content.split("\n").skip(1) { // Skip header
             if line.contains(&format!("{:08X}", pid)) {
                 count += 1;
             }
@@ -1060,7 +1060,7 @@ fn count_network_connections(pid: u32) -> Option<u32> {
     
     // Check UDP connections
     if let Ok(content) = fs::read_to_string("/proc/net/udp") {
-        for line in content.lines().skip(1) { // Skip header
+        for line in content.split("\n").skip(1) { // Skip header
             if line.contains(&format!("{:08X}", pid)) {
                 count += 1;
             }

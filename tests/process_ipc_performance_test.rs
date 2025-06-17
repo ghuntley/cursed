@@ -498,7 +498,7 @@ fn get_memory_usage() -> usize {
     #[cfg(unix)]
     {
         if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
-            for line in status.lines() {
+            for line in status.split("\n") {
                 if line.starts_with("VmRSS:") {
                     if let Some(parts) = line.split_whitespace().nth(1) {
                         if let Ok(kb) = parts.parse::<usize>() {

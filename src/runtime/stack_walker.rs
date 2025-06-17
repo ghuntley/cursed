@@ -535,7 +535,7 @@ impl StackWalker {
         let backtrace_str = format!("{}", backtrace);
         
         // Parse the backtrace string to extract frame information
-        for (index, line) in backtrace_str.lines().enumerate() {
+        for (index, line) in backtrace_str.split("\n").enumerate() {
             if index >= self.config.max_frames {
                 break;
             }

@@ -91,7 +91,13 @@ impl Parser {
     pub fn from_tokens(tokens: Vec<Token>) -> Result<Self, Error> {
         // Create a dummy lexer from tokens
         let input = tokens.iter().map(|t| t.literal.clone()).collect::<Vec<_>>().join(" ");
-        let mut lexer = Lexer::new(input);
+        let mut lexer = Lexer::new(input.to_string());
+        Self::new(lexer)
+    }
+
+    /// Create parser from source string
+    pub fn from_source(source: &str) -> Result<Self, Error> {
+        let lexer = Lexer::new(source);
         Self::new(lexer)
     }
     

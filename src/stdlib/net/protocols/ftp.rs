@@ -261,7 +261,7 @@ impl FtpClient {
     fn parse_features(&mut self, features_text: &str) {
         self.features.clear();
         
-        for line in features_text.lines() {
+        for line in features_text.split("\n") {
             if line.starts_with(' ') {
                 let feature_line = line.trim();
                 if let Some(space_pos) = feature_line.find(' ') {
@@ -389,7 +389,7 @@ impl FtpClient {
             return Err(ProtocolError::Protocol(format!("NLST failed: {}", completion_response.message)));
         }
         
-        Ok(listing_text.lines().map(|line| line.trim().to_string()).collect())
+        Ok(listing_text.split("\n").map(|line| line.trim().to_string()).collect())
     }
     
     /// Download file from server
@@ -793,7 +793,7 @@ impl FtpClient {
     fn parse_directory_listing(&self, listing: &str) -> Vec<FtpEntry> {
         let mut entries = Vec::new();
         
-        for line in listing.lines() {
+        for line in listing.split("\n") {
             if line.trim().is_empty() {
                 continue;
             }

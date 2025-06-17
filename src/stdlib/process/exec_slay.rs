@@ -1086,7 +1086,7 @@ impl SlayProcess {
         let mut vmsize_kb = 0u64;
         let mut threads = 1i32;
         
-        for line in status_content.lines() {
+        for line in status_content.split("\n") {
             if line.starts_with("VmRSS:") {
                 if let Some(value) = line.split_whitespace().nth(1) {
                     rss_kb = value.parse().unwrap_or(0);
@@ -1107,7 +1107,7 @@ impl SlayProcess {
         let mut read_bytes = 0u64;
         let mut write_bytes = 0u64;
         if let Ok(io_content) = fs::read_to_string(&io_path) {
-            for line in io_content.lines() {
+            for line in io_content.split("\n") {
                 if line.starts_with("read_bytes:") {
                     if let Some(value) = line.split_whitespace().nth(1) {
                         read_bytes = value.parse().unwrap_or(0);
@@ -1299,7 +1299,7 @@ fn get_linux_process_stats(pid: u32) -> ProcessResult<ProcessStats> {
     let mut vmsize_kb = 0u64;
     let mut threads = 1i32;
     
-    for line in status_content.lines() {
+    for line in status_content.split("\n") {
         if line.starts_with("VmRSS:") {
             if let Some(value) = line.split_whitespace().nth(1) {
                 rss_kb = value.parse().unwrap_or(0);
@@ -1320,7 +1320,7 @@ fn get_linux_process_stats(pid: u32) -> ProcessResult<ProcessStats> {
     let mut read_bytes = 0u64;
     let mut write_bytes = 0u64;
     if let Ok(io_content) = fs::read_to_string(&io_path) {
-        for line in io_content.lines() {
+        for line in io_content.split("\n") {
             if line.starts_with("read_bytes:") {
                 if let Some(value) = line.split_whitespace().nth(1) {
                     read_bytes = value.parse().unwrap_or(0);

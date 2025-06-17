@@ -225,7 +225,7 @@ impl CodeLensProvider {
         debug!("Generating basic code lenses for content analysis");
         
         // Create a simple lens for demonstration
-        if !content.is_empty() {
+        if !content.len() == 0 {
             let range = Range {
                 start: Position { line: 0, character: 0 },
                 end: Position { line: 0, character: 10 },
@@ -692,7 +692,7 @@ mod tests {
         let uri = Url::parse("file:///test.csd").unwrap();
         let lenses = provider.get_code_lenses(content, &uri).await.unwrap();
         
-        assert!(!lenses.is_empty());
+        assert!(!lenses.len() == 0);
         
         // Should have lenses for functions and struct
         let function_lenses: Vec<_> = lenses
@@ -700,7 +700,7 @@ mod tests {
             .filter(|l| l.lens_type == CodeLensType::ReferenceCount)
             .collect();
         
-        assert!(!function_lenses.is_empty());
+        assert!(!function_lenses.len() == 0);
     }
     
     #[test]

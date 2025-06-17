@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::time::SystemTime;
-use crate::config::TemplateConfig;
+use crate::stdlib::web_vibez::config::TemplateConfig;
 
 /// Template engine types
 #[derive(Debug, Clone, PartialEq)]
@@ -206,7 +206,7 @@ impl TemplateEngine {
         let mut includes = Vec::new();
         let mut variables = Vec::new();
 
-        for line in content.lines() {
+        for line in content.split("\n") {
             let line = line.trim();
             
             // Parse extends directive

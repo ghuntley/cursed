@@ -627,7 +627,7 @@ fn create_compilation_unit(path: &PathBuf) -> Result<CompilationUnit> {
 fn extract_dependencies(content: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
     
-    for line in content.lines() {
+    for line in content.split("\n") {
         let trimmed = line.trim();
         
         // Look for import statements
@@ -686,10 +686,10 @@ fn calculate_complexity_score(content: &str) -> u32 {
     let mut score = 0;
     
     // Base score from line count
-    score += content.lines().count() as u32;
+    score += content.split("\n").count() as u32;
     
     // Add complexity for various language constructs
-    for line in content.lines() {
+    for line in content.split("\n") {
         let trimmed = line.trim();
         
         // Functions add complexity

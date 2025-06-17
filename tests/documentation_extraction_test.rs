@@ -32,7 +32,7 @@ mod tests {
     }
 
     fn parse_cursed_source(source: &str) -> Program {
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         parser.parse().unwrap()

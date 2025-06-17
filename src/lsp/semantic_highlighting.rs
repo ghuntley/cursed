@@ -451,7 +451,7 @@ impl SemanticHighlightingProvider {
     fn tokenize_content(&self, content: &str) -> Result<Vec<Token>, String> {
         // Create a simple manual lexer for now until we resolve the Lexer::new issue
         let mut tokens = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         for (line_num, line) in lines.iter().enumerate() {
             // Simple word-based tokenization for keywords

@@ -368,7 +368,7 @@ impl MessageQueue {
         let mut messages = self.messages.lock()
             .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
 
-        for line in reader.lines() {
+        for line in reader.split("\n") {
             let line = line.map_err(IpcError::from)?;
             if let Ok(message) = serde_json::from_str::<Message>(&line) {
                 if messages.len() < self.config.max_size {

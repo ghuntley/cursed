@@ -31,7 +31,7 @@ squad Person {
     // This would use the actual analysis function from cursed_optimize.rs
     // For now, we'll test the analysis logic manually
     let size = test_content.len();
-    let lines = test_content.lines().count();
+    let lines = test_content.split("\n").count();
     let functions = test_content.matches("slay ").count();
     let structs = test_content.matches("squad ").count();
     let conditionals = test_content.matches("lowkey").count();
@@ -70,7 +70,7 @@ fn test_memory_usage_detection() {
     {
         if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
             let mut found_memory = false;
-            for line in status.lines() {
+            for line in status.split("\n") {
                 if line.starts_with("VmRSS:") {
                     if let Some(kb_str) = line.split_whitespace().nth(1) {
                         if let Ok(kb) = kb_str.parse::<usize>() {

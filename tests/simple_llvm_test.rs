@@ -14,7 +14,7 @@ mod tests {
         let module = context.create_module("test_module");
         let builder = context.create_builder();
         
-        let codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let codegen = LlvmCodeGenerator::new().unwrap();
         
         // Module should be created successfully
         assert!(!codegen.module().get_name().to_str().unwrap().is_empty());
@@ -28,7 +28,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -36,7 +36,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -54,7 +54,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -62,7 +62,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -76,7 +76,7 @@ mod tests {
             sus global_var = 42;
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -84,7 +84,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -104,7 +104,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -112,7 +112,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -132,7 +132,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -140,7 +140,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -160,7 +160,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -168,7 +168,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -184,7 +184,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -192,7 +192,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -212,7 +212,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -220,7 +220,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let result = codegen.compile_program(&ast);
         
@@ -238,7 +238,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -246,7 +246,7 @@ mod tests {
         let context = Context::create();
         let module = context.create_module("test");
         let builder = context.create_builder();
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new().unwrap();
         
         let compilation_result = codegen.compile_program(&ast);
         

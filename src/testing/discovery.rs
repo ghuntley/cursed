@@ -136,6 +136,26 @@ impl TestDiscovery {
         self
     }
 
+    /// Filter test suites by pattern
+    pub fn filter_tests(&self, pattern: &str) -> TestingResult<Vec<TestSuite>> {
+        let filtered_suites = self.discovered_suites
+            .iter()
+            .filter(|suite| {
+                suite.name.contains(pattern) || 
+                suite.test_files.iter().any(|file| {
+                    file.test_functions.iter().any(|func| func.name.contains(pattern))
+                })
+            })
+            .cloned()
+            .collect();
+        Ok(filtered_suites)
+    }
+
+    /// Get discovered test suites
+    pub fn get_discovered_suites(&self) -> &[TestSuite] {
+        &self.discovered_suites
+    }
+
     /// Discover all test files and functions
     pub async fn discover_tests(&mut self) -> TestingResult<Vec<TestSuite>> {
         info!("Starting test discovery in: {}", self.root_directory.display());
@@ -143,7 +163,7 @@ impl TestDiscovery {
         // Create a simple default test suite for now
         let default_suite = TestSuite {
             name: "default".to_string(),
-            test_files: vec![],
+            test_files: Vec::new(),
             total_tests: 0,
             config: TestSuiteConfig::default(),
         };
@@ -279,7 +299,7 @@ impl TestDiscovery {
         };
 
         // Extract function source code (simplified)
-        let source_lines: Vec<&str> = source.lines().collect();
+        let source_lines: Vec<&str> = source.split("\n").collect();
         // Since we don't have line numbers from AST, estimate based on function name search
         let start_line = source_lines.iter()
             .position(|line| line.contains(&func.name.value))
@@ -322,7 +342,7 @@ impl TestDiscovery {
     /// Extract package name from source code
     fn extract_package_name(&self, source: &str) -> Option<String> {
         // Look for package declarations
-        for line in source.lines() {
+        for line in source.split("\n") {
             let trimmed = line.trim();
             if trimmed.starts_with("package ") {
                 return trimmed.strip_prefix("package ")

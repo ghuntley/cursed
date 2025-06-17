@@ -766,7 +766,7 @@ impl FeatureExtractor {
     
     /// Extract function-level features from IR
     fn extract_function_features(&self, function_ir: &str) -> Result<FunctionFeatures> {
-        let lines: Vec<&str> = function_ir.lines().collect();
+        let lines: Vec<&str> = function_ir.split("\n").collect();
         let size_in_bytes = function_ir.len();
         
         // Count different types of operations
@@ -922,7 +922,7 @@ impl FeatureExtractor {
     // Helper methods for feature extraction
     
     fn extract_function_name(&self, function_ir: &str) -> String {
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.trim().starts_with("define") {
                 if let Some(name_start) = line.find('@') {
                     if let Some(name_end) = line[name_start..].find('(') {
@@ -939,7 +939,7 @@ impl FeatureExtractor {
         let mut max_depth = 0;
         let mut current_depth = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             let trimmed = line.trim();
             if trimmed.contains("call") {
                 current_depth += 1;
@@ -958,7 +958,7 @@ impl FeatureExtractor {
         // Simplified: count decision points
         let mut complexity = 1.0; // Base complexity
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             let trimmed = line.trim();
             if trimmed.contains("br i1") || trimmed.contains("switch") ||
                trimmed.contains("select") {
@@ -973,7 +973,7 @@ impl FeatureExtractor {
         // Count def-use chains
         let mut def_count = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.trim().contains("=") && !line.trim().starts_with(";") {
                 def_count += 1;
             }
@@ -986,7 +986,7 @@ impl FeatureExtractor {
         // Count control flow dependencies
         let mut control_deps = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.trim().contains("br") || line.trim().contains("switch") {
                 control_deps += 1;
             }
@@ -999,7 +999,7 @@ impl FeatureExtractor {
         // Estimate register pressure based on variable count
         let mut variable_count = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.trim().contains("%") {
                 variable_count += 1;
             }
@@ -1013,7 +1013,7 @@ impl FeatureExtractor {
         let mut patterns = Vec::new();
         
         // Simple pattern detection
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.contains("getelementptr") {
                 if line.contains("inbounds") {
                     patterns.push(AccessPattern::Sequential);
@@ -1029,7 +1029,7 @@ impl FeatureExtractor {
     fn count_constant_propagation_opportunities(&self, function_ir: &str) -> usize {
         let mut opportunities = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             // Look for operations with constant operands
             if (line.contains("add") || line.contains("mul") || line.contains("sub")) &&
                (line.contains("i32 ") || line.contains("i64 ")) {
@@ -1042,11 +1042,11 @@ impl FeatureExtractor {
     
     fn estimate_dead_code_percentage(&self, function_ir: &str) -> f64 {
         // Heuristic: look for unreachable blocks
-        let total_blocks = function_ir.lines()
+        let total_blocks = function_ir.split("\n")
             .filter(|line| line.trim().ends_with(':'))
             .count();
         
-        let reachable_blocks = function_ir.lines()
+        let reachable_blocks = function_ir.split("\n")
             .filter(|line| line.contains("br label") || line.contains("entry:"))
             .count();
         
@@ -1062,7 +1062,7 @@ impl FeatureExtractor {
         let mut independent_ops = 0;
         let mut total_ops = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.contains("=") && !line.contains("load") && !line.contains("store") {
                 total_ops += 1;
                 // Assume arithmetic operations can be parallelized
@@ -1080,11 +1080,11 @@ impl FeatureExtractor {
     }
     
     fn estimate_memory_bandwidth(&self, function_ir: &str) -> f64 {
-        let memory_ops = function_ir.lines()
+        let memory_ops = function_ir.split("\n")
             .filter(|line| line.contains("load") || line.contains("store"))
             .count();
         
-        let total_ops = function_ir.lines()
+        let total_ops = function_ir.split("\n")
             .filter(|line| line.contains("="))
             .count();
         
@@ -1099,7 +1099,7 @@ impl FeatureExtractor {
         // Simple energy model based on operation types
         let mut energy = 0.0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.contains("add") || line.contains("sub") {
                 energy += 0.1;
             } else if line.contains("mul") {
@@ -1118,7 +1118,7 @@ impl FeatureExtractor {
         // Simplified critical path calculation
         let mut path_length = 0;
         
-        for line in function_ir.lines() {
+        for line in function_ir.split("\n") {
             if line.contains("=") {
                 path_length += 1;
             }
@@ -1128,7 +1128,7 @@ impl FeatureExtractor {
     }
     
     fn analyze_goroutine_usage(&self, function_ir: &str) -> GoroutineUsageFeatures {
-        let goroutine_spawn_count = function_ir.lines()
+        let goroutine_spawn_count = function_ir.split("\n")
             .filter(|line| line.contains("stan") || line.contains("goroutine"))
             .count();
         
@@ -1136,7 +1136,7 @@ impl FeatureExtractor {
             goroutine_spawn_count,
             average_goroutine_lifetime: Duration::from_millis(100),
             stack_size_requirements: 65536,
-            synchronization_primitives: function_ir.lines()
+            synchronization_primitives: function_ir.split("\n")
                 .filter(|line| line.contains("mutex") || line.contains("channel"))
                 .count(),
             concurrent_execution_factor: if goroutine_spawn_count > 0 { 
@@ -1148,7 +1148,7 @@ impl FeatureExtractor {
     }
     
     fn analyze_channel_usage(&self, function_ir: &str) -> ChannelUsageFeatures {
-        let channel_count = function_ir.lines()
+        let channel_count = function_ir.split("\n")
             .filter(|line| line.contains("channel") || line.contains("chan"))
             .count();
         
@@ -1156,10 +1156,10 @@ impl FeatureExtractor {
             channel_count,
             buffer_sizes: vec![0, 1, 10],
             send_receive_ratio: 1.0,
-            select_statement_usage: function_ir.lines()
+            select_statement_usage: function_ir.split("\n")
                 .filter(|line| line.contains("select"))
                 .count(),
-            channel_closing_patterns: function_ir.lines()
+            channel_closing_patterns: function_ir.split("\n")
                 .filter(|line| line.contains("close"))
                 .count(),
         }
@@ -1167,17 +1167,17 @@ impl FeatureExtractor {
     
     fn analyze_gen_z_slang(&self, function_ir: &str) -> GenZSlangFeatures {
         GenZSlangFeatures {
-            slay_function_usage: function_ir.lines()
+            slay_function_usage: function_ir.split("\n")
                 .filter(|line| line.contains("slay"))
                 .count(),
-            yolo_expression_count: function_ir.lines()
+            yolo_expression_count: function_ir.split("\n")
                 .filter(|line| line.contains("yolo"))
                 .count(),
-            sus_variable_patterns: function_ir.lines()
+            sus_variable_patterns: function_ir.split("\n")
                 .filter(|line| line.contains("sus"))
                 .count(),
             facts_declaration_style: function_ir.contains("facts"),
-            periodt_termination_usage: function_ir.lines()
+            periodt_termination_usage: function_ir.split("\n")
                 .filter(|line| line.contains("periodt"))
                 .count(),
             vibe_check_complexity: if function_ir.contains("vibe_check") { 2.0 } else { 0.0 },
@@ -1185,7 +1185,7 @@ impl FeatureExtractor {
     }
     
     fn analyze_interface_complexity(&self, function_ir: &str) -> InterfaceComplexityFeatures {
-        let interface_count = function_ir.lines()
+        let interface_count = function_ir.split("\n")
             .filter(|line| line.contains("interface") || line.contains("collab"))
             .count();
         
@@ -1194,7 +1194,7 @@ impl FeatureExtractor {
             method_count_per_interface: vec![3, 5, 2],
             inheritance_depth: 2,
             dynamic_dispatch_frequency: 0.3,
-            type_assertion_count: function_ir.lines()
+            type_assertion_count: function_ir.split("\n")
                 .filter(|line| line.contains(".(") && line.contains(")?"))
                 .count(),
         }
@@ -1202,16 +1202,16 @@ impl FeatureExtractor {
     
     fn analyze_error_propagation(&self, function_ir: &str) -> ErrorPropagationFeatures {
         ErrorPropagationFeatures {
-            question_mark_operator_usage: function_ir.lines()
+            question_mark_operator_usage: function_ir.split("\n")
                 .filter(|line| line.contains("?"))
                 .count(),
-            error_handling_blocks: function_ir.lines()
+            error_handling_blocks: function_ir.split("\n")
                 .filter(|line| line.contains("catch") || line.contains("error"))
                 .count(),
-            panic_recovery_usage: function_ir.lines()
+            panic_recovery_usage: function_ir.split("\n")
                 .filter(|line| line.contains("panic") || line.contains("recover"))
                 .count(),
-            error_conversion_patterns: function_ir.lines()
+            error_conversion_patterns: function_ir.split("\n")
                 .filter(|line| line.contains("into()") || line.contains("from()"))
                 .count(),
         }

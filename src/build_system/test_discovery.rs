@@ -378,7 +378,7 @@ impl TestDiscovery {
         
         debug!("Parsing test file: {}", file_path.display());
         
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let mut i = 0;
         
         while i < lines.len() {

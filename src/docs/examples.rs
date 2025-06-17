@@ -277,7 +277,7 @@ impl ExampleGenerator {
         let content = fs::read_to_string(file_path).map_err(Error::Io)?;
         let mut examples = HashMap::new();
         
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let mut i = 0;
         
         while i < lines.len() {
@@ -379,7 +379,7 @@ impl ExampleGenerator {
         }
         
         // Clean up whitespace
-        let lines: Vec<String> = cleaned.lines()
+        let lines: Vec<String> = cleaned.split("\n")
             .map(|line| line.trim_start())
             .filter(|line| !line.trim().is_empty())
             .map(|line| line.to_string())

@@ -359,7 +359,7 @@ pub mod utils {
         if package_file.exists() {
             if let Ok(content) = std::fs::read_to_string(&package_file) {
                 // Simple TOML parsing for common fields
-                for line in content.lines() {
+                for line in content.split("\n") {
                     let line = line.trim();
                     if let Some(name) = line.strip_prefix("name = ") {
                         title = Some(name.trim_matches('"').to_string());

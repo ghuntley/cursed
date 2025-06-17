@@ -626,7 +626,7 @@ impl DocumentationExtractor {
         let file_size = metadata.len();
         
         let source = fs::read_to_string(file_path).map_err(Error::Io)?;
-        let line_count = source.lines().count();
+        let line_count = source.split("\n").count();
         
         let last_modified = metadata.modified().ok();
         
@@ -1107,7 +1107,7 @@ impl CommentParser {
         let mut examples = Vec::new();
 
         // Extract summary (first line)
-        if let Some(first_line) = content.lines().next() {
+        if let Some(first_line) = content.split("\n").next() {
             summary = first_line.trim().to_string();
         }
 

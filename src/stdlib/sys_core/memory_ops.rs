@@ -237,7 +237,7 @@ pub fn get_memory_info() -> SysCoreResult<MemoryInfo> {
         let mut swap_total = 0u64;
         let mut swap_free = 0u64;
         
-        for line in meminfo.lines() {
+        for line in meminfo.split("\n") {
             if let Some(value) = parse_meminfo_line(line, "MemTotal:") {
                 total = value;
             } else if let Some(value) = parse_meminfo_line(line, "MemAvailable:") {

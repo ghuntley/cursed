@@ -19,7 +19,7 @@ fn test_parse_generic_struct() {let input =
         be_like Box[T] squad {value T};
     ";"
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     // We should have one statement - a SquadStatement
@@ -53,7 +53,7 @@ fn test_parse_interface() {let input =
 #[test]
 fn test_parse_generic_interface() {let input = ";"
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     // We should have one statement - a CollabStatement
