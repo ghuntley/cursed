@@ -10,4 +10,4 @@ It's important that you verify the status by reading the files in "src/*". Do no
 
 Continue with this process forever until you run out of context window space.
 
-REALLY IMPORTANT - DO NOT USE UNICODE OR EMOJIS
+Use as many subagents as you need to use (up to 500)
