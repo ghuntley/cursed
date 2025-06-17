@@ -26,7 +26,7 @@ pub use key_generator::{KeyGenerator, AsymmetricAlgorithm, GeneratedKeyPair, Key
 pub use algorithms::*;
 
 // Algorithm-specific exports
-pub use rsa::{RsaEngine, CursedRsaKeyPair, RsaError, RsaPadding, KeyFormat as RsaKeyFormat};
+pub use rsa::{RsaEngine, CursedRsaKeyPair, CursedRsaKeyPair as RsaKeyPair, RsaError, RsaPadding, KeyFormat as RsaKeyFormat};
 pub use ecc::{EccEngine, EccKeyPair, EccError, EccCurve, EccKeyFormat, EccHashAlgorithm};
 pub use ed25519::{Ed25519Engine, Ed25519KeyPair, Ed25519Error, Ed25519KeyFormat};
 pub use x25519::{X25519Engine, X25519KeyPair, X25519EphemeralKeyPair, X25519Error, X25519KeyFormat};
@@ -56,7 +56,8 @@ pub use key_agreement::{
 };
 pub use key_generator::{generate_asymmetric_keypair, list_asymmetric_algorithms};
 pub use asymmetric::{
-    AsymmetricCrypto, generate_asymmetric_keypair as generate_keypair_unified,
+    AsymmetricCrypto, AsymmetricKey, AsymmetricKeyPair,
+    generate_asymmetric_keypair as generate_keypair_unified,
     asymmetric_sign, asymmetric_verify, asymmetric_key_exchange,
     get_asymmetric_algorithms, get_asymmetric_capabilities
 };

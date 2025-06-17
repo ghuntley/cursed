@@ -692,11 +692,8 @@ impl LlvmCodeGenerator {
         
         // Create a function pass manager for local optimizations
         let fpm = PassManager::create(&self.module);
-        let pmb = PassManagerBuilder::create();
-        pmb.set_optimization_level(inkwell::OptimizationLevel::Default);
-        pmb.populate_function_pass_manager(&fpm);
         
-        // Add specific passes for error check optimization
+        // Add specific passes for error check optimization (LLVM 17 direct approach)
         fpm.add_instruction_combining_pass();
         fpm.add_dead_code_elimination_pass();
         fpm.add_cfg_simplification_pass();

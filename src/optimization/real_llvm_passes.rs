@@ -18,7 +18,7 @@ use inkwell::{
     types::{BasicType, IntType, FloatType},
     basic_block::BasicBlock,
     builder::Builder,
-    passes::{PassManager, PassManagerBuilder},
+    passes::PassManager,
     OptimizationLevel as InkwellOptLevel,
 };
 
@@ -230,35 +230,30 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
     /// Configure optimization passes based on optimization level
     #[instrument(skip(self))]
     fn configure_optimization_passes(&mut self) -> Result<()> {
-        let inkwell_level = match self.optimization_level {
-            OptimizationLevel::None => InkwellOptLevel::None,
-            OptimizationLevel::Less => InkwellOptLevel::Less,
-            OptimizationLevel::Default => InkwellOptLevel::Default,
-            OptimizationLevel::Aggressive => InkwellOptLevel::Aggressive,
-            OptimizationLevel::Size => InkwellOptLevel::Default, // Use default for size
-            OptimizationLevel::SizeAggressive => InkwellOptLevel::Aggressive,
-        };
-        
-        // Configure module-level passes
-        let builder = PassManagerBuilder::create();
-        builder.set_optimization_level(inkwell_level);
+        debug!("Configuring optimization passes for level {:?}", self.optimization_level);
         
         match self.optimization_level {
             OptimizationLevel::None => {
                 // Minimal optimizations
                 debug!("Configuring minimal optimization passes");
+                // No additional passes for None level
             }
             OptimizationLevel::Less => {
                 debug!("Configuring basic optimization passes");
-                builder.set_size_level(0);
+                // Basic optimizations
                 self.pass_manager.add_instruction_combining_pass();
                 self.pass_manager.add_reassociate_pass();
                 self.pass_manager.add_gvn_pass();
                 self.pass_manager.add_cfg_simplification_pass();
+                
+                // Function-level passes
+                self.function_pass_manager.add_instruction_combining_pass();
+                self.function_pass_manager.add_reassociate_pass();
+                self.function_pass_manager.add_cfg_simplification_pass();
             }
             OptimizationLevel::Default => {
                 debug!("Configuring standard optimization passes");
-                builder.set_size_level(0);
+                // Standard optimizations
                 self.pass_manager.add_instruction_combining_pass();
                 self.pass_manager.add_reassociate_pass();
                 self.pass_manager.add_gvn_pass();
@@ -267,10 +262,18 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 self.pass_manager.add_dead_code_elimination_pass();
                 self.pass_manager.add_sccp_pass();
                 self.pass_manager.add_aggressive_dce_pass();
+                
+                // Function-level passes
+                self.function_pass_manager.add_instruction_combining_pass();
+                self.function_pass_manager.add_reassociate_pass();
+                self.function_pass_manager.add_gvn_pass();
+                self.function_pass_manager.add_cfg_simplification_pass();
+                self.function_pass_manager.add_sccp_pass();
+                self.function_pass_manager.add_aggressive_dce_pass();
             }
             OptimizationLevel::Aggressive => {
                 debug!("Configuring aggressive optimization passes");
-                builder.set_size_level(0);
+                // Aggressive optimizations
                 self.pass_manager.add_instruction_combining_pass();
                 self.pass_manager.add_reassociate_pass();
                 self.pass_manager.add_gvn_pass();
@@ -282,20 +285,31 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 self.pass_manager.add_memcpy_optimize_pass();
                 self.pass_manager.add_loop_unroll_pass();
                 self.pass_manager.add_loop_vectorize_pass();
+                
+                // Function-level passes
+                self.function_pass_manager.add_instruction_combining_pass();
+                self.function_pass_manager.add_reassociate_pass();
+                self.function_pass_manager.add_gvn_pass();
+                self.function_pass_manager.add_cfg_simplification_pass();
+                self.function_pass_manager.add_sccp_pass();
+                self.function_pass_manager.add_aggressive_dce_pass();
+                self.function_pass_manager.add_loop_unroll_pass();
             }
             OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
                 debug!("Configuring size optimization passes");
-                builder.set_size_level(2);
+                // Size optimizations - focus on reducing code size
                 self.pass_manager.add_function_inlining_pass();
                 self.pass_manager.add_dead_code_elimination_pass();
                 self.pass_manager.add_cfg_simplification_pass();
                 self.pass_manager.add_aggressive_dce_pass();
+                self.pass_manager.add_instruction_combining_pass();
+                
+                // Function-level passes for size
+                self.function_pass_manager.add_instruction_combining_pass();
+                self.function_pass_manager.add_cfg_simplification_pass();
+                self.function_pass_manager.add_aggressive_dce_pass();
             }
         }
-        
-        // Populate pass managers
-        builder.populate_module_pass_manager(&self.pass_manager);
-        builder.populate_function_pass_manager(&self.function_pass_manager);
         
         Ok(())
     }

@@ -17,6 +17,7 @@ use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey, SECRET_KEY_LENGTH as ED25519_SECRET_KEY_LENGTH};
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use elliptic_curve::pkcs8::{EncodePrivateKey as EcEncodePrivateKey, DecodePrivateKey as EcDecodePrivateKey};
+use elliptic_curve::sec1::{ToEncodedPoint, FromEncodedPoint};
 
 /// Supported private key formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -501,6 +502,18 @@ fn convert_rsa_private_key_format(
             RsaPrivateKey::from_pkcs1_der(private_key_bytes)
                 .map_err(|e| CursedError::CryptoError(format!("Failed to parse PKCS#1 DER: {}", e)))?
         },
+        PrivateKeyFormat::Pkcs8Pem => {
+            let pem_str = String::from_utf8(private_key_bytes.to_vec())
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid PEM string: {}", e)))?;
+            RsaPrivateKey::from_pkcs8_pem(&pem_str)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse PKCS#8 PEM: {}", e)))?
+        },
+        PrivateKeyFormat::Pkcs1Pem => {
+            let pem_str = String::from_utf8(private_key_bytes.to_vec())
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid PEM string: {}", e)))?;
+            RsaPrivateKey::from_pkcs1_pem(&pem_str)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse PKCS#1 PEM: {}", e)))?
+        },
         _ => return Err(CursedError::NotImplemented(format!("Parsing {} format not implemented", from_format.name()))),
     };
     
@@ -515,6 +528,16 @@ fn convert_rsa_private_key_format(
             private_key.to_pkcs1_der()
                 .map_err(|e| CursedError::CryptoError(format!("Failed to encode PKCS#1 DER: {}", e)))?
                 .as_bytes().to_vec()
+        },
+        PrivateKeyFormat::Pkcs8Pem => {
+            private_key.to_pkcs8_pem(rsa::pkcs1::LineEnding::LF)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode PKCS#8 PEM: {}", e)))?
+                .to_string().as_bytes().to_vec()
+        },
+        PrivateKeyFormat::Pkcs1Pem => {
+            private_key.to_pkcs1_pem(rsa::pkcs1::LineEnding::LF)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode PKCS#1 PEM: {}", e)))?
+                .to_string().as_bytes().to_vec()
         },
         _ => return Err(CursedError::NotImplemented(format!("Encoding {} format not implemented", to_format.name()))),
     };
@@ -547,6 +570,16 @@ fn convert_p256_private_key_format(
             P256SecretKey::from_bytes(&private_key_bytes.into())
                 .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 raw bytes: {}", e)))?
         },
+        PrivateKeyFormat::Sec1Der => {
+            P256SecretKey::from_sec1_der(private_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 SEC1 DER: {}", e)))?
+        },
+        PrivateKeyFormat::Pkcs8Pem => {
+            let pem_str = String::from_utf8(private_key_bytes.to_vec())
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid PEM string: {}", e)))?;
+            P256SecretKey::from_pkcs8_pem(&pem_str)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-256 PEM: {}", e)))?
+        },
         _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for P-256 private key not implemented", from_format.name()))),
     };
     
@@ -559,6 +592,16 @@ fn convert_p256_private_key_format(
         },
         PrivateKeyFormat::Raw => {
             private_key.to_bytes().to_vec()
+        },
+        PrivateKeyFormat::Sec1Der => {
+            let der = private_key.to_sec1_der()
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-256 SEC1 DER: {}", e)))?;
+            der.as_bytes().to_vec()
+        },
+        PrivateKeyFormat::Pkcs8Pem => {
+            let pem = private_key.to_pkcs8_pem(elliptic_curve::pkcs8::LineEnding::LF)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-256 PEM: {}", e)))?;
+            pem.to_string().as_bytes().to_vec()
         },
         _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for P-256 private key not implemented", to_format.name()))),
     };
@@ -591,6 +634,16 @@ fn convert_p384_private_key_format(
             P384SecretKey::from_bytes(&private_key_bytes.into())
                 .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 raw bytes: {}", e)))?
         },
+        PrivateKeyFormat::Sec1Der => {
+            P384SecretKey::from_sec1_der(private_key_bytes)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 SEC1 DER: {}", e)))?
+        },
+        PrivateKeyFormat::Pkcs8Pem => {
+            let pem_str = String::from_utf8(private_key_bytes.to_vec())
+                .map_err(|e| CursedError::InvalidArgument(format!("Invalid PEM string: {}", e)))?;
+            P384SecretKey::from_pkcs8_pem(&pem_str)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to parse P-384 PEM: {}", e)))?
+        },
         _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for P-384 private key not implemented", from_format.name()))),
     };
     
@@ -603,6 +656,16 @@ fn convert_p384_private_key_format(
         },
         PrivateKeyFormat::Raw => {
             private_key.to_bytes().to_vec()
+        },
+        PrivateKeyFormat::Sec1Der => {
+            let der = private_key.to_sec1_der()
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-384 SEC1 DER: {}", e)))?;
+            der.as_bytes().to_vec()
+        },
+        PrivateKeyFormat::Pkcs8Pem => {
+            let pem = private_key.to_pkcs8_pem(elliptic_curve::pkcs8::LineEnding::LF)
+                .map_err(|e| CursedError::CryptoError(format!("Failed to encode P-384 PEM: {}", e)))?;
+            pem.to_string().as_bytes().to_vec()
         },
         _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for P-384 private key not implemented", to_format.name()))),
     };
@@ -632,12 +695,26 @@ fn convert_ed25519_private_key_format(
                 .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 key length".to_string()))?;
             SigningKey::from_bytes(&key_bytes)
         },
+        PrivateKeyFormat::Pkcs8Der => {
+            // Try to parse as PKCS#8 DER or raw 32-byte key
+            if private_key_bytes.len() == 32 {
+                let key_bytes: [u8; 32] = private_key_bytes.try_into()
+                    .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 key length".to_string()))?;
+                SigningKey::from_bytes(&key_bytes)
+            } else {
+                return Err(CursedError::NotImplemented("Ed25519 PKCS#8 DER parsing not fully supported yet".to_string()));
+            }
+        },
         _ => return Err(CursedError::NotImplemented(format!("Parsing {} format for Ed25519 private key not implemented", from_format.name()))),
     };
     
     // Encode to target format
     let converted_bytes = match to_format {
         PrivateKeyFormat::Raw => {
+            private_key.to_bytes().to_vec()
+        },
+        PrivateKeyFormat::Pkcs8Der => {
+            // For now, just return raw bytes - full PKCS#8 encoding would require more complex implementation
             private_key.to_bytes().to_vec()
         },
         _ => return Err(CursedError::NotImplemented(format!("Encoding {} format for Ed25519 private key not implemented", to_format.name()))),

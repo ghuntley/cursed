@@ -28,7 +28,13 @@ use elliptic_curve::{
 // Ed25519 key handling
 use ed25519_dalek::{SigningKey, VerifyingKey};
 
-use super::{PublicKeyAlgorithm, PublicKeyFormat, PrivateKeyFormat, EccCurve};
+use crate::stdlib::packages::crypto_asymmetric::public_key::{PublicKeyAlgorithm, PublicKeyFormat};
+use crate::stdlib::packages::crypto_asymmetric::private_key::PrivateKeyFormat;
+use crate::stdlib::packages::crypto_asymmetric::ecc::EccCurve;
+
+// Additional dependencies for enhanced format support
+use base64::{Engine as _, engine::general_purpose};
+use num_bigint::BigUint;
 
 /// fr fr Enhanced public key format converter with full format support
 pub fn convert_public_key_format_enhanced(
@@ -46,7 +52,14 @@ pub fn convert_public_key_format_enhanced(
         PublicKeyAlgorithm::EcdsaP384 => convert_ecc_public_key_enhanced(&public_key_bytes, EccCurve::P384, from_format, to_format),
         PublicKeyAlgorithm::EcdsaP521 => convert_ecc_public_key_enhanced(&public_key_bytes, EccCurve::P521, from_format, to_format),
         PublicKeyAlgorithm::Ed25519 => convert_ed25519_public_key_enhanced(&public_key_bytes, from_format, to_format),
-        _ => Err(CursedError::NotImplemented(format!("Format conversion not yet implemented for {}", algorithm.name()))),
+        PublicKeyAlgorithm::X25519 => {
+            // X25519 only supports raw format currently
+            if from_format == PublicKeyFormat::Raw && to_format == PublicKeyFormat::Raw {
+                create_conversion_result("X25519", from_format, to_format, public_key_bytes.to_vec())
+            } else {
+                Err(CursedError::InvalidArgument("X25519 only supports raw format".to_string()))
+            }
+        },
     }
 }
 
@@ -66,7 +79,14 @@ pub fn convert_private_key_format_enhanced(
         PublicKeyAlgorithm::EcdsaP384 => convert_ecc_private_key_enhanced(&private_key_bytes, EccCurve::P384, from_format, to_format),
         PublicKeyAlgorithm::EcdsaP521 => convert_ecc_private_key_enhanced(&private_key_bytes, EccCurve::P521, from_format, to_format),
         PublicKeyAlgorithm::Ed25519 => convert_ed25519_private_key_enhanced(&private_key_bytes, from_format, to_format),
-        _ => Err(CursedError::NotImplemented(format!("Format conversion not yet implemented for {}", algorithm.name()))),
+        PublicKeyAlgorithm::X25519 => {
+            // X25519 only supports raw format currently
+            if from_format == PrivateKeyFormat::Raw && to_format == PrivateKeyFormat::Raw {
+                create_conversion_result("X25519", from_format.into(), to_format.into(), private_key_bytes.to_vec())
+            } else {
+                Err(CursedError::InvalidArgument("X25519 only supports raw format".to_string()))
+            }
+        },
     }
 }
 
@@ -279,6 +299,9 @@ fn convert_p256_public_key(
         PublicKeyFormat::Jwk => {
             encode_p256_public_key_to_jwk(&public_key)?.as_bytes().to_vec()
         },
+        PublicKeyFormat::SshPublicKey => {
+            encode_p256_public_key_to_ssh(&public_key)?.as_bytes().to_vec()
+        },
         _ => return Err(CursedError::NotImplemented(format!("P-256 encoding for {} format not implemented", to_format.name()))),
     };
     
@@ -387,6 +410,9 @@ fn convert_p384_public_key(
         PublicKeyFormat::Jwk => {
             encode_p384_public_key_to_jwk(&public_key)?.as_bytes().to_vec()
         },
+        PublicKeyFormat::SshPublicKey => {
+            encode_p384_public_key_to_ssh(&public_key)?.as_bytes().to_vec()
+        },
         _ => return Err(CursedError::NotImplemented(format!("P-384 encoding for {} format not implemented", to_format.name()))),
     };
     
@@ -493,6 +519,9 @@ fn convert_p521_public_key(
         PublicKeyFormat::Jwk => {
             encode_p521_public_key_to_jwk(&public_key)?.as_bytes().to_vec()
         },
+        PublicKeyFormat::SshPublicKey => {
+            encode_p521_public_key_to_ssh(&public_key)?.as_bytes().to_vec()
+        },
         _ => return Err(CursedError::NotImplemented(format!("P-521 encoding for {} format not implemented", to_format.name()))),
     };
     
@@ -570,8 +599,17 @@ fn convert_ed25519_public_key_enhanced(
                 .map_err(|e| CursedError::CryptoError(format!("Invalid Ed25519 public key: {}", e)))?
         },
         PublicKeyFormat::Pkcs8Der => {
-            // For simplicity, implement basic conversion
-            return Err(CursedError::NotImplemented("Ed25519 PKCS#8 DER parsing not yet implemented".to_string()));
+            // Parse Ed25519 public key from PKCS#8 DER
+            if public_key_bytes.len() == 32 {
+                // Raw 32-byte key
+                let mut key_bytes = [0u8; 32];
+                key_bytes.copy_from_slice(public_key_bytes);
+                VerifyingKey::from_bytes(&key_bytes)
+                    .map_err(|e| CursedError::CryptoError(format!("Invalid Ed25519 public key: {}", e)))?
+            } else {
+                // Try PKCS#8 DER format
+                return Err(CursedError::NotImplemented("Ed25519 PKCS#8 DER parsing not fully implemented yet".to_string()));
+            }
         },
         _ => return Err(CursedError::NotImplemented(format!("Ed25519 public key parsing for {} format not implemented", from_format.name()))),
     };
@@ -583,6 +621,9 @@ fn convert_ed25519_public_key_enhanced(
         },
         PublicKeyFormat::Jwk => {
             encode_ed25519_public_key_to_jwk(&public_key)?.as_bytes().to_vec()
+        },
+        PublicKeyFormat::SshPublicKey => {
+            encode_ed25519_public_key_to_ssh(&public_key)?.as_bytes().to_vec()
         },
         _ => return Err(CursedError::NotImplemented(format!("Ed25519 public key encoding for {} format not implemented", to_format.name()))),
     };
@@ -726,8 +767,97 @@ fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<String, 
 }
 
 fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> Result<String, CursedError> {
-    // Basic SSH public key format encoding
-    Err(CursedError::NotImplemented("RSA SSH public key encoding not yet implemented".to_string()))
+    // Get RSA parameters
+    let n = public_key.n();
+    let e = public_key.e();
+    
+    // Convert to SSH wire format
+    let mut ssh_data = Vec::new();
+    
+    // Algorithm identifier
+    let algorithm = b"ssh-rsa";
+    ssh_data.extend_from_slice(&(algorithm.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(algorithm);
+    
+    // Public exponent (e)
+    let e_bytes = e.to_bytes_be();
+    ssh_data.extend_from_slice(&(e_bytes.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(&e_bytes);
+    
+    // Modulus (n) 
+    let n_bytes = n.to_bytes_be();
+    ssh_data.extend_from_slice(&(n_bytes.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(&n_bytes);
+    
+    // Base64 encode
+    let b64_data = general_purpose::STANDARD.encode(&ssh_data);
+    
+    // Format as SSH public key
+    Ok(format!("ssh-rsa {} cursed-generated-key", b64_data))
+}
+
+fn encode_p256_public_key_to_ssh(
+    public_key: &P256PublicKey
+) -> Result<String, CursedError> {
+    encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp256")
+}
+
+fn encode_p384_public_key_to_ssh(
+    public_key: &P384PublicKey
+) -> Result<String, CursedError> {
+    encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp384")
+}
+
+fn encode_p521_public_key_to_ssh(
+    public_key: &P521PublicKey
+) -> Result<String, CursedError> {
+    encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp521")
+}
+
+fn encode_ecdsa_point_to_ssh(
+    point_bytes: &[u8], 
+    curve_name: &str
+) -> Result<String, CursedError> {
+    let algorithm = format!("ecdsa-sha2-{}", curve_name);
+    
+    let mut ssh_data = Vec::new();
+    
+    // Algorithm identifier
+    ssh_data.extend_from_slice(&(algorithm.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(algorithm.as_bytes());
+    
+    // Curve identifier  
+    ssh_data.extend_from_slice(&(curve_name.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(curve_name.as_bytes());
+    
+    // Public key point
+    ssh_data.extend_from_slice(&(point_bytes.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(point_bytes);
+    
+    // Base64 encode
+    let b64_data = general_purpose::STANDARD.encode(&ssh_data);
+    
+    Ok(format!("{} {} cursed-generated-key", algorithm, b64_data))
+}
+
+fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> Result<String, CursedError> {
+    let algorithm = b"ssh-ed25519";
+    
+    let mut ssh_data = Vec::new();
+    
+    // Algorithm identifier
+    ssh_data.extend_from_slice(&(algorithm.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(algorithm);
+    
+    // Public key bytes
+    let key_bytes = public_key.as_bytes();
+    ssh_data.extend_from_slice(&(key_bytes.len() as u32).to_be_bytes());
+    ssh_data.extend_from_slice(key_bytes);
+    
+    // Base64 encode
+    let b64_data = general_purpose::STANDARD.encode(&ssh_data);
+    
+    Ok(format!("ssh-ed25519 {} cursed-generated-key", b64_data))
 }
 
 fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256PublicKey, CursedError> {

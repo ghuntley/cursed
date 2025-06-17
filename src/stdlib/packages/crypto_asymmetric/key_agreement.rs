@@ -11,6 +11,7 @@ use rand::RngCore;
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey, ecdh::EphemeralSecret as P256EphemeralSecret};
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey, ecdh::EphemeralSecret as P384EphemeralSecret};
+use p521::{SecretKey as P521SecretKey, PublicKey as P521PublicKey, ecdh::EphemeralSecret as P521EphemeralSecret};
 use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep};
 use sha2::{Sha256, Sha384, Sha512, Digest};
 use hkdf::Hkdf;
@@ -259,12 +260,31 @@ pub fn ecdh_p521_agreement(args: &[Value]) -> Result<Value, CursedError> {
         return Err(CursedError::InvalidArgument("P-521 private key must be 66 bytes".to_string()));
     }
     
-    // For now, return a detailed error explaining P-521 implementation status
-    Err(CursedError::NotImplemented(format!(
-        "P-521 ECDH not yet implemented - requires specialized curve arithmetic. Private key length: {}, Public key length: {}",
-        private_key_bytes.len(),
-        public_key_bytes.len()
-    )))
+    // Parse private key  
+    let private_key = P521SecretKey::from_bytes(&private_key_bytes.into())
+        .map_err(|e| CursedError::CryptoError(format!("Invalid P-521 private key: {}", e)))?;
+    
+    // Parse public key
+    let public_key = P521PublicKey::from_sec1_bytes(&public_key_bytes)
+        .map_err(|e| CursedError::CryptoError(format!("Invalid P-521 public key: {}", e)))?;
+    
+    // Perform ECDH
+    let shared_secret = diffie_hellman(private_key.to_nonzero_scalar(), public_key.as_affine());
+    let shared_secret_bytes = shared_secret.raw_secret_bytes().to_vec();
+    
+    // Derive key using HKDF-SHA512
+    let hk = Hkdf::<Sha512>::new(None, &shared_secret_bytes);
+    let mut derived_key = vec![0u8; 64];
+    hk.expand(b"CURSED-ECDH-P521", &mut derived_key)
+        .map_err(|e| CursedError::CryptoError(format!("Key derivation failed: {}", e)))?;
+    
+    let result = KeyAgreementResult::new(
+        KeyAgreementAlgorithm::EcdhP521,
+        shared_secret_bytes,
+        Some(derived_key),
+    );
+    
+    result.to_value()
 }
 
 /// X25519 key agreement
