@@ -142,9 +142,9 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(input: String) -> Self {
+    pub fn new(input: &str) -> Self {
         Self {
-            input,
+            input: input.to_string(),
             position: 0,
             line: 1,
             column: 1,

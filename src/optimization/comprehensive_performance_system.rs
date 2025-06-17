@@ -694,7 +694,7 @@ impl RuntimePerformanceMonitor {
         {
             // Read from /proc/self/status for accurate memory usage
             if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
-                for line in status.lines() {
+                for line in status.split("\n") {
                     if line.starts_with("VmRSS:") {
                         if let Some(mem_str) = line.split_whitespace().nth(1) {
                             if let Ok(mem_kb) = mem_str.parse::<u64>() {
@@ -730,7 +730,7 @@ impl RuntimePerformanceMonitor {
                 .args(&["/FI", &format!("PID eq {}", std::process::id()), "/FO", "CSV"])
                 .output() {
                 if let Ok(output_str) = String::from_utf8(output.stdout) {
-                    for line in output_str.lines().skip(1) {
+                    for line in output_str.split("\n").skip(1) {
                         let parts: Vec<&str> = line.split(',').collect();
                         if parts.len() >= 5 {
                             let mem_str = parts[4].trim_matches('"').replace(",", "");
@@ -760,7 +760,7 @@ impl RuntimePerformanceMonitor {
             static mut LAST_TOTAL_TIME: u64 = 0;
             
             if let Ok(stat) = std::fs::read_to_string("/proc/stat") {
-                if let Some(cpu_line) = stat.lines().next() {
+                if let Some(cpu_line) = stat.split("\n").next() {
                     let values: Vec<u64> = cpu_line
                         .split_whitespace()
                         .skip(1)
@@ -802,7 +802,7 @@ impl RuntimePerformanceMonitor {
         #[cfg(target_os = "linux")]
         {
             if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
-                for line in meminfo.lines() {
+                for line in meminfo.split("\n") {
                     if line.starts_with("MemTotal:") {
                         if let Some(mem_str) = line.split_whitespace().nth(1) {
                             if let Ok(mem_kb) = mem_str.parse::<u64>() {
@@ -841,7 +841,7 @@ impl RuntimePerformanceMonitor {
                 let mut buffers = None;
                 let mut cached = None;
                 
-                for line in meminfo.lines() {
+                for line in meminfo.split("\n") {
                     if line.starts_with("MemAvailable:") {
                         if let Some(mem_str) = line.split_whitespace().nth(1) {
                             available = mem_str.parse::<u64>().ok().map(|kb| kb * 1024);
@@ -882,7 +882,7 @@ impl RuntimePerformanceMonitor {
                 let mut read_bytes = 0u64;
                 let mut write_bytes = 0u64;
                 
-                for line in io_stats.lines() {
+                for line in io_stats.split("\n") {
                     if line.starts_with("read_bytes:") {
                         if let Some(bytes_str) = line.split_whitespace().nth(1) {
                             read_bytes = bytes_str.parse().unwrap_or(0);
@@ -911,7 +911,7 @@ impl RuntimePerformanceMonitor {
             if let Ok(net_stats) = std::fs::read_to_string("/proc/net/dev") {
                 let mut total_bytes = 0u64;
                 
-                for line in net_stats.lines().skip(2) { // Skip header lines
+                for line in net_stats.split("\n").skip(2) { // Skip header lines
                     let parts: Vec<&str> = line.split_whitespace().collect();
                     if parts.len() >= 10 {
                         // Sum receive and transmit bytes (columns 1 and 9)

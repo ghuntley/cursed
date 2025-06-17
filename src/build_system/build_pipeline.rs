@@ -155,7 +155,7 @@ impl BuildPipeline {
         let total_duration = start_time.elapsed();
         statistics.total_duration = total_duration;
         
-        let success = errors.is_empty() && !results.values().any(|r| !r.success);
+        let success = errors.len() == 0 && !results.values().any(|r| !r.success);
         
         info!("Build pipeline completed in {:?}, success: {}", total_duration, success);
         
@@ -303,7 +303,7 @@ impl BuildPipeline {
                 }
             }
             
-            if current_batch.is_empty() {
+            if current_batch.len() == 0 {
                 return Err(BuildError::ConfigError(
                     "Circular dependency detected in pipeline stages".to_string()
                 ));
@@ -439,7 +439,7 @@ impl BuildPipeline {
                     let stderr = String::from_utf8_lossy(&output_result.stderr);
                     
                     output.push(stdout.to_string());
-                    if !stderr.is_empty() {
+                    if !stderr.len() == 0 {
                         warnings.push(stderr.to_string());
                     }
                     
@@ -457,7 +457,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "dependency_resolution".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(), // Will be set by caller
             output,
             warnings,
@@ -488,7 +488,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.len() == 0 {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -503,7 +503,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "format".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(),
             output,
             warnings,
@@ -537,7 +537,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.len() == 0 {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -553,7 +553,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "lint".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(),
             output,
             warnings,
@@ -573,7 +573,7 @@ impl BuildPipeline {
         output.push("Compiling source code...".to_string());
         
         // Build specific targets or all targets
-        let targets_to_build = if context.targets.is_empty() {
+        let targets_to_build = if context.targets.len() == 0 {
             self.config.targets.iter().map(|t| t.name.clone()).collect()
         } else {
             context.targets.clone()
@@ -613,7 +613,7 @@ impl BuildPipeline {
                     let stderr = String::from_utf8_lossy(&output_result.stderr);
                     
                     output.push(stdout.to_string());
-                    if !stderr.is_empty() {
+                    if !stderr.len() == 0 {
                         warnings.push(stderr.to_string());
                     }
                     
@@ -632,7 +632,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "compile".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(),
             output,
             warnings,
@@ -666,7 +666,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.len() == 0 {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -681,7 +681,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "test".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(),
             output,
             warnings,
@@ -716,7 +716,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.len() == 0 {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -733,7 +733,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "docs".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(),
             output,
             warnings,
@@ -790,7 +790,7 @@ impl BuildPipeline {
         
         Ok(StageResult {
             name: "package".to_string(),
-            success: errors.is_empty(),
+            success: errors.len() == 0,
             duration: Duration::default(),
             output,
             warnings,

@@ -412,7 +412,7 @@ impl PrivilegeManager {
                 .map_err(|e| system_error(e.raw_os_error().unwrap_or(-1), "has_capability", "Failed to read process status"))?;
 
             // Look for CapEff line (effective capabilities)
-            for line in status_content.lines() {
+            for line in status_content.split("\n") {
                 if line.starts_with("CapEff:") {
                     if let Some(cap_hex) = line.split_whitespace().nth(1) {
                         if let Ok(cap_mask) = u64::from_str_radix(cap_hex, 16) {

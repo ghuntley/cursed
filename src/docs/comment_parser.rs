@@ -60,7 +60,7 @@ impl CommentParser {
             author: None,
         };
 
-        let lines = content.lines().collect::<Vec<_>>();
+        let lines = content.split("\n").collect::<Vec<_>>();
         let mut current_section = ParsingSection::Summary;
         let mut current_example: Option<ExampleBuilder> = None;
         let mut description_lines = Vec::new();
@@ -148,7 +148,7 @@ impl CommentParser {
 
     /// Extract documentation comments preceding a location
     fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> Result<String, Error> {
-        let lines = source.lines().collect::<Vec<_>>();
+        let lines = source.split("\n").collect::<Vec<_>>();
         let mut doc_lines = Vec::new();
         
         // Look backwards from the location for doc comments
@@ -326,7 +326,7 @@ impl CommentParser {
 
     /// Extract all documentation from source file
     pub fn extract_all_documentation(&self, source: &str) -> Result<Vec<(SourceLocation, ParsedDocumentation)>, Error> {
-        let lines = source.lines().collect::<Vec<_>>();
+        let lines = source.split("\n").collect::<Vec<_>>();
         let mut results = Vec::new();
         let mut current_doc_start: Option<usize> = None;
         let mut doc_lines = Vec::new();

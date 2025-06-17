@@ -288,7 +288,7 @@ impl SignatureFormatHandler {
     }
 
     fn extract_pem_data(&self, pem: &str) -> SignatureResult<String> {
-        let lines: Vec<&str> = pem.lines().collect();
+        let lines: Vec<&str> = pem.split("\n").collect();
         let mut data_lines = Vec::new();
         let mut in_data = false;
 

@@ -346,7 +346,7 @@ slay main() -> i32 {
 
     // Helper function to normalize HTML for comparison by removing timestamps and other variable content
     fn normalize_html_for_comparison(html: &str) -> String {
-        html.lines()
+        html.split("\n")
             .filter(|line| !line.contains("generated on") && !line.contains("timestamp"))
             .map(|line| line.trim())
             .collect::<Vec<_>>()

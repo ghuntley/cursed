@@ -552,7 +552,7 @@ impl TestExecutor {
                 test_name: r.test_function.name.clone(),
                 file_path: r.test_function.file_path.clone(),
                 reason: r.failure_reason.clone().unwrap_or_else(|| format!("{:?}", r.status)),
-                output_excerpt: r.error_output.lines().take(3).collect::<Vec<_>>().join("\n"),
+                output_excerpt: r.error_output.split("\n").take(3).collect::<Vec<_>>().join("\n"),
             })
             .collect();
         
@@ -686,7 +686,7 @@ impl TestOutputParser {
         let finished_regex = Regex::new(r"Finished .+ target\(s\) in (.+)s").ok()?;
         
         // Try to extract from "Finished" line first (most accurate)
-        for line in output.lines() {
+        for line in output.split("\n") {
             if let Some(captures) = finished_regex.captures(line) {
                 if let Some(time_str) = captures.get(1) {
                     if let Ok(seconds) = time_str.as_str().parse::<f64>() {
@@ -700,7 +700,7 @@ impl TestOutputParser {
         let mut total_time = 0.0;
         let mut compilation_count = 0;
         
-        for line in output.lines() {
+        for line in output.split("\n") {
             if line.contains("Compiling") && line.contains("(") {
                 // Extract time from compilation status
                 if let Some(time_part) = line.split('(').nth(1) {

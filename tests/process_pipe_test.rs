@@ -255,7 +255,7 @@ fn test_buffered_pipe_operations() {
     
     // Read lines using buffered reader
     let reader = BufReader::new(stdout);
-    let lines: Vec<String> = reader.lines()
+    let lines: Vec<String> = reader.split("\n")
         .collect::<Result<Vec<_>, _>>()
         .expect("Failed to read lines");
     

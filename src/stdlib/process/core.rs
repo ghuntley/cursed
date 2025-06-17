@@ -1294,7 +1294,7 @@ pub fn list_processes() -> ProcessResult<Vec<ProcessInfo>> {
             .output()
         {
             let output_str = String::from_utf8_lossy(&output.stdout);
-            for line in output_str.lines().skip(1) { // Skip header
+            for line in output_str.split("\n").skip(1) { // Skip header
                 let fields: Vec<&str> = line.split(',').collect();
                 if fields.len() >= 2 {
                     if let Ok(pid) = fields[1].trim_matches('"').parse::<u32>() {
@@ -1342,7 +1342,7 @@ pub fn get_process_info(pid: u32) -> ProcessResult<ProcessInfo> {
         // Memory usage from /proc/[pid]/status
         let mut memory_usage = 0;
         if let Ok(status_content) = fs::read_to_string(format!("/proc/{}/status", pid)) {
-            for line in status_content.lines() {
+            for line in status_content.split("\n") {
                 if line.starts_with("VmRSS:") {
                     if let Some(value_str) = line.split_whitespace().nth(1) {
                         if let Ok(kb) = value_str.parse::<u64>() {

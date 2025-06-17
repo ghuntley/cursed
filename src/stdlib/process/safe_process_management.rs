@@ -439,7 +439,7 @@ fn get_linux_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<
     let mut threads = 1u32;
     let mut fd_size = 0u32;
     
-    for line in status_content.lines() {
+    for line in status_content.split("\n") {
         if line.starts_with("VmSize:") {
             if let Some(value) = line.split_whitespace().nth(1) {
                 vm_size_kb = value.parse().unwrap_or(0);
@@ -464,7 +464,7 @@ fn get_linux_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<
     let mut bytes_written = 0u64;
     
     if let Ok(io_content) = fs::read_to_string(format!("/proc/{}/io", pid)) {
-        for line in io_content.lines() {
+        for line in io_content.split("\n") {
             if line.starts_with("read_bytes:") {
                 if let Some(value) = line.split_whitespace().nth(1) {
                     bytes_read = value.parse().unwrap_or(0);

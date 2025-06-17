@@ -83,7 +83,7 @@ impl FormattingProvider {
                 }
                 
                 // Calculate the range that covers the entire document
-                let lines = content.lines().collect::<Vec<_>>();
+                let lines = content.split("\n").collect::<Vec<_>>();
                 let end_line = lines.len().saturating_sub(1);
                 let end_character = lines.get(end_line).map(|line| line.len()).unwrap_or(0);
                 

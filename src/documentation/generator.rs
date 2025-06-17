@@ -422,7 +422,7 @@ impl DocumentationGenerator {
     #[instrument(skip(self, source_code))]
     fn extract_module_doc(&self, file_path: &Path, source_code: &str) -> Result<Option<ModuleDoc>, Error> {
         // Look for module-level documentation at the beginning of the file
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         let mut description = None;
         
         // Find documentation comments at the start of the file
@@ -662,7 +662,7 @@ impl DocumentationGenerator {
 
     /// Extract documentation comment before a location
     fn extract_doc_comment_before(&self, location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line <= 1 || location.line > lines.len() {
             return Ok(None);
@@ -705,7 +705,7 @@ impl DocumentationGenerator {
 
     /// Extract source code snippet for a location
     fn extract_source_snippet(&self, location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line > lines.len() {
             return Ok(None);
@@ -768,7 +768,7 @@ impl DocumentationGenerator {
             let mut current_example = String::new();
             let mut example_title = None;
             
-            for line in desc.lines() {
+            for line in desc.split("\n") {
                 let trimmed = line.trim();
                 
                 if trimmed.starts_with("```cursed") || trimmed.starts_with("```csd") {
@@ -2237,7 +2237,7 @@ impl DocumentationGenerator {
 
     /// Extract parameter documentation from function documentation
     fn extract_param_documentation(&self, param_name: &str, func_location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         if func_location.line <= 1 || func_location.line > lines.len() {
             return Ok(None);
@@ -2305,7 +2305,7 @@ impl DocumentationGenerator {
 
     /// Extract field documentation
     fn extract_field_documentation(&self, field_name: &str, struct_location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         // Find the struct definition and look for field comments
         let struct_start = struct_location.line.saturating_sub(1);
@@ -2412,7 +2412,7 @@ impl DocumentationGenerator {
     /// Parse implementation methods from source code using enhanced parsing
     fn parse_impl_methods_from_source(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
         let mut methods = Vec::new();
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         // Look for impl blocks for this type
         for (idx, line) in lines.iter().enumerate() {
@@ -2829,7 +2829,7 @@ impl DocumentationGenerator {
     /// Fallback line-based method extraction (legacy support)
     fn extract_methods_line_based(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
         let mut methods = Vec::new();
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         // Look for impl blocks for this type
         for (idx, line) in lines.iter().enumerate() {
@@ -2895,7 +2895,7 @@ impl DocumentationGenerator {
     fn extract_exports(&self, source_code: &str) -> Result<Vec<String>, Error> {
         let mut exports = Vec::new();
         
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let trimmed = line.trim();
             if trimmed.starts_with("export ") || trimmed.starts_with("pub ") {
                 // Extract export name
@@ -2915,7 +2915,7 @@ impl DocumentationGenerator {
     fn extract_submodules(&self, source_code: &str) -> Result<Vec<String>, Error> {
         let mut submodules = Vec::new();
         
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let trimmed = line.trim();
             if trimmed.starts_with("mod ") || trimmed.starts_with("module ") {
                 // Extract module name

@@ -100,7 +100,7 @@ impl OutputStreamer {
                 
                 if let Some(line_cb) = line_callback {
                     // Line-by-line processing
-                    for line_result in reader.lines() {
+                    for line_result in reader.split("\n") {
                         if !*active.lock().unwrap() {
                             break;
                         }
@@ -145,7 +145,7 @@ impl OutputStreamer {
                 thread::spawn(move || {
                     let reader = BufReader::with_capacity(buffer_size, stderr);
                     
-                    for line_result in reader.lines() {
+                    for line_result in reader.split("\n") {
                         if !*active.lock().unwrap() {
                             break;
                         }

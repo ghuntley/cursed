@@ -93,7 +93,7 @@ impl NavigationProvider {
 
     /// Get word at position
     fn get_word_at_position(&self, content: &str, position: Position) -> Option<String> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let line_index = position.line as usize;
         let char_index = position.character as usize;
 
@@ -131,7 +131,7 @@ impl NavigationProvider {
 
     /// Get word range at position
     fn get_word_range(&self, content: &str, position: Position, word: &str) -> Range {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let line_index = position.line as usize;
 
         if line_index < lines.len() {
@@ -284,7 +284,7 @@ impl NavigationProvider {
         symbol: &str,
         _position: Position,
     ) -> Option<String> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
 
         // Look for variable declarations
         for (line_num, line) in lines.iter().enumerate() {
@@ -342,7 +342,7 @@ impl NavigationProvider {
 
     /// Find symbol definition location
     fn find_symbol_definition(&self, content: &str, symbol: &str, uri: &Url) -> Option<Location> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
 
         // Look for variable declarations
         for (line_num, line) in lines.iter().enumerate() {
@@ -418,7 +418,7 @@ impl NavigationProvider {
     /// Find all references to a symbol
     fn find_symbol_references(&self, content: &str, symbol: &str, uri: &Url) -> Vec<Location> {
         let mut references = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
 
         for (line_num, line) in lines.iter().enumerate() {
             let mut search_pos = 0;

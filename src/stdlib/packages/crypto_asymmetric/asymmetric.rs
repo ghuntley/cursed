@@ -291,7 +291,7 @@ impl AsymmetricCrypto {
     /// Parse PEM private key
     fn parse_pem_private_key(&self, pem_data: &str) -> Result<Vec<u8>, CursedError> {
         // Basic PEM parsing - extract base64 content
-        let lines: Vec<&str> = pem_data.lines().collect();
+        let lines: Vec<&str> = pem_data.split("\n").collect();
         let mut base64_content = String::new();
         let mut in_key = false;
         

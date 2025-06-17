@@ -130,7 +130,7 @@ impl CompletionProvider {
 
     /// Get completion context at cursor position
     fn get_completion_context(&self, content: &str, position: Position) -> CompletionContext {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let line_index = position.line as usize;
         let char_index = position.character as usize;
 
@@ -283,7 +283,7 @@ impl CompletionProvider {
         }
         
         // Fallback to text-based parsing for variables not captured semantically
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         for line in lines {
             if let Some(var_name) = self.extract_variable_name(line) {
                 // Skip if already added from semantic context
@@ -418,7 +418,7 @@ impl CompletionProvider {
         }
         
         // Fallback to text-based parsing for functions not captured semantically
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         for line in lines {
             if let Some((func_name, params, return_type)) = self.extract_function_signature(line) {
                 // Skip if already added from semantic context

@@ -424,7 +424,7 @@ impl RelationshipExtractor {
         let mut relationships = Vec::new();
 
         // Parse import statements from source code
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let line = line.trim();
             if line.starts_with("import ") {
                 if let Some(module_name) = self.extract_import_module_name(line) {
@@ -450,7 +450,7 @@ impl RelationshipExtractor {
         let mut relationships = Vec::new();
 
         // Parse export statements from source code
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let line = line.trim();
             if line.starts_with("export ") || line.contains(" export ") {
                 // This would require more sophisticated parsing
@@ -483,7 +483,7 @@ impl RelationshipExtractor {
         let mut relationships = Vec::new();
 
         // Look for impl blocks in source code
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let line = line.trim();
             if line.starts_with("impl ") && line.contains(struct_name) {
                 if let Some(interface_name) = self.extract_impl_interface_name(line) {
@@ -510,7 +510,7 @@ impl RelationshipExtractor {
 
         // Look for inheritance patterns in source code
         // This would depend on CURSED's inheritance syntax
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let line = line.trim();
             if line.contains("extends") && line.contains(struct_name) {
                 if let Some(parent_name) = self.extract_parent_class_name(line) {
@@ -536,7 +536,7 @@ impl RelationshipExtractor {
         let mut relationships = Vec::new();
 
         // Look for interface inheritance patterns
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let line = line.trim();
             if line.contains("extends") && line.contains(interface_name) {
                 if let Some(parent_interface) = self.extract_parent_interface_name(line) {
@@ -562,7 +562,7 @@ impl RelationshipExtractor {
         let mut relationships = Vec::new();
 
         // Look for types that implement this interface
-        for line in source_code.lines() {
+        for line in source_code.split("\n") {
             let line = line.trim();
             if line.contains("impl ") && line.contains(interface_name) {
                 if let Some(implementor_name) = self.extract_implementor_name(line) {

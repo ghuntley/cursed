@@ -344,7 +344,7 @@ impl WorkerCapabilities {
         {
             use std::fs;
             if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {
-                for line in meminfo.lines() {
+                for line in meminfo.split("\n") {
                     if line.starts_with("MemTotal:") {
                         if let Some(kb_str) = line.split_whitespace().nth(1) {
                             if let Ok(kb) = kb_str.parse::<usize>() {

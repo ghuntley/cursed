@@ -656,7 +656,7 @@ fn validate_encoded_key(key_str: &str, _options: Option<&Value>) -> Result<KeyVa
 
 /// Validate PEM format
 fn validate_pem_format(pem_data: &str, result: &mut KeyValidationResult) {
-    let lines: Vec<&str> = pem_data.lines().collect();
+    let lines: Vec<&str> = pem_data.split("\n").collect();
     
     if lines.len() < 3 {
         result.errors.push("Invalid PEM format: too few lines".to_string());

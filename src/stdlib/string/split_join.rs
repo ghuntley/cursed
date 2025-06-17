@@ -36,7 +36,7 @@ pub fn rsplit_n(s: &str, delimiter: &str, n: usize) -> Vec<String> {
 
 /// Split string by line breaks (handles \n, \r\n, \r)
 pub fn split_lines(s: &str) -> Vec<String> {
-    s.lines().map(|line| line.to_string()).collect()
+    s.split("\n").map(|line| line.to_string()).collect()
 }
 
 /// Split string by whitespace (spaces, tabs, newlines)

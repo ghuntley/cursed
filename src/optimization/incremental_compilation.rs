@@ -246,7 +246,7 @@ impl ChangeDetector {
             .map_err(|e| Error::Io(e.into()))?;
         
         // Simple dependency extraction based on import statements
-        for line in content.lines() {
+        for line in content.split("\n") {
             let line = line.trim();
             if line.starts_with("import ") || line.starts_with("use ") {
                 if let Some(dep_path) = self.parse_import_path(line, path) {

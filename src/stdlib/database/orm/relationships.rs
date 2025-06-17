@@ -588,7 +588,7 @@ impl EagerLoader {
             "Executing batch query"
         );
 
-        if primary_keys.is_empty() {
+        if primary_keys.len() == 0 {
             return Ok(Vec::new());
         }
 

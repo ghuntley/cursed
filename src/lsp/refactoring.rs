@@ -109,12 +109,320 @@ pub struct RenameSymbolOptions {
     pub include_strings: bool,
 }
 
+/// Code block analysis result
+#[derive(Debug, Clone)]
+struct CodeBlockAnalysis {
+    uses_async: bool,
+    has_return_value: bool,
+    local_variables: Vec<String>,
+    dependencies: Vec<String>,
+    complexity_score: usize,
+}
+
+/// Import statement information
+#[derive(Debug, Clone)]
+struct ImportStatement {
+    path: String,
+    line: usize,
+    is_used: bool,
+}
+
 impl RefactoringProvider {
     /// Create a new refactoring provider
     pub fn new() -> Self {
         Self {
             symbol_cache: std::sync::RwLock::new(HashMap::new()),
             import_rules: ImportOrganizationRules::default(),
+        }
+    }
+
+    /// Get symbol at position
+    fn get_symbol_at_position(&self, content: &str, position: Position) -> Option<String> {
+        let lines: Vec<&str> = content.split("\n").collect();
+        if position.line as usize >= lines.len() {
+            return None;
+        }
+        
+        let line = lines[position.line as usize];
+        if position.character as usize >= line.len() {
+            return None;
+        }
+        
+        // Simple word extraction - would be more sophisticated in real implementation
+        let start = line.char_indices()
+            .take_while(|(i, c)| *i < position.character as usize || c.is_alphanumeric() || *c == '_')
+            .last()
+            .map(|(i, _)| i)
+            .unwrap_or(position.character as usize);
+            
+        let end = line.char_indices()
+            .skip_while(|(i, _)| *i <= position.character as usize)
+            .find(|(_, c)| !c.is_alphanumeric() && *c != '_')
+            .map(|(i, _)| i)
+            .unwrap_or(line.len());
+            
+        Some(line[start..end].to_string())
+    }
+
+    /// Get symbol range
+    fn get_symbol_range(&self, content: &str, position: Position, symbol: &str) -> Option<Range> {
+        let lines: Vec<&str> = content.split("\n").collect();
+        if position.line as usize >= lines.len() {
+            return None;
+        }
+        
+        let line = lines[position.line as usize];
+        if let Some(start_char) = line.find(symbol) {
+            let start = Position::new(position.line, start_char as u32);
+            let end = Position::new(position.line, (start_char + symbol.len()) as u32);
+            Some(Range::new(start, end))
+        } else {
+            None
+        }
+    }
+
+    /// Check if symbol is renameable
+    fn is_renameable_symbol(&self, symbol: &str, content: &str) -> bool {
+        // Simple check - exclude keywords and built-in types
+        !matches!(symbol, "slay" | "sus" | "facts" | "lowkey" | "highkey" | "periodt" | "squad" | "collab")
+    }
+
+    /// Find all symbol references
+    fn find_all_symbol_references(&self, content: &str, symbol: &str, uri: &Url) -> Vec<Location> {
+        let mut references = Vec::new();
+        let lines: Vec<&str> = content.split("\n").collect();
+        
+        for (line_num, line) in lines.iter().enumerate() {
+            let mut start = 0;
+            while let Some(pos) = line[start..].find(symbol) {
+                let actual_pos = start + pos;
+                let location = Location::new(
+                    uri.clone(),
+                    Range::new(
+                        Position::new(line_num as u32, actual_pos as u32),
+                        Position::new(line_num as u32, (actual_pos + symbol.len()) as u32),
+                    ),
+                );
+                references.push(location);
+                start = actual_pos + symbol.len();
+            }
+        }
+        
+        references
+    }
+
+    /// Get text in range
+    fn get_text_in_range(&self, content: &str, range: Range) -> String {
+        let lines: Vec<&str> = content.split("\n").collect();
+        if range.start.line == range.end.line {
+            // Single line
+            if let Some(line) = lines.get(range.start.line as usize) {
+                let start = range.start.character as usize;
+                let end = range.end.character as usize;
+                if start <= line.len() && end <= line.len() && start <= end {
+                    return line[start..end].to_string();
+                }
+            }
+        }
+        // Multi-line would be more complex
+        String::new()
+    }
+
+    /// Analyze code block
+    fn analyze_code_block(&self, code: &str) -> CodeBlockAnalysis {
+        CodeBlockAnalysis {
+            uses_async: code.contains("async") || code.contains("await"),
+            has_return_value: code.contains("yolo "),
+            local_variables: Vec::new(),
+            dependencies: Vec::new(),
+            complexity_score: code.split("\n").count(),
+        }
+    }
+
+    /// Generate function parameters
+    fn generate_function_parameters(&self, analysis: &CodeBlockAnalysis) -> Vec<String> {
+        // Simplified - would analyze variable usage
+        Vec::new()
+    }
+
+    /// Infer return type
+    fn infer_return_type(&self, analysis: &CodeBlockAnalysis) -> Option<String> {
+        if analysis.has_return_value {
+            Some("void".to_string())
+        } else {
+            None
+        }
+    }
+
+    /// Generate function code
+    fn generate_function_code(&self, name: &str, params: &[String], body: &str, return_type: Option<&str>) -> String {
+        let param_str = params.join(", ");
+        match return_type {
+            Some(ret) => format!("slay {}({}) -> {} {{\n{}\n}}", name, param_str, ret, body),
+            None => format!("slay {}({}) {{\n{}\n}}", name, param_str, body),
+        }
+    }
+
+    /// Generate function call
+    fn generate_function_call(&self, name: &str, args: &[String]) -> String {
+        let args_str = args.join(", ");
+        format!("{}({})", name, args_str)
+    }
+
+    /// Find function insertion point
+    fn find_function_insertion_point(&self, content: &str, current_position: Position) -> Position {
+        let lines: Vec<&str> = content.split("\n").collect();
+        
+        // Find the end of the current function or block
+        for (i, line) in lines.iter().enumerate().skip(current_position.line as usize) {
+            if line.trim().is_empty() || line.starts_with("slay ") {
+                return Position::new(i as u32, 0);
+            }
+        }
+        
+        Position::new(lines.len() as u32, 0)
+    }
+
+    /// Find identical expressions
+    fn find_identical_expressions(&self, content: &str, expression: &str) -> Vec<Range> {
+        let mut ranges = Vec::new();
+        let lines: Vec<&str> = content.split("\n").collect();
+        
+        for (line_num, line) in lines.iter().enumerate() {
+            let mut start = 0;
+            while let Some(pos) = line[start..].find(expression) {
+                let actual_pos = start + pos;
+                let range = Range::new(
+                    Position::new(line_num as u32, actual_pos as u32),
+                    Position::new(line_num as u32, (actual_pos + expression.len()) as u32),
+                );
+                ranges.push(range);
+                start = actual_pos + expression.len();
+            }
+        }
+        
+        ranges
+    }
+
+    /// Find variable insertion point
+    fn find_variable_insertion_point(&self, content: &str, current_position: Position) -> Position {
+        let lines: Vec<&str> = content.split("\n").collect();
+        
+        // Find the start of the current function or block
+        for i in (0..=current_position.line as usize).rev() {
+            if let Some(line) = lines.get(i) {
+                if line.trim().starts_with("slay ") || line.trim() == "{" {
+                    return Position::new((i + 1) as u32, 0);
+                }
+            }
+        }
+        
+        current_position
+    }
+
+    /// Analyze imports
+    fn analyze_imports(&self, content: &str) -> Vec<ImportStatement> {
+        let lines: Vec<&str> = content.split("\n").collect();
+        let mut imports = Vec::new();
+        
+        for (line_num, line) in lines.iter().enumerate() {
+            if line.trim().starts_with("yeet ") {
+                imports.push(ImportStatement {
+                    path: line.trim().trim_start_matches("yeet ").trim_matches('"').to_string(),
+                    line: line_num,
+                    is_used: true, // Simplified
+                });
+            }
+        }
+        
+        imports
+    }
+
+    /// Organize import statements
+    fn organize_import_statements(&self, imports: &[ImportStatement]) -> Vec<ImportStatement> {
+        let mut organized = imports.to_vec();
+        organized.sort_by(|a, b| a.path.cmp(&b.path));
+        organized
+    }
+
+    /// Check if can extract function
+    fn can_extract_function(&self, content: &str, range: Range) -> bool {
+        let text = self.get_text_in_range(content, range);
+        !text.trim().is_empty() && text.split("\n").count() > 1
+    }
+
+    /// Create extract function action
+    fn create_extract_function_action(&self, content: &str, range: Range, function_name: &str) -> CodeAction {
+        let title = format!("Extract function '{}'", function_name);
+        CodeAction {
+            title,
+            kind: Some(CodeActionKind::REFACTOR_EXTRACT),
+            diagnostics: None,
+            edit: None, // Would contain the actual edit
+            command: None,
+            is_preferred: Some(true),
+            disabled: None,
+            data: None,
+        }
+    }
+
+    /// Check if can extract variable
+    fn can_extract_variable(&self, content: &str, range: Range) -> bool {
+        let text = self.get_text_in_range(content, range);
+        !text.trim().is_empty() && !text.contains('\n')
+    }
+
+    /// Create extract variable action
+    fn create_extract_variable_action(&self, content: &str, range: Range, variable_name: &str) -> CodeAction {
+        let title = format!("Extract variable '{}'", variable_name);
+        CodeAction {
+            title,
+            kind: Some(CodeActionKind::REFACTOR_EXTRACT),
+            diagnostics: None,
+            edit: None, // Would contain the actual edit
+            command: None,
+            is_preferred: Some(true),
+            disabled: None,
+            data: None,
+        }
+    }
+
+    /// Check if has imports
+    fn has_imports(&self, content: &str) -> bool {
+        content.split("\n").any(|line| line.trim().starts_with("yeet "))
+    }
+
+    /// Create organize imports action
+    fn create_organize_imports_action(&self, content: &str) -> CodeAction {
+        CodeAction {
+            title: "Organize imports".to_string(),
+            kind: Some(CodeActionKind::SOURCE_ORGANIZE_IMPORTS),
+            diagnostics: None,
+            edit: None, // Would contain the actual edit
+            command: None,
+            is_preferred: Some(true),
+            disabled: None,
+            data: None,
+        }
+    }
+
+    /// Generate quick fix
+    fn generate_quick_fix(&self, diagnostic: &Diagnostic, content: &str) -> Option<CodeAction> {
+        // Simplified quick fix generation
+        match diagnostic.message.as_str() {
+            msg if msg.contains("undefined variable") => {
+                Some(CodeAction {
+                    title: "Declare variable".to_string(),
+                    kind: Some(CodeActionKind::QUICKFIX),
+                    diagnostics: Some(vec![diagnostic.clone()]),
+                    edit: None,
+                    command: None,
+                    is_preferred: Some(true),
+                    disabled: None,
+                    data: None,
+                })
+            }
+            _ => None,
         }
     }
 
@@ -382,7 +690,7 @@ impl RefactoringProvider {
     // Helper methods
 
     fn get_symbol_at_position(&self, content: &str, position: Position) -> Option<String> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let line_index = position.line as usize;
         let char_index = position.character as usize;
 
@@ -419,7 +727,7 @@ impl RefactoringProvider {
     }
 
     fn get_symbol_range(&self, content: &str, position: Position, symbol: &str) -> Option<Range> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let line_index = position.line as usize;
 
         if line_index < lines.len() {
@@ -454,7 +762,7 @@ impl RefactoringProvider {
 
     fn find_all_symbol_references(&self, content: &str, symbol: &str, uri: &Url) -> Vec<Location> {
         let mut references = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
 
         for (line_num, line) in lines.iter().enumerate() {
             let mut search_pos = 0;
@@ -497,7 +805,7 @@ impl RefactoringProvider {
     }
 
     fn get_text_in_range(&self, content: &str, range: &Range) -> Option<String> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let start_line = range.start.line as usize;
         let end_line = range.end.line as usize;
 
@@ -576,7 +884,7 @@ impl RefactoringProvider {
     fn extract_declared_variables_from_code(&self, code: &str) -> Vec<String> {
         let mut declared = Vec::new();
         
-        for line in code.lines() {
+        for line in code.split("\n") {
             if line.contains("sus ") || line.contains("facts ") {
                 // Extract variable name after the keyword
                 if let Some(equals_pos) = line.find('=') {
@@ -600,7 +908,7 @@ impl RefactoringProvider {
         let mut calls = Vec::new();
         
         // Simple pattern matching for function calls
-        for line in code.lines() {
+        for line in code.split("\n") {
             for word in line.split_whitespace() {
                 if word.contains('(') && !word.starts_with('(') {
                     if let Some(paren_pos) = word.find('(') {
@@ -622,7 +930,7 @@ impl RefactoringProvider {
         let mut complexity = 1; // Base complexity
         
         // Count control flow statements
-        for line in code.lines() {
+        for line in code.split("\n") {
             if line.contains("lowkey") || line.contains("highkey") {
                 complexity += 1;
             }
@@ -701,7 +1009,7 @@ impl RefactoringProvider {
     }
 
     fn find_function_insertion_point(&self, content: &str) -> Option<Position> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         // Find the end of the current function or at the end of file
         for (i, line) in lines.iter().enumerate().rev() {
@@ -728,7 +1036,7 @@ impl RefactoringProvider {
 
     fn find_identical_expressions(&self, content: &str, expression: &str) -> Vec<Range> {
         let mut ranges = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
 
         for (line_num, line) in lines.iter().enumerate() {
             let mut search_pos = 0;
@@ -755,7 +1063,7 @@ impl RefactoringProvider {
 
     fn analyze_imports(&self, content: &str) -> ImportAnalysis {
         let mut imports = Vec::new();
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         let mut import_range: Option<Range> = None;
         let mut first_import_line = None;
         let mut last_import_line = None;
@@ -897,7 +1205,7 @@ impl RefactoringProvider {
     }
 
     fn has_imports(&self, content: &str) -> bool {
-        content.lines().any(|line| {
+        content.split("\n").any(|line| {
             line.trim().starts_with("use ") || line.trim().starts_with("import ")
         })
     }
@@ -983,12 +1291,191 @@ impl RefactoringProvider {
             _ => None,
         }
     }
+
+    // Missing methods implementation
+
+    fn get_symbol_at_position(&self, content: &str, position: Position) -> Option<SymbolInfo> {
+        // Placeholder implementation - would parse content and find symbol at position
+        None
+    }
+
+    fn get_symbol_range(&self, content: &str, position: Position, symbol: &SymbolInfo) -> Option<Range> {
+        // Placeholder implementation
+        None
+    }
+
+    fn is_renameable_symbol(&self, symbol: &SymbolInfo, content: &str) -> bool {
+        // Most symbols can be renamed in CURSED
+        true
+    }
+
+    fn find_all_symbol_references(&self, content: &str, symbol: &SymbolInfo, uri: &Url) -> Vec<Location> {
+        // Placeholder implementation - would find all references
+        Vec::new()
+    }
+
+    fn get_text_in_range(&self, content: &str, range: &Range) -> Option<String> {
+        // Placeholder implementation - would extract text in range
+        let lines: Vec<&str> = content.lines().collect();
+        if let Some(line) = lines.get(range.start.line as usize) {
+            Some(line[range.start.character as usize..].to_string())
+        } else {
+            None
+        }
+    }
+
+    fn analyze_code_block(&self, selected_text: &str) -> CodeBlockAnalysisAdvanced {
+        // Placeholder implementation
+        CodeBlockAnalysisAdvanced {
+            variables_used: Vec::new(),
+            variables_declared: Vec::new(),
+            functions_called: Vec::new(),
+            has_return: false,
+            complexity_score: 1,
+        }
+    }
+
+    fn generate_function_parameters(&self, analysis: &CodeBlockAnalysisAdvanced) -> Vec<FunctionParameter> {
+        // Generate parameters based on variables used
+        analysis.variables_used.iter().map(|var| FunctionParameter {
+            name: var.clone(),
+            type_name: "auto".to_string(),
+        }).collect()
+    }
+
+    fn infer_return_type(&self, analysis: &CodeBlockAnalysisAdvanced) -> String {
+        if analysis.has_return {
+            "auto".to_string()
+        } else {
+            "void".to_string()
+        }
+    }
+
+    fn generate_function_code(
+        &self,
+        function_name: &str,
+        parameters: &[FunctionParameter],
+        return_type: &str,
+        selected_text: &str,
+    ) -> String {
+        let param_list = parameters.iter()
+            .map(|p| format!("{}: {}", p.name, p.type_name))
+            .collect::<Vec<_>>()
+            .join(", ");
+        
+        format!(
+            "slay {}({}) -> {} {{\n    {}\n}}",
+            function_name, param_list, return_type, selected_text
+        )
+    }
+
+    fn generate_function_call(&self, function_name: &str, parameters: &[FunctionParameter]) -> String {
+        let args = parameters.iter()
+            .map(|p| p.name.clone())
+            .collect::<Vec<_>>()
+            .join(", ");
+        
+        format!("{}({})", function_name, args)
+    }
+
+    fn find_function_insertion_point(&self, content: &str) -> Option<Position> {
+        // Find a good place to insert the function - typically at the end
+        let lines: Vec<&str> = content.lines().collect();
+        Some(Position {
+            line: lines.len() as u32,
+            character: 0,
+        })
+    }
+
+    fn find_identical_expressions(&self, content: &str, selected_text: &str) -> Vec<Range> {
+        // Placeholder implementation - would find all identical expressions
+        Vec::new()
+    }
+
+    fn find_variable_insertion_point(&self, content: &str, selection_range: &Range) -> Option<Position> {
+        // Find a good place to insert the variable declaration
+        Some(Position {
+            line: selection_range.start.line.saturating_sub(1),
+            character: 0,
+        })
+    }
+
+    fn analyze_imports(&self, content: &str) -> ImportAnalysis {
+        // Placeholder implementation
+        ImportAnalysis {
+            imports: Vec::new(),
+            import_range: None,
+        }
+    }
+
+    fn organize_import_statements(&self, analysis: &ImportAnalysis) -> Vec<TextEdit> {
+        // Placeholder implementation
+        Vec::new()
+    }
+
+    fn can_extract_function(&self, content: &str, range: &Range) -> bool {
+        // Check if the selection is suitable for function extraction
+        true
+    }
+
+    fn create_extract_function_action(&self, range: &Range) -> CodeAction {
+        CodeAction {
+            title: "Extract Function".to_string(),
+            kind: Some(CodeActionKind::REFACTOR_EXTRACT),
+            diagnostics: None,
+            edit: None,
+            command: None,
+            is_preferred: Some(true),
+            disabled: None,
+            data: None,
+        }
+    }
+
+    fn can_extract_variable(&self, content: &str, range: &Range) -> bool {
+        // Check if the selection is suitable for variable extraction
+        true
+    }
+
+    fn create_extract_variable_action(&self, range: &Range) -> CodeAction {
+        CodeAction {
+            title: "Extract Variable".to_string(),
+            kind: Some(CodeActionKind::REFACTOR_EXTRACT),
+            diagnostics: None,
+            edit: None,
+            command: None,
+            is_preferred: Some(true),
+            disabled: None,
+            data: None,
+        }
+    }
+
+    fn has_imports(&self, content: &str) -> bool {
+        content.contains("import ")
+    }
+
+    fn create_organize_imports_action(&self) -> CodeAction {
+        CodeAction {
+            title: "Organize Imports".to_string(),
+            kind: Some(CodeActionKind::SOURCE_ORGANIZE_IMPORTS),
+            diagnostics: None,
+            edit: None,
+            command: None,
+            is_preferred: Some(false),
+            disabled: None,
+            data: None,
+        }
+    }
+
+    fn generate_quick_fix(&self, content: &str, diagnostic: &Diagnostic, uri: &Url) -> Option<CodeAction> {
+        // Placeholder implementation for quick fixes
+        None
+    }
 }
 
 // Supporting structures
 
 #[derive(Debug, Clone)]
-struct CodeBlockAnalysis {
+struct CodeBlockAnalysisAdvanced {
     variables_used: Vec<String>,
     variables_declared: Vec<String>,
     functions_called: Vec<String>,

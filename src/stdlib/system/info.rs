@@ -175,7 +175,7 @@ impl OsInfo {
         }
         
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let lines: Vec<&str> = stdout.lines().collect();
+        let lines: Vec<&str> = stdout.split("\n").collect();
         
         // Parse CSV output (simplified)
         let mut name = "Windows".to_string();
@@ -241,7 +241,7 @@ impl OsInfo {
             let mut version = "Unknown".to_string();
             let mut build = "Unknown".to_string();
             
-            for line in os_release.lines() {
+            for line in os_release.split("\n") {
                 if line.starts_with("VERSION_ID=") {
                     version = line.split('=').nth(1)
                         .unwrap_or("Unknown")
@@ -595,7 +595,7 @@ fn get_environment_variables() -> HashMap<String, String> {
 #[cfg(unix)]
 fn get_linux_distribution() -> Option<String> {
     if let Ok(os_release) = fs::read_to_string("/etc/os-release") {
-        for line in os_release.lines() {
+        for line in os_release.split("\n") {
             if line.starts_with("PRETTY_NAME=") {
                 return Some(
                     line.split('=')

@@ -508,7 +508,7 @@ pub fn to_llvm_profdata_format(profile_data: &ProfileData) -> String {
 pub fn from_llvm_profdata_format(data: &str) -> Result<ProfileData, String> {
     let mut profile_data = ProfileData::new();
     
-    for line in data.lines() {
+    for line in data.split("\n") {
         // Skip comments and empty lines
         if line.starts_with('#') || line.trim().is_empty() {
             continue;

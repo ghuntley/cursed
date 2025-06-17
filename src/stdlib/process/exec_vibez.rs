@@ -232,7 +232,7 @@ impl OutputStreamer {
                 let callback = self.line_callback.take();
                 
                 thread::spawn(move || {
-                    for line in reader.lines() {
+                    for line in reader.split("\n") {
                         if let Ok(line) = line {
                             if let Some(ref cb) = callback {
                                 cb(&line);

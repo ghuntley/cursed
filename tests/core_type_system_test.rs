@@ -15,7 +15,7 @@ mod tests {
             sus z: f64 = 3.14;
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -35,7 +35,7 @@ mod tests {
             sus w = facts;     // Should infer bool
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -58,7 +58,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -75,7 +75,7 @@ mod tests {
             sus x: i64 = "invalid";  // Type mismatch
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -94,7 +94,7 @@ mod tests {
             sus result = x + y;
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -116,7 +116,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -141,7 +141,7 @@ mod tests {
             };
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -159,7 +159,7 @@ mod tests {
             sus names: [String] = ["Alice", "Bob"];
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -178,7 +178,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -201,7 +201,7 @@ mod tests {
             }
         "#;
 
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();

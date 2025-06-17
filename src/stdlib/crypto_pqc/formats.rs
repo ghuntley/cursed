@@ -35,7 +35,7 @@ impl KeyFormatConverter {
 
     /// Parse key from PEM format
     pub fn from_pem(pem_data: &str) -> PqcResult<PqcKey> {
-        let lines: Vec<&str> = pem_data.lines().collect();
+        let lines: Vec<&str> = pem_data.split("\n").collect();
         
         if lines.len() < 3 {
             return Err(PqcError::FormatError("Invalid PEM format".to_string()));
@@ -312,7 +312,7 @@ pub struct FormatValidator;
 impl FormatValidator {
     /// Validate PEM format
     pub fn validate_pem(pem_data: &str) -> bool {
-        let lines: Vec<&str> = pem_data.lines().collect();
+        let lines: Vec<&str> = pem_data.split("\n").collect();
         
         if lines.len() < 3 {
             return false;

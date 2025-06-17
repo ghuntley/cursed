@@ -439,7 +439,7 @@ fn test_real_streaming_response() {
     
     // The response should contain multiple JSON objects
     let response_text = resp.text().unwrap();
-    let line_count = response_text.lines().count();
+    let line_count = response_text.split("\n").count();
     assert!(line_count >= 10); // Should have at least 10 lines
 }
 

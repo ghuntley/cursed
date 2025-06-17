@@ -79,7 +79,7 @@ mod oglogging_unit_tests {
         logger.spill(&["second message"]).unwrap();
         
         let full_output = get_output_string(output.clone());
-        let lines: Vec<&str> = full_output.lines().collect();
+        let lines: Vec<&str> = full_output.split("\n").collect();
         assert_eq!(lines.len(), 2, "Should have two log lines");
         
         // Extract timestamps and verify they're different
@@ -210,7 +210,7 @@ mod oglogging_unit_tests {
         }
         
         let final_output = get_output_string(output.clone());
-        let lines: Vec<&str> = final_output.lines().collect();
+        let lines: Vec<&str> = final_output.split("\n").collect();
         
         // Should have 100 lines (10 threads * 10 messages each)
         assert_eq!(lines.len(), 100, "Should have 100 log lines from concurrent threads");

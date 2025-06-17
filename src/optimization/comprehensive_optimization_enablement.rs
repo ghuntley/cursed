@@ -412,7 +412,7 @@ impl AdaptiveOptimizationEngine {
         let mut patterns = HashMap::new();
         
         // Simple pattern analysis (in a real implementation, this would be more sophisticated)
-        let line_count = source_code.lines().count() as f64;
+        let line_count = source_code.split("\n").count() as f64;
         
         // Count loops
         let loop_count = source_code.matches("lowkey").count() + source_code.matches("periodt").count();

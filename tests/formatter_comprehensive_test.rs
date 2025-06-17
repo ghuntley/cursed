@@ -354,7 +354,7 @@ fn test_multiple_statements_same_line() {
     let result = formatter.format(input).unwrap();
     
     // Should separate statements onto different lines
-    let lines: Vec<&str> = result.formatted_code.lines().collect();
+    let lines: Vec<&str> = result.formatted_code.split("\n").collect();
     assert!(lines.len() >= 4); // At least function, three statements, closing brace
 }
 

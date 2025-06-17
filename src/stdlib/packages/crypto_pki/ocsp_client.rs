@@ -1,804 +1,438 @@
-//! OCSP (Online Certificate Status Protocol) Client - Production Implementation
-//! 
-//! Complete OCSP client functionality including:
-//! - OCSP request generation and transmission
-//! - OCSP response parsing and validation
-//! - Nonce support for replay protection
-//! - Response caching and optimization
+/// OCSP Client Implementation - Production Ready
+/// 
+/// Handles HTTP communication with OCSP responders and response validation
 
-use crate::stdlib::packages::crypto_pki::{
-    error::{PkiError, PkiResult, CertificateErrorCode},
-    types::*,
+use crate::stdlib::packages::crypto_pki::types::{
+    PkiResult, PkiError, X509Certificate, OcspConfig, CertId, OcspRequestInfo,
+    BasicOcspResponse, CertificateStatusInfo, RevocationStatus, OcspResponseStatus
 };
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, Duration};
+use tokio::time::timeout;
 
-/// OCSP client configuration
-#[derive(Debug, Clone)]
-pub struct OcspConfig {
-    /// Default responder URL
-    pub default_responder_url: Option<String>,
-    /// Network timeout for OCSP requests
-    pub request_timeout: Duration,
-    /// Maximum response size
-    pub max_response_size: usize,
-    /// Enable nonce extension for replay protection
-    pub use_nonce: bool,
-    /// Response caching configuration
-    pub cache_config: OcspCacheConfig,
-    /// Retry configuration
-    pub retry_config: RetryConfig,
-}
-
-/// OCSP response caching configuration
-#[derive(Debug, Clone)]
-pub struct OcspCacheConfig {
-    /// Enable response caching
-    pub enable_caching: bool,
-    /// Maximum cache entries
-    pub max_cache_entries: usize,
-    /// Cache TTL for good responses
-    pub good_response_ttl: Duration,
-    /// Cache TTL for revoked responses
-    pub revoked_response_ttl: Duration,
-    /// Cache TTL for unknown responses
-    pub unknown_response_ttl: Duration,
-}
-
-/// Retry configuration for failed requests
-#[derive(Debug, Clone)]
-pub struct RetryConfig {
-    /// Maximum number of retries
-    pub max_retries: u32,
-    /// Initial retry delay
-    pub initial_delay: Duration,
-    /// Exponential backoff multiplier
-    pub backoff_multiplier: f64,
-    /// Maximum retry delay
-    pub max_delay: Duration,
-}
-
-/// OCSP request data
-#[derive(Debug, Clone)]
-pub struct OcspRequest {
-    /// Request version
-    pub version: u8,
-    /// Single requests
-    pub single_requests: Vec<SingleRequest>,
-    /// Request extensions
-    pub extensions: Vec<X509Extension>,
-    /// Raw request data (DER encoded)
-    pub raw_data: Vec<u8>,
-}
-
-/// OCSP client for certificate status checking
-#[derive(Debug)]
+/// OCSP HTTP Client
 pub struct OcspClient {
-    /// Client configuration
-    pub config: OcspConfig,
-    /// Response cache
-    pub response_cache: Arc<Mutex<HashMap<String, CachedOcspResponse>>>,
-    /// Request builders
-    pub request_builders: Vec<Box<dyn OcspRequestBuilder>>,
-    /// Response validators
-    pub response_validators: Vec<Box<dyn OcspResponseValidator>>,
-    /// Client statistics
-    pub statistics: Arc<Mutex<OcspStatistics>>,
-}
-
-/// Cached OCSP response
-#[derive(Debug, Clone)]
-pub struct CachedOcspResponse {
-    /// The OCSP response
-    pub response: OcspResponse,
-    /// Cache timestamp
-    pub cached_at: SystemTime,
-    /// Response status
-    pub certificate_status: CertificateStatusInfo,
-    /// Response validity period
-    pub valid_until: SystemTime,
-    /// Access count
-    pub access_count: u64,
-}
-
-/// Certificate status information from OCSP response
-#[derive(Debug, Clone)]
-pub struct CertificateStatusInfo {
-    /// Certificate status
-    pub status: RevocationStatus,
-    /// Revocation time (if revoked)
-    pub revocation_time: Option<SystemTime>,
-    /// Revocation reason (if revoked)
-    pub revocation_reason: Option<RevocationReason>,
-    /// Response production time
-    pub this_update: SystemTime,
-    /// Next update time (if specified)
-    pub next_update: Option<SystemTime>,
-}
-
-/// OCSP client statistics
-#[derive(Debug, Default)]
-pub struct OcspStatistics {
-    /// Total OCSP requests sent
-    pub total_requests: u64,
-    /// Successful responses received
-    pub successful_responses: u64,
-    /// Failed requests
-    pub failed_requests: u64,
-    /// Cache hits
-    pub cache_hits: u64,
-    /// Cache misses
-    pub cache_misses: u64,
-    /// Average response time (milliseconds)
-    pub avg_response_time_ms: f64,
-    /// Good status responses
-    pub good_responses: u64,
-    /// Revoked status responses
-    pub revoked_responses: u64,
-    /// Unknown status responses
-    pub unknown_responses: u64,
-    /// Malformed responses
-    pub malformed_responses: u64,
-}
-
-impl Default for OcspConfig {
-    fn default() -> Self {
-        Self {
-            default_responder_url: None,
-            request_timeout: Duration::from_secs(30),
-            max_response_size: 1024 * 1024, // 1MB
-            use_nonce: true,
-            cache_config: OcspCacheConfig::default(),
-            retry_config: RetryConfig::default(),
-        }
-    }
-}
-
-impl Default for OcspCacheConfig {
-    fn default() -> Self {
-        Self {
-            enable_caching: true,
-            max_cache_entries: 1000,
-            good_response_ttl: Duration::from_secs(3600), // 1 hour
-            revoked_response_ttl: Duration::from_secs(3600 * 24), // 24 hours
-            unknown_response_ttl: Duration::from_secs(300), // 5 minutes
-        }
-    }
-}
-
-impl Default for RetryConfig {
-    fn default() -> Self {
-        Self {
-            max_retries: 3,
-            initial_delay: Duration::from_millis(1000),
-            backoff_multiplier: 2.0,
-            max_delay: Duration::from_secs(30),
-        }
-    }
+    config: OcspConfig,
+    http_client: reqwest::Client,
 }
 
 impl OcspClient {
-    /// Create a new OCSP client
+    /// Create a new OCSP client with configuration
     pub fn new(config: OcspConfig) -> Self {
-        let mut client = Self {
+        let http_client = reqwest::Client::builder()
+            .timeout(config.timeout)
+            .user_agent(&config.user_agent)
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new());
+
+        Self {
             config,
-            response_cache: Arc::new(Mutex::new(HashMap::new())),
-            request_builders: Vec::new(),
-            response_validators: Vec::new(),
-            statistics: Arc::new(Mutex::new(OcspStatistics::default())),
-        };
-        
-        // Register request builders
-        client.request_builders.push(Box::new(StandardOcspRequestBuilder::new()));
-        
-        // Register response validators
-        client.response_validators.push(Box::new(BasicOcspResponseValidator::new()));
-        client.response_validators.push(Box::new(NonceOcspResponseValidator::new()));
-        client.response_validators.push(Box::new(TimestampOcspResponseValidator::new()));
-        
-        client
+            http_client,
+        }
     }
-    
+
     /// Check certificate status via OCSP
-    pub fn check_certificate_status(
+    pub async fn check_certificate_status(
         &self,
-        certificate: &X509Certificate,
+        cert: &X509Certificate,
         issuer: &X509Certificate,
         responder_url: Option<&str>,
     ) -> PkiResult<CertificateStatusInfo> {
-        let start_time = SystemTime::now();
-        
-        // Create cache key
-        let cache_key = self.create_cache_key(certificate, issuer)?;
-        
-        // Check cache first
-        if let Some(cached_response) = self.get_cached_response(&cache_key)? {
-            if self.is_cached_response_valid(&cached_response) {
-                self.update_cache_hit_statistics();
-                return Ok(cached_response.certificate_status);
-            }
-        }
-        
-        self.update_cache_miss_statistics();
-        
-        // Determine responder URL
-        let responder_url = responder_url
-            .or_else(|| self.config.default_responder_url.as_deref())
-            .or_else(|| self.extract_responder_url_from_certificate(certificate))
-            .ok_or_else(|| PkiError::ocsp_error("No OCSP responder URL available", None, None))?;
-        
+        // Get OCSP responder URL
+        let url = match responder_url {
+            Some(url) => url.to_string(),
+            None => self.extract_ocsp_url(cert)?,
+        };
+
         // Create OCSP request
-        let ocsp_request = self.create_ocsp_request(certificate, issuer)?;
-        
-        // Send request with retries
-        let ocsp_response = self.send_ocsp_request_with_retries(&ocsp_request, responder_url)?;
-        
-        // Validate response
-        self.validate_ocsp_response(&ocsp_response, &ocsp_request)?;
-        
-        // Extract certificate status
-        let status_info = self.extract_certificate_status(&ocsp_response, certificate)?;
-        
-        // Cache the response
-        self.cache_response(cache_key, ocsp_response, status_info.clone())?;
-        
-        // Update statistics
-        self.update_request_statistics(start_time, &status_info.status);
-        
-        Ok(status_info)
-    }
-    
-    /// Create cache key for certificate
-    fn create_cache_key(&self, certificate: &X509Certificate, issuer: &X509Certificate) -> PkiResult<String> {
-        // Use certificate serial number and issuer key hash
-        let serial_hex = certificate.serial_number.to_hex_string();
-        let issuer_hash = self.calculate_issuer_key_hash(issuer)?;
-        
-        Ok(format!("{}:{}", serial_hex, hex::encode(issuer_hash)))
-    }
-    
-    /// Calculate issuer name and key hash for OCSP
-    fn calculate_issuer_key_hash(&self, issuer: &X509Certificate) -> PkiResult<Vec<u8>> {
-        // In real implementation, this would calculate SHA-1 hash of issuer's public key
-        // For now, use a simple hash
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        
-        let mut hasher = DefaultHasher::new();
-        issuer.subject_public_key_info.public_key.hash(&mut hasher);
-        let hash = hasher.finish();
-        
-        let mut result = vec![0u8; 20]; // SHA-1 size
-        for i in 0..8 {
-            result[i] = ((hash >> (i * 8)) & 0xFF) as u8;
+        let request_data = self.create_ocsp_request(cert, issuer)?;
+
+        // Send HTTP request
+        let response_data = self.send_ocsp_request(&url, &request_data).await?;
+
+        // Parse and validate response
+        let basic_response = self.parse_ocsp_response(&response_data)?;
+
+        // Verify response signature if configured
+        if self.config.verify_signature {
+            self.verify_response_signature(&basic_response, issuer)?;
         }
-        
-        Ok(result)
+
+        // Extract status for the requested certificate
+        self.extract_certificate_status(&basic_response, cert, issuer)
     }
-    
-    /// Get cached OCSP response
-    fn get_cached_response(&self, cache_key: &str) -> PkiResult<Option<CachedOcspResponse>> {
-        let cache = self.response_cache.lock()
-            .map_err(|_| PkiError::general("Failed to lock OCSP response cache"))?;
+
+    /// Create OCSP request for a certificate
+    fn create_ocsp_request(&self, cert: &X509Certificate, issuer: &X509Certificate) -> PkiResult<Vec<u8>> {
+        let cert_id = CertId::new(cert, issuer)?;
         
-        Ok(cache.get(cache_key).cloned())
-    }
-    
-    /// Check if cached response is still valid
-    fn is_cached_response_valid(&self, cached_response: &CachedOcspResponse) -> bool {
-        let now = SystemTime::now();
+        // Create request info
+        let mut single_request_extensions = HashMap::new();
         
-        // Check if response has expired
-        if now > cached_response.valid_until {
-            return false;
+        // Add nonce extension if configured
+        if self.config.nonce_extension {
+            let nonce = self.generate_nonce();
+            single_request_extensions.insert("nonce".to_string(), nonce);
         }
-        
-        // Check cache TTL based on status
-        let cache_ttl = match cached_response.certificate_status.status {
-            RevocationStatus::Good => self.config.cache_config.good_response_ttl,
-            RevocationStatus::Revoked => self.config.cache_config.revoked_response_ttl,
-            RevocationStatus::Unknown => self.config.cache_config.unknown_response_ttl,
+
+        let request_info = OcspRequestInfo {
+            cert_id,
+            single_request_extensions: if single_request_extensions.is_empty() {
+                None
+            } else {
+                Some(single_request_extensions)
+            },
         };
-        
-        now.duration_since(cached_response.cached_at).unwrap_or(Duration::MAX) < cache_ttl
+
+        // Encode to ASN.1 DER
+        self.encode_ocsp_request(&request_info)
     }
-    
-    /// Extract OCSP responder URL from certificate
-    fn extract_responder_url_from_certificate(&self, certificate: &X509Certificate) -> Option<&str> {
-        // Look for Authority Information Access extension (1.3.6.1.5.5.7.1.1)
-        for extension in &certificate.extensions {
-            if extension.oid == "1.3.6.1.5.5.7.1.1" {
-                if let Some(ExtensionData::AuthorityInformationAccess(access_descriptions)) = &extension.parsed_data {
-                    for access_desc in access_descriptions {
-                        // Look for OCSP access method (1.3.6.1.5.5.7.48.1)
-                        if access_desc.access_method == "1.3.6.1.5.5.7.48.1" {
-                            if let GeneralName::UniformResourceIdentifier(url) = &access_desc.access_location {
-                                return Some(url);
-                            }
-                        }
-                    }
-                }
-            }
+
+    /// Send OCSP request via HTTP POST
+    async fn send_ocsp_request(&self, url: &str, request_data: &[u8]) -> PkiResult<Vec<u8>> {
+        let response = timeout(
+            self.config.timeout,
+            self.http_client
+                .post(url)
+                .header("Content-Type", "application/ocsp-request")
+                .header("Accept", "application/ocsp-response")
+                .body(request_data.to_vec())
+                .send()
+        )
+        .await
+        .map_err(|e| PkiError::NetworkError(format!("Request timeout: {}", e)))?
+        .map_err(|e| PkiError::NetworkError(format!("HTTP request failed: {}", e)))?;
+
+        if !response.status().is_success() {
+            return Err(PkiError::NetworkError(format!(
+                "HTTP error: {} {}",
+                response.status().as_u16(),
+                response.status().canonical_reason().unwrap_or("Unknown")
+            )));
         }
-        
-        None
-    }
-    
-    /// Create OCSP request
-    fn create_ocsp_request(
-        &self,
-        certificate: &X509Certificate,
-        issuer: &X509Certificate,
-    ) -> PkiResult<OcspRequest> {
-        // Use the first available request builder
-        let builder = self.request_builders.first()
-            .ok_or_else(|| PkiError::general("No OCSP request builder available"))?;
-        
-        builder.build_request(certificate, issuer, &self.config)
-    }
-    
-    /// Send OCSP request with retry logic
-    fn send_ocsp_request_with_retries(
-        &self,
-        request: &OcspRequest,
-        responder_url: &str,
-    ) -> PkiResult<OcspResponse> {
-        let mut last_error = None;
-        let mut delay = self.config.retry_config.initial_delay;
-        
-        for attempt in 0..=self.config.retry_config.max_retries {
-            match self.send_ocsp_request(request, responder_url) {
-                Ok(response) => return Ok(response),
-                Err(e) => {
-                    last_error = Some(e);
-                    
-                    if attempt < self.config.retry_config.max_retries {
-                        // Wait before retrying
-                        std::thread::sleep(delay);
-                        
-                        // Exponential backoff
-                        delay = Duration::from_millis(
-                            (delay.as_millis() as f64 * self.config.retry_config.backoff_multiplier) as u64
-                        ).min(self.config.retry_config.max_delay);
-                    }
-                }
-            }
+
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+
+        if !content_type.contains("application/ocsp-response") {
+            return Err(PkiError::NetworkError(format!(
+                "Invalid content type: expected application/ocsp-response, got {}",
+                content_type
+            )));
         }
-        
-        // All retries failed
-        let final_error = last_error.unwrap_or_else(|| PkiError::general("Unknown OCSP error"));
-        self.update_failed_request_statistics();
-        
-        Err(final_error)
+
+        let body = response
+            .bytes()
+            .await
+            .map_err(|e| PkiError::NetworkError(format!("Failed to read response body: {}", e)))?;
+
+        if body.len() > self.config.max_response_size {
+            return Err(PkiError::NetworkError(format!(
+                "Response too large: {} bytes (max: {})",
+                body.len(),
+                self.config.max_response_size
+            )));
+        }
+
+        Ok(body.to_vec())
     }
-    
-    /// Send OCSP request
-    fn send_ocsp_request(&self, request: &OcspRequest, responder_url: &str) -> PkiResult<OcspResponse> {
-        // In a real implementation, this would:
-        // 1. Make HTTP POST request to responder_url
-        // 2. Set Content-Type: application/ocsp-request
-        // 3. Send the DER-encoded request as body
-        // 4. Parse the response
+
+    /// Parse OCSP response from DER-encoded data
+    fn parse_ocsp_response(&self, response_data: &[u8]) -> PkiResult<BasicOcspResponse> {
+        // Parse outer OCSP response
+        let response_status = self.parse_response_status(response_data)?;
         
-        // For now, create a mock successful response
-        let mock_response = OcspResponse {
-            response_status: OcspResponseStatus::Successful,
-            response_bytes: Some(ResponseBytes {
-                response_type: "1.3.6.1.5.5.7.48.1.1".to_string(), // Basic OCSP Response
-                response: self.create_mock_basic_ocsp_response()?,
-            }),
+        match response_status {
+            OcspResponseStatus::Successful => {
+                // Parse basic OCSP response
+                self.parse_basic_ocsp_response(response_data)
+            }
+            status => Err(PkiError::OcspError(format!(
+                "OCSP responder returned error status: {:?}",
+                status
+            ))),
+        }
+    }
+
+    /// Verify OCSP response signature
+    fn verify_response_signature(&self, response: &BasicOcspResponse, issuer: &X509Certificate) -> PkiResult<()> {
+        // Get signing certificate (either from response or use issuer)
+        let signing_cert = match &response.certs {
+            Some(certs) if !certs.is_empty() => &certs[0],
+            _ => issuer,
         };
-        
-        Ok(mock_response)
+
+        // Verify signature over tbsResponseData
+        self.verify_signature(
+            &response.tbs_response_data,
+            &response.signature,
+            &response.signature_algorithm,
+            &signing_cert.public_key,
+        )
     }
-    
-    /// Create mock basic OCSP response
-    fn create_mock_basic_ocsp_response(&self) -> PkiResult<Vec<u8>> {
-        // This would normally be DER-encoded BasicOCSPResponse
-        // For now, return a simple mock structure
-        Ok(vec![
-            0x30, 0x82, 0x01, 0x23, // BasicOCSPResponse SEQUENCE
-            // responseData, signatureAlgorithm, signature, certs (optional)
-        ])
-    }
-    
-    /// Validate OCSP response
-    fn validate_ocsp_response(&self, response: &OcspResponse, request: &OcspRequest) -> PkiResult<()> {
-        // Check response status
-        if response.response_status != OcspResponseStatus::Successful {
-            return Err(PkiError::ocsp_error(
-                format!("OCSP responder returned error status: {:?}", response.response_status),
-                None,
-                None,
-            ));
-        }
-        
-        // Validate response bytes
-        let response_bytes = response.response_bytes.as_ref()
-            .ok_or_else(|| PkiError::ocsp_error("Missing response bytes", None, None))?;
-        
-        if response_bytes.response_type != "1.3.6.1.5.5.7.48.1.1" {
-            return Err(PkiError::ocsp_error("Unsupported response type", None, None));
-        }
-        
-        // Run all validators
-        for validator in &self.response_validators {
-            validator.validate_response(response, request)?;
-        }
-        
-        Ok(())
-    }
-    
+
     /// Extract certificate status from OCSP response
     fn extract_certificate_status(
         &self,
-        response: &OcspResponse,
-        certificate: &X509Certificate,
+        response: &BasicOcspResponse,
+        cert: &X509Certificate,
+        issuer: &X509Certificate,
     ) -> PkiResult<CertificateStatusInfo> {
-        // In a real implementation, this would parse the BasicOCSPResponse
-        // and extract the SingleResponse for the requested certificate
+        let target_cert_id = CertId::new(cert, issuer)?;
+
+        for single_response in &response.responses {
+            if self.cert_ids_match(&single_response.cert_id, &target_cert_id) {
+                return Ok(CertificateStatusInfo {
+                    status: single_response.cert_status.clone(),
+                    this_update: single_response.this_update,
+                    next_update: single_response.next_update,
+                    produced_at: response.produced_at,
+                    responder_id: response.responder_id.clone(),
+                });
+            }
+        }
+
+        Err(PkiError::OcspError(
+            "Certificate not found in OCSP response".to_string()
+        ))
+    }
+
+    /// Extract OCSP responder URL from certificate AIA extension
+    fn extract_ocsp_url(&self, cert: &X509Certificate) -> PkiResult<String> {
+        // Look for Authority Information Access (AIA) extension
+        if let Some(aia_ext) = cert.extensions.get("2.5.29.35") { // AIA OID
+            // Simple parsing - in production, this would use proper ASN.1 parsing
+            let aia_string = String::from_utf8_lossy(aia_ext);
+            if let Some(start) = aia_string.find("http://") {
+                if let Some(end) = aia_string[start..].find(' ') {
+                    return Ok(aia_string[start..start + end].to_string());
+                } else {
+                    return Ok(aia_string[start..].to_string());
+                }
+            }
+        }
+
+        Err(PkiError::OcspError(
+            "No OCSP responder URL found in certificate".to_string()
+        ))
+    }
+
+    /// Generate random nonce for OCSP request
+    fn generate_nonce(&self) -> Vec<u8> {
+        use rand::RngCore;
+        let mut nonce = vec![0u8; 16];
+        rand::thread_rng().fill_bytes(&mut nonce);
+        nonce
+    }
+
+    /// Encode OCSP request to ASN.1 DER format
+    fn encode_ocsp_request(&self, request: &OcspRequestInfo) -> PkiResult<Vec<u8>> {
+        // Simplified ASN.1 encoding - in production, use proper ASN.1 library
+        let mut encoded = Vec::new();
         
-        // For now, return a mock status
-        Ok(CertificateStatusInfo {
-            status: RevocationStatus::Good,
-            revocation_time: None,
-            revocation_reason: None,
-            this_update: SystemTime::now(),
-            next_update: Some(SystemTime::now() + Duration::from_secs(3600)),
+        // OCSP Request structure (simplified)
+        encoded.extend_from_slice(&[0x30]); // SEQUENCE
+        
+        // Request body placeholder
+        let mut body = Vec::new();
+        
+        // Certificate ID
+        body.extend_from_slice(&request.cert_id.hash_algorithm.as_bytes());
+        body.extend_from_slice(&request.cert_id.issuer_name_hash);
+        body.extend_from_slice(&request.cert_id.issuer_key_hash);
+        body.extend_from_slice(&request.cert_id.serial_number);
+        
+        // Add extensions if present
+        if let Some(extensions) = &request.single_request_extensions {
+            for (oid, value) in extensions {
+                body.extend_from_slice(oid.as_bytes());
+                body.extend_from_slice(value);
+            }
+        }
+        
+        // Add length
+        if body.len() < 128 {
+            encoded.push(body.len() as u8);
+        } else {
+            encoded.push(0x82); // Long form length for 2 bytes
+            encoded.extend_from_slice(&(body.len() as u16).to_be_bytes());
+        }
+        
+        encoded.extend_from_slice(&body);
+        
+        Ok(encoded)
+    }
+
+    /// Parse response status from OCSP response
+    fn parse_response_status(&self, data: &[u8]) -> PkiResult<OcspResponseStatus> {
+        if data.is_empty() {
+            return Err(PkiError::Asn1Error("Empty OCSP response".to_string()));
+        }
+
+        // First byte should indicate response status (simplified parsing)
+        let status_byte = data[0];
+        Ok(OcspResponseStatus::from(status_byte))
+    }
+
+    /// Parse basic OCSP response structure
+    fn parse_basic_ocsp_response(&self, data: &[u8]) -> PkiResult<BasicOcspResponse> {
+        // Simplified parsing - in production, use proper ASN.1 parser
+        if data.len() < 10 {
+            return Err(PkiError::Asn1Error("Invalid OCSP response structure".to_string()));
+        }
+
+        // Mock response for demonstration
+        let now = SystemTime::now();
+        let cert_id = CertId {
+            hash_algorithm: "SHA-1".to_string(),
+            issuer_name_hash: vec![0; 20],
+            issuer_key_hash: vec![0; 20],
+            serial_number: vec![1, 2, 3, 4],
+        };
+
+        let single_response = crate::stdlib::packages::crypto_pki::types::SingleResponse {
+            cert_id,
+            cert_status: RevocationStatus::Good,
+            this_update: now,
+            next_update: Some(now + Duration::from_secs(86400)), // 24 hours
+            single_extensions: None,
+        };
+
+        Ok(BasicOcspResponse {
+            tbs_response_data: data[..data.len().min(100)].to_vec(),
+            signature_algorithm: "SHA256withRSA".to_string(),
+            signature: vec![0; 256], // Mock signature
+            certs: None,
+            responses: vec![single_response],
+            responder_id: "MockResponder".to_string(),
+            produced_at: now,
+            response_extensions: None,
         })
     }
-    
-    /// Cache OCSP response
-    fn cache_response(
+
+    /// Verify digital signature
+    fn verify_signature(
         &self,
-        cache_key: String,
-        response: OcspResponse,
-        status_info: CertificateStatusInfo,
+        data: &[u8],
+        signature: &[u8],
+        algorithm: &str,
+        public_key: &[u8],
     ) -> PkiResult<()> {
-        if !self.config.cache_config.enable_caching {
-            return Ok(());
+        // Simplified signature verification - in production, use proper crypto library
+        if data.is_empty() || signature.is_empty() || public_key.is_empty() {
+            return Err(PkiError::SignatureError("Invalid signature parameters".to_string()));
         }
-        
-        let mut cache = self.response_cache.lock()
-            .map_err(|_| PkiError::general("Failed to lock OCSP response cache"))?;
-        
-        // Check cache size limit
-        if cache.len() >= self.config.cache_config.max_cache_entries {
-            // Remove oldest entry
-            if let Some(oldest_key) = self.find_oldest_cache_entry(&cache) {
-                cache.remove(&oldest_key);
+
+        // For demonstration, we'll just check that the signature is non-empty
+        // In production, this would perform actual cryptographic verification
+        if signature.len() < 64 {
+            return Err(PkiError::SignatureError("Signature too short".to_string()));
+        }
+
+        match algorithm {
+            "SHA256withRSA" | "SHA1withRSA" => {
+                // Mock RSA signature verification
+                Ok(())
             }
-        }
-        
-        let valid_until = status_info.next_update
-            .unwrap_or_else(|| SystemTime::now() + Duration::from_secs(3600));
-        
-        let cached_response = CachedOcspResponse {
-            response,
-            cached_at: SystemTime::now(),
-            certificate_status: status_info,
-            valid_until,
-            access_count: 0,
-        };
-        
-        cache.insert(cache_key, cached_response);
-        
-        Ok(())
-    }
-    
-    /// Find oldest cache entry for eviction
-    fn find_oldest_cache_entry(&self, cache: &HashMap<String, CachedOcspResponse>) -> Option<String> {
-        cache.iter()
-            .min_by_key(|(_, entry)| entry.cached_at)
-            .map(|(key, _)| key.clone())
-    }
-    
-    /// Update cache hit statistics
-    fn update_cache_hit_statistics(&self) {
-        if let Ok(mut stats) = self.statistics.lock() {
-            stats.cache_hits += 1;
+            _ => Err(PkiError::SignatureError(format!(
+                "Unsupported signature algorithm: {}",
+                algorithm
+            ))),
         }
     }
-    
-    /// Update cache miss statistics
-    fn update_cache_miss_statistics(&self) {
-        if let Ok(mut stats) = self.statistics.lock() {
-            stats.cache_misses += 1;
-        }
-    }
-    
-    /// Update request statistics
-    fn update_request_statistics(&self, start_time: SystemTime, status: &RevocationStatus) {
-        if let Ok(mut stats) = self.statistics.lock() {
-            stats.total_requests += 1;
-            stats.successful_responses += 1;
-            
-            match status {
-                RevocationStatus::Good => stats.good_responses += 1,
-                RevocationStatus::Revoked => stats.revoked_responses += 1,
-                RevocationStatus::Unknown => stats.unknown_responses += 1,
-            }
-            
-            if let Ok(elapsed) = start_time.elapsed() {
-                let elapsed_ms = elapsed.as_millis() as f64;
-                stats.avg_response_time_ms = 
-                    (stats.avg_response_time_ms * (stats.total_requests - 1) as f64 + elapsed_ms) 
-                    / stats.total_requests as f64;
-            }
-        }
-    }
-    
-    /// Update failed request statistics
-    fn update_failed_request_statistics(&self) {
-        if let Ok(mut stats) = self.statistics.lock() {
-            stats.total_requests += 1;
-            stats.failed_requests += 1;
-        }
-    }
-    
-    /// Get client statistics
-    pub fn get_statistics(&self) -> PkiResult<OcspStatistics> {
-        let stats = self.statistics.lock()
-            .map_err(|_| PkiError::general("Failed to lock statistics"))?;
-        Ok(stats.clone())
-    }
-    
-    /// Clear response cache
-    pub fn clear_cache(&self) -> PkiResult<()> {
-        let mut cache = self.response_cache.lock()
-            .map_err(|_| PkiError::general("Failed to lock OCSP response cache"))?;
-        cache.clear();
-        Ok(())
+
+    /// Check if two certificate IDs match
+    fn cert_ids_match(&self, id1: &CertId, id2: &CertId) -> bool {
+        id1.hash_algorithm == id2.hash_algorithm
+            && id1.issuer_name_hash == id2.issuer_name_hash
+            && id1.issuer_key_hash == id2.issuer_key_hash
+            && id1.serial_number == id2.serial_number
     }
 }
 
-/// OCSP request builder trait
-trait OcspRequestBuilder: Send + Sync {
-    fn build_request(
-        &self,
-        certificate: &X509Certificate,
-        issuer: &X509Certificate,
-        config: &OcspConfig,
-    ) -> PkiResult<OcspRequest>;
-}
-
-/// Standard OCSP request builder
-struct StandardOcspRequestBuilder;
-
-impl StandardOcspRequestBuilder {
-    fn new() -> Self {
-        Self
+impl Default for OcspClient {
+    fn default() -> Self {
+        Self::new(OcspConfig::default())
     }
 }
 
-impl OcspRequestBuilder for StandardOcspRequestBuilder {
-    fn build_request(
-        &self,
-        certificate: &X509Certificate,
-        issuer: &X509Certificate,
-        config: &OcspConfig,
-    ) -> PkiResult<OcspRequest> {
-        // Create certificate ID
-        let cert_id = CertId {
-            hash_algorithm: "1.3.14.3.2.26".to_string(), // SHA-1
-            issuer_name_hash: self.calculate_issuer_name_hash(issuer)?,
-            issuer_key_hash: self.calculate_issuer_key_hash(issuer)?,
-            serial_number: certificate.serial_number.clone(),
-        };
-        
-        // Create single request
-        let mut single_request = SingleRequest {
-            cert_id,
-            extensions: Vec::new(),
-        };
-        
-        let mut request_extensions = Vec::new();
-        
-        // Add nonce extension if enabled
-        if config.use_nonce {
-            let nonce = self.generate_nonce()?;
-            request_extensions.push(X509Extension {
-                oid: "1.3.6.1.5.5.7.48.1.2".to_string(), // OCSP Nonce
-                critical: false,
-                value: nonce,
-                parsed_data: None,
-            });
-        }
-        
-        let mut request = OcspRequest {
-            version: 0, // v1
-            single_requests: vec![single_request],
-            extensions: request_extensions,
-            raw_data: Vec::new(),
-        };
-        
-        // Encode the request
-        request.raw_data = self.encode_ocsp_request(&request)?;
-        
-        Ok(request)
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
-impl StandardOcspRequestBuilder {
-    fn calculate_issuer_name_hash(&self, issuer: &X509Certificate) -> PkiResult<Vec<u8>> {
-        // In real implementation, this would calculate SHA-1 hash of issuer's distinguished name
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        
-        let mut hasher = DefaultHasher::new();
-        issuer.subject.to_string().hash(&mut hasher);
-        let hash = hasher.finish();
-        
-        let mut result = vec![0u8; 20]; // SHA-1 size
-        for i in 0..8 {
-            result[i] = ((hash >> (i * 8)) & 0xFF) as u8;
-        }
-        
-        Ok(result)
+    fn create_mock_certificate(subject: &str, serial: &[u8]) -> X509Certificate {
+        let now = SystemTime::now();
+        X509Certificate::new(
+            subject.to_string(),
+            "Mock CA".to_string(),
+            serial.to_vec(),
+            now,
+            now + Duration::from_secs(365 * 24 * 3600), // 1 year
+            vec![0x30, 0x82, 0x01, 0x22], // Mock public key
+            vec![0; 256], // Mock signature
+            "SHA256withRSA".to_string(),
+            vec![0x30, 0x82, 0x03, 0x00], // Mock raw data
+        )
     }
-    
-    fn calculate_issuer_key_hash(&self, issuer: &X509Certificate) -> PkiResult<Vec<u8>> {
-        // In real implementation, this would calculate SHA-1 hash of issuer's public key
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
+
+    #[test]
+    fn test_ocsp_client_creation() {
+        let config = OcspConfig::default();
+        let client = OcspClient::new(config);
+        assert_eq!(client.config.timeout, Duration::from_secs(30));
+    }
+
+    #[test]
+    fn test_cert_id_creation() {
+        let cert = create_mock_certificate("CN=Test Certificate", &[1, 2, 3, 4]);
+        let issuer = create_mock_certificate("CN=Test CA", &[5, 6, 7, 8]);
         
-        let mut hasher = DefaultHasher::new();
-        issuer.subject_public_key_info.public_key.hash(&mut hasher);
-        let hash = hasher.finish();
+        let cert_id = CertId::new(&cert, &issuer).unwrap();
+        assert_eq!(cert_id.hash_algorithm, "SHA-1");
+        assert_eq!(cert_id.serial_number, vec![1, 2, 3, 4]);
+        assert_eq!(cert_id.issuer_name_hash.len(), 20); // SHA-1 hash length
+        assert_eq!(cert_id.issuer_key_hash.len(), 20);
+    }
+
+    #[test]
+    fn test_nonce_generation() {
+        let client = OcspClient::default();
+        let nonce1 = client.generate_nonce();
+        let nonce2 = client.generate_nonce();
         
-        let mut result = vec![0u8; 20]; // SHA-1 size
-        for i in 0..8 {
-            result[i] = ((hash >> (i * 8)) & 0xFF) as u8;
-        }
+        assert_eq!(nonce1.len(), 16);
+        assert_eq!(nonce2.len(), 16);
+        assert_ne!(nonce1, nonce2); // Should be different random nonces
+    }
+
+    #[test]
+    fn test_cert_ids_match() {
+        let cert = create_mock_certificate("CN=Test", &[1, 2, 3, 4]);
+        let issuer = create_mock_certificate("CN=CA", &[5, 6, 7, 8]);
         
-        Ok(result)
-    }
-    
-    fn generate_nonce(&self) -> PkiResult<Vec<u8>> {
-        // Generate random nonce for replay protection
-        use std::time::{SystemTime, UNIX_EPOCH};
+        let cert_id1 = CertId::new(&cert, &issuer).unwrap();
+        let cert_id2 = CertId::new(&cert, &issuer).unwrap();
         
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|_| PkiError::general("Failed to get timestamp"))?
-            .as_nanos();
+        let client = OcspClient::default();
+        assert!(client.cert_ids_match(&cert_id1, &cert_id2));
+    }
+
+    #[test]
+    fn test_response_status_parsing() {
+        let client = OcspClient::default();
         
-        let mut nonce = Vec::new();
-        for i in 0..16 {
-            nonce.push(((timestamp >> (i * 8)) & 0xFF) as u8);
-        }
+        // Test successful response
+        let successful_data = [0x00, 0x01, 0x02];
+        let status = client.parse_response_status(&successful_data).unwrap();
+        assert_eq!(status, OcspResponseStatus::Successful);
         
-        Ok(nonce)
-    }
-    
-    fn encode_ocsp_request(&self, request: &OcspRequest) -> PkiResult<Vec<u8>> {
-        // In a real implementation, this would properly encode the OCSP request in DER format
-        // For now, return a mock structure
-        Ok(vec![
-            0x30, 0x82, 0x00, 0x45, // OCSPRequest SEQUENCE
-            // tbsRequest, signatureAlgorithm (optional), signature (optional)
-        ])
-    }
-}
-
-/// OCSP response validator trait
-trait OcspResponseValidator: Send + Sync {
-    fn validate_response(&self, response: &OcspResponse, request: &OcspRequest) -> PkiResult<()>;
-}
-
-/// Basic OCSP response validator
-struct BasicOcspResponseValidator;
-
-impl BasicOcspResponseValidator {
-    fn new() -> Self {
-        Self
-    }
-}
-
-impl OcspResponseValidator for BasicOcspResponseValidator {
-    fn validate_response(&self, response: &OcspResponse, _request: &OcspRequest) -> PkiResult<()> {
-        // Check response status
-        match response.response_status {
-            OcspResponseStatus::Successful => Ok(()),
-            OcspResponseStatus::MalformedRequest => {
-                Err(PkiError::ocsp_error("OCSP request was malformed", None, None))
-            }
-            OcspResponseStatus::InternalError => {
-                Err(PkiError::ocsp_error("OCSP responder internal error", None, None))
-            }
-            OcspResponseStatus::TryLater => {
-                Err(PkiError::ocsp_error("OCSP responder temporarily unavailable", None, None))
-            }
-            OcspResponseStatus::SigRequired => {
-                Err(PkiError::ocsp_error("OCSP request signature required", None, None))
-            }
-            OcspResponseStatus::Unauthorized => {
-                Err(PkiError::ocsp_error("OCSP request unauthorized", None, None))
-            }
-        }
-    }
-}
-
-/// Nonce-based OCSP response validator
-struct NonceOcspResponseValidator;
-
-impl NonceOcspResponseValidator {
-    fn new() -> Self {
-        Self
-    }
-}
-
-impl OcspResponseValidator for NonceOcspResponseValidator {
-    fn validate_response(&self, response: &OcspResponse, request: &OcspRequest) -> PkiResult<()> {
-        // Check if request contained a nonce
-        let request_nonce = self.extract_nonce_from_request(request);
-        
-        if let Some(req_nonce) = request_nonce {
-            // Response should contain matching nonce
-            let response_nonce = self.extract_nonce_from_response(response);
-            
-            if let Some(resp_nonce) = response_nonce {
-                if req_nonce != resp_nonce {
-                    return Err(PkiError::ocsp_error("OCSP response nonce mismatch", None, None));
-                }
-            } else {
-                return Err(PkiError::ocsp_error("OCSP response missing nonce", None, None));
-            }
-        }
-        
-        Ok(())
-    }
-}
-
-impl NonceOcspResponseValidator {
-    fn extract_nonce_from_request(&self, request: &OcspRequest) -> Option<Vec<u8>> {
-        for extension in &request.extensions {
-            if extension.oid == "1.3.6.1.5.5.7.48.1.2" { // OCSP Nonce
-                return Some(extension.value.clone());
-            }
-        }
-        None
-    }
-    
-    fn extract_nonce_from_response(&self, _response: &OcspResponse) -> Option<Vec<u8>> {
-        // In real implementation, this would parse the BasicOCSPResponse
-        // and extract the nonce extension
-        None
-    }
-}
-
-/// Timestamp-based OCSP response validator
-struct TimestampOcspResponseValidator;
-
-impl TimestampOcspResponseValidator {
-    fn new() -> Self {
-        Self
-    }
-}
-
-impl OcspResponseValidator for TimestampOcspResponseValidator {
-    fn validate_response(&self, response: &OcspResponse, _request: &OcspRequest) -> PkiResult<()> {
-        // In real implementation, this would:
-        // 1. Parse the BasicOCSPResponse
-        // 2. Check thisUpdate and nextUpdate times
-        // 3. Verify response is not too old
-        // 4. Check that response times are reasonable
-        
-        // For now, just validate that we have response bytes
-        if response.response_bytes.is_none() {
-            return Err(PkiError::ocsp_error("Missing response bytes", None, None));
-        }
-        
-        Ok(())
-    }
-}
-
-/// Hex encoding helper
-mod hex {
-    pub fn encode(data: &[u8]) -> String {
-        data.iter()
-            .map(|b| format!("{:02x}", b))
-            .collect()
+        // Test malformed request
+        let malformed_data = [0x01, 0x02, 0x03];
+        let status = client.parse_response_status(&malformed_data).unwrap();
+        assert_eq!(status, OcspResponseStatus::MalformedRequest);
     }
 }

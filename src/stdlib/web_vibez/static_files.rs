@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
-use crate::config::StaticFileConfig;
+use crate::stdlib::web_vibez::config::StaticFileConfig;
 
 /// Static file server with caching
 pub struct StaticFileServer {

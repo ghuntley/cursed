@@ -13,8 +13,7 @@ mod tests {
     fn setup_llvm() -> (Context, Module<'static>, LlvmCodeGenerator<'static>) {
         let context = Context::create();
         let module = context.create_module("test");
-        let codegen = LlvmCodeGenerator::new(&context, &module);
-        (context, module, codegen)
+        let codegen = LlvmCodeGenerator::new().unwrap()
     }
 
     #[test]
@@ -26,7 +25,7 @@ mod tests {
             stan worker()
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -51,7 +50,7 @@ mod tests {
             stan process_data(1, "hello")
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -75,7 +74,7 @@ mod tests {
             }
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -107,7 +106,7 @@ mod tests {
             }
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -134,7 +133,7 @@ mod tests {
             }
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -176,7 +175,7 @@ mod tests {
             stan task_b()
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -195,7 +194,7 @@ mod tests {
         // Test compilation of invalid goroutine constructs
         let source = "stan nonexistent_function()";
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();
@@ -223,7 +222,7 @@ mod tests {
             stan spawn_workers()
         "#;
         
-        let mut lexer = Lexer::new(source);
+        let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().unwrap();

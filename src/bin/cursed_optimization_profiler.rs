@@ -772,7 +772,7 @@ fn analyze_cursed_features(source_code: &str, focus_area: &str) -> Result<Cursed
     // This would use actual source analysis
     // For now, simulate the analysis
     
-    let lines = source_code.lines().count();
+    let lines = source_code.split("\n").count();
     
     Ok(CursedFeatureAnalysis {
         goroutine_patterns: source_code.matches("stan ").count(),
@@ -789,7 +789,7 @@ fn extract_cursed_features(source_code: &str) -> Result<FeatureVector> {
     
     // Basic function features
     features.function_features.size_in_bytes = source_code.len();
-    features.function_features.instruction_count = source_code.lines().count();
+    features.function_features.instruction_count = source_code.split("\n").count();
     
     // CURSED-specific features
     features.cursed_features.goroutine_usage.goroutine_spawn_count = source_code.matches("stan ").count();

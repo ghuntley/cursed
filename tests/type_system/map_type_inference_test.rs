@@ -10,7 +10,7 @@ use cursed::parser::Parser;
 fn test_map_type_inference() {// Parse and type check a simple map literal
     let input = r#{# name ":  "age ": 30}#;"
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     let mut type_checker = TypeChecker::new();
@@ -31,7 +31,7 @@ fn test_map_type_inference_int_to_float() {// Parse and type check a map with in
     let input = r#{1: 1.5, 2: 2.5}#;
     
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     let mut type_checker = TypeChecker::new();
@@ -49,7 +49,7 @@ fn test_map_type_inference_int_to_float() {// Parse and type check a map with in
 fn test_map_type_inference_mixed_keys() {// Parse and type check a map with mixed key types (should error)
     let input = r#{# name "John , 1: 30}#;"
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     let mut type_checker = TypeChecker::new();
@@ -66,7 +66,7 @@ fn test_map_type_inference_mixed_keys() {// Parse and type check a map with mixe
 fn test_map_type_inference_mixed_values() {// Parse and type check a map with mixed value types
     let input = r#{# name ":  John "age : 30}#;
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     let mut type_checker = TypeChecker::new();

@@ -738,7 +738,7 @@ impl RealPerformanceMonitor {
         let mut cpu_model = String::new();
         let mut cpu_frequency = 0;
         
-        for line in cpuinfo.lines() {
+        for line in cpuinfo.split("\n") {
             if line.starts_with("processor") {
                 logical_cores += 1;
             } else if line.starts_with("model name") {
@@ -808,7 +808,7 @@ impl RealPerformanceMonitor {
             
             let mut total_physical = 0;
             
-            for line in meminfo.lines() {
+            for line in meminfo.split("\n") {
                 if line.starts_with("MemTotal:") {
                     if let Some(size_str) = line.split_whitespace().nth(1) {
                         if let Ok(size_kb) = size_str.parse::<u64>() {
@@ -842,7 +842,7 @@ impl RealPerformanceMonitor {
             
             // Read /proc/mounts to get mounted filesystems
             if let Ok(mounts) = fs::read_to_string("/proc/mounts") {
-                for line in mounts.lines() {
+                for line in mounts.split("\n") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
                     if parts.len() >= 2 && parts[1].starts_with('/') {
                         let mount_point = parts[1].to_string();
@@ -1367,7 +1367,7 @@ impl CpuMonitor {
         let stat_content = fs::read_to_string("/proc/stat")
             .map_err(|e| Error::from_str(&format!("Failed to read /proc/stat: {}", e)))?;
         
-        let first_line = stat_content.lines().next()
+        let first_line = stat_content.split("\n").next()
             .ok_or_else(|| Error::from_str("Empty /proc/stat file"))?;
         
         let parts: Vec<&str> = first_line.split_whitespace().collect();
@@ -1579,7 +1579,7 @@ impl MemoryMonitor {
         let mut swap_total = 0;
         let mut swap_used = 0;
         
-        for line in meminfo_content.lines() {
+        for line in meminfo_content.split("\n") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
                 let value_kb: u64 = parts[1].parse().unwrap_or(0);
@@ -1690,7 +1690,7 @@ impl ProcessMemoryTracker {
         let mut virtual_size = 0;
         let mut shared_size = 0;
         
-        for line in status_content.lines() {
+        for line in status_content.split("\n") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
                 let value_kb: u64 = parts[1].parse().unwrap_or(0);
@@ -1754,7 +1754,7 @@ impl IoMonitor {
         let mut total_read_ops = 0;
         let mut total_write_ops = 0;
         
-        for line in diskstats_content.lines() {
+        for line in diskstats_content.split("\n") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 14 {
                 // Skip loop devices and ram devices
@@ -1778,7 +1778,7 @@ impl IoMonitor {
         let stat_content = fs::read_to_string("/proc/stat")
             .map_err(|e| Error::from_str(&format!("Failed to read /proc/stat for I/O: {}", e)))?;
         
-        let io_wait_percent = if let Some(first_line) = stat_content.lines().next() {
+        let io_wait_percent = if let Some(first_line) = stat_content.split("\n").next() {
             let parts: Vec<&str> = first_line.split_whitespace().collect();
             if parts.len() >= 6 {
                 let iowait: u64 = parts[5].parse().unwrap_or(0);
@@ -1880,7 +1880,7 @@ impl NetworkTracker {
         let mut total_bytes_sent = 0;
         let mut total_bytes_received = 0;
         
-        for line in netdev_content.lines().skip(2) { // Skip header lines
+        for line in netdev_content.split("\n").skip(2) { // Skip header lines
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 17 {
                 let interface_name = parts[0].trim_end_matches(':');

@@ -437,7 +437,7 @@ pub fn get_process_priority(pid: u32) -> ProcessResult<Priority> {
 
             if wmic_output.status.success() {
                 let stdout = String::from_utf8_lossy(&wmic_output.stdout);
-                for line in stdout.lines() {
+                for line in stdout.split("\n") {
                     if line.starts_with("Priority=") {
                         if let Some(priority_str) = line.split('=').nth(1) {
                             // Windows priority values: 4=Idle, 6=BelowNormal, 8=Normal, 10=AboveNormal, 13=High, 24=RealTime

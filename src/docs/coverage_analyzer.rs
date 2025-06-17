@@ -307,7 +307,7 @@ impl CoverageAnalyzer {
         let mut items = Vec::new();
 
         // Parse the file to get AST
-        let mut lexer = Lexer::new(content);
+        let mut lexer = Lexer::new(content.to_string());
         let tokens = lexer.tokenize()
             .map_err(|e| Error::SystemError(format!("Failed to tokenize file {}: {:?}", file_path.display(), e)))?;
 
@@ -385,7 +385,7 @@ impl CoverageAnalyzer {
 
     /// Extract documentation for a specific item
     fn extract_documentation_for_item(&self, content: &str, location: &SourceLocation) -> Option<String> {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split("\n").collect();
         
         if location.line == 0 || location.line > lines.len() {
             return None;

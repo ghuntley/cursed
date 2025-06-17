@@ -390,7 +390,7 @@ impl Daemon {
                 match output {
                     Ok(result) if result.status.success() => {
                         let output_str = String::from_utf8_lossy(&result.stdout);
-                        Ok(output_str.lines().count() > 1) // Header + process line
+                        Ok(output_str.split("\n").count() > 1) // Header + process line
                     }
                     _ => Ok(false)
                 }

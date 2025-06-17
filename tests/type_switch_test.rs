@@ -115,8 +115,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         // Note: This test may need adjustment based on actual parser implementation
         // The parser needs to be enhanced to handle type switch syntax
@@ -137,8 +137,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -155,8 +155,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -175,8 +175,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -195,8 +195,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         // Should either parse successfully (if this syntax is allowed) or return error
@@ -212,8 +212,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_err());
@@ -226,8 +226,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok()); // Empty switch should be valid
@@ -243,8 +243,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         // Should handle empty case bodies gracefully
@@ -323,8 +323,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -346,8 +346,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -391,8 +391,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -409,8 +409,8 @@ mod tests {
         }
         "#;
 
-        let mut lexer = Lexer::new(input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
         
         let stmt = parser.parse_statement();
         assert!(stmt.is_ok());
@@ -493,8 +493,8 @@ mod tests {
         ];
 
         for example in examples {
-            let mut lexer = Lexer::new(example);
-            let mut parser = Parser::new(&mut lexer);
+            let mut lexer = Lexer::new(example.to_string());
+            let mut parser = Parser::new(lexer);
             
             let stmt = parser.parse_statement();
             assert!(stmt.is_ok(), "Documentation example should parse correctly");

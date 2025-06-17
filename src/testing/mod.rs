@@ -154,7 +154,7 @@ pub async fn run_tests_in_directory(dir: &str, pattern: Option<&str>) -> TestRes
 /// Run a specific test file
 pub async fn run_test_file(file_path: &str) -> TestResult<TestReport> {
     let mut config = TestConfig::default();
-    config.include_patterns = vec![file_path.to_string()];
+    config.include_patterns = Vec::from([file_path.to_string()]);
     
     run_tests(config).await
 }

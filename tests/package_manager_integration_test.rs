@@ -379,7 +379,7 @@ async fn test_workspace_member_addition_and_removal() {
     let package_file = workspace_root.join("CursedPackage.toml");
     let content = std::fs::read_to_string(&package_file).unwrap();
     assert!(content.contains("plugins"));
-    assert!(!content.contains("utils") || content.lines().any(|line| line.contains("utils") && line.contains("#")));
+    assert!(!content.contains("utils") || content.split("\n").any(|line| line.contains("utils") && line.contains("#")));
 }
 
 #[tokio::test]

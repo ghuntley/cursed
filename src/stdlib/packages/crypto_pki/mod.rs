@@ -12,6 +12,10 @@
 /// 
 /// All implementations follow industry standards and security best practices.
 
+// Core PKI types and utilities
+pub mod types;
+pub mod ocsp_client;
+
 // Main PKI implementation
 pub mod main;
 pub mod enhanced_main;
@@ -128,10 +132,12 @@ pub use certificate_transparency::{
 };
 
 pub use ocsp::{
-    OcspClient, OcspRequest, OcspResponse, OcspStatus, OcspSingleResponse,
+    OcspRequest, OcspResponse, OcspStatus, OcspSingleResponse,
     create_ocsp_request, parse_ocsp_response, check_ocsp_status,
     OcspError, OcspResult, OcspCache, OcspValidator
 };
+
+pub use ocsp_client::OcspClient;
 
 pub use key_pinning::{
     PinSet, PublicKeyPin, PinValidation, PinPolicy, create_pin_set,

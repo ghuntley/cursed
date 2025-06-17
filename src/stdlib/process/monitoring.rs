@@ -777,7 +777,7 @@ fn get_io_read_bytes(pid: u32) -> ProcessResult<u64> {
     let content = fs::read_to_string(&io_path)
         .map_err(|_| ProcessError::ProcessNotFound(pid))?;
     
-    for line in content.lines() {
+    for line in content.split("\n") {
         if line.starts_with("read_bytes:") {
             if let Some(value_str) = line.split_whitespace().nth(1) {
                 if let Ok(value) = value_str.parse::<u64>() {
@@ -904,7 +904,7 @@ fn get_io_write_bytes(pid: u32) -> ProcessResult<u64> {
     let content = fs::read_to_string(&io_path)
         .map_err(|_| ProcessError::ProcessNotFound(pid))?;
     
-    for line in content.lines() {
+    for line in content.split("\n") {
         if line.starts_with("write_bytes:") {
             if let Some(value_str) = line.split_whitespace().nth(1) {
                 if let Ok(value) = value_str.parse::<u64>() {

@@ -219,7 +219,7 @@ fn get_platform_version() -> io::Result<String> {
                 let mut name = "Linux";
                 let mut version = "Unknown";
                 
-                for line in content.lines() {
+                for line in content.split("\n") {
                     if line.starts_with("NAME=") {
                         name = line.split('=').nth(1).unwrap_or("Linux").trim_matches('"');
                     } else if line.starts_with("VERSION=") {
@@ -300,7 +300,7 @@ fn get_total_memory() -> io::Result<u64> {
     match platform {
         Platform::Linux => {
             let content = fs::read_to_string("/proc/meminfo")?;
-            for line in content.lines() {
+            for line in content.split("\n") {
                 if line.starts_with("MemTotal:") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
                     if parts.len() >= 2 {
@@ -347,7 +347,7 @@ fn get_available_memory() -> io::Result<u64> {
     match platform {
         Platform::Linux => {
             let content = fs::read_to_string("/proc/meminfo")?;
-            for line in content.lines() {
+            for line in content.split("\n") {
                 if line.starts_with("MemAvailable:") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
                     if parts.len() >= 2 {
@@ -691,7 +691,7 @@ pub mod network_ops {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 let mut interfaces = Vec::new();
                 
-                for line in output_str.lines() {
+                for line in output_str.split("\n") {
                     // Parse interface names (simplified)
                     if line.contains(":") && !line.starts_with(' ') {
                         if let Some(name) = line.split(':').next() {
@@ -730,7 +730,7 @@ pub mod network_ops {
                     .output()?;
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 
-                for line in output_str.lines() {
+                for line in output_str.split("\n") {
                     if line.contains("default via") {
                         let parts: Vec<&str> = line.split_whitespace().collect();
                         if parts.len() >= 3 {
@@ -747,7 +747,7 @@ pub mod network_ops {
                     .output()?;
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 
-                for line in output_str.lines() {
+                for line in output_str.split("\n") {
                     if line.trim().starts_with("gateway:") {
                         if let Some(gateway) = line.split(':').nth(1) {
                             return Ok(gateway.trim().to_string());

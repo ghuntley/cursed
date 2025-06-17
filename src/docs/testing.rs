@@ -625,7 +625,7 @@ impl DocumentationTester {
         let mut links = Vec::new();
         
         // Simple regex-based link extraction (would be more sophisticated in production)
-        for line in text.lines() {
+        for line in text.split("\n") {
             if line.contains("http://") || line.contains("https://") {
                 // Extract URLs using a simple heuristic
                 let words: Vec<&str> = line.split_whitespace().collect();

@@ -1047,7 +1047,7 @@ fn get_process_resource_usage(pid: u32) -> ProcessResult<ResourceUsage> {
         // Read I/O statistics from /proc/{pid}/io
         let io_path = format!("/proc/{}/io", pid);
         if let Ok(io_content) = fs::read_to_string(&io_path) {
-            for line in io_content.lines() {
+            for line in io_content.split("\n") {
                 if let Some((key, value)) = line.split_once(':') {
                     let value = value.trim().parse::<u64>().unwrap_or(0);
                     match key {
@@ -1092,7 +1092,7 @@ fn get_process_resource_usage(pid: u32) -> ProcessResult<ResourceUsage> {
         // Calculate memory percentage from meminfo
         if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
             let mut total_memory_kb = 0u64;
-            for line in meminfo.lines() {
+            for line in meminfo.split("\n") {
                 if line.starts_with("MemTotal:") {
                     if let Some(value) = line.split_whitespace().nth(1) {
                         if let Ok(mem) = value.parse::<u64>() {
@@ -1124,7 +1124,7 @@ fn get_process_resource_usage(pid: u32) -> ProcessResult<ResourceUsage> {
             .output()
         {
             if let Ok(output_str) = String::from_utf8(output.stdout) {
-                for line in output_str.lines().skip(1) { // Skip header
+                for line in output_str.split("\n").skip(1) { // Skip header
                     let fields: Vec<&str> = line.split(',').collect();
                     if fields.len() >= 5 {
                         // Parse memory usage (typically in KB)
@@ -1146,7 +1146,7 @@ fn get_process_resource_usage(pid: u32) -> ProcessResult<ResourceUsage> {
             .output()
         {
             if let Ok(output_str) = String::from_utf8(output.stdout) {
-                for line in output_str.lines() {
+                for line in output_str.split("\n") {
                     if line.starts_with("TotalVisibleMemorySize=") {
                         if let Some(value_str) = line.split('=').nth(1) {
                             if let Ok(total_kb) = value_str.trim().parse::<u64>() {
@@ -1221,7 +1221,7 @@ fn count_connections_for_protocol(pid: u32, protocol: &str) -> u32 {
     let net_path = format!("/proc/net/{}", protocol);
     if let Ok(content) = fs::read_to_string(&net_path) {
         let mut count = 0;
-        for line in content.lines().skip(1) { // Skip header
+        for line in content.split("\n").skip(1) { // Skip header
             let fields: Vec<&str> = line.split_whitespace().collect();
             if fields.len() > 9 {
                 // The inode is typically in the 10th field (index 9)

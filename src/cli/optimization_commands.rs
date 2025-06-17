@@ -1432,7 +1432,7 @@ async fn analyze_file_for_recommendations(file_path: &str) -> Result<(), Box<dyn
     println!("   🔍 Analyzing file structure and patterns...");
     
     let source = fs::read_to_string(file_path)?;
-    let lines = source.lines().count();
+    let lines = source.split("\n").count();
     let has_loops = source.contains("lowkey") || source.contains("bestie");
     let has_functions = source.contains("slay");
     let has_math = source.contains("math::") || source.contains("calculate");
@@ -1559,7 +1559,7 @@ async fn analyze_file_for_specific_recommendations(file_path: &str) -> Result<Ve
         recommendations.push("channel-optimize".to_string());
     }
     
-    if source.lines().count() > 500 {
+    if source.split("\n").count() > 500 {
         recommendations.push("inline".to_string());
         recommendations.push("dce".to_string());
     }

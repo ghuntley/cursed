@@ -236,7 +236,7 @@ fn make_http_request(
     let response_str = String::from_utf8_lossy(&response_data);
     
     // Parse status line
-    let mut lines = response_str.lines();
+    let mut lines = response_str.split("\n");
     let status_line = lines.next().ok_or("No status line")?;
     let status_code: u16 = status_line
         .split_whitespace()

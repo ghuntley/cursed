@@ -86,7 +86,7 @@ mod tests {
 
         for expr in expressions {
             let source = format!("sus result = {};", expr);
-            let mut lexer = Lexer::new(source);
+            let mut lexer = Lexer::new(source.to_string());
             let mut parser = Parser::new(lexer).unwrap();
             let ast = parser.parse_program();
             

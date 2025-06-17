@@ -324,7 +324,7 @@ impl MemoryProfiler {
         for record in history.iter() {
             if let Some(ref trace) = record.stack_trace {
                 // Extract function name from stack trace (simplified)
-                let function = trace.lines().nth(2)
+                let function = trace.split("\n").nth(2)
                     .unwrap_or("unknown")
                     .trim()
                     .to_string();

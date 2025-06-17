@@ -1040,11 +1040,11 @@ impl LiveDocumentationServer {
         
         // This would integrate with the CURSED interpreter/compiler
         // For now, return a mock response
-        info!("Executing code in playground: {} lines of {}", code.lines().count(), language);
+        info!("Executing code in playground: {} lines of {}", code.split("\n").count(), language);
         
         // Mock execution result
         Ok(format!("// Code execution result\n// {} lines of {} code processed\nslay \"Hello from CURSED playground!\"", 
-            code.lines().count(), language))
+            code.split("\n").count(), language))
     }
     
     /// Execute API method for API explorer

@@ -1334,7 +1334,7 @@ impl CertificateRenewalManager {
     fn parse_custom_script_output(&mut self, certificate_id: &str, output: &str) -> PkiResult<()> {
         // Parse script output for certificate paths and validation
         // This is a simplified implementation
-        for line in output.lines() {
+        for line in output.split("\n") {
             if line.starts_with("CERTIFICATE_PATH:") {
                 let path = line.split(':').nth(1)
                     .ok_or_else(|| PkiError::general("Invalid certificate path in script output"))?

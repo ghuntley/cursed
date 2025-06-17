@@ -580,7 +580,7 @@ impl PerformanceOptimizationSystem {
     fn estimate_compilation_time(&self, compilation_units: &[CompilationUnit]) -> Duration {
         // Simple estimation based on source code size and complexity
         let total_lines: usize = compilation_units.iter()
-            .map(|unit| unit.source_code.lines().count())
+            .map(|unit| unit.source_code.split("\n").count())
             .sum();
 
         let base_time_per_line = match self.config.build_profile {

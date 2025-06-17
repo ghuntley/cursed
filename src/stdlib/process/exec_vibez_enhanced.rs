@@ -513,7 +513,7 @@ impl OutputStreamer {
                                 
                                 if let Some(ref cb) = stdout_callback {
                                     let string_data = String::from_utf8_lossy(data);
-                                    for line in string_data.lines() {
+                                    for line in string_data.split("\n") {
                                         cb(line);
                                     }
                                 }
@@ -553,7 +553,7 @@ impl OutputStreamer {
                                 
                                 if let Some(ref cb) = stderr_callback {
                                     let string_data = String::from_utf8_lossy(data);
-                                    for line in string_data.lines() {
+                                    for line in string_data.split("\n") {
                                         cb(line);
                                     }
                                 }

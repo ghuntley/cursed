@@ -285,7 +285,7 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
     
     /// Calculate complexity score for input
     fn calculate_complexity_score(&self, source: &str, function_count: usize) -> f64 {
-        let lines = source.lines().count() as f64;
+        let lines = source.split("\n").count() as f64;
         let avg_function_size = if function_count > 0 {
             lines / function_count as f64
         } else {

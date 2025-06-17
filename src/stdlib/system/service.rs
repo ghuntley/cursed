@@ -268,7 +268,7 @@ impl ServiceManager {
         let mut services = Vec::new();
         let mut current_service: Option<Service> = None;
 
-        for line in stdout.lines() {
+        for line in stdout.split("\n") {
             let line = line.trim();
             
             if line.starts_with("SERVICE_NAME:") {
@@ -405,7 +405,7 @@ impl ServiceManager {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let mut services = Vec::new();
 
-        for line in stdout.lines() {
+        for line in stdout.split("\n") {
             let line = line.trim();
             if line.is_empty() || line.starts_with("UNIT") || line.starts_with("●") {
                 continue;
@@ -480,7 +480,7 @@ impl ServiceManager {
         if show_output.status.success() {
             let show_stdout = String::from_utf8_lossy(&show_output.stdout);
             
-            for line in show_stdout.lines() {
+            for line in show_stdout.split("\n") {
                 if let Some((key, value)) = line.split_once('=') {
                     match key {
                         "Description" => {
@@ -563,7 +563,7 @@ impl ServiceManager {
         
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
+            for line in stdout.split("\n") {
                 let line = line.trim();
                 if line.ends_with(".service") && !line.starts_with(&format!("{}.service", name)) {
                     let dep_name = line.trim_start_matches("● ")

@@ -669,7 +669,7 @@ pub mod utils {
     /// Parse certificate from PEM string
     pub fn parse_certificate_pem(pem: &str) -> SignatureResult<X509Certificate> {
         // Extract base64 data from PEM
-        let lines: Vec<&str> = pem.lines().collect();
+        let lines: Vec<&str> = pem.split("\n").collect();
         let mut data_lines = Vec::new();
         let mut in_cert = false;
 

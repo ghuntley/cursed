@@ -168,7 +168,7 @@ impl CommentParser {
     #[instrument(skip(self, source_code))]
     pub fn parse_comments(&self, source_code: &str) -> Result<Vec<ParsedComment>, CommentParsingError> {
         let mut comments = Vec::new();
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         let mut i = 0;
         while i < lines.len() {
@@ -279,7 +279,7 @@ impl CommentParser {
         let mut in_code_block = false;
         let mut current_example: Option<CodeExample> = None;
         
-        for (line_offset, line) in content.lines().enumerate() {
+        for (line_offset, line) in content.split("\n").enumerate() {
             let line = line.trim();
             let current_line = start_line + line_offset;
             

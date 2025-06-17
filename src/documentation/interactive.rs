@@ -640,7 +640,7 @@ impl SyntaxHighlighter {
         let mut highlighted_html = String::new();
         
         // Process each line
-        for (line_num, line) in request.code.lines().enumerate() {
+        for (line_num, line) in request.code.split("\n").enumerate() {
             let line_num_1based = line_num + 1;
             
             // Check if this line should be highlighted
@@ -943,7 +943,7 @@ impl CodePlayground {
     pub fn parse_compilation_errors(&self, stderr: &str) -> Vec<CompilationError> {
         let mut errors = Vec::new();
         
-        for line in stderr.lines() {
+        for line in stderr.split("\n") {
             if line.contains("error:") {
                 // Parse error line: "file.csd:10:5: error: message"
                 if let Some(error) = self.parse_error_line(line, ErrorSeverity::Error) {
@@ -959,7 +959,7 @@ impl CodePlayground {
     pub fn parse_compilation_warnings(&self, stderr: &str) -> Vec<String> {
         let mut warnings = Vec::new();
         
-        for line in stderr.lines() {
+        for line in stderr.split("\n") {
             if line.contains("warning:") {
                 warnings.push(line.to_string());
             }
@@ -972,7 +972,7 @@ impl CodePlayground {
     pub fn parse_runtime_errors(&self, stderr: &str) -> Vec<RuntimeError> {
         let mut errors = Vec::new();
         
-        for line in stderr.lines() {
+        for line in stderr.split("\n") {
             if line.contains("runtime error:") || line.contains("panic:") {
                 errors.push(RuntimeError {
                     message: line.to_string(),

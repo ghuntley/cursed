@@ -651,7 +651,7 @@ impl CompilationProfiler {
 
         // Simulate lexing work with realistic characteristics
         let char_count = source.chars().count();
-        let line_count = source.lines().count();
+        let line_count = source.split("\n").count();
         let token_estimate = char_count / 5; // Rough estimate
 
         // Simulate memory allocation for tokens
@@ -910,7 +910,7 @@ impl CompilationProfiler {
         self.phase_tracker.start_phase(&phase_name)?;
 
         // IR generation characteristics
-        let instruction_estimate = source.lines().count() * 3; // ~3 IR instructions per line
+        let instruction_estimate = source.split("\n").count() * 3; // ~3 IR instructions per line
         
         let memory_start = self.get_current_memory_usage();
         let memory_allocated = instruction_estimate * 128; // IR instruction structures
@@ -1062,7 +1062,7 @@ impl CompilationProfiler {
         let start_time = Instant::now();
         self.phase_tracker.start_phase(&phase_name)?;
 
-        let instruction_count = source.lines().count() * 4; // Estimated machine instructions
+        let instruction_count = source.split("\n").count() * 4; // Estimated machine instructions
         
         let memory_start = self.get_current_memory_usage();
         let memory_allocated = instruction_count * 64; // Code buffer

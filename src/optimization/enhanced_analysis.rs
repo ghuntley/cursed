@@ -754,7 +754,7 @@ impl EnhancedPerformanceAnalyzer {
 
     /// Calculate code complexity metrics
     fn calculate_complexity_metrics(&self, source: &str) -> Result<ComplexityMetrics> {
-        let lines = source.lines().count();
+        let lines = source.split("\n").count();
         let functions = source.matches("slay ").count(); // CURSED function keyword
         
         Ok(ComplexityMetrics {

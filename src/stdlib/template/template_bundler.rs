@@ -804,7 +804,7 @@ impl TemplateOptimizer for MinificationOptimizer {
         }
         
         if self.remove_empty_lines {
-            let lines: Vec<&str> = content.lines()
+            let lines: Vec<&str> = content.split("\n")
                 .filter(|line| !line.trim().is_empty())
                 .collect();
             let new_content = lines.join("\n");

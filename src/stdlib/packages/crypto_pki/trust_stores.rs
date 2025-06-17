@@ -746,7 +746,7 @@ impl TrustStoreManager {
         let mut current_cert = String::new();
         let mut in_cert = false;
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             if line.contains("-----BEGIN CERTIFICATE-----") {
                 in_cert = true;
                 current_cert = line.to_string() + "\n";
@@ -776,7 +776,7 @@ impl TrustStoreManager {
         // For now, create a basic certificate structure
         
         // Extract the base64 data
-        let lines: Vec<&str> = pem_data.lines().collect();
+        let lines: Vec<&str> = pem_data.split("\n").collect();
         let mut base64_data = String::new();
         
         for line in lines {
@@ -1143,7 +1143,7 @@ impl TrustStoreManager {
         let mut current_cert = String::new();
         let mut in_cert = false;
         
-        for line in content.lines() {
+        for line in content.split("\n") {
             if line.contains("-----BEGIN CERTIFICATE-----") {
                 in_cert = true;
                 current_cert = line.to_string() + "\n";

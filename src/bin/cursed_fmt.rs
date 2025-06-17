@@ -182,7 +182,7 @@ fn load_config_file(config: &mut CliConfig, path: &Path) -> Result<(), String> {
         .map_err(|e| format!("Failed to read config file: {}", e))?;
     
     // Basic TOML-like parsing for configuration
-    for line in content.lines() {
+    for line in content.split("\n") {
         let line = line.trim();
         if line.is_empty() || line.starts_with('#') {
             continue;
@@ -364,8 +364,8 @@ fn print_diff(filename: &str, original: &str, formatted: &str) {
     println!("--- {}", filename);
     println!("+++ {}", filename);
     
-    let original_lines: Vec<&str> = original.lines().collect();
-    let formatted_lines: Vec<&str> = formatted.lines().collect();
+    let original_lines: Vec<&str> = original.split("\n").collect();
+    let formatted_lines: Vec<&str> = formatted.split("\n").collect();
     
     // Simple diff - just show different lines
     let max_lines = original_lines.len().max(formatted_lines.len());

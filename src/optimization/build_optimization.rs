@@ -254,7 +254,7 @@ impl ParallelCompiler {
         let mut dependencies = Vec::new();
         
         // Extract import statements (simplified)
-        for line in content.lines() {
+        for line in content.split("\n") {
             let trimmed = line.trim();
             if trimmed.starts_with("import ") || trimmed.starts_with("use ") {
                 if let Some(dep) = self.parse_import_statement(trimmed) {
@@ -768,7 +768,7 @@ impl IncrementalCompiler {
             .map_err(|e| Error::from_str(&format!("Failed to read source file: {}", e)))?;
         
         // Calculate compilation complexity factors
-        let line_count = source_content.lines().count();
+        let line_count = source_content.split("\n").count();
         let function_count = source_content.matches("slay ").count(); // CURSED function keyword
         let import_count = source_content.matches("import ").count();
         let complexity_score = line_count + (function_count * 10) + (import_count * 5);

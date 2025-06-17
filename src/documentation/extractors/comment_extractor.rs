@@ -270,7 +270,7 @@ impl CommentExtractor {
         location: &SourceLocation,
         source_code: &str,
     ) -> Result<Vec<ParsedComment>, Error> {
-        let lines: Vec<&str> = source_code.lines().collect();
+        let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line <= 1 || location.line > lines.len() {
             return Ok(Vec::new());
@@ -371,7 +371,7 @@ impl CommentExtractor {
         let mut in_code_block = false;
         let mut current_example: Option<CodeExample> = None;
 
-        for (line_offset, line) in content.lines().enumerate() {
+        for (line_offset, line) in content.split("\n").enumerate() {
             let line = line.trim();
 
             // Handle code blocks
@@ -561,7 +561,7 @@ impl CommentExtractor {
         let mut dependencies = Vec::new();
 
         // Look for import statements
-        for line in code.lines() {
+        for line in code.split("\n") {
             let line = line.trim();
             if line.starts_with("import ") {
                 // Extract module name from import statement

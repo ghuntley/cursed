@@ -674,7 +674,7 @@ impl MemoryPressureDetector {
         let mut swap_total = 0u64;
         let mut swap_free = 0u64;
 
-        for line in meminfo.lines() {
+        for line in meminfo.split("\n") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
                 if let Ok(value) = parts[1].parse::<u64>() {

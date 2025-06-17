@@ -479,7 +479,7 @@ impl PerformanceIntegrationSystem {
         
         for file_path in source_files {
             if let Ok(content) = std::fs::read_to_string(file_path) {
-                total_lines += content.lines().count();
+                total_lines += content.split("\n").count();
                 total_bytes += content.len();
             }
         }
@@ -583,7 +583,7 @@ impl PerformanceIntegrationSystem {
         
         // LLVM IR generation
         let llvm_ir = self.generate_llvm_ir(&analyzed_ast, module_name, config)?;
-        debug!("Generated {} lines of LLVM IR for module {}", llvm_ir.lines().count(), module_name);
+        debug!("Generated {} lines of LLVM IR for module {}", llvm_ir.split("\n").count(), module_name);
         
         Ok(SingleFileCompilationResult {
             module_name: module_name.to_string(),
@@ -1030,7 +1030,7 @@ impl PerformanceMonitor {
         #[cfg(target_os = "linux")]
         {
             if let Ok(content) = std::fs::read_to_string("/proc/self/status") {
-                for line in content.lines() {
+                for line in content.split("\n") {
                     if line.starts_with("VmRSS:") {
                         if let Some(kb_str) = line.split_whitespace().nth(1) {
                             if let Ok(kb) = kb_str.parse::<f64>() {

@@ -207,7 +207,7 @@ impl AdvancedASTAnalyzer {
 
     /// Analyze function characteristics for optimization opportunities
     fn analyze_function_characteristics(&mut self, statement_str: &str, func_name: &str) {
-        let lines = statement_str.lines().count();
+        let lines = statement_str.split("\n").count();
         let estimated_complexity = statement_str.matches('{').count() + statement_str.matches("bestie").count() * 2;
         
         // Check for large functions

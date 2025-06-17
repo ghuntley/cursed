@@ -494,7 +494,7 @@ impl HardwareAccelerationDetector {
         {
             if output.status.success() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
-                for line in output_str.lines() {
+                for line in output_str.split("\n") {
                     let parts: Vec<&str> = line.split(',').collect();
                     if parts.len() >= 2 {
                         devices.push(GpuDevice {
@@ -582,7 +582,7 @@ impl HardwareAccelerationDetector {
         // Check lspci output for Cavium devices
         if let Ok(output) = std::process::Command::new("lspci").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
-            for line in output_str.lines() {
+            for line in output_str.split("\n") {
                 if line.contains("Cavium") && (line.contains("crypto") || line.contains("security")) {
                     coprocessors.push(CryptoCoprocessor {
                         name: "Cavium Crypto Accelerator".to_string(),
@@ -608,7 +608,7 @@ impl HardwareAccelerationDetector {
         // Check for various crypto accelerator vendors
         if let Ok(output) = std::process::Command::new("lspci").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
-            for line in output_str.lines() {
+            for line in output_str.split("\n") {
                 // Check for various crypto accelerator keywords
                 if line.contains("crypto") || line.contains("security") || line.contains("accelerator") {
                     if line.contains("Intel") {

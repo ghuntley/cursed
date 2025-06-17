@@ -112,7 +112,7 @@ impl MultiLineEditor {
             return 0;
         }
         
-        let lines: Vec<&str> = current_input.lines().collect();
+        let lines: Vec<&str> = current_input.split("\n").collect();
         if lines.is_empty() {
             return 0;
         }

@@ -216,7 +216,7 @@ impl SessionManager {
     /// Analyze code to extract variables and functions
     fn analyze_code(&mut self, code: &str) -> ReplResult<()> {
         // Simple analysis - in a real implementation, this would use the parser
-        let lines: Vec<&str> = code.lines().collect();
+        let lines: Vec<&str> = code.split("\n").collect();
         
         for line in lines {
             let trimmed = line.trim();

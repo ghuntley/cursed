@@ -206,7 +206,7 @@ impl Request {
 
     /// Parse an HTTP request from a raw string
     pub fn parse(raw_request: &str) -> HttpResult<Self> {
-        let lines: Vec<&str> = raw_request.lines().collect();
+        let lines: Vec<&str> = raw_request.split("\n").collect();
         if lines.is_empty() {
             return Err(HttpError::InvalidRequest("Empty request".to_string()));
         }

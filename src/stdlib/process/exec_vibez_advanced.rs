@@ -328,7 +328,7 @@ impl EnhancedOutputStreamer {
                 
                 let handle = thread::spawn(move || {
                     let reader = BufReader::new(stdout);
-                    for line in reader.lines() {
+                    for line in reader.split("\n") {
                         if let Ok(line) = line {
                             let output_line = if timestamp {
                                 format!("[{}] {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"), line)
@@ -361,7 +361,7 @@ impl EnhancedOutputStreamer {
                     
                     let handle = thread::spawn(move || {
                         let reader = BufReader::new(stderr);
-                        for line in reader.lines() {
+                        for line in reader.split("\n") {
                             if let Ok(line) = line {
                                 let output_line = if timestamp {
                                     format!("[{}] STDERR: {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"), line)

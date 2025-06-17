@@ -45,7 +45,7 @@ fn test_type_system_integration() {// Test code with various type system feature
             sus pair = Pair[tea, normie]{first:  "job1 "
             jobs <-  job2 ";"
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     let program = parser.unwrap().parse_program().unwrap();
     
     // Verify the AST has the expected structure
@@ -73,7 +73,7 @@ fn test_type_system_integration() {// Test code with various type system feature
 #[test]
 fn test_channel_type_parsing() {let input =  dm <normie>;
     let lexer = Lexer::new(input.to_string();
-    let mut parser = Parser::new(Lexer::new(lexer);
+    let mut parser = Parser::new(Lexer::new(lexer.to_string());
     
     // Parse the channel type
     let channel_type = parser.parse_type().unwrap();
