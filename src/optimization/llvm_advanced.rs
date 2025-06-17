@@ -268,7 +268,7 @@ pub trait OptimizationPass {
 /// Optimization pipeline coordinator
 pub struct OptimizationPipeline {
     config: AdvancedOptimizationConfig,
-    pass_manager: Option<PassManagerBuilder>,
+    pass_manager: Option<PassManager<Module<'static>>>,
 }
 
 impl OptimizationPipeline {

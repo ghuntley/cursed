@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use rand::{Rng, RngCore};
-use rand::distributions::{Distribution, Normal};
+use rand_distr::{Distribution, Normal};
 use sha2::{Sha256, Sha512, Digest};
 
 /// Result type for Falcon operations

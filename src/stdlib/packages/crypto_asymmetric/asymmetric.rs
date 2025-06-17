@@ -15,6 +15,42 @@ pub use super::ed25519::*;
 pub use super::x25519::*;
 pub use super::key_exchange::*;
 
+/// Generic asymmetric key representation
+#[derive(Debug, Clone)]
+pub struct AsymmetricKey {
+    pub algorithm: String,
+    pub key_data: Vec<u8>,
+    pub key_type: String, // "private" or "public"
+}
+
+impl AsymmetricKey {
+    pub fn new(algorithm: String, key_data: Vec<u8>, key_type: String) -> Self {
+        Self {
+            algorithm,
+            key_data,
+            key_type,
+        }
+    }
+}
+
+/// Generic asymmetric key pair representation
+#[derive(Debug, Clone)]
+pub struct AsymmetricKeyPair {
+    pub private_key: AsymmetricKey,
+    pub public_key: AsymmetricKey,
+    pub algorithm: String,
+}
+
+impl AsymmetricKeyPair {
+    pub fn new(private_key: AsymmetricKey, public_key: AsymmetricKey, algorithm: String) -> Self {
+        Self {
+            private_key,
+            public_key,
+            algorithm,
+        }
+    }
+}
+
 /// Asymmetric cryptographic operations
 #[derive(Debug, Clone)]
 pub struct AsymmetricCrypto {

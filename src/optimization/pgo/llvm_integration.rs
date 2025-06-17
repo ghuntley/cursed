@@ -186,10 +186,8 @@ impl LlvmPgoIntegration {
     #[instrument(skip(self, module))]
     fn create_pgo_pass_manager<'ctx>(&self, module: &Module<'ctx>) -> Result<PassManager<FunctionValue<'ctx>>> {
         let pass_manager = PassManager::create(module);
-        let pass_manager_builder = PassManagerBuilder::create();
 
-        // Configure pass manager for PGO
-        pass_manager_        pass_manager_builder.set_inliner_with_threshold(275); // Aggressive inlining threshold
+        // Configure pass manager for PGO - direct pass addition for LLVM 17
 
         // Add PGO-specific passes
         if self.profile_data_loaded {

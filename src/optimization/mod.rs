@@ -57,8 +57,8 @@ pub use comprehensive_performance_system::{
     PerformanceStatistics as SystemPerformanceStatistics, BenchmarkResults,
 };
 pub use real_llvm_passes::{
-    RealLlvmOptimizer, OptimizationResults, PerformanceImprovements, ModuleMetrics,
-    OptimizationStatistics, IntelligentInliner, AdvancedDeadCodeEliminator,
+    RealLlvmOptimizer, OptimizationResults as RealOptimizationResults, PerformanceImprovements, ModuleMetrics,
+    OptimizationStatistics, IntelligentInliner, AdvancedDeadCodeEliminator as RealAdvancedDeadCodeEliminator,
     EnhancedLoopOptimizer, RealConstantPropagator,
 };
 pub use advanced_function_inlining::{
@@ -73,7 +73,7 @@ pub use enhanced_llvm_passes_manager::{
 pub use enhanced_llvm_optimization::{
     EnhancedLlvmOptimizationSystem, EnhancedOptimizationResults, ModuleCharacteristics,
     ComprehensivePerformanceImprovements, PerformanceResult, PerformanceMonitoringResults,
-    RegressionAnalysis,
+    RegressionAnalysis as EnhancedRegressionAnalysis,
 };
 pub use interprocedural_analysis::{
     InterproceduralAnalyzer, CallGraph as InterproceduralCallGraph, FunctionInfo, CallSite, CallType,
