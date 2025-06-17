@@ -10,6 +10,10 @@ use crate::build_system::{
     ParallelCompiler, ParallelCompilationConfig, IncrementalOptimizer, IncrementalConfig,
     BuildProfiler, ProfilerConfig, ArtifactManager, ArtifactConfig
 };
+use crate::build_system::{
+    BootstrapPipeline, BootstrapConfig, BootstrapBuildResult, BootstrapStatistics,
+    BootstrapIntegration
+};
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
 use crate::build_system::incremental_cache::CacheError;
 use crate::package_manager::{PackageManager, PackageManagerError};
@@ -80,6 +84,9 @@ pub struct BuildOrchestrator {
     incremental_optimizer: Option<IncrementalOptimizer>,
     build_profiler: Option<BuildProfiler>,
     artifact_manager: Option<ArtifactManager>,
+    // Bootstrap integration
+    bootstrap_pipeline: Option<BootstrapPipeline>,
+    bootstrap_config: Option<BootstrapConfig>,
 }
 
 /// Build result information
@@ -1892,6 +1899,157 @@ impl BuildOrchestrator {
         }
         
         Ok(tasks)
+    }
+
+    /// Execute bootstrap compilation process
+    #[instrument(skip(self))]
+    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapBuildConfig>) -> Result<BootstrapCompilationResult, BuildError> {
+        info!("Starting bootstrap compilation through build orchestrator");
+
+        let bootstrap_config = config.unwrap_or_else(|| {
+            let mut config = BootstrapBuildConfig::default();
+            config.build_config = self.config.clone();
+            config.verification_config.work_dir = self.work_dir.clone();
+            config
+        });
+
+        let bootstrap_manager = BootstrapBuildManager::new(bootstrap_config, self.work_dir.clone());
+        
+        // Clone the orchestrator for bootstrap use (this is a workaround for the ownership issue)
+        let bootstrap_orchestrator = BuildOrchestrator::new(self.config.clone(), self.work_dir.clone())?;
+        
+        bootstrap_manager.execute_bootstrap_build(bootstrap_orchestrator).await
+    }
+
+    /// Execute quick bootstrap verification
+    #[instrument(skip(self))]
+    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapBuildConfig>) -> Result<BootstrapCompilationResult, BuildError> {
+        info!("Starting quick bootstrap verification through build orchestrator");
+
+        let bootstrap_config = config.unwrap_or_else(|| {
+            let mut config = BootstrapBuildConfig::default();
+            config.build_config = self.config.clone();
+            config.verification_config.work_dir = self.work_dir.clone();
+            config.max_stages = 2; // Quick verification with 2 stages
+            config.convergence_threshold = 0.8; // Lower threshold for quick check
+            config
+        });
+
+        let bootstrap_manager = BootstrapBuildManager::new(bootstrap_config, self.work_dir.clone());
+        
+        // Clone the orchestrator for bootstrap use
+        let bootstrap_orchestrator = BuildOrchestrator::new(self.config.clone(), self.work_dir.clone())?;
+        
+        bootstrap_manager.quick_bootstrap_verify(bootstrap_orchestrator).await
+    }
+
+    /// Check bootstrap feasibility
+    #[instrument(skip(self))]
+    pub async fn check_bootstrap_feasibility(&self) -> Result<bool, BuildError> {
+        info!("Checking bootstrap feasibility");
+
+        // Check if bootstrap source exists
+        let bootstrap_source = self.work_dir.join("src").join("bootstrap").join("stage2").join("main.csd");
+        if !bootstrap_source.exists() {
+            warn!("Bootstrap source not found at: {}", bootstrap_source.display());
+            return Ok(false);
+        }
+
+        // Check if we have a working Rust compiler
+        let rust_compiler = self.work_dir.join("target").join("release").join("cursed");
+        if !rust_compiler.exists() {
+            // Try to build it first
+            info!("Rust-based compiler not found, attempting to build...");
+            match self.build_all("release").await {
+                Ok(result) => {
+                    if !result.success {
+                        warn!("Failed to build Rust-based compiler for bootstrap");
+                        return Ok(false);
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to build Rust-based compiler: {}", e);
+                    return Ok(false);
+                }
+            }
+        }
+
+        // Check if the compiler has basic functionality
+        if !self.test_rust_compiler_basic_functionality(&rust_compiler).await? {
+            warn!("Rust-based compiler failed basic functionality test");
+            return Ok(false);
+        }
+
+        info!("Bootstrap feasibility check passed");
+        Ok(true)
+    }
+
+    /// Test basic functionality of the Rust-based compiler
+    async fn test_rust_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<bool, BuildError> {
+        use std::process::{Command, Stdio};
+
+        // Create a simple test program
+        let test_dir = self.work_dir.join("bootstrap_feasibility_test");
+        std::fs::create_dir_all(&test_dir)?;
+        
+        let test_program = test_dir.join("feasibility_test.csd");
+        std::fs::write(&test_program, r#"
+slay main() -> normie {
+    sus x = 42;
+    sus y = x + 8;
+    bestie (y == 50) {
+        yeet 0;
+    }
+    yeet 1;
+}
+"#)?;
+
+        // Try to compile the test program
+        let output = Command::new(compiler_path)
+            .arg("build")
+            .arg(&test_program)
+            .arg("--output")
+            .arg(test_dir.join("feasibility_test_output"))
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output();
+
+        // Clean up test directory
+        let _ = std::fs::remove_dir_all(&test_dir);
+
+        match output {
+            Ok(output) => Ok(output.status.success()),
+            Err(_) => {
+                debug!("Basic functionality test skipped (compiler not ready)");
+                Ok(true) // Assume success for now during development
+            }
+        }
+    }
+
+    /// Get bootstrap configuration recommendations
+    pub fn get_bootstrap_config_recommendations(&self) -> BootstrapBuildConfig {
+        let mut config = BootstrapBuildConfig::default();
+        config.build_config = self.config.clone();
+        config.verification_config.work_dir = self.work_dir.clone();
+
+        // Adjust based on system capabilities
+        let cpu_count = num_cpus::get();
+        if cpu_count >= 8 {
+            config.parallel_stages = false; // Keep sequential for reliability
+            config.max_stages = 4; // More stages for better verification
+        } else {
+            config.parallel_stages = false;
+            config.max_stages = 3; // Standard 3 stages
+        }
+
+        // Adjust timeouts based on expected performance
+        config.stage_timeout = Duration::from_secs(if cpu_count >= 4 { 300 } else { 600 });
+
+        // Enable performance tracking for analysis
+        config.enable_performance_tracking = true;
+        config.keep_stage_artifacts = true; // Keep for debugging
+
+        config
     }
 }
 

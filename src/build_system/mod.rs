@@ -13,6 +13,7 @@ pub mod package_integration;
 pub mod file_watcher;
 pub mod test_discovery;
 pub mod test_executor;
+pub mod bootstrap_integration;
 
 // Advanced Build System Optimizations
 pub mod dependency_optimizer;
@@ -103,4 +104,8 @@ pub use artifact_manager::{
 pub use lto_integration::{
     LtoBuildIntegration, LtoBuildConfig, LtoOptimizationResult, CompilationArtifact,
     LtoBuildStatistics, LtoBuildConfigFactory
+};
+pub use bootstrap_integration::{
+    BootstrapPipeline, BootstrapConfig, BootstrapBuildResult, BootstrapStatistics,
+    BootstrapIntegration, StagePerformance, BootstrapStageResult
 };
