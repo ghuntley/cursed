@@ -15,7 +15,7 @@ fn next_task_id() -> TaskId {
 
 /// Unique identifier for a task
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TaskId(u64);
+pub struct TaskId(pub u64);
 
 impl TaskId {
     pub fn as_u64(&self) -> u64 {

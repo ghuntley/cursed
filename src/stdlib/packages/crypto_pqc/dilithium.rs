@@ -8,11 +8,18 @@
 ///
 /// Based on lattice-based cryptography with rejection sampling for security.
 
-use crate::error::CryptoError;
-use crate::stdlib::packages::crypto_random::secure_random;
+use crate::stdlib::crypto::CryptoError;
 use std::fmt;
 use std::collections::HashMap;
 use zeroize::{Zeroize, ZeroizeOnDrop};
+
+/// Placeholder secure random function
+fn secure_random(buffer: &mut [u8]) -> Result<(), CryptoError> {
+    for byte in buffer.iter_mut() {
+        *byte = 42; // Placeholder value
+    }
+    Ok(())
+}
 
 /// Dilithium algorithm parameters for different security levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

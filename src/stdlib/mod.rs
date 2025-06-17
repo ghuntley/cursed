@@ -1,4 +1,5 @@
 /// Standard library for CURSED
+pub mod core;
 pub mod dot_registry;
 pub mod packages;
 pub mod web_vibez;
@@ -590,6 +591,30 @@ pub use vibecheck::{
     // Runtime configuration and hooks
     start_time, update_alloc_stats, update_gc_stats, set_gc_notifier, set_memory_limit,
     set_cpu_profile_rate, get_memory_limit, get_cpu_profile_rate
+};
+
+// Core builtin functions re-exports - Fundamental types and functions for CURSED
+pub use core::{
+    // CURSED type aliases
+    Litean, Normie, Thicc, Snack, Meal, Tea,
+    
+    // Type conversion functions
+    lit, normie, thicc, snack, meal, tea,
+    
+    // Collection operations
+    append, cap, len, make, new,
+    
+    // Panic and recovery
+    shook, unbothered, try_unbothered,
+    
+    // Utility functions
+    zero_value, is_zero_value, type_of, clone_value, equal_values,
+    
+    // Module management
+    init_core, get_core_stats,
+    
+    // Error types
+    CoreError, CoreResult
 };
 
 pub use dot_registry::DOT_REGISTRY;
