@@ -46,6 +46,7 @@ pub mod glyph_gang;
 pub mod glowup_http;
 pub mod no_cap;
 pub mod bytefit;
+pub mod lookin_glass;
 
 // ================================
 // GEN Z STDLIB MODULES (CURSED NAMING CONVENTIONS)
@@ -1335,6 +1336,38 @@ pub use dropz::{
     
     // Error types
     DropzError, DropzResult
+};
+
+// LookinGlass - Runtime reflection capabilities for CURSED
+pub use lookin_glass::{
+    // Error handling system
+    LookinGlassError, LookinGlassResult,
+    
+    // Core reflection types
+    Type as ReflectionType, Value as ReflectionValue, Kind, StructField, StructTag, Method,
+    
+    // Core reflection functions
+    type_of, value_of, new, zero, indirect,
+    make_slice, make_map, make_chan, make_func,
+    
+    // Type construction helpers
+    array_of, slice_of, map_of, ptr_to, chan_of, func_of,
+    
+    // Type registry functions
+    register_type, lookup_type, registered_types, init_type_registry,
+    
+    // Enhanced reflection utilities
+    deep_equal, deep_copy, struct_to_map, map_to_struct,
+    get_tags, set_field, get_field, has_field, field_names, field_info,
+    value_to_map, map_to_value,
+    
+    // VibeMapper for advanced mapping and JSON conversion
+    VibeMapper, VibeMapperConfig,
+    camel_to_snake, snake_to_camel, 
+    to_lowercase as reflection_to_lowercase, to_uppercase as reflection_to_uppercase,
+    
+    // Module management
+    initialize as initialize_lookin_glass, get_reflection_statistics, ReflectionStatistics,
 };
 
 // VibeLife - OS functionality with Gen Z flair
