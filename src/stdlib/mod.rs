@@ -47,6 +47,7 @@ pub mod glowup_http;
 pub mod no_cap;
 pub mod bytefit;
 pub mod lookin_glass;
+pub mod squish_core;
 
 // ================================
 // GEN Z STDLIB MODULES (CURSED NAMING CONVENTIONS)
@@ -1368,6 +1369,53 @@ pub use lookin_glass::{
     
     // Module management
     initialize as initialize_lookin_glass, get_reflection_statistics, ReflectionStatistics,
+};
+
+// Squish Core - Compression and decompression functionality with CURSED flair
+pub use squish_core::{
+    // Error handling system
+    SquishError, SquishResult,
+    
+    // Core interfaces
+    Reader as SquishReader, Writer as SquishWriter, Compressor, Decompressor,
+    
+    // Compression constants and levels
+    NO_COMPRESSION, BEST_SPEED, BEST_COMPRESSION, DEFAULT_COMPRESSION, HUFFMAN_ONLY,
+    MIN_COMPRESSION_LEVEL, MAX_COMPRESSION_LEVEL, CompressionQuality, CompressionStrategy as SquishStrategy,
+    FlushMode, is_valid_compression_level, quality_to_level, recommended_buffer_size,
+    should_use_parallel, optimal_chunk_size,
+    
+    // Compression format modules
+    gzip::{GzipReader, GzipWriter, new_reader as new_gzip_reader, new_writer as new_gzip_writer, 
+           new_writer_level as new_gzip_writer_level, is_gzip_data},
+    zlib::{ZlibReader, ZlibWriter, new_reader as new_zlib_reader, new_writer as new_zlib_writer,
+           new_writer_level as new_zlib_writer_level, is_zlib_data},
+    flate::{FlateReader, FlateWriter, new_reader as new_flate_reader, new_writer as new_flate_writer},
+    bzip2::{Bzip2Reader, Bzip2Writer, new_reader as new_bzip2_reader, new_writer as new_bzip2_writer,
+            new_writer_level as new_bzip2_writer_level, is_bzip2_data},
+    lzw::{LzwReader, LzwWriter, Order as LzwOrder, new_reader as new_lzw_reader, new_writer as new_lzw_writer,
+          default_literal_width, is_valid_literal_width},
+    
+    // Enhanced compression features
+    adaptive::{AdaptiveCompressor, CompressionStrategy as AdaptiveStrategy, new_adaptive_compressor,
+               new_compressor_with_strategy},
+    dictionary::{Dictionary, DictionaryCompressor},
+    parallel::{ParallelCompressor, ParallelOptions, compress_parallel},
+    progressive::{ProgressiveCompressor, ProgressiveOptions, new_progressive_compressor,
+                  new_compressor_with_options},
+    
+    // Statistics and performance monitoring
+    statistics::{CompressionStats, PerformanceMetrics, ModuleStats, OperationTimer,
+                 get_module_stats, update_global_stats, record_global_failure,
+                 start_operation, end_operation},
+    
+    // High-level utility functions
+    utils::{compress, decompress, compress_with_level, compress_adaptive, detect_format,
+            max_compressed_size, validate_level_for_algorithm, get_file_extension, get_mime_type,
+            supports_streaming, get_recommended_buffer_size, estimate_compression_ratio},
+    
+    // Module management
+    initialize as initialize_squish_core, get_module_stats as get_squish_stats, cleanup as cleanup_squish_core,
 };
 
 // VibeLife - OS functionality with Gen Z flair

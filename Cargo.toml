@@ -234,6 +234,7 @@ bytes = "1.5"           # Byte manipulation for package data
 
 # Archive and compression dependencies
 flate2 = "1.0.28"       # Gzip compression/decompression
+bzip2 = "0.4"           # BZIP2 compression/decompression
 tar = "0.4.40"          # TAR archive handling
 zip = "0.6.6"           # ZIP archive handling
 brotli = "3.4"          # Brotli compression/decompression
