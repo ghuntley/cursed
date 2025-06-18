@@ -16,7 +16,6 @@
     pkgs.llvmPackages_17.mlir
     pkgs.llvmPackages_17.stdenv
     pkgs.libffi
-    pkgs.libbfd
     pkgs.libffi.dev
     pkgs.libxml2
     pkgs.libxml2.dev
@@ -32,6 +31,14 @@
     pkgs.openssl
     pkgs.pkg-config
     pkgs.cacert
+  ] ++ lib.optionals pkgs.stdenv.isLinux [
+    # Linux-specific packages
+    pkgs.libbfd
+  ] ++ lib.optionals pkgs.stdenv.isDarwin [
+    # macOS-specific packages
+    pkgs.darwin.apple_sdk.frameworks.CoreFoundation
+    pkgs.darwin.apple_sdk.frameworks.Security
+    pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
   ];
 
   # https://devenv.sh/languages/

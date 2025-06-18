@@ -1,3 +1,4 @@
+# Linux-specific configuration
 [target.x86_64-unknown-linux-gnu]
 linker = "gcc"
 rustflags = [
@@ -8,8 +9,20 @@ rustflags = [
     # This avoids hardcoded Nix store paths that break between rebuilds
 ]
 
+# macOS-specific configuration
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-Wl,-rpath,@loader_path",
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-Wl,-rpath,@loader_path",
+]
+
 [env]
 CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER = "gcc"
 
-[build]
-target = "x86_64-unknown-linux-gnu"
+# Remove forced Linux target to allow native compilation
+# [build]
+# target = "x86_64-unknown-linux-gnu"
