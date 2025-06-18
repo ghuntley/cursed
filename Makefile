@@ -12,7 +12,7 @@ SHELL := /bin/bash
 # Build Configuration
 CARGO_FLAGS ?=
 BUILD_TYPE ?= debug
-WORKERS ?= $(shell nproc 2>/dev/null || echo 4)
+WORKERS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 VERBOSE ?= 0
 PROFILE ?= dev
 
@@ -23,8 +23,8 @@ CACHE_DIR := .cursed_cache
 COVERAGE_DIR := coverage
 TEST_RESULTS_DIR := test_results
 
-# Linking fix integration
-LINKING_FIX := ./fix_linking.sh
+# Cross-platform linking fix integration
+LINKING_FIX := ./fix_linking_cross_platform.sh
 CARGO_CMD := $(LINKING_FIX) cargo
 
 # Conditional verbosity

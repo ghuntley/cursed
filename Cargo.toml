@@ -280,6 +280,18 @@ futures = "0.3"   # Futures utilities for async operations
 winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef", "processthreadsapi", "psapi", "tlhelp32", "winbase", "fileapi", "wincon", "namedpipeapi", "synchapi", "jobapi2"] }
 windows-sys = { version = "0.52", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_Threading"] }
 
+# Linux-specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+# Linux-specific dependencies for system integration
+libc = "0.2"  # Already included above but needed for Linux system calls
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS-specific dependencies for shared memory and system integration
+core-foundation = "0.9"  # Core Foundation framework
+core-foundation-sys = "0.8"  # Core Foundation system bindings
+libc = "0.2"  # Already included above but needed for macOS system calls
+mach2 = "0.4"  # Mach kernel interface for shared memory
+
 # Template system dependencies (moved above)
 # md5, dashmap, ropey, tree-sitter moved to main dependencies section
 
