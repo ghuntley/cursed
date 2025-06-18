@@ -17,18 +17,15 @@ Successfully extended the CURSED compiler to support both Linux and macOS while 
 - **Removed forced Linux target**: Commented out `[build] target = "x86_64-unknown-linux-gnu"` to allow native compilation
 - **Platform-specific linker flags**: macOS uses `-Wl,-rpath,@loader_path` for proper library loading
 
-### 3. Cross-Platform Linking Script (`fix_linking_cross_platform.sh`)
-- **Platform detection**: Automatically detects Linux vs macOS via `uname`
-- **Linux support**: Maintains existing Nix store library paths and BFD linker configuration
-- **macOS support**: 
-  - Homebrew integration with automatic path detection
-  - LLVM path configuration for both ARM64 and Intel Macs
-  - Proper rpath settings for dynamic library loading
-- **Fallback handling**: Graceful degradation for unknown platforms
+### 3. Simplified Build System (Removed Linking Scripts)
+- **Direct cargo integration**: All linking configuration moved to `.cargo/config.toml`
+- **No wrapper scripts needed**: Users can run `cargo build` directly
+- **Platform-specific flags**: Automatically applied based on target platform
+- **Cleaner developer experience**: Single consistent build command across platforms
 
 ### 4. Makefile Updates (`Makefile`)
 - **Cross-platform CPU detection**: `nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4`
-- **Updated linking integration**: Uses `fix_linking_cross_platform.sh` instead of Linux-only script
+- **Direct cargo usage**: Removed wrapper scripts, uses `cargo` directly
 - **Preserved all existing functionality**: All build targets and optimization features maintained
 
 ### 5. Nix Development Environment (`devenv.nix`)
@@ -78,18 +75,18 @@ WORKERS = 16 (automatically detected via sysctl -n hw.ncpu)
 
 ### Linux Development
 ```bash
-# Existing workflow unchanged
+# Simplified workflow - no scripts needed
 make build
 make test
-./fix_linking.sh cargo build  # Still works
+cargo build  # Direct cargo usage
 ```
 
 ### macOS Development
 ```bash
-# New cross-platform workflow
+# Same commands work on macOS
 make build  # Automatically detects macOS
-make test   # Uses cross-platform linking
-./fix_linking_cross_platform.sh cargo build  # Explicit cross-platform usage
+make test   # Platform-specific linking applied automatically
+cargo build  # Direct cargo usage
 ```
 
 ### Universal Commands
@@ -99,25 +96,29 @@ make help
 make build
 make test
 make lint
+cargo build
+cargo test
 ```
 
 ## Benefits Achieved
 
-1. **Seamless Cross-Platform Development**: Developers can work on either Linux or macOS without changing commands
-2. **Automatic Platform Detection**: No manual configuration needed - scripts auto-detect the platform
+1. **Seamless Cross-Platform Development**: Developers can work on either Linux or macOS using standard `cargo` commands
+2. **Simplified Build System**: Eliminated wrapper scripts - all configuration in standard Cargo files
 3. **Preserved Linux Functionality**: All existing Linux workflows continue to work unchanged
-4. **Homebrew Integration**: macOS developers get automatic Homebrew path detection
+4. **Standard Rust Tooling**: Uses standard `.cargo/config.toml` for platform-specific settings
 5. **Future-Proof Architecture**: Easy to extend to additional platforms (Windows, FreeBSD, etc.)
 
 ## Files Modified
 - `Cargo.toml` - Added platform-specific dependencies
-- `.cargo/config.toml` - Added macOS linker configurations
-- `Makefile` - Updated CPU detection and linking script reference
+- `.cargo/config.toml` - Added macOS linker configurations and simplified environment
+- `Makefile` - Updated CPU detection and removed linking script dependencies
 - `devenv.nix` - Added platform-conditional packages
-- `fix_linking_cross_platform.sh` - New cross-platform linking script (created)
+
+## Files Removed
+- `fix_linking.sh` - Linux-specific wrapper script (no longer needed)
+- `fix_linking_cross_platform.sh` - Cross-platform wrapper script (no longer needed)
 
 ## Files Preserved
-- `fix_linking.sh` - Original Linux script maintained for backward compatibility
 - All existing build targets and optimization features
 - All existing test suites and validation scripts
 - All Linux-specific configurations and paths

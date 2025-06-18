@@ -1008,6 +1008,8 @@ dependencies = [
  "chrono",
  "clap",
  "colored",
+ "core-foundation",
+ "core-foundation-sys",
  "crc32fast",
  "criterion",
  "crossbeam",
@@ -1042,6 +1044,7 @@ dependencies = [
  "libm",
  "log",
  "lru",
+ "mach2",
  "md5",
  "mongodb",
  "mysql",
@@ -2720,6 +2723,15 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "url",
+]
+
+[[package]]
+name = "mach2"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19b955cdeb2a02b9117f121ce63aa52d08ade45de53e48fe6a38b39c10f6f709"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
