@@ -23,9 +23,8 @@ CACHE_DIR := .cursed_cache
 COVERAGE_DIR := coverage
 TEST_RESULTS_DIR := test_results
 
-# Cross-platform linking fix integration
-LINKING_FIX := ./fix_linking_cross_platform.sh
-CARGO_CMD := $(LINKING_FIX) cargo
+# Direct cargo usage - linking configuration handled by .cargo/config.toml
+CARGO_CMD := cargo
 
 # Conditional verbosity
 ifeq ($(VERBOSE),1)
@@ -73,34 +72,34 @@ CYAN := \033[36m
 # New optimization system tests
 test-optimization-baseline:
 	@echo "$(CYAN)Running optimization baseline comparison tests...$(RESET)"
-	$(FIX_LINKING) cargo test --test optimization_baseline_comparison_test
+	$(CARGO_CMD) test --test optimization_baseline_comparison_test
 
 test-optimization-time-savings:
 	@echo "$(CYAN)Running optimization time savings tests...$(RESET)"
-	$(FIX_LINKING) cargo test --test optimization_time_savings_test
+	$(CARGO_CMD) test --test optimization_time_savings_test
 
 test-optimization-complete:
 	@echo "$(CYAN)Running complete optimization system tests...$(RESET)"
-	$(FIX_LINKING) cargo test --test optimization_baseline_comparison_test
-	$(FIX_LINKING) cargo test --test optimization_time_savings_test
+	$(CARGO_CMD) test --test optimization_baseline_comparison_test
+	$(CARGO_CMD) test --test optimization_time_savings_test
 
 # LTO optimization testing targets
 test-lto:
 	@echo "$(CYAN)Running LTO optimization integration tests...$(RESET)"
-	$(FIX_LINKING) cargo test --test lto_optimization_integration_test
+	$(CARGO_CMD) test --test lto_optimization_integration_test
 
 test-lto-verbose:
 	@echo "$(CYAN)Running LTO optimization tests with verbose output...$(RESET)"
-	$(FIX_LINKING) cargo test --test lto_optimization_integration_test -- --nocapture
+	$(CARGO_CMD) test --test lto_optimization_integration_test -- --nocapture
 
 test-lto-ignored:
 	@echo "$(CYAN)Running ignored LTO optimization tests...$(RESET)"
-	$(FIX_LINKING) cargo test --test lto_optimization_integration_test -- --ignored
+	$(CARGO_CMD) test --test lto_optimization_integration_test -- --ignored
 
 # Run optimization examples
 demo-optimization:
 	@echo "$(CYAN)Running optimization system demo...$(RESET)"
-	$(FIX_LINKING) cargo run --example optimization_usage_demo
+	$(CARGO_CMD) run --example optimization_usage_demo
 
 # Optimization system help
 optimization-help:
@@ -1019,25 +1018,25 @@ docs-examples: ## Generate examples documentation
 .PHONY: doc-test doc-test-integration doc-test-unit doc-test-enhanced doc-test-all
 doc-test: ## Run basic documentation tests
 	$(AT)echo -e "$(CYAN)🧪 Running documentation system tests...$(RESET)"
-	./fix_linking.sh cargo test --test documentation_integration_test
+	$(CARGO_CMD) test --test documentation_integration_test
 
 doc-test-integration: ## Run documentation integration tests
 	$(AT)echo -e "$(CYAN)🧪 Running documentation integration tests...$(RESET)"
-	./fix_linking.sh cargo test --test documentation_integration_test
+	$(CARGO_CMD) test --test documentation_integration_test
 
 doc-test-unit: ## Run documentation unit tests
 	$(AT)echo -e "$(CYAN)🧪 Running documentation unit tests...$(RESET)"
-	./fix_linking.sh cargo test --lib documentation
+	$(CARGO_CMD) test --lib documentation
 
 doc-test-enhanced: ## Run enhanced documentation generation tests
 	$(AT)echo -e "$(CYAN)🧪 Running enhanced documentation generation tests...$(RESET)"
-	./fix_linking.sh cargo test --test documentation_enhanced_test
+	$(CARGO_CMD) test --test documentation_enhanced_test
 
 doc-test-all: ## Run all documentation tests
 	$(AT)echo -e "$(CYAN)🧪 Running all documentation tests...$(RESET)"
-	./fix_linking.sh cargo test --test documentation_integration_test
-	./fix_linking.sh cargo test --test documentation_enhanced_test
-	./fix_linking.sh cargo test --lib documentation
+	$(CARGO_CMD) test --test documentation_integration_test
+	$(CARGO_CMD) test --test documentation_enhanced_test
+	$(CARGO_CMD) test --lib documentation
 
 docs-stdlib: ## Generate standard library documentation  
 	$(AT)echo -e "$(MAGENTA)📚 Generating standard library documentation...$(RESET)"
@@ -1796,52 +1795,52 @@ redis-help: ## Show Redis driver testing help
 # Quick PKI signature verification tests
 pki-test-quick: ## Run PKI signature verification quick tests
 	@echo "🔐 Running PKI signature verification quick tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_certificate_processor_creation --quiet
+	$(CARGO_CMD) test --test pki_signature_verification_test test_certificate_processor_creation --quiet
 
 # Standard PKI signature verification tests
 pki-test: ## Run PKI signature verification tests
 	@echo "🔒 Running PKI signature verification tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test
+	$(CARGO_CMD) test --test pki_signature_verification_test
 
 # RSA signature verification tests
 pki-test-rsa: ## Run RSA signature verification tests
 	@echo "🔑 Running RSA signature verification tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_rsa_signature
+	$(CARGO_CMD) test --test pki_signature_verification_test test_rsa_signature
 
 # ECDSA signature verification tests
 pki-test-ecdsa: ## Run ECDSA signature verification tests
 	@echo "📈 Running ECDSA signature verification tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_ecdsa_signature
+	$(CARGO_CMD) test --test pki_signature_verification_test test_ecdsa_signature
 
 # Ed25519 signature verification tests
 pki-test-ed25519: ## Run Ed25519 signature verification tests
 	@echo "⚡ Running Ed25519 signature verification tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_ed25519_signature
+	$(CARGO_CMD) test --test pki_signature_verification_test test_ed25519_signature
 
 # Algorithm compatibility tests
 pki-test-algorithms: ## Run signature verification algorithm tests
 	@echo "🧮 Running signature verification algorithm tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_multiple_hash_algorithms
+	$(CARGO_CMD) test --test pki_signature_verification_test test_multiple_hash_algorithms
 
 # Performance tests
 pki-test-performance: ## Run PKI signature verification performance tests
 	@echo "🚀 Running PKI signature verification performance tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_signature_verification_performance --release
+	$(CARGO_CMD) test --test pki_signature_verification_test test_signature_verification_performance --release
 
 # Concurrent verification tests
 pki-test-concurrent: ## Run PKI concurrent signature verification tests
 	@echo "🔄 Running PKI concurrent signature verification tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_concurrent_signature_verification
+	$(CARGO_CMD) test --test pki_signature_verification_test test_concurrent_signature_verification
 
 # Edge case tests
 pki-test-edge-cases: ## Run PKI edge case tests
 	@echo "⚠️  Running PKI edge case tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test test_error_handling_edge_cases
+	$(CARGO_CMD) test --test pki_signature_verification_test test_error_handling_edge_cases
 
 # Complete PKI test suite
 pki-test-all: ## Run all PKI signature verification tests
 	@echo "🔒 Running all PKI signature verification tests..."
-	./fix_linking.sh cargo test --test pki_signature_verification_test
+	$(CARGO_CMD) test --test pki_signature_verification_test
 	@echo "✅ PKI signature verification tests completed"
 
 # Clean PKI test artifacts

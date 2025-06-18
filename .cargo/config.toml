@@ -5,8 +5,6 @@ rustflags = [
     "-C", "linker=gcc",
     "-C", "link-arg=-fuse-ld=bfd",
     "-C", "link-arg=-Wl,--disable-new-dtags",
-    # Library paths are provided by devenv.nix via LIBRARY_PATH environment variable
-    # This avoids hardcoded Nix store paths that break between rebuilds
 ]
 
 # macOS-specific configuration
@@ -20,9 +18,7 @@ rustflags = [
     "-C", "link-arg=-Wl,-rpath,@loader_path",
 ]
 
+# Environment variables for cross-platform builds
 [env]
 CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER = "gcc"
-
-# Remove forced Linux target to allow native compilation
-# [build]
-# target = "x86_64-unknown-linux-gnu"
+# Library paths will be provided by devenv.nix or system package managers
