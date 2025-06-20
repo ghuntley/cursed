@@ -13,6 +13,7 @@ use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 use super::types::{map_postgres_value, prepare_parameters, extract_column_info, PostgresParam};
 
 /// PostgreSQL prepared statement wrapper
+#[derive(Debug)]
 pub struct PostgresStatement {
     /// Underlying tokio-postgres statement
     statement: Statement,
@@ -246,6 +247,18 @@ impl DriverStmt for PostgresStatement {
     fn close(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
         // tokio-postgres handles cleanup automatically
         Ok(())
+    }
+
+    fn query_string(&self) -> &str {
+        &self.query
+    }
+
+    fn clone(&self) -> Box<dyn DriverStmt> {
+        Box::new(PostgresStatement {
+            statement: self.statement.clone(),
+            query: self.query.clone(),
+            stats: Arc::clone(&self.stats),
+        })
     }
 
     fn parameter_count(&self) -> usize {

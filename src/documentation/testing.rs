@@ -18,6 +18,7 @@ use crate::error::Error as CursedError;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, error, info, instrument, warn};
 use url::Url;
@@ -624,11 +625,11 @@ impl DocumentationTester {
         let mut results = Vec::new();
         
         // Execute examples with parallelism control
-        let semaphore = tokio::sync::Semaphore::new(self.config.max_parallel_tests);
+        let semaphore = Arc::new(tokio::sync::Semaphore::new(self.config.max_parallel_tests));
         let mut tasks = Vec::new();
         
         for example in examples {
-            let permit = semaphore.clone();
+            let permit = Arc::clone(&semaphore);
             let interactive_docs = &mut self.interactive_docs;
             let config = &self.config;
             

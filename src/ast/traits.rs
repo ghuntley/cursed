@@ -161,3 +161,57 @@ impl Clone for Box<dyn Statement> {
         self.clone_box()
     }
 }
+
+/// Implement Statement trait for Box<dyn Statement>
+/// This allows boxed statement trait objects to be used where Statement is expected
+impl Statement for Box<dyn Statement> {
+    fn statement_node(&self) {
+        (**self).statement_node()
+    }
+    
+    fn as_any(&self) -> &dyn Any {
+        (**self).as_any()
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        (**self).clone_box()
+    }
+}
+
+/// Implement Node trait for Box<dyn Statement>
+impl Node for Box<dyn Statement> {
+    fn string(&self) -> String {
+        (**self).string()
+    }
+    
+    fn token_literal(&self) -> String {
+        (**self).token_literal()
+    }
+}
+
+/// Implement Expression trait for Box<dyn Expression>
+/// This allows boxed expression trait objects to be used where Expression is expected
+impl Expression for Box<dyn Expression> {
+    fn expression_node(&self) {
+        (**self).expression_node()
+    }
+    
+    fn as_any(&self) -> &dyn Any {
+        (**self).as_any()
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        (**self).clone_box()
+    }
+}
+
+/// Implement Node trait for Box<dyn Expression>
+impl Node for Box<dyn Expression> {
+    fn string(&self) -> String {
+        (**self).string()
+    }
+    
+    fn token_literal(&self) -> String {
+        (**self).token_literal()
+    }
+}

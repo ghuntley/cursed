@@ -17,6 +17,7 @@ use super::statement::PostgresStatement;
 use super::transaction::PostgresTransaction;
 
 /// PostgreSQL connection wrapper
+#[derive(Debug)]
 pub struct PostgresConnection {
     /// Underlying tokio-postgres client
     client: Option<Client>,

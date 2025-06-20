@@ -1398,10 +1398,9 @@ impl BuildOrchestrator {
         info!("Enabling advanced parallel compilation");
         
         let parallel_config = config.unwrap_or_default();
+        let worker_count = parallel_config.max_workers;
         let compiler = ParallelCompiler::new(parallel_config)
             .map_err(|e| BuildError::ConfigError(e.to_string()))?;
-        
-        let worker_count = parallel_config.max_workers;
         self.parallel_compiler = Some(compiler);
         info!("Parallel compilation enabled with {} workers", worker_count);
         
@@ -1879,11 +1878,11 @@ impl BuildOrchestrator {
     }
     
     /// Create compilation tasks from build targets
-    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> Result<Vec<crate::build_system::CompilationTask>, BuildError> {
+    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> Result<Vec<crate::build_system::parallel_compilation::CompilationTask>, BuildError> {
         let mut tasks = Vec::new();
         
         for target in targets {
-            let task = crate::build_system::CompilationTask {
+            let task = crate::build_system::parallel_compilation::CompilationTask {
                 id: target.name.clone(),
                 target: target.clone(),
                 profile: self.config.get_effective_profile(profile)
@@ -1936,7 +1935,7 @@ impl BuildOrchestrator {
 
     /// Check bootstrap feasibility
     #[instrument(skip(self))]
-    pub async fn check_bootstrap_feasibility(&self) -> Result<bool, BuildError> {
+    pub async fn check_bootstrap_feasibility(&mut self) -> Result<bool, BuildError> {
         info!("Checking bootstrap feasibility");
 
         // Check if bootstrap source exists
