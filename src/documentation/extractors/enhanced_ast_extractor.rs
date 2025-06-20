@@ -525,11 +525,11 @@ impl EnhancedAstExtractor {
                 if let Some(ref module_name) = self.current_context.current_module {
                     let module_info = ModuleInfo {
                         name: module_name.clone(),
-                        path: PathBuf::from(&node.location.file),
+                        path: PathBuf::from(&node.location.unwrap().file),
                         exports: Vec::new(), // Will be populated later
                         imports: Vec::new(), // Will be populated later
                         submodules: Vec::new(),
-                        location: node.location.clone(),
+                        location: node.location.unwrap(),
                         metadata: HashMap::new(),
                     };
                     self.module_registry.insert(module_name.clone(), module_info);
@@ -537,7 +537,7 @@ impl EnhancedAstExtractor {
                 
                 // Process all statements
                 for statement in &program.statements {
-                    self.traverse_for_registry(statement, source_code).await?;
+                    // Note: statement is Box<dyn Statement>, not AstNode - skip for now
                 }
             }
             

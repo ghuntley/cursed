@@ -140,7 +140,7 @@ impl PackageIntegration {
         tracing::info!("Starting package-aware compilation");
         
         // Parse the main program
-        let lexer = Lexer::new(source.to_string());
+        let lexer = Lexer::new(source);
         let mut parser = Parser::new(lexer)?;
         let program = parser.parse_program()?;
         

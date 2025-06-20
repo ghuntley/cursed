@@ -118,7 +118,7 @@ pub struct SecureChannelManager {
     channels: Arc<Mutex<HashMap<String, SecureChannel>>>,
     pending_handshakes: Arc<Mutex<HashMap<String, HandshakeState>>>,
     secure_random: SecureRandom,
-    hash_manager: HashManager,
+    hash_manager: HashRegistry,
     default_config: ChannelConfig,
 }
 
@@ -140,7 +140,7 @@ impl SecureChannelManager {
             channels: Arc::new(Mutex::new(HashMap::new())),
             pending_handshakes: Arc::new(Mutex::new(HashMap::new())),
             secure_random: SecureRandom::new()?,
-            hash_manager: HashManager::new()?,
+            hash_manager: HashRegistry::new()?,
             default_config,
         })
     }

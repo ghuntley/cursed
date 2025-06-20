@@ -511,11 +511,17 @@ impl SecureMemory {
 }
 
 /// Secure vector that zeroizes on drop
-pub struct SecureVec<T> {
+pub struct SecureVec<T>
+where
+    T: SecureZeroize,
+{
     data: Vec<T>,
 }
 
-impl<T> SecureVec<T> {
+impl<T> SecureVec<T>
+where
+    T: SecureZeroize,
+{
     /// Get reference to data
     pub fn as_slice(&self) -> &[T] {
         &self.data
@@ -537,9 +543,9 @@ impl<T> SecureVec<T> {
     }
 }
 
-impl<T> Drop for SecureVec<T> 
+impl<T> Drop for SecureVec<T>
 where
-    Vec<T>: SecureZeroize,
+T: SecureZeroize,
 {
     fn drop(&mut self) {
         self.data.secure_zeroize();

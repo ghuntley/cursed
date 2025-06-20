@@ -126,7 +126,7 @@ pub struct TlsHandshakeSession {
 pub struct TlsHandshakeManager {
     sessions: Arc<Mutex<HashMap<String, TlsHandshakeSession>>>,
     secure_random: SecureRandom,
-    hash_manager: HashManager,
+    hash_manager: HashRegistry,
     default_config: TlsConfig,
 }
 
@@ -150,7 +150,7 @@ impl TlsHandshakeManager {
         Ok(Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
             secure_random: SecureRandom::new()?,
-            hash_manager: HashManager::new()?,
+            hash_manager: HashRegistry::new()?,
             default_config,
         })
     }

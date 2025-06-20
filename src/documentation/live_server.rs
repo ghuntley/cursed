@@ -699,6 +699,11 @@ impl LiveDocumentationServer {
             options: crate::documentation::DocOptions {
                 generate_search_index: true,
                 include_dependencies: false,
+                generate_cross_refs: true,
+                include_examples: true,
+                include_private: false,
+                max_depth: 10,
+                theme: "default".to_string(),
             },
             project: crate::documentation::ProjectMetadata {
                 name: "CURSED Documentation".to_string(),
@@ -713,9 +718,7 @@ impl LiveDocumentationServer {
                 custom_css: config.custom_css_path.clone().map(|p| vec![p]).unwrap_or_default(),
                 template_dir: None,
                 theme: "light".to_string(),
-                syntax_highlighting: true,
-                include_source_links: true,
-                responsive_design: true,
+                // Note: These fields are not available in current StylingConfig
             },
         };
         

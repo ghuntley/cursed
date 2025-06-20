@@ -869,7 +869,7 @@ impl CodePlayground {
             Duration::from_secs(30),
             command.output()
         ).await
-        .map_err(|_| CursedError::Runtime("Compilation timed out"))?
+        .map_err(|_| CursedError::Runtime("Compilation timed out".to_string()))?
         .map_err(|e| CursedError::Runtime(format!("Failed to run compiler: {}", e)))?;
         
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -920,7 +920,7 @@ impl CodePlayground {
             execution_timeout,
             command.output()
         ).await
-        .map_err(|_| CursedError::Runtime("Execution timed out"))?
+        .map_err(|_| CursedError::Runtime("Execution timed out".to_string()))?
         .map_err(|e| CursedError::Runtime(format!("Failed to execute program: {}", e)))?;
         
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();

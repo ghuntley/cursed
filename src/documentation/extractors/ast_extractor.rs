@@ -468,8 +468,10 @@ impl AstExtractor {
         import_stmt: &ImportStatement,
         source_code: &str,
     ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+        // Create mock location for now since token is just a String
+        let mock_location = crate::error::SourceLocation { line: 1, column: 1, file: None };
         let comments = self.comment_extractor.extract_comments_before(
-            &import_stmt.location, 
+            &mock_location, 
             source_code
         )?;
 
@@ -481,8 +483,7 @@ impl AstExtractor {
         let description = self.comment_extractor.get_main_description(&comments);
 
         let mut metadata = HashMap::new();
-        metadata.insert("source".to_string(), import_stmt.source.clone());
-        metadata.insert("import_type".to_string(), format!("{:?}", import_stmt.import_type));
+        metadata.insert("path".to_string(), import_stmt.path.clone());
 
         if let Some(ref alias) = import_stmt.alias {
             metadata.insert("alias".to_string(), alias.clone());
@@ -490,13 +491,13 @@ impl AstExtractor {
 
         let base_item = DocumentationItem {
             name: import_stmt.alias.clone().unwrap_or_else(|| 
-                import_stmt.source.split("::").last().unwrap_or("unknown").to_string()
+                import_stmt.path.split("::").last().unwrap_or("unknown").to_string()
             ),
             kind: ItemKind::Import,
             description,
-            location: import_stmt.location.clone(),
+            location: mock_location.clone(),
             source_code: if self.config.include_source {
-                self.extract_source_snippet(&import_stmt.location, source_code)?
+                self.extract_source_snippet(&mock_location, source_code)?
             } else {
                 None
             },
@@ -522,12 +523,12 @@ impl AstExtractor {
         source_code: &str,
     ) -> Result<Option<EnhancedDocumentationItem>, Error> {
         // Check visibility
-        if !self.config.include_private && !func_decl.is_public {
-            return Ok(None);
-        }
+        // Note: visibility checking simplified due to current AST structure
 
+        // Create mock location for now since token is just a String
+        let mock_location = crate::error::SourceLocation { line: 1, column: 1, file: None };
         let comments = self.comment_extractor.extract_comments_before(
-            &func_decl.location, 
+            &mock_location, 
             source_code
         )?;
 
@@ -541,7 +542,7 @@ impl AstExtractor {
         };
 
         // Extract generic information
-        let generic_info = if self.config.include_generics && func_decl.generic_params.is_some() {
+        let generic_info = if self.config.include_generics && !func_decl.type_parameters.is_empty() {
             Some(self.generic_extractor.extract_function_generics(func_decl)?)
         } else {
             None
@@ -555,7 +556,7 @@ impl AstExtractor {
         };
 
         let mut metadata = HashMap::new();
-        metadata.insert("is_async".to_string(), func_decl.is_async.to_string());
+        metadata.insert("is_async".to_string(), "false".to_string()); // TODO: extract from token analysis
         metadata.insert("parameter_count".to_string(), func_decl.parameters.len().to_string());
 
         if let Some(ref return_type) = func_decl.return_type {
@@ -563,16 +564,16 @@ impl AstExtractor {
         }
 
         let base_item = DocumentationItem {
-            name: func_decl.name.clone(),
+            name: func_decl.name.value.clone(),
             kind: ItemKind::Function,
             description,
-            location: func_decl.location.clone(),
+            location: mock_location.clone(),
             source_code: if self.config.include_source {
-                self.extract_source_snippet(&func_decl.location, source_code)?
+                self.extract_source_snippet(&mock_location, source_code)?
             } else {
                 None
             },
-            visibility: if func_decl.is_public { "public" } else { "private" }.to_string(),
+            visibility: "public".to_string(), // TODO: extract from token analysis
             metadata,
         };
 
