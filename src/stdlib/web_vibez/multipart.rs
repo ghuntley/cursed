@@ -367,3 +367,68 @@ impl std::fmt::Display for MultipartError {
 }
 
 impl std::error::Error for MultipartError {}
+
+/// Individual field in a multipart form
+#[derive(Debug, Clone)]
+pub struct MultipartField {
+    /// Field name
+    pub name: String,
+    /// Field value (text or binary data)
+    pub value: Vec<u8>,
+    /// Content type (if specified)
+    pub content_type: Option<String>,
+    /// Filename (for file uploads)
+    pub filename: Option<String>,
+    /// Additional headers
+    pub headers: std::collections::HashMap<String, String>,
+}
+
+impl MultipartField {
+    /// Create a new multipart field
+    pub fn new(name: String, value: Vec<u8>) -> Self {
+        Self {
+            name,
+            value,
+            content_type: None,
+            filename: None,
+            headers: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Create a text field
+    pub fn text(name: String, value: String) -> Self {
+        Self {
+            name,
+            value: value.into_bytes(),
+            content_type: Some("text/plain".to_string()),
+            filename: None,
+            headers: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Create a file field
+    pub fn file(name: String, filename: String, content_type: String, data: Vec<u8>) -> Self {
+        Self {
+            name,
+            value: data,
+            content_type: Some(content_type),
+            filename: Some(filename),
+            headers: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Get field value as string (if valid UTF-8)
+    pub fn text_value(&self) -> Option<String> {
+        String::from_utf8(self.value.clone()).ok()
+    }
+
+    /// Check if this is a file field
+    pub fn is_file(&self) -> bool {
+        self.filename.is_some()
+    }
+
+    /// Get file size in bytes
+    pub fn size(&self) -> usize {
+        self.value.len()
+    }
+}

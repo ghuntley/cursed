@@ -674,7 +674,7 @@ impl EnhancedSymbolProvider {
             } else if let Some(var_decl) = statement.as_any().downcast_ref::<VariableStatement>() {
                 // Extract information from variable statement for proper call
                 let var_name = &var_decl.name;
-                let var_type = var_decl.var_type.as_ref().map(|t| t.string()).as_deref();
+                let var_type = var_decl.var_type.as_ref().map(|t| t.to_string()).as_deref();
                 let range = Range::default(); // Use default range for now
                 let symbol = self.create_variable_symbol(var_name, var_type, range, SymbolKind::VARIABLE);
                 symbols.push(symbol);

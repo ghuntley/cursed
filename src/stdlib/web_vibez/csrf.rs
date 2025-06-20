@@ -481,3 +481,64 @@ mod tests {
         assert!(stats.total_tokens <= validator.max_tokens);
     }
 }
+
+/// CSRF protection middleware for web applications
+#[derive(Debug, Clone)]
+pub struct CsrfMiddleware {
+    validator: CsrfValidator,
+    config: CsrfConfig,
+}
+
+impl CsrfMiddleware {
+    /// Create new CSRF middleware with configuration
+    pub fn new(config: CsrfConfig) -> Self {
+        Self {
+            validator: CsrfValidator::new(),
+            config,
+        }
+    }
+
+    /// Process request and validate CSRF token
+    pub fn process_request(&mut self, headers: &std::collections::HashMap<String, String>, session_id: Option<String>) -> Result<(), CsrfError> {
+        if let Some(token) = headers.get("X-CSRF-Token") {
+            if self.validator.validate_token(token, session_id) {
+                Ok(())
+            } else {
+                Err(CsrfError::InvalidToken("CSRF token validation failed".to_string()))
+            }
+        } else {
+            Err(CsrfError::MissingToken("CSRF token missing from request".to_string()))
+        }
+    }
+
+    /// Generate a new CSRF token for session
+    pub fn generate_token(&mut self, session_id: Option<String>) -> CsrfToken {
+        self.validator.generate_token(session_id)
+    }
+}
+
+/// CSRF-related errors
+#[derive(Debug, Clone)]
+pub enum CsrfError {
+    /// CSRF token is missing from request
+    MissingToken(String),
+    /// CSRF token is invalid
+    InvalidToken(String),
+    /// CSRF token has expired
+    ExpiredToken(String),
+    /// General CSRF error
+    General(String),
+}
+
+impl std::fmt::Display for CsrfError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CsrfError::MissingToken(msg) => write!(f, "Missing CSRF token: {}", msg),
+            CsrfError::InvalidToken(msg) => write!(f, "Invalid CSRF token: {}", msg),
+            CsrfError::ExpiredToken(msg) => write!(f, "Expired CSRF token: {}", msg),
+            CsrfError::General(msg) => write!(f, "CSRF error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for CsrfError {}

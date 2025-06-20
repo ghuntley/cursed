@@ -189,6 +189,77 @@ impl SelfCompilationVerifier {
         Ok(result)
     }
 
+    /// Run the complete bootstrap verification process
+    pub async fn run_verification(&self) -> Result<BootstrapVerificationResult, Box<dyn std::error::Error>> {
+        println!("🚀 Starting CURSED Bootstrap Verification...");
+        
+        let mut result = BootstrapVerificationResult {
+            stages: Vec::new(),
+            overall_success: false,
+            total_time: Duration::default(),
+            convergence_achieved: false,
+            performance_analysis: None,
+        };
+        
+        let start_time = Instant::now();
+        
+        // Stage 1: Rust-based compiler
+        match self.verify_stage1() {
+            Ok(stage_result) => {
+                result.stages.push(stage_result);
+                if !result.stages.last().unwrap().success {
+                    result.total_time = start_time.elapsed();
+                    return Ok(result);
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Stage 1 failed: {}", e);
+                result.total_time = start_time.elapsed();
+                return Ok(result);
+            }
+        }
+        
+        // Stage 2: CURSED-based compiler
+        match self.verify_stage2() {
+            Ok(stage_result) => {
+                result.stages.push(stage_result);
+                if !result.stages.last().unwrap().success {
+                    result.total_time = start_time.elapsed();
+                    return Ok(result);
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Stage 2 failed: {}", e);
+                result.total_time = start_time.elapsed();
+                return Ok(result);
+            }
+        }
+        
+        // Additional bootstrap cycles for convergence
+        for cycle in 3..=self.config.bootstrap_cycles {
+            match self.verify_bootstrap_cycle(cycle) {
+                Ok(stage_result) => {
+                    result.stages.push(stage_result);
+                    if !result.stages.last().unwrap().success {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    eprintln!("❌ Bootstrap cycle {} failed: {}", cycle, e);
+                    break;
+                }
+            }
+        }
+        
+        // Check for convergence
+        result.convergence_achieved = self.check_convergence(&result.stages);
+        result.overall_success = result.stages.iter().all(|s| s.success) && result.convergence_achieved;
+        result.total_time = start_time.elapsed();
+        
+        println!("✅ Bootstrap verification completed in {:?}", result.total_time);
+        Ok(result)
+    }
+
     /// Verify Stage 1: Rust-based CURSED compiler
     fn verify_stage1(&self) -> Result<StageResult, Box<dyn std::error::Error>> {
         println!("🔧 Stage 1: Building Rust-based CURSED compiler...");

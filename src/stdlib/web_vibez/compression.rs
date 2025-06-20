@@ -1170,3 +1170,35 @@ mod tests {
         assert!(best_compression.is_some() || fastest.is_some());
     }
 }
+
+/// High-level compression engine for web requests
+#[derive(Debug, Clone)]
+pub struct CompressionEngine {
+    compressor: CompressionManager,
+    config: CompressionConfig,
+}
+
+impl CompressionEngine {
+    /// Create a new compression engine with configuration
+    pub fn new(config: CompressionConfig) -> Self {
+        Self {
+            compressor: CompressionManager::new(),
+            config,
+        }
+    }
+
+    /// Compress data using configured compression type
+    pub fn compress(&mut self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        self.compressor.compress(data, self.config.compression_type)
+    }
+
+    /// Decompress data using detected compression type  
+    pub fn decompress(&mut self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        self.compressor.decompress(data, self.config.compression_type)
+    }
+
+    /// Get compression statistics
+    pub fn stats(&self) -> &CompressionStats {
+        &self.compressor.stats
+    }
+}
