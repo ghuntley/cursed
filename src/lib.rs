@@ -56,16 +56,13 @@ pub use runtime::debug_runtime::{
 
 // Re-export optimization components
 pub use optimization::{
-    OptimizationSystem, OptimizationConfig, OptimizationSession, OptimizationResult,
-    OptimizationEngine, OptimizationLevel, OptimizationProfile, OptimizationArgs,
-    ParallelCompiler, IncrementalCompiler, CompilationOptimizer,
-    RuntimeOptimizer, JitOptimizer, ProfileGuidedOptimizer,
-    MemoryLayoutOptimizer, AllocationOptimizer, PerformanceProfiler, PerformanceAnalyzer,
-    LlvmPassManager, LtoManager, PgoManager, PassStatistics,
-    LevelConfig, OptimizationSettings, ProfileCategory,
-    OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults,
-    CoordinatorOptimizationLevel, OptimizationFeature, IncrementalSavings, 
-    ParallelPerformance, CachePerformance, OverallImprovement,
+    OptimizationCoordinator, CoordinatedOptimizationResults,
+    PgoSystem, PgoSystemConfig, ProfileGuidedOptimizer,
+    MemoryLayoutOptimizer, BenchmarkRunner, BaselineComparator,
+    TimeSavingsCalculator, ProductionPerformanceOptimizationSystem,
+    ComprehensivePerformanceSystem, EnhancedLlvmOptimizationSystem,
+    LinkTimeOptimizer, AdvancedOptimizationCoordinator,
+    ComprehensiveOptimizationSystem, OptimizationEnablementSystem,
 };
 
 pub mod stdlib;

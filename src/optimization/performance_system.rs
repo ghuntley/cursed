@@ -18,7 +18,7 @@ pub struct PerformanceSystem {
     /// Compilation speed optimization
     speed_optimizer: Arc<Mutex<CompilationSpeedOptimizer>>,
     /// Profile-guided optimization
-    pgo_manager: Arc<Mutex<PgoManager>>,
+    pgo_manager: Arc<Mutex<PgoSystem>>,
     /// System configuration
     config: PerformanceSystemConfig,
     /// Performance history
@@ -89,29 +89,30 @@ pub struct PerformanceStatus {
 
 impl PerformanceSystem {
     /// Create a new performance system with default configuration
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, crate::error::Error> {
         let config = PerformanceSystemConfig::default();
         Self::with_config(config)
     }
 
     /// Create a new performance system with custom configuration
-    pub fn with_config(config: PerformanceSystemConfig) -> Self {
+    pub fn with_config(config: PerformanceSystemConfig) -> Result<Self, crate::error::Error> {
         let pgo_config = if config.enable_pgo {
             PgoSystemConfig::default()
         } else {
             PgoSystemConfig {
-                enable_profiling: false,
+                enable_collection: false,
+                enable_optimization: false,
                 ..PgoSystemConfig::default()
             }
         };
 
-        Self {
+        Ok(Self {
             metrics_collector: Arc::new(Mutex::new(MetricsCollector::new())),
             speed_optimizer: Arc::new(Mutex::new(CompilationSpeedOptimizer::new(config.max_parallel_jobs))),
-            pgo_manager: Arc::new(Mutex::new(PgoManager::new(pgo_config))),
+            pgo_manager: Arc::new(Mutex::new(PgoSystem::with_config(pgo_config)?)),
             config,
             performance_history: Arc::new(Mutex::new(Vec::new())),
-        }
+        })
     }
 
     /// Start performance monitoring
@@ -324,7 +325,7 @@ impl Default for PerformanceSystemConfig {
 
 impl Default for PerformanceSystem {
     fn default() -> Self {
-        Self::new()
+        Self::new().expect("Failed to create default PerformanceSystem")
     }
 }
 
@@ -352,5 +353,157 @@ impl std::fmt::Display for CompilationStatus {
             CompilationStatus::Failed => write!(f, "Failed"),
             CompilationStatus::Cancelled => write!(f, "Cancelled"),
         }
+    }
+}
+
+// Additional types required by performance_optimization_system.rs
+
+/// Performance monitoring level for granular control
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PerformanceMonitoringLevel {
+    /// Minimal monitoring with low overhead
+    Minimal,
+    /// Basic monitoring with standard metrics
+    Basic,
+    /// Detailed monitoring with comprehensive metrics
+    Detailed,
+    /// Verbose monitoring with all available metrics
+    Verbose,
+}
+
+/// Configuration for parallel compilation
+#[derive(Debug, Clone)]
+pub struct ParallelConfig {
+    /// Maximum number of parallel jobs
+    pub max_jobs: usize,
+    /// Enable parallel compilation
+    pub enabled: bool,
+    /// Thread pool size for compilation
+    pub thread_pool_size: usize,
+}
+
+/// Configuration for compilation caching
+#[derive(Debug, Clone)]
+pub struct CacheConfig {
+    /// Enable compilation caching
+    pub enabled: bool,
+    /// Cache directory path
+    pub cache_dir: String,
+    /// Maximum cache size in MB
+    pub max_cache_size_mb: usize,
+    /// Cache TTL in seconds
+    pub cache_ttl_seconds: u64,
+}
+
+/// Performance metrics for compilation
+#[derive(Debug, Clone)]
+pub struct CompilationPerformanceMetrics {
+    /// Total compilation time
+    pub compilation_time: Duration,
+    /// Memory usage during compilation
+    pub memory_usage_mb: f64,
+    /// CPU utilization percentage
+    pub cpu_utilization: f64,
+    /// Cache hit rate
+    pub cache_hit_rate: f64,
+    /// Number of files compiled
+    pub files_compiled: usize,
+}
+
+/// Adaptive decision for optimization
+#[derive(Debug, Clone)]
+pub struct AdaptiveDecision {
+    /// Type of decision made
+    pub decision_type: AdaptiveDecisionType,
+    /// Confidence level (0.0 to 1.0)
+    pub confidence: f64,
+    /// Reasoning for the decision
+    pub reasoning: String,
+}
+
+/// Types of adaptive decisions
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AdaptiveDecisionType {
+    /// Enable optimization
+    EnableOptimization,
+    /// Disable optimization
+    DisableOptimization,
+    /// Adjust optimization level
+    AdjustOptimizationLevel,
+    /// Enable caching
+    EnableCaching,
+    /// Adjust parallel jobs
+    AdjustParallelJobs,
+}
+
+/// Performance recommendation
+#[derive(Debug, Clone)]
+pub struct PerformanceRecommendation {
+    /// Type of recommendation
+    pub recommendation_type: RecommendationType,
+    /// Priority level (1-10, 10 being highest)
+    pub priority: u8,
+    /// Description of the recommendation
+    pub description: String,
+    /// Expected performance impact
+    pub expected_impact: f64,
+}
+
+/// Types of performance recommendations
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RecommendationType {
+    /// Optimize compilation speed
+    OptimizeCompilationSpeed,
+    /// Optimize runtime performance
+    OptimizeRuntime,
+    /// Reduce memory usage
+    ReduceMemoryUsage,
+    /// Enable caching
+    EnableCaching,
+    /// Adjust parallel configuration
+    AdjustParallelism,
+}
+
+/// Optimization session tracking
+#[derive(Debug, Clone)]
+pub struct OptimizationSession {
+    /// Unique session ID
+    pub session_id: String,
+    /// Session start time
+    pub start_time: Instant,
+    /// Session configuration
+    pub config: PerformanceSystemConfig,
+    /// Performance metrics collected during session
+    pub metrics: Vec<CompilationPerformanceMetrics>,
+    /// Decisions made during session
+    pub decisions: Vec<AdaptiveDecision>,
+    /// Recommendations generated
+    pub recommendations: Vec<PerformanceRecommendation>,
+}
+
+impl Default for ParallelConfig {
+    fn default() -> Self {
+        Self {
+            max_jobs: std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4),
+            enabled: true,
+            thread_pool_size: std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4),
+        }
+    }
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            cache_dir: "target/cursed-cache".to_string(),
+            max_cache_size_mb: 1024, // 1GB
+            cache_ttl_seconds: 3600, // 1 hour
+        }
+    }
+}
+
+impl Default for PerformanceMonitoringLevel {
+    fn default() -> Self {
+        Self::Basic
     }
 }

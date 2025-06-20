@@ -15,7 +15,7 @@ pub use feature_extraction::{FeatureExtractor, FeatureVector, CursedSpecificFeat
 pub use model_training::{ModelTrainer, TrainingConfig, ModelType};
 pub use prediction::{OptimizationPredictor, PredictionResult, PredictionConfig};
 pub use data_collection::{PerformanceDataCollector, CompilationMetrics, RuntimeMetrics};
-pub use continuous_learning::{ContinuousLearningEngine, LearningConfig, ModelUpdateTrigger};
+pub use continuous_learning::{ContinuousLearningEngine, LearningConfig, UpdateTrigger as ModelUpdateTrigger};
 
 use crate::error::{Error, Result};
 use std::collections::HashMap;

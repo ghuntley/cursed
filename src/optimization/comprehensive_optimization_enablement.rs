@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::optimization::{
     OptimizationConfig, OptimizationLevel,
-    EnhancedLlvmOptimizer, EnhancedOptimizationConfig,
+    EnhancedLlvmOptimizationSystem, ManagedOptimizationConfig,
     PgoSystem, PgoSystemConfig,
     TimeSavingsCalculator, TimeSavingsConfig,
     BaselineComparator, BaselineComparisonConfig,
