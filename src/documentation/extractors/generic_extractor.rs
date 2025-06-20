@@ -4,6 +4,7 @@
 //! constraints, bounds, and variance information for documentation generation.
 
 use crate::ast::*;
+use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
 use crate::error::Error;
 use crate::documentation::extractors::ast_extractor::{GenericInfo, GenericParameter, GenericConstraint, GenericBound, Variance};
 use serde::{Deserialize, Serialize};

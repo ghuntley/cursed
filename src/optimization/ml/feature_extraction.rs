@@ -837,11 +837,11 @@ impl SemanticAnalyzer {
         })
     }
     
-    fn visit_node(&mut self, node: &ASTNode) -> Result<()> {
-        match node {
-            ASTNode::Function(func) => self.visit_function(func)?,
-            ASTNode::Statement(stmt) => self.visit_statement(stmt)?,
-            ASTNode::Expression(expr) => self.visit_expression(expr)?,
+    fn visit_node(&mut self, node: &AstNode) -> Result<()> {
+        match &node.node_type {
+            AstNodeType::FunctionDeclaration(func) => self.visit_function(func)?,
+            AstNodeType::Statement(stmt) => self.visit_statement(stmt)?,
+            AstNodeType::Expression(expr) => self.visit_expression(expr)?,
             _ => {}, // Handle other node types as needed
         }
         Ok(())

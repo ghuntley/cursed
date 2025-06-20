@@ -768,11 +768,11 @@ impl LlvmCodeGenerator {
         
         // Create coordinator configuration based on current settings
         let config = if matches!(coord_level, CoordOptLevel::O0) {
-            OptimizationCoordinatorConfig::development()
+            CoordinatorConfiguration::development()
         } else if matches!(coord_level, CoordOptLevel::O3) {
-            OptimizationCoordinatorConfig::release()
+            CoordinatorConfiguration::release()
         } else {
-            OptimizationCoordinatorConfig::balanced()
+            CoordinatorConfiguration::balanced()
         };
         
         let mut coordinator = OptimizationCoordinator::new(config)?;
@@ -808,9 +808,9 @@ impl LlvmCodeGenerator {
         tracing::info!("Enabling comprehensive optimization with preset: {:?}", preset);
         
         let config = match preset {
-            OptimizationPreset::Development => OptimizationCoordinatorConfig::development(),
-            OptimizationPreset::Balanced => OptimizationCoordinatorConfig::balanced(),
-            OptimizationPreset::Release => OptimizationCoordinatorConfig::release(),
+            OptimizationPreset::Development => CoordinatorConfiguration::development(),
+            OptimizationPreset::Balanced => CoordinatorConfiguration::balanced(),
+            OptimizationPreset::Release => CoordinatorConfiguration::release(),
         };
         
         let mut coordinator = OptimizationCoordinator::new(config)?;

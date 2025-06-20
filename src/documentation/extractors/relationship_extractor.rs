@@ -5,6 +5,7 @@
 //! cross-reference relationships for documentation generation.
 
 use crate::ast::*;
+use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
 use crate::error::Error;
 use crate::documentation::extractors::ast_extractor::{RelationshipInfo, RelationshipType, RelationshipStrength};
 use serde::{Deserialize, Serialize};

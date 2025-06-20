@@ -5,6 +5,7 @@
 //! parameters, constraints, and relationships.
 
 use crate::ast::*;
+use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
 use crate::error::Error;
 use crate::documentation::extractors::ast_extractor::{CompleteTypeInfo, TypeKind, SizeInfo};
 use serde::{Deserialize, Serialize};

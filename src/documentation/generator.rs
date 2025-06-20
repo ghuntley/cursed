@@ -5,6 +5,7 @@
 //! AST analysis.
 
 use crate::ast::*;
+use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
 use crate::error::{Error, SourceLocation};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
