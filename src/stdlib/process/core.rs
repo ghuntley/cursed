@@ -1617,7 +1617,7 @@ impl ProcessManager {
             if result == 0 {
                 Ok(())
             } else {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 match errno {
                     ESRCH => Err(process_not_found_pid(pid)),
                     EPERM => Err(permission_denied_pid(pid)),

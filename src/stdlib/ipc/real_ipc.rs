@@ -331,7 +331,7 @@ impl NamedPipeConnection {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno != libc::EEXIST {
                     return Err(system_error(errno, "mkfifo", "Failed to create named pipe"));
                 }
@@ -349,7 +349,7 @@ impl NamedPipeConnection {
         };
         
         if fd < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_error(errno, "open", "Failed to open named pipe"));
         }
         
@@ -435,7 +435,7 @@ impl NamedPipeConnection {
                 };
                 
                 if result < 0 {
-                    let errno = unsafe { *libc::__errno_location() };
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_error(errno, "write", "Failed to write to named pipe"));
                 }
                 
@@ -497,7 +497,7 @@ impl NamedPipeConnection {
                 };
                 
                 if result < 0 {
-                    let errno = unsafe { *libc::__errno_location() };
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_error(errno, "read", "Failed to read from named pipe"));
                 }
                 
@@ -796,7 +796,7 @@ impl MemoryMappedConnection {
         };
         
         if fd < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_error(errno, "open", "Failed to open memory-mapped file"));
         }
         
@@ -807,7 +807,7 @@ impl MemoryMappedConnection {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 unsafe { libc::close(fd); }
                 return Err(system_error(errno, "ftruncate", "Failed to set file size"));
             }
@@ -832,7 +832,7 @@ impl MemoryMappedConnection {
         };
         
         if mapping == libc::MAP_FAILED {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             unsafe { libc::close(fd); }
             return Err(system_error(errno, "mmap", "Failed to map file"));
         }

@@ -925,7 +925,7 @@ impl SlayProcess {
                     Ok(())
                 } else {
                     Err(system_error(
-                        *libc::__errno_location(),
+                        std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                         "kill",
                         "Failed to kill process"
                     ))
@@ -948,7 +948,7 @@ impl SlayProcess {
                 Ok(())
             } else {
                 Err(system_error(
-                    *libc::__errno_location(),
+                    std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                     "signal",
                     "Failed to send signal"
                 ))
@@ -1043,7 +1043,7 @@ impl SlayProcess {
                     Ok(())
                 } else {
                     Err(system_error(
-                        *libc::__errno_location(),
+                        std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                         "kill_tree",
                         "Failed to kill process tree"
                     ))
@@ -1232,7 +1232,7 @@ impl SlayProcess {
                 };
                 if libc::setrlimit(libc::RLIMIT_AS, &rlim) != 0 {
                     return Err(system_error(
-                        *libc::__errno_location(),
+                        std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                         "setrlimit",
                         "Failed to set memory limit"
                     ));

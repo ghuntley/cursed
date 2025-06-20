@@ -219,7 +219,7 @@ pub fn send_signal_to_pid(pid: u32, signal: Signal) -> ProcessResult<()> {
         };
 
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             match errno {
                 libc::ESRCH => Err(process_not_found_pid(pid, "Process not found")),
                 libc::EPERM => Err(permission_denied_pid("kill", pid, "Permission denied")),
@@ -293,7 +293,7 @@ pub fn set_process_priority(pid: u32, priority: Priority) -> ProcessResult<()> {
         };
 
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             match errno {
                 libc::ESRCH => Err(process_not_found_pid(pid, "Process not found")),
                 libc::EPERM => Err(permission_denied_pid("setpriority", pid, "Permission denied")),
@@ -374,13 +374,13 @@ pub fn get_process_priority(pid: u32) -> ProcessResult<Priority> {
     #[cfg(unix)]
     {
         // Clear errno first
-        unsafe { *libc::__errno_location() = 0; }
+        // errno cleared - not needed with std::io::Error
 
         let result = unsafe {
             libc::getpriority(libc::PRIO_PROCESS, pid)
         };
 
-        let errno = unsafe { *libc::__errno_location() };
+        let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
         if errno != 0 {
             match errno {
                 libc::ESRCH => Err(process_not_found_pid(pid, "Process not found")),
@@ -582,7 +582,7 @@ pub fn setup_signal_handler<H: SignalHandler + 'static>(signal: Signal, handler:
             let result = libc::signal(signal.as_number(), signal_handler_wrapper as usize);
             if result == libc::SIG_ERR {
                 return Err(system_error(
-                    unsafe { *libc::__errno_location() },
+                    std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                     "signal",
                     &format!("Failed to install handler for {}", signal.name())
                 ));
@@ -622,7 +622,7 @@ pub fn ignore_signal(signal: Signal) -> ProcessResult<()> {
             let result = libc::signal(signal.as_number(), libc::SIG_IGN);
             if result == libc::SIG_ERR {
                 return Err(system_error(
-                    unsafe { *libc::__errno_location() },
+                    std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                     "signal",
                     &format!("Failed to ignore {}", signal.name())
                 ));
@@ -641,7 +641,7 @@ pub fn reset_signal_handler(signal: Signal) -> ProcessResult<()> {
             let result = libc::signal(signal.as_number(), libc::SIG_DFL);
             if result == libc::SIG_ERR {
                 return Err(system_error(
-                    unsafe { *libc::__errno_location() },
+                    std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                     "signal",
                     &format!("Failed to reset handler for {}", signal.name())
                 ));

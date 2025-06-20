@@ -292,7 +292,7 @@ impl FileLock {
             if result == 0 {
                 Ok(())
             } else {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 match errno {
                     libc::EWOULDBLOCK | libc::EAGAIN => {
                         Err(IpcError::ResourceExhausted("Lock would block".to_string()))
@@ -327,7 +327,7 @@ impl FileLock {
             if result == 0 {
                 Ok(())
             } else {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 match errno {
                     libc::EACCES | libc::EAGAIN => {
                         Err(IpcError::ResourceExhausted("Lock unavailable".to_string()))

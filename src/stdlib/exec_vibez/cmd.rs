@@ -395,7 +395,7 @@ impl Process {
             } else {
                 use super::error::system_error;
                 Err(system_error(
-                    *libc::__errno_location(),
+                    std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                     "signal",
                     "Failed to send signal"
                 ))

@@ -299,7 +299,7 @@ impl Semaphore {
                 );
 
                 if sem == libc::SEM_FAILED {
-                    let errno = *libc::__errno_location();
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     if errno == libc::EEXIST {
                         // Semaphore already exists, try to open it
                         let sem = libc::sem_open(name_cstr.as_ptr(), 0);

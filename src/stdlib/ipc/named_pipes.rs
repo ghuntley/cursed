@@ -316,7 +316,7 @@ impl NamedPipe {
             
             let result = libc::mkfifo(path_cstr.as_ptr(), self.config.permissions);
             if result != 0 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno != libc::EEXIST {
                     return Err(system_error(errno, "mkfifo", "Failed to create FIFO"));
                 }
@@ -594,7 +594,7 @@ impl NamedPipeServer {
             
             let result = libc::mkfifo(path_cstr.as_ptr(), self.config.permissions);
             if result != 0 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "mkfifo", "Failed to create server FIFO"));
             }
         }

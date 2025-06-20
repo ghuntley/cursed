@@ -316,7 +316,7 @@ impl Semaphore {
         };
         
         if semaphore_id < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno == libc::EEXIST {
                 // Semaphore was created by another process
                 let semaphore_id = unsafe { libc::semget(key, 0, 0) };
@@ -342,7 +342,7 @@ impl Semaphore {
         };
         
         if result < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             // Try to remove the semaphore we just created
             unsafe {
                 libc::semctl(semaphore_id, 0, libc::IPC_RMID);
@@ -389,7 +389,7 @@ impl Semaphore {
         };
         
         if sem == SEM_FAILED {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno == libc::EEXIST {
                 // Semaphore was created by another process, try to open it
                 let sem = unsafe {
@@ -432,7 +432,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semop", "Failed to wait on semaphore"));
             }
             
@@ -450,7 +450,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "sem_wait", "Failed to wait on POSIX semaphore"));
             }
             
@@ -480,7 +480,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno == libc::EAGAIN {
                     return Ok(false); // Would block
                 }
@@ -501,7 +501,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno == libc::EAGAIN {
                     return Ok(false); // Would block
                 }
@@ -540,7 +540,7 @@ impl Semaphore {
                     return Ok(true);
                 }
                 
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno != libc::EAGAIN {
                     return Err(system_error(errno, "semop", "Failed to wait on semaphore"));
                 }
@@ -570,7 +570,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno == libc::ETIMEDOUT {
                     return Ok(false); // Timeout
                 }
@@ -603,7 +603,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semop", "Failed to signal semaphore"));
             }
             
@@ -621,7 +621,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "sem_post", "Failed to signal POSIX semaphore"));
             }
             
@@ -645,7 +645,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semctl", "Failed to get semaphore value"));
             }
             
@@ -664,7 +664,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "sem_getvalue", "Failed to get POSIX semaphore value"));
             }
             
@@ -688,7 +688,7 @@ impl Semaphore {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semctl", "Failed to delete semaphore"));
             }
             
@@ -709,7 +709,7 @@ impl Semaphore {
         };
         
         if result < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno != libc::ENOENT {
                 return Err(system_error(errno, "sem_unlink", "Failed to delete POSIX semaphore"));
             }

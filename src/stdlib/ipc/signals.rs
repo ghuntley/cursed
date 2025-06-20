@@ -628,7 +628,7 @@ pub fn send_signal(pid: i32, signal: BoostSignal) -> IpcResult<()> {
     {
         unsafe {
             if libc::kill(pid, signal.signal_number()) == -1 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "kill", &format!("Failed to send signal {} to process {}", signal, pid)));
             }
         }
@@ -648,7 +648,7 @@ pub fn signal_group(pgid: i32, signal: BoostSignal) -> IpcResult<()> {
     {
         unsafe {
             if libc::killpg(pgid, signal.signal_number()) == -1 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "killpg", &format!("Failed to send signal {} to process group {}", signal, pgid)));
             }
         }

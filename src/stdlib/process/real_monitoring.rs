@@ -198,7 +198,7 @@ fn is_process_running_system(pid: u32) -> ProcessResult<bool> {
             if libc::kill(pid as i32, 0) == 0 {
                 Ok(true)
             } else {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 match errno {
                     libc::ESRCH => Ok(false), // Process not found
                     libc::EPERM => Ok(true),  // Process exists but no permission

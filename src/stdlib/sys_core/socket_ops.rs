@@ -62,7 +62,7 @@ pub fn create_socket(domain: SocketDomain, socket_type: SocketType, protocol: So
         
         let fd = unsafe { libc::socket(domain, sock_type, protocol) };
         if fd == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("socket", errno));
         }
         
@@ -111,7 +111,7 @@ pub fn bind_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                 };
                 
                 if result == -1 {
-                    let errno = unsafe { *libc::__errno_location() };
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_call_error("bind", errno));
                 }
             }
@@ -132,7 +132,7 @@ pub fn bind_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                         };
                         
                         if result == -1 {
-                            let errno = unsafe { *libc::__errno_location() };
+                            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                             return Err(system_call_error("bind", errno));
                         }
                     }
@@ -158,7 +158,7 @@ pub fn listen_socket(fd: i32, backlog: i32) -> SysCoreResult<()> {
     {
         let result = unsafe { libc::listen(fd, backlog) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("listen", errno));
         }
         Ok(())
@@ -186,7 +186,7 @@ pub fn accept_socket(fd: i32) -> SysCoreResult<(i32, SocketAddress)> {
         };
         
         if client_fd == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("accept", errno));
         }
         
@@ -239,7 +239,7 @@ pub fn connect_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                 };
                 
                 if result == -1 {
-                    let errno = unsafe { *libc::__errno_location() };
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_call_error("connect", errno));
                 }
             }
@@ -260,7 +260,7 @@ pub fn connect_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                         };
                         
                         if result == -1 {
-                            let errno = unsafe { *libc::__errno_location() };
+                            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                             return Err(system_call_error("connect", errno));
                         }
                     }
@@ -289,7 +289,7 @@ pub fn send_data(fd: i32, data: &[u8], flags: i32) -> SysCoreResult<usize> {
         };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("send", errno));
         }
         
@@ -311,7 +311,7 @@ pub fn recv_data(fd: i32, buffer: &mut [u8], flags: i32) -> SysCoreResult<usize>
         };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("recv", errno));
         }
         
@@ -336,7 +336,7 @@ pub fn shutdown_socket(fd: i32, how: ShutdownHow) -> SysCoreResult<()> {
         
         let result = unsafe { libc::shutdown(fd, how) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("shutdown", errno));
         }
         

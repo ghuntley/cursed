@@ -21,7 +21,7 @@ pub fn fork_process() -> SysCoreResult<ForkResult> {
         let pid = unsafe { libc::fork() };
         match pid {
             -1 => {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 Err(system_call_error("fork", errno))
             }
             0 => Ok(ForkResult::Child),
@@ -71,7 +71,7 @@ where
         }
         
         // If execvp returns, it means it failed
-        let errno = unsafe { *libc::__errno_location() };
+        let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
         Err(system_call_error("execvp", errno))
     }
     
@@ -94,7 +94,7 @@ pub fn wait_process(pid: Option<ProcessId>) -> SysCoreResult<WaitResult> {
         let result_pid = unsafe { libc::waitpid(wait_pid, &mut status, 0) };
         
         if result_pid == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("waitpid", errno));
         }
         
@@ -139,7 +139,7 @@ pub fn kill_process(pid: ProcessId, signal: i32) -> SysCoreResult<()> {
     {
         let result = unsafe { libc::kill(pid as i32, signal) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("kill", errno));
         }
         Ok(())
@@ -157,7 +157,7 @@ pub fn setpgid(pid: ProcessId, pgid: ProcessGroup) -> SysCoreResult<()> {
     {
         let result = unsafe { libc::setpgid(pid as i32, pgid as i32) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("setpgid", errno));
         }
         Ok(())
@@ -175,7 +175,7 @@ pub fn setsid() -> SysCoreResult<SessionId> {
     {
         let result = unsafe { libc::setsid() };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("setsid", errno));
         }
         Ok(result as SessionId)
@@ -219,7 +219,7 @@ pub fn getpgid(pid: ProcessId) -> SysCoreResult<ProcessGroup> {
     {
         let result = unsafe { libc::getpgid(pid as i32) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("getpgid", errno));
         }
         Ok(result as ProcessGroup)
@@ -237,7 +237,7 @@ pub fn getsid(pid: ProcessId) -> SysCoreResult<SessionId> {
     {
         let result = unsafe { libc::getsid(pid as i32) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("getsid", errno));
         }
         Ok(result as SessionId)
@@ -301,7 +301,7 @@ pub fn set_process_priority(pid: ProcessId, priority: ProcessPriority) -> SysCor
         let nice_value = priority as i32;
         let result = unsafe { libc::setpriority(libc::PRIO_PROCESS, pid, nice_value) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("setpriority", errno));
         }
         Ok(())
@@ -317,11 +317,11 @@ pub fn set_process_priority(pid: ProcessId, priority: ProcessPriority) -> SysCor
 pub fn get_process_priority(pid: ProcessId) -> SysCoreResult<i32> {
     #[cfg(unix)]
     {
-        // Reset errno before calling getpriority
-        unsafe { *libc::__errno_location() = 0 };
+        // Reset errno before calling getpriority (not needed with std::io::Error)
+        // errno cleared automatically when using std::io::Error::last_os_error()
         
         let result = unsafe { libc::getpriority(libc::PRIO_PROCESS, pid) };
-        let errno = unsafe { *libc::__errno_location() };
+        let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
         
         if errno != 0 {
             return Err(system_call_error("getpriority", errno));

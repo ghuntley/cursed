@@ -100,7 +100,7 @@ impl NamedPipe {
             let result = unsafe { libc::mkfifo(path_cstr.as_ptr(), config.permissions) };
             
             if result != 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno != libc::EEXIST {
                     return Err(IpcError::System(errno, format!("Failed to create FIFO: {}", config.path.display())));
                 }
