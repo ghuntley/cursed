@@ -18,6 +18,9 @@ use crate::optimization::{
     BaselineComparator, BaselineComparisonConfig,
     BenchmarkRunner, BenchmarkConfig,
 };
+
+// Type alias for compatibility
+pub type EnhancedLlvmOptimizer = EnhancedLlvmOptimizationSystem;
 use crate::error::{Result, CursedError};
 
 /// Comprehensive optimization enablement system with all optimizations enabled

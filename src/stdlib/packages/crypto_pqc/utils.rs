@@ -552,6 +552,19 @@ T: SecureZeroize,
     }
 }
 
+// Implement SecureZeroize for primitive types
+impl SecureZeroize for u8 {
+    fn secure_zeroize(&mut self) {
+        *self = 0;
+    }
+}
+
+impl SecureZeroize for i32 {
+    fn secure_zeroize(&mut self) {
+        *self = 0;
+    }
+}
+
 /// Mathematical utility functions
 /// Centered modular reduction: returns value in [-q/2, q/2)
 pub fn center_mod(value: i32, modulus: i32) -> i32 {

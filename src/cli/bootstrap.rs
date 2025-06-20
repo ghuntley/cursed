@@ -206,7 +206,7 @@ async fn run_bootstrap_verification(config: BootstrapCliConfig) -> CursedResult<
     };
 
     // Create and run verifier
-    let mut verifier = SelfCompilationVerifier::new(verification_config)?;
+    let mut verifier = SelfCompilationVerifier::new(verification_config);
     
     println!("🔄 Running bootstrap verification...");
     println!("   Cycles: {}", config.bootstrap_cycles);

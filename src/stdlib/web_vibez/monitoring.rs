@@ -794,3 +794,84 @@ mod tests {
         assert!(json_output.contains("\"total_requests\""));
     }
 }
+
+/// Web-based monitoring dashboard for visualizing metrics
+#[derive(Debug, Clone)]
+pub struct MonitoringDashboard {
+    collector: MetricsCollector,
+    config: DashboardConfig,
+}
+
+/// Configuration for monitoring dashboard
+#[derive(Debug, Clone)]
+pub struct DashboardConfig {
+    pub refresh_interval: std::time::Duration,
+    pub max_data_points: usize,
+    pub enable_real_time: bool,
+    pub chart_types: Vec<ChartType>,
+}
+
+/// Types of charts available in dashboard
+#[derive(Debug, Clone)]
+pub enum ChartType {
+    Line,
+    Bar,
+    Pie,
+    Gauge,
+    Histogram,
+}
+
+impl MonitoringDashboard {
+    /// Create new monitoring dashboard
+    pub fn new(config: DashboardConfig) -> Self {
+        Self {
+            collector: MetricsCollector::new(),
+            config,
+        }
+    }
+
+    /// Generate HTML dashboard content
+    pub fn generate_html(&self) -> String {
+        format!(
+            r#"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>CURSED Monitoring Dashboard</title>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            </head>
+            <body>
+                <h1>CURSED Application Metrics</h1>
+                <div id="global-metrics">
+                    <h2>Global Metrics</h2>
+                    <p>Total Requests: {}</p>
+                    <p>Total Errors: {}</p>
+                    <p>Average Response Time: {:.2}ms</p>
+                </div>
+                <div id="charts">
+                    <canvas id="request-chart"></canvas>
+                    <canvas id="error-chart"></canvas>
+                </div>
+                <script>
+                    // Real-time chart updates would go here
+                    console.log('Dashboard loaded');
+                </script>
+            </body>
+            </html>
+            "#,
+            self.collector.global_metrics.total_requests,
+            self.collector.global_metrics.total_errors,
+            self.collector.global_metrics.average_response_time
+        )
+    }
+
+    /// Get dashboard metrics as JSON
+    pub fn get_metrics_json(&self) -> String {
+        self.collector.export_json()
+    }
+
+    /// Update dashboard with new request
+    pub fn record_request(&mut self, path: &str, duration: std::time::Duration, status_code: u16) {
+        self.collector.record_request(path, duration, status_code);
+    }
+}
