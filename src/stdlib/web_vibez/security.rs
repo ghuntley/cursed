@@ -789,3 +789,214 @@ mod tests {
         assert!(pattern_names.contains(&"credit_card"));
     }
 }
+
+/// Type alias for XssProtection (for compatibility with existing imports)
+pub type XssProtection = XssProtector;
+
+/// Security headers manager for comprehensive security policy enforcement
+#[derive(Debug, Clone)]
+pub struct SecurityHeaders {
+    pub x_frame_options: Option<String>,
+    pub x_content_type_options: Option<String>,
+    pub x_xss_protection: Option<String>,
+    pub strict_transport_security: Option<String>,
+    pub content_security_policy: Option<String>,
+    pub referrer_policy: Option<String>,
+    pub permissions_policy: Option<String>,
+    pub custom_headers: HashMap<String, String>,
+}
+
+impl SecurityHeaders {
+    /// Create new security headers with safe defaults
+    pub fn new() -> Self {
+        Self {
+            x_frame_options: Some("DENY".to_string()),
+            x_content_type_options: Some("nosniff".to_string()),
+            x_xss_protection: Some("1; mode=block".to_string()),
+            strict_transport_security: Some("max-age=31536000; includeSubDomains".to_string()),
+            content_security_policy: Some("default-src 'self'".to_string()),
+            referrer_policy: Some("strict-origin-when-cross-origin".to_string()),
+            permissions_policy: None,
+            custom_headers: HashMap::new(),
+        }
+    }
+
+    /// Convert to HTTP headers vector
+    pub fn to_headers(&self) -> Vec<(String, String)> {
+        let mut headers = Vec::new();
+        
+        if let Some(val) = &self.x_frame_options {
+            headers.push(("X-Frame-Options".to_string(), val.clone()));
+        }
+        if let Some(val) = &self.x_content_type_options {
+            headers.push(("X-Content-Type-Options".to_string(), val.clone()));
+        }
+        if let Some(val) = &self.x_xss_protection {
+            headers.push(("X-XSS-Protection".to_string(), val.clone()));
+        }
+        if let Some(val) = &self.strict_transport_security {
+            headers.push(("Strict-Transport-Security".to_string(), val.clone()));
+        }
+        if let Some(val) = &self.content_security_policy {
+            headers.push(("Content-Security-Policy".to_string(), val.clone()));
+        }
+        if let Some(val) = &self.referrer_policy {
+            headers.push(("Referrer-Policy".to_string(), val.clone()));
+        }
+        if let Some(val) = &self.permissions_policy {
+            headers.push(("Permissions-Policy".to_string(), val.clone()));
+        }
+        
+        for (key, value) in &self.custom_headers {
+            headers.push((key.clone(), value.clone()));
+        }
+        
+        headers
+    }
+
+    /// Set custom header
+    pub fn set_custom_header(&mut self, name: String, value: String) {
+        self.custom_headers.insert(name, value);
+    }
+}
+
+impl Default for SecurityHeaders {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Content Security Policy configuration and management
+#[derive(Debug, Clone)]
+pub struct ContentSecurityPolicy {
+    pub default_src: Vec<String>,
+    pub script_src: Vec<String>,
+    pub style_src: Vec<String>,
+    pub img_src: Vec<String>,
+    pub connect_src: Vec<String>,
+    pub font_src: Vec<String>,
+    pub object_src: Vec<String>,
+    pub media_src: Vec<String>,
+    pub frame_src: Vec<String>,
+    pub sandbox: Vec<String>,
+    pub report_uri: Option<String>,
+    pub report_to: Option<String>,
+    pub require_trusted_types_for: Vec<String>,
+    pub trusted_types: Vec<String>,
+    pub upgrade_insecure_requests: bool,
+    pub block_all_mixed_content: bool,
+}
+
+impl ContentSecurityPolicy {
+    /// Create new CSP with safe defaults
+    pub fn new() -> Self {
+        Self {
+            default_src: vec!["'self'".to_string()],
+            script_src: vec!["'self'".to_string()],
+            style_src: vec!["'self'".to_string(), "'unsafe-inline'".to_string()],
+            img_src: vec!["'self'".to_string(), "data:".to_string()],
+            connect_src: vec!["'self'".to_string()],
+            font_src: vec!["'self'".to_string()],
+            object_src: vec!["'none'".to_string()],
+            media_src: vec!["'self'".to_string()],
+            frame_src: vec!["'none'".to_string()],
+            sandbox: Vec::new(),
+            report_uri: None,
+            report_to: None,
+            require_trusted_types_for: Vec::new(),
+            trusted_types: Vec::new(),
+            upgrade_insecure_requests: true,
+            block_all_mixed_content: false,
+        }
+    }
+
+    /// Convert to CSP header string
+    pub fn to_header_string(&self) -> String {
+        let mut directives = Vec::new();
+        
+        if !self.default_src.is_empty() {
+            directives.push(format!("default-src {}", self.default_src.join(" ")));
+        }
+        if !self.script_src.is_empty() {
+            directives.push(format!("script-src {}", self.script_src.join(" ")));
+        }
+        if !self.style_src.is_empty() {
+            directives.push(format!("style-src {}", self.style_src.join(" ")));
+        }
+        if !self.img_src.is_empty() {
+            directives.push(format!("img-src {}", self.img_src.join(" ")));
+        }
+        if !self.connect_src.is_empty() {
+            directives.push(format!("connect-src {}", self.connect_src.join(" ")));
+        }
+        if !self.font_src.is_empty() {
+            directives.push(format!("font-src {}", self.font_src.join(" ")));
+        }
+        if !self.object_src.is_empty() {
+            directives.push(format!("object-src {}", self.object_src.join(" ")));
+        }
+        if !self.media_src.is_empty() {
+            directives.push(format!("media-src {}", self.media_src.join(" ")));
+        }
+        if !self.frame_src.is_empty() {
+            directives.push(format!("frame-src {}", self.frame_src.join(" ")));
+        }
+        if !self.sandbox.is_empty() {
+            directives.push(format!("sandbox {}", self.sandbox.join(" ")));
+        }
+        if let Some(uri) = &self.report_uri {
+            directives.push(format!("report-uri {}", uri));
+        }
+        if let Some(report_to) = &self.report_to {
+            directives.push(format!("report-to {}", report_to));
+        }
+        if !self.require_trusted_types_for.is_empty() {
+            directives.push(format!("require-trusted-types-for {}", self.require_trusted_types_for.join(" ")));
+        }
+        if !self.trusted_types.is_empty() {
+            directives.push(format!("trusted-types {}", self.trusted_types.join(" ")));
+        }
+        if self.upgrade_insecure_requests {
+            directives.push("upgrade-insecure-requests".to_string());
+        }
+        if self.block_all_mixed_content {
+            directives.push("block-all-mixed-content".to_string());
+        }
+        
+        directives.join("; ")
+    }
+
+    /// Allow unsafe inline scripts (use cautiously)
+    pub fn allow_unsafe_inline_scripts(&mut self) {
+        if !self.script_src.contains(&"'unsafe-inline'".to_string()) {
+            self.script_src.push("'unsafe-inline'".to_string());
+        }
+    }
+
+    /// Allow unsafe eval (use very cautiously)
+    pub fn allow_unsafe_eval(&mut self) {
+        if !self.script_src.contains(&"'unsafe-eval'".to_string()) {
+            self.script_src.push("'unsafe-eval'".to_string());
+        }
+    }
+
+    /// Add allowed domain to script sources
+    pub fn add_script_domain(&mut self, domain: String) {
+        if !self.script_src.contains(&domain) {
+            self.script_src.push(domain);
+        }
+    }
+
+    /// Add allowed domain to style sources
+    pub fn add_style_domain(&mut self, domain: String) {
+        if !self.style_src.contains(&domain) {
+            self.style_src.push(domain);
+        }
+    }
+}
+
+impl Default for ContentSecurityPolicy {
+    fn default() -> Self {
+        Self::new()
+    }
+}

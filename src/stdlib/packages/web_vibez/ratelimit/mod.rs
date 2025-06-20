@@ -7,9 +7,9 @@ pub mod error;
 
 pub use store::{RateLimitStore, InMemoryStore, RedisStore};
 pub use algorithm::{RateLimitAlgorithm, FixedWindow, SlidingWindow, TokenBucket};
-pub use config::{RateLimitConfig, WindowConfig, BucketConfig};
+pub use config::{RateLimitConfig, WindowConfig, BucketConfig, ClientIdentification, ErrorConfig};
 pub use metrics::{RateLimitMetrics, ClientMetrics};
-pub use error::{RateLimitError, RateLimitResult};
+pub use error::{RateLimitError, RateLimitResult, ErrorCategory};
 
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
