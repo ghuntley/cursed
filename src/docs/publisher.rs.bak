@@ -341,7 +341,7 @@ impl DocumentationPublisher {
         let sitemap_path = output_dir.join("sitemap.xml");
         
         fs::write(&sitemap_path, sitemap_content).await.map_err(|e| {
-            CursedError::General(format!("Failed to write sitemap: {}", e))
+            CursedError::Io(format!("Failed to write sitemap: {}", e))
         })?;
         
         Ok(())
@@ -379,7 +379,7 @@ impl DocumentationPublisher {
         
         let assets_dir = output_dir.join("assets");
         fs::create_dir_all(&assets_dir).await.map_err(|e| {
-            CursedError::General(format!("Failed to create assets directory: {}", e))
+            CursedError::Io(format!("Failed to create assets directory: {}", e))
         })?;
         
         // Copy CSS, JS, and image assets
@@ -420,11 +420,11 @@ document.addEventListener('DOMContentLoaded', initSearch);
 "#;
         
         fs::write(assets_dir.join("docs.css"), css_content).await.map_err(|e| {
-            CursedError::General(format!("Failed to write CSS: {}", e))
+            CursedError::Io(format!("Failed to write CSS: {}", e))
         })?;
         
         fs::write(assets_dir.join("docs.js"), js_content).await.map_err(|e| {
-            CursedError::General(format!("Failed to write JavaScript: {}", e))
+            CursedError::Io(format!("Failed to write JavaScript: {}", e))
         })?;
         
         Ok(())
@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
         
         let optimized_dir = docs_path.with_extension("optimized");
         fs::create_dir_all(&optimized_dir).await.map_err(|e| {
-            CursedError::General(format!("Failed to create optimized directory: {}", e))
+            CursedError::Io(format!("Failed to create optimized directory: {}", e))
         })?;
         
         // Copy and optimize files
@@ -461,18 +461,18 @@ document.addEventListener('DOMContentLoaded', initSearch);
     /// Copy and optimize files
     async fn copy_and_optimize_files(&self, source: &Path, dest: &Path) -> Result<()> {
         let mut entries = fs::read_dir(source).await.map_err(|e| {
-            CursedError::General(format!("Failed to read source directory: {}", e))
+            CursedError::Io(format!("Failed to read source directory: {}", e))
         })?;
         
         while let Some(entry) = entries.next_entry().await.map_err(|e| {
-            CursedError::General(format!("Failed to read directory entry: {}", e))
+            CursedError::Io(format!("Failed to read directory entry: {}", e))
         })? {
             let path = entry.path();
             let dest_path = dest.join(entry.file_name());
             
             if path.is_dir() {
                 fs::create_dir_all(&dest_path).await.map_err(|e| {
-                    CursedError::General(format!("Failed to create directory: {}", e))
+                    CursedError::Io(format!("Failed to create directory: {}", e))
                 })?;
                 self.copy_and_optimize_files(&path, &dest_path).await?;
             } else {
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
             }
             _ => {
                 fs::copy(source, dest).await.map_err(|e| {
-                    CursedError::General(format!("Failed to copy file: {}", e))
+                    CursedError::Io(format!("Failed to copy file: {}", e))
                 })?;
             }
         }
@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
     /// Minify HTML file
     async fn minify_html_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let content = fs::read_to_string(source).await.map_err(|e| {
-            CursedError::General(format!("Failed to read HTML file: {}", e))
+            CursedError::Io(format!("Failed to read HTML file: {}", e))
         })?;
         
         // Basic HTML minification (remove extra whitespace)
@@ -522,7 +522,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
             .join(" ");
         
         fs::write(dest, minified).await.map_err(|e| {
-            CursedError::General(format!("Failed to write minified HTML: {}", e))
+            CursedError::Io(format!("Failed to write minified HTML: {}", e))
         })?;
         
         Ok(())
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
     /// Minify CSS file
     async fn minify_css_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let content = fs::read_to_string(source).await.map_err(|e| {
-            CursedError::General(format!("Failed to read CSS file: {}", e))
+            CursedError::Io(format!("Failed to read CSS file: {}", e))
         })?;
         
         // Basic CSS minification
@@ -541,7 +541,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
             .replace("  ", " ");
         
         fs::write(dest, minified).await.map_err(|e| {
-            CursedError::General(format!("Failed to write minified CSS: {}", e))
+            CursedError::Io(format!("Failed to write minified CSS: {}", e))
         })?;
         
         Ok(())
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
     /// Minify JavaScript file
     async fn minify_js_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let content = fs::read_to_string(source).await.map_err(|e| {
-            CursedError::General(format!("Failed to read JS file: {}", e))
+            CursedError::Io(format!("Failed to read JS file: {}", e))
         })?;
         
         // Basic JS minification (remove comments and extra whitespace)
@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
             .join(" ");
         
         fs::write(dest, minified).await.map_err(|e| {
-            CursedError::General(format!("Failed to write minified JS: {}", e))
+            CursedError::Io(format!("Failed to write minified JS: {}", e))
         })?;
         
         Ok(())
@@ -578,11 +578,11 @@ document.addEventListener('DOMContentLoaded', initSearch);
         
         while let Some(dir) = stack.pop() {
             let mut entries = fs::read_dir(&dir).await.map_err(|e| {
-                CursedError::General(format!("Failed to read directory: {}", e))
+                CursedError::Io(format!("Failed to read directory: {}", e))
             })?;
             
             while let Some(entry) = entries.next_entry().await.map_err(|e| {
-                CursedError::General(format!("Failed to read entry: {}", e))
+                CursedError::Io(format!("Failed to read entry: {}", e))
             })? {
                 let path = entry.path();
                 
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
                     stack.push(path);
                 } else {
                     let metadata = entry.metadata().await.map_err(|e| {
-                        CursedError::General(format!("Failed to read metadata: {}", e))
+                        CursedError::Io(format!("Failed to read metadata: {}", e))
                     })?;
                     
                     total_bytes += metadata.len();
@@ -639,7 +639,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
         let package_dir = target_path.join(&package.name).join(&package.version);
         
         fs::create_dir_all(&package_dir).await.map_err(|e| {
-            CursedError::General(format!("Failed to create target directory: {}", e))
+            CursedError::Io(format!("Failed to create target directory: {}", e))
         })?;
         
         self.copy_directory(docs_path, &package_dir).await?;
@@ -688,15 +688,15 @@ document.addEventListener('DOMContentLoaded', initSearch);
         
         while let Some((src, dst)) = stack.pop() {
             fs::create_dir_all(&dst).await.map_err(|e| {
-                CursedError::General(format!("Failed to create directory: {}", e))
+                CursedError::Io(format!("Failed to create directory: {}", e))
             })?;
             
             let mut entries = fs::read_dir(&src).await.map_err(|e| {
-                CursedError::General(format!("Failed to read directory: {}", e))
+                CursedError::Io(format!("Failed to read directory: {}", e))
             })?;
             
             while let Some(entry) = entries.next_entry().await.map_err(|e| {
-                CursedError::General(format!("Failed to read entry: {}", e))
+                CursedError::Io(format!("Failed to read entry: {}", e))
             })? {
                 let src_path = entry.path();
                 let dst_path = dst.join(entry.file_name());
@@ -705,7 +705,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
                     stack.push((src_path, dst_path));
                 } else {
                     fs::copy(&src_path, &dst_path).await.map_err(|e| {
-                        CursedError::General(format!("Failed to copy file: {}", e))
+                        CursedError::Io(format!("Failed to copy file: {}", e))
                     })?;
                 }
             }

@@ -342,7 +342,7 @@ impl DocumentationServer {
         package: String,
         version: String,
         path: &str,
-    ) -> Result<impl Reply, warp::Rejection> {
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
         // Log analytics event
         let event = AnalyticsEvent {
             event_type: "page_view".to_string(),
@@ -386,7 +386,7 @@ impl DocumentationServer {
     async fn handle_search(
         search_index: Arc<RwLock<HashMap<String, Vec<SearchResult>>>>,
         query: SearchQuery,
-    ) -> Result<impl Reply, warp::Rejection> {
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
         let start_time = SystemTime::now();
         
         let index = search_index.read().await;
@@ -457,7 +457,7 @@ impl DocumentationServer {
     async fn handle_versions(
         registry: Arc<DocumentationRegistry>,
         package: String,
-    ) -> Result<impl Reply, warp::Rejection> {
+    ) -> std::result::Result<impl Reply, warp::Rejection> {
         // Get versions from registry
         let versions = vec!["1.0.0".to_string(), "0.9.0".to_string()]; // Simplified
         

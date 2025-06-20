@@ -1101,7 +1101,7 @@ impl LiveDocumentationServer {
     /// Handle statistics API request
     async fn handle_stats_request(
         statistics: Arc<Mutex<ServerStatistics>>,
-    ) -> Result<impl warp::Reply, warp::Rejection> {
+    ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
         let stats = statistics.lock().unwrap().clone();
         Ok(warp::reply::json(&stats))
     }

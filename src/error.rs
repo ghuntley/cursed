@@ -92,6 +92,8 @@ pub enum Error {
     NotFound(String),
     /// Serialization/deserialization errors
     Serialization(String),
+    /// Configuration errors
+    Configuration(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -155,6 +157,7 @@ impl Clone for Error {
             Error::General(msg) => Error::General(msg.clone()),
             Error::NotFound(msg) => Error::NotFound(msg.clone()),
             Error::Serialization(msg) => Error::Serialization(msg.clone()),
+            Error::Configuration(msg) => Error::Configuration(msg.clone()),
         }
     }
 }
@@ -237,6 +240,7 @@ impl fmt::Display for Error {
             Error::General(msg) => write!(f, "Error: {}", msg),
             Error::NotFound(msg) => write!(f, "Not found: {}", msg),
             Error::Serialization(msg) => write!(f, "Serialization error: {}", msg),
+            Error::Configuration(msg) => write!(f, "Configuration error: {}", msg),
         }
     }
 }
