@@ -349,7 +349,7 @@ impl DocumentationRegistry {
 
         // Create data directory if it doesn't exist
         fs::create_dir_all(&self.config.data_dir).await.map_err(|e| {
-            CursedError::Io(format!("Failed to create data directory: {}", e))
+            CursedError::General(format!("Failed to create data directory: {}", e))
         })?;
 
         // Load existing registry data
@@ -652,7 +652,7 @@ impl DocumentationRegistry {
         }
 
         let data = fs::read_to_string(&self.config.index_file).await.map_err(|e| {
-            CursedError::Io(format!("Failed to read registry index: {}", e))
+            CursedError::General(format!("Failed to read registry index: {}", e))
         })?;
 
         let packages: HashMap<String, PackageDocumentation> = serde_json::from_str(&data).map_err(|e| {
@@ -674,7 +674,7 @@ impl DocumentationRegistry {
         })?;
 
         fs::write(&self.config.index_file, data).await.map_err(|e| {
-            CursedError::Io(format!("Failed to write registry index: {}", e))
+            CursedError::General(format!("Failed to write registry index: {}", e))
         })?;
 
         Ok(())

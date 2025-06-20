@@ -88,6 +88,10 @@ pub enum Error {
     CryptoError(String),
     /// General error for miscellaneous cases
     General(String),
+    /// Resource not found errors
+    NotFound(String),
+    /// Serialization/deserialization errors
+    Serialization(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -149,6 +153,8 @@ impl Clone for Error {
             Error::InvalidState(msg) => Error::InvalidState(msg.clone()),
             Error::CryptoError(msg) => Error::CryptoError(msg.clone()),
             Error::General(msg) => Error::General(msg.clone()),
+            Error::NotFound(msg) => Error::NotFound(msg.clone()),
+            Error::Serialization(msg) => Error::Serialization(msg.clone()),
         }
     }
 }
@@ -229,6 +235,8 @@ impl fmt::Display for Error {
             Error::InvalidState(msg) => write!(f, "Invalid state: {}", msg),
             Error::CryptoError(msg) => write!(f, "Cryptographic error: {}", msg),
             Error::General(msg) => write!(f, "Error: {}", msg),
+            Error::NotFound(msg) => write!(f, "Not found: {}", msg),
+            Error::Serialization(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
 }
@@ -261,7 +269,7 @@ impl Error {
 
     /// Create an I/O error
     pub fn io_error(msg: String) -> Self {
-        Error::IO(msg)
+        Error::Io(std::io::Error::new(std::io::ErrorKind::Other, msg))
     }
 
     /// Create a runtime error
