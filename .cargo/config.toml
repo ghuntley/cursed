@@ -7,16 +7,12 @@ rustflags = [
     "-C", "link-arg=-Wl,--disable-new-dtags",
 ]
 
-# macOS-specific configuration
+# macOS-specific configuration  
 [target.aarch64-apple-darwin]
-rustflags = [
-    "-C", "link-arg=-Wl,-rpath,@loader_path",
-]
+rustflags = []
 
 [target.x86_64-apple-darwin]
-rustflags = [
-    "-C", "link-arg=-Wl,-rpath,@loader_path",
-]
+rustflags = []
 
 # Environment variables for cross-platform builds
 [env]
