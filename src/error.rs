@@ -84,6 +84,8 @@ pub enum Error {
     InvalidInput(String),
     /// Invalid state detected during operation
     InvalidState(String),
+    /// General error for miscellaneous cases
+    General(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -143,6 +145,7 @@ impl Clone for Error {
             Error::GenerationError(msg) => Error::GenerationError(msg.clone()),
             Error::InvalidInput(msg) => Error::InvalidInput(msg.clone()),
             Error::InvalidState(msg) => Error::InvalidState(msg.clone()),
+            Error::General(msg) => Error::General(msg.clone()),
         }
     }
 }
@@ -221,6 +224,7 @@ impl fmt::Display for Error {
             Error::GenerationError(msg) => write!(f, "Generation error: {}", msg),
             Error::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
             Error::InvalidState(msg) => write!(f, "Invalid state: {}", msg),
+            Error::General(msg) => write!(f, "Error: {}", msg),
         }
     }
 }

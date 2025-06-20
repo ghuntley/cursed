@@ -317,7 +317,7 @@ impl TestExecutor {
         // Parse the test program
         let mut parser = crate::parser::Parser::from_source(&test_program);
         
-        let program = parser.parse()
+        let program = parser?.parse()
             .map_err(|e| TestError::Compilation(format!("Program parsing failed: {}", e)))?;
         
         // Compile using LLVM codegen - need to make codegen mutable

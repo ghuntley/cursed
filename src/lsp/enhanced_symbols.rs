@@ -663,26 +663,30 @@ impl EnhancedSymbolProvider {
     ) {
         for statement in &ast.statements {
             if let Some(func_decl) = statement.as_any().downcast_ref::<FunctionStatement>() {
-                let symbol = self.create_function_symbol(func_decl, uri).await;
+                let symbol = self.create_function_symbol(func_decl);
                 symbols.push(symbol);
             } else if let Some(struct_decl) = statement.as_any().downcast_ref::<SquadStatement>() {
-                let symbol = self.create_struct_symbol(struct_decl, uri).await;
+                let symbol = self.create_struct_symbol(struct_decl);
                 symbols.push(symbol);
             } else if let Some(interface_decl) = statement.as_any().downcast_ref::<CollabStatement>() {
-                let symbol = self.create_interface_symbol(interface_decl, uri).await;
+                let symbol = self.create_interface_symbol(interface_decl);
                 symbols.push(symbol);
             } else if let Some(var_decl) = statement.as_any().downcast_ref::<VariableStatement>() {
-                let symbol = self.create_variable_symbol(var_decl, uri).await;
+                // Extract information from variable statement for proper call
+                let var_name = &var_decl.name.value;
+                let var_type = var_decl.type_annotation.as_ref().map(|t| t.to_string()).as_deref();
+                let range = Range::default(); // Use default range for now
+                let symbol = self.create_variable_symbol(var_name, var_type, range, SymbolKind::VARIABLE);
                 symbols.push(symbol);
             // TODO: Fix ConstantDeclaration when proper type is available
             // } else if let Some(const_decl) = statement.as_any().downcast_ref::<ConstantStatement>() {
             //     let symbol = self.create_constant_symbol(const_decl, uri).await;
             //     symbols.push(symbol);
             } else if let Some(import_decl) = statement.as_any().downcast_ref::<ImportStatement>() {
-                let symbol = self.create_import_symbol(import_decl, uri).await;
+                let symbol = self.create_import_symbol(import_decl);
                 symbols.push(symbol);
             } else if let Some(package_decl) = statement.as_any().downcast_ref::<PackageStatement>() {
-                let symbol = self.create_package_symbol(package_decl, uri).await;
+                let symbol = self.create_package_symbol(package_decl);
                 symbols.push(symbol);
             }
         }
@@ -693,15 +697,15 @@ impl EnhancedSymbolProvider {
         let range = self.get_function_range(func_decl);
         let selection_range = self.get_function_name_range(func_decl);
         
-        let kind = if self.is_test_function(&func_decl.name.name) {
+        let kind = if self.is_test_function(&func_decl.name.value) {
             SymbolKind::METHOD
         } else {
             SymbolKind::FUNCTION
         };
         
-        let cursed_kind = if self.is_test_function(&func_decl.name.name) {
+        let cursed_kind = if self.is_test_function(&func_decl.name.value) {
             CursedSymbolKind::TestFunction
-        } else if func_decl.generic_params.is_some() {
+        } else if func_decl.type_parameters.is_some() {
             CursedSymbolKind::GenericFunction
         } else {
             CursedSymbolKind::SlayFunction
@@ -815,11 +819,11 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_constant_name_range(const_decl);
         
         let mut symbol = CursedSymbol::new(
-            const_decl.name.name.clone(),
+            const_decl.name.value.clone(),
             SymbolKind::CONSTANT,
-            CursedSymbolKind::FactsConstant,
             range,
             selection_range,
+            CursedSymbolKind::FactsConstant,
         );
         
         // Add type information if available

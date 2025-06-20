@@ -235,10 +235,10 @@ impl InlayHintsProvider {
         let mut hints = Vec::new();
         
         // Parse the content
-        let mut lexer = Lexer::new(content.to_string());
+        let mut lexer = Lexer::new(content);
         let mut parser = Parser::new(lexer);
         
-        match parser.parse() {
+        match parser?.parse() {
             Ok(ast) => {
                 // Type check the AST for type information
                 if let Err(e) = self.type_checker.check(&ast) {
@@ -567,7 +567,7 @@ impl InlayHintsProvider {
         range: Range,
         hints: &mut Vec<CursedInlayHint>,
     ) {
-        let mut lexer = Lexer::new(content.to_string());
+        let mut lexer = Lexer::new(content);
         
         loop {
             match lexer.next_token() {
@@ -576,13 +576,13 @@ impl InlayHintsProvider {
                         break;
                     }
                     
-                    let token_line = (token.line - 1) as u32;
+                    let token_line = (token.location.line - 1) as u32;
                     if token_line >= range.start.line && token_line <= range.end.line {
                         // Generate basic hints for recognized patterns
-                        if token.lexeme == "?" && self.config.show_error_propagation {
+                        if token.literal == "?" && self.config.show_error_propagation {
                             let position = Position {
                                 line: token_line,
-                                character: token.column as u32,
+                                character: token.location.column as u32,
                             };
                             
                             hints.push(CursedInlayHint::new(

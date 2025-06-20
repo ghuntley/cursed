@@ -87,7 +87,7 @@ impl DiagnosticsProvider {
         
         // Step 1: Lexical analysis
         let mut tokens = Vec::new();
-        let mut lexer = Lexer::new(content.to_string());
+        let mut lexer = Lexer::new(content);
         
         loop {
             match lexer.next_token() {
@@ -107,7 +107,7 @@ impl DiagnosticsProvider {
         
         if diagnostics.is_empty() {
             // Step 2: Syntax analysis
-            let lexer = Lexer::new(content.to_string());
+            let lexer = Lexer::new(content);
             let mut parser = Parser::new(lexer)?;
             
             match parser.parse_program() {
@@ -189,7 +189,7 @@ impl DiagnosticsProvider {
                 if stmt_str.contains("use ") || stmt_str.contains("import ") {
                     // Extract import path and validate
                     if let Some(import_path) = self.extract_import_path(&stmt_str) {
-                        if !import_resolver.resolve_import(&import_path).is_ok() {
+                        if !import_resolver.resolve_local_import(&import_path, None).is_ok() {
                             diagnostics.push(self.create_diagnostic_impl(
                                 Range {
                                     start: Position { line: 0, character: 0 },

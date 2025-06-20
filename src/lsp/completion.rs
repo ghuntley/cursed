@@ -123,7 +123,7 @@ impl CompletionProvider {
     
     /// Parse content to get AST for context analysis
     async fn parse_content_for_context(&self, content: &str) -> Result<Program, CursedError> {
-        let lexer = Lexer::new(content.to_string());
+        let lexer = Lexer::new(content);
         let mut parser = Parser::new(lexer)?;
         parser.parse_program()
     }
