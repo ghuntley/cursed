@@ -574,3 +574,6 @@ impl fmt::Display for SourceLocation {
         }
     }
 }
+
+// Re-export commonly used error types for convenience
+pub use types::CryptoError;

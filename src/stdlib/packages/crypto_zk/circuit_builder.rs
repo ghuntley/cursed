@@ -1,7 +1,7 @@
 /// Circuit builder for zero-knowledge proof systems
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::CryptoError;
+use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
 use crate::stdlib::value::Value;
 use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
 

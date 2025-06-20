@@ -1,7 +1,7 @@
 /// Merkle tree implementations for zero-knowledge proofs
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::CryptoError;
+use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
 use crate::stdlib::value::Value;
 use sha3::{Digest, Sha3_256};
 
