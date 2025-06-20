@@ -87,7 +87,7 @@ pub struct AuthenticationManager {
     challenges: Arc<Mutex<HashMap<String, AuthChallenge>>>,
     failed_attempts: Arc<Mutex<HashMap<String, (usize, SystemTime)>>>,
     secure_random: SecureRandom,
-    hash_manager: HashManager,
+    hash_manager: HashRegistry,
     default_config: MfaConfig,
 }
 
@@ -108,7 +108,7 @@ impl AuthenticationManager {
             challenges: Arc::new(Mutex::new(HashMap::new())),
             failed_attempts: Arc::new(Mutex::new(HashMap::new())),
             secure_random: SecureRandom::new()?,
-            hash_manager: HashManager::new()?,
+            hash_manager: HashRegistry::new()?,
             default_config,
         })
     }

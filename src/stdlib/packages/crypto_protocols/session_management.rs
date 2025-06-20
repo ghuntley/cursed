@@ -111,7 +111,7 @@ pub struct SessionManager {
     session_tickets: Arc<Mutex<HashMap<String, SessionTicket>>>,
     resumption_data: Arc<Mutex<HashMap<String, SessionResumptionData>>>,
     secure_random: SecureRandom,
-    hash_manager: HashManager,
+    hash_manager: HashRegistry,
     default_config: SessionConfig,
     master_key: Vec<u8>,
 }
@@ -138,7 +138,7 @@ impl SessionManager {
             session_tickets: Arc::new(Mutex::new(HashMap::new())),
             resumption_data: Arc::new(Mutex::new(HashMap::new())),
             secure_random,
-            hash_manager: HashManager::new()?,
+            hash_manager: HashRegistry::new()?,
             default_config,
             master_key,
         })

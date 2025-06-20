@@ -673,8 +673,8 @@ impl EnhancedSymbolProvider {
                 symbols.push(symbol);
             } else if let Some(var_decl) = statement.as_any().downcast_ref::<VariableStatement>() {
                 // Extract information from variable statement for proper call
-                let var_name = &var_decl.name.value;
-                let var_type = var_decl.type_annotation.as_ref().map(|t| t.to_string()).as_deref();
+                let var_name = &var_decl.name;
+                let var_type = var_decl.var_type.as_ref().map(|t| t.string()).as_deref();
                 let range = Range::default(); // Use default range for now
                 let symbol = self.create_variable_symbol(var_name, var_type, range, SymbolKind::VARIABLE);
                 symbols.push(symbol);
@@ -705,7 +705,7 @@ impl EnhancedSymbolProvider {
         
         let cursed_kind = if self.is_test_function(&func_decl.name.value) {
             CursedSymbolKind::TestFunction
-        } else if func_decl.type_parameters.is_some() {
+        } else if !func_decl.type_parameters.is_empty() {
             CursedSymbolKind::GenericFunction
         } else {
             CursedSymbolKind::SlayFunction

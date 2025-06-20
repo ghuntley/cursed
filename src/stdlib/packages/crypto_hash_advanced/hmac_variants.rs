@@ -138,6 +138,21 @@ impl<H: Hasher + Clone> HmacEngine<H> {
 }
 
 impl<H: Hasher + Clone> Hasher for HmacEngine<H> {
+    fn algorithm(&self) -> &'static str {
+        "HMAC"
+    }
+
+    fn digest_size(&self) -> usize {
+        self.inner.digest_size()
+    }
+
+    fn update(&mut self, data: &[u8]) {
+        self.inner.update(data);
+    }
+
+    fn finalize(self) -> Vec<u8> {
+        self.inner.finalize()
+    }
     fn digest(&mut self, data: &[u8]) -> HashResult<Vec<u8>> {
         self.finalize(data)
     }

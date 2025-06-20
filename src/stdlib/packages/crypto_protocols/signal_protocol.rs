@@ -95,7 +95,7 @@ pub struct SignalProtocolManager {
     key_bundles: Arc<Mutex<HashMap<String, SignalKeyBundle>>>,
     one_time_keys: Arc<Mutex<HashMap<u32, SignalKeyPair>>>,
     secure_random: SecureRandom,
-    hash_manager: HashManager,
+    hash_manager: HashRegistry,
     registration_id: u32,
 }
 
@@ -108,7 +108,7 @@ impl SignalProtocolManager {
             key_bundles: Arc::new(Mutex::new(HashMap::new())),
             one_time_keys: Arc::new(Mutex::new(HashMap::new())),
             secure_random: SecureRandom::new()?,
-            hash_manager: HashManager::new()?,
+            hash_manager: HashRegistry::new()?,
             registration_id: 0,
         };
 

@@ -1486,7 +1486,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract submodules from module statements
-    fn extract_submodules(&self, statements: &[dyn Statement]) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_submodules(&self, statements: &[Box<dyn Statement>]) -> Result<Vec<DocumentationItem>, Error> {
         let mut submodules = Vec::new();
         let location = SourceLocation { line: 1, column: 1, file: None };
         
@@ -1522,7 +1522,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract constants from constant declarations
-    fn extract_constants(&self, statements: &[dyn Statement]) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_constants(&self, statements: &[Box<dyn Statement>]) -> Result<Vec<DocumentationItem>, Error> {
         let mut constants = Vec::new();
         let location = SourceLocation { line: 1, column: 1, file: None };
         

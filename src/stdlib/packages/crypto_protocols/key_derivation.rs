@@ -43,7 +43,7 @@ pub struct KdfResult {
 /// Protocol-specific key derivation manager
 #[derive(Debug)]
 pub struct ProtocolKeyDerivationManager {
-    hash_manager: HashManager,
+    hash_manager: HashRegistry,
     secure_random: SecureRandom,
 }
 
@@ -51,7 +51,7 @@ impl ProtocolKeyDerivationManager {
     /// Create new protocol key derivation manager
     pub fn new() -> AdvancedCryptoResult<Self> {
         Ok(Self {
-            hash_manager: HashManager::new()?,
+            hash_manager: HashRegistry::new()?,
             secure_random: SecureRandom::new()?,
         })
     }
