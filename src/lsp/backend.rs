@@ -598,7 +598,7 @@ impl LanguageServer for CursedLanguageServer {
     }
 
     #[instrument(skip(self, params))]
-    async fn symbol(&self, params: WorkspaceSymbolParams) -> LspResult<Option<Vec<WorkspaceSymbol>>> {
+    async fn symbol(&self, params: WorkspaceSymbolParams) -> LspResult<Option<Vec<SymbolInformation>>> {
         debug!("Workspace symbols requested with query: {}", params.query);
         
         let workspace_folders = self.workspace.get_workspace_folders().await;

@@ -14,7 +14,7 @@ use crate::ast::{
     block::BlockStatement,
     traits::{Statement, Expression},
 };
-use crate::error::{Error, ParseError};
+use crate::error::Error;
 
 impl Parser {
     /// Parse an async function declaration

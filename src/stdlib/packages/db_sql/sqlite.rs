@@ -28,6 +28,7 @@ pub struct SqliteDriver {
 }
 
 /// fr fr SQLite connection
+#[derive(Debug)]
 pub struct SqliteConnection {
     connection_id: String,
     connection: Arc<Mutex<Connection>>,
@@ -42,6 +43,7 @@ pub struct SqliteError {
 }
 
 /// fr fr SQLite result set implementation
+#[derive(Debug)]
 pub struct SqliteResultSet {
     rows: Vec<crate::stdlib::packages::db_core::Row>,
     metadata: crate::stdlib::packages::db_core::ResultMetadata,
@@ -49,6 +51,7 @@ pub struct SqliteResultSet {
 }
 
 /// fr fr SQLite prepared statement implementation
+#[derive(Debug)]
 pub struct SqlitePreparedStatement {
     connection: Arc<Mutex<Connection>>,
     sql: String,
@@ -56,6 +59,7 @@ pub struct SqlitePreparedStatement {
 }
 
 /// fr fr SQLite transaction implementation
+#[derive(Debug)]
 pub struct SqliteTransactionImpl {
     connection: Arc<Mutex<Connection>>,
     transaction_id: String,
@@ -862,6 +866,35 @@ impl PreparedStatement for SqlitePreparedStatement {
     fn sql(&self) -> &str {
         &self.sql
     }
+    
+    /// slay Get parameter metadata
+    fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
+        // Placeholder implementation - would need to extract from SQLite statement
+        &[]
+    }
+    
+    /// slay Get result set metadata
+    fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+        // Placeholder implementation - would need to extract from SQLite statement
+        static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
+            std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
+                columns: vec![],
+                total_rows: None,
+                has_more_rows: false,
+                name: None,
+                schema_name: None,
+                table_name: None,
+                is_updatable: false,
+                result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+            });
+        &EMPTY_METADATA
+    }
+    
+    /// slay Close the prepared statement
+    async fn close(self: Box<Self>) -> DbResult<()> {
+        // SQLite prepared statements are automatically cleaned up
+        Ok(())
+    }
 }
 
 // Implement DatabaseTransaction trait for SqliteTransactionImpl
@@ -1080,11 +1113,11 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         })
     }
 
-    fn state(&self) -> crate::stdlib::packages::db_core::TransactionState {
+    fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
         if self.active {
-            crate::stdlib::packages::db_core::TransactionState::Active
+            crate::stdlib::packages::db_core::traits::TransactionState::Active
         } else {
-            crate::stdlib::packages::db_core::TransactionState::Committed
+            crate::stdlib::packages::db_core::traits::TransactionState::Committed
         }
     }
 }

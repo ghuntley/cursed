@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concurrency - CURSED Documentation</title>
+    <link rel="stylesheet" href="../css/docs.css">
+    <link rel="stylesheet" href="../css/highlight.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>CURSED Docs</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html">Getting Started</a></li>
+            <li><a href="syntax.html">Language Syntax</a></li>
+            <li><a href="types.html">Type System</a></li>
+            <li><a href="functions.html">Functions</a></li>
+            <li><a href="concurrency.html" class="active">Concurrency</a></li>
+            <li><a href="error-handling.html">Error Handling</a></li>
+            <li><a href="package-manager.html">Package Manager</a></li>
+            <li><a href="stdlib.html">Standard Library</a></li>
+            <li><a href="examples.html">Examples</a></li>
+        </ul>
+    </nav>
+
+    <main class="content">
+        <div class="page-header">
+            <h1>Concurrency in CURSED</h1>
+            <p class="subtitle">Master goroutines, channels, and concurrent programming patterns</p>
+        </div>
+
+        <div class="table-of-contents">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#goroutines">Goroutines (stan)</a></li>
+                <li><a href="#channels">Channels (dm)</a></li>
+                <li><a href="#channel-operations">Channel Operations</a></li>
+                <li><a href="#synchronization">Synchronization Primitives</a></li>
+                <li><a href="#patterns">Concurrency Patterns</a></li>
+                <li><a href="#error-handling">Error Handling</a></li>
+                <li><a href="#performance">Performance & Best Practices</a></li>
+            </ul>
+        </div>
+
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>CURSED provides powerful concurrency features inspired by Go's goroutines and channels, but with Gen Z flair. The language supports lightweight concurrent execution through goroutines (using the <code>stan</code> keyword) and safe communication via channels (using the <code>dm</code> keyword).</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🚀 Goroutines</h3>
+                    <p>Lightweight concurrent functions that run independently</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💬 Channels</h3>
+                    <p>Type-safe communication pipes between goroutines</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔄 Select Statements</h3>
+                    <p>Non-blocking channel operations with multiple choices</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚡ High Performance</h3>
+                    <p>Efficient runtime with work-stealing scheduler</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="goroutines">
+            <h2>Goroutines (stan)</h2>
+            <p>Goroutines are lightweight concurrent functions launched with the <code>stan</code> keyword. They run independently and can communicate through channels.</p>
+
+            <h3>Creating Goroutines</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Basic goroutine creation
+stan say_hello("World")
+
+// Goroutine with a closure
+stan {
+    periodt {
+        println("Background task running...")
+        sleep(1000) // Sleep for 1 second
+    }
+}
+
+// Goroutine with parameters
+slay process_data(data: String) {
+    println("Processing: " + data)
+    // Do some work...
+}
+
+stan process_data("Important data")
+</code></pre>
+            </div>
+
+            <h3>Goroutine Lifecycle</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">import "sync"
+
+sus counter = 0
+sus wg = sync::WaitGroup::new()
+
+// Spawn multiple goroutines
+lowkey (sus i = 0; i < 5; i++) {
+    wg.add(1)
+    stan worker(i, &wg)
+    yolo // Yield point for cooperative scheduling
+}
+
+slay worker(id: i32, wg: &sync::WaitGroup) {
+    println("Worker " + id.to_string() + " starting")
+    
+    // Simulate work
+    lowkey (sus j = 0; j < 3; j++) {
+        counter += 1
+        sleep(100)
+        yolo // Cooperative yield
+    }
+    
+    println("Worker " + id.to_string() + " done")
+    wg.done()
+}
+
+// Wait for all goroutines to complete
+wg.wait()
+println("All workers completed. Counter: " + counter.to_string())
+</code></pre>
+            </div>
+
+            <h3>Goroutine Patterns</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Fire-and-forget pattern
+stan log_event("User logged in")
+
+// Worker pool pattern
+sus work_queue = dm make(String, 100) // Buffered channel
+
+// Start workers
+lowkey (sus i = 0; i < 4; i++) {
+    stan worker(i, work_queue)
+}
+
+// Send work
+work_queue <- "Task 1"
+work_queue <- "Task 2"
+work_queue <- "Task 3"
+
+slay worker(id: i32, queue: dm String) {
+    periodt {
+        bestie task = <-queue {
+            println("Worker " + id.to_string() + " processing: " + task)
+            // Process task
+        } flex {
+            println("Worker " + id.to_string() + " no work available")
+            break
+        }
+        yolo
+    }
+}
+</code></pre>
+            </div>
+        </section>
+
+        <section id="channels">
+            <h2>Channels (dm)</h2>
+            <p>Channels provide safe communication between goroutines. They're created with the <code>dm</code> keyword and can be buffered or unbuffered.</p>
+
+            <h3>Creating Channels</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Unbuffered channel (synchronous)
+sus messages = dm make(String)
+
+// Buffered channel (asynchronous up to buffer size)
+sus numbers = dm make(i32, 10)
+
+// Receive-only channel
+sus read_only: dm <-String = messages
+
+// Send-only channel  
+sus write_only: dm String<- = messages
+</code></pre>
+            </div>
+
+            <h3>Sending and Receiving</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">sus ch = dm make(String, 5)
+
+// Sending to channel
+ch <- "Hello"
+ch <- "World"
+
+// Receiving from channel
+sus msg1 = <-ch
+sus msg2 = <-ch
+
+println(msg1) // "Hello"
+println(msg2) // "World"
+
+// Non-blocking receive with bestie/flex
+bestie result = <-ch {
+    println("Received: " + result)
+} flex {
+    println("No message available")
+}
+</code></pre>
+            </div>
+
+            <h3>Channel Communication Patterns</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Producer-Consumer pattern
+sus data_channel = dm make(i32, 100)
+
+// Producer goroutine
+stan producer(ch: dm i32<-) {
+    lowkey (sus i = 0; i < 10; i++) {
+        ch <- i
+        sleep(100)
+        yolo
+    }
+    close(ch) // Signal completion
+}
+
+// Consumer goroutine
+stan consumer(ch: dm <-i32) {
+    periodt {
+        bestie value = <-ch {
+            println("Consumed: " + value.to_string())
+        } flex {
+            println("Channel closed")
+            break
+        }
+        yolo
+    }
+}
+
+stan producer(data_channel)
+stan consumer(data_channel)
+</code></pre>
+            </div>
+        </section>
+
+        <section id="channel-operations">
+            <h2>Channel Operations</h2>
+
+            <h3>Select Statements</h3>
+            <p>Select statements allow non-blocking operations on multiple channels simultaneously.</p>
+            <div class="code-example">
+                <pre><code class="language-cursed">sus ch1 = dm make(String)
+sus ch2 = dm make(i32)
+sus timeout = dm make(bool)
+
+// Timeout goroutine
+stan {
+    sleep(5000) // 5 seconds
+    timeout <- true
+}
+
+periodt {
+    vibe_check {
+        mood msg = <-ch1:
+            println("String received: " + msg)
+        
+        mood num = <-ch2:
+            println("Number received: " + num.to_string())
+        
+        mood <-timeout:
+            println("Operation timed out")
+            break
+            
+        basic:
+            println("No channels ready")
+            sleep(100)
+            yolo
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Channel Closing and Range</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">sus numbers = dm make(i32, 10)
+
+// Send numbers and close
+stan {
+    lowkey (sus i = 0; i < 5; i++) {
+        numbers <- i
+    }
+    close(numbers)
+}
+
+// Range over channel until closed
+bestie num := range numbers {
+    println("Number: " + num.to_string())
+}
+
+// Check if channel is closed
+sus (value, ok) = <-numbers
+lowkey (!ok) {
+    println("Channel is closed")
+}
+</code></pre>
+            </div>
+
+            <h3>Directional Channels</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Send-only function parameter
+slay sender(ch: dm String<-) {
+    ch <- "Message from sender"
+}
+
+// Receive-only function parameter
+slay receiver(ch: dm <-String) {
+    sus msg = <-ch
+    println("Received: " + msg)
+}
+
+sus bidirectional = dm make(String)
+sender(bidirectional)   // Automatically converts to send-only
+receiver(bidirectional) // Automatically converts to receive-only
+</code></pre>
+            </div>
+        </section>
+
+        <section id="synchronization">
+            <h2>Synchronization Primitives</h2>
+
+            <h3>WaitGroup</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">import "sync"
+
+sus wg = sync::WaitGroup::new()
+sus results = dm make(String, 3)
+
+lowkey (sus i = 0; i < 3; i++) {
+    wg.add(1)
+    stan fetch_data(i, results, &wg)
+}
+
+slay fetch_data(id: i32, results: dm String<-, wg: &sync::WaitGroup) {
+    // Simulate API call
+    sleep(1000 + (id * 500))
+    results <- "Data from source " + id.to_string()
+    wg.done()
+}
+
+wg.wait()
+close(results)
+
+// Collect all results
+bestie result := range results {
+    println(result)
+}
+</code></pre>
+            </div>
+
+            <h3>Mutex for Shared State</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">import "sync"
+
+squad Counter {
+    sus value: i32,
+    sus mutex: sync::Mutex
+}
+
+impl Counter {
+    slay new() -> Counter {
+        Counter {
+            value: 0,
+            mutex: sync::Mutex::new()
+        }
+    }
+    
+    slay increment(&self) {
+        sus lock = self.mutex.lock()
+        self.value += 1
+        // Lock automatically released when 'lock' goes out of scope
+    }
+    
+    slay get(&self) -> i32 {
+        sus lock = self.mutex.lock()
+        self.value
+    }
+}
+
+sus counter = Counter::new()
+
+// Multiple goroutines incrementing safely
+lowkey (sus i = 0; i < 5; i++) {
+    stan {
+        lowkey (sus j = 0; j < 100; j++) {
+            counter.increment()
+            yolo
+        }
+    }
+}
+
+sleep(1000) // Wait for goroutines
+println("Final count: " + counter.get().to_string())
+</code></pre>
+            </div>
+        </section>
+
+        <section id="patterns">
+            <h2>Common Concurrency Patterns</h2>
+
+            <h3>Worker Pool</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">squad WorkerPool<T> {
+    sus jobs: dm T<-,
+    sus results: dm T->,
+    sus workers: i32
+}
+
+impl<T> WorkerPool<T> {
+    slay new(worker_count: i32, buffer_size: i32) -> WorkerPool<T> {
+        WorkerPool {
+            jobs: dm make(T, buffer_size),
+            results: dm make(T, buffer_size),
+            workers: worker_count
+        }
+    }
+    
+    slay start<F>(&self, process_fn: F) 
+    where F: Fn(T) -> T + Send + Sync + 'static {
+        lowkey (sus i = 0; i < self.workers; i++) {
+            sus jobs = self.jobs.clone()
+            sus results = self.results.clone()
+            
+            stan {
+                periodt {
+                    bestie job = <-jobs {
+                        sus result = process_fn(job)
+                        results <- result
+                    } flex {
+                        break
+                    }
+                    yolo
+                }
+            }
+        }
+    }
+    
+    slay submit(&self, job: T) {
+        self.jobs <- job
+    }
+    
+    slay get_result(&self) -> T {
+        <-self.results
+    }
+}
+
+// Usage
+sus pool = WorkerPool::new(4, 100)
+pool.start(|x: i32| x * x) // Square function
+
+// Submit jobs
+lowkey (sus i = 1; i <= 10; i++) {
+    pool.submit(i)
+}
+
+// Collect results
+lowkey (sus i = 0; i < 10; i++) {
+    sus result = pool.get_result()
+    println("Result: " + result.to_string())
+}
+</code></pre>
+            </div>
+
+            <h3>Pipeline Pattern</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Pipeline: numbers -> squares -> sums
+slay pipeline_demo() {
+    sus numbers = dm make(i32, 10)
+    sus squares = dm make(i32, 10)
+    sus sums = dm make(i32, 10)
+    
+    // Stage 1: Generate numbers
+    stan {
+        lowkey (sus i = 1; i <= 5; i++) {
+            numbers <- i
+        }
+        close(numbers)
+    }
+    
+    // Stage 2: Square numbers
+    stan {
+        bestie num := range numbers {
+            squares <- num * num
+        }
+        close(squares)
+    }
+    
+    // Stage 3: Running sum
+    sus running_sum = 0
+    stan {
+        bestie square := range squares {
+            running_sum += square
+            sums <- running_sum
+        }
+        close(sums)
+    }
+    
+    // Collect final results
+    bestie sum := range sums {
+        println("Running sum: " + sum.to_string())
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Fan-In/Fan-Out Pattern</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Fan-out: distribute work to multiple goroutines
+slay fan_out<T>(input: dm <-T, worker_count: i32) -> Vec<dm <-T> {
+    sus outputs = Vec::new()
+    
+    lowkey (sus i = 0; i < worker_count; i++) {
+        sus output = dm make(T, 10)
+        outputs.push(output.clone())
+        
+        stan {
+            periodt {
+                bestie item = <-input {
+                    output <- item
+                } flex {
+                    close(output)
+                    break
+                }
+                yolo
+            }
+        }
+    }
+    
+    outputs
+}
+
+// Fan-in: merge multiple channels into one
+slay fan_in<T>(inputs: Vec<dm <-T>) -> dm <-T {
+    sus output = dm make(T, 10)
+    sus wg = sync::WaitGroup::new()
+    
+    bestie input := inputs {
+        wg.add(1)
+        stan {
+            bestie item := range input {
+                output <- item
+            }
+            wg.done()
+        }
+    }
+    
+    // Close output when all inputs are done
+    stan {
+        wg.wait()
+        close(output)
+    }
+    
+    output
+}
+
+// Usage
+sus source = dm make(String, 100)
+sus workers = fan_out(source, 3)
+sus merged = fan_in(workers)
+
+// Send work
+stan {
+    lowkey (sus i = 0; i < 10; i++) {
+        source <- "Task " + i.to_string()
+    }
+    close(source)
+}
+
+// Collect results
+bestie result := range merged {
+    println("Processed: " + result)
+}
+</code></pre>
+            </div>
+        </section>
+
+        <section id="error-handling">
+            <h2>Error Handling in Concurrent Code</h2>
+
+            <h3>Error Channels</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">squad WorkResult<T> {
+    sus data: Option<T>,
+    sus error: Option<String>
+}
+
+slay concurrent_work() -> Result<Vec<String>, String> {
+    sus results = dm make(WorkResult<String>, 10)
+    sus wg = sync::WaitGroup::new()
+    
+    // Spawn workers
+    lowkey (sus i = 0; i < 3; i++) {
+        wg.add(1)
+        stan risky_worker(i, results.clone(), &wg)
+    }
+    
+    // Close results channel when done
+    stan {
+        wg.wait()
+        close(results)
+    }
+    
+    // Collect results and handle errors
+    sus success_results = Vec::new()
+    bestie result := range results {
+        bestie err = result.error {
+            return Err(err)
+        }
+        
+        bestie data = result.data {
+            success_results.push(data)
+        }
+    }
+    
+    Ok(success_results)
+}
+
+slay risky_worker(id: i32, results: dm WorkResult<String><-, wg: &sync::WaitGroup) {
+    // Simulate work that might fail
+    lowkey (id == 1) {
+        results <- WorkResult {
+            data: None,
+            error: Some("Worker 1 failed".to_string())
+        }
+    } flex {
+        results <- WorkResult {
+            data: Some("Success from worker " + id.to_string()),
+            error: None
+        }
+    }
+    wg.done()
+}
+</code></pre>
+            </div>
+
+            <h3>Context and Cancellation</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">import "context"
+
+slay cancellable_operation(ctx: &context::Context) -> Result<String, String> {
+    sus result_ch = dm make(String, 1)
+    sus error_ch = dm make(String, 1)
+    
+    // Start long-running operation
+    stan {
+        // Simulate slow work
+        sleep(5000)
+        result_ch <- "Operation completed"
+    }
+    
+    // Wait for completion or cancellation
+    vibe_check {
+        mood result = <-result_ch:
+            Ok(result)
+        
+        mood error = <-error_ch:
+            Err(error)
+        
+        mood <-ctx.done():
+            Err("Operation cancelled".to_string())
+    }
+}
+
+// Usage with timeout
+sus ctx = context::with_timeout(context::background(), 3000) // 3 seconds
+
+bestie result = cancellable_operation(&ctx) {
+    println("Success: " + result)
+} yikes err {
+    println("Error: " + err)
+}
+</code></pre>
+            </div>
+        </section>
+
+        <section id="performance">
+            <h2>Performance & Best Practices</h2>
+
+            <h3>Performance Considerations</h3>
+            <div class="info-box">
+                <h4>🚀 Goroutine Performance</h4>
+                <ul>
+                    <li><strong>Lightweight:</strong> Each goroutine uses ~64KB of stack memory</li>
+                    <li><strong>Fast Creation:</strong> Goroutine creation takes ~1μs</li>
+                    <li><strong>Cooperative Scheduling:</strong> Use <code>yolo</code> for yield points</li>
+                    <li><strong>Work Stealing:</strong> Automatic load balancing across CPU cores</li>
+                </ul>
+            </div>
+
+            <h3>Channel Performance</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">// Buffer size affects performance
+sus unbuffered = dm make(i32)     // Synchronous, blocks on send/receive
+sus small_buffer = dm make(i32, 10)   // Good for small bursts
+sus large_buffer = dm make(i32, 1000) // Good for high throughput
+
+// Measure channel throughput
+import "time"
+
+slay benchmark_channel_throughput() {
+    sus ch = dm make(i32, 1000)
+    sus count = 100000
+    
+    sus start = time::now()
+    
+    // Producer
+    stan {
+        lowkey (sus i = 0; i < count; i++) {
+            ch <- i
+            yolo // Yield every iteration for fairness
+        }
+        close(ch)
+    }
+    
+    // Consumer
+    sus received = 0
+    bestie _ := range ch {
+        received += 1
+    }
+    
+    sus duration = time::since(start)
+    sus throughput = (count as f64) / duration.as_secs_f64()
+    
+    println("Throughput: " + throughput.to_string() + " messages/sec")
+}
+</code></pre>
+            </div>
+
+            <h3>Best Practices</h3>
+            <div class="best-practices">
+                <div class="practice-card">
+                    <h4>✅ Do</h4>
+                    <ul>
+                        <li>Use channels for communication between goroutines</li>
+                        <li>Close channels when done sending</li>
+                        <li>Use buffered channels for performance-critical paths</li>
+                        <li>Add <code>yolo</code> yield points in long-running loops</li>
+                        <li>Use WaitGroup for synchronizing goroutine completion</li>
+                        <li>Prefer select statements for non-blocking operations</li>
+                    </ul>
+                </div>
+                
+                <div class="practice-card">
+                    <h4>❌ Don't</h4>
+                    <ul>
+                        <li>Share memory without synchronization (use Mutex or channels)</li>
+                        <li>Create too many goroutines (use worker pools instead)</li>
+                        <li>Block forever on channel operations without timeouts</li>
+                        <li>Forget to close channels in producer goroutines</li>
+                        <li>Use global variables in concurrent code without protection</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Debugging Concurrent Code</h3>
+            <div class="code-example">
+                <pre><code class="language-cursed">import "runtime"
+
+// Get goroutine information
+slay debug_goroutines() {
+    sus info = runtime::goroutine_info()
+    println("Active goroutines: " + info.count.to_string())
+    
+    bestie gr := info.goroutines {
+        println("Goroutine " + gr.id.to_string() + 
+                " state: " + gr.state.to_string())
+    }
+}
+
+// Detect potential deadlocks
+slay deadlock_detection() {
+    import "context"
+    
+    sus ctx = context::with_timeout(context::background(), 10000) // 10 seconds
+    sus ch = dm make(i32)
+    
+    vibe_check {
+        mood value = <-ch:
+            println("Received: " + value.to_string())
+        
+        mood <-ctx.done():
+            println("Potential deadlock detected - no message received")
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Memory Management</h3>
+            <div class="info-box">
+                <h4>🧠 GC Integration</h4>
+                <p>CURSED's garbage collector is goroutine-aware:</p>
+                <ul>
+                    <li><strong>Stack Scanning:</strong> GC scans goroutine stacks for live objects</li>
+                    <li><strong>Safe Points:</strong> Collection only occurs at safe points</li>
+                    <li><strong>Concurrent Collection:</strong> GC runs concurrently with goroutines</li>
+                    <li><strong>Low Pause Times:</strong> Typically <10ms for moderate goroutine counts</li>
+                </ul>
+            </div>
+        </section>
+
+        <div class="navigation-footer">
+            <a href="functions.html" class="nav-link prev">← Functions</a>
+            <a href="error-handling.html" class="nav-link next">Error Handling →</a>
+        </div>
+    </main>
+</body>
+</html>

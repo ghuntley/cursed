@@ -46,12 +46,12 @@ pub enum TlsHandshakeType {
     CertificateVerify = 15,
     ClientKeyExchange = 16,
     Finished = 20,
-    // TLS 1.3
+    // TLS 1.3 - use distinct values to avoid conflicts
     EncryptedExtensions = 8,
-    CertificateRequest13 = 13,
-    Certificate13 = 11,
-    CertificateVerify13 = 15,
-    Finished13 = 20,
+    CertificateRequest13 = 113, // 100 + 13 for TLS 1.3 variant
+    Certificate13 = 111,        // 100 + 11 for TLS 1.3 variant  
+    CertificateVerify13 = 115,  // 100 + 15 for TLS 1.3 variant
+    Finished13 = 120,           // 100 + 20 for TLS 1.3 variant
 }
 
 /// TLS handshake state
@@ -322,7 +322,7 @@ impl TlsHandshakeManager {
 
     fn generate_session_id(&self) -> AdvancedCryptoResult<String> {
         let random_bytes = self.secure_random.generate_bytes(16)?;
-        Ok(hex::encode(random_bytes))
+        Ok(self.bytes_to_hex(&random_bytes))
     }
 
     fn create_client_hello(&self, config: &TlsConfig, client_random: &[u8]) -> AdvancedCryptoResult<TlsHandshakeMessage> {
@@ -475,25 +475,23 @@ impl TlsHandshakeManager {
     }
 
     fn derive_session_keys(&self, session: &mut TlsHandshakeSession) -> AdvancedCryptoResult<()> {
-        use sha2::{Sha256, Digest};
-        
         let pre_master = session.pre_master_secret.as_ref().unwrap();
         
-        // Derive master secret using PRF
-        let mut hasher = Sha256::new();
-        hasher.update(pre_master);
-        hasher.update(&session.client_random);
-        hasher.update(&session.server_random);
-        hasher.update(b"master secret");
-        let master_secret = hasher.finalize().to_vec();
+        // Derive master secret using our hash manager
+        let mut master_data = Vec::new();
+        master_data.extend_from_slice(pre_master);
+        master_data.extend_from_slice(&session.client_random);
+        master_data.extend_from_slice(&session.server_random);
+        master_data.extend_from_slice(b"master secret");
+        let master_secret = self.hash_manager.hash_sha256(&master_data)?;
         
         // Derive session keys from master secret
-        let mut hasher = Sha256::new();
-        hasher.update(&master_secret);
-        hasher.update(&session.server_random);
-        hasher.update(&session.client_random);
-        hasher.update(b"key expansion");
-        let key_material = hasher.finalize();
+        let mut key_data = Vec::new();
+        key_data.extend_from_slice(&master_secret);
+        key_data.extend_from_slice(&session.server_random);
+        key_data.extend_from_slice(&session.client_random);
+        key_data.extend_from_slice(b"key expansion");
+        let key_material = self.hash_manager.hash_sha256(&key_data)?;
         
         // Split key material into individual keys
         let session_keys = TlsSessionKeys {
@@ -519,6 +517,13 @@ impl TlsHandshakeManager {
             TlsCipherSuite::AES256CbcSha256 => [0x00, 0x3D],
             _ => [0x00, 0x9D], // Default to AES256-GCM-SHA384
         }
+    }
+
+    fn bytes_to_hex(&self, bytes: &[u8]) -> String {
+        bytes.iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<String>>()
+            .join("")
     }
 }
 

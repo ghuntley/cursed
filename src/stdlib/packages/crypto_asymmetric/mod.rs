@@ -20,6 +20,8 @@ pub mod asymmetric;
 pub mod key_validation;
 pub mod hardware_acceleration;
 pub mod key_formats;
+pub mod public_key;
+pub mod private_key;
 
 // Core functionality exports
 pub use key_generator::{KeyGenerator, AsymmetricAlgorithm, GeneratedKeyPair, KeyGeneratorError};

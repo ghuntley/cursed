@@ -117,6 +117,10 @@ struct CodeBlockAnalysis {
     local_variables: Vec<String>,
     dependencies: Vec<String>,
     complexity_score: usize,
+    variables_used: Vec<String>,
+    variables_declared: Vec<String>,
+    functions_called: Vec<String>,
+    has_return: bool,
 }
 
 /// Import statement information
@@ -125,6 +129,13 @@ struct ImportStatement {
     path: String,
     line: usize,
     is_used: bool,
+}
+
+/// Function parameter for extracted functions
+#[derive(Debug, Clone)]
+struct FunctionParameter {
+    name: String,
+    type_name: String,
 }
 
 impl RefactoringProvider {
@@ -212,7 +223,7 @@ impl RefactoringProvider {
     }
 
     /// Get text in range
-    fn get_text_in_range(&self, content: &str, range: Range) -> String {
+    fn get_text_in_range(&self, content: &str, range: &Range) -> Option<String> {
         let lines: Vec<&str> = content.split("\n").collect();
         if range.start.line == range.end.line {
             // Single line
@@ -220,12 +231,12 @@ impl RefactoringProvider {
                 let start = range.start.character as usize;
                 let end = range.end.character as usize;
                 if start <= line.len() && end <= line.len() && start <= end {
-                    return line[start..end].to_string();
+                    return Some(line[start..end].to_string());
                 }
             }
         }
         // Multi-line would be more complex
-        String::new()
+        None
     }
 
     /// Analyze code block
@@ -236,6 +247,10 @@ impl RefactoringProvider {
             local_variables: Vec::new(),
             dependencies: Vec::new(),
             complexity_score: code.split("\n").count(),
+            variables_used: self.extract_variables_from_code(code),
+            variables_declared: self.extract_declared_variables_from_code(code),
+            functions_called: self.extract_function_calls_from_code(code),
+            has_return: code.contains("vibez") || code.contains("bounce"),
         }
     }
 
@@ -346,9 +361,12 @@ impl RefactoringProvider {
     }
 
     /// Check if can extract function
-    fn can_extract_function(&self, content: &str, range: Range) -> bool {
-        let text = self.get_text_in_range(content, range);
-        !text.trim().is_empty() && text.split("\n").count() > 1
+    fn can_extract_function(&self, content: &str, range: &Range) -> bool {
+        if let Some(text) = self.get_text_in_range(content, range) {
+            !text.trim().is_empty() && text.split("\n").count() > 1
+        } else {
+            false
+        }
     }
 
     /// Create extract function action
@@ -367,9 +385,12 @@ impl RefactoringProvider {
     }
 
     /// Check if can extract variable
-    fn can_extract_variable(&self, content: &str, range: Range) -> bool {
-        let text = self.get_text_in_range(content, range);
-        !text.trim().is_empty() && !text.contains('\n')
+    fn can_extract_variable(&self, content: &str, range: &Range) -> bool {
+        if let Some(text) = self.get_text_in_range(content, range) {
+            !text.trim().is_empty() && !text.contains('\n')
+        } else {
+            false
+        }
     }
 
     /// Create extract variable action
@@ -524,15 +545,14 @@ impl RefactoringProvider {
         let function_code = self.generate_function_code(
             &options.function_name,
             &parameters,
-            return_type.as_deref(),
             &selected_text,
+            return_type.as_deref(),
         );
         
         // Generate function call to replace selected code
         let function_call = self.generate_function_call(
             &options.function_name,
             &parameters,
-            return_type.is_some(),
         );
         
         // Create text edits
@@ -545,15 +565,14 @@ impl RefactoringProvider {
         });
         
         // Insert new function (find appropriate location)
-        if let Some(insertion_point) = self.find_function_insertion_point(content) {
-            text_edits.push(TextEdit {
-                range: Range {
-                    start: insertion_point,
-                    end: insertion_point,
-                },
-                new_text: format!("\n{}\n", function_code),
-            });
-        }
+        let insertion_point = self.find_function_insertion_point(content, options.selection_range.start);
+        text_edits.push(TextEdit {
+            range: Range {
+                start: insertion_point,
+                end: insertion_point,
+            },
+            new_text: format!("\n{}\n", function_code),
+        });
         
         let mut changes = HashMap::new();
         changes.insert(uri.clone(), text_edits);
@@ -592,15 +611,14 @@ impl RefactoringProvider {
         let mut text_edits = Vec::new();
         
         // Insert variable declaration at appropriate location
-        if let Some(insertion_point) = self.find_variable_insertion_point(content, &options.selection_range) {
-            text_edits.push(TextEdit {
-                range: Range {
-                    start: insertion_point,
-                    end: insertion_point,
-                },
-                new_text: format!("{}\n", variable_declaration),
-            });
-        }
+        let insertion_point = self.find_variable_insertion_point(content, options.selection_range.start);
+        text_edits.push(TextEdit {
+            range: Range {
+                start: insertion_point,
+                end: insertion_point,
+            },
+            new_text: format!("{}\n", variable_declaration),
+        });
         
         // Replace all occurrences with variable name
         for range in ranges_to_replace {
@@ -628,25 +646,8 @@ impl RefactoringProvider {
         let import_analysis = self.analyze_imports(content);
         let organized_imports = self.organize_import_statements(&import_analysis);
         
-        if let Some((old_range, new_imports)) = organized_imports {
-            let mut text_edits = Vec::new();
-            
-            text_edits.push(TextEdit {
-                range: old_range,
-                new_text: new_imports,
-            });
-            
-            let mut changes = HashMap::new();
-            changes.insert(uri.clone(), text_edits);
-            
-            Some(WorkspaceEdit {
-                changes: Some(changes),
-                document_changes: None,
-                change_annotations: None,
-            })
-        } else {
-            None
-        }
+        // For now, just return None as this is a placeholder
+        None
     }
 
     /// Generate code actions for the given range
@@ -664,23 +665,29 @@ impl RefactoringProvider {
         
         // Extract function action
         if self.can_extract_function(content, &range) {
-            actions.push(self.create_extract_function_action(&range));
+            actions.push(CodeActionOrCommand::CodeAction(
+                self.create_extract_function_action(content, range.clone(), "extracted_function")
+            ));
         }
         
         // Extract variable action
         if self.can_extract_variable(content, &range) {
-            actions.push(self.create_extract_variable_action(&range));
+            actions.push(CodeActionOrCommand::CodeAction(
+                self.create_extract_variable_action(content, range.clone(), "extracted_variable")
+            ));
         }
         
         // Organize imports action
         if self.has_imports(content) {
-            actions.push(self.create_organize_imports_action());
+            actions.push(CodeActionOrCommand::CodeAction(
+                self.create_organize_imports_action(content)
+            ));
         }
         
         // Quick fixes for diagnostics
         for diagnostic in &context.diagnostics {
-            if let Some(quick_fix) = self.generate_quick_fix(content, diagnostic, uri) {
-                actions.push(quick_fix);
+            if let Some(quick_fix) = self.generate_quick_fix(diagnostic, content) {
+                actions.push(CodeActionOrCommand::CodeAction(quick_fix));
             }
         }
         
@@ -689,180 +696,15 @@ impl RefactoringProvider {
 
     // Helper methods
 
-    fn get_symbol_at_position(&self, content: &str, position: Position) -> Option<String> {
-        let lines: Vec<&str> = content.split("\n").collect();
-        let line_index = position.line as usize;
-        let char_index = position.character as usize;
 
-        if line_index >= lines.len() {
-            return None;
-        }
 
-        let line = lines[line_index];
-        let chars: Vec<char> = line.chars().collect();
 
-        if char_index >= chars.len() {
-            return None;
-        }
 
-        // Find word boundaries
-        let mut start = char_index;
-        let mut end = char_index;
 
-        // Move start backward
-        while start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
-            start -= 1;
-        }
 
-        // Move end forward
-        while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_') {
-            end += 1;
-        }
 
-        if start < end {
-            Some(chars[start..end].iter().collect())
-        } else {
-            None
-        }
-    }
 
-    fn get_symbol_range(&self, content: &str, position: Position, symbol: &str) -> Option<Range> {
-        let lines: Vec<&str> = content.split("\n").collect();
-        let line_index = position.line as usize;
 
-        if line_index < lines.len() {
-            let line = lines[line_index];
-            if let Some(symbol_start) = line.find(symbol) {
-                return Some(Range {
-                    start: Position {
-                        line: position.line,
-                        character: symbol_start as u32,
-                    },
-                    end: Position {
-                        line: position.line,
-                        character: (symbol_start + symbol.len()) as u32,
-                    },
-                });
-            }
-        }
-
-        None
-    }
-
-    fn is_renameable_symbol(&self, symbol: &str, _content: &str) -> bool {
-        // Check if symbol is a keyword that cannot be renamed
-        let keywords = [
-            "slay", "sus", "facts", "lowkey", "highkey", "periodt", "bestie", "flex", "yolo",
-            "stan", "vibez", "skrr", "yeet", "spill", "no_cap", "cap", "squad", "collab",
-            "nil", "import", "package", "async", "await", "match", "when"
-        ];
-        
-        !keywords.contains(&symbol)
-    }
-
-    fn find_all_symbol_references(&self, content: &str, symbol: &str, uri: &Url) -> Vec<Location> {
-        let mut references = Vec::new();
-        let lines: Vec<&str> = content.split("\n").collect();
-
-        for (line_num, line) in lines.iter().enumerate() {
-            let mut search_pos = 0;
-            while let Some(pos) = line[search_pos..].find(symbol) {
-                let actual_pos = search_pos + pos;
-                
-                // Check if it's a whole word (not part of another identifier)
-                let is_word_boundary = {
-                    let before_ok = actual_pos == 0 || 
-                        !line.chars().nth(actual_pos - 1).unwrap_or(' ').is_alphanumeric();
-                    let after_ok = {
-                        let end_pos = actual_pos + symbol.len();
-                        end_pos >= line.len() || 
-                        !line.chars().nth(end_pos).unwrap_or(' ').is_alphanumeric()
-                    };
-                    before_ok && after_ok
-                };
-
-                if is_word_boundary {
-                    references.push(Location {
-                        uri: uri.clone(),
-                        range: Range {
-                            start: Position {
-                                line: line_num as u32,
-                                character: actual_pos as u32,
-                            },
-                            end: Position {
-                                line: line_num as u32,
-                                character: (actual_pos + symbol.len()) as u32,
-                            },
-                        },
-                    });
-                }
-
-                search_pos = actual_pos + 1;
-            }
-        }
-
-        references
-    }
-
-    fn get_text_in_range(&self, content: &str, range: &Range) -> Option<String> {
-        let lines: Vec<&str> = content.split("\n").collect();
-        let start_line = range.start.line as usize;
-        let end_line = range.end.line as usize;
-
-        if start_line >= lines.len() || end_line >= lines.len() {
-            return None;
-        }
-
-        if start_line == end_line {
-            // Single line selection
-            let line = lines[start_line];
-            let start_char = range.start.character as usize;
-            let end_char = range.end.character as usize;
-            
-            if start_char <= line.len() && end_char <= line.len() && start_char <= end_char {
-                Some(line[start_char..end_char].to_string())
-            } else {
-                None
-            }
-        } else {
-            // Multi-line selection
-            let mut result = String::new();
-            
-            // First line
-            let first_line = lines[start_line];
-            let start_char = range.start.character as usize;
-            if start_char <= first_line.len() {
-                result.push_str(&first_line[start_char..]);
-                result.push('\n');
-            }
-            
-            // Middle lines
-            for line_index in (start_line + 1)..end_line {
-                result.push_str(lines[line_index]);
-                result.push('\n');
-            }
-            
-            // Last line
-            let last_line = lines[end_line];
-            let end_char = range.end.character as usize;
-            if end_char <= last_line.len() {
-                result.push_str(&last_line[..end_char]);
-            }
-            
-            Some(result)
-        }
-    }
-
-    fn analyze_code_block(&self, code: &str) -> CodeBlockAnalysis {
-        // Simplified analysis - in a real implementation, this would use the AST
-        CodeBlockAnalysis {
-            variables_used: self.extract_variables_from_code(code),
-            variables_declared: self.extract_declared_variables_from_code(code),
-            functions_called: self.extract_function_calls_from_code(code),
-            has_return: code.contains("vibez") || code.contains("bounce"),
-            complexity_score: self.calculate_complexity(code),
-        }
-    }
 
     fn extract_variables_from_code(&self, code: &str) -> Vec<String> {
         // Simple regex-based extraction - could be improved with AST analysis
@@ -1481,12 +1323,6 @@ struct CodeBlockAnalysisAdvanced {
     functions_called: Vec<String>,
     has_return: bool,
     complexity_score: u32,
-}
-
-#[derive(Debug, Clone)]
-struct FunctionParameter {
-    name: String,
-    type_name: String,
 }
 
 #[derive(Debug, Clone)]

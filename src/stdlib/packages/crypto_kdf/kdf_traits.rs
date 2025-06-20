@@ -223,7 +223,6 @@ pub trait ConstantTime {
 /// fr fr Unified KDF interface combining all traits
 pub trait UnifiedKdf: 
     KeyDerivationFunction + 
-    Configurable + 
     SecurityAssessment + 
     ConstantTime 
 {
@@ -239,14 +238,22 @@ pub trait UnifiedKdf:
     fn is_compatible_with(&self, other_name: &str, other_version: &str) -> bool {
         self.algorithm_name() == other_name && self.algorithm_version() == other_version
     }
+    
+    /// Get configuration as string
+    fn get_config_string(&self) -> String;
+    
+    /// Update configuration from string
+    fn update_config_string(&mut self, config: &str) -> KdfResult<()>;
 }
 
 /// fr fr KDF engine wrapper to unify different engine types
+#[derive(Debug)]
 pub struct KdfEngineWrapper {
     engine: KdfEngineType,
     config: String,
 }
 
+#[derive(Debug)]
 enum KdfEngineType {
     Pbkdf2(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine),
     Argon2(crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine),
@@ -443,19 +450,29 @@ impl UnifiedKdf for KdfEngineWrapper {
             KdfEngineType::Hkdf(_) => "RFC5869",
         }
     }
+    
+    fn get_config_string(&self) -> String {
+        self.config.clone()
+    }
+    
+    fn update_config_string(&mut self, config: &str) -> KdfResult<()> {
+        self.config = config.to_string();
+        Ok(())
+    }
 }
 
 /// fr fr KDF factory for creating instances
+#[derive(Debug)]
 pub struct KdfFactory;
 
 impl KdfFactory {
     /// slay Create KDF by algorithm name
-    pub fn create_kdf(algorithm: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
+    pub fn create_kdf(algorithm: &str) -> KdfResult<Box<dyn UnifiedKdf>> {
         Self::create_kdf_with_config(algorithm, "")
     }
     
     /// bestie Create KDF by algorithm name with configuration
-    pub fn create_kdf_with_config(algorithm: &str, config: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
+    pub fn create_kdf_with_config(algorithm: &str, config: &str) -> KdfResult<Box<dyn UnifiedKdf>> {
         match algorithm.to_lowercase().as_str() {
             "pbkdf2" => {
                 let pbkdf2_config = Self::parse_pbkdf2_config(config)?;
@@ -636,6 +653,7 @@ impl KdfFactory {
 }
 
 /// fr fr KDF utilities and helpers
+#[derive(Debug)]
 pub struct KdfUtils;
 
 impl KdfUtils {

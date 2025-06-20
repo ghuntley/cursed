@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use sysinfo::{System, SystemExt, CpuExt, DiskExt, NetworkExt, ProcessExt, Pid};
+use sysinfo::{System, Pid};
 use crate::stdlib::system::info::{SystemResult, SystemError};
 
 #[cfg(target_os = "linux")]

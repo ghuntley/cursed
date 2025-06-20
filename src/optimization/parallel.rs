@@ -12,7 +12,7 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 use crossbeam_channel::{Receiver, Sender, bounded, unbounded};
 use rayon::prelude::*;
-use sysinfo::{System, SystemExt, ProcessExt};
+use sysinfo::{System, Process};
 use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 
 /// Compilation job information

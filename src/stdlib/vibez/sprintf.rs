@@ -3,7 +3,7 @@
 /// Provides sprintf, snprintf and related functions that are compatible
 /// with C-style format strings for developers familiar with that syntax.
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use std::io::Write;
 use std::fmt;
 

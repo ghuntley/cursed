@@ -26,10 +26,12 @@ pub enum TokenType {
     Basic,      // default
     YeetError,  // panic (throw error)
     Catch,      // catch/recover
+    Later,      // defer statement
     Normie,     // int
     Tea,        // string
-    Cap,        // bool
-    NoCap,      // nil/null
+    Cap,        // true (bool literal)
+    NoCap,      // false (bool literal) 
+    Nil,        // nil/null value
     MainCharacter, // main function
     
     // Additional tokens for type system and control flow
@@ -177,6 +179,19 @@ impl Lexer {
                 continue;
             }
             break;
+        }
+        
+        // Check for CURSED comment syntax
+        if self.position < self.input.len() {
+            // Check for line comment "fr fr"
+            if self.starts_with("fr fr") {
+                return self.read_line_comment();
+            }
+            
+            // Check for block comment "no cap"
+            if self.starts_with("no cap") {
+                return self.read_block_comment();
+            }
         }
         
         if self.position >= self.input.len() {
@@ -618,15 +633,17 @@ impl Lexer {
             "basic" => TokenType::Basic,
             "yeet_error" => TokenType::YeetError,
             "catch" => TokenType::Catch,
+            "later" => TokenType::Later,
             "normie" => TokenType::Normie,
             "tea" => TokenType::Tea,
-            "cap" => TokenType::Cap,
-            "no_cap" => TokenType::NoCap,
+            "cap" => TokenType::Cap,      // true literal
+            "no_cap" => TokenType::NoCap, // false literal
+            "nil" => TokenType::Nil,      // nil/null value
             "main_character" => TokenType::MainCharacter,
             "dm" => TokenType::Dm,
             "async" => TokenType::Async,
             "await" => TokenType::Await,
-            "true" | "false" => TokenType::Boolean,
+            "true" | "false" => TokenType::Boolean, // Keep traditional boolean literals for compatibility
             _ => TokenType::Identifier,
         };
         
@@ -641,6 +658,62 @@ impl Lexer {
         let start_pos = self.position;
         let mut is_float = false;
         
+        // Check for special number formats
+        if self.current_char() == '0' && self.position + 1 < self.input.len() {
+            let next_char = self.peek_char();
+            match next_char {
+                'x' | 'X' => {
+                    // Hexadecimal: 0x or 0X
+                    self.advance(); // Skip '0'
+                    self.advance(); // Skip 'x'
+                    while self.position < self.input.len() && 
+                          (self.current_char().is_ascii_hexdigit()) {
+                        self.advance();
+                    }
+                    let literal = self.input[start_pos..self.position].to_string();
+                    return Ok(Token {
+                        token_type: TokenType::Integer,
+                        literal,
+                        location: start_location,
+                    });
+                }
+                'o' | 'O' => {
+                    // Octal: 0o or 0O
+                    self.advance(); // Skip '0'
+                    self.advance(); // Skip 'o'
+                    while self.position < self.input.len() && 
+                          self.current_char().is_digit(8) {
+                        self.advance();
+                    }
+                    let literal = self.input[start_pos..self.position].to_string();
+                    return Ok(Token {
+                        token_type: TokenType::Integer,
+                        literal,
+                        location: start_location,
+                    });
+                }
+                'b' | 'B' => {
+                    // Binary: 0b or 0B
+                    self.advance(); // Skip '0'
+                    self.advance(); // Skip 'b'
+                    while self.position < self.input.len() && 
+                          (self.current_char() == '0' || self.current_char() == '1') {
+                        self.advance();
+                    }
+                    let literal = self.input[start_pos..self.position].to_string();
+                    return Ok(Token {
+                        token_type: TokenType::Integer,
+                        literal,
+                        location: start_location,
+                    });
+                }
+                _ => {
+                    // Regular decimal number starting with 0
+                }
+            }
+        }
+        
+        // Regular decimal number
         while self.position < self.input.len() {
             let ch = self.current_char();
             if ch.is_numeric() {
@@ -691,6 +764,75 @@ impl Lexer {
         
         Ok(Token {
             token_type: TokenType::String,
+            literal,
+            location: start_location,
+        })
+    }
+    
+    fn starts_with(&self, pattern: &str) -> bool {
+        if self.position + pattern.len() > self.input.len() {
+            return false;
+        }
+        &self.input[self.position..self.position + pattern.len()] == pattern
+    }
+    
+    fn read_line_comment(&mut self) -> Result<Token, Error> {
+        let start_location = self.current_location();
+        let start_pos = self.position;
+        
+        // Skip "fr fr"
+        for _ in 0..5 {
+            if self.position < self.input.len() {
+                self.advance();
+            }
+        }
+        
+        // Read until end of line
+        while self.position < self.input.len() && self.current_char() != '\n' {
+            self.advance();
+        }
+        
+        let literal = self.input[start_pos..self.position].to_string();
+        Ok(Token {
+            token_type: TokenType::Comment,
+            literal,
+            location: start_location,
+        })
+    }
+    
+    fn read_block_comment(&mut self) -> Result<Token, Error> {
+        let start_location = self.current_location();
+        let start_pos = self.position;
+        
+        // Skip "no cap"
+        for _ in 0..6 {
+            if self.position < self.input.len() {
+                self.advance();
+            }
+        }
+        
+        // Read until "on god"
+        while self.position < self.input.len() {
+            if self.starts_with("on god") {
+                // Include "on god" in the comment
+                for _ in 0..6 {
+                    if self.position < self.input.len() {
+                        self.advance();
+                    }
+                }
+                break;
+            }
+            
+            if self.current_char() == '\n' {
+                self.line += 1;
+                self.column = 1;
+            }
+            self.advance();
+        }
+        
+        let literal = self.input[start_pos..self.position].to_string();
+        Ok(Token {
+            token_type: TokenType::Comment,
             literal,
             location: start_location,
         })

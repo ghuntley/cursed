@@ -342,3 +342,18 @@ mod tests {
         initialize(); // Should not panic
     }
 }
+
+/// fr fr Create new ZLIB reader with default settings
+pub fn new_reader<R: Read>(reader: R) -> SquishResult<ZlibReader<R>> {
+    ZlibReader::new(reader)
+}
+
+/// bestie Create new ZLIB writer with default compression
+pub fn new_writer<W: Write>(writer: W) -> SquishResult<ZlibWriter<W>> {
+    ZlibWriter::new(writer)
+}
+
+/// periodt Create new ZLIB writer with specified compression level
+pub fn new_writer_level<W: Write>(writer: W, level: CompressionLevel) -> SquishResult<ZlibWriter<W>> {
+    ZlibWriter::with_level(writer, level)
+}

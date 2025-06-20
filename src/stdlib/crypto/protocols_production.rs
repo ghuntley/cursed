@@ -38,11 +38,12 @@ use sha2::{Sha256, Sha512};
 use blake3::Hasher as Blake3Hasher;
 use hmac::{Hmac, Mac};
 use hkdf::Hkdf;
-use aes_gcm::{Aes256Gcm, Key, Nonce, Aead, NewAead};
+use aes_gcm::{Aes256Gcm, Key, Nonce, KeyInit};
+use aes_gcm::aead::Aead;
 use chacha20poly1305::{ChaCha20Poly1305, XChaCha20Poly1305};
 use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar, constants::ED25519_BASEPOINT_TABLE};
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
-use ed25519_dalek::{Keypair as Ed25519Keypair, PublicKey as Ed25519PublicKey, SecretKey as Ed25519SecretKey, Signature as Ed25519Signature, Signer, Verifier};
+use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519VerifyingKey, Signature as Ed25519Signature, Signer, Verifier};
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
@@ -297,7 +298,8 @@ impl CryptoPrimitives {
 
     /// ChaCha20-Poly1305 encryption
     pub fn chacha20_encrypt(key: &[u8], nonce: &[u8], plaintext: &[u8], aad: &[u8]) -> ProtocolResult<Vec<u8>> {
-        use chacha20poly1305::{Key, Nonce, aead::Aead, aead::NewAead};
+        use chacha20poly1305::{Key, Nonce, KeyInit};
+        use chacha20poly1305::aead::Aead;
         
         if key.len() != 32 {
             return Err(ProtocolError::CryptographicError {
@@ -318,7 +320,8 @@ impl CryptoPrimitives {
 
     /// ChaCha20-Poly1305 decryption
     pub fn chacha20_decrypt(key: &[u8], nonce: &[u8], ciphertext: &[u8], aad: &[u8]) -> ProtocolResult<Vec<u8>> {
-        use chacha20poly1305::{Key, Nonce, aead::Aead, aead::NewAead};
+        use chacha20poly1305::{Key, Nonce, KeyInit};
+        use chacha20poly1305::aead::Aead;
         
         if key.len() != 32 {
             return Err(ProtocolError::CryptographicError {

@@ -3,7 +3,7 @@
 /// Provides comprehensive debug output functionality including pretty printing,
 /// debug inspection, trace output, and configurable debug levels.
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use std::io::{self, Write, stderr};
 use std::collections::HashMap;
 use std::sync::{Mutex, Arc};

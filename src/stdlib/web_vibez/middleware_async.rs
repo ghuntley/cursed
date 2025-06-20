@@ -13,43 +13,43 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn, error, instrument};
+use async_trait::async_trait;
 
 use std::future::Future;
 use std::pin::Pin;
 
 /// Middleware trait for processing requests and responses
+#[async_trait::async_trait]
 pub trait Middleware: Send + Sync {
     /// Process request before handler
-    fn before_request(
+    async fn before_request(
         &self,
         context: &mut RequestContext,
         response: &mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), MiddlewareError>> + Send + '_>> {
-        Box::pin(async move { Ok(()) })
+    ) -> Result<(), MiddlewareError> {
+        Ok(())
     }
 
     /// Process response after handler
-    fn after_response(
+    async fn after_response(
         &self,
         context: &RequestContext,
         response: &mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), MiddlewareError>> + Send + '_>> {
-        Box::pin(async move { Ok(()) })
+    ) -> Result<(), MiddlewareError> {
+        Ok(())
     }
 
     /// Handle middleware error
-    fn on_error(
+    async fn on_error(
         &self,
         context: &RequestContext,
         response: &mut ResponseContext,
         error: &MiddlewareError,
-    ) -> Pin<Box<dyn Future<Output = Result<(), MiddlewareError>> + Send + '_>> {
+    ) -> Result<(), MiddlewareError> {
         let error_msg = format!("Middleware error: {}", error);
-        Box::pin(async move {
-            response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
-            response.set_text(&error_msg);
-            Ok(())
-        })
+        response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
+        response.set_text(&error_msg);
+        Ok(())
     }
 
     /// Get middleware name for debugging

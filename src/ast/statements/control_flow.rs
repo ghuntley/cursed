@@ -307,5 +307,248 @@ impl Statement for TypeAliasStatement {
     }
 }
 
+/// Enum statement (choices)
+#[derive(Debug, Clone)]
+pub struct EnumStatement {
+    pub token: String,
+    pub name: String,
+    pub variants: Vec<String>,
+}
+
+impl Node for EnumStatement {
+    fn string(&self) -> String {
+        format!("choices {} {{ {} }}", self.name, self.variants.join(", "))
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for EnumStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(self.clone())
+    }
+}
+
+/// Constant statement (vibes name = value)
+#[derive(Debug, Clone)]
+pub struct ConstantStatement {
+    pub token: String,
+    pub name: String,
+    pub value: Box<dyn Expression>,
+    pub var_type: Option<String>,
+}
+
+impl Node for ConstantStatement {
+    fn string(&self) -> String {
+        let mut result = format!("vibes {} = {}", self.name, self.value.string());
+        if let Some(ref var_type) = self.var_type {
+            result = format!("vibes {} {} = {}", self.name, var_type, self.value.string());
+        }
+        result
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for ConstantStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ConstantStatement {
+            token: self.token.clone(),
+            name: self.name.clone(),
+            value: self.value.clone_box(),
+            var_type: self.var_type.clone(),
+        })
+    }
+}
+
+/// Module statement (module name { ... })
+#[derive(Debug, Clone)]
+pub struct ModuleStatement {
+    pub token: String,
+    pub name: String,
+    pub body: Vec<Box<dyn Statement>>,
+}
+
+impl Node for ModuleStatement {
+    fn string(&self) -> String {
+        let body_str: Vec<String> = self.body.iter().map(|s| s.string()).collect();
+        format!("module {} {{ {} }}", self.name, body_str.join("; "))
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for ModuleStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ModuleStatement {
+            token: self.token.clone(),
+            name: self.name.clone(),
+            body: self.body.iter().map(|s| s.clone_box()).collect(),
+        })
+    }
+}
+
+/// For-in statement 
+#[derive(Debug, Clone)]
+pub struct ForInStatement {
+    pub token: String,
+    pub identifier: String,
+    pub iterable: Box<dyn Expression>,
+    pub body: Box<dyn Statement>,
+}
+
+impl Node for ForInStatement {
+    fn string(&self) -> String {
+        format!("bestie {} periodt {} {{ {} }}", 
+                self.identifier, 
+                self.iterable.string(), 
+                self.body.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for ForInStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ForInStatement {
+            token: self.token.clone(),
+            identifier: self.identifier.clone(),
+            iterable: self.iterable.clone_box(),
+            body: self.body.clone_box(),
+        })
+    }
+}
+
+/// Do-while statement
+#[derive(Debug, Clone)]
+pub struct DoWhileStatement {
+    pub token: String,
+    pub body: Box<dyn Statement>,
+    pub condition: Box<dyn Expression>,
+}
+
+impl Node for DoWhileStatement {
+    fn string(&self) -> String {
+        format!("do {{ {} }} lowkey {}", self.body.string(), self.condition.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for DoWhileStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(DoWhileStatement {
+            token: self.token.clone(),
+            body: self.body.clone_box(),
+            condition: self.condition.clone_box(),
+        })
+    }
+}
+
+/// Try statement
+#[derive(Debug, Clone)]
+pub struct TryStatement {
+    pub token: String,
+    pub try_block: Box<dyn Statement>,
+    pub catch_block: Option<Box<dyn Statement>>,
+    pub finally_block: Option<Box<dyn Statement>>,
+}
+
+impl Node for TryStatement {
+    fn string(&self) -> String {
+        let mut result = format!("try {{ {} }}", self.try_block.string());
+        if let Some(ref catch_block) = self.catch_block {
+            result.push_str(&format!(" catch {{ {} }}", catch_block.string()));
+        }
+        if let Some(ref finally_block) = self.finally_block {
+            result.push_str(&format!(" finally {{ {} }}", finally_block.string()));
+        }
+        result
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for TryStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(TryStatement {
+            token: self.token.clone(),
+            try_block: self.try_block.clone_box(),
+            catch_block: self.catch_block.as_ref().map(|b| b.clone_box()),
+            finally_block: self.finally_block.as_ref().map(|b| b.clone_box()),
+        })
+    }
+}
+
+/// Return statement
+#[derive(Debug, Clone)]
+pub struct ReturnStatement {
+    pub token: String,
+    pub value: Option<Box<dyn Expression>>,
+}
+
+impl Node for ReturnStatement {
+    fn string(&self) -> String {
+        if let Some(ref value) = self.value {
+            format!("return {}", value.string())
+        } else {
+            "return".to_string()
+        }
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for ReturnStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ReturnStatement {
+            token: self.token.clone(),
+            value: self.value.as_ref().map(|v| v.clone_box()),
+        })
+    }
+}
+
 // Re-export type switch from the main type_switch module
 pub use crate::ast::type_switch::*;

@@ -3,7 +3,7 @@
 //! This module provides concrete implementations of the heap Interface
 //! for common data types, including integers, strings, and priority queues.
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use super::core::Interface;
 use super::{HeapResult, heap_error};
 

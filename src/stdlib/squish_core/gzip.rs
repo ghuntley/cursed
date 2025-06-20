@@ -369,3 +369,18 @@ mod tests {
         initialize(); // Should not panic
     }
 }
+
+/// fr fr Create new GZIP reader with default settings
+pub fn new_reader<R: Read>(reader: R) -> SquishResult<GzipReader<R>> {
+    GzipReader::new(reader)
+}
+
+/// bestie Create new GZIP writer with default compression
+pub fn new_writer<W: Write>(writer: W) -> SquishResult<GzipWriter<W>> {
+    GzipWriter::new(writer)
+}
+
+/// periodt Create new GZIP writer with specified compression level
+pub fn new_writer_level<W: Write>(writer: W, level: CompressionLevel) -> SquishResult<GzipWriter<W>> {
+    GzipWriter::with_level(writer, level)
+}

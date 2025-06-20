@@ -517,7 +517,7 @@ impl MemoryOptimizer {
         let is_running = Arc::clone(&self.is_running);
         
         thread::spawn(move || {
-            use sysinfo::{System, SystemExt, ProcessExt, Pid};
+            use sysinfo::{System, Process, Pid};
             let mut sys = System::new_all();
             let current_pid = Pid::from(std::process::id() as usize);
             

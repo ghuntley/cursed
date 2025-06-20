@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED - The Bratty Programming Language</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="brat-nav">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-text">CURSED</span>
+                <span class="logo-accent">⚡</span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link active">home</a>
+                <a href="install.html" class="nav-link">install</a>
+                <a href="docs.html" class="nav-link">docs</a>
+                <a href="#examples" class="nav-link">examples</a>
+                <a href="https://github.com/ghuntley/cursed" class="nav-link" target="_blank">github</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero">
+            <div class="hero-bg"></div>
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="title-main">CURSED</span>
+                        <span class="title-sub">programming language</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        the brattiest way to code ✨<br>
+                        gen z slang meets go-like grammar
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="install.html" class="btn btn-primary">get started</a>
+                        <a href="docs.html" class="btn btn-secondary">read the tea</a>
+                    </div>
+                </div>
+                
+                <div class="hero-code">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <div class="window-controls">
+                                <span class="control close"></span>
+                                <span class="control minimize"></span>
+                                <span class="control maximize"></span>
+                            </div>
+                            <span class="file-name">hello.csd</span>
+                        </div>
+                        <div class="code-content">
+<pre><code><span class="keyword">vibe</span> <span class="identifier">main</span>
+
+<span class="comment">fr fr this is a comment</span>
+<span class="keyword">yeet</span> <span class="string">"stdlib::io"</span>
+
+<span class="keyword">slay</span> <span class="function">main</span>() {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"periodt! it's giving main character energy ✨"</span>)
+    
+    <span class="keyword">sus</span> <span class="identifier">mood</span> = <span class="string">"absolutely iconic"</span>
+    <span class="keyword">lowkey</span> <span class="identifier">mood</span> == <span class="string">"iconic"</span> {
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"that's so fetch!"</span>)
+    } <span class="keyword">highkey</span> {
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"no cap detected! 🧢"</span>)
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">why cursed hits different</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">💅</div>
+                        <h3>gen z native</h3>
+                        <p>keywords that actually make sense in 2024. <code>slay</code> functions, <code>sus</code> variables, <code>lowkey</code> conditionals.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>performance queen</h3>
+                        <p>compiles to LLVM IR for that optimized performance. your code runs fast enough to keep up with your thoughts.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>self-hosting era</h3>
+                        <p>bootstrap compiler written in rust, but the final compiler is written in cursed itself. that's called eating your own cooking!</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🧠</div>
+                        <h3>go-like vibes</h3>
+                        <p>familiar syntax structure with garbage collection, goroutines (called <code>stan</code>), and channels (<code>dm</code>s).</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>type safety bestie</h3>
+                        <p>static typing with inference. no runtime surprises, just compile-time reality checks.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📦</div>
+                        <h3>package ecosystem</h3>
+                        <p>import packages with <code>yeet</code> and organize code with the <code>vibe</code> system. modularity that serves.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section id="examples" class="examples">
+            <div class="container">
+                <h2 class="section-title">code that slaps</h2>
+                <div class="examples-tabs">
+                    <button class="tab-btn active" data-tab="functions">functions</button>
+                    <button class="tab-btn" data-tab="control">control flow</button>
+                    <button class="tab-btn" data-tab="goroutines">concurrency</button>
+                    <button class="tab-btn" data-tab="structs">data types</button>
+                </div>
+                
+                <div class="tab-content active" id="functions">
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr define a function that absolutely serves</span>
+<span class="keyword">slay</span> <span class="function">fibonacci</span>(<span class="identifier">n</span> <span class="type">normie</span>) <span class="type">normie</span> {
+    <span class="keyword">lowkey</span> <span class="identifier">n</span> <= <span class="number">1</span> {
+        <span class="keyword">yolo</span> <span class="identifier">n</span>
+    }
+    <span class="keyword">yolo</span> <span class="function">fibonacci</span>(<span class="identifier">n</span><span class="operator">-</span><span class="number">1</span>) <span class="operator">+</span> <span class="function">fibonacci</span>(<span class="identifier">n</span><span class="operator">-</span><span class="number">2</span>)
+}
+
+<span class="comment">fr fr call it like this</span>
+<span class="keyword">sus</span> <span class="identifier">result</span> = <span class="function">fibonacci</span>(<span class="number">10</span>)
+<span class="identifier">io</span>.<span class="function">println</span>(<span class="identifier">result</span>) <span class="comment">fr fr prints 55</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="control">
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr conditional statements that understand the assignment</span>
+<span class="keyword">sus</span> <span class="identifier">age</span> = <span class="number">22</span>
+<span class="keyword">sus</span> <span class="identifier">vibe_status</span> = <span class="string">"unknown"</span>
+
+<span class="keyword">lowkey</span> <span class="identifier">age</span> < <span class="number">18</span> {
+    <span class="identifier">vibe_status</span> = <span class="string">"minor energy"</span>
+} <span class="keyword">highkey</span> <span class="identifier">age</span> < <span class="number">25</span> {
+    <span class="identifier">vibe_status</span> = <span class="string">"gen z chaos"</span>
+} <span class="keyword">highkey</span> {
+    <span class="identifier">vibe_status</span> = <span class="string">"millennial vibes"</span>
+}
+
+<span class="comment">fr fr switch statements with personality</span>
+<span class="keyword">vibe_check</span> <span class="identifier">mood</span> {
+    <span class="keyword">mood</span> <span class="string">"happy"</span>, <span class="string">"excited"</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"bestie is thriving! ✨"</span>)
+    <span class="keyword">mood</span> <span class="string">"sad"</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"sending virtual hugs 🫂"</span>)
+    <span class="keyword">basic</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"neutral energy"</span>)
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="goroutines">
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr concurrent programming that doesn't disappoint</span>
+<span class="keyword">slay</span> <span class="function">worker</span>(<span class="identifier">id</span> <span class="type">normie</span>, <span class="identifier">jobs</span> <span class="keyword">dm</span> <span class="type">normie</span>) {
+    <span class="keyword">bestie</span> <span class="identifier">job</span> := <span class="keyword">flex</span> <span class="identifier">jobs</span> {
+        <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"worker {} processing job {}\n"</span>, <span class="identifier">id</span>, <span class="identifier">job</span>)
+    }
+}
+
+<span class="keyword">slay</span> <span class="function">main</span>() {
+    <span class="keyword">sus</span> <span class="identifier">jobs</span> = <span class="function">make</span>(<span class="keyword">dm</span> <span class="type">normie</span>, <span class="number">5</span>)
+    
+    <span class="comment">fr fr spawn some workers</span>
+    <span class="keyword">bestie</span> <span class="identifier">w</span> := <span class="number">1</span>; <span class="identifier">w</span> <= <span class="number">3</span>; <span class="identifier">w</span>++ {
+        <span class="keyword">stan</span> <span class="function">worker</span>(<span class="identifier">w</span>, <span class="identifier">jobs</span>)
+    }
+    
+    <span class="comment">fr fr send work to the channel</span>
+    <span class="keyword">bestie</span> <span class="identifier">j</span> := <span class="number">1</span>; <span class="identifier">j</span> <= <span class="number">5</span>; <span class="identifier">j</span>++ {
+        <span class="identifier">jobs</span> <- <span class="identifier">j</span>
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="structs">
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr define structs that serve looks</span>
+<span class="keyword">be_like</span> <span class="type">Person</span> <span class="keyword">squad</span> {
+    <span class="identifier">name</span> <span class="type">tea</span>
+    <span class="identifier">age</span> <span class="type">normie</span>
+    <span class="identifier">vibe</span> <span class="type">tea</span>
+    <span class="identifier">is_main_character</span> <span class="type">vibes</span>
+}
+
+<span class="comment">fr fr methods that understand the assignment</span>
+<span class="keyword">slay</span> (<span class="identifier">p</span> <span class="type">Person</span>) <span class="function">introduce</span>() {
+    <span class="keyword">lowkey</span> <span class="identifier">p</span>.<span class="identifier">is_main_character</span> {
+        <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"hey bestie! i'm {} and i'm {} ✨\n"</span>, <span class="identifier">p</span>.<span class="identifier">name</span>, <span class="identifier">p</span>.<span class="identifier">vibe</span>)
+    } <span class="keyword">highkey</span> {
+        <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"hi, i'm {}, just vibing\n"</span>, <span class="identifier">p</span>.<span class="identifier">name</span>)
+    }
+}
+
+<span class="comment">fr fr create and use</span>
+<span class="keyword">sus</span> <span class="identifier">person</span> = <span class="type">Person</span>{
+    <span class="identifier">name</span>: <span class="string">"Taylor"</span>,
+    <span class="identifier">age</span>: <span class="number">24</span>,
+    <span class="identifier">vibe</span>: <span class="string">"absolutely iconic"</span>,
+    <span class="identifier">is_main_character</span>: <span class="literal">based</span>,
+}
+
+<span class="identifier">person</span>.<span class="function">introduce</span>()</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Getting Started Section -->
+        <section class="getting-started">
+            <div class="container">
+                <h2 class="section-title">ready to serve looks?</h2>
+                <div class="quick-start">
+                    <div class="install-steps">
+                        <div class="step">
+                            <span class="step-number">1</span>
+                            <div class="step-content">
+                                <h3>install cursed</h3>
+                                <div class="code-snippet">
+                                    <code>curl -sSL https://install.cursed.dev | sh</code>
+                                    <button class="copy-btn" onclick="copyToClipboard(this)">copy</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">2</span>
+                            <div class="step-content">
+                                <h3>create your first brat program</h3>
+                                <div class="code-snippet">
+                                    <code>echo 'vibe main; slay main() { println("it's giving programming energy") }' > hello.csd</code>
+                                    <button class="copy-btn" onclick="copyToClipboard(this)">copy</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">3</span>
+                            <div class="step-content">
+                                <h3>run it bestie</h3>
+                                <div class="code-snippet">
+                                    <code>cursed run hello.csd</code>
+                                    <button class="copy-btn" onclick="copyToClipboard(this)">copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cta-buttons">
+                        <a href="install.html" class="btn btn-primary large">full installation guide</a>
+                        <a href="docs.html" class="btn btn-secondary large">documentation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>cursed</h4>
+                    <p>the programming language that serves main character energy</p>
+                </div>
+                <div class="footer-section">
+                    <h4>resources</h4>
+                    <ul>
+                        <li><a href="docs.html">documentation</a></li>
+                        <li><a href="#examples">examples</a></li>
+                        <li><a href="install.html">installation</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>community</h4>
+                    <ul>
+                        <li><a href="https://github.com/ghuntley/cursed" target="_blank">github</a></li>
+                        <li><a href="https://github.com/ghuntley/cursed/issues" target="_blank">report issues</a></li>
+                        <li><a href="https://github.com/ghuntley/cursed/discussions" target="_blank">discussions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>vibes</h4>
+                    <p>made with 💚 and chaotic energy<br>
+                    by <a href="https://github.com/ghuntley" target="_blank">@ghuntley</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 cursed programming language. no cap detected. ✨</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

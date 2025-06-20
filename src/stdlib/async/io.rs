@@ -4,8 +4,10 @@ use std::task::{Context, Poll};
 use std::io::{self, Read, Write, Seek, BufRead, BufReader, BufWriter};
 use std::path::Path;
 
-use crate::runtime::r#async::{Future, Promise, PromiseResolver};
+use crate::runtime::r#async::{Promise, PromiseResolver};
 use crate::stdlib::r#async::{AsyncError, AsyncResult};
+use std::future::Future;
+use std::sync::{Arc, Mutex};
 
 /// Async read trait
 pub trait AsyncReader {
@@ -83,71 +85,119 @@ impl<R> AsyncBufReader<R> {
     }
 }
 
-impl<R: Read + Send> AsyncReader for AsyncBufReader<R> {
+impl<R: Read + Send + 'static> AsyncReader for AsyncBufReader<R> {
     async fn read(&mut self, buf: &mut [u8]) -> AsyncResult<usize> {
-        spawn_blocking_io(move || {
-            self.inner.read(buf).map_err(AsyncError::from)
-        }).await
+        let buffer_size = buf.len();
+        let (bytes_read, data) = spawn_blocking_io(move || {
+            let mut temp_buf = vec![0u8; buffer_size];
+            match self.inner.read(&mut temp_buf) {
+                Ok(n) => Ok((n, temp_buf)),
+                Err(e) => Err(AsyncError::from(e))
+            }
+        }).await?;
+        
+        let copy_len = bytes_read.min(buf.len());
+        buf[..copy_len].copy_from_slice(&data[..copy_len]);
+        Ok(bytes_read)
     }
 
     async fn read_exact(&mut self, buf: &mut [u8]) -> AsyncResult<()> {
-        spawn_blocking_io(move || {
-            self.inner.read_exact(buf).map_err(AsyncError::from)
-        }).await
+        let buffer_size = buf.len();
+        let data = spawn_blocking_io(move || {
+            let mut temp_buf = vec![0u8; buffer_size];
+            match self.inner.read_exact(&mut temp_buf) {
+                Ok(()) => Ok(temp_buf),
+                Err(e) => Err(AsyncError::from(e))
+            }
+        }).await?;
+        
+        buf.copy_from_slice(&data);
+        Ok(())
     }
 
     async fn read_to_end(&mut self, buf: &mut Vec<u8>) -> AsyncResult<usize> {
-        spawn_blocking_io(move || {
-            self.inner.read_to_end(buf).map_err(AsyncError::from)
-        }).await
+        let additional_data = spawn_blocking_io(move || {
+            let mut temp_buf = Vec::new();
+            match self.inner.read_to_end(&mut temp_buf) {
+                Ok(n) => Ok((n, temp_buf)),
+                Err(e) => Err(AsyncError::from(e))
+            }
+        }).await?;
+        
+        buf.extend_from_slice(&additional_data.1);
+        Ok(additional_data.0)
     }
 
     async fn read_to_string(&mut self, buf: &mut String) -> AsyncResult<usize> {
-        spawn_blocking_io(move || {
-            self.inner.read_to_string(buf).map_err(AsyncError::from)
-        }).await
+        let additional_string = spawn_blocking_io(move || {
+            let mut temp_string = String::new();
+            match self.inner.read_to_string(&mut temp_string) {
+                Ok(n) => Ok((n, temp_string)),
+                Err(e) => Err(AsyncError::from(e))
+            }
+        }).await?;
+        
+        buf.push_str(&additional_string.1);
+        Ok(additional_string.0)
     }
 }
 
 /// Async buffered writer
 pub struct AsyncBufWriter<W> {
-    inner: BufWriter<W>,
+    inner: Arc<Mutex<BufWriter<W>>>,
 }
 
 impl<W> AsyncBufWriter<W> {
     pub fn new(writer: W) -> Self {
         Self {
-            inner: BufWriter::new(writer),
+            inner: Arc::new(Mutex::new(BufWriter::new(writer))),
         }
     }
 
     pub fn with_capacity(cap: usize, writer: W) -> Self {
         Self {
-            inner: BufWriter::with_capacity(cap, writer),
+            inner: Arc::new(Mutex::new(BufWriter::with_capacity(cap, writer))),
         }
     }
 
-    pub fn into_inner(self) -> Result<W, BufWriter<W>> {
-        self.inner.into_inner()
+    pub fn into_inner(self) -> Result<W, Arc<Mutex<BufWriter<W>>>> {
+        match Arc::try_unwrap(self.inner) {
+            Ok(mutex) => {
+                let buf_writer = mutex.into_inner().unwrap();
+                match buf_writer.into_inner() {
+                    Ok(writer) => Ok(writer),
+                    Err(buf_writer) => Err(Arc::new(Mutex::new(buf_writer))),
+                }
+            }
+            Err(arc) => Err(arc),
+        }
     }
 }
 
-impl<W: Write + Send> AsyncWriter for AsyncBufWriter<W> {
+impl<W: Write + Send + 'static> AsyncWriter for AsyncBufWriter<W> {
     async fn write(&mut self, buf: &[u8]) -> AsyncResult<usize> {
+        let buf = buf.to_vec();
+        let inner = self.inner.clone();
         spawn_blocking_io(move || {
-            self.inner.write(buf).map_err(AsyncError::from)
+            let mut writer = inner.lock().unwrap();
+            writer.write(&buf).map_err(AsyncError::from)
         }).await
     }
 
     async fn write_all(&mut self, buf: &[u8]) -> AsyncResult<()> {
+        let buf = buf.to_vec();
+        let inner = self.inner.clone();
         spawn_blocking_io(move || {
-            self.inner.write_all(buf).map_err(AsyncError::from)
+            let mut writer = inner.lock().unwrap();
+            writer.write_all(&buf).map_err(AsyncError::from)
         }).await
     }
 
     async fn flush(&mut self) -> AsyncResult<()> {
+        let inner = self.inner.clone();
         spawn_blocking_io(move || {
-            self.inner.flush().map_err(AsyncError::from)
+            let mut writer = inner.lock().unwrap();
+            writer.flush().map_err(AsyncError::from)
         }).await
     }
 }
@@ -324,6 +374,59 @@ where
     Ok(total)
 }
 
+/// Adapter to convert std::future::Future to CURSED Future
+pub struct FutureAdapter<F> {
+    inner: F,
+}
+
+impl<F> FutureAdapter<F>
+where
+    F: std::future::Future,
+{
+    pub fn new(future: F) -> Self {
+        Self { inner: future }
+    }
+}
+
+impl<F> crate::runtime::r#async::Future for FutureAdapter<F>
+where
+    F: std::future::Future,
+{
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let inner = unsafe { self.map_unchecked_mut(|s| &mut s.inner) };
+        inner.poll(cx)
+    }
+}
+
+/// Bridge from CURSED Future to std::future::Future
+pub struct StdFutureAdapter<F> {
+    inner: F,
+}
+
+impl<F> StdFutureAdapter<F>
+where
+    F: crate::runtime::r#async::Future,
+{
+    pub fn new(future: F) -> Self {
+        Self { inner: future }
+    }
+}
+
+impl<F> std::future::Future for StdFutureAdapter<F>
+where
+    F: crate::runtime::r#async::Future,
+{
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let inner = unsafe { self.map_unchecked_mut(|s| &mut s.inner) };
+        let inner = unsafe { Pin::new_unchecked(inner) };
+        inner.poll(cx)
+    }
+}
+
 /// Helper function to spawn blocking I/O operation
 async fn spawn_blocking_io<F, R>(f: F) -> R
 where
@@ -337,7 +440,7 @@ where
         let _ = resolver.resolve(result);
     });
 
-    promise.await.unwrap_or_else(|_| panic!("IO operation failed"))
+    StdFutureAdapter::new(promise).await.unwrap_or_else(|_| panic!("IO operation failed"))
 }
 
 /// Public helper function for spawning blocking operations

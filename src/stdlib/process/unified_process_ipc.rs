@@ -705,11 +705,20 @@ impl UnifiedProcessIpcManager {
     fn create_platform_handler(platform_type: PlatformType) -> Result<Box<dyn PlatformHandler>, CursedError> {
         match platform_type {
             #[cfg(unix)]
-            PlatformType::Unix => Ok(Box::new(UnixPlatformHandler::new()?)),
+            PlatformType::Unix => {
+                use crate::stdlib::process::unix_platform::UnixPlatformHandler;
+                Ok(Box::new(UnixPlatformHandler::new()?))
+            }
             #[cfg(windows)]
-            PlatformType::Windows => Ok(Box::new(WindowsPlatformHandler::new()?)),
+            PlatformType::Windows => {
+                use crate::stdlib::process::windows_platform::WindowsPlatformHandler;
+                Ok(Box::new(WindowsPlatformHandler::new()?))
+            }
             #[cfg(target_os = "macos")]
-            PlatformType::MacOS => Ok(Box::new(MacOSPlatformHandler::new()?)),
+            PlatformType::MacOS => {
+                use crate::stdlib::process::macos_platform::MacOSPlatformHandler;
+                Ok(Box::new(MacOSPlatformHandler::new()?))
+            }
             #[allow(unreachable_patterns)]
             _ => Err(CursedError::Platform("Unsupported platform".to_string())),
         }
@@ -889,13 +898,7 @@ pub struct SecurityStatus {
     pub auditing_enabled: bool,
 }
 
-// Platform-specific implementations would be in separate modules
-#[cfg(unix)]
-// mod unix_platform; // Unix platform module exists at the crate level
-#[cfg(windows)]
-mod windows_platform;
-#[cfg(target_os = "macos")]
-mod macos_platform;
+// Platform-specific implementations are provided by parent module
 
 // Default implementations
 impl Default for UnifiedConfig {

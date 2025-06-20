@@ -316,3 +316,13 @@ mod tests {
         initialize(); // Should not panic
     }
 }
+
+/// fr fr Create new FLATE reader with default settings
+pub fn new_reader<R: Read>(reader: R) -> SquishResult<FlateReader<R>> {
+    FlateReader::new(reader)
+}
+
+/// bestie Create new FLATE writer with default compression
+pub fn new_writer<W: Write>(writer: W) -> SquishResult<FlateWriter<W>> {
+    FlateWriter::new(writer)
+}

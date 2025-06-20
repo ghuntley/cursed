@@ -12,7 +12,7 @@ use crate::parser::Parser;
 use crate::core::type_checker::{TypeChecker, Type};
 use crate::error::{CursedError, Error};
 use crate::ast::Program;
-use crate::import_resolution::ImportResolver;
+use crate::imports::{ImportResolver, ImportManager};
 
 /// Enhanced diagnostics provider with compiler integration
 pub struct DiagnosticsProvider {

@@ -610,6 +610,8 @@ pub fn recovery_stmt(protected_block: Box<dyn Statement>) -> RecoveryStatement {
 
 // Control flow statements module
 pub mod control_flow;
+pub mod variable;
 
 // Re-export control flow statements for convenience
 pub use control_flow::*;
+pub use variable::*;

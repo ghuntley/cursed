@@ -742,7 +742,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a statement with documentation comments
-    fn extract_from_statement_with_docs(&self, statement: &dyn Statement, module: &str, source: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_from_statement_with_docs(&self, statement: &Box<dyn Statement>, module: &str, source: &str) -> Result<Option<DocumentationItem>, Error> {
         use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
         use crate::ast::statements::variable::VariableStatement;
         use crate::ast::traits::Locatable;
@@ -800,7 +800,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a statement (legacy method)
-    fn extract_from_statement(&self, statement: &dyn Statement, module: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_from_statement(&self, statement: &Box<dyn Statement>, module: &str) -> Result<Option<DocumentationItem>, Error> {
         // Fallback to old method without source context
         self.extract_from_statement_with_docs(statement, module, "")
     }

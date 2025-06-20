@@ -16,7 +16,7 @@ use x509_parser::prelude::*;
 use x509_parser::certificate::X509Certificate as X509ParserCertificate;
 use x509_parser::extensions::*;
 use der::{Decode, Encode};
-use pem::{Pem, encode, parse};
+use pem;
 use sha1::Sha1;
 use sha2::{Sha256, Sha512, Digest};
 // Note: These RSA/ECDSA imports would be used in a full implementation
@@ -366,7 +366,7 @@ impl CertificateProcessor {
     }
     
     /// Convert x509-parser certificate to internal format
-    fn convert_x509_to_internal(&self, x509_cert: X509Certificate<'_>, raw_der: &[u8]) -> CertificateResult<crate::stdlib::crypto::certificates::X509Certificate> {
+    fn convert_x509_to_internal(&self, x509_cert: X509ParserCertificate<'_>, raw_der: &[u8]) -> CertificateResult<crate::stdlib::crypto::certificates::X509Certificate> {
         // Extract issuer DN
         let issuer = self.extract_distinguished_name(&x509_cert.issuer)?;
         

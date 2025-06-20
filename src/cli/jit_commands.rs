@@ -8,28 +8,28 @@ use crate::config::{JitConfig, parse_optimization_level};
 use crate::codegen::llvm::{LlvmCodeGenerator, CursedJitEngine, JitCompilationInterface, create_optimized_jit_interface, create_debug_jit_interface};
 use crate::runtime::{Runtime, JitRuntime};
 
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{Command, Arg, ArgMatches};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use inkwell::context::Context;
 
 /// Add JIT-related commands to the CLI
-pub fn add_jit_commands(app: App) -> App {
+pub fn add_jit_commands(app: Command) -> Command {
     app.subcommand(
-        SubCommand::with_name("jit")
+        Command::new("jit")
             .about("JIT compilation commands")
             .subcommand(
-                SubCommand::with_name("compile")
+                Command::new("compile")
                     .about("Compile CURSED code with JIT")
                     .arg(
-                        Arg::with_name("input")
+                        Arg::new("input")
                             .help("Input CURSED source file")
                             .required(true)
                             .index(1)
                     )
                     .arg(
-                        Arg::with_name("optimization")
+                        Arg::new("optimization")
                             .long("optimization")
                             .short("O")
                             .help("Optimization level: none, less, default, aggressive")
@@ -67,7 +67,7 @@ pub fn add_jit_commands(app: App) -> App {
                     )
             )
             .subcommand(
-                SubCommand::with_name("execute")
+                Command::new("execute")
                     .about("Execute JIT-compiled CURSED code")
                     .arg(
                         Arg::with_name("input")
@@ -103,7 +103,7 @@ pub fn add_jit_commands(app: App) -> App {
                     )
             )
             .subcommand(
-                SubCommand::with_name("benchmark")
+                Command::new("benchmark")
                     .about("Benchmark JIT compilation and execution performance")
                     .arg(
                         Arg::with_name("input")
@@ -140,10 +140,10 @@ pub fn add_jit_commands(app: App) -> App {
                     )
             )
             .subcommand(
-                SubCommand::with_name("config")
+                Command::new("config")
                     .about("JIT configuration management")
                     .subcommand(
-                        SubCommand::with_name("show")
+                        Command::new("show")
                             .about("Show current JIT configuration")
                             .arg(
                                 Arg::with_name("format")
@@ -154,7 +154,7 @@ pub fn add_jit_commands(app: App) -> App {
                             )
                     )
                     .subcommand(
-                        SubCommand::with_name("create")
+                        Command::new("create")
                             .about("Create JIT configuration file")
                             .arg(
                                 Arg::with_name("output")
@@ -173,7 +173,7 @@ pub fn add_jit_commands(app: App) -> App {
                             )
                     )
                     .subcommand(
-                        SubCommand::with_name("validate")
+                        Command::new("validate")
                             .about("Validate JIT configuration file")
                             .arg(
                                 Arg::with_name("config")
@@ -184,7 +184,7 @@ pub fn add_jit_commands(app: App) -> App {
                     )
             )
             .subcommand(
-                SubCommand::with_name("stats")
+                Command::new("stats")
                     .about("Show JIT compilation and execution statistics")
                     .arg(
                         Arg::with_name("input")

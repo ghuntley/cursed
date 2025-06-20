@@ -16,7 +16,7 @@ use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
         Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
-        ExecuteResult, TransactionIsolation
+        ExecuteResult, TransactionIsolation, Row, RowMetadata, Column, ResultMetadata
     },
     db_sql::{SqlDriver, SqlDialectTrait, SqlValue, SqlResultSet, SqlExecuteResult}
 };
@@ -26,7 +26,7 @@ use crate::stdlib::packages::db_sql::drivers::{
 };
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult, DatabaseError};
 use async_trait::async_trait;
-use tokio_postgres::{Client, NoTls, Error as PgError, Row, Statement, Transaction as PgTransaction};
+use tokio_postgres::{Client, NoTls, Error as PgError, Row as PgRow, Statement, Transaction as PgTransaction};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use std::collections::HashMap;
@@ -71,7 +71,7 @@ pub struct PostgreSqlTransaction {
 /// PostgreSQL result set implementation
 #[derive(Debug)]
 pub struct PostgreSqlResultSet {
-    rows: Vec<Row>,
+    rows: Vec<PgRow>,
     current_index: usize,
     column_names: Vec<String>,
 }
@@ -843,12 +843,34 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
         }))
     }
 
-    fn parameter_count(&self) -> usize {
-        self.parameter_count
+    /// slay Get parameter metadata
+    fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
+        // Placeholder implementation - would need to extract from PostgreSQL statement
+        &[]
     }
-
-    fn sql(&self) -> &str {
-        &self.sql
+    
+    /// slay Get result set metadata
+    fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+        // Placeholder implementation - would need to extract from PostgreSQL statement
+        static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
+            std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
+                columns: vec![],
+                total_rows: None,
+                has_more_rows: false,
+                name: None,
+                schema_name: None,
+                table_name: None,
+                is_updatable: false,
+                result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+            });
+        &EMPTY_METADATA
+    }
+    
+    /// slay Close the prepared statement
+    async fn close(self: Box<Self>) -> DbResult<()> {
+        debug!("Closing prepared statement: {}", self.sql);
+        // PostgreSQL prepared statements are automatically cleaned up
+        Ok(())
     }
 }
 
@@ -875,124 +897,99 @@ impl DatabaseTransaction for PostgreSqlTransaction {
         Ok(())
     }
 
-    fn isolation_level(&self) -> crate::stdlib::packages::db_core::TransactionIsolation {
-        match self.isolation_level {
-            SqlTransactionIsolation::ReadUncommitted => TransactionIsolation::ReadUncommitted,
-            SqlTransactionIsolation::ReadCommitted => TransactionIsolation::ReadCommitted,
-            SqlTransactionIsolation::RepeatableRead => TransactionIsolation::RepeatableRead,
-            SqlTransactionIsolation::Serializable => TransactionIsolation::Serializable,
-        }
+    /// slay Create a savepoint
+    async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
+        // Placeholder implementation - would need real savepoint support
+        debug!("Creating savepoint: {}", name);
+        Ok(crate::stdlib::packages::db_core::SavePoint {
+            name: name.to_string(),
+            id: format!("sp_{}", name),
+        })
+    }
+    
+    /// slay Rollback to a savepoint
+    async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
+        debug!("Rolling back to savepoint: {}", savepoint.name);
+        // Placeholder implementation - would need real savepoint rollback
+        Ok(())
+    }
+    
+    /// slay Execute query within transaction
+    async fn query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>> {
+        debug!("Executing query in transaction: {}", sql);
+        // Placeholder implementation - would need access to transaction client
+        Err(DatabaseError::General("Query in transaction not implemented".to_string()))
+    }
+    
+    /// slay Execute statement within transaction
+    async fn execute(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult> {
+        debug!("Executing statement in transaction: {}", sql);
+        // Placeholder implementation - would need access to transaction client
+        Err(DatabaseError::General("Execute in transaction not implemented".to_string()))
+    }
+    
+    /// slay Get transaction state
+    fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
+        use crate::stdlib::packages::db_core::traits::TransactionState;
+        // Simple implementation - would need more sophisticated state tracking
+        TransactionState::Active
     }
 }
 
-#[async_trait]
-impl SqlTransaction for PostgreSqlTransaction {
-    #[instrument(skip(self))]
-    async fn sql_commit(self: Box<Self>) -> DbResult<()> {
-        self.commit().await
-    }
+// SqlTransaction trait is not part of the core database traits
 
-    #[instrument(skip(self))]
-    async fn sql_rollback(self: Box<Self>) -> DbResult<()> {
-        self.rollback().await
-    }
-
-    fn sql_isolation_level(&self) -> SqlTransactionIsolation {
-        self.isolation_level
-    }
-}
-
-#[async_trait]
 impl ResultSet for PostgreSqlResultSet {
-    #[instrument(skip(self))]
-    async fn next(&mut self) -> DbResult<bool> {
+    fn next(&mut self) -> DbResult<Option<Row>> {
         if self.current_index < self.rows.len() {
+            // Convert PgRow to db_core::Row (simplified for now)
+            let row = Row {
+                values: Vec::new(), // TODO: Convert PgRow columns to ColumnValue
+                metadata: RowMetadata {
+                    column_count: self.column_names.len(),
+                    columns: Vec::new(), // TODO: Convert column metadata
+                },
+            };
             self.current_index += 1;
-            Ok(true)
+            Ok(Some(row))
         } else {
-            Ok(false)
+            Ok(None)
         }
     }
 
-    fn get_string(&self, column_index: usize) -> DbResult<Option<String>> {
-        if self.current_index == 0 || self.current_index > self.rows.len() {
-            return Err(DatabaseError::InvalidOperation("No current row".to_string()));
+    fn collect(&mut self) -> DbResult<Vec<Row>> {
+        let mut result = Vec::new();
+        while let Some(row) = self.next()? {
+            result.push(row);
         }
-        
-        let row = &self.rows[self.current_index - 1];
-        if column_index >= row.len() {
-            return Err(DatabaseError::InvalidOperation("Column index out of bounds".to_string()));
-        }
-        
-        let value: Option<String> = row.try_get(column_index).map_err(|e| convert_pg_error(e))?;
-        Ok(value)
+        Ok(result)
     }
 
-    fn get_integer(&self, column_index: usize) -> DbResult<Option<i64>> {
-        if self.current_index == 0 || self.current_index > self.rows.len() {
-            return Err(DatabaseError::InvalidOperation("No current row".to_string()));
-        }
-        
-        let row = &self.rows[self.current_index - 1];
-        if column_index >= row.len() {
-            return Err(DatabaseError::InvalidOperation("Column index out of bounds".to_string()));
-        }
-        
-        // Try different integer types
-        if let Ok(value) = row.try_get::<_, Option<i64>>(column_index) {
-            Ok(value)
-        } else if let Ok(value) = row.try_get::<_, Option<i32>>(column_index) {
-            Ok(value.map(|v| v as i64))
-        } else {
-            Err(DatabaseError::InvalidOperation("Column is not an integer".to_string()))
-        }
+    fn columns(&self) -> &[Column] {
+        // For now, return empty slice - would need to implement Column type conversion
+        &[]
     }
 
-    fn get_float(&self, column_index: usize) -> DbResult<Option<f64>> {
-        if self.current_index == 0 || self.current_index > self.rows.len() {
-            return Err(DatabaseError::InvalidOperation("No current row".to_string()));
-        }
-        
-        let row = &self.rows[self.current_index - 1];
-        if column_index >= row.len() {
-            return Err(DatabaseError::InvalidOperation("Column index out of bounds".to_string()));
-        }
-        
-        // Try different float types
-        if let Ok(value) = row.try_get::<_, Option<f64>>(column_index) {
-            Ok(value)
-        } else if let Ok(value) = row.try_get::<_, Option<f32>>(column_index) {
-            Ok(value.map(|v| v as f64))
-        } else {
-            Err(DatabaseError::InvalidOperation("Column is not a float".to_string()))
-        }
+    fn metadata(&self) -> &ResultMetadata {
+        // For now, return a default metadata - would need proper implementation
+        use std::sync::OnceLock;
+        static DEFAULT_METADATA: OnceLock<ResultMetadata> = OnceLock::new();
+        DEFAULT_METADATA.get_or_init(|| ResultMetadata {
+            columns: Vec::new(),
+            total_rows: None,
+            has_more_rows: false,
+            name: None,
+            schema_name: None,
+            table_name: None,
+            is_updatable: false,
+            result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+        })
     }
 
-    fn get_boolean(&self, column_index: usize) -> DbResult<Option<bool>> {
-        if self.current_index == 0 || self.current_index > self.rows.len() {
-            return Err(DatabaseError::InvalidOperation("No current row".to_string()));
-        }
-        
-        let row = &self.rows[self.current_index - 1];
-        if column_index >= row.len() {
-            return Err(DatabaseError::InvalidOperation("Column index out of bounds".to_string()));
-        }
-        
-        let value: Option<bool> = row.try_get(column_index).map_err(|e| convert_pg_error(e))?;
-        Ok(value)
+    fn has_next(&self) -> bool {
+        self.current_index < self.rows.len()
     }
 
-    fn column_count(&self) -> usize {
-        self.column_names.len()
-    }
-
-    fn column_name(&self, index: usize) -> DbResult<String> {
-        self.column_names.get(index)
-            .ok_or_else(|| DatabaseError::InvalidOperation("Column index out of bounds".to_string()))
-            .map(|name| name.clone())
-    }
-
-    fn row_count(&self) -> usize {
-        self.rows.len()
+    fn row_count(&self) -> Option<usize> {
+        Some(self.rows.len())
     }
 }

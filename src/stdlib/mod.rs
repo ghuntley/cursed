@@ -852,7 +852,7 @@ pub use oglogging::{
     Logger, new_logger,
     
     // Standard logger functions
-    spill, spillf, fatal, fatalf, shook, shookf,
+    spill, spillf, fatal, fatalf, shook as log_shook, shookf,
     set_flags, set_output, set_prefix, flags, prefix,
     
     // Format flags
@@ -1130,7 +1130,7 @@ pub use no_cap::{
     NoCapError, NoCapResult, ErrSyntax, ErrRange,
     
     // Type aliases
-    Tea, Lit, Normie,
+    Tea as ParseTea, Lit, Normie as ParseNormie,
     
     // Core parsing functions (String to Value)
     FactsCheck, YoinkInt, YoinkUint, YoinkFloat,
@@ -1242,7 +1242,7 @@ pub use stringz::{
 // MathZ - Mathematical functions with CURSED types and Gen Z naming
 pub use mathz::{
     // CURSED type aliases
-    Thicc, Smol, Chonky,
+    Thicc as MathThicc, Smol, Chonky,
     
     // Normie (i32) operations
     abs_normie, min_normie, max_normie, clamp_normie, sign_normie,
@@ -1373,7 +1373,7 @@ pub use lookin_glass::{
     Type as ReflectionType, Value as ReflectionValue, Kind, StructField, StructTag, Method,
     
     // Core reflection functions
-    type_of, value_of, new, zero, indirect,
+    type_of as reflect_type_of, value_of, new as reflect_new, zero, indirect,
     make_slice, make_map, make_chan, make_func,
     
     // Type construction helpers
@@ -1430,7 +1430,7 @@ pub use squish_core::{
                   new_compressor_with_options},
     
     // Statistics and performance monitoring
-    statistics::{CompressionStats, PerformanceMetrics, ModuleStats, OperationTimer,
+    statistics::{CompressionStats as StatCompressionStats, PerformanceMetrics as StatPerformanceMetrics, ModuleStats, OperationTimer,
                  get_module_stats, update_global_stats, record_global_failure,
                  start_operation, end_operation},
     

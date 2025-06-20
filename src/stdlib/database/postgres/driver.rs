@@ -6,8 +6,9 @@
 use std::sync::Arc;
 use std::time::SystemTime;
 use crate::stdlib::database::{
-    Driver, DriverConn, DatabaseError, DriverCapabilities, SqlIsolationLevel
+    Driver, DriverConn, DatabaseError, SqlIsolationLevel
 };
+use crate::stdlib::database::driver::DriverCapabilities;
 use super::config::{PostgresConfig, PostgresConnectionString};
 use super::connection::PostgresConnection;
 use super::pool::{PostgresPool, PostgresPoolConfig};

@@ -699,6 +699,7 @@ impl OptimizationConfig {
         
         config
     }
+}
 
 /// Command line arguments for optimization
 #[derive(Debug, Clone)]

@@ -1903,44 +1903,32 @@ impl BuildOrchestrator {
 
     /// Execute bootstrap compilation process
     #[instrument(skip(self))]
-    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapBuildConfig>) -> Result<BootstrapCompilationResult, BuildError> {
+    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapConfig>) -> Result<BootstrapBuildResult, BuildError> {
         info!("Starting bootstrap compilation through build orchestrator");
 
         let bootstrap_config = config.unwrap_or_else(|| {
-            let mut config = BootstrapBuildConfig::default();
-            config.build_config = self.config.clone();
-            config.verification_config.work_dir = self.work_dir.clone();
-            config
+            BootstrapConfig::default()
         });
 
-        let bootstrap_manager = BootstrapBuildManager::new(bootstrap_config, self.work_dir.clone());
+        let mut bootstrap_manager = BootstrapPipeline::new(bootstrap_config, self.work_dir.clone())?;
         
-        // Clone the orchestrator for bootstrap use (this is a workaround for the ownership issue)
-        let bootstrap_orchestrator = BuildOrchestrator::new(self.config.clone(), self.work_dir.clone())?;
-        
-        bootstrap_manager.execute_bootstrap_build(bootstrap_orchestrator).await
+        bootstrap_manager.execute_bootstrap(&self.config).await
+            .map_err(|e| BuildError::BootstrapError(e.to_string()))
     }
 
     /// Execute quick bootstrap verification
     #[instrument(skip(self))]
-    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapBuildConfig>) -> Result<BootstrapCompilationResult, BuildError> {
+    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapConfig>) -> Result<BootstrapBuildResult, BuildError> {
         info!("Starting quick bootstrap verification through build orchestrator");
 
         let bootstrap_config = config.unwrap_or_else(|| {
-            let mut config = BootstrapBuildConfig::default();
-            config.build_config = self.config.clone();
-            config.verification_config.work_dir = self.work_dir.clone();
-            config.max_stages = 2; // Quick verification with 2 stages
-            config.convergence_threshold = 0.8; // Lower threshold for quick check
-            config
+            BootstrapConfig::default()
         });
 
-        let bootstrap_manager = BootstrapBuildManager::new(bootstrap_config, self.work_dir.clone());
+        let mut bootstrap_manager = BootstrapPipeline::new(bootstrap_config, self.work_dir.clone())?;
         
-        // Clone the orchestrator for bootstrap use
-        let bootstrap_orchestrator = BuildOrchestrator::new(self.config.clone(), self.work_dir.clone())?;
-        
-        bootstrap_manager.quick_bootstrap_verify(bootstrap_orchestrator).await
+        bootstrap_manager.execute_bootstrap(&self.config).await
+            .map_err(|e| BuildError::BootstrapError(e.to_string()))
     }
 
     /// Check bootstrap feasibility
@@ -2027,27 +2015,22 @@ slay main() -> normie {
     }
 
     /// Get bootstrap configuration recommendations
-    pub fn get_bootstrap_config_recommendations(&self) -> BootstrapBuildConfig {
-        let mut config = BootstrapBuildConfig::default();
-        config.build_config = self.config.clone();
-        config.verification_config.work_dir = self.work_dir.clone();
+    pub fn get_bootstrap_config_recommendations(&self) -> BootstrapConfig {
+        let mut config = BootstrapConfig::default();
 
         // Adjust based on system capabilities
         let cpu_count = num_cpus::get();
         if cpu_count >= 8 {
-            config.parallel_stages = false; // Keep sequential for reliability
-            config.max_stages = 4; // More stages for better verification
+            config.bootstrap_cycles = 4; // More cycles for better verification
         } else {
-            config.parallel_stages = false;
-            config.max_stages = 3; // Standard 3 stages
+            config.bootstrap_cycles = 3; // Standard 3 cycles
         }
 
         // Adjust timeouts based on expected performance
         config.stage_timeout = Duration::from_secs(if cpu_count >= 4 { 300 } else { 600 });
 
-        // Enable performance tracking for analysis
-        config.enable_performance_tracking = true;
-        config.keep_stage_artifacts = true; // Keep for debugging
+        // Enable features for analysis
+        config.keep_intermediates = true; // Keep for debugging
 
         config
     }
@@ -2109,7 +2092,7 @@ impl MemoryMonitor {
         let monitoring = Arc::clone(&self.monitoring);
         
         thread::spawn(move || {
-            use sysinfo::{System, SystemExt, ProcessExt, Pid};
+            use sysinfo::{System, Process, Pid};
             let mut sys = System::new_all();
             let current_pid = Pid::from(std::process::id() as usize);
             
