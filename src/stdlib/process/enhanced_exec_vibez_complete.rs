@@ -615,7 +615,7 @@ impl EnhancedProcess {
             
             let result = unsafe { libc::kill(self.pid as i32, sig) };
             if result == -1 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(CursedError::RuntimeError(format!("Failed to send signal {}: errno {}", sig, errno)));
             }
         }

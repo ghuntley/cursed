@@ -397,7 +397,7 @@ impl MessageQueue {
         };
         
         if queue_id < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno == libc::EEXIST {
                 // Queue was created by another process, try to get it
                 let queue_id = unsafe { libc::msgget(key, 0) };
@@ -456,7 +456,7 @@ impl MessageQueue {
         };
         
         if fd < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno == libc::EEXIST {
                 // Queue was created by another process, try to open it
                 let fd = unsafe {
@@ -577,7 +577,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "msgsnd", "Failed to send message"));
             }
             
@@ -608,7 +608,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "mq_send", "Failed to send POSIX message"));
             }
             
@@ -719,7 +719,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno == libc::ENOMSG {
                     return Err(message_queue_error(Some(&self.name), "receive", "No message available"));
                 }
@@ -749,7 +749,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno == libc::EAGAIN {
                     return Err(message_queue_error(Some(&self.name), "receive", "No message available"));
                 }
@@ -868,7 +868,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "msgctl", "Failed to get queue statistics"));
             }
             
@@ -898,7 +898,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "mq_getattr", "Failed to get POSIX queue attributes"));
             }
             
@@ -979,7 +979,7 @@ impl MessageQueue {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "msgctl", "Failed to delete message queue"));
             }
             
@@ -1007,7 +1007,7 @@ impl MessageQueue {
         };
         
         if result < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno != libc::ENOENT {
                 return Err(system_error(errno, "mq_unlink", "Failed to delete POSIX message queue"));
             }

@@ -956,7 +956,7 @@ impl EnhancedSlayProcess {
             
             let result = unsafe { libc::kill(self.pid as i32, sig) };
             if result == -1 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(CursedError::RuntimeError(format!("Failed to send signal {}: errno {}", sig, errno)));
             }
         }
@@ -1138,21 +1138,21 @@ impl EnhancedSlayProcess {
             
             unsafe {
                 if setrlimit(RLIMIT_AS, &mem_limit) == -1 {
-                    let errno = *libc::__errno_location();
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     warn!("Failed to set virtual memory limit: errno {}", errno);
                     // Don't fail completely, just warn
                 }
                 
                 // Also set data segment limit
                 if setrlimit(RLIMIT_DATA, &mem_limit) == -1 {
-                    let errno = *libc::__errno_location();
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     warn!("Failed to set data segment limit: errno {}", errno);
                 }
                 
                 // Set resident memory limit if available
                 #[cfg(target_os = "linux")]
                 if setrlimit(RLIMIT_RSS, &mem_limit) == -1 {
-                    let errno = *libc::__errno_location();
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     warn!("Failed to set resident memory limit: errno {}", errno);
                 }
             }

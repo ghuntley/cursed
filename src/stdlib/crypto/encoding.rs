@@ -1,4 +1,5 @@
 use crate::error::CursedError;
+use base64::{Engine as _, engine::general_purpose};
 use tracing::{debug, info, warn, error, instrument};
 
 /// Base64 encoding utilities for cryptographic operations

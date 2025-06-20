@@ -224,7 +224,7 @@ impl SharedMemory {
                 };
                 
                 if result < 0 {
-                    let errno = unsafe { *libc::__errno_location() };
+                    let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_error(errno, "shmdt", "Failed to detach shared memory"));
                 }
                 
@@ -239,7 +239,7 @@ impl SharedMemory {
                     };
                     
                     if result < 0 {
-                        let errno = unsafe { *libc::__errno_location() };
+                        let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                         return Err(system_error(errno, "munmap", "Failed to unmap POSIX shared memory"));
                     }
                 }
@@ -443,7 +443,7 @@ impl SharedMemory {
         };
         
         if segment_id < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno == libc::EEXIST {
                 // Segment was created by another process
                 let segment_id = unsafe { libc::shmget(key, 0, 0) };
@@ -503,7 +503,7 @@ impl SharedMemory {
         };
         
         if fd < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno == libc::EEXIST {
                 // Segment was created by another process, try to open it
                 let fd = unsafe {
@@ -525,7 +525,7 @@ impl SharedMemory {
         };
         
         if result < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             unsafe { libc::close(fd); }
             return Err(system_error(errno, "ftruncate", "Failed to set shared memory size"));
         }
@@ -603,7 +603,7 @@ impl SharedMemory {
             };
             
             if ptr == libc::MAP_FAILED {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "shmat", "Failed to attach to shared memory"));
             }
             
@@ -643,7 +643,7 @@ impl SharedMemory {
             };
             
             if ptr == libc::MAP_FAILED {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "mmap", "Failed to map POSIX shared memory"));
             }
             
@@ -765,7 +765,7 @@ impl SharedMemory {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "shmctl", "Failed to delete shared memory segment"));
             }
             
@@ -786,7 +786,7 @@ impl SharedMemory {
         };
         
         if result < 0 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             if errno != libc::ENOENT {
                 return Err(system_error(errno, "shm_unlink", "Failed to delete POSIX shared memory"));
             }
@@ -816,7 +816,7 @@ impl SharedMemory {
             };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "shmctl", "Failed to get segment statistics"));
             }
             
@@ -845,7 +845,7 @@ impl SharedMemory {
             let result = unsafe { libc::fstat(fd, &mut stat) };
             
             if result < 0 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "fstat", "Failed to get POSIX segment statistics"));
             }
             

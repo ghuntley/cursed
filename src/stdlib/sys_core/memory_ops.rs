@@ -106,7 +106,7 @@ pub fn mmap_memory(
         };
         
         if result == libc::MAP_FAILED {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("mmap", errno));
         }
         
@@ -128,7 +128,7 @@ pub fn munmap_memory(map: MemoryMap) -> SysCoreResult<()> {
     {
         let result = unsafe { libc::munmap(map.addr, map.size) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("munmap", errno));
         }
         Ok(())
@@ -151,7 +151,7 @@ pub fn mprotect_memory(addr: *mut libc::c_void, size: usize, protection: MemoryP
         
         let result = unsafe { libc::mprotect(addr, size, prot) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("mprotect", errno));
         }
         Ok(())
@@ -169,7 +169,7 @@ pub fn mlock_memory(addr: *const libc::c_void, size: usize) -> SysCoreResult<()>
     {
         let result = unsafe { libc::mlock(addr, size) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("mlock", errno));
         }
         Ok(())
@@ -187,7 +187,7 @@ pub fn munlock_memory(addr: *const libc::c_void, size: usize) -> SysCoreResult<(
     {
         let result = unsafe { libc::munlock(addr, size) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("munlock", errno));
         }
         Ok(())

@@ -953,7 +953,7 @@ impl SlayProcess {
             };
             
             if libc::setrlimit(libc::RLIMIT_AS, &rlim) != 0 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(ProcessError::SystemError {
                     code: errno,
                     operation: "setrlimit".to_string(),

@@ -103,7 +103,7 @@ pub fn get_resource_limit(resource: ResourceType) -> SysCoreResult<ResourceLimit
         let result = unsafe { libc::getrlimit(resource_id, &mut rlimit) };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("getrlimit", errno));
         }
         
@@ -143,7 +143,7 @@ pub fn set_resource_limit(resource: ResourceType, limit: ResourceLimit) -> SysCo
         let result = unsafe { libc::setrlimit(resource_id, &rlimit) };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("setrlimit", errno));
         }
         
@@ -202,7 +202,7 @@ pub fn get_resource_usage(who: ResourceUsageWho) -> SysCoreResult<ResourceUsage>
         let result = unsafe { libc::getrusage(who, &mut usage) };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("getrusage", errno));
         }
         

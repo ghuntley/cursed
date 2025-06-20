@@ -703,11 +703,11 @@ fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<RsaPrivateKey, Cur
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' parameter in RSA private JWK".to_string()))?;
     
     // Decode base64url parameters
-    let n_bytes = base64::decode_config(n_b64, base64::URL_SAFE_NO_PAD)
+    let n_bytes = general_purpose::URL_SAFE_NO_PAD.decode(n_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'n' base64: {}", e)))?;
-    let e_bytes = base64::decode_config(e_b64, base64::URL_SAFE_NO_PAD)
+    let e_bytes = general_purpose::URL_SAFE_NO_PAD.decode(e_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'e' base64: {}", e)))?;
-    let d_bytes = base64::decode_config(d_b64, base64::URL_SAFE_NO_PAD)
+    let d_bytes = general_purpose::URL_SAFE_NO_PAD.decode(d_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'd' base64: {}", e)))?;
     
     // Convert to RSA components
@@ -731,8 +731,8 @@ fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> Result<String, Cur
     
     let jwk = format!(
         r#"{{"kty":"RSA","use":"sig","n":"{}","e":"{}"}}"#,
-        base64::encode_config(n.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(e.to_bytes_be(), base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(n.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(e.to_bytes_be())
     );
     
     Ok(jwk)
@@ -753,14 +753,14 @@ fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<String, 
     
     let jwk = format!(
         r#"{{"kty":"RSA","use":"sig","n":"{}","e":"{}","d":"{}","p":"{}","q":"{}","dp":"{}","dq":"{}","qi":"{}"}}"#,
-        base64::encode_config(n.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(e.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(d.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(p.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(q.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(dp.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(dq.to_bytes_be(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(qi.to_bytes_be(), base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(n.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(e.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(d.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(p.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(q.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(dp.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(dq.to_bytes_be()),
+        general_purpose::URL_SAFE_NO_PAD.encode(qi.to_bytes_be())
     );
     
     Ok(jwk)
@@ -884,9 +884,9 @@ fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256PublicKey, Cur
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'y' parameter in EC JWK".to_string()))?;
     
     // Decode base64url coordinates
-    let x_bytes = base64::decode_config(x_b64, base64::URL_SAFE_NO_PAD)
+    let x_bytes = general_purpose::URL_SAFE_NO_PAD.decode(x_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'x' base64: {}", e)))?;
-    let y_bytes = base64::decode_config(y_b64, base64::URL_SAFE_NO_PAD)
+    let y_bytes = general_purpose::URL_SAFE_NO_PAD.decode(y_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'y' base64: {}", e)))?;
     
     // Create uncompressed point (0x04 prefix + x + y)
@@ -921,7 +921,7 @@ fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256SecretKey, Cu
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' parameter in EC private JWK".to_string()))?;
     
     // Decode base64url scalar
-    let d_bytes = base64::decode_config(d_b64, base64::URL_SAFE_NO_PAD)
+    let d_bytes = general_purpose::URL_SAFE_NO_PAD.decode(d_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'd' base64: {}", e)))?;
     
     // Parse as P-256 private key
@@ -945,8 +945,8 @@ fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> Result<String, C
     
     let jwk = format!(
         r#"{{"kty":"EC","crv":"P-256","use":"sig","x":"{}","y":"{}"}}"#,
-        base64::encode_config(x_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(y_bytes, base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(x_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(y_bytes)
     );
     
     Ok(jwk)
@@ -970,9 +970,9 @@ fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<String,
     
     let jwk = format!(
         r#"{{"kty":"EC","crv":"P-256","use":"sig","x":"{}","y":"{}","d":"{}"}}"#,
-        base64::encode_config(x_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(y_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(&d_bytes, base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(x_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(y_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(&d_bytes)
     );
     
     Ok(jwk)
@@ -981,7 +981,7 @@ fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<String,
 fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<String, CursedError> {
     let jwk = format!(
         r#"{{"kty":"OKP","crv":"Ed25519","x":"{}"}}"#,
-        base64::encode_config(public_key.as_bytes(), base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(public_key.as_bytes())
     );
     Ok(jwk)
 }
@@ -989,8 +989,8 @@ fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<String,
 fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> Result<String, CursedError> {
     let jwk = format!(
         r#"{{"kty":"OKP","crv":"Ed25519","d":"{}","x":"{}"}}"#,
-        base64::encode_config(&private_key.to_bytes(), base64::URL_SAFE_NO_PAD),
-        base64::encode_config(&private_key.verifying_key().as_bytes(), base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(&private_key.to_bytes()),
+        general_purpose::URL_SAFE_NO_PAD.encode(&private_key.verifying_key().as_bytes())
     );
     Ok(jwk)
 }
@@ -1020,9 +1020,9 @@ fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P384PublicKey, Cur
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'y' parameter in EC JWK".to_string()))?;
     
     // Decode base64url coordinates
-    let x_bytes = base64::decode_config(x_b64, base64::URL_SAFE_NO_PAD)
+    let x_bytes = general_purpose::URL_SAFE_NO_PAD.decode(x_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'x' base64: {}", e)))?;
-    let y_bytes = base64::decode_config(y_b64, base64::URL_SAFE_NO_PAD)
+    let y_bytes = general_purpose::URL_SAFE_NO_PAD.decode(y_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'y' base64: {}", e)))?;
     
     // Create uncompressed point (0x04 prefix + x + y)
@@ -1057,7 +1057,7 @@ fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P384SecretKey, Cu
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' parameter in EC private JWK".to_string()))?;
     
     // Decode base64url scalar
-    let d_bytes = base64::decode_config(d_b64, base64::URL_SAFE_NO_PAD)
+    let d_bytes = general_purpose::URL_SAFE_NO_PAD.decode(d_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'd' base64: {}", e)))?;
     
     // Parse as P-384 private key
@@ -1081,8 +1081,8 @@ fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> Result<String, C
     
     let jwk = format!(
         r#"{{"kty":"EC","crv":"P-384","use":"sig","x":"{}","y":"{}"}}"#,
-        base64::encode_config(x_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(y_bytes, base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(x_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(y_bytes)
     );
     
     Ok(jwk)
@@ -1106,9 +1106,9 @@ fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> Result<String,
     
     let jwk = format!(
         r#"{{"kty":"EC","crv":"P-384","use":"sig","x":"{}","y":"{}","d":"{}"}}"#,
-        base64::encode_config(x_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(y_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(&d_bytes, base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(x_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(y_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(&d_bytes)
     );
     
     Ok(jwk)
@@ -1139,9 +1139,9 @@ fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P521PublicKey, Cur
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'y' parameter in EC JWK".to_string()))?;
     
     // Decode base64url coordinates
-    let x_bytes = base64::decode_config(x_b64, base64::URL_SAFE_NO_PAD)
+    let x_bytes = general_purpose::URL_SAFE_NO_PAD.decode(x_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'x' base64: {}", e)))?;
-    let y_bytes = base64::decode_config(y_b64, base64::URL_SAFE_NO_PAD)
+    let y_bytes = general_purpose::URL_SAFE_NO_PAD.decode(y_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'y' base64: {}", e)))?;
     
     // Create uncompressed point (0x04 prefix + x + y)
@@ -1176,7 +1176,7 @@ fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P521SecretKey, Cu
         .ok_or_else(|| CursedError::InvalidArgument("Missing 'd' parameter in EC private JWK".to_string()))?;
     
     // Decode base64url scalar
-    let d_bytes = base64::decode_config(d_b64, base64::URL_SAFE_NO_PAD)
+    let d_bytes = general_purpose::URL_SAFE_NO_PAD.decode(d_b64)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid 'd' base64: {}", e)))?;
     
     // Parse as P-521 private key
@@ -1200,8 +1200,8 @@ fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> Result<String, C
     
     let jwk = format!(
         r#"{{"kty":"EC","crv":"P-521","use":"sig","x":"{}","y":"{}"}}"#,
-        base64::encode_config(x_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(y_bytes, base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(x_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(y_bytes)
     );
     
     Ok(jwk)
@@ -1225,9 +1225,9 @@ fn encode_p521_private_key_to_jwk(private_key: &P521SecretKey) -> Result<String,
     
     let jwk = format!(
         r#"{{"kty":"EC","crv":"P-521","use":"sig","x":"{}","y":"{}","d":"{}"}}"#,
-        base64::encode_config(x_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(y_bytes, base64::URL_SAFE_NO_PAD),
-        base64::encode_config(&d_bytes, base64::URL_SAFE_NO_PAD)
+        general_purpose::URL_SAFE_NO_PAD.encode(x_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(y_bytes),
+        general_purpose::URL_SAFE_NO_PAD.encode(&d_bytes)
     );
     
     Ok(jwk)

@@ -198,7 +198,7 @@ impl SafeProcessHandle {
             if libc::kill(self.pid as i32, signal) == 0 {
                 Ok(())
             } else {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 Err(system_error(errno, "kill", "Failed to send signal"))
             }
         }
@@ -550,7 +550,7 @@ fn apply_unix_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResul
             };
             
             if libc::setrlimit(libc::RLIMIT_AS, &rlim) != 0 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 tracing::warn!(pid = pid, errno = errno, "Failed to set memory limit");
             }
         }
@@ -565,7 +565,7 @@ fn apply_unix_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResul
             };
             
             if libc::setrlimit(libc::RLIMIT_NOFILE, &rlim) != 0 {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 tracing::warn!(pid = pid, errno = errno, "Failed to set file descriptor limit");
             }
         }

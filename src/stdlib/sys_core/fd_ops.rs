@@ -91,7 +91,7 @@ pub fn create_fd(path: &str, flags: i32, mode: u32) -> SysCoreResult<RawFd> {
         let fd = unsafe { libc::open(c_path.as_ptr(), flags, mode) };
         
         if fd == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("open", errno));
         }
         
@@ -110,7 +110,7 @@ pub fn close_fd(fd: RawFd) -> SysCoreResult<()> {
     {
         let result = unsafe { libc::close(fd) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("close", errno));
         }
         Ok(())
@@ -132,7 +132,7 @@ pub fn duplicate_fd(old_fd: RawFd, new_fd: Option<RawFd>) -> SysCoreResult<RawFd
         };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("dup/dup2", errno));
         }
         
@@ -151,13 +151,13 @@ pub fn get_fd_flags(fd: RawFd) -> SysCoreResult<FileDescriptorFlags> {
     {
         let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
         if flags == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("fcntl F_GETFL", errno));
         }
         
         let fd_flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
         if fd_flags == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("fcntl F_GETFD", errno));
         }
         
@@ -190,7 +190,7 @@ pub fn set_fd_flags(fd: RawFd, flags: FileDescriptorFlags) -> SysCoreResult<()> 
         
         let result = unsafe { libc::fcntl(fd, libc::F_SETFL, file_flags) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("fcntl F_SETFL", errno));
         }
         
@@ -201,7 +201,7 @@ pub fn set_fd_flags(fd: RawFd, flags: FileDescriptorFlags) -> SysCoreResult<()> 
         
         let result = unsafe { libc::fcntl(fd, libc::F_SETFD, fd_flags) };
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("fcntl F_SETFD", errno));
         }
         
@@ -231,7 +231,7 @@ pub fn poll_fds(fds: &[(RawFd, i16)], timeout: Option<Duration>) -> SysCoreResul
         let result = unsafe { libc::poll(poll_fds.as_mut_ptr(), poll_fds.len() as u64, timeout_ms) };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("poll", errno));
         }
         
@@ -305,7 +305,7 @@ pub fn select_fds(
         };
         
         if result == -1 {
-            let errno = unsafe { *libc::__errno_location() };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("select", errno));
         }
         
@@ -353,7 +353,7 @@ impl EpollOperations {
         {
             let fd = unsafe { libc::epoll_create1(libc::EPOLL_CLOEXEC) };
             if fd == -1 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_call_error("epoll_create1", errno));
             }
             self.epoll_fd = Some(fd);
@@ -378,7 +378,7 @@ impl EpollOperations {
             
             let result = unsafe { libc::epoll_ctl(epoll_fd, libc::EPOLL_CTL_ADD, fd, &mut event) };
             if result == -1 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_call_error("epoll_ctl ADD", errno));
             }
             
@@ -409,7 +409,7 @@ impl EpollOperations {
             };
             
             if result == -1 {
-                let errno = unsafe { *libc::__errno_location() };
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_call_error("epoll_wait", errno));
             }
             

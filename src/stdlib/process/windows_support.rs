@@ -817,7 +817,7 @@ pub fn kill_process(pid: u32) -> ProcessResult<()> {
             if libc::kill(pid as i32, 9) == 0 {
                 Ok(())
             } else {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 Err(system_error(errno, "kill", "Failed to kill process"))
             }
         }
@@ -836,7 +836,7 @@ pub fn terminate_process(pid: u32) -> ProcessResult<()> {
             if libc::kill(pid as i32, 15) == 0 {
                 Ok(())
             } else {
-                let errno = *libc::__errno_location();
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 Err(system_error(errno, "terminate", "Failed to terminate process"))
             }
         }
