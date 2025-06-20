@@ -678,9 +678,8 @@ impl SqlConnection for SqliteConnection {
 }
 
 // Implement ResultSet trait for SqliteResultSet
-#[async_trait]
 impl ResultSet for SqliteResultSet {
-    async fn next(&mut self) -> DbResult<Option<crate::stdlib::packages::db_core::Row>> {
+    fn next(&mut self) -> DbResult<Option<crate::stdlib::packages::db_core::Row>> {
         if self.current_index < self.rows.len() {
             let row = self.rows[self.current_index].clone();
             self.current_index += 1;
@@ -690,20 +689,28 @@ impl ResultSet for SqliteResultSet {
         }
     }
 
-    async fn seek(&mut self, position: usize) -> DbResult<()> {
-        if position <= self.rows.len() {
-            self.current_index = position;
-            Ok(())
-        } else {
-            Err(DatabaseError::query(
-                QueryError::ResultSetExhausted,
-                "Position beyond result set bounds"
-            ))
+    fn collect(&mut self) -> DbResult<Vec<crate::stdlib::packages::db_core::Row>> {
+        let mut result = Vec::new();
+        while let Some(row) = self.next()? {
+            result.push(row);
         }
+        Ok(result)
+    }
+
+    fn columns(&self) -> &[crate::stdlib::packages::db_core::Column] {
+        &self.metadata.columns
+    }
+
+    fn has_next(&self) -> bool {
+        self.current_index < self.rows.len()
     }
 
     fn metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
         &self.metadata
+    }
+
+    fn row_count(&self) -> Option<usize> {
+        Some(self.rows.len())
     }
 
     fn is_empty(&self) -> bool {

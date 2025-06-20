@@ -250,6 +250,26 @@ impl Error {
         Error::Repl(msg.to_string())
     }
 
+    /// Create a general error
+    pub fn general_error(msg: &str) -> Self {
+        Error::General(msg.to_string())
+    }
+
+    /// Create an I/O error
+    pub fn io_error(msg: String) -> Self {
+        Error::IO(msg)
+    }
+
+    /// Create a runtime error
+    pub fn runtime_error(msg: &str) -> Self {
+        Error::Runtime(msg.to_string())
+    }
+
+    /// Create a parse error
+    pub fn parse_error(msg: String) -> Self {
+        Error::Parse { message: msg, line: None, column: None }
+    }
+
     /// Create a panic error
     pub fn panic_error(message: String) -> Self {
         Error::Panic {
