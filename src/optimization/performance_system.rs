@@ -5,7 +5,7 @@
 
 use super::metrics::{CompilationStatistics, SystemStatistics, ResourceStatistics, MetricsCollector};
 use super::compilation_speed::CompilationSpeedOptimizer;
-use super::pgo::{PgoManager, PgoConfig};
+use super::pgo::{PgoSystem, PgoSystemConfig};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
@@ -97,11 +97,11 @@ impl PerformanceSystem {
     /// Create a new performance system with custom configuration
     pub fn with_config(config: PerformanceSystemConfig) -> Self {
         let pgo_config = if config.enable_pgo {
-            PgoConfig::default()
+            PgoSystemConfig::default()
         } else {
-            PgoConfig {
+            PgoSystemConfig {
                 enable_profiling: false,
-                ..PgoConfig::default()
+                ..PgoSystemConfig::default()
             }
         };
 

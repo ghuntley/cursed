@@ -1,7 +1,7 @@
 /// Key Derivation Functions for Cryptographic Protocols
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_hash_advanced::HashManager;
+use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use crate::stdlib::packages::crypto_random::SecureRandom;
 
 /// Key derivation function types

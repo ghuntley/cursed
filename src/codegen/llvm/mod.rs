@@ -61,6 +61,11 @@ pub mod web_vibez_integration;
 // Re-export from main module
 pub use main::*;
 
+// Re-export JIT engine types
+pub use jit_engine::{
+    CursedJitEngine, JitEngineConfig, JitEngineStats
+};
+
 // Re-export main optimization types
 pub use optimization::{OptimizationLevel, OptimizationConfig, OptimizationManager, LlvmOptimizer};
 pub use optimization_engine::{
