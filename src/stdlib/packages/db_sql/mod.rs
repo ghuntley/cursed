@@ -15,7 +15,7 @@ pub mod migration;
 
 // Driver implementations
 pub mod postgresql;
-pub mod mysql;
+// pub mod mysql;  // Temporarily disabled - mysql crate not available
 pub mod sqlite;
 
 // Re-export the important stuff for easy access
@@ -44,7 +44,7 @@ pub use migration::{
 
 // Driver-specific exports
 pub use postgresql::{PostgreSqlDriver, PostgreSqlConnection, PgError};
-pub use mysql::{MySqlDriver, MySqlConnection, MySqlError};
+// pub use mysql::{MySqlDriver, MySqlConnection, MySqlError};  // Temporarily disabled - mysql crate not available
 pub use sqlite::{SqliteDriver, SqliteConnection, SqliteError};
 
 use crate::stdlib::packages::db_core::{

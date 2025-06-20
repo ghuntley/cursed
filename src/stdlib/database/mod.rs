@@ -27,7 +27,7 @@ pub mod orm;
 // Database-specific drivers
 pub mod sqlite;
 pub mod postgres;
-pub mod mysql;
+// pub mod mysql;  // Temporarily disabled - mysql crate not available
 
 // Re-export main types for easy access
 pub use core::{

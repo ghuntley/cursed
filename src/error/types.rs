@@ -297,6 +297,166 @@ impl CursedErrorTrait for IoError {
     }
 }
 
+/// Cryptographic operation errors
+#[derive(Debug, Clone)]
+pub struct CryptoError {
+    pub code: String,
+    pub message: String,
+    pub source_location: Option<SourceLocation>,
+    pub crypto_operation: CryptoOperation,
+    pub algorithm: Option<String>,
+}
+
+/// Types of cryptographic operations that can fail
+#[derive(Debug, Clone, PartialEq)]
+pub enum CryptoOperation {
+    KeyGeneration,
+    Encryption,
+    Decryption,
+    Signing,
+    Verification,
+    Hashing,
+    RandomGeneration,
+    KeyDerivation,
+    CertificateValidation,
+    Other(String),
+}
+
+impl CryptoError {
+    pub fn new(code: String, message: String, operation: CryptoOperation) -> Self {
+        Self {
+            code,
+            message,
+            source_location: None,
+            crypto_operation: operation,
+            algorithm: None,
+        }
+    }
+
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
+        self.source_location = Some(location);
+        self
+    }
+
+    pub fn with_algorithm(mut self, algorithm: String) -> Self {
+        self.algorithm = Some(algorithm);
+        self
+    }
+
+    pub fn key_generation(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_KEY_GENERATION".to_string(),
+            format!("Key generation failed: {}", message),
+            CryptoOperation::KeyGeneration,
+        )
+    }
+
+    pub fn encryption_failed(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_ENCRYPTION_FAILED".to_string(),
+            format!("Encryption failed: {}", message),
+            CryptoOperation::Encryption,
+        )
+    }
+
+    pub fn decryption_failed(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_DECRYPTION_FAILED".to_string(),
+            format!("Decryption failed: {}", message),
+            CryptoOperation::Decryption,
+        )
+    }
+
+    pub fn invalid_key(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_INVALID_KEY".to_string(),
+            format!("Invalid key: {}", message),
+            CryptoOperation::KeyGeneration,
+        )
+    }
+
+    pub fn hash_error(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_HASH_ERROR".to_string(),
+            format!("Hash computation failed: {}", message),
+            CryptoOperation::Hashing,
+        )
+    }
+
+    pub fn random_error(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_RANDOM_ERROR".to_string(),
+            format!("Random generation failed: {}", message),
+            CryptoOperation::RandomGeneration,
+        )
+    }
+
+    pub fn general(message: &str) -> Self {
+        Self::new(
+            "CRYPTO_GENERAL".to_string(),
+            format!("Cryptographic error: {}", message),
+            CryptoOperation::Other("general".to_string()),
+        )
+    }
+}
+
+impl CursedErrorTrait for CryptoError {
+    fn category(&self) -> ErrorCategory {
+        ErrorCategory::Runtime  // Add Crypto category if needed
+    }
+
+    fn severity(&self) -> ErrorSeverity {
+        match self.crypto_operation {
+            CryptoOperation::KeyGeneration => ErrorSeverity::Error,
+            CryptoOperation::Encryption => ErrorSeverity::Error,
+            CryptoOperation::Decryption => ErrorSeverity::Error,
+            CryptoOperation::Signing => ErrorSeverity::Error,
+            CryptoOperation::Verification => ErrorSeverity::Warning,
+            CryptoOperation::Hashing => ErrorSeverity::Error,
+            CryptoOperation::RandomGeneration => ErrorSeverity::Critical,
+            CryptoOperation::KeyDerivation => ErrorSeverity::Error,
+            CryptoOperation::CertificateValidation => ErrorSeverity::Warning,
+            CryptoOperation::Other(_) => ErrorSeverity::Error,
+        }
+    }
+
+    fn error_code(&self) -> &str {
+        &self.code
+    }
+
+    fn message(&self) -> &str {
+        &self.message
+    }
+
+    fn source_location(&self) -> Option<&SourceLocation> {
+        self.source_location.as_ref()
+    }
+
+    fn cause(&self) -> Option<&dyn CursedErrorTrait> {
+        None
+    }
+
+    fn to_cursed_error(&self) -> CursedError {
+        CursedError::Runtime(self.message.clone())
+    }
+    
+    fn clone_box(&self) -> Box<dyn CursedErrorTrait> {
+        Box::new(self.clone())
+    }
+}
+
+impl fmt::Display for CryptoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}] {} (operation: {:?})", self.code, self.message, self.crypto_operation)?;
+        if let Some(algorithm) = &self.algorithm {
+            write!(f, " [algorithm: {}]", algorithm)?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for CryptoError {}
+
 impl fmt::Display for IoError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "I/O Error [{}]: {}", self.code, self.message)?;

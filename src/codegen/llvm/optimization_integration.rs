@@ -391,7 +391,7 @@ impl LlvmOptimizationIntegration {
     /// Print comprehensive optimization summary
     pub fn print_summary(&self) {
         println!("🚀 LLVM Optimization Integration Summary");
-        println!("=" .repeat(50));
+        println!("{}", "=".repeat(50));
         
         let stats = &self.current_state.stats;
         println!("📊 Optimization Statistics:");

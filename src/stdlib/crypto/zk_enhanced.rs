@@ -50,8 +50,8 @@ use hmac::{Hmac, Mac};
 
 // Arkworks imports for real ZK implementations
 use ark_ff::{Field, PrimeField, UniformRand, Zero, One};
-use ark_ec::{CurveGroup, AffineRepr};
-use ark_std::{rand::RngCore, vec::Vec as ArkVec};
+use ark_ec::{AffineCurve, ProjectiveCurve};
+use ark_std::{rand::RngCore as ArkRngCore, vec::Vec as ArkVec};
 use ark_bn254::{Fr as Bn254Fr, G1Projective as Bn254G1, G1Affine as Bn254G1Affine};
 use ark_bls12_381::{Fr as Bls12Fr, G1Projective as Bls12G1, G1Affine as Bls12G1Affine};
 use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
@@ -67,8 +67,8 @@ use ark_r1cs_std::{
 };
 use ark_groth16::{Groth16, ProvingKey, VerifyingKey, Proof as Groth16ProofInternal};
 use ark_poly::univariate::DensePolynomial;
-use ark_poly_commit::{PolynomialCommitment, kzg10::KZG10};
-use ark_ec::pairing::Pairing;
+use ark_poly_commit::{PolynomialCommitment as ArkPolynomialCommitment, kzg10::KZG10};
+use ark_ec::PairingEngine;
 
 use crate::error::CursedError;
 
@@ -1043,13 +1043,13 @@ impl Groth16Prover {
 
 /// Polynomial commitment scheme (KZG-style)
 #[derive(Debug, Clone)]
-pub struct PolynomialCommitment {
+pub struct CursedPolynomialCommitment {
     pub security_level: ZkSecurityLevel,
     pub max_degree: usize,
     pub setup_parameters: Vec<u8>, // Simplified setup storage
 }
 
-impl PolynomialCommitment {
+impl CursedPolynomialCommitment {
     /// Setup polynomial commitment scheme
     pub fn setup(security_level: ZkSecurityLevel, max_degree: usize, rng: &mut impl RngCore) -> ZkResult<Self> {
         if max_degree == 0 {

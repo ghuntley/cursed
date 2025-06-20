@@ -10,6 +10,10 @@
 //! - Build performance optimization
 
 pub mod config;
+pub mod metrics;
+pub mod compilation_speed;
+// pub mod pgo;  // Using existing pgo directory instead
+pub mod performance_system;
 pub mod baseline_storage;
 pub mod benchmarks;
 pub mod intelligent_recommendations;
@@ -559,3 +563,20 @@ pub enum RecommendationPriority {
     Medium,
     Low,
 }
+
+// New module exports
+pub use metrics::{
+    CompilationUnit, CompilationStatistics, SystemStatistics, ResourceStatistics,
+    MetricsCollector, MetricsSummary
+};
+pub use compilation_speed::{
+    CompilationSpeedOptimizer, CompilationResult, ResourceMonitor
+};
+pub use pgo::{
+    PgoDataCollector, PgoAnalyzer, PgoOptimizer, PgoConfig,
+    ProfileEntry, ProfileStorage, LlvmPgoIntegration
+};
+pub use performance_system::{
+    PerformanceSystem, PerformanceSystemConfig, PerformanceStatus,
+    PerformanceOptimizationLevel, CompilationStatus
+};
