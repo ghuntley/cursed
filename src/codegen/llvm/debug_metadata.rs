@@ -32,6 +32,34 @@ use std::fmt;
 
 use tracing::{debug, error, info, instrument, warn, span, Level};
 
+/// Debug statistics for LLVM debug metadata generation
+#[derive(Debug, Clone, Default)]
+pub struct DebugStats {
+    pub functions: usize,
+    pub variables: usize,
+    pub files: usize,
+    pub types: usize,
+}
+
+impl std::fmt::Display for DebugStats {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "DebugStats {{ functions: {}, variables: {}, files: {}, types: {} }}", 
+               self.functions, self.variables, self.files, self.types)
+    }
+}
+
+/// Trait for LLVM debug integration capabilities
+pub trait LlvmDebugIntegration {
+    /// Get debug statistics
+    fn get_debug_stats(&self) -> DebugStats;
+    
+    /// Enable debug information generation
+    fn enable_debug_info(&mut self, enabled: bool);
+    
+    /// Set debug optimization level
+    fn set_debug_optimization(&mut self, level: u32);
+}
+
 /// Simplified LLVM debug metadata generator
 pub struct LlvmDebugMetadata<'ctx> {
     /// LLVM context reference

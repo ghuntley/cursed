@@ -6,17 +6,17 @@
 // Core NoSQL modules
 pub mod drivers;
 pub mod document;
-pub mod mongodb;
+// pub mod mongodb;  // Temporarily disabled - mongodb crate not available
 pub mod redis;
 
 // Re-export important types
 pub use drivers::{NoSqlDriver, NoSqlConnection};
 pub use document::{Document, Collection};
-pub use mongodb::{
-    MongoDbDriver, MongoDbConnection, MongoDbDatabase, MongoDbCollection,
-    MongoDbConfig, MongoDbError, MongoDbQueryBuilder, MongoDbTransaction,
-    AggregationPipelineBuilder, WriteConcernConfig,
-};
+// pub use mongodb::{
+//     MongoDbDriver, MongoDbConnection, MongoDbDatabase, MongoDbCollection,
+//     MongoDbConfig, MongoDbError, MongoDbQueryBuilder, MongoDbTransaction,
+//     AggregationPipelineBuilder, WriteConcernConfig,
+// };  // Temporarily disabled - mongodb crate not available
 pub use redis::{RedisDriver, RedisConnection, RedisConfig, RedisConnectionPool};
 
 /// slay Initialize the db_nosql package
