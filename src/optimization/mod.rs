@@ -572,10 +572,7 @@ pub use metrics::{
 pub use compilation_speed::{
     CompilationSpeedOptimizer, CompilationResult, ResourceMonitor
 };
-pub use pgo::{
-    PgoDataCollector, PgoAnalyzer, PgoOptimizer, PgoConfig,
-    ProfileEntry, ProfileStorage, LlvmPgoIntegration
-};
+// PGO types already exported above in lines 120-124
 pub use performance_system::{
     PerformanceSystem, PerformanceSystemConfig, PerformanceStatus,
     PerformanceOptimizationLevel, CompilationStatus

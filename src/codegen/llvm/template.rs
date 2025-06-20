@@ -32,8 +32,9 @@ use crate::stdlib::template::{
 use crate::stdlib::template::template_syntax::{MatchCase};
 use super::{
     LlvmCodeGenerator, DummyContext, DummyModule, DummyBuilder, DummyFunction, 
-    DummyType, DummyValue, DummyBlock, LlvmType, LlvmValue, ExpressionContext
+    DummyType, DummyValue, DummyBlock
 };
+use crate::codegen::llvm::expression_compiler::{LlvmType, LlvmValue, ExpressionContext};
 
 /// Template compilation error types
 #[derive(Debug, Clone)]
