@@ -176,7 +176,7 @@ fn run_compiler(args: CliArgs) -> Result<(), CursedError> {
     
     // Read source file
     let source_code = fs::read_to_string(&args.input_file)
-        .map_err(|e| CursedError::General(format!("Failed to read source file: {}", e)))?;
+        .map_err(|e| CursedError::Io(format!("Failed to read source file: {}", e)))?;
     
     if args.verbose {
         debug!("Source code length: {} bytes", source_code.len());
@@ -280,7 +280,7 @@ fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs)
         // Output LLVM IR
         let ir_path = output_path.with_extension("ll");
         fs::write(&ir_path, result.to_string())
-            .map_err(|e| CursedError::General(format!("Failed to write LLVM IR: {}", e)))?;
+            .map_err(|e| CursedError::Io(format!("Failed to write LLVM IR: {}", e)))?;
         info!("LLVM IR written to: {}", ir_path.display());
     }
 
@@ -301,7 +301,7 @@ fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs)
     if !args.emit_llvm_ir && !args.emit_object && !args.emit_assembly {
         let ir_path = output_path.with_extension("ll");
         fs::write(&ir_path, result.to_string())
-            .map_err(|e| CursedError::General(format!("Failed to write LLVM IR: {}", e)))?;
+            .map_err(|e| CursedError::Io(format!("Failed to write LLVM IR: {}", e)))?;
         info!("LLVM IR written to: {}", ir_path.display());
     }
 

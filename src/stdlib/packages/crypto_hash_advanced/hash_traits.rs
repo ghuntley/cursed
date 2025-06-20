@@ -49,7 +49,7 @@ pub trait Hasher: Clone + Debug + Send + Sync {
             match reader.read(&mut buffer) {
                 Ok(0) => break,
                 Ok(n) => self.update(&buffer[..n]),
-                Err(e) => return Err(CursedError::IoError(format!("Read error: {}", e))),
+                Err(e) => return Err(CursedError::General(format!("Read error: {}", e))),
             }
         }
         Ok(self.clone().finalize())
