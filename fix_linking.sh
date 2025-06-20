@@ -1,0 +1,23 @@
+#!/bin/bash
+# CURSED Linking Fix for Nix Environment
+# 
+# This script fixes linking issues in the Nix development environment by:
+# 1. Setting correct library paths for SQLite, libffi, zlib, etc.
+# 2. Forcing BFD linker instead of mold which has compatibility issues
+# 3. Providing a transparent wrapper for cargo commands
+
+echo "🔧 CURSED Linking Fix - Setting up Nix environment for compilation..."
+
+# Export library paths for Nix store libraries
+export LIBRARY_PATH="/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib"
+
+# Force BFD linker to avoid mold compatibility issues
+export RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd"
+
+echo "📚 Library Path: $LIBRARY_PATH"
+echo "🛠️  Rust Flags: $RUSTFLAGS"
+echo "🚀 Executing: $*"
+echo ""
+
+# Execute the command with the fixed environment
+exec "$@"

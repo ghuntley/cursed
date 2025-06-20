@@ -30,7 +30,8 @@ use mongodb::{
 use futures::stream::TryStreamExt;
 
 use crate::stdlib::value::Value;
-use crate::error::{CursedError, ErrorKind};
+use crate::error::CursedError;
+use crate::stdlib::packages::ErrorKind;
 
 /// MongoDB-specific error types
 #[derive(Debug, Clone, Serialize, Deserialize)]

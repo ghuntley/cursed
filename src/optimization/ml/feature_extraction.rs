@@ -4,7 +4,7 @@
 /// for ML model training and prediction.
 
 use crate::error::{Error, Result};
-use crate::ast::{ASTNode, Expression, Statement, Function};
+use crate::ast::{AstNode, Expression, Statement, FunctionDeclaration};
 use crate::optimization::ml::CompilationContext;
 use std::collections::HashMap;
 use std::time::Duration;

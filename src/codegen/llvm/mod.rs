@@ -9,6 +9,7 @@ pub mod main;
 // Core LLVM code generation modules
 pub mod optimization;
 pub mod optimization_engine;
+pub mod optimization_integration;
 pub mod optimization_passes;
 pub mod optimization_pipeline;
 pub mod performance_monitor;
