@@ -63,7 +63,7 @@ pub use optimization::{
     MemoryLayoutOptimizer, AllocationOptimizer, PerformanceProfiler, PerformanceAnalyzer,
     LlvmPassManager, LtoManager, PgoManager, PassStatistics,
     LevelConfig, OptimizationSettings, ProfileCategory,
-    OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
+    OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults,
     CoordinatorOptimizationLevel, OptimizationFeature, IncrementalSavings, 
     ParallelPerformance, CachePerformance, OverallImprovement,
 };

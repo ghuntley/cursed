@@ -263,6 +263,9 @@ pub mod advanced_loop_optimization;
 pub mod profile_guided_optimization;
 pub mod link_time_optimization;
 pub mod advanced_coordinator;
+pub mod lto;
+pub mod llvm_passes;
+pub mod optimization_levels;
 
 /// High-level optimization manager that coordinates all optimization features
 pub struct OptimizationManager {

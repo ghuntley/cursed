@@ -6,6 +6,24 @@ use std::collections::HashMap;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
+/// System-level performance statistics
+#[derive(Debug, Clone, Default)]
+pub struct SystemStatistics {
+    pub cpu_usage: f64,
+    pub memory_usage: f64,
+    pub io_throughput: f64,
+    pub cache_hit_rate: f64,
+}
+
+/// Resource utilization statistics
+#[derive(Debug, Clone, Default)]
+pub struct ResourceStatistics {
+    pub total_memory: u64,
+    pub used_memory: u64,
+    pub cpu_cores: u32,
+    pub thread_count: u32,
+}
+
 /// Compilation unit for optimization tracking
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompilationUnit {
