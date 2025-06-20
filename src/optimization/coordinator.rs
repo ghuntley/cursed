@@ -2448,6 +2448,71 @@ impl Default for CoordinatorConfiguration {
     }
 }
 
+impl CoordinatorConfiguration {
+    /// Create development configuration optimized for fast compilation
+    pub fn development() -> Self {
+        Self {
+            max_parallel_optimizations: (num_cpus::get() / 2).max(1),
+            strategy_selection_timeout: Duration::from_secs(1),
+            cache_size_limit: 512 * 1024 * 1024, // 512MB
+            performance_monitoring_enabled: false,
+            adaptive_strategy_selection: false,
+            risk_tolerance: RiskTolerance {
+                acceptable_risk_levels: HashMap::new(),
+                risk_appetite: RiskAppetite::Conservative,
+                risk_capacity: RiskCapacity {
+                    maximum_acceptable_loss: 0.05,
+                    recovery_time_tolerance: Duration::from_secs(30),
+                    resource_buffer: 0.1,
+                },
+            },
+            energy_efficiency_priority: 0.1,
+        }
+    }
+
+    /// Create balanced configuration for development with some optimization
+    pub fn balanced() -> Self {
+        Self {
+            max_parallel_optimizations: num_cpus::get(),
+            strategy_selection_timeout: Duration::from_secs(3),
+            cache_size_limit: 768 * 1024 * 1024, // 768MB
+            performance_monitoring_enabled: true,
+            adaptive_strategy_selection: true,
+            risk_tolerance: RiskTolerance {
+                acceptable_risk_levels: HashMap::new(),
+                risk_appetite: RiskAppetite::Moderate,
+                risk_capacity: RiskCapacity {
+                    maximum_acceptable_loss: 0.08,
+                    recovery_time_tolerance: Duration::from_secs(45),
+                    resource_buffer: 0.15,
+                },
+            },
+            energy_efficiency_priority: 0.2,
+        }
+    }
+
+    /// Create release configuration optimized for maximum performance
+    pub fn release() -> Self {
+        Self {
+            max_parallel_optimizations: num_cpus::get() * 2,
+            strategy_selection_timeout: Duration::from_secs(10),
+            cache_size_limit: 2048 * 1024 * 1024, // 2GB
+            performance_monitoring_enabled: true,
+            adaptive_strategy_selection: true,
+            risk_tolerance: RiskTolerance {
+                acceptable_risk_levels: HashMap::new(),
+                risk_appetite: RiskAppetite::Aggressive,
+                risk_capacity: RiskCapacity {
+                    maximum_acceptable_loss: 0.15,
+                    recovery_time_tolerance: Duration::from_secs(120),
+                    resource_buffer: 0.3,
+                },
+            },
+            energy_efficiency_priority: 0.5,
+        }
+    }
+}
+
 // Supporting result types
 
 /// System information for context

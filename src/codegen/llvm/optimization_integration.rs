@@ -82,14 +82,14 @@ impl LlvmOptimizationIntegration {
         };
         
         let incremental_compiler = if config.enable_incremental_compilation {
-            Some(IncrementalCompiler::new(&config)?)
+            Some(crate::optimization::incremental::IncrementalCompiler::new(&config)?)
         } else {
             None
         };
         
         let benchmark_suite = if config.enable_profiling {
             let benchmark_config = BenchmarkConfig::default();
-            let benchmarks = OptimizationBenchmarks::new(config.clone());
+            let benchmarks = crate::optimization::benchmarks::BenchmarkRunner::new(config.clone());
             Some(benchmarks.create_suite(benchmark_config)?)
         } else {
             None

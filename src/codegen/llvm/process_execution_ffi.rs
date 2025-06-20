@@ -168,13 +168,13 @@ pub unsafe extern "C" fn cursed_exec_vibez(
     );
     
     // Create VibezCommand
-    let mut vibez_cmd = VibezCommand::new(&command_str, &args);
+    let mut vibez_cmd = Cmd::new(&command_str, &args);
     
     // Apply context if provided
     if !context_ptr.is_null() {
         // In a real implementation, we would deserialize context from the pointer
         // For now, we'll use default context
-        let context = VibezContext::default();
+        let context = ProcessContext::default();
         vibez_cmd = vibez_cmd.with_context(context);
     }
     

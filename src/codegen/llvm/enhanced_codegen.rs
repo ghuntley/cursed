@@ -167,29 +167,33 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         
         info!("Compiling AST with debug information");
         
-        match ast {
-            AST::Program { statements, location } => {
+        match &ast.node_type {
+            AstNodeType::Program(program) => {
                 // Set debug location for program start
                 if let Some(debug) = &mut self.debug_metadata {
-                    debug.set_debug_location_from_source(location)?;
+                    if let Some(location) = &ast.location {
+                        debug.set_debug_location_from_source(location)?;
+                    }
                 }
                 
-                for statement in statements {
+                for statement in &program.statements {
                     self.compile_statement(statement)?;
                 }
             }
-            AST::Module { name, items, location } => {
-                info!(module = %name, "Compiling module");
+            AstNodeType::ModuleDeclaration(module_decl) => {
+                info!(module = %module_decl.name.value, "Compiling module");
                 
                 if let Some(debug) = &mut self.debug_metadata {
-                    debug.set_debug_location_from_source(location)?;
+                    if let Some(location) = &ast.location {
+                        debug.set_debug_location_from_source(location)?;
+                    }
                 }
                 
-                for item in items {
-                    self.compile_ast(item)?;
+                for item in &module_decl.body {
+                    self.compile_statement(item)?;
                 }
             }
-            AST::Function(func_decl) => {
+            AstNodeType::FunctionDeclaration(func_decl) => {
                 self.compile_function(func_decl)?;
             }
             _ => {
