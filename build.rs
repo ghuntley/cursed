@@ -25,6 +25,12 @@ fn main() {
         }
     }
     
+    // macOS-specific configuration for dylib loading
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-search=native=/usr/local/lib");
+        println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
+    }
+    
     // Tell cargo to rerun build script if environment changes
     println!("cargo:rerun-if-env-changed=LIBRARY_PATH");
     println!("cargo:rerun-if-env-changed=PKG_CONFIG_PATH");

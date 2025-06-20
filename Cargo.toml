@@ -89,7 +89,7 @@ ring = "0.17"    # Comprehensive crypto library (alternative to RustCrypto)
 cbc = "0.1"      # CBC mode traits
 
 # Missing procedural macro dependencies
-zeroize = { version = "1.8", features = ["derive"] }  # Secure memory zeroing with derive
+zeroize = { version = "1.7", features = ["derive"] }  # Secure memory zeroing with derive
 zerofrom = { version = "0.1", features = ["derive"] }  # Zero-copy deserialization with derive
 pinned = "0.1"   # For pin_project_internal
 pin-project = "1.0"  # Pin projection for async code
@@ -108,7 +108,7 @@ rustls-pemfile = "1.0"       # PEM file parsing
 oid-registry = "0.6"         # OID registry for X.509 extensions
 asn1-rs = "0.5"              # ASN.1 parsing
 sha1 = "0.10"                # SHA-1 for certificate fingerprints
-time = { version = "0.3", features = ["macros", "parsing", "formatting"] }  # Time handling for certificate validity
+time = { version = "0.3.30", features = ["macros", "parsing", "formatting"] }  # Time handling for certificate validity
 
 # Post-quantum cryptography
 pqcrypto-kyber = "0.7"      # Kyber KEM
@@ -126,7 +126,7 @@ ark-ff = "0.3"          # Finite field arithmetic
 ark-ec = "0.3"          # Elliptic curve arithmetic  
 ark-std = "0.3"         # Standard library for arkworks
 ark-poly = "0.3"        # Polynomial arithmetic
-ark-serialize = "0.3"   # Serialization for arkworks
+ark-serialize = { version = "0.3", features = ["derive"] }   # Serialization for arkworks with derive support
 ark-bn254 = "0.3"       # BN254 curve for pairings
 ark-bls12-381 = "0.3"   # BLS12-381 curve for pairings
 ark-relations = "0.3"   # Constraint systems
@@ -156,9 +156,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] } # For tracin
 # Session store dependencies
 redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis client and session store
 
-# MongoDB dependencies
-mongodb = { version = "2.8", features = ["tokio-runtime", "bson-chrono-0_4"] }  # MongoDB driver
-bson = "2.9"           # BSON serialization/deserialization
+# MongoDB dependencies (temporarily disabled to resolve build issues)
+# mongodb = { version = "2.7", features = ["tokio-runtime", "bson-chrono-0_4"] }  # MongoDB driver
+# bson = "2.7"           # BSON serialization/deserialization
+derivative = "2.2"     # Enhanced derive macros
 
 # Math dependencies
 libm = "0.2"    # Mathematical functions
@@ -266,7 +267,7 @@ rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trac
 # redis already defined above
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL async driver
 postgres-types = { version = "0.2", features = ["derive", "with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL type system
-mysql = { version = "24.0", default-features = false, features = ["derive"] }  # MySQL driver
+# mysql = { version = "22.0", default-features = false, features = ["native-tls"] }  # MySQL driver (temporarily disabled due to yanked dependencies)
 bb8 = "0.8"                                        # Connection pooling
 bb8-postgres = "0.8"                               # PostgreSQL connection pool
 
