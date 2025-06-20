@@ -8,12 +8,12 @@ use crate::error::{Error, Result};
 use crate::optimization::{
     build_profiles::{BuildProfile, ProfileManager},
     config::{OptimizationConfig, OptimizationLevel},
-    compilation_speed::{CompilationUnit, CompilationStatus},
+    compilation_speed::CompilationUnit,
     benchmarking_types::{BenchmarkType, BenchmarkConfig, BenchmarkResults, BenchmarkingEngine},
     performance_system::{
         PerformanceSystemConfig, PerformanceMonitoringLevel, ParallelConfig, CacheConfig,
         CompilationPerformanceMetrics, AdaptiveDecision, AdaptiveDecisionType, PerformanceRecommendation,
-        RecommendationType, OptimizationSession,
+        RecommendationType, OptimizationSession, CompilationStatus,
     },
 };
 

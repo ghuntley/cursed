@@ -9,7 +9,7 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::config::{OptimizationConfig, OptimizationLevel};
-use crate::optimization::pgo::{PgoManager, PgoConfig, PgoSession};
+use crate::optimization::pgo::{PgoSystem, PgoSystemConfig, ProfileSession};
 use crate::optimization::real_llvm_passes::RealLlvmPassManager;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -33,7 +33,7 @@ pub struct ComprehensivePerformanceSystem<'ctx> {
     
     // Core optimization components
     llvm_optimizer: AdvancedLlvmOptimizer<'ctx>,
-    pgo_manager: PgoManager,
+    pgo_manager: PgoSystem,
     build_optimizer: BuildPerformanceOptimizer,
     runtime_monitor: RuntimePerformanceMonitor,
     
@@ -143,9 +143,13 @@ impl<'ctx> ComprehensivePerformanceSystem<'ctx> {
         
         // Initialize PGO manager
         let pgo_manager = if config.enable_pgo {
-            PgoManager::new(config.pgo_config.clone())?
+            PgoSystem::with_config(config.pgo_config.clone())?
         } else {
-            PgoManager::new(PgoConfig { enabled: false, ..PgoConfig::default() })?
+            PgoSystem::with_config(PgoSystemConfig { 
+                enable_collection: false, 
+                enable_optimization: false,
+                ..PgoSystemConfig::default() 
+            })?
         };
         
         // Initialize LLVM optimizer
