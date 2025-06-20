@@ -342,7 +342,7 @@ impl DocumentationSystem {
         let mut lexer = crate::lexer::Lexer::new(&source_code);
         let tokens = lexer.tokenize()?;
         
-        let mut parser = crate::parser::Parser::new(tokens);
+        let mut parser = crate::parser::Parser::from_tokens(tokens)?;
         let ast = parser.parse()?;
         
         // Extract documentation using the generator
