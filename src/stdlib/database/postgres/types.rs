@@ -273,6 +273,11 @@ impl ToSql for PostgresParam {
         }
     }
 
+    fn to_sql_checked(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
+        // Delegate to the main to_sql implementation
+        self.to_sql(ty, out)
+    }
+
     fn accepts(ty: &Type) -> bool {
         match *ty {
             Type::BOOL | Type::INT2 | Type::INT4 | Type::INT8 | Type::FLOAT4 | Type::FLOAT8

@@ -6,7 +6,8 @@
 use std::sync::Arc;
 use tokio_postgres::Transaction;
 use crate::stdlib::database::{
-    DriverTx, SqlValue, SqlIsolationLevel,
+    DriverTx, DriverStmt, SqlValue, SqlIsolationLevel, DatabaseError,
+    TxOptions, IsolationLevel,
     driver::{QueryResult, ExecuteResult}
 };
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
@@ -14,6 +15,7 @@ use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::connection::ConnectionStats;
 
 /// PostgreSQL transaction wrapper
+#[derive(Debug)]
 pub struct PostgresTransaction<'a> {
     /// Underlying tokio-postgres transaction
     transaction: Option<Transaction<'a>>,
@@ -317,7 +319,7 @@ impl<'a> DriverTx for PostgresTransaction<'a> {
         ))
     }
 
-    fn commit(self: Box<Self>) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn commit(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
         // Cannot commit async transaction in sync context
         Err(crate::stdlib::database::DatabaseError::new(
             crate::stdlib::database::DatabaseErrorKind::NotSupported,
@@ -325,12 +327,41 @@ impl<'a> DriverTx for PostgresTransaction<'a> {
         ))
     }
 
-    fn rollback(self: Box<Self>) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn rollback(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
         // Cannot rollback async transaction in sync context
         Err(crate::stdlib::database::DatabaseError::new(
             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Transaction rollback requires async context. Use async transaction methods instead.",
         ))
+    }
+
+    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+        // For async operations in sync context, return not supported error
+        Err(crate::stdlib::database::DatabaseError::new(
+            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+            "Transaction prepare requires async context. Use async transaction methods instead.",
+        ))
+    }
+
+    fn options(&self) -> &TxOptions {
+        // Return default options for sync context
+        &TxOptions {
+            isolation_level: Some(IsolationLevel::ReadCommitted),
+            read_only: false,
+        }
+    }
+
+    fn clone(&self) -> Box<dyn DriverTx> {
+        // PostgreSQL transactions cannot be cloned in a meaningful way
+        // Return an error transaction that will fail operations
+        Box::new(PostgresTransaction {
+            transaction: None,
+            state: Arc::clone(&self.state),
+            in_transaction: Arc::clone(&self.in_transaction),
+            connection_stats: Arc::clone(&self.connection_stats),
+            stats: self.stats.clone(),
+            savepoint_counter: self.savepoint_counter,
+        })
     }
 
     fn is_active(&self) -> bool {

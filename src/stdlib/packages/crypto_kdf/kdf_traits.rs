@@ -467,12 +467,12 @@ pub struct KdfFactory;
 
 impl KdfFactory {
     /// slay Create KDF by algorithm name
-    pub fn create_kdf(algorithm: &str) -> KdfResult<Box<dyn UnifiedKdf>> {
+    pub fn create_kdf(algorithm: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
         Self::create_kdf_with_config(algorithm, "")
     }
     
     /// bestie Create KDF by algorithm name with configuration
-    pub fn create_kdf_with_config(algorithm: &str, config: &str) -> KdfResult<Box<dyn UnifiedKdf>> {
+    pub fn create_kdf_with_config(algorithm: &str, config: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
         match algorithm.to_lowercase().as_str() {
             "pbkdf2" => {
                 let pbkdf2_config = Self::parse_pbkdf2_config(config)?;

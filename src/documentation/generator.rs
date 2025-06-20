@@ -397,7 +397,7 @@ impl DocumentationGenerator {
             
             AstNodeType::VariableDeclaration(var_decl) => {
                 if let Some(var_doc) = self.extract_variable_doc(var_decl, source_code)? {
-                    if var_decl.is_const {
+                    if !var_decl.is_mutable {
                         extracted.constants.push(var_doc);
                     } else {
                         extracted.variables.push(var_doc);
@@ -481,7 +481,7 @@ impl DocumentationGenerator {
         }
         
         // Extract documentation comment above the function
-        let description = self.extract_doc_comment_before(&func_decl.location, source_code)?;
+        let description = self.extract_doc_comment_before(&func_decl.token.location, source_code)?;
         
         // Extract parameters
         let mut parameters = Vec::new();
@@ -652,7 +652,7 @@ impl DocumentationGenerator {
         
         Ok(Some(DocumentationItem {
             name: var_decl.name.clone(),
-            kind: if var_decl.is_const { ItemKind::Constant } else { ItemKind::Variable },
+            kind: if !var_decl.is_mutable { ItemKind::Constant } else { ItemKind::Variable },
             description,
             location: var_decl.location.clone(),
             source_code: source_code_snippet,

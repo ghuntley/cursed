@@ -143,11 +143,11 @@ impl<R: Read + Send + 'static> AsyncReader for AsyncBufReader<R> {
 }
 
 /// Async buffered writer
-pub struct AsyncBufWriter<W> {
+pub struct AsyncBufWriter<W: std::io::Write> {
     inner: Arc<Mutex<BufWriter<W>>>,
 }
 
-impl<W> AsyncBufWriter<W> {
+impl<W: std::io::Write> AsyncBufWriter<W> {
     pub fn new(writer: W) -> Self {
         Self {
             inner: Arc::new(Mutex::new(BufWriter::new(writer))),

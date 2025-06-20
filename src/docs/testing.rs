@@ -339,7 +339,7 @@ impl DocumentationTester {
             let link_start = SystemTime::now();
             let link_result = self.check_links(&package_doc, version).await?;
             test_results.performance.link_check_time_ms = link_start.elapsed().unwrap().as_millis() as u64;
-            test_results.performance.links_checked = link_result.metrics.get("links_checked").unwrap_or(&0.0) as usize;
+            test_results.performance.links_checked = *link_result.metrics.get("links_checked").unwrap_or(&0.0) as usize;
             
             if !link_result.passed {
                 test_results.passed = false;
@@ -352,7 +352,7 @@ impl DocumentationTester {
             let example_start = SystemTime::now();
             let example_result = self.verify_examples(&package_doc, version).await?;
             test_results.performance.example_verify_time_ms = example_start.elapsed().unwrap().as_millis() as u64;
-            test_results.performance.examples_tested = example_result.metrics.get("examples_tested").unwrap_or(&0.0) as usize;
+            test_results.performance.examples_tested = *example_result.metrics.get("examples_tested").unwrap_or(&0.0) as usize;
             
             if !example_result.passed {
                 test_results.passed = false;

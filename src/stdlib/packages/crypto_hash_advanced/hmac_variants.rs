@@ -137,6 +137,29 @@ impl<H: Hasher + Clone> HmacEngine<H> {
     }
 }
 
+impl<H: Hasher + Clone> Hasher for HmacEngine<H> {
+    fn digest(&mut self, data: &[u8]) -> HashResult<Vec<u8>> {
+        self.finalize(data)
+    }
+
+    fn reset(&mut self) {
+        // Reset by recreating with the same configuration
+        if let Some(key) = &self.key.clone() {
+            *self = Self::new(self.hasher.clone(), self.variant, key).unwrap_or_else(|_| {
+                Self {
+                    hasher: self.hasher.clone(),
+                    variant: self.variant,
+                    key: None,
+                }
+            });
+        }
+    }
+
+    fn output_size(&self) -> usize {
+        self.digest_size()
+    }
+}
+
 impl<H: Hasher + Clone> KeyedHasher for HmacEngine<H> {
     fn set_key(&mut self, key: &[u8]) -> HashResult<()> {
         self.set_key(key).map_err(|e| CursedError::InvalidArgument(e.to_string()))
