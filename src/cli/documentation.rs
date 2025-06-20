@@ -273,7 +273,7 @@ async fn watch_and_regenerate(config: DocGeneratorConfig, input_path: &PathBuf) 
     use std::time::Instant;
 
     let (tx, rx) = channel();
-    let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(1))
+    let mut watcher: RecommendedWatcher = Watcher::new(tx, notify::Config::default())
         .map_err(|e| Error::General(format!("Failed to create file watcher: {}", e)))?;
 
     watcher.watch(input_path, RecursiveMode::Recursive)
