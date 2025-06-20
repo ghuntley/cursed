@@ -6,7 +6,7 @@
 use crate::error::{CursedError, Result};
 use crate::docs::generator::DocumentationGenerator;
 use crate::docs::registry::DocumentationRegistry;
-use crate::package::{Package, PackageManager};
+use crate::package_manager::{Package, PackageManager};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

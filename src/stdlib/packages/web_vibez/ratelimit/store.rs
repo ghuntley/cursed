@@ -2,10 +2,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
+use async_trait::async_trait;
 
 use super::{ClientState, RateLimitResult, RateLimitError, current_timestamp};
 
 /// fr fr Rate limit store trait - storage abstraction
+#[async_trait::async_trait]
 pub trait RateLimitStore: Send + Sync {
     /// fr fr Get client state from store - retrieve current status
     async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState>;
@@ -72,6 +74,7 @@ impl Default for InMemoryStore {
     }
 }
 
+#[async_trait::async_trait]
 impl RateLimitStore for InMemoryStore {
     async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
         let clients = self.clients.read().unwrap();
@@ -163,6 +166,7 @@ impl RedisStore {
     }
 }
 
+#[async_trait::async_trait]
 impl RateLimitStore for RedisStore {
     async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
         if self.connected {
@@ -237,6 +241,7 @@ impl DistributedStore {
     }
 }
 
+#[async_trait::async_trait]
 impl RateLimitStore for DistributedStore {
     async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
         // Try primary first

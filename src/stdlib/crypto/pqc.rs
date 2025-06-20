@@ -48,12 +48,13 @@ use pqcrypto_traits::kem::{PublicKey as KemPublicKey, SecretKey as KemSecretKey,
 use pqcrypto_traits::sign::{PublicKey as SignPublicKey, SecretKey as SignSecretKey, DetachedSignature};
 use pqcrypto_kyber::{kyber512, kyber768, kyber1024};
 use pqcrypto_dilithium::{dilithium2, dilithium3, dilithium5};
-use pqcrypto_sphincsplus::{sphincssha256128ssimple, sphincssha256192ssimple, sphincssha256256ssimple};
+use pqcrypto_sphincsplus::{sphincssha2128fsimple, sphincssha2128ssimple, sphincssha2192fsimple, sphincssha2192ssimple, sphincssha2256fsimple, sphincssha2256ssimple};
 use pqcrypto_falcon::{falcon512, falcon1024};
 use pqcrypto_ntru::{ntruhps2048509, ntruhps2048677, ntruhps4096821, ntruhrss701};
 
 // Additional cryptography for hybrid encryption
-use aes_gcm::{Aes256Gcm, Key, Nonce, NewAead, Aead};
+use aes_gcm::{Aes256Gcm, Key, Nonce, KeyInit};
+use aes_gcm::aead::Aead;
 
 use crate::error::CursedError;
 
@@ -674,7 +675,7 @@ impl SphincsPlusSignature {
     pub fn keygen_with_params(params: SphincsPlusParameterSet) -> PqcResult<(SphincsPlusPublicKey, SphincsPlusSecretKey)> {
         match params {
             SphincsPlusParameterSet::Sphincs128s => {
-                let (pk, sk) = sphincssha256128ssimple::keypair();
+                let (pk, sk) = sphincssha2128ssimple::keypair();
                 let public_key = SphincsPlusPublicKey {
                     parameter_set: params,
                     key_data: pk.as_bytes().to_vec(),
@@ -686,7 +687,7 @@ impl SphincsPlusSignature {
                 Ok((public_key, secret_key))
             },
             SphincsPlusParameterSet::Sphincs192s => {
-                let (pk, sk) = sphincssha256192ssimple::keypair();
+                let (pk, sk) = sphincssha2192ssimple::keypair();
                 let public_key = SphincsPlusPublicKey {
                     parameter_set: params,
                     key_data: pk.as_bytes().to_vec(),
@@ -698,7 +699,7 @@ impl SphincsPlusSignature {
                 Ok((public_key, secret_key))
             },
             SphincsPlusParameterSet::Sphincs256s => {
-                let (pk, sk) = sphincssha256256ssimple::keypair();
+                let (pk, sk) = sphincssha2256ssimple::keypair();
                 let public_key = SphincsPlusPublicKey {
                     parameter_set: params,
                     key_data: pk.as_bytes().to_vec(),
@@ -716,21 +717,21 @@ impl SphincsPlusSignature {
     pub fn sign(secret_key: &SphincsPlusSecretKey, message: &[u8]) -> PqcResult<Vec<u8>> {
         match secret_key.parameter_set {
             SphincsPlusParameterSet::Sphincs128s => {
-                let sk = sphincssha256128ssimple::SecretKey::from_bytes(&secret_key.key_data)
+                let sk = sphincssha2128ssimple::SecretKey::from_bytes(&secret_key.key_data)
                     .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+128s secret key".to_string()))?;
-                let signature = sphincssha256128ssimple::detached_sign(message, &sk);
+                let signature = sphincssha2128ssimple::detached_sign(message, &sk);
                 Ok(signature.as_bytes().to_vec())
             },
             SphincsPlusParameterSet::Sphincs192s => {
-                let sk = sphincssha256192ssimple::SecretKey::from_bytes(&secret_key.key_data)
+                let sk = sphincssha2192ssimple::SecretKey::from_bytes(&secret_key.key_data)
                     .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+192s secret key".to_string()))?;
-                let signature = sphincssha256192ssimple::detached_sign(message, &sk);
+                let signature = sphincssha2192ssimple::detached_sign(message, &sk);
                 Ok(signature.as_bytes().to_vec())
             },
             SphincsPlusParameterSet::Sphincs256s => {
-                let sk = sphincssha256256ssimple::SecretKey::from_bytes(&secret_key.key_data)
+                let sk = sphincssha2256ssimple::SecretKey::from_bytes(&secret_key.key_data)
                     .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+256s secret key".to_string()))?;
-                let signature = sphincssha256256ssimple::detached_sign(message, &sk);
+                let signature = sphincssha2256ssimple::detached_sign(message, &sk);
                 Ok(signature.as_bytes().to_vec())
             },
         }
@@ -747,31 +748,31 @@ impl SphincsPlusSignature {
 
         match public_key.parameter_set {
             SphincsPlusParameterSet::Sphincs128s => {
-                let pk = sphincssha256128ssimple::PublicKey::from_bytes(&public_key.key_data)
+                let pk = sphincssha2128ssimple::PublicKey::from_bytes(&public_key.key_data)
                     .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+128s public key".to_string()))?;
-                let sig = sphincssha256128ssimple::DetachedSignature::from_bytes(signature)
+                let sig = sphincssha2128ssimple::DetachedSignature::from_bytes(signature)
                     .map_err(|_| PqcError::InvalidSignature("Invalid SPHINCS+128s signature".to_string()))?;
-                match sphincssha256128ssimple::verify_detached_signature(message, &sig, &pk) {
+                match sphincssha2128ssimple::verify_detached_signature(message, &sig, &pk) {
                     Ok(_) => Ok(true),
                     Err(_) => Ok(false),
                 }
             },
             SphincsPlusParameterSet::Sphincs192s => {
-                let pk = sphincssha256192ssimple::PublicKey::from_bytes(&public_key.key_data)
+                let pk = sphincssha2192ssimple::PublicKey::from_bytes(&public_key.key_data)
                     .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+192s public key".to_string()))?;
-                let sig = sphincssha256192ssimple::DetachedSignature::from_bytes(signature)
+                let sig = sphincssha2192ssimple::DetachedSignature::from_bytes(signature)
                     .map_err(|_| PqcError::InvalidSignature("Invalid SPHINCS+192s signature".to_string()))?;
-                match sphincssha256192ssimple::verify_detached_signature(message, &sig, &pk) {
+                match sphincssha2192ssimple::verify_detached_signature(message, &sig, &pk) {
                     Ok(_) => Ok(true),
                     Err(_) => Ok(false),
                 }
             },
             SphincsPlusParameterSet::Sphincs256s => {
-                let pk = sphincssha256256ssimple::PublicKey::from_bytes(&public_key.key_data)
+                let pk = sphincssha2256ssimple::PublicKey::from_bytes(&public_key.key_data)
                     .map_err(|_| PqcError::InvalidKey("Invalid SPHINCS+256s public key".to_string()))?;
-                let sig = sphincssha256256ssimple::DetachedSignature::from_bytes(signature)
+                let sig = sphincssha2256ssimple::DetachedSignature::from_bytes(signature)
                     .map_err(|_| PqcError::InvalidSignature("Invalid SPHINCS+256s signature".to_string()))?;
-                match sphincssha256256ssimple::verify_detached_signature(message, &sig, &pk) {
+                match sphincssha2256ssimple::verify_detached_signature(message, &sig, &pk) {
                     Ok(_) => Ok(true),
                     Err(_) => Ok(false),
                 }

@@ -18,7 +18,7 @@ pub use reader::{Reader, ReaderConfig};
 pub use writer::{Writer, WriterConfig};
 pub use column_reader::{ColumnReader, TypedValue};
 pub use streamer::{Streamer, StreamProcessor};
-pub use schema::{Schema, SchemaColumn, ValidationResult, ValidationError};
+pub use schema::{Schema, SchemaColumn, ValidationResult, ValidationError, ColumnType};
 pub use transformer::{Transformer, ColumnTransform, TransformResult};
 
 use std::io;

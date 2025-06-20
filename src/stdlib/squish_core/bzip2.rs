@@ -335,3 +335,18 @@ mod tests {
         initialize(); // Should not panic
     }
 }
+
+/// fr fr Create new BZIP2 reader with default settings
+pub fn new_reader<R: Read>(reader: R) -> SquishResult<Bzip2Reader<R>> {
+    Bzip2Reader::new(reader)
+}
+
+/// bestie Create new BZIP2 writer with default compression
+pub fn new_writer<W: Write>(writer: W) -> SquishResult<Bzip2Writer<W>> {
+    Bzip2Writer::new(writer)
+}
+
+/// periodt Create new BZIP2 writer with specified compression level
+pub fn new_writer_level<W: Write>(writer: W, level: CompressionLevel) -> SquishResult<Bzip2Writer<W>> {
+    Bzip2Writer::with_level(writer, level)
+}

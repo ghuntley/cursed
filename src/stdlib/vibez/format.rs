@@ -3,7 +3,7 @@
 /// Provides comprehensive string formatting capabilities including
 /// placeholder interpolation, format specifications, and context-aware formatting.
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use std::collections::HashMap;
 use std::fmt;
 

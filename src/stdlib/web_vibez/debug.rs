@@ -12,6 +12,60 @@ pub struct RequestDebugger {
     max_body_length: usize,
 }
 
+/// Live reload functionality for development
+pub struct LiveReload {
+    enabled: bool,
+    port: u16,
+}
+
+/// Debug mode configuration
+#[derive(Debug, Clone)]
+pub enum DebugMode {
+    Off,
+    Basic,
+    Verbose,
+    Full,
+}
+
+/// Debug configuration
+#[derive(Debug, Clone)]
+pub struct DebugConfig {
+    pub mode: DebugMode,
+    pub log_requests: bool,
+    pub log_responses: bool,
+    pub enable_live_reload: bool,
+    pub live_reload_port: u16,
+}
+
+impl LiveReload {
+    pub fn new() -> Self {
+        Self {
+            enabled: false,
+            port: 35729,
+        }
+    }
+
+    pub fn enable(&mut self) {
+        self.enabled = true;
+    }
+
+    pub fn disable(&mut self) {
+        self.enabled = false;
+    }
+}
+
+impl Default for DebugConfig {
+    fn default() -> Self {
+        Self {
+            mode: DebugMode::Off,
+            log_requests: false,
+            log_responses: false,
+            enable_live_reload: false,
+            live_reload_port: 35729,
+        }
+    }
+}
+
 impl RequestDebugger {
     pub fn new() -> Self {
         Self {

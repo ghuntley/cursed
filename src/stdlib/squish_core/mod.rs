@@ -30,10 +30,19 @@ pub mod dictionary;
 // Re-export all public APIs for easy access
 pub use error::{SquishError, SquishResult, CompressionError, DecompressionError};
 
+// Constants and types needed by stdlib
+pub use constants::{MIN_COMPRESSION_LEVEL, MAX_COMPRESSION_LEVEL};
+pub use core::{CompressionQuality, CompressionStrategy, FlushMode};
+pub use utils::{
+    is_valid_compression_level, quality_to_level, recommended_buffer_size,
+    should_use_parallel, optimal_chunk_size
+};
+pub use statistics::{get_module_stats, cleanup};
+
 // Core interfaces and types
 pub use core::{
     Reader, Writer, Compressor, Decompressor,
-    CompressionLevel, CompressionStats, CompressionMode,
+    CompressionLevel, CompressionStats, CompressionMode, CompressionTimer,
     DEFAULT_COMPRESSION, NO_COMPRESSION, BEST_SPEED, BEST_COMPRESSION, HUFFMAN_ONLY,
     compress, decompress, compress_with_level, decompress_with_validation
 };
@@ -41,22 +50,26 @@ pub use core::{
 // Format-specific implementations
 pub use gzip::{
     GzipReader, GzipWriter, NewGzipReader, NewGzipWriter, NewGzipWriterLevel,
-    gzip_compress, gzip_decompress, gzip_compress_level
+    gzip_compress, gzip_decompress, gzip_compress_level,
+    new_reader as gzip_new_reader, new_writer as gzip_new_writer
 };
 
 pub use zlib::{
     ZlibReader, ZlibWriter, NewZlibReader, NewZlibWriter, NewZlibWriterLevel,
-    zlib_compress, zlib_decompress, zlib_compress_level
+    zlib_compress, zlib_decompress, zlib_compress_level,
+    new_reader as zlib_new_reader, new_writer as zlib_new_writer, new_writer_level as zlib_new_writer_level
 };
 
 pub use flate::{
     FlateReader, FlateWriter, NewFlateReader, NewFlateWriter,
-    flate_compress, flate_decompress, flate_compress_level
+    flate_compress, flate_decompress, flate_compress_level,
+    new_reader as flate_new_reader, new_writer as flate_new_writer
 };
 
 pub use bzip2::{
     Bzip2Reader, Bzip2Writer, NewBzip2Reader, NewBzip2Writer, NewBzip2WriterLevel,
-    bzip2_compress, bzip2_decompress, bzip2_compress_level
+    bzip2_compress, bzip2_decompress, bzip2_compress_level,
+    new_reader as bzip2_new_reader, new_writer as bzip2_new_writer, new_writer_level as bzip2_new_writer_level
 };
 
 pub use lzw::{

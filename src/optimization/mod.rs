@@ -9,6 +9,7 @@
 //! - Real LLVM optimization passes
 //! - Build performance optimization
 
+pub mod config;
 pub mod baseline_storage;
 pub mod benchmarks;
 pub mod intelligent_recommendations;

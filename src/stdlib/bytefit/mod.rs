@@ -15,7 +15,12 @@ pub mod pattern;
 pub mod error;
 
 // Re-export all public functions and types
-pub use error::{ByteFitError, ByteFitResult};
+pub use error::{
+    ByteFitError, ByteFitResult, 
+    invalid_utf8, invalid_base64, invalid_hex, invalid_pattern, 
+    index_out_of_bounds, invalid_input, buffer_overflow, 
+    encoding_error, regex_error
+};
 
 // Basic operations
 pub use basic::{

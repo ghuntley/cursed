@@ -17,10 +17,13 @@ use rsa::sha2::{Sha256, Sha384, Sha512};
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey, ecdsa::{Signature as P256Signature, SigningKey as P256SigningKey, VerifyingKey as P256VerifyingKey}};
 use p384::{SecretKey as P384SecretKey, PublicKey as P384PublicKey, ecdsa::{Signature as P384Signature, SigningKey as P384SigningKey, VerifyingKey as P384VerifyingKey}};
 use k256::{SecretKey as K256SecretKey, PublicKey as K256PublicKey, ecdsa::{Signature as K256Signature, SigningKey as K256SigningKey, VerifyingKey as K256VerifyingKey}};
-use ed25519_dalek::{Keypair as Ed25519Keypair, PublicKey as Ed25519PublicKeyInternal, SecretKey as Ed25519SecretKey, Signature as Ed25519SignatureInternal, Signer, Verifier as Ed25519Verifier};
+use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519VerifyingKey, Signature as Ed25519SignatureInternal, Signer, Verifier as Ed25519Verifier};
+
+// Type alias for backward compatibility - ed25519-dalek 2.0 uses separate keys
+pub type Ed25519Keypair = Ed25519KeyPair;
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKeyInternal};
 use signature::{Signer as SignatureSigner, Verifier as SignatureVerifier};
-use rand::{rngs::OsRng, RngCore};
+use rand::{rngs::OsRng, RngCore, CryptoRng};
 use base64::{Engine as _, engine::general_purpose};
 use pem::{Pem, encode, parse};
 use der::{Encode, Decode};
@@ -221,14 +224,41 @@ pub struct Ed25519KeyPair {
     pub private_key: Ed25519PrivateKey,
 }
 
+impl Ed25519KeyPair {
+    /// Generate a new Ed25519 key pair
+    pub fn generate<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
+        let signing_key = Ed25519SigningKey::generate(rng);
+        let verifying_key = signing_key.verifying_key();
+        
+        Ed25519KeyPair {
+            public_key: Ed25519PublicKey {
+                inner: verifying_key,
+            },
+            private_key: Ed25519PrivateKey {
+                inner: signing_key,
+            },
+        }
+    }
+    
+    /// Get the public key
+    pub fn public(&self) -> &Ed25519PublicKey {
+        &self.public_key
+    }
+    
+    /// Get the verifying key
+    pub fn verifying_key(&self) -> &Ed25519VerifyingKey {
+        &self.public_key.inner
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Ed25519PublicKey {
-    pub inner: Ed25519PublicKeyInternal,
+    pub inner: Ed25519VerifyingKey,
 }
 
 #[derive(Debug, Clone)]
 pub struct Ed25519PrivateKey {
-    pub inner: Ed25519SecretKey,
+    pub inner: Ed25519SigningKey,
 }
 
 #[derive(Debug, Clone)]
@@ -681,28 +711,22 @@ impl AsymmetricCrypto {
     /// slay Generate Ed25519 key pair
     pub fn ed25519_generate_keypair(&self) -> AsymmetricResult<Ed25519KeyPair> {
         let mut rng = OsRng;
-        let secret_key = Ed25519SecretKey::generate(&mut rng);
-        let public_key = Ed25519PublicKeyInternal::from(&secret_key);
+        let signing_key = Ed25519SigningKey::generate(&mut rng);
+        let verifying_key = signing_key.verifying_key();
         
         Ok(Ed25519KeyPair {
             public_key: Ed25519PublicKey {
-                inner: public_key,
+                inner: verifying_key,
             },
             private_key: Ed25519PrivateKey {
-                inner: secret_key,
+                inner: signing_key,
             },
         })
     }
     
     /// slay Ed25519 sign message
     pub fn ed25519_sign(&self, private_key: &Ed25519PrivateKey, message: &[u8]) -> AsymmetricResult<Ed25519Signature> {
-        let public_key = Ed25519PublicKeyInternal::from(&private_key.inner);
-        let keypair = Ed25519Keypair {
-            secret: private_key.inner.clone(),
-            public: public_key,
-        };
-        
-        let signature = keypair.sign(message);
+        let signature = private_key.inner.sign(message);
         
         Ok(Ed25519Signature {
             inner: signature,
@@ -966,10 +990,10 @@ impl AsymmetricCrypto {
             return Err(AsymmetricError::InvalidPrivateKey);
         }
         
-        let secret_key = Ed25519SecretKey::from_bytes(&bytes)
+        let signing_key = Ed25519SigningKey::from_bytes(&bytes.try_into().unwrap())
             .map_err(|e| AsymmetricError::InvalidPrivateKey)?;
         
-        Ok(Ed25519PrivateKey { inner: secret_key })
+        Ok(Ed25519PrivateKey { inner: signing_key })
     }
 
     /// slay Parse Ed25519 public key from base64 format
@@ -981,10 +1005,10 @@ impl AsymmetricCrypto {
             return Err(AsymmetricError::InvalidPublicKey);
         }
         
-        let public_key = Ed25519PublicKeyInternal::from_bytes(&bytes)
+        let verifying_key = Ed25519VerifyingKey::from_bytes(&bytes.try_into().unwrap())
             .map_err(|e| AsymmetricError::InvalidPublicKey)?;
         
-        Ok(Ed25519PublicKey { inner: public_key })
+        Ok(Ed25519PublicKey { inner: verifying_key })
     }
 }
 

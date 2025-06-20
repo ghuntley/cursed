@@ -1046,3 +1046,6 @@ mod tests {
         // Test basic creation and configuration
     }
 }
+
+/// Type alias for backward compatibility with existing code
+pub type RealLlvmPassManager<'ctx> = RealLlvmOptimizer<'ctx>;

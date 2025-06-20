@@ -677,7 +677,7 @@ impl BuildAnalytics {
         let enable_cpu = self.config.enable_cpu_profiling;
 
         thread::spawn(move || {
-            use sysinfo::{System, SystemExt, ProcessExt, Pid};
+            use sysinfo::{System, Process, Pid};
             let mut sys = System::new_all();
             let current_pid = Pid::from(std::process::id() as usize);
 

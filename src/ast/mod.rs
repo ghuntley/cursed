@@ -41,7 +41,9 @@
 
 use std::fmt::{Debug, Display};
 use std::any::Any;
+use std::collections::HashMap;
 use crate::lexer::Token;
+use crate::error::SourceLocation;
 
 // Re-export all sub-modules for easier access
 pub mod traits;
@@ -256,5 +258,110 @@ impl Statement for ImportStatement {
     
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
+    }
+}
+
+/// Enum representing different types of AST nodes
+#[derive(Debug, Clone)]
+pub enum AstNodeType {
+    /// Program root node
+    Program(Program),
+    /// Block statement
+    BlockStatement(BlockStatement),
+    /// Expression statement
+    ExpressionStatement(Box<dyn Expression>),
+    /// Function declaration
+    FunctionDeclaration(FunctionDeclaration),
+    /// Struct declaration  
+    StructDeclaration(SquadStatement),
+    /// Interface declaration
+    InterfaceDeclaration(CollabStatement),
+    /// Enum declaration
+    EnumDeclaration(EnumStatement),
+    /// Variable declaration
+    VariableDeclaration(VariableStatement),
+    /// Constant declaration
+    ConstantDeclaration(ConstantStatement),
+    /// Type alias declaration
+    TypeAliasDeclaration(TypeAliasStatement),
+    /// Import statement
+    ImportStatement(ImportStatement),
+    /// Import declaration
+    Import(ImportStatement),
+    /// Module declaration
+    ModuleDeclaration(ModuleStatement),
+    /// If statement
+    IfStatement(IfStatement),
+    /// While statement
+    WhileStatement(WhileStatement),
+    /// For statement
+    ForStatement(ForStatement),
+    /// For-in statement
+    ForInStatement(ForInStatement),
+    /// Do-while statement
+    DoWhileStatement(DoWhileStatement),
+    /// Switch statement
+    SwitchStatement(SwitchStatement),
+    /// Try statement
+    TryStatement(TryStatement),
+    /// Return statement
+    ReturnStatement(ReturnStatement),
+}
+
+/// Unified AST node wrapper
+#[derive(Debug, Clone)]
+pub struct AstNode {
+    /// The specific node type and its data
+    pub node_type: AstNodeType,
+    /// Source location information
+    pub location: Option<SourceLocation>,
+    /// Additional metadata
+    pub metadata: HashMap<String, String>,
+}
+
+impl AstNode {
+    /// Create a new AST node
+    pub fn new(node_type: AstNodeType) -> Self {
+        Self {
+            node_type,
+            location: None,
+            metadata: HashMap::new(),
+        }
+    }
+    
+    /// Create a new AST node with location
+    pub fn with_location(node_type: AstNodeType, location: SourceLocation) -> Self {
+        Self {
+            node_type,
+            location: Some(location),
+            metadata: HashMap::new(),
+        }
+    }
+    
+    /// Get the string representation of this node
+    pub fn string(&self) -> String {
+        match &self.node_type {
+            AstNodeType::Program(program) => program.string(),
+            AstNodeType::BlockStatement(block) => block.string(),
+            AstNodeType::ExpressionStatement(expr) => expr.string(),
+            AstNodeType::FunctionDeclaration(func) => func.string(),
+            AstNodeType::StructDeclaration(struct_decl) => struct_decl.string(),
+            AstNodeType::InterfaceDeclaration(interface) => interface.string(),
+            AstNodeType::EnumDeclaration(enum_decl) => enum_decl.string(),
+            AstNodeType::VariableDeclaration(var) => var.string(),
+            AstNodeType::ConstantDeclaration(const_decl) => const_decl.string(),
+            AstNodeType::TypeAliasDeclaration(type_alias) => type_alias.string(),
+            AstNodeType::ImportStatement(import) => import.string(),
+            AstNodeType::Import(import) => import.string(),
+            AstNodeType::ModuleDeclaration(module) => module.string(),
+            AstNodeType::IfStatement(if_stmt) => if_stmt.string(),
+            AstNodeType::WhileStatement(while_stmt) => while_stmt.string(),
+            AstNodeType::ForStatement(for_stmt) => for_stmt.string(),
+            AstNodeType::ForInStatement(for_in) => for_in.string(),
+            AstNodeType::DoWhileStatement(do_while) => do_while.string(),
+            AstNodeType::SwitchStatement(switch) => switch.string(),
+            AstNodeType::TryStatement(try_stmt) => try_stmt.string(),
+            AstNodeType::ReturnStatement(ret) => ret.string(),
+        }
     }
 }

@@ -4,7 +4,7 @@
 /// type system and supports styled/colored output. Includes the essential
 /// `spill` functions for Gen Z-style output and input operations.
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use std::io::{self, Write, stdout, stderr, stdin, BufRead};
 use std::fmt;
 

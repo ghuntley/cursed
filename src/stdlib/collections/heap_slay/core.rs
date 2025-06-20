@@ -4,7 +4,7 @@
 //! implementing the `Interface` collab. The heap is maintained as a binary heap
 //! where each parent node satisfies the heap property relative to its children.
 
-use crate::value::Value;
+use crate::stdlib::value::Value;
 use super::{HeapResult, validate_index, validate_not_empty};
 
 /// The core heap interface that must be implemented by any type wanting to use heap operations.

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - CURSED Documentation</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="brat-nav">
+        <div class="nav-container">
+            <div class="logo">
+                <a href="../index.html" style="text-decoration: none; color: inherit;">
+                    <span class="logo-text">CURSED</span>
+                    <span class="logo-accent">⚡</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">home</a>
+                <a href="../install.html" class="nav-link">install</a>
+                <a href="index.html" class="nav-link">docs</a>
+                <a href="../index.html#examples" class="nav-link">examples</a>
+                <a href="https://github.com/ghuntley/cursed" class="nav-link" target="_blank">github</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Docs Navigation Sidebar -->
+    <aside class="docs-sidebar">
+        <div class="sidebar-content">
+            <a href="index.html" class="sidebar-title">📚 documentation</a>
+            <nav class="sidebar-nav">
+                <a href="getting-started.html" class="sidebar-link active">🚀 getting started</a>
+                <a href="language-basics.html" class="sidebar-link">💫 language basics</a>
+                <a href="advanced-features.html" class="sidebar-link">✨ advanced features</a>
+                <a href="concurrency.html" class="sidebar-link">🔄 concurrency</a>
+                <a href="standard-library.html" class="sidebar-link">📦 standard library</a>
+                <a href="package-system.html" class="sidebar-link">🎁 package system</a>
+                <a href="compiler-cli.html" class="sidebar-link">⚙️ compiler & cli</a>
+                <a href="language-reference.html" class="sidebar-link">📖 language reference</a>
+                <a href="examples.html" class="sidebar-link">💡 examples & tutorials</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="docs-main">
+        <div class="docs-container">
+            <!-- Breadcrumbs -->
+            <div class="breadcrumbs">
+                <a href="index.html">docs</a>
+                <span>/</span>
+                <span>getting started</span>
+            </div>
+
+            <!-- Page Header -->
+            <header class="docs-header">
+                <h1>getting started</h1>
+                <p class="docs-subtitle">
+                    welcome to cursed! let's get you serving main character programming energy in no time ✨
+                </p>
+            </header>
+
+            <!-- Table of Contents -->
+            <div class="toc">
+                <h3>on this page</h3>
+                <ul>
+                    <li><a href="#hello-world">hello world</a></li>
+                    <li><a href="#basic-syntax">basic syntax</a></li>
+                    <li><a href="#variables">variables and constants</a></li>
+                    <li><a href="#functions">functions</a></li>
+                    <li><a href="#control-flow">control flow</a></li>
+                    <li><a href="#next-steps">next steps</a></li>
+                </ul>
+            </div>
+
+            <!-- Content -->
+            <div class="docs-content">
+                <section id="hello-world" class="docs-section">
+                    <h2>hello world</h2>
+                    <p>let's start with the classic hello world program that serves absolute icon energy:</p>
+                    
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr this is your first cursed program bestie!</span>
+<span class="keyword">vibe</span> <span class="identifier">main</span>
+
+<span class="keyword">yeet</span> <span class="string">"stdlib::io"</span>
+
+<span class="keyword">slay</span> <span class="function">main</span>() {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"hello world! it's giving main character energy ✨"</span>)
+}</code></pre>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">copy</button>
+                    </div>
+
+                    <p>save this as <code>hello.csd</code> and run it:</p>
+                    
+                    <div class="code-snippet">
+                        <code>cursed run hello.csd</code>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">copy</button>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>💡 what's happening here?</h4>
+                        <ul>
+                            <li><code>vibe main</code> - declares this as the main package</li>
+                            <li><code>yeet "stdlib::io"</code> - imports the I/O library (because we yeet imports)</li>
+                            <li><code>slay main()</code> - defines the main function (functions slay in cursed)</li>
+                            <li><code>io.println()</code> - prints text with a newline</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="basic-syntax" class="docs-section">
+                    <h2>basic syntax</h2>
+                    <p>cursed follows go-like syntax but with gen z flair. here are the key patterns:</p>
+
+                    <h3>comments</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr this is a line comment</span>
+
+<span class="comment">no cap</span>
+<span class="comment">this is a block comment</span>
+<span class="comment">that spans multiple lines</span>
+<span class="comment">on god</span></code></pre>
+                    </div>
+
+                    <h3>package declaration</h3>
+                    <p>every cursed file starts with a package declaration:</p>
+                    <div class="code-example">
+<pre><code><span class="keyword">vibe</span> <span class="identifier">main</span>        <span class="comment">fr fr main package</span>
+<span class="keyword">vibe</span> <span class="identifier">utils</span>       <span class="comment">fr fr custom package</span>
+<span class="keyword">vibe</span> <span class="identifier">webserver</span>   <span class="comment">fr fr another package</span></code></pre>
+                    </div>
+
+                    <h3>imports</h3>
+                    <p>import other packages with <code>yeet</code>:</p>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr single import</span>
+<span class="keyword">yeet</span> <span class="string">"stdlib::io"</span>
+
+<span class="comment">fr fr multiple imports</span>
+<span class="keyword">yeet</span> (
+    <span class="string">"stdlib::io"</span>
+    <span class="string">"stdlib::strings"</span>
+    <span class="identifier">fmt</span> <span class="string">"stdlib::format"</span>  <span class="comment">fr fr with alias</span>
+)</code></pre>
+                    </div>
+                </section>
+
+                <section id="variables" class="docs-section">
+                    <h2>variables and constants</h2>
+                    <p>declare variables with <code>sus</code> and constants with <code>facts</code>:</p>
+
+                    <h3>variables</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr basic variable declaration</span>
+<span class="keyword">sus</span> <span class="identifier">name</span> = <span class="string">"bestie"</span>
+<span class="keyword">sus</span> <span class="identifier">age</span> = <span class="number">22</span>
+<span class="keyword">sus</span> <span class="identifier">height</span> = <span class="number">5.6</span>
+<span class="keyword">sus</span> <span class="identifier">is_iconic</span> = <span class="literal">based</span>
+
+<span class="comment">fr fr with explicit types</span>
+<span class="keyword">sus</span> <span class="identifier">score</span> <span class="type">normie</span> = <span class="number">100</span>
+<span class="keyword">sus</span> <span class="identifier">message</span> <span class="type">tea</span> = <span class="string">"periodt!"</span>
+
+<span class="comment">fr fr multiple variables</span>
+<span class="keyword">sus</span> <span class="identifier">x</span>, <span class="identifier">y</span> = <span class="number">10</span>, <span class="number">20</span>
+<span class="keyword">sus</span> <span class="identifier">a</span>, <span class="identifier">b</span> <span class="type">normie</span> = <span class="number">1</span>, <span class="number">2</span></code></pre>
+                    </div>
+
+                    <h3>constants</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr constants that never change</span>
+<span class="keyword">facts</span> <span class="identifier">PI</span> = <span class="number">3.14159</span>
+<span class="keyword">facts</span> <span class="identifier">APP_NAME</span> = <span class="string">"my cursed app"</span>
+<span class="keyword">facts</span> <span class="identifier">MAX_USERS</span> = <span class="number">1000</span>
+
+<span class="comment">fr fr multiple constants</span>
+<span class="keyword">facts</span> (
+    <span class="identifier">VERSION</span> = <span class="string">"1.0.0"</span>
+    <span class="identifier">DEBUG</span> = <span class="literal">based</span>
+    <span class="identifier">PORT</span> = <span class="number">8080</span>
+)</code></pre>
+                    </div>
+
+                    <div class="type-reference">
+                        <h4>data types</h4>
+                        <div class="type-grid">
+                            <div class="type-item">
+                                <code>tea</code>
+                                <span>string type</span>
+                            </div>
+                            <div class="type-item">
+                                <code>normie</code>
+                                <span>32-bit integer</span>
+                            </div>
+                            <div class="type-item">
+                                <code>big_normie</code>
+                                <span>64-bit integer</span>
+                            </div>
+                            <div class="type-item">
+                                <code>decimal</code>
+                                <span>64-bit float</span>
+                            </div>
+                            <div class="type-item">
+                                <code>vibes</code>
+                                <span>boolean</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="functions" class="docs-section">
+                    <h2>functions</h2>
+                    <p>functions in cursed are defined with <code>slay</code> because functions absolutely slay:</p>
+
+                    <h3>basic functions</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr simple function</span>
+<span class="keyword">slay</span> <span class="function">greet</span>() {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"hey bestie! ✨"</span>)
+}
+
+<span class="comment">fr fr function with parameters</span>
+<span class="keyword">slay</span> <span class="function">greet_person</span>(<span class="identifier">name</span> <span class="type">tea</span>) {
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"hey {}! you're iconic! ✨\n"</span>, <span class="identifier">name</span>)
+}
+
+<span class="comment">fr fr function with return value</span>
+<span class="keyword">slay</span> <span class="function">add</span>(<span class="identifier">x</span>, <span class="identifier">y</span> <span class="type">normie</span>) <span class="type">normie</span> {
+    <span class="keyword">yolo</span> <span class="identifier">x</span> + <span class="identifier">y</span>
+}</code></pre>
+                    </div>
+
+                    <h3>multiple return values</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr function returning multiple values</span>
+<span class="keyword">slay</span> <span class="function">divide</span>(<span class="identifier">x</span>, <span class="identifier">y</span> <span class="type">decimal</span>) (<span class="type">decimal</span>, <span class="type">vibes</span>) {
+    <span class="keyword">lowkey</span> <span class="identifier">y</span> == <span class="number">0.0</span> {
+        <span class="keyword">yolo</span> <span class="number">0.0</span>, <span class="literal">sus</span>  <span class="comment">fr fr can't divide by zero bestie</span>
+    }
+    <span class="keyword">yolo</span> <span class="identifier">x</span> / <span class="identifier">y</span>, <span class="literal">based</span>
+}
+
+<span class="comment">fr fr calling function with multiple returns</span>
+<span class="keyword">sus</span> <span class="identifier">result</span>, <span class="identifier">ok</span> = <span class="function">divide</span>(<span class="number">10.0</span>, <span class="number">3.0</span>)
+<span class="keyword">lowkey</span> <span class="identifier">ok</span> {
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"result: {}\n"</span>, <span class="identifier">result</span>)
+} <span class="keyword">highkey</span> {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"division failed bestie"</span>)
+}</code></pre>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>🎯 function naming conventions</h4>
+                        <ul>
+                            <li>use <code>snake_case</code> for function names</li>
+                            <li>start with lowercase for private functions</li>
+                            <li>start with uppercase for public/exported functions</li>
+                            <li>make names descriptive and iconic</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="control-flow" class="docs-section">
+                    <h2>control flow</h2>
+                    <p>control your program's flow with cursed's expressive keywords:</p>
+
+                    <h3>conditional statements</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr basic if statement</span>
+<span class="keyword">sus</span> <span class="identifier">age</span> = <span class="number">22</span>
+
+<span class="keyword">lowkey</span> <span class="identifier">age</span> >= <span class="number">18</span> {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"you're an adult bestie! ✨"</span>)
+} <span class="keyword">highkey</span> <span class="identifier">age</span> >= <span class="number">13</span> {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"teen energy! 😎"</span>)
+} <span class="keyword">highkey</span> {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"smol bean energy 🥺"</span>)
+}</code></pre>
+                    </div>
+
+                    <h3>switch statements</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr switch on values</span>
+<span class="keyword">sus</span> <span class="identifier">mood</span> = <span class="string">"happy"</span>
+
+<span class="keyword">vibe_check</span> <span class="identifier">mood</span> {
+    <span class="keyword">mood</span> <span class="string">"happy"</span>, <span class="string">"excited"</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"bestie is thriving! ✨"</span>)
+    <span class="keyword">mood</span> <span class="string">"sad"</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"sending virtual hugs 🫂"</span>)
+    <span class="keyword">mood</span> <span class="string">"stressed"</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"we've all been there bestie"</span>)
+    <span class="keyword">basic</span>:
+        <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"neutral energy, and that's ok"</span>)
+}</code></pre>
+                    </div>
+
+                    <h3>loops</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr for loop</span>
+<span class="keyword">bestie</span> <span class="identifier">i</span> := <span class="number">0</span>; <span class="identifier">i</span> < <span class="number">5</span>; <span class="identifier">i</span>++ {
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"counting: {}\n"</span>, <span class="identifier">i</span>)
+}
+
+<span class="comment">fr fr while loop</span>
+<span class="keyword">sus</span> <span class="identifier">x</span> = <span class="number">10</span>
+<span class="keyword">periodt</span> <span class="identifier">x</span> > <span class="number">0</span> {
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"countdown: {}\n"</span>, <span class="identifier">x</span>)
+    <span class="identifier">x</span>--
+}
+
+<span class="comment">fr fr range loop</span>
+<span class="keyword">sus</span> <span class="identifier">items</span> = []<span class="type">tea</span>{<span class="string">"apple"</span>, <span class="string">"banana"</span>, <span class="string">"cherry"</span>}
+<span class="keyword">bestie</span> <span class="identifier">index</span>, <span class="identifier">item</span> := <span class="keyword">flex</span> <span class="identifier">items</span> {
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"{}: {}\n"</span>, <span class="identifier">index</span>, <span class="identifier">item</span>)
+}</code></pre>
+                    </div>
+
+                    <h3>loop control</h3>
+                    <div class="code-example">
+<pre><code><span class="comment">fr fr break and continue</span>
+<span class="keyword">bestie</span> <span class="identifier">i</span> := <span class="number">0</span>; <span class="identifier">i</span> < <span class="number">10</span>; <span class="identifier">i</span>++ {
+    <span class="keyword">lowkey</span> <span class="identifier">i</span> == <span class="number">3</span> {
+        <span class="keyword">simp</span>  <span class="comment">fr fr continue (skip this iteration)</span>
+    }
+    <span class="keyword">lowkey</span> <span class="identifier">i</span> == <span class="number">8</span> {
+        <span class="keyword">ghosted</span>  <span class="comment">fr fr break (exit loop)</span>
+    }
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"number: {}\n"</span>, <span class="identifier">i</span>)
+}</code></pre>
+                    </div>
+                </section>
+
+                <section id="next-steps" class="docs-section">
+                    <h2>next steps</h2>
+                    <p>congrats bestie! you've learned the basics of cursed. here's what to explore next:</p>
+
+                    <div class="next-steps-grid">
+                        <a href="language-basics.html" class="next-card">
+                            <h4>💫 language basics</h4>
+                            <p>dive deeper into data types, operators, and language features</p>
+                        </a>
+                        <a href="advanced-features.html" class="next-card">
+                            <h4>✨ advanced features</h4>
+                            <p>learn about structs, interfaces, generics, and error handling</p>
+                        </a>
+                        <a href="examples.html" class="next-card">
+                            <h4>💡 examples</h4>
+                            <p>see real-world examples and step-by-step tutorials</p>
+                        </a>
+                        <a href="standard-library.html" class="next-card">
+                            <h4>📦 standard library</h4>
+                            <p>explore built-in packages for common programming tasks</p>
+                        </a>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>💡 pro tips for cursed development</h4>
+                        <ul>
+                            <li>use <code>cursed format</code> to keep your code looking iconic</li>
+                            <li>run <code>cursed check</code> to catch errors without compiling</li>
+                            <li>try <code>cursed run --watch</code> for automatic recompilation</li>
+                            <li>join the community on github for help and discussions</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Navigation -->
+            <div class="docs-navigation">
+                <a href="index.html" class="nav-prev">
+                    ← documentation index
+                </a>
+                <a href="language-basics.html" class="nav-next">
+                    language basics →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script src="../script.js"></script>
+    <link rel="stylesheet" href="docs-styles.css">
+</body>
+</html>

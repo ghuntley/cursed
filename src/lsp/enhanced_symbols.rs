@@ -194,23 +194,6 @@ impl CursedSymbol {
         }
     }
     
-    /// Convert to LSP WorkspaceSymbol
-    pub fn to_workspace_symbol(&self, uri: Url) -> WorkspaceSymbol {
-        WorkspaceSymbol {
-            name: self.name.clone(),
-            kind: self.kind,
-            tags: self.tags.clone(),
-            location: OneOf::Left(Location::new(uri, self.range)),
-            container_name: None,
-            data: None,
-        }
-    }
-    
-    /// Add a child symbol
-    pub fn add_child(&mut self, child: CursedSymbol) {
-        self.children.push(child);
-    }
-    
     /// Set visibility
     pub fn with_visibility(mut self, visibility: Visibility) -> Self {
         self.visibility = visibility;
@@ -725,7 +708,7 @@ impl EnhancedSymbolProvider {
         };
         
         let mut symbol = CursedSymbol::new(
-            func_decl.name.name.clone(),
+            func_decl.name.value.clone(),
             kind,
             range,
             selection_range,
@@ -734,17 +717,19 @@ impl EnhancedSymbolProvider {
         
         // Add function details
         symbol.detail = Some(self.create_function_signature(func_decl));
-        symbol.is_generic = func_decl.generic_params.is_some();
+        symbol.is_generic = func_decl.type_parameters.len() > 0;
         
         // Add parameter symbols as children
         for param in &func_decl.parameters {
-            let param_symbol = self.create_parameter_symbol(param, uri).await;
+            let param_symbol = self.create_parameter_symbol(param);
             symbol.add_child(param_symbol);
         }
         
         // Extract local symbols from function body
-        if let Some(body) = &func_decl.body {
-            self.extract_local_symbols(body, &mut symbol, uri).await;
+        let mut local_symbols = Vec::new();
+        self.extract_local_symbols(&func_decl.body, &mut local_symbols);
+        for local_symbol in local_symbols {
+            symbol.add_child(local_symbol);
         }
         
         symbol
@@ -756,7 +741,7 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_struct_name_range(struct_decl);
         
         let mut symbol = CursedSymbol::new(
-            struct_decl.name.name.clone(),
+            struct_decl.name.value.clone(),
             SymbolKind::STRUCT,
             range,
             selection_range,
@@ -764,11 +749,11 @@ impl EnhancedSymbolProvider {
         );
         
         symbol.detail = Some("struct".to_string());
-        symbol.is_generic = struct_decl.generic_params.is_some();
+        symbol.is_generic = struct_decl.type_parameters.len() > 0;
         
         // Add field symbols as children
         for field in &struct_decl.fields {
-            let field_symbol = self.create_field_symbol(field, uri).await;
+            let field_symbol = self.create_field_symbol(field);
             symbol.add_child(field_symbol);
         }
         
@@ -781,7 +766,7 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_interface_name_range(interface_decl);
         
         let mut symbol = CursedSymbol::new(
-            interface_decl.name.name.clone(),
+            interface_decl.name.value.clone(),
             SymbolKind::INTERFACE,
             range,
             selection_range,
@@ -789,11 +774,11 @@ impl EnhancedSymbolProvider {
         );
         
         symbol.detail = Some("interface".to_string());
-        symbol.is_generic = interface_decl.generic_params.is_some();
+        symbol.is_generic = interface_decl.type_parameters.len() > 0;
         
         // Add method symbols as children
         for method in &interface_decl.methods {
-            let method_symbol = self.create_method_symbol(method, uri).await;
+            let method_symbol = self.create_method_symbol(method);
             symbol.add_child(method_symbol);
         }
         
@@ -806,7 +791,7 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_variable_name_range(var_decl);
         
         let mut symbol = CursedSymbol::new(
-            var_decl.name.name.clone(),
+            var_decl.name.value.clone(),
             SymbolKind::VARIABLE,
             range,
             selection_range,
@@ -860,9 +845,9 @@ impl EnhancedSymbolProvider {
         let mut symbol = CursedSymbol::new(
             name.clone(),
             SymbolKind::MODULE,
-            CursedSymbolKind::ImportDeclaration,
             range,
             selection_range,
+            CursedSymbolKind::ImportDeclaration,
         );
         
         symbol.detail = Some(format!("import \"{}\"", name));
@@ -876,20 +861,20 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_package_name_range(package_decl);
         
         let mut symbol = CursedSymbol::new(
-            package_decl.name.name.clone(),
+            package_decl.name.value.clone(),
             SymbolKind::PACKAGE,
-            CursedSymbolKind::PackageDeclaration,
             range,
             selection_range,
+            CursedSymbolKind::PackageDeclaration,
         );
         
-        symbol.detail = Some(format!("package {}", package_decl.name.name));
+        symbol.detail = Some(format!("package {}", package_decl.name.value));
         
         symbol
     }
     
     /// Create parameter symbol
-    async fn create_parameter_symbol(&mut self, param: &Parameter, uri: &Url) -> CursedSymbol {
+    fn create_parameter_symbol(&self, param: &Parameter) -> CursedSymbol {
         let range = self.get_parameter_range(param);
         let selection_range = self.get_parameter_name_range(param);
         
@@ -908,53 +893,67 @@ impl EnhancedSymbolProvider {
     }
     
     /// Create field symbol
-    async fn create_field_symbol(&mut self, field: &StructField, uri: &Url) -> CursedSymbol {
+    fn create_field_symbol(&self, field: &StructField) -> CursedSymbol {
         let range = self.get_field_range(field);
         let selection_range = self.get_field_name_range(field);
         
         let mut symbol = CursedSymbol::new(
-            field.name.name.clone(),
+            field.name.value.clone(),
             SymbolKind::PROPERTY,
-            CursedSymbolKind::SusVariable,
             range,
             selection_range,
+            CursedSymbolKind::SusVariable,
         );
         
-        symbol.detail = Some(format!("{}: {:?}", field.name.name, field.type_annotation));
+        symbol.detail = Some(format!("{}: {:?}", field.name.value, field.type_annotation));
         symbol.type_info = Some(format!("{:?}", field.type_annotation));
         
         symbol
     }
     
     /// Create method symbol
-    async fn create_method_symbol(&mut self, method: &InterfaceMethod, uri: &Url) -> CursedSymbol {
+    fn create_method_symbol(&self, method: &InterfaceMethod) -> CursedSymbol {
         let range = self.get_method_range(method);
         let selection_range = self.get_method_name_range(method);
         
         let mut symbol = CursedSymbol::new(
-            method.name.name.clone(),
+            method.name.value.clone(),
             SymbolKind::METHOD,
-            CursedSymbolKind::SlayFunction,
             range,
             selection_range,
+            CursedSymbolKind::SlayFunction,
         );
         
-        symbol.detail = Some(self.create_method_signature(method));
+        symbol.detail = Some(self.create_method_signature(&method.name.value, &[], None));
         
         symbol
     }
     
+    /// Create basic variable symbol
+    fn create_variable_symbol_basic(&self, name: &str, var_type: &str) -> CursedSymbol {
+        let range = Range::new(Position::new(0, 0), Position::new(0, 0));
+        let mut symbol = CursedSymbol::new(
+            name.to_string(),
+            SymbolKind::VARIABLE,
+            range,
+            range,
+            CursedSymbolKind::SusVariable,
+        );
+        symbol.detail = Some(format!("{}: {}", name, var_type));
+        symbol
+    }
+    
     /// Extract local symbols from block statement
-    async fn extract_local_symbols(&mut self, block: &BlockStatement, parent: &mut CursedSymbol, uri: &Url) {
+    fn extract_local_symbols(&self, block: &BlockStatement, symbols: &mut Vec<CursedSymbol>) {
         for statement in &block.statements {
             if let Some(var_decl) = statement.as_any().downcast_ref::<VariableStatement>() {
-                let symbol = self.create_variable_symbol(var_decl, uri).await;
-                parent.add_child(symbol);
+                let symbol = self.create_variable_symbol_basic(&var_decl.name.value, "variable");
+                symbols.push(symbol);
             }
             // TODO: Add ConstantDeclaration when available
             // if let Some(const_decl) = statement.as_any().downcast_ref::<ConstantStatement>() {
             //     let symbol = self.create_constant_symbol(const_decl, uri).await;
-            //     parent.add_child(symbol);
+            //     symbols.push(symbol);
             // }
             // Add more local symbol types as needed
         }
@@ -978,20 +977,20 @@ impl EnhancedSymbolProvider {
                     }
                     
                     // Look for function-like patterns
-                    if token.lexeme == "slay" {
-                        if let Some(symbol) = self.create_lexical_function_symbol(&token, &lines) {
+                    if token.literal == "slay" {
+                        if let Some(symbol) = self.create_lexical_function_symbol(&token.literal, line_num) {
                             symbols.push(symbol);
                         }
                     }
                     // Look for variable patterns
-                    else if token.lexeme == "sus" || token.lexeme == "facts" {
-                        if let Some(symbol) = self.create_lexical_variable_symbol(&token, &lines) {
+                    else if token.literal == "sus" || token.literal == "facts" {
+                        if let Some(symbol) = self.create_lexical_variable_symbol(&token.literal, line_num) {
                             symbols.push(symbol);
                         }
                     }
                     // Look for type patterns
-                    else if token.lexeme == "squad" || token.lexeme == "collab" {
-                        if let Some(symbol) = self.create_lexical_type_symbol(&token, &lines) {
+                    else if token.literal == "squad" || token.literal == "collab" {
+                        if let Some(symbol) = self.create_lexical_type_symbol(&token.literal, line_num) {
                             symbols.push(symbol);
                         }
                     }
@@ -1015,16 +1014,22 @@ impl EnhancedSymbolProvider {
         // Search through cached symbols
         for (workspace, symbols) in &self.workspace_symbols {
             for symbol in symbols {
-                if self.symbol_matches_query(&symbol.name, query) {
+                if self.symbol_matches_query(symbol, query) {
                     let uri = Url::parse(&format!("file://{}", workspace)).unwrap();
-                    results.push(symbol.to_workspace_symbol(uri));
+                    results.push(symbol.to_workspace_symbol(&uri));
                 }
             }
         }
         
         // If no results and we have workspace folders, scan files
-        if results.len() == 0 && !workspace_folders.len() == 0 {
-            self.scan_workspace_for_symbols(workspace_folders, query, &mut results).await;
+        if results.len() == 0 && workspace_folders.len() > 0 {
+            let additional_symbols = self.scan_workspace_for_symbols(workspace_folders).await;
+            for symbol in additional_symbols {
+                if self.symbol_matches_query(&symbol, query) {
+                    let uri = Url::parse("file:///").unwrap(); // Default URI
+                    results.push(symbol.to_workspace_symbol(&uri));
+                }
+            }
         }
         
         Ok(results)
@@ -1086,8 +1091,9 @@ impl EnhancedSymbolProvider {
             return Ok(hierarchy.clone());
         }
         
-        // Build call hierarchy
-        let hierarchy = self.build_call_hierarchy(symbol_name, uri, position).await?;
+        // Create a dummy symbol and build call hierarchy  
+        let dummy_symbol = self.create_variable_symbol_basic(symbol_name, "unknown");
+        let hierarchy = self.build_call_hierarchy(&dummy_symbol, uri);
         
         // Cache the result
         self.call_hierarchy.insert(symbol_name.to_string(), hierarchy.clone());
@@ -1095,8 +1101,8 @@ impl EnhancedSymbolProvider {
         Ok(hierarchy)
     }
     
-    /// Build call hierarchy for a symbol
-    async fn build_call_hierarchy(
+    /// Build call hierarchy for a symbol by name
+    async fn build_call_hierarchy_by_name(
         &mut self,
         symbol_name: &str,
         uri: &Url,
@@ -1481,7 +1487,7 @@ impl EnhancedSymbolProvider {
             CursedSymbolKind::InterfaceMethod,
         );
         
-        symbol.detail = Some(self.create_method_signature(method));
+        symbol.detail = Some(self.create_method_signature(&method.name, &[], None));
         symbol
     }
 
@@ -1563,7 +1569,7 @@ impl EnhancedSymbolProvider {
             SymbolKind::VARIABLE,
             range,
             selection_range,
-            CursedSymbolKind::Variable,
+            CursedSymbolKind::SusVariable,
         )
     }
 

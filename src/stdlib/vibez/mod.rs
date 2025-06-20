@@ -15,6 +15,7 @@ pub use print::{
     eprint as vibez_eprint, eprintln as vibez_eprintln, 
     print_to, println_to, print_styled, println_styled, 
     print_colored, println_colored,
+    PrintStyle, PrintColor,
     // Spill functions - the core Gen Z I/O operations
     spill, spillf, spillstr, scan, scanln
 };
@@ -22,7 +23,7 @@ pub use print::{
 pub use format::{
     format, format_args, format_with_context, interpolate,
     FormatError, FormatResult, FormatContext, FormatOptions,
-    FormatPlaceholder, FormatSpec, PlaceholderType
+    FormatPlaceholder, FormatSpec, PlaceholderType, FormatAlignment, FormatSign
 };
 
 pub use sprintf::{

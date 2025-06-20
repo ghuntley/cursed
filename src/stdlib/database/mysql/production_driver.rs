@@ -24,6 +24,7 @@ use mysql::{
     TxOpts, IsolationLevel, Row, Column
 };
 use mysql::prelude::*;
+use chrono::{NaiveDateTime, NaiveDate};
 
 use crate::stdlib::database::{
     Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, 
@@ -313,6 +314,7 @@ impl ProductionPoolStats {
 }
 
 /// Production MySQL driver with full feature support
+#[derive(Debug)]
 pub struct ProductionMySqlDriver {
     config: Arc<RwLock<ProductionMySqlConfig>>,
     pool: Arc<RwLock<Option<Pool>>>,
@@ -354,8 +356,12 @@ impl ProductionMySqlDriver {
         let mut conn = pool.get_conn()
             .map_err(|e| MySqlError::connection(format!("Failed to get test connection: {}", e)))?;
         
-        // Run initialization commands
-        for init_cmd in &config.init_commands {
+        // Run basic initialization commands
+        let init_commands = [
+            "SET SESSION sql_mode = 'STRICT_TRANS_TABLES'",
+            "SET SESSION time_zone = 'UTC'",
+        ];
+        for init_cmd in &init_commands {
             conn.query_drop(init_cmd)
                 .map_err(|e| MySqlError::query(format!("Failed to execute init command '{}': {}", init_cmd, e)))?;
         }
@@ -499,6 +505,7 @@ impl DriverHealthReport {
 }
 
 /// Production MySQL connection
+#[derive(Debug)]
 pub struct ProductionMySqlConnection {
     connection: PooledConn,
     driver: Arc<ProductionMySqlDriver>,
@@ -705,17 +712,22 @@ impl ProductionMySqlConnection {
     /// Convert MySQL rows to QueryResult
     fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<QueryResult, DatabaseError> {
         if rows.is_empty() {
-            return Ok(QueryResult {
-                columns: Vec::new(),
-                rows: Vec::new(),
-                rows_affected: Some(0),
-            });
+            return Ok(QueryResult::new(
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+            ));
         }
         
         // Extract column information from the first row
-        let columns: Vec<String> = rows[0].columns()
+        let column_names: Vec<String> = rows[0].columns()
             .iter()
             .map(|col| col.name_str().to_string())
+            .collect();
+        
+        let column_types: Vec<String> = rows[0].columns()
+            .iter()
+            .map(|col| format!("{:?}", col.column_type()))
             .collect();
         
         // Convert rows
@@ -729,11 +741,7 @@ impl ProductionMySqlConnection {
             result_rows.push(values);
         }
         
-        Ok(QueryResult {
-            columns,
-            rows: result_rows,
-            rows_affected: Some(result_rows.len() as u64),
-        })
+        Ok(QueryResult::new(column_names, column_types, result_rows))
     }
     
     /// Convert MySQL value at specific index
@@ -751,6 +759,7 @@ impl ProductionMySqlConnection {
 }
 
 /// Production MySQL prepared statement
+#[derive(Debug)]
 pub struct ProductionMySqlStatement {
     connection: PooledConn,
     query: String,
@@ -789,7 +798,7 @@ impl ProductionMySqlStatement {
 }
 
 impl DriverStmt for ProductionMySqlStatement {
-    fn execute(&mut self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::QueryError,
@@ -833,7 +842,7 @@ impl DriverStmt for ProductionMySqlStatement {
         })
     }
 
-    fn query(&mut self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::QueryError,
@@ -869,9 +878,26 @@ impl DriverStmt for ProductionMySqlStatement {
         self.convert_rows_to_result(rows)
     }
 
-    fn close(&mut self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), DatabaseError> {
         // Statement will be dropped automatically
         Ok(())
+    }
+
+    fn query_string(&self) -> &str {
+        &self.query
+    }
+
+    fn parameter_count(&self) -> usize {
+        self.parameter_count
+    }
+
+    fn clone(&self) -> Box<dyn DriverStmt> {
+        Box::new(ProductionMySqlStatement {
+            connection: self.connection.clone(),
+            query: self.query.clone(),
+            driver: Arc::clone(&self.driver),
+            parameter_count: self.parameter_count,
+        })
     }
 }
 
@@ -879,17 +905,22 @@ impl ProductionMySqlStatement {
     /// Convert rows to QueryResult
     fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<QueryResult, DatabaseError> {
         if rows.is_empty() {
-            return Ok(QueryResult {
-                columns: Vec::new(),
-                rows: Vec::new(),
-                rows_affected: Some(0),
-            });
+            return Ok(QueryResult::new(
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+            ));
         }
         
         // Extract column information
-        let columns: Vec<String> = rows[0].columns()
+        let column_names: Vec<String> = rows[0].columns()
             .iter()
             .map(|col| col.name_str().to_string())
+            .collect();
+        
+        let column_types: Vec<String> = rows[0].columns()
+            .iter()
+            .map(|col| format!("{:?}", col.column_type()))
             .collect();
         
         // Convert rows
@@ -903,11 +934,7 @@ impl ProductionMySqlStatement {
             result_rows.push(values);
         }
         
-        Ok(QueryResult {
-            columns,
-            rows: result_rows,
-            rows_affected: Some(result_rows.len() as u64),
-        })
+        Ok(QueryResult::new(column_names, column_types, result_rows))
     }
     
     /// Convert MySQL value at index
@@ -925,13 +952,15 @@ impl ProductionMySqlStatement {
 }
 
 /// Production MySQL transaction
+#[derive(Debug)]
 pub struct ProductionMySqlTransaction {
     connection: PooledConn,
     driver: Arc<ProductionMySqlDriver>,
     transaction_active: Arc<Mutex<bool>>,
     started_at: SystemTime,
-    committed: bool,
-    rolled_back: bool,
+    committed: Arc<Mutex<bool>>,
+    rolled_back: Arc<Mutex<bool>>,
+    options: TxOptions,
 }
 
 impl ProductionMySqlTransaction {
@@ -985,26 +1014,36 @@ impl ProductionMySqlTransaction {
             driver,
             transaction_active,
             started_at: SystemTime::now(),
-            committed: false,
-            rolled_back: false,
+            committed: Arc::new(Mutex::new(false)),
+            rolled_back: Arc::new(Mutex::new(false)),
+            options: opts,
         })
     }
 }
 
 impl DriverTx for ProductionMySqlTransaction {
-    fn commit(&mut self) -> Result<(), DatabaseError> {
-        if self.committed || self.rolled_back {
+    fn commit(&self) -> Result<(), DatabaseError> {
+        let committed = self.committed.lock().map_err(|_| 
+            DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
+        let rolled_back = self.rolled_back.lock().map_err(|_| 
+            DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire rollback lock"))?;
+            
+        if *committed || *rolled_back {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
                 "Transaction already completed"
             ));
         }
+        drop(committed);
+        drop(rolled_back);
         
         let mut conn = &self.connection;
         conn.query_drop("COMMIT")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::TransactionError, &format!("Transaction commit failed: {}", e)))?;
         
-        self.committed = true;
+        if let Ok(mut committed) = self.committed.lock() {
+            *committed = true;
+        }
         
         // Mark transaction as inactive
         if let Ok(mut active) = self.transaction_active.lock() {
@@ -1014,19 +1053,28 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(())
     }
 
-    fn rollback(&mut self) -> Result<(), DatabaseError> {
-        if self.committed || self.rolled_back {
+    fn rollback(&self) -> Result<(), DatabaseError> {
+        let committed = self.committed.lock().map_err(|_| 
+            DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
+        let rolled_back = self.rolled_back.lock().map_err(|_| 
+            DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire rollback lock"))?;
+            
+        if *committed || *rolled_back {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
                 "Transaction already completed"
             ));
         }
+        drop(committed);
+        drop(rolled_back);
         
         let mut conn = &self.connection;
         conn.query_drop("ROLLBACK")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::TransactionError, &format!("Transaction rollback failed: {}", e)))?;
         
-        self.rolled_back = true;
+        if let Ok(mut rolled_back) = self.rolled_back.lock() {
+            *rolled_back = true;
+        }
         
         // Mark transaction as inactive
         if let Ok(mut active) = self.transaction_active.lock() {
@@ -1040,6 +1088,173 @@ impl DriverTx for ProductionMySqlTransaction {
         }
         
         Ok(())
+    }
+
+    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+        SqlSanitizer::validate_query(query)
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
+        
+        let stmt = ProductionMySqlStatement::new(
+            &self.connection,
+            query.to_string(),
+            Arc::clone(&self.driver),
+        ).map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
+        
+        Ok(Box::new(stmt))
+    }
+
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+        SqlSanitizer::validate_query(query)
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
+        
+        let start_time = SystemTime::now();
+        
+        // Convert arguments to MySQL values
+        let mysql_params: Result<Vec<MySqlValue>, _> = args.iter()
+            .map(convert_to_mysql_value)
+            .collect();
+        
+        let mysql_params = mysql_params
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
+        
+        // Execute query
+        let mut conn = &self.connection;
+        let result: Result<Vec<Row>, mysql::Error> = if mysql_params.is_empty() {
+            conn.query(query)
+        } else {
+            conn.exec(query, mysql_params)
+        };
+        
+        let rows = result
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &format!("Query execution failed: {}", e)))?;
+        
+        let query_time = start_time.elapsed().unwrap_or_default();
+        
+        // Update statistics
+        if let Ok(mut stats) = self.driver.stats.write() {
+            stats.successful_queries += 1;
+            stats.average_query_time = (stats.average_query_time + query_time) / 2;
+            stats.update();
+        }
+        
+        // Convert results
+        self.convert_rows_to_result(rows)
+    }
+
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+        SqlSanitizer::validate_query(query)
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
+        
+        let start_time = SystemTime::now();
+        
+        // Convert arguments to MySQL values
+        let mysql_params: Result<Vec<MySqlValue>, _> = args.iter()
+            .map(convert_to_mysql_value)
+            .collect();
+        
+        let mysql_params = mysql_params
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
+        
+        // Execute statement
+        let mut conn = &self.connection;
+        let result = if mysql_params.is_empty() {
+            conn.query_drop(query)
+        } else {
+            conn.exec_drop(query, mysql_params)
+        };
+        
+        result
+            .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &format!("Statement execution failed: {}", e)))?;
+        
+        let query_time = start_time.elapsed().unwrap_or_default();
+        
+        // Get execution results
+        let affected_rows = conn.affected_rows();
+        let last_insert_id = conn.last_insert_id();
+        
+        // Update statistics
+        if let Ok(mut stats) = self.driver.stats.write() {
+            stats.successful_queries += 1;
+            stats.average_query_time = (stats.average_query_time + query_time) / 2;
+            stats.update();
+        }
+        
+        Ok(ExecuteResult::new(
+            if last_insert_id > 0 { Some(last_insert_id) } else { None },
+            affected_rows,
+        ))
+    }
+
+    fn options(&self) -> &TxOptions {
+        &self.options
+    }
+
+    fn is_active(&self) -> bool {
+        let committed = self.committed.lock().unwrap_or_else(|_| std::process::abort());
+        let rolled_back = self.rolled_back.lock().unwrap_or_else(|_| std::process::abort());
+        !*committed && !*rolled_back
+    }
+
+    fn clone(&self) -> Box<dyn DriverTx> {
+        Box::new(ProductionMySqlTransaction {
+            connection: self.connection.clone(),
+            driver: Arc::clone(&self.driver),
+            transaction_active: Arc::clone(&self.transaction_active),
+            started_at: self.started_at,
+            committed: Arc::clone(&self.committed),
+            rolled_back: Arc::clone(&self.rolled_back),
+            options: self.options.clone(),
+        })
+    }
+}
+
+impl ProductionMySqlTransaction {
+    /// Convert MySQL rows to QueryResult
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<QueryResult, DatabaseError> {
+        if rows.is_empty() {
+            return Ok(QueryResult::new(
+                Vec::new(),
+                Vec::new(), 
+                Vec::new(),
+            ));
+        }
+        
+        // Extract column information from the first row
+        let column_names: Vec<String> = rows[0].columns()
+            .iter()
+            .map(|col| col.name_str().to_string())
+            .collect();
+        
+        let column_types: Vec<String> = rows[0].columns()
+            .iter()
+            .map(|col| format!("{:?}", col.column_type()))
+            .collect();
+        
+        // Convert rows
+        let mut result_rows = Vec::new();
+        for row in rows {
+            let mut values = Vec::new();
+            for i in 0..row.len() {
+                let value = self.convert_mysql_value_at_index(&row, i)?;
+                values.push(value);
+            }
+            result_rows.push(values);
+        }
+        
+        Ok(QueryResult::new(column_names, column_types, result_rows))
+    }
+    
+    /// Convert MySQL value at specific index
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<SqlValue, DatabaseError> {
+        match row.get_opt::<MySqlValue, usize>(index) {
+            Some(Ok(value)) => convert_from_mysql_value(value)
+                .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
+            Some(Err(e)) => Err(DatabaseError::new(
+                DatabaseErrorKind::TypeConversionError, 
+                &format!("Failed to get value at index {}: {}", index, e)
+            )),
+            None => Ok(SqlValue::Null),
+        }
     }
 }
 
@@ -1056,7 +1271,7 @@ pub fn convert_to_mysql_value(value: &SqlValue) -> MySqlResult<MySqlValue> {
             let duration = t.duration_since(UNIX_EPOCH)
                 .map_err(|_| MySqlError::type_conversion("Invalid timestamp".to_string()))?;
             
-            let timestamp = mysql::chrono::NaiveDateTime::from_timestamp_opt(
+            let timestamp = NaiveDateTime::from_timestamp_opt(
                 duration.as_secs() as i64, 
                 duration.subsec_nanos()
             ).ok_or_else(|| MySqlError::type_conversion("Timestamp out of range".to_string()))?;
@@ -1084,7 +1299,7 @@ pub fn convert_from_mysql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
         MySqlValue::Float(f) => Ok(SqlValue::Float(f as f64)),
         MySqlValue::Double(d) => Ok(SqlValue::Float(d)),
         MySqlValue::Date(year, month, day, hour, minute, second, microsecond) => {
-            let naive_date = mysql::chrono::NaiveDate::from_ymd_opt(
+            let naive_date = NaiveDate::from_ymd_opt(
                 year as i32, month as u32, day as u32
             ).and_then(|d| d.and_hms_micro_opt(
                 hour as u32, minute as u32, second as u32, microsecond

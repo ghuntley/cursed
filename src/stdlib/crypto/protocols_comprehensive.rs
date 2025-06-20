@@ -55,7 +55,7 @@ use std::time::{Duration, SystemTime};
 use std::sync::{Arc, Mutex};
 
 use rand::rngs::OsRng;
-use ed25519_dalek::{Keypair as Ed25519Keypair};
+use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519VerifyingKey};
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
@@ -80,7 +80,7 @@ pub use super::protocols_advanced::{
 /// Comprehensive protocol suite providing unified access to all cryptographic protocols
 #[derive(Debug)]
 pub struct ProtocolSuite {
-    identity: Ed25519Keypair,
+    identity: Ed25519SigningKey,
     config: ProtocolConfig,
     active_channels: HashMap<String, SecureChannel>,
     challenge_auth: ChallengeResponseAuth,
@@ -103,7 +103,7 @@ struct ProtocolStatistics {
 impl ProtocolSuite {
     /// Create new protocol suite with specified security level
     pub fn new(security_level: SecurityLevel) -> Self {
-        let identity = Ed25519Keypair::generate(&mut OsRng);
+        let identity = Ed25519SigningKey::generate(&mut OsRng);
         let config = ProtocolConfig {
             security_level,
             ..ProtocolConfig::default()
@@ -124,7 +124,7 @@ impl ProtocolSuite {
 
     /// Create protocol suite with custom configuration
     pub fn with_config(config: ProtocolConfig) -> Self {
-        let identity = Ed25519Keypair::generate(&mut OsRng);
+        let identity = Ed25519SigningKey::generate(&mut OsRng);
         let party_id = hex::encode(&identity.public.to_bytes()[..8]);
         
         Self {

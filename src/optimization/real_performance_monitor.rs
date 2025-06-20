@@ -7,7 +7,7 @@ use crate::error::{Error, Result};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, atomic::{AtomicU64, AtomicUsize, Ordering}};
 use std::time::{Duration, Instant, SystemTime};
-use sysinfo::{System, SystemExt, ProcessExt, CpuExt};
+use sysinfo::{System, Process, Cpu};
 use tracing::{debug, info, warn, instrument};
 use serde::{Deserialize, Serialize};
 

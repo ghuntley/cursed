@@ -49,8 +49,14 @@ pub mod resource_limits;
 pub mod namespaces;
 pub mod privileges;
 pub mod unified_process_ipc;
+
+// Platform-specific modules
+#[cfg(unix)]
 pub mod unix_platform;
+#[cfg(windows)]
 pub mod windows_platform;
+#[cfg(target_os = "macos")]
+pub mod macos_platform;
 pub mod mmap;
 
 // Re-export enhanced functionality

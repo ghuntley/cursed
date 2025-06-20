@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED Documentation - The Bratty Programming Language</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="brat-nav">
+        <div class="nav-container">
+            <div class="logo">
+                <a href="../index.html" style="text-decoration: none; color: inherit;">
+                    <span class="logo-text">CURSED</span>
+                    <span class="logo-accent">⚡</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">home</a>
+                <a href="../install.html" class="nav-link">install</a>
+                <a href="index.html" class="nav-link active">docs</a>
+                <a href="../index.html#examples" class="nav-link">examples</a>
+                <a href="https://github.com/ghuntley/cursed" class="nav-link" target="_blank">github</a>
+            </div>
+        </div>
+    </nav>
+
+    <main style="padding-top: 70px;">
+        <!-- Documentation Header -->
+        <section class="hero" style="min-height: 60vh;">
+            <div class="hero-bg"></div>
+            <div class="container">
+                <div class="hero-content" style="text-align: center; max-width: 800px; margin: 0 auto;">
+                    <h1 class="hero-title">
+                        <span class="title-main" style="font-size: clamp(2.5rem, 6vw, 4rem);">documentation</span>
+                        <span class="title-sub">learn to serve main character energy 📚</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        comprehensive guide to the cursed programming language<br>
+                        from hello world to advanced concurrent applications
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Navigation -->
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">documentation sections</h2>
+                <div class="docs-grid">
+                    <a href="getting-started.html" class="doc-card">
+                        <div class="doc-icon">🚀</div>
+                        <h3>getting started</h3>
+                        <p>first steps with cursed, basic syntax, and your first programs</p>
+                        <div class="doc-topics">
+                            <span>hello world</span>
+                            <span>basic syntax</span>
+                            <span>variables</span>
+                        </div>
+                    </a>
+
+                    <a href="language-basics.html" class="doc-card">
+                        <div class="doc-icon">💫</div>
+                        <h3>language basics</h3>
+                        <p>core language features, data types, and control flow</p>
+                        <div class="doc-topics">
+                            <span>data types</span>
+                            <span>functions</span>
+                            <span>control flow</span>
+                        </div>
+                    </a>
+
+                    <a href="advanced-features.html" class="doc-card">
+                        <div class="doc-icon">✨</div>
+                        <h3>advanced features</h3>
+                        <p>structs, interfaces, generics, and error handling</p>
+                        <div class="doc-topics">
+                            <span>structs</span>
+                            <span>interfaces</span>
+                            <span>generics</span>
+                        </div>
+                    </a>
+
+                    <a href="concurrency.html" class="doc-card">
+                        <div class="doc-icon">🔄</div>
+                        <h3>concurrency</h3>
+                        <p>goroutines (stan), channels (dm), and concurrent programming</p>
+                        <div class="doc-topics">
+                            <span>goroutines</span>
+                            <span>channels</span>
+                            <span>synchronization</span>
+                        </div>
+                    </a>
+
+                    <a href="standard-library.html" class="doc-card">
+                        <div class="doc-icon">📦</div>
+                        <h3>standard library</h3>
+                        <p>built-in packages for I/O, strings, math, and more</p>
+                        <div class="doc-topics">
+                            <span>io operations</span>
+                            <span>collections</span>
+                            <span>utilities</span>
+                        </div>
+                    </a>
+
+                    <a href="package-system.html" class="doc-card">
+                        <div class="doc-icon">🎁</div>
+                        <h3>package system</h3>
+                        <p>creating, importing, and managing packages and dependencies</p>
+                        <div class="doc-topics">
+                            <span>package creation</span>
+                            <span>imports</span>
+                            <span>dependencies</span>
+                        </div>
+                    </a>
+
+                    <a href="compiler-cli.html" class="doc-card">
+                        <div class="doc-icon">⚙️</div>
+                        <h3>compiler & cli</h3>
+                        <p>using the cursed compiler, build options, and optimization</p>
+                        <div class="doc-topics">
+                            <span>compilation</span>
+                            <span>optimization</span>
+                            <span>cli tools</span>
+                        </div>
+                    </a>
+
+                    <a href="language-reference.html" class="doc-card">
+                        <div class="doc-icon">📖</div>
+                        <h3>language reference</h3>
+                        <p>complete grammar, keywords, and language specification</p>
+                        <div class="doc-topics">
+                            <span>grammar</span>
+                            <span>keywords</span>
+                            <span>operators</span>
+                        </div>
+                    </a>
+
+                    <a href="examples.html" class="doc-card">
+                        <div class="doc-icon">💡</div>
+                        <h3>examples & tutorials</h3>
+                        <p>practical examples and step-by-step tutorials</p>
+                        <div class="doc-topics">
+                            <span>web servers</span>
+                            <span>cli tools</span>
+                            <span>algorithms</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="examples">
+            <div class="container">
+                <h2 class="section-title">quick reference</h2>
+                <div class="quick-ref-grid">
+                    <div class="quick-ref-card">
+                        <h3>gen z keywords</h3>
+                        <div class="keyword-grid">
+                            <div class="keyword-pair">
+                                <code class="traditional">func</code>
+                                <span>→</span>
+                                <code class="cursed">slay</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">var</code>
+                                <span>→</span>
+                                <code class="cursed">sus</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">if</code>
+                                <span>→</span>
+                                <code class="cursed">lowkey</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">else</code>
+                                <span>→</span>
+                                <code class="cursed">highkey</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">for</code>
+                                <span>→</span>
+                                <code class="cursed">bestie</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">return</code>
+                                <span>→</span>
+                                <code class="cursed">yolo</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">true</code>
+                                <span>→</span>
+                                <code class="cursed">based</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">false</code>
+                                <span>→</span>
+                                <code class="cursed">sus</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">nil</code>
+                                <span>→</span>
+                                <code class="cursed">cap</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">go</code>
+                                <span>→</span>
+                                <code class="cursed">stan</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">chan</code>
+                                <span>→</span>
+                                <code class="cursed">dm</code>
+                            </div>
+                            <div class="keyword-pair">
+                                <code class="traditional">struct</code>
+                                <span>→</span>
+                                <code class="cursed">squad</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-ref-card">
+                        <h3>basic syntax</h3>
+                        <div class="code-example">
+<pre><code><span class="comment">fr fr package declaration</span>
+<span class="keyword">vibe</span> <span class="identifier">main</span>
+
+<span class="comment">fr fr import statement</span>
+<span class="keyword">yeet</span> <span class="string">"stdlib::io"</span>
+
+<span class="comment">fr fr function definition</span>
+<span class="keyword">slay</span> <span class="function">greet</span>(<span class="identifier">name</span> <span class="type">tea</span>) {
+    <span class="identifier">io</span>.<span class="function">printf</span>(<span class="string">"hey {}! ✨\n"</span>, <span class="identifier">name</span>)
+}
+
+<span class="comment">fr fr main function</span>
+<span class="keyword">slay</span> <span class="function">main</span>() {
+    <span class="keyword">sus</span> <span class="identifier">name</span> = <span class="string">"bestie"</span>
+    <span class="function">greet</span>(<span class="identifier">name</span>)
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="quick-ref-card">
+                        <h3>data types</h3>
+                        <div class="type-list">
+                            <div class="type-item">
+                                <code>tea</code>
+                                <span>string</span>
+                            </div>
+                            <div class="type-item">
+                                <code>normie</code>
+                                <span>integer (i32)</span>
+                            </div>
+                            <div class="type-item">
+                                <code>big_normie</code>
+                                <span>integer (i64)</span>
+                            </div>
+                            <div class="type-item">
+                                <code>decimal</code>
+                                <span>float (f64)</span>
+                            </div>
+                            <div class="type-item">
+                                <code>vibes</code>
+                                <span>boolean</span>
+                            </div>
+                            <div class="type-item">
+                                <code>[]T</code>
+                                <span>slice/array</span>
+                            </div>
+                            <div class="type-item">
+                                <code>tea[T]</code>
+                                <span>map</span>
+                            </div>
+                            <div class="type-item">
+                                <code>dm T</code>
+                                <span>channel</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-ref-card">
+                        <h3>common patterns</h3>
+                        <div class="code-example">
+<pre><code><span class="comment">fr fr error handling</span>
+<span class="keyword">sus</span> <span class="identifier">result</span>, <span class="identifier">err</span> = <span class="function">doSomething</span>()
+<span class="keyword">lowkey</span> <span class="identifier">err</span> != <span class="literal">cap</span> {
+    <span class="identifier">io</span>.<span class="function">println</span>(<span class="string">"oops:"</span>, <span class="identifier">err</span>)
+    <span class="keyword">yolo</span>
+}
+
+<span class="comment">fr fr goroutine</span>
+<span class="keyword">stan</span> <span class="function">asyncWork</span>()
+
+<span class="comment">fr fr channel communication</span>
+<span class="keyword">sus</span> <span class="identifier">ch</span> = <span class="function">make</span>(<span class="keyword">dm</span> <span class="type">normie</span>)
+<span class="identifier">ch</span> <- <span class="number">42</span>
+<span class="keyword">sus</span> <span class="identifier">value</span> = <-<span class="identifier">ch</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Getting Started CTA -->
+        <section class="getting-started">
+            <div class="container">
+                <h2 class="section-title">ready to start your cursed journey?</h2>
+                <p style="text-align: center; margin-bottom: 3rem; color: rgba(255, 255, 255, 0.8); font-size: 1.1rem;">
+                    dive into the documentation and start building iconic applications
+                </p>
+                <div class="cta-buttons">
+                    <a href="getting-started.html" class="btn btn-primary large">start with basics</a>
+                    <a href="language-reference.html" class="btn btn-secondary large">full reference</a>
+                    <a href="examples.html" class="btn btn-secondary large">see examples</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>cursed</h4>
+                    <p>the programming language that serves main character energy</p>
+                </div>
+                <div class="footer-section">
+                    <h4>resources</h4>
+                    <ul>
+                        <li><a href="index.html">documentation</a></li>
+                        <li><a href="../index.html#examples">examples</a></li>
+                        <li><a href="../install.html">installation</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>community</h4>
+                    <ul>
+                        <li><a href="https://github.com/ghuntley/cursed" target="_blank">github</a></li>
+                        <li><a href="https://github.com/ghuntley/cursed/issues" target="_blank">report issues</a></li>
+                        <li><a href="https://github.com/ghuntley/cursed/discussions" target="_blank">discussions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>vibes</h4>
+                    <p>made with 💚 and chaotic energy<br>
+                    by <a href="https://github.com/ghuntley" target="_blank">@ghuntley</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 cursed programming language. no cap detected. ✨</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+    <style>
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--space-xl);
+        }
+
+        .doc-card {
+            background: var(--brat-gray);
+            padding: var(--space-xl);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(139, 206, 0, 0.2);
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            display: block;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-glow);
+            border-color: var(--brat-green);
+        }
+
+        .doc-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .doc-card h3 {
+            font-size: 1.25rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--brat-green);
+            margin-bottom: var(--space-sm);
+            text-transform: lowercase;
+        }
+
+        .doc-card p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: var(--space-md);
+        }
+
+        .doc-topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+        }
+
+        .doc-topics span {
+            background: rgba(139, 206, 0, 0.1);
+            color: var(--brat-green);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .quick-ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-xl);
+        }
+
+        .quick-ref-card {
+            background: var(--brat-gray);
+            padding: var(--space-xl);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(139, 206, 0, 0.2);
+        }
+
+        .quick-ref-card h3 {
+            color: var(--brat-green);
+            font-size: 1.25rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-lg);
+            text-transform: lowercase;
+        }
+
+        .keyword-grid {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .keyword-pair {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-xs) 0;
+        }
+
+        .keyword-pair code.traditional {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-family: 'SF Mono', monospace;
+            font-size: 0.85rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .keyword-pair code.cursed {
+            background: rgba(139, 206, 0, 0.1);
+            color: var(--brat-green);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-family: 'SF Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: var(--font-weight-semibold);
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .keyword-pair span {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+        }
+
+        .type-list {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .type-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-xs) 0;
+            border-bottom: 1px solid rgba(139, 206, 0, 0.1);
+        }
+
+        .type-item code {
+            background: rgba(139, 206, 0, 0.1);
+            color: var(--brat-green);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-family: 'SF Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .type-item span {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .docs-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-ref-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .keyword-pair {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--space-xs);
+            }
+            
+            .keyword-pair span {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</body>
+</html>

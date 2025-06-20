@@ -28,7 +28,7 @@ use sha2::{Sha256, Sha512};
 use blake3::Hasher as Blake3Hasher;
 use hmac::{Hmac, Mac};
 use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar, constants::ED25519_BASEPOINT_TABLE, ristretto::RistrettoPoint};
-use ed25519_dalek::{Keypair as Ed25519Keypair, PublicKey as Ed25519PublicKey, SecretKey as Ed25519SecretKey, Signature as Ed25519Signature, Signer, Verifier};
+use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519VerifyingKey, Signature as Ed25519Signature, Signer, Verifier};
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;

@@ -690,7 +690,7 @@ impl ParallelCompiler {
     
     /// Get current process memory usage
     fn get_current_memory_usage() -> usize {
-        use sysinfo::{System, SystemExt, ProcessExt, Pid};
+        use sysinfo::{System, Process, Pid};
         
         let mut sys = System::new();
         sys.refresh_processes();
@@ -1256,7 +1256,7 @@ impl ResourceMonitor {
         
         let stats = Arc::clone(&self.resource_stats);
         let handle = thread::spawn(move || {
-            use sysinfo::{System, SystemExt, ProcessExt, Pid};
+            use sysinfo::{System, Process, Pid};
             let mut sys = System::new_all();
             let current_pid = Pid::from(std::process::id() as usize);
             

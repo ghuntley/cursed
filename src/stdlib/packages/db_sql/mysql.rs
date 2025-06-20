@@ -28,6 +28,7 @@ pub struct MySqlDriver {
 }
 
 /// fr fr MySQL connection
+#[derive(Debug)]
 pub struct MySqlConnection {
     connection_id: String,
     pool: Arc<Pool>,
@@ -42,6 +43,7 @@ pub struct MySqlError {
 }
 
 /// fr fr MySQL result set implementation
+#[derive(Debug)]
 pub struct MySqlResultSet {
     rows: Vec<crate::stdlib::packages::db_core::Row>,
     metadata: crate::stdlib::packages::db_core::ResultMetadata,
@@ -49,6 +51,7 @@ pub struct MySqlResultSet {
 }
 
 /// fr fr MySQL prepared statement implementation
+#[derive(Debug)]
 pub struct MySqlPreparedStatement {
     pool: Arc<Pool>,
     sql: String,
@@ -56,6 +59,7 @@ pub struct MySqlPreparedStatement {
 }
 
 /// fr fr MySQL transaction implementation
+#[derive(Debug)]
 pub struct MySqlTransactionImpl {
     connection: Option<MySqlTransaction<'static>>,
     transaction_id: String,
@@ -832,6 +836,35 @@ impl PreparedStatement for MySqlPreparedStatement {
     fn sql(&self) -> &str {
         &self.sql
     }
+    
+    /// slay Get parameter metadata
+    fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
+        // Placeholder implementation - would need to extract from MySQL statement
+        &[]
+    }
+    
+    /// slay Get result set metadata
+    fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+        // Placeholder implementation - would need to extract from MySQL statement
+        static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
+            std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
+                columns: vec![],
+                total_rows: None,
+                has_more_rows: false,
+                name: None,
+                schema_name: None,
+                table_name: None,
+                is_updatable: false,
+                result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+            });
+        &EMPTY_METADATA
+    }
+    
+    /// slay Close the prepared statement
+    async fn close(self: Box<Self>) -> DbResult<()> {
+        // MySQL prepared statements are automatically cleaned up
+        Ok(())
+    }
 }
 
 // Implement DatabaseTransaction trait for MySqlTransactionImpl
@@ -963,11 +996,11 @@ impl DatabaseTransaction for MySqlTransactionImpl {
         }
     }
 
-    fn state(&self) -> crate::stdlib::packages::db_core::TransactionState {
+    fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
         if self.active {
-            crate::stdlib::packages::db_core::TransactionState::Active
+            crate::stdlib::packages::db_core::traits::TransactionState::Active
         } else {
-            crate::stdlib::packages::db_core::TransactionState::Committed
+            crate::stdlib::packages::db_core::traits::TransactionState::Committed
         }
     }
 }
