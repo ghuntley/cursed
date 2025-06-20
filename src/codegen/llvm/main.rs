@@ -8,7 +8,7 @@ use crate::optimization::real_llvm_passes::RealLlvmPassManager;
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
 use crate::optimization::config::{OptimizationConfig as OptConfig, OptimizationLevel as OptLevel};
 use crate::optimization::coordinator::{
-    OptimizationCoordinator, OptimizationCoordinatorConfig, ComprehensiveOptimizationResult,
+    OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults,
     OptimizationLevel as CoordOptLevel
 };
 
@@ -35,7 +35,7 @@ use inkwell::{
 // Import from sibling modules
 use super::debug_integration::LlvmDebugCodeGenerator;
 use super::debug::{CursedDebugBuilder, LlvmDebugConfig};
-use super::debug_metadata::{LlvmDebugMetadata, DebugStats, LlvmDebugIntegration};
+use super::debug_metadata::LlvmDebugMetadata;
 use super::enhanced_codegen::{EnhancedLlvmCodegen, CodegenConfig, CodegenStats, CodegenResult};
 use super::web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
 use super::stdlib_registry::{StdlibRegistry, StdlibLlvmIntegration, StdlibFunction};
@@ -52,7 +52,8 @@ use super::process_execution::{ProcessExecutionCompiler, initialize_process_exec
 use super::process::{ProcessCompilation, ProcessControlOp, IpcChannelType, SharedMemoryOp, SignalOp};
 use super::gc_integration::{LlvmGcIntegration, GcIntegrationStats, ObjectHeader, AllocationRequest, AllocationResult};
 use super::panic::{PanicCompiler, LlvmPanicGenerator, PanicCompilerConfig};
-use super::debug_info::{LlvmDebugGenerator, LlvmDebugManager};
+use super::debug_info::LlvmDebugGenerator;
+use super::debug::LlvmDebugManager;
 use super::error_propagation::ErrorPropagationCompiler;
 use super::error_propagation_enhanced::{EnhancedErrorPropagationCompiler, ErrorPropagationContext};
 use super::question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime, ErrorContext};
@@ -68,17 +69,16 @@ use super::result_types::{
 use super::result_types_simple::{ResultTypeLayout, OptionTypeLayout, ResultTypeCompiler as SimpleResultTypeCompiler, result_type_utils as simple_result_utils};
 use super::optimization::{OptimizationManager, OptimizationLevel, OptimizationConfig, OptimizationStats, utils as optimization_utils};
 use super::optimization_engine::{OptimizationEngine, OptimizationEngineConfig, EngineStatistics, OptimizationResult};
-use super::optimization_integration::{LlvmOptimizationIntegration, OptimizationState, OptimizationStats as LlvmOptimizationStats, HotPath};
+use super::optimization::{LlvmOptimizationIntegration, OptimizationState, OptimizationStats as LlvmOptimizationStats, HotPath};
 use super::lto_integration::{
     LlvmLtoIntegration, ModuleSummary, FunctionSummary, GlobalSummary, ImportDecision,
     GlobalCallGraph, LtoResult as LlvmLtoResult, OptimizationResult as LlvmOptimizationResult, ObjectFile
 };
-use super::passes::{
+use super::optimization_passes::{
     OptimizationPass, PassConfiguration, PassResult, OptimizationLevel as PassOptLevel,
     PassRegistry, OptimizationPipeline, PipelineBuilder, PerformanceMonitor,
     DeadCodeEliminationPass, ConstantPropagationPass
 };
-use super::process::{ProcessCompiler, ProcessIoOperation};
 use super::ipc::{IpcCompiler, SharedMemoryOperation, PipeOperation, MessageQueueOperation, SemaphoreOperation, SignalOperation};
 use super::type_switch::{TypeSwitchCompilation, TypeSwitchContext, LlvmTypeSwitchCompiler, TypeSwitchUtils};
 use super::jit_engine::{CursedJitEngine, JitEngineConfig, JitEngineStats, JitError, create_optimized_jit_engine, create_debug_jit_engine, create_production_jit_engine};
