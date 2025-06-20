@@ -69,15 +69,14 @@ use super::result_types::{
 use super::result_types_simple::{ResultTypeLayout, OptionTypeLayout, ResultTypeCompiler as SimpleResultTypeCompiler, result_type_utils as simple_result_utils};
 use super::optimization::{OptimizationManager, OptimizationLevel, OptimizationConfig, OptimizationStats, utils as optimization_utils};
 use super::optimization_engine::{OptimizationEngine, OptimizationEngineConfig, EngineStatistics, OptimizationResult};
-use super::optimization::{LlvmOptimizationIntegration, OptimizationState, OptimizationStats as LlvmOptimizationStats, HotPath};
+use super::optimization_integration::{LlvmOptimizationIntegration, OptimizationState, HotPath};
 use super::lto_integration::{
     LlvmLtoIntegration, ModuleSummary, FunctionSummary, GlobalSummary, ImportDecision,
     GlobalCallGraph, LtoResult as LlvmLtoResult, OptimizationResult as LlvmOptimizationResult, ObjectFile
 };
 use super::optimization_passes::{
-    OptimizationPass, PassConfiguration, PassResult, OptimizationLevel as PassOptLevel,
-    PassRegistry, OptimizationPipeline, PipelineBuilder, PerformanceMonitor,
-    DeadCodeEliminationPass, ConstantPropagationPass
+    OptimizationPass, PassConfiguration, PassResult, 
+    PassRegistry
 };
 use super::ipc::{IpcCompiler, SharedMemoryOperation, PipeOperation, MessageQueueOperation, SemaphoreOperation, SignalOperation};
 use super::type_switch::{TypeSwitchCompilation, TypeSwitchContext, LlvmTypeSwitchCompiler, TypeSwitchUtils};
@@ -89,7 +88,7 @@ use super::template::{
     declare_template_runtime_functions, register_standard_filters, runtime as template_runtime
 };
 use super::async_await::{
-    AsyncAwaitCompiler, AsyncFunctionContext, AwaitPoint, register_async_runtime_functions
+    AsyncAwaitCompiler, AsyncFunctionContext, AwaitPoint
 };
 
 // Export the real LLVM code generator for tests will be added after struct definition

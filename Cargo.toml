@@ -121,22 +121,28 @@ pqcrypto-traits = "0.3"     # Common traits for PQC algorithms
 # ECDSA signature support for PKI
 ecdsa = "0.16"              # ECDSA signature traits
 
-# Zero-knowledge proofs dependencies (commented out due to version conflicts)
-# ark-ff = "0.4"          # Finite field arithmetic
-# ark-ec = "0.4"          # Elliptic curve arithmetic  
-# ark-std = "0.4"         # Standard library for arkworks
-# ark-poly = "0.4"        # Polynomial arithmetic
-# ark-serialize = "0.4"   # Serialization for arkworks
-# ark-bn254 = "0.4"       # BN254 curve for pairings
-# ark-bls12-381 = "0.4"   # BLS12-381 curve for pairings
-# ark-relations = "0.4"   # Constraint systems
-# ark-r1cs-std = "0.4"    # R1CS standard library
-# ark-groth16 = "0.4"     # Groth16 zk-SNARK
-# ark-marlin = "0.4"      # Marlin universal SNARK
+# Zero-knowledge proofs dependencies 
+ark-ff = "0.3"          # Finite field arithmetic
+ark-ec = "0.3"          # Elliptic curve arithmetic  
+ark-std = "0.3"         # Standard library for arkworks
+ark-poly = "0.3"        # Polynomial arithmetic
+ark-serialize = "0.3"   # Serialization for arkworks
+ark-bn254 = "0.3"       # BN254 curve for pairings
+ark-bls12-381 = "0.3"   # BLS12-381 curve for pairings
+ark-relations = "0.3"   # Constraint systems
+ark-r1cs-std = "0.3"    # R1CS standard library
+ark-groth16 = "0.3"     # Groth16 zk-SNARK
+ark-marlin = "0.3"      # Marlin universal SNARK
+ark-poly-commit = "0.3" # Polynomial commitment schemes
 
 # Package management dependencies
 tokio = { version = "1.0", features = ["full"] }  # Async runtime
 indicatif = "0.17"  # Progress bars for CLI
+
+# System interaction dependencies
+nix = "0.27"              # Unix system calls and utilities
+num-integer = "0.1"       # Integer operations and algorithms 
+lz4_flex = "0.11"         # LZ4 compression
 
 # Optimization system dependencies
 # num_cpus = "1.16"         # For detecting number of CPU cores (already included above)
