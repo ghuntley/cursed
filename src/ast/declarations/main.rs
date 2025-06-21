@@ -4,6 +4,7 @@ use crate::ast::traits::{Node, Statement, Expression};
 use crate::ast::identifiers::Identifier;
 use crate::ast::block::BlockStatement;
 use crate::ast::expressions::Parameter;
+use crate::error::SourceLocation;
 use std::any::Any;
 
 /// Function declaration (slay name(params) return_type { body })
@@ -16,6 +17,9 @@ pub struct FunctionStatement {
     pub body: BlockStatement,
     pub type_parameters: Vec<TypeParameter>,
     pub generic_constraints: Vec<GenericConstraint>,
+    pub location: Option<SourceLocation>,
+    pub is_public: bool,
+    pub is_async: bool,
 }
 
 impl FunctionStatement {
@@ -34,7 +38,25 @@ impl FunctionStatement {
             body,
             type_parameters: Vec::new(),
             generic_constraints: Vec::new(),
+            location: None,
+            is_public: false,
+            is_async: false,
         }
+    }
+
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
+        self.location = Some(location);
+        self
+    }
+
+    pub fn with_visibility(mut self, is_public: bool) -> Self {
+        self.is_public = is_public;
+        self
+    }
+
+    pub fn with_async(mut self, is_async: bool) -> Self {
+        self.is_async = is_async;
+        self
     }
 }
 
@@ -75,6 +97,9 @@ impl Statement for FunctionStatement {
             body: self.body.clone(),
             type_parameters: self.type_parameters.clone(),
             generic_constraints: self.generic_constraints.clone(),
+            location: self.location.clone(),
+            is_public: self.is_public,
+            is_async: self.is_async,
         })
     }
 }
@@ -90,6 +115,8 @@ pub struct SquadStatement {
     pub fields: Vec<FieldStatement>,
     pub type_parameters: Vec<TypeParameter>,
     pub generic_constraints: Vec<GenericConstraint>,
+    pub location: Option<SourceLocation>,
+    pub is_public: bool,
 }
 
 impl SquadStatement {
@@ -104,7 +131,19 @@ impl SquadStatement {
             fields,
             type_parameters: Vec::new(),
             generic_constraints: Vec::new(),
+            location: None,
+            is_public: false,
         }
+    }
+
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
+        self.location = Some(location);
+        self
+    }
+
+    pub fn with_visibility(mut self, is_public: bool) -> Self {
+        self.is_public = is_public;
+        self
     }
 }
 
@@ -139,6 +178,8 @@ pub struct CollabStatement {
     pub name: Identifier,
     pub methods: Vec<MethodDeclaration>,
     pub type_parameters: Vec<TypeParameter>,
+    pub location: Option<SourceLocation>,
+    pub is_public: bool,
 }
 
 impl CollabStatement {
@@ -152,7 +193,19 @@ impl CollabStatement {
             name,
             methods,
             type_parameters: Vec::new(),
+            location: None,
+            is_public: false,
         }
+    }
+
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
+        self.location = Some(location);
+        self
+    }
+
+    pub fn with_visibility(mut self, is_public: bool) -> Self {
+        self.is_public = is_public;
+        self
     }
 }
 
