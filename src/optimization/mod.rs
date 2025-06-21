@@ -38,6 +38,10 @@ pub mod build_profiles;
 pub mod benchmarking_types;
 pub mod enablement_system;
 pub mod configuration_manager;
+pub mod dependency_analyzer;
+pub mod benchmarking;
+pub mod profiling;
+pub mod compiler_passes;
 
 // Missing critical modules causing E0433 errors
 pub mod llvm_advanced;
@@ -52,7 +56,7 @@ pub mod profiler;
 pub mod runtime_optimizations;
 pub mod real_performance_analyzer;
 pub mod real_compilation_profiler;
-pub mod analysis;
+// pub mod analysis; // Moved to alias section below
 pub mod enhanced_benchmarking;
 
 pub use baseline_storage::{
@@ -190,13 +194,25 @@ pub use runtime_optimizations::{
     RuntimeOptimizer, RuntimeOptimizationConfig, RuntimeOptimizationResults,
 };
 pub use real_performance_analyzer::{
-    PerformanceAnalyzer, AnalyzerConfig, BottleneckSeverity, AnalysisResult,
+    PerformanceAnalyzer as RealPerformanceAnalyzer, AnalyzerConfig, BottleneckSeverity, AnalysisResult,
 };
 pub use real_compilation_profiler::{
     CompilationProfiler, ProfileResult, ProfilingConfig,
 };
 pub use enhanced_benchmarking::{
     EnhancedBenchmarkResult, BenchmarkMetrics,
+};
+pub use dependency_analyzer::{
+    DependencyAnalyzer, CompilationUnit as DependencyCompilationUnit, DependencyAnalysisResult,
+};
+pub use benchmarking::{
+    BenchmarkingSuite, BenchmarkingConfig, Benchmark, BenchmarkResult as BenchmarkingBenchmarkResult, BenchmarkCategory, PerformanceComparison,
+};
+pub use profiling::{
+    ProfilingSystem, ProfilingConfig, ProfilingSession, Profile, ProfileStatistics, Hotspot, CompilationPhaseProfile,
+};
+pub use compiler_passes::{
+    CompilerPassManager, CompilerPass, PassType, PassExecutionResult, PassExecutionConfig, PassExecutionStatistics,
 };
 
 // Create analysis and utils modules as aliases
@@ -229,7 +245,7 @@ pub use real_optimization_integration::{
 
 // Advanced optimization exports
 pub use advanced_llvm_integration::{
-    AdvancedLlvmIntegration, AdvancedLlvmConfig, AdvancedOptimizationStatistics,
+    AdvancedLlvmIntegration, AdvancedLlvmConfig, AdvancedOptimizationStatistics as LlvmAdvancedOptimizationStatistics,
     CfgTransformationStatistics, LoopOptimizationStatistics as AdvancedLoopStats,
     VectorizationStatistics, TargetSpecificStatistics, FunctionComplexity,
 };
@@ -240,7 +256,7 @@ pub use target_optimization::{
 };
 pub use advanced_loop_optimization::{
     AdvancedLoopOptimizer, LoopOptimizationConfig as AdvancedLoopConfig,
-    LoopOptimizationStatistics, LoopInfo, OptimizationOpportunity as LoopOpportunity,
+    LoopOptimizationStatistics, LoopInfo as AdvancedLoopInfo, OptimizationOpportunity as LoopOpportunity,
     CodeUnit as LoopCodeUnit,
 };
 pub use profile_guided_optimization::{
@@ -289,7 +305,7 @@ pub use ml_optimization::{
 };
 pub use ml::{
     MLOptimizationCoordinator, OptimizationStrategy as MLOptimizationStrategy, OptimizationLevel as MLOptimizationLevel,
-    OptimizationPass, CompilationContext, PerformanceStatistics as MLPerformanceStatistics,
+    OptimizationPass as MLOptimizationPass, CompilationContext, PerformanceStatistics as MLPerformanceStatistics,
 };
 
 // Advanced optimization passes
@@ -314,7 +330,7 @@ pub use gvn::{
     GvnOptimization, PhiSimplification, LoadForwardingOpportunity, GvnStatistics,
 };
 pub use tail_call_optimization::{
-    TailCallOptimizer, TailCallOptimizationResults, FunctionTailCallResults, TailCallCandidate,
+    TailCallOptimizer as TailCallOptimizationOptimizer, TailCallOptimizationResults, FunctionTailCallResults, TailCallCandidate,
     TailCallEligibility, TailCallOptimization, TailCallStatistics,
 };
 pub use jump_threading::{

@@ -8,7 +8,7 @@ use tracing::{debug, error, info, instrument, warn};
 
 use crate::error::Error as CursedError;
 use super::template_core::{TemplateConfig, TemplateLoader, Template};
-use super::template_syntax::{TemplateAst, TemplateNode, TemplateExpression};
+use super::template_syntax::{TemplateAst, TemplateNode, TemplateExpression, BlockNode};
 use super::template_cache::CacheEntry;
 
 /// Template bundle configuration
