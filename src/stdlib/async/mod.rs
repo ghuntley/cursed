@@ -43,6 +43,8 @@ pub use sync::{
     mpsc, oneshot, broadcast, select, join, race
 };
 
+pub use utils::{spawn_blocking_io};
+
 /// Common async utilities
 pub mod utils {
     use super::*;
@@ -151,6 +153,15 @@ pub mod utils {
     /// Yield execution to allow other tasks to run
     pub async fn yield_to_scheduler() {
         yield_now().await
+    }
+
+    /// Spawn a blocking I/O operation
+    pub async fn spawn_blocking_io<F, R>(f: F) -> AsyncResult<R>
+    where
+        F: FnOnce() -> AsyncResult<R> + Send + 'static,
+        R: Send + 'static,
+    {
+        spawn_blocking_result(f).await
     }
 }
 

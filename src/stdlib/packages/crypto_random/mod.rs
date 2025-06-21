@@ -28,6 +28,49 @@ pub use nonce_generation::*;
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 
+/// Result type for cryptographic random operations
+pub type CsprngResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+/// Supported CSPRNG algorithms
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CsprngAlgorithm {
+    ChaCha20,
+    SystemRandom,
+    Hardware,
+}
+
+/// Cryptographically secure random number generator
+#[derive(Debug, Clone)]
+pub struct CryptographicRng {
+    algorithm: CsprngAlgorithm,
+}
+
+impl CryptographicRng {
+    /// Create a new cryptographic RNG with the specified algorithm
+    pub fn new(algorithm: CsprngAlgorithm) -> Self {
+        Self { algorithm }
+    }
+    
+    /// Generate cryptographically secure random bytes
+    pub fn generate_bytes(&self, count: usize) -> CsprngResult<Vec<u8>> {
+        // Use existing random_bytes function
+        random_bytes(count).map_err(|e| e.into())
+    }
+    
+    /// Fill a buffer with cryptographically secure random bytes
+    pub fn fill_bytes(&self, buffer: &mut [u8]) -> CsprngResult<()> {
+        let bytes = self.generate_bytes(buffer.len())?;
+        buffer.copy_from_slice(&bytes);
+        Ok(())
+    }
+}
+
+/// Fill a buffer with cryptographically secure random data
+pub fn fill_random(buffer: &mut [u8]) -> CsprngResult<()> {
+    let rng = CryptographicRng::new(CsprngAlgorithm::ChaCha20);
+    rng.fill_bytes(buffer)
+}
+
 /// Initialize the crypto_random package with comprehensive functionality
 pub fn init_crypto_random() -> AdvancedCryptoResult<()> {
     // Test that the random number generator is working properly

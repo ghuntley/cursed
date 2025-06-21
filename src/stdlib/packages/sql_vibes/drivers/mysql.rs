@@ -7,6 +7,22 @@ use crate::stdlib::packages::sql_vibes::{
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
+// Type aliases for compatibility with external API expectations
+pub type MySqlError = SqlError;
+pub type MySqlResult<T> = SqlResult<T>;
+pub type MySqlStatement = MySqlPreparedStatement;
+
+// Placeholder types for missing functionality
+#[derive(Debug, Clone)]
+pub struct MySqlPool {
+    // Placeholder for connection pooling
+}
+
+#[derive(Debug, Clone)]
+pub struct MySqlPoolConfig {
+    // Placeholder for pool configuration
+}
+
 /// fr fr MySQL driver implementation - web development's favorite database periodt
 #[derive(Debug)]
 pub struct MySqlDriver {
@@ -464,7 +480,7 @@ pub struct MySqlConnectionParts {
 // Helper functions for MySQL implementation
 
 /// Parse MySQL connection string into components
-fn parse_mysql_connection_string(connection_string: &str) -> SqlResult<MySqlConnectionParts> {
+pub fn parse_mysql_connection_string(connection_string: &str) -> SqlResult<MySqlConnectionParts> {
     // mysql://username:password@host:port/database?param1=value1&param2=value2
     
     let url = connection_string.strip_prefix("mysql://")

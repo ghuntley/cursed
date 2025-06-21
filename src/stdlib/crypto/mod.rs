@@ -102,6 +102,32 @@ pub use pqc_production::{
     get_recommended_algorithm as production_get_recommended_algorithm,
 };
 
+// Re-export protocol types that are being imported elsewhere
+pub use protocols::{
+    JwtHandler, HmacAuth, TotpGenerator, 
+    ProtocolSuite, ProtocolBuilder, SecurityLevel as ProtocolSecurityLevel, ProtocolConfig,
+    SecureMessagingProtocol, MpcProtocol, DkgProtocol,
+    SecurityAuditReport, ProtocolHealthStatus,
+    ProtocolError, ProtocolResult, CryptoPrimitives,
+    X25519KeyExchange, EcdhKeyExchange, DiffieHellmanKeyExchange,
+    EcdheKeyExchange, EcdheMessage, SecureChannel,
+    ChallengeResponseAuth, ChallengeSet, ResponseSet, AuthenticationResult,
+    MultiPartyComputation, ShareDistribution,
+    DistributedKeyGeneration, DistributedKey,
+};
+
+// Re-export random and encoding types
+pub use random::{
+    UuidV4Generator, SaltGenerator, NonceGenerator, SecureRandom,
+};
+
+pub use encoding::{
+    Base64Encoder, HexEncoder, Base32Encoder, UrlEncoder,
+};
+
+// Re-export CryptoPlatform if it exists
+// Note: This may need to be created or found in appropriate module
+
 // Re-export unified crypto ecosystem
 pub use unified_api::{
     UnifiedCryptoError, UnifiedCryptoResult, UnifiedCryptoManager,

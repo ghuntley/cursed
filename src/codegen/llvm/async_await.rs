@@ -4,89 +4,87 @@
 /// Currently provides stubs for future integration with real LLVM backend.
 
 use std::collections::HashMap;
-use llvm_sys::core::*;
-use llvm_sys::prelude::*;
+use inkwell::{
+    context::Context,
+    values::{BasicValueEnum, FunctionValue},
+    types::{BasicTypeEnum, FunctionType},
+    basic_block::BasicBlock,
+};
 use crate::error::CursedError;
 
 /// Async/await code generation trait (placeholder)
 pub trait AsyncAwaitCompiler {
     /// Compile an async function declaration (placeholder)
-    fn compile_async_function(
+    fn compile_async_function<'ctx>(
         &mut self,
         name: &str,
         parameters: &[String],
         body: &[String],
-        return_type: LLVMTypeRef,
-    ) -> Result<LLVMValueRef, CursedError> {
-        // Placeholder implementation
-        Ok(std::ptr::null_mut())
+        return_type: BasicTypeEnum<'ctx>,
+    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+        // Placeholder implementation - would create actual async function
+        Err(CursedError::Runtime("Async function compilation not implemented".to_string()))
     }
 
     /// Compile an await expression (placeholder)
-    fn compile_await_expression(
+    fn compile_await_expression<'ctx>(
         &mut self,
         future_expr: &str,
-    ) -> Result<LLVMValueRef, CursedError> {
-        // Placeholder implementation
-        Ok(std::ptr::null_mut())
+    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+        // Placeholder implementation - would compile await expression
+        Err(CursedError::Runtime("Await expression compilation not implemented".to_string()))
     }
 
     /// Generate async runtime state machine (placeholder)
-    fn generate_async_state_machine(
+    fn generate_async_state_machine<'ctx>(
         &mut self,
-        function: LLVMValueRef,
-        await_points: &[AwaitPoint],
+        function: FunctionValue<'ctx>,
+        await_points: &[AwaitPoint<'ctx>],
     ) -> Result<(), CursedError> {
         // Placeholder implementation
         Ok(())
     }
 
     /// Create future type for async function (placeholder)
-    fn create_future_type(&mut self, return_type: LLVMTypeRef) -> LLVMTypeRef {
-        // Placeholder implementation
-        std::ptr::null_mut()
+    fn create_future_type<'ctx>(&mut self, return_type: BasicTypeEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, CursedError> {
+        // Placeholder implementation - would create future type
+        Err(CursedError::Runtime("Future type creation not implemented".to_string()))
     }
 
     /// Generate yield point for async function (placeholder)
-    fn generate_yield_point(&mut self, yield_value: Option<LLVMValueRef>) -> Result<LLVMValueRef, CursedError> {
-        // Placeholder implementation
-        Ok(std::ptr::null_mut())
+    fn generate_yield_point<'ctx>(&mut self, yield_value: Option<BasicValueEnum<'ctx>>) -> Result<BasicValueEnum<'ctx>, CursedError> {
+        // Placeholder implementation - would generate yield point
+        Err(CursedError::Runtime("Yield point generation not implemented".to_string()))
     }
 }
 
 /// Information about an await point in async function
 #[derive(Debug, Clone)]
-pub struct AwaitPoint {
+pub struct AwaitPoint<'ctx> {
     pub block_id: usize,
     pub future_value: String,
-    pub result_type: LLVMTypeRef,
+    pub result_type: BasicTypeEnum<'ctx>,
     pub continuation_block: String,
 }
 
 /// Async function context for state machine generation
 #[derive(Debug)]
-pub struct AsyncFunctionContext {
-    pub function: LLVMValueRef,
-    pub state_variable: LLVMValueRef,
-    pub context_struct: LLVMTypeRef,
-    pub await_points: Vec<AwaitPoint>,
-    pub local_variables: HashMap<String, LLVMValueRef>,
+pub struct AsyncFunctionContext<'ctx> {
+    pub function: FunctionValue<'ctx>,
+    pub state_variable: BasicValueEnum<'ctx>,
+    pub context_struct: BasicTypeEnum<'ctx>,
+    pub await_points: Vec<AwaitPoint<'ctx>>,
+    pub local_variables: HashMap<String, BasicValueEnum<'ctx>>,
     pub current_state: usize,
 }
 
-impl AsyncFunctionContext {
-    pub fn new(function: LLVMValueRef, context_struct: LLVMTypeRef) -> Self {
-        Self {
-            function,
-            state_variable: std::ptr::null_mut(),
-            context_struct,
-            await_points: Vec::new(),
-            local_variables: HashMap::new(),
-            current_state: 0,
-        }
+impl<'ctx> AsyncFunctionContext<'ctx> {
+    pub fn new(function: FunctionValue<'ctx>, context_struct: BasicTypeEnum<'ctx>) -> Result<Self, CursedError> {
+        // Placeholder implementation - would create proper async context
+        Err(CursedError::Runtime("AsyncFunctionContext creation not implemented".to_string()))
     }
 
-    pub fn add_await_point(&mut self, await_point: AwaitPoint) -> usize {
+    pub fn add_await_point(&mut self, await_point: AwaitPoint<'ctx>) -> usize {
         let id = self.await_points.len();
         self.await_points.push(await_point);
         id
