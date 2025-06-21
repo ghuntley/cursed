@@ -6,53 +6,59 @@
 /// inter-process communication.
 
 use std::collections::HashMap;
-use llvm_sys::core::*;
-use llvm_sys::prelude::*;
+use inkwell::{
+    context::Context,
+    module::Module,
+    builder::Builder,
+    values::{BasicValueEnum, FunctionValue, PointerValue, IntValue},
+    types::{BasicType, IntType},
+    AddressSpace,
+};
 
 use crate::ast::traits::Expression;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::{CursedError, Result as CursedResult};
 
-/// Process management compilation trait
-pub trait ProcessCompilation {
+/// Process management compilation trait with inkwell integration
+pub trait ProcessCompilation<'ctx> {
     /// Compile process spawn operation
-    fn compile_process_spawn(&mut self, command: &str, args: &[String]) -> CursedResult<LLVMValueRef>;
+    fn compile_process_spawn(&mut self, command: &str, args: &[String]) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile process control operation
-    fn compile_process_control(&mut self, pid_expr: &dyn Expression, operation: ProcessControlOp) -> CursedResult<LLVMValueRef>;
+    fn compile_process_control(&mut self, pid_expr: &dyn Expression, operation: ProcessControlOp) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile IPC channel creation
-    fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, config: &dyn Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_ipc_channel_create(&mut self, channel_type: IpcChannelType, config: &dyn Expression) -> CursedResult<PointerValue<'ctx>>;
     
     /// Compile IPC send operation
-    fn compile_ipc_send(&mut self, channel_expr: &dyn Expression, data_expr: &dyn Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_ipc_send(&mut self, channel_expr: &dyn Expression, data_expr: &dyn Expression) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile IPC receive operation
-    fn compile_ipc_receive(&mut self, channel_expr: &dyn Expression, timeout_expr: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_ipc_receive(&mut self, channel_expr: &dyn Expression, timeout_expr: Option<&dyn Expression>) -> CursedResult<BasicValueEnum<'ctx>>;
     
     /// Compile shared memory operations
-    fn compile_shared_memory(&mut self, operation: SharedMemoryOp, args: &[&dyn Expression]) -> CursedResult<LLVMValueRef>;
+    fn compile_shared_memory(&mut self, operation: SharedMemoryOp, args: &[&dyn Expression]) -> CursedResult<PointerValue<'ctx>>;
     
     /// Compile signal operations
-    fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&dyn Expression]) -> CursedResult<LLVMValueRef>;
+    fn compile_signal_operation(&mut self, operation: SignalOp, args: &[&dyn Expression]) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile exec_slay command operations
-    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile exec_slay pipeline operations
-    fn compile_slay_pipeline(&mut self, commands: &[&dyn Expression], options: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_slay_pipeline(&mut self, commands: &[&dyn Expression], options: Option<&dyn Expression>) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile exec_slay background task operations
-    fn compile_slay_background_task(&mut self, command_expr: &dyn Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_slay_background_task(&mut self, command_expr: &dyn Expression) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile exec_vibez command operations
-    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile exec_vibez process group operations
-    fn compile_vibez_process_group(&mut self, commands: &[&dyn Expression], config: Option<&dyn Expression>) -> CursedResult<LLVMValueRef>;
+    fn compile_vibez_process_group(&mut self, commands: &[&dyn Expression], config: Option<&dyn Expression>) -> CursedResult<IntValue<'ctx>>;
     
     /// Compile exec_vibez output streaming operations
-    fn compile_vibez_output_streaming(&mut self, command_expr: &dyn Expression, callback: &dyn Expression) -> CursedResult<LLVMValueRef>;
+    fn compile_vibez_output_streaming(&mut self, command_expr: &dyn Expression, callback: &dyn Expression) -> CursedResult<IntValue<'ctx>>;
 }
 
 /// Process control operations
