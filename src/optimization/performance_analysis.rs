@@ -14,6 +14,10 @@ use std::time::{Duration, Instant, SystemTime};
 use tracing::{debug, info, warn, instrument};
 use serde::{Deserialize, Serialize};
 
+// Type aliases for compatibility with existing imports
+pub type PerformanceAnalyzer = PerformanceAnalysisEngine;
+pub type OptimizationReport = BenchmarkResult;
+
 /// Comprehensive performance analysis engine
 pub struct PerformanceAnalysisEngine {
     benchmark_database: BenchmarkDatabase,

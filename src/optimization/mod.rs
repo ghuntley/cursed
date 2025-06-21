@@ -48,6 +48,7 @@ pub mod llvm_advanced;
 pub mod incremental;
 pub mod optimization_manager;
 pub mod cache_manager;
+pub mod optimization_result;
 pub mod adaptive;
 pub mod memory_optimization;
 pub mod build_optimization;
@@ -93,7 +94,7 @@ pub use advanced_function_inlining::{
 pub use enhanced_llvm_passes_manager::{
     EnhancedLlvmPassManager, EnhancedOptimizationStatistics, IntelligentFunctionInliner,
     AdvancedDeadCodeEliminator, EnhancedConstantPropagator, AdvancedLoopOptimizer as EnhancedAdvancedLoopOptimizer,
-    ControlFlowGraphSimplifier, PerformanceAnalyzer, ModuleAnalysis, PerformanceImprovements as EnhancedPerformanceImprovements,
+    ControlFlowGraphSimplifier, PerformanceAnalyzer as LlvmPerformanceAnalyzer, ModuleAnalysis, PerformanceImprovements as EnhancedPerformanceImprovements,
 };
 pub use enhanced_llvm_optimization::{
     EnhancedLlvmOptimizationSystem, EnhancedOptimizationResults, ModuleCharacteristics,
@@ -120,6 +121,8 @@ pub use performance_analysis::{
     PerformanceAnalysisEngine, ComprehensivePerformanceAnalysis, BenchmarkComparisonResults,
     TrendAnalysisResults, BottleneckAnalysisResults, RegressionAnalysisResults,
     OverallPerformanceAssessment, PerformanceAnalysisStatistics,
+    // Compatibility aliases
+    PerformanceAnalyzer, OptimizationReport,
 };
 pub use parallel_pass_manager::{
     ParallelPassManager, ParallelPassConfig, ParallelPassStatistics,
@@ -170,7 +173,7 @@ pub use incremental::{
     IncrementalCompiler, IncrementalConfig, IncrementalResult, CompilationUnit as IncrementalCompilationUnit,
 };
 pub use optimization_manager::{
-    OptimizationManagerEngine, OptimizationSession, OptimizationTaskConfig,
+    OptimizationManager, OptimizationManagerEngine, OptimizationSession, OptimizationTaskConfig,
 };
 pub use cache_manager::{
     CacheManager, CacheConfig, CacheStatistics, CacheEntry,
@@ -238,7 +241,7 @@ pub use real_regression_detector::{
     RegressionType, AffectedMetric, RootCauseAnalysis,
 };
 pub use real_optimization_integration::{
-    RealOptimizationManager, RealOptimizationResult, OptimizationSession,
+    RealOptimizationManager, RealOptimizationResult, OptimizationSession as RealOptimizationSession,
     DetailedPerformanceMetrics, OptimizationEffectivenessAnalysis,
     RecommendationType,
 };
@@ -283,8 +286,13 @@ pub use comprehensive_optimization_enablement::{
 pub use cli_optimization_interface::{
     OptimizationCLI,
 };
+pub use optimization_result::{
+    OptimizationResult as GenericOptimizationResult, IncrementalResult, AdaptiveResults, AdaptiveStrategy,
+    MemoryOptimizer, MemoryOptimizationResults, BuildOptimizer, BuildOptimizationResults,
+    ParallelCompilationResults, OptimizationProfiler, ProfilerResults, 
+    RuntimeOptimizer, RuntimeOptimizationResults, ProfilingConfig,
+};
 
-use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use crate::error::Result;
 use std::path::Path;
 
@@ -294,6 +302,24 @@ pub use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLev
 // Additional optimization types for CLI compatibility
 pub type OptimizationEngine = OptimizationManager;
 pub type OptimizationPass = String; // Simplified pass representation for CLI
+
+// Global optimization state for tracking system-wide optimizations
+#[derive(Debug, Clone)]
+pub struct GlobalOptimizationState {
+    pub active_sessions: Vec<String>,
+    pub performance_data: std::collections::HashMap<String, f64>,
+    pub optimization_history: Vec<String>,
+}
+
+impl Default for GlobalOptimizationState {
+    fn default() -> Self {
+        Self {
+            active_sessions: Vec::new(),
+            performance_data: std::collections::HashMap::new(),
+            optimization_history: Vec::new(),
+        }
+    }
+}
 
 // ML-Guided Optimization System
 pub mod ml_optimization;

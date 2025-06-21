@@ -854,3 +854,8 @@ mod tests {
         assert!(manager.is_optimization_enabled().unwrap());
     }
 }
+
+// Additional type aliases for compatibility
+pub type OptimizationManagerEngine = OptimizationManager;
+pub type OptimizationSession = String; // Simplified session ID
+pub type OptimizationTaskConfig = crate::optimization::config::OptimizationConfig;

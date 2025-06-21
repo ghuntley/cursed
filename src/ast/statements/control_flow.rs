@@ -2,6 +2,7 @@
 
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::ast::block::BlockStatement;
+use crate::error::SourceLocation;
 use crate::lexer::Token;
 use std::any::Any;
 
@@ -379,6 +380,8 @@ pub struct ModuleStatement {
     pub token: String,
     pub name: String,
     pub body: Vec<Box<dyn Statement>>,
+    pub location: Option<SourceLocation>,
+    pub is_public: bool,
 }
 
 impl Node for ModuleStatement {

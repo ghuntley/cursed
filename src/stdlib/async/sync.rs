@@ -238,6 +238,15 @@ impl<T> Future for AsyncRwLockReadFuture<T> {
     }
 }
 
+impl<T> StdFuture for AsyncRwLockReadFuture<T> {
+    type Output = AsyncRwLockReadGuard<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the CURSED Future implementation
+        <Self as Future>::poll(self, cx)
+    }
+}
+
 struct AsyncRwLockWriteFuture<T> {
     lock: AsyncRwLock<T>,
 }
@@ -260,6 +269,15 @@ impl<T> Future for AsyncRwLockWriteFuture<T> {
             inner.write_waiters.push_back(cx.waker().clone());
             Poll::Pending
         }
+    }
+}
+
+impl<T> StdFuture for AsyncRwLockWriteFuture<T> {
+    type Output = AsyncRwLockWriteGuard<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the CURSED Future implementation
+        <Self as Future>::poll(self, cx)
     }
 }
 
@@ -351,6 +369,15 @@ impl Future for AsyncSemaphoreAcquireFuture {
     }
 }
 
+impl StdFuture for AsyncSemaphoreAcquireFuture {
+    type Output = AsyncSemaphorePermit;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the CURSED Future implementation
+        <Self as Future>::poll(self, cx)
+    }
+}
+
 /// Async condition variable
 pub struct AsyncCondVar {
     waiters: Arc<Mutex<VecDeque<Waker>>>,
@@ -417,6 +444,15 @@ impl Future for AsyncCondVarWaitFuture {
             self.registered = true;
         }
         Poll::Pending
+    }
+}
+
+impl StdFuture for AsyncCondVarWaitFuture {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the CURSED Future implementation
+        <Self as Future>::poll(self, cx)
     }
 }
 
@@ -587,6 +623,15 @@ impl<T> Future for SendFuture<T> {
         } else {
             Poll::Ready(Err(AsyncError::Channel("Value already consumed".to_string())))
         }
+    }
+}
+
+impl<T> StdFuture for SendFuture<T> {
+    type Output = AsyncResult<()>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the CURSED Future implementation
+        <Self as Future>::poll(self, cx)
     }
 }
 
