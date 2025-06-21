@@ -1073,3 +1073,11 @@ fn count_network_connections(pid: u32) -> Option<u32> {
         None
     }
 }
+
+// Type aliases for compatibility with imports
+pub type ProcessStats = EnhancedProcessStats;
+
+/// Alias for compatibility - gets enhanced process statistics
+pub fn get_real_process_stats(pid: u32) -> ProcessResult<ProcessStats> {
+    get_enhanced_process_stats(pid)
+}

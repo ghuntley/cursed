@@ -70,6 +70,33 @@ pub struct HealthCheckConfig {
     pub responsiveness_timeout: Duration,
 }
 
+/// Monitoring configuration for process observation
+#[derive(Debug, Clone)]
+pub struct MonitoringConfig {
+    /// Health check configuration
+    pub health_check: HealthCheckConfig,
+    /// Resource monitoring interval
+    pub monitoring_interval: Duration,
+    /// Enable detailed performance tracking
+    pub enable_performance_tracking: bool,
+    /// Maximum number of historical metrics to keep
+    pub max_history_entries: usize,
+    /// Enable automatic alerts
+    pub enable_alerts: bool,
+}
+
+impl Default for MonitoringConfig {
+    fn default() -> Self {
+        Self {
+            health_check: HealthCheckConfig::default(),
+            monitoring_interval: Duration::from_secs(5),
+            enable_performance_tracking: true,
+            max_history_entries: 100,
+            enable_alerts: true,
+        }
+    }
+}
+
 /// Process performance metrics
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {

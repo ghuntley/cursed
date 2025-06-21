@@ -587,5 +587,74 @@ impl fmt::Display for SourceLocation {
     }
 }
 
+/// Error type enumeration for categorizing errors
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ErrorType {
+    /// Syntax and parsing errors
+    SyntaxError,
+    /// Type system errors
+    TypeError,
+    /// Runtime execution errors
+    RuntimeError,
+    /// Compilation errors
+    CompilationError,
+    /// I/O errors
+    IoError,
+    /// Collection operation errors
+    CollectionError,
+    /// Memory management errors
+    MemoryError,
+    /// Network errors
+    NetworkError,
+    /// Database errors
+    DatabaseError,
+    /// Template errors
+    TemplateError,
+    /// Package manager errors
+    PackageError,
+    /// REPL errors
+    ReplError,
+    /// Panic and recovery errors
+    PanicError,
+    /// Configuration errors
+    ConfigurationError,
+    /// Security errors
+    SecurityError,
+    /// Process management errors
+    ProcessError,
+    /// Optimization errors
+    OptimizationError,
+    /// General errors
+    GeneralError,
+}
+
+impl fmt::Display for ErrorType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ErrorType::SyntaxError => write!(f, "Syntax Error"),
+            ErrorType::TypeError => write!(f, "Type Error"),
+            ErrorType::RuntimeError => write!(f, "Runtime Error"),
+            ErrorType::CompilationError => write!(f, "Compilation Error"),
+            ErrorType::IoError => write!(f, "I/O Error"),
+            ErrorType::CollectionError => write!(f, "Collection Error"),
+            ErrorType::MemoryError => write!(f, "Memory Error"),
+            ErrorType::NetworkError => write!(f, "Network Error"),
+            ErrorType::DatabaseError => write!(f, "Database Error"),
+            ErrorType::TemplateError => write!(f, "Template Error"),
+            ErrorType::PackageError => write!(f, "Package Error"),
+            ErrorType::ReplError => write!(f, "REPL Error"),
+            ErrorType::PanicError => write!(f, "Panic Error"),
+            ErrorType::ConfigurationError => write!(f, "Configuration Error"),
+            ErrorType::SecurityError => write!(f, "Security Error"),
+            ErrorType::ProcessError => write!(f, "Process Error"),
+            ErrorType::OptimizationError => write!(f, "Optimization Error"),
+            ErrorType::GeneralError => write!(f, "General Error"),
+        }
+    }
+}
+
 // Re-export commonly used error types for convenience
 pub use types::CryptoError;
+
+// Re-export ErrorContext from runtime module
+pub use crate::runtime::error_handling::ErrorContext;
