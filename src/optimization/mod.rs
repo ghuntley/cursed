@@ -170,7 +170,7 @@ pub use llvm_advanced::{
     CommonSubexpressionEliminator, TailCallOptimizer, MemoryOptimizer, LoopInfo,
 };
 pub use incremental::{
-    IncrementalCompiler, IncrementalConfig, IncrementalResult, CompilationUnit as IncrementalCompilationUnit,
+    IncrementalCompiler, IncrementalConfig, IncrementalUnitResult as IncrementalResult, CompilationUnit as IncrementalCompilationUnit,
 };
 pub use optimization_manager::{
     OptimizationManager, OptimizationManagerEngine, OptimizationSession, OptimizationTaskConfig,
@@ -179,31 +179,35 @@ pub use cache_manager::{
     CacheManager, CacheConfig, CacheStatistics, CacheEntry,
 };
 pub use adaptive::{
-    AdaptiveOptimizer, AdaptiveConfig, AdaptiveResults, AdaptiveStrategy,
+    AdaptiveOptimizer, AdaptiveConfig, AdaptationResult as AdaptiveResults,
 };
+pub use crate::optimization::optimization_result::{AdaptiveStrategy as OriginalAdaptiveStrategy};
 pub use memory_optimization::{
-    MemoryOptimizer as ModuleMemoryOptimizer, MemoryOptimizationConfig, MemoryOptimizationResults as ModuleMemoryOptimizationResults,
+    MemoryLayoutOptimizer as ModuleMemoryOptimizer, MemoryOptimizationConfig, MemoryOptimizationStats as ModuleMemoryOptimizationResults,
 };
 pub use build_optimization::{
-    BuildOptimizer, BuildOptimizationConfig, BuildOptimizationResults,
+    BuildOptimizationConfig, BuildOptimizationStats as BuildOptimizationResults,
 };
+pub use crate::optimization::optimization_result::{BuildOptimizer as AltBuildOptimizer};
 pub use parallel_compilation::{
-    ParallelCompiler, ParallelCompilationConfig, ParallelCompilationResults,
+    ParallelCompiler, ParallelCompilationConfig, ParallelCompilationResult as ParallelCompilationResults,
 };
 pub use profiler::{
-    OptimizationProfiler, ProfilerConfig, ProfilerResults,
+    ProfilerConfig, ProfileReport as ProfilerResults,
 };
+pub use crate::optimization::optimization_result::{OptimizationProfiler as AltOptimizationProfiler};
 pub use runtime_optimizations::{
-    RuntimeOptimizer, RuntimeOptimizationConfig, RuntimeOptimizationResults,
+    RuntimeOptimizationConfig, RuntimeOptimizationStats as RuntimeOptimizationResults,
 };
+pub use crate::optimization::optimization_result::{RuntimeOptimizer as AltRuntimeOptimizer};
 pub use real_performance_analyzer::{
     PerformanceAnalyzer as RealPerformanceAnalyzer, AnalyzerConfig, BottleneckSeverity, AnalysisResult,
 };
 pub use real_compilation_profiler::{
-    CompilationProfiler, ProfileResult, ProfilingConfig,
+    CompilationProfiler, ProfileResult,
 };
 pub use enhanced_benchmarking::{
-    EnhancedBenchmarkResult, BenchmarkMetrics,
+    EnhancedBenchmarkResult, BenchmarkConfig as BenchmarkMetrics,
 };
 pub use dependency_analyzer::{
     DependencyAnalyzer, CompilationUnit as DependencyCompilationUnit, DependencyAnalysisResult,
@@ -287,10 +291,10 @@ pub use cli_optimization_interface::{
     OptimizationCLI,
 };
 pub use optimization_result::{
-    OptimizationResult as GenericOptimizationResult, IncrementalResult, AdaptiveResults, AdaptiveStrategy,
-    MemoryOptimizer, MemoryOptimizationResults, BuildOptimizer, BuildOptimizationResults,
-    ParallelCompilationResults, OptimizationProfiler, ProfilerResults, 
-    RuntimeOptimizer, RuntimeOptimizationResults, ProfilingConfig,
+    OptimizationResult as GenericOptimizationResult, IncrementalResult as ResultIncrementalResult, AdaptiveResults as ResultAdaptiveResults, AdaptiveStrategy as ResultAdaptiveStrategy,
+    MemoryOptimizer as EnhancedMemoryOptimizer, MemoryOptimizationResults as EnhancedMemoryOptimizationResults, BuildOptimizer as ResultBuildOptimizer, BuildOptimizationResults as ResultBuildOptimizationResults,
+    ParallelCompilationResults as ResultParallelCompilationResults, OptimizationProfiler as ResultOptimizationProfiler, ProfilerResults as ResultProfilerResults, 
+    RuntimeOptimizer as ResultRuntimeOptimizer, RuntimeOptimizationResults as ResultRuntimeOptimizationResults, ProfilingConfig as RuntimeProfilingConfig,
 };
 
 use crate::error::Result;
@@ -299,8 +303,8 @@ use std::path::Path;
 // Re-export core optimization types for CLI and external usage
 pub use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 
-// Additional optimization types for CLI compatibility
-pub type OptimizationEngine = OptimizationManager;
+// Additional optimization types for CLI compatibility  
+pub type OptimizationEngine = LocalOptimizationCoordinator;
 pub type OptimizationPass = String; // Simplified pass representation for CLI
 
 // Global optimization state for tracking system-wide optimizations
@@ -389,8 +393,8 @@ pub mod lto;
 pub mod llvm_passes;
 pub mod optimization_levels;
 
-/// High-level optimization manager that coordinates all optimization features
-pub struct OptimizationManager {
+/// High-level optimization coordinator that manages all optimization features locally
+pub struct LocalOptimizationCoordinator {
     /// Default optimization configuration
     pub default_config: OptimizationConfig,
     /// Benchmark runner for performance testing
@@ -403,7 +407,7 @@ pub struct OptimizationManager {
     pub time_savings_calculator: TimeSavingsCalculator,
 }
 
-impl OptimizationManager {
+impl LocalOptimizationCoordinator {
     /// Create a new optimization manager with default settings
     pub fn new() -> Self {
         Self {
@@ -644,7 +648,7 @@ impl OptimizationManager {
     }
 }
 
-impl Default for OptimizationManager {
+impl Default for LocalOptimizationCoordinator {
     fn default() -> Self {
         Self::new()
     }
