@@ -7,7 +7,7 @@ pub mod mock;
 // Re-export driver implementations
 pub use sqlite::SqliteDriver;
 pub use postgres::PostgresDriver;
-// pub use mysql::MySqlDriver;  // Temporarily disabled - mysql crate not available
+pub use mysql::MySqlDriver;
 pub use mock::MockDriver;
 
 use crate::stdlib::packages::sql_vibes::{DatabaseDriver, SqlResult, SqlError};

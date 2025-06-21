@@ -7,11 +7,12 @@ use std::collections::HashMap;
 use std::ffi::CString;
 
 use crate::error::CursedError;
-
-// Type aliases for compatibility
-pub type LLVMValueRef = *mut u8;
-pub type LLVMTypeRef = *mut u8;
-pub type LLVMBasicBlockRef = *mut u8;
+use inkwell::{
+    context::Context,
+    values::{BasicValueEnum, FunctionValue},
+    types::{BasicTypeEnum, FunctionType},
+    basic_block::BasicBlock,
+};
 
 /// Async/await code generation trait (placeholder)
 pub trait AsyncAwaitCompiler {

@@ -15,7 +15,7 @@ use crate::stdlib::packages::crypto_advanced::{constant_time_compare, SecureMemo
 use aes_gcm::{Aes256Gcm as AesGcmCipher, Key, Nonce, KeyInit};
 use aes_gcm::aead::{Aead, Payload};
 use aes::Aes256;
-use aes_cbc::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
+use cbc::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
 use cbc::{Encryptor, Decryptor};
 use chacha20::ChaCha20;
 use chacha20::cipher::{KeyIvInit as ChaChaKeyIvInit, StreamCipher};

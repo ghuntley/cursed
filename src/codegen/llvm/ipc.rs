@@ -5,10 +5,12 @@
 
 use std::collections::HashMap;
 use crate::error::CursedError;
-
-// Type aliases for compatibility
-pub type LLVMValueRef = *mut u8;
-pub type LLVMTypeRef = *mut u8;
+use inkwell::{
+    context::Context,
+    values::{BasicValueEnum, FunctionValue},
+    types::{BasicTypeEnum, FunctionType},
+    basic_block::BasicBlock,
+};
 
 type CursedResult<T> = Result<T, CursedError>;
 

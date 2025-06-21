@@ -1,6 +1,6 @@
 /// Async file system operations for CURSED stdlib
 use std::path::Path;
-use crate::stdlib::r#async::{AsyncError, AsyncResult};
+use crate::stdlib::r#async::{AsyncError, AsyncResult, spawn_blocking_io};
 use crate::runtime::r#async::Promise;
 
 /// Async file handle

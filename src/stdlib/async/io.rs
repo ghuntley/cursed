@@ -5,7 +5,7 @@ use std::io::{self, Read, Write, Seek, BufRead, BufReader, BufWriter};
 use std::path::Path;
 
 use crate::runtime::r#async::{Promise, PromiseResolver};
-use crate::stdlib::r#async::{AsyncError, AsyncResult};
+use crate::stdlib::r#async::{AsyncError, AsyncResult, spawn_blocking_io};
 use std::future::Future;
 use std::sync::{Arc, Mutex};
 

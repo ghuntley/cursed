@@ -15,7 +15,7 @@ pub mod migration;
 
 // Driver implementations
 pub mod postgresql;
-// pub mod mysql;  // Temporarily disabled - mysql crate not available
+pub mod mysql;
 pub mod sqlite;
 
 // Re-export the important stuff for easy access

@@ -66,11 +66,10 @@ pub use postgres::{
     parse_connection_string
 };
 
-// Re-export MySQL driver
-pub use mysql::{
-    MySqlDriver, MySqlConfig, MySqlConnection, MySqlStatement, MySqlTransaction,
-    MySqlError, MySqlResult, MySqlPool, MySqlPoolConfig, init_mysql, 
-    new_mysql_driver, new_mysql_driver_with_config, create_mysql_driver, parse_mysql_dsn
+// Re-export MySQL driver from db_sql package
+pub use crate::stdlib::packages::db_sql::mysql::{
+    MySqlDriver, MySqlConnection, MySqlPreparedStatement as MySqlStatement, 
+    MySqlTransactionImpl as MySqlTransaction, MySqlError, MySqlResultSet
 };
 
 /// fr fr Database isolation levels for transaction control

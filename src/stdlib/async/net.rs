@@ -1,6 +1,6 @@
 /// Async networking operations for CURSED stdlib
 use std::net::{SocketAddr, ToSocketAddrs};
-use crate::stdlib::r#async::{AsyncError, AsyncResult};
+use crate::stdlib::r#async::{AsyncError, AsyncResult, spawn_blocking_io};
 use crate::runtime::r#async::Promise;
 
 /// Async TCP listener
