@@ -2,6 +2,7 @@
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 use std::sync::{Arc, Mutex};
+use std::future::Future as StdFuture;
 use crate::runtime::r#async::{Future, FutureError, FutureResult, FutureState};
 
 /// Promise state enumeration
@@ -137,6 +138,19 @@ where
     }
 }
 
+// Implement standard Future trait for Promise to support .await syntax
+impl<T> StdFuture for Promise<T>
+where
+    T: Clone,
+{
+    type Output = FutureResult<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
+    }
+}
+
 /// Resolver for a promise - can resolve the promise with a value
 pub struct PromiseResolver<T> {
     inner: Arc<Mutex<PromiseInner<T>>>,
@@ -257,6 +271,14 @@ impl<T: Clone> Future for AllPromise<T> {
     }
 }
 
+impl<T: Clone> StdFuture for AllPromise<T> {
+    type Output = FutureResult<Vec<T>>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
+    }
+}
+
 /// Race promise - resolves with the first promise to complete
 pub struct RacePromise<T> {
     promises: Vec<Promise<T>>,
@@ -278,6 +300,14 @@ impl<T: Clone> Future for RacePromise<T> {
             }
         }
         Poll::Pending
+    }
+}
+
+impl<T: Clone> StdFuture for RacePromise<T> {
+    type Output = FutureResult<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
     }
 }
 
@@ -323,6 +353,14 @@ impl<T: Clone> Future for AnyPromise<T> {
             }
         }
         Poll::Pending
+    }
+}
+
+impl<T: Clone> StdFuture for AnyPromise<T> {
+    type Output = FutureResult<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
     }
 }
 

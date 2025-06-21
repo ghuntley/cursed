@@ -39,6 +39,22 @@ pub mod benchmarking_types;
 pub mod enablement_system;
 pub mod configuration_manager;
 
+// Missing critical modules causing E0433 errors
+pub mod llvm_advanced;
+pub mod incremental;
+pub mod optimization_manager;
+pub mod cache_manager;
+pub mod adaptive;
+pub mod memory_optimization;
+pub mod build_optimization;
+pub mod parallel_compilation;
+pub mod profiler;
+pub mod runtime_optimizations;
+pub mod real_performance_analyzer;
+pub mod real_compilation_profiler;
+pub mod analysis;
+pub mod enhanced_benchmarking;
+
 pub use baseline_storage::{
     BaselineStorage, BaselineStorageConfig, PerformanceBaseline, BaselineType,
     BaselineBenchmark, TimeMetrics,
@@ -121,6 +137,7 @@ pub use pgo::{
     PgoSystem, PgoSystemConfig, PgoSystemStatistics, ProfileData, ProfileAnalysisResult,
     OptimizationOpportunity as PgoOptimizationOpportunity, ProfileInsight, ExecutionContext, PgoError,
     OptimizationAggressiveness, PerformanceMetrics, OptimizationResult,
+    InstrumentationMode, CollectionMode,
 };
 pub use performance_optimization_system::{
     PerformanceOptimizationSystem as ProductionPerformanceOptimizationSystem, SmartCompilationResults,
@@ -138,6 +155,58 @@ pub use configuration_manager::{
     OptimizationConfigManager, ManagedOptimizationConfig, GlobalOptimizationSettings,
     TargetOptimizationConfig,
 };
+
+// Critical missing exports causing E0433 errors  
+pub use llvm_advanced::{
+    AdvancedOptimizationManager, AdvancedOptimizationConfig, OptimizationStatistics as AdvancedOptimizationStatistics,
+    OptimizationPipeline, FunctionInliner, LoopOptimizer, DeadCodeEliminator, ConstantPropagator,
+    CommonSubexpressionEliminator, TailCallOptimizer, MemoryOptimizer, LoopInfo,
+};
+pub use incremental::{
+    IncrementalCompiler, IncrementalConfig, IncrementalResult, CompilationUnit as IncrementalCompilationUnit,
+};
+pub use optimization_manager::{
+    OptimizationManagerEngine, OptimizationSession, OptimizationTaskConfig,
+};
+pub use cache_manager::{
+    CacheManager, CacheConfig, CacheStatistics, CacheEntry,
+};
+pub use adaptive::{
+    AdaptiveOptimizer, AdaptiveConfig, AdaptiveResults, AdaptiveStrategy,
+};
+pub use memory_optimization::{
+    MemoryOptimizer as ModuleMemoryOptimizer, MemoryOptimizationConfig, MemoryOptimizationResults as ModuleMemoryOptimizationResults,
+};
+pub use build_optimization::{
+    BuildOptimizer, BuildOptimizationConfig, BuildOptimizationResults,
+};
+pub use parallel_compilation::{
+    ParallelCompiler, ParallelCompilationConfig, ParallelCompilationResults,
+};
+pub use profiler::{
+    OptimizationProfiler, ProfilerConfig, ProfilerResults,
+};
+pub use runtime_optimizations::{
+    RuntimeOptimizer, RuntimeOptimizationConfig, RuntimeOptimizationResults,
+};
+pub use real_performance_analyzer::{
+    PerformanceAnalyzer, AnalyzerConfig, BottleneckSeverity, AnalysisResult,
+};
+pub use real_compilation_profiler::{
+    CompilationProfiler, ProfileResult, ProfilingConfig,
+};
+pub use enhanced_benchmarking::{
+    EnhancedBenchmarkResult, BenchmarkMetrics,
+};
+
+// Create analysis and utils modules as aliases
+pub mod analysis {
+    pub use super::real_performance_analyzer::*;
+}
+
+pub mod utils {
+    pub use super::intelligent_recommendations::*;
+}
 
 // Real optimization implementations
 pub use real_optimization_implementation::{
@@ -202,6 +271,13 @@ pub use cli_optimization_interface::{
 use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use crate::error::Result;
 use std::path::Path;
+
+// Re-export core optimization types for CLI and external usage
+pub use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
+
+// Additional optimization types for CLI compatibility
+pub type OptimizationEngine = OptimizationManager;
+pub type OptimizationPass = String; // Simplified pass representation for CLI
 
 // ML-Guided Optimization System
 pub mod ml_optimization;

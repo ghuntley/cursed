@@ -115,6 +115,26 @@ pub enum OptimizationAggressiveness {
     Experimental,  // Cutting-edge optimizations
 }
 
+/// Instrumentation modes for profile collection
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InstrumentationMode {
+    Frontend,   // Frontend-based instrumentation
+    IR,         // IR-level instrumentation  
+    Sampling,   // Statistical sampling
+    Hardware,   // Hardware performance counters
+    Hybrid,     // Combination of methods
+}
+
+/// Collection modes for profile data
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]  
+pub enum CollectionMode {
+    Counters,              // Counter-based collection
+    Sampling,              // Sampling-based collection
+    CountersAndSampling,   // Combined counters and sampling
+    TimeBased,             // Time-based collection
+    EventBased,            // Event-driven collection
+}
+
 impl Default for PgoSystemConfig {
     fn default() -> Self {
         Self {

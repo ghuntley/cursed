@@ -297,6 +297,14 @@ impl<T: Send + 'static> Future for JoinFuture<T> {
     }
 }
 
+impl<T: Send + 'static> StdFuture for JoinFuture<T> {
+    type Output = Vec<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
+    }
+}
+
 /// Select the first future to complete
 pub struct SelectFuture<T> {
     futures: Vec<BoxFuture<'static, T>>,
@@ -318,6 +326,14 @@ impl<T: Send + 'static> Future for SelectFuture<T> {
             }
         }
         Poll::Pending
+    }
+}
+
+impl<T: Send + 'static> StdFuture for SelectFuture<T> {
+    type Output = (T, usize);
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
     }
 }
 
@@ -431,6 +447,18 @@ where
         } else {
             Poll::Pending
         }
+    }
+}
+
+impl<F1, F2> StdFuture for JoinTwoFuture<F1, F2>
+where
+    F1: Future,
+    F2: Future,
+{
+    type Output = (F1::Output, F2::Output);
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
     }
 }
 

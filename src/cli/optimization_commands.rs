@@ -11,14 +11,14 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
 
-use cursed::optimization::{
+use crate::optimization::{
     OptimizationLevel, OptimizationPass, OptimizationConfig, OptimizationEngine,
     analysis::{PerformanceAnalyzer, CompilationProfiler, BenchmarkRunner},
     utils::{OptimizationRecommendations, PerformanceReport},
 };
-use cursed::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
-use cursed::core::performance_pipeline::PerformancePipeline;
-use cursed::error::CursedError;
+use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
+use crate::core::performance_pipeline::PerformancePipeline;
+use crate::error::CursedError;
 
 /// Configuration for optimization settings that can be persisted
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1732,7 +1732,7 @@ fn print_configuration(config: &OptimizationCliConfig, global: bool) {
 
 // Real report generation functions with comprehensive analysis and formatting
 fn generate_analysis_report(
-    result: &cursed::optimization::analysis::AnalysisResult,
+    result: &crate::optimization::analysis::AnalysisResult,
     format: &str,
     detailed: bool,
     suggestions: bool,
@@ -1746,7 +1746,7 @@ fn generate_analysis_report(
 }
 
 fn generate_json_analysis_report(
-    result: &cursed::optimization::analysis::AnalysisResult,
+    result: &crate::optimization::analysis::AnalysisResult,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let json_report = serde_json::json!({
         "analysis_timestamp": result.analysis_timestamp,
@@ -1867,7 +1867,7 @@ fn generate_json_analysis_report(
 }
 
 fn generate_markdown_analysis_report(
-    result: &cursed::optimization::analysis::AnalysisResult,
+    result: &crate::optimization::analysis::AnalysisResult,
     detailed: bool,
     suggestions: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -1930,11 +1930,11 @@ fn generate_markdown_analysis_report(
         
         for (i, bottleneck) in result.bottlenecks.iter().enumerate() {
             let severity_emoji = match bottleneck.severity {
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "🔴",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::High => "🟠",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "🟡",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Low => "🟢",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "⚪",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "🔴",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::High => "🟠",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "🟡",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Low => "🟢",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "⚪",
             };
             
             report.push_str(&format!("### {} Bottleneck #{}: {}\n\n", severity_emoji, i + 1, bottleneck.description));
@@ -2114,7 +2114,7 @@ fn generate_markdown_analysis_report(
 }
 
 fn generate_table_analysis_report(
-    result: &cursed::optimization::analysis::AnalysisResult,
+    result: &crate::optimization::analysis::AnalysisResult,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut report = String::new();
     
@@ -2164,11 +2164,11 @@ fn generate_table_analysis_report(
         
         for bottleneck in &result.bottlenecks {
             let severity_str = match bottleneck.severity {
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "CRITICAL",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::High => "HIGH    ",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "MEDIUM  ",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Low => "LOW     ",
-                cursed::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "MINIMAL ",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "CRITICAL",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::High => "HIGH    ",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "MEDIUM  ",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Low => "LOW     ",
+                crate::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "MINIMAL ",
             };
             
             report.push_str(&format!(
@@ -2233,8 +2233,8 @@ fn generate_table_analysis_report(
 }
 
 fn generate_benchmark_report(
-    results: &HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>,
-    previous: Option<&HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>,
+    results: &HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>,
+    previous: Option<&HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut report = String::new();
     
@@ -2429,7 +2429,7 @@ fn generate_benchmark_report(
 }
 
 fn generate_profiling_report(
-    result: &cursed::optimization::real_compilation_profiler::ProfileResult,
+    result: &crate::optimization::real_compilation_profiler::ProfileResult,
     flamegraph: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut report = String::new();
@@ -2686,7 +2686,7 @@ fn generate_profiling_report(
     Ok(report)
 }
 
-fn load_benchmark_results(file: &str) -> Result<Option<HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>, Box<dyn std::error::Error>> {
+fn load_benchmark_results(file: &str) -> Result<Option<HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>, Box<dyn std::error::Error>> {
     use std::fs;
     use std::path::Path;
     
@@ -2695,13 +2695,13 @@ fn load_benchmark_results(file: &str) -> Result<Option<HashMap<OptimizationLevel
     }
     
     let content = fs::read_to_string(file)?;
-    let results: HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult> = 
+    let results: HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult> = 
         serde_json::from_str(&content)?;
     
     Ok(Some(results))
 }
 
-fn print_benchmark_summary(results: &HashMap<OptimizationLevel, cursed::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>) {
+fn print_benchmark_summary(results: &HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>) {
     println!("\n📊 Benchmark Summary:");
     
     if results.is_empty() {
@@ -2799,7 +2799,7 @@ fn print_benchmark_summary(results: &HashMap<OptimizationLevel, cursed::optimiza
     }
 }
 
-fn print_profiling_summary(result: &cursed::optimization::real_compilation_profiler::ProfileResult) {
+fn print_profiling_summary(result: &crate::optimization::real_compilation_profiler::ProfileResult) {
     println!("\n📈 Profiling Summary:");
     
     // Overall performance

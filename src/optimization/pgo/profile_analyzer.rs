@@ -1404,7 +1404,7 @@ impl ProfileAnalyzer {
         // LLVM Memory Optimizations
         for pattern in &memory_analysis.patterns {
             match pattern.pattern_type {
-                crate::optimization::pgo::profile_analyzer::MemoryPatternType::Sequential => {
+                AccessPatternType::Sequential => {
                     if pattern.confidence > 0.8 {
                         opportunities.push(OptimizationOpportunity {
                             id: format!("llvm_prefetch_{}", pattern.id),
@@ -1425,7 +1425,7 @@ impl ProfileAnalyzer {
                         });
                     }
                 },
-                crate::optimization::pgo::profile_analyzer::MemoryPatternType::Random => {
+                AccessPatternType::Random => {
                     // Memory coalescing for random access patterns
                     if pattern.cache_miss_rate > 0.2 {
                         opportunities.push(OptimizationOpportunity {

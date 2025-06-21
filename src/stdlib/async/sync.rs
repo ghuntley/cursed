@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex, Condvar};
 use std::task::{Context, Poll, Waker};
 use std::pin::Pin;
 use std::time::Duration;
+use std::future::Future as StdFuture;
 
 use crate::runtime::r#async::{Future, Promise, PromiseResolver, PromiseRejecter};
 use crate::stdlib::r#async::{AsyncError, AsyncResult};
@@ -610,6 +611,14 @@ impl<T> Future for RecvFuture<T> {
     }
 }
 
+impl<T> StdFuture for RecvFuture<T> {
+    type Output = AsyncResult<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
+    }
+}
+
 /// Multi-producer, single-consumer channel
 pub mod mpsc {
     use super::*;
@@ -758,6 +767,14 @@ pub mod broadcast {
             }
         }
     }
+
+    impl<'a, T: Clone> StdFuture for BroadcastRecvFuture<'a, T> {
+        type Output = AsyncResult<T>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            Future::poll(self, cx)
+        }
+    }
 }
 
 /// Select macro-like functionality
@@ -822,6 +839,18 @@ where
         }
 
         Poll::Pending
+    }
+}
+
+impl<F1, F2> StdFuture for SelectTwoFuture<F1, F2>
+where
+    F1: Future,
+    F2: Future,
+{
+    type Output = Either<F1::Output, F2::Output>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
     }
 }
 
