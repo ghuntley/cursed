@@ -830,3 +830,252 @@ mod tests {
         assert_eq!(config.effective_workers(), 1);
     }
 }
+
+// Additional configuration types for missing imports
+
+/// Build optimization configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BuildOptimizationConfig {
+    pub enable_incremental: bool,
+    pub parallel_compilation: bool,
+    pub cache_optimization: bool,
+    pub dependency_optimization: bool,
+}
+
+/// Parallel compilation configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParallelCompilationConfig {
+    pub max_workers: usize,
+    pub load_balancing: LoadBalancingStrategy,
+    pub worker_affinity: bool,
+}
+
+/// Incremental compilation configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IncrementalCompilationConfig {
+    pub change_detection: ChangeDetectionStrategy,
+    pub dependency_granularity: DependencyGranularity,
+    pub cache_invalidation: CacheInvalidationStrategy,
+}
+
+/// Link-time optimization configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LtoConfig {
+    pub mode: LtoMode,
+    pub optimization_level: u8,
+    pub cross_module_inlining: bool,
+}
+
+/// Debug information configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DebugInfoConfig {
+    pub level: DebugInfoLevel,
+    pub compress_debug_sections: bool,
+    pub split_debug_info: bool,
+}
+
+/// Caching configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CachingConfig {
+    pub cache_dir: PathBuf,
+    pub max_cache_size: usize,
+    pub eviction_strategy: CacheEvictionStrategy,
+    pub compression: bool,
+}
+
+/// Runtime optimization configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeOptimizationConfig {
+    pub jit_optimization: JitOptimizationConfig,
+    pub adaptive_optimization: bool,
+    pub profile_guided: PgoConfig,
+}
+
+/// JIT optimization configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JitOptimizationConfig {
+    pub optimization_level: u8,
+    pub compilation_threshold: usize,
+    pub enable_speculation: bool,
+}
+
+/// Profile-guided optimization configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PgoConfig {
+    pub profile_data_path: PathBuf,
+    pub instrumentation_mode: InstrumentationMode,
+    pub collection_mode: CollectionMode,
+}
+
+/// Load balancing strategy
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum LoadBalancingStrategy {
+    RoundRobin,
+    WorkStealing,
+    Static,
+    Dynamic,
+}
+
+/// Dependency granularity level
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum DependencyGranularity {
+    File,
+    Function,
+    Module,
+    Package,
+}
+
+/// Change detection strategy
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ChangeDetectionStrategy {
+    Timestamp,
+    Checksum,
+    ContentHash,
+    Hybrid,
+}
+
+/// Cache invalidation strategy
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum CacheInvalidationStrategy {
+    Immediate,
+    Lazy,
+    Scheduled,
+    OnDemand,
+}
+
+/// LTO mode
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum LtoMode {
+    None,
+    Thin,
+    Full,
+    Fat,
+}
+
+/// Debug info level
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum DebugInfoLevel {
+    None,
+    Line,
+    Limited,
+    Full,
+}
+
+/// Cache eviction strategy
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum CacheEvictionStrategy {
+    LRU,
+    LFU,
+    FIFO,
+    Random,
+    Size,
+}
+
+/// Instrumentation mode for PGO
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum InstrumentationMode {
+    Frontend,
+    Backend,
+    Sampling,
+    Hardware,
+}
+
+/// Collection mode for PGO
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum CollectionMode {
+    Training,
+    Production,
+    Hybrid,
+}
+
+impl Default for BuildOptimizationConfig {
+    fn default() -> Self {
+        Self {
+            enable_incremental: true,
+            parallel_compilation: true,
+            cache_optimization: true,
+            dependency_optimization: true,
+        }
+    }
+}
+
+impl Default for ParallelCompilationConfig {
+    fn default() -> Self {
+        Self {
+            max_workers: num_cpus::get(),
+            load_balancing: LoadBalancingStrategy::WorkStealing,
+            worker_affinity: false,
+        }
+    }
+}
+
+impl Default for IncrementalCompilationConfig {
+    fn default() -> Self {
+        Self {
+            change_detection: ChangeDetectionStrategy::ContentHash,
+            dependency_granularity: DependencyGranularity::File,
+            cache_invalidation: CacheInvalidationStrategy::Lazy,
+        }
+    }
+}
+
+impl Default for LtoConfig {
+    fn default() -> Self {
+        Self {
+            mode: LtoMode::Thin,
+            optimization_level: 2,
+            cross_module_inlining: true,
+        }
+    }
+}
+
+impl Default for DebugInfoConfig {
+    fn default() -> Self {
+        Self {
+            level: DebugInfoLevel::Limited,
+            compress_debug_sections: true,
+            split_debug_info: false,
+        }
+    }
+}
+
+impl Default for CachingConfig {
+    fn default() -> Self {
+        Self {
+            cache_dir: PathBuf::from(".cursed-cache"),
+            max_cache_size: 1024, // 1GB
+            eviction_strategy: CacheEvictionStrategy::LRU,
+            compression: true,
+        }
+    }
+}
+
+impl Default for RuntimeOptimizationConfig {
+    fn default() -> Self {
+        Self {
+            jit_optimization: JitOptimizationConfig::default(),
+            adaptive_optimization: true,
+            profile_guided: PgoConfig::default(),
+        }
+    }
+}
+
+impl Default for JitOptimizationConfig {
+    fn default() -> Self {
+        Self {
+            optimization_level: 2,
+            compilation_threshold: 1000,
+            enable_speculation: true,
+        }
+    }
+}
+
+impl Default for PgoConfig {
+    fn default() -> Self {
+        Self {
+            profile_data_path: PathBuf::from("profile.data"),
+            instrumentation_mode: InstrumentationMode::Frontend,
+            collection_mode: CollectionMode::Training,
+        }
+    }
+}
