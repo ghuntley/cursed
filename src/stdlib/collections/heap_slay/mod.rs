@@ -59,12 +59,7 @@ pub type HeapResult<T> = Result<T, CursedError>;
 
 /// Create a heap-specific error
 pub fn heap_error(message: &str) -> CursedError {
-    CursedError {
-        error_type: ErrorType::CollectionError,
-        message: format!("heap_slay: {}", message),
-        location: None,
-        stack_trace: Vec::new(),
-    }
+    CursedError::General(format!("heap_slay: {}", message))
 }
 
 /// Validate heap index bounds
@@ -93,9 +88,11 @@ mod tests {
     #[test]
     fn test_heap_error_creation() {
         let err = heap_error("test message");
-        assert!(err.message.contains("heap_slay"));
-        assert!(err.message.contains("test message"));
-        assert!(matches!(err.error_type, ErrorType::CollectionError));
+        let err_str = format!("{}", err);
+        assert!(err_str.contains("heap_slay"));
+        assert!(err_str.contains("test message"));
+        // Test that it's a General error variant
+        assert!(matches!(err, CursedError::General(_)));
     }
 
     #[test]

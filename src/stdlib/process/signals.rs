@@ -756,6 +756,100 @@ pub mod convenience {
     }
 }
 
+/// Signal manager for coordinating signal handling across processes
+#[derive(Debug)]
+pub struct SignalManager {
+    /// Signal handlers per process
+    handlers: Arc<Mutex<HashMap<u32, Arc<SignalHandler>>>>,
+    /// Global signal handler
+    global_handler: Arc<SignalHandler>,
+    /// Manager configuration
+    config: SignalManagerConfig,
+}
+
+/// Configuration for signal manager
+#[derive(Debug, Clone)]
+pub struct SignalManagerConfig {
+    /// Enable global signal handling
+    pub enable_global_handler: bool,
+    /// Timeout for signal operations
+    pub signal_timeout: Duration,
+    /// Maximum number of pending signals
+    pub max_pending_signals: usize,
+}
+
+impl Default for SignalManagerConfig {
+    fn default() -> Self {
+        Self {
+            enable_global_handler: true,
+            signal_timeout: Duration::from_secs(5),
+            max_pending_signals: 100,
+        }
+    }
+}
+
+impl SignalManager {
+    /// Create a new signal manager
+    pub fn new() -> ProcessResult<Self> {
+        Self::with_config(SignalManagerConfig::default())
+    }
+
+    /// Create a new signal manager with configuration
+    pub fn with_config(config: SignalManagerConfig) -> ProcessResult<Self> {
+        let global_handler = Arc::new(SignalHandler::new());
+        Ok(Self {
+            handlers: Arc::new(Mutex::new(HashMap::new())),
+            global_handler,
+            config,
+        })
+    }
+
+    /// Register a signal handler for a specific process
+    pub fn register_handler(&self, pid: u32, handler: Arc<SignalHandler>) -> ProcessResult<()> {
+        if let Ok(mut handlers) = self.handlers.lock() {
+            handlers.insert(pid, handler);
+            Ok(())
+        } else {
+            Err(system_error(-1, "Failed to acquire handlers lock".to_string()))
+        }
+    }
+
+    /// Unregister a signal handler for a specific process
+    pub fn unregister_handler(&self, pid: u32) -> ProcessResult<()> {
+        if let Ok(mut handlers) = self.handlers.lock() {
+            handlers.remove(&pid);
+            Ok(())
+        } else {
+            Err(system_error(-1, "Failed to acquire handlers lock".to_string()))
+        }
+    }
+
+    /// Send a signal to a specific process
+    pub fn send_signal(&self, pid: u32, signal: Signal) -> ProcessResult<()> {
+        if let Ok(handlers) = self.handlers.lock() {
+            if let Some(handler) = handlers.get(&pid) {
+                handler.handle_signal(signal)
+            } else {
+                // Use global handler if no specific handler
+                self.global_handler.handle_signal(signal)
+            }
+        } else {
+            Err(system_error(-1, "Failed to acquire handlers lock".to_string()))
+        }
+    }
+
+    /// Get the global signal handler
+    pub fn global_handler(&self) -> Arc<SignalHandler> {
+        Arc::clone(&self.global_handler)
+    }
+}
+
+impl Default for SignalManager {
+    fn default() -> Self {
+        Self::new().expect("Failed to create default SignalManager")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

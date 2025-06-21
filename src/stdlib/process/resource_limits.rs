@@ -727,3 +727,43 @@ mod tests {
         assert!(file_limit.is_ok());
     }
 }
+
+// Type aliases for compatibility with imports
+pub type ResourceLimiter = ResourceLimitManager;
+
+/// Configuration for resource limiting operations
+#[derive(Debug, Clone)]
+pub struct ResourceConfig {
+    /// Default limits to apply
+    pub default_limits: HashMap<ResourceType, ResourceLimit>,
+    /// Enable automatic monitoring
+    pub enable_monitoring: bool,
+    /// Monitoring interval
+    pub monitoring_interval: Duration,
+    /// Warning thresholds (percentage of limit)
+    pub warning_thresholds: HashMap<ResourceType, f64>,
+}
+
+impl Default for ResourceConfig {
+    fn default() -> Self {
+        let mut default_limits = HashMap::new();
+        let mut warning_thresholds = HashMap::new();
+        
+        // Set reasonable defaults
+        default_limits.insert(ResourceType::CpuTime, ResourceLimit::unlimited());
+        default_limits.insert(ResourceType::OpenFiles, ResourceLimit::hard(1024));
+        default_limits.insert(ResourceType::ProcessCount, ResourceLimit::hard(256));
+        
+        // Set warning thresholds at 80%
+        warning_thresholds.insert(ResourceType::CpuTime, 0.8);
+        warning_thresholds.insert(ResourceType::OpenFiles, 0.8);
+        warning_thresholds.insert(ResourceType::ProcessCount, 0.8);
+        
+        Self {
+            default_limits,
+            enable_monitoring: true,
+            monitoring_interval: Duration::from_secs(10),
+            warning_thresholds,
+        }
+    }
+}
