@@ -427,21 +427,7 @@ where
     }
 }
 
-/// Helper function to spawn blocking I/O operation
-async fn spawn_blocking_io<F, R>(f: F) -> R
-where
-    F: FnOnce() -> R + Send + 'static,
-    R: Send + 'static,
-{
-    let (promise, resolver, _rejecter) = Promise::new();
 
-    std::thread::spawn(move || {
-        let result = f();
-        let _ = resolver.resolve(result);
-    });
-
-    StdFutureAdapter::new(promise).await.unwrap_or_else(|_| panic!("IO operation failed"))
-}
 
 /// Public helper function for spawning blocking operations
 pub async fn spawn_blocking_io_public<F, R>(f: F) -> R
