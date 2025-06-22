@@ -3,7 +3,8 @@
 /// Removes unused functions, unreachable basic blocks, and dead instructions
 /// to reduce code size and improve performance.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,
@@ -25,7 +26,7 @@ pub struct DeadCodeEliminationPass {
 impl DeadCodeEliminationPass {
     /// Create a new dead code elimination pass
     pub fn new(config: PassConfiguration) -> Self {
-        let aggressive_mode = config.optimization_level >= OptimizationLevel::Aggressive;
+        let aggressive_mode = config.optimization_level >= OptimizationLevel::O3;
         
         Self {
             statistics: PassStatistics::default(),
@@ -333,11 +334,11 @@ impl<'ctx> OptimizationPass<'ctx> for DeadCodeEliminationPass {
     
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_dead_code_elimination && 
-        config.optimization_level >= OptimizationLevel::Basic
+        config.optimization_level >= OptimizationLevel::O1
     }
     
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Basic
+        OptimizationLevel::O1
     }
     
     #[instrument(skip(self, module, context))]
@@ -565,7 +566,7 @@ mod tests {
     fn test_should_run_logic() {
         let mut config = PassConfiguration::default();
         config.enable_dead_code_elimination = true;
-        config.optimization_level = OptimizationLevel::Basic;
+        config.optimization_level = OptimizationLevel::O1;
         
         let pass = DeadCodeEliminationPass::new(config.clone());
         assert!(pass.should_run(&config));
@@ -602,11 +603,11 @@ mod tests {
     
     #[test]
     fn test_optimization_level_config() {
-        let config = OptimizationLevel::Aggressive.default_config();
+        let config = OptimizationLevel::O3.default_config();
         assert!(config.enable_aggressive_optimizations);
         assert_eq!(config.max_inline_size, 2000);
         
-        let config = OptimizationLevel::None.default_config();
+        let config = OptimizationLevel::O0.default_config();
         assert!(!config.enable_aggressive_optimizations);
         assert_eq!(config.max_inline_size, 0);
     }

@@ -5,11 +5,12 @@
 
 use clap::{Arg, App, SubCommand};
 use cursed::optimization::{
-    OptimizationEngine, OptimizationConfig, OptimizationLevel, OptimizationProfile,
+    OptimizationEngine, OptimizationConfig, OptimizationProfile,
     EnhancedPerformanceAnalyzer, ParallelCompiler, ParallelCompilationConfig,
     CompilerPassManager
 };
 use cursed::error::Result;
+use cursed::optimization::config::OptimizationLevel;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use std::fs;

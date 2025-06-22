@@ -178,7 +178,7 @@ impl Default for TemplateCompilationContext {
             variables: HashMap::new(),
             filters: HashMap::new(),
             blocks: HashMap::new(),
-            optimization_level: TemplateOptimizationLevel::Basic,
+            optimization_level: TemplateOptimizationLevel::O1,
         }
     }
 }
@@ -1126,13 +1126,13 @@ impl LlvmTemplateCompiler {
         
         // Optimization level hints
         match context.optimization_level {
-            TemplateOptimizationLevel::None => {
+            TemplateOptimizationLevel::O0 => {
                 hints.push("Enable optimization for better runtime performance".to_string());
             }
-            TemplateOptimizationLevel::Basic => {
+            TemplateOptimizationLevel::O1 => {
                 hints.push("Consider aggressive optimization for production use".to_string());
             }
-            TemplateOptimizationLevel::Aggressive => {
+            TemplateOptimizationLevel::O3 => {
                 // No hint needed for aggressive optimization
             }
         }

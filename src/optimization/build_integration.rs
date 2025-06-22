@@ -196,14 +196,14 @@ impl BuildOptimizer {
         
         // Set optimization level based on build mode
         if context.debug_mode {
-            config.optimization_level = OptimizationLevel::Less;
+            config.optimization_level = OptimizationLevel::O1;
             config.debug_mode = true;
         } else if context.release_mode {
-            config.optimization_level = OptimizationLevel::Aggressive;
+            config.optimization_level = OptimizationLevel::O3;
             config.debug_mode = false;
             config.profile_guided = true;
         } else {
-            config.optimization_level = OptimizationLevel::Default;
+            config.optimization_level = OptimizationLevel::O2;
         }
         
         // Configure parallel compilation

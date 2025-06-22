@@ -651,10 +651,10 @@ impl JitConfig {
 /// Convert optimization level string to inkwell OptimizationLevel
 pub fn parse_optimization_level(level: &str) -> Result<inkwell::OptimizationLevel, Error> {
     match level.to_lowercase().as_str() {
-        "none" => Ok(inkwell::OptimizationLevel::None),
-        "less" => Ok(inkwell::OptimizationLevel::Less),
-        "default" => Ok(inkwell::OptimizationLevel::Default),
-        "aggressive" => Ok(inkwell::OptimizationLevel::Aggressive),
+        "none" => Ok(inkwell::OptimizationLevel::O0),
+        "less" => Ok(inkwell::OptimizationLevel::O1),
+        "default" => Ok(inkwell::OptimizationLevel::O2),
+        "aggressive" => Ok(inkwell::OptimizationLevel::O3),
         _ => Err(Error::from_str(&format!("Invalid optimization level: {}", level))),
     }
 }

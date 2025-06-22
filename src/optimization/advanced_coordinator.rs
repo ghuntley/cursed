@@ -776,7 +776,7 @@ impl AdvancedOptimizationCoordinator {
     
     pub fn create_size_optimized_config() -> AdvancedCoordinatorConfig {
         AdvancedCoordinatorConfig {
-            optimization_level: AdvancedOptimizationLevel::Size,
+            optimization_level: AdvancedOptimizationLevel::Os,
             enable_advanced_llvm: true,
             enable_target_optimization: false,
             enable_loop_optimization: false,
@@ -809,7 +809,7 @@ mod tests {
         assert!(prod_config.enable_advanced_llvm);
         
         let size_config = AdvancedOptimizationCoordinator::create_size_optimized_config();
-        assert_eq!(size_config.optimization_level, AdvancedOptimizationLevel::Size);
+        assert_eq!(size_config.optimization_level, AdvancedOptimizationLevel::Os);
         assert!(size_config.enable_lto);
     }
     

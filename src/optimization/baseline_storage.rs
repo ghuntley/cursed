@@ -459,13 +459,13 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
     use crate::optimization::benchmarks::{BenchmarkStatistics, BenchmarkResult};
-    use crate::codegen::llvm::optimization::OptimizationLevel;
+    use crate::optimization::config::OptimizationLevel;
 
     fn create_test_suite_result() -> BenchmarkSuiteResult {
         let results = vec![
             BenchmarkResult {
                 name: "test_benchmark".to_string(),
-                optimization_level: OptimizationLevel::Default,
+                optimization_level: OptimizationLevel::O2,
                 compile_time: Duration::from_secs(2),
                 runtime_performance: Some(Duration::from_millis(500)),
                 binary_size: 1024,
@@ -486,7 +486,7 @@ mod tests {
                 avg_compile_time: Duration::from_secs(2),
                 avg_performance_improvement: 15.0,
                 avg_size_change: -5.0,
-                best_optimization_level: OptimizationLevel::Default,
+                best_optimization_level: OptimizationLevel::O2,
             },
             regression_analysis: None,
         }

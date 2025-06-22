@@ -331,7 +331,7 @@ impl OptimizationManager {
 
         // Apply optimizations based on level
         match self.config.level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 tracing::debug!("No optimizations requested");
             }
             OptimizationLevel::Debug => {
@@ -340,7 +340,7 @@ impl OptimizationManager {
                     combined_result = self.merge_optimization_results(combined_result, result);
                 }
             }
-            OptimizationLevel::Basic | OptimizationLevel::Default => {
+            OptimizationLevel::O1 | OptimizationLevel::O2 => {
                 // Standard optimization pipeline
                 if let Ok(result) = self.apply_compiler_optimizations(source) {
                     combined_result = self.merge_optimization_results(combined_result, result);
@@ -352,7 +352,7 @@ impl OptimizationManager {
                     }
                 }
             }
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::MinSize => {
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::Oz => {
                 // Aggressive optimization pipeline
                 if let Ok(result) = self.apply_compiler_optimizations(source) {
                     combined_result = self.merge_optimization_results(combined_result, result);
@@ -468,8 +468,8 @@ impl OptimizationManager {
             instrumentation_mode: crate::optimization::pgo::InstrumentationMode::Frontend,
             collection_mode: crate::optimization::pgo::CollectionMode::CountersAndSampling,
             optimization_strategy: match self.config.level {
-                OptimizationLevel::Aggressive => crate::optimization::pgo::OptimizationStrategy::Speed,
-                OptimizationLevel::Size | OptimizationLevel::MinSize => crate::optimization::pgo::OptimizationStrategy::Size,
+                OptimizationLevel::O3 => crate::optimization::pgo::OptimizationStrategy::Speed,
+                OptimizationLevel::Os | OptimizationLevel::Oz => crate::optimization::pgo::OptimizationStrategy::Size,
                 _ => crate::optimization::pgo::OptimizationStrategy::Balanced,
             },
             ..Default::default()
@@ -833,13 +833,13 @@ mod tests {
         let mut manager = OptimizationManager::new(config).unwrap();
         
         let new_config = OptimizationConfig {
-            level: OptimizationLevel::Aggressive,
+            level: OptimizationLevel::O3,
             ..OptimizationConfig::default()
         };
         
         let result = manager.update_configuration(new_config);
         assert!(result.is_ok());
-        assert_eq!(manager.config.level, OptimizationLevel::Aggressive);
+        assert_eq!(manager.config.level, OptimizationLevel::O3);
     }
 
     #[test]

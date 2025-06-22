@@ -3,7 +3,8 @@
 /// Provides registration, dependency resolution, and execution management
 /// for optimization passes in the CURSED compiler.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
@@ -293,18 +294,18 @@ impl<'ctx> PassRegistry<'ctx> {
     /// Get recommended pass sequence for optimization level
     pub fn get_recommended_sequence(&self, level: OptimizationLevel) -> Vec<String> {
         match level {
-            OptimizationLevel::None => vec![],
-            OptimizationLevel::Basic => vec![
+            OptimizationLevel::O0 => vec![],
+            OptimizationLevel::O1 => vec![
                 "dead_code_elimination".to_string(),
                 "constant_propagation".to_string(),
             ],
-            OptimizationLevel::Default => vec![
+            OptimizationLevel::O2 => vec![
                 "dead_code_elimination".to_string(),
                 "constant_propagation".to_string(),
                 "loop_optimization".to_string(),
                 "inlining".to_string(),
             ],
-            OptimizationLevel::Aggressive => vec![
+            OptimizationLevel::O3 => vec![
                 "dead_code_elimination".to_string(),
                 "constant_propagation".to_string(),
                 "loop_optimization".to_string(),
@@ -313,7 +314,7 @@ impl<'ctx> PassRegistry<'ctx> {
                 "instruction_combining".to_string(),
                 "branch_optimization".to_string(),
             ],
-            OptimizationLevel::Size | OptimizationLevel::MinSize => vec![
+            OptimizationLevel::Os | OptimizationLevel::Oz => vec![
                 "dead_code_elimination".to_string(),
                 "constant_propagation".to_string(),
                 "memory_optimization".to_string(),
@@ -393,7 +394,7 @@ impl PassDependency {
         Self {
             name: name.to_string(),
             required: true,
-            minimum_optimization_level: OptimizationLevel::None,
+            minimum_optimization_level: OptimizationLevel::O0,
         }
     }
     
@@ -402,7 +403,7 @@ impl PassDependency {
         Self {
             name: name.to_string(),
             required: false,
-            minimum_optimization_level: OptimizationLevel::None,
+            minimum_optimization_level: OptimizationLevel::O0,
         }
     }
     
@@ -508,10 +509,10 @@ mod tests {
         let dce_pass = DeadCodeEliminationPass::new(config);
         registry.register_pass(dce_pass).unwrap();
         
-        let basic_passes = registry.get_passes_for_level(OptimizationLevel::Basic);
+        let basic_passes = registry.get_passes_for_level(OptimizationLevel::O1);
         assert!(!basic_passes.is_empty());
         
-        let none_passes = registry.get_passes_for_level(OptimizationLevel::None);
+        let none_passes = registry.get_passes_for_level(OptimizationLevel::O0);
         // DCE requires Basic level, so should be empty for None
         assert!(none_passes.is_empty() || none_passes.len() < basic_passes.len());
     }
@@ -521,9 +522,9 @@ mod tests {
         let config = PassConfiguration::default();
         let registry = PassRegistry::new(config);
         
-        let none_seq = registry.get_recommended_sequence(OptimizationLevel::None);
-        let basic_seq = registry.get_recommended_sequence(OptimizationLevel::Basic);
-        let aggressive_seq = registry.get_recommended_sequence(OptimizationLevel::Aggressive);
+        let none_seq = registry.get_recommended_sequence(OptimizationLevel::O0);
+        let basic_seq = registry.get_recommended_sequence(OptimizationLevel::O1);
+        let aggressive_seq = registry.get_recommended_sequence(OptimizationLevel::O3);
         
         assert!(none_seq.is_empty());
         assert!(!basic_seq.is_empty());
@@ -537,9 +538,9 @@ mod tests {
         assert_eq!(required_dep.name, "test_pass");
         
         let optional_dep = PassDependency::optional("other_pass")
-            .with_level(OptimizationLevel::Aggressive);
+            .with_level(OptimizationLevel::O3);
         assert!(!optional_dep.required);
-        assert_eq!(optional_dep.minimum_optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(optional_dep.minimum_optimization_level, OptimizationLevel::O3);
     }
     
     #[test]

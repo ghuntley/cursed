@@ -218,17 +218,17 @@ impl<'ctx> TailCallOptimizer<'ctx> {
         
         let optimization_constraints = OptimizationConstraints {
             max_recursion_depth: match optimization_level {
-                OptimizationLevel::None => Some(10),
-                OptimizationLevel::Less => Some(50),
-                OptimizationLevel::Default => Some(100),
-                OptimizationLevel::Aggressive => None,
-                OptimizationLevel::Size => Some(20),
-                OptimizationLevel::SizeAggressive => Some(10),
+                OptimizationLevel::O0 => Some(10),
+                OptimizationLevel::O1 => Some(50),
+                OptimizationLevel::O2 => Some(100),
+                OptimizationLevel::O3 => None,
+                OptimizationLevel::Os => Some(20),
+                OptimizationLevel::OsAggressive => Some(10),
             },
-            preserve_debugging_info: matches!(optimization_level, OptimizationLevel::None | OptimizationLevel::Less),
-            maintain_call_stack: matches!(optimization_level, OptimizationLevel::None),
-            optimize_indirect_calls: matches!(optimization_level, OptimizationLevel::Aggressive | OptimizationLevel::Default),
-            aggressive_optimization: matches!(optimization_level, OptimizationLevel::Aggressive),
+            preserve_debugging_info: matches!(optimization_level, OptimizationLevel::O0 | OptimizationLevel::O1),
+            maintain_call_stack: matches!(optimization_level, OptimizationLevel::O0),
+            optimize_indirect_calls: matches!(optimization_level, OptimizationLevel::O3 | OptimizationLevel::O2),
+            aggressive_optimization: matches!(optimization_level, OptimizationLevel::O3),
         };
         
         Self {
@@ -1021,7 +1021,7 @@ mod tests {
     #[test]
     fn test_tail_call_optimizer_creation() {
         let context = Context::create();
-        let optimizer = TailCallOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = TailCallOptimizer::new(&context, OptimizationLevel::O2);
         
         let stats = optimizer.get_statistics();
         assert_eq!(stats.functions_analyzed, 0);
@@ -1041,7 +1041,7 @@ mod tests {
     #[test]
     fn test_optimization_constraints() {
         let context = Context::create();
-        let optimizer = TailCallOptimizer::new(&context, OptimizationLevel::Aggressive);
+        let optimizer = TailCallOptimizer::new(&context, OptimizationLevel::O3);
         
         assert!(optimizer.optimization_constraints.aggressive_optimization);
         assert!(optimizer.optimization_constraints.optimize_indirect_calls);
@@ -1051,7 +1051,7 @@ mod tests {
     #[test]
     fn test_stack_impact_calculation() {
         let context = Context::create();
-        let optimizer = TailCallOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = TailCallOptimizer::new(&context, OptimizationLevel::O2);
         
         let call_site = CallSiteInfo {
             caller_function: "test_func".to_string(),

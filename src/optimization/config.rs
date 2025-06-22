@@ -54,7 +54,7 @@ impl Default for OptimizationConfig {
         let cpu_count = num_cpus::get();
         
         Self {
-            optimization_level: OptimizationLevel::Default, // Balanced default for better dev experience
+            optimization_level: OptimizationLevel::O2, // Balanced default for better dev experience
             debug_mode: false,
             profile_guided: false,
             parallel_workers: cpu_count.max(2), // Ensure at least 2 workers for parallel benefits
@@ -79,58 +79,8 @@ impl Default for OptimizationConfig {
     }
 }
 
-/// Optimization levels for CURSED compiler
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum OptimizationLevel {
-    /// No optimization (-O0)
-    None,
-    /// Minimal optimization (-O1)
-    Less,
-    /// Standard optimization (-O2)
-    Default,
-    /// Aggressive optimization (-O3)
-    Aggressive,
-    /// Optimize for size (-Os)
-    Size,
-    /// Optimize aggressively for size (-Oz)
-    SizeAggressive,
-}
-
-impl OptimizationLevel {
-    pub fn from_str(s: &str) -> Result<Self> {
-        match s.to_lowercase().as_str() {
-            "0" | "o0" | "none" => Ok(OptimizationLevel::None),
-            "1" | "o1" | "less" => Ok(OptimizationLevel::Less),
-            "2" | "o2" | "default" => Ok(OptimizationLevel::Default),
-            "3" | "o3" | "aggressive" => Ok(OptimizationLevel::Aggressive),
-            "s" | "os" | "size" => Ok(OptimizationLevel::Size),
-            "z" | "oz" | "size-aggressive" => Ok(OptimizationLevel::SizeAggressive),
-            _ => Err(Error::Other(format!("Invalid optimization level: {}", s))),
-        }
-    }
-    
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            OptimizationLevel::None => "O0",
-            OptimizationLevel::Less => "O1",
-            OptimizationLevel::Default => "O2",
-            OptimizationLevel::Aggressive => "O3",
-            OptimizationLevel::Size => "Os",
-            OptimizationLevel::SizeAggressive => "Oz",
-        }
-    }
-    
-    pub fn description(&self) -> &'static str {
-        match self {
-            OptimizationLevel::None => "No optimization (fastest compilation)",
-            OptimizationLevel::Less => "Minimal optimization (good for development)",
-            OptimizationLevel::Default => "Standard optimization (balanced)",
-            OptimizationLevel::Aggressive => "Aggressive optimization (best performance)",
-            OptimizationLevel::Size => "Optimize for size",
-            OptimizationLevel::SizeAggressive => "Aggressively optimize for size",
-        }
-    }
-}
+// Import canonical OptimizationLevel from optimization_config
+pub use crate::optimization::optimization_config::OptimizationLevel;
 
 /// LLVM pass configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -337,7 +287,7 @@ impl OptimizationProfile {
     
     fn development_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Less,
+            optimization_level: OptimizationLevel::O1,
             debug_mode: true,
             enable_parallel: true,
             enable_incremental: true,
@@ -355,7 +305,7 @@ impl OptimizationProfile {
     
     fn release_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             debug_mode: false,
             enable_parallel: true,
             enable_incremental: true,
@@ -373,7 +323,7 @@ impl OptimizationProfile {
     
     fn debug_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             debug_mode: true,
             enable_parallel: false,
             enable_incremental: true,
@@ -393,7 +343,7 @@ impl OptimizationProfile {
     
     fn size_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::SizeAggressive,
+            optimization_level: OptimizationLevel::OsAggressive,
             debug_mode: false,
             enable_parallel: true,
             enable_incremental: true,
@@ -410,7 +360,7 @@ impl OptimizationProfile {
     
     fn performance_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             debug_mode: false,
             profile_guided: true,
             enable_parallel: true,
@@ -543,7 +493,7 @@ impl OptimizationConfig {
     
     /// Check if optimization is enabled
     pub fn is_optimized(&self) -> bool {
-        !matches!(self.optimization_level, OptimizationLevel::None)
+        !matches!(self.optimization_level, OptimizationLevel::O0)
     }
     
     /// Get cache directory with fallback
@@ -740,10 +690,10 @@ mod tests {
     
     #[test]
     fn test_optimization_level_conversion() {
-        assert_eq!(OptimizationLevel::from_str("O0").unwrap(), OptimizationLevel::None);
-        assert_eq!(OptimizationLevel::from_str("o2").unwrap(), OptimizationLevel::Default);
-        assert_eq!(OptimizationLevel::from_str("aggressive").unwrap(), OptimizationLevel::Aggressive);
-        assert_eq!(OptimizationLevel::from_str("size").unwrap(), OptimizationLevel::Size);
+        assert_eq!(OptimizationLevel::from_str("O0").unwrap(), OptimizationLevel::O0);
+        assert_eq!(OptimizationLevel::from_str("o2").unwrap(), OptimizationLevel::O2);
+        assert_eq!(OptimizationLevel::from_str("aggressive").unwrap(), OptimizationLevel::O3);
+        assert_eq!(OptimizationLevel::from_str("size").unwrap(), OptimizationLevel::Os);
         
         assert!(OptimizationLevel::from_str("invalid").is_err());
     }
@@ -751,11 +701,11 @@ mod tests {
     #[test]
     fn test_optimization_profiles() {
         let dev_config = OptimizationProfile::Development.to_config();
-        assert_eq!(dev_config.optimization_level, OptimizationLevel::Less);
+        assert_eq!(dev_config.optimization_level, OptimizationLevel::O1);
         assert!(dev_config.debug_mode);
         
         let release_config = OptimizationProfile::Release.to_config();
-        assert_eq!(release_config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(release_config.optimization_level, OptimizationLevel::O3);
         assert!(!release_config.debug_mode);
         assert!(release_config.llvm_passes.enable_link_time_optimization);
     }
@@ -766,7 +716,7 @@ mod tests {
         let config_path = temp_dir.path().join("optimization.toml");
         
         let config = OptimizationConfig {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             parallel_workers: 8,
             enable_profiling: true,
             ..Default::default()
@@ -778,7 +728,7 @@ mod tests {
         
         // Load config
         let loaded_config = OptimizationConfig::from_file(&config_path).unwrap();
-        assert_eq!(loaded_config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(loaded_config.optimization_level, OptimizationLevel::O3);
         assert_eq!(loaded_config.parallel_workers, 8);
         assert!(loaded_config.enable_profiling);
     }
@@ -808,7 +758,7 @@ mod tests {
         };
         
         let config = OptimizationConfig::from_args(&args).unwrap();
-        assert_eq!(config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(config.optimization_level, OptimizationLevel::O3);
         assert_eq!(config.parallel_workers, 6);
         assert!(config.enable_profiling);
         assert_eq!(config.target_cpu, Some("native".to_string()));

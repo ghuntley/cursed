@@ -1074,10 +1074,10 @@ impl OptimizationStrategySelector {
     ) -> Result<OptimizationStrategy> {
         // Select base strategy based on optimization level and characteristics
         let base_strategy_name = match optimization_level {
-            OptimizationLevel::None | OptimizationLevel::Less => "fast_compilation",
-            OptimizationLevel::Default => "balanced",
-            OptimizationLevel::Aggressive | OptimizationLevel::SizeAggressive => "aggressive_optimization",
-            OptimizationLevel::Size => "balanced", // Balanced approach for size optimization
+            OptimizationLevel::O0 | OptimizationLevel::O1 => "fast_compilation",
+            OptimizationLevel::O2 => "balanced",
+            OptimizationLevel::O3 | OptimizationLevel::OsAggressive => "aggressive_optimization",
+            OptimizationLevel::Os => "balanced", // Balanced approach for size optimization
         };
         
         let mut strategy = self.strategy_templates.get(base_strategy_name)
@@ -1318,7 +1318,7 @@ mod tests {
     #[test]
     fn test_enhanced_optimizer_creation() {
         let context = Context::create();
-        let optimizer = EnhancedLlvmOptimizationSystem::new(&context, OptimizationLevel::Default).unwrap();
+        let optimizer = EnhancedLlvmOptimizationSystem::new(&context, OptimizationLevel::O2).unwrap();
         
         let stats = optimizer.get_enhanced_statistics();
         assert_eq!(stats.modules_optimized, 0);

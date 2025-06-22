@@ -53,14 +53,8 @@ struct FunctionProfile {
     is_hot: bool,
 }
 
-/// JIT optimization levels
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum OptimizationLevel {
-    None,
-    Basic,
-    Aggressive,
-    Speculative,
-}
+// Import canonical OptimizationLevel from optimization_config
+use crate::optimization::config::OptimizationLevel;
 
 /// Optimization task for JIT compilation
 #[derive(Debug, Clone)]
@@ -132,7 +126,7 @@ impl JitOptimizer {
                 total_execution_time: Duration::from_nanos(0),
                 average_execution_time: Duration::from_nanos(0),
                 last_optimization_time: None,
-                optimization_level: OptimizationLevel::None,
+                optimization_level: OptimizationLevel::O0,
                 is_hot: false,
             });
 
@@ -246,9 +240,9 @@ impl JitOptimizer {
             profile.last_optimization_time = Some(Instant::now());
             if success {
                 profile.optimization_level = match profile.optimization_level {
-                    OptimizationLevel::None => OptimizationLevel::Basic,
-                    OptimizationLevel::Basic => OptimizationLevel::Aggressive,
-                    OptimizationLevel::Aggressive => OptimizationLevel::Speculative,
+                    OptimizationLevel::O0 => OptimizationLevel::O1,
+                    OptimizationLevel::O1 => OptimizationLevel::O3,
+                    OptimizationLevel::O3 => OptimizationLevel::Speculative,
                     OptimizationLevel::Speculative => OptimizationLevel::Speculative,
                 };
             }
@@ -342,9 +336,9 @@ impl JitOptimizer {
         // Cost based on optimization level and function complexity
         let base_cost = Duration::from_millis(100);
         let complexity_factor = match profile.optimization_level {
-            OptimizationLevel::None => 1.0,
-            OptimizationLevel::Basic => 1.5,
-            OptimizationLevel::Aggressive => 2.0,
+            OptimizationLevel::O0 => 1.0,
+            OptimizationLevel::O1 => 1.5,
+            OptimizationLevel::O3 => 2.0,
             OptimizationLevel::Speculative => 3.0,
         };
         
@@ -512,7 +506,7 @@ mod tests {
             total_execution_time: Duration::from_millis(1000),
             average_execution_time: Duration::from_millis(1),
             last_optimization_time: None,
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             is_hot: true,
         };
 
@@ -533,7 +527,7 @@ mod tests {
             total_execution_time: Duration::from_secs(1),
             average_execution_time: Duration::from_millis(1),
             last_optimization_time: None,
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             is_hot: true,
         };
 
@@ -546,7 +540,7 @@ mod tests {
             total_execution_time: Duration::from_millis(150),
             average_execution_time: Duration::from_millis(1),
             last_optimization_time: None,
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             is_hot: true,
         };
 

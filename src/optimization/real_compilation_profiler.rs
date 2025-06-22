@@ -4,7 +4,7 @@
 //! capabilities for the CURSED compiler performance optimization system.
 
 use crate::error::{Error, Result};
-use crate::optimization::OptimizationLevel;
+use crate::optimization::config::OptimizationLevel;
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime};
 use std::path::Path;

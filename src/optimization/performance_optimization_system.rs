@@ -374,7 +374,7 @@ impl PerformanceOptimizationSystem {
     fn get_current_optimization_level(&self) -> OptimizationLevel {
         self.profile_manager.get_profile_config(self.config.build_profile)
             .map(|config| config.optimization_level.clone())
-            .unwrap_or(OptimizationLevel::Default)
+            .unwrap_or(OptimizationLevel::O2)
     }
 
     /// Run performance benchmark

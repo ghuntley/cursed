@@ -75,6 +75,9 @@ pub mod collections;
 // Additional modules for parser support
 pub mod parser_support;
 
+// Core types module
+pub mod core_types;
+
 // Re-export commonly used types
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};
 pub use expressions::*;
@@ -101,6 +104,11 @@ pub use type_switch::*;
 pub use select::*;
 pub use documentation::*;
 pub use collections::*;
+pub use core_types::{
+    AST, VariableDeclaration, ConstantDeclaration, ImportDeclaration, 
+    PackageDeclaration, InterfaceMethod, StructField, FieldVisibility,
+    ModuleDeclaration, ASTNode
+};
 // Specific imports to avoid conflicts
 pub use parser_support::{
     VariableStatement,

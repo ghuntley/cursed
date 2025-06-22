@@ -9,9 +9,10 @@ use crate::bootstrap::{
     StageResult, PerformanceMetrics, ConvergenceAnalysis
 };
 use crate::build_system::{
-    BuildConfig, BuildResult, BuildTarget, BuildProfile, OptimizationLevel,
+    BuildConfig, BuildResult, BuildTarget, BuildProfile,
     IncrementalCache, DependencyResolver
 };
+use crate::optimization::config::OptimizationLevel;
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
 use crate::error::{Error, Result as CursedResult};
 use serde::{Deserialize, Serialize};

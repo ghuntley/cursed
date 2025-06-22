@@ -92,7 +92,7 @@ pub enum JitError {
 impl Default for JitEngineConfig {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             enable_function_cache: true,
             enable_performance_monitoring: true,
             max_cached_functions: 1000,
@@ -498,13 +498,13 @@ pub fn create_optimized_jit_engine(context: &Context) -> Result<CursedJitEngine,
     // Set optimization level based on build configuration
     #[cfg(debug_assertions)]
     {
-        config.optimization_level = OptimizationLevel::None;
+        config.optimization_level = OptimizationLevel::O0;
         config.enable_debug_info = true;
     }
     
     #[cfg(not(debug_assertions))]
     {
-        config.optimization_level = OptimizationLevel::Aggressive;
+        config.optimization_level = OptimizationLevel::O3;
         config.enable_debug_info = false;
     }
     
@@ -519,7 +519,7 @@ pub fn create_optimized_jit_engine(context: &Context) -> Result<CursedJitEngine,
 /// Create a JIT engine for development/debugging
 pub fn create_debug_jit_engine(context: &Context) -> Result<CursedJitEngine, Error> {
     let config = JitEngineConfig {
-        optimization_level: OptimizationLevel::None,
+        optimization_level: OptimizationLevel::O0,
         enable_function_cache: true,
         enable_performance_monitoring: true,
         max_cached_functions: 100,
@@ -534,7 +534,7 @@ pub fn create_debug_jit_engine(context: &Context) -> Result<CursedJitEngine, Err
 /// Create a JIT engine for production use
 pub fn create_production_jit_engine(context: &Context) -> Result<CursedJitEngine, Error> {
     let config = JitEngineConfig {
-        optimization_level: OptimizationLevel::Aggressive,
+        optimization_level: OptimizationLevel::O3,
         enable_function_cache: true,
         enable_performance_monitoring: false, // Disable for performance
         max_cached_functions: 10000,
@@ -564,7 +564,7 @@ mod tests {
         let mut engine = CursedJitEngine::new_with_default_config(&context).unwrap();
         
         let config = JitEngineConfig {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             enable_function_cache: false,
             enable_performance_monitoring: true,
             max_cached_functions: 500,

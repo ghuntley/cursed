@@ -178,14 +178,14 @@ impl LlvmOptimizationIntegration {
         if let Some(llvm_optimizer) = self.optimization_manager.llvm_optimizer() {
             // Apply optimizations based on level
             match level {
-                OptimizationLevel::None => Ok(function_ir.to_string()),
-                OptimizationLevel::Basic => {
+                OptimizationLevel::O0 => Ok(function_ir.to_string()),
+                OptimizationLevel::O1 => {
                     llvm_optimizer.apply_basic_optimizations(function_ir)
                 },
-                OptimizationLevel::Standard => {
+                OptimizationLevel::O2 => {
                     llvm_optimizer.apply_standard_optimizations(function_ir)
                 },
-                OptimizationLevel::Aggressive => {
+                OptimizationLevel::O3 => {
                     llvm_optimizer.apply_aggressive_optimizations(function_ir)
                 },
             }
@@ -435,31 +435,31 @@ impl OptimizationLevel {
     /// Convert from u32
     pub fn from_u32(level: u32) -> Self {
         match level {
-            0 => OptimizationLevel::None,
-            1 => OptimizationLevel::Basic,
-            2 => OptimizationLevel::Standard,
-            3 => OptimizationLevel::Aggressive,
-            _ => OptimizationLevel::Standard,
+            0 => OptimizationLevel::O0,
+            1 => OptimizationLevel::O1,
+            2 => OptimizationLevel::O2,
+            3 => OptimizationLevel::O3,
+            _ => OptimizationLevel::O2,
         }
     }
     
     /// Increase optimization level
     pub fn increase(self) -> Self {
         match self {
-            OptimizationLevel::None => OptimizationLevel::Basic,
-            OptimizationLevel::Basic => OptimizationLevel::Standard,
-            OptimizationLevel::Standard => OptimizationLevel::Aggressive,
-            OptimizationLevel::Aggressive => OptimizationLevel::Aggressive,
+            OptimizationLevel::O0 => OptimizationLevel::O1,
+            OptimizationLevel::O1 => OptimizationLevel::O2,
+            OptimizationLevel::O2 => OptimizationLevel::O3,
+            OptimizationLevel::O3 => OptimizationLevel::O3,
         }
     }
     
     /// Decrease optimization level
     pub fn decrease(self) -> Self {
         match self {
-            OptimizationLevel::None => OptimizationLevel::None,
-            OptimizationLevel::Basic => OptimizationLevel::None,
-            OptimizationLevel::Standard => OptimizationLevel::Basic,
-            OptimizationLevel::Aggressive => OptimizationLevel::Standard,
+            OptimizationLevel::O0 => OptimizationLevel::O0,
+            OptimizationLevel::O1 => OptimizationLevel::O0,
+            OptimizationLevel::O2 => OptimizationLevel::O1,
+            OptimizationLevel::O3 => OptimizationLevel::O2,
         }
     }
 }
@@ -525,24 +525,24 @@ mod tests {
         let config = OptimizationConfig::default();
         let mut integration = LlvmOptimizationIntegration::new(config).unwrap();
         
-        integration.set_optimization_level(OptimizationLevel::Aggressive).unwrap();
-        assert_eq!(integration.get_state().level, OptimizationLevel::Aggressive);
+        integration.set_optimization_level(OptimizationLevel::O3).unwrap();
+        assert_eq!(integration.get_state().level, OptimizationLevel::O3);
         
-        integration.set_optimization_level(OptimizationLevel::None).unwrap();
-        assert_eq!(integration.get_state().level, OptimizationLevel::None);
+        integration.set_optimization_level(OptimizationLevel::O0).unwrap();
+        assert_eq!(integration.get_state().level, OptimizationLevel::O0);
     }
     
     #[test]
     fn test_optimization_level_increase_decrease() {
-        assert_eq!(OptimizationLevel::None.increase(), OptimizationLevel::Basic);
-        assert_eq!(OptimizationLevel::Basic.increase(), OptimizationLevel::Standard);
-        assert_eq!(OptimizationLevel::Standard.increase(), OptimizationLevel::Aggressive);
-        assert_eq!(OptimizationLevel::Aggressive.increase(), OptimizationLevel::Aggressive);
+        assert_eq!(OptimizationLevel::O0.increase(), OptimizationLevel::O1);
+        assert_eq!(OptimizationLevel::O1.increase(), OptimizationLevel::O2);
+        assert_eq!(OptimizationLevel::O2.increase(), OptimizationLevel::O3);
+        assert_eq!(OptimizationLevel::O3.increase(), OptimizationLevel::O3);
         
-        assert_eq!(OptimizationLevel::Aggressive.decrease(), OptimizationLevel::Standard);
-        assert_eq!(OptimizationLevel::Standard.decrease(), OptimizationLevel::Basic);
-        assert_eq!(OptimizationLevel::Basic.decrease(), OptimizationLevel::None);
-        assert_eq!(OptimizationLevel::None.decrease(), OptimizationLevel::None);
+        assert_eq!(OptimizationLevel::O3.decrease(), OptimizationLevel::O2);
+        assert_eq!(OptimizationLevel::O2.decrease(), OptimizationLevel::O1);
+        assert_eq!(OptimizationLevel::O1.decrease(), OptimizationLevel::O0);
+        assert_eq!(OptimizationLevel::O0.decrease(), OptimizationLevel::O0);
     }
     
     #[test]

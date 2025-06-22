@@ -2025,9 +2025,9 @@ fn setup_optimized_build_config(
     
     // Set optimization level based on release flag
     if args.release {
-        config.optimization_level = crate::build_system::OptimizationLevel::Release;
+        config.optimization_level = crate::optimization::config::OptimizationLevel::O3;
     } else {
-        config.optimization_level = crate::build_system::OptimizationLevel::Debug;
+        config.optimization_level = crate::optimization::config::OptimizationLevel::O0;
     }
     
     // Configure parallel jobs

@@ -74,14 +74,14 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         
         // Add standard optimization passes based on optimization level
         match self.config.optimization_level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // No optimizations
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 pass_manager.add_instruction_combining_pass();
                 pass_manager.add_basic_alias_analysis_pass();
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 // Standard O2-like optimizations
                 pass_manager.add_instruction_combining_pass();
                 pass_manager.add_reassociate_pass();
@@ -92,7 +92,7 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
                 pass_manager.add_function_inlining_pass();
                 pass_manager.add_dead_store_elimination_pass();
             }
-            OptimizationLevel::Aggressive => {
+            OptimizationLevel::O3 => {
                 // Aggressive O3-like optimizations
                 pass_manager.add_instruction_combining_pass();
                 pass_manager.add_reassociate_pass();
@@ -106,7 +106,7 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
                 pass_manager.add_loop_vectorize_pass();
                 pass_manager.add_slp_vectorize_pass();
             }
-            OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::Os | OptimizationLevel::OsAggressive => {
                 // Size-focused optimizations
                 pass_manager.add_instruction_combining_pass();
                 pass_manager.add_cfg_simplification_pass();
@@ -269,11 +269,11 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         let features = "";
         
         let opt_level = match config.optimization_level {
-            OptimizationLevel::None => InkwellOptLevel::None,
-            OptimizationLevel::Less => InkwellOptLevel::Less,
-            OptimizationLevel::Default => InkwellOptLevel::Default,
-            OptimizationLevel::Aggressive => InkwellOptLevel::Aggressive,
-            OptimizationLevel::Size | OptimizationLevel::SizeAggressive => InkwellOptLevel::Default,
+            OptimizationLevel::O0 => InkwellOptLevel::None,
+            OptimizationLevel::O1 => InkwellOptLevel::Less,
+            OptimizationLevel::O2 => InkwellOptLevel::Default,
+            OptimizationLevel::O3 => InkwellOptLevel::Aggressive,
+            OptimizationLevel::Os | OptimizationLevel::OsAggressive => InkwellOptLevel::Default,
         };
         
         let target_machine = target.create_target_machine(

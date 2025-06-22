@@ -4,7 +4,8 @@
 //! CPU core optimization, memory-conscious task distribution, and compilation
 //! pipeline optimization for maximum developer productivity.
 
-use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics, TargetType, OptimizationLevel};
+use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics, TargetType};
+use crate::optimization::config::OptimizationLevel;
 use crate::build_system::dependency_resolver::{DependencyGraph, DependencyResolver};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;

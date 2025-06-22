@@ -6,7 +6,8 @@
 use crate::ast::*;
 use crate::parser::Parser;
 use crate::lexer::Lexer;
-use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
+use crate::codegen::llvm::optimization::{OptimizationConfig};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::Result;
 use crate::optimization::ast_analyzer::AdvancedASTAnalyzer;
 use std::collections::{HashMap, HashSet};
@@ -385,14 +386,14 @@ impl CodeAnalysisEngine {
     fn suggest_configuration(&self, category: &super::OptimizationCategory, patterns: &[AnalysisPattern]) -> OptimizationConfig {
         match category {
             super::OptimizationCategory::Performance => {
-                let mut config = OptimizationConfig::new(OptimizationLevel::Aggressive);
+                let mut config = OptimizationConfig::new(OptimizationLevel::O3);
                 config.enable_vectorization = patterns.iter().any(|p| p.pattern_type == PatternType::NestedLoops);
                 config.enable_function_inlining = patterns.iter().any(|p| p.pattern_type == PatternType::InlineCandidate);
                 config.enable_loop_optimization = patterns.iter().any(|p| matches!(p.pattern_type, PatternType::NestedLoops | PatternType::RepeatedComputation));
                 config
             }
             super::OptimizationCategory::MemoryUsage => {
-                let mut config = OptimizationConfig::new(OptimizationLevel::Size);
+                let mut config = OptimizationConfig::new(OptimizationLevel::Os);
                 config.enable_memory_optimization = true;
                 config.enable_dead_code_elimination = true;
                 config
@@ -401,7 +402,7 @@ impl CodeAnalysisEngine {
                 OptimizationConfig::new(OptimizationLevel::Fast)
             }
             super::OptimizationCategory::BinarySize => {
-                let mut config = OptimizationConfig::new(OptimizationLevel::Size);
+                let mut config = OptimizationConfig::new(OptimizationLevel::Os);
                 config.enable_dead_code_elimination = true;
                 config.enable_constant_folding = true;
                 config

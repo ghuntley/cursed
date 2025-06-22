@@ -13,6 +13,7 @@ pub mod optimization_integration;
 pub mod optimization_passes;
 pub mod optimization_pipeline;
 pub mod performance_monitor;
+pub mod types;
 
 // Existing modules
 pub mod async_await;
@@ -67,7 +68,8 @@ pub use jit_engine::{
 };
 
 // Re-export main optimization types
-pub use optimization::{OptimizationLevel, OptimizationConfig, OptimizationManager, LlvmOptimizer};
+pub use optimization::{OptimizationConfig, OptimizationManager, LlvmOptimizer};
+pub use crate::optimization::config::OptimizationLevel;
 pub use optimization_engine::{
     OptimizationEngine, OptimizationEngineConfig, OptimizationResult, EngineStatistics
 };
@@ -79,4 +81,9 @@ pub use optimization_pipeline::{
 };
 pub use performance_monitor::{
     PerformanceMonitor, MonitoringConfig, CodeMetrics, BaselineMetrics, PerformanceReport
+};
+pub use types::{
+    LLVMValueRef, LLVMTypeRef, LLVMContextRef, LLVMModuleRef, LLVMBuilderRef,
+    LlvmValue, LlvmType, LlvmContext, LlvmFunctionSignature, LlvmCompileOptions,
+    LlvmCompileResult, LlvmCompileStats,
 };

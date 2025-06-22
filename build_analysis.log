@@ -1,0 +1,47 @@
+[36m🔧 Building CURSED compiler...[0m
+   Compiling mysql_common v0.32.4
+   Compiling openssl v0.10.73
+   Compiling ark-r1cs-std v0.3.1
+   Compiling ark-snark v0.3.0
+   Compiling tokio-postgres v0.7.13
+   Compiling libssh2-sys v0.3.1
+   Compiling hyper-rustls v0.24.2
+   Compiling cursed v0.1.0 (/home/ghuntley/code/cursed)
+   Compiling tower-lsp v0.20.0
+   Compiling warp v0.3.7
+   Compiling tempfile v3.20.0
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling notify v6.1.1
+   Compiling redis v0.24.0
+   Compiling ropey v1.6.1
+   Compiling env_logger v0.10.2
+   Compiling clap v4.5.40
+   Compiling pulldown-cmark v0.9.6
+   Compiling scrypt v0.11.0
+   Compiling indicatif v0.17.11
+   Compiling backtrace v0.3.75
+   Compiling rustyline v12.0.0
+   Compiling blake3 v1.8.2
+   Compiling ed25519-dalek v2.1.1
+   Compiling rsa v0.9.8
+   Compiling aes-gcm v0.10.3
+   Compiling lru v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling chacha20poly1305 v0.10.1
+   Compiling ark-crypto-primitives v0.3.0
+   Compiling ssh2 v0.9.5
+   Compiling tree-sitter v0.20.10
+   Compiling dirs v5.0.1
+   Compiling x509-parser v0.15.1
+   Compiling globwalk v0.9.1
+error: linking with `gcc` failed: exit status: 1
+  |
+  = note:  "gcc" "-m64" "/tmp/rustcOa6azq/symbols.o" "<40 object files omitted>" "-Wl,--as-needed" "-Wl,-Bstatic" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib/{libstd-*,libpanic_unwind-*,libobject-*,libmemchr-*,libaddr2line-*,libgimli-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libminiz_oxide-*,libadler2-*,libunwind-*,libcfg_if-*,liblibc-*,liballoc-*,librustc_std_workspace_core-*,libcore-*,libcompiler_builtins-*}.rlib" "-Wl,-Bdynamic" "-lgcc_s" "-lutil" "-lrt" "-lpthread" "-lm" "-ldl" "-lc" "-Wl,--eh-frame-hdr" "-Wl,-z,noexecstack" "-L" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib" "-o" "/home/ghuntley/code/cursed/target/debug/build/cursed-e7c014ee6b422af9/build_script_build-e7c014ee6b422af9" "-Wl,--gc-sections" "-pie" "-Wl,-z,relro,-z,now" "-nodefaultlibs" "-fuse-ld=bfd" "-Wl,--disable-new-dtags"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: gcc: fatal error: cannot read spec file './specs': Is a directory
+          compilation terminated.
+          
+
+error: could not compile `cursed` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+make: *** [Makefile:330: build] Error 101

@@ -385,15 +385,218 @@ impl Expression for TypeConversionExpression {
     }
 }
 
+/// Binary operator types
+#[derive(Debug, Clone, PartialEq)]
+pub enum BinaryOperator {
+    /// Addition (+)
+    Add,
+    /// Subtraction (-)
+    Subtract,
+    /// Multiplication (*)
+    Multiply,
+    /// Division (/)
+    Divide,
+    /// Modulo (%)
+    Modulo,
+    /// Exponentiation (**)
+    Power,
+    /// Equality (==)
+    Equal,
+    /// Inequality (!=)
+    NotEqual,
+    /// Less than (<)
+    LessThan,
+    /// Less than or equal (<=)
+    LessThanOrEqual,
+    /// Greater than (>)
+    GreaterThan,
+    /// Greater than or equal (>=)
+    GreaterThanOrEqual,
+    /// Logical AND (&&)
+    LogicalAnd,
+    /// Logical OR (||)
+    LogicalOr,
+    /// Bitwise AND (&)
+    BitwiseAnd,
+    /// Bitwise OR (|)
+    BitwiseOr,
+    /// Bitwise XOR (^)
+    BitwiseXor,
+    /// Left shift (<<)
+    LeftShift,
+    /// Right shift (>>)
+    RightShift,
+    /// String concatenation (+)
+    Concatenate,
+    /// Range operator (..)
+    Range,
+    /// Inclusive range (...) 
+    InclusiveRange,
+}
+
+impl BinaryOperator {
+    /// Get the string representation of the operator
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BinaryOperator::Add => "+",
+            BinaryOperator::Subtract => "-",
+            BinaryOperator::Multiply => "*",
+            BinaryOperator::Divide => "/",
+            BinaryOperator::Modulo => "%",
+            BinaryOperator::Power => "**",
+            BinaryOperator::Equal => "==",
+            BinaryOperator::NotEqual => "!=",
+            BinaryOperator::LessThan => "<",
+            BinaryOperator::LessThanOrEqual => "<=",
+            BinaryOperator::GreaterThan => ">",
+            BinaryOperator::GreaterThanOrEqual => ">=",
+            BinaryOperator::LogicalAnd => "&&",
+            BinaryOperator::LogicalOr => "||",
+            BinaryOperator::BitwiseAnd => "&",
+            BinaryOperator::BitwiseOr => "|",
+            BinaryOperator::BitwiseXor => "^",
+            BinaryOperator::LeftShift => "<<",
+            BinaryOperator::RightShift => ">>",
+            BinaryOperator::Concatenate => "+",
+            BinaryOperator::Range => "..",
+            BinaryOperator::InclusiveRange => "...",
+        }
+    }
+
+    /// Parse operator from string
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "+" => Some(BinaryOperator::Add),
+            "-" => Some(BinaryOperator::Subtract),
+            "*" => Some(BinaryOperator::Multiply),
+            "/" => Some(BinaryOperator::Divide),
+            "%" => Some(BinaryOperator::Modulo),
+            "**" => Some(BinaryOperator::Power),
+            "==" => Some(BinaryOperator::Equal),
+            "!=" => Some(BinaryOperator::NotEqual),
+            "<" => Some(BinaryOperator::LessThan),
+            "<=" => Some(BinaryOperator::LessThanOrEqual),
+            ">" => Some(BinaryOperator::GreaterThan),
+            ">=" => Some(BinaryOperator::GreaterThanOrEqual),
+            "&&" => Some(BinaryOperator::LogicalAnd),
+            "||" => Some(BinaryOperator::LogicalOr),
+            "&" => Some(BinaryOperator::BitwiseAnd),
+            "|" => Some(BinaryOperator::BitwiseOr),
+            "^" => Some(BinaryOperator::BitwiseXor),
+            "<<" => Some(BinaryOperator::LeftShift),
+            ">>" => Some(BinaryOperator::RightShift),
+            ".." => Some(BinaryOperator::Range),
+            "..." => Some(BinaryOperator::InclusiveRange),
+            _ => None,
+        }
+    }
+
+    /// Get operator precedence
+    pub fn precedence(&self) -> u8 {
+        match self {
+            BinaryOperator::LogicalOr => 1,
+            BinaryOperator::LogicalAnd => 2,
+            BinaryOperator::BitwiseOr => 3,
+            BinaryOperator::BitwiseXor => 4,
+            BinaryOperator::BitwiseAnd => 5,
+            BinaryOperator::Equal | BinaryOperator::NotEqual => 6,
+            BinaryOperator::LessThan | BinaryOperator::LessThanOrEqual |
+            BinaryOperator::GreaterThan | BinaryOperator::GreaterThanOrEqual => 7,
+            BinaryOperator::Range | BinaryOperator::InclusiveRange => 8,
+            BinaryOperator::LeftShift | BinaryOperator::RightShift => 9,
+            BinaryOperator::Add | BinaryOperator::Subtract | BinaryOperator::Concatenate => 10,
+            BinaryOperator::Multiply | BinaryOperator::Divide | BinaryOperator::Modulo => 11,
+            BinaryOperator::Power => 12,
+        }
+    }
+
+    /// Check if operator is right-associative
+    pub fn is_right_associative(&self) -> bool {
+        matches!(self, BinaryOperator::Power)
+    }
+}
+
+/// Unary operator types
+#[derive(Debug, Clone, PartialEq)]
+pub enum UnaryOperator {
+    /// Unary plus (+)
+    Plus,
+    /// Unary minus (-)
+    Minus,
+    /// Logical NOT (!)
+    LogicalNot,
+    /// Bitwise NOT (~)
+    BitwiseNot,
+    /// Reference (&)
+    Reference,
+    /// Dereference (*)
+    Dereference,
+    /// Pre-increment (++)
+    PreIncrement,
+    /// Pre-decrement (--)
+    PreDecrement,
+    /// Post-increment (++)
+    PostIncrement,
+    /// Post-decrement (--)
+    PostDecrement,
+}
+
+impl UnaryOperator {
+    /// Get the string representation of the operator
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            UnaryOperator::Plus => "+",
+            UnaryOperator::Minus => "-",
+            UnaryOperator::LogicalNot => "!",
+            UnaryOperator::BitwiseNot => "~",
+            UnaryOperator::Reference => "&",
+            UnaryOperator::Dereference => "*",
+            UnaryOperator::PreIncrement => "++",
+            UnaryOperator::PreDecrement => "--",
+            UnaryOperator::PostIncrement => "++",
+            UnaryOperator::PostDecrement => "--",
+        }
+    }
+
+    /// Parse operator from string
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "+" => Some(UnaryOperator::Plus),
+            "-" => Some(UnaryOperator::Minus),
+            "!" => Some(UnaryOperator::LogicalNot),
+            "~" => Some(UnaryOperator::BitwiseNot),
+            "&" => Some(UnaryOperator::Reference),
+            "*" => Some(UnaryOperator::Dereference),
+            "++" => Some(UnaryOperator::PreIncrement),
+            "--" => Some(UnaryOperator::PreDecrement),
+            _ => None,
+        }
+    }
+
+    /// Check if operator is prefix
+    pub fn is_prefix(&self) -> bool {
+        matches!(self, 
+            UnaryOperator::Plus | UnaryOperator::Minus | UnaryOperator::LogicalNot |
+            UnaryOperator::BitwiseNot | UnaryOperator::Reference | UnaryOperator::Dereference |
+            UnaryOperator::PreIncrement | UnaryOperator::PreDecrement
+        )
+    }
+
+    /// Check if operator is postfix
+    pub fn is_postfix(&self) -> bool {
+        matches!(self, UnaryOperator::PostIncrement | UnaryOperator::PostDecrement)
+    }
+}
+
 /// Helper functions for creating operator expressions
 pub fn binary_expr(left: Box<dyn Expression>, op: &str, right: Box<dyn Expression>) -> BinaryExpression {
     BinaryExpression::new(op.to_string(), left, op.to_string(), right)
 }
     
-    pub fn unary_expr(op: &str, operand: Box<dyn Expression>) -> UnaryExpression {
+pub fn unary_expr(op: &str, operand: Box<dyn Expression>) -> UnaryExpression {
     UnaryExpression::new(op.to_string(), op.to_string(), operand)
 }
     
-    pub fn assign_expr(name: Box<dyn Expression>, value: Box<dyn Expression>) -> AssignmentExpression {
+pub fn assign_expr(name: Box<dyn Expression>, value: Box<dyn Expression>) -> AssignmentExpression {
     AssignmentExpression::new("=".to_string(), name, value)
 }

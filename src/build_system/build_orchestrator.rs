@@ -5,11 +5,12 @@
 
 use crate::build_system::{
     BuildConfig, BuildTarget, BuildProfile, IncrementalCache, DependencyResolver,
-    TargetType, OptimizationLevel, TestDiscovery, TestDiscoveryConfig, TestExecutor, 
+    TargetType, TestDiscovery, TestDiscoveryConfig, TestExecutor, 
     TestExecutionConfig, TestExecutionResult, TestFilter, TestCategory,
     ParallelCompiler, ParallelCompilationConfig, IncrementalOptimizer, IncrementalConfig,
     BuildProfiler, ProfilerConfig, ArtifactManager, ArtifactConfig
 };
+use crate::optimization::config::OptimizationLevel;
 use crate::build_system::{
     BootstrapPipeline, BootstrapConfig, BootstrapBuildResult, BootstrapStatistics,
     BootstrapIntegration
@@ -591,8 +592,9 @@ impl BuildOrchestrator {
         let profile_name = match profile.optimization {
             OptimizationLevel::None => "debug",
             OptimizationLevel::Basic => "dev", 
-            OptimizationLevel::Max => "release",
+            OptimizationLevel::Aggressive => "release",
             OptimizationLevel::Size => "release-small",
+            _ => "dev", // Default fallback
         };
         
         let output_dir = self.work_dir.join("target").join(profile_name);
@@ -626,17 +628,23 @@ impl BuildOrchestrator {
         
         // Add optimization flags based on profile
         match profile.optimization {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 cmd.arg("--optimization").arg("none");
             }
-            OptimizationLevel::Basic => {
-                cmd.arg("--optimization").arg("basic");
+            OptimizationLevel::O1 => {
+                cmd.arg("--optimization").arg("less");
             }
-            OptimizationLevel::Max => {
-                cmd.arg("--optimization").arg("max");
+            OptimizationLevel::O2 => {
+                cmd.arg("--optimization").arg("default");
             }
-            OptimizationLevel::Size => {
+            OptimizationLevel::O3 => {
+                cmd.arg("--optimization").arg("aggressive");
+            }
+            OptimizationLevel::Os => {
                 cmd.arg("--optimization").arg("size");
+            }
+            OptimizationLevel::Oz => {
+                cmd.arg("--optimization").arg("size-aggressive");
             }
         }
         

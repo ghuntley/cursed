@@ -3,6 +3,8 @@
 //! Complete build system integration for the CURSED programming language.
 //! Provides project configuration, build orchestration, and toolchain integration.
 
+use crate::optimization::optimization_config::OptimizationLevel;
+
 pub mod build_config;
 pub mod build_orchestrator;
 pub mod build_pipeline;
@@ -33,7 +35,7 @@ pub mod lto_integration;
 // Re-export main types
 pub use build_config::{
     BuildConfig, BuildTarget, BuildProfile, ProjectMetadata, ProjectType,
-    TargetType, OptimizationLevel, PanicStrategy, ToolConfigurations,
+    TargetType, PanicStrategy, ToolConfigurations,
     FormatterConfig, LinterConfig, DocsConfig, PackageManagerConfig, 
     CompilerConfig, CrossTargetConfig
 };

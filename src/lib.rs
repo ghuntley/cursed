@@ -20,6 +20,10 @@ pub mod config;
 pub mod bootstrap;
 pub mod execution;
 pub mod optimization;
+pub mod common;
+
+// Re-export common types for easy access
+pub use common::OptimizationLevel;
 
 // Re-export enhanced debug information types
 pub use runtime::{

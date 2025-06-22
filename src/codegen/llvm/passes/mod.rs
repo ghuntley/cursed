@@ -75,7 +75,7 @@ pub trait OptimizationPass<'ctx> {
     
     /// Get optimization level requirements
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Basic
+        OptimizationLevel::O1
     }
     
     /// Get estimated execution time
@@ -114,7 +114,7 @@ pub struct PassConfiguration {
 impl Default for PassConfiguration {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             target_cpu: None,
             target_features: Vec::new(),
             enable_aggressive_optimizations: false,
@@ -259,79 +259,10 @@ impl PassStatistics {
     }
 }
 
-/// Optimization levels for passes
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum OptimizationLevel {
-    None,
-    Basic,
-    Default,
-    Aggressive,
-    Size,
-    MinSize,
-}
+// Import canonical OptimizationLevel from optimization_config
+pub use crate::optimization::config::OptimizationLevel;
 
-impl OptimizationLevel {
-    pub fn from_str(s: &str) -> Result<Self> {
-        match s.to_lowercase().as_str() {
-            "0" | "o0" | "none" => Ok(OptimizationLevel::None),
-            "1" | "o1" | "basic" => Ok(OptimizationLevel::Basic),
-            "2" | "o2" | "default" => Ok(OptimizationLevel::Default),
-            "3" | "o3" | "aggressive" => Ok(OptimizationLevel::Aggressive),
-            "s" | "os" | "size" => Ok(OptimizationLevel::Size),
-            "z" | "oz" | "minsize" => Ok(OptimizationLevel::MinSize),
-            _ => Err(Error::Internal(format!("Invalid optimization level: {}", s))),
-        }
-    }
-    
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            OptimizationLevel::None => "O0",
-            OptimizationLevel::Basic => "O1",
-            OptimizationLevel::Default => "O2",
-            OptimizationLevel::Aggressive => "O3",
-            OptimizationLevel::Size => "Os",
-            OptimizationLevel::MinSize => "Oz",
-        }
-    }
-    
-    /// Get default configuration for this optimization level
-    pub fn default_config(&self) -> PassConfiguration {
-        let mut config = PassConfiguration::default();
-        config.optimization_level = *self;
-        
-        match self {
-            OptimizationLevel::None => {
-                config.enable_aggressive_optimizations = false;
-                config.enable_vectorization = false;
-                config.enable_loop_unrolling = false;
-                config.max_inline_size = 0;
-                config.max_unroll_count = 0;
-            }
-            OptimizationLevel::Basic => {
-                config.enable_aggressive_optimizations = false;
-                config.max_inline_size = 500;
-                config.max_unroll_count = 4;
-            }
-            OptimizationLevel::Default => {
-                config.max_inline_size = 1000;
-                config.max_unroll_count = 8;
-            }
-            OptimizationLevel::Aggressive => {
-                config.enable_aggressive_optimizations = true;
-                config.max_inline_size = 2000;
-                config.max_unroll_count = 16;
-            }
-            OptimizationLevel::Size | OptimizationLevel::MinSize => {
-                config.enable_size_optimizations = true;
-                config.enable_vectorization = false;
-                config.max_inline_size = 200;
-                config.max_unroll_count = 2;
-            }
-        }
-        
-        config
-    }
-}
+// Impl moved to PassConfiguration to avoid conflicts with canonical OptimizationLevel
 
 /// Utility functions for pass management
 pub mod utils {

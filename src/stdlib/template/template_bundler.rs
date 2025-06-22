@@ -44,7 +44,7 @@ impl Default for BundleConfig {
             enable_dependency_optimization: true,
             enable_dead_code_elimination: true,
             bundle_format: BundleFormat::Optimized,
-            optimization_level: OptimizationLevel::Production,
+            optimization_level: OptimizationLevel::Aggressive,
             max_bundle_size: 5 * 1024 * 1024, // 5MB
             enable_source_maps: false,
             include_debug_info: false,
@@ -68,20 +68,8 @@ pub enum BundleFormat {
     Precompiled,
 }
 
-/// Template optimization levels
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OptimizationLevel {
-    /// No optimization
-    None,
-    /// Basic optimization (minification only)
-    Basic,
-    /// Standard optimization (minification + compression)
-    Standard,
-    /// Production optimization (all optimizations)
-    Production,
-    /// Aggressive optimization (may break compatibility)
-    Aggressive,
-}
+// Import canonical OptimizationLevel from optimization_config
+pub use crate::optimization::config::OptimizationLevel;
 
 /// Template versioning strategies
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1667,7 +1655,7 @@ mod tests {
         let config = BundleConfig::default();
         assert!(config.enable_minification);
         assert!(config.enable_compression);
-        assert_eq!(config.optimization_level, OptimizationLevel::Production);
+        assert_eq!(config.optimization_level, OptimizationLevel::Aggressive);
     }
     
     #[test]

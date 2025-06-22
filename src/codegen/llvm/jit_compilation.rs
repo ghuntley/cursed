@@ -123,8 +123,8 @@ impl Default for JitCompilationConfig {
             compilation_timeout: Duration::from_secs(30),
             enable_dynamic_recompilation: true,
             enable_background_compilation: true,
-            hot_path_optimization_level: OptimizationLevel::Aggressive,
-            regular_optimization_level: OptimizationLevel::Default,
+            hot_path_optimization_level: OptimizationLevel::O3,
+            regular_optimization_level: OptimizationLevel::O2,
             max_parallel_compilations: 4,
             enable_pgo: false,
             enable_osr: true,
@@ -417,7 +417,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             let mut cache = self.compilation_cache.lock().unwrap();
             if let Some(func) = cache.get_mut(function_name) {
                 func.is_hot_path_optimized = true;
-                func.optimization_level = OptimizationLevel::Aggressive;
+                func.optimization_level = OptimizationLevel::O3;
                 func.compiled_at = Instant::now();
             }
         }
@@ -491,7 +491,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             };
 
             // Only optimize if not already at highest level
-            if current_optimization != OptimizationLevel::Aggressive {
+            if current_optimization != OptimizationLevel::O3 {
                 // Recompile with aggressive optimization
                 self.jit_engine.remove_function(&function_name)?;
                 self.jit_engine.compile_function(&function_name, &llvm_ir)?;
@@ -501,7 +501,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
                     let mut cache = self.compilation_cache.lock().unwrap();
                     if let Some(func) = cache.get_mut(&function_name) {
                         func.is_hot_path_optimized = true;
-                        func.optimization_level = OptimizationLevel::Aggressive;
+                        func.optimization_level = OptimizationLevel::O3;
                         func.compiled_at = Instant::now();
                     }
                 }
@@ -774,11 +774,11 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     /// Convert compilation tier to optimization level
     fn tier_to_optimization_level(&self, tier: CompilationTier) -> OptimizationLevel {
         match tier {
-            CompilationTier::Interpreter => OptimizationLevel::None,
-            CompilationTier::BasicJIT => OptimizationLevel::Less,
-            CompilationTier::OptimizedJIT => OptimizationLevel::Default,
-            CompilationTier::HighlyOptimizedJIT => OptimizationLevel::Aggressive,
-            CompilationTier::SpeculativeJIT => OptimizationLevel::Aggressive,
+            CompilationTier::Interpreter => OptimizationLevel::O0,
+            CompilationTier::BasicJIT => OptimizationLevel::O1,
+            CompilationTier::OptimizedJIT => OptimizationLevel::O2,
+            CompilationTier::HighlyOptimizedJIT => OptimizationLevel::O3,
+            CompilationTier::SpeculativeJIT => OptimizationLevel::O3,
         }
     }
 
@@ -962,8 +962,8 @@ pub fn create_optimized_jit_interface<'ctx>(
         compilation_timeout: Duration::from_secs(60),
         enable_dynamic_recompilation: true,
         enable_background_compilation: true,
-        hot_path_optimization_level: OptimizationLevel::Aggressive,
-        regular_optimization_level: OptimizationLevel::Default,
+        hot_path_optimization_level: OptimizationLevel::O3,
+        regular_optimization_level: OptimizationLevel::O2,
         max_parallel_compilations: num_cpus::get(),
         enable_pgo: true,
         enable_osr: true,
@@ -987,8 +987,8 @@ pub fn create_debug_jit_interface<'ctx>(
         compilation_timeout: Duration::from_secs(10),
         enable_dynamic_recompilation: false,
         enable_background_compilation: false,
-        hot_path_optimization_level: OptimizationLevel::Default,
-        regular_optimization_level: OptimizationLevel::None,
+        hot_path_optimization_level: OptimizationLevel::O2,
+        regular_optimization_level: OptimizationLevel::O0,
         max_parallel_compilations: 1,
         enable_pgo: false,
         enable_osr: false,

@@ -85,7 +85,7 @@ impl Default for CodegenConfig {
     fn default() -> Self {
         Self {
             debug_config: DebugConfig::default(),
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             target_triple: None,
             verify_module: true,
             enable_jit: false,
@@ -820,7 +820,7 @@ impl<'ctx> CodegenResult<'ctx> {
             &target_triple,
             "generic",
             "",
-            OptimizationLevel::None,
+            OptimizationLevel::O0,
             RelocMode::Default,
             CodeModel::Default,
         ).ok_or_else(|| CursedError::Compile("Target machine creation failed".to_string()))?;
@@ -959,7 +959,7 @@ mod tests {
     fn test_codegen_config() {
         let config = CodegenConfig::default();
         assert_eq!(config.module_name, "cursed_module");
-        assert_eq!(config.optimization_level, OptimizationLevel::None);
+        assert_eq!(config.optimization_level, OptimizationLevel::O0);
         assert!(config.verify_module);
         assert!(!config.enable_jit);
     }

@@ -10,7 +10,8 @@ use std::process::Command;
 use serde::{Serialize, Deserialize};
 use tracing::{info, debug, warn, instrument};
 
-use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
+use crate::codegen::llvm::optimization::{OptimizationConfig};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use crate::optimization::baseline_storage::{BaselineStorage, BaselineStorageConfig, BaselineType};
 use crate::optimization::regression_analyzer::{RegressionAnalyzer, RegressionAnalysisConfig, DetailedRegressionAnalysis};
@@ -448,7 +449,7 @@ impl BenchmarkRunner {
             .iter()
             .min_by_key(|(_, &time)| time)
             .map(|(&level, _)| level)
-            .unwrap_or(OptimizationLevel::Default);
+            .unwrap_or(OptimizationLevel::O2);
 
         BenchmarkStatistics {
             total_benchmarks,
@@ -655,10 +656,10 @@ impl BenchmarkRunner {
     /// Count optimization passes for a given optimization level
     fn count_optimization_passes(&self, level: OptimizationLevel) -> usize {
         match level {
-            OptimizationLevel::None => 0,
-            OptimizationLevel::Less => 5,      // Basic passes: mem2reg, instcombine, simplifycfg, dce, gvn
-            OptimizationLevel::Default => 12,  // Standard passes including loop optimizations
-            OptimizationLevel::Aggressive => 25, // All passes including aggressive inlining, vectorization
+            OptimizationLevel::O0 => 0,
+            OptimizationLevel::O1 => 5,      // Basic passes: mem2reg, instcombine, simplifycfg, dce, gvn
+            OptimizationLevel::O2 => 12,  // Standard passes including loop optimizations
+            OptimizationLevel::O3 => 25, // All passes including aggressive inlining, vectorization
             OptimizationLevel::Os => 18,       // Size-focused passes
             OptimizationLevel::Oz => 15,       // Aggressive size optimization
         }
@@ -725,7 +726,7 @@ impl BenchmarkRunner {
         
         // Find baseline (O0 or None level)
         let baseline_result = results.iter()
-            .find(|r| matches!(r.optimization_level, OptimizationLevel::None))
+            .find(|r| matches!(r.optimization_level, OptimizationLevel::O0))
             .or_else(|| results.first())
             .unwrap();
         
@@ -776,7 +777,7 @@ impl BenchmarkRunner {
         
         // Find baseline (O0 or None level)
         let baseline_result = results.iter()
-            .find(|r| matches!(r.optimization_level, OptimizationLevel::None))
+            .find(|r| matches!(r.optimization_level, OptimizationLevel::O0))
             .or_else(|| results.first())
             .unwrap();
         
@@ -958,10 +959,10 @@ pub fn create_default_benchmarks() -> Vec<BenchmarkConfig> {
             name: "small_function".to_string(),
             source_files: vec![PathBuf::from("benchmarks/small_function.csd")],
             optimization_levels: vec![
-                OptimizationLevel::None,
-                OptimizationLevel::Less, 
-                OptimizationLevel::Default,
-                OptimizationLevel::Aggressive,
+                OptimizationLevel::O0,
+                OptimizationLevel::O1, 
+                OptimizationLevel::O2,
+                OptimizationLevel::O3,
             ],
             iterations: 5,
             warmup_iterations: 2,
@@ -973,9 +974,9 @@ pub fn create_default_benchmarks() -> Vec<BenchmarkConfig> {
             name: "medium_program".to_string(),
             source_files: vec![PathBuf::from("benchmarks/medium_program.csd")],
             optimization_levels: vec![
-                OptimizationLevel::Less,
-                OptimizationLevel::Default,
-                OptimizationLevel::Aggressive,
+                OptimizationLevel::O1,
+                OptimizationLevel::O2,
+                OptimizationLevel::O3,
             ],
             iterations: 3,
             warmup_iterations: 1,
@@ -987,8 +988,8 @@ pub fn create_default_benchmarks() -> Vec<BenchmarkConfig> {
             name: "large_application".to_string(),
             source_files: vec![PathBuf::from("benchmarks/large_application.csd")],
             optimization_levels: vec![
-                OptimizationLevel::Default,
-                OptimizationLevel::Aggressive,
+                OptimizationLevel::O2,
+                OptimizationLevel::O3,
             ],
             iterations: 2,
             warmup_iterations: 1,

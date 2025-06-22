@@ -72,6 +72,9 @@ pub use crate::stdlib::packages::db_sql::mysql::{
     MySqlTransactionImpl as MySqlTransaction, MySqlError, MySqlResultSet
 };
 
+/// Transaction isolation level (alias for compatibility)
+pub type IsolationLevel = SqlIsolationLevel;
+
 /// fr fr Database isolation levels for transaction control
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqlIsolationLevel {

@@ -37,14 +37,8 @@ pub enum PassType {
     Cleanup,
 }
 
-/// Optimization level for passes
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum OptimizationLevel {
-    Debug,
-    Release,
-    Size,
-    Speed,
-}
+// Import canonical OptimizationLevel from optimization_config
+pub use crate::optimization::config::OptimizationLevel;
 
 /// Statistics for pass execution
 #[derive(Debug, Clone)]
@@ -359,7 +353,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "dead_code_elimination".to_string(),
             description: "Removes dead code and unused variables".to_string(),
             pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Release,
+            optimization_level: OptimizationLevel::Aggressive,
             dependencies: vec!["control_flow_analysis".to_string()],
             estimated_duration: Duration::from_millis(200),
             effectiveness: 0.8,
@@ -368,7 +362,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "constant_propagation".to_string(),
             description: "Propagates constant values".to_string(),
             pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Release,
+            optimization_level: OptimizationLevel::Aggressive,
             dependencies: vec![],
             estimated_duration: Duration::from_millis(150),
             effectiveness: 0.7,
@@ -377,7 +371,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "function_inlining".to_string(),
             description: "Inlines small functions".to_string(),
             pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Speed,
+            optimization_level: OptimizationLevel::Default,
             dependencies: vec!["call_graph_analysis".to_string()],
             estimated_duration: Duration::from_millis(300),
             effectiveness: 0.6,
@@ -386,7 +380,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "loop_optimization".to_string(),
             description: "Optimizes loop structures".to_string(),
             pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Speed,
+            optimization_level: OptimizationLevel::Default,
             dependencies: vec!["loop_analysis".to_string()],
             estimated_duration: Duration::from_millis(400),
             effectiveness: 0.75,
@@ -395,7 +389,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "control_flow_analysis".to_string(),
             description: "Analyzes control flow patterns".to_string(),
             pass_type: PassType::Analysis,
-            optimization_level: OptimizationLevel::Debug,
+            optimization_level: OptimizationLevel::None,
             dependencies: vec![],
             estimated_duration: Duration::from_millis(100),
             effectiveness: 1.0,
@@ -404,7 +398,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "call_graph_analysis".to_string(),
             description: "Builds call graph for function analysis".to_string(),
             pass_type: PassType::Analysis,
-            optimization_level: OptimizationLevel::Debug,
+            optimization_level: OptimizationLevel::None,
             dependencies: vec![],
             estimated_duration: Duration::from_millis(120),
             effectiveness: 1.0,
@@ -413,7 +407,7 @@ pub fn create_standard_passes() -> Vec<CompilerPass> {
             name: "loop_analysis".to_string(),
             description: "Analyzes loop structures and nesting".to_string(),
             pass_type: PassType::Analysis,
-            optimization_level: OptimizationLevel::Debug,
+            optimization_level: OptimizationLevel::None,
             dependencies: vec!["control_flow_analysis".to_string()],
             estimated_duration: Duration::from_millis(80),
             effectiveness: 1.0,

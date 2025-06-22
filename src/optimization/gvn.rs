@@ -938,7 +938,7 @@ mod tests {
     #[test]
     fn test_gvn_optimizer_creation() {
         let context = Context::create();
-        let optimizer = GvnOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = GvnOptimizer::new(&context, OptimizationLevel::O2);
         
         let stats = optimizer.get_statistics();
         assert_eq!(stats.values_numbered, 0);

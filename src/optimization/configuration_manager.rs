@@ -10,9 +10,10 @@ use serde::{Deserialize, Serialize};
 use tracing::{info, warn, debug, instrument};
 
 use crate::optimization::{
-    OptimizationConfig, OptimizationLevel, OptimizationProfile,
+    OptimizationConfig, OptimizationProfile,
     PerformanceMonitoringConfig, PerformanceReportFormat,
 };
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
 /// Default configuration file name
@@ -164,7 +165,7 @@ impl ManagedOptimizationConfig {
         
         // Create a debug profile with optimizations
         let mut debug_config = OptimizationConfig::development();
-        debug_config.optimization_level = OptimizationLevel::Basic;
+        debug_config.optimization_level = OptimizationLevel::O1;
         debug_config.debug_info_level = crate::optimization::optimization_config::DebugInfoLevel::Full;
         debug_config.enable_dce = true;
         debug_config.enable_inlining = true;

@@ -1,9 +1,11 @@
 /// Runtime system for CURSED
+pub mod value;
 pub mod goroutine;
 pub mod channels;
 pub mod unicode_char;
 pub mod panic;
 pub mod recovery;
+pub mod runtime_value;
 pub mod stack_trace;
 pub mod stack_walker;
 pub mod debug_output;
@@ -18,6 +20,8 @@ pub mod jit_runtime;
 pub mod process;
 pub mod r#async;
 
+pub use value::Value;
+pub use runtime_value::{RuntimeValue, TypeInfo, SpecializedRuntimeValue};
 pub use goroutine::{
     GoroutineScheduler, Goroutine, GoroutineState, GoroutineStack,
     SchedulerConfig, GcCoordinator, SafePoint,

@@ -14,6 +14,7 @@ pub mod protocols_production;
 pub mod protocols_advanced;
 pub mod protocols_enhanced;
 pub mod protocols_comprehensive;
+pub mod types;
 
 // Unified crypto ecosystem
 pub mod unified_api;
@@ -39,7 +40,7 @@ pub use asymmetric::{
     EcdsaKeyPair, EcdsaPublicKey, EcdsaPrivateKey, EcdsaSignature,
     EcdhKeyPair, EcdhPublicKey, EcdhPrivateKey,
     X25519KeyPair, X25519PublicKey, X25519PrivateKey,
-    Ed25519KeyPair, Ed25519PublicKey, Ed25519PrivateKey, Ed25519Signature,
+    Ed25519KeyPair,
     EcCurve, EcPoint, EcScalar,
     RSA_2048_BITS, RSA_3072_BITS, RSA_4096_BITS,
     X25519_KEY_SIZE, ED25519_PUBLIC_KEY_SIZE, ED25519_PRIVATE_KEY_SIZE, ED25519_SIGNATURE_SIZE,
@@ -61,6 +62,12 @@ pub use crypto_advanced::{
     XCHACHA20_KEY_SIZE, XCHACHA20_NONCE_SIZE, XCHACHA20_TAG_SIZE, XCHACHA20_MAX_PLAINTEXT_SIZE,
 };
 
+pub use types::{
+    Ed25519PublicKey, Ed25519PrivateKey, Ed25519Signature, CryptoError,
+    HashFunction, SymmetricAlgorithm, AsymmetricAlgorithm, KeyMaterial, KeyType,
+    CryptoContext, SecurityLevel, KeySizeRecommendations,
+};
+
 pub use certificates::{
     CertificateProcessor, CertificateConfig, CertificateError, CertificateResult,
     X509Certificate, CertificateChain, CertificateSigningRequest,
@@ -69,7 +76,7 @@ pub use certificates::{
 };
 
 pub use pqc::{
-    PqcError, PqcResult, SecurityLevel, AlgorithmType, PerformanceMetrics, QuantumResistanceAssessment,
+    PqcError, PqcResult, AlgorithmType, PerformanceMetrics, QuantumResistanceAssessment,
     KyberParameterSet, KyberPublicKey, KyberSecretKey, KyberKem,
     DilithiumParameterSet, DilithiumPublicKey, DilithiumSecretKey, DilithiumSignature,
     SphincsPlusParameterSet, SphincsPlusPublicKey, SphincsPlusSecretKey, SphincsPlusSignature,
@@ -84,7 +91,7 @@ use crate::stdlib::crypto_pqc;
 // Re-export production PQC types
 pub use pqc_production::{
     PqcError as ProductionPqcError, PqcResult as ProductionPqcResult,
-    SecurityLevel as ProductionSecurityLevel, AlgorithmType as ProductionAlgorithmType,
+    AlgorithmType as ProductionAlgorithmType,
     MathematicalFoundation, ConstantTime, SecureBytes,
     KyberParameterSet as ProductionKyberParameterSet,
     KyberPublicKey as ProductionKyberPublicKey,
@@ -105,7 +112,7 @@ pub use pqc_production::{
 // Re-export protocol types that are being imported elsewhere
 pub use protocols::{
     JwtHandler, HmacAuth, TotpGenerator, 
-    ProtocolSuite, ProtocolBuilder, SecurityLevel as ProtocolSecurityLevel, ProtocolConfig,
+    ProtocolSuite, ProtocolBuilder, ProtocolConfig,
     SecureMessagingProtocol, MpcProtocol, DkgProtocol,
     SecurityAuditReport, ProtocolHealthStatus,
     ProtocolError, ProtocolResult, CryptoPrimitives,

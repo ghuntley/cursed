@@ -13,9 +13,10 @@ use serde::{Deserialize, Serialize};
 use tracing::{info, warn, debug, instrument};
 
 use crate::optimization::{
-    OptimizationConfig, OptimizationLevel,
+    OptimizationConfig,
     TimeSavingsCalculator, TimeSavingsConfig,
 };
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
 /// Optimization profile types for different use cases
@@ -210,7 +211,7 @@ impl OptimizationEnablementSystem {
             OptimizationProfile::Size => OptimizationConfig::size_optimized(),
             OptimizationProfile::Debug => {
                 let mut config = OptimizationConfig::development();
-                config.optimization_level = OptimizationLevel::Basic;
+                config.optimization_level = OptimizationLevel::O1;
                 config.debug_info_level = crate::optimization::optimization_config::DebugInfoLevel::Full;
                 config
             }
@@ -270,11 +271,11 @@ impl OptimizationEnablementSystem {
         
         // Simulate optimization improvements based on configuration
         let base_improvement = match opt_config.optimization_level {
-            OptimizationLevel::None => 0.0,
-            OptimizationLevel::Basic => 0.15,
-            OptimizationLevel::Default => 0.35,
-            OptimizationLevel::Aggressive => 0.55,
-            OptimizationLevel::Size => 0.25,
+            OptimizationLevel::O0 => 0.0,
+            OptimizationLevel::O1 => 0.15,
+            OptimizationLevel::O2 => 0.35,
+            OptimizationLevel::O3 => 0.55,
+            OptimizationLevel::Os => 0.25,
             OptimizationLevel::Fast => 0.45,
         };
         
@@ -770,13 +771,13 @@ mod tests {
         let system = OptimizationEnablementSystem::new().unwrap();
         
         let dev_config = system.get_optimization_config(&OptimizationProfile::Development).unwrap();
-        assert_eq!(dev_config.optimization_level, OptimizationLevel::None);
+        assert_eq!(dev_config.optimization_level, OptimizationLevel::O0);
         
         let release_config = system.get_optimization_config(&OptimizationProfile::Release).unwrap();
-        assert_eq!(release_config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(release_config.optimization_level, OptimizationLevel::O3);
         
         let size_config = system.get_optimization_config(&OptimizationProfile::Size).unwrap();
-        assert_eq!(size_config.optimization_level, OptimizationLevel::Size);
+        assert_eq!(size_config.optimization_level, OptimizationLevel::Os);
     }
     
     #[test]
@@ -784,7 +785,7 @@ mod tests {
         let mut system = OptimizationEnablementSystem::new().unwrap();
         
         let custom_config = OptimizationConfig {
-            optimization_level: OptimizationLevel::Basic,
+            optimization_level: OptimizationLevel::O1,
             enable_lto: true,
             ..OptimizationConfig::default()
         };
@@ -795,7 +796,7 @@ mod tests {
             &OptimizationProfile::Custom("custom_fast".to_string())
         ).unwrap();
         
-        assert_eq!(retrieved_config.optimization_level, OptimizationLevel::Basic);
+        assert_eq!(retrieved_config.optimization_level, OptimizationLevel::O1);
         assert!(retrieved_config.enable_lto);
     }
     

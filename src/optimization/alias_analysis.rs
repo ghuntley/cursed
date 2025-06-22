@@ -922,12 +922,12 @@ pub struct AliasOptimizationOpportunity {
 impl OptimizationLevel {
     pub fn as_str(&self) -> &'static str {
         match self {
-            OptimizationLevel::None => "O0",
-            OptimizationLevel::Less => "O1",
-            OptimizationLevel::Default => "O2",
-            OptimizationLevel::Aggressive => "O3",
-            OptimizationLevel::Size => "Os",
-            OptimizationLevel::SizeAggressive => "Oz",
+            OptimizationLevel::O0 => "O0",
+            OptimizationLevel::O1 => "O1",
+            OptimizationLevel::O2 => "O2",
+            OptimizationLevel::O3 => "O3",
+            OptimizationLevel::Os => "Os",
+            OptimizationLevel::OsAggressive => "Oz",
         }
     }
 }
@@ -940,7 +940,7 @@ mod tests {
     #[test]
     fn test_alias_analyzer_creation() {
         let context = Context::create();
-        let analyzer = AdvancedAliasAnalyzer::new(&context, OptimizationLevel::Default);
+        let analyzer = AdvancedAliasAnalyzer::new(&context, OptimizationLevel::O2);
         
         let stats = analyzer.get_statistics();
         assert_eq!(stats.total_pointers_analyzed, 0);
@@ -950,7 +950,7 @@ mod tests {
     #[test]
     fn test_alias_type_determination() {
         let context = Context::create();
-        let analyzer = AdvancedAliasAnalyzer::new(&context, OptimizationLevel::Default);
+        let analyzer = AdvancedAliasAnalyzer::new(&context, OptimizationLevel::O2);
         
         // Test basic alias query
         let result = analyzer.query_alias("ptr1", "ptr2");

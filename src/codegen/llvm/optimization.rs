@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 use std::thread;
+use std::str::FromStr;
 use rayon::prelude::*;
 use tracing::{debug, info, warn, instrument, span, Level};
 
@@ -20,58 +21,8 @@ use inkwell::{
     OptimizationLevel as InkwellOptLevel,
 };
 
-/// Optimization level configuration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OptimizationLevel {
-    /// No optimization (-O0)
-    None,
-    /// Minimal optimization (-O1)
-    Less,
-    /// Standard optimization (-O2)
-    Default,
-    /// Aggressive optimization (-O3)
-    Aggressive,
-    /// Optimize for size (-Os)
-    Size,
-    /// Optimize aggressively for size (-Oz)
-    SizeAggressive,
-}
-
-impl OptimizationLevel {
-    pub fn from_str(s: &str) -> Result<Self> {
-        match s {
-            "0" | "O0" => Ok(OptimizationLevel::None),
-            "1" | "O1" => Ok(OptimizationLevel::Less),
-            "2" | "O2" => Ok(OptimizationLevel::Default),
-            "3" | "O3" => Ok(OptimizationLevel::Aggressive),
-            "s" | "Os" => Ok(OptimizationLevel::Size),
-            "z" | "Oz" => Ok(OptimizationLevel::SizeAggressive),
-            _ => Err(Error::Other(format!("Invalid optimization level: {}", s))),
-        }
-    }
-    
-    pub fn to_inkwell_level(&self) -> InkwellOptLevel {
-        match self {
-            OptimizationLevel::None => InkwellOptLevel::None,
-            OptimizationLevel::Less => InkwellOptLevel::Less,
-            OptimizationLevel::Default => InkwellOptLevel::Default,
-            OptimizationLevel::Aggressive => InkwellOptLevel::Aggressive,
-            OptimizationLevel::Size => InkwellOptLevel::Default, // LLVM doesn't have size-specific levels
-            OptimizationLevel::SizeAggressive => InkwellOptLevel::Aggressive,
-        }
-    }
-    
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            OptimizationLevel::None => "O0",
-            OptimizationLevel::Less => "O1", 
-            OptimizationLevel::Default => "O2",
-            OptimizationLevel::Aggressive => "O3",
-            OptimizationLevel::Size => "Os",
-            OptimizationLevel::SizeAggressive => "Oz",
-        }
-    }
-}
+// Import canonical OptimizationLevel from common module
+pub use crate::common::optimization_level::OptimizationLevel;
 
 /// Optimization pass configuration
 #[derive(Debug, Clone)]
@@ -110,7 +61,7 @@ impl OptimizationConfig {
     /// Create development-optimized configuration (fast compile, minimal optimization)
     pub fn dev_config() -> Self {
         Self {
-            level: OptimizationLevel::Less,
+            level: OptimizationLevel::O1,
             target_cpu: None,
             target_features: Vec::new(),
             vectorize_loops: false,
@@ -138,7 +89,7 @@ impl OptimizationConfig {
     /// Create release-optimized configuration (aggressive optimization, longer compile)
     pub fn release_config() -> Self {
         Self {
-            level: OptimizationLevel::Aggressive,
+            level: OptimizationLevel::O3,
             target_cpu: Some("native".to_string()), // Use native CPU features
             target_features: vec![
                 "sse4.2".to_string(),
@@ -231,7 +182,7 @@ impl OptimizationConfig {
     /// Create size-optimized configuration (minimize binary size)
     pub fn size_config() -> Self {
         Self {
-            level: OptimizationLevel::SizeAggressive,
+            level: OptimizationLevel::Oz,
             target_cpu: None, // Generic for broader compatibility
             target_features: Vec::new(),
             vectorize_loops: false, // Can increase size
@@ -432,17 +383,17 @@ impl<'ctx> OptimizationManager<'ctx> {
         let mut passes_added = 0;
         
         match self.config.level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // No optimization passes
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 fpm.add_instruction_combining_pass();
                 fpm.add_reassociate_pass();
                 fpm.add_gvn_pass();
                 fpm.add_cfg_simplification_pass();
                 passes_added += 4;
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 fpm.add_instruction_combining_pass();
                 fpm.add_reassociate_pass();
                 fpm.add_gvn_pass();
@@ -453,7 +404,7 @@ impl<'ctx> OptimizationManager<'ctx> {
                 fpm.add_reassociate_pass();
                 passes_added += 8;
             }
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::Oz => {
                 fpm.add_instruction_combining_pass();
                 fpm.add_reassociate_pass();
                 fpm.add_gvn_pass();
@@ -493,15 +444,15 @@ impl<'ctx> OptimizationManager<'ctx> {
         let mut passes_added = 0;
         
         match self.config.level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // No optimization passes
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 mpm.add_always_inliner_pass();
                 mpm.add_strip_dead_prototypes_pass();
                 passes_added += 2;
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 mpm.add_always_inliner_pass();
                 mpm.add_strip_dead_prototypes_pass();
                 mpm.add_constant_merge_pass();
@@ -510,7 +461,7 @@ impl<'ctx> OptimizationManager<'ctx> {
                 mpm.add_global_dce_pass();
                 passes_added += 6;
             }
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::Oz => {
                 mpm.add_always_inliner_pass();
                 mpm.add_strip_dead_prototypes_pass();
                 mpm.add_constant_merge_pass();
@@ -572,11 +523,11 @@ impl<'ctx> OptimizationManager<'ctx> {
         
         // Recommend optimization level based on code size and complexity
         let recommended_level = if total_instructions < 1000 {
-            OptimizationLevel::Aggressive
+            OptimizationLevel::O3
         } else if total_instructions < 10000 {
-            OptimizationLevel::Default
+            OptimizationLevel::O2
         } else {
-            OptimizationLevel::Less
+            OptimizationLevel::O1
         };
         
         debug!(
@@ -1992,13 +1943,13 @@ impl<'ctx> OptimizationManager<'ctx> {
         let complexity_factor = analysis.total_instructions as f64 / analysis.total_functions as f64;
         
         let recommended_level = if complexity_factor < 10.0 {
-            OptimizationLevel::Aggressive // Small, simple functions
+            OptimizationLevel::O3 // Small, simple functions
         } else if complexity_factor < 50.0 {
-            OptimizationLevel::Default // Medium complexity
+            OptimizationLevel::O2 // Medium complexity
         } else if complexity_factor < 200.0 {
-            OptimizationLevel::Less // High complexity
+            OptimizationLevel::O1 // High complexity
         } else {
-            OptimizationLevel::None // Very high complexity, focus on compile time
+            OptimizationLevel::O0 // Very high complexity, focus on compile time
         };
         
         // Check if we have historical data suggesting different approach
@@ -2007,10 +1958,10 @@ impl<'ctx> OptimizationManager<'ctx> {
             if historical_performance < 0.5 {
                 // Previous optimizations didn't help much, be more conservative
                 return match recommended_level {
-                    OptimizationLevel::Aggressive => OptimizationLevel::Default,
-                    OptimizationLevel::Default => OptimizationLevel::Less,
-                    OptimizationLevel::Less => OptimizationLevel::None,
-                    OptimizationLevel::None => OptimizationLevel::None,
+                    OptimizationLevel::O3 => OptimizationLevel::O2,
+                    OptimizationLevel::O2 => OptimizationLevel::O1,
+                    OptimizationLevel::O1 => OptimizationLevel::O0,
+                    OptimizationLevel::O0 => OptimizationLevel::O0,
                     _ => recommended_level,
                 };
             }
@@ -2271,7 +2222,7 @@ pub mod utils {
         let level = if let Some(level_str) = opt_level {
             OptimizationLevel::from_str(level_str)?
         } else {
-            OptimizationLevel::Default
+            OptimizationLevel::O2
         };
         
         Ok(OptimizationConfig {
@@ -2286,7 +2237,7 @@ pub mod utils {
     /// Get default optimization configuration for development
     pub fn dev_config() -> OptimizationConfig {
         OptimizationConfig {
-            level: OptimizationLevel::None,
+            level: OptimizationLevel::O0,
             vectorize_loops: false,
             vectorize_slp: false,
             unroll_loops: false,
@@ -2300,7 +2251,7 @@ pub mod utils {
     /// Get default optimization configuration for release
     pub fn release_config() -> OptimizationConfig {
         OptimizationConfig {
-            level: OptimizationLevel::Aggressive,
+            level: OptimizationLevel::O3,
             vectorize_loops: true,
             vectorize_slp: true,
             unroll_loops: true,
@@ -2319,12 +2270,12 @@ mod tests {
     
     #[test]
     fn test_optimization_level_conversion() {
-        assert_eq!(OptimizationLevel::from_str("O0").unwrap(), OptimizationLevel::None);
-        assert_eq!(OptimizationLevel::from_str("O1").unwrap(), OptimizationLevel::Less);
-        assert_eq!(OptimizationLevel::from_str("O2").unwrap(), OptimizationLevel::Default);
-        assert_eq!(OptimizationLevel::from_str("O3").unwrap(), OptimizationLevel::Aggressive);
-        assert_eq!(OptimizationLevel::from_str("Os").unwrap(), OptimizationLevel::Size);
-        assert_eq!(OptimizationLevel::from_str("Oz").unwrap(), OptimizationLevel::SizeAggressive);
+        assert_eq!(OptimizationLevel::from_str("O0").unwrap(), OptimizationLevel::O0);
+        assert_eq!(OptimizationLevel::from_str("O1").unwrap(), OptimizationLevel::O1);
+        assert_eq!(OptimizationLevel::from_str("O2").unwrap(), OptimizationLevel::O2);
+        assert_eq!(OptimizationLevel::from_str("O3").unwrap(), OptimizationLevel::O3);
+        assert_eq!(OptimizationLevel::from_str("Os").unwrap(), OptimizationLevel::Os);
+        assert_eq!(OptimizationLevel::from_str("Oz").unwrap(), OptimizationLevel::Oz);
     }
     
     #[test]
@@ -2336,7 +2287,7 @@ mod tests {
             true,
         ).unwrap();
         
-        assert_eq!(config.level, OptimizationLevel::Default);
+        assert_eq!(config.level, OptimizationLevel::O2);
         assert_eq!(config.target_cpu, Some("native".to_string()));
         assert_eq!(config.target_features, vec!["sse4.2", "avx"]);
         assert!(config.enable_lto);
@@ -2348,7 +2299,7 @@ mod tests {
         let config = OptimizationConfig::default();
         let manager = OptimizationManager::new(&context, config);
         
-        assert_eq!(manager.get_config().level, OptimizationLevel::Default);
+        assert_eq!(manager.get_config().level, OptimizationLevel::O2);
     }
     
     #[test]
@@ -2364,8 +2315,8 @@ mod tests {
         let dev_config = utils::dev_config();
         let release_config = utils::release_config();
         
-        assert_eq!(dev_config.level, OptimizationLevel::None);
-        assert_eq!(release_config.level, OptimizationLevel::Aggressive);
+        assert_eq!(dev_config.level, OptimizationLevel::O0);
+        assert_eq!(release_config.level, OptimizationLevel::O3);
         assert!(!dev_config.enable_lto);
         assert!(release_config.enable_lto);
     }

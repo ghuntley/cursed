@@ -3,7 +3,8 @@
 /// This pass eliminates redundant conditional branches by "threading" jumps through
 /// intermediate blocks when the condition can be determined statically along certain paths.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,
@@ -65,11 +66,11 @@ impl<'ctx> OptimizationPass<'ctx> for JumpThreadingPass<'ctx> {
     }
     
     fn should_run(&self, config: &PassConfiguration) -> bool {
-        config.optimization_level >= OptimizationLevel::Default
+        config.optimization_level >= OptimizationLevel::O2
     }
     
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Default
+        OptimizationLevel::O2
     }
     
     fn estimated_execution_time(&self) -> Duration {

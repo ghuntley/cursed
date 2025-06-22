@@ -48,12 +48,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         info!("Initializing advanced function inliner with level {}", optimization_level.as_str());
         
         let (max_inline_size, max_caller_growth, call_frequency_threshold) = match optimization_level {
-            OptimizationLevel::None => (0, 0.0, 0.0),
-            OptimizationLevel::Less => (25, 1.2, 0.1),
-            OptimizationLevel::Default => (75, 1.5, 0.2),
-            OptimizationLevel::Aggressive => (150, 2.0, 0.3),
-            OptimizationLevel::Size => (15, 1.1, 0.05),
-            OptimizationLevel::SizeAggressive => (10, 1.05, 0.02),
+            OptimizationLevel::O0 => (0, 0.0, 0.0),
+            OptimizationLevel::O1 => (25, 1.2, 0.1),
+            OptimizationLevel::O2 => (75, 1.5, 0.2),
+            OptimizationLevel::O3 => (150, 2.0, 0.3),
+            OptimizationLevel::Os => (15, 1.1, 0.05),
+            OptimizationLevel::OsAggressive => (10, 1.05, 0.02),
         };
         
         Self {
@@ -1053,12 +1053,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         
         // Limit total number of inlinings per optimization pass
         let max_inlinings = match self.optimization_level {
-            OptimizationLevel::None => 0,
-            OptimizationLevel::Less => 10,
-            OptimizationLevel::Default => 25,
-            OptimizationLevel::Aggressive => 50,
-            OptimizationLevel::Size => 5,
-            OptimizationLevel::SizeAggressive => 3,
+            OptimizationLevel::O0 => 0,
+            OptimizationLevel::O1 => 10,
+            OptimizationLevel::O2 => 25,
+            OptimizationLevel::O3 => 50,
+            OptimizationLevel::Os => 5,
+            OptimizationLevel::OsAggressive => 3,
         };
         
         decisions.truncate(max_inlinings);
@@ -1068,12 +1068,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
     
     fn get_factor_weights(&self) -> (f64, f64, f64, f64, f64, f64) {
         match self.optimization_level {
-            OptimizationLevel::None => (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            OptimizationLevel::Less => (0.3, 0.2, 0.2, 0.1, 0.1, 0.1),
-            OptimizationLevel::Default => (0.2, 0.25, 0.15, 0.15, 0.15, 0.1),
-            OptimizationLevel::Aggressive => (0.15, 0.3, 0.1, 0.2, 0.15, 0.1),
-            OptimizationLevel::Size => (0.4, 0.1, 0.3, 0.05, 0.1, 0.05),
-            OptimizationLevel::SizeAggressive => (0.5, 0.05, 0.3, 0.05, 0.05, 0.05),
+            OptimizationLevel::O0 => (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            OptimizationLevel::O1 => (0.3, 0.2, 0.2, 0.1, 0.1, 0.1),
+            OptimizationLevel::O2 => (0.2, 0.25, 0.15, 0.15, 0.15, 0.1),
+            OptimizationLevel::O3 => (0.15, 0.3, 0.1, 0.2, 0.15, 0.1),
+            OptimizationLevel::Os => (0.4, 0.1, 0.3, 0.05, 0.1, 0.05),
+            OptimizationLevel::OsAggressive => (0.5, 0.05, 0.3, 0.05, 0.05, 0.05),
         }
     }
     

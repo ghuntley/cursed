@@ -11,13 +11,14 @@ use tracing::{info, warn, debug, instrument, error};
 use serde::{Deserialize, Serialize};
 
 use crate::optimization::{
-    OptimizationConfig, OptimizationLevel,
+    OptimizationConfig,
     EnhancedLlvmOptimizationSystem, ManagedOptimizationConfig,
     PgoSystem, PgoSystemConfig,
     TimeSavingsCalculator, TimeSavingsConfig,
     BaselineComparator, BaselineComparisonConfig,
     BenchmarkRunner, BenchmarkConfig,
 };
+use crate::optimization::config::OptimizationLevel;
 
 // Type alias for compatibility
 pub type EnhancedLlvmOptimizer = EnhancedLlvmOptimizationSystem;
@@ -88,7 +89,7 @@ pub struct ComprehensiveOptimizationConfig {
 impl Default for ComprehensiveOptimizationConfig {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             
             // Core optimizations - ALL ENABLED
             enable_function_inlining: true,
@@ -138,7 +139,7 @@ impl ComprehensiveOptimizationConfig {
     /// O0 (Debug): Basic optimization for fast compilation
     pub fn debug_config() -> Self {
         Self {
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             enable_function_inlining: false,
             enable_vectorization: false,
             enable_loop_unrolling: false,
@@ -163,7 +164,7 @@ impl ComprehensiveOptimizationConfig {
     /// O1 (Basic): Enable core optimizations
     pub fn basic_config() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Basic,
+            optimization_level: OptimizationLevel::O1,
             enable_function_inlining: true,
             enable_vectorization: true,
             enable_loop_unrolling: true,
@@ -185,7 +186,7 @@ impl ComprehensiveOptimizationConfig {
     /// O2 (Standard): Enable most optimizations
     pub fn standard_config() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             enable_function_inlining: true,
             enable_vectorization: true,
             enable_loop_unrolling: true,
@@ -207,7 +208,7 @@ impl ComprehensiveOptimizationConfig {
     /// O3 (Aggressive): Enable all optimizations
     pub fn aggressive_config() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             // All optimizations enabled (default config)
             ..Default::default()
         }
@@ -216,7 +217,7 @@ impl ComprehensiveOptimizationConfig {
     /// Os (Size): Optimize for binary size
     pub fn size_config() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Size,
+            optimization_level: OptimizationLevel::Os,
             enable_function_inlining: false,  // Can increase size
             enable_vectorization: false,      // Can increase size
             enable_loop_unrolling: false,     // Can increase size
@@ -238,7 +239,7 @@ impl ComprehensiveOptimizationConfig {
     /// Oz (Aggressive Size): Aggressively optimize for size
     pub fn aggressive_size_config() -> Self {
         let mut config = Self::size_config();
-        config.optimization_level = OptimizationLevel::Size;
+        config.optimization_level = OptimizationLevel::Os;
         config.enable_common_subexpression_elimination = true;
         config.enable_tail_call_optimization = true;
         config.enable_link_time_optimization = true;
@@ -253,7 +254,7 @@ impl ComprehensiveOptimizationConfig {
         levels.insert("hot_path".to_string(), AdaptiveOptimizationLevel {
             name: "hot_path".to_string(),
             description: "Aggressive optimization for frequently executed code".to_string(),
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             enable_all_optimizations: true,
             priority: 10,
         });
@@ -261,7 +262,7 @@ impl ComprehensiveOptimizationConfig {
         levels.insert("cold_path".to_string(), AdaptiveOptimizationLevel {
             name: "cold_path".to_string(),
             description: "Basic optimization for rarely executed code".to_string(),
-            optimization_level: OptimizationLevel::Basic,
+            optimization_level: OptimizationLevel::O1,
             enable_all_optimizations: false,
             priority: 1,
         });
@@ -269,7 +270,7 @@ impl ComprehensiveOptimizationConfig {
         levels.insert("library_code".to_string(), AdaptiveOptimizationLevel {
             name: "library_code".to_string(),
             description: "Balanced optimization for library functions".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             enable_all_optimizations: true,
             priority: 5,
         });
@@ -402,11 +403,11 @@ impl AdaptiveOptimizationEngine {
         // Determine the best optimization level based on patterns
         if patterns.get("hot_loops").unwrap_or(&0.0) > &0.5 ||
            patterns.get("mathematical_computation").unwrap_or(&0.0) > &0.7 {
-            OptimizationLevel::Aggressive
+            OptimizationLevel::O3
         } else if patterns.get("simple_control_flow").unwrap_or(&0.0) > &0.8 {
-            OptimizationLevel::Basic
+            OptimizationLevel::O1
         } else {
-            OptimizationLevel::Default
+            OptimizationLevel::O2
         }
     }
     
@@ -482,11 +483,11 @@ impl ComprehensiveOptimizationSystem {
         
         // Create optimization configuration
         let optimization_config = match adaptive_level {
-            OptimizationLevel::None => ComprehensiveOptimizationConfig::debug_config(),
-            OptimizationLevel::Basic => ComprehensiveOptimizationConfig::basic_config(),
-            OptimizationLevel::Default => ComprehensiveOptimizationConfig::standard_config(),
-            OptimizationLevel::Aggressive => ComprehensiveOptimizationConfig::aggressive_config(),
-            OptimizationLevel::Size => ComprehensiveOptimizationConfig::size_config(),
+            OptimizationLevel::O0 => ComprehensiveOptimizationConfig::debug_config(),
+            OptimizationLevel::O1 => ComprehensiveOptimizationConfig::basic_config(),
+            OptimizationLevel::O2 => ComprehensiveOptimizationConfig::standard_config(),
+            OptimizationLevel::O3 => ComprehensiveOptimizationConfig::aggressive_config(),
+            OptimizationLevel::Os => ComprehensiveOptimizationConfig::size_config(),
             OptimizationLevel::Fast => ComprehensiveOptimizationConfig::aggressive_config(),
         };
         
@@ -529,11 +530,11 @@ impl ComprehensiveOptimizationSystem {
     /// Simulate optimization results based on configuration
     fn simulate_optimization_results(&self, config: &ComprehensiveOptimizationConfig, source_code: &str) -> Result<OptimizationResults> {
         let mut base_improvement = match config.optimization_level {
-            OptimizationLevel::None => 0.05,
-            OptimizationLevel::Basic => 0.25,
-            OptimizationLevel::Default => 0.45,
-            OptimizationLevel::Aggressive => 0.65,
-            OptimizationLevel::Size => 0.35,
+            OptimizationLevel::O0 => 0.05,
+            OptimizationLevel::O1 => 0.25,
+            OptimizationLevel::O2 => 0.45,
+            OptimizationLevel::O3 => 0.65,
+            OptimizationLevel::Os => 0.35,
             OptimizationLevel::Fast => 0.55,
         };
         
@@ -573,7 +574,7 @@ impl ComprehensiveOptimizationSystem {
             overall_improvement: base_improvement,
             compilation_time_improvement: if config.enable_parallel_compilation { 0.6 } else { 0.0 },
             runtime_performance_improvement: base_improvement,
-            binary_size_improvement: if config.optimization_level == OptimizationLevel::Size { 0.3 } else { 0.1 },
+            binary_size_improvement: if config.optimization_level == OptimizationLevel::Os { 0.3 } else { 0.1 },
             cache_hit_rate,
             parallel_efficiency,
             optimizations_applied: self.count_enabled_optimizations(config),
@@ -731,11 +732,11 @@ mod tests {
     #[test]
     fn test_optimization_config_levels() {
         let debug_config = ComprehensiveOptimizationConfig::debug_config();
-        assert_eq!(debug_config.optimization_level, OptimizationLevel::None);
+        assert_eq!(debug_config.optimization_level, OptimizationLevel::O0);
         assert!(!debug_config.enable_function_inlining);
         
         let aggressive_config = ComprehensiveOptimizationConfig::aggressive_config();
-        assert_eq!(aggressive_config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(aggressive_config.optimization_level, OptimizationLevel::O3);
         assert!(aggressive_config.enable_function_inlining);
         assert!(aggressive_config.enable_vectorization);
         assert!(aggressive_config.enable_link_time_optimization);
@@ -748,11 +749,11 @@ mod tests {
         
         let hot_code = "lowkey (sus i = 0; i < 1000; i++) { periodt; x = x * 2 + 3; }";
         let level = engine.analyze_and_select_optimization(hot_code);
-        assert_eq!(level, OptimizationLevel::Aggressive);
+        assert_eq!(level, OptimizationLevel::O3);
         
         let simple_code = "sus x = 5; facts y = 10;";
         let level = engine.analyze_and_select_optimization(simple_code);
-        assert_eq!(level, OptimizationLevel::Basic);
+        assert_eq!(level, OptimizationLevel::O1);
     }
     
     #[test]

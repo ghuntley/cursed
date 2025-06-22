@@ -65,7 +65,7 @@ pub enum ExecutionError {
 impl Default for ExecutionConfig {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             debug_output: false,
             max_execution_time_ms: 5000, // 5 second timeout
             enable_monitoring: true,

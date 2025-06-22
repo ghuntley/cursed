@@ -1,7 +1,8 @@
 //! LLVM pass pipeline management and execution
 
 use crate::error::{Result, CursedError};
-use crate::optimization::{OptimizationConfig, OptimizationLevel};
+use crate::optimization::{OptimizationConfig};
+use crate::optimization::config::OptimizationLevel;
 use crate::optimization::metrics::CompilationUnit;
 use std::collections::HashMap;
 use tracing::{info, debug, warn, instrument};
@@ -60,7 +61,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "dead-code-elimination".to_string(),
             description: "Remove unreachable and unused code".to_string(),
-            optimization_level: OptimizationLevel::Basic,
+            optimization_level: OptimizationLevel::O1,
             estimated_time_cost: 0.1,
             size_impact: SizeImpact::Reduces,
             dependencies: vec![],
@@ -69,7 +70,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "constant-folding".to_string(),
             description: "Evaluate constant expressions at compile time".to_string(),
-            optimization_level: OptimizationLevel::Basic,
+            optimization_level: OptimizationLevel::O1,
             estimated_time_cost: 0.05,
             size_impact: SizeImpact::Reduces,
             dependencies: vec![],
@@ -78,7 +79,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "block-merging".to_string(),
             description: "Merge adjacent basic blocks".to_string(),
-            optimization_level: OptimizationLevel::Basic,
+            optimization_level: OptimizationLevel::O1,
             estimated_time_cost: 0.03,
             size_impact: SizeImpact::Reduces,
             dependencies: vec![],
@@ -88,7 +89,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "function-inlining".to_string(),
             description: "Inline small functions to reduce call overhead".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             estimated_time_cost: 0.3,
             size_impact: SizeImpact::Variable,
             dependencies: vec!["constant-folding".to_string()],
@@ -97,7 +98,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "loop-optimizations".to_string(),
             description: "Optimize loop structures and access patterns".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             estimated_time_cost: 0.4,
             size_impact: SizeImpact::Variable,
             dependencies: vec!["dead-code-elimination".to_string()],
@@ -106,7 +107,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "vectorization".to_string(),
             description: "Vectorize loops and operations when possible".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             estimated_time_cost: 0.5,
             size_impact: SizeImpact::Increases,
             dependencies: vec!["loop-optimizations".to_string()],
@@ -115,7 +116,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "global-value-numbering".to_string(),
             description: "Eliminate redundant computations globally".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             estimated_time_cost: 0.2,
             size_impact: SizeImpact::Reduces,
             dependencies: vec!["constant-folding".to_string()],
@@ -124,7 +125,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "instruction-combining".to_string(),
             description: "Combine and simplify instruction sequences".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             estimated_time_cost: 0.15,
             size_impact: SizeImpact::Reduces,
             dependencies: vec![],
@@ -134,7 +135,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "aggressive-inlining".to_string(),
             description: "Aggressively inline functions for performance".to_string(),
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             estimated_time_cost: 0.8,
             size_impact: SizeImpact::Increases,
             dependencies: vec!["function-inlining".to_string()],
@@ -143,7 +144,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "loop-unrolling".to_string(),
             description: "Unroll loops to reduce branching overhead".to_string(),
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             estimated_time_cost: 0.6,
             size_impact: SizeImpact::Increases,
             dependencies: vec!["loop-optimizations".to_string()],
@@ -152,7 +153,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "tail-call-optimization".to_string(),
             description: "Optimize tail calls to reduce stack usage".to_string(),
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             estimated_time_cost: 0.2,
             size_impact: SizeImpact::Neutral,
             dependencies: vec!["function-inlining".to_string()],
@@ -161,7 +162,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "interprocedural-optimizations".to_string(),
             description: "Cross-function optimizations and analysis".to_string(),
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             estimated_time_cost: 1.0,
             size_impact: SizeImpact::Variable,
             dependencies: vec!["global-value-numbering".to_string()],
@@ -171,7 +172,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "size-optimized-inlining".to_string(),
             description: "Conservative inlining focused on size reduction".to_string(),
-            optimization_level: OptimizationLevel::Size,
+            optimization_level: OptimizationLevel::Os,
             estimated_time_cost: 0.2,
             size_impact: SizeImpact::Reduces,
             dependencies: vec!["dead-code-elimination".to_string()],
@@ -180,7 +181,7 @@ impl LlvmPassManager {
         self.register_pass(PassInfo {
             name: "code-deduplication".to_string(),
             description: "Remove duplicate code sequences".to_string(),
-            optimization_level: OptimizationLevel::Size,
+            optimization_level: OptimizationLevel::Os,
             estimated_time_cost: 0.3,
             size_impact: SizeImpact::Reduces,
             dependencies: vec![],
@@ -238,33 +239,33 @@ impl LlvmPassManager {
     /// Check if a pass is applicable for the current optimization level
     fn is_pass_applicable(&self, pass_info: &PassInfo, target_level: &OptimizationLevel) -> bool {
         match target_level {
-            OptimizationLevel::None => false,
-            OptimizationLevel::Basic => {
-                matches!(pass_info.optimization_level, OptimizationLevel::Basic)
+            OptimizationLevel::O0 => false,
+            OptimizationLevel::O1 => {
+                matches!(pass_info.optimization_level, OptimizationLevel::O1)
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 matches!(
                     pass_info.optimization_level,
-                    OptimizationLevel::Basic | OptimizationLevel::Default
+                    OptimizationLevel::O1 | OptimizationLevel::O2
                 )
             }
-            OptimizationLevel::Aggressive => {
+            OptimizationLevel::O3 => {
                 matches!(
                     pass_info.optimization_level,
-                    OptimizationLevel::Basic | OptimizationLevel::Default | OptimizationLevel::Aggressive
+                    OptimizationLevel::O1 | OptimizationLevel::O2 | OptimizationLevel::O3
                 )
             }
-            OptimizationLevel::Size => {
+            OptimizationLevel::Os => {
                 // For size optimization, include basic passes and size-specific passes
                 matches!(
                     pass_info.optimization_level,
-                    OptimizationLevel::Basic | OptimizationLevel::Size
+                    OptimizationLevel::O1 | OptimizationLevel::Os
                 ) && pass_info.size_impact != SizeImpact::Increases
             }
             OptimizationLevel::Fast => {
                 matches!(
                     pass_info.optimization_level,
-                    OptimizationLevel::Basic | OptimizationLevel::Default | OptimizationLevel::Fast
+                    OptimizationLevel::O1 | OptimizationLevel::O2 | OptimizationLevel::Fast
                 )
             }
         }

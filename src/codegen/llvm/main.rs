@@ -6,7 +6,8 @@ use std::path::PathBuf;
 // Import real LLVM optimization passes
 use crate::optimization::real_llvm_passes::RealLlvmPassManager;
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
-use crate::optimization::config::{OptimizationConfig as OptConfig, OptimizationLevel as OptLevel};
+use crate::optimization::config::OptimizationConfig as OptConfig;
+use crate::optimization::optimization_config::OptimizationLevel as OptLevel;
 use crate::optimization::coordinator::{
     OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults,
     OptimizationLevel as CoordOptLevel

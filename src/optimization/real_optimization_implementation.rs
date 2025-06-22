@@ -550,7 +550,7 @@ mod tests {
         let snapshots = vec![
             PerformanceSnapshot {
                 timestamp: Instant::now(),
-                optimization_level: OptimizationLevel::Default,
+                optimization_level: OptimizationLevel::O2,
                 metrics: BaselineMetrics::default(),
                 improvements: PerformanceImprovements {
                     runtime_improvement: 0.1,
@@ -562,7 +562,7 @@ mod tests {
             },
             PerformanceSnapshot {
                 timestamp: Instant::now(),
-                optimization_level: OptimizationLevel::Default,
+                optimization_level: OptimizationLevel::O2,
                 metrics: BaselineMetrics::default(),
                 improvements: PerformanceImprovements {
                     runtime_improvement: 0.2,
@@ -574,7 +574,7 @@ mod tests {
             },
             PerformanceSnapshot {
                 timestamp: Instant::now(),
-                optimization_level: OptimizationLevel::Default,
+                optimization_level: OptimizationLevel::O2,
                 metrics: BaselineMetrics::default(),
                 improvements: PerformanceImprovements {
                     runtime_improvement: 0.3,

@@ -144,13 +144,13 @@ fn parse_args() -> CliArgs {
         .unwrap_or(2);
     
     let optimization_level = match matches.value_of("optimization").unwrap() {
-        "0" => OptimizationLevel::None,
-        "1" => OptimizationLevel::Less,
-        "2" => OptimizationLevel::Default,
-        "3" => OptimizationLevel::Aggressive,
-        "s" => OptimizationLevel::Default, // Size optimization fallback
-        "z" => OptimizationLevel::Default, // Size optimization fallback
-        _ => OptimizationLevel::None,
+        "0" => OptimizationLevel::O0,
+        "1" => OptimizationLevel::O1,
+        "2" => OptimizationLevel::O2,
+        "3" => OptimizationLevel::O3,
+        "s" => OptimizationLevel::O2, // Size optimization fallback
+        "z" => OptimizationLevel::O2, // Size optimization fallback
+        _ => OptimizationLevel::O0,
     };
 
     CliArgs {
@@ -192,7 +192,7 @@ fn run_compiler(args: CliArgs) -> Result<(), CursedError> {
     let debug_config = DebugConfig {
         generate_debug_info: true,
         debug_level: args.debug_level,
-        optimized_debug: args.optimization_level != OptimizationLevel::None,
+        optimized_debug: args.optimization_level != OptimizationLevel::O0,
         include_source_text: true,
         generate_line_tables: true,
         ..Default::default()
@@ -394,7 +394,7 @@ mod tests {
             input_file: PathBuf::from("test.csd"),
             output_file: None,
             debug_level: 2,
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             emit_llvm_ir: false,
             emit_object: false,
             emit_assembly: false,

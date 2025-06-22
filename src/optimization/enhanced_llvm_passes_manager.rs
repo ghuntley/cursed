@@ -151,16 +151,16 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
         
         // Execute optimization phases based on level
         match self.optimization_level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 self.run_minimal_optimization_phase(module)?;
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 self.run_basic_optimization_phase(module)?;
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 self.run_standard_optimization_phase(module)?;
             }
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::OsAggressive => {
                 self.run_aggressive_optimization_phase(module)?;
             }
         }
@@ -1687,7 +1687,7 @@ mod tests {
     fn test_enhanced_pass_manager_creation() {
         let context = Context::create();
         let config = OptimizationConfig::default();
-        let pass_manager = EnhancedLlvmPassManager::new(&context, OptimizationLevel::Default, &config);
+        let pass_manager = EnhancedLlvmPassManager::new(&context, OptimizationLevel::O2, &config);
         
         let stats = pass_manager.get_statistics();
         assert_eq!(stats.initial_functions, 0);

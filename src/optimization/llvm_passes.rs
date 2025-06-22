@@ -53,11 +53,11 @@ impl<'ctx> LlvmPassManager<'ctx> {
         self.function_passes.extend(self.config.function_passes.clone());
         
         match self.optimization_level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // Minimal passes for O0
                 self.function_passes.push("mem2reg".to_string());
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 // O1 passes
                 if self.config.enable_constant_folding {
                     self.function_passes.push("constprop".to_string());
@@ -66,7 +66,7 @@ impl<'ctx> LlvmPassManager<'ctx> {
                     self.function_passes.push("dce".to_string());
                 }
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 // O2 passes
                 if self.config.enable_inlining {
                     self.function_passes.push("inline".to_string());
@@ -78,7 +78,7 @@ impl<'ctx> LlvmPassManager<'ctx> {
                     self.function_passes.push("loop-unroll".to_string());
                 }
             }
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::OsAggressive => {
                 // O3/Os/Oz passes
                 if self.config.enable_vectorization {
                     self.function_passes.push("loop-vectorize".to_string());
@@ -102,29 +102,29 @@ impl<'ctx> LlvmPassManager<'ctx> {
         self.module_passes.extend(self.config.module_passes.clone());
         
         match self.optimization_level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // Minimal module passes
                 self.module_passes.push("strip-dead-prototypes".to_string());
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 // O1 module passes
                 self.module_passes.push("globalopt".to_string());
                 self.module_passes.push("always-inline".to_string());
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 // O2 module passes
                 self.module_passes.push("function-attrs".to_string());
                 self.module_passes.push("argpromotion".to_string());
                 self.module_passes.push("deadargelim".to_string());
             }
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::OsAggressive => {
                 // O3/Os/Oz module passes
                 self.module_passes.push("mergefunc".to_string());
                 self.module_passes.push("inline".to_string());
                 self.module_passes.push("globaldce".to_string());
                 
                 // Size-specific optimizations
-                if matches!(self.optimization_level, OptimizationLevel::Size | OptimizationLevel::SizeAggressive) {
+                if matches!(self.optimization_level, OptimizationLevel::Os | OptimizationLevel::OsAggressive) {
                     self.module_passes.push("constmerge".to_string());
                     self.module_passes.push("strip".to_string());
                 }
@@ -728,20 +728,20 @@ pub mod pass_utils {
     /// Get recommended passes for optimization level
     pub fn get_recommended_passes(level: OptimizationLevel) -> (Vec<String>, Vec<String>) {
         let function_passes = match level {
-            OptimizationLevel::None => vec!["mem2reg".to_string()],
-            OptimizationLevel::Less => vec![
+            OptimizationLevel::O0 => vec!["mem2reg".to_string()],
+            OptimizationLevel::O1 => vec![
                 "mem2reg".to_string(),
                 "instcombine".to_string(),
                 "simplifycfg".to_string(),
             ],
-            OptimizationLevel::Default => vec![
+            OptimizationLevel::O2 => vec![
                 "mem2reg".to_string(),
                 "instcombine".to_string(),
                 "reassociate".to_string(),
                 "gvn".to_string(),
                 "simplifycfg".to_string(),
             ],
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => vec![
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::OsAggressive => vec![
                 "mem2reg".to_string(),
                 "instcombine".to_string(),
                 "reassociate".to_string(),
@@ -754,17 +754,17 @@ pub mod pass_utils {
         };
         
         let module_passes = match level {
-            OptimizationLevel::None => vec!["strip-dead-prototypes".to_string()],
-            OptimizationLevel::Less => vec![
+            OptimizationLevel::O0 => vec!["strip-dead-prototypes".to_string()],
+            OptimizationLevel::O1 => vec![
                 "strip-dead-prototypes".to_string(),
                 "globalopt".to_string(),
             ],
-            OptimizationLevel::Default => vec![
+            OptimizationLevel::O2 => vec![
                 "globalopt".to_string(),
                 "globaldce".to_string(),
                 "function-attrs".to_string(),
             ],
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => vec![
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::OsAggressive => vec![
                 "globalopt".to_string(),
                 "globaldce".to_string(),
                 "function-attrs".to_string(),
@@ -784,7 +784,7 @@ mod tests {
     #[test]
     fn test_llvm_pass_manager_creation() {
         let config = LlvmPassConfig::default();
-        let mut manager = LlvmPassManager::new(config, OptimizationLevel::Default);
+        let mut manager = LlvmPassManager::new(config, OptimizationLevel::O2);
         assert!(manager.initialize_passes().is_ok());
     }
     
@@ -822,7 +822,7 @@ mod tests {
     
     #[test]
     fn test_recommended_passes() {
-        let (func_passes, mod_passes) = pass_utils::get_recommended_passes(OptimizationLevel::Default);
+        let (func_passes, mod_passes) = pass_utils::get_recommended_passes(OptimizationLevel::O2);
         assert!(!func_passes.is_empty());
         assert!(!mod_passes.is_empty());
         assert!(func_passes.contains(&"gvn".to_string()));

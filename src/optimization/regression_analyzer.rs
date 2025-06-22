@@ -771,7 +771,7 @@ mod tests {
     use super::*;
     use crate::optimization::benchmarks::BenchmarkResult;
     use crate::optimization::baseline_storage::{PerformanceBaseline, BaselineBenchmark, TimeMetrics, BaselineType};
-    use crate::codegen::llvm::optimization::OptimizationLevel;
+    use crate::optimization::config::OptimizationLevel;
 
     fn create_test_baseline() -> PerformanceBaseline {
         let mut benchmarks = HashMap::new();
@@ -815,7 +815,7 @@ mod tests {
     fn create_regression_result() -> BenchmarkResult {
         BenchmarkResult {
             name: "test_benchmark".to_string(),
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             compile_time: Duration::from_secs(4), // 100% increase from baseline
             runtime_performance: Some(Duration::from_millis(600)), // 20% degradation
             binary_size: 1536, // 50% increase
