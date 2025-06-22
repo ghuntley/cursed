@@ -4,6 +4,7 @@ use crate::stdlib::r#async::{AsyncError, AsyncResult, spawn_blocking_io};
 use crate::runtime::r#async::Promise;
 
 /// Async TCP listener
+#[derive(Clone)]
 pub struct AsyncTcpListener {
     addr: SocketAddr,
 }
@@ -24,7 +25,7 @@ impl AsyncTcpListener {
             let _ = resolver.resolve(result);
         });
         
-        promise.await.unwrap_or_else(|_| Err(AsyncError::Network("Operation failed".to_string())))
+        promise.clone().await.unwrap_or_else(|_| Err(AsyncError::Network("Operation failed".to_string())))
     }
 
     /// Accept incoming connections
@@ -37,11 +38,12 @@ impl AsyncTcpListener {
             let _ = resolver.resolve(Ok((stream, addr)));
         });
         
-        promise.await.unwrap_or_else(|_| Err(AsyncError::Network("Accept failed".to_string())))
+        promise.clone().await.unwrap_or_else(|_| Err(AsyncError::Network("Accept failed".to_string())))
     }
 }
 
 /// Async TCP stream
+#[derive(Clone)]
 pub struct AsyncTcpStream {
     addr: SocketAddr,
 }
@@ -63,6 +65,7 @@ impl AsyncTcpStream {
 }
 
 /// Async UDP socket
+#[derive(Clone)]
 pub struct AsyncUdpSocket {
     addr: SocketAddr,
 }

@@ -61,53 +61,83 @@ pub mod mmap;
 
 // Re-export enhanced functionality
 pub use enhanced_exec_slay::*;
-pub use enhanced_exec_slay_complete::*;
-pub use enhanced_exec_vibez_complete::*;
-pub use comprehensive_integration::*;
+// pub use enhanced_exec_slay_complete::*; // Removed to avoid E0659 conflicts
+// pub use enhanced_exec_vibez_complete::*; // Removed to avoid E0659 conflicts
+// pub use comprehensive_integration::*; // Removed to avoid E0659 conflicts
 pub use llvm_integration::*;
 pub use shell_commands::*;
-pub use safe_process_management::*;
+// Use explicit imports from safe_process_management to avoid conflicts
+pub use safe_process_management::{
+    SafeProcessManager, ProcessSecurityManager, SafetyConfig, 
+    ResourceLimits as SafeResourceLimits, ResourceType as SafeResourceType,
+    SecurityContext, ProcessIsolation, SecurityCheck, ProcessGuard
+};
 pub use safe_exec_slay::*;
 
 #[cfg(test)]
 pub mod tests;
+pub mod type_disambiguation;
 
 // Re-export public API
-pub use error::*;
-pub use core::*;
-pub use info::*;
-pub use control::*;
-pub use enhanced_control::*;
-pub use communication::*;
-pub use monitoring::*;
-pub use platform::*;
-pub use pipes::*;
-pub use signals::*;
-pub use daemon::*;
-pub use environment::*;
-pub use lifecycle::*;
-pub use exec_slay::*;
-// Primary exec_vibez exports (basic module)
-pub use exec_vibez::*;
-// Enhanced modules for specific features
-// pub use exec_vibez_advanced::*;
-// pub use exec_vibez_enhanced::*;
-pub use real_monitoring::*;
-pub use integration::*;
-pub use ipc_integration::*;
-pub use enhanced_exec_slay::*;
-pub use enhanced_exec_slay_complete::*;
-pub use enhanced_exec_vibez_complete::*;
-pub use comprehensive_integration::*;
-pub use pipeline::*;
-pub use background_tasks::*;
-pub use shell_commands::*;
-pub use real_ipc::*;
-pub use fork::*;
-pub use resource_limits::*;
-pub use namespaces::*;
-pub use privileges::*;
-pub use mmap::*;
+// Core types - explicit exports to avoid conflicts
+pub use error::{ProcessError, ProcessResult};
+pub use core::{ProcessManager, ProcessHandle};
+pub use info::{ProcessInfo as StdProcessInfo, SystemInfo, ProcessState as StdProcessState};
+pub use control::{ProcessController, ControlOptions};
+pub use enhanced_control::{EnhancedProcessController, EnhancedControlOptions};
+pub use communication::{ProcessCommunication, CommunicationChannel};
+pub use monitoring::{ProcessMonitor, MonitoringOptions, ProcessMetrics};
+pub use platform::{PlatformHandler, PlatformCapabilities};
+pub use pipes::{ProcessPipe, PipeOptions};
+pub use signals::{SignalHandler, SignalType};
+pub use daemon::{DaemonManager, DaemonOptions};
+pub use environment::{EnvironmentManager, EnvVar};
+pub use lifecycle::{ProcessLifecycleManager, ManagedProcess, LifecycleEvent};
+
+// Exec modules - prefixed to avoid conflicts
+pub use exec_slay::{
+    SlayProcess as ProcessSlayProcess,
+    SlayCommand as ProcessSlayCommand,
+    SlayResult as ProcessSlayResult
+};
+pub use exec_vibez::{
+    VibezProcess as ProcessVibezProcess,
+    VibezCommand as ProcessVibezCommand,
+    VibezResult as ProcessVibezResult
+};
+
+// Enhanced modules with prefixes
+pub use enhanced_exec_slay::{
+    EnhancedSlayProcess,
+    EnhancedSlayCommand,
+    EnhancedSlayOptions
+};
+
+// Monitoring exports
+pub use real_monitoring::{
+    get_real_cpu_times, get_real_memory_usage, get_real_process_stats,
+    RealProcessStats, CpuTimes, MemoryUsage
+};
+
+// Integration modules
+pub use integration::{ProcessIntegration, IntegrationOptions};
+pub use ipc_integration::{IpcIntegration, IpcOptions};
+pub use comprehensive_integration::{ComprehensiveProcessManager};
+
+// Pipeline and task management
+pub use pipeline::{ProcessPipeline, PipelineStage};
+pub use background_tasks::{BackgroundTaskManager, TaskHandle};
+pub use shell_commands::{ShellCommandManager, ShellOptions};
+
+// IPC and communication
+pub use real_ipc::{RealIpcManager, IpcChannel, IpcMessage};
+
+// System-level operations
+pub use fork::{ForkManager, ForkOptions};
+pub use resource_limits::{ResourceLimitManager, ResourceLimits};
+pub use namespaces::{NamespaceManager, NamespaceOptions};
+pub use privileges::{PrivilegeManager, PrivilegeOptions};
+pub use mmap::{MemoryMapManager, MmapOptions};
 
 // Unified process-IPC system exports
 pub use unified_process_ipc::{
@@ -122,3 +152,6 @@ pub use unified_process_ipc::{
 pub use unix_platform::UnixPlatformHandler;
 #[cfg(windows)]
 pub use windows_platform::WindowsPlatformHandler;
+
+// Type disambiguation exports
+pub use type_disambiguation::*;

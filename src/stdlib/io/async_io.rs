@@ -5,7 +5,8 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use crate::runtime::r#async::{Future, FutureResult, FutureError};
+use crate::runtime::r#async::{Future as RuntimeFuture, FutureResult, FutureError};
+use std::future::Future;
 use crate::stdlib::io::IoResult;
 
 /// Async file operations
@@ -155,7 +156,7 @@ pub async fn sleep(duration: Duration) {
 /// Async timeout wrapper
 pub async fn timeout<F>(duration: Duration, future: F) -> Result<F::Output, FutureError>
 where
-    F: Future,
+    F: Future + Send,
 {
     match tokio::time::timeout(duration, future).await {
         Ok(result) => Ok(result),

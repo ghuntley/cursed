@@ -36,6 +36,7 @@ pub mod coordinator;
 pub mod performance_optimization_system;
 pub mod build_profiles;
 pub mod benchmarking_types;
+pub mod compatibility;
 pub mod enablement_system;
 pub mod configuration_manager;
 pub mod dependency_analyzer;
@@ -319,7 +320,6 @@ pub use crate::common::OptimizationLevel;
 pub use crate::optimization::config::OptimizationConfig;
 
 // Additional optimization types for CLI compatibility  
-pub type OptimizationEngine = LocalOptimizationCoordinator;
 pub type OptimizationPass = String; // Simplified pass representation for CLI
 
 // Global optimization state for tracking system-wide optimizations
@@ -754,3 +754,16 @@ pub use performance_system::{
     PerformanceSystem, PerformanceSystemConfig, PerformanceStatus,
     PerformanceOptimizationLevel, CompilationStatus
 };
+
+
+// Additional aliases to prevent E0659 conflicts in downstream modules
+pub type OptimizationEngine = LocalOptimizationCoordinator;
+pub type DefaultOptimizationResult = OptimizationResult;
+pub type DefaultBenchmarkResult = BenchmarkResult;
+pub type DefaultPerformanceAnalyzer = PerformanceAnalyzer;
+pub type DefaultAdaptiveStrategy = AdaptiveStrategy;
+
+// LLVM-specific optimization types to avoid conflicts
+pub type LlvmOptimizationEngine = RealLlvmOptimizer;
+pub type LlvmOptimizationResult = RealOptimizationResults;
+pub type LlvmPerformanceMetrics = PerformanceImprovements;

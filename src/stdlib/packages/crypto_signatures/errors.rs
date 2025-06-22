@@ -28,6 +28,10 @@ pub enum SignatureError {
     KeyGenerationFailed(String),
     /// Invalid hash algorithm for signature
     InvalidHashAlgorithm(String),
+    /// Invalid input parameter or data
+    InvalidInput(String),
+    /// Timestamp service error
+    TimestampError(String),
     /// Multi-signature threshold not met
     ThresholdNotMet(String),
     /// Invalid multi-signature configuration
@@ -59,6 +63,10 @@ impl fmt::Display for SignatureError {
                 write!(f, "Key generation failed: {}", msg),
             SignatureError::InvalidHashAlgorithm(msg) => 
                 write!(f, "Invalid hash algorithm: {}", msg),
+            SignatureError::InvalidInput(msg) => 
+                write!(f, "Invalid input: {}", msg),
+            SignatureError::TimestampError(msg) => 
+                write!(f, "Timestamp error: {}", msg),
             SignatureError::ThresholdNotMet(msg) => 
                 write!(f, "Multi-signature threshold not met: {}", msg),
             SignatureError::InvalidMultiSigConfig(msg) => 

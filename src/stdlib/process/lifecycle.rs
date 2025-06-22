@@ -1,4 +1,4 @@
-/// Process lifecycle management for CURSED
+/// RuntimeProcessInfo lifecycle management for CURSED
 /// 
 /// This module provides comprehensive process lifecycle management including
 /// spawning, waiting, termination, and cleanup operations with robust error handling.
@@ -9,12 +9,15 @@ use std::sync::{Arc, Mutex, Weak};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::{
-    ProcessError, ProcessResult, ProcessConfig, Process, ProcessInfo, ProcessStatus,
-    timeout_error, execution_failed, invalid_state, system_error
+use crate::stdlib::process::error::{
+    ProcessError, ProcessResult, timeout_error, execution_failed, invalid_state, system_error
 };
+use crate::stdlib::process::core::{ProcessConfig};
+use crate::stdlib::process::info::{ProcessInfo as StdProcessInfo, ProcessState as StdProcessState};
+use crate::runtime::process::{ProcessInfo as RuntimeProcessInfo, ProcessStatus as RuntimeProcessStatus};
 
-/// Process lifecycle manager
+
+/// RuntimeProcessInfo lifecycle manager
 #[derive(Debug)]
 pub struct ProcessLifecycleManager {
     /// Active processes being managed
@@ -32,7 +35,7 @@ pub struct ProcessLifecycleManager {
 /// Managed process wrapper
 #[derive(Debug)]
 struct ManagedProcess {
-    /// Process instance
+    /// RuntimeProcessInfo instance
     process: Process,
     /// Spawn time
     spawn_time: Instant,
@@ -44,22 +47,22 @@ struct ManagedProcess {
     manager: Weak<Mutex<HashMap<u32, ManagedProcess>>>,
 }
 
-/// Process lifecycle states
+/// RuntimeProcessInfo lifecycle states
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProcessLifecycleState {
-    /// Process is starting up
+    /// RuntimeProcessInfo is starting up
     Starting,
-    /// Process is running normally
+    /// RuntimeProcessInfo is running normally
     Running,
-    /// Process is being terminated
+    /// RuntimeProcessInfo is being terminated
     Terminating,
-    /// Process has completed successfully
+    /// RuntimeProcessInfo has completed successfully
     Completed(ExitStatus),
-    /// Process failed during execution
+    /// RuntimeProcessInfo failed during execution
     Failed(ProcessError),
-    /// Process was terminated due to timeout
+    /// RuntimeProcessInfo was terminated due to timeout
     TimedOut,
-    /// Process was forcibly killed
+    /// RuntimeProcessInfo was forcibly killed
     Killed,
 }
 
@@ -109,7 +112,7 @@ impl ProcessLifecycleManager {
         }
 
         // Spawn the process
-        let mut process = Process::spawn(config)?;
+        let mut process = RuntimeProcessInfo::spawn(config)?;
         let pid = process.id();
         
         // Calculate timeout
@@ -166,7 +169,7 @@ impl ProcessLifecycleManager {
                     return Err(execution_failed(&format!("Process {} was killed", pid)));
                 }
                 _ => {
-                    // Process still running, check our timeout
+                    // RuntimeProcessInfo still running, check our timeout
                     if let Some(deadline) = deadline {
                         if Instant::now() >= deadline {
                             // Terminate the process
@@ -345,15 +348,15 @@ impl ProcessLifecycleManager {
                     // Check if process is still running
                     match managed.process.try_wait() {
                         Ok(Some(exit_status)) => {
-                            // Process completed
+                            // RuntimeProcessInfo completed
                             managed.state = ProcessLifecycleState::Completed(exit_status);
                             true // Remove from active list
                         }
                         Ok(None) => {
-                            // Process still running, check timeout
+                            // RuntimeProcessInfo still running, check timeout
                             if let Some(timeout_at) = managed.timeout_at {
                                 if Instant::now() >= timeout_at {
-                                    // Process timed out
+                                    // RuntimeProcessInfo timed out
                                     managed.state = ProcessLifecycleState::TimedOut;
                                     // Try to kill the process
                                     if let Err(_) = managed.process.kill() {
@@ -384,7 +387,7 @@ impl ProcessLifecycleManager {
                         }
                     }
                 }
-                None => false, // Process not found, nothing to do
+                None => false, // RuntimeProcessInfo not found, nothing to do
             }
         };
 
@@ -409,7 +412,7 @@ impl Drop for ProcessLifecycleManager {
     }
 }
 
-/// Process lifecycle statistics
+/// RuntimeProcessInfo lifecycle statistics
 #[derive(Debug, Clone)]
 pub struct ProcessLifecycleStats {
     /// Total processes spawned
@@ -453,7 +456,8 @@ impl ProcessLifecycleManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stdlib::process::{ProcessConfig, ProcessIo};
+    use crate::stdlib::process::core::{ProcessConfig};
+    use crate::stdlib::process::communication::{ProcessIo};
     use std::time::Duration;
 
     #[test]

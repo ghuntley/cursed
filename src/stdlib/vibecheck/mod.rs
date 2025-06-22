@@ -14,16 +14,22 @@ pub mod profile_data;
 pub mod profiler;
 
 // Re-export core types and functions
-pub use mem_stats::*;
+pub use mem_stats::{
+    MemStats, read_mem_stats, update_allocation_stats, memory_profile, write_profile,
+    free_os_memory as vibecheck_free_os_memory
+};
 pub use goroutine::*;
 pub use version::*;
-pub use gc::*;
+pub use gc::{
+    GcStats, GcError, collect_garbage, gc_enabled, enable_gc, disable_gc,
+    free_os_memory as gc_free_os_memory
+};
 
 // Re-export profiling functionality
 pub use memory_profiler::{
     MemoryProfilerConfig, MemoryStats, MemoryLeak, HeapAnalysis, AllocationPattern,
     get_memory_profiler, configure_memory_profiler, profile_allocation, profile_deallocation,
-    memory_profile, detect_memory_leaks, clear_memory_profile
+    detect_memory_leaks, clear_memory_profile
 };
 pub use cpu_profiler::{
     CpuProfilerConfig, CpuProfile, FunctionCall, CpuSample, HotPath, PerformanceBottleneck,
