@@ -4,6 +4,7 @@
 /// to ensure they meet current security standards and best practices.
 
 use super::super::errors::*;
+use super::super::CryptoParameters;
 use std::collections::HashMap;
 
 /// fr fr Result type for parameter verification
@@ -173,7 +174,7 @@ impl ParameterVerifier {
     }
 
     /// slay Verify cryptographic parameters
-    pub fn verify_parameters(&self, params: &super::CryptoParameters) -> ParameterResult<ParameterVerificationResult> {
+    pub fn verify_parameters(&self, params: &CryptoParameters) -> ParameterResult<ParameterVerificationResult> {
         let mut violations = Vec::new();
         let mut recommendations = Vec::new();
 
@@ -245,7 +246,7 @@ impl ParameterVerifier {
     }
 
     /// slay Verify multiple parameter sets for comparison
-    pub fn verify_multiple_parameters(&self, param_sets: &[super::CryptoParameters]) 
+    pub fn verify_multiple_parameters(&self, param_sets: &[CryptoParameters]) 
         -> ParameterResult<Vec<ParameterVerificationResult>> {
         param_sets.iter()
             .map(|params| self.verify_parameters(params))
@@ -253,13 +254,13 @@ impl ParameterVerifier {
     }
 
     /// slay Get recommended parameters for an algorithm
-    pub fn get_recommended_parameters(&self, algorithm: &str) -> ParameterResult<super::CryptoParameters> {
+    pub fn get_recommended_parameters(&self, algorithm: &str) -> ParameterResult<CryptoParameters> {
         let profile = self.algorithm_registry.get(&algorithm.to_lowercase())
             .ok_or_else(|| SecurityAnalysisError::ParameterError(
                 format!("Unknown algorithm: {}", algorithm)
             ))?;
 
-        Ok(super::CryptoParameters {
+        Ok(CryptoParameters {
             algorithm: algorithm.to_string(),
             key_size: profile.recommended_key_size,
             block_size: profile.min_block_size,
@@ -449,7 +450,7 @@ impl ParameterVerifier {
     }
 
     /// slay Verify key size parameters
-    fn verify_key_size(&self, params: &super::CryptoParameters, profile: &AlgorithmProfile,
+    fn verify_key_size(&self, params: &CryptoParameters, profile: &AlgorithmProfile,
                       violations: &mut Vec<ParameterViolation>, recommendations: &mut Vec<String>) {
         let key_size_bits = params.key_size;
 
@@ -643,7 +644,7 @@ impl ParameterVerifier {
     }
 
     /// slay Estimate effective security bits
-    fn estimate_security_bits(&self, params: &super::CryptoParameters, profile: &AlgorithmProfile) -> u32 {
+    fn estimate_security_bits(&self, params: &CryptoParameters, profile: &AlgorithmProfile) -> u32 {
         let base_security = (params.key_size as f64 * profile.security_bits_per_key_bit) as u32;
         
         // Apply penalties for various issues
@@ -672,7 +673,7 @@ impl ParameterVerifier {
     }
 
     /// slay Check standards compliance
-    fn check_standards_compliance(&self, params: &super::CryptoParameters, profile: &AlgorithmProfile,
+    fn check_standards_compliance(&self, params: &CryptoParameters, profile: &AlgorithmProfile,
                                  violations: &[ParameterViolation]) -> StandardsCompliance {
         let has_serious_violations = violations.iter().any(|v| v.severity >= ViolationSeverity::High);
         
@@ -690,7 +691,7 @@ impl ParameterVerifier {
     }
 
     /// slay Check Suite B compliance
-    fn is_suite_b_compliant(&self, params: &super::CryptoParameters, _profile: &AlgorithmProfile) -> bool {
+    fn is_suite_b_compliant(&self, params: &CryptoParameters, _profile: &AlgorithmProfile) -> bool {
         // Suite B algorithms: AES (128/256), ECDH/ECDSA (P-256/P-384), SHA-256/384
         match params.algorithm.to_lowercase().as_str() {
             "aes" => params.key_size >= 128,
@@ -701,7 +702,7 @@ impl ParameterVerifier {
     }
 
     /// slay Check CNSA compliance
-    fn is_cnsa_compliant(&self, params: &super::CryptoParameters, _profile: &AlgorithmProfile) -> bool {
+    fn is_cnsa_compliant(&self, params: &CryptoParameters, _profile: &AlgorithmProfile) -> bool {
         // Commercial National Security Algorithm requirements
         match params.algorithm.to_lowercase().as_str() {
             "aes" => params.key_size >= 256,
@@ -713,7 +714,7 @@ impl ParameterVerifier {
     }
 
     /// slay Generate compliance notes
-    fn generate_compliance_notes(&self, _params: &super::CryptoParameters, profile: &AlgorithmProfile,
+    fn generate_compliance_notes(&self, _params: &CryptoParameters, profile: &AlgorithmProfile,
                                 violations: &[ParameterViolation]) -> Vec<String> {
         let mut notes = Vec::new();
 
@@ -733,7 +734,7 @@ impl ParameterVerifier {
     }
 
     /// slay Generate general recommendations
-    fn generate_general_recommendations(&self, params: &super::CryptoParameters, profile: &AlgorithmProfile,
+    fn generate_general_recommendations(&self, params: &CryptoParameters, profile: &AlgorithmProfile,
                                        recommendations: &mut Vec<String>) {
         if params.key_size < profile.recommended_key_size {
             recommendations.push(format!("Consider upgrading to {} bit keys for future-proofing",
@@ -787,7 +788,7 @@ mod tests {
     #[test]
     fn test_aes_parameter_verification() {
         let verifier = ParameterVerifier::new();
-        let params = super::super::CryptoParameters {
+        let params = CryptoParameters {
             algorithm: "AES".to_string(),
             key_size: 256,
             block_size: Some(128),
@@ -808,7 +809,7 @@ mod tests {
     #[test]
     fn test_weak_parameter_detection() {
         let verifier = ParameterVerifier::new();
-        let params = super::super::CryptoParameters {
+        let params = CryptoParameters {
             algorithm: "AES".to_string(),
             key_size: 64, // Too small
             block_size: Some(128),
@@ -830,7 +831,7 @@ mod tests {
     #[test]
     fn test_deprecated_algorithm_detection() {
         let verifier = ParameterVerifier::new();
-        let params = super::super::CryptoParameters {
+        let params = CryptoParameters {
             algorithm: "MD5".to_string(),
             key_size: 128,
             block_size: Some(512),
@@ -875,7 +876,7 @@ mod tests {
     #[test]
     fn test_standards_compliance() {
         let verifier = ParameterVerifier::new();
-        let good_aes_params = super::super::CryptoParameters {
+        let good_aes_params = CryptoParameters {
             algorithm: "AES".to_string(),
             key_size: 256,
             block_size: Some(128),
@@ -895,7 +896,7 @@ mod tests {
         let verifier = ParameterVerifier::new();
         
         // AES-256 should provide 256 bits of security
-        let aes_params = super::super::CryptoParameters {
+        let aes_params = CryptoParameters {
             algorithm: "AES".to_string(),
             key_size: 256,
             block_size: Some(128),
@@ -909,7 +910,7 @@ mod tests {
         assert_eq!(result.estimated_security_bits, 256);
 
         // RSA-2048 should provide less security per bit
-        let rsa_params = super::super::CryptoParameters {
+        let rsa_params = CryptoParameters {
             algorithm: "RSA".to_string(),
             key_size: 2048,
             block_size: None,

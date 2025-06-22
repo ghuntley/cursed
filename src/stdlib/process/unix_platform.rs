@@ -869,6 +869,9 @@ impl UnixSharedMemoryManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
     
     #[test]
     fn test_unix_platform_handler_creation() {

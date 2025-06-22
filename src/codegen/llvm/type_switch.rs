@@ -6,7 +6,7 @@
 /// 
 /// Syntax: vibe_check interface_var.(Type) { mood ConcreteType: ... }
 
-use crate::ast::statements::control_flow::SwitchStatement;
+use crate::ast::conditionals::SwitchStatement;
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::error::Error;
 use crate::codegen::llvm::type_system::LlvmTypeRegistry;

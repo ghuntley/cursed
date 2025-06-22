@@ -1096,6 +1096,10 @@ fn get_io_write_bytes(pid: u32) -> ProcessResult<u64> {
 fn get_io_write_bytes(pid: u32) -> ProcessResult<u64> {
     use std::mem;
     use std::ptr;
+use crate::stdlib::process::core::ProcessHandle;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
     
     // Reuse the IoCounters structure from get_io_read_bytes
     #[repr(C)]

@@ -1071,6 +1071,9 @@ fn get_process_priority(pid: u32) -> Option<i32> {
 #[cfg(unix)]
 fn count_network_connections(pid: u32) -> Option<u32> {
     use std::fs;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
     
     // Count entries in /proc/net that belong to this process
     // This is a simplified approach - real implementation would be more complex

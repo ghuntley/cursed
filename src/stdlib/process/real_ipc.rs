@@ -1217,6 +1217,10 @@ pub fn receive_ipc_message(channel_name: &str, timeout: Duration) -> ProcessResu
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
+use crate::stdlib::process::real_ipc::IpcMessage;
+use crate::stdlib::process::real_ipc::IpcChannel;
 
     #[test]
     fn test_ipc_channel_creation() {

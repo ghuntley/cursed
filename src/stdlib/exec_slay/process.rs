@@ -484,6 +484,7 @@ mod tests {
     fn test_slay_process_state() {
         use std::process::ExitStatus;
         use std::os::unix::process::ExitStatusExt;
+use crate::stdlib::process::info::ProcessState;
         
         let exit_status = ExitStatus::from_raw(0);
         let run_time = Duration::from_secs(1);

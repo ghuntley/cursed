@@ -1,3 +1,5 @@
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::info::ProcessState;
 //! Type disambiguation for process management
 //! 
 //! This module provides type aliases and clarifications to resolve

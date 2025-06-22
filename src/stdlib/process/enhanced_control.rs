@@ -1350,6 +1350,10 @@ fn count_connections_for_protocol(pid: u32, protocol: &str) -> u32 {
 #[cfg(unix)]
 fn count_threads(pid: u32) -> u32 {
     use std::fs;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
+use crate::stdlib::process::enhanced_control::EnhancedProcessInfo;
     
     let task_path = format!("/proc/{}/task", pid);
     if let Ok(entries) = fs::read_dir(&task_path) {

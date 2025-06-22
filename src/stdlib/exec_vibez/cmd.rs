@@ -557,6 +557,7 @@ pub fn command_context(ctx: VibeContext, name: &str, args: &[&str]) -> Cmd {
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::info::ProcessState;
 
     #[test]
     fn test_cmd_creation() {

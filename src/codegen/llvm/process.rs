@@ -180,6 +180,7 @@ impl ProcessCompilation for LlvmCodeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::real_ipc::IpcChannel;
     
     #[test]
     fn test_process_compilation_trait() {

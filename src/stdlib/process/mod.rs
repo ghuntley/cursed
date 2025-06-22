@@ -1,3 +1,10 @@
+use crate::stdlib::process::core::ProcessHandle;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
+use crate::stdlib::process::real_ipc::IpcMessage;
+use crate::stdlib::process::real_ipc::IpcChannel;
 /// Process management and system interaction for CURSED
 /// 
 /// This module provides comprehensive process management functionality including:
@@ -62,9 +69,9 @@ pub mod mmap;
 
 // Re-export enhanced functionality
 pub use enhanced_exec_slay::*;
-// pub use enhanced_exec_slay_complete::*; // Removed to avoid E0659 conflicts
-// pub use enhanced_exec_vibez_complete::*; // Removed to avoid E0659 conflicts
-// pub use comprehensive_integration::*; // Removed to avoid E0659 conflicts
+// // pub use enhanced_exec_slay_complete::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
+// // pub use enhanced_exec_vibez_complete::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
+// // pub use comprehensive_integration::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
 pub use llvm_integration::*;
 pub use shell_commands::*;
 // Use explicit imports from safe_process_management to avoid conflicts

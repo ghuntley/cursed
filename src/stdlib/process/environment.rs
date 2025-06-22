@@ -495,6 +495,8 @@ impl EnvironmentUtils {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_environment_manager_basic_operations() {

@@ -1016,6 +1016,7 @@ pub fn cleanup_real_ipc() -> IpcResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::real_ipc::IpcMessage;
 
     #[test]
     fn test_priority_message_queue() {

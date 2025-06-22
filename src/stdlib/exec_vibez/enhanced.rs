@@ -569,6 +569,7 @@ impl CrossPlatformUtils {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_look_path_absolute() {

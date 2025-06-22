@@ -811,6 +811,10 @@ pub fn command_exists_safe<S: AsRef<str>>(command: S) -> bool {
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::core::ProcessHandle;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_safe_slay_command_creation() {

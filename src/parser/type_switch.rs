@@ -2,7 +2,7 @@
 /// Handles parsing of type switch statements with `vibe_check expr.(type)` syntax
 
 use crate::parser::Parser;
-use crate::ast::statements::control_flow::{SwitchStatement, SwitchCase};
+use crate::ast::conditionals::{SwitchStatement, SwitchCase};
 use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use crate::ast::traits::{Statement, Expression};
 use crate::ast::block::BlockStatement;

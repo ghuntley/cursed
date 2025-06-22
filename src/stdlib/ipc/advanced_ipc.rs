@@ -1128,6 +1128,7 @@ pub fn cleanup_advanced_ipc() -> IpcResult<()> {
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::real_ipc::IpcMessage;
 
     #[test]
     fn test_advanced_ipc_manager_creation() {

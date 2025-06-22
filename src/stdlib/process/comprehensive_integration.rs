@@ -954,6 +954,7 @@ pub fn create_named_pipe(name: &str) -> Result<ProcessIpcIntegration, CursedErro
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::error::ProcessError;
     
     #[test]
     fn test_integration_system_creation() {

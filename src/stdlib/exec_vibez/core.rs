@@ -230,6 +230,7 @@ pub fn get_process_lifecycle() -> &'static ProcessLifecycle {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessInfo;
     
     #[test]
     fn test_process_tracking() {

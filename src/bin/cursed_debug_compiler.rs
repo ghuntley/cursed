@@ -10,10 +10,11 @@ use cursed::debug::{DebugConfig, SourceLocation};
 use cursed::ast::{
     AST, FunctionStatement, FunctionDeclaration, VariableDeclaration, Statement, Expression, 
     Parameter, Literal, BinaryExpression, BinaryOperator, UnaryOperator, Identifier, 
-    VariableStatement, ExpressionStatement, ReturnStatement, IfStatement, WhileStatement, 
+    VariableStatement, ExpressionStatement, ReturnStatement, 
     BlockStatement, AssignmentExpression, VariableExpression, LiteralExpression,
     FunctionCallExpression, TypeParameter
 };
+use cursed::ast::{ConditionalIfStatement as IfStatement, ConditionalWhileStatement as WhileStatement};
 use cursed::error::Error as CursedError;
 
 use inkwell::context::Context;

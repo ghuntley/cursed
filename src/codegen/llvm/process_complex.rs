@@ -18,6 +18,8 @@ use inkwell::{
 use crate::ast::traits::Expression;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::{CursedError, Result as CursedResult};
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::real_ipc::IpcChannel;
 
 /// Process management compilation trait with inkwell integration
 pub trait ProcessCompilation<'ctx> {

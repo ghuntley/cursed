@@ -25,6 +25,7 @@ pub use runtime_value::{RuntimeValue, TypeInfo, SpecializedRuntimeValue};
 pub use goroutine::{
     GoroutineScheduler, Goroutine, GoroutineState, GoroutineStack,
     SchedulerConfig, GcCoordinator, SafePoint,
+    initialize_global_scheduler, get_global_scheduler, shutdown_global_scheduler,
     cursed_spawn_goroutine, cursed_yield_goroutine, cursed_safe_point, cursed_gc_requested
 };
 pub use channels::*;

@@ -19,6 +19,7 @@ use crate::stdlib::process::{
     EnhancedProcess, ResourceLimits, SecurityContext, ProcessState
 };
 use super::unified_process_ipc::{
+use crate::stdlib::process::info::ProcessState;
     PlatformHandler, IpcType, IpcConnection, SecuritySettings
 };
 

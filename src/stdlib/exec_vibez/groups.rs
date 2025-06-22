@@ -310,6 +310,7 @@ fn generate_group_id() -> usize {
 mod tests {
     use super::*;
     use crate::stdlib::exec_vibez::cmd::Cmd;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_process_group_creation() {

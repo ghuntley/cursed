@@ -705,6 +705,8 @@ pub fn create_sandbox() -> ProcessResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_capability_methods() {

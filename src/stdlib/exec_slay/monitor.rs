@@ -441,6 +441,7 @@ mod tests {
     use super::*;
     use crate::stdlib::exec_slay::{SlayCommand, SharedProcessState};
     use std::sync::{Arc, Mutex};
+use crate::stdlib::process::info::ProcessState;
 
     fn create_test_process() -> SlayProcess {
         SlayProcess::new(Arc::new(Mutex::new(SharedProcessState::new())))

@@ -1075,6 +1075,10 @@ mod chrono {
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_enhanced_environment() {
