@@ -13,10 +13,11 @@ use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
 use x509_parser::prelude::*;
+use x509_parser::{name, algorithm};
 use x509_parser::certificate::X509Certificate as X509ParserCertificate;
 use x509_parser::extensions::*;
 use der::{Decode, Encode};
-use pem;
+use pem as pem_crate;
 use sha1::Sha1;
 use sha2::{Sha256, Sha512, Digest};
 // Note: These RSA/ECDSA imports would be used in a full implementation
@@ -415,7 +416,7 @@ impl CertificateProcessor {
     }
     
     /// Extract Distinguished Name from x509-parser format
-    fn extract_distinguished_name(&self, dn: &x509_parser::name::X509Name) -> CertificateResult<DistinguishedName> {
+    fn extract_distinguished_name(&self, dn: &x509_parser::prelude::X509Name) -> CertificateResult<DistinguishedName> {
         let mut result = DistinguishedName::new();
         
         for rdn in dn.iter() {
@@ -451,7 +452,7 @@ impl CertificateProcessor {
     }
     
     /// Determine signature algorithm from OID
-    fn determine_signature_algorithm(&self, alg: &x509_parser::algorithm::AlgorithmIdentifier) -> CertificateResult<SignatureAlgorithm> {
+    fn determine_signature_algorithm(&self, alg: &x509_parser::prelude::AlgorithmIdentifier) -> CertificateResult<SignatureAlgorithm> {
         match alg.algorithm.to_id_string().as_str() {
             "1.2.840.113549.1.1.11" => Ok(SignatureAlgorithm::Sha256WithRsaEncryption),
             "1.2.840.113549.1.1.12" => Ok(SignatureAlgorithm::Sha384WithRsaEncryption),
@@ -465,7 +466,7 @@ impl CertificateProcessor {
     }
     
     /// Determine public key algorithm from OID
-    fn determine_public_key_algorithm(&self, alg: &x509_parser::algorithm::AlgorithmIdentifier) -> CertificateResult<PublicKeyAlgorithm> {
+    fn determine_public_key_algorithm(&self, alg: &x509_parser::prelude::AlgorithmIdentifier) -> CertificateResult<PublicKeyAlgorithm> {
         match alg.algorithm.to_id_string().as_str() {
             "1.2.840.113549.1.1.1" => Ok(PublicKeyAlgorithm::RsaEncryption),
             "1.2.840.10045.2.1" => Ok(PublicKeyAlgorithm::EcPublicKey),

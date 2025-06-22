@@ -8,3 +8,6 @@ pub use async_function::{AsyncFunctionStatement, AsyncFunctionDeclaration};
 
 // Re-export from main declarations
 pub use main::*;
+
+// Make sure Parameter is re-exported
+pub use crate::ast::expressions::Parameter;

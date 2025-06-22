@@ -8,6 +8,7 @@
 /// - Comprehensive testing infrastructure
 
 use crate::error::{Error, Result};
+use crate::optimization::PgoConfig;
 use crate::optimization::config::{OptimizationConfig, OptimizationLevel};
 use crate::optimization::pgo::{PgoSystem, PgoSystemConfig, ProfileSession};
 use crate::optimization::real_llvm_passes::RealLlvmPassManager;

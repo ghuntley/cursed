@@ -1,5 +1,6 @@
 /// fr fr MySQL driver implementation - the popular choice periodt
 
+use crate::runtime::Value;
 use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
@@ -182,7 +183,7 @@ impl MySqlConnection {
     fn convert_parameters(parameters: &[Parameter]) -> Vec<MySqlValue> {
         parameters.iter()
             .filter_map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Some(Self::convert_parameter_value(&p.value))
                 }
                 _ => Some(MySqlValue::NULL),
@@ -191,21 +192,21 @@ impl MySqlConnection {
     }
 
     /// slay Convert Parameter::Value to MySqlValue 
-    fn convert_parameter_value(value: &crate::stdlib::packages::db_core::Value) -> MySqlValue {
+    fn convert_parameter_value(value: &crate::runtime::Value) -> MySqlValue {
         match value {
-            crate::stdlib::packages::db_core::Value::Null => MySqlValue::NULL,
-            crate::stdlib::packages::db_core::Value::Boolean(b) => MySqlValue::Int(*b as i64),
-            crate::stdlib::packages::db_core::Value::Integer(i) => MySqlValue::Int(*i),
-            crate::stdlib::packages::db_core::Value::Float(f) => MySqlValue::Double(*f),
-            crate::stdlib::packages::db_core::Value::String(s) => MySqlValue::Bytes(s.as_bytes().to_vec()),
-            crate::stdlib::packages::db_core::Value::Binary(data) => MySqlValue::Bytes(data.clone()),
-            crate::stdlib::packages::db_core::Value::Date(d) => MySqlValue::Date(
+            crate::runtime::Value::Null => MySqlValue::NULL,
+            crate::runtime::Value::Boolean(b) => MySqlValue::Int(*b as i64),
+            crate::runtime::Value::Integer(i) => MySqlValue::Int(*i),
+            crate::runtime::Value::Float(f) => MySqlValue::Double(*f),
+            crate::runtime::Value::String(s) => MySqlValue::Bytes(s.as_bytes().to_vec()),
+            crate::runtime::Value::Binary(data) => MySqlValue::Bytes(data.clone()),
+            crate::runtime::Value::Date(d) => MySqlValue::Date(
                 d.year() as u16, d.month() as u8, d.day() as u8, 0, 0, 0, 0
             ),
-            crate::stdlib::packages::db_core::Value::Time(t) => MySqlValue::Time(
+            crate::runtime::Value::Time(t) => MySqlValue::Time(
                 false, 0, t.hour() as u8, t.minute() as u8, t.second() as u8, 0
             ),
-            crate::stdlib::packages::db_core::Value::DateTime(dt) => MySqlValue::Date(
+            crate::runtime::Value::DateTime(dt) => MySqlValue::Date(
                 dt.year() as u16, dt.month() as u8, dt.day() as u8,
                 dt.hour() as u8, dt.minute() as u8, dt.second() as u8, 0
             ),
@@ -862,7 +863,7 @@ impl PreparedStatement for MySqlPreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+                result_type: crate::stdlib::packages::result::ResultType::Forward,
             });
         &EMPTY_METADATA
     }

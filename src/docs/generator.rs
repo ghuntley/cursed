@@ -1493,11 +1493,12 @@ impl DocumentationExtractor {
         for statement in statements {
             // Check for module declarations (when available in AST)
             // For now, we look for import statements that might indicate submodules
-            if let Some(any_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::import::ImportStatement>() {
+            // Check for import-like statements (simplified for now)
+            let stmt_str = statement.to_string();
+            if stmt_str.contains("import") || stmt_str.contains("yeet") {
                 // If import is relative, it might be a submodule
-                if any_stmt.path.starts_with("./") || any_stmt.path.starts_with("../") {
-                    let module_name = any_stmt.path.trim_start_matches("./").replace("/", "::");
-                    
+                if stmt_str.contains("./") || stmt_str.contains("../") {
+                    let module_name = "submodule".to_string(); // Simplified for now
                     let submodule = DocumentationItem {
                         name: module_name.clone(),
                         kind: ItemKind::Module,

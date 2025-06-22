@@ -1171,6 +1171,176 @@ mod tests {
     }
 }
 
+/// Compression manager for handling different compression algorithms
+#[derive(Debug, Clone)]
+pub struct CompressionManager {
+    /// Compression level for algorithms
+    pub compression_level: CompressionLevel,
+    /// Buffer size for compression operations
+    pub buffer_size: usize,
+    /// Statistics for compression operations
+    pub stats: CompressionStats,
+}
+
+impl CompressionManager {
+    /// Create a new compression manager with default settings
+    pub fn new() -> Self {
+        Self {
+            compression_level: CompressionLevel::Default,
+            buffer_size: 32768, // 32KB buffer
+            stats: CompressionStats::default(),
+        }
+    }
+
+    /// Create a compression manager with custom level
+    pub fn with_level(level: CompressionLevel) -> Self {
+        Self {
+            compression_level: level,
+            buffer_size: 32768,
+            stats: CompressionStats::default(),
+        }
+    }
+
+    /// Set the buffer size for compression operations
+    pub fn with_buffer_size(mut self, size: usize) -> Self {
+        self.buffer_size = size;
+        self
+    }
+
+    /// Compress data using the specified algorithm
+    pub fn compress(&mut self, data: &[u8], compression_type: CompressionType) -> Result<Vec<u8>, CompressionError> {
+        let start_time = std::time::Instant::now();
+        let original_size = data.len();
+
+        let result = match compression_type {
+            CompressionType::Gzip => self.compress_gzip(data),
+            CompressionType::Deflate => self.compress_deflate(data),
+            CompressionType::Brotli => self.compress_brotli(data),
+            CompressionType::Zstd => self.compress_zstd(data),
+            CompressionType::Identity => Ok(data.to_vec()),
+        };
+
+        match result {
+            Ok(compressed) => {
+                let compression_time = start_time.elapsed();
+                self.stats.update_compression_stats(compression_type, original_size, compressed.len(), compression_time, true);
+                Ok(compressed)
+            }
+            Err(e) => {
+                self.stats.update_compression_stats(compression_type, original_size, 0, start_time.elapsed(), false);
+                Err(e)
+            }
+        }
+    }
+
+    /// Decompress data using the specified algorithm
+    pub fn decompress(&mut self, data: &[u8], compression_type: CompressionType) -> Result<Vec<u8>, CompressionError> {
+        let start_time = std::time::Instant::now();
+
+        let result = match compression_type {
+            CompressionType::Gzip => self.decompress_gzip(data),
+            CompressionType::Deflate => self.decompress_deflate(data),
+            CompressionType::Brotli => self.decompress_brotli(data),
+            CompressionType::Zstd => self.decompress_zstd(data),
+            CompressionType::Identity => Ok(data.to_vec()),
+        };
+
+        match result {
+            Ok(decompressed) => {
+                let decompression_time = start_time.elapsed();
+                self.stats.update_decompression_stats(compression_type, data.len(), decompressed.len(), decompression_time, true);
+                Ok(decompressed)
+            }
+            Err(e) => {
+                self.stats.update_decompression_stats(compression_type, data.len(), 0, start_time.elapsed(), false);
+                Err(e)
+            }
+        }
+    }
+
+    /// Get compression statistics
+    pub fn get_stats(&self) -> &CompressionStats {
+        &self.stats
+    }
+
+    /// Reset compression statistics
+    pub fn reset_stats(&mut self) {
+        self.stats = CompressionStats::default();
+    }
+
+    // Private compression methods
+    fn compress_gzip(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        let mut encoder = GzEncoder::new(Vec::new(), self.compression_level.into());
+        encoder.write_all(data).map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
+        encoder.finish().map_err(|e| CompressionError::CompressionFailed(e.to_string()))
+    }
+
+    fn compress_deflate(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        let mut encoder = DeflateEncoder::new(Vec::new(), self.compression_level.into());
+        encoder.write_all(data).map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
+        encoder.finish().map_err(|e| CompressionError::CompressionFailed(e.to_string()))
+    }
+
+    fn compress_brotli(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        let mut output = Vec::new();
+        let mut compressor = CompressorWriter::new(&mut output, self.buffer_size, 6, 22);
+        compressor.write_all(data).map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
+        compressor.flush().map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
+        drop(compressor);
+        Ok(output)
+    }
+
+    fn compress_zstd(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        // Mock implementation for zstd - in production would use actual zstd library
+        let mut output = Vec::with_capacity(data.len());
+        output.extend_from_slice(b"ZSTD");
+        output.extend_from_slice(&(data.len() as u32).to_le_bytes());
+        output.extend_from_slice(data);
+        Ok(output)
+    }
+
+    fn decompress_gzip(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        let mut decoder = GzDecoder::new(data);
+        let mut output = Vec::new();
+        decoder.read_to_end(&mut output).map_err(|e| CompressionError::DecompressionFailed(e.to_string()))?;
+        Ok(output)
+    }
+
+    fn decompress_deflate(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        let mut decoder = DeflateDecoder::new(data);
+        let mut output = Vec::new();
+        decoder.read_to_end(&mut output).map_err(|e| CompressionError::DecompressionFailed(e.to_string()))?;
+        Ok(output)
+    }
+
+    fn decompress_brotli(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        let mut decoder = Decompressor::new(data, self.buffer_size);
+        let mut output = Vec::new();
+        decoder.read_to_end(&mut output).map_err(|e| CompressionError::DecompressionFailed(e.to_string()))?;
+        Ok(output)
+    }
+
+    fn decompress_zstd(&self, data: &[u8]) -> Result<Vec<u8>, CompressionError> {
+        // Mock implementation for zstd decompression
+        if data.len() < 8 || &data[0..4] != b"ZSTD" {
+            return Err(CompressionError::DecompressionFailed("Invalid ZSTD format".to_string()));
+        }
+        let original_size = u32::from_le_bytes([data[4], data[5], data[6], data[7]]) as usize;
+        if data.len() < 8 + original_size {
+            return Err(CompressionError::DecompressionFailed("Truncated ZSTD data".to_string()));
+        }
+        Ok(data[8..8 + original_size].to_vec())
+    }
+}
+
+impl Default for CompressionManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
+
 /// High-level compression engine for web requests
 #[derive(Debug, Clone)]
 pub struct CompressionEngine {

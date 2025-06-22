@@ -394,3 +394,201 @@ impl std::fmt::Display for PgoError {
 }
 
 impl std::error::Error for PgoError {}
+
+/// Optimization recommendations based on profile analysis
+#[derive(Debug, Clone)]
+pub struct OptimizationRecommendations {
+    /// Function-level optimization recommendations
+    pub function_recommendations: Vec<FunctionOptimizationRecommendation>,
+    /// Loop-level optimization recommendations  
+    pub loop_recommendations: Vec<LoopOptimizationRecommendation>,
+    /// Inlining recommendations
+    pub inlining_recommendations: Vec<InliningRecommendation>,
+    /// Memory optimization recommendations
+    pub memory_recommendations: Vec<MemoryOptimizationRecommendation>,
+    /// Overall optimization strategy recommendation
+    pub strategy_recommendation: OptimizationStrategy,
+    /// Expected performance improvement
+    pub expected_improvement: f64,
+    /// Confidence level in recommendations
+    pub confidence: f64,
+    /// Additional metadata
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+/// Function-level optimization recommendation
+#[derive(Debug, Clone)]
+pub struct FunctionOptimizationRecommendation {
+    /// Function name
+    pub function_name: String,
+    /// Recommendation type
+    pub recommendation_type: FunctionOptimizationType,
+    /// Priority level
+    pub priority: RecommendationPriority,
+    /// Estimated impact
+    pub estimated_impact: f64,
+    /// Reasoning behind recommendation
+    pub reasoning: String,
+}
+
+/// Loop-level optimization recommendation
+#[derive(Debug, Clone)]
+pub struct LoopOptimizationRecommendation {
+    /// Loop identifier/location
+    pub loop_id: String,
+    /// Optimization type
+    pub optimization_type: LoopOptimizationType,
+    /// Priority level
+    pub priority: RecommendationPriority,
+    /// Estimated speedup
+    pub estimated_speedup: f64,
+    /// Recommendation details
+    pub details: String,
+}
+
+/// Inlining recommendation
+#[derive(Debug, Clone)]
+pub struct InliningRecommendation {
+    /// Caller function
+    pub caller: String,
+    /// Callee function
+    pub callee: String,
+    /// Should inline this call
+    pub should_inline: bool,
+    /// Confidence in recommendation
+    pub confidence: f64,
+    /// Justification
+    pub justification: String,
+}
+
+/// Memory optimization recommendation
+#[derive(Debug, Clone)]
+pub struct MemoryOptimizationRecommendation {
+    /// Memory location/allocation site
+    pub location: String,
+    /// Optimization type
+    pub optimization_type: MemoryOptimizationType,
+    /// Priority level
+    pub priority: RecommendationPriority,
+    /// Estimated memory savings
+    pub estimated_savings: usize,
+    /// Details
+    pub details: String,
+}
+
+/// Function optimization types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FunctionOptimizationType {
+    Inline,
+    NoInline,
+    Unroll,
+    Vectorize,
+    Reorder,
+    SpecialCase,
+}
+
+/// Loop optimization types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LoopOptimizationType {
+    Unroll,
+    Vectorize,
+    Interchange,
+    Tiling,
+    Distribution,
+    Fusion,
+}
+
+/// Memory optimization types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MemoryOptimizationType {
+    StackToHeap,
+    HeapToStack,
+    Prefetch,
+    Alignment,
+    Coalescing,
+    Elimination,
+}
+
+/// Recommendation priority levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RecommendationPriority {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+impl Default for OptimizationRecommendations {
+    fn default() -> Self {
+        Self {
+            function_recommendations: Vec::new(),
+            loop_recommendations: Vec::new(),
+            inlining_recommendations: Vec::new(),
+            memory_recommendations: Vec::new(),
+            strategy_recommendation: OptimizationStrategy::default(),
+            expected_improvement: 0.0,
+            confidence: 0.0,
+            metadata: std::collections::HashMap::new(),
+        }
+    }
+}
+
+impl OptimizationRecommendations {
+    /// Create new optimization recommendations
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add function optimization recommendation
+    pub fn add_function_recommendation(&mut self, recommendation: FunctionOptimizationRecommendation) {
+        self.function_recommendations.push(recommendation);
+    }
+
+    /// Add loop optimization recommendation
+    pub fn add_loop_recommendation(&mut self, recommendation: LoopOptimizationRecommendation) {
+        self.loop_recommendations.push(recommendation);
+    }
+
+    /// Add inlining recommendation
+    pub fn add_inlining_recommendation(&mut self, recommendation: InliningRecommendation) {
+        self.inlining_recommendations.push(recommendation);
+    }
+
+    /// Add memory optimization recommendation
+    pub fn add_memory_recommendation(&mut self, recommendation: MemoryOptimizationRecommendation) {
+        self.memory_recommendations.push(recommendation);
+    }
+
+    /// Get total number of recommendations
+    pub fn total_recommendations(&self) -> usize {
+        self.function_recommendations.len() + 
+        self.loop_recommendations.len() + 
+        self.inlining_recommendations.len() + 
+        self.memory_recommendations.len()
+    }
+
+    /// Get high priority recommendations
+    pub fn get_high_priority_recommendations(&self) -> Vec<String> {
+        let mut high_priority = Vec::new();
+        
+        for rec in &self.function_recommendations {
+            if rec.priority >= RecommendationPriority::High {
+                high_priority.push(format!("Function {}: {}", rec.function_name, rec.reasoning));
+            }
+        }
+        
+        for rec in &self.loop_recommendations {
+            if rec.priority >= RecommendationPriority::High {
+                high_priority.push(format!("Loop {}: {}", rec.loop_id, rec.details));
+            }
+        }
+        
+        for rec in &self.memory_recommendations {
+            if rec.priority >= RecommendationPriority::High {
+                high_priority.push(format!("Memory {}: {}", rec.location, rec.details));
+            }
+        }
+        
+        high_priority
+    }
+}

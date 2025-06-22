@@ -137,6 +137,12 @@ pub enum OptimizationStrategy {
     Custom(Vec<String>),
 }
 
+impl Default for OptimizationStrategy {
+    fn default() -> Self {
+        OptimizationStrategy::Adaptive
+    }
+}
+
 /// Performance metrics for optimization analysis
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {

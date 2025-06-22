@@ -10,6 +10,7 @@ use crate::ast::statements::control_flow::SwitchStatement;
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::error::Error;
 use crate::codegen::llvm::type_system::LlvmTypeRegistry;
+use crate::codegen::llvm::expression_compiler::LlvmValue;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
@@ -113,7 +114,7 @@ impl<'a> IntegratedTypeSwitchCompiler<'a> {
         type_cases: &[TypeCase],
         default_case: Option<&[Box<dyn Statement>]>,
     ) -> Result<(), Error> {
-        use crate::codegen::llvm::expression_compiler::LlvmValue;
+
         
         tracing::info!("Compiling integrated type switch with {} cases", type_cases.len());
         

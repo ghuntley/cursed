@@ -63,7 +63,7 @@ pub use server::{
 };
 
 // Additional module re-exports
-pub use compression::{CompressionType, CompressionConfig, CompressionEngine, CompressionStats};
+pub use compression::{CompressionType, CompressionConfig, CompressionEngine, CompressionManager, CompressionStats};
 pub use csrf::{CsrfToken, CsrfMiddleware, CsrfConfig, CsrfError};
 pub use debug::{RequestDebugger, LiveReload, DebugMode, DebugConfig};
 pub use json::{JsonHandler, JsonValue, JsonError, JsonResponse};

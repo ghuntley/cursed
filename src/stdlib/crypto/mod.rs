@@ -32,6 +32,7 @@ pub mod zk_enhanced;
 pub mod format_conversions;
 pub mod x448_implementation;
 pub mod crypto_advanced;
+pub mod ed25519_keys;
 
 // Re-export main types for convenience
 pub use asymmetric::{
@@ -41,6 +42,9 @@ pub use asymmetric::{
     EcdhKeyPair, EcdhPublicKey, EcdhPrivateKey,
     X25519KeyPair, X25519PublicKey, X25519PrivateKey,
     Ed25519KeyPair,
+};
+pub use ed25519_keys::{
+    Ed25519PublicKey, Ed25519PrivateKey, Ed25519Keypair, Ed25519Signature,
     EcCurve, EcPoint, EcScalar,
     RSA_2048_BITS, RSA_3072_BITS, RSA_4096_BITS,
     X25519_KEY_SIZE, ED25519_PUBLIC_KEY_SIZE, ED25519_PRIVATE_KEY_SIZE, ED25519_SIGNATURE_SIZE,
@@ -66,6 +70,7 @@ pub use types::{
     Ed25519PublicKey, Ed25519PrivateKey, Ed25519Signature, CryptoError,
     HashFunction, SymmetricAlgorithm, AsymmetricAlgorithm, KeyMaterial, KeyType,
     CryptoContext, SecurityLevel, KeySizeRecommendations,
+    CryptoParameters, SecurityContext,
 };
 
 pub use certificates::{

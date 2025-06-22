@@ -9,7 +9,7 @@ use crate::ast::block::BlockStatement;
 use crate::lexer::TokenType;
 use crate::error::Error;
 
-impl ModParser {
+impl Parser {
     /// Parse type switch statement (vibe_check expr.(type))
     /// 
     /// Type switch syntax:

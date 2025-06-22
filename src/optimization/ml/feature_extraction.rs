@@ -1,3 +1,4 @@
+use crate::ast::AstNodeType;
 /// Feature Extraction for ML-Guided Optimization
 /// 
 /// Extracts relevant features from CURSED source code and compilation context

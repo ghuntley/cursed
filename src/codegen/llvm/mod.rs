@@ -84,6 +84,5 @@ pub use performance_monitor::{
 };
 pub use types::{
     LLVMValueRef, LLVMTypeRef, LLVMContextRef, LLVMModuleRef, LLVMBuilderRef,
-    LlvmValue, LlvmType, LlvmContext, LlvmFunctionSignature, LlvmCompileOptions,
-    LlvmCompileResult, LlvmCompileStats,
+    LlvmValue, LlvmType, LlvmContext, LlvmFunctionSignature, LlvmCompileOptions, LlvmCompileResult, LlvmCompileStats,
 };

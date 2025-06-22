@@ -343,7 +343,7 @@ impl OptimizationProfile {
     
     fn size_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::OsAggressive,
+            optimization_level: OptimizationLevel::Oz,
             debug_mode: false,
             enable_parallel: true,
             enable_incremental: true,

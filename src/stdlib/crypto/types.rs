@@ -394,6 +394,208 @@ pub enum SecurityLevel {
     Maximum,
 }
 
+/// Cryptographic parameters for configuration
+#[derive(Debug, Clone)]
+pub struct CryptoParameters {
+    /// Key size for symmetric encryption in bits
+    pub symmetric_key_size: usize,
+    /// Key size for asymmetric encryption in bits
+    pub asymmetric_key_size: usize,
+    /// Hash algorithm to use
+    pub hash_algorithm: String,
+    /// Encryption algorithm to use
+    pub encryption_algorithm: String,
+    /// Security level
+    pub security_level: SecurityLevel,
+    /// Key derivation parameters
+    pub kdf_iterations: usize,
+    /// Salt size for key derivation
+    pub salt_size: usize,
+    /// Additional algorithm-specific parameters
+    pub algorithm_parameters: HashMap<String, String>,
+}
+
+impl CryptoParameters {
+    /// Create default cryptographic parameters
+    pub fn new() -> Self {
+        Self {
+            symmetric_key_size: 256,
+            asymmetric_key_size: 2048,
+            hash_algorithm: "SHA-256".to_string(),
+            encryption_algorithm: "AES-256-GCM".to_string(),
+            security_level: SecurityLevel::Standard,
+            kdf_iterations: 100_000,
+            salt_size: 32,
+            algorithm_parameters: HashMap::new(),
+        }
+    }
+
+    /// Create high-security parameters
+    pub fn high_security() -> Self {
+        Self {
+            symmetric_key_size: 256,
+            asymmetric_key_size: 4096,
+            hash_algorithm: "SHA-512".to_string(),
+            encryption_algorithm: "ChaCha20-Poly1305".to_string(),
+            security_level: SecurityLevel::High,
+            kdf_iterations: 500_000,
+            salt_size: 64,
+            algorithm_parameters: HashMap::new(),
+        }
+    }
+
+    /// Create maximum security parameters
+    pub fn maximum_security() -> Self {
+        Self {
+            symmetric_key_size: 256,
+            asymmetric_key_size: 4096,
+            hash_algorithm: "SHA-512".to_string(),
+            encryption_algorithm: "XChaCha20-Poly1305".to_string(),
+            security_level: SecurityLevel::Maximum,
+            kdf_iterations: 1_000_000,
+            salt_size: 64,
+            algorithm_parameters: HashMap::new(),
+        }
+    }
+
+    /// Add an algorithm-specific parameter
+    pub fn with_parameter(mut self, key: String, value: String) -> Self {
+        self.algorithm_parameters.insert(key, value);
+        self
+    }
+
+    /// Get the effective security level in bits
+    pub fn effective_security_bits(&self) -> usize {
+        match self.security_level {
+            SecurityLevel::Low => 80,
+            SecurityLevel::Standard => 128,
+            SecurityLevel::High => 192,
+            SecurityLevel::Maximum => 256,
+        }
+    }
+}
+
+impl Default for CryptoParameters {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Security context for cryptographic operations
+#[derive(Debug, Clone)]
+pub struct SecurityContext {
+    /// User identity for access control
+    pub user_id: String,
+    /// Roles assigned to the user
+    pub roles: Vec<String>,
+    /// Permissions granted
+    pub permissions: Vec<String>,
+    /// Security level required
+    pub security_level: SecurityLevel,
+    /// Cryptographic parameters
+    pub crypto_parameters: CryptoParameters,
+    /// Session-specific data
+    pub session_data: HashMap<String, String>,
+    /// Audit trail enabled
+    pub audit_enabled: bool,
+    /// Time-based restrictions
+    pub valid_from: Option<u64>,
+    pub valid_until: Option<u64>,
+}
+
+impl SecurityContext {
+    /// Create a new security context
+    pub fn new(user_id: String) -> Self {
+        Self {
+            user_id,
+            roles: Vec::new(),
+            permissions: Vec::new(),
+            security_level: SecurityLevel::Standard,
+            crypto_parameters: CryptoParameters::new(),
+            session_data: HashMap::new(),
+            audit_enabled: true,
+            valid_from: None,
+            valid_until: None,
+        }
+    }
+
+    /// Create a high-security context
+    pub fn high_security(user_id: String) -> Self {
+        Self {
+            user_id,
+            roles: Vec::new(),
+            permissions: Vec::new(),
+            security_level: SecurityLevel::High,
+            crypto_parameters: CryptoParameters::high_security(),
+            session_data: HashMap::new(),
+            audit_enabled: true,
+            valid_from: None,
+            valid_until: None,
+        }
+    }
+
+    /// Add a role to the context
+    pub fn with_role(mut self, role: String) -> Self {
+        self.roles.push(role);
+        self
+    }
+
+    /// Add a permission to the context
+    pub fn with_permission(mut self, permission: String) -> Self {
+        self.permissions.push(permission);
+        self
+    }
+
+    /// Add session data
+    pub fn with_session_data(mut self, key: String, value: String) -> Self {
+        self.session_data.insert(key, value);
+        self
+    }
+
+    /// Set validity period
+    pub fn with_validity(mut self, from: u64, until: u64) -> Self {
+        self.valid_from = Some(from);
+        self.valid_until = Some(until);
+        self
+    }
+
+    /// Check if context has a specific role
+    pub fn has_role(&self, role: &str) -> bool {
+        self.roles.iter().any(|r| r == role)
+    }
+
+    /// Check if context has a specific permission
+    pub fn has_permission(&self, permission: &str) -> bool {
+        self.permissions.iter().any(|p| p == permission)
+    }
+
+    /// Check if context is currently valid
+    pub fn is_valid(&self, current_time: u64) -> bool {
+        if let Some(from) = self.valid_from {
+            if current_time < from {
+                return false;
+            }
+        }
+        if let Some(until) = self.valid_until {
+            if current_time > until {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Get the minimum security level required
+    pub fn minimum_security_level(&self) -> &SecurityLevel {
+        &self.security_level
+    }
+}
+
+impl Default for SecurityContext {
+    fn default() -> Self {
+        Self::new("anonymous".to_string())
+    }
+}
+
 impl SecurityLevel {
     /// Get recommended key sizes for this security level
     pub fn recommended_key_sizes(&self) -> KeySizeRecommendations {
@@ -477,5 +679,60 @@ mod tests {
         assert!(key.is_symmetric());
         assert!(!key.is_public());
         assert!(!key.is_private());
+    }
+
+    #[test]
+    fn test_crypto_parameters() {
+        let params = CryptoParameters::new();
+        assert_eq!(params.symmetric_key_size, 256);
+        assert_eq!(params.asymmetric_key_size, 2048);
+        assert_eq!(params.security_level, SecurityLevel::Standard);
+        assert_eq!(params.effective_security_bits(), 128);
+
+        let high_security = CryptoParameters::high_security();
+        assert_eq!(high_security.asymmetric_key_size, 4096);
+        assert_eq!(high_security.security_level, SecurityLevel::High);
+        assert_eq!(high_security.effective_security_bits(), 192);
+
+        let with_param = CryptoParameters::new()
+            .with_parameter("custom".to_string(), "value".to_string());
+        assert_eq!(with_param.algorithm_parameters.get("custom"), Some(&"value".to_string()));
+    }
+
+    #[test]
+    fn test_security_context() {
+        let context = SecurityContext::new("user123".to_string());
+        assert_eq!(context.user_id, "user123");
+        assert_eq!(context.security_level, SecurityLevel::Standard);
+        assert!(context.audit_enabled);
+
+        let enhanced_context = SecurityContext::high_security("admin".to_string())
+            .with_role("administrator".to_string())
+            .with_permission("read_all".to_string())
+            .with_session_data("session_id".to_string(), "abc123".to_string())
+            .with_validity(1000, 2000);
+
+        assert!(enhanced_context.has_role("administrator"));
+        assert!(enhanced_context.has_permission("read_all"));
+        assert!(!enhanced_context.has_role("user"));
+        assert!(!enhanced_context.has_permission("write_all"));
+        assert!(enhanced_context.is_valid(1500));
+        assert!(!enhanced_context.is_valid(500));
+        assert!(!enhanced_context.is_valid(3000));
+    }
+
+    #[test]
+    fn test_security_level_recommendations() {
+        let low = SecurityLevel::Low;
+        let recommendations = low.recommended_key_sizes();
+        assert_eq!(recommendations.symmetric, 128);
+        assert_eq!(recommendations.rsa, 1024);
+        assert_eq!(recommendations.ecc, 256);
+
+        let maximum = SecurityLevel::Maximum;
+        let max_recommendations = maximum.recommended_key_sizes();
+        assert_eq!(max_recommendations.symmetric, 256);
+        assert_eq!(max_recommendations.rsa, 4096);
+        assert_eq!(max_recommendations.ecc, 521);
     }
 }

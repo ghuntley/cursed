@@ -12,6 +12,7 @@ use crate::optimization::coordinator::{
     OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults,
     OptimizationLevel as CoordOptLevel
 };
+use crate::optimization::types::ComprehensiveOptimizationResult;
 
 /// Optimization preset configurations
 #[derive(Debug, Clone, Copy)]

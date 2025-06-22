@@ -1577,17 +1577,17 @@ impl EnhancedSymbolProvider {
         )
     }
 
-    fn create_lexical_function_symbol(&self, _token: &crate::lexer::token::Token, _lines: &[&str]) -> Option<CursedSymbol> {
+    fn create_lexical_function_symbol(&self, _token: &crate::lexer::Token, _lines: &[&str]) -> Option<CursedSymbol> {
         // Placeholder implementation
         None
     }
 
-    fn create_lexical_variable_symbol(&self, _token: &crate::lexer::token::Token, _lines: &[&str]) -> Option<CursedSymbol> {
+    fn create_lexical_variable_symbol(&self, _token: &crate::lexer::Token, _lines: &[&str]) -> Option<CursedSymbol> {
         // Placeholder implementation
         None
     }
 
-    fn create_lexical_type_symbol(&self, _token: &crate::lexer::token::Token, _lines: &[&str]) -> Option<CursedSymbol> {
+    fn create_lexical_type_symbol(&self, _token: &crate::lexer::Token, _lines: &[&str]) -> Option<CursedSymbol> {
         // Placeholder implementation
         None
     }

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use crate::error::CursedError;
 use inkwell::{
     context::Context,
-    values::{BasicValueEnum, FunctionValue},
+    values::{BasicValueEnum, FunctionValue, PointerValue},
     types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
@@ -23,8 +23,8 @@ pub trait IpcCompiler {
         name: &str,
         size: Option<usize>,
         data: Option<&str>,
-    ) -> Result<LLVMValueRef, CursedError> {
-        Ok(std::ptr::null_mut())
+    ) -> Result<BasicValueEnum<'static>, CursedError> {
+        Ok(BasicValueEnum::PointerValue(PointerValue::new(std::ptr::null_mut())))
     }
 
     /// Compile named pipe operations (placeholder)
@@ -33,8 +33,8 @@ pub trait IpcCompiler {
         operation: PipeOperation,
         name: &str,
         data: Option<&str>,
-    ) -> CursedResult<LLVMValueRef> {
-        Ok(std::ptr::null_mut())
+    ) -> CursedResult<BasicValueEnum<'static>> {
+        Ok(BasicValueEnum::PointerValue(PointerValue::new(std::ptr::null_mut())))
     }
 
     /// Compile message queue operations (placeholder)
@@ -44,8 +44,8 @@ pub trait IpcCompiler {
         name: &str,
         message: Option<&str>,
         priority: Option<i32>,
-    ) -> CursedResult<LLVMValueRef> {
-        Ok(std::ptr::null_mut())
+    ) -> CursedResult<BasicValueEnum<'static>> {
+        Ok(BasicValueEnum::PointerValue(PointerValue::new(std::ptr::null_mut())))
     }
 
     /// Compile semaphore operations (placeholder)
@@ -54,8 +54,8 @@ pub trait IpcCompiler {
         operation: SemaphoreOperation,
         name: &str,
         count: Option<i32>,
-    ) -> CursedResult<LLVMValueRef> {
-        Ok(std::ptr::null_mut())
+    ) -> CursedResult<BasicValueEnum<'static>> {
+        Ok(BasicValueEnum::PointerValue(PointerValue::new(std::ptr::null_mut())))
     }
 
     /// Compile signal operations (placeholder)
@@ -65,8 +65,8 @@ pub trait IpcCompiler {
         signal: i32,
         target: Option<i64>,
         handler: Option<&str>,
-    ) -> CursedResult<LLVMValueRef> {
-        Ok(std::ptr::null_mut())
+    ) -> CursedResult<BasicValueEnum<'static>> {
+        Ok(BasicValueEnum::PointerValue(PointerValue::new(std::ptr::null_mut())))
     }
 
     /// Generate FFI function declarations for IPC operations (placeholder)
