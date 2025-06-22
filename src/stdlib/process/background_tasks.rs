@@ -16,6 +16,12 @@ use crate::stdlib::process::error::{
 use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayProcess, SlayProcessState};
 use crate::stdlib::process::real_monitoring::{ProcessStats, get_real_process_stats};
 
+/// Background task manager for managing multiple tasks
+pub type BackgroundTaskManager = SlayTaskManager;
+
+/// Task handle for managing individual tasks
+pub type TaskHandle = SlayTask;
+
 /// SlayTask represents a background task with comprehensive status tracking
 #[derive(Debug)]
 pub struct SlayTask {

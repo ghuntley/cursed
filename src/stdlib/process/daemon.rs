@@ -15,6 +15,39 @@ use std::io::{Write, Read};
 use crate::stdlib::process::error::{ProcessError, ProcessResult, system_error, execution_failed};
 use crate::stdlib::process::core::{ProcessConfig, spawn_process};
 
+/// Options for daemon configuration
+#[derive(Debug, Clone)]
+pub struct DaemonOptions {
+    /// Enable logging
+    pub enable_logging: bool,
+    /// Log level
+    pub log_level: String,
+    /// Auto restart on crash
+    pub auto_restart: bool,
+    /// Maximum restart attempts
+    pub max_restarts: u32,
+    /// Start timeout
+    pub start_timeout: Duration,
+    /// Stop timeout
+    pub stop_timeout: Duration,
+}
+
+impl Default for DaemonOptions {
+    fn default() -> Self {
+        Self {
+            enable_logging: true,
+            log_level: "info".to_string(),
+            auto_restart: true,
+            max_restarts: 5,
+            start_timeout: Duration::from_secs(30),
+            stop_timeout: Duration::from_secs(10),
+        }
+    }
+}
+
+/// Daemon manager type alias
+pub type DaemonManager = Daemon;
+
 /// Daemon configuration
 #[derive(Debug, Clone)]
 pub struct DaemonConfig {

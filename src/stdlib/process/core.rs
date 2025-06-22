@@ -1757,3 +1757,137 @@ impl Default for IoRedirection {
         Self::new()
     }
 }
+
+/// Process handle for managing individual processes
+#[derive(Debug)]
+pub struct ProcessHandle {
+    /// Process ID
+    pub pid: u32,
+    /// Process information
+    pub info: Arc<Mutex<ProcessInfo>>,
+    /// Resource limits
+    pub resource_limits: ResourceLimits,
+    /// Internal child process handle
+    child: Option<Arc<Mutex<Child>>>,
+    /// Process manager reference
+    manager: Option<Arc<ProcessManager>>,
+}
+
+impl ProcessHandle {
+    /// Create a new process handle
+    pub fn new(pid: u32, info: ProcessInfo) -> Self {
+        Self {
+            pid,
+            info: Arc::new(Mutex::new(info)),
+            resource_limits: ResourceLimits::default(),
+            child: None,
+            manager: None,
+        }
+    }
+
+    /// Create with child process
+    pub fn with_child(pid: u32, info: ProcessInfo, child: Child) -> Self {
+        Self {
+            pid,
+            info: Arc::new(Mutex::new(info)),
+            resource_limits: ResourceLimits::default(),
+            child: Some(Arc::new(Mutex::new(child))),
+            manager: None,
+        }
+    }
+
+    /// Get process ID
+    pub fn pid(&self) -> u32 {
+        self.pid
+    }
+
+    /// Get process information
+    pub fn info(&self) -> ProcessInfo {
+        let info = self.info.lock().unwrap();
+        info.clone()
+    }
+
+    /// Update process information
+    pub fn update_info(&self, info: ProcessInfo) {
+        let mut current_info = self.info.lock().unwrap();
+        *current_info = info;
+    }
+
+    /// Get resource limits
+    pub fn get_resource_limits(&self) -> &ResourceLimits {
+        &self.resource_limits
+    }
+
+    /// Set resource limits
+    pub fn set_resource_limits(&mut self, limits: ResourceLimits) {
+        self.resource_limits = limits;
+    }
+
+    /// Check if process is alive
+    pub fn is_alive(&self) -> bool {
+        process_exists(self.pid)
+    }
+
+    /// Wait for process to complete
+    pub fn wait(&self) -> ProcessResult<ExitStatus> {
+        if let Some(child_ref) = &self.child {
+            let mut child = child_ref.lock().unwrap();
+            child.wait().map_err(|e| io_error(&format!("Failed to wait for process: {}", e)))
+        } else {
+            // For external processes, we need to implement platform-specific waiting
+            self.wait_external()
+        }
+    }
+
+    /// Wait for external process (no Child handle)
+    fn wait_external(&self) -> ProcessResult<ExitStatus> {
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::ExitStatusExt;
+            use std::process::ExitStatus;
+            
+            // Wait for the process using waitpid
+            let mut status: libc::c_int = 0;
+            let result = unsafe { libc::waitpid(self.pid as libc::pid_t, &mut status, 0) };
+            
+            if result == -1 {
+                return Err(system_error("Failed to wait for process"));
+            }
+            
+            Ok(ExitStatus::from_raw(status))
+        }
+        
+        #[cfg(not(unix))]
+        {
+            // For Windows and other platforms, we'll need a different approach
+            Err(platform_error("External process waiting not implemented for this platform"))
+        }
+    }
+
+    /// Terminate the process
+    pub fn terminate(&self) -> ProcessResult<()> {
+        if let Some(child_ref) = &self.child {
+            let mut child = child_ref.lock().unwrap();
+            child.kill().map_err(|e| io_error(&format!("Failed to terminate process: {}", e)))
+        } else {
+            terminate_process(self.pid)
+        }
+    }
+
+    /// Send signal to process (Unix only)
+    #[cfg(unix)]
+    pub fn signal(&self, signal: i32) -> ProcessResult<()> {
+        let result = unsafe { libc::kill(self.pid as libc::pid_t, signal) };
+        if result == -1 {
+            Err(system_error(&format!("Failed to send signal {} to process {}", signal, self.pid)))
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Send signal to process (non-Unix platforms)
+    #[cfg(not(unix))]
+    pub fn signal(&self, _signal: i32) -> ProcessResult<()> {
+        Err(platform_error("Signal sending not supported on this platform"))
+    }
+}

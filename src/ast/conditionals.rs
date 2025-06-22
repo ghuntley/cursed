@@ -476,6 +476,138 @@ impl Statement for CaseStatement {
     }
 }
 
+/// Else statement (highkey { ... })
+#[derive(Debug, Clone)]
+pub struct ElseStatement {
+    pub token: String,
+    pub body: BlockStatement,
+}
+
+impl ElseStatement {
+    pub fn new(token: String, body: BlockStatement) -> Self {
+        Self { token, body }
+    }
+    
+    pub fn simple(body: BlockStatement) -> Self {
+        Self {
+            token: "highkey".to_string(),
+            body,
+        }
+    }
+}
+
+impl Node for ElseStatement {
+    fn string(&self) -> String {
+        format!("highkey {}", self.body.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for ElseStatement {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ElseStatement {
+            token: self.token.clone(),
+            body: self.body.clone(),
+        })
+    }
+}
+
+/// Else if statement (highkey lowkey condition { ... })
+#[derive(Debug, Clone)]
+pub struct ElseIfStatement {
+    pub token: String,
+    pub condition: Box<dyn Expression>,
+    pub body: BlockStatement,
+}
+
+impl ElseIfStatement {
+    pub fn new(token: String, condition: Box<dyn Expression>, body: BlockStatement) -> Self {
+        Self { token, condition, body }
+    }
+    
+    pub fn simple(condition: Box<dyn Expression>, body: BlockStatement) -> Self {
+        Self {
+            token: "highkey".to_string(),
+            condition,
+            body,
+        }
+    }
+}
+
+impl Node for ElseIfStatement {
+    fn string(&self) -> String {
+        format!("highkey lowkey {} {}", self.condition.string(), self.body.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for ElseIfStatement {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(ElseIfStatement {
+            token: self.token.clone(),
+            condition: self.condition.clone_box(),
+            body: self.body.clone(),
+        })
+    }
+}
+
+/// Default statement for switch cases (basic { ... })
+#[derive(Debug, Clone)]
+pub struct DefaultStatement {
+    pub token: String,
+    pub body: BlockStatement,
+}
+
+impl DefaultStatement {
+    pub fn new(token: String, body: BlockStatement) -> Self {
+        Self { token, body }
+    }
+    
+    pub fn simple(body: BlockStatement) -> Self {
+        Self {
+            token: "basic".to_string(),
+            body,
+        }
+    }
+}
+
+impl Node for DefaultStatement {
+    fn string(&self) -> String {
+        format!("basic: {}", self.body.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for DefaultStatement {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(DefaultStatement {
+            token: self.token.clone(),
+            body: self.body.clone(),
+        })
+    }
+}
+
 /// Helper functions for creating conditional statements
 pub fn if_stmt(condition: Box<dyn Expression>, consequence: BlockStatement) -> IfStatement {
     IfStatement::simple(condition, consequence)

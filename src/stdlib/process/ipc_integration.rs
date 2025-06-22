@@ -16,6 +16,22 @@ use crate::stdlib::ipc::shared_memory::SharedMemorySegment;
 use crate::stdlib::ipc::named_pipes::NamedPipe as IpcNamedPipe;
 use crate::stdlib::ipc::message_queues::MessageQueue as IpcMessageQueue;
 
+/// IPC integration manager for process-IPC coordination
+pub type IpcIntegration = ProcessIpcCoordinator;
+
+/// Configuration options for IPC integration
+#[derive(Debug, Clone)]
+pub struct IpcOptions {
+    /// Enable automatic cleanup
+    pub auto_cleanup: bool,
+    /// Cleanup interval
+    pub cleanup_interval: Duration,
+    /// Max resources per process
+    pub max_resources_per_process: usize,
+    /// Enable resource monitoring
+    pub enable_monitoring: bool,
+}
+
 /// Process-IPC Coordinator manages IPC resources per process
 pub struct ProcessIpcCoordinator {
     /// Active process-IPC mappings

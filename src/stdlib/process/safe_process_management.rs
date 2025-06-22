@@ -695,3 +695,164 @@ mod tests {
         assert!(std::ptr::eq(manager1, manager2));
     }
 }
+
+/// Process security manager for enhanced security controls
+#[derive(Debug)]
+pub struct ProcessSecurityManager {
+    /// Security policies
+    policies: Arc<RwLock<HashMap<String, SecurityPolicy>>>,
+    /// Active security contexts
+    contexts: Arc<RwLock<HashMap<u32, SecurityContextData>>>,
+    /// Audit log
+    audit_log: Arc<Mutex<Vec<SecurityEvent>>>,
+    /// Configuration
+    config: SafetyConfig,
+}
+
+/// Safety configuration for process management
+#[derive(Debug, Clone)]
+pub struct SafetyConfig {
+    /// Enable memory protection
+    pub memory_protection: bool,
+    /// Enable process isolation
+    pub process_isolation: bool,
+    /// Enable security auditing
+    pub security_auditing: bool,
+    /// Maximum process count
+    pub max_processes: Option<u32>,
+    /// Default resource limits
+    pub default_limits: ResourceLimits,
+    /// Security level
+    pub security_level: SecurityLevel,
+}
+
+/// Security policy for process execution
+#[derive(Debug, Clone)]
+pub struct SecurityPolicy {
+    /// Policy name
+    pub name: String,
+    /// Allowed capabilities
+    pub allowed_capabilities: Vec<String>,
+    /// Denied capabilities
+    pub denied_capabilities: Vec<String>,
+    /// Resource limits
+    pub resource_limits: ResourceLimits,
+    /// Network access
+    pub network_access: bool,
+    /// File system access
+    pub filesystem_access: bool,
+    /// System call restrictions
+    pub syscall_restrictions: Vec<String>,
+}
+
+/// Security context data for process
+#[derive(Debug, Clone)]
+pub struct SecurityContextData {
+    /// Process ID
+    pub pid: u32,
+    /// User ID
+    pub uid: Option<u32>,
+    /// Group ID
+    pub gid: Option<u32>,
+    /// Security labels
+    pub labels: HashMap<String, String>,
+    /// Applied policies
+    pub policies: Vec<String>,
+    /// Creation time
+    pub created_at: std::time::Instant,
+}
+
+/// Security event for auditing
+#[derive(Debug, Clone)]
+pub struct SecurityEvent {
+    /// Event timestamp
+    pub timestamp: std::time::Instant,
+    /// Process ID
+    pub pid: u32,
+    /// Event type
+    pub event_type: String,
+    /// Event description
+    pub description: String,
+    /// Security level
+    pub level: SecurityLevel,
+}
+
+/// Security levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SecurityLevel {
+    /// Low security
+    Low,
+    /// Medium security
+    Medium,
+    /// High security
+    High,
+    /// Critical security
+    Critical,
+}
+
+impl Default for SafetyConfig {
+    fn default() -> Self {
+        Self {
+            memory_protection: true,
+            process_isolation: true,
+            security_auditing: true,
+            max_processes: Some(1000),
+            default_limits: ResourceLimits::default(),
+            security_level: SecurityLevel::Medium,
+        }
+    }
+}
+
+impl ProcessSecurityManager {
+    /// Create a new process security manager
+    pub fn new() -> Self {
+        Self {
+            policies: Arc::new(RwLock::new(HashMap::new())),
+            contexts: Arc::new(RwLock::new(HashMap::new())),
+            audit_log: Arc::new(Mutex::new(Vec::new())),
+            config: SafetyConfig::default(),
+        }
+    }
+
+    /// Create with custom configuration
+    pub fn with_config(config: SafetyConfig) -> Self {
+        Self {
+            policies: Arc::new(RwLock::new(HashMap::new())),
+            contexts: Arc::new(RwLock::new(HashMap::new())),
+            audit_log: Arc::new(Mutex::new(Vec::new())),
+            config,
+        }
+    }
+
+    /// Add a security policy
+    pub fn add_policy(&self, policy: SecurityPolicy) -> ProcessResult<()> {
+        let mut policies = self.policies.write().unwrap();
+        policies.insert(policy.name.clone(), policy);
+        Ok(())
+    }
+
+    /// Apply security context to process
+    pub fn apply_context(&self, pid: u32, context: SecurityContextData) -> ProcessResult<()> {
+        let mut contexts = self.contexts.write().unwrap();
+        contexts.insert(pid, context);
+        Ok(())
+    }
+
+    /// Get security context for process
+    pub fn get_context(&self, pid: u32) -> Option<SecurityContextData> {
+        let contexts = self.contexts.read().unwrap();
+        contexts.get(&pid).cloned()
+    }
+
+    /// Log security event
+    pub fn log_event(&self, event: SecurityEvent) {
+        let mut audit_log = self.audit_log.lock().unwrap();
+        audit_log.push(event);
+    }
+
+    /// Get audit log
+    pub fn get_audit_log(&self) -> Vec<SecurityEvent> {
+        let audit_log = self.audit_log.lock().unwrap();
+        audit_log.clone()
+    }
+}

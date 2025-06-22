@@ -21,6 +21,67 @@ use super::error::{ProcessError, ProcessResult};
 use super::info::{ProcessInfo, MemoryInfo, CpuInfo};
 use super::control::ProcessControl;
 
+/// Options for process monitoring configuration
+#[derive(Debug, Clone)]
+pub struct MonitoringOptions {
+    /// Monitoring interval
+    pub interval: Duration,
+    /// Enable CPU monitoring
+    pub monitor_cpu: bool,
+    /// Enable memory monitoring
+    pub monitor_memory: bool,
+    /// Enable I/O monitoring
+    pub monitor_io: bool,
+    /// Enable network monitoring
+    pub monitor_network: bool,
+    /// Resource usage thresholds
+    pub thresholds: ResourceThresholds,
+}
+
+impl Default for MonitoringOptions {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+            monitor_cpu: true,
+            monitor_memory: true,
+            monitor_io: false,
+            monitor_network: false,
+            thresholds: ResourceThresholds::default(),
+        }
+    }
+}
+
+/// Process metrics collected during monitoring
+#[derive(Debug, Clone)]
+pub struct ProcessMetrics {
+    /// Process ID
+    pub pid: u32,
+    /// CPU usage percentage
+    pub cpu_percent: f64,
+    /// Memory usage in bytes
+    pub memory_bytes: u64,
+    /// Number of threads
+    pub thread_count: u32,
+    /// Number of open file descriptors
+    pub file_descriptors: u32,
+    /// Timestamp when metrics were collected
+    pub timestamp: SystemTime,
+}
+
+impl ProcessMetrics {
+    /// Create new process metrics
+    pub fn new(pid: u32) -> Self {
+        Self {
+            pid,
+            cpu_percent: 0.0,
+            memory_bytes: 0,
+            thread_count: 1,
+            file_descriptors: 0,
+            timestamp: SystemTime::now(),
+        }
+    }
+}
+
 /// Process health status
 #[derive(Debug, Clone, PartialEq)]
 pub enum HealthStatus {
@@ -51,6 +112,18 @@ pub struct ResourceThresholds {
     pub max_threads: u32,
     /// Maximum execution time
     pub max_execution_time: Option<Duration>,
+}
+
+impl Default for ResourceThresholds {
+    fn default() -> Self {
+        Self {
+            max_cpu_percent: 80.0,
+            max_memory_bytes: 1024 * 1024 * 1024, // 1GB
+            max_file_descriptors: 1000,
+            max_threads: 100,
+            max_execution_time: None,
+        }
+    }
 }
 
 /// Process health check configuration
@@ -93,6 +166,54 @@ impl Default for MonitoringConfig {
             enable_performance_tracking: true,
             max_history_entries: 100,
             enable_alerts: true,
+        }
+    }
+}
+
+/// Process statistics for monitoring
+#[derive(Debug, Clone)]
+pub struct ProcessStats {
+    /// CPU usage percentage
+    pub cpu_percent: f64,
+    /// Memory usage in bytes
+    pub memory_bytes: u64,
+    /// Memory usage percentage
+    pub memory_percent: f64,
+    /// Number of threads
+    pub thread_count: u32,
+    /// Number of file descriptors
+    pub fd_count: u32,
+    /// CPU time in user mode (milliseconds)
+    pub user_time: u64,
+    /// CPU time in system mode (milliseconds)
+    pub system_time: u64,
+    /// Total runtime (milliseconds)
+    pub runtime: u64,
+    /// Read I/O operations
+    pub read_ops: u64,
+    /// Write I/O operations
+    pub write_ops: u64,
+    /// Bytes read
+    pub bytes_read: u64,
+    /// Bytes written
+    pub bytes_written: u64,
+}
+
+impl Default for ProcessStats {
+    fn default() -> Self {
+        Self {
+            cpu_percent: 0.0,
+            memory_bytes: 0,
+            memory_percent: 0.0,
+            thread_count: 1,
+            fd_count: 0,
+            user_time: 0,
+            system_time: 0,
+            runtime: 0,
+            read_ops: 0,
+            write_ops: 0,
+            bytes_read: 0,
+            bytes_written: 0,
         }
     }
 }

@@ -770,3 +770,262 @@ mod tests {
         assert!(result.unwrap().is_empty());
     }
 }
+
+/// Process controller for advanced process management
+#[derive(Debug)]
+pub struct ProcessController {
+    /// Active processes
+    processes: Arc<Mutex<HashMap<u32, ProcessControlInfo>>>,
+    /// Control options
+    options: ControlOptions,
+    /// Monitoring enabled
+    monitoring_enabled: bool,
+}
+
+/// Control options for process management
+#[derive(Debug, Clone)]
+pub struct ControlOptions {
+    /// Default timeout for operations
+    pub default_timeout: Duration,
+    /// Enable automatic cleanup
+    pub auto_cleanup: bool,
+    /// Enable process monitoring
+    pub enable_monitoring: bool,
+    /// Signal timeout
+    pub signal_timeout: Duration,
+    /// Maximum processes to control
+    pub max_processes: Option<u32>,
+    /// Enable logging
+    pub enable_logging: bool,
+}
+
+/// Process control information
+#[derive(Debug, Clone)]
+pub struct ProcessControlInfo {
+    /// Process ID
+    pub pid: u32,
+    /// Process name
+    pub name: String,
+    /// Control state
+    pub state: ControlState,
+    /// Last signal sent
+    pub last_signal: Option<Signal>,
+    /// Last operation time
+    pub last_operation: Instant,
+    /// Control flags
+    pub flags: ControlFlags,
+}
+
+/// Control state enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControlState {
+    /// Process is running normally
+    Running,
+    /// Process is paused/stopped
+    Paused,
+    /// Process is being terminated
+    Terminating,
+    /// Process has terminated
+    Terminated,
+    /// Process state is unknown
+    Unknown,
+}
+
+/// Control flags for process management
+#[derive(Debug, Clone)]
+pub struct ControlFlags {
+    /// Can send signals
+    pub can_signal: bool,
+    /// Can terminate
+    pub can_terminate: bool,
+    /// Can modify priority
+    pub can_modify_priority: bool,
+    /// Is monitored
+    pub is_monitored: bool,
+}
+
+impl Default for ControlOptions {
+    fn default() -> Self {
+        Self {
+            default_timeout: Duration::from_secs(30),
+            auto_cleanup: true,
+            enable_monitoring: true,
+            signal_timeout: Duration::from_secs(5),
+            max_processes: Some(1000),
+            enable_logging: true,
+        }
+    }
+}
+
+impl Default for ControlFlags {
+    fn default() -> Self {
+        Self {
+            can_signal: true,
+            can_terminate: true,
+            can_modify_priority: true,
+            is_monitored: false,
+        }
+    }
+}
+
+impl ProcessController {
+    /// Create a new process controller
+    pub fn new() -> Self {
+        Self {
+            processes: Arc::new(Mutex::new(HashMap::new())),
+            options: ControlOptions::default(),
+            monitoring_enabled: false,
+        }
+    }
+
+    /// Create with custom options
+    pub fn with_options(options: ControlOptions) -> Self {
+        Self {
+            processes: Arc::new(Mutex::new(HashMap::new())),
+            monitoring_enabled: options.enable_monitoring,
+            options,
+        }
+    }
+
+    /// Add process to control
+    pub fn add_process(&self, pid: u32, name: String) -> ProcessResult<()> {
+        let mut processes = self.processes.lock().unwrap();
+        
+        if let Some(max) = self.options.max_processes {
+            if processes.len() >= max as usize {
+                return Err(invalid_state("Maximum number of controlled processes reached"));
+            }
+        }
+        
+        let control_info = ProcessControlInfo {
+            pid,
+            name,
+            state: ControlState::Running,
+            last_signal: None,
+            last_operation: Instant::now(),
+            flags: ControlFlags::default(),
+        };
+        
+        processes.insert(pid, control_info);
+        Ok(())
+    }
+
+    /// Remove process from control
+    pub fn remove_process(&self, pid: u32) -> ProcessResult<()> {
+        let mut processes = self.processes.lock().unwrap();
+        processes.remove(&pid);
+        Ok(())
+    }
+
+    /// Get process control info
+    pub fn get_process_info(&self, pid: u32) -> Option<ProcessControlInfo> {
+        let processes = self.processes.lock().unwrap();
+        processes.get(&pid).cloned()
+    }
+
+    /// List all controlled processes
+    pub fn list_processes(&self) -> Vec<ProcessControlInfo> {
+        let processes = self.processes.lock().unwrap();
+        processes.values().cloned().collect()
+    }
+
+    /// Send signal to process
+    pub fn signal_process(&self, pid: u32, signal: Signal) -> ProcessResult<()> {
+        // Update control info
+        {
+            let mut processes = self.processes.lock().unwrap();
+            if let Some(info) = processes.get_mut(&pid) {
+                info.last_signal = Some(signal);
+                info.last_operation = Instant::now();
+            }
+        }
+        
+        // Send the signal
+        send_signal(pid, signal)
+    }
+
+    /// Terminate process
+    pub fn terminate_process(&self, pid: u32) -> ProcessResult<()> {
+        // Update control info
+        {
+            let mut processes = self.processes.lock().unwrap();
+            if let Some(info) = processes.get_mut(&pid) {
+                info.state = ControlState::Terminating;
+                info.last_operation = Instant::now();
+            }
+        }
+        
+        // Terminate the process
+        let result = terminate_process(pid);
+        
+        // Update state based on result
+        {
+            let mut processes = self.processes.lock().unwrap();
+            if let Some(info) = processes.get_mut(&pid) {
+                info.state = if result.is_ok() {
+                    ControlState::Terminated
+                } else {
+                    ControlState::Unknown
+                };
+            }
+        }
+        
+        result
+    }
+
+    /// Pause process (send SIGSTOP)
+    pub fn pause_process(&self, pid: u32) -> ProcessResult<()> {
+        let result = self.signal_process(pid, Signal::SIGSTOP);
+        
+        if result.is_ok() {
+            let mut processes = self.processes.lock().unwrap();
+            if let Some(info) = processes.get_mut(&pid) {
+                info.state = ControlState::Paused;
+            }
+        }
+        
+        result
+    }
+
+    /// Resume process (send SIGCONT)
+    pub fn resume_process(&self, pid: u32) -> ProcessResult<()> {
+        let result = self.signal_process(pid, Signal::SIGCONT);
+        
+        if result.is_ok() {
+            let mut processes = self.processes.lock().unwrap();
+            if let Some(info) = processes.get_mut(&pid) {
+                info.state = ControlState::Running;
+            }
+        }
+        
+        result
+    }
+
+    /// Get control options
+    pub fn get_options(&self) -> &ControlOptions {
+        &self.options
+    }
+
+    /// Update control options
+    pub fn set_options(&mut self, options: ControlOptions) {
+        self.monitoring_enabled = options.enable_monitoring;
+        self.options = options;
+    }
+
+    /// Clean up terminated processes
+    pub fn cleanup(&self) -> ProcessResult<usize> {
+        let mut processes = self.processes.lock().unwrap();
+        let mut removed = 0;
+        
+        processes.retain(|&pid, info| {
+            if info.state == ControlState::Terminated || !process_exists(pid) {
+                removed += 1;
+                false
+            } else {
+                true
+            }
+        });
+        
+        Ok(removed)
+    }
+}

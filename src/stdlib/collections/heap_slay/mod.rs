@@ -50,6 +50,12 @@ pub use types::{
     StringHeap,
     Item,
     PriorityQueue,
+    HeapSorter,
+    BinaryHeap,
+    MinHeap,
+    MaxHeap,
+    HeapIterator,
+    HeapError,
 };
 
 use crate::error::{CursedError, ErrorType};

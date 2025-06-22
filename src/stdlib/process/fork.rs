@@ -20,6 +20,22 @@ use crate::stdlib::process::error::{
 };
 use crate::stdlib::process::core::{ProcessConfig, ProcessInfo, ProcessState};
 
+/// Fork manager alias for process forking
+pub type ForkManager = JobControlManager;
+
+/// Fork options configuration
+#[derive(Debug, Clone)]
+pub struct ForkOptions {
+    /// Create new process group
+    pub new_process_group: bool,
+    /// Create new session
+    pub new_session: bool,
+    /// Process group ID to join
+    pub process_group_id: Option<u32>,
+    /// Controlling terminal
+    pub controlling_terminal: Option<String>,
+}
+
 /// Fork result containing information about the forked process
 #[derive(Debug, Clone)]
 pub struct ForkResult {

@@ -27,6 +27,7 @@ pub mod environment;
 pub mod lifecycle;
 pub mod exec_slay;
 pub mod exec_vibez;
+pub mod exec_vibez_types;
 pub mod exec_vibez_advanced;
 pub mod exec_vibez_enhanced;
 pub mod real_monitoring;
@@ -68,7 +69,8 @@ pub use llvm_integration::*;
 pub use shell_commands::*;
 // Use explicit imports from safe_process_management to avoid conflicts
 pub use safe_process_management::{
-    SafeProcessManager, ProcessSecurityManager, SafetyConfig, 
+    SafeProcessManager, ProcessSecurityManager, SafetyConfig, SecurityPolicy, 
+    SecurityContextData, SecurityEvent, SecurityLevel,
     ResourceLimits as SafeResourceLimits, ResourceType as SafeResourceType,
     SecurityContext, ProcessIsolation, SecurityCheck, ProcessGuard
 };
@@ -104,6 +106,10 @@ pub use exec_vibez::{
     VibezProcess as ProcessVibezProcess,
     VibezCommand as ProcessVibezCommand,
     VibezResult as ProcessVibezResult
+};
+pub use exec_vibez_types::{
+    VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits as ExecResourceLimits,
+    SecurityContext as ExecSecurityContext, ExecutionMode, Priority
 };
 
 // Enhanced modules with prefixes

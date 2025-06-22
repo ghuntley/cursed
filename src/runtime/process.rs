@@ -11,6 +11,7 @@ use std::thread;
 use std::ffi::{CString, CStr};
 use std::os::raw::{c_char, c_int, c_long, c_void};
 use std::ptr;
+use std::path::PathBuf;
 
 // Platform-specific imports for signal handling
 #[cfg(unix)]
@@ -90,6 +91,87 @@ pub struct ProcessInfo {
     pub memory_usage: u64,
     pub cpu_time: u64,
     pub child: Option<Arc<Mutex<Child>>>,
+}
+
+/// Process output information
+#[derive(Debug, Clone)]
+pub struct ProcessOutput {
+    /// Exit status code
+    pub status: i32,
+    /// Standard output
+    pub stdout: Vec<u8>,
+    /// Standard error output
+    pub stderr: Vec<u8>,
+    /// Process execution time
+    pub execution_time: Duration,
+    /// Whether the process was terminated by signal
+    pub terminated_by_signal: bool,
+    /// Signal number if terminated by signal
+    pub signal: Option<i32>,
+}
+
+impl ProcessOutput {
+    pub fn new(status: i32, stdout: Vec<u8>, stderr: Vec<u8>) -> Self {
+        Self {
+            status,
+            stdout,
+            stderr,
+            execution_time: Duration::from_secs(0),
+            terminated_by_signal: false,
+            signal: None,
+        }
+    }
+    
+    pub fn success(&self) -> bool {
+        self.status == 0 && !self.terminated_by_signal
+    }
+}
+
+/// Process group for managing related processes
+#[derive(Debug, Clone)]
+pub struct ProcessGroup {
+    /// Group ID
+    pub pgid: u32,
+    /// Processes in this group
+    pub processes: Vec<u32>,
+    /// Group leader PID
+    pub leader: u32,
+    /// Group status
+    pub status: ProcessGroupStatus,
+    /// Creation time
+    pub created_at: SystemTime,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ProcessGroupStatus {
+    Active,
+    Stopped,
+    Terminated,
+}
+
+impl ProcessGroup {
+    pub fn new(pgid: u32, leader: u32) -> Self {
+        Self {
+            pgid,
+            processes: vec![leader],
+            leader,
+            status: ProcessGroupStatus::Active,
+            created_at: SystemTime::now(),
+        }
+    }
+    
+    pub fn add_process(&mut self, pid: u32) {
+        if !self.processes.contains(&pid) {
+            self.processes.push(pid);
+        }
+    }
+    
+    pub fn remove_process(&mut self, pid: u32) {
+        self.processes.retain(|&p| p != pid);
+        if self.processes.is_empty() {
+            self.status = ProcessGroupStatus::Terminated;
+        }
+    }
 }
 
 /// Process status enumeration
@@ -1268,5 +1350,80 @@ mod tests {
         // Check handler is registered
         let handlers = runtime.signal_handlers.read().unwrap();
         assert!(handlers.contains_key(&15));
+    }
+}
+
+/// Resource limits for runtime process management
+#[derive(Debug, Clone)]
+pub struct ResourceLimits {
+    /// Maximum memory usage in bytes
+    pub max_memory: Option<u64>,
+    /// Maximum CPU usage percentage
+    pub max_cpu_percent: Option<f64>,
+    /// Maximum execution time
+    pub max_execution_time: Option<Duration>,
+    /// Maximum file descriptors
+    pub max_file_descriptors: Option<u32>,
+    /// Maximum number of processes
+    pub max_processes: Option<u32>,
+    /// Maximum stack size
+    pub max_stack_size: Option<u64>,
+    /// Maximum heap size
+    pub max_heap_size: Option<u64>,
+}
+
+/// Security context for runtime process management
+#[derive(Debug, Clone)]
+pub struct SecurityContext {
+    /// User ID to run as
+    pub user_id: Option<u32>,
+    /// Group ID to run as
+    pub group_id: Option<u32>,
+    /// Additional group IDs
+    pub supplementary_groups: Vec<u32>,
+    /// Allowed capabilities
+    pub capabilities: Vec<String>,
+    /// Chroot directory
+    pub chroot_dir: Option<PathBuf>,
+    /// Network namespace
+    pub network_namespace: Option<String>,
+    /// Process namespace
+    pub process_namespace: Option<String>,
+    /// Mount namespace
+    pub mount_namespace: Option<String>,
+    /// User namespace
+    pub user_namespace: Option<String>,
+    /// Security labels
+    pub security_labels: HashMap<String, String>,
+}
+
+impl Default for ResourceLimits {
+    fn default() -> Self {
+        Self {
+            max_memory: None,
+            max_cpu_percent: None,
+            max_execution_time: None,
+            max_file_descriptors: None,
+            max_processes: None,
+            max_stack_size: None,
+            max_heap_size: None,
+        }
+    }
+}
+
+impl Default for SecurityContext {
+    fn default() -> Self {
+        Self {
+            user_id: None,
+            group_id: None,
+            supplementary_groups: Vec::new(),
+            capabilities: Vec::new(),
+            chroot_dir: None,
+            network_namespace: None,
+            process_namespace: None,
+            mount_namespace: None,
+            user_namespace: None,
+            security_labels: HashMap::new(),
+        }
     }
 }

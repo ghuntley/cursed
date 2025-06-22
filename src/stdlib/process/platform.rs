@@ -25,6 +25,54 @@ use std::path::PathBuf;
 use std::time::Duration;
 use super::error::{ProcessError, ProcessResult};
 
+/// Platform capabilities for process management
+#[derive(Debug, Clone)]
+pub struct PlatformCapabilities {
+    /// Supports process monitoring
+    pub supports_monitoring: bool,
+    /// Supports signal handling
+    pub supports_signals: bool,
+    /// Supports process groups
+    pub supports_process_groups: bool,
+    /// Supports memory mapping
+    pub supports_memory_mapping: bool,
+    /// Maximum number of processes
+    pub max_processes: Option<u32>,
+}
+
+impl Default for PlatformCapabilities {
+    fn default() -> Self {
+        Self {
+            supports_monitoring: true,
+            supports_signals: cfg!(unix),
+            supports_process_groups: cfg!(unix),
+            supports_memory_mapping: true,
+            max_processes: None,
+        }
+    }
+}
+
+/// Platform-specific process handler trait
+pub trait PlatformHandler: std::fmt::Debug + Send + Sync {
+    /// Get platform capabilities
+    fn capabilities(&self) -> &PlatformCapabilities;
+    
+    /// Create a new process
+    fn create_process(&self, command: &str, args: &[String]) -> ProcessResult<u32>;
+    
+    /// Kill a process
+    fn kill_process(&self, pid: u32) -> ProcessResult<()>;
+    
+    /// Get process info
+    fn get_process_info(&self, pid: u32) -> ProcessResult<HashMap<String, String>>;
+    
+    /// Platform-specific initialization
+    fn initialize(&mut self) -> ProcessResult<()>;
+    
+    /// Platform-specific cleanup
+    fn cleanup(&mut self) -> ProcessResult<()>;
+}
+
 /// Platform-specific process utilities
 pub struct PlatformUtils;
 

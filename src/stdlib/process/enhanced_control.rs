@@ -18,6 +18,33 @@ use crate::stdlib::process::fork::{JobControlManager, fork_process, exec_program
 use crate::stdlib::process::resource_limits::{ResourceLimitManager, ResourceType, ResourceLimit};
 use crate::stdlib::process::privileges::{PrivilegeManager, SecureEnvironment};
 
+/// Options for enhanced process control operations
+#[derive(Debug, Clone)]
+pub struct EnhancedControlOptions {
+    /// Maximum number of concurrent processes
+    pub max_concurrent: usize,
+    /// Default timeout for process operations
+    pub default_timeout: Duration,
+    /// Enable resource monitoring
+    pub enable_monitoring: bool,
+    /// Enable process hierarchy tracking
+    pub enable_hierarchy: bool,
+    /// Maximum retries for failed operations
+    pub max_retries: u32,
+}
+
+impl Default for EnhancedControlOptions {
+    fn default() -> Self {
+        Self {
+            max_concurrent: 100,
+            default_timeout: Duration::from_secs(30),
+            enable_monitoring: true,
+            enable_hierarchy: true,
+            max_retries: 3,
+        }
+    }
+}
+
 /// Enhanced process controller with comprehensive management capabilities
 pub struct EnhancedProcessController {
     /// Map of managed processes
@@ -38,6 +65,67 @@ pub struct EnhancedProcessController {
     resource_manager: Arc<Mutex<ResourceLimitManager>>,
     /// Privilege manager
     privilege_manager: Arc<Mutex<Option<PrivilegeManager>>>,
+}
+
+/// Enhanced process wrapper with advanced management capabilities
+#[derive(Debug)]
+pub struct EnhancedProcess {
+    /// Process information
+    pub info: EnhancedProcessInfo,
+    /// Process handle
+    pub handle: Option<std::process::Child>,
+    /// Configuration
+    pub config: ProcessConfig,
+    /// Resource monitoring
+    pub monitor: Option<Arc<Mutex<ProcessMonitor>>>,
+    /// Status tracking
+    pub status_tracker: Arc<Mutex<ProcessStatusTracker>>,
+}
+
+impl EnhancedProcess {
+    pub fn new(pid: u32, handle: Option<std::process::Child>) -> ProcessResult<Self> {
+        Ok(Self {
+            info: EnhancedProcessInfo::new(pid),
+            handle,
+            config: ProcessConfig::default(),
+            monitor: None,
+            status_tracker: Arc::new(Mutex::new(ProcessStatusTracker::new(pid))),
+        })
+    }
+    
+    pub fn pid(&self) -> u32 {
+        self.info.pid
+    }
+    
+    pub fn status(&self) -> ProcessStatus {
+        self.info.status
+    }
+}
+
+/// Process status tracking
+#[derive(Debug)]
+pub struct ProcessStatusTracker {
+    pub pid: u32,
+    pub status: ProcessStatus,
+    pub last_update: Instant,
+}
+
+impl ProcessStatusTracker {
+    pub fn new(pid: u32) -> Self {
+        Self {
+            pid,
+            status: ProcessStatus::Creating,
+            last_update: Instant::now(),
+        }
+    }
+}
+
+/// Process monitor for resource tracking
+#[derive(Debug)]
+pub struct ProcessMonitor {
+    pub pid: u32,
+    pub enabled: bool,
+    pub last_check: Instant,
 }
 
 /// Enhanced process information with comprehensive metadata
@@ -62,6 +150,32 @@ pub struct EnhancedProcessInfo {
     pub io_statistics: IoStatistics,
     pub security_context: SecurityContext,
     pub resource_limits: ResourceLimits,
+}
+
+impl EnhancedProcessInfo {
+    pub fn new(pid: u32) -> Self {
+        Self {
+            pid,
+            internal_id: 0,
+            command: String::new(),
+            args: Vec::new(),
+            status: ProcessStatus::Creating,
+            start_time: Instant::now(),
+            parent_pid: None,
+            children: HashSet::new(),
+            working_dir: None,
+            environment: HashMap::new(),
+            resource_usage: ResourceUsage::default(),
+            exit_info: None,
+            process_group: None,
+            session_id: None,
+            priority: Priority::default(),
+            metadata: HashMap::new(),
+            io_statistics: IoStatistics::default(),
+            security_context: SecurityContext::default(),
+            resource_limits: ResourceLimits::default(),
+        }
+    }
 }
 
 /// Process status enumeration with detailed states
@@ -91,6 +205,72 @@ pub enum ProcessStatus {
     Uninterruptible,
 }
 
+/// Resource usage tracking
+#[derive(Debug, Clone, Default)]
+pub struct ResourceUsage {
+    pub cpu_time: Duration,
+    pub memory_bytes: u64,
+    pub io_read_bytes: u64,
+    pub io_write_bytes: u64,
+}
+
+/// I/O statistics tracking
+#[derive(Debug, Clone, Default)]
+pub struct IoStatistics {
+    pub read_ops: u64,
+    pub write_ops: u64,
+    pub bytes_read: u64,
+    pub bytes_written: u64,
+}
+
+/// Security context information
+#[derive(Debug, Clone, Default)]
+pub struct SecurityContext {
+    pub user_id: Option<u32>,
+    pub group_id: Option<u32>,
+    pub capabilities: Vec<String>,
+}
+
+/// Resource limits configuration
+#[derive(Debug, Clone, Default)]
+pub struct ResourceLimits {
+    pub max_memory: Option<u64>,
+    pub max_cpu_time: Option<Duration>,
+    pub max_file_descriptors: Option<u32>,
+}
+
+/// Process exit information
+#[derive(Debug, Clone)]
+pub struct ProcessExitInfo {
+    pub exit_code: i32,
+    pub signal: Option<i32>,
+    pub exit_time: Instant,
+    pub reason: ExitReason,
+}
+
+#[derive(Debug, Clone)]
+pub enum ExitReason {
+    Normal,
+    Signal(i32),
+    Error(String),
+}
+
+/// Process priority levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Priority {
+    Highest,
+    High, 
+    Normal,
+    Low,
+    Lowest,
+}
+
+impl Default for Priority {
+    fn default() -> Self {
+        Priority::Normal
+    }
+}
+
 /// Process hierarchy tracking
 #[derive(Debug, Clone)]
 pub struct ProcessHierarchy {
@@ -104,77 +284,6 @@ pub struct ProcessHierarchy {
     sessions: HashMap<u32, HashSet<u32>>,
     /// Process creation order
     creation_order: Vec<u32>,
-}
-
-/// Resource usage information
-#[derive(Debug, Clone, Default)]
-pub struct ResourceUsage {
-    pub cpu_time_user: Duration,
-    pub cpu_time_system: Duration,
-    pub cpu_percent: f64,
-    pub memory_rss: u64,        // Resident set size in bytes
-    pub memory_vms: u64,        // Virtual memory size in bytes
-    pub memory_percent: f64,
-    pub open_files: u32,
-    pub network_connections: u32,
-    pub threads: u32,
-    pub last_updated: Option<SystemTime>,
-    pub peak_memory: u64,
-    pub total_read_bytes: u64,
-    pub total_write_bytes: u64,
-    pub syscalls_read: u64,
-    pub syscalls_write: u64,
-}
-
-/// Process exit information
-#[derive(Debug, Clone)]
-pub struct ProcessExitInfo {
-    pub exit_code: Option<i32>,
-    pub signal: Option<i32>,
-    pub exit_time: SystemTime,
-    pub core_dumped: bool,
-    pub total_runtime: Duration,
-    pub total_cpu_time: Duration,
-    pub peak_memory_usage: u64,
-}
-
-/// I/O statistics for processes
-#[derive(Debug, Clone, Default)]
-pub struct IoStatistics {
-    pub stdin_bytes: u64,
-    pub stdout_bytes: u64,
-    pub stderr_bytes: u64,
-    pub disk_read_bytes: u64,
-    pub disk_write_bytes: u64,
-    pub network_read_bytes: u64,
-    pub network_write_bytes: u64,
-    pub last_updated: Option<SystemTime>,
-}
-
-/// Security context for processes
-#[derive(Debug, Clone, Default)]
-pub struct SecurityContext {
-    pub user_id: Option<u32>,
-    pub group_id: Option<u32>,
-    pub effective_user_id: Option<u32>,
-    pub effective_group_id: Option<u32>,
-    pub supplementary_groups: Vec<u32>,
-    pub capabilities: Vec<String>,
-    pub selinux_context: Option<String>,
-    pub apparmor_profile: Option<String>,
-}
-
-/// Resource limits for processes
-#[derive(Debug, Clone, Default)]
-pub struct ResourceLimits {
-    pub max_memory: Option<u64>,
-    pub max_cpu_time: Option<Duration>,
-    pub max_open_files: Option<u32>,
-    pub max_threads: Option<u32>,
-    pub max_network_connections: Option<u32>,
-    pub max_disk_read: Option<u64>,
-    pub max_disk_write: Option<u64>,
-    pub timeout: Option<Duration>,
 }
 
 /// Controller configuration

@@ -83,7 +83,7 @@ pub mod core_types;
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};
 pub use expressions::*;
 // Use explicit imports to avoid E0659 conflicts between statements and conditionals
-pub use statements::{ExpressionStatement, ReturnStatement, BreakStatement, ContinueStatement, ThrowStatement, TryStatement, CatchStatement, FinallyStatement, ImportStatement, PackageStatement, MutStatement, ConstStatement, AssignmentStatement, ChannelReceiveStatement, ChannelSendStatement, ChannelCloseStatement};
+pub use statements::{ExpressionStatement, ReturnStatement, BreakStatement, ContinueStatement, ThrowStatement, TryStatement, CatchStatement, FinallyStatement, ImportStatement, PackageStatement, MutStatement, ConstStatement, AssignmentStatement, ChannelReceiveStatement, ChannelSendStatement, ChannelCloseStatement, LetStatement, FactsStatement};
 pub use declarations::{FunctionStatement, FunctionDeclaration, SquadStatement, CollabStatement, GenericConstraint, AsyncFunctionStatement, AsyncFunctionDeclaration, StructDeclaration, InterfaceDeclaration};
 pub use literals::*;
 pub use operators::*;
@@ -196,82 +196,7 @@ impl Default for Program {
     }
 }
 
-/// Package declaration statement (vibe package_name)
-#[derive(Debug, Clone)]
-pub struct PackageStatement {
-    pub token: Token,
-    pub name: String,
-}
 
-impl Node for PackageStatement {
-    fn string(&self) -> String {
-        format!("vibe {}", self.name)
-    }
-
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-}
-
-impl Statement for PackageStatement {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    
-    fn clone_box(&self) -> Box<dyn Statement> {
-        Box::new(self.clone())
-    }
-}
-
-/// Import statement (yeet "package_path")
-#[derive(Debug, Clone)]
-pub struct ImportStatement {
-    pub token: Token,
-    pub path: String,
-    pub alias: Option<String>,
-}
-
-impl ImportStatement {
-    pub fn new(token: Token, path: String) -> Self {
-        Self {
-            token,
-            path,
-            alias: None,
-        }
-    }
-    
-    pub fn with_alias(token: Token, path: String, alias: String) -> Self {
-        Self {
-            token,
-            path,
-            alias: Some(alias),
-        }
-    }
-}
-
-impl Node for ImportStatement {
-    fn string(&self) -> String {
-        if let Some(alias) = &self.alias {
-            format!("yeet {} \"{}\"", alias, self.path)
-        } else {
-            format!("yeet \"{}\"", self.path)
-        }
-    }
-
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
-    }
-}
-
-impl Statement for ImportStatement {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    
-    fn clone_box(&self) -> Box<dyn Statement> {
-        Box::new(self.clone())
-    }
-}
 
 /// Enum representing different types of AST nodes
 #[derive(Debug, Clone)]

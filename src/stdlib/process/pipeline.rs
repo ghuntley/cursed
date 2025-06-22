@@ -16,6 +16,24 @@ use crate::stdlib::process::error::{
 };
 use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayOptions, SlayProcessState};
 
+/// Process pipeline alias for consistency
+pub type ProcessPipeline = SlayPipeline;
+
+/// Pipeline stage information  
+#[derive(Debug, Clone)]
+pub struct PipelineStage {
+    /// Stage index in pipeline
+    pub index: usize,
+    /// Command for this stage
+    pub command: SlayCommand,
+    /// Stage state
+    pub state: PipelineState,
+    /// Stage start time
+    pub start_time: Option<Instant>,
+    /// Stage completion time
+    pub end_time: Option<Instant>,
+}
+
 /// SlayPipeline manages a series of commands connected via pipes
 #[derive(Debug)]
 pub struct SlayPipeline {
