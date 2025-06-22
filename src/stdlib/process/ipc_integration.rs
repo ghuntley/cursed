@@ -606,6 +606,10 @@ pub fn create_enhanced_process_communication(
 mod tests {
     use super::*;
     use crate::stdlib::process::core::ProcessConfig;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
+use crate::stdlib::process::real_ipc::IpcMessage;
 
     #[test]
     fn test_coordinator_creation() {

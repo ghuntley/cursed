@@ -553,6 +553,9 @@ pub fn parse_and_run_shell_pipeline(pipeline_str: &str) -> ProcessResult<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_pipeline_creation() {

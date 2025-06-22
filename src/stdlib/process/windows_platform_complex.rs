@@ -790,6 +790,7 @@ impl WindowsProcessGroupManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_windows_platform_handler_creation() {

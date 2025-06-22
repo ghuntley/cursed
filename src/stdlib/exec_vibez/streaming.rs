@@ -366,6 +366,7 @@ pub fn get_active_streamer_count() -> usize {
 mod tests {
     use super::*;
     use crate::stdlib::exec_vibez::cmd::Cmd;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_output_streamer_creation() {

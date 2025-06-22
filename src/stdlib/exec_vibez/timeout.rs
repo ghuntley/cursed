@@ -297,6 +297,7 @@ impl Default for TimeoutManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_timeout_config_creation() {

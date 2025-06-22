@@ -917,6 +917,9 @@ pub fn send_windows_signal(pid: u32, signal: i32) -> ProcessResult<()> {
     use winapi::um::winnt::{PROCESS_TERMINATE, CTRL_C_EVENT, CTRL_BREAK_EVENT};
     use winapi::um::handleapi::CloseHandle;
     use winapi::shared::minwindef::FALSE;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
     
     match signal {
         libc::SIGTERM | libc::SIGINT => {

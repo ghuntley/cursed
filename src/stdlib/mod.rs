@@ -300,14 +300,25 @@ pub use collections::{
     // Stack types - LIFO collections with various specializations
     Stack, FixedStack, ThreadSafeStack, StackWithMin,
     
-    // Simple Iterator System
-    SimpleIterator, SimpleIntoIterator, VecIterator, RangeIterator,
+    // Simple Iterator System - Primary public API
+    SimpleIterator, SimpleIntoIterator, 
+    VecIterator as SimpleVecIterator, RangeIterator as SimpleRangeIterator,
     
-    // Iterator Adapters
-    MapIterator, FilterIterator, TakeIterator, SkipIterator,
+    // Simple Iterator Adapters
+    MapIterator as SimpleMapIterator, FilterIterator as SimpleFilterIterator, 
+    TakeIterator, SkipIterator,
     
     // Iterator Utilities
     SimpleIteratorUtils,
+    
+    // Full Iterator System - Advanced usage
+    Iterator as AdvancedIterator, IntoIterator as AdvancedIntoIterator,
+    iterators::VecIterator as AdvancedVecIterator, 
+    iterators::RangeIterator as AdvancedRangeIterator,
+    iterators::MapIterator as AdvancedMapIterator,
+    iterators::FilterIterator as AdvancedFilterIterator,
+    // Iterator utilities and extensions
+    IteratorExt, IteratorUtils,
     
     // Utility Functions
     simple_range, simple_range_step,

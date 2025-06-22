@@ -499,6 +499,7 @@ impl ChannelPair {
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::real_ipc::IpcChannel;
 
     #[test]
     fn test_in_memory_channel_basic() {

@@ -510,6 +510,10 @@ mod tests {
     use crate::stdlib::process::core::{ProcessConfig};
     use crate::stdlib::process::communication::{ProcessIo};
     use std::time::Duration;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_lifecycle_manager_creation() {

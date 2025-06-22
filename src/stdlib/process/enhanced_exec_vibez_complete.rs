@@ -1217,6 +1217,7 @@ pub fn new_environment() -> Environment {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_enhanced_cmd_creation() {

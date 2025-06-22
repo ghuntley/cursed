@@ -2,7 +2,8 @@
 /// 
 /// This module implements compilation of control flow statements to LLVM IR
 
-use crate::ast::statements::control_flow::{IfStatement, WhileStatement, ForStatement, BreakStatement, ContinueStatement};
+use crate::ast::conditionals::{IfStatement, WhileStatement, ForStatement};
+use crate::ast::statements::{BreakStatement, ContinueStatement};
 use crate::ast::block::BlockStatement;
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::error::Error;

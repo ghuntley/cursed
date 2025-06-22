@@ -252,6 +252,7 @@ pub(crate) fn get_shell_args(use_shell: bool, shell_path: Option<&str>) -> Vec<S
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
 
     #[test]
     fn test_slay_options_default() {

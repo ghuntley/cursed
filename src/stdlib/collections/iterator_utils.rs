@@ -658,6 +658,7 @@ impl<I, T> IteratorExt<T> for I where I: Iterator<T> {}
 mod tests {
     use super::*;
     use crate::stdlib::collections::iterators::{range, VecIterator};
+    use crate::stdlib::collections::iterators_simple::{SimpleIterator, SimpleIntoIterator};
 
     #[test]
     fn test_partition() {

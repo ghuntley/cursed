@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use crate::stdlib::process::info::ProcessInfo;
 
 pub struct MacOSProcessManager {
     processes: Arc<Mutex<HashMap<u32, ProcessInfo>>>,

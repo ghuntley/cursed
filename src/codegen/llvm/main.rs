@@ -1339,7 +1339,7 @@ impl LlvmCodeGenerator {
     /// Compile a statement to LLVM IR
     pub fn compile_statement(&mut self, stmt: &dyn crate::ast::traits::Statement) -> Result<(), Error> {
         use crate::ast::statements::{PanicStatement, RecoveryStatement};
-        use crate::ast::statements::control_flow::SwitchStatement;
+        use crate::ast::conditionals::SwitchStatement;
         use crate::runtime::panic::{PanicSeverity, PanicCategory};
         
         // Try to downcast to specific statement types
@@ -1612,7 +1612,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile a type switch statement (vibe_check with type cases)
-    fn compile_type_switch_statement(&mut self, switch_stmt: &crate::ast::statements::control_flow::SwitchStatement) -> Result<(), Error> {
+    fn compile_type_switch_statement(&mut self, switch_stmt: &crate::ast::conditionals::SwitchStatement) -> Result<(), Error> {
         use crate::codegen::llvm::type_switch::IntegratedTypeSwitchCompiler;
         
         tracing::info!("Compiling type switch statement");
@@ -1637,7 +1637,7 @@ impl LlvmCodeGenerator {
     /// Parse type switch from SwitchStatement AST
     fn parse_type_switch_from_statement(
         &self,
-        switch_stmt: &crate::ast::statements::control_flow::SwitchStatement
+        switch_stmt: &crate::ast::conditionals::SwitchStatement
     ) -> Result<(Box<dyn crate::ast::traits::Expression>, Vec<crate::codegen::llvm::type_switch::TypeCase>, Option<Vec<Box<dyn crate::ast::traits::Statement>>>), Error> {
         use crate::codegen::llvm::type_switch::TypeCase;
         

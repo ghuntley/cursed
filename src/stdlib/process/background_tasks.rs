@@ -772,6 +772,9 @@ pub fn run_background_with_config(command: SlayCommand, config: TaskConfig) -> P
 mod tests {
     use super::*;
     use crate::stdlib::process::enhanced_exec_slay::SlayCommand;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_task_creation() {

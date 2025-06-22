@@ -336,6 +336,7 @@ mod tests {
     use super::*;
     use crate::stdlib::exec_slay::SlayCommand;
     use std::time::Duration;
+use crate::stdlib::process::info::ProcessState;
 
     #[test]
     fn test_task_status_display() {

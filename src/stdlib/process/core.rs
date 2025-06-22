@@ -1845,6 +1845,11 @@ impl ProcessHandle {
         {
             use std::os::unix::process::ExitStatusExt;
             use std::process::ExitStatus;
+use crate::stdlib::process::core::ProcessHandle;
+use crate::stdlib::process::info::ProcessInfo;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
             
             // Wait for the process using waitpid
             let mut status: libc::c_int = 0;

@@ -1,5 +1,7 @@
 /// Code formatter for CURSED
 use crate::ast::*;
+use crate::ast::conditionals::{IfStatement, ForStatement, SwitchStatement, RangeForStatement, WhileStatement};
+use crate::ast::statements::{ThrowStatement, TryStatement, CatchStatement};
 use crate::error::Error;
 use crate::parser::Parser;
 use crate::lexer::Lexer;

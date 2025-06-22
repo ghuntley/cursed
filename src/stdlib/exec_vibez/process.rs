@@ -248,6 +248,7 @@ mod tests {
     #[test]
     fn test_process_state_creation() {
         use std::process::ExitStatus;
+use crate::stdlib::process::info::ProcessState;
         
         // Create a mock exit status for testing
         // This is a bit tricky since ExitStatus can't be constructed directly

@@ -27,6 +27,7 @@ pub use common::OptimizationLevel;
 
 // Re-export enhanced debug information types
 pub use runtime::{
+    Runtime, GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler,
     EnhancedDebugInfo, EnhancedStackFrame, EnhancedStackTrace, VariableInfo,
     StackTraceCapture, EnhancedStackTraceConfig, SymbolResolver, SymbolInfo,
     DebugManager, SourceFile, FunctionDebugInfo, DebugManagerConfig, DebugManagerStats

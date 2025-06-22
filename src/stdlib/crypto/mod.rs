@@ -65,7 +65,7 @@ pub use crypto_advanced::{
 };
 
 pub use types::{
-    CryptoError,
+    CryptoError, CryptoPlatform,
     HashFunction, SymmetricAlgorithm, AsymmetricAlgorithm, KeyMaterial, KeyType,
     CryptoContext, SecurityLevel, KeySizeRecommendations,
     CryptoParameters, SecurityContext,

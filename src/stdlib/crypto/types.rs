@@ -5,6 +5,55 @@
 
 use std::collections::HashMap;
 
+/// Platform-specific cryptographic operations
+#[derive(Debug, Clone)]
+pub struct CryptoPlatform {
+    /// Platform identifier
+    pub platform_id: String,
+    /// Supported algorithms
+    pub supported_algorithms: Vec<String>,
+    /// Hardware acceleration support
+    pub hardware_acceleration: bool,
+}
+
+impl CryptoPlatform {
+    /// Create a new crypto platform
+    pub fn new() -> Result<Self, CryptoError> {
+        Ok(Self {
+            platform_id: "default".to_string(),
+            supported_algorithms: vec![
+                "AES-256-GCM".to_string(),
+                "ChaCha20-Poly1305".to_string(),
+                "Ed25519".to_string(),
+                "X25519".to_string(),
+            ],
+            hardware_acceleration: false,
+        })
+    }
+
+    /// Constant-time equality comparison
+    pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+        if a.len() != b.len() {
+            return false;
+        }
+        let mut result = 0u8;
+        for (byte_a, byte_b) in a.iter().zip(b.iter()) {
+            result |= byte_a ^ byte_b;
+        }
+        result == 0
+    }
+}
+
+impl Default for CryptoPlatform {
+    fn default() -> Self {
+        Self::new().unwrap_or_else(|_| Self {
+            platform_id: "fallback".to_string(),
+            supported_algorithms: vec![],
+            hardware_acceleration: false,
+        })
+    }
+}
+
 /// Ed25519 public key type
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ed25519PublicKey {

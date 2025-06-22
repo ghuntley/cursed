@@ -2582,6 +2582,9 @@ fn get_shell_command(cmd_string: &str) -> SlayCommand {
     #[cfg(unix)]
     mod integration_tests {
         use super::*;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
         #[test]
         fn test_echo_command_execution() {

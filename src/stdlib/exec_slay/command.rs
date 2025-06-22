@@ -306,6 +306,7 @@ impl Clone for SlayCommand {
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::info::ProcessState;
 
     #[test]
     fn test_new_slay_command() {

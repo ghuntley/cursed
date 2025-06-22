@@ -443,6 +443,9 @@ pub fn shell_script_output<P: AsRef<Path>>(script_path: P, config: Option<ShellC
 mod tests {
     use super::*;
     use std::time::Duration;
+use crate::stdlib::process::info::ProcessState;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_shell_config_default() {

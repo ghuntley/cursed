@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use std::alloc::{alloc, dealloc, Layout};
 use std::ptr::NonNull;
+use std::sync::OnceLock;
 
 // Mark stack as Send for threading (unsafe but necessary for scheduler)
 unsafe impl Send for GoroutineStack {}
@@ -18,6 +19,9 @@ unsafe impl Sync for GoroutineStack {}
 
 /// Global goroutine ID counter
 static GOROUTINE_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+
+/// Global goroutine scheduler instance
+static GLOBAL_SCHEDULER: OnceLock<Arc<Mutex<GoroutineScheduler>>> = OnceLock::new();
 
 /// Generate a unique goroutine ID
 fn next_goroutine_id() -> u64 {
@@ -757,6 +761,37 @@ pub extern "C" fn cursed_gc_requested(scheduler_ptr: *mut GoroutineScheduler) ->
     
     tracing::trace!("GC coordination requested: {}", requested);
     requested
+}
+
+/// Initialize the global goroutine scheduler
+pub fn initialize_global_scheduler() -> Result<(), Error> {
+    let scheduler = GoroutineScheduler::new();
+    GLOBAL_SCHEDULER.set(Arc::new(Mutex::new(scheduler)))
+        .map_err(|_| Error::Runtime("Global scheduler already initialized".to_string()))?;
+    
+    // Start the scheduler
+    if let Some(scheduler_ref) = get_global_scheduler() {
+        let mut scheduler = scheduler_ref.lock()
+            .map_err(|_| Error::Runtime("Failed to lock global scheduler".to_string()))?;
+        scheduler.start()?;
+    }
+    
+    Ok(())
+}
+
+/// Get the global goroutine scheduler
+pub fn get_global_scheduler() -> Option<Arc<Mutex<GoroutineScheduler>>> {
+    GLOBAL_SCHEDULER.get().cloned()
+}
+
+/// Shutdown the global goroutine scheduler
+pub fn shutdown_global_scheduler() -> Result<(), Error> {
+    if let Some(scheduler_ref) = get_global_scheduler() {
+        let mut scheduler = scheduler_ref.lock()
+            .map_err(|_| Error::Runtime("Failed to lock global scheduler".to_string()))?;
+        scheduler.stop()?;
+    }
+    Ok(())
 }
 
 // External dependency placeholder - replace with actual crate

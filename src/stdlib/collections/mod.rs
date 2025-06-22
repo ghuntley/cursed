@@ -12,7 +12,9 @@ pub mod sets;
 pub mod queues;
 pub mod stacks;
 pub mod heap_slay;
+pub mod iterators;
 pub mod iterators_simple;
+pub mod iterator_utils;
 pub mod advanced;
 pub mod sorta_fresh;
 
@@ -25,7 +27,10 @@ pub use heap_slay::{
     HeapSorter, BinaryHeap, MinHeap, MaxHeap, HeapIterator,
     PriorityQueue as HeapPriorityQueue, HeapError
 };
+// Re-export iterator systems
+pub use iterators::*;
 pub use iterators_simple::*;
+pub use iterator_utils::*;
 pub use advanced::*;
 pub use sorta_fresh::*;
 

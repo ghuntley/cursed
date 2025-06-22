@@ -1774,6 +1774,7 @@ pub fn combined_output_with_timeout(mut cmd: EnhancedSlayCommand, timeout: Durat
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::info::ProcessState;
     
     #[test]
     fn test_enhanced_slay_command_creation() {

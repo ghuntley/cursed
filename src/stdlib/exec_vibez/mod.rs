@@ -36,6 +36,7 @@ pub use enhanced::{
 
 // Module initialization
 use std::sync::Once;
+use crate::stdlib::process::info::ProcessState;
 
 static INIT: Once = Once::new();
 

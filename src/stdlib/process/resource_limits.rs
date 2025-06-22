@@ -641,6 +641,8 @@ pub fn get_cpu_time() -> ProcessResult<Duration> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::stdlib::process::error::ProcessResult;
+use crate::stdlib::process::error::ProcessError;
 
     #[test]
     fn test_resource_limit() {
