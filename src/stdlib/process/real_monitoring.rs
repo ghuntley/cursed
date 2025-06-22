@@ -324,7 +324,7 @@ fn get_real_memory_info(pid: u32) -> ProcessResult<RealMemoryInfo> {
 }
 
 /// Get real CPU times for a process
-fn get_real_cpu_times(pid: u32) -> ProcessResult<(Duration, Duration)> {
+pub fn get_real_cpu_times(pid: u32) -> ProcessResult<(Duration, Duration)> {
     #[cfg(target_os = "linux")]
     {
         use std::fs;

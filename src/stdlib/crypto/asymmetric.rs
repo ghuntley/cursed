@@ -11,7 +11,7 @@ use crate::stdlib::value::Value;
 use crate::error::CursedError;
 
 // External crypto crates
-use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep, Pss};
+pub use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep, Pss};
 use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::sha2::{Sha256, Sha384, Sha512};
 use p256::{SecretKey as P256SecretKey, PublicKey as P256PublicKey, ecdsa::{Signature as P256Signature, SigningKey as P256SigningKey, VerifyingKey as P256VerifyingKey}};

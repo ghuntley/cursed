@@ -1,5 +1,5 @@
 /// fr fr Symmetric cipher trait and implementations
-use super::errors::*;
+pub use super::errors::*;
 
 /// Trait for symmetric cipher operations
 pub trait SymmetricCipher: std::fmt::Debug {

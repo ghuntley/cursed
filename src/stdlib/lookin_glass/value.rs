@@ -14,7 +14,7 @@ pub struct Value {
 
 /// Internal data storage for values
 #[derive(Debug, Clone)]
-enum ValueData {
+pub enum ValueData {
     Invalid,
     Bool(bool),
     Int(i64),

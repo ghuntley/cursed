@@ -19,7 +19,7 @@ use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Digest};
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
-use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
+pub use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 // Note: In a real implementation, these would use actual Kyber implementations
 // For this example, we'll use placeholder implementations that demonstrate the API

@@ -7,7 +7,7 @@
 /// - Cache-friendly data structures
 
 use crate::error::{Error, Result};
-use crate::optimization::config::{RuntimeOptimizationConfig, JitOptimizationConfig, PgoConfig};
+pub use crate::optimization::config::{RuntimeOptimizationConfig, JitOptimizationConfig, PgoConfig};
 use crate::codegen::llvm::jit_compilation::{JitCompilationInterface, JitCompilationConfig};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};

@@ -27,7 +27,7 @@ use crate::stdlib::packages::db_sql::drivers::{
 };
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult, DatabaseError};
 use async_trait::async_trait;
-use tokio_postgres::{Client, NoTls, Error as PgError, Row as PgRow, Statement, Transaction as PgTransaction};
+pub use tokio_postgres::{Client, NoTls, Error as PgError, Row as PgRow, Statement, Transaction as PgTransaction};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use std::collections::HashMap;

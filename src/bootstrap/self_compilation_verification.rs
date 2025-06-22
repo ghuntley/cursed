@@ -190,10 +190,10 @@ impl SelfCompilationVerifier {
     }
 
     /// Run the complete bootstrap verification process
-    pub async fn run_verification(&self) -> Result<BootstrapVerificationResult, Box<dyn std::error::Error>> {
+    pub async fn run_verification(&self) -> Result<VerificationResult, Box<dyn std::error::Error>> {
         println!("🚀 Starting CURSED Bootstrap Verification...");
         
-        let mut result = BootstrapVerificationResult {
+        let mut result = VerificationResult {
             stages: Vec::new(),
             overall_success: false,
             total_time: Duration::default(),

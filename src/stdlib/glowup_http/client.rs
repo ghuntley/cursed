@@ -2,7 +2,7 @@
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::{VibeRequest, Method};
-use crate::stdlib::glowup_http::response::VibeResponse;
+pub use crate::stdlib::glowup_http::response::VibeResponse;
 use reqwest;
 #[cfg(feature = "multipart")]
 use reqwest::multipart;

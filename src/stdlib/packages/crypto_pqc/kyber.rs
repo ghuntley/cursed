@@ -386,7 +386,7 @@ impl ZeroizeOnDrop for KyberEncapsulationResult {}
 
 /// Kyber parameter configuration for different security levels
 #[derive(Debug, Clone, Copy)]
-struct KyberParams {
+pub struct KyberParams {
     k: usize,          // Module dimension
     eta1: u8,          // Noise parameter 1
     eta2: u8,          // Noise parameter 2

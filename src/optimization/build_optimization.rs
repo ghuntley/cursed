@@ -7,7 +7,7 @@
 /// - Debug information optimization
 
 use crate::error::{Error, Result};
-use crate::optimization::config::{
+pub use crate::optimization::config::{
     BuildOptimizationConfig, ParallelCompilationConfig, IncrementalCompilationConfig,
     LtoConfig, DebugInfoConfig, CachingConfig, LoadBalancingStrategy,
     DependencyGranularity, ChangeDetectionStrategy, CacheInvalidationStrategy,

@@ -582,7 +582,7 @@ pub struct PerformanceReport {
     /// Code analysis patterns found
     pub analysis_patterns: Vec<AnalysisPattern>,
     /// Optimization suggestions
-    pub optimization_suggestions: Vec<OptimizationSuggestion>,
+    pub optimization_suggestions: Vec<OptimizationAction>,
     /// Performance bottlenecks identified
     pub bottlenecks: Vec<PerformanceBottleneck>,
     /// Memory usage analysis

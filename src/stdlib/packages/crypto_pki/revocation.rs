@@ -1,6 +1,6 @@
 /// Certificate Revocation Lists (CRL)
 
-use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError, RevocationStatus, RevocationReason};
+pub use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError, RevocationStatus, RevocationReason};
 use crate::stdlib::packages::crypto_pki::certificate::Certificate;
 use std::time::SystemTime;
 

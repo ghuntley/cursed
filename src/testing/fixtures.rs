@@ -4,7 +4,7 @@
 /// and reusable test components for CURSED tests.
 
 use super::{TestError, TestResult as TestingResult};
-use super::framework::{TestFixture, TestValue};
+pub use super::framework::{TestFixture, TestValue};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};

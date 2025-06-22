@@ -13,7 +13,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 
 use crate::stdlib::process::error::{ProcessError, ProcessResult};
-use crate::stdlib::process::exec_slay::{
+pub use crate::stdlib::process::exec_slay::{
     SlayCommand, SlayProcess, SlayProcessState, SlayOptions, SlayPipeline,
     SlayTask, SlayCommandBuilder, ProcessStats, SignalOptions
 };

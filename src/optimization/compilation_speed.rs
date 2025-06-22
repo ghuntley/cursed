@@ -3,7 +3,7 @@
 //! This module provides utilities for optimizing compilation speed through
 //! parallel processing, caching, and intelligent resource utilization.
 
-use super::metrics::{CompilationUnit, CompilationStatistics, SystemStatistics, ResourceStatistics};
+pub use super::metrics::{CompilationUnit, CompilationStatistics, SystemStatistics, ResourceStatistics};
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
