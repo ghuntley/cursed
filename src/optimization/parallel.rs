@@ -866,22 +866,22 @@ impl ParallelCompiler {
     fn apply_compilation_flag(config: &mut OptimizationConfig, flag: &str) {
         match flag {
             "-O0" | "--no-optimization" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::None;
+                config.optimization_level = crate::optimization::config::OptimizationLevel::O0;
             }
             "-O1" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::Less;
+                config.optimization_level = crate::optimization::config::OptimizationLevel::O1;
             }
             "-O2" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::Default;
+                config.optimization_level = crate::optimization::config::OptimizationLevel::O2;
             }
             "-O3" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::Aggressive;
+                config.optimization_level = crate::optimization::config::OptimizationLevel::O3;
             }
             "-Os" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::Size;
+                config.optimization_level = crate::optimization::config::OptimizationLevel::Os;
             }
             "-Oz" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::SizeAggressive;
+                config.optimization_level = crate::optimization::config::OptimizationLevel::OsAggressive;
             }
             "--enable-vectorization" => {
                 config.llvm_passes.enable_vectorization = true;
@@ -960,7 +960,7 @@ impl ParallelCompiler {
             &target_triple,
             "generic",
             "",
-            OptimizationLevel::Default,
+            OptimizationLevel::O2,
             RelocMode::Default,
             CodeModel::Default,
         ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))?;

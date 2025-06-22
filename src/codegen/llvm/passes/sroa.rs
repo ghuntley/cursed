@@ -4,7 +4,8 @@
 /// components when beneficial. It promotes memory operations to register operations
 /// and enables further optimizations by exposing scalar values.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,
@@ -65,11 +66,11 @@ impl<'ctx> OptimizationPass<'ctx> for SroaPass<'ctx> {
     }
     
     fn should_run(&self, config: &PassConfiguration) -> bool {
-        config.enable_memory_optimizations && config.optimization_level >= OptimizationLevel::Basic
+        config.enable_memory_optimizations && config.optimization_level >= OptimizationLevel::O1
     }
     
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Basic
+        OptimizationLevel::O1
     }
     
     fn estimated_execution_time(&self) -> Duration {

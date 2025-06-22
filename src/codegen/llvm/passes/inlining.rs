@@ -3,7 +3,8 @@
 /// Implements intelligent function inlining decisions based on cost-benefit analysis,
 /// call site characteristics, and optimization heuristics.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,
@@ -29,7 +30,7 @@ impl InliningPass {
         let inlining_config = InliningConfig {
             enabled: config.enable_inlining,
             max_inline_size: config.max_inline_size,
-            aggressive_inlining: config.optimization_level >= OptimizationLevel::Aggressive,
+            aggressive_inlining: config.optimization_level >= OptimizationLevel::O3,
             size_optimization: config.enable_size_optimizations,
             preserve_debug_info: config.enable_debug_info_preservation,
             hot_path_threshold: 100, // Call count threshold for hot paths
@@ -239,11 +240,11 @@ impl<'ctx> OptimizationPass<'ctx> for InliningPass {
     
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_inlining && 
-        config.optimization_level >= OptimizationLevel::Basic
+        config.optimization_level >= OptimizationLevel::O1
     }
     
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Basic
+        OptimizationLevel::O1
     }
     
     fn dependencies(&self) -> Vec<String> {
@@ -614,7 +615,7 @@ mod tests {
     fn test_should_run_logic() {
         let mut config = PassConfiguration::default();
         config.enable_inlining = true;
-        config.optimization_level = OptimizationLevel::Basic;
+        config.optimization_level = OptimizationLevel::O1;
         
         let pass = InliningPass::new(config.clone());
         assert!(pass.should_run(&config));

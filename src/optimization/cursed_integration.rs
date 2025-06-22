@@ -307,13 +307,13 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         // Adjust optimization level based on performance score
         if analysis.summary.performance_score < 60.0 {
             // Poor performance, try more aggressive optimization
-            self.config.base_config.level = OptimizationLevel::Aggressive;
+            self.config.base_config.level = OptimizationLevel::O3;
             self.config.base_config.unroll_loops = true;
             self.config.base_config.vectorize_loops = true;
             debug!("Switched to aggressive optimization due to poor performance");
         } else if analysis.summary.performance_score > 90.0 {
             // Good performance, can use lighter optimization for faster compilation
-            self.config.base_config.level = OptimizationLevel::Default;
+            self.config.base_config.level = OptimizationLevel::O2;
             debug!("Using default optimization for already good performance");
         }
         
@@ -323,7 +323,7 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                 CompilationPhase::LLVMOptimization => {
                     if bottleneck.severity > 7 {
                         // Reduce LLVM optimization if it's too slow
-                        self.config.base_config.level = OptimizationLevel::Less;
+                        self.config.base_config.level = OptimizationLevel::O1;
                         warn!("Reduced LLVM optimization level due to bottleneck");
                     }
                 }

@@ -133,14 +133,14 @@ impl PgoPassConfig {
             }
             crate::optimization::pgo::OptimizationAggressiveness::Aggressive => {
                 config.inlining_aggressiveness = 0.9;
-                config.branch_optimization_level = BranchOptimizationLevel::Aggressive;
+                config.branch_optimization_level = BranchOptimizationLevel::O3;
                 config.loop_optimization_aggressiveness = 0.9;
                 config.code_layout_level = CodeLayoutLevel::Advanced;
                 config.safety_level = OptimizationSafetyLevel::Aggressive;
             }
             crate::optimization::pgo::OptimizationAggressiveness::Experimental => {
                 config.inlining_aggressiveness = 1.0;
-                config.branch_optimization_level = BranchOptimizationLevel::Aggressive;
+                config.branch_optimization_level = BranchOptimizationLevel::O3;
                 config.loop_optimization_aggressiveness = 1.0;
                 config.code_layout_level = CodeLayoutLevel::Advanced;
                 config.safety_level = OptimizationSafetyLevel::Experimental;
@@ -702,7 +702,7 @@ impl<'ctx> BranchLayoutPass<'ctx> {
                 optimizations += self.basic_block_reordering(function)?;
                 optimizations += self.optimize_conditional_branches(function)?;
             }
-            BranchOptimizationLevel::Aggressive => {
+            BranchOptimizationLevel::O3 => {
                 optimizations += self.basic_block_reordering(function)?;
                 optimizations += self.optimize_conditional_branches(function)?;
                 optimizations += self.eliminate_redundant_branches(function)?;

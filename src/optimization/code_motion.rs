@@ -1107,7 +1107,7 @@ mod tests {
     #[test]
     fn test_code_motion_optimizer_creation() {
         let context = Context::create();
-        let optimizer = CodeMotionOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = CodeMotionOptimizer::new(&context, OptimizationLevel::O2);
         
         let stats = optimizer.get_statistics();
         assert_eq!(stats.functions_analyzed, 0);

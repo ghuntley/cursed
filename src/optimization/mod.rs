@@ -10,6 +10,7 @@
 //! - Build performance optimization
 
 pub mod config;
+pub mod optimization_config;
 pub mod metrics;
 pub mod compilation_speed;
 // pub mod pgo;  // Using existing pgo directory instead
@@ -42,6 +43,7 @@ pub mod dependency_analyzer;
 pub mod benchmarking;
 pub mod profiling;
 pub mod compiler_passes;
+pub mod types;
 
 // Missing critical modules causing E0433 errors
 pub mod llvm_advanced;
@@ -221,6 +223,12 @@ pub use profiling::{
 pub use compiler_passes::{
     CompilerPassManager, CompilerPass, PassType, PassExecutionResult, PassExecutionConfig, PassExecutionStatistics,
 };
+pub use types::{
+    ComprehensiveOptimizationResult, OptimizationPassResult, OptimizationMetrics,
+    BenchmarkSuite, Benchmark as TypesBenchmark, BenchmarkConfig as TypesBenchmarkConfig, BenchmarkSuiteResults, BenchmarkResult as TypesBenchmarkResult,
+    PerformanceProfiler, ProfilerConfig as TypesProfilerConfig, ProfilingSession as TypesProfilingSession, ProfileData as TypesProfileData, ProfileSample,
+    IncrementalCompilationResult, AdaptationResult,
+};
 
 // Create analysis and utils modules as aliases
 pub mod analysis {
@@ -301,7 +309,8 @@ use crate::error::Result;
 use std::path::Path;
 
 // Re-export core optimization types for CLI and external usage
-pub use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
+pub use crate::common::OptimizationLevel;
+pub use crate::optimization::config::OptimizationConfig;
 
 // Additional optimization types for CLI compatibility  
 pub type OptimizationEngine = LocalOptimizationCoordinator;
@@ -334,7 +343,7 @@ pub use ml_optimization::{
     MLOptimizationEngine, MLOptimizationConfig, ProfilingData,
 };
 pub use ml::{
-    MLOptimizationCoordinator, OptimizationStrategy as MLOptimizationStrategy, OptimizationLevel as MLOptimizationLevel,
+    MLOptimizationCoordinator, OptimizationStrategy as MLOptimizationStrategy,
     OptimizationPass as MLOptimizationPass, CompilationContext, PerformanceStatistics as MLPerformanceStatistics,
 };
 

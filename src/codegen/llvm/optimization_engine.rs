@@ -229,7 +229,7 @@ impl<'ctx> OptimizationEngine<'ctx> {
         let size_before = code_before.len();
         
         let config = OptimizationConfig {
-            level: OptimizationLevel::Less,
+            level: OptimizationLevel::O1,
             enable_parallel_optimization: true,
             enable_caching: true,
             ..Default::default()
@@ -264,7 +264,7 @@ impl<'ctx> OptimizationEngine<'ctx> {
         let size_before = code_before.len();
         
         let config = OptimizationConfig {
-            level: OptimizationLevel::Default,
+            level: OptimizationLevel::O2,
             enable_parallel_optimization: true,
             enable_caching: true,
             ..Default::default()
@@ -301,7 +301,7 @@ impl<'ctx> OptimizationEngine<'ctx> {
         let size_before = code_before.len();
         
         let config = OptimizationConfig {
-            level: OptimizationLevel::Aggressive,
+            level: OptimizationLevel::O3,
             enable_parallel_optimization: true,
             enable_caching: true,
             vectorize_loops: true,

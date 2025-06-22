@@ -4,7 +4,8 @@
 /// alloca/load/store patterns into SSA values. It's essential for enabling
 /// other optimizations by exposing values in registers.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,
@@ -59,11 +60,11 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
     }
     
     fn should_run(&self, config: &PassConfiguration) -> bool {
-        config.enable_memory_optimizations && config.optimization_level >= OptimizationLevel::Basic
+        config.enable_memory_optimizations && config.optimization_level >= OptimizationLevel::O1
     }
     
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Basic
+        OptimizationLevel::O1
     }
     
     fn estimated_execution_time(&self) -> Duration {

@@ -2172,7 +2172,7 @@ impl OptimizationContextAnalyzer {
                     data_structure_complexity: 0.0,
                 },
                 compilation_features: CompilationFeatures {
-                    optimization_level: OptimizationLevel::Default,
+                    optimization_level: OptimizationLevel::O2,
                     target_architecture: std::env::consts::ARCH.to_string(),
                     compiler_flags: vec![],
                     debug_info_enabled: false,
@@ -2578,7 +2578,7 @@ mod tests {
     #[test]
     fn test_optimization_coordinator_creation() {
         let context = Context::create();
-        let coordinator = OptimizationCoordinator::new(&context, OptimizationLevel::Default).unwrap();
+        let coordinator = OptimizationCoordinator::new(&context, OptimizationLevel::O2).unwrap();
         
         let stats = coordinator.get_coordinator_statistics();
         assert_eq!(stats.total_coordinations, 0);

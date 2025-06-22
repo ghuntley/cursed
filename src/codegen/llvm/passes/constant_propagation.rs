@@ -3,7 +3,8 @@
 /// Propagates constant values through the program and folds constant expressions
 /// to reduce runtime computation and improve performance.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,
@@ -27,7 +28,7 @@ pub struct ConstantPropagationPass {
 impl ConstantPropagationPass {
     /// Create a new constant propagation pass
     pub fn new(config: PassConfiguration) -> Self {
-        let interprocedural_analysis = config.optimization_level >= OptimizationLevel::Aggressive;
+        let interprocedural_analysis = config.optimization_level >= OptimizationLevel::O3;
         
         Self {
             statistics: PassStatistics::default(),
@@ -419,11 +420,11 @@ impl<'ctx> OptimizationPass<'ctx> for ConstantPropagationPass {
     
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_constant_propagation && 
-        config.optimization_level >= OptimizationLevel::Basic
+        config.optimization_level >= OptimizationLevel::O1
     }
     
     fn required_optimization_level(&self) -> OptimizationLevel {
-        OptimizationLevel::Basic
+        OptimizationLevel::O1
     }
     
     #[instrument(skip(self, module, context))]
@@ -731,7 +732,7 @@ mod tests {
     fn test_should_run_logic() {
         let mut config = PassConfiguration::default();
         config.enable_constant_propagation = true;
-        config.optimization_level = OptimizationLevel::Basic;
+        config.optimization_level = OptimizationLevel::O1;
         
         let pass = ConstantPropagationPass::new(config.clone());
         assert!(pass.should_run(&config));
@@ -771,12 +772,12 @@ mod tests {
     #[test]
     fn test_interprocedural_analysis_flag() {
         let mut config = PassConfiguration::default();
-        config.optimization_level = OptimizationLevel::Aggressive;
+        config.optimization_level = OptimizationLevel::O3;
         
         let pass = ConstantPropagationPass::new(config);
         assert!(pass.interprocedural_analysis);
         
-        config.optimization_level = OptimizationLevel::Basic;
+        config.optimization_level = OptimizationLevel::O1;
         let pass = ConstantPropagationPass::new(config);
         assert!(!pass.interprocedural_analysis);
     }

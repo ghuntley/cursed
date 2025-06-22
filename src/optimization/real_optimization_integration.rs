@@ -525,7 +525,7 @@ impl RealOptimizationManager {
         let mut recommendations = Vec::new();
 
         // Recommend increasing optimization level if current improvements are good
-        if matches!(optimization_level, OptimizationLevel::Debug | OptimizationLevel::Default) &&
+        if matches!(optimization_level, OptimizationLevel::Debug | OptimizationLevel::O2) &&
            effectiveness_analysis.overall_effectiveness > 0.6 {
             recommendations.push(OptimizationRecommendation {
                 recommendation_type: RecommendationType::IncreaseOptimizationLevel,
@@ -726,7 +726,7 @@ mod tests {
         };
         
         let recommendations = manager.generate_optimization_recommendations(
-            OptimizationLevel::Default,
+            OptimizationLevel::O2,
             &performance_improvements,
             &cpu_efficiency,
             &effectiveness_analysis,

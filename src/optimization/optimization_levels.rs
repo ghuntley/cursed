@@ -29,19 +29,19 @@ impl LevelConfig {
     /// Get configuration for optimization level
     pub fn for_level(level: OptimizationLevel) -> Self {
         match level {
-            OptimizationLevel::None => Self::o0_config(),
-            OptimizationLevel::Less => Self::o1_config(),
-            OptimizationLevel::Default => Self::o2_config(),
-            OptimizationLevel::Aggressive => Self::o3_config(),
-            OptimizationLevel::Size => Self::os_config(),
-            OptimizationLevel::SizeAggressive => Self::oz_config(),
+            OptimizationLevel::O0 => Self::o0_config(),
+            OptimizationLevel::O1 => Self::o1_config(),
+            OptimizationLevel::O2 => Self::o2_config(),
+            OptimizationLevel::O3 => Self::o3_config(),
+            OptimizationLevel::Os => Self::os_config(),
+            OptimizationLevel::OsAggressive => Self::oz_config(),
         }
     }
     
     /// O0 configuration - No optimization
     fn o0_config() -> Self {
         Self {
-            level: OptimizationLevel::None,
+            level: OptimizationLevel::O0,
             description: "No optimization - fastest compilation".to_string(),
             compilation_speed: CompilationSpeed::Fastest,
             runtime_performance: RuntimePerformance::Baseline,
@@ -58,7 +58,7 @@ impl LevelConfig {
                 enable_tail_call_optimization: false,
                 enable_link_time_optimization: false,
             },
-            memory_optimization: MemoryOptimizationLevel::None,
+            memory_optimization: MemoryOptimizationLevel::O0,
             debug_info_level: DebugInfoLevel::Full,
             vectorization_settings: VectorizationSettings::disabled(),
             inlining_settings: InliningSettings::minimal(),
@@ -70,7 +70,7 @@ impl LevelConfig {
     /// O1 configuration - Basic optimization
     fn o1_config() -> Self {
         Self {
-            level: OptimizationLevel::Less,
+            level: OptimizationLevel::O1,
             description: "Basic optimization - good compilation speed".to_string(),
             compilation_speed: CompilationSpeed::Fast,
             runtime_performance: RuntimePerformance::Basic,
@@ -95,7 +95,7 @@ impl LevelConfig {
                 enable_tail_call_optimization: true,
                 enable_link_time_optimization: false,
             },
-            memory_optimization: MemoryOptimizationLevel::Basic,
+            memory_optimization: MemoryOptimizationLevel::O1,
             debug_info_level: DebugInfoLevel::Standard,
             vectorization_settings: VectorizationSettings::conservative(),
             inlining_settings: InliningSettings::conservative(),
@@ -107,7 +107,7 @@ impl LevelConfig {
     /// O2 configuration - Standard optimization
     fn o2_config() -> Self {
         Self {
-            level: OptimizationLevel::Default,
+            level: OptimizationLevel::O2,
             description: "Standard optimization - balanced performance".to_string(),
             compilation_speed: CompilationSpeed::Moderate,
             runtime_performance: RuntimePerformance::Good,
@@ -139,7 +139,7 @@ impl LevelConfig {
                 enable_tail_call_optimization: true,
                 enable_link_time_optimization: false,
             },
-            memory_optimization: MemoryOptimizationLevel::Standard,
+            memory_optimization: MemoryOptimizationLevel::O2,
             debug_info_level: DebugInfoLevel::Standard,
             vectorization_settings: VectorizationSettings::standard(),
             inlining_settings: InliningSettings::standard(),
@@ -151,7 +151,7 @@ impl LevelConfig {
     /// O3 configuration - Aggressive optimization
     fn o3_config() -> Self {
         Self {
-            level: OptimizationLevel::Aggressive,
+            level: OptimizationLevel::O3,
             description: "Aggressive optimization - maximum performance".to_string(),
             compilation_speed: CompilationSpeed::Slow,
             runtime_performance: RuntimePerformance::Maximum,
@@ -191,7 +191,7 @@ impl LevelConfig {
                 enable_tail_call_optimization: true,
                 enable_link_time_optimization: true,
             },
-            memory_optimization: MemoryOptimizationLevel::Aggressive,
+            memory_optimization: MemoryOptimizationLevel::O3,
             debug_info_level: DebugInfoLevel::Minimal,
             vectorization_settings: VectorizationSettings::aggressive(),
             inlining_settings: InliningSettings::aggressive(),
@@ -203,7 +203,7 @@ impl LevelConfig {
     /// Os configuration - Optimize for size
     fn os_config() -> Self {
         Self {
-            level: OptimizationLevel::Size,
+            level: OptimizationLevel::Os,
             description: "Size optimization - minimize code size".to_string(),
             compilation_speed: CompilationSpeed::Moderate,
             runtime_performance: RuntimePerformance::Good,
@@ -232,7 +232,7 @@ impl LevelConfig {
                 enable_tail_call_optimization: true,
                 enable_link_time_optimization: true,
             },
-            memory_optimization: MemoryOptimizationLevel::Size,
+            memory_optimization: MemoryOptimizationLevel::Os,
             debug_info_level: DebugInfoLevel::Minimal,
             vectorization_settings: VectorizationSettings::size_optimized(),
             inlining_settings: InliningSettings::size_optimized(),
@@ -244,7 +244,7 @@ impl LevelConfig {
     /// Oz configuration - Aggressively optimize for size
     fn oz_config() -> Self {
         Self {
-            level: OptimizationLevel::SizeAggressive,
+            level: OptimizationLevel::OsAggressive,
             description: "Aggressive size optimization - minimize code size aggressively".to_string(),
             compilation_speed: CompilationSpeed::Slow,
             runtime_performance: RuntimePerformance::Basic,
@@ -273,7 +273,7 @@ impl LevelConfig {
                 enable_tail_call_optimization: true,
                 enable_link_time_optimization: true,
             },
-            memory_optimization: MemoryOptimizationLevel::Size,
+            memory_optimization: MemoryOptimizationLevel::Os,
             debug_info_level: DebugInfoLevel::None,
             vectorization_settings: VectorizationSettings::disabled(),
             inlining_settings: InliningSettings::size_aggressive(),
@@ -339,19 +339,19 @@ impl OptimizationSettings {
         
         // Initialize all optimization levels
         for level in &[
-            OptimizationLevel::None,
-            OptimizationLevel::Less,
-            OptimizationLevel::Default,
-            OptimizationLevel::Aggressive,
-            OptimizationLevel::Size,
-            OptimizationLevel::SizeAggressive,
+            OptimizationLevel::O0,
+            OptimizationLevel::O1,
+            OptimizationLevel::O2,
+            OptimizationLevel::O3,
+            OptimizationLevel::Os,
+            OptimizationLevel::OsAggressive,
         ] {
             level_configs.insert(*level, LevelConfig::for_level(*level));
         }
         
         Self {
             level_configs,
-            default_level: OptimizationLevel::Default,
+            default_level: OptimizationLevel::O2,
         }
     }
     
@@ -771,16 +771,16 @@ mod tests {
     
     #[test]
     fn test_level_config_creation() {
-        let config = LevelConfig::for_level(OptimizationLevel::Default);
-        assert_eq!(config.level, OptimizationLevel::Default);
+        let config = LevelConfig::for_level(OptimizationLevel::O2);
+        assert_eq!(config.level, OptimizationLevel::O2);
         assert!(config.enables_optimization("vectorization"));
     }
     
     #[test]
     fn test_optimization_settings() {
         let settings = OptimizationSettings::new();
-        let config = settings.get_config(OptimizationLevel::Aggressive).unwrap();
-        assert_eq!(config.level, OptimizationLevel::Aggressive);
+        let config = settings.get_config(OptimizationLevel::O3).unwrap();
+        assert_eq!(config.level, OptimizationLevel::O3);
         assert_eq!(config.compilation_speed, CompilationSpeed::Slow);
         assert_eq!(config.runtime_performance, RuntimePerformance::Maximum);
     }
@@ -789,8 +789,8 @@ mod tests {
     fn test_level_comparison() {
         let settings = OptimizationSettings::new();
         let comparison = settings.compare_levels(
-            OptimizationLevel::None,
-            OptimizationLevel::Aggressive
+            OptimizationLevel::O0,
+            OptimizationLevel::O3
         ).unwrap();
         
         assert!(comparison.compilation_time_ratio > 1.0);
@@ -818,7 +818,7 @@ mod tests {
     
     #[test]
     fn test_pass_pipeline() {
-        let config = LevelConfig::for_level(OptimizationLevel::Default);
+        let config = LevelConfig::for_level(OptimizationLevel::O2);
         let pipeline = config.get_pass_pipeline();
         
         assert!(!pipeline.function_passes.is_empty());
@@ -828,8 +828,8 @@ mod tests {
     
     #[test]
     fn test_o0_vs_o3_settings() {
-        let o0 = LevelConfig::for_level(OptimizationLevel::None);
-        let o3 = LevelConfig::for_level(OptimizationLevel::Aggressive);
+        let o0 = LevelConfig::for_level(OptimizationLevel::O0);
+        let o3 = LevelConfig::for_level(OptimizationLevel::O3);
         
         // O0 should be faster to compile but slower runtime
         assert!(o0.get_compilation_time_factor() < o3.get_compilation_time_factor());
@@ -844,8 +844,8 @@ mod tests {
     
     #[test]
     fn test_size_optimization_settings() {
-        let os = LevelConfig::for_level(OptimizationLevel::Size);
-        let oz = LevelConfig::for_level(OptimizationLevel::SizeAggressive);
+        let os = LevelConfig::for_level(OptimizationLevel::Os);
+        let oz = LevelConfig::for_level(OptimizationLevel::OsAggressive);
         
         assert_eq!(os.code_size_priority, CodeSizePriority::High);
         assert_eq!(oz.code_size_priority, CodeSizePriority::Maximum);

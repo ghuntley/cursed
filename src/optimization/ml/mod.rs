@@ -61,15 +61,11 @@ pub struct OptimizationStrategy {
     pub estimated_performance_gain: f64,
 }
 
-/// Optimization levels
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OptimizationLevel {
-    Debug,      // -O0
-    Size,       // -Os
-    Speed,      // -O2
-    Aggressive, // -O3
-    Custom { passes: Vec<OptimizationPass> },
-}
+// Import canonical OptimizationLevel from optimization_config
+pub use crate::optimization::config::OptimizationLevel as MLOptimizationLevel;
+
+// Alias for compatibility in this module
+pub type OptimizationLevel = crate::optimization::config::OptimizationLevel;
 
 /// Optimization passes
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -306,13 +302,13 @@ impl MLOptimizationCoordinator {
         // Analyze prediction and features to determine optimal level
         if features.performance_features.execution_frequency > 100.0 {
             // Hot code path - aggressive optimization
-            Ok(OptimizationLevel::Aggressive)
+            Ok(OptimizationLevel::O3)
         } else if features.code_features.cyclomatic_complexity > 10.0 {
             // Complex code - balanced optimization
             Ok(OptimizationLevel::Speed)
         } else if features.function_features.size_in_bytes > 10000 {
             // Large functions - size optimization
-            Ok(OptimizationLevel::Size)
+            Ok(OptimizationLevel::Os)
         } else {
             // Default to speed optimization
             Ok(OptimizationLevel::Speed)

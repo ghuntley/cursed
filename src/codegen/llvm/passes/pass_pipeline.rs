@@ -3,7 +3,8 @@
 /// Provides automated pipeline construction and execution for optimization passes
 /// based on optimization levels, target configurations, and performance constraints.
 
-use super::{OptimizationPass, PassConfiguration, PassResult, PassRegistry, OptimizationLevel};
+use super::{OptimizationPass, PassConfiguration, PassResult, PassRegistry};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{context::Context, module::Module};
 use std::collections::{HashMap, VecDeque};
@@ -48,20 +49,20 @@ impl<'ctx> OptimizationPipeline<'ctx> {
         self.stages.clear();
         
         match level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // No optimization stages
                 debug!("Building pipeline for O0 - no optimizations");
             }
-            OptimizationLevel::Basic => {
+            OptimizationLevel::O1 => {
                 self.build_basic_pipeline()?;
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 self.build_default_pipeline()?;
             }
-            OptimizationLevel::Aggressive => {
+            OptimizationLevel::O3 => {
                 self.build_aggressive_pipeline()?;
             }
-            OptimizationLevel::Size | OptimizationLevel::MinSize => {
+            OptimizationLevel::Os | OptimizationLevel::Oz => {
                 self.build_size_pipeline()?;
             }
         }
@@ -440,14 +441,14 @@ impl<'ctx> PipelineBuilder<'ctx> {
     /// Add stages based on optimization level
     pub fn with_optimization_level(mut self, level: OptimizationLevel) -> Self {
         match level {
-            OptimizationLevel::None => {},
-            OptimizationLevel::Basic => {
+            OptimizationLevel::O0 => {},
+            OptimizationLevel::O1 => {
                 self = self.add_pass_stage("basic_optimization", vec![
                     "dead_code_elimination".to_string(),
                     "constant_propagation".to_string(),
                 ]);
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 self = self.add_pass_stage("default_optimization", vec![
                     "dead_code_elimination".to_string(),
                     "constant_propagation".to_string(),
@@ -455,7 +456,7 @@ impl<'ctx> PipelineBuilder<'ctx> {
                     "inlining".to_string(),
                 ]);
             }
-            OptimizationLevel::Aggressive => {
+            OptimizationLevel::O3 => {
                 self = self.add_pass_stage("aggressive_optimization", vec![
                     "dead_code_elimination".to_string(),
                     "constant_propagation".to_string(),
@@ -466,7 +467,7 @@ impl<'ctx> PipelineBuilder<'ctx> {
                     "branch_optimization".to_string(),
                 ]);
             }
-            OptimizationLevel::Size | OptimizationLevel::MinSize => {
+            OptimizationLevel::Os | OptimizationLevel::Oz => {
                 self = self.add_pass_stage("size_optimization", vec![
                     "dead_code_elimination".to_string(),
                     "constant_propagation".to_string(),
@@ -713,7 +714,7 @@ mod tests {
         let registry = Arc::new(Mutex::new(PassRegistry::new(config.clone())));
         
         let pipeline = PipelineBuilder::new(registry, config)
-            .with_optimization_level(OptimizationLevel::Default)
+            .with_optimization_level(OptimizationLevel::O2)
             .build();
         
         assert_eq!(pipeline.stages.len(), 1);

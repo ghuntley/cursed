@@ -1,7 +1,8 @@
 //! LLVM optimization pass management and integration
 
 use crate::error::{Result, CursedError};
-use crate::optimization::{OptimizationConfig, OptimizationLevel};
+use crate::optimization::{OptimizationConfig};
+use crate::optimization::config::OptimizationLevel;
 use crate::optimization::pass_manager::LlvmPassManager;
 use crate::optimization::metrics::CompilationUnit;
 use std::collections::HashMap;
@@ -142,23 +143,23 @@ impl LlvmOptimizer {
 
         // Apply standard optimization passes based on level
         match self.config.optimization_level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // No optimization passes for -O0
                 debug!("Skipping optimization passes for O0 level");
             }
-            OptimizationLevel::Basic => {
+            OptimizationLevel::O1 => {
                 applied_passes.extend(self.apply_basic_passes(unit)?);
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 applied_passes.extend(self.apply_basic_passes(unit)?);
                 applied_passes.extend(self.apply_standard_passes(unit)?);
             }
-            OptimizationLevel::Aggressive => {
+            OptimizationLevel::O3 => {
                 applied_passes.extend(self.apply_basic_passes(unit)?);
                 applied_passes.extend(self.apply_standard_passes(unit)?);
                 applied_passes.extend(self.apply_aggressive_passes(unit)?);
             }
-            OptimizationLevel::Size => {
+            OptimizationLevel::Os => {
                 applied_passes.extend(self.apply_size_passes(unit)?);
             }
             OptimizationLevel::Fast => {
@@ -366,10 +367,10 @@ mod tests {
     #[test]
     fn test_optimization_levels() {
         let levels = vec![
-            OptimizationLevel::None,
-            OptimizationLevel::Basic,
-            OptimizationLevel::Default,
-            OptimizationLevel::Aggressive,
+            OptimizationLevel::O0,
+            OptimizationLevel::O1,
+            OptimizationLevel::O2,
+            OptimizationLevel::O3,
         ];
 
         for level in levels {

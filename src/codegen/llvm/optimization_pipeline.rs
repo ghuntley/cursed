@@ -172,11 +172,11 @@ impl<'ctx> OptimizationPipeline<'ctx> {
         info!("Creating default pipeline for level: {:?}", optimization_level);
         
         match optimization_level {
-            OptimizationLevel::None => self.create_no_optimization_pipeline(),
-            OptimizationLevel::Less => self.create_basic_pipeline(),
-            OptimizationLevel::Default => self.create_standard_pipeline(),
-            OptimizationLevel::Aggressive => self.create_aggressive_pipeline(),
-            OptimizationLevel::Size | OptimizationLevel::SizeAggressive => self.create_size_optimization_pipeline(),
+            OptimizationLevel::O0 => self.create_no_optimization_pipeline(),
+            OptimizationLevel::O1 => self.create_basic_pipeline(),
+            OptimizationLevel::O2 => self.create_standard_pipeline(),
+            OptimizationLevel::O3 => self.create_aggressive_pipeline(),
+            OptimizationLevel::Os | OptimizationLevel::OsAggressive => self.create_size_optimization_pipeline(),
         }
     }
     

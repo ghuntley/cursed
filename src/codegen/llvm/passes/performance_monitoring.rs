@@ -3,7 +3,8 @@
 /// Provides comprehensive performance tracking, analysis, and reporting
 /// for optimization passes to measure effectiveness and guide optimization decisions.
 
-use super::{PassResult, PassStatistics, OptimizationLevel};
+use super::{PassResult, PassStatistics};
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Error, Result};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

@@ -233,12 +233,12 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         debug!("Configuring optimization passes for level {:?}", self.optimization_level);
         
         match self.optimization_level {
-            OptimizationLevel::None => {
+            OptimizationLevel::O0 => {
                 // Minimal optimizations
                 debug!("Configuring minimal optimization passes");
                 // No additional passes for None level
             }
-            OptimizationLevel::Less => {
+            OptimizationLevel::O1 => {
                 debug!("Configuring basic optimization passes");
                 // Basic optimizations
                 self.pass_manager.add_instruction_combining_pass();
@@ -251,7 +251,7 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 self.function_pass_manager.add_reassociate_pass();
                 self.function_pass_manager.add_cfg_simplification_pass();
             }
-            OptimizationLevel::Default => {
+            OptimizationLevel::O2 => {
                 debug!("Configuring standard optimization passes");
                 // Standard optimizations
                 self.pass_manager.add_instruction_combining_pass();
@@ -271,7 +271,7 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 self.function_pass_manager.add_sccp_pass();
                 self.function_pass_manager.add_aggressive_dce_pass();
             }
-            OptimizationLevel::Aggressive => {
+            OptimizationLevel::O3 => {
                 debug!("Configuring aggressive optimization passes");
                 // Aggressive optimizations
                 self.pass_manager.add_instruction_combining_pass();
@@ -295,7 +295,7 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 self.function_pass_manager.add_aggressive_dce_pass();
                 self.function_pass_manager.add_loop_unroll_pass();
             }
-            OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::Os | OptimizationLevel::OsAggressive => {
                 debug!("Configuring size optimization passes");
                 // Size optimizations - focus on reducing code size
                 self.pass_manager.add_function_inlining_pass();
@@ -990,7 +990,7 @@ mod tests {
     #[test]
     fn test_real_optimizer_creation() {
         let context = Context::create();
-        let optimizer = RealLlvmOptimizer::new(&context, OptimizationLevel::Default).unwrap();
+        let optimizer = RealLlvmOptimizer::new(&context, OptimizationLevel::O2).unwrap();
         
         let stats = optimizer.get_statistics();
         assert_eq!(stats.total_optimizations, 0);
@@ -1000,7 +1000,7 @@ mod tests {
     #[test]
     fn test_module_metrics_calculation() {
         let context = Context::create();
-        let optimizer = RealLlvmOptimizer::new(&context, OptimizationLevel::Default).unwrap();
+        let optimizer = RealLlvmOptimizer::new(&context, OptimizationLevel::O2).unwrap();
         let module = context.create_module("test");
         
         let metrics = optimizer.calculate_module_metrics(&module);
@@ -1011,7 +1011,7 @@ mod tests {
     #[test]
     fn test_optimization_effectiveness_calculation() {
         let context = Context::create();
-        let optimizer = RealLlvmOptimizer::new(&context, OptimizationLevel::Default).unwrap();
+        let optimizer = RealLlvmOptimizer::new(&context, OptimizationLevel::O2).unwrap();
         
         let before = ModuleMetrics {
             instruction_count: 100,

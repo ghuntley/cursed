@@ -571,7 +571,7 @@ impl OptimizationPredictor {
                 PerformancePriority::Speed => {
                     alternatives.push(AlternativeStrategy {
                         strategy: OptimizationStrategy {
-                            optimization_level: OptimizationLevel::Size,
+                            optimization_level: OptimizationLevel::Os,
                             enabled_passes: vec![OptimizationPass::DeadCodeElimination],
                             pass_parameters: HashMap::new(),
                             confidence: 0.6,
@@ -586,7 +586,7 @@ impl OptimizationPredictor {
                 PerformancePriority::Size => {
                     alternatives.push(AlternativeStrategy {
                         strategy: OptimizationStrategy {
-                            optimization_level: OptimizationLevel::Aggressive,
+                            optimization_level: OptimizationLevel::O3,
                             enabled_passes: vec![
                                 OptimizationPass::Inlining { aggressiveness: 0.8 },
                                 OptimizationPass::LoopVectorization { width: 8 },
@@ -723,9 +723,9 @@ impl OptimizationPredictor {
             OptimizationTarget::OptimizationLevel { level, expected_speedup } => {
                 let optimization_level = match level {
                     0 => OptimizationLevel::Debug,
-                    1 => OptimizationLevel::Size,
+                    1 => OptimizationLevel::Os,
                     2 => OptimizationLevel::Speed,
-                    3 => OptimizationLevel::Aggressive,
+                    3 => OptimizationLevel::O3,
                     _ => OptimizationLevel::Speed,
                 };
                 

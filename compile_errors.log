@@ -1,0 +1,3299 @@
+🔧 CURSED Linking Fix - Setting up Nix environment for compilation...
+📚 Library Path: /nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib
+🛠️  Rust Flags: -C linker=gcc -C link-arg=-fuse-ld=bfd
+🚀 Executing: cargo check --all-targets
+
+    Blocking waiting for file lock on build directory
+    Checking either v1.15.0
+    Checking serde v1.0.219
+    Checking half v2.6.0
+    Checking ciborium-io v0.2.2
+    Checking plotters-backend v0.3.7
+    Checking wait-timeout v0.2.1
+    Checking bit-vec v0.8.0
+    Checking cast v0.3.0
+    Checking quick-error v1.2.3
+    Checking rand_xorshift v0.4.0
+    Checking anes v0.1.6
+    Checking diff v0.1.13
+    Checking oorandom v11.1.5
+    Checking unarray v0.1.4
+    Checking yansi v1.0.1
+    Checking tracing-test v0.2.5
+    Checking rayon v1.10.0
+    Checking inkwell v0.4.0
+    Checking itertools v0.10.5
+    Checking rusty-fork v0.3.0
+    Checking bit-set v0.8.0
+    Checking plotters-svg v0.3.7
+    Checking ciborium-ll v0.2.2
+    Checking plotters v0.3.7
+    Checking pretty_assertions v1.4.1
+    Checking proptest v1.7.0
+    Checking criterion-plot v0.5.0
+    Checking ark-std v0.3.0
+    Checking sysinfo v0.30.13
+    Checking ark-serialize v0.3.0
+    Checking serde_json v1.0.140
+    Checking url v2.5.4
+    Checking uuid v1.17.0
+    Checking chrono v0.4.41
+    Checking serde_spanned v0.6.9
+    Checking serde_urlencoded v0.7.1
+    Checking toml_datetime v0.6.11
+    Checking serde_yaml v0.9.34+deprecated
+    Checking bincode v1.3.3
+    Checking ciborium v0.2.2
+    Checking ark-ff v0.3.0
+    Checking toml_edit v0.22.27
+    Checking tungstenite v0.21.0
+    Checking webbrowser v0.8.15
+    Checking redis v0.24.0
+    Checking lsp-types v0.94.1
+    Checking mysql_common v0.32.4
+    Checking handlebars v4.5.0
+    Checking reqwest v0.11.27
+    Checking tinytemplate v1.2.1
+    Checking tokio-tungstenite v0.21.0
+    Checking criterion v0.5.1
+    Checking warp v0.3.7
+    Checking postgres-types v0.2.9
+    Checking tokio-postgres v0.7.13
+    Checking toml v0.8.23
+    Checking mysql v25.0.1
+    Checking bb8-postgres v0.8.1
+    Checking ark-ec v0.3.0
+    Checking ark-relations v0.3.0
+    Checking ark-poly v0.3.0
+    Checking ark-snark v0.3.0
+    Checking ark-r1cs-std v0.3.1
+    Checking ark-crypto-primitives v0.3.0
+    Checking ark-bls12-381 v0.3.0
+    Checking ark-bn254 v0.3.0
+    Checking ark-groth16 v0.3.0
+    Checking tower-lsp v0.20.0
+    Checking ark-nonnative-field v0.3.0
+    Checking ark-poly-commit v0.3.0
+    Checking ark-marlin v0.3.0
+    Checking cursed v0.1.0 (/home/ghuntley/code/cursed)
+error[E0432]: unresolved import `crate::optimization::ml::OptimizationLevel`
+ --> src/optimization/ml/prediction.rs:9:53
+  |
+9 | use crate::optimization::ml::{OptimizationStrategy, OptimizationLevel, OptimizationPass};
+  |                                                     ^^^^^^^^^^^^^^^^^
+  |                                                     |
+  |                                                     no `OptimizationLevel` in `optimization::ml`
+  |                                                     help: a similar name exists in the module: `MLOptimizationLevel`
+  |
+  = help: consider importing one of these items instead:
+          crate::OptimizationLevel
+          crate::build_system::build_config::OptimizationLevel
+          crate::optimization::coordinator::ConditionType::OptimizationLevel
+          crate::optimization::enhanced_benchmarking::RecommendationType::OptimizationLevel
+          crate::optimization::ml::prediction::OptimizationTarget::OptimizationLevel
+          inkwell::OptimizationLevel
+
+error[E0432]: unresolved imports `utils::UrlEncoder`, `utils::HttpHeaders`, `utils::MimeTypes`
+  --> src/stdlib/web_vibez/mod.rs:75:56
+   |
+75 | pub use utils::{ConnectionPool as UtilsConnectionPool, UrlEncoder, HttpHeaders, MimeTypes};
+   |                                                        ^^^^^^^^^^  ^^^^^^^^^^^  ^^^^^^^^^ no `MimeTypes` in `stdlib::web_vibez::utils`
+   |                                                        |           |
+   |                                                        |           no `HttpHeaders` in `stdlib::web_vibez::utils`
+   |                                                        no `UrlEncoder` in `stdlib::web_vibez::utils`
+   |
+   = help: consider importing this struct through its public re-export instead:
+           crate::stdlib::crypto::UrlEncoder
+   = help: consider importing this struct through its public re-export instead:
+           crate::stdlib::HttpHeaders
+
+error[E0432]: unresolved imports `session_enhanced::EnhancedSessionManager`, `session_enhanced::SessionOptions`, `session_enhanced::SessionSecurity`
+  --> src/stdlib/web_vibez/mod.rs:76:28
+   |
+76 | pub use session_enhanced::{EnhancedSessionManager, SessionOptions, SessionSecurity};
+   |                            ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^ no `SessionSecurity` in `stdlib::web_vibez::session_enhanced`
+   |                            |                       |
+   |                            |                       no `SessionOptions` in `stdlib::web_vibez::session_enhanced`
+   |                            no `EnhancedSessionManager` in `stdlib::web_vibez::session_enhanced`
+
+error[E0432]: unresolved import `crate::stdlib::database::IsolationLevel`
+  --> src/stdlib/database/postgres/transaction.rs:10:16
+   |
+10 |     TxOptions, IsolationLevel,
+   |                ^^^^^^^^^^^^^^
+   |                |
+   |                no `IsolationLevel` in `stdlib::database`
+   |                help: a similar name exists in the module: `SqlIsolationLevel`
+   |
+   = help: consider importing one of these enums instead:
+           crate::stdlib::exec_slay::IsolationLevel
+           crate::stdlib::process::IsolationLevel
+           crate::testing::framework::IsolationLevel
+           mysql::IsolationLevel
+           tokio_postgres::IsolationLevel
+
+error[E0432]: unresolved import `pbkdf2::pbkdf2_hmac`
+  --> src/stdlib/crypto/symmetric.rs:23:5
+   |
+23 | use pbkdf2::pbkdf2_hmac;
+   |     ^^^^^^^^^^^^^^^^^^^ no `pbkdf2_hmac` in `stdlib::packages::crypto_kdf::pbkdf2`
+
+error[E0432]: unresolved import `crate::stdlib::crypto::CryptoPlatform`
+ --> src/stdlib/crypto/llvm_integration.rs:5:5
+  |
+5 |     CryptoPlatform
+  |     ^^^^^^^^^^^^^^ no `CryptoPlatform` in `stdlib::crypto`
+
+error[E0432]: unresolved imports `asymmetric::EcPoint`, `asymmetric::EcScalar`
+  --> src/stdlib/crypto/mod.rs:43:14
+   |
+43 |     EcCurve, EcPoint, EcScalar,
+   |              ^^^^^^^  ^^^^^^^^ no `EcScalar` in `stdlib::crypto::asymmetric`
+   |              |
+   |              no `EcPoint` in `stdlib::crypto::asymmetric`
+
+error[E0432]: unresolved import `crate::stdlib::process::monitoring::ProcessStats`
+  --> src/stdlib/process/integration.rs:15:18
+   |
+15 |     monitoring::{ProcessStats, HealthStatus, PerformanceMetrics}
+   |                  ^^^^^^^^^^^^ no `ProcessStats` in `stdlib::process::monitoring`
+   |
+   = help: consider importing one of these items instead:
+           crate::stdlib::ProcessStats
+           crate::stdlib::crypto::EntropySource::ProcessStats
+           crate::stdlib::process::ProcessStats
+           crate::stdlib::process::exec_slay::ProcessStats
+           crate::stdlib::process::exec_slay_complete::ProcessStats
+
+error[E0432]: unresolved import `crate::stdlib::net::error::network_error`
+  --> src/stdlib/net/websocket/server.rs:12:71
+   |
+12 | use crate::stdlib::net::error::{NetError, NetResult, websocket_error, network_error};
+   |                                                                       ^^^^^^^^^^^^^ no `network_error` in `stdlib::net::error`
+
+error[E0432]: unresolved imports `crate::stdlib::signal_boost::error::invalid_operation`, `crate::stdlib::signal_boost::error::not_found`
+ --> src/stdlib/signal_boost/genZ.rs:8:79
+  |
+8 | use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult, invalid_operation, not_found};
+  |                                                                               ^^^^^^^^^^^^^^^^^  ^^^^^^^^^ no `not_found` in `stdlib::signal_boost::error`
+  |                                                                               |
+  |                                                                               no `invalid_operation` in `stdlib::signal_boost::error`
+
+error[E0432]: unresolved import `super::error::timeout_exceeded`
+  --> src/stdlib/exec_vibez/timeout.rs:12:61
+   |
+12 | use super::error::{ExecResult, ExecError, execution_failed, timeout_exceeded};
+   |                                                             ^^^^^^^^^^^^^^^^ no `timeout_exceeded` in `stdlib::exec_vibez::error`
+
+error[E0432]: unresolved import `groups::NewProcessGroup`
+  --> src/stdlib/exec_vibez/mod.rs:22:53
+   |
+22 | pub use groups::{ProcessGroup, ProcessGroupOptions, NewProcessGroup};
+   |                                                     ^^^^^^^^^^^^^^^
+   |                                                     |
+   |                                                     no `NewProcessGroup` in `stdlib::exec_vibez::groups`
+   |                                                     help: a similar name exists in the module: `ProcessGroup`
+
+error[E0432]: unresolved imports `environment::NewEnvironment`, `environment::CommandWithEnv`
+  --> src/stdlib/exec_vibez/mod.rs:23:36
+   |
+23 | pub use environment::{Environment, NewEnvironment, CommandWithEnv};
+   |                                    ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^ no `CommandWithEnv` in `stdlib::exec_vibez::environment`
+   |                                    |
+   |                                    no `NewEnvironment` in `stdlib::exec_vibez::environment`
+   |                                    help: a similar name exists in the module: `new_environment`
+
+error[E0432]: unresolved imports `streaming::NewOutputStreamer`, `streaming::NewInputGenerator`
+  --> src/stdlib/exec_vibez/mod.rs:24:37
+   |
+24 | pub use streaming::{OutputStreamer, NewOutputStreamer, InputGenerator, NewInputGenerator};
+   |                                     ^^^^^^^^^^^^^^^^^                  ^^^^^^^^^^^^^^^^^ no `NewInputGenerator` in `stdlib::exec_vibez::streaming`
+   |                                     |
+   |                                     no `NewOutputStreamer` in `stdlib::exec_vibez::streaming`
+   |
+help: a similar name exists in the module
+   |
+24 - pub use streaming::{OutputStreamer, NewOutputStreamer, InputGenerator, NewInputGenerator};
+24 + pub use streaming::{OutputStreamer, OutputStreamer, InputGenerator, NewInputGenerator};
+   |
+help: a similar name exists in the module
+   |
+24 - pub use streaming::{OutputStreamer, NewOutputStreamer, InputGenerator, NewInputGenerator};
+24 + pub use streaming::{OutputStreamer, NewOutputStreamer, InputGenerator, InputGenerator};
+   |
+
+error[E0432]: unresolved import `timeout::RunWithTimeout`
+  --> src/stdlib/exec_vibez/mod.rs:25:19
+   |
+25 | pub use timeout::{RunWithTimeout, TimeoutConfig};
+   |                   ^^^^^^^^^^^^^^ no `RunWithTimeout` in `stdlib::exec_vibez::timeout`
+
+error[E0432]: unresolved import `error::Error`
+  --> src/stdlib/exec_vibez/mod.rs:26:17
+   |
+26 | pub use error::{Error as ExecError, ExecResult};
+   |                 ^^^^^^^^^^^^^^^^^^ no `Error` in `stdlib::exec_vibez::error`
+   |
+   = help: consider importing one of these items instead:
+           crate::Error
+           crate::ErrorSeverity::Error
+           crate::build_system::build_profiler::AlertSeverity::Error
+           crate::build_system::build_profiler::EventType::Error
+           crate::build_system::distributed_compilation::NodeStatus::Error
+           crate::docs::cross_reference::ShadowingSeverity::Error
+           crate::docs::quality_system::Severity::Error
+           crate::documentation::interactive::ErrorSeverity::Error
+           crate::optimization::coordinator::ValidationSeverity::Error
+           crate::optimization::coordinator::ViolationAction::Error
+           crate::optimization::pgo::optimization_integration::IssueSeverity::Error
+           crate::optimization::pgo::profile_manager::ValidationSeverity::Error
+           crate::profiling::IoStatus::Error
+           crate::repl::MessageType::Error
+           crate::repl::ReplState::Error
+           crate::stdlib::DebugLevel::Error
+           crate::stdlib::SocketState::Error
+           crate::stdlib::crypto::protocols_comprehensive::ChannelState::Error
+           crate::stdlib::crypto::protocols_enhanced::ChannelState::Error
+           crate::stdlib::crypto::session_management::SessionState::Error
+           crate::stdlib::crypto::signature_validation::CheckSeverity::Error
+           crate::stdlib::crypto::unified_api::PackageStatus::Error
+           crate::stdlib::database::error::ErrorSeverity::Error
+           crate::stdlib::database::llvm_integration::ReturnType::Error
+           crate::stdlib::database::sqlite::ConnectionState::Error
+           crate::stdlib::database::sqlite::SqliteErrorCode::Error
+           crate::stdlib::database::sqlite::TransactionState::Error
+           crate::stdlib::database::sqlite::backup::BackupPhase::Error
+           crate::stdlib::database::sqlite::error::ErrorSeverity::Error
+           crate::stdlib::database::sqlite::ffi::SqliteResultCode::Error
+           crate::stdlib::glowup_http::server::LogLevel::Error
+           crate::stdlib::ipc::MessageType::Error
+           crate::stdlib::ipc::advanced_ipc::SocketState::Error
+           crate::stdlib::packages::config::LogLevel::Error
+           crate::stdlib::plug_vibes::PluginState::Error
+           crate::stdlib::process::ChannelState::Error
+           crate::stdlib::process::Error
+           crate::stdlib::r#async::FutureState::Error
+           crate::stdlib::signal_boost::actions::LogLevel::Error
+           crate::stdlib::sys_core::SystemCallResult::Error
+           crate::stdlib::system::ServiceStatus::Error
+           crate::stdlib::template::ControlCommand::Error
+           crate::stdlib::vibe_net::monitoring::LogLevel::Error
+           crate::stdlib::vibecheck::ProfilerState::Error
+           crate::stdlib::web_vibez::config::LogLevel::Error
+           crate::stdlib::web_vibez::monitoring::AlertSeverity::Error
+           crate::tools::LintSeverity::Error
+           std::error::Error
+           std::fmt::Error
+           std::io::Error
+           ::core::error::Error
+           ::core::fmt::Error
+           aes_gcm::Error
+           argon2::Error
+           ark_marlin::Error
+           ark_marlin::ahp::Error
+           ark_poly_commit::Error
+           ark_std::error::Error
+           ark_std::fmt::Error
+           ark_std::io::Error
+           asn1_rs::Err::Error
+           asn1_rs::Error
+           base64ct::Error
+           bincode::Error
+           bzip2::Error
+           chacha20poly1305::Error
+           chrono::format::Item::Error
+           clap::Error
+           clap::error::Error
+           der::Error
+           ecdsa::Error
+           elliptic_curve::Error
+           futures::io::Error
+           getrandom::Error
+           httpdate::Error
+           inkwell::module::FlagBehavior::Error
+           k256::schnorr::Error
+           libloading::Error
+           log::Level::Error
+           log::LevelFilter::Error
+           lz4_flex::frame::Error
+           mysql::Error
+           nix::Error
+           notify::Error
+           p256::ecdsa::Error
+           p384::ecdsa::Error
+           p521::ecdsa::Error
+           pkcs1::Error
+           pkcs8::Error
+           pqcrypto_traits::Error
+           rand::Error
+           regex::Error
+           reqwest::Error
+           ropey::Error
+           rsa::Error
+           rusqlite::Error
+           sec1::Error
+           semver::Error
+           serde::de::Error
+           serde::de::value::Error
+           serde::ser::Error
+           serde_json::Error
+           serde_yaml::Error
+           signature::Error
+           spki::Error
+           ssh2::Error
+           sys_info::Error
+           time::Error
+           tokio::io::Error
+           tokio::time::error::Error
+           tokio_postgres::Error
+           tokio_postgres::error::Severity::Error
+           toml::de::Error
+           toml::ser::Error
+           tower_lsp::jsonrpc::Error
+           tracing_subscriber::reload::Error
+           uuid::Error
+           walkdir::Error
+           warp::Error
+           webpki::Error
+           webpki::ErrorExt::Error
+
+error[E0432]: unresolved import `context::ProcessContext`
+  --> src/stdlib/exec_vibez/mod.rs:27:19
+   |
+27 | pub use context::{ProcessContext, VibeContext};
+   |                   ^^^^^^^^^^^^^^ no `ProcessContext` in `stdlib::exec_vibez::context`
+   |
+   = help: consider importing one of these structs instead:
+           crate::stdlib::process::ProcessContext
+           crate::stdlib::process::exec_vibez_enhanced::ProcessContext
+
+error[E0432]: unresolved import `enhanced::LookPath`
+  --> src/stdlib/exec_vibez/mod.rs:30:5
+   |
+30 |     LookPath, ProcessMonitor, ResourceLimits, SecurityOptions,
+   |     ^^^^^^^^ no `LookPath` in `stdlib::exec_vibez::enhanced`
+
+error[E0432]: unresolved imports `core::CompressionQuality`, `core::CompressionStrategy`, `core::FlushMode`
+  --> src/stdlib/squish_core/mod.rs:35:16
+   |
+35 | pub use core::{CompressionQuality, CompressionStrategy, FlushMode};
+   |                ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^ no `FlushMode` in `stdlib::squish_core::core`
+   |                |                   |
+   |                |                   no `CompressionStrategy` in `stdlib::squish_core::core`
+   |                no `CompressionQuality` in `stdlib::squish_core::core`
+   |
+   = help: consider importing this enum instead:
+           crate::stdlib::squish_core::constants::CompressionQuality
+   = help: consider importing one of these enums instead:
+           crate::stdlib::squish_core::adaptive::CompressionStrategy
+           crate::stdlib::squish_core::constants::CompressionStrategy
+   = help: consider importing this enum instead:
+           crate::stdlib::squish_core::constants::FlushMode
+help: a similar name exists in the module
+   |
+35 - pub use core::{CompressionQuality, CompressionStrategy, FlushMode};
+35 + pub use core::{CompressionStats, CompressionStrategy, FlushMode};
+   |
+help: a similar name exists in the module
+   |
+35 - pub use core::{CompressionQuality, CompressionStrategy, FlushMode};
+35 + pub use core::{CompressionQuality, CompressionStats, FlushMode};
+   |
+
+error[E0432]: unresolved imports `utils::is_valid_compression_level`, `utils::quality_to_level`, `utils::recommended_buffer_size`, `utils::should_use_parallel`, `utils::optimal_chunk_size`
+  --> src/stdlib/squish_core/mod.rs:37:5
+   |
+37 |     is_valid_compression_level, quality_to_level, recommended_buffer_size,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^ no `recommended_buffer_size` in `stdlib::squish_core::utils`
+   |     |                           |
+   |     |                           no `quality_to_level` in `stdlib::squish_core::utils`
+   |     no `is_valid_compression_level` in `stdlib::squish_core::utils`
+38 |     should_use_parallel, optimal_chunk_size
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `optimal_chunk_size` in `stdlib::squish_core::utils`
+   |     |
+   |     no `should_use_parallel` in `stdlib::squish_core::utils`
+
+error[E0432]: unresolved import `statistics::cleanup`
+  --> src/stdlib/squish_core/mod.rs:40:40
+   |
+40 | pub use statistics::{get_module_stats, cleanup};
+   |                                        ^^^^^^^ no `cleanup` in `stdlib::squish_core::statistics`
+
+error[E0365]: `SharedProcessState` is only public within the crate, and cannot be re-exported outside
+   --> src/stdlib/mod.rs:124:59
+    |
+124 |     SlayResult, SlayOptions, SignalOptions, ProcessStats, SharedProcessState,
+    |                                                           ^^^^^^^^^^^^^^^^^^ re-export of crate public `SharedProcessState`
+    |
+    = note: consider declaring type or module `SharedProcessState` with `pub`
+
+error[E0432]: unresolved imports `enhanced::EnhancedCompressor`, `enhanced::CompressionMode`, `enhanced::CompressionOptions`, `enhanced::fast_compressor`, `enhanced::max_compressor`, `enhanced::parallel_compressor`, `enhanced::smart_compress`, `enhanced::compress_with_mode`, `enhanced::ultra_compress`
+  --> src/stdlib/squish_core/mod.rs:82:5
+   |
+82 |     EnhancedCompressor, CompressionMode, CompressionOptions,
+   |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `CompressionOptions` in `stdlib::squish_core::enhanced`
+   |     |                   |
+   |     |                   no `CompressionMode` in `stdlib::squish_core::enhanced`
+   |     no `EnhancedCompressor` in `stdlib::squish_core::enhanced`
+83 |     fast_compressor, max_compressor, parallel_compressor,
+   |     ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^ no `parallel_compressor` in `stdlib::squish_core::enhanced`
+   |     |                |
+   |     |                no `max_compressor` in `stdlib::squish_core::enhanced`
+   |     no `fast_compressor` in `stdlib::squish_core::enhanced`
+84 |     smart_compress, compress_with_mode, ultra_compress
+   |     ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^ no `ultra_compress` in `stdlib::squish_core::enhanced`
+   |     |               |
+   |     |               no `compress_with_mode` in `stdlib::squish_core::enhanced`
+   |     no `smart_compress` in `stdlib::squish_core::enhanced`
+   |
+   = help: consider importing this enum instead:
+           crate::stdlib::squish_core::core::CompressionMode
+help: a similar name exists in the module
+   |
+82 -     EnhancedCompressor, CompressionMode, CompressionOptions,
+82 +     ParallelCompressor, CompressionMode, CompressionOptions,
+   |
+help: a similar name exists in the module
+   |
+82 -     EnhancedCompressor, CompressionMode, CompressionOptions,
+82 +     EnhancedCompressor, CompressionLevel, CompressionOptions,
+   |
+help: a similar name exists in the module
+   |
+82 -     EnhancedCompressor, CompressionMode, CompressionOptions,
+82 +     EnhancedCompressor, CompressionMode, CompressionStats,
+   |
+help: a similar name exists in the module
+   |
+83 -     fast_compressor, max_compressor, parallel_compressor,
+83 +     fast_compressor, max_compressor, ParallelCompressor,
+   |
+
+error[E0432]: unresolved imports `ipc::named_pipe_error`, `ipc::message_queue_error`, `ipc::shared_memory_error`, `ipc::semaphore_error`, `ipc::unix_socket_error`, `ipc::permission_denied`, `ipc::already_exists`, `ipc::not_found`, `ipc::timeout_error`, `ipc::system_error`, `ipc::platform_error`, `ipc::NamedPipeConfig`, `ipc::ProcessStdin`, `ipc::ProcessStdout`, `ipc::ProcessStderr`, `ipc::MessageQueueStats`, `ipc::SharedMemoryStats`, `ipc::SemaphoreConfig`, `ipc::UnixSocketConfig`, `ipc::UnixDatagramServer`, `ipc::cleanup_sockets`
+   --> src/stdlib/mod.rs:506:5
+    |
+506 |     named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+    |     ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `unix_socket_error` in `stdlib::ipc`
+    |     |                 |                    |                    |
+    |     |                 |                    |                    no `semaphore_error` in `stdlib::ipc`
+    |     |                 |                    no `shared_memory_error` in `stdlib::ipc`
+    |     |                 no `message_queue_error` in `stdlib::ipc`
+    |     no `named_pipe_error` in `stdlib::ipc`
+507 |     permission_denied as ipc_permission_denied, already_exists, not_found, timeout_error as ipc_timeout_error,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `timeout_error` in `stdlib::ipc`
+    |     |                                           |               |
+    |     |                                           |               no `not_found` in `stdlib::ipc`
+    |     |                                           no `already_exists` in `stdlib::ipc`
+    |     no `permission_denied` in `stdlib::ipc`
+508 |     system_error as ipc_system_error, platform_error as ipc_platform_error,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     |
+    |     no `system_error` in `stdlib::ipc`
+...
+514 |     NamedPipe, NamedPipeServer, NamedPipeClient, NamedPipeConfig,
+    |                                                  ^^^^^^^^^^^^^^^
+515 |     ProcessStdin, ProcessStdout, ProcessStderr,
+    |     ^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+...
+518 |     MessageQueue, Message, MessageQueueConfig, MessageQueueStats,
+    |                                                ^^^^^^^^^^^^^^^^^
+...
+521 |     SharedMemory, SharedMemorySegment, SharedMemoryConfig, SharedMemoryStats,
+    |                                                            ^^^^^^^^^^^^^^^^^
+...
+524 |     Semaphore as IpcSemaphore, NamedSemaphore, SemaphoreConfig, SemaphoreValue,
+    |                                                ^^^^^^^^^^^^^^^
+...
+527 |     UnixSocket, UnixSocketServer, UnixSocketClient, UnixSocketConfig, UnixSocketType,
+    |                                                     ^^^^^^^^^^^^^^^^
+528 |     UnixDatagramServer, cleanup_sockets,
+    |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+    |
+help: a similar name exists in the module
+    |
+506 -     named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+506 +     named_pipe_error, message_queues, shared_memory_error, semaphore_error, unix_socket_error,
+    |
+help: a similar name exists in the module
+    |
+506 -     named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+506 +     named_pipe_error, message_queue_error, shared_memory, semaphore_error, unix_socket_error,
+    |
+
+error[E0432]: unresolved import `exec_vibez::ContextError`
+   --> src/stdlib/mod.rs:804:53
+    |
+804 |     VibeContext as ExecVibeContext, ProcessContext, ContextError,
+    |                                                     ^^^^^^^^^^^^ no `ContextError` in `stdlib::exec_vibez`
+    |
+    = help: consider importing this enum instead:
+            crate::stdlib::exec_vibez::context::ContextError
+
+error[E0432]: unresolved imports `oglogging::get_timestamp`, `oglogging::format_message`
+   --> src/stdlib/mod.rs:866:23
+    |
+866 |     format_log_entry, get_timestamp, format_message,
+    |                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^ no `format_message` in `stdlib::oglogging`
+    |                       |
+    |                       no `get_timestamp` in `stdlib::oglogging`
+
+error[E0432]: unresolved imports `regex_vibez::GroupStatistics`, `regex_vibez::GroupValidationResult`
+   --> src/stdlib/mod.rs:925:5
+    |
+925 |     GroupStatistics, GroupValidationResult,
+    |     ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^ no `GroupValidationResult` in `stdlib::regex_vibez`
+    |     |
+    |     no `GroupStatistics` in `stdlib::regex_vibez`
+    |
+    = help: consider importing this struct instead:
+            crate::stdlib::regex_vibez::groups::GroupStatistics
+    = help: consider importing this struct instead:
+            crate::stdlib::regex_vibez::groups::GroupValidationResult
+
+error[E0432]: unresolved imports `squish_core::lzw::Order`, `squish_core::lzw::new_reader`, `squish_core::lzw::new_writer`, `squish_core::lzw::default_literal_width`, `squish_core::utils::compress`, `squish_core::utils::decompress`, `squish_core::utils::compress_with_level`, `squish_core::utils::compress_adaptive`, `squish_core::utils::max_compressed_size`, `squish_core::utils::validate_level_for_algorithm`, `squish_core::utils::get_file_extension`, `squish_core::utils::get_mime_type`, `squish_core::utils::supports_streaming`, `squish_core::utils::get_recommended_buffer_size`
+    --> src/stdlib/mod.rs:1421:33
+     |
+1421 |     lzw::{LzwReader, LzwWriter, Order as LzwOrder, new_reader as new_lzw_reader, new_writer as new_lzw_writer,
+     |                                 ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `new_writer` in `stdlib::squish_core::lzw`
+     |                                 |                  |
+     |                                 |                  no `new_reader` in `stdlib::squish_core::lzw`
+     |                                 no `Order` in `stdlib::squish_core::lzw`
+1422 |           default_literal_width, is_valid_literal_width},
+     |           ^^^^^^^^^^^^^^^^^^^^^
+     |           |
+     |           no `default_literal_width` in `stdlib::squish_core::lzw`
+     |           help: a similar name exists in the module: `is_valid_literal_width`
+...
+1438 |     utils::{compress, decompress, compress_with_level, compress_adaptive, detect_format,
+     |             ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `compress_adaptive` in `stdlib::squish_core::utils`
+     |             |         |           |
+     |             |         |           no `compress_with_level` in `stdlib::squish_core::utils`
+     |             |         no `decompress` in `stdlib::squish_core::utils`
+     |             no `compress` in `stdlib::squish_core::utils`
+1439 |             max_compressed_size, validate_level_for_algorithm, get_file_extension, get_mime_type,
+     |             ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+     |             |                    |
+     |             |                    no `validate_level_for_algorithm` in `stdlib::squish_core::utils`
+     |             no `max_compressed_size` in `stdlib::squish_core::utils`
+1440 |             supports_streaming, get_recommended_buffer_size, estimate_compression_ratio},
+     |             ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0432]: unresolved import `crate::package_manager::Package`
+ --> src/docs/publisher.rs:9:30
+  |
+9 | use crate::package_manager::{Package, PackageManager};
+  |                              ^^^^^^^ no `Package` in `package_manager`
+  |
+  = help: consider importing one of these variants instead:
+          crate::Error::Package
+          crate::build_system::ArtifactType::Package
+          crate::build_system::incremental_optimization::NodeType::Package
+          crate::build_system::incremental_optimization::PropagationScope::Package
+          crate::lsp::enhanced_symbols::Visibility::Package
+          crate::optimization::config::DependencyGranularity::Package
+
+error[E0432]: unresolved import `crate::package_manager::Package`
+ --> src/docs/registry.rs:8:30
+  |
+8 | use crate::package_manager::{Package, PackageManager};
+  |                              ^^^^^^^ no `Package` in `package_manager`
+  |
+  = help: consider importing one of these variants instead:
+          crate::Error::Package
+          crate::build_system::ArtifactType::Package
+          crate::build_system::incremental_optimization::NodeType::Package
+          crate::build_system::incremental_optimization::PropagationScope::Package
+          crate::lsp::enhanced_symbols::Visibility::Package
+          crate::optimization::config::DependencyGranularity::Package
+
+error[E0432]: unresolved import `crate::package_manager::Package`
+ --> src/docs/testing.rs:8:5
+  |
+8 | use crate::package_manager::Package;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `Package` in `package_manager`
+  |
+help: consider importing one of these variants instead
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::Error::Package;
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::build_system::ArtifactType::Package;
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::build_system::incremental_optimization::NodeType::Package;
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::build_system::incremental_optimization::PropagationScope::Package;
+  |
+    and 2 other candidates
+
+error[E0432]: unresolved import `crate::parser::ParsedProgram`
+ --> src/docs/coverage_analyzer.rs:8:29
+  |
+8 | use crate::parser::{Parser, ParsedProgram};
+  |                             ^^^^^^^^^^^^^ no `ParsedProgram` in `parser`
+
+error[E0432]: unresolved import `crate::ast::Declaration`
+ --> src/docs/coverage_analyzer.rs:9:50
+  |
+9 | use crate::ast::{AstNode, Statement, Expression, Declaration};
+  |                                                  ^^^^^^^^^^^
+  |                                                  |
+  |                                                  no `Declaration` in `ast`
+  |                                                  help: a similar name exists in the module: `declarations`
+  |
+  = help: consider importing this variant instead:
+          crate::lsp::semantic_highlighting::CursedSemanticTokenModifier::Declaration
+
+error[E0432]: unresolved import `crate::parser::ParsedProgram`
+ --> src/docs/advanced_examples.rs:8:29
+  |
+8 | use crate::parser::{Parser, ParsedProgram};
+  |                             ^^^^^^^^^^^^^ no `ParsedProgram` in `parser`
+
+error[E0432]: unresolved import `crate::parser::ParsedProgram`
+ --> src/docs/cross_reference.rs:9:29
+  |
+9 | use crate::parser::{Parser, ParsedProgram};
+  |                             ^^^^^^^^^^^^^ no `ParsedProgram` in `parser`
+
+error[E0432]: unresolved import `crate::documentation::DocFormat`
+  --> src/documentation/live_server.rs:37:93
+   |
+37 | use crate::documentation::{DocumentationGenerator, DocumentationConfig, DocGeneratorConfig, DocFormat};
+   |                                                                                             ^^^^^^^^^ no `DocFormat` in `documentation`
+   |
+   = help: consider importing this enum through its public re-export instead:
+           crate::docs::DocFormat
+
+error[E0432]: unresolved import `crate::codegen::llvm::debug_info::LlvmDebugManager`
+  --> src/debug/debug_info_manager.rs:27:60
+   |
+27 | use crate::codegen::llvm::debug_info::{LlvmDebugGenerator, LlvmDebugManager, SimpleDebugLocation};
+   |                                                            ^^^^^^^^^^^^^^^^ no `LlvmDebugManager` in `codegen::llvm::debug_info`
+   |
+   = help: consider importing this struct instead:
+           crate::codegen::llvm::debug::LlvmDebugManager
+
+error[E0432]: unresolved imports `crate::codegen::llvm::JitCompilationInterface`, `crate::codegen::llvm::create_optimized_jit_interface`, `crate::codegen::llvm::create_debug_jit_interface`
+ --> src/cli/jit_commands.rs:8:64
+  |
+8 | ...or, CursedJitEngine, JitCompilationInterface, create_optimized_jit_interface, create_debug_jit_interface};
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `create_debug_jit_interface` in `codegen::llvm`
+  |                         |                        |
+  |                         |                        no `create_optimized_jit_interface` in `codegen::llvm`
+  |                         no `JitCompilationInterface` in `codegen::llvm`
+  |
+  = help: consider importing this struct instead:
+          crate::codegen::llvm::jit_compilation::JitCompilationInterface
+
+error[E0432]: unresolved imports `crate::optimization::analysis::CompilationProfiler`, `crate::optimization::analysis::BenchmarkRunner`, `crate::optimization::utils::OptimizationRecommendations`, `crate::optimization::utils::PerformanceReport`
+  --> src/cli/optimization_commands.rs:16:37
+   |
+16 |     analysis::{PerformanceAnalyzer, CompilationProfiler, BenchmarkRunner},
+   |                                     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^ no `BenchmarkRunner` in `optimization::analysis`
+   |                                     |
+   |                                     no `CompilationProfiler` in `optimization::analysis`
+17 |     utils::{OptimizationRecommendations, PerformanceReport},
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `PerformanceReport` in `optimization::utils`
+   |             |
+   |             no `OptimizationRecommendations` in `optimization::utils`
+   |
+   = help: consider importing this struct through its public re-export instead:
+           crate::optimization::CompilationProfiler
+   = help: consider importing one of these structs instead:
+           crate::BenchmarkRunner
+           crate::optimization::comprehensive_performance_system::BenchmarkRunner
+           crate::stdlib::BenchmarkRunner
+   = help: consider importing one of these structs instead:
+           crate::codegen::llvm::PerformanceReport
+           crate::profiling::PerformanceReport
+           crate::testing::reporting::PerformanceReport
+help: a similar name exists in the module
+   |
+16 -     analysis::{PerformanceAnalyzer, CompilationProfiler, BenchmarkRunner},
+16 +     analysis::{PerformanceAnalyzer, CompilationPhase, BenchmarkRunner},
+   |
+help: a similar name exists in the module
+   |
+17 -     utils::{OptimizationRecommendations, PerformanceReport},
+17 +     utils::{OptimizationRecommendations, PerformanceImpact},
+   |
+
+error[E0432]: unresolved imports `crate::optimization::pgo::PgoManager`, `crate::optimization::pgo::PgoConfig`
+  --> src/cli/pgo_commands.rs:10:32
+   |
+10 | use crate::optimization::pgo::{PgoManager, PgoConfig, OptimizationStrategy, InstrumentationMode, CollectionMode};
+   |                                ^^^^^^^^^^  ^^^^^^^^^ no `PgoConfig` in `optimization::pgo`
+   |                                |
+   |                                no `PgoManager` in `optimization::pgo`
+   |
+   = help: consider importing this struct instead:
+           crate::optimization::llvm_passes::PgoManager
+   = help: consider importing one of these structs instead:
+           crate::optimization::PgoConfig
+           crate::optimization::config::PgoConfig
+
+error[E0432]: unresolved imports `crate::codegen::llvm::JitCompilationInterface`, `crate::codegen::llvm::create_optimized_jit_interface`
+  --> src/repl/evaluator.rs:16:28
+   |
+16 | use crate::codegen::llvm::{JitCompilationInterface, create_optimized_jit_interface};
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `create_optimized_jit_interface` in `codegen::llvm`
+   |                            |
+   |                            no `JitCompilationInterface` in `codegen::llvm`
+   |
+   = help: consider importing this struct instead:
+           crate::codegen::llvm::jit_compilation::JitCompilationInterface
+
+error[E0432]: unresolved imports `crate::type_system::Type`, `crate::type_system::TypeChecker`
+  --> src/lsp/inlay_hints.rs:13:26
+   |
+13 | use crate::type_system::{Type, TypeChecker};
+   |                          ^^^^  ^^^^^^^^^^^ no `TypeChecker` in `type_system`
+   |                          |
+   |                          no `Type` in `type_system`
+   |
+   = help: consider importing one of these items instead:
+           crate::Error::Type
+           crate::SymbolType::Type
+           crate::ast::Type
+           crate::build_system::incremental_optimization::SymbolType::Type
+           crate::core::Type
+           crate::debug::debug_symbols::DebugSymbolType::Type
+           crate::docs::ItemKind::Type
+           crate::docs::coverage_analyzer::ItemType::Type
+           crate::docs::cross_reference::DependencyNodeType::Type
+           crate::docs::cross_reference::SymbolType::Type
+           crate::documentation::ItemKind::Type
+           crate::documentation::extractors::CrossReferenceType::Type
+           crate::lsp::inlay_hints::ElementType::Type
+           crate::lsp::inlay_hints::QualifiedSymbolKind::Type
+           crate::lsp::semantic_highlighting::CursedSemanticTokenType::Type
+           crate::optimization::link_time_optimization::SymbolType::Type
+           crate::stdlib::lookin_glass::Type
+           postgres_types::Type
+           rusqlite::types::Type
+           tokio_postgres::types::Type
+   = help: consider importing this struct through its public re-export instead:
+           crate::core::TypeChecker
+
+error[E0432]: unresolved import `crate::stdlib::process::real_monitoring::get_real_process_state`
+   --> src/stdlib/process/enhanced_exec_slay_complete.rs:789:25
+    |
+789 |                     use crate::stdlib::process::real_monitoring::get_real_process_state;
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^----------------------
+    |                         |                                        |
+    |                         |                                        help: a similar name exists in the module: `get_real_process_stats`
+    |                         no `get_real_process_state` in `stdlib::process::real_monitoring`
+
+error[E0432]: unresolved import `crate::ast::expressions::literals`
+   --> src/ast/type_switch.rs:244:34
+    |
+244 |     use crate::ast::expressions::literals::StringLiteral;
+    |                                  ^^^^^^^^ could not find `literals` in `expressions`
+
+error: cannot find macro `to_sql_checked` in this scope
+   --> src/stdlib/database/postgres/types.rs:290:5
+    |
+290 |     to_sql_checked!();
+    |     ^^^^^^^^^^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use postgres_types::to_sql_checked;
+    |
+1   + use tokio_postgres::types::to_sql_checked;
+    |
+
+error[E0432]: unresolved import `crate::value`
+   --> src/stdlib/collections/heap_slay/core.rs:247:16
+    |
+247 |     use crate::value::Value;
+    |                ^^^^^
+    |                |
+    |                unresolved import
+    |                help: a similar path exists: `serde_json::value`
+
+error[E0432]: unresolved import `crate::value`
+   --> src/stdlib/collections/heap_slay/types.rs:396:16
+    |
+396 |     use crate::value::Value;
+    |                ^^^^^
+    |                |
+    |                unresolved import
+    |                help: a similar path exists: `serde_json::value`
+
+error[E0432]: unresolved imports `crate::ast::BinaryOperator`, `crate::ast::UnaryOperator`
+   --> src/codegen/llvm/enhanced_codegen.rs:929:31
+    |
+929 |     use crate::ast::{Literal, BinaryOperator, UnaryOperator};
+    |                               ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^ no `UnaryOperator` in `ast`
+    |                               |
+    |                               no `BinaryOperator` in `ast`
+    |
+    = help: consider importing this enum through its public re-export instead:
+            crate::stdlib::template::BinaryOperator
+    = help: consider importing this enum through its public re-export instead:
+            crate::stdlib::template::UnaryOperator
+
+error: cannot find macro `warn` in this scope
+   --> src/stdlib/template/template_streaming.rs:314:33
+    |
+314 | ...                   warn!("Failed to send chunk - receiver may be closed");
+    |                       ^^^^
+    |
+    = note: `warn` is in scope, but it is an attribute: `#[warn]`
+help: consider importing one of these macros
+    |
+1   + use log::warn;
+    |
+1   + use tracing::warn;
+    |
+
+error[E0432]: unresolved import `error::Error`
+  --> src/stdlib/exec_vibez/mod.rs:26:17
+   |
+26 | pub use error::{Error as ExecError, ExecResult};
+   |                 ^^^^^^^^^^^^^^^^^^ no `Error` in `stdlib::exec_vibez::error`
+   |
+   = help: consider importing one of these items instead:
+           crate::Error
+           crate::ErrorSeverity::Error
+           crate::build_system::build_profiler::AlertSeverity::Error
+           crate::build_system::build_profiler::EventType::Error
+           crate::build_system::distributed_compilation::NodeStatus::Error
+           crate::docs::cross_reference::ShadowingSeverity::Error
+           crate::docs::quality_system::Severity::Error
+           crate::documentation::interactive::ErrorSeverity::Error
+           crate::optimization::coordinator::ValidationSeverity::Error
+           crate::optimization::coordinator::ViolationAction::Error
+           crate::optimization::pgo::optimization_integration::IssueSeverity::Error
+           crate::optimization::pgo::profile_manager::ValidationSeverity::Error
+           crate::profiling::IoStatus::Error
+           crate::repl::MessageType::Error
+           crate::repl::ReplState::Error
+           crate::stdlib::DebugLevel::Error
+           crate::stdlib::SocketState::Error
+           crate::stdlib::crypto::protocols_comprehensive::ChannelState::Error
+           crate::stdlib::crypto::protocols_enhanced::ChannelState::Error
+           crate::stdlib::crypto::session_management::SessionState::Error
+           crate::stdlib::crypto::signature_validation::CheckSeverity::Error
+           crate::stdlib::crypto::unified_api::PackageStatus::Error
+           crate::stdlib::database::error::ErrorSeverity::Error
+           crate::stdlib::database::llvm_integration::ReturnType::Error
+           crate::stdlib::database::sqlite::ConnectionState::Error
+           crate::stdlib::database::sqlite::SqliteErrorCode::Error
+           crate::stdlib::database::sqlite::TransactionState::Error
+           crate::stdlib::database::sqlite::backup::BackupPhase::Error
+           crate::stdlib::database::sqlite::error::ErrorSeverity::Error
+           crate::stdlib::glowup_http::server::LogLevel::Error
+           crate::stdlib::ipc::MessageType::Error
+           crate::stdlib::ipc::advanced_ipc::SocketState::Error
+           crate::stdlib::packages::config::LogLevel::Error
+           crate::stdlib::plug_vibes::PluginState::Error
+           crate::stdlib::process::ChannelState::Error
+           crate::stdlib::process::Error
+           crate::stdlib::r#async::FutureState::Error
+           crate::stdlib::signal_boost::actions::LogLevel::Error
+           crate::stdlib::sys_core::SystemCallResult::Error
+           crate::stdlib::system::ServiceStatus::Error
+           crate::stdlib::template::ControlCommand::Error
+           crate::stdlib::vibe_net::monitoring::LogLevel::Error
+           crate::stdlib::vibecheck::ProfilerState::Error
+           crate::stdlib::web_vibez::config::LogLevel::Error
+           crate::stdlib::web_vibez::monitoring::AlertSeverity::Error
+           crate::tools::LintSeverity::Error
+           std::error::Error
+           std::fmt::Error
+           std::io::Error
+           ::core::error::Error
+           ::core::fmt::Error
+           aes_gcm::Error
+           argon2::Error
+           ark_marlin::Error
+           ark_marlin::ahp::Error
+           ark_poly_commit::Error
+           ark_std::error::Error
+           ark_std::fmt::Error
+           ark_std::io::Error
+           asn1_rs::Err::Error
+           asn1_rs::Error
+           base64ct::Error
+           bincode::Error
+           bzip2::Error
+           chacha20poly1305::Error
+           chrono::format::Item::Error
+           clap::Error
+           clap::error::Error
+           der::Error
+           ecdsa::Error
+           elliptic_curve::Error
+           futures::io::Error
+           getrandom::Error
+           httpdate::Error
+           inkwell::module::FlagBehavior::Error
+           k256::schnorr::Error
+           libloading::Error
+           log::Level::Error
+           log::LevelFilter::Error
+           lz4_flex::frame::Error
+           mysql::Error
+           nix::Error
+           notify::Error
+           p256::ecdsa::Error
+           p384::ecdsa::Error
+           p521::ecdsa::Error
+           pkcs1::Error
+           pkcs8::Error
+           pqcrypto_traits::Error
+           proptest::string::Error
+           rand::Error
+           regex::Error
+           reqwest::Error
+           ropey::Error
+           rsa::Error
+           rusqlite::Error
+           sec1::Error
+           semver::Error
+           serde::de::Error
+           serde::de::value::Error
+           serde::ser::Error
+           serde_json::Error
+           serde_yaml::Error
+           signature::Error
+           spki::Error
+           ssh2::Error
+           sys_info::Error
+           time::Error
+           tokio::io::Error
+           tokio::time::error::Error
+           tokio_postgres::Error
+           tokio_postgres::error::Severity::Error
+           toml::de::Error
+           toml::ser::Error
+           tower_lsp::jsonrpc::Error
+           tracing_subscriber::reload::Error
+           uuid::Error
+           walkdir::Error
+           warp::Error
+           webpki::Error
+           webpki::ErrorExt::Error
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:443:9
+    |
+443 |         debug!("Running dead prototype stripping on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:437:9
+    |
+437 |         debug!("Running symbol stripping on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:431:9
+    |
+431 |         debug!("Running constant merging on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error[E0432]: unresolved imports `ipc::named_pipe_error`, `ipc::message_queue_error`, `ipc::shared_memory_error`, `ipc::semaphore_error`, `ipc::unix_socket_error`, `ipc::permission_denied`, `ipc::already_exists`, `ipc::not_found`, `ipc::timeout_error`, `ipc::system_error`, `ipc::platform_error`, `ipc::NamedPipeConfig`, `ipc::ProcessStdin`, `ipc::ProcessStdout`, `ipc::ProcessStderr`, `ipc::MessageQueueStats`, `ipc::SharedMemoryStats`, `ipc::SemaphoreConfig`, `ipc::UnixSocketConfig`, `ipc::UnixDatagramServer`, `ipc::cleanup_sockets`
+   --> src/stdlib/mod.rs:506:5
+    |
+506 |     named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+    |     ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `unix_socket_error` in `stdlib::ipc`
+    |     |                 |                    |                    |
+    |     |                 |                    |                    no `semaphore_error` in `stdlib::ipc`
+    |     |                 |                    no `shared_memory_error` in `stdlib::ipc`
+    |     |                 no `message_queue_error` in `stdlib::ipc`
+    |     no `named_pipe_error` in `stdlib::ipc`
+507 |     permission_denied as ipc_permission_denied, already_exists, not_found, timeout_error as ipc_timeout_error,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `timeout_error` in `stdlib::ipc`
+    |     |                                           |               |
+    |     |                                           |               no `not_found` in `stdlib::ipc`
+    |     |                                           no `already_exists` in `stdlib::ipc`
+    |     no `permission_denied` in `stdlib::ipc`
+508 |     system_error as ipc_system_error, platform_error as ipc_platform_error,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     |
+    |     no `system_error` in `stdlib::ipc`
+...
+514 |     NamedPipe, NamedPipeServer, NamedPipeClient, NamedPipeConfig,
+    |                                                  ^^^^^^^^^^^^^^^
+515 |     ProcessStdin, ProcessStdout, ProcessStderr,
+    |     ^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+...
+518 |     MessageQueue, Message, MessageQueueConfig, MessageQueueStats,
+    |                                                ^^^^^^^^^^^^^^^^^
+...
+521 |     SharedMemory, SharedMemorySegment, SharedMemoryConfig, SharedMemoryStats,
+    |                                                            ^^^^^^^^^^^^^^^^^
+...
+524 |     Semaphore as IpcSemaphore, NamedSemaphore, SemaphoreConfig, SemaphoreValue,
+    |                                                ^^^^^^^^^^^^^^^
+...
+527 |     UnixSocket, UnixSocketServer, UnixSocketClient, UnixSocketConfig, UnixSocketType,
+    |                                                     ^^^^^^^^^^^^^^^^
+528 |     UnixDatagramServer, cleanup_sockets,
+    |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+    |
+    = note: unresolved item `crate::stdlib::signal_boost::genZ::tests::not_found` exists but is inaccessible
+help: a similar name exists in the module
+    |
+506 -     named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+506 +     named_pipe_error, message_queues, shared_memory_error, semaphore_error, unix_socket_error,
+    |
+help: a similar name exists in the module
+    |
+506 -     named_pipe_error, message_queue_error, shared_memory_error, semaphore_error, unix_socket_error,
+506 +     named_pipe_error, message_queue_error, shared_memory, semaphore_error, unix_socket_error,
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:425:9
+    |
+425 |         debug!("Running dead argument elimination on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:419:9
+    |
+419 |         debug!("Running argument promotion on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error[E0432]: unresolved import `crate::package_manager::Package`
+ --> src/docs/publisher.rs:9:30
+  |
+9 | use crate::package_manager::{Package, PackageManager};
+  |                              ^^^^^^^ no `Package` in `package_manager`
+  |
+  = help: consider importing one of these variants instead:
+          crate::Error::Package
+          crate::build_system::ArtifactType::Package
+          crate::build_system::incremental_optimization::NodeType::Package
+          crate::build_system::incremental_optimization::PropagationScope::Package
+          crate::lsp::enhanced_symbols::Visibility::Package
+
+error[E0432]: unresolved import `crate::package_manager::Package`
+ --> src/docs/registry.rs:8:30
+  |
+8 | use crate::package_manager::{Package, PackageManager};
+  |                              ^^^^^^^ no `Package` in `package_manager`
+  |
+  = help: consider importing one of these variants instead:
+          crate::Error::Package
+          crate::build_system::ArtifactType::Package
+          crate::build_system::incremental_optimization::NodeType::Package
+          crate::build_system::incremental_optimization::PropagationScope::Package
+          crate::lsp::enhanced_symbols::Visibility::Package
+
+error[E0432]: unresolved import `crate::package_manager::Package`
+ --> src/docs/testing.rs:8:5
+  |
+8 | use crate::package_manager::Package;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `Package` in `package_manager`
+  |
+help: consider importing one of these variants instead
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::Error::Package;
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::build_system::ArtifactType::Package;
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::build_system::incremental_optimization::NodeType::Package;
+  |
+8 - use crate::package_manager::Package;
+8 + use crate::build_system::incremental_optimization::PropagationScope::Package;
+  |
+    and 1 other candidate
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:413:9
+    |
+413 |         debug!("Running always-inline pass on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error[E0432]: unresolved imports `crate::codegen::llvm::JitCompilationInterface`, `crate::codegen::llvm::create_optimized_jit_interface`
+  --> src/repl/evaluator.rs:16:28
+   |
+16 | use crate::codegen::llvm::{JitCompilationInterface, create_optimized_jit_interface};
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `create_optimized_jit_interface` in `codegen::llvm`
+   |                            |
+   |                            no `JitCompilationInterface` in `codegen::llvm`
+   |
+   = help: consider importing this struct instead:
+           crate::codegen::llvm::jit_compilation::JitCompilationInterface
+   = note: unresolved item `crate::cli::jit_commands::tests::create_optimized_jit_interface` exists but is inaccessible
+
+error[E0432]: unresolved imports `crate::type_system::Type`, `crate::type_system::TypeChecker`
+  --> src/lsp/inlay_hints.rs:13:26
+   |
+13 | use crate::type_system::{Type, TypeChecker};
+   |                          ^^^^  ^^^^^^^^^^^ no `TypeChecker` in `type_system`
+   |                          |
+   |                          no `Type` in `type_system`
+   |
+   = help: consider importing one of these items instead:
+           crate::Error::Type
+           crate::SymbolType::Type
+           crate::ast::Type
+           crate::build_system::incremental_optimization::SymbolType::Type
+           crate::core::Type
+           crate::docs::ItemKind::Type
+           crate::docs::coverage_analyzer::ItemType::Type
+           crate::docs::cross_reference::DependencyNodeType::Type
+           crate::docs::cross_reference::SymbolType::Type
+           crate::documentation::ItemKind::Type
+           crate::documentation::extractors::CrossReferenceType::Type
+           crate::lsp::semantic_highlighting::CursedSemanticTokenType::Type
+           crate::optimization::link_time_optimization::SymbolType::Type
+           crate::stdlib::lookin_glass::Type
+           postgres_types::Type
+           rusqlite::types::Type
+           tokio_postgres::types::Type
+   = help: consider importing this struct through its public re-export instead:
+           crate::core::TypeChecker
+
+error[E0432]: unresolved import `memory_layout_optimizer_stub`
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:3847:13
+     |
+3847 |         use memory_layout_optimizer_stub::MemoryLayoutConfig;
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `memory_layout_optimizer_stub`
+     |
+     = help: if you wanted to use a crate named `memory_layout_optimizer_stub`, use `cargo add memory_layout_optimizer_stub` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `interprocedural_analyzer_stub`
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:3848:13
+     |
+3848 |         use interprocedural_analyzer_stub::InterproceduralConfig;
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `interprocedural_analyzer_stub`
+     |
+     = help: if you wanted to use a crate named `interprocedural_analyzer_stub`, use `cargo add interprocedural_analyzer_stub` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `vectorization_optimizer_stub`
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:3849:13
+     |
+3849 |         use vectorization_optimizer_stub::VectorizationConfig;
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `vectorization_optimizer_stub`
+     |
+     = help: if you wanted to use a crate named `vectorization_optimizer_stub`, use `cargo add vectorization_optimizer_stub` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `cache_optimizer_stub`
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:3850:13
+     |
+3850 |         use cache_optimizer_stub::CacheOptimizationConfig;
+     |             ^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `cache_optimizer_stub`
+     |
+     = help: if you wanted to use a crate named `cache_optimizer_stub`, use `cargo add cache_optimizer_stub` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `branch_predictor_stub`
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:3851:13
+     |
+3851 |         use branch_predictor_stub::BranchPredictionConfig;
+     |             ^^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `branch_predictor_stub`
+     |
+     = help: if you wanted to use a crate named `branch_predictor_stub`, use `cargo add branch_predictor_stub` to add it to your `Cargo.toml`
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:407:9
+    |
+407 |         debug!("Running function attributes analysis on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:401:9
+    |
+401 |         debug!("Running function merging on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:395:9
+    |
+395 |         debug!("Running global dead code elimination on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:389:9
+    |
+389 |         debug!("Running global optimization on module");
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:381:9
+    |
+381 |         debug!("Running tail call elimination on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:375:9
+    |
+375 |         debug!("Running loop vectorization on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:369:9
+    |
+369 |         debug!("Running loop unrolling on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:363:9
+    |
+363 |         debug!("Running function inlining on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:357:9
+    |
+357 |         debug!("Running CFG simplification on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:351:9
+    |
+351 |         debug!("Running global value numbering on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:333:21
+    |
+333 |                     debug!("Removing dead instruction");
+    |                     ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:322:9
+    |
+322 |         debug!("Running dead code elimination on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:305:21
+    |
+305 |                     debug!("Combining instruction: {}", instr.get_opcode().as_str());
+    |                     ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:293:9
+    |
+293 |         debug!("Running instcombine on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:274:25
+    |
+274 |                         debug!("Promoting alloca to register");
+    |                         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:261:9
+    |
+261 |         debug!("Running mem2reg on function {}", function.get_name().to_str().unwrap_or("unnamed"));
+    |         ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:252:17
+    |
+252 |                 debug!("Unknown module pass: {}", pass_name);
+    |                 ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `debug` in this scope
+   --> src/optimization/llvm_passes.rs:232:17
+    |
+232 |                 debug!("Unknown function pass: {}", pass_name);
+    |                 ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::debug;
+    |
+1   + use tracing::debug;
+    |
+
+error: cannot find macro `info` in this scope
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:2005:13
+     |
+2005 |             info!("Would perform real inlining of function {} at call site", 
+     |             ^^^^
+     |
+help: consider importing one of these macros
+     |
+1430 +     use log::info;
+     |
+1430 +     use tracing::info;
+     |
+
+error: cannot find macro `info` in this scope
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:1858:13
+     |
+1858 |             info!("Successfully inlined {} function calls", inlined_count);
+     |             ^^^^
+     |
+help: consider importing one of these macros
+     |
+1430 +     use log::info;
+     |
+1430 +     use tracing::info;
+     |
+
+error: cannot find macro `info` in this scope
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:1851:33
+     |
+1851 | ...                   info!("Inlined function {} at call site", candidate.name);
+     |                       ^^^^
+     |
+help: consider importing one of these macros
+     |
+1430 +     use log::info;
+     |
+1430 +     use tracing::info;
+     |
+
+error: cannot find macro `info` in this scope
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:1834:13
+     |
+1834 |             info!("Applying real function inlining optimizations");
+     |             ^^^^
+     |
+help: consider importing one of these macros
+     |
+1430 +     use log::info;
+     |
+1430 +     use tracing::info;
+     |
+
+error: cannot find macro `trace` in this scope
+   --> src/runtime/channels/select.rs:575:29
+    |
+575 | ...                   trace!(case_id = case.case_id, "Receive would block");
+    |                       ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::trace;
+    |
+1   + use tracing::trace;
+    |
+
+error: cannot find macro `trace` in this scope
+   --> src/runtime/channels/select.rs:538:29
+    |
+538 | ...                   trace!(case_id = case.case_id, "Send would block");
+    |                       ^^^^^
+    |
+help: consider importing one of these macros
+    |
+1   + use log::trace;
+    |
+1   + use tracing::trace;
+    |
+
+error[E0106]: missing lifetime specifier
+   --> src/codegen/llvm/main.rs:153:26
+    |
+153 |     expression_compiler: LlvmExpressionCompiler,
+    |                          ^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+    |
+help: consider introducing a named lifetime parameter
+    |
+140 ~ pub struct LlvmCodeGenerator<'a> {
+141 |     // Real LLVM components
+...
+152 |     web_vibez_integration: Option<WebVibezLlvmIntegration<'static>>,
+153 ~     expression_compiler: LlvmExpressionCompiler<'a>,
+    |
+
+error[E0106]: missing lifetime specifier
+   --> src/codegen/llvm/main.rs:163:70
+    |
+163 |     optimization_coordinator: Option<std::sync::Arc<std::sync::Mutex<OptimizationCoordinator>>>,
+    |                                                                      ^^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+    |
+help: consider introducing a named lifetime parameter
+    |
+140 ~ pub struct LlvmCodeGenerator<'a> {
+141 |     // Real LLVM components
+...
+162 |     enhanced_pass_manager: Option<EnhancedLlvmPassManager<'static>>,
+163 ~     optimization_coordinator: Option<std::sync::Arc<std::sync::Mutex<OptimizationCoordinator<'a>>>>,
+    |
+
+error[E0106]: missing lifetime specifier
+   --> src/codegen/llvm/main.rs:235:26
+    |
+235 |     expression_compiler: LlvmExpressionCompiler,
+    |                          ^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+    |
+help: consider using the `'ctx` lifetime
+    |
+235 |     expression_compiler: LlvmExpressionCompiler<'ctx>,
+    |                                                ++++++
+
+error[E0106]: missing lifetime specifier
+  --> src/codegen/llvm/channels.rs:33:14
+   |
+33 |     context: ExpressionContext,
+   |              ^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+29 ~ pub struct LlvmChannelCompiler<'a> {
+30 |     /// Type registry for channel type management
+31 |     type_registry: LlvmTypeRegistry,
+32 |     /// Expression context for variable and type management
+33 ~     context: ExpressionContext<'a>,
+   |
+
+error[E0407]: method `generate_function_debug` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:860:5
+    |
+860 | /     fn generate_function_debug(
+861 | |         &mut self,
+862 | |         function: FunctionValue<'ctx>,
+863 | |         name: &str,
+...   |
+869 | |         Ok(())
+870 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0407]: method `generate_variable_debug` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:872:5
+    |
+872 | /     fn generate_variable_debug(
+873 | |         &mut self,
+874 | |         name: &str,
+875 | |         storage: PointerValue<'ctx>,
+...   |
+881 | |         Ok(())
+882 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0407]: method `set_debug_location` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:884:5
+    |
+884 | /     fn set_debug_location(
+885 | |         &mut self,
+886 | |         location: &SourceLocation,
+887 | |     ) -> Result<(), CursedError> {
+...   |
+892 | |         Ok(())
+893 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0407]: method `generate_expression_debug` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:895:5
+    |
+895 | /     fn generate_expression_debug(
+896 | |         &mut self,
+897 | |         expr: &dyn Expression,
+898 | |         instruction: Option<InstructionValue<'ctx>>,
+...   |
+903 | |         Ok(())
+904 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0407]: method `enter_scope` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:906:5
+    |
+906 | /     fn enter_scope(&mut self, location: &SourceLocation) -> Result<(), CursedError> {
+907 | |         if let Some(debug) = &mut self.debug_metadata {
+908 | |             let file = debug.get_or_create_file(&location.file);
+909 | |             debug.enter_lexical_scope(file, location.line, location.column)?;
+910 | |         }
+911 | |         Ok(())
+912 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0407]: method `exit_scope` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:914:5
+    |
+914 | /     fn exit_scope(&mut self) {
+915 | |         if let Some(debug) = &mut self.debug_metadata {
+916 | |             debug.exit_lexical_scope();
+917 | |         }
+918 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0407]: method `debug_enabled` is not a member of trait `LlvmDebugIntegration`
+   --> src/codegen/llvm/enhanced_codegen.rs:920:5
+    |
+920 | /     fn debug_enabled(&self) -> bool {
+921 | |         self.debug_metadata.is_some()
+922 | |     }
+    | |_____^ not a member of trait `LlvmDebugIntegration`
+
+error[E0106]: missing lifetime specifier
+  --> src/codegen/llvm/jit_engine.rs:27:62
+   |
+27 |     compiled_functions: Arc<Mutex<HashMap<String, JitFunction<()>>>>,
+   |                                                              ^ expected named lifetime parameter
+   |
+help: consider using the `'ctx` lifetime
+   |
+27 |     compiled_functions: Arc<Mutex<HashMap<String, JitFunction<'ctx, ()>>>>,
+   |                                                               +++++
+
+error[E0726]: implicit elided lifetime not allowed here
+   --> src/codegen/llvm/process.rs:176:6
+    |
+176 | impl ProcessCompilation for LlvmCodeGenerator {
+    |      ^^^^^^^^^^^^^^^^^^ expected lifetime parameter
+    |
+help: indicate the anonymous lifetime
+    |
+176 | impl ProcessCompilation<'_> for LlvmCodeGenerator {
+    |                        ++++
+
+error[E0106]: missing lifetime specifier
+  --> src/optimization/pgo/mod.rs:73:23
+   |
+73 |     pub pass_manager: PgoPassManager,
+   |                       ^^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+65 ~ pub struct PgoSystem<'a> {
+66 |     /// Profile collector for runtime data gathering
+...
+72 |     /// PGO pass manager for optimization execution
+73 ~     pub pass_manager: PgoPassManager<'a>,
+   |
+
+error[E0106]: missing lifetime specifier
+  --> src/optimization/pgo/mod.rs:77:26
+   |
+77 |     pub instrumentation: ProfileInstrumentation,
+   |                          ^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+65 ~ pub struct PgoSystem<'a> {
+66 |     /// Profile collector for runtime data gathering
+...
+76 |     /// Instrumentation system for code generation
+77 ~     pub instrumentation: ProfileInstrumentation<'a>,
+   |
+
+error[E0106]: missing lifetime specifier
+  --> src/optimization/pgo/mod.rs:79:22
+   |
+79 |     pub integration: PgoOptimizationIntegrator,
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+65 ~ pub struct PgoSystem<'a> {
+66 |     /// Profile collector for runtime data gathering
+...
+78 |     /// Integration with existing optimization pipeline
+79 ~     pub integration: PgoOptimizationIntegrator<'a>,
+   |
+
+error[E0106]: missing lifetime specifier
+  --> src/optimization/comprehensive_optimization_enablement.rs:24:34
+   |
+24 | pub type EnhancedLlvmOptimizer = EnhancedLlvmOptimizationSystem;
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+24 | pub type EnhancedLlvmOptimizer<'a> = EnhancedLlvmOptimizationSystem<'a>;
+   |                               ++++                                 ++++
+
+error[E0106]: missing lifetime specifier
+  --> src/stdlib/packages/db_sql/postgresql.rs:66:35
+   |
+66 |     transaction: Arc<Mutex<Option<PgTransaction>>>,
+   |                                   ^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+65 ~ pub struct PostgreSqlTransaction<'a> {
+66 ~     transaction: Arc<Mutex<Option<PgTransaction<'a>>>>,
+   |
+
+error[E0407]: method `is_empty` is not a member of trait `ResultSet`
+   --> src/stdlib/packages/db_sql/mysql.rs:768:5
+    |
+768 | /     fn is_empty(&self) -> bool {
+769 | |         self.rows.is_empty()
+770 | |     }
+    | |_____^ not a member of trait `ResultSet`
+
+error[E0201]: duplicate definitions with name `row_count`:
+   --> src/stdlib/packages/db_sql/mysql.rs:772:5
+    |
+764 | /     fn row_count(&self) -> Option<usize> {
+765 | |         Some(self.rows.len())
+766 | |     }
+    | |_____- previous definition here
+...
+772 | /     fn row_count(&self) -> Option<usize> {
+773 | |         Some(self.rows.len())
+774 | |     }
+    | |_____^ duplicate definition
+    |
+   ::: src/stdlib/packages/db_core/traits.rs:119:5
+    |
+119 |       fn row_count(&self) -> Option<usize>;
+    |       ------------------------------------- item in trait
+
+error[E0407]: method `parameter_count` is not a member of trait `PreparedStatement`
+   --> src/stdlib/packages/db_sql/mysql.rs:838:5
+    |
+838 | /     fn parameter_count(&self) -> usize {
+839 | |         // MySQL doesn't expose parameter count directly, we'll estimate
+840 | |         self.sql.matches('?').count()
+841 | |     }
+    | |_____^ not a member of trait `PreparedStatement`
+
+error[E0407]: method `sql` is not a member of trait `PreparedStatement`
+   --> src/stdlib/packages/db_sql/mysql.rs:843:5
+    |
+843 | /     fn sql(&self) -> &str {
+844 | |         &self.sql
+845 | |     }
+    | |_____^ not a member of trait `PreparedStatement`
+
+error[E0407]: method `is_empty` is not a member of trait `ResultSet`
+   --> src/stdlib/packages/db_sql/sqlite.rs:716:5
+    |
+716 | /     fn is_empty(&self) -> bool {
+717 | |         self.rows.is_empty()
+718 | |     }
+    | |_____^ not a member of trait `ResultSet`
+
+error[E0201]: duplicate definitions with name `row_count`:
+   --> src/stdlib/packages/db_sql/sqlite.rs:720:5
+    |
+712 | /     fn row_count(&self) -> Option<usize> {
+713 | |         Some(self.rows.len())
+714 | |     }
+    | |_____- previous definition here
+...
+720 | /     fn row_count(&self) -> Option<usize> {
+721 | |         Some(self.rows.len())
+722 | |     }
+    | |_____^ duplicate definition
+    |
+   ::: src/stdlib/packages/db_core/traits.rs:119:5
+    |
+119 |       fn row_count(&self) -> Option<usize>;
+    |       ------------------------------------- item in trait
+
+error[E0407]: method `parameter_count` is not a member of trait `PreparedStatement`
+   --> src/stdlib/packages/db_sql/sqlite.rs:868:5
+    |
+868 | /     fn parameter_count(&self) -> usize {
+869 | |         // SQLite doesn't expose parameter count directly, we'll estimate
+870 | |         self.sql.matches('?').count()
+871 | |     }
+    | |_____^ not a member of trait `PreparedStatement`
+
+error[E0407]: method `sql` is not a member of trait `PreparedStatement`
+   --> src/stdlib/packages/db_sql/sqlite.rs:873:5
+    |
+873 | /     fn sql(&self) -> &str {
+874 | |         &self.sql
+875 | |     }
+    | |_____^ not a member of trait `PreparedStatement`
+
+error[E0407]: method `create_engine_from_config` is not a member of trait `Configurable`
+   --> src/stdlib/packages/crypto_kdf/kdf_traits.rs:351:5
+    |
+351 | /     fn create_engine_from_config(config: &Self::Config) -> KdfResult<Self> where Self: Sized {
+352 | |         // Parse configuration format: "algorithm:param1=value1,param2=value2"
+353 | |         let parts: Vec<&str> = config.splitn(2, ':').collect();
+354 | |         let algorithm = parts[0].trim();
+...   |
+381 | |     }
+    | |_____^ not a member of trait `Configurable`
+
+error[E0407]: method `digest` is not a member of trait `Hasher`
+   --> src/stdlib/packages/crypto_hash_advanced/hmac_variants.rs:156:5
+    |
+156 | /     fn digest(&mut self, data: &[u8]) -> HashResult<Vec<u8>> {
+157 | |         self.finalize(data)
+158 | |     }
+    | |_____^ not a member of trait `Hasher`
+
+error[E0407]: method `output_size` is not a member of trait `Hasher`
+   --> src/stdlib/packages/crypto_hash_advanced/hmac_variants.rs:173:5
+    |
+173 | /     fn output_size(&self) -> usize {
+174 | |         self.digest_size()
+175 | |     }
+    | |_____^ not a member of trait `Hasher`
+
+error[E0435]: attempt to use a non-constant value in a constant
+  --> src/stdlib/packages/crypto_random/random_bytes.rs:67:37
+   |
+67 |         const MAX_ATTEMPTS: usize = size * 10;
+   |                                     ^^^^ non-constant value
+   |
+help: consider using `let` instead of `const`
+   |
+67 -         const MAX_ATTEMPTS: usize = size * 10;
+67 +         let MAX_ATTEMPTS: usize = size * 10;
+   |
+
+error[E0407]: method `column_count` is not a member of trait `DriverStmt`
+   --> src/stdlib/database/postgres/statement.rs:268:5
+    |
+268 | /     fn column_count(&self) -> usize {
+269 | |         self.column_types.len()
+270 | |     }
+    | |_____^ not a member of trait `DriverStmt`
+
+error[E0433]: failed to resolve: could not find `name` in `x509_parser`
+   --> src/stdlib/crypto/certificates.rs:418:60
+    |
+418 |     fn extract_distinguished_name(&self, dn: &x509_parser::name::X509Name) -> CertificateResult<DistinguishedName> {
+    |                                                            ^^^^ could not find `name` in `x509_parser`
+
+error[E0433]: failed to resolve: could not find `algorithm` in `x509_parser`
+   --> src/stdlib/crypto/certificates.rs:454:64
+    |
+454 |     fn determine_signature_algorithm(&self, alg: &x509_parser::algorithm::AlgorithmIdentifier) -> CertificateResult<SignatureAlgorithm> {
+    |                                                                ^^^^^^^^^ could not find `algorithm` in `x509_parser`
+
+error[E0433]: failed to resolve: could not find `algorithm` in `x509_parser`
+   --> src/stdlib/crypto/certificates.rs:468:65
+    |
+468 |     fn determine_public_key_algorithm(&self, alg: &x509_parser::algorithm::AlgorithmIdentifier) -> CertificateResult<PublicKeyAlgorithm> {
+    |                                                                 ^^^^^^^^^ could not find `algorithm` in `x509_parser`
+
+error[E0433]: failed to resolve: could not find `multipart` in `reqwest`
+   --> src/stdlib/glowup_http/client.rs:217:37
+    |
+217 |             let mut form = reqwest::multipart::Form::new();
+    |                                     ^^^^^^^^^ could not find `multipart` in `reqwest`
+    |
+note: found an item that was configured out
+   --> /home/ghuntley/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-0.11.27/src/lib.rs:347:31
+    |
+347 |     pub use self::async_impl::multipart;
+    |                               ^^^^^^^^^
+note: the item is gated behind the `multipart` feature
+   --> /home/ghuntley/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-0.11.27/src/lib.rs:346:11
+    |
+346 |     #[cfg(feature = "multipart")]
+    |           ^^^^^^^^^^^^^^^^^^^^^
+note: found an item that was configured out
+   --> /home/ghuntley/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-0.11.27/src/lib.rs:370:25
+    |
+370 |     pub use self::wasm::multipart;
+    |                         ^^^^^^^^^
+note: the item is gated behind the `wasm32` feature
+   --> /home/ghuntley/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-0.11.27/src/lib.rs:364:1
+    |
+364 | / if_wasm! {
+365 | |     mod wasm;
+366 | |     mod util;
+...   |
+370 | |     pub use self::wasm::multipart;
+371 | | }
+    | |_^
+    = note: this error originates in the macro `if_wasm` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: there is an enum variant `crate::stdlib::http_core::request::RequestBody::Form` and 1 other; try using the variant's enum
+    |
+217 -             let mut form = reqwest::multipart::Form::new();
+217 +             let mut form = crate::stdlib::http_core::request::RequestBody::new();
+    |
+217 -             let mut form = reqwest::multipart::Form::new();
+217 +             let mut form = crate::stdlib::packages::RequestBody::new();
+    |
+
+error[E0433]: failed to resolve: could not find `import` in `statements`
+    --> src/docs/generator.rs:1496:95
+     |
+1496 |             if let Some(any_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::import::ImportStatement>() {
+     |                                                                                               ^^^^^^ could not find `import` in `statements`
+
+error[E0433]: failed to resolve: could not find `token` in `lexer`
+    --> src/lsp/enhanced_symbols.rs:1580:69
+     |
+1580 |     fn create_lexical_function_symbol(&self, _token: &crate::lexer::token::Token, _lines: &[&str]) -> Option<CursedSymbol> {
+     |                                                                     ^^^^^ could not find `token` in `lexer`
+
+error[E0433]: failed to resolve: could not find `token` in `lexer`
+    --> src/lsp/enhanced_symbols.rs:1585:69
+     |
+1585 |     fn create_lexical_variable_symbol(&self, _token: &crate::lexer::token::Token, _lines: &[&str]) -> Option<CursedSymbol> {
+     |                                                                     ^^^^^ could not find `token` in `lexer`
+
+error[E0433]: failed to resolve: could not find `token` in `lexer`
+    --> src/lsp/enhanced_symbols.rs:1590:65
+     |
+1590 |     fn create_lexical_type_symbol(&self, _token: &crate::lexer::token::Token, _lines: &[&str]) -> Option<CursedSymbol> {
+     |                                                                 ^^^^^ could not find `token` in `lexer`
+
+error[E0412]: cannot find type `ModParser` in this scope
+  --> src/parser/type_switch.rs:12:6
+   |
+12 | impl ModParser {
+   |      ^^^^^^^^^ help: a struct with a similar name exists: `Parser`
+   |
+  ::: src/parser/mod.rs:54:1
+   |
+54 | pub struct Parser {
+   | ----------------- similarly named struct `Parser` defined here
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:116:42
+    |
+116 |             return Err(Error::ParseError(ParseError {
+    |                                          ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::build_config::ConfigError::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+      and 16 other candidates
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:167:42
+    |
+167 |             return Err(Error::ParseError(ParseError {
+    |                                          ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::build_config::ConfigError::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+      and 16 other candidates
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:235:35
+    |
+235 |             Err(Error::ParseError(ParseError {
+    |                                   ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::build_config::ConfigError::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+      and 16 other candidates
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:294:42
+    |
+294 |             return Err(Error::ParseError(ParseError {
+    |                                          ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::build_config::ConfigError::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+      and 16 other candidates
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:303:46
+    |
+303 |                 return Err(Error::ParseError(ParseError {
+    |                                              ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::build_config::ConfigError::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `ComprehensiveOptimizationResult` in this scope
+    --> src/codegen/llvm/main.rs:794:121
+     |
+794  | ...optimization::metrics::CompilationUnit]) -> Result<ComprehensiveOptimizationResult, Error> {
+     |                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+    ::: src/optimization/coordinator.rs:2538:1
+     |
+2538 | pub struct CoordinatedOptimizationResults {
+     | ----------------------------------------- similarly named struct `CoordinatedOptimizationResults` defined here
+     |
+help: a struct with a similar name exists
+     |
+794  -     pub fn optimize_compilation_units(&mut self, units: &mut [crate::optimization::metrics::CompilationUnit]) -> Result<ComprehensiveOptimizationResult, Error> {
+794  +     pub fn optimize_compilation_units(&mut self, units: &mut [crate::optimization::metrics::CompilationUnit]) -> Result<CoordinatedOptimizationResults, Error> {
+     |
+help: you might be missing a type parameter
+     |
+253  | impl<ComprehensiveOptimizationResult> LlvmCodeGenerator {
+     |     +++++++++++++++++++++++++++++++++
+
+error[E0412]: cannot find type `BenchmarkSuite` in this scope
+  --> src/codegen/llvm/optimization_integration.rs:24:29
+   |
+24 |     benchmark_suite: Option<BenchmarkSuite>,
+   |                             ^^^^^^^^^^^^^^
+   |
+  ::: src/optimization/benchmarking.rs:12:1
+   |
+12 | pub struct BenchmarkingSuite {
+   | ---------------------------- similarly named struct `BenchmarkingSuite` defined here
+   |
+help: a struct with a similar name exists
+   |
+24 -     benchmark_suite: Option<BenchmarkSuite>,
+24 +     benchmark_suite: Option<BenchmarkingSuite>,
+   |
+help: consider importing one of these structs
+   |
+1  + use crate::optimization::performance_analysis::BenchmarkSuite;
+   |
+1  + use crate::profiling::BenchmarkSuite;
+   |
+1  + use crate::stdlib::BenchmarkSuite;
+   |
+1  + use crate::stdlib::crypto_pqc::BenchmarkSuite;
+   |
+     and 2 other candidates
+
+error[E0412]: cannot find type `PerformanceProfiler` in this scope
+   --> src/codegen/llvm/optimization_integration.rs:26:22
+    |
+26  |     profiler: Option<PerformanceProfiler>,
+    |                      ^^^^^^^^^^^^^^^^^^^
+    |
+   ::: src/optimization/comprehensive_optimization_enablement.rs:318:1
+    |
+318 | pub struct PerformanceMonitor {
+    | ----------------------------- similarly named struct `PerformanceMonitor` defined here
+    |
+help: a struct with a similar name exists
+    |
+26  -     profiler: Option<PerformanceProfiler>,
+26  +     profiler: Option<PerformanceMonitor>,
+    |
+help: consider importing one of these structs
+    |
+1   + use crate::optimization::analysis::PerformanceProfiler;
+    |
+1   + use crate::optimization::coordinator::PerformanceProfiler;
+    |
+
+error[E0433]: failed to resolve: use of undeclared type `PerformanceProfiler`
+   --> src/codegen/llvm/optimization_integration.rs:100:18
+    |
+100 |             Some(PerformanceProfiler::new(&config)?)
+    |                  ^^^^^^^^^^^^^^^^^^^ use of undeclared type `PerformanceProfiler`
+    |
+help: a struct with a similar name exists
+    |
+100 -             Some(PerformanceProfiler::new(&config)?)
+100 +             Some(PerformanceMonitor::new(&config)?)
+    |
+help: consider importing one of these structs
+    |
+1   + use crate::optimization::analysis::PerformanceProfiler;
+    |
+1   + use crate::optimization::coordinator::PerformanceProfiler;
+    |
+
+error[E0422]: cannot find struct, variant or union type `OptimizationFeedback` in this scope
+   --> src/codegen/llvm/optimization_integration.rs:226:28
+    |
+226 |             let feedback = OptimizationFeedback {
+    |                            ^^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::optimization::adaptive::OptimizationFeedback;
+    |
+
+error[E0412]: cannot find type `IncrementalCompilationResult` in this scope
+   --> src/codegen/llvm/optimization_integration.rs:273:17
+    |
+273 |     ) -> Result<IncrementalCompilationResult>
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+74  | impl<IncrementalCompilationResult> LlvmOptimizationIntegration {
+    |     ++++++++++++++++++++++++++++++
+
+error[E0412]: cannot find type `BenchmarkSuiteResults` in this scope
+   --> src/codegen/llvm/optimization_integration.rs:285:44
+    |
+285 |     pub fn run_benchmarks(&self) -> Result<BenchmarkSuiteResults> {
+    |                                            ^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: src/optimization/benchmarks.rs:89:1
+    |
+89  | pub struct BenchmarkSuiteResult {
+    | ------------------------------- similarly named struct `BenchmarkSuiteResult` defined here
+    |
+help: a struct with a similar name exists
+    |
+285 -     pub fn run_benchmarks(&self) -> Result<BenchmarkSuiteResults> {
+285 +     pub fn run_benchmarks(&self) -> Result<BenchmarkSuiteResult> {
+    |
+help: you might be missing a type parameter
+    |
+74  | impl<BenchmarkSuiteResults> LlvmOptimizationIntegration {
+    |     +++++++++++++++++++++++
+
+error[E0412]: cannot find type `AdaptationResult` in this scope
+   --> src/codegen/llvm/optimization_integration.rs:358:52
+    |
+358 |     pub fn adapt_if_needed(&self) -> Result<Option<AdaptationResult>> {
+    |                                                    ^^^^^^^^^^^^^^^^
+    |
+   ::: src/optimization/adaptive.rs:594:1
+    |
+594 | pub struct AdaptationResult {
+    | --------------------------- similarly named struct `AdaptiveResults` defined here
+    |
+help: a struct with a similar name exists
+    |
+358 -     pub fn adapt_if_needed(&self) -> Result<Option<AdaptationResult>> {
+358 +     pub fn adapt_if_needed(&self) -> Result<Option<AdaptiveResults>> {
+    |
+help: consider importing this struct
+    |
+1   + use crate::optimization::adaptive::AdaptationResult;
+    |
+
+error[E0412]: cannot find type `AST` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:164:41
+    |
+164 |     pub fn compile_ast(&mut self, ast: &AST) -> Result<(), CursedError> {
+    |                                         ^^^ not found in this scope
+
+error[E0412]: cannot find type `FunctionDeclaration` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:211:52
+    |
+211 |     pub fn compile_function(&mut self, func_decl: &FunctionDeclaration) -> Result<FunctionValue<'ctx>, CursedError> {
+    |                                                    ^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+8   + use crate::ast::FunctionDeclaration;
+    |
+8   + use crate::ast::parser_support::FunctionDeclaration;
+    |
+8   + use crate::documentation::extractors::FunctionDeclaration;
+    |
+
+error[E0412]: cannot find type `VariableDeclaration` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:349:59
+    |
+349 |     fn compile_variable_declaration(&mut self, var_decl: &VariableDeclaration) -> Result<(), CursedError> {
+    |                                                           ^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct through its public re-export
+    |
+8   + use crate::documentation::extractors::VariableDeclaration;
+    |
+
+error[E0412]: cannot find type `BinaryOperator` in module `crate::ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:459:32
+    |
+459 |         operator: &crate::ast::BinaryOperator,
+    |                                ^^^^^^^^^^^^^^ not found in `crate::ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::BinaryOperator;
+    |
+help: if you import `BinaryOperator`, refer to it directly
+    |
+459 -         operator: &crate::ast::BinaryOperator,
+459 +         operator: &BinaryOperator,
+    |
+
+error[E0433]: failed to resolve: could not find `BinaryOperator` in `ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:467:25
+    |
+467 |             crate::ast::BinaryOperator::Add => {
+    |                         ^^^^^^^^^^^^^^ could not find `BinaryOperator` in `ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::BinaryOperator;
+    |
+help: if you import `BinaryOperator`, refer to it directly
+    |
+467 -             crate::ast::BinaryOperator::Add => {
+467 +             BinaryOperator::Add => {
+    |
+
+error[E0433]: failed to resolve: could not find `BinaryOperator` in `ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:478:25
+    |
+478 |             crate::ast::BinaryOperator::Subtract => {
+    |                         ^^^^^^^^^^^^^^ could not find `BinaryOperator` in `ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::BinaryOperator;
+    |
+help: if you import `BinaryOperator`, refer to it directly
+    |
+478 -             crate::ast::BinaryOperator::Subtract => {
+478 +             BinaryOperator::Subtract => {
+    |
+
+error[E0433]: failed to resolve: could not find `BinaryOperator` in `ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:489:25
+    |
+489 |             crate::ast::BinaryOperator::Multiply => {
+    |                         ^^^^^^^^^^^^^^ could not find `BinaryOperator` in `ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::BinaryOperator;
+    |
+help: if you import `BinaryOperator`, refer to it directly
+    |
+489 -             crate::ast::BinaryOperator::Multiply => {
+489 +             BinaryOperator::Multiply => {
+    |
+
+error[E0433]: failed to resolve: could not find `BinaryOperator` in `ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:500:25
+    |
+500 |             crate::ast::BinaryOperator::Divide => {
+    |                         ^^^^^^^^^^^^^^ could not find `BinaryOperator` in `ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::BinaryOperator;
+    |
+help: if you import `BinaryOperator`, refer to it directly
+    |
+500 -             crate::ast::BinaryOperator::Divide => {
+500 +             BinaryOperator::Divide => {
+    |
+
+error[E0412]: cannot find type `UnaryOperator` in module `crate::ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:518:32
+    |
+518 |         operator: &crate::ast::UnaryOperator,
+    |                                ^^^^^^^^^^^^^ not found in `crate::ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::UnaryOperator;
+    |
+help: if you import `UnaryOperator`, refer to it directly
+    |
+518 -         operator: &crate::ast::UnaryOperator,
+518 +         operator: &UnaryOperator,
+    |
+
+error[E0433]: failed to resolve: could not find `UnaryOperator` in `ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:525:25
+    |
+525 |             crate::ast::UnaryOperator::Minus => {
+    |                         ^^^^^^^^^^^^^ could not find `UnaryOperator` in `ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::UnaryOperator;
+    |
+help: if you import `UnaryOperator`, refer to it directly
+    |
+525 -             crate::ast::UnaryOperator::Minus => {
+525 +             UnaryOperator::Minus => {
+    |
+
+error[E0433]: failed to resolve: could not find `UnaryOperator` in `ast`
+   --> src/codegen/llvm/enhanced_codegen.rs:536:25
+    |
+536 |             crate::ast::UnaryOperator::Not => {
+    |                         ^^^^^^^^^^^^^ could not find `UnaryOperator` in `ast`
+    |
+help: consider importing this enum through its public re-export
+    |
+8   + use crate::stdlib::template::UnaryOperator;
+    |
+help: if you import `UnaryOperator`, refer to it directly
+    |
+536 -             crate::ast::UnaryOperator::Not => {
+536 +             UnaryOperator::Not => {
+    |
+
+error[E0412]: cannot find type `FunctionDeclaration` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:864:21
+    |
+864 |         func_decl: &FunctionDeclaration,
+    |                     ^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+8   + use crate::ast::FunctionDeclaration;
+    |
+8   + use crate::ast::parser_support::FunctionDeclaration;
+    |
+8   + use crate::documentation::extractors::FunctionDeclaration;
+    |
+
+error[E0412]: cannot find type `VariableDeclaration` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:876:20
+    |
+876 |         var_decl: &VariableDeclaration,
+    |                    ^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct through its public re-export
+    |
+8   + use crate::documentation::extractors::VariableDeclaration;
+    |
+
+error[E0532]: cannot match against a tuple struct which contains private fields
+   --> src/codegen/llvm/function_registry.rs:264:54
+    |
+264 |             (LlvmType::Pointer(_), LlvmType::Pointer(Box(LlvmType::Void))) => true, // Any pointer to void*
+    |                                                      ^^^ constructor is not visible here due to private fields
+
+error[E0532]: cannot match against a tuple struct which contains private fields
+   --> src/codegen/llvm/function_registry.rs:265:50
+    |
+265 |             (LlvmType::String, LlvmType::Pointer(Box(LlvmType::Void))) => true, // String is a pointer
+    |                                                  ^^^ constructor is not visible here due to private fields
+
+error[E0532]: cannot match against a tuple struct which contains private fields
+   --> src/codegen/llvm/function_registry.rs:268:35
+    |
+268 |             (_, LlvmType::Pointer(Box(LlvmType::Void))) => true, // void* accepts anything
+    |                                   ^^^ constructor is not visible here due to private fields
+
+error[E0412]: cannot find type `LLVMValueRef` in this scope
+  --> src/codegen/llvm/ipc.rs:26:17
+   |
+26 |     ) -> Result<LLVMValueRef, CursedError> {
+   |                 ^^^^^^^^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+18 | pub trait IpcCompiler<LLVMValueRef> {
+   |                      ++++++++++++++
+
+error[E0412]: cannot find type `LLVMValueRef` in this scope
+  --> src/codegen/llvm/ipc.rs:36:23
+   |
+36 |     ) -> CursedResult<LLVMValueRef> {
+   |                       ^^^^^^^^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+18 | pub trait IpcCompiler<LLVMValueRef> {
+   |                      ++++++++++++++
+
+error[E0412]: cannot find type `LLVMValueRef` in this scope
+  --> src/codegen/llvm/ipc.rs:47:23
+   |
+47 |     ) -> CursedResult<LLVMValueRef> {
+   |                       ^^^^^^^^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+18 | pub trait IpcCompiler<LLVMValueRef> {
+   |                      ++++++++++++++
+
+error[E0412]: cannot find type `LLVMValueRef` in this scope
+  --> src/codegen/llvm/ipc.rs:57:23
+   |
+57 |     ) -> CursedResult<LLVMValueRef> {
+   |                       ^^^^^^^^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+18 | pub trait IpcCompiler<LLVMValueRef> {
+   |                      ++++++++++++++
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:116:42
+    |
+116 |             return Err(Error::ParseError(ParseError {
+    |                                          ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+1   + use crate::stdlib::ParseError;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `LLVMValueRef` in this scope
+  --> src/codegen/llvm/ipc.rs:68:23
+   |
+68 |     ) -> CursedResult<LLVMValueRef> {
+   |                       ^^^^^^^^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+18 | pub trait IpcCompiler<LLVMValueRef> {
+   |                      ++++++++++++++
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:167:42
+    |
+167 |             return Err(Error::ParseError(ParseError {
+    |                                          ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+1   + use crate::stdlib::ParseError;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `BasicBlock` in module `inkwell::values`
+   --> src/codegen/llvm/lto_integration.rs:380:46
+    |
+380 |         block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+    |                                              ^^^^^^^^^^ not found in `inkwell::values`
+    |
+help: consider importing one of these items
+    |
+1   + use crate::codegen::llvm::BasicBlock;
+    |
+1   + use ark_std::intrinsics::mir::BasicBlock;
+    |
+1   + use inkwell::basic_block::BasicBlock;
+    |
+help: if you import `BasicBlock`, refer to it directly
+    |
+380 -         block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+380 +         block_map: &HashMap<BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+    |
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:235:35
+    |
+235 |             Err(Error::ParseError(ParseError {
+    |                                   ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+1   + use crate::stdlib::ParseError;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `BasicBlock` in module `inkwell::values`
+   --> src/codegen/llvm/lto_integration.rs:380:81
+    |
+380 |         block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+    |                                                                                 ^^^^^^^^^^ not found in `inkwell::values`
+    |
+help: consider importing one of these items
+    |
+1   + use crate::codegen::llvm::BasicBlock;
+    |
+1   + use ark_std::intrinsics::mir::BasicBlock;
+    |
+1   + use inkwell::basic_block::BasicBlock;
+    |
+help: if you import `BasicBlock`, refer to it directly
+    |
+380 -         block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+380 +         block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    |
+
+error[E0412]: cannot find type `BasicBlock` in module `inkwell::values`
+   --> src/codegen/llvm/lto_integration.rs:448:47
+    |
+448 |         _block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+    |                                               ^^^^^^^^^^ not found in `inkwell::values`
+    |
+help: consider importing one of these items
+    |
+1   + use crate::codegen::llvm::BasicBlock;
+    |
+1   + use ark_std::intrinsics::mir::BasicBlock;
+    |
+1   + use inkwell::basic_block::BasicBlock;
+    |
+help: if you import `BasicBlock`, refer to it directly
+    |
+448 -         _block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+448 +         _block_map: &HashMap<BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+    |
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:294:42
+    |
+294 |             return Err(Error::ParseError(ParseError {
+    |                                          ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+1   + use crate::stdlib::ParseError;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `BasicBlock` in module `inkwell::values`
+   --> src/codegen/llvm/lto_integration.rs:448:82
+    |
+448 |         _block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+    |                                                                                  ^^^^^^^^^^ not found in `inkwell::values`
+    |
+help: consider importing one of these items
+    |
+1   + use crate::codegen::llvm::BasicBlock;
+    |
+1   + use ark_std::intrinsics::mir::BasicBlock;
+    |
+1   + use inkwell::basic_block::BasicBlock;
+    |
+help: if you import `BasicBlock`, refer to it directly
+    |
+448 -         _block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+448 +         _block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    |
+
+error[E0422]: cannot find struct, variant or union type `ParseError` in this scope
+   --> src/parser/async_await.rs:303:46
+    |
+303 |                 return Err(Error::ParseError(ParseError {
+    |                                              ^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error::ParseError;
+    |
+1   + use crate::build_system::project_template::TemplateError::ParseError;
+    |
+1   + use crate::error::types::ParseError;
+    |
+1   + use crate::stdlib::ParseError;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:133:24
+    |
+133 |         switch_value: &LlvmValue,
+    |                        ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:206:27
+    |
+206 |         interface_value: &LlvmValue,
+    |                           ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:208:17
+    |
+208 |     ) -> Result<LlvmValue, Error> {
+    |                 ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0422]: cannot find struct, variant or union type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:218:33
+    |
+218 |         let comparison_result = LlvmValue {
+    |                                 ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:234:64
+    |
+234 |     fn extract_integrated_type_id(&mut self, interface_value: &LlvmValue) -> Result<LlvmValue, Error> {
+    |                                                                ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:234:85
+    |
+234 |     fn extract_integrated_type_id(&mut self, interface_value: &LlvmValue) -> Result<LlvmValue, Error> {
+    |                                                                                     ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0422]: cannot find struct, variant or union type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:235:30
+    |
+235 |         let type_id_result = LlvmValue {
+    |                              ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0422]: cannot find struct, variant or union type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:248:29
+    |
+248 |         let final_type_id = LlvmValue {
+    |                             ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:265:27
+    |
+265 |         interface_value: &LlvmValue,
+    |                           ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:268:17
+    |
+268 |     ) -> Result<LlvmValue, Error> {
+    |                 ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0422]: cannot find struct, variant or union type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:275:25
+    |
+275 |         let bound_var = LlvmValue {
+    |                         ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:301:27
+    |
+301 |         interface_value: &LlvmValue,
+    |                           ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0412]: cannot find type `FunctionDeclaration` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:211:52
+    |
+211 |     pub fn compile_function(&mut self, func_decl: &FunctionDeclaration) -> Result<FunctionValue<'ctx>, CursedError> {
+    |                                                    ^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+8   + use crate::ast::FunctionDeclaration;
+    |
+8   + use crate::documentation::extractors::FunctionDeclaration;
+    |
+
+error[E0412]: cannot find type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:303:17
+    |
+303 |     ) -> Result<LlvmValue, Error> {
+    |                 ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0422]: cannot find struct, variant or union type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:304:31
+    |
+304 |         let extracted_value = LlvmValue {
+    |                               ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0422]: cannot find struct, variant or union type `LlvmValue` in this scope
+   --> src/codegen/llvm/type_switch.rs:311:24
+    |
+311 |         let data_ptr = LlvmValue {
+    |                        ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use crate::codegen::llvm::expression_compiler::LlvmValue;
+    |
+
+error[E0425]: cannot find function `backtrace_symbols` in crate `libc`
+   --> src/runtime/stack_walker.rs:309:19
+    |
+309 |             libc::backtrace_symbols(buffer.as_ptr(), num_frames)
+    |                   ^^^^^^^^^^^^^^^^^ not found in `libc`
+
+error[E0425]: cannot find function `get_global_scheduler` in module `crate::runtime::goroutine`
+   --> src/runtime/async/runtime.rs:146:61
+    |
+146 |         if let Some(scheduler) = crate::runtime::goroutine::get_global_scheduler() {
+    |                                                             ^^^^^^^^^^^^^^^^^^^^ not found in `crate::runtime::goroutine`
+
+error[E0412]: cannot find type `BootstrapVerificationResult` in this scope
+   --> src/bootstrap/self_compilation_verification.rs:193:52
+    |
+40  | pub struct VerificationResult {
+    | ----------------------------- similarly named struct `VerificationResult` defined here
+...
+193 |     pub async fn run_verification(&self) -> Result<BootstrapVerificationResult, Box<dyn std::error::Error>> {
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: a struct with a similar name exists
+    |
+193 -     pub async fn run_verification(&self) -> Result<BootstrapVerificationResult, Box<dyn std::error::Error>> {
+193 +     pub async fn run_verification(&self) -> Result<VerificationResult, Box<dyn std::error::Error>> {
+    |
+help: you might be missing a type parameter
+    |
+107 | impl<BootstrapVerificationResult> SelfCompilationVerifier {
+    |     +++++++++++++++++++++++++++++
+
+error[E0422]: cannot find struct, variant or union type `BootstrapVerificationResult` in this scope
+   --> src/bootstrap/self_compilation_verification.rs:196:26
+    |
+40  | pub struct VerificationResult {
+    | ----------------------------- similarly named struct `VerificationResult` defined here
+...
+196 |         let mut result = BootstrapVerificationResult {
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: a struct with a similar name exists: `VerificationResult`
+
+error[E0412]: cannot find type `PgoConfig` in this scope
+  --> src/optimization/comprehensive_performance_system.rs:61:21
+   |
+61 |     pub pgo_config: PgoConfig,
+   |                     ^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these structs
+   |
+1  + use crate::optimization::PgoConfig;
+   |
+1  + use crate::optimization::config::PgoConfig;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `PgoConfig`
+   --> src/optimization/comprehensive_performance_system.rs:107:25
+    |
+107 |             pgo_config: PgoConfig::default(),
+    |                         ^^^^^^^^^ use of undeclared type `PgoConfig`
+    |
+help: consider importing one of these structs
+    |
+1   + use crate::optimization::PgoConfig;
+    |
+1   + use crate::optimization::config::PgoConfig;
+    |
+
+error[E0412]: cannot find type `FunctionDeclaration` in this scope
+   --> src/codegen/llvm/enhanced_codegen.rs:864:21
+    |
+864 |         func_decl: &FunctionDeclaration,
+    |                     ^^^^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+8   + use crate::ast::FunctionDeclaration;
+    |
+8   + use crate::documentation::extractors::FunctionDeclaration;
+    |
+
+error[E0412]: cannot find type `OptimizationRecommendations` in module `crate::optimization::pgo`
+   --> src/optimization/comprehensive_performance_system.rs:600:52
+    |
+600 |     pub recommendations: crate::optimization::pgo::OptimizationRecommendations,
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::optimization::pgo`
+
+error[E0425]: cannot find value `results` in this scope
+    --> src/optimization/comprehensive_performance_system.rs:1089:75
+     |
+1089 |             let estimated_cpu_efficiency = self.calculate_cpu_efficiency(&results);
+     |                                                                           ^^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `PgoStatistics` in module `crate::optimization::pgo`
+    --> src/optimization/comprehensive_performance_system.rs:1485:51
+     |
+1485 |     pub pgo_statistics: crate::optimization::pgo::PgoStatistics,
+     |                                                   ^^^^^^^^^^^^^
+     |
+    ::: src/optimization/pgo/pgo_passes.rs:188:1
+     |
+188  | pub struct PassStatistics {
+     | ------------------------- similarly named struct `PassStatistics` defined here
+     |
+help: a struct with a similar name exists
+     |
+1485 -     pub pgo_statistics: crate::optimization::pgo::PgoStatistics,
+1485 +     pub pgo_statistics: crate::optimization::pgo::PassStatistics,
+     |
+help: consider importing one of these structs
+     |
+1    + use crate::optimization::PgoStatistics;
+     |
+1    + use crate::optimization::llvm_passes::PgoStatistics;
+     |
+help: if you import `PgoStatistics`, refer to it directly
+     |
+1485 -     pub pgo_statistics: crate::optimization::pgo::PgoStatistics,
+1485 +     pub pgo_statistics: PgoStatistics,
+     |
+
+error[E0412]: cannot find type `CallInstruction` in module `inkwell::values`
+   --> src/optimization/real_llvm_passes.rs:903:68
+    |
+903 |     fn is_pure_function_call(&self, _call_instr: &inkwell::values::CallInstruction<'ctx>) -> bool {
+    |                                                                    ^^^^^^^^^^^^^^^ not found in `inkwell::values`
+
+error[E0412]: cannot find type `InstructionValue` in this scope
+   --> src/optimization/enhanced_llvm_passes/function_specializer.rs:114:58
+    |
+114 |     fn analyze_call_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
+    |                                                          ^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use inkwell::values::InstructionValue;
+    |
+
+error[E0412]: cannot find type `BasicTypeEnum` in this scope
+   --> src/optimization/enhanced_llvm_passes/function_specializer.rs:288:21
+    |
+288 |     ) -> Result<Vec<BasicTypeEnum<'ctx>>> {
+    |                     ^^^^^^^^^^^^^
+    |
+   ::: /home/ghuntley/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inkwell-0.4.0/src/types/traits.rs:39:1
+    |
+39  | pub unsafe trait BasicType<'ctx>: AnyType<'ctx> {
+    | ----------------------------------------------- similarly named trait `BasicType` defined here
+    |
+help: a trait with a similar name exists
+    |
+288 -     ) -> Result<Vec<BasicTypeEnum<'ctx>>> {
+288 +     ) -> Result<Vec<BasicType<'ctx>>> {
+    |
+help: consider importing this enum
+    |
+1   + use inkwell::types::BasicTypeEnum;
+    |
+
+error[E0412]: cannot find type `MemoryAccessPattern` in this scope
+    --> src/optimization/enhanced_llvm_passes/error_propagation_optimizer.rs:2150:30
+     |
+2150 |         memory_patterns: Vec<MemoryAccessPattern>,
+     |                              ^^^^^^^^^^^^^^^^^^^ not found in this scope
+     |
+help: consider importing one of these items
+     |
+2098 +     use crate::optimization::coordinator::MemoryAccessPattern;
+     |
+2098 +     use crate::optimization::enhanced_llvm_optimization::MemoryAccessPattern;
+     |
+2098 +     use crate::optimization::ml::data_collection::MemoryAccessPattern;
+     |
+2098 +     use crate::optimization::ml::feature_extraction::MemoryAccessPattern;
+     |
+       and 2 other candidates
+
+error[E0425]: cannot find value `i` in this scope
+   --> src/optimization/enhanced_llvm_passes/interprocedural_analyzer.rs:349:69
+    |
+349 | ...                   location: format!("{}:{}", caller_name, i),
+    |                                                               ^ not found in this scope
+
+error[E0412]: cannot find type `InstructionValue` in this scope
+   --> src/optimization/enhanced_llvm_optimization.rs:632:50
+    |
+632 |     fn is_vector_operation(&self, _instruction: &InstructionValue<'ctx>) -> bool {
+    |                                                  ^^^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+1   + use inkwell::values::InstructionValue;
+    |
+
+error[E0425]: cannot find value `average_parallel_efficiency` in this scope
+   --> src/optimization/time_savings.rs:552:13
+    |
+552 |             average_parallel_efficiency,
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: a local variable with a similar name exists: `avg_parallel_efficiency`
+
+error[E0412]: cannot find type `Duration` in this scope
+  --> src/optimization/dependency_analyzer.rs:43:31
+   |
+43 |     pub total_estimated_time: Duration,
+   |                               ^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+6  + use crate::stdlib::Duration;
+   |
+6  + use std::time::Duration;
+   |
+6  + use ark_std::time::Duration;
+   |
+6  + use chrono::Duration;
+   |
+     and 2 other candidates
+
+error[E0412]: cannot find type `Duration` in this scope
+  --> src/optimization/dependency_analyzer.rs:53:29
+   |
+53 |     pub estimated_duration: Duration,
+   |                             ^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+6  + use crate::stdlib::Duration;
+   |
+6  + use std::time::Duration;
+   |
+6  + use ark_std::time::Duration;
+   |
+6  + use chrono::Duration;
+   |
+     and 2 other candidates
+
+error[E0422]: cannot find struct, variant or union type `PgoConfig` in module `crate::optimization::pgo`
+   --> src/optimization/optimization_manager.rs:465:52
+    |
+465 |         let pgo_config = crate::optimization::pgo::PgoConfig {
+    |                                                    ^^^^^^^^^ not found in `crate::optimization::pgo`
+    |
+help: consider importing one of these structs
+    |
+1   + use crate::optimization::PgoConfig;
+    |
+1   + use crate::optimization::config::PgoConfig;
+    |
+help: if you import `PgoConfig`, refer to it directly
+    |
+465 -         let pgo_config = crate::optimization::pgo::PgoConfig {
+465 +         let pgo_config = PgoConfig {
+    |
+
+error[E0433]: failed to resolve: could not find `PgoManager` in `pgo`
+   --> src/optimization/optimization_manager.rs:479:57
+    |
+479 |         let mut pgo_manager = crate::optimization::pgo::PgoManager::new(pgo_config)
+    |                                                         ^^^^^^^^^^ could not find `PgoManager` in `pgo`
+    |
+help: consider importing this struct
+    |
+1   + use crate::optimization::llvm_passes::PgoManager;
+    |
+help: if you import `PgoManager`, refer to it directly
+    |
+479 -         let mut pgo_manager = crate::optimization::pgo::PgoManager::new(pgo_config)
+479 +         let mut pgo_manager = PgoManager::new(pgo_config)
+    |
+
+error[E0422]: cannot find struct, variant or union type `Function` in module `crate::ast`
+   --> src/optimization/optimization_manager.rs:647:29
+    |
+647 |                 crate::ast::Function {
+    |                             ^^^^^^^^ not found in `crate::ast`
+    |
+help: consider importing one of these variants
+    |
+1   + use crate::SymbolType::Function;
+    |
+1   + use crate::TypeKind::Function;
+    |
+1   + use crate::ast::ElementType::Function;
+    |
+1   + use crate::ast::QualifiedSymbolKind::Function;
+    |
+      and 27 other candidates
+help: if you import `Function`, refer to it directly
+    |
+647 -                 crate::ast::Function {
+647 +                 Function {
+    |
+
+error[E0412]: cannot find type `CpuSample` in this scope
+   --> src/optimization/real_compilation_profiler.rs:301:18
+    |
+301 |     samples: Vec<CpuSample>,
+    |                  ^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+6   + use crate::stdlib::CpuSample;
+    |
+6   + use crate::stdlib::vibecheck::CpuSample;
+    |
+
+error[E0412]: cannot find type `ASTNode` in this scope
+   --> src/optimization/ml/feature_extraction.rs:303:22
+    |
+303 |         ast: Option<&ASTNode>,
+    |                      ^^^^^^^
+    |
+   ::: src/ast/mod.rs:313:1
+    |
+313 | pub struct AstNode {
+    | ------------------ similarly named struct `AstNode` defined here
+    |
+help: a struct with a similar name exists
+    |
+303 -         ast: Option<&ASTNode>,
+303 +         ast: Option<&AstNode>,
+    |
+help: you might be missing a type parameter
+    |
+288 | impl<ASTNode> FeatureExtractor {
+    |     +++++++++
+
+error[E0412]: cannot find type `ASTNode` in this scope
+   --> src/optimization/ml/feature_extraction.rs:488:47
+    |
+488 |     fn extract_semantic_features(&self, ast: &ASTNode) -> Result<SemanticFeatures> {
+    |                                               ^^^^^^^ help: a struct with a similar name exists: `AstNode`
+    |
+   ::: src/ast/mod.rs:313:1
+    |
+313 | pub struct AstNode {
+    | ------------------ similarly named struct `AstNode` defined here
+
+error[E0412]: cannot find type `ASTNode` in this scope
+   --> src/optimization/ml/feature_extraction.rs:561:71
+    |
+561 |     fn extract_cursed_features(&self, source_code: &str, ast: Option<&ASTNode>) -> Result<CursedSpecificFeatures> {
+    |                                                                       ^^^^^^^
+    |
+   ::: src/ast/mod.rs:313:1
+    |
+313 | pub struct AstNode {
+    | ------------------ similarly named struct `AstNode` defined here
+    |
+help: a struct with a similar name exists
+    |
+561 -     fn extract_cursed_features(&self, source_code: &str, ast: Option<&ASTNode>) -> Result<CursedSpecificFeatures> {
+561 +     fn extract_cursed_features(&self, source_code: &str, ast: Option<&AstNode>) -> Result<CursedSpecificFeatures> {
+    |
+help: you might be missing a type parameter
+    |
+288 | impl<ASTNode> FeatureExtractor {
+    |     +++++++++
+
+error[E0412]: cannot find type `ASTNode` in this scope
+   --> src/optimization/ml/feature_extraction.rs:701:77
+    |
+701 |     fn extract_type_system_features(&self, source_code: &str, _ast: Option<&ASTNode>) -> Result<TypeSystemFeatures> {
+    |                                                                             ^^^^^^^
+    |
+   ::: src/ast/mod.rs:313:1
+    |
+313 | pub struct AstNode {
+    | ------------------ similarly named struct `AstNode` defined here
+    |
+help: a struct with a similar name exists
+    |
+701 -     fn extract_type_system_features(&self, source_code: &str, _ast: Option<&ASTNode>) -> Result<TypeSystemFeatures> {
+701 +     fn extract_type_system_features(&self, source_code: &str, _ast: Option<&AstNode>) -> Result<TypeSystemFeatures> {
+    |
+help: you might be missing a type parameter
+    |
+288 | impl<ASTNode> FeatureExtractor {
+    |     +++++++++
+
+error[E0412]: cannot find type `ASTNode` in this scope
+   --> src/optimization/ml/feature_extraction.rs:817:33
+    |
+817 |     fn analyze(&mut self, ast: &ASTNode) -> Result<SemanticFeatures> {
+    |                                 ^^^^^^^ help: a struct with a similar name exists: `AstNode`
+    |
+   ::: src/ast/mod.rs:313:1
+    |
+313 | pub struct AstNode {
+    | ------------------ similarly named struct `AstNode` defined here
+
+error[E0433]: failed to resolve: use of undeclared type `AstNodeType`
+   --> src/optimization/ml/feature_extraction.rs:842:13
+    |
+842 |             AstNodeType::FunctionDeclaration(func) => self.visit_function(func)?,
+    |             ^^^^^^^^^^^ use of undeclared type `AstNodeType`
+    |
+help: consider importing this enum
+    |
+1   + use crate::ast::AstNodeType;
+    |
+
+error[E0433]: failed to resolve: use of undeclared type `AstNodeType`
+   --> src/optimization/ml/feature_extraction.rs:843:13
+    |
+843 |             AstNodeType::Statement(stmt) => self.visit_statement(stmt)?,
+    |             ^^^^^^^^^^^ use of undeclared type `AstNodeType`
+    |
+help: consider importing this enum
+    |
+1   + use crate::ast::AstNodeType;
+    |
+
+error[E0433]: failed to resolve: use of undeclared type `AstNodeType`
+   --> src/optimization/ml/feature_extraction.rs:844:13
+    |
+844 |             AstNodeType::Expression(expr) => self.visit_expression(expr)?,
+    |             ^^^^^^^^^^^ use of undeclared type `AstNodeType`
+    |
+help: consider importing this enum
+    |
+1   + use crate::ast::AstNodeType;
+    |
+
+error[E0412]: cannot find type `Function` in this scope
+   --> src/optimization/ml/feature_extraction.rs:850:46
+    |
+850 |     fn visit_function(&mut self, _function: &Function) -> Result<()> {
+    |                                              ^^^^^^^^ not found in this scope
+    |
+help: there is an enum variant `crate::SymbolType::Function` and 31 others; try using the variant's enum
+    |
+850 -     fn visit_function(&mut self, _function: &Function) -> Result<()> {
+850 +     fn visit_function(&mut self, _function: &crate::SymbolType) -> Result<()> {
+    |
+850 -     fn visit_function(&mut self, _function: &Function) -> Result<()> {
+850 +     fn visit_function(&mut self, _function: &crate::TypeKind) -> Result<()> {
+    |
+850 -     fn visit_function(&mut self, _function: &Function) -> Result<()> {
+850 +     fn visit_function(&mut self, _function: &crate::ast::ElementType) -> Result<()> {
+    |
+850 -     fn visit_function(&mut self, _function: &Function) -> Result<()> {
+850 +     fn visit_function(&mut self, _function: &crate::ast::QualifiedSymbolKind) -> Result<()> {
+    |
+      and 27 other candidates
+

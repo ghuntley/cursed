@@ -2169,9 +2169,9 @@ pub struct AnalysisMetadata {
 impl From<usize> for OptimizationLevel {
     fn from(instruction_count: usize) -> Self {
         match instruction_count {
-            0..=1000 => OptimizationLevel::Less,
-            1001..=10000 => OptimizationLevel::Default,
-            _ => OptimizationLevel::Aggressive,
+            0..=1000 => OptimizationLevel::O1,
+            1001..=10000 => OptimizationLevel::O2,
+            _ => OptimizationLevel::O3,
         }
     }
 }

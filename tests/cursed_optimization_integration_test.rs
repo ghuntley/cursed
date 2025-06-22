@@ -25,12 +25,8 @@ mod integration_tests {
         optimization_level: OptimizationLevel,
     }
     
-    #[derive(Debug, Clone, Copy)]
-    enum OptimizationLevel {
-        None,
-        Basic,
-        Aggressive,
-    }
+    // Import canonical OptimizationLevel from optimization_config
+    use cursed::optimization::optimization_config::OptimizationLevel;
     
     #[derive(Debug, Clone, Default)]
     struct OptimizationSystemStats {

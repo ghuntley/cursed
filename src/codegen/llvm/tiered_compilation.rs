@@ -684,11 +684,11 @@ impl<'ctx> TieredCompilationManager<'ctx> {
     /// Convert compilation tier to LLVM optimization level
     fn tier_to_optimization_level(&self, tier: CompilationTier) -> OptimizationLevel {
         match tier {
-            CompilationTier::Interpreter => OptimizationLevel::None,
-            CompilationTier::BasicJIT => OptimizationLevel::Less,
-            CompilationTier::OptimizedJIT => OptimizationLevel::Default,
-            CompilationTier::HighlyOptimizedJIT => OptimizationLevel::Aggressive,
-            CompilationTier::SpeculativeJIT => OptimizationLevel::Aggressive,
+            CompilationTier::Interpreter => OptimizationLevel::O0,
+            CompilationTier::BasicJIT => OptimizationLevel::O1,
+            CompilationTier::OptimizedJIT => OptimizationLevel::O2,
+            CompilationTier::HighlyOptimizedJIT => OptimizationLevel::O3,
+            CompilationTier::SpeculativeJIT => OptimizationLevel::O3,
         }
     }
 
@@ -1007,10 +1007,10 @@ mod tests {
         let context = Context::create();
         let manager = TieredCompilationManager::new(&context, TieredCompilationConfig::default()).unwrap();
         
-        assert_eq!(manager.tier_to_optimization_level(CompilationTier::Interpreter), OptimizationLevel::None);
-        assert_eq!(manager.tier_to_optimization_level(CompilationTier::BasicJIT), OptimizationLevel::Less);
-        assert_eq!(manager.tier_to_optimization_level(CompilationTier::OptimizedJIT), OptimizationLevel::Default);
-        assert_eq!(manager.tier_to_optimization_level(CompilationTier::HighlyOptimizedJIT), OptimizationLevel::Aggressive);
+        assert_eq!(manager.tier_to_optimization_level(CompilationTier::Interpreter), OptimizationLevel::O0);
+        assert_eq!(manager.tier_to_optimization_level(CompilationTier::BasicJIT), OptimizationLevel::O1);
+        assert_eq!(manager.tier_to_optimization_level(CompilationTier::OptimizedJIT), OptimizationLevel::O2);
+        assert_eq!(manager.tier_to_optimization_level(CompilationTier::HighlyOptimizedJIT), OptimizationLevel::O3);
     }
 
     #[test]

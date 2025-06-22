@@ -102,7 +102,7 @@ pub struct PerformanceConfig {
 impl Default for PerformanceConfig {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             enable_pgo: false,
             pgo_config: PgoConfig::default(),
             enable_incremental_compilation: true,
@@ -541,7 +541,7 @@ impl<'ctx> AdvancedLlvmOptimizer<'ctx> {
             &target_triple,
             "generic",
             "",
-            inkwell::OptimizationLevel::Default,
+            inkwell::OptimizationLevel::O2,
             inkwell::targets::RelocMode::Default,
             inkwell::targets::CodeModel::Default,
         ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))?;

@@ -999,14 +999,14 @@ mod tests {
     #[test]
     fn test_interprocedural_analyzer_creation() {
         let context = Context::create();
-        let analyzer = InterproceduralAnalyzer::new(&context, OptimizationLevel::Default);
+        let analyzer = InterproceduralAnalyzer::new(&context, OptimizationLevel::O2);
         assert_eq!(analyzer.call_graph.functions.len(), 0);
     }
     
     #[test]
     fn test_call_graph_creation() {
         let context = Context::create();
-        let mut analyzer = InterproceduralAnalyzer::new(&context, OptimizationLevel::Default);
+        let mut analyzer = InterproceduralAnalyzer::new(&context, OptimizationLevel::O2);
         let call_graph = CallGraph::new();
         analyzer.call_graph = call_graph;
         assert_eq!(analyzer.call_graph.call_sites.len(), 0);

@@ -99,11 +99,11 @@ fn build_cli() -> Command {
                 )
                 .arg(
                     Arg::new("opt-level")
-                        .short('O')
-                        .long("opt-level")
-                        .value_name("LEVEL")
-                        .help("Optimization level (0, 1, 2, 3, s, z)")
-                        .default_value("2")
+                    .short('O')
+                    .long("opt-level")
+                    .value_name("LEVEL")
+                    .help("Optimization level (O0, O1, O2, O3, Os, Oz)")
+                    .default_value("O2")
                 )
                 .arg(
                     Arg::new("opt-profile")
@@ -233,12 +233,12 @@ fn build_cli() -> Command {
                         .default_value("exe")
                 )
                 .arg(
-                    Arg::new("opt-level")
-                        .short('O')
-                        .long("opt-level")
-                        .value_name("LEVEL")
-                        .help("Optimization level (0, 1, 2, 3, s, z)")
-                        .default_value("2")
+                Arg::new("opt-level")
+                .short('O')
+                .long("opt-level")
+                .value_name("LEVEL")
+                .help("Optimization level (O0, O1, O2, O3, Os, Oz)")
+                .default_value("O2")
                 )
                 .arg(
                     Arg::new("opt-profile")
@@ -545,7 +545,7 @@ async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn st
     if watch {
         handle_watch_run_command(matches).await
     } else if opt_profile != "release" || enable_pgo || parallel_opt.is_some() || performance_report.is_some() || 
-              profile || time_passes || opt_level != "2" || enable_lto || enhanced_passes || disable_enhanced_passes {
+              profile || time_passes || opt_level != "O2" || enable_lto || enhanced_passes || disable_enhanced_passes {
         // Use advanced optimization path when optimization flags are provided
         handle_run_command_with_optimization_enablement(matches).await
     } else {

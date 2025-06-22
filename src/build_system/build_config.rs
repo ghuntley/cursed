@@ -172,7 +172,7 @@ pub struct BuildProfile {
 }
 
 fn default_optimization() -> OptimizationLevel {
-    OptimizationLevel::Basic
+    OptimizationLevel::O1
 }
 
 fn default_debug() -> bool {
@@ -186,7 +186,7 @@ fn default_panic() -> PanicStrategy {
 impl Default for BuildProfile {
     fn default() -> Self {
         Self {
-            optimization: OptimizationLevel::Basic,
+            optimization: OptimizationLevel::O1,
             debug: true,
             panic: PanicStrategy::Unwind,
             lto: false,
@@ -230,30 +230,8 @@ impl Default for BuildConfig {
     }
 }
 
-/// Optimization levels
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum OptimizationLevel {
-    /// No optimization
-    None,
-    /// Basic optimizations
-    Basic,
-    /// Maximum optimizations
-    Max,
-    /// Size optimizations
-    Size,
-}
-
-impl std::fmt::Display for OptimizationLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OptimizationLevel::None => write!(f, "none"),
-            OptimizationLevel::Basic => write!(f, "basic"),
-            OptimizationLevel::Max => write!(f, "max"),
-            OptimizationLevel::Size => write!(f, "size"),
-        }
-    }
-}
+// Use canonical OptimizationLevel from optimization config
+pub use crate::optimization::config::OptimizationLevel;
 
 /// Panic strategies
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -693,7 +671,7 @@ impl BuildConfig {
         // Add default profiles
         config.profiles.insert("dev".to_string(), BuildProfile {
             inherits: None,
-            optimization: OptimizationLevel::None,
+            optimization: OptimizationLevel::O0,
             debug: true,
             strip: false,
             lto: false,
@@ -705,7 +683,7 @@ impl BuildConfig {
         
         config.profiles.insert("release".to_string(), BuildProfile {
             inherits: None,
-            optimization: OptimizationLevel::Max,
+            optimization: OptimizationLevel::O3,
             debug: false,
             strip: true,
             lto: true,
@@ -815,7 +793,7 @@ mod tests {
         // Add a custom profile that inherits from release
         config.profiles.insert("production".to_string(), BuildProfile {
             inherits: Some("release".to_string()),
-            optimization: OptimizationLevel::Size,
+            optimization: OptimizationLevel::Os,
             debug: false,
             strip: true,
             lto: true,
@@ -826,7 +804,7 @@ mod tests {
         });
         
         let effective = config.get_effective_profile("production").unwrap();
-        assert_eq!(effective.optimization, OptimizationLevel::Size);
+        assert_eq!(effective.optimization, OptimizationLevel::Os);
         assert_eq!(effective.debug, false);
         assert_eq!(effective.strip, true);
         assert!(effective.llvm_args.contains(&"-march=native".to_string()));

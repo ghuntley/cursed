@@ -41,7 +41,7 @@ impl BuildProfile {
     /// Development configuration - fast compilation, basic optimization
     fn development_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Less,
+            optimization_level: OptimizationLevel::O1,
             debug_mode: true,
             profile_guided: false,
             parallel_workers: num_cpus::get().min(4), // Limit for faster startup
@@ -87,7 +87,7 @@ impl BuildProfile {
     /// Debug configuration - no optimization, full debug info
     fn debug_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::None,
+            optimization_level: OptimizationLevel::O0,
             debug_mode: true,
             profile_guided: false,
             parallel_workers: 1, // Single-threaded for deterministic builds
@@ -130,7 +130,7 @@ impl BuildProfile {
     /// Release configuration - balanced performance
     fn release_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Default,
+            optimization_level: OptimizationLevel::O2,
             debug_mode: false,
             profile_guided: false,
             parallel_workers: num_cpus::get(),
@@ -181,7 +181,7 @@ impl BuildProfile {
     /// Production configuration - maximum performance
     fn production_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Aggressive,
+            optimization_level: OptimizationLevel::O3,
             debug_mode: false,
             profile_guided: true,
             parallel_workers: num_cpus::get(),
@@ -252,7 +252,7 @@ impl BuildProfile {
     /// Size configuration - minimize binary size
     fn size_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Size,
+            optimization_level: OptimizationLevel::Os,
             debug_mode: false,
             profile_guided: false,
             parallel_workers: num_cpus::get(),
@@ -308,7 +308,7 @@ impl BuildProfile {
     /// Testing configuration - optimized for test execution
     fn testing_config() -> OptimizationConfig {
         OptimizationConfig {
-            optimization_level: OptimizationLevel::Less,
+            optimization_level: OptimizationLevel::O1,
             debug_mode: true,
             profile_guided: false,
             parallel_workers: num_cpus::get(),
@@ -512,12 +512,12 @@ mod tests {
     #[test]
     fn test_profile_creation() {
         let dev_config = BuildProfile::Development.to_optimization_config();
-        assert_eq!(dev_config.optimization_level, OptimizationLevel::Less);
+        assert_eq!(dev_config.optimization_level, OptimizationLevel::O1);
         assert!(dev_config.debug_mode);
         assert!(dev_config.enable_incremental);
         
         let prod_config = BuildProfile::Production.to_optimization_config();
-        assert_eq!(prod_config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(prod_config.optimization_level, OptimizationLevel::O3);
         assert!(!prod_config.debug_mode);
         assert!(prod_config.profile_guided);
         assert!(prod_config.llvm_passes.enable_link_time_optimization);
@@ -537,7 +537,7 @@ mod tests {
         assert_eq!(manager.get_default_profile(), BuildProfile::Release);
         
         let dev_config = manager.get_profile_config(BuildProfile::Development).unwrap();
-        assert_eq!(dev_config.optimization_level, OptimizationLevel::Less);
+        assert_eq!(dev_config.optimization_level, OptimizationLevel::O1);
         
         let profiles = manager.list_profiles();
         assert_eq!(profiles.len(), 6);
@@ -555,7 +555,7 @@ mod tests {
     #[test]
     fn test_size_profile_optimizations() {
         let size_config = BuildProfile::Size.to_optimization_config();
-        assert_eq!(size_config.optimization_level, OptimizationLevel::Size);
+        assert_eq!(size_config.optimization_level, OptimizationLevel::Os);
         assert!(!size_config.llvm_passes.enable_vectorization); // Disabled for size
         assert!(!size_config.llvm_passes.enable_loop_unrolling); // Disabled for size
         assert!(size_config.llvm_passes.enable_link_time_optimization); // Enabled for size reduction

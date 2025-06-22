@@ -1047,7 +1047,7 @@ mod tests {
     #[test]
     fn test_sroa_optimizer_creation() {
         let context = Context::create();
-        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::O2);
         
         let stats = optimizer.get_statistics();
         assert_eq!(stats.aggregates_analyzed, 0);
@@ -1058,7 +1058,7 @@ mod tests {
     #[test]
     fn test_aggregate_type_detection() {
         let context = Context::create();
-        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::O2);
         
         let i32_type = context.i32_type();
         let struct_type = context.struct_type(&[i32_type.into(), i32_type.into()], false);
@@ -1072,7 +1072,7 @@ mod tests {
     #[test]
     fn test_promotion_score_calculation() {
         let context = Context::create();
-        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::O2);
         
         let usage_pattern = UsagePattern {
             aggregate_name: "test".to_string(),
@@ -1092,7 +1092,7 @@ mod tests {
     #[test]
     fn test_escape_detection() {
         let context = Context::create();
-        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::O2);
         
         let usage_pattern_escaped = UsagePattern {
             aggregate_name: "escaped".to_string(),
@@ -1111,7 +1111,7 @@ mod tests {
     #[test]
     fn test_size_info_calculation() {
         let context = Context::create();
-        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = SroaOptimizer::new(&context, OptimizationLevel::O2);
         
         let i32_type = context.i32_type();
         let array_type = i32_type.array_type(5);

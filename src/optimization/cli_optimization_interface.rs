@@ -11,7 +11,7 @@ use crate::optimization::comprehensive_optimization_enablement::{
     ComprehensiveOptimizationSystem, ComprehensiveOptimizationConfig,
     OptimizationResults,
 };
-use crate::optimization::OptimizationLevel;
+use crate::optimization::config::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
 /// CLI interface for comprehensive optimization system
@@ -297,23 +297,23 @@ impl OptimizationCLI {
             // Parse optimization level
             if let Some(opt_level_str) = matches.get_one::<String>("opt-level") {
                 config.optimization_level = match opt_level_str.as_str() {
-                    "0" => OptimizationLevel::None,
-                    "1" => OptimizationLevel::Basic,
-                    "2" => OptimizationLevel::Default,
-                    "3" => OptimizationLevel::Aggressive,
-                    "s" => OptimizationLevel::Size,
-                    "z" => OptimizationLevel::Size, // Treat z as size for now
+                    "0" => OptimizationLevel::O0,
+                    "1" => OptimizationLevel::O1,
+                    "2" => OptimizationLevel::O2,
+                    "3" => OptimizationLevel::O3,
+                    "s" => OptimizationLevel::Os,
+                    "z" => OptimizationLevel::Os, // Treat z as size for now
                     "fast" => OptimizationLevel::Fast,
                     _ => return Err(CursedError::generic(format!("Invalid optimization level: {}", opt_level_str))),
                 };
                 
                 // Apply appropriate configuration for the level
                 config = match config.optimization_level {
-                    OptimizationLevel::None => ComprehensiveOptimizationConfig::debug_config(),
-                    OptimizationLevel::Basic => ComprehensiveOptimizationConfig::basic_config(),
-                    OptimizationLevel::Default => ComprehensiveOptimizationConfig::standard_config(),
-                    OptimizationLevel::Aggressive => ComprehensiveOptimizationConfig::aggressive_config(),
-                    OptimizationLevel::Size => ComprehensiveOptimizationConfig::size_config(),
+                    OptimizationLevel::O0 => ComprehensiveOptimizationConfig::debug_config(),
+                    OptimizationLevel::O1 => ComprehensiveOptimizationConfig::basic_config(),
+                    OptimizationLevel::O2 => ComprehensiveOptimizationConfig::standard_config(),
+                    OptimizationLevel::O3 => ComprehensiveOptimizationConfig::aggressive_config(),
+                    OptimizationLevel::Os => ComprehensiveOptimizationConfig::size_config(),
                     OptimizationLevel::Fast => ComprehensiveOptimizationConfig::aggressive_config(),
                 };
             }
@@ -569,7 +569,7 @@ mod tests {
         let matches = app.try_get_matches_from(vec!["test", "input.csd", "-O3"]).unwrap();
         let config = OptimizationCLI::parse_optimization_config(&matches).unwrap();
         
-        assert_eq!(config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(config.optimization_level, OptimizationLevel::O3);
     }
     
     #[test]
@@ -579,19 +579,19 @@ mod tests {
         // Test fast compile preset
         let matches = app.clone().try_get_matches_from(vec!["test", "--fast-compile"]).unwrap();
         let config = OptimizationCLI::parse_optimization_config(&matches).unwrap();
-        assert_eq!(config.optimization_level, OptimizationLevel::Basic);
+        assert_eq!(config.optimization_level, OptimizationLevel::O1);
         assert!(config.enable_parallel_compilation);
         assert!(config.enable_caching_mechanisms);
         
         // Test max performance preset
         let matches = app.clone().try_get_matches_from(vec!["test", "--max-performance"]).unwrap();
         let config = OptimizationCLI::parse_optimization_config(&matches).unwrap();
-        assert_eq!(config.optimization_level, OptimizationLevel::Aggressive);
+        assert_eq!(config.optimization_level, OptimizationLevel::O3);
         
         // Test min size preset
         let matches = app.clone().try_get_matches_from(vec!["test", "--min-size"]).unwrap();
         let config = OptimizationCLI::parse_optimization_config(&matches).unwrap();
-        assert_eq!(config.optimization_level, OptimizationLevel::Size);
+        assert_eq!(config.optimization_level, OptimizationLevel::Os);
     }
     
     #[test]
@@ -609,7 +609,7 @@ mod tests {
         
         let config = OptimizationCLI::parse_optimization_config(&matches).unwrap();
         
-        assert_eq!(config.optimization_level, OptimizationLevel::Default);
+        assert_eq!(config.optimization_level, OptimizationLevel::O2);
         assert!(!config.enable_function_inlining); // Override
         assert!(config.enable_profile_guided_optimization); // Override
         assert_eq!(config.max_parallel_jobs, 4);

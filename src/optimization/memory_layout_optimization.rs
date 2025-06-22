@@ -192,10 +192,10 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
     /// Check if struct should be optimized
     fn should_optimize_struct(&self, optimization: &StructLayoutOptimization) -> bool {
         match self.optimization_level {
-            OptimizationLevel::None => false,
-            OptimizationLevel::Less => optimization.estimated_memory_savings > 10.0,
-            OptimizationLevel::Default => optimization.estimated_memory_savings > 5.0,
-            OptimizationLevel::Aggressive | OptimizationLevel::Size | OptimizationLevel::SizeAggressive => {
+            OptimizationLevel::O0 => false,
+            OptimizationLevel::O1 => optimization.estimated_memory_savings > 10.0,
+            OptimizationLevel::O2 => optimization.estimated_memory_savings > 5.0,
+            OptimizationLevel::O3 | OptimizationLevel::Os | OptimizationLevel::OsAggressive => {
                 optimization.estimated_memory_savings > 1.0
             }
         }
@@ -988,7 +988,7 @@ mod tests {
     #[test]
     fn test_memory_layout_optimizer_creation() {
         let context = Context::create();
-        let optimizer = MemoryLayoutOptimizer::new(&context, OptimizationLevel::Default);
+        let optimizer = MemoryLayoutOptimizer::new(&context, OptimizationLevel::O2);
         let stats = optimizer.get_statistics();
         assert_eq!(stats.struct_replacements, 0);
     }

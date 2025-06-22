@@ -75,8 +75,8 @@ impl OptimizationPass {
             dependencies: Vec::new(),
             conflicts: Vec::new(),
             target_optimization_levels: vec![
-                super::optimization::OptimizationLevel::Default,
-                super::optimization::OptimizationLevel::Aggressive,
+                super::optimization::OptimizationLevel::O2,
+                super::optimization::OptimizationLevel::O3,
             ],
             is_analysis_pass: false,
             is_transformation_pass: true,
@@ -164,7 +164,7 @@ impl Default for PassConfiguration {
         Self {
             enabled_passes: HashSet::new(),
             disabled_passes: HashSet::new(),
-            optimization_level: super::optimization::OptimizationLevel::Default,
+            optimization_level: super::optimization::OptimizationLevel::O2,
             enable_expensive_passes: true,
             enable_cursed_passes: true,
             max_pass_execution_time: Duration::from_secs(30),
@@ -265,8 +265,8 @@ impl PassRegistry {
                 "loop-unroll",
                 "Unroll loops for better performance"
             ).for_levels(vec![
-                super::optimization::OptimizationLevel::Default,
-                super::optimization::OptimizationLevel::Aggressive,
+                super::optimization::OptimizationLevel::O2,
+                super::optimization::OptimizationLevel::O3,
             ])
             .estimated_improvement(1.5)
             .compile_time_cost(PassTimeCategory::Slow)
@@ -277,7 +277,7 @@ impl PassRegistry {
                 "loop-vectorize",
                 "Vectorize loops using SIMD instructions"
             ).for_levels(vec![
-                super::optimization::OptimizationLevel::Aggressive,
+                super::optimization::OptimizationLevel::O3,
             ])
             .estimated_improvement(2.0)
             .compile_time_cost(PassTimeCategory::Slow)
@@ -288,7 +288,7 @@ impl PassRegistry {
                 "slp-vectorize",
                 "Superword-level parallelism vectorization"
             ).for_levels(vec![
-                super::optimization::OptimizationLevel::Aggressive,
+                super::optimization::OptimizationLevel::O3,
             ])
             .estimated_improvement(1.6)
             .compile_time_cost(PassTimeCategory::Medium)

@@ -738,11 +738,11 @@ impl PerformanceIntegrationSystem {
             
             // Apply optimization-specific IR
             match config.optimization_level {
-                crate::optimization::config::OptimizationLevel::Aggressive => {
+                crate::optimization::config::OptimizationLevel::O3 => {
                     ir.push_str("  ; Aggressive optimization enabled\n");
                     ir.push_str("  %result = add i32 42, 0\n");
                 }
-                crate::optimization::config::OptimizationLevel::Default => {
+                crate::optimization::config::OptimizationLevel::O2 => {
                     ir.push_str("  ; Default optimization\n");
                     ir.push_str("  %result = alloca i32\n");
                     ir.push_str("  store i32 42, i32* %result\n");

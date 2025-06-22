@@ -12,11 +12,12 @@ use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
 
 use crate::optimization::{
-    OptimizationLevel, OptimizationPass, OptimizationConfig, OptimizationEngine,
+    OptimizationPass, OptimizationConfig, OptimizationEngine,
     analysis::{PerformanceAnalyzer, CompilationProfiler, BenchmarkRunner},
     utils::{OptimizationRecommendations, PerformanceReport},
 };
 use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
+use crate::optimization::config::OptimizationLevel;
 use crate::core::performance_pipeline::PerformancePipeline;
 use crate::error::CursedError;
 

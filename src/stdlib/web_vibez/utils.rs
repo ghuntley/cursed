@@ -602,6 +602,209 @@ impl Default for RequestIdGenerator {
     }
 }
 
+// TODO: Implement full URL encoding functionality
+/// URL encoder utility for web applications
+#[derive(Debug, Clone)]
+pub struct UrlEncoder {
+    /// Whether to encode reserved characters
+    pub encode_reserved: bool,
+    /// Custom encoding rules
+    pub custom_rules: HashMap<char, String>,
+}
+
+impl UrlEncoder {
+    /// Create new URL encoder
+    pub fn new() -> Self {
+        Self {
+            encode_reserved: false,
+            custom_rules: HashMap::new(),
+        }
+    }
+
+    /// Create URL encoder with reserved character encoding
+    pub fn with_reserved_encoding() -> Self {
+        Self {
+            encode_reserved: true,
+            custom_rules: HashMap::new(),
+        }
+    }
+
+    /// Add custom encoding rule
+    pub fn add_rule(&mut self, ch: char, encoded: String) {
+        self.custom_rules.insert(ch, encoded);
+    }
+
+    /// Encode a URL string
+    pub fn encode(&self, input: &str) -> String {
+        // TODO: Implement proper URL encoding
+        input.to_string()
+    }
+
+    /// Decode a URL string
+    pub fn decode(&self, input: &str) -> Result<String, String> {
+        // TODO: Implement proper URL decoding
+        Ok(input.to_string())
+    }
+}
+
+impl Default for UrlEncoder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// TODO: Implement full HTTP headers functionality
+/// HTTP headers manager for web applications
+#[derive(Debug, Clone)]
+pub struct HttpHeaders {
+    /// Header map
+    pub headers: HashMap<String, Vec<String>>,
+    /// Case-sensitive header names
+    pub case_sensitive: bool,
+}
+
+impl HttpHeaders {
+    /// Create new HTTP headers manager
+    pub fn new() -> Self {
+        Self {
+            headers: HashMap::new(),
+            case_sensitive: false,
+        }
+    }
+
+    /// Add header
+    pub fn add(&mut self, name: &str, value: &str) {
+        let key = if self.case_sensitive {
+            name.to_string()
+        } else {
+            name.to_lowercase()
+        };
+        
+        self.headers.entry(key).or_insert_with(Vec::new).push(value.to_string());
+    }
+
+    /// Get header values
+    pub fn get(&self, name: &str) -> Option<&Vec<String>> {
+        let key = if self.case_sensitive {
+            name.to_string()
+        } else {
+            name.to_lowercase()
+        };
+        
+        self.headers.get(&key)
+    }
+
+    /// Get first header value
+    pub fn get_first(&self, name: &str) -> Option<&String> {
+        self.get(name).and_then(|values| values.first())
+    }
+
+    /// Remove header
+    pub fn remove(&mut self, name: &str) -> Option<Vec<String>> {
+        let key = if self.case_sensitive {
+            name.to_string()
+        } else {
+            name.to_lowercase()
+        };
+        
+        self.headers.remove(&key)
+    }
+
+    /// Check if header exists
+    pub fn contains(&self, name: &str) -> bool {
+        let key = if self.case_sensitive {
+            name.to_string()
+        } else {
+            name.to_lowercase()
+        };
+        
+        self.headers.contains_key(&key)
+    }
+
+    /// Get all header names
+    pub fn keys(&self) -> Vec<&String> {
+        self.headers.keys().collect()
+    }
+
+    /// Clear all headers
+    pub fn clear(&mut self) {
+        self.headers.clear();
+    }
+}
+
+impl Default for HttpHeaders {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// TODO: Implement full MIME type functionality
+/// MIME type utilities for web applications
+#[derive(Debug, Clone)]
+pub struct MimeTypes {
+    /// Custom MIME type mappings
+    pub custom_types: HashMap<String, String>,
+    /// Default MIME type for unknown extensions
+    pub default_type: String,
+}
+
+impl MimeTypes {
+    /// Create new MIME types manager
+    pub fn new() -> Self {
+        Self {
+            custom_types: HashMap::new(),
+            default_type: "application/octet-stream".to_string(),
+        }
+    }
+
+    /// Add custom MIME type mapping
+    pub fn add_type(&mut self, extension: &str, mime_type: &str) {
+        self.custom_types.insert(extension.to_string(), mime_type.to_string());
+    }
+
+    /// Get MIME type for file extension
+    pub fn get_type(&self, extension: &str) -> &str {
+        self.custom_types.get(extension).map(|s| s.as_str()).unwrap_or(&self.default_type)
+    }
+
+    /// Get MIME type from filename
+    pub fn get_type_from_filename(&self, filename: &str) -> &str {
+        if let Some(extension) = filename.rfind('.').map(|pos| &filename[pos + 1..]) {
+            self.get_type(extension)
+        } else {
+            &self.default_type
+        }
+    }
+
+    /// Check if MIME type is text-based
+    pub fn is_text_type(&self, mime_type: &str) -> bool {
+        mime_type.starts_with("text/") || 
+        mime_type.starts_with("application/json") ||
+        mime_type.starts_with("application/xml")
+    }
+}
+
+impl Default for MimeTypes {
+    fn default() -> Self {
+        let mut types = Self::new();
+        
+        // Add common MIME types
+        types.add_type("html", "text/html");
+        types.add_type("css", "text/css");
+        types.add_type("js", "application/javascript");
+        types.add_type("json", "application/json");
+        types.add_type("xml", "application/xml");
+        types.add_type("txt", "text/plain");
+        types.add_type("png", "image/png");
+        types.add_type("jpg", "image/jpeg");
+        types.add_type("jpeg", "image/jpeg");
+        types.add_type("gif", "image/gif");
+        types.add_type("pdf", "application/pdf");
+        
+        types
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
