@@ -415,7 +415,7 @@ enum PlatformType {
 }
 
 /// Platform-specific operations trait
-trait PlatformHandler: std::fmt::Debug + Send + Sync {
+pub trait PlatformHandler: std::fmt::Debug + Send + Sync {
     /// Initialize platform-specific features
     fn initialize(&self) -> Result<(), CursedError>;
     
@@ -433,7 +433,7 @@ trait PlatformHandler: std::fmt::Debug + Send + Sync {
 }
 
 /// Generic IPC connection trait
-trait IpcConnection: std::fmt::Debug + Send + Sync {
+pub trait IpcConnection: std::fmt::Debug + Send + Sync {
     /// Send a message
     fn send(&self, message: &[u8]) -> Result<(), CursedError>;
     

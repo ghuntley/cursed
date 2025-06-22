@@ -1,7 +1,7 @@
 //! Incremental compilation support for faster build times
 
 use crate::error::{Result, CursedError};
-use crate::optimization::metrics::CompilationUnit;
+pub use crate::optimization::metrics::CompilationUnit;
 use crate::optimization::dependency_analyzer::{DependencyGraph, DependencyAnalyzer};
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, Duration};

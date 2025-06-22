@@ -552,7 +552,7 @@ impl FileSystemVibe for EmbeddedFileSystem {
 }
 
 /// Convert a glob pattern to a regex
-fn glob_to_regex(pattern: &str) -> regex::Regex {
+pub fn glob_to_regex(pattern: &str) -> regex::Regex {
     let mut regex_pattern = String::new();
     let mut chars = pattern.chars().peekable();
     

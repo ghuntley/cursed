@@ -29,7 +29,7 @@ mod process;
 mod pipeline;
 mod task;
 mod builder;
-mod shell;
+pub mod shell;
 mod monitor;
 mod timeout;
 mod enhanced_command;

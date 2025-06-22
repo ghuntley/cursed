@@ -19,7 +19,7 @@ use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Digest};
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
-use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
+pub use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// Dilithium parameter sets
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

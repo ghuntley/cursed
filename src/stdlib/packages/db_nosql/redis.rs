@@ -237,12 +237,8 @@ impl RedisConnection {
         })
     }
 
-    /// slay Execute a Redis command with timing - helper method for tracking performance
-    async fn execute_with_timing<T>(&self, operation: impl std::future::Future<Output = RedisResult<T>>) -> DatabaseResult<T> {
-        let start = Instant::now();
-        let result = operation.await;
-        let duration = start.elapsed();
-
+    /// slay Execute a Redis command with timing and update stats
+    async fn update_stats_and_handle_error<T>(&self, result: RedisResult<T>, duration: std::time::Duration) -> DatabaseResult<T> {
         let success = result.is_ok();
         self.pool.update_stats(success, duration).await;
 
@@ -256,9 +252,10 @@ impl RedisConnection {
 
     /// slay GET - Retrieve value by key
     pub async fn get(&mut self, key: &str) -> DatabaseResult<Option<Value>> {
-        let result: Option<String> = self.execute_with_timing(
-            self.connection.get(key)
-        ).await?;
+        let start = std::time::Instant::now();
+        let result: RedisResult<Option<String>> = self.connection.get(key).await;
+        let duration = start.elapsed();
+        let result = self.update_stats_and_handle_error(result, duration).await?;
 
         Ok(result.map(Value::string))
     }
@@ -266,74 +263,94 @@ impl RedisConnection {
     /// slay SET - Set key-value pair
     pub async fn set(&mut self, key: &str, value: &Value) -> DatabaseResult<()> {
         let redis_value = value_to_redis_string(value);
-        self.execute_with_timing(
-            self.connection.set(key, redis_value)
-        ).await
+        let start = std::time::Instant::now();
+        let result = self.connection.set(key, redis_value).await;
+        let duration = start.elapsed();
+        self.update_stats_and_handle_error(result, duration).await
     }
 
     /// slay SET with expiration - Set key-value pair with TTL
     pub async fn set_ex(&mut self, key: &str, value: &Value, seconds: u64) -> DatabaseResult<()> {
         let redis_value = value_to_redis_string(value);
-        self.execute_with_timing(
-            self.connection.set_ex(key, redis_value, seconds)
-        ).await
+        let start = std::time::Instant::now();
+        let result = self.connection.set_ex(key, redis_value, seconds).await;
+        let duration = start.elapsed();
+        self.update_stats_and_handle_error(result, duration).await
     }
 
     /// slay DEL - Delete keys
     pub async fn del(&mut self, keys: &[&str]) -> DatabaseResult<u64> {
+        let keys: Vec<String> = keys.iter().map(|&s| s.to_string()).collect();
         self.execute_with_timing(
-            self.connection.del(keys)
+            |conn| conn.del(keys)
         ).await
     }
 
     /// slay EXISTS - Check if key exists
     pub async fn exists(&mut self, key: &str) -> DatabaseResult<bool> {
+        let key = key.to_string();
         let result: i32 = self.execute_with_timing(
-            self.connection.exists(key)
+            |conn| conn.exists(key)
         ).await?;
         Ok(result > 0)
     }
 
     /// slay EXPIRE - Set key expiration
     pub async fn expire(&mut self, key: &str, seconds: u64) -> DatabaseResult<bool> {
+        let key = key.to_string();
         let result: i32 = self.execute_with_timing(
-            self.connection.expire(key, seconds as i64)
+            |conn| conn.expire(key, seconds as i64)
         ).await?;
         Ok(result > 0)
     }
 
     /// slay TTL - Get key time to live
     pub async fn ttl(&mut self, key: &str) -> DatabaseResult<i64> {
+        let key = key.to_string();
+        
+       
         self.execute_with_timing(
-            self.connection.ttl(key)
+            |conn| conn.ttl(key)
         ).await
     }
 
     /// slay INCR - Increment integer value
     pub async fn incr(&mut self, key: &str) -> DatabaseResult<i64> {
+        let key = key.to_string();
+        
+       
         self.execute_with_timing(
-            self.connection.incr(key, 1)
+            |conn| conn.incr(key, 1)
         ).await
     }
 
     /// slay INCRBY - Increment by amount
     pub async fn incr_by(&mut self, key: &str, increment: i64) -> DatabaseResult<i64> {
+        let key = key.to_string();
+        
+       
         self.execute_with_timing(
-            self.connection.incr(key, increment)
+            |conn| conn.incr(key, increment)
         ).await
     }
 
     /// slay DECR - Decrement integer value
     pub async fn decr(&mut self, key: &str) -> DatabaseResult<i64> {
+        let key = key.to_string();
+        
+       
         self.execute_with_timing(
-            self.connection.decr(key, 1)
+            |conn| conn.decr(key, 1)
         ).await
     }
 
     /// slay DECRBY - Decrement by amount
     pub async fn decr_by(&mut self, key: &str, decrement: i64) -> DatabaseResult<i64> {
+        let key = key.to_string();
+        
+       
         self.execute_with_timing(
-            self.connection.decr(key, decrement)
+            |conn| conn.decr(key, decrement)
         ).await
     }
 
@@ -341,47 +358,57 @@ impl RedisConnection {
 
     /// slay LPUSH - Push to left of list
     pub async fn lpush(&mut self, key: &str, values: &[Value]) -> DatabaseResult<u64> {
+        let key = key.to_string();
         let redis_values: Vec<String> = values.iter().map(value_to_redis_string).collect();
+        
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.lpush(key, redis_values)
+            |conn| conn.lpush(key, redis_values)
         ).await
     }
 
     /// slay RPUSH - Push to right of list
     pub async fn rpush(&mut self, key: &str, values: &[Value]) -> DatabaseResult<u64> {
+        let key = key.to_string();
         let redis_values: Vec<String> = values.iter().map(value_to_redis_string).collect();
+        
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.rpush(key, redis_values)
+            |conn| conn.rpush(key, redis_values)
         ).await
     }
 
     /// slay LPOP - Pop from left of list
     pub async fn lpop(&mut self, key: &str) -> DatabaseResult<Option<Value>> {
+        let key = key.to_string();
         let result: Option<String> = self.execute_with_timing(
-            self.connection.lpop(key, None)
+            |conn| conn.lpop(key, None)
         ).await?;
         Ok(result.map(Value::string))
     }
 
     /// slay RPOP - Pop from right of list
     pub async fn rpop(&mut self, key: &str) -> DatabaseResult<Option<Value>> {
+        let key = key.to_string();
         let result: Option<String> = self.execute_with_timing(
-            self.connection.rpop(key, None)
+            |conn| conn.rpop(key, None)
         ).await?;
         Ok(result.map(Value::string))
     }
 
     /// slay LLEN - Get list length
     pub async fn llen(&mut self, key: &str) -> DatabaseResult<u64> {
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.llen(key)
+            |conn| conn.llen(key)
         ).await
     }
 
     /// slay LRANGE - Get list range
     pub async fn lrange(&mut self, key: &str, start: i64, stop: i64) -> DatabaseResult<Vec<Value>> {
+        let key = key.to_string();
         let result: Vec<String> = self.execute_with_timing(
-            self.connection.lrange(key, start as isize, stop as isize)
+            |conn| conn.lrange(key, start as isize, stop as isize)
         ).await?;
         Ok(result.into_iter().map(Value::string).collect())
     }
@@ -391,23 +418,28 @@ impl RedisConnection {
     /// slay SADD - Add members to set
     pub async fn sadd(&mut self, key: &str, members: &[Value]) -> DatabaseResult<u64> {
         let redis_values: Vec<String> = members.iter().map(value_to_redis_string).collect();
+        
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.sadd(key, redis_values)
+            |conn| conn.sadd(key, redis_values)
         ).await
     }
 
     /// slay SREM - Remove members from set
     pub async fn srem(&mut self, key: &str, members: &[Value]) -> DatabaseResult<u64> {
         let redis_values: Vec<String> = members.iter().map(value_to_redis_string).collect();
+        
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.srem(key, redis_values)
+            |conn| conn.srem(key, redis_values)
         ).await
     }
 
     /// slay SMEMBERS - Get all set members
     pub async fn smembers(&mut self, key: &str) -> DatabaseResult<Vec<Value>> {
+        let key = key.to_string();
         let result: Vec<String> = self.execute_with_timing(
-            self.connection.smembers(key)
+            |conn| conn.smembers(key)
         ).await?;
         Ok(result.into_iter().map(Value::string).collect())
     }
@@ -415,16 +447,18 @@ impl RedisConnection {
     /// slay SISMEMBER - Check if member exists in set
     pub async fn sismember(&mut self, key: &str, member: &Value) -> DatabaseResult<bool> {
         let redis_value = value_to_redis_string(member);
+        let key = key.to_string();
         let result: bool = self.execute_with_timing(
-            self.connection.sismember(key, redis_value)
+            |conn| conn.sismember(key, redis_value)
         ).await?;
         Ok(result)
     }
 
     /// slay SCARD - Get set cardinality
     pub async fn scard(&mut self, key: &str) -> DatabaseResult<u64> {
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.scard(key)
+            |conn| conn.scard(key)
         ).await
     }
 
@@ -433,38 +467,53 @@ impl RedisConnection {
     /// slay HSET - Set hash field
     pub async fn hset(&mut self, key: &str, field: &str, value: &Value) -> DatabaseResult<bool> {
         let redis_value = value_to_redis_string(value);
+        let key = key.to_string();
+       
         let result: i32 = self.execute_with_timing(
-            self.connection.hset(key, field, redis_value)
+            |conn| conn.hset(key, field, redis_value)
         ).await?;
         Ok(result > 0)
     }
 
     /// slay HGET - Get hash field
     pub async fn hget(&mut self, key: &str, field: &str) -> DatabaseResult<Option<Value>> {
+        let key = key.to_string();
+       
         let result: Option<String> = self.execute_with_timing(
-            self.connection.hget(key, field)
+            |conn| conn.hget(key, field)
         ).await?;
         Ok(result.map(Value::string))
     }
 
     /// slay HDEL - Delete hash fields
     pub async fn hdel(&mut self, key: &str, fields: &[&str]) -> DatabaseResult<u64> {
+        
+        let key = key.to_string();
+        
+       
+        let fields: Vec<String> = fields.iter().map(|&s| s.to_string()).collect();
         self.execute_with_timing(
-            self.connection.hdel(key, fields)
+            |conn| conn.hdel(key, fields)
         ).await
     }
 
     /// slay HEXISTS - Check if hash field exists
     pub async fn hexists(&mut self, key: &str, field: &str) -> DatabaseResult<bool> {
+        
+        let key = key.to_string();
+        
+       
+        let field = field.to_string();
         self.execute_with_timing(
-            self.connection.hexists(key, field)
+            |conn| conn.hexists(key, field)
         ).await
     }
 
     /// slay HGETALL - Get all hash fields and values
     pub async fn hgetall(&mut self, key: &str) -> DatabaseResult<HashMap<String, Value>> {
+        let key = key.to_string();
         let result: HashMap<String, String> = self.execute_with_timing(
-            self.connection.hgetall(key)
+            |conn| conn.hgetall(key)
         ).await?;
         
         Ok(result.into_iter()
@@ -474,23 +523,27 @@ impl RedisConnection {
 
     /// slay HKEYS - Get all hash field names
     pub async fn hkeys(&mut self, key: &str) -> DatabaseResult<Vec<String>> {
+        
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.hkeys(key)
+            |conn| conn.hkeys(key)
         ).await
     }
 
     /// slay HVALS - Get all hash values
     pub async fn hvals(&mut self, key: &str) -> DatabaseResult<Vec<Value>> {
+        let key = key.to_string();
         let result: Vec<String> = self.execute_with_timing(
-            self.connection.hvals(key)
+            |conn| conn.hvals(key)
         ).await?;
         Ok(result.into_iter().map(Value::string).collect())
     }
 
     /// slay HLEN - Get hash length
     pub async fn hlen(&mut self, key: &str) -> DatabaseResult<u64> {
+        let key = key.to_string();
         self.execute_with_timing(
-            self.connection.hlen(key)
+            |conn| conn.hlen(key)
         ).await
     }
 
@@ -498,8 +551,9 @@ impl RedisConnection {
 
     /// slay KEYS - Find keys matching pattern
     pub async fn keys(&mut self, pattern: &str) -> DatabaseResult<Vec<String>> {
+        let pattern = pattern.to_string();
         self.execute_with_timing(
-            self.connection.keys(pattern)
+            |conn| conn.keys(pattern)
         ).await
     }
 
@@ -517,7 +571,7 @@ impl RedisConnection {
         }
 
         let result: (u64, Vec<String>) = self.execute_with_timing(
-            cmd.query_async(&mut self.connection)
+            |conn| cmd.query_async(conn)
         ).await?;
         
         Ok(result)
@@ -526,7 +580,7 @@ impl RedisConnection {
     /// slay FLUSHDB - Clear current database
     pub async fn flushdb(&mut self) -> DatabaseResult<()> {
         self.execute_with_timing(
-            redis::cmd("FLUSHDB").query_async(&mut self.connection)
+            |conn| redis::cmd("FLUSHDB").query_async(conn)
         ).await
     }
 
@@ -538,7 +592,7 @@ impl RedisConnection {
         }
         
         self.execute_with_timing(
-            cmd.query_async(&mut self.connection)
+            |conn| cmd.query_async(conn)
         ).await
     }
 
@@ -546,12 +600,12 @@ impl RedisConnection {
     pub async fn ping(&mut self, message: Option<&str>) -> DatabaseResult<String> {
         let result: String = if let Some(msg) = message {
             self.execute_with_timing(
-                redis::cmd("PING").arg(msg).query_async(&mut self.connection)
-            ).await?
+            |conn| redis::cmd("PING").arg(msg).query_async(conn)
+        ).await?
         } else {
             self.execute_with_timing(
-                self.connection.get("PING")
-            ).await.unwrap_or_else(|_| "PONG".to_string())
+            |conn| conn.get("PING")
+        ).await.unwrap_or_else(|_| "PONG".to_string())
         };
         
         Ok(result)
