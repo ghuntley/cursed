@@ -14,6 +14,9 @@ use crate::stdlib::process::core::{Process, ProcessConfig};
 use crate::stdlib::process::ipc_integration::{ProcessIpcCoordinator, InterProcessChannel};
 use crate::stdlib::ipc::process_coordination::{IpcProcessRegistry, ProcessAwareIpcManager};
 
+/// Communication channel type alias for process communication
+pub type CommunicationChannel = InterProcessChannel;
+
 /// Process communication channels
 #[derive(Debug, Clone)]
 pub struct ProcessChannels {

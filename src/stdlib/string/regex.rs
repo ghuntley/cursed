@@ -717,6 +717,64 @@ pub fn extract_words(text: &str) -> StringResult<Vec<String>> {
     Ok(regex.find_all(text).into_iter().map(|m| m.text).collect())
 }
 
+// =============================================================================
+// MISSING FUNCTIONS USED IN MOD.RS
+// =============================================================================
+
+/// Type alias for compatibility with mod.rs imports
+pub type RegexPattern = Regex;
+
+/// Type alias for compatibility with mod.rs imports  
+pub type RegexMatch = Match;
+
+/// Finds matches using regex pattern - wrapper for find_match
+pub fn find_with_regex(pattern: &str, text: &str) -> StringResult<Option<Match>> {
+    find_match(pattern, text)
+}
+
+/// Replaces first match with replacement using regex
+pub fn replace_with_regex(pattern: &str, text: &str, replacement: &str) -> StringResult<String> {
+    replace_first(pattern, text, replacement)
+}
+
+/// Replaces all matches with replacement using regex
+pub fn replace_all_with_regex(pattern: &str, text: &str, replacement: &str) -> StringResult<String> {
+    replace_all(pattern, text, replacement)
+}
+
+/// Splits text using regex pattern
+pub fn split_with_regex(pattern: &str, text: &str) -> StringResult<Vec<String>> {
+    split_by_pattern(pattern, text)
+}
+
+/// Tests if text matches pattern - wrapper for is_match
+pub fn match_with_regex(pattern: &str, text: &str) -> StringResult<bool> {
+    is_match(pattern, text)
+}
+
+/// Extracts capture groups from regex match
+pub fn capture_groups(pattern: &str, text: &str) -> StringResult<Vec<Vec<String>>> {
+    let regex = Regex::new(pattern)?;
+    let matches = regex.find_all(text);
+    
+    let mut all_groups = Vec::new();
+    for m in matches {
+        // Convert Option<String> to String, using empty string for None
+        let groups: Vec<String> = m.groups().iter()
+            .map(|opt| opt.as_ref().unwrap_or(&String::new()).clone())
+            .collect();
+        all_groups.push(groups);
+    }
+    
+    Ok(all_groups)
+}
+
+/// Extracts all pattern matches from text
+pub fn extract_patterns(pattern: &str, text: &str) -> StringResult<Vec<String>> {
+    let regex = Regex::new(pattern)?;
+    Ok(regex.find_all(text).into_iter().map(|m| m.text).collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -775,5 +833,64 @@ mod tests {
     fn test_extract_numbers() {
         let numbers = extract_numbers("The price is $123 and tax is $45").unwrap();
         assert_eq!(numbers, vec!["123", "45"]);
+    }
+    
+    #[test]
+    fn test_find_with_regex() {
+        let result = find_with_regex("world", "hello world").unwrap();
+        assert!(result.is_some());
+        let m = result.unwrap();
+        assert_eq!(m.as_str(), "world");
+    }
+    
+    #[test]
+    fn test_replace_with_regex() {
+        let result = replace_with_regex("world", "hello world", "universe").unwrap();
+        assert_eq!(result, "hello universe");
+    }
+    
+    #[test]
+    fn test_replace_all_with_regex() {
+        let result = replace_all_with_regex("l", "hello", "x").unwrap();
+        assert_eq!(result, "hexxo");
+    }
+    
+    #[test]
+    fn test_split_with_regex() {
+        let result = split_with_regex(",", "a,b,c").unwrap();
+        assert_eq!(result, vec!["a", "b", "c"]);
+    }
+    
+    #[test]
+    fn test_match_with_regex() {
+        let result = match_with_regex("hello", "hello world").unwrap();
+        assert!(result);
+        
+        let result = match_with_regex("xyz", "hello world").unwrap();
+        assert!(!result);
+    }
+    
+    #[test]
+    fn test_capture_groups() {
+        let result = capture_groups("test", "test string test").unwrap();
+        assert_eq!(result.len(), 2);
+    }
+    
+    #[test]
+    fn test_extract_patterns() {
+        let result = extract_patterns("\\d+", "I have 123 apples and 456 oranges").unwrap();
+        assert_eq!(result, vec!["123", "456"]);
+    }
+    
+    #[test]
+    fn test_type_aliases() {
+        // Test that type aliases work
+        let _pattern: RegexPattern = Regex::new("test").unwrap();
+        let _match: RegexMatch = Match {
+            start: 0,
+            end: 4,
+            text: "test".to_string(),
+            groups: Vec::new(),
+        };
     }
 }

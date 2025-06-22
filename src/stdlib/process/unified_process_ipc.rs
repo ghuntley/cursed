@@ -26,7 +26,7 @@ use crate::stdlib::process::core::{ProcessConfig as CoreProcessConfig, ProcessMa
 use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
 use crate::stdlib::process::info::{ProcessState as StdProcessState};
 use crate::runtime::process::{ProcessGroup as RuntimeProcessGroup};
-use crate::stdlib::process::exec_vibez::{VibezResult, ExecutionContext, EnhancedCmd};
+use crate::stdlib::process::exec_vibez_types::{VibezResult, ExecutionContext, EnhancedCmd};
 
 
 type ProcessState = StdProcessState;

@@ -592,3 +592,7 @@ impl OptimizationRecommendations {
         high_priority
     }
 }
+
+// Type aliases for CLI compatibility
+pub type PgoManager = ProfileManager;
+pub type PgoConfig = ProfileManagerConfig;

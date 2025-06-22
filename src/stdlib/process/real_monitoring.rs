@@ -74,6 +74,33 @@ pub struct EnhancedProcessStats {
     pub priority: Option<i32>,
 }
 
+/// CPU timing information
+#[derive(Debug, Clone)]
+pub struct CpuTimes {
+    /// Time spent in user mode
+    pub user: Duration,
+    /// Time spent in system mode
+    pub system: Duration,
+    /// Time spent idle (for system-wide stats)
+    pub idle: Option<Duration>,
+}
+
+/// Memory usage statistics
+#[derive(Debug, Clone)]
+pub struct MemoryUsage {
+    /// Physical memory usage in bytes
+    pub rss: u64,
+    /// Virtual memory usage in bytes  
+    pub vms: u64,
+    /// Shared memory in bytes
+    pub shared: u64,
+    /// Peak memory usage in bytes
+    pub peak: u64,
+}
+
+/// Process statistics alias for compatibility
+pub type RealProcessStats = EnhancedProcessStats;
+
 /// Process registry for tracking active processes
 static PROCESS_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<u32, Arc<Mutex<Child>>>>>> = std::sync::OnceLock::new();
 
@@ -1080,4 +1107,16 @@ pub type ProcessStats = EnhancedProcessStats;
 /// Alias for compatibility - gets enhanced process statistics
 pub fn get_real_process_stats(pid: u32) -> ProcessResult<ProcessStats> {
     get_enhanced_process_stats(pid)
+}
+
+/// Get real memory usage for a process
+pub fn get_real_memory_usage(pid: u32) -> ProcessResult<MemoryUsage> {
+    let memory_info = get_real_memory_info(pid)?;
+    
+    Ok(MemoryUsage {
+        rss: memory_info.current_rss_bytes,
+        vms: memory_info.virtual_memory_bytes,
+        shared: memory_info.shared_memory_bytes,
+        peak: memory_info.peak_rss_bytes,
+    })
 }

@@ -52,6 +52,12 @@ use crate::stdlib::process::error::{
     ProcessError, ProcessResult, communication_error, timeout_error, system_error
 };
 
+/// Real IPC manager for process-IPC coordination
+pub type RealIpcManager = IpcChannelManager;
+
+/// IPC channel alias for consistency
+pub type IpcChannel = RealIpcChannel;
+
 /// IPC channel types with platform-specific implementations
 #[derive(Debug, Clone, PartialEq)]
 pub enum IpcChannelType {

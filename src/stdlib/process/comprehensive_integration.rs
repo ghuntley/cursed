@@ -22,6 +22,9 @@ use super::monitoring::{ProcessMonitor, MonitoringConfig};
 use super::signals::{SignalHandler, SignalManager};
 use super::resource_limits::{ResourceLimiter, ResourceConfig};
 
+/// Comprehensive process manager alias for integration
+pub type ComprehensiveProcessManager = ProcessIpcIntegration;
+
 /// Comprehensive process and IPC integration system
 #[derive(Debug)]
 pub struct ProcessIpcIntegration {

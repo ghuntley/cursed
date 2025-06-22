@@ -16,6 +16,57 @@ use crate::stdlib::process::core::{ProcessConfig};
 use crate::stdlib::process::info::{ProcessInfo as StdProcessInfo, ProcessState as StdProcessState};
 use crate::runtime::process::{ProcessInfo as RuntimeProcessInfo, ProcessStatus as RuntimeProcessStatus};
 
+/// Process lifecycle events
+#[derive(Debug, Clone)]
+pub enum LifecycleEvent {
+    /// Process spawned successfully
+    Spawned { pid: u32, timestamp: Instant },
+    /// Process started execution
+    Started { pid: u32, timestamp: Instant },
+    /// Process is running normally
+    Running { pid: u32, timestamp: Instant },
+    /// Process terminated normally
+    Terminated { pid: u32, exit_code: i32, timestamp: Instant },
+    /// Process was killed
+    Killed { pid: u32, signal: Option<i32>, timestamp: Instant },
+    /// Process failed to start
+    Failed { pid: u32, error: String, timestamp: Instant },
+    /// Process timed out
+    TimedOut { pid: u32, timeout: Duration, timestamp: Instant },
+    /// Process is being cleaned up
+    Cleanup { pid: u32, timestamp: Instant },
+}
+
+impl LifecycleEvent {
+    /// Get the process ID associated with this event
+    pub fn pid(&self) -> u32 {
+        match self {
+            LifecycleEvent::Spawned { pid, .. } => *pid,
+            LifecycleEvent::Started { pid, .. } => *pid,
+            LifecycleEvent::Running { pid, .. } => *pid,
+            LifecycleEvent::Terminated { pid, .. } => *pid,
+            LifecycleEvent::Killed { pid, .. } => *pid,
+            LifecycleEvent::Failed { pid, .. } => *pid,
+            LifecycleEvent::TimedOut { pid, .. } => *pid,
+            LifecycleEvent::Cleanup { pid, .. } => *pid,
+        }
+    }
+    
+    /// Get the timestamp when this event occurred
+    pub fn timestamp(&self) -> Instant {
+        match self {
+            LifecycleEvent::Spawned { timestamp, .. } => *timestamp,
+            LifecycleEvent::Started { timestamp, .. } => *timestamp,
+            LifecycleEvent::Running { timestamp, .. } => *timestamp,
+            LifecycleEvent::Terminated { timestamp, .. } => *timestamp,
+            LifecycleEvent::Killed { timestamp, .. } => *timestamp,
+            LifecycleEvent::Failed { timestamp, .. } => *timestamp,
+            LifecycleEvent::TimedOut { timestamp, .. } => *timestamp,
+            LifecycleEvent::Cleanup { timestamp, .. } => *timestamp,
+        }
+    }
+}
+
 
 /// RuntimeProcessInfo lifecycle manager
 #[derive(Debug)]

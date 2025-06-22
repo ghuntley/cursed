@@ -35,6 +35,27 @@ pub enum ProcessStatus {
     Unknown(String),
 }
 
+/// Process state information
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProcessState {
+    /// Process is created but not yet started
+    Created,
+    /// Process is running normally
+    Running,
+    /// Process is paused/suspended
+    Paused,
+    /// Process is waiting for some condition
+    Waiting,
+    /// Process has stopped execution
+    Stopped,
+    /// Process has terminated normally
+    Terminated,
+    /// Process was killed by signal
+    Killed,
+    /// Process state is unknown
+    Unknown,
+}
+
 impl fmt::Display for ProcessStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

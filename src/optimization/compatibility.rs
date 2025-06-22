@@ -25,6 +25,9 @@ pub use crate::optimization::benchmarks::{
 pub use crate::optimization::adaptive::{
     AdaptiveOptimizer,
     AdaptationResult as CoreAdaptationResult,
+};
+// AdaptiveStrategy comes from optimization_result module, not adaptive
+pub use crate::optimization::optimization_result::{
     AdaptiveStrategy as CoreAdaptiveStrategy
 };
 

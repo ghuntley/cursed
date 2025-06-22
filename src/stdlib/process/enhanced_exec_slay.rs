@@ -19,6 +19,37 @@ pub use crate::stdlib::process::exec_slay::{
 };
 use crate::stdlib::ipc::{IpcConfig, initialize_ipc};
 
+/// Enhanced slay command with additional capabilities
+pub type EnhancedSlayCommand = EnhancedCommandBuilder;
+
+/// Enhanced slay process for advanced process management
+#[derive(Debug)]
+pub struct EnhancedSlayProcess {
+    /// Process ID
+    pub pid: u32,
+    /// Process handle
+    pub handle: Option<Child>,
+    /// Start time
+    pub start_time: SystemTime,
+    /// Resource limits
+    pub resource_limits: ResourceLimits,
+    /// Security context
+    pub security_context: SecurityContext,
+}
+
+/// Enhanced slay options for configuration
+#[derive(Debug, Clone)]
+pub struct EnhancedSlayOptions {
+    /// Resource limits
+    pub resource_limits: ResourceLimits,
+    /// Security context
+    pub security_context: SecurityContext,
+    /// Timeout configuration
+    pub timeout: Option<Duration>,
+    /// Process priority
+    pub priority: ProcessPriority,
+}
+
 /// Enhanced command builder with comprehensive configuration
 #[derive(Debug, Clone)]
 pub struct EnhancedCommandBuilder {

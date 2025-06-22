@@ -30,6 +30,33 @@ mod windows_constants {
 
 use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
 
+/// Options for pipe configuration
+#[derive(Debug, Clone)]
+pub struct PipeOptions {
+    /// Pipe buffer size
+    pub buffer_size: usize,
+    /// Read timeout
+    pub read_timeout: Option<Duration>,
+    /// Write timeout
+    pub write_timeout: Option<Duration>,
+    /// Enable blocking mode
+    pub blocking: bool,
+}
+
+impl Default for PipeOptions {
+    fn default() -> Self {
+        Self {
+            buffer_size: 4096,
+            read_timeout: Some(Duration::from_secs(30)),
+            write_timeout: Some(Duration::from_secs(30)),
+            blocking: true,
+        }
+    }
+}
+
+/// Process pipe for inter-process communication
+pub type ProcessPipe = NamedPipe;
+
 /// Cross-platform named pipe
 pub struct NamedPipe {
     name: String,

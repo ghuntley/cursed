@@ -74,6 +74,9 @@ pub enum Signal {
     BadSystemCall,
 }
 
+/// Type alias for Signal for compatibility
+pub type SignalType = Signal;
+
 impl Signal {
     /// Get platform-specific signal number
     pub fn as_raw(&self) -> i32 {

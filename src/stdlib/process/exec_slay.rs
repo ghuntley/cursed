@@ -38,6 +38,10 @@ use crate::stdlib::process::real_monitoring::{
     RealProcessState, register_process_for_monitoring, wait_for_real_process,
     unregister_process_from_monitoring
 };
+use crate::error::CursedError;
+
+/// Result type for SlayCommand operations
+pub type SlayResult<T> = Result<T, CursedError>;
 
 /// SlayCommand represents an external command to be executed with enhanced features
 #[derive(Debug)]

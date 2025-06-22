@@ -10,6 +10,38 @@ use std::path::PathBuf;
 
 use crate::stdlib::process::error::{ProcessError, ProcessResult, environment_error, invalid_arguments};
 
+/// Environment variable representation
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnvVar {
+    /// Variable name
+    pub name: String,
+    /// Variable value
+    pub value: Option<String>,
+}
+
+impl EnvVar {
+    /// Create a new environment variable
+    pub fn new<N: Into<String>, V: Into<String>>(name: N, value: V) -> Self {
+        Self {
+            name: name.into(),
+            value: Some(value.into()),
+        }
+    }
+    
+    /// Create an environment variable to be removed (unset)
+    pub fn unset<N: Into<String>>(name: N) -> Self {
+        Self {
+            name: name.into(),
+            value: None,
+        }
+    }
+    
+    /// Check if this variable should be unset
+    pub fn is_unset(&self) -> bool {
+        self.value.is_none()
+    }
+}
+
 /// Environment variable manager for processes
 #[derive(Debug, Clone)]
 pub struct EnvironmentManager {

@@ -20,6 +20,22 @@ use crate::runtime::process::{ProcessOutput as RuntimeProcessOutput};
 // Type aliases
 type ProcessOutput = RuntimeProcessOutput;
 
+/// Process integration manager for cross-module functionality
+pub type ProcessIntegration = UnifiedProcessManager;
+
+/// Configuration options for process integration
+#[derive(Debug, Clone)]
+pub struct IntegrationOptions {
+    /// Enable monitoring
+    pub enable_monitoring: bool,
+    /// Enable lifecycle management
+    pub enable_lifecycle: bool,
+    /// Health check configuration
+    pub health_config: Option<HealthCheckConfig>,
+    /// Performance metrics collection
+    pub collect_metrics: bool,
+}
+
 /// Unified process manager that integrates all process management capabilities
 #[derive(Debug)]
 pub struct UnifiedProcessManager {

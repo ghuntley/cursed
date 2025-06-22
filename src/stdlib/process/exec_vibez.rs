@@ -24,6 +24,16 @@ use crate::stdlib::process::real_monitoring::{
     unregister_process_from_monitoring
 };
 
+// Re-export types from exec_vibez_types
+pub use crate::stdlib::process::exec_vibez_types::{
+    VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits, SecurityContext,
+    ExecutionMode, Priority
+};
+
+// Type aliases for compatibility
+pub type VibezProcess = Process;
+pub type VibezCommand = Cmd;
+
 /// Cmd represents an external command being prepared or run
 #[derive(Debug)]
 pub struct Cmd {

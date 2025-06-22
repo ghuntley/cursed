@@ -390,6 +390,398 @@ impl Default for PriorityQueue {
     }
 }
 
+/// A utility for sorting arrays using heap sort algorithm
+/// Provides efficient O(n log n) sorting with O(1) space complexity
+#[derive(Debug, Clone)]
+pub struct HeapSorter<T> {
+    comparator: fn(&T, &T) -> std::cmp::Ordering,
+}
+
+impl<T> HeapSorter<T> {
+    /// Create a new heap sorter with a custom comparator
+    pub fn new(comparator: fn(&T, &T) -> std::cmp::Ordering) -> Self {
+        Self { comparator }
+    }
+    
+    /// Sort a mutable slice using heap sort
+    pub fn sort(&self, data: &mut [T]) {
+        if data.len() <= 1 {
+            return;
+        }
+        
+        // Build max heap
+        for i in (0..data.len() / 2).rev() {
+            self.heapify_down(data, i, data.len());
+        }
+        
+        // Extract elements from heap
+        for i in (1..data.len()).rev() {
+            data.swap(0, i);
+            self.heapify_down(data, 0, i);
+        }
+    }
+    
+    /// Sort and return a new vector
+    pub fn sort_vec(&self, mut data: Vec<T>) -> Vec<T> {
+        self.sort(&mut data);
+        data
+    }
+    
+    fn heapify_down(&self, data: &mut [T], start: usize, end: usize) {
+        let mut parent = start;
+        
+        while 2 * parent + 1 < end {
+            let left_child = 2 * parent + 1;
+            let right_child = left_child + 1;
+            let mut largest = parent;
+            
+            if (self.comparator)(&data[left_child], &data[largest]) == std::cmp::Ordering::Greater {
+                largest = left_child;
+            }
+            
+            if right_child < end && (self.comparator)(&data[right_child], &data[largest]) == std::cmp::Ordering::Greater {
+                largest = right_child;
+            }
+            
+            if largest == parent {
+                break;
+            }
+            
+            data.swap(parent, largest);
+            parent = largest;
+        }
+    }
+}
+
+impl<T: Ord> Default for HeapSorter<T> {
+    fn default() -> Self {
+        Self::new(|a, b| a.cmp(b))
+    }
+}
+
+/// A generic binary heap implementation
+/// Can be configured as min-heap or max-heap based on comparator
+#[derive(Debug, Clone)]
+pub struct BinaryHeap<T> {
+    data: Vec<T>,
+    comparator: fn(&T, &T) -> std::cmp::Ordering,
+}
+
+impl<T> BinaryHeap<T> {
+    /// Create a new binary heap with custom comparator
+    pub fn new(comparator: fn(&T, &T) -> std::cmp::Ordering) -> Self {
+        Self {
+            data: Vec::new(),
+            comparator,
+        }
+    }
+    
+    /// Create a binary heap from existing data
+    pub fn from_vec(data: Vec<T>, comparator: fn(&T, &T) -> std::cmp::Ordering) -> Self {
+        let mut heap = Self { data, comparator };
+        heap.heapify();
+        heap
+    }
+    
+    /// Push an element into the heap
+    pub fn push(&mut self, item: T) {
+        self.data.push(item);
+        self.bubble_up(self.data.len() - 1);
+    }
+    
+    /// Pop the top element from the heap
+    pub fn pop(&mut self) -> Option<T> {
+        if self.data.is_empty() {
+            return None;
+        }
+        
+        if self.data.len() == 1 {
+            return self.data.pop();
+        }
+        
+        let last_idx = self.data.len() - 1;
+        self.data.swap(0, last_idx);
+        let result = self.data.pop();
+        self.bubble_down(0);
+        result
+    }
+    
+    /// Peek at the top element without removing it
+    pub fn peek(&self) -> Option<&T> {
+        self.data.first()
+    }
+    
+    /// Get the number of elements in the heap
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+    
+    /// Check if the heap is empty
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+    
+    /// Clear all elements from the heap
+    pub fn clear(&mut self) {
+        self.data.clear();
+    }
+    
+    /// Get capacity of underlying storage
+    pub fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+    
+    /// Reserve capacity for additional elements
+    pub fn reserve(&mut self, additional: usize) {
+        self.data.reserve(additional);
+    }
+    
+    fn heapify(&mut self) {
+        if self.data.len() <= 1 {
+            return;
+        }
+        
+        for i in (0..self.data.len() / 2).rev() {
+            self.bubble_down(i);
+        }
+    }
+    
+    fn bubble_up(&mut self, mut index: usize) {
+        while index > 0 {
+            let parent_index = (index - 1) / 2;
+            
+            if (self.comparator)(&self.data[index], &self.data[parent_index]) != std::cmp::Ordering::Greater {
+                break;
+            }
+            
+            self.data.swap(index, parent_index);
+            index = parent_index;
+        }
+    }
+    
+    fn bubble_down(&mut self, mut index: usize) {
+        let len = self.data.len();
+        
+        loop {
+            let left_child = 2 * index + 1;
+            let right_child = 2 * index + 2;
+            let mut largest = index;
+            
+            if left_child < len && (self.comparator)(&self.data[left_child], &self.data[largest]) == std::cmp::Ordering::Greater {
+                largest = left_child;
+            }
+            
+            if right_child < len && (self.comparator)(&self.data[right_child], &self.data[largest]) == std::cmp::Ordering::Greater {
+                largest = right_child;
+            }
+            
+            if largest == index {
+                break;
+            }
+            
+            self.data.swap(index, largest);
+            index = largest;
+        }
+    }
+}
+
+/// A min-heap implementation (smallest element at top)
+#[derive(Debug, Clone)]
+pub struct MinHeap<T>(BinaryHeap<T>);
+
+impl<T: Ord> MinHeap<T> {
+    /// Create a new min-heap
+    pub fn new() -> Self {
+        Self(BinaryHeap::new(|a, b| b.cmp(a))) // Reverse order for min-heap
+    }
+    
+    /// Create a min-heap from existing data
+    pub fn from_vec(data: Vec<T>) -> Self {
+        Self(BinaryHeap::from_vec(data, |a, b| b.cmp(a)))
+    }
+    
+    /// Push an element into the min-heap
+    pub fn push(&mut self, item: T) {
+        self.0.push(item);
+    }
+    
+    /// Pop the minimum element from the heap
+    pub fn pop(&mut self) -> Option<T> {
+        self.0.pop()
+    }
+    
+    /// Peek at the minimum element without removing it
+    pub fn peek(&self) -> Option<&T> {
+        self.0.peek()
+    }
+    
+    /// Get the number of elements in the heap
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    
+    /// Check if the heap is empty
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    
+    /// Clear all elements from the heap
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+    
+    /// Get capacity of underlying storage
+    pub fn capacity(&self) -> usize {
+        self.0.capacity()
+    }
+    
+    /// Reserve capacity for additional elements
+    pub fn reserve(&mut self, additional: usize) {
+        self.0.reserve(additional);
+    }
+}
+
+impl<T: Ord> Default for MinHeap<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// A max-heap implementation (largest element at top)
+#[derive(Debug, Clone)]
+pub struct MaxHeap<T>(BinaryHeap<T>);
+
+impl<T: Ord> MaxHeap<T> {
+    /// Create a new max-heap
+    pub fn new() -> Self {
+        Self(BinaryHeap::new(|a, b| a.cmp(b))) // Normal order for max-heap
+    }
+    
+    /// Create a max-heap from existing data
+    pub fn from_vec(data: Vec<T>) -> Self {
+        Self(BinaryHeap::from_vec(data, |a, b| a.cmp(b)))
+    }
+    
+    /// Push an element into the max-heap
+    pub fn push(&mut self, item: T) {
+        self.0.push(item);
+    }
+    
+    /// Pop the maximum element from the heap
+    pub fn pop(&mut self) -> Option<T> {
+        self.0.pop()
+    }
+    
+    /// Peek at the maximum element without removing it
+    pub fn peek(&self) -> Option<&T> {
+        self.0.peek()
+    }
+    
+    /// Get the number of elements in the heap
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    
+    /// Check if the heap is empty
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    
+    /// Clear all elements from the heap
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+    
+    /// Get capacity of underlying storage
+    pub fn capacity(&self) -> usize {
+        self.0.capacity()
+    }
+    
+    /// Reserve capacity for additional elements
+    pub fn reserve(&mut self, additional: usize) {
+        self.0.reserve(additional);
+    }
+}
+
+impl<T: Ord> Default for MaxHeap<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Iterator for heap structures
+#[derive(Debug)]
+pub struct HeapIterator<T> {
+    data: Vec<T>,
+    index: usize,
+}
+
+impl<T> HeapIterator<T> {
+    /// Create a new heap iterator from data
+    pub fn new(data: Vec<T>) -> Self {
+        Self { data, index: 0 }
+    }
+    
+    /// Create an iterator from a BinaryHeap (consumes the heap)
+    pub fn from_binary_heap(heap: BinaryHeap<T>) -> Self {
+        Self::new(heap.data)
+    }
+    
+    /// Create an iterator from a MinHeap (consumes the heap)
+    pub fn from_min_heap(heap: MinHeap<T>) -> Self {
+        Self::new(heap.0.data)
+    }
+    
+    /// Create an iterator from a MaxHeap (consumes the heap)
+    pub fn from_max_heap(heap: MaxHeap<T>) -> Self {
+        Self::new(heap.0.data)
+    }
+    
+    /// Get the remaining length
+    pub fn len(&self) -> usize {
+        self.data.len() - self.index
+    }
+    
+    /// Check if iterator is empty
+    pub fn is_empty(&self) -> bool {
+        self.index >= self.data.len()
+    }
+}
+
+impl<T> Iterator for HeapIterator<T> {
+    type Item = T;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.data.len() {
+            let item = unsafe { std::ptr::read(&self.data[self.index]) };
+            self.index += 1;
+            Some(item)
+        } else {
+            None
+        }
+    }
+    
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.len();
+        (remaining, Some(remaining))
+    }
+}
+
+impl<T> ExactSizeIterator for HeapIterator<T> {}
+
+impl<T> Drop for HeapIterator<T> {
+    fn drop(&mut self) {
+        // Properly drop remaining elements
+        while self.index < self.data.len() {
+            unsafe { std::ptr::drop_in_place(&mut self.data[self.index]) };
+            self.index += 1;
+        }
+    }
+}
+
+/// Heap-specific error type (alias for HeapResult errors)
+pub type HeapError = crate::error::CursedError;
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -12,6 +12,28 @@ use std::time::Duration;
 use crate::stdlib::process::error::{ProcessError, ProcessResult, execution_failed, invalid_arguments};
 use crate::stdlib::process::exec_slay::{SlayCommand, SlayProcessState, ProcessStdout, ProcessStderr};
 
+/// Shell command manager for executing shell commands
+#[derive(Debug)]
+pub struct ShellCommandManager {
+    /// Default shell configuration
+    pub config: ShellConfig,
+}
+
+impl ShellCommandManager {
+    /// Create new shell command manager
+    pub fn new(config: ShellConfig) -> Self {
+        Self { config }
+    }
+    
+    /// Create with default configuration
+    pub fn default() -> Self {
+        Self::new(ShellConfig::default())
+    }
+}
+
+/// Shell options type alias
+pub type ShellOptions = ShellConfig;
+
 /// Shell configuration for command execution
 #[derive(Debug, Clone)]
 pub struct ShellConfig {
