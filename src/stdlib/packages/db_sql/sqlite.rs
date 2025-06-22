@@ -1,5 +1,6 @@
 /// fr fr SQLite driver implementation - the lightweight champion periodt
 
+use crate::runtime::Value;
 use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
@@ -257,7 +258,7 @@ impl DatabaseConnection for SqliteConnection {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 }
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -362,7 +363,7 @@ impl DatabaseConnection for SqliteConnection {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -738,7 +739,7 @@ impl PreparedStatement for SqlitePreparedStatement {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -773,7 +774,7 @@ impl PreparedStatement for SqlitePreparedStatement {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -892,7 +893,7 @@ impl PreparedStatement for SqlitePreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+                result_type: crate::stdlib::packages::result::ResultType::Forward,
             });
         &EMPTY_METADATA
     }
@@ -993,7 +994,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -1098,7 +1099,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::db_core::ParameterDirection::In => {
+                crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,

@@ -13,7 +13,7 @@ pub mod config;
 pub mod optimization_config;
 pub mod metrics;
 pub mod compilation_speed;
-// pub mod pgo;  // Using existing pgo directory instead
+pub mod pgo;
 pub mod performance_system;
 pub mod baseline_storage;
 pub mod benchmarks;
@@ -61,6 +61,7 @@ pub mod real_performance_analyzer;
 pub mod real_compilation_profiler;
 // pub mod analysis; // Moved to alias section below
 pub mod enhanced_benchmarking;
+pub mod thread_pool_manager;
 
 pub use baseline_storage::{
     BaselineStorage, BaselineStorageConfig, PerformanceBaseline, BaselineType,
@@ -84,6 +85,7 @@ pub use comprehensive_performance_system::{
     LlvmOptimizationResults, PgoOptimizationResults, RuntimePerformanceMetrics,
     PerformanceStatistics as SystemPerformanceStatistics, BenchmarkResults,
 };
+pub use pgo::{PgoConfig, PgoManager, ProfileData};
 pub use real_llvm_passes::{
     RealLlvmOptimizer, OptimizationResults as RealOptimizationResults, PerformanceImprovements, ModuleMetrics,
     OptimizationStatistics, IntelligentInliner, AdvancedDeadCodeEliminator as RealAdvancedDeadCodeEliminator,
@@ -164,6 +166,9 @@ pub use configuration_manager::{
     OptimizationConfigManager, ManagedOptimizationConfig, GlobalOptimizationSettings,
     TargetOptimizationConfig,
 };
+pub use thread_pool_manager::{
+    ThreadPoolManager, ThreadPoolConfig, ThreadPoolStatistics, Task, SimpleTask,
+};
 
 // Critical missing exports causing E0433 errors  
 pub use llvm_advanced::{
@@ -237,6 +242,7 @@ pub mod analysis {
 
 pub mod utils {
     pub use super::intelligent_recommendations::*;
+    pub use super::pgo::OptimizationRecommendations;
 }
 
 // Real optimization implementations

@@ -573,3 +573,187 @@ impl Default for CodeAnalysisEngine {
         Self::new()
     }
 }
+
+/// Performance report containing optimization analysis results
+#[derive(Debug, Clone)]
+pub struct PerformanceReport {
+    /// Overall performance score (0.0 - 1.0)
+    pub performance_score: f64,
+    /// Code analysis patterns found
+    pub analysis_patterns: Vec<AnalysisPattern>,
+    /// Optimization suggestions
+    pub optimization_suggestions: Vec<OptimizationSuggestion>,
+    /// Performance bottlenecks identified
+    pub bottlenecks: Vec<PerformanceBottleneck>,
+    /// Memory usage analysis
+    pub memory_analysis: MemoryAnalysis,
+    /// Execution time analysis
+    pub execution_analysis: ExecutionAnalysis,
+    /// Report generation timestamp
+    pub generated_at: std::time::SystemTime,
+    /// Metadata and additional information
+    pub metadata: HashMap<String, String>,
+}
+
+/// Performance bottleneck information
+#[derive(Debug, Clone)]
+pub struct PerformanceBottleneck {
+    /// Location of the bottleneck
+    pub location: SourceLocation,
+    /// Type of bottleneck
+    pub bottleneck_type: BottleneckType,
+    /// Severity of the bottleneck
+    pub severity: PatternSeverity,
+    /// Description of the issue
+    pub description: String,
+    /// Estimated performance impact
+    pub impact: PerformanceImpact,
+    /// Suggested solutions
+    pub solutions: Vec<String>,
+}
+
+/// Memory usage analysis
+#[derive(Debug, Clone)]
+pub struct MemoryAnalysis {
+    /// Estimated peak memory usage
+    pub peak_memory: usize,
+    /// Allocation patterns detected
+    pub allocation_patterns: Vec<String>,
+    /// Memory optimization opportunities
+    pub optimization_opportunities: Vec<String>,
+    /// Memory efficiency score (0.0 - 1.0)
+    pub efficiency_score: f64,
+}
+
+/// Execution time analysis
+#[derive(Debug, Clone)]
+pub struct ExecutionAnalysis {
+    /// Estimated relative execution time
+    pub relative_execution_time: f64,
+    /// Hot spots identified
+    pub hot_spots: Vec<String>,
+    /// Time complexity analysis
+    pub time_complexity: Vec<String>,
+    /// Execution efficiency score (0.0 - 1.0)
+    pub efficiency_score: f64,
+}
+
+/// Types of performance bottlenecks
+#[derive(Debug, Clone, PartialEq)]
+pub enum BottleneckType {
+    /// CPU-bound operations
+    CpuBound,
+    /// Memory allocation issues
+    MemoryBound,
+    /// I/O operations
+    IoBound,
+    /// Synchronization issues
+    SynchronizationBound,
+    /// Algorithm complexity issues
+    AlgorithmicComplexity,
+    /// Cache inefficiency
+    CacheInefficiency,
+    /// Branch misprediction
+    BranchMisprediction,
+}
+
+impl Default for PerformanceReport {
+    fn default() -> Self {
+        Self {
+            performance_score: 0.0,
+            analysis_patterns: Vec::new(),
+            optimization_suggestions: Vec::new(),
+            bottlenecks: Vec::new(),
+            memory_analysis: MemoryAnalysis::default(),
+            execution_analysis: ExecutionAnalysis::default(),
+            generated_at: std::time::SystemTime::now(),
+            metadata: HashMap::new(),
+        }
+    }
+}
+
+impl Default for MemoryAnalysis {
+    fn default() -> Self {
+        Self {
+            peak_memory: 0,
+            allocation_patterns: Vec::new(),
+            optimization_opportunities: Vec::new(),
+            efficiency_score: 0.0,
+        }
+    }
+}
+
+impl Default for ExecutionAnalysis {
+    fn default() -> Self {
+        Self {
+            relative_execution_time: 1.0,
+            hot_spots: Vec::new(),
+            time_complexity: Vec::new(),
+            efficiency_score: 0.0,
+        }
+    }
+}
+
+impl PerformanceReport {
+    /// Create a new performance report
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add an analysis pattern
+    pub fn add_pattern(&mut self, pattern: AnalysisPattern) {
+        self.analysis_patterns.push(pattern);
+    }
+
+    /// Add an optimization suggestion
+    pub fn add_suggestion(&mut self, suggestion: OptimizationSuggestion) {
+        self.optimization_suggestions.push(suggestion);
+    }
+
+    /// Add a performance bottleneck
+    pub fn add_bottleneck(&mut self, bottleneck: PerformanceBottleneck) {
+        self.bottlenecks.push(bottleneck);
+    }
+
+    /// Get critical issues count
+    pub fn critical_issues_count(&self) -> usize {
+        self.analysis_patterns.iter()
+            .filter(|p| p.severity == PatternSeverity::Critical)
+            .count() +
+        self.bottlenecks.iter()
+            .filter(|b| b.severity == PatternSeverity::Critical)
+            .count()
+    }
+
+    /// Get overall optimization priority
+    pub fn optimization_priority(&self) -> PatternSeverity {
+        let critical_count = self.critical_issues_count();
+        if critical_count > 0 {
+            PatternSeverity::Critical
+        } else {
+            let high_count = self.analysis_patterns.iter()
+                .filter(|p| p.severity == PatternSeverity::High)
+                .count() +
+            self.bottlenecks.iter()
+                .filter(|b| b.severity == PatternSeverity::High)
+                .count();
+            
+            if high_count > 0 {
+                PatternSeverity::High
+            } else {
+                PatternSeverity::Medium
+            }
+        }
+    }
+
+    /// Generate summary text
+    pub fn generate_summary(&self) -> String {
+        format!(
+            "Performance Report: {:.1}% score, {} patterns, {} suggestions, {} bottlenecks",
+            self.performance_score * 100.0,
+            self.analysis_patterns.len(),
+            self.optimization_suggestions.len(),
+            self.bottlenecks.len()
+        )
+    }
+}

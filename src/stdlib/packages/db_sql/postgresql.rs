@@ -12,6 +12,7 @@
 /// Database operations are critical for application data integrity and require
 /// comprehensive testing to ensure reliability, performance, and security.
 
+use crate::runtime::Value;
 use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
@@ -861,7 +862,7 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+                result_type: crate::stdlib::packages::result::ResultType::Forward,
             });
         &EMPTY_METADATA
     }
@@ -981,7 +982,7 @@ impl ResultSet for PostgreSqlResultSet {
             schema_name: None,
             table_name: None,
             is_updatable: false,
-            result_type: crate::stdlib::packages::db_core::ResultType::Forward,
+            result_type: crate::stdlib::packages::result::ResultType::Forward,
         })
     }
 

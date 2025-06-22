@@ -4,7 +4,8 @@
 /// including pass selection, performance tuning, and target-specific optimizations.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::{OptimizationLevel, LlvmPassConfig};
+use crate::optimization::optimization_config::OptimizationLevel;
+use crate::optimization::config::LlvmPassConfig;
 use std::collections::HashMap;
 use tracing::{info, debug};
 
@@ -34,7 +35,7 @@ impl LevelConfig {
             OptimizationLevel::O2 => Self::o2_config(),
             OptimizationLevel::O3 => Self::o3_config(),
             OptimizationLevel::Os => Self::os_config(),
-            OptimizationLevel::OsAggressive => Self::oz_config(),
+            OptimizationLevel::Oz => Self::oz_config(),
         }
     }
     

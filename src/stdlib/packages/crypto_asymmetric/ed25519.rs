@@ -6,6 +6,7 @@
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer, Verifier};
+use pkcs8;
 use zeroize::Zeroizing;
 use crate::error::CursedError;
 
@@ -97,8 +98,8 @@ impl From<ed25519_dalek::SignatureError> for Ed25519Error {
     }
 }
 
-impl From<ed25519_dalek::pkcs8::Error> for Ed25519Error {
-    fn from(err: ed25519_dalek::pkcs8::Error) -> Self {
+impl From<pkcs8::Error> for Ed25519Error {
+    fn from(err: pkcs8::Error) -> Self {
         Ed25519Error::SerializationFailed(err.to_string())
     }
 }

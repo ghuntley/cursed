@@ -3,7 +3,7 @@
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::ast::identifiers::Identifier;
 use crate::ast::block::BlockStatement;
-use crate::ast::expressions::Parameter;
+use crate::ast::expressions::{Parameter, TypeExpression};
 use crate::error::SourceLocation;
 use std::any::Any;
 
@@ -447,5 +447,208 @@ pub type StructDeclaration = SquadStatement;
 
 /// Interface declaration alias
 pub type InterfaceDeclaration = CollabStatement;
+
+/// Interface method declaration
+#[derive(Debug, Clone)]
+pub struct InterfaceMethod {
+    pub name: String,
+    pub parameters: Vec<Parameter>,
+    pub return_type: Option<Box<dyn Expression>>,
+    pub visibility: Visibility,
+    pub is_optional: bool,
+}
+
+impl InterfaceMethod {
+    pub fn new(name: String, parameters: Vec<Parameter>, return_type: Option<Box<dyn Expression>>) -> Self {
+        Self {
+            name,
+            parameters,
+            return_type,
+            visibility: Visibility::Public,
+            is_optional: false,
+        }
+    }
+}
+
+impl Node for InterfaceMethod {
+    fn string(&self) -> String {
+        let params: Vec<String> = self.parameters.iter().map(|p| p.string()).collect();
+        let return_str = match &self.return_type {
+            Some(t) => format!(" -> {}", t.string()),
+            None => String::new(),
+        };
+        format!("{}({}){}", self.name, params.join(", "), return_str)
+    }
+
+    fn token_literal(&self) -> String {
+        self.name.clone()
+    }
+}
+
+/// Struct field declaration
+#[derive(Debug, Clone)]
+pub struct StructField {
+    pub name: String,
+    pub field_type: Box<dyn Expression>,
+    pub visibility: Visibility,
+    pub default_value: Option<Box<dyn Expression>>,
+    pub is_readonly: bool,
+}
+
+impl StructField {
+    pub fn new(name: String, field_type: Box<dyn Expression>) -> Self {
+        Self {
+            name,
+            field_type,
+            visibility: Visibility::Public,
+            default_value: None,
+            is_readonly: false,
+        }
+    }
+}
+
+impl Node for StructField {
+    fn string(&self) -> String {
+        format!("{}: {}", self.name, self.field_type.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.name.clone()
+    }
+}
+
+/// Variable declaration
+#[derive(Debug, Clone)]
+pub struct VariableDeclaration {
+    pub name: String,
+    pub var_type: Option<Box<dyn Expression>>,
+    pub initial_value: Option<Box<dyn Expression>>,
+    pub is_mutable: bool,
+    pub visibility: Visibility,
+}
+
+impl VariableDeclaration {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            var_type: None,
+            initial_value: None,
+            is_mutable: false,
+            visibility: Visibility::Private,
+        }
+    }
+}
+
+impl Node for VariableDeclaration {
+    fn string(&self) -> String {
+        let mut result = self.name.clone();
+        if let Some(t) = &self.var_type {
+            result.push_str(&format!(": {}", t.string()));
+        }
+        if let Some(v) = &self.initial_value {
+            result.push_str(&format!(" = {}", v.string()));
+        }
+        result
+    }
+
+    fn token_literal(&self) -> String {
+        self.name.clone()
+    }
+}
+
+/// Constant declaration
+#[derive(Debug, Clone)]
+pub struct ConstantDeclaration {
+    pub name: String,
+    pub const_type: Box<dyn Expression>,
+    pub value: Box<dyn Expression>,
+    pub visibility: Visibility,
+}
+
+impl ConstantDeclaration {
+    pub fn new(name: String, const_type: Box<dyn Expression>, value: Box<dyn Expression>) -> Self {
+        Self {
+            name,
+            const_type,
+            value,
+            visibility: Visibility::Public,
+        }
+    }
+}
+
+impl Node for ConstantDeclaration {
+    fn string(&self) -> String {
+        format!("const {}: {} = {}", self.name, self.const_type.string(), self.value.string())
+    }
+
+    fn token_literal(&self) -> String {
+        self.name.clone()
+    }
+}
+
+/// Enum declaration
+#[derive(Debug, Clone)]
+pub struct EnumDeclaration {
+    pub name: String,
+    pub variants: Vec<EnumVariant>,
+    pub visibility: Visibility,
+}
+
+/// Enum variant
+#[derive(Debug, Clone)]
+pub struct EnumVariant {
+    pub name: String,
+    pub associated_data: Option<Vec<Box<dyn Expression>>>,
+    pub discriminant: Option<i64>,
+}
+
+impl EnumDeclaration {
+    pub fn new(name: String, variants: Vec<EnumVariant>) -> Self {
+        Self {
+            name,
+            variants,
+            visibility: Visibility::Public,
+        }
+    }
+}
+
+impl Node for EnumDeclaration {
+    fn string(&self) -> String {
+        let variants: Vec<String> = self.variants.iter().map(|v| v.name.clone()).collect();
+        format!("enum {} {{ {} }}", self.name, variants.join(", "))
+    }
+
+    fn token_literal(&self) -> String {
+        self.name.clone()
+    }
+}
+
+/// Package declaration
+#[derive(Debug, Clone)]
+pub struct PackageDeclaration {
+    pub name: String,
+    pub version: Option<String>,
+    pub dependencies: Vec<String>,
+}
+
+impl PackageDeclaration {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            version: None,
+            dependencies: Vec::new(),
+        }
+    }
+}
+
+impl Node for PackageDeclaration {
+    fn string(&self) -> String {
+        format!("package {}", self.name)
+    }
+
+    fn token_literal(&self) -> String {
+        self.name.clone()
+    }
+}
 
 

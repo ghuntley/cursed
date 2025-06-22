@@ -17,6 +17,8 @@ use inkwell::{
     targets::{Target, TargetMachine, CodeModel, RelocMode, FileType},
     OptimizationLevel as InkwellOptLevel,
     passes::PassManager,
+    basic_block::BasicBlock,
+    values,
 };
 
 /// LLVM LTO Integration Manager
@@ -377,7 +379,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         instruction: &inkwell::values::InstructionValue<'ctx>,
         builder: &inkwell::builder::Builder<'ctx>,
         value_map: &HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
-        block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+        block_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     ) -> Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         use inkwell::values::InstructionOpcode;
 
@@ -445,7 +447,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         instruction: &inkwell::values::InstructionValue<'ctx>,
         builder: &inkwell::builder::Builder<'ctx>,
         value_map: &HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
-        _block_map: &HashMap<inkwell::values::BasicBlock<'ctx>, inkwell::values::BasicBlock<'ctx>>,
+        _block_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     ) -> Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         // Extract function and arguments from call instruction
         let num_operands = instruction.get_num_operands();

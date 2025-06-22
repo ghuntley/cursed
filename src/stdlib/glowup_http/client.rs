@@ -4,6 +4,7 @@ use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::{VibeRequest, Method};
 use crate::stdlib::glowup_http::response::VibeResponse;
 use reqwest;
+use reqwest::multipart;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Duration;

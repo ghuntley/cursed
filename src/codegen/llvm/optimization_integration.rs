@@ -6,6 +6,7 @@
 use crate::error::{Error, Result};
 use crate::optimization::*;
 use crate::optimization::config::OptimizationLevel; // Explicit import to resolve conflict
+use crate::optimization::adaptive::OptimizationFeedback;
 use crate::ast::*;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};

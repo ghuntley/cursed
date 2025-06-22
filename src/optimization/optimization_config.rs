@@ -9,17 +9,17 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OptimizationLevel {
     /// No optimization (equivalent to -O0)
-    None,
+    O0,
     /// Basic optimization (equivalent to -O1)
-    Basic,
+    O1,
     /// Default optimization (equivalent to -O2)
-    Default,
+    O2,
     /// Aggressive optimization (equivalent to -O3)
-    Aggressive,
+    O3,
     /// Size optimization (equivalent to -Os)
-    Size,
-    /// Fast optimization (equivalent to -Ofast)
-    Fast,
+    Os,
+    /// Size and speed optimization (equivalent to -Oz)
+    Oz,
 }
 
 impl Hash for OptimizationLevel {
@@ -31,12 +31,12 @@ impl Hash for OptimizationLevel {
 impl fmt::Display for OptimizationLevel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            OptimizationLevel::O0 => write!(f, "none"),
-            OptimizationLevel::O1 => write!(f, "basic"),
-            OptimizationLevel::O2 => write!(f, "default"),
-            OptimizationLevel::O3 => write!(f, "aggressive"),
-            OptimizationLevel::Os => write!(f, "size"),
-            OptimizationLevel::Fast => write!(f, "fast"),
+            OptimizationLevel::O0 => write!(f, "O0"),
+            OptimizationLevel::O1 => write!(f, "O1"),
+            OptimizationLevel::O2 => write!(f, "O2"),
+            OptimizationLevel::O3 => write!(f, "O3"),
+            OptimizationLevel::Os => write!(f, "Os"),
+            OptimizationLevel::Oz => write!(f, "Oz"),
         }
     }
 }
@@ -51,9 +51,9 @@ impl FromStr for OptimizationLevel {
             "default" | "2" | "o2" => Ok(OptimizationLevel::O2),
             "aggressive" | "3" | "o3" => Ok(OptimizationLevel::O3),
             "size" | "s" | "os" => Ok(OptimizationLevel::Os),
-            "fast" | "ofast" => Ok(OptimizationLevel::Fast),
+            "smallest" | "z" | "oz" => Ok(OptimizationLevel::Oz),
             _ => Err(format!(
-                "Invalid optimization level '{}'. Valid values are: none, basic, default, aggressive, size, fast",
+                "Invalid optimization level '{}'. Valid values are: o0, o1, o2, o3, os, oz",
                 s
             )),
         }
@@ -62,7 +62,7 @@ impl FromStr for OptimizationLevel {
 
 impl Default for OptimizationLevel {
     fn default() -> Self {
-        Self::Default
+        Self::O2
     }
 }
 
@@ -75,18 +75,18 @@ impl OptimizationLevel {
             OptimizationLevel::O2 => 2,
             OptimizationLevel::O3 => 3,
             OptimizationLevel::Os => 2,  // -Os maps to O2 with size focus
-            OptimizationLevel::Fast => 3,  // -Ofast maps to O3 with fast math
+            OptimizationLevel::Oz => 2,  // -Oz maps to O2 with aggressive size focus
         }
     }
 
     /// Check if this optimization level focuses on size
     pub fn optimizes_for_size(&self) -> bool {
-        matches!(self, OptimizationLevel::Os)
+        matches!(self, OptimizationLevel::Os | OptimizationLevel::Oz)
     }
 
     /// Check if this optimization level enables fast math
     pub fn enables_fast_math(&self) -> bool {
-        matches!(self, OptimizationLevel::Fast)
+        matches!(self, OptimizationLevel::O3)
     }
 
     /// Get recommended parallel compilation threshold for this level
@@ -97,7 +97,7 @@ impl OptimizationLevel {
             OptimizationLevel::O2 => 8,   // Moderate parallelization
             OptimizationLevel::O3 => 16, // Heavy parallelization
             OptimizationLevel::Os => 4,      // Conservative for size
-            OptimizationLevel::Fast => 12,     // Aggressive but not maximum
+            OptimizationLevel::Oz => 2,     // Very conservative for smallest size
         }
     }
 }

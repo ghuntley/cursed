@@ -11,6 +11,57 @@ use std::sync::{Arc, Mutex, RwLock};
 use serde::{Serialize, Deserialize};
 use tracing::{debug, info, instrument, warn, error};
 
+/// Optimization suggestion with confidence rating
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OptimizationSuggestion {
+    /// Name/ID of the optimization
+    pub name: String,
+    /// Type of optimization suggested
+    pub optimization_type: OptimizationType,
+    /// Confidence level (0.0 to 1.0)
+    pub confidence: f64,
+    /// Expected performance improvement
+    pub expected_improvement: f64,
+    /// Cost of applying optimization
+    pub cost: OptimizationCost,
+    /// Context where this applies
+    pub context: String,
+    /// Reasoning for the suggestion
+    pub reasoning: String,
+}
+
+/// Types of optimizations that can be suggested
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum OptimizationType {
+    /// Function inlining
+    Inlining,
+    /// Loop unrolling
+    LoopUnrolling,
+    /// Dead code elimination
+    DeadCodeElimination,
+    /// Constant propagation
+    ConstantPropagation,
+    /// Vector operations
+    Vectorization,
+    /// Memory layout optimization
+    MemoryLayout,
+    /// Profile-guided optimization
+    ProfileGuided,
+    /// Custom optimization
+    Custom(String),
+}
+
+/// Cost associated with applying an optimization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OptimizationCost {
+    /// Compilation time increase
+    pub compile_time_cost: Duration,
+    /// Memory usage increase during compilation
+    pub memory_cost: u64,
+    /// Risk level (0.0 to 1.0)
+    pub risk: f64,
+}
+
 /// Configuration for adaptive optimization
 #[derive(Debug, Clone)]
 pub struct AdaptiveConfig {

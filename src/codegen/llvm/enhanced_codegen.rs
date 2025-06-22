@@ -5,7 +5,7 @@
 //! that all AST nodes are properly mapped to source locations and debug
 //! information is generated for functions, variables, and expressions.
 
-use crate::ast::{AstNodeType, Expression, Statement, FunctionStatement, VariableStatement, Parameter};
+use crate::ast::{AstNodeType, Expression, Statement, FunctionStatement, VariableStatement, Parameter, AST, FunctionDeclaration, VariableDeclaration};
 use crate::codegen::llvm::debug_metadata::{LlvmDebugMetadata, DebugStats, LlvmDebugIntegration};
 use crate::debug::{DebugConfig, SourceLocation};
 use crate::error::Error as CursedError;
