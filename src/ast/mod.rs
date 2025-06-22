@@ -82,11 +82,13 @@ pub mod core_types;
 // Re-export commonly used types
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};
 pub use expressions::*;
-pub use statements::*;
+// Use explicit imports to avoid E0659 conflicts between statements and conditionals
+pub use statements::{ExpressionStatement, ReturnStatement, BreakStatement, ContinueStatement, ThrowStatement, TryStatement, CatchStatement, FinallyStatement, ImportStatement, PackageStatement, MutStatement, ConstStatement, AssignmentStatement, ChannelReceiveStatement, ChannelSendStatement, ChannelCloseStatement};
 pub use declarations::{FunctionStatement, FunctionDeclaration, SquadStatement, CollabStatement, GenericConstraint, AsyncFunctionStatement, AsyncFunctionDeclaration, StructDeclaration, InterfaceDeclaration};
 pub use literals::*;
 pub use operators::*;
-pub use conditionals::*;
+// Import conditionals explicitly to avoid conflicts with statements
+pub use conditionals::{IfStatement as ConditionalIfStatement, WhileStatement as ConditionalWhileStatement, ForStatement as ConditionalForStatement, SwitchStatement as ConditionalSwitchStatement, ElseStatement, ElseIfStatement, CaseStatement, DefaultStatement};
 pub use types::*;
 pub use identifiers::*;
 pub use block::*;
@@ -301,17 +303,17 @@ pub enum AstNodeType {
     /// Module declaration
     ModuleDeclaration(ModuleStatement),
     /// If statement
-    IfStatement(IfStatement),
+    IfStatement(ConditionalIfStatement),
     /// While statement
-    WhileStatement(WhileStatement),
+    WhileStatement(ConditionalWhileStatement),
     /// For statement
-    ForStatement(ForStatement),
+    ForStatement(ConditionalForStatement),
     /// For-in statement
     ForInStatement(ForInStatement),
     /// Do-while statement
     DoWhileStatement(DoWhileStatement),
     /// Switch statement
-    SwitchStatement(SwitchStatement),
+    SwitchStatement(ConditionalSwitchStatement),
     /// Try statement
     TryStatement(TryStatement),
     /// Return statement

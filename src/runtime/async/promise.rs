@@ -141,7 +141,7 @@ where
 // Implement standard Future trait for Promise to support .await syntax
 impl<T> StdFuture for Promise<T>
 where
-    T: Clone,
+    T: Clone + Send,
 {
     type Output = FutureResult<T>;
 

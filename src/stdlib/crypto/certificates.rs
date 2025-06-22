@@ -12,10 +12,12 @@ use std::path::{Path, PathBuf};
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
-use x509_parser::prelude::*;
-// Note: x509_parser imports removed - implement certificate parsing manually if needed
+// Use explicit imports instead of glob import to avoid conflicts
 use x509_parser::certificate::X509Certificate as X509ParserCertificate;
-use x509_parser::extensions::*;
+use x509_parser::extensions::ParsedExtension;
+use x509_parser::time::ASN1Time;
+use x509_parser::error::{X509Error, PEMError};
+use x509_parser::public_key::PublicKey as X509PublicKey;
 use der::{Decode, Encode};
 use pem as pem_crate;
 use sha1::Sha1;

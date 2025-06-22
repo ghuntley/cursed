@@ -5,7 +5,9 @@
 /// and using dominance analysis to ensure correctness.
 
 use crate::error::{Error, Result};
-use crate::ast::*;
+use crate::ast::{
+    Node, Expression, Statement, Function, Type
+};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
@@ -740,7 +742,9 @@ impl fmt::Display for CseStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::*;
+    use crate::ast::{
+    Node, Expression, Statement, Function, Type
+};
     
     fn create_test_binary_expr(left: Expression, op: BinaryOperator, right: Expression) -> Expression {
         Expression::Binary(Box::new(BinaryExpression {

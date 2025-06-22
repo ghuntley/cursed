@@ -7,7 +7,8 @@ use crate::stdlib::packages::{
         Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
         ExecuteResult, TransactionIsolation
     },
-    db_sql::{SqlDriver, SqlDialectTrait, SqlFeature, SqlValue, SqlResultSet, SqlExecuteResult}
+    db_sql::{SqlDriver, SqlDialectTrait, SqlFeature, SqlValue, SqlResultSet, SqlExecuteResult},
+    // types::ParameterDirection  // Explicit import to resolve E0659
 };
 use crate::stdlib::packages::db_sql::drivers::{
     SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,

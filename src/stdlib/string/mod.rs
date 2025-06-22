@@ -23,7 +23,11 @@ pub use transform::*;
 pub use split_join::*;
 pub use validation::*;
 pub use format::*;
-pub use regex::*;
+// Use explicit imports from regex to avoid conflicts
+pub use regex::{
+    find_with_regex, replace_with_regex, replace_all_with_regex, split_with_regex,
+    match_with_regex, capture_groups, extract_patterns, RegexPattern, RegexMatch
+};
 
 // String manipulation result type
 pub type StringResult<T> = Result<T, StringError>;

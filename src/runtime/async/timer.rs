@@ -506,22 +506,16 @@ pub mod utils {
     /// Race two futures, returning the first to complete
     pub async fn race<F1, F2>(f1: F1, f2: F2) -> Either<F1::Output, F2::Output>
     where
-        F1: Future + StdFuture + Send + 'static,
-        F2: Future + StdFuture + Send + 'static,
+        F1: StdFuture + Send + 'static,
+        F2: StdFuture + Send + 'static,
         F1::Output: Send + 'static,
         F2::Output: Send + 'static,
     {
-        // This is a simplified race implementation
-        // A real implementation would use proper select! machinery
-        use crate::runtime::r#async::future::SelectFuture;
-        
-        let futures = vec![
-            Box::pin(async move { Either::Left(f1.await) }) as crate::runtime::r#async::BoxFuture<'static, Either<F1::Output, F2::Output>>,
-            Box::pin(async move { Either::Right(f2.await) }) as crate::runtime::r#async::BoxFuture<'static, Either<F1::Output, F2::Output>>,
-        ];
-        
-        let select = SelectFuture::new(futures);
-        select.await.0
+        // Use tokio's select! for proper async racing
+        tokio::select! {
+            result = f1 => Either::Left(result),
+            result = f2 => Either::Right(result),
+        }
     }
 
     /// Either type for race results

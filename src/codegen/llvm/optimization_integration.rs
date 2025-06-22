@@ -4,9 +4,15 @@
 /// and LLVM code generation.
 
 use crate::error::{Error, Result};
-use crate::optimization::*;
+
+use crate::optimization::{
+    OptimizationConfig, OptimizationManager, AdaptiveOptimizer, 
+    IncrementalCompiler, BenchmarkSuite, PerformanceProfiler,
+    OptimizationFeedback, OptimizationStrategy, OptimizationRecommendation,
+    IncrementalCompilationResult, BenchmarkSuiteResults, AdaptationResult,
+    BenchmarkConfig, PerformanceMetrics
+};
 use crate::common::optimization_level::OptimizationLevel; // Explicit import to resolve conflict
-use crate::optimization::adaptive::OptimizationFeedback;
 use crate::ast::*;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};

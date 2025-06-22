@@ -27,9 +27,15 @@ use nix::sys::wait::{waitpid, WaitStatus};
 use nix::unistd::{fork, ForkResult, Pid, getpid, getppid, setsid, setpgid};
 
 use crate::error::CursedError;
-use crate::stdlib::process::{
-    EnhancedProcess, ResourceLimits, SecurityContext, ProcessState
-};
+use crate::stdlib::process::error::{ProcessError, ProcessResult};
+use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
+use crate::runtime::process::{ResourceLimits as RuntimeResourceLimits, SecurityContext as RuntimeSecurityContext};
+use crate::stdlib::process::info::{ProcessState as StdProcessState};
+
+
+type ResourceLimits = RuntimeResourceLimits;
+type SecurityContext = RuntimeSecurityContext;
+type ProcessState = StdProcessState;
 use super::unified_process_ipc::{
     PlatformHandler, IpcType, IpcConnection, SecuritySettings, UnixSettings
 };

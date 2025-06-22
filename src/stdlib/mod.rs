@@ -295,7 +295,7 @@ pub use collections::{
     HashSet, TreeSet, BitSet, BitSetIterator,
     
     // Queue types - FIFO and priority-based collections
-    Queue, Deque, PriorityQueue, CircularQueue,
+    Queue, Deque, PriorityQueue, HeapPriorityQueue, CircularQueue,
     
     // Stack types - LIFO collections with various specializations
     Stack, FixedStack, ThreadSafeStack, StackWithMin,
@@ -425,7 +425,7 @@ pub use process::{
     
     // Platform-specific utilities
     PlatformUtils, PlatformProcessInfo, PlatformFeature, UserInfo, FileDescriptorInfo,
-    ResourceLimits, ResourceType, get_platform_name, supports_feature,
+    ResourceLimits, SafeResourceLimits, ResourceType, SafeResourceType, get_platform_name, supports_feature,
 };
 
 // Threading and synchronization re-exports - Comprehensive concurrency support
@@ -571,7 +571,7 @@ pub use net::{
 // Runtime introspection (vibecheck) re-exports - Comprehensive runtime control
 pub use vibecheck::{
     // Memory statistics and management
-    MemStats, read_mem_stats, update_allocation_stats, memory_profile, write_profile, free_os_memory,
+    MemStats, read_mem_stats, update_allocation_stats, memory_profile, write_profile, vibecheck_free_os_memory, gc_free_os_memory,
     MemoryProfile, GcOverhead,
     
     // Garbage collection control

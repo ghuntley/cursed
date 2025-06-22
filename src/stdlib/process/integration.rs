@@ -8,12 +8,17 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use crate::stdlib::process::{
-    ProcessError, ProcessResult, ProcessConfig, ProcessOutput, ProcessLifecycleManager,
-    ProcessMonitor, HealthCheckConfig, ProcessControl, Signal, Priority, Cmd, SlayCommand,
-    real_monitoring::{start_global_monitoring, stop_global_monitoring, get_current_process_state},
-    monitoring::{HealthStatus, PerformanceMetrics}, ProcessStats
-};
+use crate::stdlib::process::error::{ProcessError, ProcessResult};
+use crate::stdlib::process::core::{ProcessConfig};
+use crate::stdlib::process::lifecycle::{ProcessLifecycleManager};
+use crate::stdlib::process::monitoring::{ProcessMonitor, HealthCheckConfig, HealthStatus, PerformanceMetrics, ProcessStats};
+use crate::stdlib::process::control::{ProcessControl};
+use crate::stdlib::process::signals::{SignalType as Signal};
+use crate::stdlib::process::real_monitoring::{start_global_monitoring, stop_global_monitoring, get_current_process_state};
+use crate::runtime::process::{ProcessOutput as RuntimeProcessOutput};
+
+// Type aliases
+type ProcessOutput = RuntimeProcessOutput;
 
 /// Unified process manager that integrates all process management capabilities
 #[derive(Debug)]

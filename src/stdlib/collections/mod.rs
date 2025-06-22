@@ -20,7 +20,11 @@ pub mod sorta_fresh;
 pub use sets::*;
 pub use queues::*;
 pub use stacks::*;
-pub use heap_slay::*;
+// Use explicit imports from heap_slay to avoid conflicts
+pub use heap_slay::{
+    HeapSorter, BinaryHeap, MinHeap, MaxHeap, HeapIterator,
+    PriorityQueue as HeapPriorityQueue, HeapError
+};
 pub use iterators_simple::*;
 pub use advanced::*;
 pub use sorta_fresh::*;

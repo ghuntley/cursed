@@ -79,7 +79,7 @@ pub mod utils {
             let _ = resolver.resolve(result);
         });
 
-        promise.await.unwrap_or_else(|_| Err(AsyncError::Runtime("Operation failed".to_string())))
+        promise.clone().await.unwrap_or_else(|_| Err(AsyncError::Runtime("Operation failed".to_string())))
     }
 
     /// Race multiple futures and return the first to complete
@@ -105,7 +105,7 @@ pub mod utils {
     /// Convert a Result<Future, Error> to a Future<Result<T, Error>>
     pub async fn flatten_result<T, E, F>(result: Result<F, E>) -> Result<T, E>
     where
-        F: Future<Output = T>,
+        F: std::future::Future<Output = T>,
     {
         match result {
             Ok(future) => Ok(future.await),
@@ -121,7 +121,7 @@ pub mod utils {
     ) -> Result<T, E>
     where
         F: FnMut() -> Fut,
-        Fut: Future<Output = Result<T, E>>,
+        Fut: std::future::Future<Output = Result<T, E>>,
     {
         let mut attempts = 0;
         loop {
