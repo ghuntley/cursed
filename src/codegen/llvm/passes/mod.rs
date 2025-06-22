@@ -260,7 +260,7 @@ impl PassStatistics {
 }
 
 // Import canonical OptimizationLevel from optimization_config
-pub use crate::optimization::config::OptimizationLevel;
+pub use crate::common::optimization_level::OptimizationLevel;
 
 // Impl moved to PassConfiguration to avoid conflicts with canonical OptimizationLevel
 

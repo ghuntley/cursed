@@ -235,7 +235,7 @@ impl CertificateValidationManager {
     }
 
     /// Validate certificate chain
-    pub fn validate_certificate_chain(
+    pub async fn validate_certificate_chain(
         &self,
         certificate_chain: &[X509Certificate],
         policy: Option<&CertificateValidationPolicy>,

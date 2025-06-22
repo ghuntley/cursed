@@ -5,7 +5,7 @@
 //! pipeline optimization for maximum developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics, TargetType};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::build_system::dependency_resolver::{DependencyGraph, DependencyResolver};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;

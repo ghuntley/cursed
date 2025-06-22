@@ -4,7 +4,7 @@
 /// call graph analysis, function attribute inference, and dead function elimination.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, info, instrument, warn};

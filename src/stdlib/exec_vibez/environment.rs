@@ -383,3 +383,7 @@ mod tests {
         assert!(cmd.args.contains(&"hello".to_string()));
     }
 }
+
+
+pub type NewEnvironment = Environment;
+pub type CommandWithEnv = std::process::Command;

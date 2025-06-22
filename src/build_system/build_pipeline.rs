@@ -597,12 +597,12 @@ impl BuildPipeline {
             // Add profile-specific flags
             let profile = self.config.get_effective_profile(&context.profile)?;
             match profile.optimization {
-                crate::optimization::config::OptimizationLevel::O0 => cmd.arg("-O0"),
-                crate::optimization::config::OptimizationLevel::O1 => cmd.arg("-O1"),
-                crate::optimization::config::OptimizationLevel::O2 => cmd.arg("-O2"),
-                crate::optimization::config::OptimizationLevel::O3 => cmd.arg("-O3"),
-                crate::optimization::config::OptimizationLevel::Os => cmd.arg("-Os"),
-                crate::optimization::config::OptimizationLevel::Oz => cmd.arg("-Oz"),
+                crate::common::optimization_level::OptimizationLevel::O0 => cmd.arg("-O0"),
+                crate::common::optimization_level::OptimizationLevel::O1 => cmd.arg("-O1"),
+                crate::common::optimization_level::OptimizationLevel::O2 => cmd.arg("-O2"),
+                crate::common::optimization_level::OptimizationLevel::O3 => cmd.arg("-O3"),
+                crate::common::optimization_level::OptimizationLevel::Os => cmd.arg("-Os"),
+                crate::common::optimization_level::OptimizationLevel::Oz => cmd.arg("-Oz"),
             };
             
             if profile.debug {

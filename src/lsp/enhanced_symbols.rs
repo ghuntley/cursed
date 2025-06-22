@@ -268,6 +268,59 @@ pub struct EnhancedSymbolProvider {
 }
 
 impl EnhancedSymbolProvider {
+    fn convert_import_statement_to_declaration(&self, import_stmt: &ImportStatement) -> ImportDeclaration {
+        ImportDeclaration {
+            module_path: import_stmt.module_path.clone(),
+            items: import_stmt.items.clone(),
+            location: import_stmt.location.clone(),
+        }
+    }
+
+    fn convert_package_statement_to_declaration(&self, package_stmt: &PackageStatement) -> PackageDeclaration {
+        PackageDeclaration {
+            name: package_stmt.name.clone(),
+            version: package_stmt.version.clone(),
+            location: package_stmt.location.clone(),
+        }
+    }
+
+    fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_types::StructField {
+        core_types::StructField {
+            name: field.name.value.clone(),
+            field_type: field.field_type.clone(),
+            is_public: field.is_public,
+            location: field.location.clone(),
+        }
+    }
+
+    fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_types::InterfaceMethod {
+        core_types::InterfaceMethod {
+            name: method.name.value.clone(),
+            parameters: method.parameters.clone(),
+            return_type: method.return_type.clone(),
+            location: method.location.clone(),
+        }
+    }
+
+    fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_types::InterfaceMethod {
+        core_types::InterfaceMethod {
+            name: method.name.value.clone(),
+            parameters: method.parameters.clone(),
+            return_type: method.return_type.clone(),
+            location: method.location.clone(),
+        }
+    }
+
+    fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_types::VariableDeclaration {
+        core_types::VariableDeclaration {
+            name: var_decl.name.value.clone(),
+            var_type: var_decl.var_type.clone(),
+            value: var_decl.value.clone(),
+            is_mutable: var_decl.is_mutable,
+            location: var_decl.location.clone(),
+        }
+    }
+
     /// Create a new enhanced symbol provider
     pub fn new() -> Self {
         Self {
@@ -626,8 +679,8 @@ impl EnhancedSymbolProvider {
     }
 
     fn create_field_symbol(&self, field: &StructField) -> CursedSymbol {
-        let range = self.get_field_range(field);
-        let selection_range = self.get_field_name_range(field);
+        let range = self.get_field_range(self.convert_to_core_struct_field(field));
+        let selection_range = self.get_field_name_range(self.convert_to_core_struct_field(field));
         CursedSymbol::new(
             field.name.clone(),
             SymbolKind::FIELD,
@@ -638,8 +691,8 @@ impl EnhancedSymbolProvider {
     }
 
     fn create_method_symbol(&self, method: &InterfaceMethod) -> CursedSymbol {
-        let range = self.get_method_range(method);
-        let selection_range = self.get_method_name_range(method);
+        let range = self.get_method_range(self.convert_to_core_interface_method(method));
+        let selection_range = self.get_method_name_range(self.convert_to_core_interface_method(method));
         CursedSymbol::new(
             method.name.clone(),
             SymbolKind::METHOD,
@@ -683,10 +736,10 @@ impl EnhancedSymbolProvider {
             //     let symbol = self.create_constant_symbol(const_decl, uri).await;
             //     symbols.push(symbol);
             } else if let Some(import_decl) = statement.as_any().downcast_ref::<ImportStatement>() {
-                let symbol = self.create_import_symbol(import_decl);
+                let symbol = self.create_import_symbol(&self.convert_import_statement_to_declaration(import_decl));
                 symbols.push(symbol);
             } else if let Some(package_decl) = statement.as_any().downcast_ref::<PackageStatement>() {
-                let symbol = self.create_package_symbol(package_decl);
+                let symbol = self.create_package_symbol(&self.convert_package_statement_to_declaration(package_decl));
                 symbols.push(symbol);
             }
         }
@@ -757,7 +810,7 @@ impl EnhancedSymbolProvider {
         
         // Add field symbols as children
         for field in &struct_decl.fields {
-            let field_symbol = self.create_field_symbol(field);
+            let field_symbol = self.create_field_symbol(&self.convert_to_core_struct_field(field));
             symbol.add_child(field_symbol);
         }
         
@@ -782,7 +835,7 @@ impl EnhancedSymbolProvider {
         
         // Add method symbols as children
         for method in &interface_decl.methods {
-            let method_symbol = self.create_method_symbol(method);
+            let method_symbol = self.create_method_symbol(&self.convert_to_core_interface_method(method));
             symbol.add_child(method_symbol);
         }
         
@@ -791,8 +844,8 @@ impl EnhancedSymbolProvider {
     
     /// Create variable symbol
     async fn create_variable_symbol(&mut self, var_decl: &VariableDeclaration, uri: &Url) -> CursedSymbol {
-        let range = self.get_variable_range(var_decl);
-        let selection_range = self.get_variable_name_range(var_decl);
+        let range = self.get_variable_range(self.convert_to_core_variable_declaration(var_decl));
+        let selection_range = self.get_variable_name_range(self.convert_to_core_variable_declaration(var_decl));
         
         let mut symbol = CursedSymbol::new(
             var_decl.name.value.clone(),
@@ -898,8 +951,8 @@ impl EnhancedSymbolProvider {
     
     /// Create field symbol
     fn create_field_symbol(&self, field: &StructField) -> CursedSymbol {
-        let range = self.get_field_range(field);
-        let selection_range = self.get_field_name_range(field);
+        let range = self.get_field_range(self.convert_to_core_struct_field(field));
+        let selection_range = self.get_field_name_range(self.convert_to_core_struct_field(field));
         
         let mut symbol = CursedSymbol::new(
             field.name.value.clone(),
@@ -917,8 +970,8 @@ impl EnhancedSymbolProvider {
     
     /// Create method symbol
     fn create_method_symbol(&self, method: &InterfaceMethod) -> CursedSymbol {
-        let range = self.get_method_range(method);
-        let selection_range = self.get_method_name_range(method);
+        let range = self.get_method_range(self.convert_to_core_interface_method(method));
+        let selection_range = self.get_method_name_range(self.convert_to_core_interface_method(method));
         
         let mut symbol = CursedSymbol::new(
             method.name.value.clone(),
@@ -1318,7 +1371,7 @@ impl EnhancedSymbolProvider {
     }
     
     fn get_field_name_range(&self, field: &StructField) -> Range {
-        self.get_field_range(field)
+        self.get_field_range(self.convert_to_core_struct_field(field))
     }
     
     fn get_method_range(&self, method: &InterfaceMethod) -> Range {
@@ -1335,7 +1388,7 @@ impl EnhancedSymbolProvider {
     }
     
     fn get_method_name_range(&self, method: &InterfaceMethod) -> Range {
-        self.get_method_range(method)
+        self.get_method_range(self.convert_to_core_interface_method(method))
     }
     
     // Helper methods for signature creation
@@ -1457,8 +1510,8 @@ impl EnhancedSymbolProvider {
     // Missing methods needed by the async functions
     
     async fn create_field_symbol(&mut self, field: &crate::ast::declarations::StructField, uri: &Url) -> CursedSymbol {
-        let range = self.get_field_range(field);
-        let selection_range = self.get_field_name_range(field);
+        let range = self.get_field_range(self.convert_to_core_struct_field(field));
+        let selection_range = self.get_field_name_range(self.convert_to_core_struct_field(field));
         
         CursedSymbol::new(
             field.name.clone(),
@@ -1480,8 +1533,8 @@ impl EnhancedSymbolProvider {
     }
 
     async fn create_method_symbol(&mut self, method: &crate::ast::declarations::InterfaceMethod, uri: &Url) -> CursedSymbol {
-        let range = self.get_method_range(method);
-        let selection_range = self.get_method_name_range(method);
+        let range = self.get_method_range(self.convert_to_core_interface_method(method));
+        let selection_range = self.get_method_name_range(self.convert_to_core_interface_method(method));
         
         let mut symbol = CursedSymbol::new(
             method.name.clone(),
@@ -1565,8 +1618,8 @@ impl EnhancedSymbolProvider {
     }
 
     async fn create_variable_symbol(&mut self, var_decl: &crate::ast::declarations::VariableDeclaration, uri: &Url) -> CursedSymbol {
-        let range = self.get_variable_range(var_decl);
-        let selection_range = self.get_variable_name_range(var_decl);
+        let range = self.get_variable_range(self.convert_to_core_variable_declaration(var_decl));
+        let selection_range = self.get_variable_name_range(self.convert_to_core_variable_declaration(var_decl));
         
         CursedSymbol::new(
             var_decl.name.clone(),
@@ -1608,6 +1661,43 @@ impl EnhancedSymbolProvider {
 }
 
 impl Default for EnhancedSymbolProvider {
+    fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_types::StructField {
+        core_types::StructField {
+            name: field.name.value.clone(),
+            field_type: field.field_type.clone(),
+            is_public: field.is_public,
+            location: field.location.clone(),
+        }
+    }
+
+    fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_types::InterfaceMethod {
+        core_types::InterfaceMethod {
+            name: method.name.value.clone(),
+            parameters: method.parameters.clone(),
+            return_type: method.return_type.clone(),
+            location: method.location.clone(),
+        }
+    }
+
+    fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_types::InterfaceMethod {
+        core_types::InterfaceMethod {
+            name: method.name.value.clone(),
+            parameters: method.parameters.clone(),
+            return_type: method.return_type.clone(),
+            location: method.location.clone(),
+        }
+    }
+
+    fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_types::VariableDeclaration {
+        core_types::VariableDeclaration {
+            name: var_decl.name.value.clone(),
+            var_type: var_decl.var_type.clone(),
+            value: var_decl.value.clone(),
+            is_mutable: var_decl.is_mutable,
+            location: var_decl.location.clone(),
+        }
+    }
+
     fn default() -> Self {
         Self::new()
     }

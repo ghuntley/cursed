@@ -10,7 +10,7 @@ use crate::build_system::{
     ParallelCompiler, ParallelCompilationConfig, IncrementalOptimizer, IncrementalConfig,
     BuildProfiler, ProfilerConfig, ArtifactManager, ArtifactConfig
 };
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::build_system::{
     BootstrapPipeline, BootstrapConfig, BootstrapBuildResult, BootstrapStatistics,
     BootstrapIntegration
@@ -590,11 +590,12 @@ impl BuildOrchestrator {
         
         // Determine output path using actual profile name
         let profile_name = match profile.optimization {
-            OptimizationLevel::None => "debug",
-            OptimizationLevel::Basic => "dev", 
-            OptimizationLevel::Aggressive => "release",
-            OptimizationLevel::Size => "release-small",
-            _ => "dev", // Default fallback
+            OptimizationLevel::O0 => "debug",
+            OptimizationLevel::O1 => "dev", 
+            OptimizationLevel::O2 => "release",
+            OptimizationLevel::O3 => "release",
+            OptimizationLevel::Os => "release-small",
+            OptimizationLevel::Oz => "release-small",
         };
         
         let output_dir = self.work_dir.join("target").join(profile_name);

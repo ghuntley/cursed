@@ -46,6 +46,7 @@ use tokio::time::timeout;
 use tracing::{debug, error, info, instrument, warn};
 use uuid::Uuid;
 use warp::ws::{Message, WebSocket};
+use futures_util::{SinkExt, StreamExt};
 use warp::{Filter, Rejection, Reply};
 
 pub type LiveServerResult<T> = Result<T, CursedError>;
@@ -665,7 +666,7 @@ impl LiveDocumentationServer {
         {
             let mut queue = generation_queue.lock()
                 .map_err(|_| CursedError::system_error("Failed to acquire generation queue lock"))?;
-            *queue = Some(generation_task);
+            *queue = Some(tokio::spawn(async move { let _ = generation_task.await; }));
         }
         
         Ok(())
@@ -837,7 +838,7 @@ impl LiveDocumentationServer {
         config: LiveServerConfig,
     ) {
         let client_id = Uuid::new_v4();
-        let (ws_tx, mut ws_rx) = ws.split();
+        let (mut ws_tx, mut ws_rx) = ws.split();
         let mut websocket_rx = websocket_tx.subscribe();
         
         // Register client

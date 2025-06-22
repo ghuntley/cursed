@@ -4,7 +4,7 @@
 /// including pass selection, performance tuning, and target-specific optimizations.
 
 use crate::error::{Error, Result};
-use crate::optimization::optimization_config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::config::LlvmPassConfig;
 use std::collections::HashMap;
 use tracing::{info, debug};

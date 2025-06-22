@@ -321,3 +321,23 @@ mod tests {
         initialize(); // Should not panic
     }
 }
+
+// Removed duplicate initialize function
+
+// Constants and compatibility exports
+pub const DEFAULT_LITERAL_WIDTH: u8 = 8;
+
+// Re-export for compatibility
+pub use LzwOrder as Order;
+
+pub fn new_reader<R: std::io::Read>(reader: R, order: LzwOrder, literal_width: u8) -> SquishResult<LzwReader<R>> {
+    LzwReader::new(reader, order, literal_width)
+}
+
+pub fn new_writer<W: std::io::Write>(writer: W, order: LzwOrder, literal_width: u8) -> SquishResult<LzwWriter<W>> {
+    LzwWriter::new(writer, order, literal_width)
+}
+
+pub fn default_literal_width() -> u8 {
+    DEFAULT_LITERAL_WIDTH
+}

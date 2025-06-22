@@ -4,7 +4,7 @@
 /// eliminating redundant computations and enabling advanced optimizations.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

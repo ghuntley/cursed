@@ -7,7 +7,7 @@
 use crate::error::{Error, Result};
 use crate::optimization::{
     real_llvm_passes::{RealLlvmPassManager, OptimizationStatistics},
-    config::OptimizationLevel,
+    OptimizationLevel,
 };
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, Condvar, atomic::{AtomicBool, AtomicUsize, Ordering}};

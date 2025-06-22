@@ -262,6 +262,26 @@ impl OptimizationLevel {
     pub fn production_default() -> Self {
         OptimizationLevel::O3
     }
+    
+    /// Get the LLVM optimization level equivalent
+    pub fn to_llvm_level(&self) -> u32 {
+        self.to_numeric()
+    }
+
+    /// Check if this optimization level focuses on size
+    pub fn optimizes_for_size(&self) -> bool {
+        self.is_size_optimized()
+    }
+
+    /// Check if this optimization level enables fast math
+    pub fn enables_fast_math(&self) -> bool {
+        matches!(self, OptimizationLevel::O3)
+    }
+
+    /// Get recommended parallel compilation threshold for this level
+    pub fn parallel_threshold(&self) -> usize {
+        self.recommended_parallel_threads()
+    }
 }
 
 impl Default for OptimizationLevel {
@@ -488,11 +508,11 @@ mod tests {
     fn test_inkwell_conversion() {
         use inkwell::OptimizationLevel as InkwellLevel;
         
-        assert_eq!(OptimizationLevel::O0.to_inkwell_level(), InkwellLevel::None);
-        assert_eq!(OptimizationLevel::O1.to_inkwell_level(), InkwellLevel::Less);
-        assert_eq!(OptimizationLevel::O2.to_inkwell_level(), InkwellLevel::Default);
-        assert_eq!(OptimizationLevel::O3.to_inkwell_level(), InkwellLevel::Aggressive);
-        assert_eq!(OptimizationLevel::Os.to_inkwell_level(), InkwellLevel::Default);
-        assert_eq!(OptimizationLevel::Oz.to_inkwell_level(), InkwellLevel::Aggressive);
+        assert_eq!(OptimizationLevel::O0.to_inkwell_level(), InkwellLevel::O0);
+        assert_eq!(OptimizationLevel::O1.to_inkwell_level(), InkwellLevel::O1);
+        assert_eq!(OptimizationLevel::O2.to_inkwell_level(), InkwellLevel::O2);
+        assert_eq!(OptimizationLevel::O3.to_inkwell_level(), InkwellLevel::O3);
+        assert_eq!(OptimizationLevel::Os.to_inkwell_level(), InkwellLevel::O2);
+        assert_eq!(OptimizationLevel::Oz.to_inkwell_level(), InkwellLevel::O3);
     }
 }

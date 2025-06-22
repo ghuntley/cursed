@@ -459,7 +459,7 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
     use crate::optimization::benchmarks::{BenchmarkStatistics, BenchmarkResult};
-    use crate::optimization::config::OptimizationLevel;
+    use crate::common::optimization_level::OptimizationLevel;
 
     fn create_test_suite_result() -> BenchmarkSuiteResult {
         let results = vec![

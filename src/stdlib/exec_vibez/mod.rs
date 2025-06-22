@@ -75,3 +75,26 @@ pub struct ModuleStatistics {
     pub process_groups: usize,
     pub streamers_active: usize,
 }
+
+
+pub type Error = Box<dyn std::error::Error + Send + Sync>;
+
+
+#[derive(Debug, Clone)]
+pub enum ContextError {
+    InvalidContext(String),
+    MissingContext,
+    ContextSetup(String),
+}
+
+impl std::fmt::Display for ContextError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ContextError::InvalidContext(msg) => write!(f, "Invalid context: {}", msg),
+            ContextError::MissingContext => write!(f, "Missing context"),
+            ContextError::ContextSetup(msg) => write!(f, "Context setup error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for ContextError {}

@@ -231,7 +231,7 @@ impl Default for BuildConfig {
 }
 
 // Use canonical OptimizationLevel from optimization config
-pub use crate::optimization::config::OptimizationLevel;
+pub use crate::common::optimization_level::OptimizationLevel;
 
 /// Panic strategies
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

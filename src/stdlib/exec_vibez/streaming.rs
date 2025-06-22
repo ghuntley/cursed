@@ -447,3 +447,7 @@ mod tests {
         assert_eq!(get_active_streamer_count(), initial_count);
     }
 }
+
+
+pub type NewOutputStreamer = OutputStreamer;
+pub type NewInputGenerator = InputGenerator;

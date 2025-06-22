@@ -100,7 +100,9 @@ impl PostgresDriver {
     /// Test connection with given configuration
     pub async fn test_connection(config: &PostgresConfig) -> PostgresResult<()> {
         let mut connection = PostgresConnection::new(config.clone()).await?;
-        connection.is_alive().await;
+        if !connection.is_alive() {
+            return Err(PostgresError::ConnectionLost);
+        }
         Ok(())
     }
 
@@ -135,7 +137,7 @@ impl PostgresDriver {
             // If pool is available, get connection from pool
             let pooled_conn = pool.get_connection().await?;
             Ok(PostgresConnection::from_client(
-                pooled_conn.client().clone(),
+                pooled_conn.into_client(),
                 self.default_config.clone(),
             ))
         } else {
@@ -192,7 +194,7 @@ impl Driver for PostgresDriver {
                 // Use pool if available
                 let pooled_conn = pool.get_connection().await?;
                 Ok(PostgresConnection::from_client(
-                    pooled_conn.client().clone(),
+                pooled_conn.into_client(),
                     config,
                 ))
             } else {

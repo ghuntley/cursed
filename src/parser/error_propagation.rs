@@ -24,9 +24,23 @@ impl fmt::Display for EnhancedQuestionMarkExpression {
     }
 }
 
+impl crate::ast::traits::Node for EnhancedQuestionMarkExpression {
+    fn string(&self) -> String {
+        format!("{}", self)
+    }
+    
+    fn token_literal(&self) -> String {
+        "?".to_string()
+    }
+}
+
 impl Expression for EnhancedQuestionMarkExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
     }
 }
 
@@ -64,9 +78,23 @@ impl fmt::Display for UnwrapOrExpression {
     }
 }
 
+impl crate::ast::traits::Node for UnwrapOrExpression {
+    fn string(&self) -> String {
+        format!("{}.unwrap_or({})", self.expression.string(), self.fallback.string())
+    }
+    
+    fn token_literal(&self) -> String {
+        "unwrap_or".to_string()
+    }
+}
+
 impl Expression for UnwrapOrExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
     }
 }
 
@@ -91,9 +119,30 @@ impl fmt::Display for TryExpression {
     }
 }
 
+impl crate::ast::traits::Node for TryExpression {
+    fn string(&self) -> String {
+        let mut result = format!("try {}", self.try_block.string());
+        for catch in &self.catch_blocks {
+            result.push_str(&format!(" catch({}) {}", catch.error_type, catch.handler.string()));
+        }
+        if let Some(ref finally) = self.finally_block {
+            result.push_str(&format!(" finally {}", finally.string()));
+        }
+        result
+    }
+    
+    fn token_literal(&self) -> String {
+        "try".to_string()
+    }
+}
+
 impl Expression for TryExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
     }
 }
 
@@ -115,9 +164,24 @@ impl fmt::Display for FieldAccessExpression {
     }
 }
 
+impl crate::ast::traits::Node for FieldAccessExpression {
+    fn string(&self) -> String {
+        let operator = if self.safe_access { "?." } else { "." };
+        format!("{}{}{}", self.object.string(), operator, self.field_name)
+    }
+    
+    fn token_literal(&self) -> String {
+        if self.safe_access { "?." } else { "." }.to_string()
+    }
+}
+
 impl Expression for FieldAccessExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
     }
 }
 
@@ -149,9 +213,38 @@ impl fmt::Display for MethodCallExpression {
     }
 }
 
+impl crate::ast::traits::Node for MethodCallExpression {
+    fn string(&self) -> String {
+        let mut result = format!("{}.{}", self.object.string(), self.method_name);
+        if !self.type_arguments.is_empty() {
+            result.push_str("<");
+            for (i, arg) in self.type_arguments.iter().enumerate() {
+                if i > 0 { result.push_str(", "); }
+                result.push_str(arg);
+            }
+            result.push_str(">");
+        }
+        result.push_str("(");
+        for (i, arg) in self.arguments.iter().enumerate() {
+            if i > 0 { result.push_str(", "); }
+            result.push_str(&arg.string());
+        }
+        result.push_str(")");
+        result
+    }
+    
+    fn token_literal(&self) -> String {
+        self.method_name.clone()
+    }
+}
+
 impl Expression for MethodCallExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
     }
 }
 

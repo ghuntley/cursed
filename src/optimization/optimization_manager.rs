@@ -5,8 +5,9 @@
 /// and build optimizations in a coordinated manner.
 
 use crate::error::{Error, Result};
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::{
-    config::{OptimizationConfig, OptimizationLevel},
+    config::OptimizationConfig,
     compiler_passes::{CompilerPassManager, DeadCodeEliminator, ConstantPropagator, LoopOptimizer, InliningDecision, RegisterAllocator},
     runtime_optimizations::{RuntimeOptimizationEngine, JitOptimizer},
     profiling::{ProfilingSession, CpuProfiler, MemoryProfiler},

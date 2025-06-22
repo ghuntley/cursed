@@ -3,7 +3,8 @@
 /// Connects CURSED optimizations with enhanced analysis, LTO, and performance monitoring systems.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::{OptimizationConfig, OptimizationLevel};
+use crate::optimization::config::{OptimizationConfig};
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::enhanced_analysis::{
     EnhancedPerformanceAnalyzer, EnhancedAnalysisResult, PerformanceBottleneck, 
     OptimizationRecommendation, CompilationPhase

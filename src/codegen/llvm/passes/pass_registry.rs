@@ -4,7 +4,7 @@
 /// for optimization passes in the CURSED compiler.
 
 use super::{OptimizationPass, PassConfiguration, PassResult};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Error, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};

@@ -658,3 +658,8 @@ mod tests {
         assert!(dir_sep == '/' || dir_sep == '\\');
     }
 }
+
+
+pub trait LookPath {
+    fn lookup_path(&self) -> Option<std::path::PathBuf>;
+}

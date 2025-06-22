@@ -117,3 +117,20 @@ mod tests {
         assert_eq!(quote_meta("normal"), "normal");
     }
 }
+
+
+#[derive(Debug, Clone)]
+pub struct GroupStatistics {
+    pub total_groups: usize,
+    pub named_groups: usize,
+    pub unnamed_groups: usize,
+    pub nested_groups: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct GroupValidationResult {
+    pub is_valid: bool,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+    pub statistics: GroupStatistics,
+}

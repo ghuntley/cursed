@@ -12,7 +12,7 @@ use tracing::{debug, error, info, instrument, span, Level};
 use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateContext, TemplateConfig, TemplateLoader};
-use super::template_syntax::{TemplateAst, TemplateNode, TemplateExpression};
+use super::template_syntax::{TemplateAst, TemplateNode, TemplateExpression, BlockNode};
 use super::template_render::{TemplateRenderer, RenderContext, SecurityLevel, OutputFormat};
 use super::template_filters::FilterRegistry;
 
@@ -360,10 +360,14 @@ impl StreamingTemplateRenderer {
                     chunks.push(StreamChunk::Text(text.clone()));
                 }
             }
-            TemplateNode::Variable { name, filters } => {
-                // Resolve variable and apply filters
-                if let Some(value) = context.get(name) {
-                    let processed_value = Self::apply_filters_to_value(&value, filters, context).await?;
+            TemplateNode::Variable { expression, filters, .. } => {
+                // Resolve variable and apply filters  
+                let name = match expression {
+                    TemplateExpression::Variable(var_name) => var_name,
+                    _ => "unknown".to_string(),
+                };
+                if let Some(value) = context.get(&name) {
+                    let processed_value = Self::apply_filters_to_value(&value, &filters.iter().map(|f| f.name.clone()).collect::<Vec<_>>(), context).await?;
                     let text_value = Self::object_to_string(&processed_value)?;
                     
                     // Apply security escaping based on output format
@@ -379,16 +383,21 @@ impl StreamingTemplateRenderer {
                     chunks.push(StreamChunk::Text(String::new()));
                 }
             }
-            TemplateNode::Block { block_type, content, .. } => {
-                // Process block content recursively
-                if let Some(content_nodes) = content {
+            TemplateNode::Block { block, .. } => {
+                // Process block content recursively  
+                let content_nodes = match block {
+                    BlockNode::If { then_branch, .. } => then_branch.clone(),
+                    BlockNode::For { body, .. } => body.clone(),
+                    _ => vec![],
+                };
+                if !content_nodes.is_empty() {
                     for content_node in content_nodes {
                         let mut node_chunks = Self::process_node_to_chunks(content_node, context, config).await?;
                         chunks.append(&mut node_chunks);
                     }
                 }
             }
-            TemplateNode::Comment(_) => {
+            TemplateNode::Comment { .. } => {
                 // Comments produce no output
             }
         }

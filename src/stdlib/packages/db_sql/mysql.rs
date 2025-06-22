@@ -769,10 +769,6 @@ impl ResultSet for MySqlResultSet {
     fn is_empty(&self) -> bool {
         self.rows.is_empty()
     }
-
-    fn row_count(&self) -> Option<usize> {
-        Some(self.rows.len())
-    }
 }
 
 // Implement PreparedStatement trait for MySqlPreparedStatement
@@ -863,7 +859,7 @@ impl PreparedStatement for MySqlPreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::result::ResultType::Forward,
+                result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
             });
         &EMPTY_METADATA
     }

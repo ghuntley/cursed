@@ -3,7 +3,8 @@
 /// Provides predefined optimization configurations for different build scenarios
 /// with appropriate optimization levels, features, and performance characteristics.
 
-use crate::optimization::config::{OptimizationConfig, OptimizationLevel, LlvmPassConfig};
+use crate::optimization::config::{OptimizationConfig, LlvmPassConfig};
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::optimization_levels::{LevelConfig, TargetSpecificSettings};
 use std::collections::HashMap;
 use std::path::PathBuf;

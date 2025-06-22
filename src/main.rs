@@ -677,7 +677,8 @@ async fn handle_single_run_command_with_options(
     enhanced_passes: bool,
     disable_enhanced_passes: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use cursed::codegen::llvm::optimization::{OptimizationLevel, utils::create_config_from_args};
+    use cursed::common::OptimizationLevel;
+    use cursed::codegen::llvm::optimization::utils::create_config_from_args;
     use cursed::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
     use cursed::core::performance_pipeline::{PerformancePipeline, utils};
     use cursed::optimization::{OptimizationEnablementSystem, OptimizationProfile};

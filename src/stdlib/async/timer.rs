@@ -1,6 +1,7 @@
 /// Async timer operations for CURSED stdlib
 use std::time::{Duration, Instant};
 use crate::runtime::r#async::{Future, delay as runtime_delay, timeout as runtime_timeout};
+use std::future::Future as StdFuture;
 use crate::stdlib::r#async::{AsyncError, AsyncResult};
 
 /// Sleep for the specified duration
@@ -127,6 +128,19 @@ where
         } else {
             std::task::Poll::Ready(Err(AsyncError::Runtime("Future already completed".to_string())))
         }
+    }
+}
+
+// Implement standard Future trait for Timeout to support .await syntax
+impl<F> StdFuture for Timeout<F>
+where
+    F: Future,
+{
+    type Output = Result<F::Output, AsyncError>;
+
+    fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
     }
 }
 

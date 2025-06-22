@@ -9,7 +9,7 @@
 /// - Thread-safe operations
 /// - Proper error handling
 
-use crate::stdlib::net::error::{NetError, NetResult, websocket_error, network_error};
+use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
 use crate::stdlib::net::socket::{TcpSocket, TcpListener};
 use crate::stdlib::net::websocket::{
     WebSocketFrame, WebSocketMessage, WebSocketConfig, CloseCode, ConnectionState, Opcode, FrameType

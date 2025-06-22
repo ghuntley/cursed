@@ -4,6 +4,7 @@
 /// LLVM passes, parallel compilation, caching, and performance monitoring.
 
 use crate::error::{Error, Result};
+use crate::common::optimization_level::OptimizationLevel;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -79,8 +80,7 @@ impl Default for OptimizationConfig {
     }
 }
 
-// Import canonical OptimizationLevel from optimization_config
-pub use crate::optimization::optimization_config::OptimizationLevel;
+// OptimizationLevel is imported at the top of the file
 
 /// LLVM pass configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

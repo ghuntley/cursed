@@ -1,215 +1,329 @@
 #!/usr/bin/env python3
 """
-Fix final compilation errors in CURSED codebase.
-This fixes specific string literal and API issues found in the latest compilation run.
+Fix final compilation errors to achieve clean build
 """
-
 import os
 import re
-import glob
+import subprocess
+from pathlib import Path
 
-def fix_string_literal_parsing(content):
-    """Fix string literals that are being parsed as prefixed identifiers."""
-    # Fix patterns like: info!("something"something) -> info!("something something")
-    content = re.sub(
-        r'(info!|debug!|warn!|error!|trace!)\("([^"]+)"([a-zA-Z_][a-zA-Z0-9_]*)\)',
-        r'\1("\2 \3")',
-        content
-    )
-    
-    # Fix patterns like: "path/module" -> "path/module"
-    content = re.sub(
-        r'"([^"]+)"([a-zA-Z_][a-zA-Z0-9_]*)',
-        r'"\1 \2"',
-        content
-    )
-    
-    # Fix format strings and backslashes
-    content = re.sub(
-        r'format!\("\\?\\"{}\\?\\"",',
-        r'format!("{}".',
-        content
-    )
-    
-    return content
+def run_cargo_check():
+    """Run cargo check and return error output"""
+    result = subprocess.run(['./fix_linking.sh', 'cargo', 'check'], 
+                          capture_output=True, text=True, cwd='.')
+    return result.stderr
 
-def fix_database_api_calls(content):
-    """Fix database API method calls and parameters."""
-    # Fix vec![] parameters to &[] for database calls
-    content = re.sub(r'\.execute\(([^,]+),\s*vec!\[\]\)', r'.execute(\1, &[])', content)
-    content = re.sub(r'\.query\(([^,]+),\s*vec!\[\]\)', r'.query(\1, &[])', content)
-    
-    # Fix parameter conversion from SqlValue to Parameter
-    content = re.sub(
-        r'vec!\[\s*(SqlValue::[^]]+)\s*\]',
-        r'&[Parameter::from(\1)]',
-        content
-    )
-    
-    # Fix begin_transaction calls to include None parameter
-    content = re.sub(r'\.begin_transaction\(\)\.await', r'.begin_transaction(None).await', content)
-    
-    # Fix Option<usize> display issues
-    content = re.sub(r'result\.row_count\(\)', r'result.row_count().unwrap_or(0)', content)
-    content = re.sub(r'result\.row_count\(\) as f64', r'result.row_count().unwrap_or(0) as f64', content)
-    content = re.sub(r'result\.row_count\(\) >', r'result.row_count().unwrap_or(0) >', content)
-    
-    # Fix rows() method calls
-    content = re.sub(r'result\.rows\(\)', r'result.next().unwrap()', content)
-    
-    # Fix method calls on database connections
-    content = re.sub(r'\.sender\(\)\.sender\(\)\.close\(\)', r'.close()', content)
-    
-    return content
-
-def fix_unterminated_strings(content):
-    """Fix unterminated string literals."""
-    # Look for lines with unterminated strings and fix them
-    lines = content.split('\n')
-    fixed_lines = []
-    
-    for line in lines:
-        # Fix unterminated strings in info!() macros
-        if 'info!(' in line and line.count('"') % 2 == 1:
-            line = line + '"'
-        
-        # Fix other unterminated strings
-        if line.count('"') % 2 == 1 and not line.strip().endswith('\\'):
-            # Find the last quote and see if it's properly terminated
-            if '"' in line and not line.strip().endswith('";'):
-                line = line.rstrip() + '"'
-        
-        fixed_lines.append(line)
-    
-    return '\n'.join(fixed_lines)
-
-def fix_format_string_errors(content):
-    """Fix format string and macro call errors."""
-    # Fix format! calls with invalid escapes
-    content = re.sub(
-        r'format!\("\\\"{}\\\"",\s*([^)]+)\)',
-        r'format!("{}",\1)',
-        content
-    )
-    
-    # Fix missing closing delimiters in format strings
-    content = re.sub(
-        r'token:\s*format!\("([^"]+)",\s*([^)]+)\),',
-        r'token: format!("\1", \2).to_string(),',
-        content
-    )
-    
-    return content
-
-def fix_identifier_initialization(content):
-    """Fix Identifier struct initialization issues."""
-    # Fix missing 'token' field in Identifier structs
-    content = re.sub(
-        r'Identifier\s*{\s*value:\s*([^,}\n]+),?\s*}',
-        r'Identifier {\n            token: "identifier".to_string(),\n            value: \1,\n        }',
-        content
-    )
-    
-    return content
-
-def fix_arc_type_issues(content):
-    """Fix Arc type annotation issues."""
-    # Remove problematic Arc<T, A> type annotations
-    content = re.sub(
-        r'let\s+(\w+):\s*Arc<[^>]+>\s*=\s*Arc::clone\(([^)]+)\);',
-        r'let \1 = Arc::clone(\2);',
-        content
-    )
-    
-    return content
-
-def fix_method_call_chains(content):
-    """Fix problematic method call chains."""
-    # Fix channel method calls
-    content = re.sub(r'\.sender\(\)\.send\(', r'.send(', content)
-    content = re.sub(r'\.receiver\(\)\.receive\(', r'.receive(', content)
-    content = re.sub(r'\.sender\(\)\.close\(', r'.close(', content)
-    
-    return content
-
-def process_test_file(filepath):
-    """Process a single test file and apply all fixes."""
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+def fix_missing_imports():
+    """Fix missing import issues"""
+    # Fix ProcessStats import
+    process_integration = 'src/stdlib/process/integration.rs'
+    if os.path.exists(process_integration):
+        with open(process_integration, 'r') as f:
             content = f.read()
         
-        original_content = content
+        # Fix ProcessStats import
+        content = re.sub(
+            r'monitoring::\{ProcessStats, HealthStatus, PerformanceMetrics\}',
+            r'monitoring::{HealthStatus, PerformanceMetrics}, ProcessStats',
+            content
+        )
         
-        # Apply all fixes
-        content = fix_string_literal_parsing(content)
-        content = fix_database_api_calls(content)
-        content = fix_unterminated_strings(content)
-        content = fix_format_string_errors(content)
-        content = fix_identifier_initialization(content)
-        content = fix_arc_type_issues(content)
-        content = fix_method_call_chains(content)
+        with open(process_integration, 'w') as f:
+            f.write(content)
+        print(f"Fixed ProcessStats import in {process_integration}")
+
+    # Fix network_error import
+    websocket_server = 'src/stdlib/net/websocket/server.rs'
+    if os.path.exists(websocket_server):
+        with open(websocket_server, 'r') as f:
+            content = f.read()
         
-        # Only write if changes were made
-        if content != original_content:
-            with open(filepath, 'w', encoding='utf-8') as f:
+        content = re.sub(
+            r'use crate::stdlib::net::error::\{NetError, NetResult, websocket_error, network_error\};',
+            r'use crate::stdlib::net::error::{NetError, NetResult, websocket_error};',
+            content
+        )
+        
+        with open(websocket_server, 'w') as f:
+            f.write(content)
+        print(f"Fixed network_error import in {websocket_server}")
+
+    # Fix signal_boost error imports
+    signal_boost_genz = 'src/stdlib/signal_boost/genZ.rs'
+    if os.path.exists(signal_boost_genz):
+        with open(signal_boost_genz, 'r') as f:
+            content = f.read()
+        
+        content = re.sub(
+            r'use crate::stdlib::signal_boost::error::\{SignalBoostError, SignalBoostResult, invalid_operation, not_found\};',
+            r'use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};',
+            content
+        )
+        
+        # Add error helper functions
+        if 'fn invalid_operation(' not in content:
+            content += '''
+
+fn invalid_operation(msg: &str) -> SignalBoostError {
+    SignalBoostError::InvalidOperation(msg.to_string())
+}
+
+fn not_found(msg: &str) -> SignalBoostError {
+    SignalBoostError::NotFound(msg.to_string())
+}
+'''
+        
+        with open(signal_boost_genz, 'w') as f:
+            f.write(content)
+        print(f"Fixed signal_boost imports in {signal_boost_genz}")
+
+    # Fix exec_vibez timeout import
+    timeout_rs = 'src/stdlib/exec_vibez/timeout.rs'
+    if os.path.exists(timeout_rs):
+        with open(timeout_rs, 'r') as f:
+            content = f.read()
+        
+        content = re.sub(
+            r'use super::error::\{ExecResult, ExecError, execution_failed, timeout_exceeded\};',
+            r'use super::error::{ExecResult, ExecError, execution_failed};',
+            content
+        )
+        
+        # Add timeout_exceeded function
+        if 'fn timeout_exceeded(' not in content:
+            content += '''
+
+fn timeout_exceeded(msg: &str) -> ExecError {
+    ExecError::Timeout(msg.to_string())
+}
+'''
+        
+        with open(timeout_rs, 'w') as f:
+            f.write(content)
+        print(f"Fixed timeout_exceeded import in {timeout_rs}")
+
+def fix_missing_types():
+    """Fix missing type definitions"""
+    
+    # Fix NewProcessGroup
+    groups_rs = 'src/stdlib/exec_vibez/groups.rs'
+    if os.path.exists(groups_rs):
+        with open(groups_rs, 'r') as f:
+            content = f.read()
+        
+        if 'pub type NewProcessGroup' not in content:
+            content += '''
+
+pub type NewProcessGroup = ProcessGroup;
+'''
+        
+        with open(groups_rs, 'w') as f:
+            f.write(content)
+        print(f"Added NewProcessGroup type alias in {groups_rs}")
+
+    # Fix environment types
+    environment_rs = 'src/stdlib/exec_vibez/environment.rs'
+    if os.path.exists(environment_rs):
+        with open(environment_rs, 'r') as f:
+            content = f.read()
+        
+        if 'pub type NewEnvironment' not in content:
+            content += '''
+
+pub type NewEnvironment = Environment;
+pub type CommandWithEnv = std::process::Command;
+'''
+        
+        with open(environment_rs, 'w') as f:
+            f.write(content)
+        print(f"Added environment type aliases in {environment_rs}")
+
+    # Fix streaming types
+    streaming_rs = 'src/stdlib/exec_vibez/streaming.rs'
+    if os.path.exists(streaming_rs):
+        with open(streaming_rs, 'r') as f:
+            content = f.read()
+        
+        if 'pub type NewOutputStreamer' not in content:
+            content += '''
+
+pub type NewOutputStreamer = OutputStreamer;
+pub type NewInputGenerator = InputGenerator;
+'''
+        
+        with open(streaming_rs, 'w') as f:
+            f.write(content)
+        print(f"Added streaming type aliases in {streaming_rs}")
+
+    # Fix timeout types
+    timeout_rs = 'src/stdlib/exec_vibez/timeout.rs'
+    if os.path.exists(timeout_rs):
+        with open(timeout_rs, 'r') as f:
+            content = f.read()
+        
+        if 'pub trait RunWithTimeout' not in content:
+            content += '''
+
+pub trait RunWithTimeout {
+    fn run_with_timeout(&self, timeout: std::time::Duration) -> ExecResult<()>;
+}
+'''
+        
+        with open(timeout_rs, 'w') as f:
+            f.write(content)
+        print(f"Added RunWithTimeout trait in {timeout_rs}")
+
+def fix_context_types():
+    """Fix context-related type issues"""
+    
+    # Fix ProcessContext
+    context_rs = 'src/stdlib/exec_vibez/context.rs'
+    if os.path.exists(context_rs):
+        with open(context_rs, 'r') as f:
+            content = f.read()
+        
+        if 'pub struct ProcessContext' not in content:
+            content += '''
+
+#[derive(Debug, Clone)]
+pub struct ProcessContext {
+    pub environment: std::collections::HashMap<String, String>,
+    pub working_dir: Option<std::path::PathBuf>,
+    pub timeout: Option<std::time::Duration>,
+}
+
+impl ProcessContext {
+    pub fn new() -> Self {
+        Self {
+            environment: std::collections::HashMap::new(),
+            working_dir: None,
+            timeout: None,
+        }
+    }
+}
+
+impl Default for ProcessContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+'''
+        
+        with open(context_rs, 'w') as f:
+            f.write(content)
+        print(f"Added ProcessContext struct in {context_rs}")
+
+def fix_enhanced_types():
+    """Fix enhanced module types"""
+    
+    # Fix LookPath
+    enhanced_rs = 'src/stdlib/exec_vibez/enhanced.rs'
+    if os.path.exists(enhanced_rs):
+        with open(enhanced_rs, 'r') as f:
+            content = f.read()
+        
+        if 'pub trait LookPath' not in content:
+            content += '''
+
+pub trait LookPath {
+    fn lookup_path(&self) -> Option<std::path::PathBuf>;
+}
+'''
+        
+        with open(enhanced_rs, 'w') as f:
+            f.write(content)
+        print(f"Added LookPath trait in {enhanced_rs}")
+
+def fix_compression_types():
+    """Fix compression-related types"""
+    
+    # Fix compression core types
+    core_rs = 'src/stdlib/compression/core.rs'
+    if os.path.exists(core_rs):
+        with open(core_rs, 'r') as f:
+            content = f.read()
+        
+        missing_types = []
+        if 'pub enum CompressionQuality' not in content:
+            missing_types.append('''
+#[derive(Debug, Clone)]
+pub enum CompressionQuality {
+    Fast,
+    Balanced,
+    Best,
+}
+''')
+        
+        if 'pub enum CompressionStrategy' not in content:
+            missing_types.append('''
+#[derive(Debug, Clone)]
+pub enum CompressionStrategy {
+    Default,
+    Filtered,
+    HuffmanOnly,
+    Rle,
+    Fixed,
+}
+''')
+        
+        if 'pub enum FlushMode' not in content:
+            missing_types.append('''
+#[derive(Debug, Clone)]
+pub enum FlushMode {
+    None,
+    Partial,
+    Sync,
+    Full,
+    Finish,
+}
+''')
+        
+        if missing_types:
+            content += '\n'.join(missing_types)
+            with open(core_rs, 'w') as f:
                 f.write(content)
-            print(f"✅ Fixed: {filepath}")
-            return True
-        else:
-            print(f"⏭️  No changes: {filepath}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Error processing {filepath}: {e}")
-        return False
+            print(f"Added compression types in {core_rs}")
+
+def fix_visibility_issues():
+    """Fix visibility issues"""
+    
+    # Fix SharedProcessState visibility
+    state_rs = 'src/stdlib/process/state.rs'
+    if os.path.exists(state_rs):
+        with open(state_rs, 'r') as f:
+            content = f.read()
+        
+        content = re.sub(
+            r'pub\(crate\) struct SharedProcessState',
+            r'pub struct SharedProcessState',
+            content
+        )
+        
+        with open(state_rs, 'w') as f:
+            f.write(content)
+        print(f"Fixed SharedProcessState visibility in {state_rs}")
 
 def main():
-    """Main function to process all test files."""
-    print("🔧 Fixing final compilation errors...")
+    """Main execution function"""
+    print("Starting final compilation error fixes...")
     
-    # Find all test files
-    test_files = []
-    test_files.extend(glob.glob("tests/*.rs"))
-    test_files.extend(glob.glob("tests/**/*.rs", recursive=True))
+    fix_missing_imports()
+    fix_missing_types()
+    fix_context_types()
+    fix_enhanced_types()
+    fix_compression_types()
+    fix_visibility_issues()
     
-    # Focus on files that were mentioned in the error output
-    priority_files = [
-        "tests/database_stress_tests.rs",
-        "tests/map_functionality_integration_test.rs",
-        "tests/import_llvm_integration_test.rs",
-        "tests/basic_float_conversions_test.rs",
-        "tests/interface_dynamic_dispatch_test.rs",
-        "tests/database_llvm_integration_test.rs",
-        "tests/crypto_asymmetric_test.rs",
-        "tests/crypto_symmetric_test.rs"
-    ]
+    print("\nRunning compilation check...")
+    errors = run_cargo_check()
+    error_count = errors.count('error[E')
+    print(f"Compilation check complete. Errors found: {error_count}")
     
-    # Process priority files first
-    fixed_count = 0
-    total_count = 0
-    
-    for test_file in priority_files:
-        if os.path.exists(test_file):
-            total_count += 1
-            if process_test_file(test_file):
-                fixed_count += 1
-    
-    # Process remaining files
-    for test_file in test_files:
-        if test_file not in priority_files:
-            total_count += 1
-            if process_test_file(test_file):
-                fixed_count += 1
-    
-    print(f"\n📊 Summary:")
-    print(f"   Total files: {total_count}")
-    print(f"   Fixed files: {fixed_count}")
-    print(f"   Unchanged: {total_count - fixed_count}")
-    
-    if fixed_count > 0:
-        print(f"\n✅ Fixed {fixed_count} test files. Try running tests again.")
-    else:
-        print(f"\n⚠️  No files needed fixing. Manual intervention may be required.")
+    if error_count > 0:
+        print("\nFirst 20 errors:")
+        error_lines = [line for line in errors.split('\n') if 'error[E' in line][:20]
+        for line in error_lines:
+            print(f"  {line}")
 
 if __name__ == "__main__":
     main()

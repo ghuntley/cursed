@@ -4,7 +4,8 @@
 /// for the CURSED compiler, replacing placeholder implementations.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::{OptimizationConfig, OptimizationLevel};
+use crate::optimization::config::{OptimizationConfig};
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::real_llvm_passes::{RealLlvmPassManager, OptimizationStatistics as RealOptStats};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

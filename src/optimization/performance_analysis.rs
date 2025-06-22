@@ -4,7 +4,7 @@
 /// and intelligent performance insights for optimization effectiveness.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::enhanced_llvm_optimization::{
     EnhancedOptimizationResults, ComprehensivePerformanceImprovements, PerformanceResult
 };

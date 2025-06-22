@@ -11,7 +11,7 @@ use crate::optimization::comprehensive_optimization_enablement::{
     ComprehensiveOptimizationSystem, ComprehensiveOptimizationConfig,
     OptimizationResults,
 };
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
 /// CLI interface for comprehensive optimization system
