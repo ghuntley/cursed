@@ -771,7 +771,7 @@ mod tests {
     use super::*;
     use crate::optimization::benchmarks::BenchmarkResult;
     use crate::optimization::baseline_storage::{PerformanceBaseline, BaselineBenchmark, TimeMetrics, BaselineType};
-    use crate::optimization::config::OptimizationLevel;
+    use crate::common::optimization_level::OptimizationLevel;
 
     fn create_test_baseline() -> PerformanceBaseline {
         let mut benchmarks = HashMap::new();

@@ -7,7 +7,7 @@ use crate::ast::*;
 use crate::parser::Parser;
 use crate::lexer::Lexer;
 use crate::codegen::llvm::optimization::{OptimizationConfig};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::Result;
 use crate::optimization::ast_analyzer::AdvancedASTAnalyzer;
 use std::collections::{HashMap, HashSet};

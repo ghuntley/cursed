@@ -4,6 +4,7 @@ use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::{VibeRequest, Method};
 use crate::stdlib::glowup_http::response::VibeResponse;
 use reqwest;
+#[cfg(feature = "multipart")]
 use reqwest::multipart;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -215,13 +216,20 @@ impl<'a> RequestBuilder<'a> {
         } else if let Some(body) = &self.body {
             req_builder = req_builder.body(body.clone());
         } else if let Some(multipart) = &self.multipart_data {
-            let mut form = reqwest::multipart::Form::new();
-            for (key, data) in multipart {
-                let part = reqwest::multipart::Part::bytes(data.clone())
-                    .file_name(key.clone());
-                form = form.part(key.clone(), part);
+            #[cfg(feature = "multipart")]
+            {
+                let mut form = reqwest::multipart::Form::new();
+                for (key, data) in multipart {
+                    let part = reqwest::multipart::Part::bytes(data.clone())
+                        .file_name(key.clone());
+                    form = form.part(key.clone(), part);
+                }
+                req_builder = req_builder.multipart(form);
             }
-            req_builder = req_builder.multipart(form);
+            #[cfg(not(feature = "multipart"))]
+            {
+                return Err(GlowUpError::Other("Multipart support not available".to_string()));
+            }
         }
 
         // Set timeout
@@ -628,6 +636,14 @@ async fn convert_response(response: reqwest::Response) -> GlowUpResult<VibeRespo
         status,
         headers,
         body,
+        status_line: format!("{} {}", status, StatusCode::from_u16(status).unwrap_or(StatusCode::OK).canonical_reason().unwrap_or("Unknown")),
+        status_code: StatusCode::from_u16(status).unwrap_or(StatusCode::OK),
+        proto: "HTTP/1.1".to_string(),
+        content_length: body.len() as i64,
+        transfer_encoding: vec![],
+        close: false,
+        uncompressed: true,
+        trailer: HeaderMap::new(),
     })
 }
 

@@ -625,22 +625,6 @@ impl Default for ParserConfig {
 }
 
 /// Cryptographic parameters configuration
-#[derive(Debug, Clone)]
-pub struct CryptoParameters {
-    /// Hash algorithm selection
-    pub hash_algorithm: String,
-    /// Key derivation iterations
-    pub kdf_iterations: u32,
-    /// Salt length in bytes
-    pub salt_length: usize,
-    /// Encryption key length in bits
-    pub key_length: usize,
-    /// Use hardware acceleration if available
-    pub use_hardware_acceleration: bool,
-    /// Secure random number generator
-    pub secure_rng: bool,
-}
-
 impl Default for CryptoParameters {
     fn default() -> Self {
         Self {
@@ -655,22 +639,6 @@ impl Default for CryptoParameters {
 }
 
 /// Security context configuration
-#[derive(Debug, Clone)]
-pub struct SecurityContext {
-    /// Security level (1-5, higher is more secure)
-    pub security_level: u8,
-    /// Require secure environment
-    pub require_secure_env: bool,
-    /// Trusted execution environment
-    pub use_tee: bool,
-    /// Memory protection enabled
-    pub memory_protection: bool,
-    /// Audit logging enabled
-    pub audit_logging: bool,
-    /// Crypto parameters
-    pub crypto: CryptoParameters,
-}
-
 impl Default for SecurityContext {
     fn default() -> Self {
         Self {

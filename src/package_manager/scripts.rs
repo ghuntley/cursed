@@ -362,12 +362,12 @@ impl ScriptExecutor {
         
         let stdout_handle = tokio::task::spawn_blocking(move || {
             let reader = BufReader::new(stdout);
-            reader.split("\n").collect::<Result<Vec<_>, _>>()
+            reader.split(b'\n').collect::<Result<Vec<_>, _>>()
         });
         
         let stderr_handle = tokio::task::spawn_blocking(move || {
             let reader = BufReader::new(stderr);
-            reader.split("\n").collect::<Result<Vec<_>, _>>()
+            reader.split(b'\n').collect::<Result<Vec<_>, _>>()
         });
         
         // Wait for completion with timeout

@@ -3,7 +3,8 @@
 use crate::ast::traits::{Node, Statement, Expression};
 use crate::ast::identifiers::Identifier;
 use crate::ast::block::BlockStatement;
-use crate::ast::expressions::{Parameter, TypeExpression};
+use crate::ast::expressions::Parameter;
+use crate::ast::TypeExpression;
 use crate::error::SourceLocation;
 use std::any::Any;
 

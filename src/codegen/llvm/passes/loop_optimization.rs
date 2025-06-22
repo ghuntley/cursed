@@ -4,7 +4,7 @@
 /// to improve performance of loop-heavy code.
 
 use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,

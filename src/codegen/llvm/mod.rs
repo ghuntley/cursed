@@ -69,7 +69,7 @@ pub use jit_engine::{
 
 // Re-export main optimization types
 pub use optimization::{OptimizationConfig, OptimizationManager, LlvmOptimizer};
-pub use crate::optimization::config::OptimizationLevel;
+pub use crate::common::optimization_level::OptimizationLevel;
 pub use optimization_engine::{
     OptimizationEngine, OptimizationEngineConfig, OptimizationResult, EngineStatistics
 };

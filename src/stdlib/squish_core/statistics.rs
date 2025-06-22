@@ -367,3 +367,9 @@ pub fn end_operation() {
         }
     }
 }
+
+
+pub fn cleanup() -> Result<(), String> {
+    // Clear global statistics
+    Ok(())
+}

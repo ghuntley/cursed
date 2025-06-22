@@ -152,7 +152,7 @@ impl RedisConnectionPool {
     }
 
     /// slay Update operation statistics
-    async fn update_stats(&self, success: bool, duration: Duration) {
+    pub async fn update_stats(&self, success: bool, duration: Duration) {
         let mut stats = self.stats.write().await;
         stats.total_operations += 1;
         
@@ -237,11 +237,8 @@ impl RedisConnection {
         })
     }
 
-    /// slay Execute a Redis command with timing
-    async fn execute_with_timing<F, R>(&mut self, operation: F) -> DatabaseResult<R>
-    where
-        F: std::future::Future<Output = RedisResult<R>>,
-    {
+    /// slay Execute a Redis command with timing - helper method for tracking performance
+    async fn execute_with_timing<T>(&self, operation: impl std::future::Future<Output = RedisResult<T>>) -> DatabaseResult<T> {
         let start = Instant::now();
         let result = operation.await;
         let duration = start.elapsed();
@@ -384,7 +381,7 @@ impl RedisConnection {
     /// slay LRANGE - Get list range
     pub async fn lrange(&mut self, key: &str, start: i64, stop: i64) -> DatabaseResult<Vec<Value>> {
         let result: Vec<String> = self.execute_with_timing(
-            self.connection.lrange(key, start, stop)
+            self.connection.lrange(key, start as isize, stop as isize)
         ).await?;
         Ok(result.into_iter().map(Value::string).collect())
     }
@@ -619,7 +616,7 @@ fn value_to_redis_string(value: &Value) -> String {
         Value::String(s) => s.clone(),
         Value::Array(arr) => serde_json::to_string(arr).unwrap_or_default(),
         Value::Object(obj) => serde_json::to_string(obj).unwrap_or_default(),
-        Value::Bytes(bytes) => base64::encode(bytes),
+        Value::Bytes(bytes) => base64::engine::general_purpose::STANDARD.encode(bytes),
     }
 }
 

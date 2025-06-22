@@ -5,9 +5,10 @@
 //! performance improvements.
 
 use crate::error::{Error, Result};
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::{
     build_profiles::{BuildProfile, ProfileManager},
-    config::{OptimizationConfig, OptimizationLevel},
+    config::OptimizationConfig,
     compilation_speed::CompilationUnit,
     benchmarking_types::{BenchmarkType, BenchmarkConfig, BenchmarkResults, BenchmarkingEngine},
     performance_system::{

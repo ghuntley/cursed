@@ -430,12 +430,12 @@ where
 
 
 /// Public helper function for spawning blocking operations
-pub async fn spawn_blocking_io_public<F, R>(f: F) -> R
+pub async fn spawn_blocking_io_public<F, R>(f: F) -> Result<R, crate::error::CursedError>
 where
     F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
 {
-    spawn_blocking_io(f).await
+    spawn_blocking_io(f).await.map_err(|e| crate::error::CursedError::General(e.to_string()))
 }
 
 /// Async file operations module

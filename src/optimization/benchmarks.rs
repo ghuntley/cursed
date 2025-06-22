@@ -11,7 +11,7 @@ use serde::{Serialize, Deserialize};
 use tracing::{info, debug, warn, instrument};
 
 use crate::codegen::llvm::optimization::{OptimizationConfig};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Error, Result};
 use crate::optimization::baseline_storage::{BaselineStorage, BaselineStorageConfig, BaselineType};
 use crate::optimization::regression_analyzer::{RegressionAnalyzer, RegressionAnalysisConfig, DetailedRegressionAnalysis};
@@ -318,7 +318,7 @@ impl BenchmarkRunner {
 
         // Calculate averages
         let avg_compile_time = Duration::from_nanos(
-            compile_times.iter().map(|d| d.as_nanos()).sum::<u128>() / config.iterations as u128
+            (compile_times.iter().map(|d| d.as_nanos()).sum::<u128>() / config.iterations as u128) as u64
         );
         let avg_binary_size = binary_sizes.iter().sum::<usize>() / config.iterations;
         let avg_memory_usage = memory_usages.iter().sum::<usize>() / config.iterations;

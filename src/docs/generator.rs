@@ -7,6 +7,7 @@ use crate::ast::*;
 use crate::error::{Error, SourceLocation};
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::Parser;
+use crate::package_manager::Package;
 use std::collections::{HashMap, BTreeMap};
 use std::path::{Path, PathBuf};
 use std::fs;
@@ -545,6 +546,31 @@ impl DocumentationGenerator {
         
         // Generate search index
         json_generator.generate_search_index(&self.search_index, &self.config.output_dir)?;
+        
+        Ok(())
+    }
+
+    /// Generate HTML documentation for a package (async version for publisher)
+    pub async fn generate_html_docs(&self, package: &Package, output_dir: &Path) -> Result<(), Error> {
+        // Create output directory
+        fs::create_dir_all(output_dir).map_err(Error::Io)?;
+        
+        // Create HTML generator with package-specific config
+        let mut html_config = self.config.clone();
+        html_config.output_dir = output_dir.to_path_buf();
+        let html_generator = HtmlGenerator::new(&html_config);
+        
+        // Generate package documentation
+        html_generator.generate_package_docs(package, &self.extracted_docs, output_dir)?;
+        
+        // Generate module documentation
+        for doc in &self.extracted_docs {
+            html_generator.generate_module_doc(doc, output_dir)?;
+        }
+        
+        // Generate index and navigation
+        html_generator.generate_index(&self.extracted_docs, output_dir)?;
+        html_generator.generate_navigation(&self.extracted_docs, output_dir)?;
         
         Ok(())
     }

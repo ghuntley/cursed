@@ -16,7 +16,7 @@ pub enum SecurityLevel {
 }
 
 /// Threat model for random number generation
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ThreatModel {
     PassiveObserver,     // Attacker can observe outputs
     ActiveAdversary,     // Attacker can influence inputs

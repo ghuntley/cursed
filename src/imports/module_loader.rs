@@ -99,7 +99,7 @@ impl ModuleLoader {
         };
         
         // Parse the module
-        let lexer = Lexer::new(source.clone());
+        let lexer = Lexer::new(&source);
         let mut parser = Parser::new(lexer).map_err(|e| ImportError::ModuleLoadError {
             module: resolved.original_path.clone(),
             error: format!("Failed to create parser: {}", e),

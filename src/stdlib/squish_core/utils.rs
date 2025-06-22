@@ -434,3 +434,73 @@ mod tests {
         assert!(formatted.contains("40.0%"));
     }
 }
+
+// Additional utility functions for compression
+pub fn compress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    crate::stdlib::squish_core::gzip::gzip_compress(data)
+}
+
+pub fn decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    crate::stdlib::squish_core::gzip::gzip_decompress(data)
+}
+
+pub fn compress_with_level(data: &[u8], level: i32) -> SquishResult<Vec<u8>> {
+    crate::stdlib::squish_core::gzip::gzip_compress_level(data, level)
+}
+
+pub fn compress_adaptive(data: &[u8]) -> SquishResult<Vec<u8>> {
+    let level = if data.len() < 1024 { 1 } else if data.len() < 1024 * 1024 { 6 } else { 9 };
+    compress_with_level(data, level)
+}
+
+pub fn max_compressed_size(input_size: usize) -> usize {
+    input_size + (input_size / 1000) + 12
+}
+
+pub fn validate_level_for_algorithm(level: i32, algorithm: &str) -> bool {
+    match algorithm {
+        "gzip" | "zlib" | "deflate" => level >= 0 && level <= 9,
+        "bzip2" => level >= 1 && level <= 9,
+        "lzw" => level == 0, // LZW doesn't use levels
+        _ => false,
+    }
+}
+
+pub fn get_file_extension(format: &CompressionFormat) -> &'static str {
+    match format {
+        CompressionFormat::Gzip => "gz",
+        CompressionFormat::Zlib => "z",
+        CompressionFormat::Deflate => "deflate",
+        CompressionFormat::Bzip2 => "bz2",
+        CompressionFormat::Lzw => "lzw",
+        CompressionFormat::Unknown => "bin",
+    }
+}
+
+pub fn get_mime_type(format: &CompressionFormat) -> &'static str {
+    match format {
+        CompressionFormat::Gzip => "application/gzip",
+        CompressionFormat::Zlib => "application/zlib",
+        CompressionFormat::Deflate => "application/deflate",
+        CompressionFormat::Bzip2 => "application/x-bzip2",
+        CompressionFormat::Lzw => "application/x-lzw",
+        CompressionFormat::Unknown => "application/octet-stream",
+    }
+}
+
+pub fn supports_streaming(format: &CompressionFormat) -> bool {
+    match format {
+        CompressionFormat::Gzip | CompressionFormat::Zlib | CompressionFormat::Deflate => true,
+        CompressionFormat::Bzip2 | CompressionFormat::Lzw => false,
+        CompressionFormat::Unknown => false,
+    }
+}
+
+pub fn get_recommended_buffer_size(format: &CompressionFormat) -> usize {
+    match format {
+        CompressionFormat::Gzip | CompressionFormat::Zlib | CompressionFormat::Deflate => 8192,
+        CompressionFormat::Bzip2 => 16384,
+        CompressionFormat::Lzw => 4096,
+        CompressionFormat::Unknown => 8192,
+    }
+}

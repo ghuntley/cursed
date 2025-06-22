@@ -5,7 +5,7 @@
 /// other optimizations by exposing values in registers.
 
 use super::{OptimizationPass, PassConfiguration, PassResult};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{
     context::Context,

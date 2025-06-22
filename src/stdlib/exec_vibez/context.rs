@@ -380,3 +380,27 @@ mod tests {
         assert_eq!(format!("{}", deadline), "context deadline exceeded");
     }
 }
+
+
+#[derive(Debug, Clone)]
+pub struct ProcessContext {
+    pub environment: std::collections::HashMap<String, String>,
+    pub working_dir: Option<std::path::PathBuf>,
+    pub timeout: Option<std::time::Duration>,
+}
+
+impl ProcessContext {
+    pub fn new() -> Self {
+        Self {
+            environment: std::collections::HashMap::new(),
+            working_dir: None,
+            timeout: None,
+        }
+    }
+}
+
+impl Default for ProcessContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}

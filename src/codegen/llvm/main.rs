@@ -7,10 +7,9 @@ use std::path::PathBuf;
 use crate::optimization::real_llvm_passes::RealLlvmPassManager;
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
 use crate::optimization::config::OptimizationConfig as OptConfig;
-use crate::optimization::optimization_config::OptimizationLevel as OptLevel;
+use crate::common::optimization_level::OptimizationLevel as OptLevel;
 use crate::optimization::coordinator::{
-    OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults,
-    OptimizationLevel as CoordOptLevel
+    OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults
 };
 use crate::optimization::types::ComprehensiveOptimizationResult;
 
@@ -760,21 +759,14 @@ impl LlvmCodeGenerator {
         
         tracing::info!("Initializing comprehensive optimization coordinator");
         
-        // Convert optimization level
-        let coord_level = match self.optimization_config.optimization_level {
-            OptLevel::None => CoordOptLevel::O0,
-            OptLevel::Less => CoordOptLevel::O1,
-            OptLevel::Default => CoordOptLevel::O2,
-            OptLevel::Aggressive | OptLevel::Size | OptLevel::SizeAggressive => CoordOptLevel::O3,
-        };
-        
-        // Create coordinator configuration based on current settings
-        let config = if matches!(coord_level, CoordOptLevel::O0) {
-            CoordinatorConfiguration::development()
-        } else if matches!(coord_level, CoordOptLevel::O3) {
-            CoordinatorConfiguration::release()
-        } else {
-            CoordinatorConfiguration::balanced()
+        // Convert optimization level to coordinator config
+        let config = match self.optimization_config.optimization_level {
+            OptLevel::O0 => CoordinatorConfiguration::development(),
+            OptLevel::O1 => CoordinatorConfiguration::balanced(),
+            OptLevel::O2 => CoordinatorConfiguration::balanced(),
+            OptLevel::O3 => CoordinatorConfiguration::release(),
+            OptLevel::Os => CoordinatorConfiguration::balanced(),
+            OptLevel::Oz => CoordinatorConfiguration::release(),
         };
         
         let mut coordinator = OptimizationCoordinator::new(config)?;

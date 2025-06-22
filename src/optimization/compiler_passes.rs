@@ -38,7 +38,7 @@ pub enum PassType {
 }
 
 // Import canonical OptimizationLevel from optimization_config
-pub use crate::optimization::config::OptimizationLevel;
+pub use crate::common::optimization_level::OptimizationLevel;
 
 /// Statistics for pass execution
 #[derive(Debug, Clone)]

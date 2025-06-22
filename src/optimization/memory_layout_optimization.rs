@@ -5,7 +5,7 @@
 /// and NUMA-aware memory allocation hints.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, info, instrument, warn};

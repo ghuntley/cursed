@@ -383,3 +383,6 @@ mod tests {
         assert!(group.id() > 0);
     }
 }
+
+
+pub type NewProcessGroup = ProcessGroup;

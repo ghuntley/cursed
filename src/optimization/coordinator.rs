@@ -4,7 +4,7 @@
 /// statistics, time savings measurement, and advanced strategy selection logic.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::real_llvm_passes::{RealLlvmOptimizer, OptimizationResults};
 use crate::optimization::enhanced_llvm_optimization::{EnhancedLlvmOptimizationSystem, EnhancedOptimizationResults};
 use crate::optimization::performance_analysis::{PerformanceAnalysisEngine, ComprehensivePerformanceAnalysis};

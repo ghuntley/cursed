@@ -16,7 +16,7 @@ use crate::optimization::{
     OptimizationConfig,
     TimeSavingsCalculator, TimeSavingsConfig,
 };
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
 /// Optimization profile types for different use cases

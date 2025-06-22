@@ -94,6 +94,16 @@ impl<T> Future for ReadyFuture<T> {
     }
 }
 
+// Implement standard Future trait for ReadyFuture to support .await syntax
+impl<T> StdFuture for ReadyFuture<T> {
+    type Output = T;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
+    }
+}
+
 /// Future that yields control once before completing
 pub struct YieldNowFuture {
     yielded: bool,
@@ -116,6 +126,16 @@ impl Future for YieldNowFuture {
             cx.waker().wake_by_ref();
             Poll::Pending
         }
+    }
+}
+
+// Implement standard Future trait for YieldNowFuture to support .await syntax
+impl StdFuture for YieldNowFuture {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
     }
 }
 
@@ -152,6 +172,16 @@ impl<T> Future for PendingFuture<T> {
 
     fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
         Poll::Pending
+    }
+}
+
+// Implement standard Future trait for PendingFuture to support .await syntax
+impl<T> StdFuture for PendingFuture<T> {
+    type Output = T;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
     }
 }
 
@@ -387,7 +417,11 @@ where
     JoinTwoFuture::new(f1, f2)
 }
 
-pub struct JoinTwoFuture<F1, F2> {
+pub struct JoinTwoFuture<F1, F2>
+where
+    F1: Future,
+    F2: Future,
+{
     future1: Option<F1>,
     future2: Option<F2>,
     result1: Option<F1::Output>,

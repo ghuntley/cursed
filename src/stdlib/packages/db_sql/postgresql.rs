@@ -862,7 +862,7 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::result::ResultType::Forward,
+                result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
             });
         &EMPTY_METADATA
     }
@@ -982,7 +982,7 @@ impl ResultSet for PostgreSqlResultSet {
             schema_name: None,
             table_name: None,
             is_updatable: false,
-            result_type: crate::stdlib::packages::result::ResultType::Forward,
+            result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
         })
     }
 

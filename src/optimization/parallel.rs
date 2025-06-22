@@ -866,22 +866,22 @@ impl ParallelCompiler {
     fn apply_compilation_flag(config: &mut OptimizationConfig, flag: &str) {
         match flag {
             "-O0" | "--no-optimization" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::O0;
+                config.optimization_level = crate::common::optimization_level::OptimizationLevel::O0;
             }
             "-O1" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::O1;
+                config.optimization_level = crate::common::optimization_level::OptimizationLevel::O1;
             }
             "-O2" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::O2;
+                config.optimization_level = crate::common::optimization_level::OptimizationLevel::O2;
             }
             "-O3" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::O3;
+                config.optimization_level = crate::common::optimization_level::OptimizationLevel::O3;
             }
             "-Os" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::Os;
+                config.optimization_level = crate::common::optimization_level::OptimizationLevel::Os;
             }
             "-Oz" => {
-                config.optimization_level = crate::optimization::config::OptimizationLevel::OsAggressive;
+                config.optimization_level = crate::common::optimization_level::OptimizationLevel::OsAggressive;
             }
             "--enable-vectorization" => {
                 config.llvm_passes.enable_vectorization = true;

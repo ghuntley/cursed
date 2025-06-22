@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::cmd::Cmd;
 use super::process::{Process, ProcessState};
-use super::error::{ExecResult, ExecError, execution_failed, timeout_exceeded};
+use super::error::{ExecResult, ExecError, execution_failed};
 
 /// Timeout configuration for command execution
 #[derive(Debug, Clone)]
@@ -368,4 +368,14 @@ mod tests {
         let result = run_with_timeout("nonexistent_command_12345", &[], Duration::from_secs(1));
         assert!(result.is_err());
     }
+}
+
+
+fn timeout_exceeded(msg: &str) -> ExecError {
+    ExecError::Timeout(msg.to_string())
+}
+
+
+pub trait RunWithTimeout {
+    fn run_with_timeout(&self, timeout: std::time::Duration) -> ExecResult<()>;
 }

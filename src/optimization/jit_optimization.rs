@@ -54,7 +54,7 @@ struct FunctionProfile {
 }
 
 // Import canonical OptimizationLevel from optimization_config
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 
 /// Optimization task for JIT compilation
 #[derive(Debug, Clone)]

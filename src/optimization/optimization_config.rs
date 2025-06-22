@@ -5,102 +5,8 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
-/// Optimization levels corresponding to standard compiler optimization levels
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum OptimizationLevel {
-    /// No optimization (equivalent to -O0)
-    O0,
-    /// Basic optimization (equivalent to -O1)
-    O1,
-    /// Default optimization (equivalent to -O2)
-    O2,
-    /// Aggressive optimization (equivalent to -O3)
-    O3,
-    /// Size optimization (equivalent to -Os)
-    Os,
-    /// Size and speed optimization (equivalent to -Oz)
-    Oz,
-}
-
-impl Hash for OptimizationLevel {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        core::mem::discriminant(self).hash(state);
-    }
-}
-
-impl fmt::Display for OptimizationLevel {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            OptimizationLevel::O0 => write!(f, "O0"),
-            OptimizationLevel::O1 => write!(f, "O1"),
-            OptimizationLevel::O2 => write!(f, "O2"),
-            OptimizationLevel::O3 => write!(f, "O3"),
-            OptimizationLevel::Os => write!(f, "Os"),
-            OptimizationLevel::Oz => write!(f, "Oz"),
-        }
-    }
-}
-
-impl FromStr for OptimizationLevel {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "none" | "0" | "o0" => Ok(OptimizationLevel::O0),
-            "basic" | "1" | "o1" => Ok(OptimizationLevel::O1),
-            "default" | "2" | "o2" => Ok(OptimizationLevel::O2),
-            "aggressive" | "3" | "o3" => Ok(OptimizationLevel::O3),
-            "size" | "s" | "os" => Ok(OptimizationLevel::Os),
-            "smallest" | "z" | "oz" => Ok(OptimizationLevel::Oz),
-            _ => Err(format!(
-                "Invalid optimization level '{}'. Valid values are: o0, o1, o2, o3, os, oz",
-                s
-            )),
-        }
-    }
-}
-
-impl Default for OptimizationLevel {
-    fn default() -> Self {
-        Self::O2
-    }
-}
-
-impl OptimizationLevel {
-    /// Get the LLVM optimization level equivalent
-    pub fn to_llvm_level(&self) -> u32 {
-        match self {
-            OptimizationLevel::O0 => 0,
-            OptimizationLevel::O1 => 1,
-            OptimizationLevel::O2 => 2,
-            OptimizationLevel::O3 => 3,
-            OptimizationLevel::Os => 2,  // -Os maps to O2 with size focus
-            OptimizationLevel::Oz => 2,  // -Oz maps to O2 with aggressive size focus
-        }
-    }
-
-    /// Check if this optimization level focuses on size
-    pub fn optimizes_for_size(&self) -> bool {
-        matches!(self, OptimizationLevel::Os | OptimizationLevel::Oz)
-    }
-
-    /// Check if this optimization level enables fast math
-    pub fn enables_fast_math(&self) -> bool {
-        matches!(self, OptimizationLevel::O3)
-    }
-
-    /// Get recommended parallel compilation threshold for this level
-    pub fn parallel_threshold(&self) -> usize {
-        match self {
-            OptimizationLevel::O0 => 1,      // No parallel for debug builds
-            OptimizationLevel::O1 => 4,     // Light parallelization
-            OptimizationLevel::O2 => 8,   // Moderate parallelization
-            OptimizationLevel::O3 => 16, // Heavy parallelization
-            OptimizationLevel::Os => 4,      // Conservative for size
-            OptimizationLevel::Oz => 2,     // Very conservative for smallest size
-        }
-    }
-}
+// Use the canonical OptimizationLevel from common module
+pub use crate::common::optimization_level::OptimizationLevel;
 
 /// Comprehensive optimization configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -311,7 +217,7 @@ impl OptimizationConfig {
         self.max_parallel_jobs.unwrap_or_else(|| {
             std::cmp::min(
                 num_cpus::get(),
-                self.optimization_level.parallel_threshold()
+                self.optimization_level.recommended_parallel_threads()
             )
         })
     }
@@ -353,16 +259,7 @@ impl OptimizationConfig {
 
     /// Get estimated compilation time multiplier
     pub fn compilation_time_multiplier(&self) -> f64 {
-        let base_multiplier = match self.optimization_level {
-            OptimizationLevel::O0 => 1.0,
-            OptimizationLevel::O1 => 1.5,
-            OptimizationLevel::O2 => 2.5,
-            OptimizationLevel::O3 => 4.0,
-            OptimizationLevel::Os => 3.0,
-            OptimizationLevel::Fast => 3.5,
-        };
-
-        let mut multiplier = base_multiplier;
+        let mut multiplier = self.optimization_level.compilation_time_multiplier();
 
         if self.enable_lto {
             multiplier *= 1.8;
@@ -384,10 +281,10 @@ mod tests {
 
     #[test]
     fn test_optimization_level_llvm_mapping() {
-        assert_eq!(OptimizationLevel::O0.to_llvm_level(), 0);
-        assert_eq!(OptimizationLevel::O1.to_llvm_level(), 1);
-        assert_eq!(OptimizationLevel::O2.to_llvm_level(), 2);
-        assert_eq!(OptimizationLevel::O3.to_llvm_level(), 3);
+        assert_eq!(OptimizationLevel::O0.to_numeric(), 0);
+        assert_eq!(OptimizationLevel::O1.to_numeric(), 1);
+        assert_eq!(OptimizationLevel::O2.to_numeric(), 2);
+        assert_eq!(OptimizationLevel::O3.to_numeric(), 3);
     }
 
     #[test]
@@ -416,12 +313,12 @@ mod tests {
 
     #[test]
     fn test_optimization_level_display() {
-        assert_eq!(OptimizationLevel::O0.to_string(), "none");
-        assert_eq!(OptimizationLevel::O1.to_string(), "basic");
-        assert_eq!(OptimizationLevel::O2.to_string(), "default");
-        assert_eq!(OptimizationLevel::O3.to_string(), "aggressive");
-        assert_eq!(OptimizationLevel::Os.to_string(), "size");
-        assert_eq!(OptimizationLevel::Fast.to_string(), "fast");
+        assert_eq!(OptimizationLevel::O0.to_string(), "O0");
+        assert_eq!(OptimizationLevel::O1.to_string(), "O1");
+        assert_eq!(OptimizationLevel::O2.to_string(), "O2");
+        assert_eq!(OptimizationLevel::O3.to_string(), "O3");
+        assert_eq!(OptimizationLevel::Os.to_string(), "Os");
+        assert_eq!(OptimizationLevel::Oz.to_string(), "Oz");
     }
 
     #[test]
@@ -432,7 +329,7 @@ mod tests {
         assert_eq!("default".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::O2);
         assert_eq!("aggressive".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::O3);
         assert_eq!("size".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Os);
-        assert_eq!("fast".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Fast);
+        assert_eq!("minsize".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Oz);
 
         // Test numeric variations
         assert_eq!("0".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::O0);
@@ -446,10 +343,11 @@ mod tests {
         assert_eq!("o2".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::O2);
         assert_eq!("o3".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::O3);
         assert_eq!("os".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Os);
-        assert_eq!("ofast".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Fast);
+        assert_eq!("oz".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Oz);
 
         // Test short variations
         assert_eq!("s".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Os);
+        assert_eq!("z".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::Oz);
 
         // Test case insensitivity
         assert_eq!("NONE".parse::<OptimizationLevel>().unwrap(), OptimizationLevel::O0);
@@ -472,7 +370,7 @@ mod tests {
         map.insert(OptimizationLevel::O2, "default");
         map.insert(OptimizationLevel::O3, "aggressive");
         map.insert(OptimizationLevel::Os, "size");
-        map.insert(OptimizationLevel::Fast, "fast");
+        map.insert(OptimizationLevel::Oz, "minsize");
 
         // Test that all values are stored and retrievable
         assert_eq!(map.get(&OptimizationLevel::O0), Some(&"none"));
@@ -480,7 +378,7 @@ mod tests {
         assert_eq!(map.get(&OptimizationLevel::O2), Some(&"default"));
         assert_eq!(map.get(&OptimizationLevel::O3), Some(&"aggressive"));
         assert_eq!(map.get(&OptimizationLevel::Os), Some(&"size"));
-        assert_eq!(map.get(&OptimizationLevel::Fast), Some(&"fast"));
+        assert_eq!(map.get(&OptimizationLevel::Oz), Some(&"minsize"));
 
         // Test that we have exactly 6 entries
         assert_eq!(map.len(), 6);
@@ -501,7 +399,7 @@ mod tests {
             OptimizationLevel::O2,
             OptimizationLevel::O3,
             OptimizationLevel::Os,
-            OptimizationLevel::Fast,
+            OptimizationLevel::Oz,
         ];
 
         for level in levels {
@@ -520,7 +418,7 @@ mod tests {
             OptimizationLevel::O2,
             OptimizationLevel::O3,
             OptimizationLevel::Os,
-            OptimizationLevel::Fast,
+            OptimizationLevel::Oz,
         ];
 
         for level in levels {
@@ -543,7 +441,7 @@ mod tests {
         
         // Test that Debug implementation works
         let debug_string = format!("{:?}", level);
-        assert!(debug_string.contains("Aggressive"));
+        assert!(debug_string.contains("O3"));
     }
 
     #[test]

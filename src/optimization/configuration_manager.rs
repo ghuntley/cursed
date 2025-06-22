@@ -13,7 +13,7 @@ use crate::optimization::{
     OptimizationConfig, OptimizationProfile,
     PerformanceMonitoringConfig, PerformanceReportFormat,
 };
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
 /// Default configuration file name

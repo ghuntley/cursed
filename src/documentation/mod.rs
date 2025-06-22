@@ -22,6 +22,7 @@ pub mod extractors;
 pub mod interactive;
 pub mod live_server;
 pub mod testing;
+pub mod ast_bridge;
 
 // Re-export from main implementation
 pub use main::*;
@@ -343,7 +344,10 @@ impl DocumentationSystem {
         let tokens = lexer.tokenize()?;
         
         let mut parser = crate::parser::Parser::from_tokens(tokens)?;
-        let ast = parser.parse()?;
+        let program = parser.parse()?;
+        
+        // Convert Program to AstNode for documentation extraction
+        let ast = AstNode::new_program(program);
         
         // Extract documentation using the generator
         let extracted = self.generator.extract_from_ast(&ast, file_path, &source_code).await?;

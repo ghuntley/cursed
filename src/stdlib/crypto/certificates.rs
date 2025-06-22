@@ -13,7 +13,7 @@ use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
 use x509_parser::prelude::*;
-use x509_parser::{name, algorithm};
+// Note: x509_parser imports removed - implement certificate parsing manually if needed
 use x509_parser::certificate::X509Certificate as X509ParserCertificate;
 use x509_parser::extensions::*;
 use der::{Decode, Encode};

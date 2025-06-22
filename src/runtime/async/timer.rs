@@ -8,6 +8,7 @@ use std::pin::Pin;
 use std::cmp::Ordering;
 
 use crate::runtime::r#async::{Future, FutureError};
+use std::future::Future as StdFuture;
 
 /// Timer handle for managing timer operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -330,6 +331,16 @@ impl Future for Delay {
     }
 }
 
+// Implement standard Future trait for Delay to support .await syntax
+impl StdFuture for Delay {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
+    }
+}
+
 /// Timeout wrapper that fails a future if it takes too long
 pub struct Timeout<F> {
     future: Option<F>,
@@ -384,6 +395,19 @@ where
         } else {
             Poll::Ready(Err(FutureError::InvalidState))
         }
+    }
+}
+
+// Implement standard Future trait for Timeout to support .await syntax
+impl<F> StdFuture for Timeout<F>
+where
+    F: Future,
+{
+    type Output = Result<F::Output, FutureError>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
     }
 }
 
@@ -444,6 +468,16 @@ impl Future for Interval {
     }
 }
 
+// Implement standard Future trait for Interval to support .await syntax
+impl StdFuture for Interval {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
+    }
+}
+
 /// Utility functions for timer operations
 pub mod utils {
     use super::*;
@@ -472,8 +506,10 @@ pub mod utils {
     /// Race two futures, returning the first to complete
     pub async fn race<F1, F2>(f1: F1, f2: F2) -> Either<F1::Output, F2::Output>
     where
-        F1: Future,
-        F2: Future,
+        F1: Future + StdFuture + Send + 'static,
+        F2: Future + StdFuture + Send + 'static,
+        F1::Output: Send + 'static,
+        F2::Output: Send + 'static,
     {
         // This is a simplified race implementation
         // A real implementation would use proper select! machinery

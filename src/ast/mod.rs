@@ -109,7 +109,7 @@ pub use collections::*;
 pub use core_types::{
     AST, VariableDeclaration, ConstantDeclaration, ImportDeclaration, 
     PackageDeclaration, InterfaceMethod, StructField, FieldVisibility,
-    ModuleDeclaration, ASTNode
+    ModuleDeclaration
 };
 // Specific imports to avoid conflicts
 pub use parser_support::{
@@ -346,6 +346,16 @@ impl AstNode {
             location: Some(location),
             metadata: HashMap::new(),
         }
+    }
+
+    /// Create a new statement node
+    pub fn new_statement(statement: Statement) -> Self {
+        Self::new(AstNodeType::Statement(statement))
+    }
+
+    /// Create a new program node
+    pub fn new_program(program: ASTProgram) -> Self {
+        Self::new(AstNodeType::Program(program))
     }
     
     /// Get the string representation of this node

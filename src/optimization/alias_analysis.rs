@@ -4,7 +4,7 @@
 /// including support for CURSED-specific constructs like goroutines and channels.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -919,18 +919,7 @@ pub struct AliasOptimizationOpportunity {
     pub affected_pointers: HashSet<String>,
 }
 
-impl OptimizationLevel {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            OptimizationLevel::O0 => "O0",
-            OptimizationLevel::O1 => "O1",
-            OptimizationLevel::O2 => "O2",
-            OptimizationLevel::O3 => "O3",
-            OptimizationLevel::Os => "Os",
-            OptimizationLevel::OsAggressive => "Oz",
-        }
-    }
-}
+// OptimizationLevel as_str() method is implemented in src/common/optimization_level.rs
 
 #[cfg(test)]
 mod tests {

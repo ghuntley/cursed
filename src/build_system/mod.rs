@@ -3,7 +3,7 @@
 //! Complete build system integration for the CURSED programming language.
 //! Provides project configuration, build orchestration, and toolchain integration.
 
-use crate::optimization::optimization_config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 
 pub mod build_config;
 pub mod build_orchestrator;

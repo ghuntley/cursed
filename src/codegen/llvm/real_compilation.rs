@@ -486,7 +486,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
 
     /// Apply LLVM optimization passes to the current module
-    pub fn optimize_module(&self, optimization_level: crate::optimization::optimization_levels::OptimizationLevel) -> Result<(), Error> {
+    pub fn optimize_module(&self, optimization_level: crate::common::optimization_level::OptimizationLevel) -> Result<(), Error> {
         use crate::optimization::optimization_levels::LevelConfig;
         
         let config = LevelConfig::for_level(optimization_level);
@@ -508,7 +508,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
 
     /// Apply link-time optimization to multiple modules
-    pub fn apply_lto(&self, modules: &[&inkwell::module::Module], optimization_level: crate::optimization::optimization_levels::OptimizationLevel) -> Result<(), Error> {
+    pub fn apply_lto(&self, modules: &[&inkwell::module::Module], optimization_level: crate::common::optimization_level::OptimizationLevel) -> Result<(), Error> {
         use crate::optimization::optimization_levels::LevelConfig;
         
         let config = LevelConfig::for_level(optimization_level);
@@ -526,7 +526,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
 
     /// Apply profile-guided optimization
-    pub fn apply_pgo(&self, profile_path: Option<&str>, optimization_level: crate::optimization::optimization_levels::OptimizationLevel) -> Result<(), Error> {
+    pub fn apply_pgo(&self, profile_path: Option<&str>, optimization_level: crate::common::optimization_level::OptimizationLevel) -> Result<(), Error> {
         use crate::optimization::optimization_levels::LevelConfig;
         
         let config = LevelConfig::for_level(optimization_level);
@@ -556,7 +556,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     /// Comprehensive optimization pipeline
     pub fn run_optimization_pipeline(
         &self, 
-        optimization_level: crate::optimization::optimization_levels::OptimizationLevel,
+        optimization_level: crate::common::optimization_level::OptimizationLevel,
         profile_path: Option<&str>,
         enable_lto: bool
     ) -> Result<(), Error> {

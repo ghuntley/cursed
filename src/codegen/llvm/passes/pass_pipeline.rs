@@ -4,7 +4,7 @@
 /// based on optimization levels, target configurations, and performance constraints.
 
 use super::{OptimizationPass, PassConfiguration, PassResult, PassRegistry};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Error, Result};
 use inkwell::{context::Context, module::Module};
 use std::collections::{HashMap, VecDeque};

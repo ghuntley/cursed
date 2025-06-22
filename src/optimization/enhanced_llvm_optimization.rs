@@ -4,7 +4,7 @@
 /// comprehensive performance monitoring, and adaptive optimization strategies.
 
 use crate::error::{Error, Result};
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::real_llvm_passes::{RealLlvmOptimizer, OptimizationResults, PerformanceImprovements};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};

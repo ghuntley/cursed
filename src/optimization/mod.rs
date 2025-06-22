@@ -33,7 +33,6 @@ pub mod parallel_pass_manager;
 pub mod baseline_comparison;
 pub mod time_savings;
 pub mod coordinator;
-pub mod pgo;
 pub mod performance_optimization_system;
 pub mod build_profiles;
 pub mod benchmarking_types;
@@ -85,7 +84,8 @@ pub use comprehensive_performance_system::{
     LlvmOptimizationResults, PgoOptimizationResults, RuntimePerformanceMetrics,
     PerformanceStatistics as SystemPerformanceStatistics, BenchmarkResults,
 };
-pub use pgo::{PgoConfig, PgoManager, ProfileData};
+pub use profile_guided_optimization::PgoConfig;
+pub use llvm_passes::PgoManager;
 pub use real_llvm_passes::{
     RealLlvmOptimizer, OptimizationResults as RealOptimizationResults, PerformanceImprovements, ModuleMetrics,
     OptimizationStatistics, IntelligentInliner, AdvancedDeadCodeEliminator as RealAdvancedDeadCodeEliminator,
@@ -145,7 +145,7 @@ pub use coordinator::{
     ParallelBenefits, IncrementalBenefits, CoordinationMetadata,
 };
 pub use pgo::{
-    PgoSystem, PgoSystemConfig, PgoSystemStatistics, ProfileData, ProfileAnalysisResult,
+    PgoSystem, PgoSystemConfig, PgoSystemStatistics, ProfileAnalysisResult,
     OptimizationOpportunity as PgoOptimizationOpportunity, ProfileInsight, ExecutionContext, PgoError,
     OptimizationAggressiveness, PerformanceMetrics, OptimizationResult,
     InstrumentationMode, CollectionMode,
@@ -281,7 +281,7 @@ pub use advanced_loop_optimization::{
     CodeUnit as LoopCodeUnit,
 };
 pub use profile_guided_optimization::{
-    ProfileGuidedOptimizer, PgoConfig, PgoOptimizationResult,
+    ProfileGuidedOptimizer, PgoOptimizationResult,
     ProfileCollectionMethod, PgoOptimizationLevel, PgoStatistics,
     OptimizationOpportunity as PgoOpportunity, CodeUnit as PgoCodeUnit,
 };
@@ -535,7 +535,9 @@ impl LocalOptimizationCoordinator {
                     let baseline = runner.load_baseline(baseline_path)?;
                     // Perform real baseline comparison
                     if let Some(ref comparator) = self.baseline_comparator {
-                        let comparison_result = comparator.compare_against_baseline(&results, &baseline)?;
+                        // Convert BenchmarkSuiteResult to BaselineData for comparison
+                        let baseline_data = self.convert_benchmark_to_baseline(&baseline)?;
+                        let comparison_result = comparator.compare_against_baseline(&results, &baseline_data)?;
                         
                         if comparison_result.has_regressions {
                             tracing::error!("Baseline comparison detected regressions!");
@@ -660,6 +662,44 @@ impl LocalOptimizationCoordinator {
             units_from_incremental,
             parallel_efficiency,
         )
+    }
+
+    /// Convert BenchmarkSuiteResult to BaselineData for comparison
+    fn convert_benchmark_to_baseline(&self, benchmark: &BenchmarkSuiteResult) -> Result<BaselineData> {
+        use crate::optimization::baseline_comparison::{BaselineData, BaselineMetadata, EnvironmentInfo, BaselineMetrics};
+        use std::collections::HashMap;
+        
+        let mut benchmark_results = HashMap::new();
+        
+        // Convert benchmark results to baseline metrics
+        for result in &benchmark.results {
+            let metrics = BaselineMetrics {
+                compile_time: result.compile_time,
+                runtime: result.runtime.unwrap_or_default(),
+                binary_size: result.binary_size,
+                memory_usage: result.memory_usage,
+            };
+            benchmark_results.insert(result.benchmark_name.clone(), metrics);
+        }
+        
+        let baseline_data = BaselineData {
+            timestamp: benchmark.timestamp.timestamp() as u64,
+            version: benchmark.suite_name.clone(),
+            benchmark_results,
+            metadata: BaselineMetadata {
+                commit_hash: None,
+                environment: EnvironmentInfo {
+                    rust_version: "unknown".to_string(),
+                    llvm_version: "unknown".to_string(),
+                    os: std::env::consts::OS.to_string(),
+                    arch: std::env::consts::ARCH.to_string(),
+                    cpu_count: num_cpus::get(),
+                },
+                build_config: HashMap::new(),
+            },
+        };
+        
+        Ok(baseline_data)
     }
 }
 

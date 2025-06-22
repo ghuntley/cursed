@@ -123,6 +123,16 @@ impl<T> Future for AsyncMutexLockFuture<T> {
     }
 }
 
+// Implement standard Future trait for AsyncMutexLockFuture to support .await syntax
+impl<T> StdFuture for AsyncMutexLockFuture<T> {
+    type Output = AsyncMutexGuard<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Delegate to the custom Future implementation
+        Future::poll(self, cx)
+    }
+}
+
 /// Async read-write lock
 pub struct AsyncRwLock<T> {
     data: Arc<Mutex<AsyncRwLockInner<T>>>,
@@ -277,7 +287,7 @@ impl<T> StdFuture for AsyncRwLockWriteFuture<T> {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Delegate to the CURSED Future implementation
-        <Self as Future>::poll(self, cx)
+        Future::poll(self, cx)
     }
 }
 
@@ -374,7 +384,7 @@ impl StdFuture for AsyncSemaphoreAcquireFuture {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Delegate to the CURSED Future implementation
-        <Self as Future>::poll(self, cx)
+        Future::poll(self, cx)
     }
 }
 
@@ -452,7 +462,7 @@ impl StdFuture for AsyncCondVarWaitFuture {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Delegate to the CURSED Future implementation
-        <Self as Future>::poll(self, cx)
+        Future::poll(self, cx)
     }
 }
 
@@ -631,7 +641,7 @@ impl<T> StdFuture for SendFuture<T> {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Delegate to the CURSED Future implementation
-        <Self as Future>::poll(self, cx)
+        Future::poll(self, cx)
     }
 }
 

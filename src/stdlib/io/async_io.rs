@@ -393,7 +393,7 @@ pub mod process {
         }
 
         /// Kill the process
-        pub fn kill(&mut self) -> IoResult<()> {
+        pub async fn kill(&mut self) -> IoResult<()> {
             self.inner.kill().await
                 .map_err(|e| crate::stdlib::io::IoError::from(e))
         }

@@ -37,6 +37,8 @@ pub enum GlowUpError {
     Json(String),
     /// General HTTP errors with status code
     Http(u16, String),
+    /// Other generic errors
+    Other(String),
     /// Invalid request format
     InvalidRequest(String),
     /// Server already running

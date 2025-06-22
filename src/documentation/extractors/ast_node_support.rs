@@ -221,6 +221,47 @@ pub struct Expression {
     pub expr_type: ExpressionType,
 }
 
+impl crate::ast::traits::Node for Expression {
+    fn string(&self) -> String {
+        match &self.expr_type {
+            ExpressionType::Identifier(id) => id.name.clone(),
+            ExpressionType::Literal(lit) => lit.value.clone(),
+            ExpressionType::FunctionCall(call) => {
+                format!("{}({})", call.function.string(), 
+                    call.arguments.iter()
+                        .map(|arg| arg.string())
+                        .collect::<Vec<_>>()
+                        .join(", "))
+            },
+            ExpressionType::BinaryExpression(bin) => {
+                format!("{} {} {}", bin.left.string(), bin.operator, bin.right.string())
+            },
+            ExpressionType::UnaryExpression(un) => {
+                format!("{}{}", un.operator, un.operand.string())
+            },
+            _ => format!("{:?}", self.expr_type)
+        }
+    }
+    
+    fn token_literal(&self) -> String {
+        match &self.expr_type {
+            ExpressionType::Identifier(id) => id.name.clone(),
+            ExpressionType::Literal(lit) => lit.value.clone(),
+            _ => "expression".to_string()
+        }
+    }
+}
+
+impl crate::ast::traits::Expression for Expression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn crate::ast::traits::Expression> {
+        Box::new(self.clone())
+    }
+}
+
 /// Expression types for documentation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExpressionType {

@@ -62,10 +62,10 @@ pub struct OptimizationStrategy {
 }
 
 // Import canonical OptimizationLevel from optimization_config
-pub use crate::optimization::config::OptimizationLevel as MLOptimizationLevel;
+pub use crate::common::optimization_level::OptimizationLevel as MLOptimizationLevel;
 
 // Alias for compatibility in this module
-pub type OptimizationLevel = crate::optimization::config::OptimizationLevel;
+pub type OptimizationLevel = crate::common::optimization_level::OptimizationLevel;
 
 /// Optimization passes
 #[derive(Debug, Clone, Serialize, Deserialize)]

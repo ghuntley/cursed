@@ -18,7 +18,7 @@ use crate::optimization::{
     BaselineComparator, BaselineComparisonConfig,
     BenchmarkRunner, BenchmarkConfig,
 };
-use crate::optimization::config::OptimizationLevel;
+use crate::common::optimization_level::OptimizationLevel;
 
 // Type alias for compatibility
 pub type EnhancedLlvmOptimizer = EnhancedLlvmOptimizationSystem;

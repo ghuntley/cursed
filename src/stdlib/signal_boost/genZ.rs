@@ -5,7 +5,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::path::PathBuf;
 use crate::stdlib::signal_boost::core::{BoostSignal, notify, NotifyHandle, SIGUSR1, SIGUSR2, SIGHUP, SIGQUIT, SIGINT, SIGTERM};
-use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult, invalid_operation, not_found};
+use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
 
 /// VibeChecker - runs health checks when specific signals are received
 pub struct VibeChecker {
@@ -1100,4 +1100,13 @@ pub fn no_cap_reload_config_with_signal<P: Into<PathBuf>>(config_path: P, signal
 /// Create a FlexSignalQueue for priority signal processing
 pub fn flex_signal_queue(signals: Vec<BoostSignal>, max_size: usize) -> FlexSignalQueue {
     FlexSignalQueue::new(signals, max_size)
+}
+
+
+fn invalid_operation(msg: &str) -> SignalBoostError {
+    SignalBoostError::InvalidOperation(msg.to_string())
+}
+
+fn not_found(msg: &str) -> SignalBoostError {
+    SignalBoostError::NotFound(msg.to_string())
 }

@@ -45,9 +45,7 @@ pub use asymmetric::{
 };
 pub use ed25519_keys::{
     Ed25519PublicKey, Ed25519PrivateKey, Ed25519Keypair, Ed25519Signature,
-    EcCurve, EcPoint, EcScalar,
-    RSA_2048_BITS, RSA_3072_BITS, RSA_4096_BITS,
-    X25519_KEY_SIZE, ED25519_PUBLIC_KEY_SIZE, ED25519_PRIVATE_KEY_SIZE, ED25519_SIGNATURE_SIZE,
+    // Note: Constants removed - they need to be defined in ed25519_keys module
 };
 
 pub use format_conversions::{
@@ -67,7 +65,7 @@ pub use crypto_advanced::{
 };
 
 pub use types::{
-    Ed25519PublicKey, Ed25519PrivateKey, Ed25519Signature, CryptoError,
+    CryptoError,
     HashFunction, SymmetricAlgorithm, AsymmetricAlgorithm, KeyMaterial, KeyType,
     CryptoContext, SecurityLevel, KeySizeRecommendations,
     CryptoParameters, SecurityContext,
