@@ -300,7 +300,7 @@ impl Default for IntegrationConfig {
 impl ProcessIpcIntegration {
     /// Create new integration system
     #[instrument]
-    pub fn new(config: IntegrationConfig) -> Result<Self, CursedError> {
+    pub fn new(config: IntegrationConfig) -> Result<(), Error> {
         info!("Initializing ProcessIpcIntegration system");
         
         // Initialize IPC manager
@@ -344,7 +344,7 @@ impl ProcessIpcIntegration {
     
     /// Start a background management thread
     #[instrument(skip(self))]
-    fn start_management_thread(&mut self) -> Result<(), CursedError> {
+    fn start_management_thread(&mut self) -> Result<(), Error> {
         let process_manager = self.process_manager.clone();
         let ipc_registry = self.ipc_registry.clone();
         let monitor = self.monitor.clone();
@@ -378,7 +378,7 @@ impl ProcessIpcIntegration {
     
     /// Spawn a new process with IPC integration
     #[instrument(skip(self))]
-    pub fn spawn_process(&self, mut command: SlayCommand, ipc_bindings: Vec<String>) -> Result<u32, CursedError> {
+    pub fn spawn_process(&self, mut command: SlayCommand, ipc_bindings: Vec<String>) -> Result<(), Error> {
         // Check process limits
         {
             let manager = self.process_manager.read()
@@ -456,7 +456,7 @@ impl ProcessIpcIntegration {
     
     /// Create named pipe with process binding
     #[instrument(skip(self))]
-    pub fn create_named_pipe(&self, name: &str, is_server: bool, bind_to_process: Option<u32>) -> Result<(), CursedError> {
+    pub fn create_named_pipe(&self, name: &str, is_server: bool, bind_to_process: Option<u32>) -> Result<(), Error> {
         // Create the IPC connection
         let connection = {
             let mut ipc_manager = self.ipc_manager.lock()
@@ -504,7 +504,7 @@ impl ProcessIpcIntegration {
     
     /// Create shared memory with process binding
     #[instrument(skip(self))]
-    pub fn create_shared_memory(&self, name: &str, size: usize, bind_to_process: Option<u32>) -> Result<(), CursedError> {
+    pub fn create_shared_memory(&self, name: &str, size: usize, bind_to_process: Option<u32>) -> Result<(), Error> {
         // Create the IPC connection
         let connection = {
             let mut ipc_manager = self.ipc_manager.lock()
@@ -552,7 +552,7 @@ impl ProcessIpcIntegration {
     
     /// Create message queue with process binding
     #[instrument(skip(self))]
-    pub fn create_message_queue(&self, name: &str, bind_to_process: Option<u32>) -> Result<(), CursedError> {
+    pub fn create_message_queue(&self, name: &str, bind_to_process: Option<u32>) -> Result<(), Error> {
         // Create the IPC connection
         let connection = {
             let mut ipc_manager = self.ipc_manager.lock()
@@ -600,7 +600,7 @@ impl ProcessIpcIntegration {
     
     /// Execute a pipeline of commands
     #[instrument(skip(self))]
-    pub fn execute_pipeline(&self, pipeline_id: &str, commands: Vec<SlayCommand>) -> Result<Vec<u32>, CursedError> {
+    pub fn execute_pipeline(&self, pipeline_id: &str, commands: Vec<SlayCommand>) -> Result<(), Error> {
         let mut pids = Vec::new();
         let start_time = SystemTime::now();
         
@@ -649,7 +649,7 @@ impl ProcessIpcIntegration {
     
     /// Get process information
     #[instrument(skip(self))]
-    pub fn get_process_info(&self, pid: u32) -> Result<ProcessRegistryEntry, CursedError> {
+    pub fn get_process_info(&self, pid: u32) -> Result<(), Error> {
         let registry = self.process_registry.read()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire process registry lock".to_string()))?;
         
@@ -660,7 +660,7 @@ impl ProcessIpcIntegration {
     
     /// List all active processes
     #[instrument(skip(self))]
-    pub fn list_processes(&self) -> Result<Vec<ProcessRegistryEntry>, CursedError> {
+    pub fn list_processes(&self) -> Result<(), Error> {
         let registry = self.process_registry.read()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire process registry lock".to_string()))?;
         
@@ -669,7 +669,7 @@ impl ProcessIpcIntegration {
     
     /// List all IPC connections
     #[instrument(skip(self))]
-    pub fn list_ipc_connections(&self) -> Result<Vec<String>, CursedError> {
+    pub fn list_ipc_connections(&self) -> Result<(), Error> {
         let registry = self.ipc_registry.read()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire IPC registry lock".to_string()))?;
         
@@ -678,7 +678,7 @@ impl ProcessIpcIntegration {
     
     /// Get IPC connection information
     #[instrument(skip(self))]
-    pub fn get_ipc_info(&self, name: &str) -> Result<IpcConnectionEntry, CursedError> {
+    pub fn get_ipc_info(&self, name: &str) -> Result<(), Error> {
         let registry = self.ipc_registry.read()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire IPC registry lock".to_string()))?;
         
@@ -689,7 +689,7 @@ impl ProcessIpcIntegration {
     
     /// Kill a process
     #[instrument(skip(self))]
-    pub fn kill_process(&self, pid: u32) -> Result<(), CursedError> {
+    pub fn kill_process(&self, pid: u32) -> Result<(), Error> {
         let mut manager = self.process_manager.write()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire process manager lock".to_string()))?;
         
@@ -708,7 +708,7 @@ impl ProcessIpcIntegration {
     
     /// Wait for process completion
     #[instrument(skip(self))]
-    pub fn wait_for_process(&self, pid: u32, timeout: Option<Duration>) -> Result<i32, CursedError> {
+    pub fn wait_for_process(&self, pid: u32, timeout: Option<Duration>) -> Result<(), Error> {
         let start = Instant::now();
         
         loop {
@@ -811,7 +811,7 @@ impl ProcessIpcIntegration {
     
     /// Bind IPC resource to process
     #[instrument(skip(self))]
-    fn bind_ipc_to_process(&self, pid: u32, ipc_name: &str) -> Result<(), CursedError> {
+    fn bind_ipc_to_process(&self, pid: u32, ipc_name: &str) -> Result<(), Error> {
         let mut registry = self.ipc_registry.write()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire IPC registry lock".to_string()))?;
         
@@ -830,7 +830,7 @@ impl ProcessIpcIntegration {
     
     /// Extract PID from SlayProcess
     #[instrument(skip(self, process))]
-    fn extract_pid_from_process(&self, process: &SlayProcess) -> Result<u32, CursedError> {
+    fn extract_pid_from_process(&self, process: &SlayProcess) -> Result<(), Error> {
         // Extract the actual PID from the underlying system process handle
         process.pid()
             .ok_or_else(|| CursedError::RuntimeError("Process not running or PID unavailable".to_string()))
@@ -858,7 +858,7 @@ impl ProcessIpcIntegration {
     
     /// Add event callback
     #[instrument(skip(self, callback))]
-    pub fn add_event_callback(&self, callback: Box<dyn ProcessEventCallback + Send + Sync>) -> Result<(), CursedError> {
+    pub fn add_event_callback(&self, callback: Box<dyn ProcessEventCallback + Send + Sync>) -> Result<(), Error> {
         let mut callbacks = self.event_callbacks.lock()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire callbacks lock".to_string()))?;
         
@@ -868,7 +868,7 @@ impl ProcessIpcIntegration {
     
     /// Shutdown the integration system
     #[instrument(skip(self))]
-    pub fn shutdown(&mut self) -> Result<(), CursedError> {
+    pub fn shutdown(&mut self) -> Result<(), Error> {
         info!("Shutting down ProcessIpcIntegration system");
         
         // Signal shutdown
@@ -939,12 +939,12 @@ impl Drop for ProcessIpcIntegration {
 }
 
 /// Convenience function to create a new integration system with default config
-pub fn create_integration_system() -> Result<ProcessIpcIntegration, CursedError> {
+pub fn create_integration_system() -> Result<(), Error> {
     ProcessIpcIntegration::new(IntegrationConfig::default())
 }
 
 /// Convenience function to create a named pipe through the integration system
-pub fn create_named_pipe(name: &str) -> Result<ProcessIpcIntegration, CursedError> {
+pub fn create_named_pipe(name: &str) -> Result<(), Error> {
     let integration = create_integration_system()?;
     integration.create_named_pipe(name, true, None)?;
     Ok(integration)

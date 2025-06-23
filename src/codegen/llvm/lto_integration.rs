@@ -51,10 +51,10 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     #[instrument(skip(self))]
     pub fn initialize_target(&mut self, target_triple: &str) -> Result<()> {
         Target::initialize_native(&inkwell::targets::InitializationConfig::default())
-            .map_err(|e| Error::Other(format!("Failed to initialize target: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to initialize target: {}", e)))?;
 
         let target = Target::from_triple(target_triple)
-            .map_err(|e| Error::Other(format!("Failed to create target from triple: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create target from triple: {}", e)))?;
 
         let optimization_level = match self.config.level {
             LtoLevel::None => InkwellOptLevel::None,
@@ -70,7 +70,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 optimization_level,
                 RelocMode::PIC,
                 CodeModel::Default,
-            ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))?
+            ).ok_or_else(|| Error::General("Failed to create target machine".to_string()))?
         );
 
         info!("Target machine initialized for {}", target_triple);
@@ -80,7 +80,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     /// Add module for LTO processing
     pub fn add_module(&mut self, module: Module<'ctx>) -> Result<()> {
         let module_name = module.get_name().to_str()
-            .map_err(|_| Error::Other("Invalid module name".to_string()))?;
+            .map_err(|_| Error::General("Invalid module name".to_string()))?;
         
         info!("Adding module for LTO: {}", module_name);
 
@@ -197,7 +197,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     /// Optimize a single module without LTO
     fn optimize_single_module(&self, module: &Module<'ctx>) -> Result<Module<'ctx>> {
         let module_name = module.get_name().to_str()
-            .map_err(|_| Error::Other("Invalid module name".to_string()))?;
+            .map_err(|_| Error::General("Invalid module name".to_string()))?;
 
         // Clone the module for optimization
         let cloned_module = self.clone_module_for_lto(module)?;
@@ -213,7 +213,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     #[instrument(skip(self, module))]
     fn clone_module_for_lto(&self, module: &Module<'ctx>) -> Result<Module<'ctx>> {
         let module_name = module.get_name().to_str()
-            .map_err(|_| Error::Other("Invalid module name".to_string()))?;
+            .map_err(|_| Error::General("Invalid module name".to_string()))?;
 
         // Create new module with LTO-optimized name
         let cloned_module = self.context.create_module(&format!("{}_lto", module_name));
@@ -269,7 +269,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     fn clone_global_variables(&self, source: &Module<'ctx>, target: &Module<'ctx>) -> Result<()> {
         for global in source.get_globals() {
             let global_name = global.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid global variable name".to_string()))?;
+                .map_err(|_| Error::General("Invalid global variable name".to_string()))?;
 
             // Get global variable properties
             let global_type = global.get_type();
@@ -303,7 +303,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // First pass: Create function declarations
         for function in source.get_functions() {
             let function_name = function.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid function name".to_string()))?;
+                .map_err(|_| Error::General("Invalid function name".to_string()))?;
 
             // Get function type and properties
             let function_type = function.get_type();
@@ -324,10 +324,10 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         for function in source.get_functions() {
             if function.count_basic_blocks() > 0 {
                 let function_name = function.get_name().to_str()
-                    .map_err(|_| Error::Other("Invalid function name".to_string()))?;
+                    .map_err(|_| Error::General("Invalid function name".to_string()))?;
 
                 let cloned_function = target.get_function(function_name)
-                    .ok_or_else(|| Error::Other(format!("Failed to find cloned function: {}", function_name)))?;
+                    .ok_or_else(|| Error::General(format!("Failed to find cloned function: {}", function_name)))?;
 
                 self.clone_function_body(&function, &cloned_function)?;
                 
@@ -350,7 +350,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // First pass: Create all basic blocks
         for basic_block in source.get_basic_blocks() {
             let block_name = basic_block.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid basic block name".to_string()))?;
+                .map_err(|_| Error::General("Invalid basic block name".to_string()))?;
 
             let cloned_block = self.context.append_basic_block(*target, block_name);
             block_map.insert(basic_block.get_name(), cloned_block);
@@ -388,31 +388,31 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 let lhs = self.map_value(instruction.get_operand(0).unwrap().left().unwrap(), value_map)?;
                 let rhs = self.map_value(instruction.get_operand(1).unwrap().left().unwrap(), value_map)?;
                 let result = builder.build_int_add(lhs.into_int_value(), rhs.into_int_value(), "add")
-                    .map_err(|e| Error::Other(format!("Failed to build add instruction: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to build add instruction: {}", e)))?;
                 Ok(Some(result.into()))
             }
             InstructionOpcode::Sub => {
                 let lhs = self.map_value(instruction.get_operand(0).unwrap().left().unwrap(), value_map)?;
                 let rhs = self.map_value(instruction.get_operand(1).unwrap().left().unwrap(), value_map)?;
                 let result = builder.build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "sub")
-                    .map_err(|e| Error::Other(format!("Failed to build sub instruction: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to build sub instruction: {}", e)))?;
                 Ok(Some(result.into()))
             }
             InstructionOpcode::Mul => {
                 let lhs = self.map_value(instruction.get_operand(0).unwrap().left().unwrap(), value_map)?;
                 let rhs = self.map_value(instruction.get_operand(1).unwrap().left().unwrap(), value_map)?;
                 let result = builder.build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "mul")
-                    .map_err(|e| Error::Other(format!("Failed to build mul instruction: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to build mul instruction: {}", e)))?;
                 Ok(Some(result.into()))
             }
             InstructionOpcode::Ret => {
                 if instruction.get_num_operands() > 0 {
                     let return_value = self.map_value(instruction.get_operand(0).unwrap().left().unwrap(), value_map)?;
                     builder.build_return(Some(&return_value))
-                        .map_err(|e| Error::Other(format!("Failed to build return instruction: {}", e)))?;
+                        .map_err(|e| Error::General(format!("Failed to build return instruction: {}", e)))?;
                 } else {
                     builder.build_return(None)
-                        .map_err(|e| Error::Other(format!("Failed to build return instruction: {}", e)))?;
+                        .map_err(|e| Error::General(format!("Failed to build return instruction: {}", e)))?;
                 }
                 Ok(None)
             }
@@ -423,14 +423,14 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             InstructionOpcode::Load => {
                 let pointer = self.map_value(instruction.get_operand(0).unwrap().left().unwrap(), value_map)?;
                 let result = builder.build_load(pointer.into_pointer_value(), "load")
-                    .map_err(|e| Error::Other(format!("Failed to build load instruction: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to build load instruction: {}", e)))?;
                 Ok(Some(result))
             }
             InstructionOpcode::Store => {
                 let value = self.map_value(instruction.get_operand(0).unwrap().left().unwrap(), value_map)?;
                 let pointer = self.map_value(instruction.get_operand(1).unwrap().left().unwrap(), value_map)?;
                 builder.build_store(pointer.into_pointer_value(), value)
-                    .map_err(|e| Error::Other(format!("Failed to build store instruction: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to build store instruction: {}", e)))?;
                 Ok(None)
             }
             _ => {
@@ -452,7 +452,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // Extract function and arguments from call instruction
         let num_operands = instruction.get_num_operands();
         if num_operands == 0 {
-            return Err(Error::Other("Call instruction has no operands".to_string()));
+            return Err(Error::General("Call instruction has no operands".to_string()));
         }
 
         // The last operand is typically the function being called
@@ -469,7 +469,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         // Build the call instruction
         let result = builder.build_call(function_value.into_pointer_value(), &mapped_args, "call")
-            .map_err(|e| Error::Other(format!("Failed to build call instruction: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to build call instruction: {}", e)))?;
 
         Ok(result.try_as_basic_value().left())
     }
@@ -495,7 +495,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // Clone named metadata
         for named_metadata in source.get_named_metadata() {
             let metadata_name = named_metadata.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid metadata name".to_string()))?;
+                .map_err(|_| Error::General("Invalid metadata name".to_string()))?;
 
             let target_metadata = target.add_named_metadata(metadata_name);
             
@@ -629,7 +629,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     fn validate_cloned_module(&self, module: &Module<'ctx>) -> Result<()> {
         // Check if module is well-formed
         if let Err(errors) = module.verify() {
-            return Err(Error::Other(format!("Cloned module validation failed: {}", errors)));
+            return Err(Error::General(format!("Cloned module validation failed: {}", errors)));
         }
 
         // Check that the module has expected content
@@ -660,7 +660,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     /// Create summary for a single module
     fn create_module_summary(&self, module: &Module<'ctx>) -> Result<ModuleSummary> {
         let module_name = module.get_name().to_str()
-            .map_err(|_| Error::Other("Invalid module name".to_string()))?;
+            .map_err(|_| Error::General("Invalid module name".to_string()))?;
 
         let mut summary = ModuleSummary {
             name: module_name.to_string(),
@@ -672,7 +672,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // Analyze functions in the module
         for function in module.get_functions() {
             let function_name = function.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid function name".to_string()))?;
+                .map_err(|_| Error::General("Invalid function name".to_string()))?;
 
             let function_summary = FunctionSummary {
                 name: function_name.to_string(),
@@ -688,7 +688,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // Analyze global variables
         for global in module.get_globals() {
             let global_name = global.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid global name".to_string()))?;
+                .map_err(|_| Error::General("Invalid global name".to_string()))?;
 
             let global_summary = GlobalSummary {
                 name: global_name.to_string(),
@@ -776,7 +776,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         for module in &self.modules {
             let module_name = module.get_name().to_str()
-                .map_err(|_| Error::Other("Invalid module name".to_string()))?;
+                .map_err(|_| Error::General("Invalid module name".to_string()))?;
 
             // Get imports for this module
             let imports = import_map.get(module_name).cloned().unwrap_or_default();
@@ -801,7 +801,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         imports: &[ImportDecision],
     ) -> Result<Module<'ctx>> {
         let module_name = module.get_name().to_str()
-            .map_err(|_| Error::Other("Invalid module name".to_string()))?;
+            .map_err(|_| Error::General("Invalid module name".to_string()))?;
 
         // Create optimized module
         let optimized_module = self.context.create_module(&format!("{}_lto", module_name));
@@ -854,11 +854,11 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         let mut object_files = Vec::new();
 
         let target_machine = self.target_machine.as_ref()
-            .ok_or_else(|| Error::Other("Target machine not initialized".to_string()))?;
+            .ok_or_else(|| Error::General("Target machine not initialized".to_string()))?;
 
         for (i, module) in modules.iter().enumerate() {
             let object_data = target_machine.write_to_memory_buffer(module, FileType::Object)
-                .map_err(|e| Error::Other(format!("Failed to generate object file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to generate object file: {}", e)))?;
 
             let object_file = ObjectFile {
                 name: format!("lto_module_{}.o", i),
@@ -876,10 +876,10 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
     /// Generate single object file for Full LTO
     fn generate_single_object_file(&self, module: &Module<'ctx>) -> Result<ObjectFile> {
         let target_machine = self.target_machine.as_ref()
-            .ok_or_else(|| Error::Other("Target machine not initialized".to_string()))?;
+            .ok_or_else(|| Error::General("Target machine not initialized".to_string()))?;
 
         let object_data = target_machine.write_to_memory_buffer(module, FileType::Object)
-            .map_err(|e| Error::Other(format!("Failed to generate object file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to generate object file: {}", e)))?;
 
         Ok(ObjectFile {
             name: "lto_full.o".to_string(),
@@ -898,12 +898,12 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         let mut written_files = Vec::new();
 
         std::fs::create_dir_all(output_dir)
-            .map_err(|e| Error::Other(format!("Failed to create output directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create output directory: {}", e)))?;
 
         for object_file in object_files {
             let file_path = output_dir.join(&object_file.name);
             std::fs::write(&file_path, &object_file.data)
-                .map_err(|e| Error::Other(format!("Failed to write object file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to write object file: {}", e)))?;
             
             written_files.push(file_path);
         }
@@ -917,12 +917,12 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         let mut bitcode_files = Vec::new();
 
         std::fs::create_dir_all(output_dir)
-            .map_err(|e| Error::Other(format!("Failed to create output directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create output directory: {}", e)))?;
 
         for (module_name, bitcode) in &self.bitcode_cache {
             let file_path = output_dir.join(format!("{}.bc", module_name));
             std::fs::write(&file_path, bitcode)
-                .map_err(|e| Error::Other(format!("Failed to write bitcode file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to write bitcode file: {}", e)))?;
             
             bitcode_files.push(file_path);
         }
@@ -1042,7 +1042,7 @@ pub struct ObjectFile {
 mod tests {
     use super::*;
     use inkwell::context::Context;
-    use inkwell::types::BasicTypeEnum;
+    use inkwell::crate::types::BasicTypeEnum;
 
     #[test]
     fn test_llvm_lto_integration_creation() {

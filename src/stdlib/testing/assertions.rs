@@ -7,12 +7,12 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 use crate::stdlib::value::Value;
 use super::{TestError, assertion_error};
 
 /// Result type for assertion operations
-pub type AssertionResult = Result<(), TestError>;
+pub type AssertionResult = Result<(), Error>;
 
 /// Context information for assertion failures
 #[derive(Debug, Clone)]

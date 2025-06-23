@@ -251,7 +251,7 @@ impl fmt::Display for ErrorCategory {
 }
 
 /// fr fr Rate limit result type - convenience alias
-pub type RateLimitResult<T> = Result<T, RateLimitError>;
+pub type RateLimitResult<(), Error>;
 
 /// fr fr Error context - additional error information
 #[derive(Debug, Clone)]

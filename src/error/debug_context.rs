@@ -120,7 +120,7 @@ impl DebugContext {
     }
 
     /// Extract source snippet from the error location
-    pub fn extract_source_snippet(&mut self, context_lines: u32) -> Result<(), CursedError> {
+    pub fn extract_source_snippet(&mut self, context_lines: u32) -> Result<(), Error> {
         if self.source_snippet.is_some() {
             return Ok(()); // Already have snippet
         }
@@ -177,7 +177,7 @@ impl DebugContext {
 
         let file = File::open(file_path).ok()?;
         let reader = BufReader::new(file);
-        let lines: Result<Vec<String>, std::io::Error> = reader.split("\n").collect();
+        let lines: Result<(), Error> = reader.split("\n").collect();
         let lines = lines.ok()?;
 
         let target_line = line.saturating_sub(1) as usize;

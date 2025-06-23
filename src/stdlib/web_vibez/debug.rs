@@ -210,7 +210,7 @@ impl HotReloadWatcher {
         }
     }
 
-    pub fn watch_path(&mut self, path: std::path::PathBuf) -> Result<(), crate::error::Error> {
+    pub fn watch_path(&mut self, path: std::path::PathBuf) -> Result<(), Error> {
         if !path.exists() {
             return Err(crate::error::Error::Io(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
@@ -239,7 +239,7 @@ impl HotReloadWatcher {
         self
     }
 
-    pub fn enable(&mut self) -> Result<(), crate::error::Error> {
+    pub fn enable(&mut self) -> Result<(), Error> {
         if !self.enabled {
             self.enabled = true;
             self.start_watching()?;
@@ -247,7 +247,7 @@ impl HotReloadWatcher {
         Ok(())
     }
 
-    pub fn disable(&mut self) -> Result<(), crate::error::Error> {
+    pub fn disable(&mut self) -> Result<(), Error> {
         if self.enabled {
             self.enabled = false;
             self.stop_watching()?;
@@ -255,7 +255,7 @@ impl HotReloadWatcher {
         Ok(())
     }
 
-    fn start_watching(&mut self) -> Result<(), crate::error::Error> {
+    fn start_watching(&mut self) -> Result<(), Error> {
         use notify::{Watcher, RecursiveMode, Config};
         
         let (tx, rx) = std::sync::mpsc::channel();
@@ -303,7 +303,7 @@ impl HotReloadWatcher {
         Ok(())
     }
 
-    fn stop_watching(&mut self) -> Result<(), crate::error::Error> {
+    fn stop_watching(&mut self) -> Result<(), Error> {
         if let Some(mut watcher) = self.watcher.take() {
             for path in &self.watched_paths {
                 let _ = watcher.unwatch(path);
@@ -497,7 +497,7 @@ mod tests {
     }
 
     #[test]
-    fn test_watch_valid_path() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_watch_valid_path() -> Result<(), Error>> {
         let temp_dir = TempDir::new()?;
         let mut watcher = HotReloadWatcher::new();
         
@@ -509,7 +509,7 @@ mod tests {
     }
 
     #[test]
-    fn test_enable_disable_watcher() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_enable_disable_watcher() -> Result<(), Error>> {
         let temp_dir = TempDir::new()?;
         let mut watcher = HotReloadWatcher::new();
         

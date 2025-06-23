@@ -146,7 +146,7 @@ pub trait ControlFlowCompilation<'ctx> {
         builder: &Builder<'ctx>,
         expr: &dyn Expression,
         flow_ctx: &mut ControlFlowContext<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    ) -> Result<(), Error>;
 
     /// GC Integration Methods
 
@@ -455,7 +455,7 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         _builder: &Builder<'ctx>,
         expr: &dyn Expression,
         _flow_ctx: &mut ControlFlowContext<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         // Simplified expression compilation for now
         let expr_str = expr.string();
         

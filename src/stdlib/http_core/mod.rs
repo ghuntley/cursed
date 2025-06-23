@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 //! CURSED HTTP Core - Comprehensive HTTP Request and Response Processing
 //!
 //! This package provides comprehensive HTTP request and response processing capabilities

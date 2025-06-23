@@ -129,7 +129,7 @@ impl BaselineStorage {
         
         // Create storage directory if it doesn't exist
         std::fs::create_dir_all(&config.storage_dir)
-            .map_err(|e| Error::Other(format!("Failed to create baseline storage directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create baseline storage directory: {}", e)))?;
 
         let mut storage = Self {
             storage_dir: config.storage_dir,
@@ -235,10 +235,10 @@ impl BaselineStorage {
         }
 
         let content = std::fs::read_to_string(&baseline_path)
-            .map_err(|e| Error::Other(format!("Failed to read baseline file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read baseline file: {}", e)))?;
         
         let baseline: PerformanceBaseline = serde_json::from_str(&content)
-            .map_err(|e| Error::Other(format!("Failed to parse baseline: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to parse baseline: {}", e)))?;
 
         let baseline_id = baseline.baseline_id.clone();
         self.loaded_baselines.insert(baseline_id.clone(), baseline);
@@ -251,10 +251,10 @@ impl BaselineStorage {
         debug!("Loading all baselines from storage");
         
         let entries = std::fs::read_dir(&self.storage_dir)
-            .map_err(|e| Error::Other(format!("Failed to read baseline directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read baseline directory: {}", e)))?;
 
         for entry in entries {
-            let entry = entry.map_err(|e| Error::Other(format!("Failed to read directory entry: {}", e)))?;
+            let entry = entry.map_err(|e| Error::General(format!("Failed to read directory entry: {}", e)))?;
             let path = entry.path();
             
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
@@ -275,10 +275,10 @@ impl BaselineStorage {
         let baseline_path = self.get_baseline_path(&baseline.baseline_id);
         
         let json = serde_json::to_string_pretty(baseline)
-            .map_err(|e| Error::Other(format!("Failed to serialize baseline: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize baseline: {}", e)))?;
         
         std::fs::write(&baseline_path, json)
-            .map_err(|e| Error::Other(format!("Failed to write baseline file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write baseline file: {}", e)))?;
         
         debug!("Baseline saved: {}", baseline_path.display());
         Ok(())
@@ -305,7 +305,7 @@ impl BaselineStorage {
     /// Set the default baseline
     pub fn set_default_baseline(&mut self, baseline_id: String) -> Result<()> {
         if !self.loaded_baselines.contains_key(&baseline_id) {
-            return Err(Error::Other(format!("Baseline not found: {}", baseline_id)));
+            return Err(Error::General(format!("Baseline not found: {}", baseline_id)));
         }
         
         self.default_baseline_id = Some(baseline_id.clone());
@@ -420,10 +420,10 @@ impl BaselineStorage {
         };
 
         let export_data = serde_json::to_string_pretty(&baselines_to_export)
-            .map_err(|e| Error::Other(format!("Failed to serialize export data: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize export data: {}", e)))?;
 
         std::fs::write(export_path, export_data)
-            .map_err(|e| Error::Other(format!("Failed to write export file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write export file: {}", e)))?;
 
         info!("Exported {} baselines to: {}", baselines_to_export.len(), export_path.display());
         Ok(())
@@ -432,10 +432,10 @@ impl BaselineStorage {
     /// Import baselines from a portable format
     pub fn import_baselines(&mut self, import_path: &Path, overwrite_existing: bool) -> Result<usize> {
         let content = std::fs::read_to_string(import_path)
-            .map_err(|e| Error::Other(format!("Failed to read import file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read import file: {}", e)))?;
 
         let imported_baselines: Vec<PerformanceBaseline> = serde_json::from_str(&content)
-            .map_err(|e| Error::Other(format!("Failed to parse import data: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to parse import data: {}", e)))?;
 
         let mut imported_count = 0;
         for baseline in imported_baselines {

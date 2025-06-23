@@ -335,8 +335,8 @@ impl AeadUtils {
 }
 
 // Type aliases for compatibility
-pub type EncryptionResult<T> = Result<T, AdvancedCryptoError>;
-pub type DecryptionResult<T> = Result<T, AdvancedCryptoError>;
+pub type EncryptionResult<(), Error>;
+pub type DecryptionResult<(), Error>;
 pub type AuthenticationError = AdvancedCryptoError;
 pub type TagMismatchError = AdvancedCryptoError;
 

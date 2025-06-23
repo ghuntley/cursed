@@ -404,7 +404,7 @@ impl Default for AnalysisContext {
 impl EnhancedAstExtractor {
     /// Create a new enhanced AST extractor
     #[instrument(skip(config))]
-    pub fn new(config: ExtractionConfig) -> Result<Self, CursedError> {
+    pub fn new(config: ExtractionConfig) -> Result<(), Error> {
         info!("Creating enhanced AST extractor");
         
         // Initialize Gen Z slang mappings
@@ -462,7 +462,7 @@ impl EnhancedAstExtractor {
         ast: &AstNode,
         file_path: &Path,
         source_code: &str,
-    ) -> Result<(Vec<EnhancedDocumentationItem>, SemanticAnalysis), CursedError> {
+    ) -> Result<(), Error> {
         info!("Starting comprehensive documentation extraction for: {:?}", file_path);
         
         // Reset state for new file
@@ -502,7 +502,7 @@ impl EnhancedAstExtractor {
     
     /// Build registries by traversing AST
     #[instrument(skip(self, ast, source_code))]
-    async fn build_registries(&mut self, ast: &AstNode, source_code: &str) -> Result<(), CursedError> {
+    async fn build_registries(&mut self, ast: &AstNode, source_code: &str) -> Result<(), Error> {
         debug!("Building type and function registries");
         
         self.traverse_for_registry(ast, source_code).await?;
@@ -518,7 +518,7 @@ impl EnhancedAstExtractor {
     
     /// Traverse AST to build registries
     #[instrument(skip(self, node, source_code))]
-    async fn traverse_for_registry(&mut self, node: &AstNode, source_code: &str) -> Result<(), CursedError> {
+    async fn traverse_for_registry(&mut self, node: &AstNode, source_code: &str) -> Result<(), Error> {
         match &node.node_type {
             AstNodeType::Program(program) => {
                 // Register module information
@@ -575,16 +575,16 @@ impl EnhancedAstExtractor {
     }
     
     /// Register function information
-    fn register_function(&mut self, func_decl: &FunctionDeclaration) -> Result<(), CursedError> {
+    fn register_function(&mut self, func_decl: &FunctionDeclaration) -> Result<(), Error> {
         let parameters = func_decl.parameters.iter().map(|param| ParameterInfo {
-            name: param.name.clone(),
+            name: param.to_string().clone(),
             param_type: param.param_type.as_ref().map(|t| self.format_type_name(t)),
             is_optional: param.default_value.is_some(),
             default_value: param.default_value.as_ref().map(|_| "default".to_string()), // Would extract actual value
         }).collect();
         
         let function_info = FunctionInfo {
-            name: func_decl.name.clone(),
+            name: func_decl.to_string().clone(),
             location: func_decl.location.clone(),
             parameters,
             return_type: func_decl.return_type.as_ref().map(|t| self.format_type_name(t)),
@@ -594,16 +594,16 @@ impl EnhancedAstExtractor {
             metadata: HashMap::new(),
         };
         
-        self.function_registry.insert(func_decl.name.clone(), function_info);
+        self.function_registry.insert(func_decl.to_string().clone(), function_info);
         
-        debug!("Registered function: {}", func_decl.name);
+        debug!("Registered function: {}", func_decl.to_string());
         Ok(())
     }
     
     /// Register struct information
-    fn register_struct(&mut self, struct_decl: &StructDeclaration) -> Result<(), CursedError> {
+    fn register_struct(&mut self, struct_decl: &StructDeclaration) -> Result<(), Error> {
         let fields = struct_decl.fields.iter().map(|field| FieldInfo {
-            name: field.name.clone(),
+            name: field.to_string().clone(),
             field_type: field.field_type.as_ref()
                 .map(|t| self.format_type_name(t))
                 .unwrap_or_else(|| "Any".to_string()),
@@ -613,7 +613,7 @@ impl EnhancedAstExtractor {
         }).collect();
         
         let type_info = TypeInfo {
-            name: struct_decl.name.clone(),
+            name: struct_decl.to_string().clone(),
             type_kind: "struct".to_string(),
             location: struct_decl.location.clone(),
             generic_params: struct_decl.generic_params.clone().unwrap_or_default(),
@@ -624,18 +624,18 @@ impl EnhancedAstExtractor {
             metadata: HashMap::new(),
         };
         
-        self.type_registry.insert(struct_decl.name.clone(), type_info);
+        self.type_registry.insert(struct_decl.to_string().clone(), type_info);
         
-        debug!("Registered struct: {}", struct_decl.name);
+        debug!("Registered struct: {}", struct_decl.to_string());
         Ok(())
     }
     
     /// Register interface information
-    fn register_interface(&mut self, interface_decl: &InterfaceDeclaration) -> Result<(), CursedError> {
-        let methods = interface_decl.methods.iter().map(|method| method.name.clone()).collect();
+    fn register_interface(&mut self, interface_decl: &InterfaceDeclaration) -> Result<(), Error> {
+        let methods = interface_decl.methods.iter().map(|method| method.to_string().clone()).collect();
         
         let type_info = TypeInfo {
-            name: interface_decl.name.clone(),
+            name: interface_decl.to_string().clone(),
             type_kind: "interface".to_string(),
             location: interface_decl.location.clone(),
             generic_params: interface_decl.generic_params.clone().unwrap_or_default(),
@@ -646,21 +646,21 @@ impl EnhancedAstExtractor {
             metadata: HashMap::new(),
         };
         
-        self.type_registry.insert(interface_decl.name.clone(), type_info);
+        self.type_registry.insert(interface_decl.to_string().clone(), type_info);
         
         // Register interface methods
         for method in &interface_decl.methods {
             self.register_function(method)?;
         }
         
-        debug!("Registered interface: {}", interface_decl.name);
+        debug!("Registered interface: {}", interface_decl.to_string());
         Ok(())
     }
     
     /// Register enum information
-    fn register_enum(&mut self, enum_decl: &EnumDeclaration) -> Result<(), CursedError> {
+    fn register_enum(&mut self, enum_decl: &EnumDeclaration) -> Result<(), Error> {
         let type_info = TypeInfo {
-            name: enum_decl.name.clone(),
+            name: enum_decl.to_string().clone(),
             type_kind: "enum".to_string(),
             location: enum_decl.location.clone(),
             generic_params: enum_decl.generic_params.clone().unwrap_or_default(),
@@ -671,14 +671,14 @@ impl EnhancedAstExtractor {
             metadata: HashMap::new(),
         };
         
-        self.type_registry.insert(enum_decl.name.clone(), type_info);
+        self.type_registry.insert(enum_decl.to_string().clone(), type_info);
         
-        debug!("Registered enum: {}", enum_decl.name);
+        debug!("Registered enum: {}", enum_decl.to_string());
         Ok(())
     }
     
     /// Register import information
-    fn register_import(&mut self, import_stmt: &Import) -> Result<(), CursedError> {
+    fn register_import(&mut self, import_stmt: &Import) -> Result<(), Error> {
         if let Some(ref module_name) = self.current_context.current_module {
             if let Some(module_info) = self.module_registry.get_mut(module_name) {
                 module_info.imports.push(import_stmt.path.clone());
@@ -696,7 +696,7 @@ impl EnhancedAstExtractor {
         ast: &AstNode,
         source_code: &str,
         documentation_items: &mut Vec<EnhancedDocumentationItem>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!("Extracting documentation items");
         
         // Use the existing AST extractor as base
@@ -717,11 +717,11 @@ impl EnhancedAstExtractor {
         &self,
         base_item: EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<EnhancedDocumentationItem, CursedError> {
+    ) -> Result<(), Error> {
         let mut enhanced = base_item;
         
         // Add cross-references
-        if let Some(cross_refs) = self.cross_reference_tracker.get(&enhanced.base.name) {
+        if let Some(cross_refs) = self.cross_reference_tracker.get(&enhanced.base.to_string()) {
             enhanced.relationships.extend(
                 cross_refs.iter().map(|cross_ref| TypeRelationship {
                     source: cross_ref.source.clone(),
@@ -735,11 +735,11 @@ impl EnhancedAstExtractor {
         }
         
         // Add semantic information based on registries
-        if let Some(type_info) = self.type_registry.get(&enhanced.base.name) {
+        if let Some(type_info) = self.type_registry.get(&enhanced.base.to_string()) {
             // Add type-specific relationships
             for parent in &type_info.parent_types {
                 enhanced.relationships.push(TypeRelationship {
-                    source: enhanced.base.name.clone(),
+                    source: enhanced.base.to_string().clone(),
                     target: parent.clone(),
                     relationship_type: RelationshipType::Inherits,
                     metadata: HashMap::new(),
@@ -750,7 +750,7 @@ impl EnhancedAstExtractor {
             
             for interface in &type_info.implemented_interfaces {
                 enhanced.relationships.push(TypeRelationship {
-                    source: enhanced.base.name.clone(),
+                    source: enhanced.base.to_string().clone(),
                     target: interface.clone(),
                     relationship_type: RelationshipType::Implements,
                     metadata: HashMap::new(),
@@ -760,11 +760,11 @@ impl EnhancedAstExtractor {
             }
         }
         
-        if let Some(function_info) = self.function_registry.get(&enhanced.base.name) {
+        if let Some(function_info) = self.function_registry.get(&enhanced.base.to_string()) {
             // Add function call relationships
             for called_function in &function_info.calls {
                 enhanced.relationships.push(TypeRelationship {
-                    source: enhanced.base.name.clone(),
+                    source: enhanced.base.to_string().clone(),
                     target: called_function.clone(),
                     relationship_type: RelationshipType::Calls,
                     metadata: HashMap::new(),
@@ -779,7 +779,7 @@ impl EnhancedAstExtractor {
     
     /// Perform comprehensive semantic analysis
     #[instrument(skip(self))]
-    async fn perform_semantic_analysis(&self) -> Result<SemanticAnalysis, CursedError> {
+    async fn perform_semantic_analysis(&self) -> Result<(), Error> {
         info!("Performing semantic analysis");
         
         // Build type relationships
@@ -849,7 +849,7 @@ impl EnhancedAstExtractor {
                     relationship_type: RelationshipType::HasField,
                     metadata: {
                         let mut meta = HashMap::new();
-                        meta.insert("field_name".to_string(), field.name.clone());
+                        meta.insert("field_name".to_string(), field.to_string().clone());
                         meta
                     },
                     location: type_info.location.clone(),
@@ -881,7 +881,7 @@ impl EnhancedAstExtractor {
                         relationship_type: RelationshipType::AcceptsParameter,
                         metadata: {
                             let mut meta = HashMap::new();
-                            meta.insert("parameter_name".to_string(), param.name.clone());
+                            meta.insert("parameter_name".to_string(), param.to_string().clone());
                             meta
                         },
                         location: function_info.location.clone(),
@@ -930,7 +930,7 @@ impl EnhancedAstExtractor {
         &self,
         root_type: &str,
         processed_types: &mut HashSet<String>,
-    ) -> Result<InheritanceHierarchy, CursedError> {
+    ) -> Result<(), Error> {
         let mut hierarchy = BTreeMap::new();
         let mut max_depth = 0;
         
@@ -954,7 +954,7 @@ impl EnhancedAstExtractor {
         hierarchy: &mut BTreeMap<String, HierarchyNode>,
         max_depth: &mut usize,
         processed_types: &mut HashSet<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if processed_types.contains(type_name) {
             return Ok(()); // Avoid cycles
         }
@@ -1191,7 +1191,7 @@ impl EnhancedAstExtractor {
             // Parent type edges
             for parent in &type_info.parent_types {
                 edges.push(DependencyEdge {
-                    from: type_info.name.clone(),
+                    from: type_info.to_string().clone(),
                     to: parent.clone(),
                     edge_type: "inherits".to_string(),
                     weight: 1.0,
@@ -1201,7 +1201,7 @@ impl EnhancedAstExtractor {
             // Interface implementation edges
             for interface in &type_info.implemented_interfaces {
                 edges.push(DependencyEdge {
-                    from: type_info.name.clone(),
+                    from: type_info.to_string().clone(),
                     to: interface.clone(),
                     edge_type: "implements".to_string(),
                     weight: 1.0,
@@ -1211,7 +1211,7 @@ impl EnhancedAstExtractor {
             // Field type edges
             for field in &type_info.fields {
                 edges.push(DependencyEdge {
-                    from: type_info.name.clone(),
+                    from: type_info.to_string().clone(),
                     to: field.field_type.clone(),
                     edge_type: "uses".to_string(),
                     weight: 0.5,
@@ -1223,7 +1223,7 @@ impl EnhancedAstExtractor {
         for function_info in self.function_registry.values() {
             for called_function in &function_info.calls {
                 edges.push(DependencyEdge {
-                    from: function_info.name.clone(),
+                    from: function_info.to_string().clone(),
                     to: called_function.clone(),
                     edge_type: "calls".to_string(),
                     weight: 0.8,
@@ -1316,14 +1316,14 @@ impl EnhancedAstExtractor {
         for item in documentation_items {
             // Add relationships from semantic analysis
             let relevant_relationships: Vec<TypeRelationship> = semantic_analysis.type_relationships.iter()
-                .filter(|rel| rel.source == item.base.name || rel.target == item.base.name)
+                .filter(|rel| rel.source == item.base.to_string() || rel.target == item.base.to_string())
                 .cloned()
                 .collect();
             
             item.relationships.extend(relevant_relationships);
             
             // Add navigation info if available
-            if let Some(nav_info) = semantic_analysis.navigation_info.get(&item.base.name) {
+            if let Some(nav_info) = semantic_analysis.navigation_info.get(&item.base.to_string()) {
                 item.base.metadata.insert(
                     "usages_count".to_string(),
                     nav_info.usages.len().to_string()
@@ -1335,7 +1335,7 @@ impl EnhancedAstExtractor {
             }
             
             // Add complexity metrics if available
-            if let Some(complexity) = semantic_analysis.complexity_metrics.cyclomatic_complexity.get(&item.base.name) {
+            if let Some(complexity) = semantic_analysis.complexity_metrics.cyclomatic_complexity.get(&item.base.to_string()) {
                 item.base.metadata.insert(
                     "cyclomatic_complexity".to_string(),
                     complexity.to_string()
@@ -1356,7 +1356,7 @@ impl EnhancedAstExtractor {
         // This would format type expressions into readable strings
         // For now, return a placeholder
         match type_expr {
-            Expression::Identifier(id) => id.name.clone(),
+            Expression::Identifier(id) => id.to_string().clone(),
             _ => "Unknown".to_string(),
         }
     }

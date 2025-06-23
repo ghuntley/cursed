@@ -339,7 +339,7 @@ impl CertificatePathValidator {
         &mut self,
         target_certificate: &CertificateInfo,
         intermediate_certificates: &[CertificateInfo],
-    ) -> Result<PathValidationResult, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         // Step 1: Build certificate chain
         let chain_result = self.build_certificate_chain(
             target_certificate,
@@ -427,7 +427,7 @@ impl CertificatePathValidator {
         &self,
         target_certificate: &CertificateInfo,
         intermediate_certificates: &[CertificateInfo],
-    ) -> Result<Option<Vec<CertificateInfo>>, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         let mut chain = vec![target_certificate.clone()];
         let mut current_cert = target_certificate;
         let mut visited = HashSet::new();
@@ -488,7 +488,7 @@ impl CertificatePathValidator {
     fn find_trust_anchor(
         &self,
         certificate_chain: &[CertificateInfo],
-    ) -> Result<Option<TrustAnchor>, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         let root_cert = certificate_chain.last().unwrap();
         
         for trust_anchor in &self.context.trust_anchors {
@@ -513,7 +513,7 @@ impl CertificatePathValidator {
         &self,
         certificate_chain: &[CertificateInfo],
         trust_anchor: &TrustAnchor,
-    ) -> Result<ValidationState, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         let root_cert = certificate_chain.last().unwrap();
         
         Ok(ValidationState {
@@ -561,7 +561,7 @@ impl CertificatePathValidator {
         index: usize,
         state: &mut ValidationState,
         is_end_entity: bool,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Step 1: Verify certificate signature
         self.verify_certificate_signature(certificate, state)?;
         
@@ -604,7 +604,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Extract signature algorithm and parameters
         let signature_algorithm = &certificate.signature_algorithm;
         let signature_value = &certificate.signature_value;
@@ -634,7 +634,7 @@ impl CertificatePathValidator {
     fn check_validity_period(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         let current_time = self.context.validation_time;
         
         if current_time < certificate.not_before {
@@ -662,7 +662,7 @@ impl CertificatePathValidator {
     fn check_revocation_status(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Check CRL distribution points
         if let Some(crl_points) = &certificate.crl_distribution_points {
             for crl_point in crl_points {
@@ -698,7 +698,7 @@ impl CertificatePathValidator {
         certificate: &CertificateInfo,
         state: &mut ValidationState,
         is_end_entity: bool,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Extract certificate policies from certificate
         let cert_policies = self.extract_certificate_policies(certificate)?;
         
@@ -745,7 +745,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &mut ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Extract name constraints from certificate
         if let Some(name_constraints) = &certificate.name_constraints {
             // Add permitted subtrees
@@ -778,7 +778,7 @@ impl CertificatePathValidator {
         certificate: &CertificateInfo,
         state: &mut ValidationState,
         is_end_entity: bool,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         if let Some(basic_constraints) = &certificate.basic_constraints {
             // Check CA flag for non-end-entity certificates
             if !is_end_entity && !basic_constraints.ca {
@@ -817,7 +817,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         is_end_entity: bool,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         if let Some(key_usage) = certificate.key_usage {
             if !is_end_entity {
                 // CA certificates must have key cert sign usage
@@ -838,7 +838,7 @@ impl CertificatePathValidator {
     fn process_critical_extensions(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         for extension in &certificate.extensions {
             if extension.critical && !self.is_supported_critical_extension(&extension.oid) {
                 return Err(PathValidationError::CriticalExtensionNotSupported {
@@ -855,7 +855,7 @@ impl CertificatePathValidator {
     fn perform_wrap_up_procedures(
         &self,
         state: &ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Check explicit policy requirement
         if let Some(explicit_policy) = state.explicit_policy {
             if explicit_policy == 0 && !self.context.required_policies.is_empty() {
@@ -905,14 +905,14 @@ impl CertificatePathValidator {
     fn is_self_signed(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         Ok(certificate.subject_name == certificate.issuer_name)
     }
     
     fn is_trusted_root(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         for trust_anchor in &self.context.trust_anchors {
             if let Some(anchor_cert) = &trust_anchor.certificate {
                 if self.certificates_match(certificate, anchor_cert)? {
@@ -927,7 +927,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         intermediates: &[CertificateInfo],
-    ) -> Result<Option<CertificateInfo>, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         for intermediate in intermediates {
             if intermediate.subject_name == certificate.issuer_name {
                 // Verify key identifiers match if present
@@ -949,7 +949,7 @@ impl CertificatePathValidator {
     fn find_issuer_in_trust_anchors(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<Option<TrustAnchor>, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         for trust_anchor in &self.context.trust_anchors {
             if trust_anchor.subject_name == certificate.issuer_name {
                 if let Some(aki) = &certificate.authority_key_identifier {
@@ -970,7 +970,7 @@ impl CertificatePathValidator {
         &self,
         cert1: &CertificateInfo,
         cert2: &CertificateInfo,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         Ok(cert1.subject_name == cert2.subject_name &&
            cert1.public_key == cert2.public_key)
     }
@@ -979,7 +979,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         trust_anchor: &TrustAnchor,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         Ok(certificate.subject_name == trust_anchor.subject_name &&
            certificate.public_key == trust_anchor.public_key)
     }
@@ -988,7 +988,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Verify issuer name matches working issuer name
         if certificate.issuer_name != state.working_issuer_name {
             return Err(PathValidationError::ChainBuildingFailed {
@@ -1010,7 +1010,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         algorithm: &str,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         // Implement signature verification based on algorithm
         match algorithm {
             "sha256WithRSAEncryption" => {
@@ -1043,7 +1043,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         hash_algorithm: &str,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         // RSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
@@ -1055,7 +1055,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         hash_algorithm: &str,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         // ECDSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
@@ -1064,7 +1064,7 @@ impl CertificatePathValidator {
     fn extract_certificate_policies(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<Vec<CertificatePolicy>, PathValidationError> {
+    ) -> Result<(), Error> {
         let mut policies = Vec::new();
         
         for extension in &certificate.extensions {
@@ -1081,7 +1081,7 @@ impl CertificatePathValidator {
     fn parse_certificate_policies_extension(
         &self,
         extension_data: &[u8],
-    ) -> Result<Vec<CertificatePolicy>, PathValidationError> {
+    ) -> Result<(), Error> {
         // Parse DER-encoded certificate policies extension
         // This would use actual ASN.1/DER parsing
         Ok(vec![]) // Placeholder
@@ -1091,7 +1091,7 @@ impl CertificatePathValidator {
         &self,
         policy_tree: &mut PolicyTree,
         cert_policies: &[CertificatePolicy],
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Update policy tree according to RFC 5280 algorithm
         // This implements the complex policy tree processing logic
         Ok(()) // Placeholder
@@ -1101,7 +1101,7 @@ impl CertificatePathValidator {
         &self,
         subject_name: &DistinguishedName,
         state: &ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Convert distinguished name to general name for constraint checking
         let general_name = GeneralName::DirectoryName(subject_name.clone());
         self.validate_general_name_constraints(&general_name, state)
@@ -1111,7 +1111,7 @@ impl CertificatePathValidator {
         &self,
         name: &GeneralName,
         state: &ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Check excluded subtrees first
         for excluded in &state.excluded_subtrees {
             if self.name_matches_subtree(name, excluded)? {
@@ -1151,7 +1151,7 @@ impl CertificatePathValidator {
         &self,
         name: &GeneralName,
         subtree: &GeneralSubtree,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         match (&name, &subtree.base) {
             (GeneralName::DnsName(name), GeneralName::DnsName(constraint)) => {
                 Ok(self.dns_name_matches(name, constraint))
@@ -1264,7 +1264,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &mut ValidationState,
-    ) -> Result<(), PathValidationError> {
+    ) -> Result<(), Error> {
         // Update working public key
         state.working_public_key = certificate.public_key.clone();
         state.working_public_key_algorithm = certificate.public_key.algorithm.clone();
@@ -1296,7 +1296,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         crl_point: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         // CRL revocation checking implementation
         // This would download and parse CRL, then check certificate serial number
         Ok(()) // Placeholder
@@ -1306,7 +1306,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         ocsp_responder: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         // OCSP revocation checking implementation
         // This would send OCSP request and parse response
         Ok(()) // Placeholder
@@ -1388,7 +1388,7 @@ pub fn validate_certificate_path_simple(
     target_certificate: &CertificateInfo,
     intermediate_certificates: &[CertificateInfo],
     trust_anchors: &[TrustAnchor],
-) -> Result<PathValidationResult, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let context = create_validation_context_with_anchors(trust_anchors.to_vec());
     let mut validator = CertificatePathValidator::new(context);
     

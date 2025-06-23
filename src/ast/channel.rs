@@ -722,7 +722,7 @@ impl Expression for ChannelTimeout {
 mod tests {
     use super::*;
     use crate::lexer::Token;
-    use crate::ast::types::TypeExpression;
+    use crate::ast::crate::types::TypeExpression;
     use crate::ast::literals::IntegerLiteral;
     use crate::ast::identifiers::Identifier;
     use crate::ast::statements::ExpressionStatement;

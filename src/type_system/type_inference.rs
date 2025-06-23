@@ -308,7 +308,7 @@ impl TypeInference {
         expression: &dyn Expression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         // Generate cache key
         let cache_key = self.generate_cache_key(expression, context);
 
@@ -332,7 +332,7 @@ impl TypeInference {
         expression: &dyn Expression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         // Try to downcast to specific expression types
         if let Some(literal) = expression.as_any().downcast_ref::<IntegerLiteral>() {
             self.infer_integer_literal(literal, context)
@@ -361,7 +361,7 @@ impl TypeInference {
         &mut self,
         literal: &IntegerLiteral,
         _context: &InferenceContext,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         Ok(TypeExpression::named("normie"))
     }
 
@@ -370,7 +370,7 @@ impl TypeInference {
         &mut self,
         literal: &BooleanLiteral,
         _context: &InferenceContext,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         Ok(TypeExpression::named("facts"))
     }
 
@@ -379,7 +379,7 @@ impl TypeInference {
         &mut self,
         literal: &StringLiteral,
         _context: &InferenceContext,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         Ok(TypeExpression::named("tea"))
     }
 
@@ -389,7 +389,7 @@ impl TypeInference {
         identifier: &Identifier,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         let var_name = &identifier.value;
 
         // Check local variables first
@@ -418,7 +418,7 @@ impl TypeInference {
         call: &CallExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         let function_name = &call.function.string();
 
         // Get function signature
@@ -472,7 +472,7 @@ impl TypeInference {
         binary: &BinaryExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         let left_type = self.infer_expression(binary.left.as_ref(), context, environment)?;
         let right_type = self.infer_expression(binary.right.as_ref(), context, environment)?;
 
@@ -526,7 +526,7 @@ impl TypeInference {
         unary: &UnaryExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         let operand_type = self.infer_expression(unary.operand.as_ref(), context, environment)?;
 
         match unary.operator.as_str() {
@@ -564,7 +564,7 @@ impl TypeInference {
         if_expr: &IfExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         // Condition must be boolean
         let condition_type = self.infer_expression(if_expr.condition.as_ref(), context, environment)?;
         if condition_type != TypeExpression::named("facts") {
@@ -603,7 +603,7 @@ impl TypeInference {
         expression: &dyn Expression,
         _context: &InferenceContext,
         _environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         // Generate fresh type variable for unknown expressions
         let fresh_var = self.type_var_generator.generate_fresh();
         Ok(TypeExpression::parameter(&fresh_var))
@@ -615,7 +615,7 @@ impl TypeInference {
         type1: &TypeExpression,
         type2: &TypeExpression,
         _environment: &TypeEnvironment,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         // Simplified compatibility check
         match (type1, type2) {
             (TypeExpression::Named(name1), TypeExpression::Named(name2)) => Ok(name1 == name2),
@@ -629,7 +629,7 @@ impl TypeInference {
         &self,
         constraint: &InferenceConstraint,
         _environment: &TypeEnvironment,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         match constraint.constraint_type {
             ConstraintType::Equality => Ok(constraint.left_type == constraint.right_type),
             ConstraintType::Subtyping => {
@@ -656,7 +656,7 @@ impl TypeInference {
         expected_type: Option<&TypeExpression>,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         match expected_type {
             Some(expected) => {
                 // Analysis mode: check against expected type
@@ -694,7 +694,7 @@ impl BidirectionalChecker {
         &mut self,
         expression: &dyn Expression,
         environment: &TypeEnvironment,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         self.checking_mode = CheckingMode::Synthesis;
         // Implementation would go here
         Ok(TypeExpression::named("sus")) // Placeholder
@@ -830,7 +830,7 @@ impl ConstraintAccumulator {
     }
 
     /// Solve accumulated constraints
-    pub fn solve_constraints(&mut self) -> Result<HashMap<String, TypeExpression>, Error> {
+    pub fn solve_constraints(&mut self) -> Result<(), Error> {
         // Simplified constraint solving
         Ok(HashMap::new())
     }

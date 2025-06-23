@@ -18,6 +18,8 @@ use serde::{Serialize, Deserialize};
 
 use crate::error::CursedError;
 use crate::stdlib::ipc::{
+use crate::stdlib::web_vibez::SecurityContext;
+use crate::stdlib::process::EnhancedProcess;
     IpcConfig, IpcError, IpcResult, NamedPipe, MessageQueue, SharedMemory, Semaphore,
     UnixSocket, RealIpcManager, IpcConnectionPool, ProcessAwareIpcManager
 };
@@ -26,7 +28,7 @@ use crate::stdlib::process::core::{ProcessConfig as CoreProcessConfig, ProcessMa
 use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
 use crate::stdlib::process::info::{ProcessState as StdProcessState};
 use crate::runtime::process::{ProcessGroup as RuntimeProcessGroup};
-use crate::stdlib::process::exec_vibez_types::{VibezResult, ExecutionContext, EnhancedCmd};
+use crate::stdlib::process::exec_vibez_crate::types::{VibezResult, ExecutionContext, EnhancedCmd};
 
 
 type ProcessState = StdProcessState;
@@ -423,40 +425,40 @@ enum PlatformType {
 /// Platform-specific operations trait
 pub trait PlatformHandler: std::fmt::Debug + Send + Sync {
     /// Initialize platform-specific features
-    fn initialize(&self) -> Result<(), CursedError>;
+    fn initialize(&self) -> Result<(), Error>;
     
     /// Create platform-specific IPC mechanism
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<Box<dyn IpcConnection>, CursedError>;
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error>;
     
     /// Apply platform-specific security settings
-    fn apply_security(&self, process: &mut EnhancedProcess, settings: &SecuritySettings) -> Result<(), CursedError>;
+    fn apply_security(&self, process: &mut EnhancedProcess, settings: &SecuritySettings) -> Result<(), Error>;
     
     /// Get platform-specific resource limits
     fn get_resource_limits(&self) -> ResourceLimits;
     
     /// Cleanup platform-specific resources
-    fn cleanup(&self) -> Result<(), CursedError>;
+    fn cleanup(&self) -> Result<(), Error>;
 }
 
 /// Generic IPC connection trait
 pub trait IpcConnection: std::fmt::Debug + Send + Sync {
     /// Send a message
-    fn send(&self, message: &[u8]) -> Result<(), CursedError>;
+    fn send(&self, message: &[u8]) -> Result<(), Error>;
     
     /// Receive a message
-    fn receive(&self) -> Result<Vec<u8>, CursedError>;
+    fn receive(&self) -> Result<(), Error>;
     
     /// Close the connection
-    fn close(&self) -> Result<(), CursedError>;
+    fn close(&self) -> Result<(), Error>;
 }
 
 /// Connection pool management trait
 trait ConnectionPoolManager: std::fmt::Debug + Send + Sync {
     /// Get a connection from the pool
-    fn get_connection(&self, target: &str) -> Result<Arc<dyn IpcConnection>, CursedError>;
+    fn get_connection(&self, target: &str) -> Result<(), Error>;
     
     /// Return a connection to the pool
-    fn return_connection(&self, connection: Arc<dyn IpcConnection>) -> Result<(), CursedError>;
+    fn return_connection(&self, connection: Arc<dyn IpcConnection>) -> Result<(), Error>;
     
     /// Get pool statistics
     fn get_stats(&self) -> ConnectionPoolStats;
@@ -480,7 +482,7 @@ struct ConnectionPoolStats {
 impl UnifiedProcessIpcManager {
     /// Create a new unified manager
     #[instrument]
-    pub fn new(config: UnifiedConfig) -> Result<Self, CursedError> {
+    pub fn new(config: UnifiedConfig) -> Result<(), Error> {
         info!("Creating unified process-IPC manager");
         
         let platform_type = Self::detect_platform();
@@ -568,7 +570,7 @@ impl UnifiedProcessIpcManager {
         &self,
         cmd: &mut EnhancedCmd,
         ipc_connections: Vec<IpcConnectionRequest>,
-    ) -> Result<ProcessWithIpc, CursedError> {
+    ) -> Result<(), Error> {
         let span = span!(Level::INFO, "spawn_process_with_ipc");
         let _enter = span.enter();
         
@@ -613,7 +615,7 @@ impl UnifiedProcessIpcManager {
         target_process: u32,
         connection_type: IpcType,
         name: &str,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         info!(
             source = source_process,
             target = target_process,
@@ -658,7 +660,7 @@ impl UnifiedProcessIpcManager {
     
     /// Monitor and manage all processes and IPC connections
     #[instrument(skip(self))]
-    pub fn monitor_all(&self) -> Result<UnifiedStatus, CursedError> {
+    pub fn monitor_all(&self) -> Result<(), Error> {
         debug!("Monitoring all processes and IPC connections");
         
         let process_state = self.process_state.read().unwrap();
@@ -678,7 +680,7 @@ impl UnifiedProcessIpcManager {
     
     /// Cleanup and shutdown the unified manager
     #[instrument(skip(self))]
-    pub fn shutdown(&self) -> Result<(), CursedError> {
+    pub fn shutdown(&self) -> Result<(), Error> {
         info!("Shutting down unified process-IPC manager");
         
         // Stop monitoring
@@ -708,7 +710,7 @@ impl UnifiedProcessIpcManager {
         return PlatformType::Unix;
     }
     
-    fn create_platform_handler(platform_type: PlatformType) -> Result<Box<dyn PlatformHandler>, CursedError> {
+    fn create_platform_handler(platform_type: PlatformType) -> Result<(), Error> {
         match platform_type {
             #[cfg(unix)]
             PlatformType::Unix => {
@@ -730,19 +732,19 @@ impl UnifiedProcessIpcManager {
         }
     }
     
-    fn start_monitoring(&self) -> Result<(), CursedError> {
+    fn start_monitoring(&self) -> Result<(), Error> {
         // Start background monitoring threads
         // Implementation would spawn monitoring threads
         Ok(())
     }
     
-    fn stop_monitoring(&self) -> Result<(), CursedError> {
+    fn stop_monitoring(&self) -> Result<(), Error> {
         // Stop background monitoring threads
         // Implementation would join monitoring threads
         Ok(())
     }
     
-    fn apply_security_to_process(&self, cmd: &mut EnhancedCmd) -> Result<(), CursedError> {
+    fn apply_security_to_process(&self, cmd: &mut EnhancedCmd) -> Result<(), Error> {
         let security = self.security.lock().unwrap();
         
         if self.config.security_settings.enable_privilege_drop {
@@ -756,7 +758,7 @@ impl UnifiedProcessIpcManager {
         Ok(())
     }
     
-    fn setup_ipc_connection(&self, request: &IpcConnectionRequest) -> Result<IpcHandle, CursedError> {
+    fn setup_ipc_connection(&self, request: &IpcConnectionRequest) -> Result<(), Error> {
         // Setup IPC connection based on request type
         Ok(IpcHandle {
             connection_id: format!("ipc_{}", request.name),
@@ -764,7 +766,7 @@ impl UnifiedProcessIpcManager {
         })
     }
     
-    fn configure_process_io(&self, cmd: &mut EnhancedCmd, handles: &[IpcHandle]) -> Result<(), CursedError> {
+    fn configure_process_io(&self, cmd: &mut EnhancedCmd, handles: &[IpcHandle]) -> Result<(), Error> {
         // Configure process I/O to use IPC connections
         Ok(())
     }
@@ -774,7 +776,7 @@ impl UnifiedProcessIpcManager {
         process_id: u32,
         process: EnhancedProcess,
         ipc_handles: &[IpcHandle],
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let mut process_state = self.process_state.write().unwrap();
         
         let ipc_connection_ids: Vec<String> = ipc_handles.iter()
@@ -794,13 +796,13 @@ impl UnifiedProcessIpcManager {
         Ok(())
     }
     
-    fn update_spawn_statistics(&self) -> Result<(), CursedError> {
+    fn update_spawn_statistics(&self) -> Result<(), Error> {
         let mut process_state = self.process_state.write().unwrap();
         process_state.statistics.total_spawned += 1;
         Ok(())
     }
     
-    fn validate_process_exists(&self, process_id: u32) -> Result<(), CursedError> {
+    fn validate_process_exists(&self, process_id: u32) -> Result<(), Error> {
         let process_state = self.process_state.read().unwrap();
         if !process_state.processes.contains_key(&process_id) {
             return Err(CursedError::Process(format!("Process {} not found", process_id)));
@@ -813,7 +815,7 @@ impl UnifiedProcessIpcManager {
         source: u32,
         target: u32,
         connection_type: &IpcType,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Check if IPC type is allowed
         if !self.config.security_settings.allowed_ipc_types.contains(connection_type) {
             return Err(CursedError::Security(format!("IPC type {:?} not allowed", connection_type)));
@@ -822,7 +824,7 @@ impl UnifiedProcessIpcManager {
         Ok(())
     }
     
-    fn get_security_status(&self) -> Result<SecurityStatus, CursedError> {
+    fn get_security_status(&self) -> Result<(), Error> {
         let security = self.security.lock().unwrap();
         Ok(SecurityStatus {
             privilege_level: security.privilege_level.clone(),
@@ -832,12 +834,12 @@ impl UnifiedProcessIpcManager {
         })
     }
     
-    fn terminate_all_processes(&self) -> Result<(), CursedError> {
+    fn terminate_all_processes(&self) -> Result<(), Error> {
         // Terminate all managed processes
         Ok(())
     }
     
-    fn close_all_ipc_connections(&self) -> Result<(), CursedError> {
+    fn close_all_ipc_connections(&self) -> Result<(), Error> {
         // Close all IPC connections
         Ok(())
     }
@@ -951,7 +953,7 @@ impl Default for UnifiedConfig {
 }
 
 /// Initialize the unified process-IPC system
-pub fn initialize_unified_system() -> Result<Arc<UnifiedProcessIpcManager>, CursedError> {
+pub fn initialize_unified_system() -> Result<(), Error> {
     let config = UnifiedConfig::default();
     let manager = UnifiedProcessIpcManager::new(config)?;
     Ok(Arc::new(manager))
@@ -962,7 +964,7 @@ static mut GLOBAL_MANAGER: Option<Arc<UnifiedProcessIpcManager>> = None;
 static MANAGER_INIT: std::sync::Once = std::sync::Once::new();
 
 /// Get the global unified manager
-pub fn get_unified_manager() -> Result<Arc<UnifiedProcessIpcManager>, CursedError> {
+pub fn get_unified_manager() -> Result<(), Error> {
     unsafe {
         MANAGER_INIT.call_once(|| {
             match initialize_unified_system() {

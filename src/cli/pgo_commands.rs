@@ -407,7 +407,7 @@ impl PgoCommandHandler {
 
         // Create profile data directory
         std::fs::create_dir_all(&args.profile_dir).map_err(|e| {
-            Error::Other(format!("Failed to create profile directory: {}", e))
+            Error::General(format!("Failed to create profile directory: {}", e))
         })?;
 
         // Compile with instrumentation
@@ -431,7 +431,7 @@ impl PgoCommandHandler {
         info!("Collecting profile data from instrumented binary");
 
         if !args.binary.exists() {
-            return Err(Error::Other(format!("Binary not found: {:?}", args.binary)));
+            return Err(Error::General(format!("Binary not found: {:?}", args.binary)));
         }
 
         // Create PGO configuration
@@ -476,7 +476,7 @@ impl PgoCommandHandler {
                 self.execute_with_timeout(cmd, Duration::from_secs(args.timeout))?
             } else {
                 cmd.output().map_err(|e| {
-                    Error::Other(format!("Failed to execute binary: {}", e))
+                    Error::General(format!("Failed to execute binary: {}", e))
                 })?
             };
 
@@ -535,7 +535,7 @@ impl PgoCommandHandler {
             self.save_profile_data(&args.output, &merged_data)?;
             info!("Merged profile data saved to: {:?}", args.output);
         } else {
-            return Err(Error::Other("No valid profile data files found".to_string()));
+            return Err(Error::General("No valid profile data files found".to_string()));
         }
 
         Ok(())
@@ -733,7 +733,7 @@ impl PgoCommandHandler {
         match args.format.as_str() {
             "json" => {
                 let json = serde_json::to_string_pretty(&statistics).map_err(|e| {
-                    Error::Other(format!("Failed to serialize statistics: {}", e))
+                    Error::General(format!("Failed to serialize statistics: {}", e))
                 })?;
                 println!("{}", json);
             }
@@ -812,11 +812,11 @@ impl PgoCommandHandler {
         });
 
         match rx.recv_timeout(timeout) {
-            Ok(result) => result.map_err(|e| Error::Other(format!("Process execution failed: {}", e))),
+            Ok(result) => result.map_err(|e| Error::General(format!("Process execution failed: {}", e))),
             Err(_) => {
                 // Timeout occurred
                 warn!("Process execution timed out after {:?}", timeout);
-                Err(Error::Other("Process execution timed out".to_string()))
+                Err(Error::General("Process execution timed out".to_string()))
             }
         }
     }
@@ -852,7 +852,7 @@ impl PgoCommandHandler {
 
         if let Some(path) = output_path {
             std::fs::write(path, &report).map_err(|e| {
-                Error::Other(format!("Failed to write analysis report: {}", e))
+                Error::General(format!("Failed to write analysis report: {}", e))
             })?;
         } else {
             println!("{}", report);
@@ -867,12 +867,12 @@ impl PgoCommandHandler {
         output_path: Option<PathBuf>,
     ) -> Result<()> {
         let json = serde_json::to_string_pretty(recommendations).map_err(|e| {
-            Error::Other(format!("Failed to serialize recommendations: {}", e))
+            Error::General(format!("Failed to serialize recommendations: {}", e))
         })?;
 
         if let Some(path) = output_path {
             std::fs::write(path, &json).map_err(|e| {
-                Error::Other(format!("Failed to write JSON report: {}", e))
+                Error::General(format!("Failed to write JSON report: {}", e))
             })?;
         } else {
             println!("{}", json);
@@ -890,7 +890,7 @@ impl PgoCommandHandler {
 
         if let Some(path) = output_path {
             std::fs::write(path, &html).map_err(|e| {
-                Error::Other(format!("Failed to write HTML report: {}", e))
+                Error::General(format!("Failed to write HTML report: {}", e))
             })?;
         } else {
             println!("{}", html);

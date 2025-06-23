@@ -34,7 +34,7 @@ impl BenchmarkSuite {
     }
     
     #[instrument(skip(self))]
-    pub fn run_all(&mut self) -> Result<BenchmarkResults, ProfilerError> {
+    pub fn run_all(&mut self) -> Result<(), Error> {
         info!("Running benchmark suite: {} ({} benchmarks)", self.name, self.benchmarks.len());
         
         let mut results = BenchmarkResults::new(self.name.clone());
@@ -59,7 +59,7 @@ impl BenchmarkSuite {
         Ok(results)
     }
     
-    fn run_benchmark_by_index(&self, index: usize) -> Result<BenchmarkResult, ProfilerError> {
+    fn run_benchmark_by_index(&self, index: usize) -> Result<(), Error> {
         let benchmark = &self.benchmarks[index];
         let mut measurements = Vec::new();
         let mut profiler = CursedProfiler::new(ProfilerConfig::default());
@@ -205,7 +205,7 @@ impl BenchmarkSuite {
         self.baseline = Some(results);
     }
     
-    pub fn load_baseline(&mut self, path: &str) -> Result<(), ProfilerError> {
+    pub fn load_baseline(&mut self, path: &str) -> Result<(), Error> {
         let baseline = BenchmarkResults::load_from_file(path)?;
         self.set_baseline(baseline);
         Ok(())
@@ -330,7 +330,7 @@ impl BenchmarkResults {
         };
     }
     
-    pub fn save_to_file(&self, path: &str) -> Result<(), ProfilerError> {
+    pub fn save_to_file(&self, path: &str) -> Result<(), Error> {
         let json = serde_json::to_string_pretty(self)
             .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
         
@@ -340,7 +340,7 @@ impl BenchmarkResults {
         Ok(())
     }
     
-    pub fn load_from_file(path: &str) -> Result<Self, ProfilerError> {
+    pub fn load_from_file(path: &str) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)
             .map_err(ProfilerError::IoError)?;
         

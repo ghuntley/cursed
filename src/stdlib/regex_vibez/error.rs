@@ -3,7 +3,7 @@ use crate::error::CursedError;
 use std::fmt;
 
 /// Result type for RegexVibez operations
-pub type RegexVibesResult<T> = Result<T, RegexVibesError>;
+pub type RegexVibesResult<(), Error>;
 
 /// Comprehensive error types for regex operations
 #[derive(Debug, Clone)]

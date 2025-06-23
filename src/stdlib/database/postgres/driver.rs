@@ -181,7 +181,7 @@ impl Default for PostgresDriver {
 }
 
 impl Driver for PostgresDriver {
-    fn open(&self, data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, data_source_name: &str) -> Result<(), Error> {
         // Parse connection string
         let config = PostgresConnectionString::parse(data_source_name)
             .map_err(|e| e.to_database_error())?;

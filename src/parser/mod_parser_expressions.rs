@@ -21,12 +21,12 @@ impl Parameter {
 
 impl Parser {
     /// Parse expression with precedence climbing
-    pub fn parse_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    pub fn parse_expression(&mut self) -> Result<(), Error> {
         self.parse_expression_with_precedence(Precedence::Lowest)
     }
     
     /// Parse expression with given precedence level
-    fn parse_expression_with_precedence(&mut self, precedence: Precedence) -> Result<Box<dyn Expression>, Error> {
+    fn parse_expression_with_precedence(&mut self, precedence: Precedence) -> Result<(), Error> {
         let mut left = self.parse_prefix_expression()?;
         
         while !self.peek_token_is(&TokenType::Semicolon) && 
@@ -70,7 +70,7 @@ impl Parser {
     }
     
     /// Parse prefix expressions (unary operators, primary expressions)
-    fn parse_prefix_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_prefix_expression(&mut self) -> Result<(), Error> {
         match &self.current_token.token_type {
             TokenType::Identifier => self.parse_identifier(),
             TokenType::Integer => self.parse_integer_literal(),
@@ -98,7 +98,7 @@ impl Parser {
     }
     
     /// Parse infix expressions (binary operators)
-    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         let operator = self.current_token.literal.clone();
         let precedence = self.current_precedence();
         
@@ -114,7 +114,7 @@ impl Parser {
     }
     
     /// Parse call expressions function(args...)
-    fn parse_call_expression(&mut self, function: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+    fn parse_call_expression(&mut self, function: Box<dyn Expression>) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         let arguments = self.parse_call_arguments()?;
         
@@ -126,7 +126,7 @@ impl Parser {
     }
     
     /// Parse index expressions array[index]
-    fn parse_index_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+    fn parse_index_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         self.advance_token()?;
@@ -141,7 +141,7 @@ impl Parser {
     }
     
     /// Parse dot expressions obj.field
-    fn parse_dot_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+    fn parse_dot_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         self.advance_token()?;
@@ -155,7 +155,7 @@ impl Parser {
     }
     
     /// Parse identifier
-    fn parse_identifier(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_identifier(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         let value = token.literal.clone();
         self.advance_token()?;
@@ -164,7 +164,7 @@ impl Parser {
     }
     
     /// Parse integer literal
-    fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_integer_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         
         let value = token.literal.parse::<i64>()
@@ -176,7 +176,7 @@ impl Parser {
     }
     
     /// Parse float literal
-    fn parse_float_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_float_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         
         let value = token.literal.parse::<f64>()
@@ -188,7 +188,7 @@ impl Parser {
     }
     
     /// Parse string literal
-    fn parse_string_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_string_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         let value = token.literal.clone();
         self.advance_token()?;
@@ -197,7 +197,7 @@ impl Parser {
     }
     
     /// Parse boolean literal
-    fn parse_boolean_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_boolean_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         let value = token.literal == "true";
         self.advance_token()?;
@@ -206,7 +206,7 @@ impl Parser {
     }
     
     /// Parse nil literal (no_cap)
-    fn parse_nil_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_nil_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         self.advance_token()?;
         
@@ -214,7 +214,7 @@ impl Parser {
     }
     
     /// Parse unary expressions (!x, -x, ~x)
-    fn parse_unary_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_unary_expression(&mut self) -> Result<(), Error> {
         let token = self.current_token.clone();
         let operator = token.literal.clone();
         
@@ -229,7 +229,7 @@ impl Parser {
     }
     
     /// Parse grouped expressions (expr)
-    fn parse_grouped_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_grouped_expression(&mut self) -> Result<(), Error> {
         self.advance_token()?;
         let expression = self.parse_expression()?;
         self.expect_token(TokenType::RightParen)?;
@@ -241,7 +241,7 @@ impl Parser {
     }
     
     /// Parse array literals [1, 2, 3]
-    fn parse_array_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_array_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         let elements = self.parse_expression_list(TokenType::RightBracket)?;
         
@@ -249,7 +249,7 @@ impl Parser {
     }
     
     /// Parse hash literals {key: value, ...}
-    fn parse_hash_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_hash_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         let mut pairs = Vec::new();
         
@@ -273,7 +273,7 @@ impl Parser {
     }
     
     /// Parse function literals slay(params) { body }
-    fn parse_function_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_function_literal(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         self.expect_token(TokenType::LeftParen)?;
@@ -304,14 +304,14 @@ impl Parser {
         
         Ok(Box::new(FunctionLiteral::new(
             token,
-            parameters.into_iter().map(|p| crate::ast::expressions::Parameter::new(p.name, p.param_type)).collect(),
+            parameters.into_iter().map(|p| crate::ast::expressions::Parameter::new(p.to_string(), p.param_type)).collect(),
             Box::new(crate::ast::expressions::BlockExpression::new(body)),
             return_type.map(|id| id as Box<dyn Expression>),
         )))
     }
     
     /// Parse function parameters for function literals
-    fn parse_function_parameters(&mut self) -> Result<Vec<Parameter>, Error> {
+    fn parse_function_parameters(&mut self) -> Result<(), Error> {
         let mut parameters = Vec::new();
         
         if self.peek_token_is(&TokenType::RightParen) {
@@ -351,12 +351,12 @@ impl Parser {
     }
     
     /// Parse call arguments
-    fn parse_call_arguments(&mut self) -> Result<Vec<Box<dyn Expression>>, Error> {
+    fn parse_call_arguments(&mut self) -> Result<(), Error> {
         self.parse_expression_list(TokenType::RightParen)
     }
     
     /// Parse expression list separated by commas
-    fn parse_expression_list(&mut self, end_token: TokenType) -> Result<Vec<Box<dyn Expression>>, Error> {
+    fn parse_expression_list(&mut self, end_token: TokenType) -> Result<(), Error> {
         let mut args = Vec::new();
         
         if self.peek_token_is(&end_token) {
@@ -378,7 +378,7 @@ impl Parser {
     }
     
     /// Parse channel receive expression (<-channel)
-    fn parse_channel_receive(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_channel_receive(&mut self) -> Result<(), Error> {
         use crate::ast::expressions::ChannelReceive;
         
         let token = self.current_token.literal.clone();
@@ -389,7 +389,7 @@ impl Parser {
     }
     
     /// Parse channel send expression (channel <- value)
-    fn parse_channel_send(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+    fn parse_channel_send(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         use crate::ast::expressions::ChannelSend;
         
         let token = self.current_token.literal.clone();
@@ -401,7 +401,7 @@ impl Parser {
     }
     
     /// Parse goroutine spawn expression (stan function_call)
-    fn parse_goroutine_spawn(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_goroutine_spawn(&mut self) -> Result<(), Error> {
         use crate::ast::expressions::GoroutineSpawn;
         
         let token = self.current_token.literal.clone();
@@ -412,8 +412,8 @@ impl Parser {
     }
     
     /// Parse channel type expression (dm Type)
-    fn parse_channel_type(&mut self) -> Result<Box<dyn Expression>, Error> {
-        use crate::ast::types::ChannelTypeExpression;
+    fn parse_channel_type(&mut self) -> Result<(), Error> {
+        use crate::ast::crate::types::ChannelTypeExpression;
         
         let token = self.current_token.literal.clone();
         self.advance_token()?;

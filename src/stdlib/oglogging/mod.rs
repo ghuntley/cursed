@@ -24,7 +24,7 @@ lazy_static::lazy_static! {
 /// Standard logger functions that operate on the global logger instance
 
 /// spill - Print args followed by newline
-pub fn spill(args: &[Value]) -> Result<(), CursedError> {
+pub fn spill(args: &[Value]) -> Result<(), Error> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -32,7 +32,7 @@ pub fn spill(args: &[Value]) -> Result<(), CursedError> {
 }
 
 /// spillf - Print formatted string
-pub fn spillf(format: &str, args: &[Value]) -> Result<(), CursedError> {
+pub fn spillf(format: &str, args: &[Value]) -> Result<(), Error> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -72,7 +72,7 @@ pub fn shookf(format: &str, args: &[Value]) -> ! {
 }
 
 /// setFlags - Set output flags for standard logger
-pub fn set_flags(flag: i32) -> Result<(), CursedError> {
+pub fn set_flags(flag: i32) -> Result<(), Error> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -81,7 +81,7 @@ pub fn set_flags(flag: i32) -> Result<(), CursedError> {
 }
 
 /// setOutput - Set output destination for standard logger
-pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), CursedError> {
+pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), Error> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -90,7 +90,7 @@ pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), CursedError> {
 }
 
 /// setPrefix - Set output prefix for standard logger
-pub fn set_prefix(prefix: &str) -> Result<(), CursedError> {
+pub fn set_prefix(prefix: &str) -> Result<(), Error> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -99,7 +99,7 @@ pub fn set_prefix(prefix: &str) -> Result<(), CursedError> {
 }
 
 /// Get current flags from standard logger
-pub fn flags() -> Result<i32, CursedError> {
+pub fn flags() -> Result<(), Error> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -107,7 +107,7 @@ pub fn flags() -> Result<i32, CursedError> {
 }
 
 /// Get current prefix from standard logger
-pub fn prefix() -> Result<String, CursedError> {
+pub fn prefix() -> Result<(), Error> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;

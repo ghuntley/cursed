@@ -26,13 +26,13 @@ pub trait Migration: Send + Sync + Debug {
     }
     
     /// Apply the migration (move schema forward)
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError>;
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error>;
     
     /// Rollback the migration (move schema backward)
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError>;
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error>;
     
     /// Check if migration can be safely applied
-    fn can_apply(&self, schema: &DatabaseSchema) -> Result<bool, DatabaseError> {
+    fn can_apply(&self, schema: &DatabaseSchema) -> Result<(), Error> {
         // Default: check dependencies are satisfied
         let applied_migrations = schema.get_applied_migrations();
         for dep in self.dependencies() {
@@ -163,7 +163,7 @@ impl MigrationManager {
 
     /// facts Register a migration
     #[instrument(skip(self, migration))]
-    pub fn register_migration(&self, migration: Box<dyn Migration>) -> Result<(), DatabaseError> {
+    pub fn register_migration(&self, migration: Box<dyn Migration>) -> Result<(), Error> {
         let version = migration.version();
         info!(version = %version, name = %migration.name(), "Registering migration");
         
@@ -187,7 +187,7 @@ impl MigrationManager {
 
     /// periodt Apply all pending migrations
     #[instrument(skip(self))]
-    pub async fn migrate(&self) -> Result<Vec<MigrationStatus>, DatabaseError> {
+    pub async fn migrate(&self) -> Result<(), Error> {
         info!("Starting migration process");
         
         // Get pending migrations in dependency order
@@ -207,7 +207,7 @@ impl MigrationManager {
 
     /// bestie Rollback to specific version
     #[instrument(skip(self))]
-    pub async fn rollback_to(&self, target_version: &str) -> Result<Vec<MigrationStatus>, DatabaseError> {
+    pub async fn rollback_to(&self, target_version: &str) -> Result<(), Error> {
         info!(target = target_version, "Rolling back to version");
         
         let applied_migrations = self.get_applied_migrations()?;
@@ -242,7 +242,7 @@ impl MigrationManager {
 
     /// yolo Get current schema version
     #[instrument(skip(self))]
-    pub fn current_version(&self) -> Result<SchemaVersion, DatabaseError> {
+    pub fn current_version(&self) -> Result<(), Error> {
         debug!("Getting current schema version");
         
         let applied_migrations = self.get_applied_migrations()?;
@@ -271,7 +271,7 @@ impl MigrationManager {
 
     /// lit Generate migration for entity
     #[instrument(skip(self))]
-    pub fn generate_migration<T: Entity>(&self, operation: MigrationOperation) -> Result<Box<dyn Migration>, DatabaseError> {
+    pub fn generate_migration<T: Entity>(&self, operation: MigrationOperation) -> Result<(), Error> {
         info!(entity = T::table_name(), operation = ?operation, "Generating migration");
         
         let version = self.generate_version();
@@ -317,7 +317,7 @@ impl MigrationManager {
     }
 
     // Helper methods
-    async fn apply_migration(&self, version: &str) -> Result<MigrationStatus, DatabaseError> {
+    async fn apply_migration(&self, version: &str) -> Result<(), Error> {
         info!(version = version, "Applying migration");
         
         // Update status to in progress
@@ -377,7 +377,7 @@ impl MigrationManager {
         }
     }
     
-    async fn rollback_migration(&self, version: &str) -> Result<MigrationStatus, DatabaseError> {
+    async fn rollback_migration(&self, version: &str) -> Result<(), Error> {
         info!(version = version, "Rolling back migration");
         
         let migration_exists = if let Ok(migrations) = self.migrations.lock() {
@@ -409,7 +409,7 @@ impl MigrationManager {
         }
     }
     
-    async fn execute_migration_up(&self, migration: &dyn Migration) -> Result<(), DatabaseError> {
+    async fn execute_migration_up(&self, migration: &dyn Migration) -> Result<(), Error> {
         debug!(migration = %migration.name(), "Executing migration up");
         
         let sql_statements = if let Ok(mut schema) = self.schema.lock() {
@@ -440,7 +440,7 @@ impl MigrationManager {
         Ok(())
     }
     
-    async fn execute_migration_down(&self, migration: &dyn Migration) -> Result<(), DatabaseError> {
+    async fn execute_migration_down(&self, migration: &dyn Migration) -> Result<(), Error> {
         debug!(migration = %migration.name(), "Executing migration down");
         
         let sql_statements = if let Ok(mut schema) = self.schema.lock() {
@@ -471,7 +471,7 @@ impl MigrationManager {
         Ok(())
     }
     
-    fn get_pending_migrations(&self) -> Result<Vec<String>, DatabaseError> {
+    fn get_pending_migrations(&self) -> Result<(), Error> {
         if let Ok(tracker) = self.status_tracker.lock() {
             let pending: Vec<String> = tracker.iter()
                 .filter(|(_, status)| matches!(status, MigrationStatus::Pending))
@@ -483,7 +483,7 @@ impl MigrationManager {
         }
     }
     
-    fn get_applied_migrations(&self) -> Result<Vec<String>, DatabaseError> {
+    fn get_applied_migrations(&self) -> Result<(), Error> {
         if let Ok(tracker) = self.status_tracker.lock() {
             let mut applied: Vec<String> = tracker.iter()
                 .filter(|(_, status)| matches!(status, MigrationStatus::Applied { .. }))
@@ -496,7 +496,7 @@ impl MigrationManager {
         }
     }
     
-    fn sort_by_dependencies(&self, migrations: Vec<String>) -> Result<Vec<String>, DatabaseError> {
+    fn sort_by_dependencies(&self, migrations: Vec<String>) -> Result<(), Error> {
         debug!("Sorting migrations by dependencies");
         
         let migrations_guard = self.migrations.lock().map_err(|_| 
@@ -597,7 +597,7 @@ impl MigrationManager {
     /// 2. Falls back to analyzing the connection string/data source name
     /// 3. Defaults to PostgreSQL if detection fails
     #[instrument(skip(self))]
-    fn detect_database_dialect(&self) -> Result<String, DatabaseError> {
+    fn detect_database_dialect(&self) -> Result<(), Error> {
         debug!("Detecting database dialect");
         
         let driver_name = &self.db.driver_name;
@@ -690,14 +690,14 @@ impl<T: Entity> Migration for CreateTableMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
         Ok(Vec::from([sql]))
@@ -731,13 +731,13 @@ impl<T: Entity> Migration for DropTableMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
@@ -774,7 +774,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!(
             "ALTER TABLE {} ADD COLUMN {} {}{}",
             T::table_name(),
@@ -797,7 +797,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!(
             "ALTER TABLE {} DROP COLUMN {}",
             T::table_name(),
@@ -841,7 +841,7 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!(
             "ALTER TABLE {} DROP COLUMN {}",
             T::table_name(),
@@ -855,7 +855,7 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         // Note: This is a destructive operation - we can't perfectly restore the column
         // In a real implementation, we'd need to store the original column definition
         warn!("Dropping column is a destructive operation - rollback may not be perfect");
@@ -935,7 +935,7 @@ impl<T: Entity> Migration for AddIndexMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let unique_keyword = if self.index.unique { "UNIQUE " } else { "" };
         let condition_clause = if let Some(condition) = &self.index.condition {
             format!(" WHERE {}", condition)
@@ -960,7 +960,7 @@ impl<T: Entity> Migration for AddIndexMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!("DROP INDEX IF EXISTS {};", self.index.name);
         
         // Remove index from schema
@@ -1033,7 +1033,7 @@ impl<T: Entity> Migration for DropIndexMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         let sql = format!("DROP INDEX IF EXISTS {};", self.index_name);
         
         // Remove index from schema
@@ -1044,7 +1044,7 @@ impl<T: Entity> Migration for DropIndexMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
+    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
         // Note: This is a destructive operation - we can't perfectly restore the index
         // In a real implementation, we'd need to store the original index definition
         warn!("Dropping index is a destructive operation - rollback may not be perfect");
@@ -1128,7 +1128,7 @@ mod tests {
             }
         }
 
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<Self, DatabaseError> {
+        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
             Ok(Self {
                 id: None,
                 name: "Test".to_string(),
@@ -1312,8 +1312,8 @@ mod tests {
         impl Migration for Migration1 {
             fn version(&self) -> String { "001".to_string() }
             fn name(&self) -> String { "first".to_string() }
-            fn up(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
-            fn down(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
+            fn up(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
+            fn down(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
         }
         
         struct Migration2;
@@ -1321,8 +1321,8 @@ mod tests {
             fn version(&self) -> String { "002".to_string() }
             fn name(&self) -> String { "second".to_string() }
             fn dependencies(&self) -> Vec<String> { vec!["001".to_string()] }
-            fn up(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
-            fn down(&self, _: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> { Ok(vec![]) }
+            fn up(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
+            fn down(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
         }
         
         manager.register_migration(Box::new(Migration1)).expect("Should register migration 1");

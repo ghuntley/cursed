@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
+use crate::ast::ASTNode;
 
 /// Feature extractor for CURSED code
 #[derive(Debug)]

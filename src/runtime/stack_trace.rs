@@ -364,7 +364,7 @@ impl StackTraceManager {
         module_name: Option<String>,
         source_location: Option<SourceLocation>,
         parameters: HashMap<String, String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let thread_id = thread::current().id();
         
         if let Ok(mut stacks) = self.thread_stacks.lock() {
@@ -397,7 +397,7 @@ impl StackTraceManager {
 
     /// Exit a function (pop frame from stack)
     #[instrument(skip(self))]
-    pub fn exit_function(&self, function_name: Option<String>) -> Result<(), CursedError> {
+    pub fn exit_function(&self, function_name: Option<String>) -> Result<(), Error> {
         let thread_id = thread::current().id();
         
         if let Ok(mut stacks) = self.thread_stacks.lock() {
@@ -430,7 +430,7 @@ impl StackTraceManager {
 
     /// Capture current stack trace
     #[instrument(skip(self))]
-    pub fn capture_stack_trace(&self, goroutine_id: Option<u64>) -> Result<StackTrace, CursedError> {
+    pub fn capture_stack_trace(&self, goroutine_id: Option<u64>) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         let thread_id = thread::current().id();
         
@@ -494,7 +494,7 @@ impl StackTraceManager {
     }
 
     /// Add debug information for symbol resolution
-    pub fn add_debug_info(&self, function_name: String, location: SourceLocation, module: Option<String>) -> Result<(), CursedError> {
+    pub fn add_debug_info(&self, function_name: String, location: SourceLocation, module: Option<String>) -> Result<(), Error> {
         if let Ok(mut debug_info) = self.debug_info.write() {
             let file_path = location.file.clone(); // Clone before moving location
             debug_info.add_function(function_name, location);
@@ -549,14 +549,14 @@ impl StackTraceManager {
     }
 
     /// Get stack trace statistics
-    pub fn get_statistics(&self) -> Result<StackTraceStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access stack trace statistics".to_string()))
     }
 
     /// Update configuration
-    pub fn update_config<F>(&self, updater: F) -> Result<(), CursedError>
+    pub fn update_config<F>(&self, updater: F) -> Result<(), Error>
     where
         F: FnOnce(&mut StackTraceConfig),
     {
@@ -570,7 +570,7 @@ impl StackTraceManager {
 
     // Helper methods
 
-    fn capture_local_variables(&self, mut frame: CallFrame) -> Result<CallFrame, CursedError> {
+    fn capture_local_variables(&self, mut frame: CallFrame) -> Result<(), Error> {
         // Placeholder implementation - in a real system this would inspect
         // the current execution context for local variables
         
@@ -580,7 +580,7 @@ impl StackTraceManager {
         Ok(frame)
     }
 
-    fn resolve_frame_symbols(&self, mut frame: CallFrame) -> Result<CallFrame, CursedError> {
+    fn resolve_frame_symbols(&self, mut frame: CallFrame) -> Result<(), Error> {
         if let Ok(debug_info) = self.debug_info.read() {
             // Resolve function location if not already set
             if frame.source_location.is_none() {

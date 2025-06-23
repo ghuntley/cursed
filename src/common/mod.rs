@@ -32,4 +32,4 @@ pub const TARGET_TRIPLE: &str = "unknown-target";
 pub const BUILD_TIMESTAMP: &str = "unknown";
 
 /// Common result type used throughout the codebase
-pub type Result<T> = std::result::Result<T, crate::error::Error>;
+pub type Result<(), Error>;

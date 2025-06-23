@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// High-performance HTTP router with flexible pattern matching
 /// 
 /// Supports:
@@ -62,7 +63,7 @@ impl Route {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
         middleware: Vec<Arc<dyn Middleware>>,
-    ) -> Result<Self, RouterError> {
+    ) -> Result<(), Error> {
         let compiled_pattern = RoutePattern::compile(pattern)
             .map_err(|e| RouterError::InvalidPattern(pattern.to_string(), e))?;
         
@@ -291,7 +292,7 @@ impl Router {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
         middleware: Vec<Arc<dyn Middleware>>,
-    ) -> Result<(), RouterError> {
+    ) -> Result<(), Error> {
         let route = Route::new(method, pattern, handler, middleware)?;
         
         // Add global middleware to route
@@ -322,7 +323,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), RouterError> {
+    ) -> Result<(), Error> {
         self.add_route(HttpMethod::GET, pattern, handler, Vec::from([]))
     }
 
@@ -331,7 +332,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), RouterError> {
+    ) -> Result<(), Error> {
         self.add_route(HttpMethod::POST, pattern, handler, Vec::from([]))
     }
 
@@ -340,7 +341,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), RouterError> {
+    ) -> Result<(), Error> {
         self.add_route(HttpMethod::PUT, pattern, handler, Vec::from([]))
     }
 
@@ -349,7 +350,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), RouterError> {
+    ) -> Result<(), Error> {
         self.add_route(HttpMethod::DELETE, pattern, handler, Vec::from([]))
     }
 

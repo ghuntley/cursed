@@ -645,7 +645,7 @@ impl<'ctx> OptimizationPipeline<'ctx> {
         }
         
         if result.len() != self.stages.len() {
-            return Err(Error::Other("Circular dependency in pipeline stages".to_string()));
+            return Err(Error::General("Circular dependency in pipeline stages".to_string()));
         }
         
         Ok(result)

@@ -3,7 +3,7 @@ use std::fmt;
 use crate::error::CursedError;
 
 /// Result type for SignalBoost operations
-pub type SignalBoostResult<T> = Result<T, SignalBoostError>;
+pub type SignalBoostResult<(), Error>;
 
 /// Comprehensive error type for signal handling operations
 #[derive(Debug, Clone)]

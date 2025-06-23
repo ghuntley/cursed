@@ -168,7 +168,7 @@ impl DependencyResolver {
     
     /// Resolve dependencies using the real constraint satisfaction algorithm
     #[instrument(skip(self, dependencies))]
-    pub async fn resolve(&mut self, dependencies: &HashMap<String, String>) -> Result<DependencyGraph, DependencyError> {
+    pub async fn resolve(&mut self, dependencies: &HashMap<String, String>) -> Result<(), Error> {
         info!("Resolving {} dependencies using constraint satisfaction", dependencies.len());
         
         // Clear previous resolution
@@ -254,7 +254,7 @@ impl DependencyResolver {
     }
     
     /// Resolve version for a package given constraints
-    async fn resolve_version(&self, package: &str, constraint: &str) -> Result<String, DependencyError> {
+    async fn resolve_version(&self, package: &str, constraint: &str) -> Result<(), Error> {
         debug!("Resolving version for {}: {}", package, constraint);
         
         let available_versions = self.get_available_versions(package).await?;
@@ -268,7 +268,7 @@ impl DependencyResolver {
     }
     
     /// Get available versions for a package from registry
-    async fn get_available_versions(&self, package: &str) -> Result<Vec<Version>, DependencyError> {
+    async fn get_available_versions(&self, package: &str) -> Result<(), Error> {
         if let Some(ref registry) = self.registry {
             debug!("Fetching versions for package {} from registry", package);
             match registry.lock() {
@@ -307,7 +307,7 @@ impl DependencyResolver {
     }
     
     /// Get package metadata from registry
-    async fn get_package_metadata(&self, name: &str, version: &str) -> Result<PkgMetadata, DependencyError> {
+    async fn get_package_metadata(&self, name: &str, version: &str) -> Result<(), Error> {
         if let Some(ref registry) = self.registry {
             debug!("Fetching metadata for package {}@{} from registry", name, version);
             match registry.lock() {
@@ -370,7 +370,7 @@ impl DependencyResolver {
     }
     
     /// Check for circular dependencies
-    fn check_circular_dependencies(&self) -> Result<(), DependencyError> {
+    fn check_circular_dependencies(&self) -> Result<(), Error> {
         debug!("Checking for circular dependencies");
         
         let mut visited = HashSet::new();
@@ -414,7 +414,7 @@ impl DependencyResolver {
     }
     
     /// Validate all version constraints are satisfied
-    fn validate_constraints(&self) -> Result<(), DependencyError> {
+    fn validate_constraints(&self) -> Result<(), Error> {
         debug!("Validating version constraints");
         
         for edge in &self.graph.edges {
@@ -434,7 +434,7 @@ impl DependencyResolver {
     }
     
     /// Get dependency graph in topological order
-    pub fn topological_sort(&self) -> Result<Vec<String>, DependencyError> {
+    pub fn topological_sort(&self) -> Result<(), Error> {
         let mut in_degree = HashMap::new();
         let mut adj_list = HashMap::new();
         
@@ -498,7 +498,7 @@ impl VersionConstraintResolver {
         &self,
         available_versions: &[String],
         constraint: &str,
-    ) -> Result<String, DependencyError> {
+    ) -> Result<(), Error> {
         // Parse the constraint using semver
         let version_req = VersionReq::parse(constraint)
             .map_err(|e| DependencyError::InvalidConstraint { 
@@ -534,7 +534,7 @@ impl VersionConstraintResolver {
     }
     
     /// Check if version satisfies constraint
-    pub fn satisfies_constraint(&self, version: &str, constraint: &str) -> Result<bool, DependencyError> {
+    pub fn satisfies_constraint(&self, version: &str, constraint: &str) -> Result<(), Error> {
         let version_parsed = Version::parse(version)
             .map_err(|e| DependencyError::InvalidConstraint { 
                 constraint: format!("Invalid version '{}': {}", version, e) 

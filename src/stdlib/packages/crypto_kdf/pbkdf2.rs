@@ -41,7 +41,7 @@ impl Pbkdf2Config {
     }
     
     /// vibes Validate configuration parameters
-    pub fn validate(&self) -> Result<(), Pbkdf2Error> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.iterations < 1000 {
             return Err(Pbkdf2Error::InvalidConfig("PBKDF2 iterations must be at least 1000 for security".to_string()));
         }
@@ -102,18 +102,18 @@ pub struct Pbkdf2Engine {
 
 impl Pbkdf2Engine {
     /// slay Create new PBKDF2 engine with configuration
-    pub fn new(config: Pbkdf2Config) -> Result<Self, Pbkdf2Error> {
+    pub fn new(config: Pbkdf2Config) -> Result<(), Error> {
         config.validate()?;
         Ok(Self { config })
     }
     
     /// bestie Create PBKDF2 engine with default configuration
-    pub fn default() -> Result<Self, Pbkdf2Error> {
+    pub fn default() -> Result<(), Error> {
         Self::new(Pbkdf2Config::new())
     }
     
     /// vibes Derive key from password and salt
-    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<Vec<u8>, Pbkdf2Error> {
+    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<(), Error> {
         if password.is_empty() {
             return Err(Pbkdf2Error::InvalidInput("Password cannot be empty".to_string()));
         }
@@ -126,7 +126,7 @@ impl Pbkdf2Engine {
     }
     
     /// periodt Derive key with custom parameters
-    pub fn derive_key_custom(&self, password: &[u8], salt: &[u8], iterations: u32, output_len: usize) -> Result<Vec<u8>, Pbkdf2Error> {
+    pub fn derive_key_custom(&self, password: &[u8], salt: &[u8], iterations: u32, output_len: usize) -> Result<(), Error> {
         if password.is_empty() {
             return Err(Pbkdf2Error::InvalidInput("Password cannot be empty".to_string()));
         }
@@ -147,13 +147,13 @@ impl Pbkdf2Engine {
     }
     
     /// facts Verify password against derived key
-    pub fn verify_password(&self, password: &[u8], salt: &[u8], expected_key: &[u8]) -> Result<bool, Pbkdf2Error> {
+    pub fn verify_password(&self, password: &[u8], salt: &[u8], expected_key: &[u8]) -> Result<(), Error> {
         let derived_key = self.derive_key(password, salt)?;
         Ok(self.constant_time_compare(&derived_key, expected_key))
     }
     
     /// yolo Hash password with random salt (for storage)
-    pub fn hash_password(&self, password: &[u8]) -> Result<Pbkdf2Result, Pbkdf2Error> {
+    pub fn hash_password(&self, password: &[u8]) -> Result<(), Error> {
         let salt = self.generate_salt()?;
         let derived_key = self.derive_key(password, &salt)?;
         
@@ -166,7 +166,7 @@ impl Pbkdf2Engine {
     }
     
     /// slay Generate cryptographically secure salt
-    pub fn generate_salt(&self) -> Result<Vec<u8>, Pbkdf2Error> {
+    pub fn generate_salt(&self) -> Result<(), Error> {
         use rand::RngCore;
         let mut salt = vec![0u8; self.config.salt_len];
         rand::thread_rng().fill_bytes(&mut salt);
@@ -174,7 +174,7 @@ impl Pbkdf2Engine {
     }
     
     // Internal PBKDF2 implementation following RFC 2898
-    fn pbkdf2_derive(&self, password: &[u8], salt: &[u8], iterations: u32, output_len: usize) -> Result<Vec<u8>, Pbkdf2Error> {
+    fn pbkdf2_derive(&self, password: &[u8], salt: &[u8], iterations: u32, output_len: usize) -> Result<(), Error> {
         let hmac_engine = HmacEngine::new(self.config.hash_algorithm, password)
             .map_err(|e| Pbkdf2Error::HmacError(e))?;
         
@@ -194,7 +194,7 @@ impl Pbkdf2Engine {
     
     // PBKDF2 F function: U1 = PRF(P, S || INT(i)), U2 = PRF(P, U1), ..., Uc = PRF(P, Uc-1)
     // F(P, S, c, i) = U1 XOR U2 XOR ... XOR Uc
-    fn pbkdf2_f(&self, hmac_engine: &HmacEngine, salt: &[u8], iterations: u32, block_index: u32) -> Result<Vec<u8>, Pbkdf2Error> {
+    fn pbkdf2_f(&self, hmac_engine: &HmacEngine, salt: &[u8], iterations: u32, block_index: u32) -> Result<(), Error> {
         // Prepare salt || INT(block_index)
         let mut salt_with_index = salt.to_vec();
         salt_with_index.extend_from_slice(&block_index.to_be_bytes());
@@ -252,7 +252,7 @@ impl Pbkdf2Result {
     }
     
     /// vibes Parse result from string format
-    pub fn from_string(s: &str) -> Result<Self, Pbkdf2Error> {
+    pub fn from_string(s: &str) -> Result<(), Error> {
         let parts: Vec<&str> = s.split(':').collect();
         if parts.len() != 5 || parts[0] != "pbkdf2" {
             return Err(Pbkdf2Error::InvalidFormat("Invalid PBKDF2 string format".to_string()));
@@ -283,7 +283,7 @@ impl Pbkdf2Result {
     }
     
     /// periodt Verify password against this result
-    pub fn verify(&self, password: &[u8]) -> Result<bool, Pbkdf2Error> {
+    pub fn verify(&self, password: &[u8]) -> Result<(), Error> {
         let config = Pbkdf2Config {
             hash_algorithm: self.algorithm,
             iterations: self.iterations,
@@ -332,14 +332,14 @@ impl Pbkdf2Utils {
     }
     
     /// vibes Hash password with PBKDF2-SHA256 and default settings
-    pub fn hash_password_sha256(password: &str) -> Result<String, Pbkdf2Error> {
+    pub fn hash_password_sha256(password: &str) -> Result<(), Error> {
         let engine = Pbkdf2Engine::default()?;
         let result = engine.hash_password(password.as_bytes())?;
         Ok(result.to_string())
     }
     
     /// periodt Hash password with PBKDF2-SHA512 and custom iterations
-    pub fn hash_password_sha512(password: &str, iterations: u32) -> Result<String, Pbkdf2Error> {
+    pub fn hash_password_sha512(password: &str, iterations: u32) -> Result<(), Error> {
         let config = Pbkdf2Config::with_params(HmacAlgorithm::Sha512, iterations, 64);
         let engine = Pbkdf2Engine::new(config)?;
         let result = engine.hash_password(password.as_bytes())?;
@@ -347,20 +347,20 @@ impl Pbkdf2Utils {
     }
     
     /// facts Verify password against stored hash
-    pub fn verify_password(password: &str, stored_hash: &str) -> Result<bool, Pbkdf2Error> {
+    pub fn verify_password(password: &str, stored_hash: &str) -> Result<(), Error> {
         let result = Pbkdf2Result::from_string(stored_hash)?;
         result.verify(password.as_bytes())
     }
     
     /// yolo Derive key from password with custom parameters
-    pub fn derive_key(password: &str, salt: &[u8], iterations: u32, output_len: usize) -> Result<Vec<u8>, Pbkdf2Error> {
+    pub fn derive_key(password: &str, salt: &[u8], iterations: u32, output_len: usize) -> Result<(), Error> {
         let config = Pbkdf2Config::with_params(HmacAlgorithm::Sha256, iterations, output_len);
         let engine = Pbkdf2Engine::new(config)?;
         engine.derive_key(password.as_bytes(), salt)
     }
     
     /// slay Generate secure random salt
-    pub fn generate_salt(length: usize) -> Result<Vec<u8>, Pbkdf2Error> {
+    pub fn generate_salt(length: usize) -> Result<(), Error> {
         if length < 8 {
             return Err(Pbkdf2Error::InvalidInput("Salt length must be at least 8 bytes".to_string()));
         }
@@ -375,7 +375,7 @@ impl Pbkdf2Utils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay PBKDF2 key derivation function
-pub fn pbkdf2_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn pbkdf2_derive_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("PBKDF2 requires password, salt, iterations, and output length".to_string()));
     }
@@ -413,7 +413,7 @@ pub fn pbkdf2_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Hash password with PBKDF2
-pub fn pbkdf2_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn pbkdf2_hash_password(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("PBKDF2 hash requires password".to_string()));
     }
@@ -464,7 +464,7 @@ pub fn pbkdf2_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Verify password with PBKDF2
-pub fn pbkdf2_verify_password(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn pbkdf2_verify_password(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("PBKDF2 verify requires password and stored hash".to_string()));
     }
@@ -486,7 +486,7 @@ pub fn pbkdf2_verify_password(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Generate PBKDF2 salt
-pub fn pbkdf2_generate_salt(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn pbkdf2_generate_salt(args: Vec<Value>) -> Result<(), Error> {
     let length = if args.is_empty() {
         16
     } else {
@@ -503,7 +503,7 @@ pub fn pbkdf2_generate_salt(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Create PBKDF2 configuration
-pub fn create_pbkdf2_config(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn create_pbkdf2_config(args: Vec<Value>) -> Result<(), Error> {
     let algorithm_str = if args.is_empty() {
         "SHA256"
     } else {

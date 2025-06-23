@@ -270,7 +270,7 @@ pub enum BuildError {
 
 impl BuildOrchestrator {
     /// Create a new build orchestrator
-    pub fn new(config: BuildConfig, work_dir: PathBuf) -> Result<Self, BuildError> {
+    pub fn new(config: BuildConfig, work_dir: PathBuf) -> Result<(), Error> {
         let cache = IncrementalCache::new(work_dir.join("target").join("cache"))?;
         let dependency_resolver = DependencyResolver::new();
         let package_manager_config = crate::package_manager::PackageManagerConfig {
@@ -302,7 +302,7 @@ impl BuildOrchestrator {
     
     /// Build all targets
     #[instrument(skip(self))]
-    pub async fn build_all(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+    pub async fn build_all(&mut self, profile: &str) -> Result<(), Error> {
         info!("Starting build for all targets with profile: {}", profile);
         
         let start_time = Instant::now();
@@ -365,7 +365,7 @@ impl BuildOrchestrator {
     
     /// Build using comprehensive pipeline (enhanced method)
     #[instrument(skip(self))]
-    pub async fn build_with_pipeline(&mut self, profile: &str, targets: Vec<String>, force_rebuild: bool, parallel: bool) -> Result<PipelineResult, BuildError> {
+    pub async fn build_with_pipeline(&mut self, profile: &str, targets: Vec<String>, force_rebuild: bool, parallel: bool) -> Result<(), Error> {
         info!("Starting pipeline build with profile: {}", profile);
         
         let context = PipelineContext {
@@ -382,13 +382,13 @@ impl BuildOrchestrator {
     
     /// Build specific targets with pipeline
     #[instrument(skip(self))]
-    pub async fn build_targets_with_pipeline(&mut self, profile: &str, target_names: &[String]) -> Result<PipelineResult, BuildError> {
+    pub async fn build_targets_with_pipeline(&mut self, profile: &str, target_names: &[String]) -> Result<(), Error> {
         self.build_with_pipeline(profile, target_names.to_vec(), false, true).await
     }
     
     /// Quick build (skip formatting and linting)
     #[instrument(skip(self))]
-    pub async fn quick_build(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+    pub async fn quick_build(&mut self, profile: &str) -> Result<(), Error> {
         info!("Starting quick build (skipping formatting and linting)");
         
         // Create temporary config without format/lint on build
@@ -426,7 +426,7 @@ impl BuildOrchestrator {
     
     /// Clean build artifacts and cache
     #[instrument(skip(self))]
-    pub async fn clean_all(&mut self, clean_cache: bool) -> Result<(), BuildError> {
+    pub async fn clean_all(&mut self, clean_cache: bool) -> Result<(), Error> {
         info!("Cleaning build artifacts");
         
         let target_dir = self.work_dir.join("target");
@@ -450,7 +450,7 @@ impl BuildOrchestrator {
     
     /// Watch for file changes and rebuild
     #[instrument(skip(self))]
-    pub async fn watch(&mut self, profile: &str, command: &str) -> Result<(), BuildError> {
+    pub async fn watch(&mut self, profile: &str, command: &str) -> Result<(), Error> {
         info!("Starting file watcher for profile: {}", profile);
         
         // Configure watch settings
@@ -501,7 +501,7 @@ impl BuildOrchestrator {
     
     /// Build a specific target
     #[instrument(skip(self, target, profile))]
-    pub async fn build_target(&mut self, target: &BuildTarget, profile: &BuildProfile) -> Result<BuildResult, BuildError> {
+    pub async fn build_target(&mut self, target: &BuildTarget, profile: &BuildProfile) -> Result<(), Error> {
         info!("Building target: {} ({})", target.name, target.path.display());
         
         let start_time = Instant::now();
@@ -532,7 +532,7 @@ impl BuildOrchestrator {
     
     /// Resolve package dependencies
     #[instrument(skip(self))]
-    async fn resolve_dependencies(&mut self) -> Result<(), BuildError> {
+    async fn resolve_dependencies(&mut self) -> Result<(), Error> {
         info!("Resolving dependencies");
         
         // Use dependency resolver to create dependency graph
@@ -548,7 +548,7 @@ impl BuildOrchestrator {
     }
     
     /// Check if target is cached and up to date
-    async fn check_cache(&self, target: &BuildTarget) -> Result<Option<BuildResult>, BuildError> {
+    async fn check_cache(&self, target: &BuildTarget) -> Result<(), Error> {
         if let Some(entry) = self.cache.get(&target.name) {
             // Check if source files have changed
             let source_modified = self.get_source_modification_time(&target.path)?;
@@ -578,14 +578,14 @@ impl BuildOrchestrator {
     }
     
     /// Get modification time for source files
-    fn get_source_modification_time(&self, path: &Path) -> Result<std::time::SystemTime, BuildError> {
+    fn get_source_modification_time(&self, path: &Path) -> Result<(), Error> {
         let metadata = std::fs::metadata(path)?;
         Ok(metadata.modified()?)
     }
     
     /// Compile a target using CURSED compiler
     #[instrument(skip(self, target, profile))]
-    async fn compile_target(&self, target: &BuildTarget, profile: &BuildProfile) -> Result<BuildResult, BuildError> {
+    async fn compile_target(&self, target: &BuildTarget, profile: &BuildProfile) -> Result<(), Error> {
         let start_time = Instant::now();
         
         // Determine output path using actual profile name
@@ -731,7 +731,7 @@ impl BuildOrchestrator {
     }
     
     /// Run pre-build scripts
-    async fn run_pre_build_scripts(&self, target: &BuildTarget) -> Result<(), BuildError> {
+    async fn run_pre_build_scripts(&self, target: &BuildTarget) -> Result<(), Error> {
         if let Some(script) = self.config.scripts.get("pre-build") {
             info!("Running pre-build script for target: {}", target.name);
             self.run_script(script).await?;
@@ -748,7 +748,7 @@ impl BuildOrchestrator {
     }
     
     /// Run post-build scripts
-    async fn run_post_build_scripts(&self, target: &BuildTarget, result: &BuildResult) -> Result<(), BuildError> {
+    async fn run_post_build_scripts(&self, target: &BuildTarget, result: &BuildResult) -> Result<(), Error> {
         if let Some(script) = self.config.scripts.get("post-build") {
             info!("Running post-build script for target: {}", target.name);
             self.run_script(script).await?;
@@ -765,7 +765,7 @@ impl BuildOrchestrator {
     }
     
     /// Execute a build script
-    async fn run_script(&self, script: &str) -> Result<(), BuildError> {
+    async fn run_script(&self, script: &str) -> Result<(), Error> {
         let mut cmd = if cfg!(target_os = "windows") {
             Command::new("cmd")
         } else {
@@ -793,7 +793,7 @@ impl BuildOrchestrator {
     }
     
     /// Update build cache
-    async fn update_cache(&mut self, target: &BuildTarget, result: &BuildResult) -> Result<(), BuildError> {
+    async fn update_cache(&mut self, target: &BuildTarget, result: &BuildResult) -> Result<(), Error> {
         self.cache.insert(
             &target.name,
             result.outputs.clone(),
@@ -806,7 +806,7 @@ impl BuildOrchestrator {
     
     /// Clean build artifacts
     #[instrument(skip(self))]
-    pub fn clean(&self) -> Result<(), BuildError> {
+    pub fn clean(&self) -> Result<(), Error> {
         info!("Cleaning build artifacts");
         
         let target_dir = self.work_dir.join("target");
@@ -820,7 +820,7 @@ impl BuildOrchestrator {
     
     /// Run tests with comprehensive discovery and execution
     #[instrument(skip(self))]
-    pub async fn test(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+    pub async fn test(&mut self, profile: &str) -> Result<(), Error> {
         info!("Running comprehensive test suite with profile: {}", profile);
         
         let start_time = Instant::now();
@@ -916,7 +916,7 @@ impl BuildOrchestrator {
     
     /// Run tests with custom filter patterns
     #[instrument(skip(self))]
-    pub async fn test_with_filter(&mut self, profile: &str, patterns: &[String]) -> Result<BuildResult, BuildError> {
+    pub async fn test_with_filter(&mut self, profile: &str, patterns: &[String]) -> Result<(), Error> {
         info!("Running filtered tests with patterns: {:?}", patterns);
         
         let start_time = Instant::now();
@@ -1000,7 +1000,7 @@ impl BuildOrchestrator {
     
     /// Run only ignored tests
     #[instrument(skip(self))]
-    pub async fn test_ignored(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+    pub async fn test_ignored(&mut self, profile: &str) -> Result<(), Error> {
         info!("Running ignored tests with profile: {}", profile);
         
         let start_time = Instant::now();
@@ -1093,7 +1093,7 @@ impl BuildOrchestrator {
         &self, 
         execution_result: TestExecutionResult, 
         total_duration: Duration
-    ) -> Result<BuildResult, BuildError> {
+    ) -> Result<(), Error> {
         let success = execution_result.summary.success;
         let statistics = &execution_result.statistics;
         
@@ -1147,7 +1147,7 @@ impl BuildOrchestrator {
     
     /// Run toolchain integration (format, lint, etc.)
     #[instrument(skip(self))]
-    pub async fn run_tools(&self) -> Result<(), BuildError> {
+    pub async fn run_tools(&self) -> Result<(), Error> {
         info!("Running toolchain integration");
         
         // Run formatter
@@ -1169,7 +1169,7 @@ impl BuildOrchestrator {
     }
     
     /// Run CURSED formatter
-    async fn run_formatter(&self) -> Result<(), BuildError> {
+    async fn run_formatter(&self) -> Result<(), Error> {
         info!("Running CURSED formatter");
         
         let output = Command::new("./target/debug/cursed-fmt")
@@ -1187,7 +1187,7 @@ impl BuildOrchestrator {
     }
     
     /// Run CURSED linter
-    async fn run_linter(&self) -> Result<(), BuildError> {
+    async fn run_linter(&self) -> Result<(), Error> {
         info!("Running CURSED linter");
         
         let output = Command::new("./target/debug/cursed_lint_new")
@@ -1204,7 +1204,7 @@ impl BuildOrchestrator {
     }
     
     /// Run documentation generator
-    async fn run_docs(&self) -> Result<(), BuildError> {
+    async fn run_docs(&self) -> Result<(), Error> {
         info!("Running documentation generator");
         
         let output = Command::new("./target/debug/cursed-doc")
@@ -1226,7 +1226,7 @@ impl BuildOrchestrator {
     
     /// Start file watching
     #[instrument(skip(self))]
-    pub async fn start_file_watching(&mut self) -> Result<(), BuildError> {
+    pub async fn start_file_watching(&mut self) -> Result<(), Error> {
         if self.file_watcher.is_some() {
             warn!("File watcher already running");
             return Ok(());
@@ -1361,7 +1361,7 @@ impl BuildOrchestrator {
     
     /// Stop file watching
     #[instrument(skip(self))]
-    pub async fn stop_file_watching(&mut self) -> Result<(), BuildError> {
+    pub async fn stop_file_watching(&mut self) -> Result<(), Error> {
         if let Some(mut file_watcher) = self.file_watcher.take() {
             info!("Stopping file watcher");
             
@@ -1384,7 +1384,7 @@ impl BuildOrchestrator {
     }
     
     /// Check if we need to trigger a rebuild
-    async fn check_for_rebuild_trigger(&self) -> Result<bool, BuildError> {
+    async fn check_for_rebuild_trigger(&self) -> Result<(), Error> {
         // This is a placeholder - in the real implementation,
         // the file watcher thread would set a flag that we check here
         // For now, we return false to prevent constant rebuilding
@@ -1403,7 +1403,7 @@ impl BuildOrchestrator {
     
     /// Enable advanced parallel compilation
     #[instrument(skip(self))]
-    pub async fn enable_parallel_compilation(&mut self, config: Option<ParallelCompilationConfig>) -> Result<(), BuildError> {
+    pub async fn enable_parallel_compilation(&mut self, config: Option<ParallelCompilationConfig>) -> Result<(), Error> {
         info!("Enabling advanced parallel compilation");
         
         let parallel_config = config.unwrap_or_default();
@@ -1418,7 +1418,7 @@ impl BuildOrchestrator {
     
     /// Enable incremental optimization
     #[instrument(skip(self))]
-    pub async fn enable_incremental_optimization(&mut self, config: Option<IncrementalConfig>) -> Result<(), BuildError> {
+    pub async fn enable_incremental_optimization(&mut self, config: Option<IncrementalConfig>) -> Result<(), Error> {
         info!("Enabling incremental compilation optimization");
         
         let incremental_config = config.unwrap_or_default();
@@ -1433,7 +1433,7 @@ impl BuildOrchestrator {
     
     /// Enable build profiling
     #[instrument(skip(self))]
-    pub async fn enable_build_profiling(&mut self, config: Option<ProfilerConfig>) -> Result<(), BuildError> {
+    pub async fn enable_build_profiling(&mut self, config: Option<ProfilerConfig>) -> Result<(), Error> {
         info!("Enabling build performance profiling");
         
         let profiler_config = config.unwrap_or_default();
@@ -1448,7 +1448,7 @@ impl BuildOrchestrator {
     
     /// Enable artifact management
     #[instrument(skip(self))]
-    pub async fn enable_artifact_management(&mut self, config: Option<ArtifactConfig>) -> Result<(), BuildError> {
+    pub async fn enable_artifact_management(&mut self, config: Option<ArtifactConfig>) -> Result<(), Error> {
         info!("Enabling advanced artifact management");
         
         let artifact_config = config.unwrap_or_default();
@@ -1463,7 +1463,7 @@ impl BuildOrchestrator {
     
     /// Build with advanced optimization
     #[instrument(skip(self))]
-    pub async fn build_optimized(&mut self, profile: &str) -> Result<BuildResult, BuildError> {
+    pub async fn build_optimized(&mut self, profile: &str) -> Result<(), Error> {
         info!("Starting optimized build with advanced features");
         
         // Start profiling if enabled
@@ -1608,7 +1608,7 @@ impl BuildOrchestrator {
     }
     
     /// Extract enhanced metrics from pipeline results
-    fn extract_enhanced_pipeline_metrics(&self, pipeline_result: &PipelineResult) -> Result<BuildStatistics, BuildError> {
+    fn extract_enhanced_pipeline_metrics(&self, pipeline_result: &PipelineResult) -> Result<(), Error> {
         let mut phase_timings = HashMap::new();
         let mut total_lines_compiled = 0;
         
@@ -1887,7 +1887,7 @@ impl BuildOrchestrator {
     }
     
     /// Create compilation tasks from build targets
-    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> Result<Vec<crate::build_system::parallel_compilation::CompilationTask>, BuildError> {
+    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> Result<(), Error> {
         let mut tasks = Vec::new();
         
         for target in targets {
@@ -1910,7 +1910,7 @@ impl BuildOrchestrator {
 
     /// Execute bootstrap compilation process
     #[instrument(skip(self))]
-    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapConfig>) -> Result<BootstrapBuildResult, BuildError> {
+    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapConfig>) -> Result<(), Error> {
         info!("Starting bootstrap compilation through build orchestrator");
 
         let _bootstrap_config = config.unwrap_or_else(|| {
@@ -1927,7 +1927,7 @@ impl BuildOrchestrator {
 
     /// Execute quick bootstrap verification
     #[instrument(skip(self))]
-    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapConfig>) -> Result<BootstrapBuildResult, BuildError> {
+    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapConfig>) -> Result<(), Error> {
         info!("Starting quick bootstrap verification through build orchestrator");
 
         let _bootstrap_config = config.unwrap_or_else(|| {
@@ -1944,7 +1944,7 @@ impl BuildOrchestrator {
 
     /// Check bootstrap feasibility
     #[instrument(skip(self))]
-    pub async fn check_bootstrap_feasibility(&mut self) -> Result<bool, BuildError> {
+    pub async fn check_bootstrap_feasibility(&mut self) -> Result<(), Error> {
         info!("Checking bootstrap feasibility");
 
         // Check if bootstrap source exists
@@ -1984,7 +1984,7 @@ impl BuildOrchestrator {
     }
 
     /// Test basic functionality of the Rust-based compiler
-    async fn test_rust_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<bool, BuildError> {
+    async fn test_rust_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<(), Error> {
         use std::process::{Command, Stdio};
 
         // Create a simple test program
@@ -2066,7 +2066,7 @@ fn extract_warnings(output: &str) -> Vec<String> {
 }
 
 /// Count lines of code in a file
-fn count_lines(path: &Path) -> Result<usize, BuildError> {
+fn count_lines(path: &Path) -> Result<(), Error> {
     let content = std::fs::read_to_string(path)?;
     Ok(content.split("\n").count())
 }
@@ -2246,7 +2246,7 @@ mod tests {
     }
     
     #[test]
-    fn test_line_counting() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_line_counting() -> Result<(), Error>> {
         let dir = tempdir()?;
         let file_path = dir.path().join("test.csd");
         

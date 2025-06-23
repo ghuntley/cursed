@@ -14,7 +14,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, PointerValue, InstructionValue};
-use inkwell::types::{BasicTypeEnum, FunctionType, IntType, FloatType};
+use inkwell::crate::types::{BasicTypeEnum, FunctionType, IntType, FloatType};
 use inkwell::{AddressSpace, IntPredicate, FloatPredicate, OptimizationLevel};
 use inkwell::execution_engine::{ExecutionEngine, JitFunction};
 use inkwell::targets::{Target, TargetMachine, RelocMode, CodeModel, FileType};
@@ -112,7 +112,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         context: &'ctx Context,
         source_file: &Path,
         config: CodegenConfig,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         let span = span!(Level::INFO, "enhanced_codegen_init");
         let _enter = span.enter();
         
@@ -161,7 +161,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile an entire AST with debug information
     #[instrument(skip(self, ast), fields(ast_type = ?std::mem::discriminant(ast)))]
-    pub fn compile_ast(&mut self, ast: &AST) -> Result<(), CursedError> {
+    pub fn compile_ast(&mut self, ast: &AST) -> Result<(), Error> {
         let span = span!(Level::INFO, "compile_ast");
         let _enter = span.enter();
         
@@ -208,7 +208,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile a function declaration with debug information
     #[instrument(skip(self, func_decl), fields(name = %func_decl.name))]
-    pub fn compile_function(&mut self, func_decl: &FunctionDeclaration) -> Result<FunctionValue<'ctx>, CursedError> {
+    pub fn compile_function(&mut self, func_decl: &FunctionDeclaration) -> Result<(), Error> {
         let span = span!(Level::DEBUG, "compile_function", function = %func_decl.name);
         let _enter = span.enter();
         
@@ -289,7 +289,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile a statement with debug information
     #[instrument(skip(self, stmt), fields(stmt_type = ?std::mem::discriminant(stmt)))]
-    pub fn compile_statement(&mut self, stmt: &dyn Statement) -> Result<(), CursedError> {
+    pub fn compile_statement(&mut self, stmt: &dyn Statement) -> Result<(), Error> {
         let span = span!(Level::TRACE, "compile_statement");
         let _enter = span.enter();
         
@@ -346,7 +346,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile a variable declaration with debug information
     #[instrument(skip(self, var_decl), fields(name = %var_decl.name))]
-    fn compile_variable_declaration(&mut self, var_decl: &VariableDeclaration) -> Result<(), CursedError> {
+    fn compile_variable_declaration(&mut self, var_decl: &VariableDeclaration) -> Result<(), Error> {
         debug!("Compiling variable declaration with debug information");
         
         // Get variable type
@@ -379,7 +379,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Compile an expression with debug information
     #[instrument(skip(self, expr), fields(expr_type = ?std::mem::discriminant(expr)))]
-    pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         let span = span!(Level::TRACE, "compile_expression");
         let _enter = span.enter();
         
@@ -423,7 +423,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     }
     
     /// Compile a literal value
-    fn compile_literal(&self, literal: &crate::ast::Literal, location: &SourceLocation) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    fn compile_literal(&self, literal: &crate::ast::Literal, location: &SourceLocation) -> Result<(), Error> {
         match literal {
             crate::ast::Literal::Integer(val) => {
                 Ok(self.context.i32_type().const_int(*val as u64, false).into())
@@ -444,7 +444,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     }
     
     /// Compile a variable reference
-    fn compile_variable_reference(&self, name: &str, location: &SourceLocation) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    fn compile_variable_reference(&self, name: &str, location: &SourceLocation) -> Result<(), Error> {
         let var_ptr = self.variables.get(name)
             .ok_or_else(|| CursedError::Compile(format!("Undefined variable: {}", name)))?;
         
@@ -459,7 +459,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         operator: &crate::ast::BinaryOperator,
         right: &dyn Expression,
         location: &SourceLocation,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let left_val = self.compile_expression(left)?;
         let right_val = self.compile_expression(right)?;
         
@@ -518,7 +518,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         operator: &crate::ast::UnaryOperator,
         operand: &dyn Expression,
         location: &SourceLocation,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let operand_val = self.compile_expression(operand)?;
         
         match operator {
@@ -551,7 +551,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         name: &str,
         arguments: &[dyn Expression],
         location: &SourceLocation,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let function = self.functions.get(name)
             .ok_or_else(|| CursedError::Compile(format!("Undefined function: {}", name)))?;
         
@@ -574,7 +574,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         target: &dyn Expression,
         value: &dyn Expression,
         location: &SourceLocation,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let value_result = self.compile_expression(value)?;
         
         match target {
@@ -598,7 +598,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         then_branch: &dyn Statement,
         else_branch: Option<&dyn Statement>,
         location: &SourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let condition_val = self.compile_expression(condition)?;
         let condition_int = condition_val.into_int_value()
             .map_err(|_| CursedError::Compile("Condition must be integer".to_string()))?;
@@ -648,7 +648,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         condition: &dyn Expression,
         body: &dyn Statement,
         location: &SourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let function = self.current_function
             .ok_or_else(|| CursedError::Compile("No current function".to_string()))?;
         
@@ -692,7 +692,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
         &mut self,
         statements: &[dyn Statement],
         location: &SourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Enter lexical scope if debug is enabled
         if let Some(debug) = &mut self.debug_metadata {
             let file = debug.get_or_create_file(&location.file);
@@ -713,7 +713,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     }
     
     /// Get LLVM type for CURSED type
-    fn get_llvm_type(&self, type_name: &str) -> Result<Option<BasicTypeEnum<'ctx>>, CursedError> {
+    fn get_llvm_type(&self, type_name: &str) -> Result<(), Error> {
         match type_name {
             "sus" => Ok(Some(self.context.i32_type().into())),
             "facts" => Ok(Some(self.context.bool_type().into())),
@@ -725,7 +725,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     }
     
     /// Get zero value for type
-    fn get_zero_value(&self, type_name: &str) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    fn get_zero_value(&self, type_name: &str) -> Result<(), Error> {
         match type_name {
             "sus" => Ok(self.context.i32_type().const_zero().into()),
             "facts" => Ok(self.context.bool_type().const_zero().into()),
@@ -746,7 +746,7 @@ impl<'ctx> EnhancedLlvmCodegen<'ctx> {
     
     /// Finalize code generation
     #[instrument(skip(self))]
-    pub fn finalize(mut self) -> Result<CodegenResult<'ctx>, CursedError> {
+    pub fn finalize(mut self) -> Result<(), Error> {
         let span = span!(Level::INFO, "finalize_codegen");
         let _enter = span.enter();
         
@@ -809,7 +809,7 @@ pub struct CodegenResult<'ctx> {
 
 impl<'ctx> CodegenResult<'ctx> {
     /// Write module to object file
-    pub fn write_object_file(&self, path: &Path) -> Result<(), CursedError> {
+    pub fn write_object_file(&self, path: &Path) -> Result<(), Error> {
         Target::initialize_all(&Default::default());
         
         let target_triple = self.module.get_triple();
@@ -862,7 +862,7 @@ impl<'ctx> LlvmDebugIntegration<'ctx> for EnhancedLlvmCodegen<'ctx> {
         function: FunctionValue<'ctx>,
         name: &str,
         func_decl: &FunctionDeclaration,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if let Some(debug) = &mut self.debug_metadata {
             debug.generate_function_debug(function, name, func_decl)?;
         }
@@ -874,7 +874,7 @@ impl<'ctx> LlvmDebugIntegration<'ctx> for EnhancedLlvmCodegen<'ctx> {
         name: &str,
         storage: PointerValue<'ctx>,
         var_decl: &VariableDeclaration,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if let Some(debug) = &mut self.debug_metadata {
             debug.generate_variable_debug(name, storage, var_decl)?;
         }
@@ -884,7 +884,7 @@ impl<'ctx> LlvmDebugIntegration<'ctx> for EnhancedLlvmCodegen<'ctx> {
     fn set_debug_location(
         &mut self,
         location: &SourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if let Some(debug) = &mut self.debug_metadata {
             debug.set_debug_location_from_source(location)?;
             self.stats.debug_locations_set += 1;
@@ -896,14 +896,14 @@ impl<'ctx> LlvmDebugIntegration<'ctx> for EnhancedLlvmCodegen<'ctx> {
         &mut self,
         expr: &dyn Expression,
         instruction: Option<InstructionValue<'ctx>>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if let Some(debug) = &mut self.debug_metadata {
             debug.generate_expression_debug(expr, instruction)?;
         }
         Ok(())
     }
     
-    fn enter_scope(&mut self, location: &SourceLocation) -> Result<(), CursedError> {
+    fn enter_scope(&mut self, location: &SourceLocation) -> Result<(), Error> {
         if let Some(debug) = &mut self.debug_metadata {
             let file = debug.get_or_create_file(&location.file);
             debug.enter_lexical_scope(file, location.line, location.column)?;

@@ -209,7 +209,7 @@ impl MemoryProfiler {
     }
 
     /// Perform heap analysis
-    pub fn analyze_heap(&self) -> Result<HeapAnalysis, Error> {
+    pub fn analyze_heap(&self) -> Result<(), Error> {
         let heap_stats = self.heap_stats.lock()
             .map_err(|_| Error::Runtime("Failed to lock heap stats".to_string()))?;
         
@@ -248,7 +248,7 @@ impl MemoryProfiler {
     }
 
     /// Detect memory leaks
-    pub fn detect_leaks(&self) -> Result<Vec<MemoryLeak>, Error> {
+    pub fn detect_leaks(&self) -> Result<(), Error> {
         if !self.config.leak_detection {
             return Ok(Vec::new());
         }
@@ -287,7 +287,7 @@ impl MemoryProfiler {
     }
 
     /// Analyze allocation patterns
-    pub fn analyze_patterns(&self) -> Result<AllocationPattern, Error> {
+    pub fn analyze_patterns(&self) -> Result<(), Error> {
         let history = self.allocation_history.lock()
             .map_err(|_| Error::Runtime("Failed to lock allocation history".to_string()))?;
 
@@ -344,7 +344,7 @@ impl MemoryProfiler {
     }
 
     /// Get memory usage statistics
-    pub fn get_memory_stats(&self) -> Result<MemoryStats, Error> {
+    pub fn get_memory_stats(&self) -> Result<(), Error> {
         let heap_analysis = self.analyze_heap()?;
         let leaks = self.detect_leaks()?;
         let patterns = self.analyze_patterns()?;
@@ -513,13 +513,13 @@ pub fn profile_deallocation(address: usize) -> Result<(), Error> {
 }
 
 /// Get current memory statistics
-pub fn memory_profile() -> Result<MemoryStats, Error> {
+pub fn memory_profile() -> Result<(), Error> {
     let profiler = get_memory_profiler();
     profiler.get_memory_stats()
 }
 
 /// Detect memory leaks
-pub fn detect_memory_leaks() -> Result<Vec<MemoryLeak>, Error> {
+pub fn detect_memory_leaks() -> Result<(), Error> {
     let profiler = get_memory_profiler();
     profiler.detect_leaks()
 }

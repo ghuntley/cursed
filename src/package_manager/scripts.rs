@@ -147,7 +147,7 @@ impl ScriptExecutor {
         &self,
         script: &InstallScript,
         context: &ScriptContext,
-    ) -> Result<ScriptResult, ScriptError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             info!("Script execution disabled, skipping");
             return Ok(ScriptResult {
@@ -194,7 +194,7 @@ impl ScriptExecutor {
     }
     
     /// Validate script content for security
-    fn validate_script_content(&self, script: &InstallScript) -> Result<(), ScriptError> {
+    fn validate_script_content(&self, script: &InstallScript) -> Result<(), Error> {
         // Check for potentially dangerous commands
         let dangerous_patterns = vec![
             "rm -rf /",
@@ -233,7 +233,7 @@ impl ScriptExecutor {
     }
     
     /// Create temporary script file
-    fn create_script_file(&self, script: &InstallScript) -> Result<PathBuf, ScriptError> {
+    fn create_script_file(&self, script: &InstallScript) -> Result<(), Error> {
         let extension = match script.interpreter {
             ScriptInterpreter::Shell | ScriptInterpreter::Bash => "sh",
             ScriptInterpreter::Python => "py",
@@ -262,7 +262,7 @@ impl ScriptExecutor {
         script: &InstallScript,
         script_file: &Path,
         context: &ScriptContext,
-    ) -> Result<Command, ScriptError> {
+    ) -> Result<(), Error> {
         let mut command = match &script.interpreter {
             ScriptInterpreter::Shell => {
                 #[cfg(unix)]
@@ -349,7 +349,7 @@ impl ScriptExecutor {
         &self,
         command: &mut Command,
         script: &InstallScript,
-    ) -> Result<ScriptResult, ScriptError> {
+    ) -> Result<(), Error> {
         let timeout = script.timeout_seconds
             .map(Duration::from_secs)
             .unwrap_or(self.config.timeout);
@@ -434,7 +434,7 @@ impl ScriptExecutor {
     pub fn parse_scripts_from_metadata(
         &self,
         metadata: &str,
-    ) -> Result<Vec<InstallScript>, ScriptError> {
+    ) -> Result<(), Error> {
         // Parse scripts from package.toml or similar metadata
         // This is a simplified implementation
         let mut scripts = Vec::new();

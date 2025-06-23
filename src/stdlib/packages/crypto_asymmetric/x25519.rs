@@ -110,7 +110,7 @@ impl std::fmt::Display for X25519Error {
 
 impl std::error::Error for X25519Error {}
 
-type X25519Result<T> = Result<T, X25519Error>;
+type X25519Result<(), Error>;
 
 /// fr fr X25519 engine for cryptographic operations
 pub struct X25519Engine {
@@ -352,7 +352,7 @@ impl Default for X25519Engine {
 use crate::stdlib::value::Value;
 
 /// slay Generate X25519 static key pair
-pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let mut engine = X25519Engine::new();
     match engine.generate_static_keypair() {
         Ok(keypair) => {
@@ -375,7 +375,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> 
 }
 
 /// slay Generate X25519 ephemeral key pair
-pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let engine = X25519Engine::new();
     match engine.generate_ephemeral_keypair() {
         Ok(keypair) => {
@@ -397,7 +397,7 @@ pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<Value, Cur
 }
 
 /// slay Generate X25519 key pair from seed
-pub fn x25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("X25519 key generation from seed requires seed".to_string()));
     }
@@ -431,7 +431,7 @@ pub fn x25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<Value, Curs
 }
 
 /// slay Perform X25519 key exchange
-pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("X25519 key exchange requires our private key and their public key".to_string()));
     }
@@ -469,7 +469,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Derive X25519 public key from private key
-pub fn x25519_derive_public_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_derive_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("X25519 derive public key requires private key".to_string()));
     }
@@ -493,7 +493,7 @@ pub fn x25519_derive_public_key(args: Vec<Value>) -> Result<Value, CursedError> 
 }
 
 /// slay Validate X25519 public key
-pub fn x25519_validate_public_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("X25519 validate public key requires public key".to_string()));
     }

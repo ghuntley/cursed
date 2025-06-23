@@ -217,7 +217,7 @@ fn load_config_file(config: &mut CliConfig, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn run_formatter(config: CliConfig) -> Result<i32, Error> {
+fn run_formatter(config: CliConfig) -> Result<(), Error> {
     let mut formatter = CursedFormatter::new(config.formatter_config.clone());
     let mut total_files = 0;
     let mut changed_files = 0;
@@ -319,7 +319,7 @@ fn collect_cursed_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), Erro
     Ok(())
 }
 
-fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliConfig) -> Result<bool, Error> {
+fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliConfig) -> Result<(), Error> {
     let content = fs::read_to_string(file_path)
         .map_err(|e| Error::General(format!("Failed to read file: {}", e)))?;
 

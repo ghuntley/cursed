@@ -79,10 +79,10 @@ pub use benchmarking::{
 };
 
 // Error handling
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 
 /// Result type for TestVibes operations
-pub type TestVibesResult<T> = Result<T, CursedError>;
+pub type TestVibesResult<(), Error>;
 
 /// Error types specific to TestVibes
 #[derive(Debug, Clone)]

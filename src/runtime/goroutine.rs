@@ -62,7 +62,7 @@ pub struct GoroutineStack {
 
 impl GoroutineStack {
     /// Create a new stack with specified size
-    pub fn new(size: usize) -> Result<Self, Error> {
+    pub fn new(size: usize) -> Result<(), Error> {
         let layout = Layout::from_size_align(size, 16)
             .map_err(|_| Error::Runtime("Invalid stack layout".to_string()))?;
         
@@ -156,7 +156,7 @@ pub struct Goroutine {
 
 impl Goroutine {
     /// Create a new goroutine
-    pub fn new<F>(task: F, stack_size: usize) -> Result<Self, Error>
+    pub fn new<F>(task: F, stack_size: usize) -> Result<(), Error>
     where
         F: FnOnce() + Send + 'static,
     {
@@ -423,7 +423,7 @@ impl GoroutineScheduler {
     }
     
     /// Spawn a new goroutine
-    pub fn spawn<F>(&mut self, task: F) -> Result<u64, Error>
+    pub fn spawn<F>(&mut self, task: F) -> Result<(), Error>
     where
         F: FnOnce() + Send + 'static,
     {

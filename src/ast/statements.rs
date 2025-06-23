@@ -44,7 +44,7 @@ impl LetStatement {
 
 impl Node for LetStatement {
     fn string(&self) -> String {
-        let mut result = format!("sus {}", self.name.string());
+        let mut result = format!("sus {}", self.to_string().string());
         
         if let Some(type_ann) = &self.type_annotation {
             result.push_str(&format!(" {}", type_ann.string()));
@@ -70,7 +70,7 @@ impl Statement for LetStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(LetStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             value: self.value.as_ref().map(|v| v.clone_box()),
             type_annotation: self.type_annotation.as_ref().map(|t| t.clone_box()),
         })
@@ -114,7 +114,7 @@ impl FactsStatement {
 
 impl Node for FactsStatement {
     fn string(&self) -> String {
-        let mut result = format!("facts {}", self.name.string());
+        let mut result = format!("facts {}", self.to_string().string());
         
         if let Some(type_ann) = &self.type_annotation {
             result.push_str(&format!(" {}", type_ann.string()));
@@ -138,7 +138,7 @@ impl Statement for FactsStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(FactsStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             value: self.value.clone_box(),
             type_annotation: self.type_annotation.as_ref().map(|t| t.clone_box()),
         })
@@ -462,7 +462,7 @@ impl AssignmentStatement {
 
 impl Node for AssignmentStatement {
     fn string(&self) -> String {
-        format!("{} = {}", self.name.string(), self.value.string())
+        format!("{} = {}", self.to_string().string(), self.value.string())
     }
 
     fn token_literal(&self) -> String {
@@ -479,7 +479,7 @@ impl Statement for AssignmentStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(AssignmentStatement {
             token: self.token.clone(),
-            name: self.name.clone_box(),
+            name: self.to_string().clone_box(),
             value: self.value.clone_box(),
         })
     }
@@ -939,7 +939,7 @@ impl PackageStatement {
 
 impl Node for PackageStatement {
     fn string(&self) -> String {
-        format!("package \"{}\"", self.name)
+        format!("package \"{}\"", self.to_string())
     }
 
     fn token_literal(&self) -> String {
@@ -955,7 +955,7 @@ impl Statement for PackageStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(PackageStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
         })
     }
 }
@@ -1005,7 +1005,7 @@ impl MutStatement {
 
 impl Node for MutStatement {
     fn string(&self) -> String {
-        let mut result = format!("flex {}", self.name.string());
+        let mut result = format!("flex {}", self.to_string().string());
         
         if let Some(type_ann) = &self.type_annotation {
             result.push_str(&format!(" {}", type_ann.string()));
@@ -1031,7 +1031,7 @@ impl Statement for MutStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(MutStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             value: self.value.as_ref().map(|v| v.clone_box()),
             type_annotation: self.type_annotation.as_ref().map(|t| t.clone_box()),
         })
@@ -1083,7 +1083,7 @@ impl ConstStatement {
 
 impl Node for ConstStatement {
     fn string(&self) -> String {
-        let mut result = format!("no_cap {}", self.name.string());
+        let mut result = format!("no_cap {}", self.to_string().string());
         
         if let Some(type_ann) = &self.type_annotation {
             result.push_str(&format!(" {}", type_ann.string()));
@@ -1106,7 +1106,7 @@ impl Statement for ConstStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(ConstStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             value: self.value.clone_box(),
             type_annotation: self.type_annotation.as_ref().map(|t| t.clone_box()),
         })

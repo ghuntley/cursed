@@ -116,7 +116,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Run the complete bootstrap verification process
-    pub fn verify(&self) -> Result<VerificationResult, Box<dyn std::error::Error>> {
+    pub fn verify(&self) -> Result<(), Error>> {
         let start_time = Instant::now();
         let mut result = VerificationResult {
             success: false,
@@ -190,7 +190,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Run the complete bootstrap verification process
-    pub async fn run_verification(&self) -> Result<VerificationResult, Box<dyn std::error::Error>> {
+    pub async fn run_verification(&self) -> Result<(), Error>> {
         println!("🚀 Starting CURSED Bootstrap Verification...");
         
         let mut result = VerificationResult {
@@ -206,8 +206,8 @@ impl SelfCompilationVerifier {
         // Stage 1: Rust-based compiler
         match self.verify_stage1() {
             Ok(stage_result) => {
-                result.stages.push(stage_result);
-                if !result.stages.last().unwrap().success {
+                result.stage_results.push(stage_result);
+                if !result.stage_results.last().unwrap().success {
                     result.total_time = start_time.elapsed();
                     return Ok(result);
                 }
@@ -222,8 +222,8 @@ impl SelfCompilationVerifier {
         // Stage 2: CURSED-based compiler
         match self.verify_stage2() {
             Ok(stage_result) => {
-                result.stages.push(stage_result);
-                if !result.stages.last().unwrap().success {
+                result.stage_results.push(stage_result);
+                if !result.stage_results.last().unwrap().success {
                     result.total_time = start_time.elapsed();
                     return Ok(result);
                 }
@@ -239,8 +239,8 @@ impl SelfCompilationVerifier {
         for cycle in 3..=self.config.bootstrap_cycles {
             match self.verify_bootstrap_cycle(cycle) {
                 Ok(stage_result) => {
-                    result.stages.push(stage_result);
-                    if !result.stages.last().unwrap().success {
+                    result.stage_results.push(stage_result);
+                    if !result.stage_results.last().unwrap().success {
                         break;
                     }
                 }
@@ -253,7 +253,7 @@ impl SelfCompilationVerifier {
         
         // Check for convergence
         result.convergence_achieved = self.check_convergence(&result.stages);
-        result.overall_success = result.stages.iter().all(|s| s.success) && result.convergence_achieved;
+        result.overall_success = result.stage_results.iter().all(|s| s.success) && result.convergence_achieved;
         result.total_time = start_time.elapsed();
         
         println!("✅ Bootstrap verification completed in {:?}", result.total_time);
@@ -261,7 +261,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify Stage 1: Rust-based CURSED compiler
-    fn verify_stage1(&self) -> Result<StageResult, Box<dyn std::error::Error>> {
+    fn verify_stage1(&self) -> Result<(), Error>> {
         println!("🔧 Stage 1: Building Rust-based CURSED compiler...");
         let start_time = Instant::now();
 
@@ -316,7 +316,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify Stage 2: CURSED-based compiler compiled by Stage 1
-    fn verify_stage2(&self, stage1: &StageResult) -> Result<StageResult, Box<dyn std::error::Error>> {
+    fn verify_stage2(&self, stage1: &StageResult) -> Result<(), Error>> {
         println!("🔧 Stage 2: Building CURSED-based compiler using Stage 1...");
         let start_time = Instant::now();
 
@@ -392,7 +392,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify functional equivalence between compiler stages
-    fn verify_functional_equivalence(&self, stage1: &StageResult, stage2: &StageResult) -> Result<bool, Box<dyn std::error::Error>> {
+    fn verify_functional_equivalence(&self, stage1: &StageResult, stage2: &StageResult) -> Result<(), Error>> {
         println!("🔍 Testing functional equivalence between compiler stages...");
 
         // Create test programs to compile with both stages
@@ -421,7 +421,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify bootstrap cycles for convergence
-    fn verify_bootstrap_cycles(&self, stage2: &StageResult) -> Result<ConvergenceAnalysis, Box<dyn std::error::Error>> {
+    fn verify_bootstrap_cycles(&self, stage2: &StageResult) -> Result<(), Error>> {
         println!("🔄 Testing bootstrap convergence ({} cycles)...", self.config.bootstrap_cycles);
 
         let mut analysis = ConvergenceAnalysis::default();
@@ -491,7 +491,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Test basic compiler functionality
-    fn test_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<bool, Box<dyn std::error::Error>> {
+    fn test_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<(), Error>> {
         // Create a simple test program
         let test_program = self.config.work_dir.join("test_basic.csd");
         fs::write(&test_program, r#"
@@ -523,7 +523,7 @@ slay main() -> normie {
     }
 
     /// Create test programs for equivalence testing
-    fn create_test_programs(&self) -> Result<Vec<(String, PathBuf)>, Box<dyn std::error::Error>> {
+    fn create_test_programs(&self) -> Result<(), Error>> {
         let mut programs = Vec::new();
 
         // Simple arithmetic test
@@ -565,7 +565,7 @@ slay main() -> normie {
     }
 
     /// Compile a program with a specific compiler stage
-    fn compile_with_stage(&self, compiler_path: &Path, program_path: &Path, stage_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+    fn compile_with_stage(&self, compiler_path: &Path, program_path: &Path, stage_name: &str) -> Result<(), Error>> {
         let output_path = self.config.work_dir.join(format!("output_{}_{}", stage_name, program_path.file_name().unwrap().to_str().unwrap()));
         
         let output = Command::new(compiler_path)
@@ -594,7 +594,7 @@ slay main() -> normie {
     }
 
     /// Create a test CURSED compiler source (placeholder)
-    fn create_test_cursed_compiler(&self, output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    fn create_test_cursed_compiler(&self, output_path: &Path) -> Result<(), Error>> {
         let content = r#"
 // Placeholder CURSED compiler implementation
 // This would be a real compiler written in CURSED
@@ -614,7 +614,7 @@ slay compile(source: tea, output: tea) -> normie {
     }
 
     /// Calculate checksum of a file
-    fn calculate_checksum(&self, file_path: &Path) -> Result<String, Box<dyn std::error::Error>> {
+    fn calculate_checksum(&self, file_path: &Path) -> Result<(), Error>> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -629,7 +629,7 @@ slay compile(source: tea, output: tea) -> normie {
     }
 
     /// Generate a verification report
-    pub fn generate_report(&self, result: &VerificationResult, output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn generate_report(&self, result: &VerificationResult, output_path: &Path) -> Result<(), Error>> {
         let mut report = String::new();
 
         report.push_str("# CURSED Bootstrap Verification Report\n\n");

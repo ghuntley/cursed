@@ -61,7 +61,7 @@ pub struct Parser {
 
 impl Parser {
     /// Create a new parser from lexer (main constructor)
-    pub fn new(mut lexer: Lexer) -> Result<Self, Error> {
+    pub fn new(mut lexer: Lexer) -> Result<(), Error> {
         let current_token = lexer.next_token()?;
         let peek_token = lexer.next_token()?;
         
@@ -88,7 +88,7 @@ impl Parser {
     }
     
     /// Parse from tokens (convenience method for tests)
-    pub fn from_tokens(tokens: Vec<Token>) -> Result<Self, Error> {
+    pub fn from_tokens(tokens: Vec<Token>) -> Result<(), Error> {
         // Create a dummy lexer from tokens
         let input = tokens.iter().map(|t| t.literal.clone()).collect::<Vec<_>>().join(" ");
         let lexer = Lexer::new(&input);
@@ -96,18 +96,18 @@ impl Parser {
     }
 
     /// Create parser from source string
-    pub fn from_source(source: &str) -> Result<Self, Error> {
+    pub fn from_source(source: &str) -> Result<(), Error> {
         let lexer = Lexer::new(source);
         Self::new(lexer)
     }
     
     /// Convenience method for tests - alias for parse_program
-    pub fn parse(&mut self) -> Result<Program, Error> {
+    pub fn parse(&mut self) -> Result<(), Error> {
         self.parse_program()
     }
     
     /// Parse a complete CURSED program
-    pub fn parse_program(&mut self) -> Result<Program, Error> {
+    pub fn parse_program(&mut self) -> Result<(), Error> {
         let mut program = Program::new();
         
         // Skip initial newlines
@@ -178,7 +178,7 @@ impl Parser {
         self.peek_token.token_type == *token_type
     }
     
-    fn expect_token(&mut self, token_type: TokenType) -> Result<Token, Error> {
+    fn expect_token(&mut self, token_type: TokenType) -> Result<(), Error> {
         if self.current_token.token_type == token_type {
             let token = self.current_token.clone();
             self.advance_token()?;
@@ -222,7 +222,7 @@ impl Parser {
         }
     }
     
-    fn parse_package_declaration(&mut self) -> Result<Option<String>, Error> {
+    fn parse_package_declaration(&mut self) -> Result<(), Error> {
         self.expect_token(TokenType::Vibe)?;
         
         if !self.current_token_is(&TokenType::Identifier) {
@@ -235,7 +235,7 @@ impl Parser {
         Ok(Some(package_name))
     }
     
-    fn parse_import_statement(&mut self) -> Result<ImportStatement, Error> {
+    fn parse_import_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Yeet)?;
         
         // Handle aliased imports: yeet alias "path" 

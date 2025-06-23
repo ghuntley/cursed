@@ -247,7 +247,7 @@ pub struct TaskHandle<T> {
 }
 
 struct TaskHandleState<T> {
-    result: Option<Result<T, FutureError>>,
+    result: Option<Result<(), Error>>,
     wakers: Vec<Waker>,
     completed: bool,
 }
@@ -302,7 +302,7 @@ impl<T> TaskHandle<T> {
     }
 
     /// Try to get the result without waiting
-    pub fn try_result(&self) -> Option<Result<T, FutureError>>
+    pub fn try_result(&self) -> Option<Result<(), Error>>
     where
         T: Clone,
     {
@@ -332,7 +332,7 @@ impl<T> Clone for TaskHandle<T> {
 }
 
 impl<T: Clone> Future for TaskHandle<T> {
-    type Output = Result<T, FutureError>;
+    type Output = Result<(), Error>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut state = self.shared_state.lock().unwrap();

@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Comprehensive timeout middleware for HTTP request processing
 /// 
 /// Provides timeout mechanisms for requests, connections, sessions, and database operations
@@ -113,7 +114,7 @@ struct DatabaseTimeout {
 }
 
 /// Timeout result for async operations
-pub type TimeoutResult<T> = Result<T, TimeoutError>;
+pub type TimeoutResult<(), Error>;
 
 /// Timeout error types
 #[derive(Debug, Clone)]

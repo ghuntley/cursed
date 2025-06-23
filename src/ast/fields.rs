@@ -18,7 +18,7 @@ impl FieldStatement {
 
 impl Node for FieldStatement {
     fn string(&self) -> String {
-        format!("{} {}", self.name.string(), self.type_name.string())
+        format!("{} {}", self.to_string().string(), self.type_name.string())
     }
 
     fn token_literal(&self) -> String {
@@ -40,10 +40,10 @@ impl FieldDefinition {
 
 impl Node for FieldDefinition {
     fn string(&self) -> String {
-        format!("{} {}", self.name, self.field_type)
+        format!("{} {}", self.to_string(), self.field_type)
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }

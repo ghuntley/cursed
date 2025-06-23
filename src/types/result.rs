@@ -424,13 +424,13 @@ impl TypeNode for OptionTypeExpression {
 }
 
 /// Conversion traits for integration with CURSED error system
-impl From<CursedError> for Result<(), CursedError> {
+impl From<CursedError> for Result<(), Error> {
     fn from(err: CursedError) -> Self {
         Result::Err(err)
     }
 }
 
-impl<T> From<Option<T>> for Result<T, CursedError> {
+impl<T> From<Option<T>> for Result<(), Error> {
     fn from(opt: Option<T>) -> Self {
         match opt {
             Option::Some(val) => Result::Ok(val),
@@ -487,7 +487,7 @@ pub mod error_patterns {
     use super::*;
 
     /// Create a parse error result
-    pub fn parse_error<T>(message: &str, line: usize, column: usize) -> Result<T, CursedError> {
+    pub fn parse_error<T>(message: &str, line: usize, column: usize) -> Result<(), Error> {
         Result::Err(CursedError::parse_error_with_location(
             message.to_string(),
             line,
@@ -496,22 +496,22 @@ pub mod error_patterns {
     }
 
     /// Create a runtime error result
-    pub fn runtime_error<T>(message: &str) -> Result<T, CursedError> {
+    pub fn runtime_error<T>(message: &str) -> Result<(), Error> {
         Result::Err(CursedError::Runtime(message.to_string()))
     }
 
     /// Create a type error result
-    pub fn type_error<T>(message: &str) -> Result<T, CursedError> {
+    pub fn type_error<T>(message: &str) -> Result<(), Error> {
         Result::Err(CursedError::Type(message.to_string()))
     }
 
     /// Create a compilation error result
-    pub fn compilation_error<T>(message: &str) -> Result<T, CursedError> {
+    pub fn compilation_error<T>(message: &str) -> Result<(), Error> {
         Result::Err(CursedError::Compile(message.to_string()))
     }
 
     /// Create an I/O error result
-    pub fn io_error<T>(io_err: std::io::Error) -> Result<T, CursedError> {
+    pub fn io_error<T>(io_err: std::io::Error) -> Result<(), Error> {
         Result::Err(CursedError::Io(io_err))
     }
 }

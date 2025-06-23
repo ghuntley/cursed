@@ -268,13 +268,13 @@ pub fn generate_xml_docs(source_file: &Path, output_dir: &Path) -> Result<(), Er
 }
 
 /// Extract documentation from CURSED source code
-pub fn extract_documentation(source: &str, file_path: &Path) -> Result<generator::ExtractedDocumentation, Error> {
+pub fn extract_documentation(source: &str, file_path: &Path) -> Result<(), Error> {
     let extractor = generator::DocumentationExtractor::new();
     extractor.extract_from_source(source, file_path)
 }
 
 /// Parse documentation comments from source
-pub fn parse_doc_comments(source: &str, location: &SourceLocation) -> Result<comment_parser::ParsedDocumentation, Error> {
+pub fn parse_doc_comments(source: &str, location: &SourceLocation) -> Result<(), Error> {
     let parser = comment_parser::CommentParser::new()?;
     parser.parse_item_documentation(source, location)
 }

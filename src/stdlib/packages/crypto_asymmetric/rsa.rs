@@ -119,7 +119,7 @@ impl From<rsa::pkcs8::Error> for RsaError {
     }
 }
 
-type RsaResult<T> = Result<T, RsaError>;
+type RsaResult<(), Error>;
 
 /// fr fr RSA implementation with real cryptographic operations
 pub struct RsaEngine {
@@ -485,7 +485,7 @@ impl Default for RsaEngine {
 use crate::stdlib::value::Value;
 
 /// slay Generate RSA key pair
-pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
     let key_size = if args.is_empty() {
         RSA_2048_BITS
     } else {
@@ -517,7 +517,7 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA encrypt data with public key
-pub fn rsa_encrypt(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_encrypt(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA encrypt requires public key and plaintext".to_string()));
     }
@@ -561,7 +561,7 @@ pub fn rsa_encrypt(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA decrypt data with private key  
-pub fn rsa_decrypt(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_decrypt(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA decrypt requires private key and ciphertext".to_string()));
     }
@@ -609,7 +609,7 @@ pub fn rsa_decrypt(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA sign data with private key
-pub fn rsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA sign requires private key and message".to_string()));
     }
@@ -653,7 +653,7 @@ pub fn rsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA verify signature with public key
-pub fn rsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("RSA verify requires public key, message, and signature".to_string()));
     }

@@ -73,7 +73,7 @@ impl TypeChecker {
     }
 
     /// Check type of an expression (legacy string interface)
-    pub fn check_type(&self, expr: &str) -> Result<Type, Error> {
+    pub fn check_type(&self, expr: &str) -> Result<(), Error> {
         // For backward compatibility, try to parse basic type names
         match expr {
             "facts" | "true" | "false" => Ok(Type::Lit),
@@ -104,7 +104,7 @@ impl TypeChecker {
     pub fn check_expression_type(
         &mut self,
         expr: &dyn Expression,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         // Use inference context if available
         let default_context = InferenceContext::new();
         let context = self.current_context.as_ref().unwrap_or(&default_context);
@@ -259,7 +259,7 @@ impl TypeChecker {
     }
 
     /// Infer type from a literal value
-    fn infer_type_from_literal(&self, literal: &str) -> Result<TypeExpression, Error> {
+    fn infer_type_from_literal(&self, literal: &str) -> Result<(), Error> {
         match literal {
             "true" | "false" => Ok(TypeExpression::named("facts")),
             s if s.parse::<i32>().is_ok() => Ok(TypeExpression::named("normie")),
@@ -362,7 +362,7 @@ impl TypeChecker {
         &self,
         type_expr: &TypeExpression,
         constraints: &[crate::ast::declarations::GenericConstraint],
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         self.type_system.check_constraints(type_expr, constraints)
     }
 }

@@ -11,7 +11,7 @@ use crate::stdlib::database::{
     driver::{QueryResult, ExecuteResult}
 };
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
-use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
+use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::connection::ConnectionStats;
 
 /// PostgreSQL transaction wrapper
@@ -78,7 +78,7 @@ impl<'a> PostgresTransaction<'a> {
         let transaction = self.get_active_transaction()?;
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows = transaction
@@ -121,7 +121,7 @@ impl<'a> PostgresTransaction<'a> {
         let transaction = self.get_active_transaction()?;
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = transaction
@@ -301,7 +301,7 @@ impl<'a> PostgresTransaction<'a> {
 }
 
 impl<'a> DriverTx for PostgresTransaction<'a> {
-    fn query(&self, sql: &str, args: &[SqlValue]) -> Result<QueryResult, crate::stdlib::database::DatabaseError> {
+    fn query(&self, sql: &str, args: &[SqlValue]) -> Result<(), Error> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
         Err(crate::stdlib::database::DatabaseError::new(
@@ -310,7 +310,7 @@ impl<'a> DriverTx for PostgresTransaction<'a> {
         ))
     }
 
-    fn execute(&self, sql: &str, args: &[SqlValue]) -> Result<ExecuteResult, crate::stdlib::database::DatabaseError> {
+    fn execute(&self, sql: &str, args: &[SqlValue]) -> Result<(), Error> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
         Err(crate::stdlib::database::DatabaseError::new(
@@ -319,7 +319,7 @@ impl<'a> DriverTx for PostgresTransaction<'a> {
         ))
     }
 
-    fn commit(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         // Cannot commit async transaction in sync context
         Err(crate::stdlib::database::DatabaseError::new(
             crate::stdlib::database::DatabaseErrorKind::NotSupported,
@@ -327,7 +327,7 @@ impl<'a> DriverTx for PostgresTransaction<'a> {
         ))
     }
 
-    fn rollback(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         // Cannot rollback async transaction in sync context
         Err(crate::stdlib::database::DatabaseError::new(
             crate::stdlib::database::DatabaseErrorKind::NotSupported,
@@ -335,7 +335,7 @@ impl<'a> DriverTx for PostgresTransaction<'a> {
         ))
     }
 
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         // For async operations in sync context, return not supported error
         Err(crate::stdlib::database::DatabaseError::new(
             crate::stdlib::database::DatabaseErrorKind::NotSupported,

@@ -97,7 +97,7 @@ impl CursedFormatter {
         }
     }
     
-    pub fn format(&mut self, source: &str) -> Result<FormatterResult, Error> {
+    pub fn format(&mut self, source: &str) -> Result<(), Error> {
         // Reset state
         self.current_indent = 0;
         self.output.clear();

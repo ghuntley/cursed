@@ -37,7 +37,7 @@ impl StaticFileServer {
         }
     }
 
-    pub fn serve_file(&mut self, path: &str) -> Result<StaticFileResponse, StaticFileError> {
+    pub fn serve_file(&mut self, path: &str) -> Result<(), Error> {
         // Check if file extension is allowed
         if !self.is_allowed_extension(path) {
             return Err(StaticFileError::NotAllowed);

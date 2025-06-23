@@ -33,6 +33,7 @@ use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519Veri
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
 use super::protocols_production::{ProtocolError, ProtocolResult, SecurityLevel, ProtocolConfig, CryptoPrimitives};
+use crate::stdlib::crypto::asymmetric::Ed25519PublicKey;
 
 // ============================================================================
 // CHALLENGE-RESPONSE AUTHENTICATION PROTOCOLS

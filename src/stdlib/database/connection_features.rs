@@ -13,13 +13,13 @@ use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
 /// fr fr Connection middleware trait for intercepting operations
 pub trait ConnectionMiddleware: Send + Sync + std::fmt::Debug {
     /// sus Before connection operation
-    fn before_operation(&self, context: &OperationContext) -> Result<(), DatabaseError>;
+    fn before_operation(&self, context: &OperationContext) -> Result<(), Error>;
     
     /// facts After connection operation
-    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), DatabaseError>;
+    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), Error>;
     
     /// lowkey On connection error
-    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> Result<(), DatabaseError>;
+    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> Result<(), Error>;
 }
 
 /// fr fr Operation context for middleware
@@ -102,7 +102,7 @@ impl QueryLoggingMiddleware {
 
 impl ConnectionMiddleware for QueryLoggingMiddleware {
     #[instrument(skip(self, context))]
-    fn before_operation(&self, context: &OperationContext) -> Result<(), DatabaseError> {
+    fn before_operation(&self, context: &OperationContext) -> Result<(), Error> {
         if self.log_all_queries {
             if let Some(ref sql) = context.sql {
                 let sanitized_sql = self.sanitize_sql(sql);
@@ -119,7 +119,7 @@ impl ConnectionMiddleware for QueryLoggingMiddleware {
     }
 
     #[instrument(skip(self, context, result))]
-    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), DatabaseError> {
+    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), Error> {
         let should_log = self.log_all_queries || 
             (self.log_slow_queries && result.duration >= self.slow_query_threshold);
 
@@ -153,7 +153,7 @@ impl ConnectionMiddleware for QueryLoggingMiddleware {
     }
 
     #[instrument(skip(self, context, error))]
-    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> Result<(), DatabaseError> {
+    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> Result<(), Error> {
         if let Some(ref sql) = context.sql {
             let sanitized_sql = self.sanitize_sql(sql);
             error!(
@@ -227,7 +227,7 @@ impl PerformanceProfilingMiddleware {
 
 impl ConnectionMiddleware for PerformanceProfilingMiddleware {
     #[instrument(skip(self, context))]
-    fn before_operation(&self, context: &OperationContext) -> Result<(), DatabaseError> {
+    fn before_operation(&self, context: &OperationContext) -> Result<(), Error> {
         if let Ok(mut conn_stats) = self.connection_stats.lock() {
             let stats = conn_stats.entry(context.connection_id.clone())
                 .or_insert_with(|| ConnectionStats {
@@ -244,7 +244,7 @@ impl ConnectionMiddleware for PerformanceProfilingMiddleware {
     }
 
     #[instrument(skip(self, context, result))]
-    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), DatabaseError> {
+    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), Error> {
         // Update operation stats
         if let Ok(mut op_stats) = self.operation_stats.lock() {
             let stats = op_stats.entry(context.operation_type.clone())
@@ -284,7 +284,7 @@ impl ConnectionMiddleware for PerformanceProfilingMiddleware {
     }
 
     #[instrument(skip(self, context, _error))]
-    fn on_error(&self, context: &OperationContext, _error: &DatabaseError) -> Result<(), DatabaseError> {
+    fn on_error(&self, context: &OperationContext, _error: &DatabaseError) -> Result<(), Error> {
         if let Ok(mut conn_stats) = self.connection_stats.lock() {
             if let Some(stats) = conn_stats.get_mut(&context.connection_id) {
                 stats.active_operations = stats.active_operations.saturating_sub(1);
@@ -353,7 +353,7 @@ impl ConnectionHealthChecker {
 
     /// facts Check health of specific connection
     #[instrument(skip(self))]
-    pub async fn check_connection_health(&self, connection_id: &str) -> Result<HealthStatus, DatabaseError> {
+    pub async fn check_connection_health(&self, connection_id: &str) -> Result<(), Error> {
         debug!(connection_id = %connection_id, "Checking connection health");
         
         let start_time = Instant::now();
@@ -457,7 +457,7 @@ impl ConnectionHealthChecker {
     }
 
     /// lowkey Execute actual health check query
-    async fn execute_health_check_query(&self, connection_id: &str) -> Result<(), DatabaseError> {
+    async fn execute_health_check_query(&self, connection_id: &str) -> Result<(), Error> {
         trace!(connection_id = %connection_id, "Executing health check query");
         
         // Simulate health check with small delay
@@ -587,7 +587,7 @@ impl DatabaseLoadBalancer {
 
     /// facts Get next connection using load balancing strategy
     #[instrument(skip(self))]
-    pub async fn get_connection(&self) -> Result<String, DatabaseError> {
+    pub async fn get_connection(&self) -> Result<(), Error> {
         debug!(strategy = ?self.strategy, "Getting connection using load balancer");
         
         let nodes = self.database_nodes.read()
@@ -620,7 +620,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// lowkey Round robin selection
-    async fn round_robin_selection(&self, nodes: &[DatabaseNode]) -> Result<&DatabaseNode, DatabaseError> {
+    async fn round_robin_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
         let mut index = self.current_index.lock()
             .map_err(|_| DatabaseError::connection_error("Failed to acquire index lock"))?;
         
@@ -631,7 +631,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// periodt Weighted round robin selection
-    async fn weighted_round_robin_selection(&self, nodes: &[DatabaseNode]) -> Result<&DatabaseNode, DatabaseError> {
+    async fn weighted_round_robin_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
         let total_weight: u32 = nodes.iter().map(|n| n.weight).sum();
         
         if total_weight == 0 {
@@ -656,7 +656,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// bestie Least connections selection
-    async fn least_connections_selection(&self, nodes: &[DatabaseNode]) -> Result<&DatabaseNode, DatabaseError> {
+    async fn least_connections_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
         let mut min_connections = u32::MAX;
         let mut selected_node = &nodes[0];
         
@@ -673,7 +673,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// yolo Random selection
-    async fn random_selection(&self, nodes: &[DatabaseNode]) -> Result<&DatabaseNode, DatabaseError> {
+    async fn random_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
         use rand::Rng;
         let mut rng = rand::thread_rng();
         let index = rng.gen_range(0..nodes.len());
@@ -681,7 +681,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// slay Health-aware selection (prefer healthy nodes with lower priority)
-    async fn health_aware_selection(&self, nodes: &[DatabaseNode]) -> Result<&DatabaseNode, DatabaseError> {
+    async fn health_aware_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
         // Filter healthy nodes
         let healthy_nodes: Vec<&DatabaseNode> = nodes.iter()
             .filter(|n| n.is_healthy)
@@ -707,7 +707,7 @@ impl DatabaseLoadBalancer {
 
     /// facts Release connection and decrement count
     #[instrument(skip(self))]
-    pub async fn release_connection(&self, connection_string: &str) -> Result<(), DatabaseError> {
+    pub async fn release_connection(&self, connection_string: &str) -> Result<(), Error> {
         let nodes = self.database_nodes.read()
             .map_err(|_| DatabaseError::connection_error("Failed to read database nodes"))?;
         

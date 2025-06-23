@@ -57,7 +57,7 @@ impl NtruConfig {
     }
     
     /// vibes Validate NTRU configuration
-    pub fn validate(&self) -> Result<(), NtruError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.n < 256 {
             return Err(NtruError::InvalidConfig("N must be at least 256 for security".to_string()));
         }
@@ -125,7 +125,7 @@ pub struct NtruEngine {
 
 impl NtruEngine {
     /// slay Create new NTRU engine
-    pub fn new(config: NtruConfig) -> Result<Self, NtruError> {
+    pub fn new(config: NtruConfig) -> Result<(), Error> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -140,7 +140,7 @@ impl NtruEngine {
     }
     
     /// bestie Generate NTRU key pair
-    pub fn generate_keypair(&mut self) -> Result<NtruKeyPair, NtruError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         let n = self.config.n;
         let p = self.config.p;
         let q = self.config.q;
@@ -186,7 +186,7 @@ impl NtruEngine {
     }
     
     /// vibes Encrypt message using NTRU
-    pub fn encrypt(&mut self, message: &[u8], public_key: &NtruPublicKey) -> Result<Vec<u8>, NtruError> {
+    pub fn encrypt(&mut self, message: &[u8], public_key: &NtruPublicKey) -> Result<(), Error> {
         let n = public_key.n;
         let p = public_key.p;
         let q = public_key.q;
@@ -206,7 +206,7 @@ impl NtruEngine {
     }
     
     /// periodt Decrypt ciphertext using NTRU
-    pub fn decrypt(&mut self, ciphertext: &[u8], private_key: &NtruPrivateKey) -> Result<Vec<u8>, NtruError> {
+    pub fn decrypt(&mut self, ciphertext: &[u8], private_key: &NtruPrivateKey) -> Result<(), Error> {
         let n = private_key.n;
         let p = private_key.p;
         let q = private_key.q;
@@ -226,7 +226,7 @@ impl NtruEngine {
     }
     
     /// sus Sample ternary polynomial with specified weights
-    fn sample_ternary_polynomial(&mut self, n: usize, ones: usize, minus_ones: usize) -> Result<NtruPolynomial, NtruError> {
+    fn sample_ternary_polynomial(&mut self, n: usize, ones: usize, minus_ones: usize) -> Result<(), Error> {
         if ones + minus_ones > n {
             return Err(NtruError::InvalidConfig("Too many non-zero coefficients".to_string()));
         }
@@ -254,7 +254,7 @@ impl NtruEngine {
     }
     
     /// facts Convert message bytes to polynomial
-    fn message_to_polynomial(&self, message: &[u8], n: usize, p: u16) -> Result<NtruPolynomial, NtruError> {
+    fn message_to_polynomial(&self, message: &[u8], n: usize, p: u16) -> Result<(), Error> {
         let max_bytes = n * 2; // Rough estimate for capacity
         if message.len() > max_bytes {
             return Err(NtruError::MessageTooLong(format!("Message too long: {} > {}", message.len(), max_bytes)));
@@ -274,7 +274,7 @@ impl NtruEngine {
     }
     
     /// yolo Convert polynomial to message bytes
-    fn polynomial_to_message(&self, poly: &NtruPolynomial, p: u16) -> Result<Vec<u8>, NtruError> {
+    fn polynomial_to_message(&self, poly: &NtruPolynomial, p: u16) -> Result<(), Error> {
         let mut message = Vec::new();
         
         for &coeff in &poly.coefficients {
@@ -293,7 +293,7 @@ impl NtruEngine {
     }
     
     /// stan Convert polynomial to bytes for transmission
-    fn polynomial_to_bytes(&self, poly: &NtruPolynomial) -> Result<Vec<u8>, NtruError> {
+    fn polynomial_to_bytes(&self, poly: &NtruPolynomial) -> Result<(), Error> {
         let mut bytes = Vec::new();
         
         for &coeff in &poly.coefficients {
@@ -306,7 +306,7 @@ impl NtruEngine {
     }
     
     /// bestie Convert bytes to polynomial
-    fn bytes_to_polynomial(&self, bytes: &[u8], n: usize) -> Result<NtruPolynomial, NtruError> {
+    fn bytes_to_polynomial(&self, bytes: &[u8], n: usize) -> Result<(), Error> {
         if bytes.len() != n * 2 {
             return Err(NtruError::InvalidCiphertext("Invalid ciphertext length".to_string()));
         }
@@ -371,7 +371,7 @@ impl NtruPolynomialRing {
     }
     
     /// bestie Add polynomials modulo q
-    pub fn add_mod_q(&self, a: &NtruPolynomial, b: &NtruPolynomial) -> Result<NtruPolynomial, NtruError> {
+    pub fn add_mod_q(&self, a: &NtruPolynomial, b: &NtruPolynomial) -> Result<(), Error> {
         if a.degree != b.degree {
             return Err(NtruError::InvalidDimensions("Polynomial degrees don't match".to_string()));
         }
@@ -385,7 +385,7 @@ impl NtruPolynomialRing {
     }
     
     /// vibes Multiply polynomials modulo q and x^n - 1
-    pub fn multiply_mod_q(&self, a: &NtruPolynomial, b: &NtruPolynomial) -> Result<NtruPolynomial, NtruError> {
+    pub fn multiply_mod_q(&self, a: &NtruPolynomial, b: &NtruPolynomial) -> Result<(), Error> {
         if a.degree != b.degree {
             return Err(NtruError::InvalidDimensions("Polynomial degrees don't match".to_string()));
         }
@@ -403,7 +403,7 @@ impl NtruPolynomialRing {
     }
     
     /// periodt Multiply polynomial by scalar
-    pub fn scalar_multiply(&self, poly: &NtruPolynomial, scalar: i32) -> Result<NtruPolynomial, NtruError> {
+    pub fn scalar_multiply(&self, poly: &NtruPolynomial, scalar: i32) -> Result<(), Error> {
         let result_coeffs = poly.coefficients.iter()
             .map(|&c| (c * scalar) % self.q as i32)
             .collect();
@@ -412,7 +412,7 @@ impl NtruPolynomialRing {
     }
     
     /// sus Multiply polynomials modulo p
-    pub fn multiply_mod_p(&self, a: &NtruPolynomial, b: &NtruPolynomial, p: u16) -> Result<NtruPolynomial, NtruError> {
+    pub fn multiply_mod_p(&self, a: &NtruPolynomial, b: &NtruPolynomial, p: u16) -> Result<(), Error> {
         if a.degree != b.degree {
             return Err(NtruError::InvalidDimensions("Polynomial degrees don't match".to_string()));
         }
@@ -436,7 +436,7 @@ impl NtruPolynomialRing {
     /// 
     /// Critical for NTRU security: Without proper polynomial inversion, the entire
     /// cryptosystem is broken as key generation requires computing f^(-1) mod q.
-    pub fn invert_mod_q(&self, poly: &NtruPolynomial) -> Result<NtruPolynomial, NtruError> {
+    pub fn invert_mod_q(&self, poly: &NtruPolynomial) -> Result<(), Error> {
         self.extended_euclidean_invert(poly, self.q as i32)
             .ok_or_else(|| NtruError::InversionError(
                 format!("Polynomial not invertible modulo q={}", self.q)
@@ -450,7 +450,7 @@ impl NtruPolynomialRing {
     /// 
     /// Critical for NTRU decryption: f_p = f^(-1) mod p is required to recover
     /// the original message during decryption.
-    pub fn invert_mod_p(&self, poly: &NtruPolynomial, p: u16) -> Result<NtruPolynomial, NtruError> {
+    pub fn invert_mod_p(&self, poly: &NtruPolynomial, p: u16) -> Result<(), Error> {
         self.extended_euclidean_invert(poly, p as i32)
             .ok_or_else(|| NtruError::InversionError(
                 format!("Polynomial not invertible modulo p={}", p)
@@ -735,7 +735,7 @@ Some(NtruPolynomial::new(result_coeffs, self.n))
     }
     
     /// stan Center reduction for polynomial coefficients
-    pub fn center_reduction(&self, poly: &NtruPolynomial, modulus: u16) -> Result<NtruPolynomial, NtruError> {
+    pub fn center_reduction(&self, poly: &NtruPolynomial, modulus: u16) -> Result<(), Error> {
         let half_mod = modulus as i32 / 2;
         let result_coeffs = poly.coefficients.iter()
             .map(|&c| {
@@ -764,19 +764,19 @@ pub struct NtruKeyPair {
 
 impl NtruKeyPair {
     /// slay Generate new NTRU key pair
-    pub fn generate(config: &NtruConfig) -> Result<Self, NtruError> {
+    pub fn generate(config: &NtruConfig) -> Result<(), Error> {
         let mut engine = NtruEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Encrypt message with public key
-    pub fn encrypt(&self, message: &[u8]) -> Result<Vec<u8>, NtruError> {
+    pub fn encrypt(&self, message: &[u8]) -> Result<(), Error> {
         let mut engine = NtruEngine::new(self.config.clone())?;
         engine.encrypt(message, &self.public_key)
     }
     
     /// vibes Decrypt ciphertext with private key
-    pub fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, NtruError> {
+    pub fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
         let mut engine = NtruEngine::new(self.config.clone())?;
         engine.decrypt(ciphertext, &self.private_key)
     }
@@ -869,7 +869,7 @@ impl NtruUtils {
     }
     
     /// bestie Validate NTRU parameters for production use
-    pub fn validate_for_production(config: &NtruConfig) -> Result<SecurityValidation, NtruError> {
+    pub fn validate_for_production(config: &NtruConfig) -> Result<(), Error> {
         let security_bits = Self::estimate_security_level(config);
         
         let is_secure = security_bits >= 128.0;
@@ -902,7 +902,7 @@ impl NtruUtils {
     }
     
     /// vibes Generate test vectors for NTRU implementation
-    pub fn generate_test_vectors(config: &NtruConfig) -> Result<NtruTestVectors, NtruError> {
+    pub fn generate_test_vectors(config: &NtruConfig) -> Result<(), Error> {
         let mut engine = NtruEngine::new(config.clone())?;
         let keypair = engine.generate_keypair()?;
         

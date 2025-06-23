@@ -329,13 +329,13 @@ impl ProfileData {
     }
 
     /// Export to JSON
-    pub fn to_json(&self) -> Result<String, Error> {
+    pub fn to_json(&self) -> Result<(), Error> {
         serde_json::to_string_pretty(self)
             .map_err(|e| Error::Runtime(format!("Failed to serialize to JSON: {}", e)))
     }
 
     /// Import from JSON
-    pub fn from_json(json: &str) -> Result<Self, Error> {
+    pub fn from_json(json: &str) -> Result<(), Error> {
         serde_json::from_str(json)
             .map_err(|e| Error::Runtime(format!("Failed to deserialize from JSON: {}", e)))
     }
@@ -523,7 +523,7 @@ impl CpuProfileData {
 
 impl ProfileReport {
     /// Generate report as string
-    pub fn generate(&self) -> Result<String, Error> {
+    pub fn generate(&self) -> Result<(), Error> {
         match self.config.format {
             ReportFormat::Text => self.generate_text_report(),
             ReportFormat::Json => self.data.to_json(),
@@ -534,7 +534,7 @@ impl ProfileReport {
     }
 
     /// Generate text report
-    fn generate_text_report(&self) -> Result<String, Error> {
+    fn generate_text_report(&self) -> Result<(), Error> {
         let mut report = String::new();
         
         report.push_str("=== CURSED Profiling Report ===\n\n");
@@ -610,7 +610,7 @@ impl ProfileReport {
     }
 
     /// Generate HTML report
-    fn generate_html_report(&self) -> Result<String, Error> {
+    fn generate_html_report(&self) -> Result<(), Error> {
         let mut html = String::new();
         
         html.push_str("<!DOCTYPE html>\n");
@@ -654,7 +654,7 @@ impl ProfileReport {
     }
 
     /// Generate Markdown report
-    fn generate_markdown_report(&self) -> Result<String, Error> {
+    fn generate_markdown_report(&self) -> Result<(), Error> {
         let mut md = String::new();
         
         md.push_str("# CURSED Profiling Report\n\n");
@@ -699,7 +699,7 @@ impl ProfileReport {
     }
 
     /// Generate CSV report
-    fn generate_csv_report(&self) -> Result<String, Error> {
+    fn generate_csv_report(&self) -> Result<(), Error> {
         let mut csv = String::new();
         
         // CSV headers and data for function statistics

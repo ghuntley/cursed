@@ -75,7 +75,7 @@ pub use key_formats::{
 use crate::error::CursedError;
 
 /// fr fr Initialize asymmetric crypto package with comprehensive testing
-pub fn init_crypto_asymmetric() -> Result<(), CursedError> {
+pub fn init_crypto_asymmetric() -> Result<(), Error> {
     // Initialize key generator
     let mut generator = KeyGenerator::new();
     

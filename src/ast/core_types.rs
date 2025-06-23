@@ -11,6 +11,7 @@ use crate::ast::declarations::{TypeParameter, GenericConstraint, FieldStatement,
 use crate::error::SourceLocation;
 use crate::lexer::Token;
 use std::any::Any;
+use crate::ast::ASTNode;
 
 /// AST root type representing complete program structure
 #[derive(Debug, Clone)]
@@ -76,7 +77,7 @@ impl VariableDeclaration {
 impl Node for VariableDeclaration {
     fn string(&self) -> String {
         let keyword = if self.is_mutable { "sus" } else { "facts" };
-        let mut result = format!("{} {}", keyword, self.name.string());
+        let mut result = format!("{} {}", keyword, self.to_string().string());
         
         if let Some(type_ann) = &self.type_annotation {
             result.push_str(&format!(" {}", type_ann.string()));
@@ -102,7 +103,7 @@ impl Statement for VariableDeclaration {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(VariableDeclaration {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             value: self.value.as_ref().map(|v| v.clone_box()),
             type_annotation: self.type_annotation.as_ref().map(|t| t.clone_box()),
             is_mutable: self.is_mutable,
@@ -149,10 +150,10 @@ impl ConstantDeclaration {
 
 impl Node for ConstantDeclaration {
     fn string(&self) -> String {
-        let mut result = format!("vibes {} = {}", self.name.string(), self.value.string());
+        let mut result = format!("vibes {} = {}", self.to_string().string(), self.value.string());
         
         if let Some(type_ann) = &self.type_annotation {
-            result = format!("vibes {} {} = {}", self.name.string(), type_ann.string(), self.value.string());
+            result = format!("vibes {} {} = {}", self.to_string().string(), type_ann.string(), self.value.string());
         }
         
         result
@@ -171,7 +172,7 @@ impl Statement for ConstantDeclaration {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(ConstantDeclaration {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             value: self.value.clone_box(),
             type_annotation: self.type_annotation.as_ref().map(|t| t.clone_box()),
             location: self.location.clone(),
@@ -258,7 +259,7 @@ impl PackageDeclaration {
 
 impl Node for PackageDeclaration {
     fn string(&self) -> String {
-        format!("vibe {}", self.name)
+        format!("vibe {}", self.to_string())
     }
 
     fn token_literal(&self) -> String {
@@ -311,7 +312,7 @@ impl Node for InterfaceMethod {
             .map(|p| p.string())
             .collect();
         
-        let mut result = format!("{}({})", self.name.string(), params.join(", "));
+        let mut result = format!("{}({})", self.to_string().string(), params.join(", "));
         
         if let Some(ret_type) = &self.return_type {
             result.push_str(&format!(" {}", ret_type.string()));
@@ -321,7 +322,7 @@ impl Node for InterfaceMethod {
     }
 
     fn token_literal(&self) -> String {
-        self.name.token_literal()
+        self.to_string().token_literal()
     }
 }
 
@@ -363,11 +364,11 @@ impl StructField {
 
 impl Node for StructField {
     fn string(&self) -> String {
-        format!("{} {}", self.name.string(), self.field_type.string())
+        format!("{} {}", self.to_string().string(), self.field_type.string())
     }
 
     fn token_literal(&self) -> String {
-        self.name.token_literal()
+        self.to_string().token_literal()
     }
 }
 
@@ -405,7 +406,7 @@ impl ModuleDeclaration {
 
 impl Node for ModuleDeclaration {
     fn string(&self) -> String {
-        format!("mod {} {}", self.name, self.body.string())
+        format!("mod {} {}", self.to_string(), self.body.string())
     }
 
     fn token_literal(&self) -> String {

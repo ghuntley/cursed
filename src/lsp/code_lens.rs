@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::time::Duration;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument};
 use serde_json::Value;
 

@@ -430,7 +430,7 @@ where
 
 
 /// Public helper function for spawning blocking operations
-pub async fn spawn_blocking_io_public<F, R>(f: F) -> Result<R, crate::error::CursedError>
+pub async fn spawn_blocking_io_public<F, R>(f: F) -> Result<(), Error>
 where
     F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,

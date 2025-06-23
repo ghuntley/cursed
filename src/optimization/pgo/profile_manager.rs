@@ -780,7 +780,7 @@ impl ProfileManager {
                 data: HashMap::new(),
             })
         } else {
-            Err(Error::Other(format!("Session not found: {}", session_id)))
+            Err(Error::General(format!("Session not found: {}", session_id)))
         }
     }
 
@@ -820,7 +820,7 @@ impl ProfileManager {
                 data,
             })
         } else {
-            Err(Error::Other(format!("Session not found: {}", session_id)))
+            Err(Error::General(format!("Session not found: {}", session_id)))
         }
     }
 
@@ -858,7 +858,7 @@ impl ProfileManager {
     fn merge_profiles(&self, profiles: &[ProfileData]) -> Result<ProfileData> {
         // Simplified profile merging
         if profiles.is_empty() {
-            return Err(Error::Other("No profiles to merge".to_string()));
+            return Err(Error::General("No profiles to merge".to_string()));
         }
         
         // Use first profile as base
@@ -1047,7 +1047,7 @@ impl ProfileMigrationEngine {
             self.statistics.successful_migrations += 1;
             Ok(migrated_data)
         } else {
-            Err(Error::Other(format!("No migration path from {} to {}", source_version, target_version)))
+            Err(Error::General(format!("No migration path from {} to {}", source_version, target_version)))
         }
     }
 }

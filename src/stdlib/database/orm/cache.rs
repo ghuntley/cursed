@@ -382,7 +382,7 @@ impl EntityCache {
         &mut self,
         entity: T,
         ttl: Duration,
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(entity = T::table_name(), "Caching entity");
         
         if let Some(pk_value) = entity.primary_key_value() {
@@ -518,7 +518,7 @@ impl RedisCache {
 
     /// facts Get value from Redis
     #[instrument(skip(self))]
-    pub async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, DatabaseError> {
+    pub async fn get(&self, key: &str) -> Result<(), Error> {
         debug!(key = key, "Getting value from Redis");
         // Placeholder implementation
         Ok(None)
@@ -526,7 +526,7 @@ impl RedisCache {
 
     /// periodt Set value in Redis
     #[instrument(skip(self, value))]
-    pub async fn set(&self, key: &str, value: Vec<u8>, ttl: Duration) -> Result<(), DatabaseError> {
+    pub async fn set(&self, key: &str, value: Vec<u8>, ttl: Duration) -> Result<(), Error> {
         debug!(key = key, ttl = ?ttl, "Setting value in Redis");
         // Placeholder implementation
         Ok(())
@@ -534,7 +534,7 @@ impl RedisCache {
 
     /// bestie Delete value from Redis
     #[instrument(skip(self))]
-    pub async fn delete(&self, key: &str) -> Result<bool, DatabaseError> {
+    pub async fn delete(&self, key: &str) -> Result<(), Error> {
         debug!(key = key, "Deleting value from Redis");
         // Placeholder implementation
         Ok(true)
@@ -579,7 +579,7 @@ impl CacheInvalidator {
 
     /// periodt Invalidate caches based on entity change
     #[instrument(skip(self))]
-    pub async fn invalidate_for_entity(&self, entity_type: &str, operation: CacheOperation) -> Result<(), DatabaseError> {
+    pub async fn invalidate_for_entity(&self, entity_type: &str, operation: CacheOperation) -> Result<(), Error> {
         info!(entity = entity_type, operation = ?operation, "Invalidating caches for entity");
         
         let rules = if let Ok(invalidation_rules) = self.invalidation_rules.lock() {
@@ -597,7 +597,7 @@ impl CacheInvalidator {
         Ok(())
     }
 
-    async fn execute_invalidation_rule(&self, rule: &InvalidationRule) -> Result<(), DatabaseError> {
+    async fn execute_invalidation_rule(&self, rule: &InvalidationRule) -> Result<(), Error> {
         match rule {
             InvalidationRule::InvalidatePattern { pattern } => {
                 if let Ok(mut cache) = self.memory_cache.lock() {

@@ -134,7 +134,7 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         
         // Validate module before optimization
         if let Err(error_msg) = module.verify() {
-            return Err(Error::Other(format!("Module verification failed before optimization: {}", error_msg)));
+            return Err(Error::General(format!("Module verification failed before optimization: {}", error_msg)));
         }
         
         // Phase 1: Pre-optimization analysis and CURSED-specific optimizations
@@ -169,7 +169,7 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         
         // Final verification
         if let Err(error_msg) = module.verify() {
-            return Err(Error::Other(format!("Module verification failed after optimization: {}", error_msg)));
+            return Err(Error::General(format!("Module verification failed after optimization: {}", error_msg)));
         }
         
         // Update comprehensive statistics
@@ -264,7 +264,7 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
         
         let target_triple = TargetMachine::get_default_triple();
         let target = Target::from_triple(&target_triple)
-            .map_err(|e| Error::Other(format!("Failed to create target: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create target: {}", e)))?;
         
         let cpu = "generic";
         let features = "";
@@ -284,7 +284,7 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
             opt_level,
             RelocMode::Default,
             CodeModel::Default,
-        ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))?;
+        ).ok_or_else(|| Error::General("Failed to create target machine".to_string()))?;
         
         Ok(Some(target_machine))
     }
@@ -358,12 +358,12 @@ impl<'ctx> RealLlvmOptimizationIntegration<'ctx> {
             info!("Generating optimized machine code to: {}", output_file);
             
             target_machine.write_to_file(module, FileType::Object, std::path::Path::new(output_file))
-                .map_err(|e| Error::Other(format!("Failed to write object file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to write object file: {}", e)))?;
             
             info!("Machine code generation completed");
             Ok(())
         } else {
-            Err(Error::Other("No target machine available for code generation".to_string()))
+            Err(Error::General("No target machine available for code generation".to_string()))
         }
     }
     

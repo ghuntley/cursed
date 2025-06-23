@@ -261,7 +261,7 @@ pub fn escape_json_string(s: &str) -> String {
 }
 
 /// Unescape JSON string escape sequences
-pub fn unescape_json_string(s: &str) -> Result<String, CursedError> {
+pub fn unescape_json_string(s: &str) -> Result<(), Error> {
     let mut result = String::with_capacity(s.len());
     let mut chars = s.chars();
     

@@ -306,7 +306,7 @@ impl Default for TieredCompilationConfig {
 
 impl<'ctx> TieredCompilationManager<'ctx> {
     /// Create a new tiered compilation manager
-    pub fn new(context: &'ctx Context, config: TieredCompilationConfig) -> Result<Self, Error> {
+    pub fn new(context: &'ctx Context, config: TieredCompilationConfig) -> Result<(), Error> {
         let osr_config = OSRConfig::default();
         let osr_manager = OSRManager::new(context, osr_config);
         
@@ -470,7 +470,7 @@ impl<'ctx> TieredCompilationManager<'ctx> {
         &self,
         function_name: &str,
         conditions: &[TransitionCondition],
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         let profiler = self.execution_profiler.lock().unwrap();
         let profile = profiler.function_profiles.get(function_name);
         
@@ -719,7 +719,7 @@ impl<'ctx> TieredCompilationManager<'ctx> {
     }
 
     /// Detect hot paths in a function
-    pub fn detect_hot_paths(&mut self, function_name: &str) -> Result<Vec<HotPathSegment>, Error> {
+    pub fn detect_hot_paths(&mut self, function_name: &str) -> Result<(), Error> {
         tracing::debug!(
             function_name = function_name,
             "Detecting hot paths"
@@ -767,7 +767,7 @@ impl<'ctx> TieredCompilationManager<'ctx> {
         &mut self,
         function_name: &str,
         target_tier: CompilationTier,
-    ) -> Result<Vec<OptimizationOpportunity>, Error> {
+    ) -> Result<(), Error> {
         tracing::debug!(
             function_name = function_name,
             target_tier = ?target_tier,
@@ -934,7 +934,7 @@ impl<'ctx> TieredCompilationManager<'ctx> {
 /// Utility functions for tiered compilation
 
 /// Create a tiered compilation manager with optimal settings
-pub fn create_optimized_tiered_manager(context: &Context) -> Result<TieredCompilationManager, Error> {
+pub fn create_optimized_tiered_manager(context: &Context) -> Result<(), Error> {
     let config = TieredCompilationConfig {
         enable_auto_promotion: true,
         enable_auto_demotion: true,
@@ -947,7 +947,7 @@ pub fn create_optimized_tiered_manager(context: &Context) -> Result<TieredCompil
 }
 
 /// Create a tiered compilation manager for development
-pub fn create_debug_tiered_manager(context: &Context) -> Result<TieredCompilationManager, Error> {
+pub fn create_debug_tiered_manager(context: &Context) -> Result<(), Error> {
     let mut config = TieredCompilationConfig::default();
     config.enable_auto_promotion = false;
     config.enable_background_compilation = false;

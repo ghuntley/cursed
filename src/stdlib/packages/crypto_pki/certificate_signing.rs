@@ -10,7 +10,7 @@
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    types::*,
+    crate::types::*,
 };
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -89,7 +89,7 @@ pub struct ExtensionPolicy {
 #[derive(Debug, Clone)]
 pub struct CertificateSigningRequest {
     /// Original CSR
-    pub csr: super::types::CertificateSigningRequest,
+    pub csr: super::crate::types::CertificateSigningRequest,
     /// Requested validity period
     pub validity_period: Option<Duration>,
     /// Additional extensions to include
@@ -529,7 +529,7 @@ impl CertificateSigner {
     }
     
     /// Validate CSR signature
-    fn validate_csr_signature(&self, csr: &super::types::CertificateSigningRequest) -> PkiResult<()> {
+    fn validate_csr_signature(&self, csr: &super::crate::types::CertificateSigningRequest) -> PkiResult<()> {
         // Extract CSR info (signed portion)
         let csr_info = self.extract_csr_info(csr)?;
         
@@ -615,7 +615,7 @@ impl CertificateSigner {
     }
     
     /// Validate requested extensions
-    fn validate_requested_extensions(&self, csr: &super::types::CertificateSigningRequest) -> PkiResult<()> {
+    fn validate_requested_extensions(&self, csr: &super::crate::types::CertificateSigningRequest) -> PkiResult<()> {
         for attribute in &csr.attributes {
             if attribute.attribute_type == "1.2.840.113549.1.9.14" {
                 // Validate extension request
@@ -974,11 +974,11 @@ impl CertificateSigner {
     }
     
     /// Create CSR from renewal request
-    fn create_csr_from_renewal(&self, renewal: &CertificateRenewalRequest) -> PkiResult<super::types::CertificateSigningRequest> {
+    fn create_csr_from_renewal(&self, renewal: &CertificateRenewalRequest) -> PkiResult<super::crate::types::CertificateSigningRequest> {
         let public_key_info = renewal.new_public_key.clone()
             .unwrap_or_else(|| renewal.original_certificate.subject_public_key_info.clone());
         
-        Ok(super::types::CertificateSigningRequest {
+        Ok(super::crate::types::CertificateSigningRequest {
             version: 0,
             subject: renewal.original_certificate.subject.clone(),
             subject_public_key_info: public_key_info,
@@ -1026,7 +1026,7 @@ impl CertificateSigner {
     }
     
     /// Extract CSR info (signed portion)
-    fn extract_csr_info(&self, csr: &super::types::CertificateSigningRequest) -> PkiResult<Vec<u8>> {
+    fn extract_csr_info(&self, csr: &super::crate::types::CertificateSigningRequest) -> PkiResult<Vec<u8>> {
         // In a real implementation, parse the DER-encoded CSR
         // and extract the certificationRequestInfo portion
         Ok(csr.raw_data[..csr.raw_data.len()-csr.signature.len()].to_vec()) // Mock

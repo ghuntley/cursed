@@ -486,10 +486,10 @@ impl PerformanceMonitor {
         let _span = span!(Level::INFO, "generate_performance_report").entered();
         
         let samples = self.samples.lock()
-            .map_err(|_| Error::Other("Failed to lock samples".to_string()))?;
+            .map_err(|_| Error::General("Failed to lock samples".to_string()))?;
         
         if samples.is_empty() {
-            return Err(Error::Other("No performance samples available".to_string()));
+            return Err(Error::General("No performance samples available".to_string()));
         }
         
         let total_samples = samples.len();
@@ -514,7 +514,7 @@ impl PerformanceMonitor {
         
         // Get recent alerts
         let alerts = self.alert_history.lock()
-            .map_err(|_| Error::Other("Failed to lock alert history".to_string()))?
+            .map_err(|_| Error::General("Failed to lock alert history".to_string()))?
             .iter()
             .rev()
             .take(50)
@@ -799,18 +799,18 @@ impl PerformanceMonitor {
                             *baseline = loaded_baseline;
                             info!("Successfully loaded baseline metrics with {} samples", baseline.sample_count);
                         } else {
-                            return Err(Error::Other("Failed to acquire baseline metrics lock".to_string()));
+                            return Err(Error::General("Failed to acquire baseline metrics lock".to_string()));
                         }
                     }
                     Err(e) => {
                         warn!("Failed to parse baseline metrics JSON: {}", e);
-                        return Err(Error::Other(format!("Invalid baseline metrics format: {}", e)));
+                        return Err(Error::General(format!("Invalid baseline metrics format: {}", e)));
                     }
                 }
             }
             Err(e) => {
                 warn!("Failed to read baseline metrics file: {}", e);
-                return Err(Error::Other(format!("File read error: {}", e)));
+                return Err(Error::General(format!("File read error: {}", e)));
             }
         }
         
@@ -825,18 +825,18 @@ impl PerformanceMonitor {
         if let Some(parent) = path.parent() {
             if !parent.exists() {
                 std::fs::create_dir_all(parent)
-                    .map_err(|e| Error::Other(format!("Failed to create directory: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to create directory: {}", e)))?;
             }
         }
         
         let baseline = self.baseline_metrics.read()
-            .map_err(|_| Error::Other("Failed to acquire baseline metrics lock".to_string()))?;
+            .map_err(|_| Error::General("Failed to acquire baseline metrics lock".to_string()))?;
         
         let json_content = serde_json::to_string_pretty(&*baseline)
-            .map_err(|e| Error::Other(format!("Failed to serialize baseline metrics: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize baseline metrics: {}", e)))?;
         
         std::fs::write(path, json_content)
-            .map_err(|e| Error::Other(format!("Failed to write baseline metrics file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write baseline metrics file: {}", e)))?;
         
         info!("Successfully saved baseline metrics with {} samples", baseline.sample_count);
         Ok(())
@@ -850,15 +850,15 @@ impl PerformanceMonitor {
         if let Some(parent) = path.parent() {
             if !parent.exists() {
                 std::fs::create_dir_all(parent)
-                    .map_err(|e| Error::Other(format!("Failed to create directory: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to create directory: {}", e)))?;
             }
         }
         
         let json_content = serde_json::to_string_pretty(&report)
-            .map_err(|e| Error::Other(format!("Failed to serialize performance report: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize performance report: {}", e)))?;
         
         std::fs::write(path, json_content)
-            .map_err(|e| Error::Other(format!("Failed to write performance report: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write performance report: {}", e)))?;
         
         info!("Exported performance report to: {:?}", path);
         Ok(())
@@ -869,14 +869,14 @@ impl PerformanceMonitor {
         info!("Importing performance samples from: {:?}", path);
         
         if !path.exists() {
-            return Err(Error::Other(format!("Import file does not exist: {:?}", path)));
+            return Err(Error::General(format!("Import file does not exist: {:?}", path)));
         }
         
         let content = std::fs::read_to_string(path)
-            .map_err(|e| Error::Other(format!("Failed to read import file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read import file: {}", e)))?;
         
         let imported_samples: Vec<PerformanceSample> = serde_json::from_str(&content)
-            .map_err(|e| Error::Other(format!("Failed to parse performance samples: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to parse performance samples: {}", e)))?;
         
         let import_count = imported_samples.len();
         
@@ -908,7 +908,7 @@ impl PerformanceMonitor {
     /// Get current performance statistics
     pub fn get_current_statistics(&self) -> Result<(usize, Duration, f64)> {
         let samples = self.samples.lock()
-            .map_err(|_| Error::Other("Failed to lock samples".to_string()))?;
+            .map_err(|_| Error::General("Failed to lock samples".to_string()))?;
         
         if samples.is_empty() {
             return Ok((0, Duration::from_secs(0), 0.0));

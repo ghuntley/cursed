@@ -336,7 +336,7 @@ struct ExecutionSession {
 impl InteractiveDocumentation {
     /// Create a new interactive documentation manager
     #[instrument(skip(config))]
-    pub fn new(config: InteractiveConfig) -> Result<Self, CursedError> {
+    pub fn new(config: InteractiveConfig) -> Result<(), Error> {
         info!("Creating interactive documentation manager");
         
         // Create temp directory if it doesn't exist
@@ -362,7 +362,7 @@ impl InteractiveDocumentation {
     
     /// Execute code in playground
     #[instrument(skip(self, request))]
-    pub async fn execute_code(&mut self, request: CodeExecutionRequest) -> Result<CodeExecutionResult, CursedError> {
+    pub async fn execute_code(&mut self, request: CodeExecutionRequest) -> Result<(), Error> {
         info!("Executing code for session: {}", request.session_id);
         
         // Get or create session
@@ -382,7 +382,7 @@ impl InteractiveDocumentation {
     
     /// Call API method
     #[instrument(skip(self, request))]
-    pub async fn call_api_method(&mut self, request: ApiCallRequest) -> Result<ApiCallResult, CursedError> {
+    pub async fn call_api_method(&mut self, request: ApiCallRequest) -> Result<(), Error> {
         info!("Calling API method '{}' for session: {}", request.method_name, request.session_id);
         
         // Get or create session
@@ -396,7 +396,7 @@ impl InteractiveDocumentation {
     
     /// Highlight syntax
     #[instrument(skip(self, request))]
-    pub async fn highlight_syntax(&self, request: SyntaxHighlightRequest) -> Result<SyntaxHighlightResult, CursedError> {
+    pub async fn highlight_syntax(&self, request: SyntaxHighlightRequest) -> Result<(), Error> {
         debug!("Highlighting {} lines of {} code", request.code.len(), request.language);
         
         self.syntax_highlighter.highlight(request).await
@@ -409,7 +409,7 @@ impl InteractiveDocumentation {
         example_code: &str,
         example_id: &str,
         session_id: Option<String>,
-    ) -> Result<CodeExecutionResult, CursedError> {
+    ) -> Result<(), Error> {
         let session_id = session_id.unwrap_or_else(|| Uuid::new_v4().to_string());
         
         info!("Executing documentation example '{}' for session: {}", example_id, session_id);
@@ -429,7 +429,7 @@ impl InteractiveDocumentation {
     }
     
     /// Get available API methods for explorer
-    pub async fn get_available_api_methods(&self) -> Result<Vec<ApiMethodInfo>, CursedError> {
+    pub async fn get_available_api_methods(&self) -> Result<(), Error> {
         self.api_explorer.get_available_methods().await
     }
     
@@ -439,7 +439,7 @@ impl InteractiveDocumentation {
     }
     
     /// Get or create execution session
-    async fn get_or_create_session(&mut self, session_id: &str) -> Result<&mut ExecutionSession, CursedError> {
+    async fn get_or_create_session(&mut self, session_id: &str) -> Result<(), Error> {
         if !self.active_sessions.contains_key(session_id) {
             let session_dir = self.config.temp_dir.join(session_id);
             if !session_dir.exists() {
@@ -463,7 +463,7 @@ impl InteractiveDocumentation {
     }
     
     /// Cleanup old sessions
-    pub async fn cleanup_old_sessions(&mut self, max_age: Duration) -> Result<(), CursedError> {
+    pub async fn cleanup_old_sessions(&mut self, max_age: Duration) -> Result<(), Error> {
         let now = SystemTime::now();
         let mut to_remove = Vec::new();
         
@@ -565,7 +565,7 @@ struct HighlightRule {
 
 impl SyntaxHighlighter {
     /// Create new syntax highlighter
-    pub fn new(config: &InteractiveConfig) -> Result<Self, CursedError> {
+    pub fn new(config: &InteractiveConfig) -> Result<(), Error> {
         let mut highlight_rules = HashMap::new();
         
         // Initialize CURSED language rules
@@ -580,7 +580,7 @@ impl SyntaxHighlighter {
     }
     
     /// Create highlight rules for CURSED language
-    fn create_cursed_highlight_rules() -> Result<Vec<HighlightRule>, CursedError> {
+    fn create_cursed_highlight_rules() -> Result<(), Error> {
         let mut rules = Vec::new();
         
         // Keywords (Gen Z slang)
@@ -632,7 +632,7 @@ impl SyntaxHighlighter {
     }
     
     /// Highlight code
-    pub async fn highlight(&self, request: SyntaxHighlightRequest) -> Result<SyntaxHighlightResult, CursedError> {
+    pub async fn highlight(&self, request: SyntaxHighlightRequest) -> Result<(), Error> {
         let rules = self.highlight_rules.get(&request.language)
             .ok_or_else(|| CursedError::Runtime(format!("Unsupported language: {}", request.language)))?;
         
@@ -693,7 +693,7 @@ impl SyntaxHighlighter {
         line: &str,
         line_num: usize,
         rules: &[HighlightRule],
-    ) -> Result<(Vec<SyntaxToken>, String), CursedError> {
+    ) -> Result<(), Error> {
         let mut tokens = Vec::new();
         let mut highlighted = String::new();
         let mut processed = 0;
@@ -745,7 +745,7 @@ impl SyntaxHighlighter {
     }
     
     /// Generate CSS styles for theme
-    pub fn generate_css_styles(&self, theme: &str) -> Result<String, CursedError> {
+    pub fn generate_css_styles(&self, theme: &str) -> Result<(), Error> {
         let css = match theme {
             "monokai" => include_str!("../../web/assets/themes/monokai.css"),
             "github" => include_str!("../../web/assets/themes/github.css"),
@@ -797,7 +797,7 @@ pub struct CodePlayground {
 }
 
 impl CodePlayground {
-    pub fn new(config: &InteractiveConfig) -> Result<Self, CursedError> {
+    pub fn new(config: &InteractiveConfig) -> Result<(), Error> {
         Ok(Self {
             config: config.clone(),
         })
@@ -808,7 +808,7 @@ impl CodePlayground {
         &self,
         request: CodeExecutionRequest,
         session: &ExecutionSession,
-    ) -> Result<CodeExecutionResult, CursedError> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Write code to temporary file
@@ -856,7 +856,7 @@ impl CodePlayground {
         &self,
         code_file: &Path,
         working_dir: &Path,
-    ) -> Result<CompilationResult, CursedError> {
+    ) -> Result<(), Error> {
         let mut command = Command::new("cursed");
         command
             .arg("compile")
@@ -895,7 +895,7 @@ impl CodePlayground {
         working_dir: &Path,
         request: &CodeExecutionRequest,
         execution_timeout: Duration,
-    ) -> Result<ExecutionResult, CursedError> {
+    ) -> Result<(), Error> {
         let executable = working_dir.join("main");
         
         let mut command = Command::new(&executable);
@@ -1036,7 +1036,7 @@ pub struct ApiExplorer {
 }
 
 impl ApiExplorer {
-    pub fn new(config: &InteractiveConfig) -> Result<Self, CursedError> {
+    pub fn new(config: &InteractiveConfig) -> Result<(), Error> {
         let mut available_methods = HashMap::new();
         
         // Initialize with some built-in API methods
@@ -1066,7 +1066,7 @@ impl ApiExplorer {
         &self,
         request: ApiCallRequest,
         _session: &ExecutionSession,
-    ) -> Result<ApiCallResult, CursedError> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Look up method
@@ -1102,7 +1102,7 @@ impl ApiExplorer {
     }
     
     /// Get available methods
-    pub async fn get_available_methods(&self) -> Result<Vec<ApiMethodInfo>, CursedError> {
+    pub async fn get_available_methods(&self) -> Result<(), Error> {
         Ok(self.available_methods.values().cloned().collect())
     }
     
@@ -1116,14 +1116,14 @@ impl ApiExplorer {
         
         // Check required parameters
         for param in expected {
-            if !param.is_optional && !provided.contains_key(&param.name) {
-                errors.push(format!("Missing required parameter: {}", param.name));
+            if !param.is_optional && !provided.contains_key(&param.to_string()) {
+                errors.push(format!("Missing required parameter: {}", param.to_string()));
             }
         }
         
         // Check parameter types (simplified)
         for (name, value) in provided {
-            if let Some(param) = expected.iter().find(|p| p.name == *name) {
+            if let Some(param) = expected.iter().find(|p| p.to_string() == *name) {
                 if !self.is_value_compatible_with_type(value, &param.param_type) {
                     errors.push(format!("Parameter '{}' has wrong type", name));
                 }
@@ -1152,7 +1152,7 @@ impl ApiExplorer {
         &self,
         method_name: &str,
         parameters: &HashMap<String, serde_json::Value>,
-    ) -> Result<serde_json::Value, CursedError> {
+    ) -> Result<(), Error> {
         match method_name {
             "print" => {
                 let message = parameters.get("message")
@@ -1175,13 +1175,13 @@ impl ApiExplorer {
     pub fn format_method_signature(&self, method_info: &ApiMethodInfo) -> String {
         let params: Vec<String> = method_info.parameters.iter().map(|p| {
             if p.is_optional {
-                format!("{}?: {}", p.name, p.param_type)
+                format!("{}?: {}", p.to_string(), p.param_type)
             } else {
-                format!("{}: {}", p.name, p.param_type)
+                format!("{}: {}", p.to_string(), p.param_type)
             }
         }).collect();
         
-        format!("{}({}) -> {}", method_info.name, params.join(", "), method_info.return_type)
+        format!("{}({}) -> {}", method_info.to_string(), params.join(", "), method_info.return_type)
     }
 }
 
@@ -1191,7 +1191,7 @@ pub struct ExampleExecutor {
 }
 
 impl ExampleExecutor {
-    pub fn new(config: &InteractiveConfig) -> Result<Self, CursedError> {
+    pub fn new(config: &InteractiveConfig) -> Result<(), Error> {
         Ok(Self {
             config: config.clone(),
         })
@@ -1202,7 +1202,7 @@ impl ExampleExecutor {
         &self,
         request: CodeExecutionRequest,
         example_id: &str,
-    ) -> Result<CodeExecutionResult, CursedError> {
+    ) -> Result<(), Error> {
         info!("Executing example: {}", example_id);
         
         // Create a temporary playground for the example

@@ -25,7 +25,7 @@ use tracing::instrument;
 
 /// Initialize the LSP server with tracing
 #[instrument]
-pub fn init_lsp_server() -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_lsp_server() -> Result<(), Error>> {
     // Initialize tracing for LSP server
     tracing_subscriber::fmt()
         .with_env_filter(

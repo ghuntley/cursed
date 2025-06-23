@@ -12,7 +12,7 @@
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    types::*,
+    crate::types::*,
     certificate_signing::{CertificateSigner, CertificateSigningRequest},
     key_management::{KeyManager, KeyPair},
     validation::ValidationResult,
@@ -1871,7 +1871,7 @@ impl Default for MonitoringConfig {
 /// Public API functions for certificate renewal
 
 /// Initialize certificate renewal system
-pub fn init_certificate_renewal(config: RenewalConfig) -> Result<(), CursedError> {
+pub fn init_certificate_renewal(config: RenewalConfig) -> Result<(), Error> {
     // Global renewal manager would be initialized here
     println!("🔄 Certificate Renewal System initialized");
     println!("   ✅ ACME protocol support (Let's Encrypt)");
@@ -1885,7 +1885,7 @@ pub fn init_certificate_renewal(config: RenewalConfig) -> Result<(), CursedError
 }
 
 /// Create a new certificate renewal manager
-pub fn create_renewal_manager(config: RenewalConfig) -> Result<CertificateRenewalManager, CursedError> {
+pub fn create_renewal_manager(config: RenewalConfig) -> Result<(), Error> {
     let mut manager = CertificateRenewalManager::new(config);
     manager.initialize()
         .map_err(|e| CursedError::Runtime(format!("Failed to initialize renewal manager: {}", e)))?;
@@ -1900,7 +1900,7 @@ pub fn add_certificate_to_monitoring(
     certificate_path: PathBuf,
     private_key_path: PathBuf,
     monitoring_config: CertificateMonitoringConfig,
-) -> Result<(), CursedError> {
+) -> Result<(), Error> {
     manager.add_certificate_to_monitoring(certificate_id, certificate, certificate_path, private_key_path, monitoring_config)
         .map_err(|e| CursedError::Runtime(format!("Failed to add certificate to monitoring: {}", e)))
 }
@@ -1910,7 +1910,7 @@ pub fn trigger_certificate_renewal(
     manager: &mut CertificateRenewalManager,
     certificate_id: &str,
     renewal_method: Option<RenewalMethod>,
-) -> Result<String, CursedError> {
+) -> Result<(), Error> {
     manager.trigger_manual_renewal(certificate_id, renewal_method)
         .map_err(|e| CursedError::Runtime(format!("Failed to trigger certificate renewal: {}", e)))
 }
@@ -1919,7 +1919,7 @@ pub fn trigger_certificate_renewal(
 pub fn get_certificate_renewal_status(
     manager: &CertificateRenewalManager,
     certificate_id: &str,
-) -> Result<CertificateStatus, CursedError> {
+) -> Result<(), Error> {
     manager.get_certificate_status(certificate_id)
         .map_err(|e| CursedError::Runtime(format!("Failed to get certificate status: {}", e)))
 }
@@ -1927,7 +1927,7 @@ pub fn get_certificate_renewal_status(
 /// Get renewal statistics
 pub fn get_renewal_statistics(
     manager: &CertificateRenewalManager,
-) -> Result<RenewalStatistics, CursedError> {
+) -> Result<(), Error> {
     manager.get_renewal_statistics()
         .map_err(|e| CursedError::Runtime(format!("Failed to get renewal statistics: {}", e)))
 }

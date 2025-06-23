@@ -109,7 +109,7 @@ impl CacheStats {
 
 impl PackageCache {
     #[instrument(fields(cache_dir = ?cache_dir, max_size = max_size))]
-    pub fn new(cache_dir: PathBuf, max_size: usize) -> Result<Self, PackageManagerError> {
+    pub fn new(cache_dir: PathBuf, max_size: usize) -> Result<(), Error> {
         info!("Initializing package cache");
         
         // Create cache directory structure
@@ -186,7 +186,7 @@ impl PackageCache {
 
     /// Load cache index from disk with migration support
     #[instrument(skip(self))]
-    fn load_index(&self) -> Result<CacheIndex, PackageManagerError> {
+    fn load_index(&self) -> Result<(), Error> {
         let index_path = self.index_path();
         if !index_path.exists() {
             debug!("Cache index not found, creating new index");
@@ -218,7 +218,7 @@ impl PackageCache {
 
     /// Save cache index to disk atomically
     #[instrument(skip(self, index))]
-    fn save_index(&self, index: &CacheIndex) -> Result<(), PackageManagerError> {
+    fn save_index(&self, index: &CacheIndex) -> Result<(), Error> {
         let index_path = self.index_path();
         let temp_path = index_path.with_extension("tmp");
 
@@ -261,7 +261,7 @@ impl PackageCache {
 
     /// Verify package integrity using checksum
     #[instrument(skip(self))]
-    fn verify_package(&self, name: &str, version: &str) -> Result<bool, PackageManagerError> {
+    fn verify_package(&self, name: &str, version: &str) -> Result<(), Error> {
         let data_path = self.package_data_path(name, version);
         let checksum_path = self.package_checksum_path(name, version);
 
@@ -297,7 +297,7 @@ impl PackageCache {
 
     /// Acquire exclusive lock for package operations with timeout
     #[instrument(skip(self))]
-    fn acquire_lock(&self, name: &str, version: &str) -> Result<File, PackageManagerError> {
+    fn acquire_lock(&self, name: &str, version: &str) -> Result<(), Error> {
         let lock_path = self.lock_path(name, version);
         let lock_file = OpenOptions::new()
             .write(true)
@@ -333,7 +333,7 @@ impl PackageCache {
 
     /// Evict packages using advanced LRU strategy with access frequency consideration
     #[instrument(skip(self))]
-    fn evict_packages(&mut self, target_free_space: usize) -> Result<(), PackageManagerError> {
+    fn evict_packages(&mut self, target_free_space: usize) -> Result<(), Error> {
         let mut index = self.load_index()?;
         
         if index.total_size + target_free_space <= self.max_size {
@@ -392,7 +392,7 @@ impl PackageCache {
     }
 
     #[instrument(skip(self))]
-    pub fn get_package(&mut self, name: &str, version: &str) -> Result<Option<PackageMetadata>, PackageManagerError> {
+    pub fn get_package(&mut self, name: &str, version: &str) -> Result<(), Error> {
         let _lock = self.acquire_lock(name, version)?;
         
         // Check if package exists and verify integrity
@@ -437,7 +437,7 @@ impl PackageCache {
     }
 
     #[instrument(skip(self, metadata, data))]
-    pub fn store_package(&mut self, metadata: &PackageMetadata, data: &PackageData) -> Result<(), PackageManagerError> {
+    pub fn store_package(&mut self, metadata: &PackageMetadata, data: &PackageData) -> Result<(), Error> {
         let name = &metadata.name;
         let version = &metadata.version;
         
@@ -536,7 +536,7 @@ impl PackageCache {
     }
 
     #[instrument(skip(self))]
-    pub fn remove_package(&mut self, name: &str) -> Result<(), PackageManagerError> {
+    pub fn remove_package(&mut self, name: &str) -> Result<(), Error> {
         info!("Removing all versions of package {}", name);
         
         let mut index = self.load_index()?;
@@ -590,7 +590,7 @@ impl PackageCache {
     }
 
     #[instrument(skip(self))]
-    pub fn list_packages(&self) -> Result<Vec<PackageMetadata>, PackageManagerError> {
+    pub fn list_packages(&self) -> Result<(), Error> {
         let index = self.load_index()?;
         let mut packages = Vec::new();
 
@@ -626,7 +626,7 @@ impl PackageCache {
     }
 
     #[instrument(skip(self))]
-    pub fn clean(&mut self) -> Result<(), PackageManagerError> {
+    pub fn clean(&mut self) -> Result<(), Error> {
         info!("Starting cache cleanup");
         
         let mut index = self.load_index()?;
@@ -711,7 +711,7 @@ impl PackageCache {
         Ok(())
     }
 
-    pub fn stats(&self) -> Result<CacheStats, PackageManagerError> {
+    pub fn stats(&self) -> Result<(), Error> {
         let index = self.load_index()?;
         let hit_ratio = CacheStats::calculate_hit_ratio(self.hit_count, self.miss_count);
         let average_package_size = if index.entries.is_empty() {
@@ -734,13 +734,13 @@ impl PackageCache {
     }
     
     /// Alias for stats() method for consistency
-    pub fn get_stats(&self) -> Result<CacheStats, PackageManagerError> {
+    pub fn get_stats(&self) -> Result<(), Error> {
         self.stats()
     }
 
     /// Get package data (binary content) from cache
     #[instrument(skip(self))]
-    pub fn get_package_data(&mut self, name: &str, version: &str) -> Result<Option<Vec<u8>>, PackageManagerError> {
+    pub fn get_package_data(&mut self, name: &str, version: &str) -> Result<(), Error> {
         let _lock = self.acquire_lock(name, version)?;
         
         // Check if package exists and verify integrity
@@ -775,7 +775,7 @@ impl PackageCache {
     }
 
     /// Check if package exists in cache without updating access time
-    pub fn contains_package(&self, name: &str, version: &str) -> Result<bool, PackageManagerError> {
+    pub fn contains_package(&self, name: &str, version: &str) -> Result<(), Error> {
         let index = self.load_index()?;
         let key = CacheIndex::cache_key(name, version);
         
@@ -788,7 +788,7 @@ impl PackageCache {
     }
 
     /// Get cache entry information without retrieving the package
-    pub fn get_package_info(&self, name: &str, version: &str) -> Result<Option<CacheEntry>, PackageManagerError> {
+    pub fn get_package_info(&self, name: &str, version: &str) -> Result<(), Error> {
         let index = self.load_index()?;
         let key = CacheIndex::cache_key(name, version);
         
@@ -805,7 +805,7 @@ impl PackageCache {
     }
 
     /// Get all package entries from cache (useful for listing)
-    pub fn get_all_entries(&self) -> Result<Vec<CacheEntry>, PackageManagerError> {
+    pub fn get_all_entries(&self) -> Result<(), Error> {
         let index = self.load_index()?;
         let mut entries: Vec<CacheEntry> = index.entries.values().cloned().collect();
         
@@ -819,7 +819,7 @@ impl PackageCache {
 
     /// Prune cache to target size using advanced LRU strategy
     #[instrument(skip(self))]
-    pub fn prune_to_size(&mut self, target_size: usize) -> Result<(), PackageManagerError> {
+    pub fn prune_to_size(&mut self, target_size: usize) -> Result<(), Error> {
         let index = self.load_index()?;
         if index.total_size <= target_size {
             return Ok(());
@@ -833,7 +833,7 @@ impl PackageCache {
 
     /// Force rebuild of cache index by scanning filesystem
     #[instrument(skip(self))]
-    pub fn rebuild_index(&mut self) -> Result<(), PackageManagerError> {
+    pub fn rebuild_index(&mut self) -> Result<(), Error> {
         info!("Rebuilding cache index from filesystem");
         
         let mut new_index = CacheIndex::default();

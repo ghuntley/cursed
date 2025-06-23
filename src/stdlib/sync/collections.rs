@@ -359,7 +359,7 @@ pub struct ChannelSender<T> {
 
 impl<T> ChannelSender<T> {
     /// Send a message
-    pub fn send(&self, msg: T) -> Result<(), ChannelError> {
+    pub fn send(&self, msg: T) -> Result<(), Error> {
         match self.sender.send(msg) {
             Ok(()) => {
                 MESSAGES_SENT.fetch_add(1, Ordering::Relaxed);
@@ -399,7 +399,7 @@ pub struct ChannelReceiver<T> {
 
 impl<T> ChannelReceiver<T> {
     /// Receive a message (blocking)
-    pub fn recv(&self) -> Result<T, ChannelError> {
+    pub fn recv(&self) -> Result<(), Error> {
         match self.receiver.recv() {
             Ok(msg) => {
                 MESSAGES_RECEIVED.fetch_add(1, Ordering::Relaxed);
@@ -410,7 +410,7 @@ impl<T> ChannelReceiver<T> {
     }
 
     /// Try to receive a message (non-blocking)
-    pub fn try_recv(&self) -> Result<T, ChannelError> {
+    pub fn try_recv(&self) -> Result<(), Error> {
         match self.receiver.try_recv() {
             Ok(msg) => {
                 MESSAGES_RECEIVED.fetch_add(1, Ordering::Relaxed);
@@ -422,7 +422,7 @@ impl<T> ChannelReceiver<T> {
     }
 
     /// Receive with timeout
-    pub fn recv_timeout(&self, timeout: Duration) -> Result<T, ChannelError> {
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<(), Error> {
         match self.receiver.recv_timeout(timeout) {
             Ok(msg) => {
                 MESSAGES_RECEIVED.fetch_add(1, Ordering::Relaxed);
@@ -509,7 +509,7 @@ pub fn unbounded_channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
 }
 
 /// Select operation for multiple channels (simplified implementation)
-pub fn select_channel<T>(receivers: &[&ChannelReceiver<T>]) -> Result<(usize, T), ChannelError> {
+pub fn select_channel<T>(receivers: &[&ChannelReceiver<T>]) -> Result<(), Error> {
     // Simple round-robin implementation
     for (index, receiver) in receivers.iter().enumerate() {
         if let Ok(msg) = receiver.try_recv() {
@@ -520,7 +520,7 @@ pub fn select_channel<T>(receivers: &[&ChannelReceiver<T>]) -> Result<(usize, T)
 }
 
 /// Try select operation for multiple channels
-pub fn try_select_channel<T>(receivers: &[&ChannelReceiver<T>], timeout: Duration) -> Result<(usize, T), ChannelError> {
+pub fn try_select_channel<T>(receivers: &[&ChannelReceiver<T>], timeout: Duration) -> Result<(), Error> {
     let start = Instant::now();
     
     while start.elapsed() < timeout {

@@ -358,7 +358,7 @@ impl Default for ParallelCompilationConfig {
 
 impl ParallelCompiler {
     /// Create new parallel compiler
-    pub fn new(config: ParallelCompilationConfig) -> Result<Self, BuildError> {
+    pub fn new(config: ParallelCompilationConfig) -> Result<(), Error> {
         let worker_pool = WorkerPool::new(&config)?;
         let task_scheduler = TaskScheduler::new();
         let resource_monitor = ResourceMonitor::new(&config)?;
@@ -379,7 +379,7 @@ impl ParallelCompiler {
         &mut self,
         targets: Vec<CompilationTask>,
         build_profile: &BuildProfile,
-    ) -> Result<ParallelCompilationResult, BuildError> {
+    ) -> Result<(), Error> {
         info!("Starting parallel compilation of {} targets", targets.len());
         let start_time = Instant::now();
         
@@ -416,7 +416,7 @@ impl ParallelCompiler {
     async fn execute_tasks_parallel(
         &mut self,
         tasks: Vec<CompilationTask>,
-    ) -> Result<Vec<WorkerResult>, BuildError> {
+    ) -> Result<(), Error> {
         let (result_sender, result_receiver) = mpsc::channel();
         let task_distributor = Arc::new(Mutex::new(TaskDistributor::new(tasks, self.config.scheduling_strategy.clone())));
         
@@ -766,7 +766,7 @@ impl ParallelCompiler {
         results: Vec<WorkerResult>,
         resource_stats: ResourceStatistics,
         total_duration: Duration,
-    ) -> Result<ParallelCompilationResult, BuildError> {
+    ) -> Result<(), Error> {
         let tasks_completed = results.iter().filter(|r| r.success).count();
         let tasks_failed = results.iter().filter(|r| !r.success).count();
         
@@ -911,7 +911,7 @@ impl ParallelCompiler {
     }
     
     /// Calculate number of cached tasks from worker results
-    fn calculate_cached_tasks(&self, results: &[WorkerResult]) -> Result<usize, BuildError> {
+    fn calculate_cached_tasks(&self, results: &[WorkerResult]) -> Result<(), Error> {
         let mut cached_count = 0;
         
         for result in results {
@@ -1103,7 +1103,7 @@ impl ParallelCompiler {
 }
 
 impl WorkerPool {
-    fn new(config: &ParallelCompilationConfig) -> Result<Self, BuildError> {
+    fn new(config: &ParallelCompilationConfig) -> Result<(), Error> {
         let (completion_sender, completion_receiver) = mpsc::channel();
         let task_distributor = Arc::new(Mutex::new(TaskDistributor::new(Vec::new(), config.scheduling_strategy.clone())));
         let active_workers = Arc::new(Mutex::new(0));
@@ -1134,7 +1134,7 @@ impl TaskScheduler {
         }
     }
     
-    fn schedule_tasks(&mut self, tasks: Vec<CompilationTask>) -> Result<Vec<CompilationTask>, BuildError> {
+    fn schedule_tasks(&mut self, tasks: Vec<CompilationTask>) -> Result<(), Error> {
         // Build dependency graph
         for task in &tasks {
             self.dependency_graph.add_node(&task.id, task.dependencies.clone());
@@ -1226,7 +1226,7 @@ impl TaskDistributor {
 }
 
 impl ResourceMonitor {
-    fn new(config: &ParallelCompilationConfig) -> Result<Self, BuildError> {
+    fn new(config: &ParallelCompilationConfig) -> Result<(), Error> {
         let (alert_sender, _alert_receiver) = mpsc::channel();
         
         Ok(ResourceMonitor {
@@ -1250,7 +1250,7 @@ impl ResourceMonitor {
         })
     }
     
-    fn start_monitoring(&mut self) -> Result<(), BuildError> {
+    fn start_monitoring(&mut self) -> Result<(), Error> {
         if self.monitor_thread.is_some() {
             return Ok(()); // Already monitoring
         }
@@ -1292,7 +1292,7 @@ impl ResourceMonitor {
         Ok(())
     }
     
-    fn stop_monitoring(&mut self) -> Result<ResourceStatistics, BuildError> {
+    fn stop_monitoring(&mut self) -> Result<(), Error> {
         if let Some(handle) = self.monitor_thread.take() {
             // In real implementation, signal the thread to stop
             // For now, just take the current stats

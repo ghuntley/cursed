@@ -7,7 +7,7 @@ use ropey::Rope;
 use serde_json::Value;
 use tokio::sync::RwLock;
 use tower_lsp::jsonrpc::{Result as LspResult, Error as LspError};
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tower_lsp::{Client, LanguageServer};
 use tracing::{debug, error, info, instrument, warn};
 

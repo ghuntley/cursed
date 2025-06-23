@@ -14,12 +14,12 @@ use crate::ast::{
     block::BlockStatement,
     traits::{Statement, Expression},
 };
-use crate::error::{Error, types::ParseError};
+use crate::error::{Error, crate::types::ParseError};
 
 impl Parser {
     /// Parse an async function declaration
     /// Expected syntax: slay async identifier(parameters) -> return_type { body }
-    pub fn parse_async_function(&mut self) -> Result<Box<dyn Statement>, Error> {
+    pub fn parse_async_function(&mut self) -> Result<(), Error> {
         // Expect 'slay' token
         self.expect_token(TokenType::Slay)?;
         let function_token = self.previous_token().literal.clone();
@@ -58,7 +58,7 @@ impl Parser {
 
     /// Parse an await expression
     /// Expected syntax: await expression
-    pub fn parse_await_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    pub fn parse_await_expression(&mut self) -> Result<(), Error> {
         let await_token = self.expect_token(TokenType::Await)?;
         
         // Get source location for better error reporting
@@ -83,7 +83,7 @@ impl Parser {
 
     /// Parse an await assignment statement
     /// Expected syntax: facts variable = await expression
-    pub fn parse_await_assignment(&mut self) -> Result<Box<dyn Expression>, Error> {
+    pub fn parse_await_assignment(&mut self) -> Result<(), Error> {
         // Parse variable declaration
         let var_token = self.expect_token(TokenType::Facts)?;
         let var_name_token = self.expect_token(TokenType::Identifier)?;
@@ -128,7 +128,7 @@ impl Parser {
     }
 
     /// Parse an async block with multiple await expressions
-    pub fn parse_async_block(&mut self) -> Result<Box<dyn Expression>, Error> {
+    pub fn parse_async_block(&mut self) -> Result<(), Error> {
         let async_token = self.expect_token(TokenType::Async)?;
         self.expect_token(TokenType::LeftBrace)?;
 
@@ -183,7 +183,7 @@ impl Parser {
     }
 
     /// Parse function parameters for async functions
-    fn parse_function_parameters(&mut self) -> Result<Vec<Parameter>, Error> {
+    fn parse_function_parameters(&mut self) -> Result<(), Error> {
         let mut parameters = Vec::new();
 
         if self.current_token_is(TokenType::RightParen) {
@@ -228,7 +228,7 @@ impl Parser {
     }
 
     /// Helper method to expect a specific token type
-    fn expect_token(&mut self, expected: TokenType) -> Result<Token, Error> {
+    fn expect_token(&mut self, expected: TokenType) -> Result<(), Error> {
         if self.current_token_is(expected.clone()) {
             Ok(self.advance())
         } else {
@@ -299,7 +299,7 @@ impl AsyncParser {
 
         // Validate parameters (basic check)
         for param in parameters {
-            if param.name.is_empty() {
+            if param.to_string().is_empty() {
                 return Err(Error::ParseError(ParseError {
                     message: "Parameter name cannot be empty".to_string(),
                     location: crate::error::SourceLocation::default(),

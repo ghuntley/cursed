@@ -44,6 +44,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use crate::lexer::Token;
 use crate::error::SourceLocation;
+use crate::ast::ASTNode;
 
 // Re-export all sub-modules for easier access
 pub mod traits;

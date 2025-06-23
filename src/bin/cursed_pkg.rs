@@ -7,7 +7,7 @@ use clap::Parser;
 use cursed::package_manager::{PackageManagerCli, PackageManagerError};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Error>> {
     // Parse command line arguments
     let cli = PackageManagerCli::parse();
     

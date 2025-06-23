@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use dashmap::DashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, info, instrument};
 
 use crate::core::type_checker::{TypeChecker, Type};

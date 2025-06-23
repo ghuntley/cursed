@@ -44,7 +44,7 @@ impl EcCurve {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "P-256" | "P256" | "SECP256R1" => Ok(EcCurve::P256),
             "P-384" | "P384" | "SECP384R1" => Ok(EcCurve::P384),
@@ -96,7 +96,7 @@ impl EcKeyPair {
         hex::encode(result)
     }
     
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
         map.insert("curve".to_string(), Value::String(self.curve.name().to_string()));
@@ -118,7 +118,7 @@ pub struct EcdhSharedSecret {
 }
 
 impl EcdhSharedSecret {
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
         map.insert("curve".to_string(), Value::String(self.curve.name().to_string()));
@@ -130,7 +130,7 @@ impl EcdhSharedSecret {
 }
 
 /// Generate elliptic curve key pair
-pub fn ec_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ec_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Curve name required".to_string()));
     }
@@ -149,7 +149,7 @@ pub fn ec_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Generate P-256 key pair
-fn generate_p256_keypair() -> Result<Value, CursedError> {
+fn generate_p256_keypair() -> Result<(), Error> {
     let mut rng = OsRng;
     let private_key = P256SecretKey::random(&mut rng);
     let public_key = P256PublicKey::from(&private_key);
@@ -170,7 +170,7 @@ fn generate_p256_keypair() -> Result<Value, CursedError> {
 }
 
 /// Generate P-384 key pair
-fn generate_p384_keypair() -> Result<Value, CursedError> {
+fn generate_p384_keypair() -> Result<(), Error> {
     let mut rng = OsRng;
     let private_key = P384SecretKey::random(&mut rng);
     let public_key = P384PublicKey::from(&private_key);
@@ -191,7 +191,7 @@ fn generate_p384_keypair() -> Result<Value, CursedError> {
 }
 
 /// ECDSA signing
-pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("ECDSA signing requires: curve, private_key, message".to_string()));
     }
@@ -223,7 +223,7 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// ECDSA signing with P-256
-fn ecdsa_sign_p256(private_key_bytes: &[u8], message: &[u8]) -> Result<Value, CursedError> {
+fn ecdsa_sign_p256(private_key_bytes: &[u8], message: &[u8]) -> Result<(), Error> {
     let private_key = P256SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -245,7 +245,7 @@ fn ecdsa_sign_p256(private_key_bytes: &[u8], message: &[u8]) -> Result<Value, Cu
 }
 
 /// ECDSA signing with P-384
-fn ecdsa_sign_p384(private_key_bytes: &[u8], message: &[u8]) -> Result<Value, CursedError> {
+fn ecdsa_sign_p384(private_key_bytes: &[u8], message: &[u8]) -> Result<(), Error> {
     let private_key = P384SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -267,7 +267,7 @@ fn ecdsa_sign_p384(private_key_bytes: &[u8], message: &[u8]) -> Result<Value, Cu
 }
 
 /// ECDSA signature verification
-pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("ECDSA verification requires: curve, public_key, message, signature".to_string()));
     }
@@ -306,7 +306,7 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// ECDSA verification with P-256
-fn ecdsa_verify_p256(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> Result<Value, CursedError> {
+fn ecdsa_verify_p256(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> Result<(), Error> {
     let public_key = P256PublicKey::from_public_key_der(public_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 public key: {}", e)))?;
     
@@ -331,7 +331,7 @@ fn ecdsa_verify_p256(public_key_bytes: &[u8], message: &[u8], signature_bytes: &
 }
 
 /// ECDSA verification with P-384
-fn ecdsa_verify_p384(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> Result<Value, CursedError> {
+fn ecdsa_verify_p384(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> Result<(), Error> {
     let public_key = P384PublicKey::from_public_key_der(public_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 public key: {}", e)))?;
     
@@ -356,7 +356,7 @@ fn ecdsa_verify_p384(public_key_bytes: &[u8], message: &[u8], signature_bytes: &
 }
 
 /// ECDH key exchange
-pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("ECDH requires: curve, private_key, public_key".to_string()));
     }
@@ -389,7 +389,7 @@ pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// ECDH with P-256
-fn ecdh_p256(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn ecdh_p256(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<(), Error> {
     let private_key = P256SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -413,7 +413,7 @@ fn ecdh_p256(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<Value,
 }
 
 /// ECDH with P-384
-fn ecdh_p384(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn ecdh_p384(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<(), Error> {
     let private_key = P384SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -445,7 +445,7 @@ pub fn list_supported_curves() -> Vec<String> {
 }
 
 /// Validate curve and hash algorithm combination
-pub fn validate_curve_hash_combination(curve: EcCurve, hash: EcHashAlgorithm) -> Result<(), CursedError> {
+pub fn validate_curve_hash_combination(curve: EcCurve, hash: EcHashAlgorithm) -> Result<(), Error> {
     match (curve, hash) {
         (EcCurve::P256, EcHashAlgorithm::Sha256) => Ok(()),
         (EcCurve::P384, EcHashAlgorithm::Sha384) => Ok(()),

@@ -85,7 +85,7 @@ struct DocTagConfig {
 impl CommentParser {
     /// Create a new comment parser
     #[instrument]
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         let mut known_tags = HashMap::new();
         
         // Standard documentation tags
@@ -166,7 +166,7 @@ impl CommentParser {
 
     /// Parse documentation comments from source code
     #[instrument(skip(self, source_code))]
-    pub fn parse_comments(&self, source_code: &str) -> Result<Vec<ParsedComment>, CommentParsingError> {
+    pub fn parse_comments(&self, source_code: &str) -> Result<(), Error> {
         let mut comments = Vec::new();
         let lines: Vec<&str> = source_code.split("\n").collect();
         
@@ -187,7 +187,7 @@ impl CommentParser {
         &self,
         lines: &[&str],
         line_index: &mut usize,
-    ) -> Result<Option<ParsedComment>, CommentParsingError> {
+    ) -> Result<(), Error> {
         let start_line = *line_index;
         let mut comment_lines = Vec::new();
         let mut found_doc_comment = false;
@@ -271,7 +271,7 @@ impl CommentParser {
         &self,
         content: &str,
         start_line: usize,
-    ) -> Result<ParsedComment, CommentParsingError> {
+    ) -> Result<(), Error> {
         let mut description_lines = Vec::new();
         let mut tags = Vec::new();
         let mut examples = Vec::new();
@@ -376,7 +376,7 @@ impl CommentParser {
     }
 
     /// Validate a documentation tag
-    fn validate_tag(&self, tag: &DocTag, line: usize) -> Result<(), CommentParsingError> {
+    fn validate_tag(&self, tag: &DocTag, line: usize) -> Result<(), Error> {
         if let Some(config) = self.known_tags.get(&tag.name) {
             if config.requires_value && tag.value.is_empty() {
                 return Err(CommentParsingError {

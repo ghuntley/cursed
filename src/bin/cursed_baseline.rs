@@ -351,10 +351,10 @@ fn run_regression_analysis(
             ..Default::default()
         })?;
         storage_mut.load_baseline(id)?
-            .ok_or_else(|| cursed::error::Error::Other(format!("Baseline not found: {}", id)))?
+            .ok_or_else(|| cursed::error::Error::General(format!("Baseline not found: {}", id)))?
     } else {
         storage.get_default_baseline()
-            .ok_or_else(|| cursed::error::Error::Other("No default baseline available".to_string()))?
+            .ok_or_else(|| cursed::error::Error::General("No default baseline available".to_string()))?
     };
     
     println!("✓ Using baseline: {} ({})", baseline.name, baseline.baseline_id);
@@ -412,7 +412,7 @@ fn run_regression_analysis(
 
 fn show_baseline(storage: &mut BaselineStorage, baseline_id: &str, detailed: bool) -> Result<()> {
     let baseline = storage.load_baseline(baseline_id)?
-        .ok_or_else(|| cursed::error::Error::Other(format!("Baseline not found: {}", baseline_id)))?;
+        .ok_or_else(|| cursed::error::Error::General(format!("Baseline not found: {}", baseline_id)))?;
     
     println!("Baseline: {}", baseline.name);
     println!("=================={}", "=".repeat(baseline.name.len()));
@@ -473,7 +473,7 @@ fn delete_baseline(storage_config: &BaselineStorageConfig, baseline_id: &str, fo
     
     // Check if baseline exists
     let baseline = storage.load_baseline(baseline_id)?
-        .ok_or_else(|| cursed::error::Error::Other(format!("Baseline not found: {}", baseline_id)))?;
+        .ok_or_else(|| cursed::error::Error::General(format!("Baseline not found: {}", baseline_id)))?;
     
     if !force {
         println!("Are you sure you want to delete baseline '{}'? (y/N)", baseline.name);

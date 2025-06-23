@@ -12,7 +12,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, PointerValue, IntValue, BasicValueEnum, BasicValue};
-use inkwell::types::{BasicTypeEnum, IntType, PointerType, StructType, FunctionType};
+use inkwell::crate::types::{BasicTypeEnum, IntType, PointerType, StructType, FunctionType};
 use inkwell::AddressSpace;
 use inkwell::IntPredicate;
 use crate::error::CursedError;
@@ -49,7 +49,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         context: &'ctx Context,
         module: &'ctx Module<'ctx>,
         builder: &'ctx Builder<'ctx>,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         let string_type = context.i8_type().ptr_type(AddressSpace::Generic);
         let i32_type = context.i32_type();
         let i64_type = context.i64_type();
@@ -127,7 +127,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
     }
     
     /// Declare external FFI functions for process and IPC operations
-    fn declare_external_functions(&mut self) -> Result<(), CursedError> {
+    fn declare_external_functions(&mut self) -> Result<(), Error> {
         // Process management functions
         self.declare_function(
             "cursed_spawn_process",
@@ -223,14 +223,14 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
     }
     
     /// Declare a function in the module
-    fn declare_function(&mut self, name: &str, fn_type: FunctionType<'ctx>) -> Result<(), CursedError> {
+    fn declare_function(&mut self, name: &str, fn_type: FunctionType<'ctx>) -> Result<(), Error> {
         let function = self.module.add_function(name, fn_type, None);
         self.function_cache.insert(name.to_string(), function);
         Ok(())
     }
     
     /// Get a declared function
-    fn get_function(&self, name: &str) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_function(&self, name: &str) -> Result<(), Error> {
         self.function_cache.get(name)
             .copied()
             .ok_or_else(|| CursedError::CodegenError(format!("Function {} not found", name)))
@@ -242,7 +242,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         command: PointerValue<'ctx>,
         args: PointerValue<'ctx>,
         options: Option<PointerValue<'ctx>>,
-    ) -> Result<PointerValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let spawn_fn = self.get_function("cursed_spawn_process")?;
         
         // Allocate process handle
@@ -287,7 +287,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         &self,
         process_handle: PointerValue<'ctx>,
         timeout: Option<IntValue<'ctx>>,
-    ) -> Result<IntValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let wait_fn = self.get_function("cursed_wait_process")?;
         
         let timeout_val = timeout.unwrap_or_else(|| self.i32_type.const_int(0, false));
@@ -308,7 +308,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         &self,
         process_handle: PointerValue<'ctx>,
         signal: Option<IntValue<'ctx>>,
-    ) -> Result<IntValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let kill_fn = self.get_function("cursed_kill_process")?;
         
         let signal_val = signal.unwrap_or_else(|| self.i32_type.const_int(15, false)); // SIGTERM
@@ -328,7 +328,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
     pub fn compile_get_process_stats(
         &self,
         process_handle: PointerValue<'ctx>,
-    ) -> Result<PointerValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let stats_fn = self.get_function("cursed_get_process_stats")?;
         
         // Allocate stats structure
@@ -351,7 +351,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         &self,
         segment_id: PointerValue<'ctx>,
         size: IntValue<'ctx>,
-    ) -> Result<PointerValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let create_fn = self.get_function("cursed_create_shared_memory")?;
         
         // Allocate shared memory structure
@@ -376,7 +376,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         offset: IntValue<'ctx>,
         data: PointerValue<'ctx>,
         size: IntValue<'ctx>,
-    ) -> Result<IntValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let write_fn = self.get_function("cursed_write_shared_memory")?;
         
         let result = self.builder.build_call(
@@ -397,7 +397,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         offset: IntValue<'ctx>,
         buffer: PointerValue<'ctx>,
         size: IntValue<'ctx>,
-    ) -> Result<IntValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let read_fn = self.get_function("cursed_read_shared_memory")?;
         
         let result = self.builder.build_call(
@@ -416,7 +416,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         &self,
         queue_id: PointerValue<'ctx>,
         capacity: IntValue<'ctx>,
-    ) -> Result<PointerValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let create_fn = self.get_function("cursed_create_message_queue")?;
         
         // Allocate message queue structure
@@ -439,7 +439,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         &self,
         queue: PointerValue<'ctx>,
         message: PointerValue<'ctx>,
-    ) -> Result<IntValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let send_fn = self.get_function("cursed_send_message")?;
         
         let result = self.builder.build_call(
@@ -458,7 +458,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         &self,
         queue: PointerValue<'ctx>,
         timeout: Option<IntValue<'ctx>>,
-    ) -> Result<PointerValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let receive_fn = self.get_function("cursed_receive_message")?;
         
         // Allocate message structure
@@ -482,7 +482,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
     fn initialize_default_process_options(
         &self,
         options: PointerValue<'ctx>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Set default values for process options
         let null_ptr = self.string_type.const_null();
         let zero_i32 = self.i32_type.const_int(0, false);
@@ -559,7 +559,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         data: PointerValue<'ctx>,
         data_size: IntValue<'ctx>,
         priority: IntValue<'ctx>,
-    ) -> Result<PointerValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         let message = self.builder.build_alloca(self.ipc_message_type, "ipc_message")
             .map_err(|e| CursedError::CodegenError(format!("Failed to allocate IPC message: {}", e)))?;
         
@@ -621,7 +621,7 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
     pub fn extract_message_data(
         &self,
         message: PointerValue<'ctx>,
-    ) -> Result<(PointerValue<'ctx>, IntValue<'ctx>), CursedError> {
+    ) -> Result<(), Error> {
         // Get data pointer
         let data_gep = self.builder.build_struct_gep(
             self.ipc_message_type,

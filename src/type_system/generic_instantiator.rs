@@ -314,7 +314,7 @@ impl GenericInstantiator {
         type_args: &[TypeExpression],
         environment: &mut TypeEnvironment,
         constraint_resolver: &ConstraintResolver,
-    ) -> Result<InstantiatedType, Error> {
+    ) -> Result<(), Error> {
         let start_time = std::time::SystemTime::now();
 
         // Generate cache key
@@ -415,7 +415,7 @@ impl GenericInstantiator {
         &self,
         type_params: &[TypeParameter],
         type_args: &[TypeExpression],
-    ) -> Result<HashMap<String, TypeExpression>, Error> {
+    ) -> Result<(), Error> {
         let mut substitution_map = HashMap::new();
 
         for (param, arg) in type_params.iter().zip(type_args.iter()) {
@@ -462,7 +462,7 @@ impl GenericInstantiator {
         base_def: &TypeDefinition,
         substitutions: &HashMap<String, TypeExpression>,
         instance_id: &str,
-    ) -> Result<TypeDefinition, Error> {
+    ) -> Result<(), Error> {
         // Apply substitutions to methods
         let instantiated_methods = base_def.methods.iter().map(|method| {
             self.apply_substitutions_to_method(method, substitutions)
@@ -483,7 +483,7 @@ impl GenericInstantiator {
         &self,
         method: &MethodSignature,
         substitutions: &HashMap<String, TypeExpression>,
-    ) -> Result<MethodSignature, Error> {
+    ) -> Result<(), Error> {
         let substituted_params = method.parameters.iter()
             .map(|param| self.substitution_engine.apply_substitution(param, substitutions))
             .collect::<Result<Vec<_>, _>>()?;
@@ -518,7 +518,7 @@ impl GenericInstantiator {
         method_name: &str,
         argument_types: &[TypeExpression],
         environment: &TypeEnvironment,
-    ) -> Result<ResolvedMethod, Error> {
+    ) -> Result<(), Error> {
         let dispatch_key = format!("{}::{}", receiver_type.to_string(), method_name);
 
         // Check resolution cache
@@ -545,7 +545,7 @@ impl GenericInstantiator {
         &mut self,
         type_name: &str,
         environment: &TypeEnvironment,
-    ) -> Result<VTable, Error> {
+    ) -> Result<(), Error> {
         self.method_dispatcher.vtable_generator.generate_vtable(type_name, environment)
     }
 
@@ -689,7 +689,7 @@ impl TypeSubstitution {
         &self,
         type_expr: &TypeExpression,
         substitutions: &HashMap<String, TypeExpression>,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         match type_expr {
             TypeExpression::Named(name) => {
                 Ok(substitutions.get(name).cloned().unwrap_or_else(|| type_expr.clone()))
@@ -763,7 +763,7 @@ impl MethodDispatcher {
         method_name: &str,
         argument_types: &[TypeExpression],
         environment: &TypeEnvironment,
-    ) -> Result<ResolvedMethod, Error> {
+    ) -> Result<(), Error> {
         let type_name = match receiver_type {
             TypeExpression::Named(name) => name.clone(),
             TypeExpression::Generic(name, _) => name.clone(),
@@ -805,7 +805,7 @@ impl MethodDispatcher {
         &mut self,
         type_name: &str,
         environment: &TypeEnvironment,
-    ) -> Result<DispatchTable, Error> {
+    ) -> Result<(), Error> {
         let type_def = environment.type_definitions.get(type_name)
             .ok_or_else(|| Error::Type(format!("Type '{}' not found", type_name)))?;
 
@@ -850,7 +850,7 @@ impl VTableGenerator {
         &mut self,
         type_name: &str,
         environment: &TypeEnvironment,
-    ) -> Result<VTable, Error> {
+    ) -> Result<(), Error> {
         // Check if already generated
         if let Some(vtable) = self.generated_vtables.get(type_name) {
             return Ok(vtable.clone());

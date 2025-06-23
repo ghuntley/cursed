@@ -124,14 +124,14 @@ impl OrmContext {
 
     /// periodt Execute migrations to update database schema
     #[instrument(skip(self))]
-    pub async fn migrate(&self) -> Result<Vec<MigrationStatus>, DatabaseError> {
+    pub async fn migrate(&self) -> Result<(), Error> {
         info!("Executing database migrations");
         self.migration_manager.migrate().await
     }
 
     /// bestie Clear all caches
     #[instrument(skip(self))]
-    pub fn clear_caches(&self) -> Result<(), DatabaseError> {
+    pub fn clear_caches(&self) -> Result<(), Error> {
         debug!("Clearing all ORM caches");
         if let Ok(mut cache) = self.query_cache.lock() {
             cache.clear();
@@ -181,7 +181,7 @@ impl<T: Entity> Repository<T> {
 
     /// facts Find entity by primary key with caching
     #[instrument(skip(self))]
-    pub async fn find_by_vibe(&self, id: SqlValue) -> Result<Option<T>, DatabaseError> {
+    pub async fn find_by_vibe(&self, id: SqlValue) -> Result<(), Error> {
         debug!(entity = T::table_name(), id = ?id, "Finding entity by primary key");
         
         // Check cache first
@@ -213,7 +213,7 @@ impl<T: Entity> Repository<T> {
 
     /// sus Find entities matching criteria
     #[instrument(skip(self))]
-    pub async fn find_where_its_at(&self, conditions: &[(&str, SqlValue)]) -> Result<Vec<T>, DatabaseError> {
+    pub async fn find_where_its_at(&self, conditions: &[(&str, SqlValue)]) -> Result<(), Error> {
         debug!(entity = T::table_name(), conditions = ?conditions, "Finding entities with conditions");
         
         let mut query = self.query();
@@ -226,7 +226,7 @@ impl<T: Entity> Repository<T> {
 
     /// periodt Save entity (create or update)
     #[instrument(skip(self, entity))]
-    pub async fn save_it(&self, entity: &T) -> Result<T, DatabaseError> {
+    pub async fn save_it(&self, entity: &T) -> Result<(), Error> {
         info!(entity = T::table_name(), "Saving entity");
         
         // Validate entity
@@ -256,7 +256,7 @@ impl<T: Entity> Repository<T> {
 
     /// lowkey Delete entity
     #[instrument(skip(self, entity))]
-    pub async fn delete_sus(&self, entity: &T) -> Result<bool, DatabaseError> {
+    pub async fn delete_sus(&self, entity: &T) -> Result<(), Error> {
         info!(entity = T::table_name(), "Deleting entity");
         
         let pk_value = entity.primary_key_value()
@@ -301,7 +301,7 @@ impl<T: Entity> Repository<T> {
 
     /// bestie Bulk insert entities with transaction
     #[instrument(skip(self, entities))]
-    pub async fn bulk_insert_vibes(&self, entities: &[T]) -> Result<Vec<T>, DatabaseError> {
+    pub async fn bulk_insert_vibes(&self, entities: &[T]) -> Result<(), Error> {
         info!(entity = T::table_name(), count = entities.len(), "Bulk inserting entities");
         
         if entities.is_empty() {
@@ -375,7 +375,7 @@ impl<T: Entity> Repository<T> {
 
     /// facts Load relationships eagerly
     #[instrument(skip(self, entity))]
-    pub async fn with_vibes<R: Entity>(&self, entity: &T, relationship: &str) -> Result<Vec<R>, DatabaseError> {
+    pub async fn with_vibes<R: Entity>(&self, entity: &T, relationship: &str) -> Result<(), Error> {
         debug!(
             entity = T::table_name(),
             relationship = relationship,
@@ -410,7 +410,7 @@ impl<T: Entity> Repository<T> {
     }
 
     // Helper methods
-    async fn create_entity(&self, entity: &T) -> Result<T, DatabaseError> {
+    async fn create_entity(&self, entity: &T) -> Result<(), Error> {
         debug!(entity = T::table_name(), "Creating new entity");
         
         let fields = entity.to_fields();
@@ -444,7 +444,7 @@ impl<T: Entity> Repository<T> {
         Ok(created_entity)
     }
     
-    async fn update_entity(&self, entity: &T) -> Result<T, DatabaseError> {
+    async fn update_entity(&self, entity: &T) -> Result<(), Error> {
         debug!(entity = T::table_name(), "Updating existing entity");
         
         let pk_value = entity.primary_key_value()
@@ -488,7 +488,7 @@ impl<T: Entity> Repository<T> {
         Ok(entity.clone())
     }
     
-    async fn invalidate_caches(&self, entity: &T) -> Result<(), DatabaseError> {
+    async fn invalidate_caches(&self, entity: &T) -> Result<(), Error> {
         if let Ok(mut cache) = self.query_cache.lock() {
             let pk_value = entity.primary_key_value();
             if let Some(pk) = pk_value {

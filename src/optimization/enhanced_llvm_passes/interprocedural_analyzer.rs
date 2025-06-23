@@ -10,7 +10,7 @@ use tracing::{debug, trace, info, instrument};
 
 use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, CallSiteValue, InstructionValue},
-    types::{BasicType, FunctionType},
+    crate::types::{BasicType, FunctionType},
     basic_block::BasicBlock,
     module::Module,
     context::Context,

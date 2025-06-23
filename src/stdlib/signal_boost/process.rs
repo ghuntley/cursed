@@ -400,7 +400,7 @@ fn validate_pid(pid: u32) -> SignalBoostResult<()> {
 }
 
 /// Signal multiple processes
-pub fn signal_processes(pids: &[u32], signal: BoostSignal) -> SignalBoostResult<Vec<Result<(), SignalBoostError>>> {
+pub fn signal_processes(pids: &[u32], signal: BoostSignal) -> SignalBoostResult<(), Error>>> {
     let mut results = Vec::new();
     
     for &pid in pids {

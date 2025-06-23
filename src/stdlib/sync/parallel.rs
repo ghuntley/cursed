@@ -111,7 +111,7 @@ impl Default for ThreadPoolBuilder {
 pub type Task = Box<dyn FnOnce() + Send + 'static>;
 
 /// Result of a task execution
-pub type TaskResult<T> = Result<T, SyncError>;
+pub type TaskResult<(), Error>;
 
 /// A thread pool for executing tasks
 pub struct ThreadPool {

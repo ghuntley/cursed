@@ -737,7 +737,7 @@ impl ProfileCollector {
         
         // Stop background thread if running
         if let Some(handle) = self.collection_thread.take() {
-            handle.join().map_err(|_| Error::Other("Failed to join collection thread".to_string()))?;
+            handle.join().map_err(|_| Error::General("Failed to join collection thread".to_string()))?;
         }
         
         // Update statistics

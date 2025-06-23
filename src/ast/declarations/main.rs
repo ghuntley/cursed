@@ -67,7 +67,7 @@ impl Node for FunctionStatement {
             .map(|p| p.string())
             .collect();
         
-        let mut result = format!("slay {}({})", self.name.string(), params.join(", "));
+        let mut result = format!("slay {}({})", self.to_string().string(), params.join(", "));
         
         if let Some(ret_type) = &self.return_type {
             result.push_str(&format!(" {}", ret_type.string()));
@@ -92,7 +92,7 @@ impl Statement for FunctionStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(FunctionStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             parameters: self.parameters.clone(),
             return_type: self.return_type.as_ref().map(|t| t.clone_box()),
             body: self.body.clone(),
@@ -154,7 +154,7 @@ impl Node for SquadStatement {
             .map(|f| format!("  {}", f.string()))
             .collect();
         
-        format!("squad {} {{\n{}\n}}", self.name.string(), fields.join("\n"))
+        format!("squad {} {{\n{}\n}}", self.to_string().string(), fields.join("\n"))
     }
 
     fn token_literal(&self) -> String {
@@ -216,7 +216,7 @@ impl Node for CollabStatement {
             .map(|m| format!("  {}", m.string()))
             .collect();
         
-        format!("collab {} {{\n{}\n}}", self.name.string(), methods.join("\n"))
+        format!("collab {} {{\n{}\n}}", self.to_string().string(), methods.join("\n"))
     }
 
     fn token_literal(&self) -> String {
@@ -250,7 +250,7 @@ impl FieldStatement {
 
 impl Node for FieldStatement {
     fn string(&self) -> String {
-        format!("{} {}", self.name.string(), self.type_name.string())
+        format!("{} {}", self.to_string().string(), self.type_name.string())
     }
 
     fn token_literal(&self) -> String {
@@ -286,7 +286,7 @@ impl Node for MethodDeclaration {
             .map(|p| p.string())
             .collect();
         
-        let mut result = format!("{}({})", self.name.string(), params.join(", "));
+        let mut result = format!("{}({})", self.to_string().string(), params.join(", "));
         
         if let Some(ret_type) = &self.return_type {
             result.push_str(&format!(" {}", ret_type.string()));
@@ -296,7 +296,7 @@ impl Node for MethodDeclaration {
     }
 
     fn token_literal(&self) -> String {
-        self.name.token_literal()
+        self.to_string().token_literal()
     }
 }
 
@@ -329,9 +329,9 @@ impl TypeParameter {
 impl Node for TypeParameter {
     fn string(&self) -> String {
         if self.constraints.is_empty() {
-            self.name.clone()
+            self.to_string().clone()
         } else {
-            format!("{}: {}", self.name, self.constraints.join(" + "))
+            format!("{}: {}", self.to_string(), self.constraints.join(" + "))
         }
     }
 
@@ -397,14 +397,14 @@ impl ParameterStatement {
 impl Node for ParameterStatement {
     fn string(&self) -> String {
         if let Some(param_type) = &self.param_type {
-            format!("{} {}", self.name, param_type)
+            format!("{} {}", self.to_string(), param_type)
         } else {
-            self.name.clone()
+            self.to_string().clone()
         }
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -435,11 +435,11 @@ impl FieldDeclaration {
 
 impl Node for FieldDeclaration {
     fn string(&self) -> String {
-        format!("{} {}", self.name, self.field_type)
+        format!("{} {}", self.to_string(), self.field_type)
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -478,11 +478,11 @@ impl Node for InterfaceMethod {
             Some(t) => format!(" -> {}", t.string()),
             None => String::new(),
         };
-        format!("{}({}){}", self.name, params.join(", "), return_str)
+        format!("{}({}){}", self.to_string(), params.join(", "), return_str)
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -510,11 +510,11 @@ impl StructField {
 
 impl Node for StructField {
     fn string(&self) -> String {
-        format!("{}: {}", self.name, self.field_type.string())
+        format!("{}: {}", self.to_string(), self.field_type.string())
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -542,7 +542,7 @@ impl VariableDeclaration {
 
 impl Node for VariableDeclaration {
     fn string(&self) -> String {
-        let mut result = self.name.clone();
+        let mut result = self.to_string().clone();
         if let Some(t) = &self.var_type {
             result.push_str(&format!(": {}", t.string()));
         }
@@ -553,7 +553,7 @@ impl Node for VariableDeclaration {
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -579,11 +579,11 @@ impl ConstantDeclaration {
 
 impl Node for ConstantDeclaration {
     fn string(&self) -> String {
-        format!("const {}: {} = {}", self.name, self.const_type.string(), self.value.string())
+        format!("const {}: {} = {}", self.to_string(), self.const_type.string(), self.value.string())
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -615,12 +615,12 @@ impl EnumDeclaration {
 
 impl Node for EnumDeclaration {
     fn string(&self) -> String {
-        let variants: Vec<String> = self.variants.iter().map(|v| v.name.clone()).collect();
-        format!("enum {} {{ {} }}", self.name, variants.join(", "))
+        let variants: Vec<String> = self.variants.iter().map(|v| v.to_string().clone()).collect();
+        format!("enum {} {{ {} }}", self.to_string(), variants.join(", "))
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -644,11 +644,11 @@ impl PackageDeclaration {
 
 impl Node for PackageDeclaration {
     fn string(&self) -> String {
-        format!("package {}", self.name)
+        format!("package {}", self.to_string())
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 

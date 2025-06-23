@@ -6,7 +6,7 @@
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    types::*,
+    crate::types::*,
 };
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -366,7 +366,7 @@ impl CertificateGenerator {
     
     /// Add a custom certificate template
     pub fn add_template(&mut self, template: CertificateTemplate) {
-        self.templates.insert(template.name.clone(), template);
+        self.templates.insert(template.to_string().clone(), template);
     }
     
     /// Get available template names

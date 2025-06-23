@@ -104,7 +104,7 @@ impl EventLoop {
     }
 
     /// Run the event loop for a single iteration
-    pub fn run_once(&self, config: &EventLoopConfig) -> Result<bool, Error> {
+    pub fn run_once(&self, config: &EventLoopConfig) -> Result<(), Error> {
         let start_time = Instant::now();
         let mut progress_made = false;
 
@@ -255,7 +255,7 @@ impl EventLoop {
     }
 
     /// Poll ready tasks up to the specified limit
-    fn poll_ready_tasks(&self, max_polls: usize) -> Result<usize, Error> {
+    fn poll_ready_tasks(&self, max_polls: usize) -> Result<(), Error> {
         let mut tasks_polled = 0;
 
         for _ in 0..max_polls {
@@ -285,7 +285,7 @@ impl EventLoop {
     }
 
     /// Poll a specific task
-    fn poll_task(&self, task_id: TaskId) -> Result<bool, Error> {
+    fn poll_task(&self, task_id: TaskId) -> Result<(), Error> {
         // Get the future for this task
         let future_opt = {
             let mut pending = self.pending_futures.lock().unwrap();

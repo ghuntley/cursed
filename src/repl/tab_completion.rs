@@ -189,7 +189,7 @@ impl Completer for TabCompletion {
         line: &str,
         pos: usize,
         _ctx: &Context<'_>,
-    ) -> Result<(usize, Vec<Pair>), ReadlineError> {
+    ) -> Result<(), Error> {
         // Find the word boundary
         let mut start = pos;
         while start > 0 {

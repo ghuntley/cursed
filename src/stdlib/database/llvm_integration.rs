@@ -22,7 +22,7 @@ pub trait DatabaseLLVMIntegration {
         generator: &mut LlvmCodeGenerator,
         driver_name: &str,
         data_source_name: &str,
-    ) -> Result<(), DatabaseError>;
+    ) -> Result<(), Error>;
 
     /// slay Generate LLVM code for query execution
     fn generate_query_execution(
@@ -30,27 +30,27 @@ pub trait DatabaseLLVMIntegration {
         generator: &mut LlvmCodeGenerator,
         query: &str,
         parameters: &[SqlValue],
-    ) -> Result<(), DatabaseError>;
+    ) -> Result<(), Error>;
 
     /// slay Generate LLVM code for transaction management
     fn generate_transaction_code(
         &self,
         generator: &mut LlvmCodeGenerator,
         operation: TransactionOperation,
-    ) -> Result<(), DatabaseError>;
+    ) -> Result<(), Error>;
 
     /// slay Generate LLVM code for prepared statements
     fn generate_prepared_statement(
         &self,
         generator: &mut LlvmCodeGenerator,
         query: &str,
-    ) -> Result<(), DatabaseError>;
+    ) -> Result<(), Error>;
 
     /// slay Generate LLVM code for connection pool operations
     fn generate_pool_operations(
         &self,
         generator: &mut LlvmCodeGenerator,
-    ) -> Result<(), DatabaseError>;
+    ) -> Result<(), Error>;
 }
 
 /// fr fr Transaction operations for LLVM code generation
@@ -307,7 +307,7 @@ impl DatabaseLLVMIntegration for DatabaseLLVMIntegrationImpl {
         generator: &mut LlvmCodeGenerator,
         driver_name: &str,
         data_source_name: &str,
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         // In a real implementation, this would generate LLVM IR for database opening
         // For now, we'll create a placeholder that can be expanded later
         
@@ -332,7 +332,7 @@ impl DatabaseLLVMIntegration for DatabaseLLVMIntegrationImpl {
         generator: &mut LlvmCodeGenerator,
         query: &str,
         parameters: &[SqlValue],
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         // Generate LLVM IR for query execution
         // This would involve:
         // 1. Parameter marshaling from CURSED types to C types
@@ -348,7 +348,7 @@ impl DatabaseLLVMIntegration for DatabaseLLVMIntegrationImpl {
         &self,
         generator: &mut LlvmCodeGenerator,
         operation: TransactionOperation,
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         let function_name = match operation {
             TransactionOperation::Begin => "sql_slay_begin",
             TransactionOperation::Commit => "sql_slay_commit",
@@ -370,7 +370,7 @@ impl DatabaseLLVMIntegration for DatabaseLLVMIntegrationImpl {
         &self,
         generator: &mut LlvmCodeGenerator,
         query: &str,
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         // Generate LLVM IR for prepared statement creation and execution
         Ok(())
     }
@@ -378,14 +378,14 @@ impl DatabaseLLVMIntegration for DatabaseLLVMIntegrationImpl {
     fn generate_pool_operations(
         &self,
         generator: &mut LlvmCodeGenerator,
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         // Generate LLVM IR for connection pool management
         Ok(())
     }
 }
 
 /// slay Register database functions with LLVM code generator
-pub fn register_database_functions(generator: &mut LlvmCodeGenerator) -> Result<(), DatabaseError> {
+pub fn register_database_functions(generator: &mut LlvmCodeGenerator) -> Result<(), Error> {
     let integration = DatabaseLLVMIntegrationImpl::new();
     
     // Register all database functions with the LLVM generator

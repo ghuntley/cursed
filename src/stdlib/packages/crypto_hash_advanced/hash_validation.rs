@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 /// Result type for validation operations
-pub type ValidationResult<T> = Result<T, CursedError>;
+pub type ValidationResult<(), Error>;
 
 /// Hash validation status
 #[derive(Debug, Clone, PartialEq)]

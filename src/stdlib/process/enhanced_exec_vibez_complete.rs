@@ -19,7 +19,7 @@ use crate::error::CursedError;
 use crate::stdlib::time::Duration as CursedDuration;
 
 /// Result type for exec_vibez operations
-pub type VibezResult<T> = Result<T, CursedError>;
+pub type VibezResult<(), Error>;
 
 /// Enhanced Cmd structure matching exec_vibez specification
 #[derive(Debug)]

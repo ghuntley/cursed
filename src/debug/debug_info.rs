@@ -188,7 +188,7 @@ impl DebugInfoManager {
 
     /// Generate LLVM debug metadata
     #[instrument(skip(self))]
-    pub fn generate_llvm_debug_metadata(&mut self) -> Result<String, Error> {
+    pub fn generate_llvm_debug_metadata(&mut self) -> Result<(), Error> {
         if !self.is_enabled {
             return Ok(String::new());
         }

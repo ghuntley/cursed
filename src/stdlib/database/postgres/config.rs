@@ -222,7 +222,7 @@ impl PostgresConfig {
     }
 
     /// Validate configuration
-    pub fn validate(&self) -> Result<(), PostgresError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.host.is_empty() {
             return Err(PostgresError::new(
                 PostgresErrorKind::InvalidConfiguration,
@@ -279,7 +279,7 @@ impl PostgresConnectionString {
     /// - postgresql://user:password@host:port/database
     /// - postgres://user:password@host:port/database?param=value
     /// - host=host port=port dbname=database user=user password=password
-    pub fn parse(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+    pub fn parse(dsn: &str) -> Result<(), Error> {
         // Try URL format first
         if dsn.starts_with("postgresql://") || dsn.starts_with("postgres://") {
             Self::parse_url(dsn)
@@ -290,7 +290,7 @@ impl PostgresConnectionString {
     }
     
     /// Parse URL format connection string
-    fn parse_url(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+    fn parse_url(dsn: &str) -> Result<(), Error> {
         let url = url::Url::parse(dsn).map_err(|e| {
             PostgresError::new(
                 PostgresErrorKind::InvalidConfiguration,
@@ -348,7 +348,7 @@ impl PostgresConnectionString {
     }
     
     /// Parse key-value format connection string
-    fn parse_key_value(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+    fn parse_key_value(dsn: &str) -> Result<(), Error> {
         let mut config = PostgresConfig::default();
         
         for pair in dsn.split_whitespace() {

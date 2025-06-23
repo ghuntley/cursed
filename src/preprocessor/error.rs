@@ -7,7 +7,7 @@ use crate::error::{Error, SourceLocation};
 use std::fmt;
 
 /// Result type for preprocessor operations
-pub type PreprocessorResult<T> = Result<T, PreprocessorError>;
+pub type PreprocessorResult<(), Error>;
 
 /// Preprocessor-specific error types
 #[derive(Debug, Clone, PartialEq)]

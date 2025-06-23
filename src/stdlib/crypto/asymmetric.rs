@@ -267,7 +267,7 @@ pub struct Ed25519Signature {
 }
 
 /// fr fr Asymmetric operation results
-pub type AsymmetricResult<T> = Result<T, AsymmetricError>;
+pub type AsymmetricResult<(), Error>;
 
 /// fr fr Asymmetric crypto errors
 #[derive(Debug, Clone, PartialEq)]
@@ -1021,7 +1021,7 @@ impl Default for AsymmetricCrypto {
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay RSA key generation
-pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
     let crypto = AsymmetricCrypto::new();
     
     let key_size = if args.is_empty() {
@@ -1045,7 +1045,7 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA encryption
-pub fn rsa_encrypt(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_encrypt(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA encrypt requires public key and plaintext".to_string()));
     }
@@ -1073,7 +1073,7 @@ pub fn rsa_encrypt(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA decryption  
-pub fn rsa_decrypt(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_decrypt(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA decrypt requires private key and ciphertext".to_string()));
     }
@@ -1104,7 +1104,7 @@ pub fn rsa_decrypt(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA signing
-pub fn rsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA sign requires private key and message".to_string()));
     }
@@ -1146,7 +1146,7 @@ pub fn rsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay RSA signature verification
-pub fn rsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn rsa_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("RSA verify requires public key, message, and signature".to_string()));
     }
@@ -1196,7 +1196,7 @@ pub fn rsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay ECDSA key generation
-pub fn ecdsa_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
     let crypto = AsymmetricCrypto::new();
     
     let curve = if args.is_empty() {
@@ -1226,7 +1226,7 @@ pub fn ecdsa_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay ECDSA signing
-pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("ECDSA sign requires private key and message".to_string()));
     }
@@ -1276,7 +1276,7 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay ECDSA verification
-pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("ECDSA verify requires public key, message, and signature".to_string()));
     }
@@ -1331,7 +1331,7 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay ECDH key exchange
-pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("ECDH requires private key and public key".to_string()));
     }
@@ -1425,7 +1425,7 @@ pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay X25519 key generation
-pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let crypto = AsymmetricCrypto::new();
     
     match crypto.x25519_generate_keypair() {
@@ -1440,7 +1440,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> 
 }
 
 /// slay X25519 key exchange
-pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("X25519 exchange requires private key and public key".to_string()));
     }
@@ -1494,7 +1494,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Ed25519 key generation
-pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let crypto = AsymmetricCrypto::new();
     
     match crypto.ed25519_generate_keypair() {
@@ -1509,7 +1509,7 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError>
 }
 
 /// slay Ed25519 signing
-pub fn ed25519_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("Ed25519 sign requires private key and message".to_string()));
     }
@@ -1542,7 +1542,7 @@ pub fn ed25519_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Ed25519 verification
-pub fn ed25519_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify requires public key, message, and signature".to_string()));
     }

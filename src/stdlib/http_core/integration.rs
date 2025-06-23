@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 //! Integration utilities for CURSED web_vibez package
 //!
 //! Higher-level utilities that combine multiple components for common use cases.

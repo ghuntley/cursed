@@ -171,7 +171,7 @@ impl AesGcm256 {
 }
 
 impl SymmetricCipher for AesGcm256 {
-    fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn encrypt(&self, plaintext: &[u8]) -> Result<(), Error> {
         let encrypted = self.encrypt_aead(plaintext, None)
             .map_err(|e| CipherError::OperationFailed(e.to_string()))?;
 
@@ -186,7 +186,7 @@ impl SymmetricCipher for AesGcm256 {
         Ok(result)
     }
     
-    fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
         // Parse format: nonce || ciphertext || tag
         if ciphertext.len() < AES_GCM_NONCE_SIZE + 16 {
             return Err(CipherError::OperationFailed("Ciphertext too short".to_string()));
@@ -242,7 +242,7 @@ impl AesGcm192 {
 }
 
 impl SymmetricCipher for AesGcm192 {
-    fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn encrypt(&self, plaintext: &[u8]) -> Result<(), Error> {
         // Similar to AES-256 but with 192-bit key
         let nonce = self.nonce_generator.generate_nonce(AES_GCM_NONCE_SIZE)
             .map_err(|e| CipherError::OperationFailed(e.to_string()))?;
@@ -266,7 +266,7 @@ impl SymmetricCipher for AesGcm192 {
         Ok(result)
     }
     
-    fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
         if ciphertext.len() < AES_GCM_NONCE_SIZE + 16 {
             return Err(CipherError::OperationFailed("Ciphertext too short".to_string()));
         }
@@ -319,7 +319,7 @@ impl AesGcm128 {
 }
 
 impl SymmetricCipher for AesGcm128 {
-    fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn encrypt(&self, plaintext: &[u8]) -> Result<(), Error> {
         let nonce = self.nonce_generator.generate_nonce(AES_GCM_NONCE_SIZE)
             .map_err(|e| CipherError::OperationFailed(e.to_string()))?;
 
@@ -342,7 +342,7 @@ impl SymmetricCipher for AesGcm128 {
         Ok(result)
     }
     
-    fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
         if ciphertext.len() < AES_GCM_NONCE_SIZE + 16 {
             return Err(CipherError::OperationFailed("Ciphertext too short".to_string()));
         }
@@ -373,7 +373,7 @@ impl SymmetricCipher for AesGcm128 {
 pub type AesGcmCipher = AesGcm256;
 pub type AesGcmKey = Vec<u8>;
 pub type AesGcmNonce = Vec<u8>;
-pub type AesGcmResult<T> = Result<T, AdvancedCryptoError>;
+pub type AesGcmResult<(), Error>;
 pub type AesGcmError = AdvancedCryptoError;
 pub const AES_GCM_KEY_SIZE_256: usize = 32;
 pub const AES_GCM_KEY_SIZE_192: usize = 24;

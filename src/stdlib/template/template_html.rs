@@ -385,7 +385,7 @@ impl HtmlTemplateContext {
     }
 
     /// Register a component template
-    pub fn register_component(&self, component: ComponentTemplate) -> Result<(), CursedError> {
+    pub fn register_component(&self, component: ComponentTemplate) -> Result<(), Error> {
         let mut cache = self.component_cache.lock()
             .map_err(|e| CursedError::Runtime(format!("Component cache lock error: {}", e)))?;
         cache.insert(component.name.clone(), component);
@@ -393,7 +393,7 @@ impl HtmlTemplateContext {
     }
 
     /// Get a component template
-    pub fn get_component(&self, name: &str) -> Result<Option<ComponentTemplate>, CursedError> {
+    pub fn get_component(&self, name: &str) -> Result<(), Error> {
         let cache = self.component_cache.lock()
             .map_err(|e| CursedError::Runtime(format!("Component cache lock error: {}", e)))?;
         Ok(cache.get(name).cloned())
@@ -419,7 +419,7 @@ impl HtmlEscaper {
 
     /// Escape content based on context
     #[instrument(skip(self, content))]
-    pub fn escape(&self, content: &str, escape_context: EscapeContext) -> Result<String, CursedError> {
+    pub fn escape(&self, content: &str, escape_context: EscapeContext) -> Result<(), Error> {
         debug!(context = ?escape_context, content_length = content.len(), "Escaping HTML content");
 
         if !self.context.auto_escape {
@@ -502,7 +502,7 @@ impl HtmlEscaper {
         tag_name: &str,
         attributes: &HashMap<String, String>,
         content: Option<&str>,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let mut html = format!("<{}", tag_name);
 
         // Add attributes
@@ -546,7 +546,7 @@ impl HtmlEscaper {
 
     /// Validate and sanitize HTML content
     #[instrument(skip(self, html))]
-    pub fn sanitize_html(&self, html: &str) -> Result<String, CursedError> {
+    pub fn sanitize_html(&self, html: &str) -> Result<(), Error> {
         debug!(html_length = html.len(), "Sanitizing HTML content");
 
         // This is a simplified HTML sanitizer
@@ -620,7 +620,7 @@ impl HtmlTemplateHelpers {
         attributes: &HashMap<String, CursedObject>,
         content: Option<&str>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         for (key, value) in attributes {
             let value_str = match value {
@@ -643,7 +643,7 @@ impl HtmlTemplateHelpers {
         text: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("href".to_string(), href.to_string());
 
@@ -672,7 +672,7 @@ impl HtmlTemplateHelpers {
         alt: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("src".to_string(), src.to_string());
         attr_map.insert("alt".to_string(), alt.to_string());
@@ -703,7 +703,7 @@ impl HtmlTemplateHelpers {
         attributes: Option<&HashMap<String, CursedObject>>,
         content: &str,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("action".to_string(), action.to_string());
         attr_map.insert("method".to_string(), method.to_string());
@@ -734,7 +734,7 @@ impl HtmlTemplateHelpers {
         value: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), input_type.to_string());
         attr_map.insert("name".to_string(), name.to_string());
@@ -763,7 +763,7 @@ impl HtmlTemplateHelpers {
     }
 
     /// Generate CSRF protection token
-    pub fn csrf_token(secret: &str) -> Result<CursedObject, CursedError> {
+    pub fn csrf_token(secret: &str) -> Result<(), Error> {
         use std::time::{SystemTime, UNIX_EPOCH};
         
         let timestamp = SystemTime::now()
@@ -777,7 +777,7 @@ impl HtmlTemplateHelpers {
     }
 
     /// Generate CSP nonce
-    pub fn csp_nonce() -> Result<CursedObject, CursedError> {
+    pub fn csp_nonce() -> Result<(), Error> {
         use rand::RngCore;
         
         let mut rng = rand::thread_rng();
@@ -795,7 +795,7 @@ impl HtmlTemplateHelpers {
         selected: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
 
@@ -839,7 +839,7 @@ impl HtmlTemplateHelpers {
         content: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
 
@@ -868,7 +868,7 @@ impl HtmlTemplateHelpers {
         options: &[(String, String)], // (value, label) pairs
         selected: Option<&str>,
         escaper: &HtmlEscaper,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<(), Error> {
         let mut html = String::new();
         
         for (value, label) in options {
@@ -900,7 +900,7 @@ impl HtmlTemplateHelpers {
         label: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<(), Error> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), "checkbox".to_string());
         attr_map.insert("name".to_string(), name.to_string());
@@ -949,7 +949,7 @@ impl LayoutHelpers {
         layout_template: &str,
         content_blocks: &HashMap<String, String>,
         context: &HtmlTemplateContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         info!(layout_template_length = layout_template.len(), blocks_count = content_blocks.len(), "Rendering layout");
         
         let mut rendered = layout_template.to_string();
@@ -969,7 +969,7 @@ impl LayoutHelpers {
     }
 
     /// Generate meta tags for the page head
-    pub fn render_meta_tags(context: &HtmlTemplateContext) -> Result<String, CursedError> {
+    pub fn render_meta_tags(context: &HtmlTemplateContext) -> Result<(), Error> {
         let meta_config = &context.layout_config.meta_config;
         let mut meta_html = String::new();
         
@@ -1013,7 +1013,7 @@ impl LayoutHelpers {
         partial_name: &str,
         locals: &HashMap<String, CursedObject>,
         context: &HtmlTemplateContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         use super::template_core::{FileSystemLoader, TemplateLoader, TemplateEngine};
         use super::template_render::RenderContext;
         use std::path::PathBuf;
@@ -1105,7 +1105,7 @@ impl LayoutHelpers {
 
 impl AssetHelpers {
     /// Generate stylesheet link tags
-    pub fn stylesheet_links(context: &HtmlTemplateContext) -> Result<String, CursedError> {
+    pub fn stylesheet_links(context: &HtmlTemplateContext) -> Result<(), Error> {
         let asset_config = &context.layout_config.asset_config;
         let mut html = String::new();
         
@@ -1128,7 +1128,7 @@ impl AssetHelpers {
     }
 
     /// Generate JavaScript script tags
-    pub fn javascript_includes(context: &HtmlTemplateContext) -> Result<String, CursedError> {
+    pub fn javascript_includes(context: &HtmlTemplateContext) -> Result<(), Error> {
         let asset_config = &context.layout_config.asset_config;
         let mut html = String::new();
         
@@ -1167,7 +1167,7 @@ impl AssetHelpers {
         alt: &str,
         sizes: &[(u32, String)], // (width, src) pairs
         context: &HtmlTemplateContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let escaper = HtmlEscaper::new(context.clone());
         let escaped_src = escaper.escape_html_attribute(src);
         let escaped_alt = escaper.escape_html_attribute(alt);
@@ -1196,7 +1196,7 @@ impl FormHelpers {
         content: &str,
         context: &HtmlTemplateContext,
         escaper: &HtmlEscaper,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let mut form_content = String::new();
         
         // Add CSRF token as hidden field
@@ -1227,7 +1227,7 @@ impl FormHelpers {
         errors: &[String],
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let mut field_html = String::new();
         
         // Add label if provided
@@ -1266,7 +1266,7 @@ impl ComponentSystem {
         component_name: &str,
         parameters: &HashMap<String, CursedObject>,
         context: &HtmlTemplateContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         info!(component_name = component_name, param_count = parameters.len(), "Rendering component");
         
         // Get component from cache
@@ -1300,7 +1300,7 @@ impl ComponentSystem {
     fn validate_parameters(
         component: &ComponentTemplate,
         parameters: &HashMap<String, CursedObject>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         for param_def in &component.parameters {
             if param_def.required && !parameters.contains_key(&param_def.name) {
                 return Err(CursedError::Runtime(format!(

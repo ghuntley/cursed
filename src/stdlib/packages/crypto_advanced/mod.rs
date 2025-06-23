@@ -1,3 +1,4 @@
+use crate::stdlib::web_vibez::SecurityContext;
 /// fr fr Advanced cryptographic operations for CURSED - production-ready security periodt
 /// 
 /// This module provides state-of-the-art cryptographic implementations including:
@@ -132,7 +133,7 @@ impl CipherRegistry {
 }
 
 /// slay Register a cipher globally
-pub fn register_cipher<T>(name: &str, cipher: T) -> Result<(), CipherError>
+pub fn register_cipher<T>(name: &str, cipher: T) -> Result<(), Error>
 where
     T: SymmetricCipher + Send + Sync + 'static,
 {
@@ -144,7 +145,7 @@ where
 }
 
 /// slay Get a cipher by name from global registry
-pub fn get_cipher(name: &str) -> Result<Arc<dyn SymmetricCipher + Send + Sync>, CipherError> {
+pub fn get_cipher(name: &str) -> Result<(), Error> {
     let registry = CIPHER_REGISTRY.read()
         .map_err(|_| CipherError::Internal("Failed to acquire cipher registry lock".to_string()))?;
     

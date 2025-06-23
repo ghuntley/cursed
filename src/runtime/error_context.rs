@@ -47,7 +47,7 @@ impl ErrorContextManager {
 
     /// Register a new error context
     #[instrument(skip(self, context))]
-    pub fn register_context(&self, context: EnhancedErrorContext) -> Result<String, CursedError> {
+    pub fn register_context(&self, context: EnhancedErrorContext) -> Result<(), Error> {
         let mut registry = self.context_registry.write()
             .map_err(|_| CursedError::system_error("Failed to acquire context registry lock"))?;
 
@@ -64,7 +64,7 @@ impl ErrorContextManager {
         function_name: String,
         source_location: SourceLocation,
         parameters: Option<HashMap<String, String>>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let mut call_stack = self.call_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire call stack lock"))?;
 
@@ -84,7 +84,7 @@ impl ErrorContextManager {
 
     /// Pop function context from call stack
     #[instrument(skip(self))]
-    pub fn pop_function_context(&self) -> Result<Option<FunctionCallContext>, CursedError> {
+    pub fn pop_function_context(&self) -> Result<(), Error> {
         let mut call_stack = self.call_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire call stack lock"))?;
 
@@ -103,7 +103,7 @@ impl ErrorContextManager {
         &self,
         propagation_error: &PropagationError<E>,
         additional_info: Option<ErrorContextInfo>,
-    ) -> Result<EnhancedErrorContext, CursedError> {
+    ) -> Result<(), Error> {
         // Get current call stack
         let call_stack = self.get_current_call_stack()?;
         
@@ -133,7 +133,7 @@ impl ErrorContextManager {
         &self,
         file_path: PathBuf,
         file_content: String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let mut mapper = self.source_mapper.write()
             .map_err(|_| CursedError::system_error("Failed to acquire source mapper lock"))?;
 
@@ -142,7 +142,7 @@ impl ErrorContextManager {
     }
 
     /// Get detailed error context by ID
-    pub fn get_context(&self, context_id: &str) -> Result<Option<EnhancedErrorContext>, CursedError> {
+    pub fn get_context(&self, context_id: &str) -> Result<(), Error> {
         let registry = self.context_registry.read()
             .map_err(|_| CursedError::system_error("Failed to acquire context registry lock"))?;
 
@@ -150,7 +150,7 @@ impl ErrorContextManager {
     }
 
     /// Get current function call stack
-    pub fn get_current_call_stack(&self) -> Result<Vec<FunctionCallContext>, CursedError> {
+    pub fn get_current_call_stack(&self) -> Result<(), Error> {
         let call_stack = self.call_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire call stack lock"))?;
 
@@ -163,7 +163,7 @@ impl ErrorContextManager {
         &self,
         root_context_id: String,
         related_context_ids: Vec<String>,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let mut chains = self.error_chains.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error chains lock"))?;
 
@@ -175,7 +175,7 @@ impl ErrorContextManager {
 
     /// Get comprehensive error report
     #[instrument(skip(self))]
-    pub fn generate_error_report(&self, context_id: &str) -> Result<ErrorReport, CursedError> {
+    pub fn generate_error_report(&self, context_id: &str) -> Result<(), Error> {
         let context = self.get_context(context_id)?
             .ok_or_else(|| CursedError::Runtime(format!("Context not found: {}", context_id)))?;
 
@@ -197,7 +197,7 @@ impl ErrorContextManager {
     }
 
     /// Resolve source location to detailed information
-    fn resolve_source_location(&self, location: &SourceLocation) -> Result<Option<SourceInfo>, CursedError> {
+    fn resolve_source_location(&self, location: &SourceLocation) -> Result<(), Error> {
         let mapper = self.source_mapper.read()
             .map_err(|_| CursedError::system_error("Failed to acquire source mapper lock"))?;
 

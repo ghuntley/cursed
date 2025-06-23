@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use dashmap::DashMap;
 use ropey::Rope;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument, warn};
 
 /// Document information stored by the LSP server

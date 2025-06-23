@@ -66,7 +66,7 @@ impl Migrator {
     }
 
     /// slay Apply all pending migrations
-    pub fn migrate_up(&self) -> Result<(), DatabaseError> {
+    pub fn migrate_up(&self) -> Result<(), Error> {
         let current_version = self.current_version()?;
         
         for migration in &self.migrations {
@@ -79,7 +79,7 @@ impl Migrator {
     }
 
     /// slay Rollback the last migration
-    pub fn migrate_down(&self) -> Result<(), DatabaseError> {
+    pub fn migrate_down(&self) -> Result<(), Error> {
         let current_version = self.current_version()?;
         
         if let Some(migration) = self.migrations.iter().find(|m| m.version == current_version) {
@@ -90,7 +90,7 @@ impl Migrator {
     }
 
     /// slay Migrate to a specific version
-    pub fn migrate_to(&self, target_version: i32) -> Result<(), DatabaseError> {
+    pub fn migrate_to(&self, target_version: i32) -> Result<(), Error> {
         let current_version = self.current_version()?;
         
         if target_version > current_version {
@@ -113,13 +113,13 @@ impl Migrator {
     }
 
     /// slay Get current database version
-    pub fn current_version(&self) -> Result<i32, DatabaseError> {
+    pub fn current_version(&self) -> Result<(), Error> {
         // In a real implementation, this would query a migrations table
         Ok(0)
     }
 
     /// slay List all migrations with their status
-    pub fn list_migrations(&self) -> Result<Vec<(Migration, MigrationStatus)>, DatabaseError> {
+    pub fn list_migrations(&self) -> Result<(), Error> {
         let current_version = self.current_version()?;
         
         let mut result = Vec::new();
@@ -136,7 +136,7 @@ impl Migrator {
     }
 
     /// slay Apply a single migration
-    fn apply_migration(&self, migration: &Migration) -> Result<(), DatabaseError> {
+    fn apply_migration(&self, migration: &Migration) -> Result<(), Error> {
         let mut tx = self.db.begin()?;
         
         match tx.exec(migration.up.clone(), Vec::from([])) {
@@ -154,7 +154,7 @@ impl Migrator {
     }
 
     /// slay Rollback a single migration
-    fn rollback_migration(&self, migration: &Migration) -> Result<(), DatabaseError> {
+    fn rollback_migration(&self, migration: &Migration) -> Result<(), Error> {
         let mut tx = self.db.begin()?;
         
         match tx.exec(migration.down.clone(), Vec::from([])) {
@@ -172,13 +172,13 @@ impl Migrator {
     }
 
     /// slay Record migration in database
-    fn record_migration(&self, version: i32, description: &str) -> Result<(), DatabaseError> {
+    fn record_migration(&self, version: i32, description: &str) -> Result<(), Error> {
         // In a real implementation, this would insert into a migrations table
         Ok(())
     }
 
     /// slay Remove migration record from database
-    fn remove_migration_record(&self, version: i32) -> Result<(), DatabaseError> {
+    fn remove_migration_record(&self, version: i32) -> Result<(), Error> {
         // In a real implementation, this would delete from migrations table
         Ok(())
     }

@@ -15,7 +15,7 @@ use crate::ast::traits::{Expression, Node};
 use crate::ast::expressions::{Literal, LiteralValue};
 use crate::ast::operators::{BinaryExpression, UnaryExpression, AssignmentExpression};
 use crate::ast::identifiers::Identifier;
-use crate::ast::types::{TypeExpression, Type};
+use crate::ast::crate::types::{TypeExpression, Type};
 use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType, ExpressionContext};
 use crate::codegen::llvm::type_system::LlvmTypeRegistry;
 use crate::error::{Error, CursedError};
@@ -148,7 +148,7 @@ impl LlvmChannelCompiler {
 
     /// Compile channel type for generic `dm<T>` declaration
     #[instrument(skip(self), fields(element_type = ?element_type))]
-    pub fn compile_channel_type(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<CompiledChannelType, Error> {
+    pub fn compile_channel_type(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<(), Error> {
         debug!("Compiling channel type for element type: {:?}", element_type);
         
         let type_key = format!("dm<{}>", element_type.to_llvm_string());
@@ -180,7 +180,7 @@ impl LlvmChannelCompiler {
 
     /// Generate LLVM struct layout for channel handles
     #[instrument(skip(self), fields(element_type = ?element_type))]
-    fn get_channel_struct_type(&mut self, element_type: &LlvmType) -> Result<String, Error> {
+    fn get_channel_struct_type(&mut self, element_type: &LlvmType) -> Result<(), Error> {
         let element_llvm = element_type.to_llvm_string();
         let struct_name = format!("%channel_{}", element_llvm.replace("*", "_ptr"));
         
@@ -208,7 +208,7 @@ impl LlvmChannelCompiler {
 
     /// Compile channel creation expression (e.g., `make(dm<int>, 10)`)
     #[instrument(skip(self), fields(element_type = ?element_type, buffer_size = ?buffer_size))]
-    pub fn compile_channel_creation(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<ChannelOperation, Error> {
+    pub fn compile_channel_creation(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<(), Error> {
         debug!("Compiling channel creation for type: {:?}", element_type);
         
         let channel_type = self.compile_channel_type(element_type, buffer_size)?;
@@ -251,7 +251,7 @@ impl LlvmChannelCompiler {
 
     /// Compile send operation for `ch <- value` syntax
     #[instrument(skip(self), fields(channel_expr = ?channel_expr, value_expr = ?value_expr))]
-    pub fn compile_send_operation(&mut self, channel_expr: &dyn Expression, value_expr: &dyn Expression, blocking: bool) -> Result<ChannelOperation, Error> {
+    pub fn compile_send_operation(&mut self, channel_expr: &dyn Expression, value_expr: &dyn Expression, blocking: bool) -> Result<(), Error> {
         debug!("Compiling send operation, blocking: {}", blocking);
         
         // Compile channel expression to get channel handle
@@ -308,7 +308,7 @@ impl LlvmChannelCompiler {
 
     /// Compile receive operation for `<-ch` syntax
     #[instrument(skip(self), fields(channel_expr = ?channel_expr))]
-    pub fn compile_receive_operation(&mut self, channel_expr: &dyn Expression, blocking: bool) -> Result<ChannelOperation, Error> {
+    pub fn compile_receive_operation(&mut self, channel_expr: &dyn Expression, blocking: bool) -> Result<(), Error> {
         debug!("Compiling receive operation, blocking: {}", blocking);
         
         // Compile channel expression to get channel handle
@@ -371,7 +371,7 @@ impl LlvmChannelCompiler {
 
     /// Compile channel close operation
     #[instrument(skip(self), fields(channel_expr = ?channel_expr))]
-    pub fn compile_channel_close(&mut self, channel_expr: &dyn Expression) -> Result<ChannelOperation, Error> {
+    pub fn compile_channel_close(&mut self, channel_expr: &dyn Expression) -> Result<(), Error> {
         debug!("Compiling channel close operation");
         
         // Compile channel expression to get channel handle
@@ -414,7 +414,7 @@ impl LlvmChannelCompiler {
 
     /// Helper: Compile channel expression to get channel handle
     #[instrument(skip(self))]
-    fn compile_channel_expression(&mut self, expr: &dyn Expression) -> Result<LlvmValue, Error> {
+    fn compile_channel_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         // This would integrate with the main expression compiler
         // For now, simplified implementation
         if let Some(identifier) = expr.as_any().downcast_ref::<Identifier>() {
@@ -430,7 +430,7 @@ impl LlvmChannelCompiler {
 
     /// Helper: Compile value expression for sending
     #[instrument(skip(self))]
-    fn compile_value_expression(&mut self, expr: &dyn Expression) -> Result<LlvmValue, Error> {
+    fn compile_value_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         // This would integrate with the main expression compiler
         // For now, simplified implementation for literals
         if let Some(literal) = expr.as_any().downcast_ref::<Literal>() {
@@ -454,7 +454,7 @@ impl LlvmChannelCompiler {
 
     /// Helper: Extract element type from channel value
     #[instrument(skip(self))]
-    fn extract_channel_element_type(&self, channel_value: &LlvmValue) -> Result<LlvmType, Error> {
+    fn extract_channel_element_type(&self, channel_value: &LlvmValue) -> Result<(), Error> {
         // Parse channel type to extract element type
         // This is simplified - real implementation would use type registry
         match &channel_value.value_type {
@@ -465,7 +465,7 @@ impl LlvmChannelCompiler {
 
     /// Helper: Generate error handling for send operations
     #[instrument(skip(self))]
-    fn generate_send_error_handling(&self, result_temp: &str) -> Result<Vec<String>, Error> {
+    fn generate_send_error_handling(&self, result_temp: &str) -> Result<(), Error> {
         Ok(vec![
             format!("{}_is_error = icmp ne i32 {}, 0", result_temp, result_temp),
             format!("br i1 {}_is_error, label %send_error, label %send_success", result_temp),
@@ -479,7 +479,7 @@ impl LlvmChannelCompiler {
 
     /// Helper: Generate error handling for receive operations
     #[instrument(skip(self))]
-    fn generate_receive_error_handling(&self, result_temp: &str) -> Result<Vec<String>, Error> {
+    fn generate_receive_error_handling(&self, result_temp: &str) -> Result<(), Error> {
         Ok(vec![
             format!("{}_is_error = icmp ne i32 {}, 0", result_temp, result_temp),
             format!("br i1 {}_is_error, label %receive_error, label %receive_success", result_temp),
@@ -548,18 +548,18 @@ impl LlvmChannelCompiler {
 /// Channel operation trait for AST integration
 pub trait ChannelExpressionCompiler {
     /// Compile send expression (`ch <- value`)
-    fn compile_send_expression(&mut self, channel: &dyn Expression, value: &dyn Expression) -> Result<LlvmValue, Error>;
+    fn compile_send_expression(&mut self, channel: &dyn Expression, value: &dyn Expression) -> Result<(), Error>;
     
     /// Compile receive expression (`<-ch`)
-    fn compile_receive_expression(&mut self, channel: &dyn Expression) -> Result<LlvmValue, Error>;
+    fn compile_receive_expression(&mut self, channel: &dyn Expression) -> Result<(), Error>;
     
     /// Compile channel creation expression
-    fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<LlvmValue, Error>;
+    fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<(), Error>;
 }
 
 impl ChannelExpressionCompiler for LlvmChannelCompiler {
     #[instrument(skip(self))]
-    fn compile_send_expression(&mut self, channel: &dyn Expression, value: &dyn Expression) -> Result<LlvmValue, Error> {
+    fn compile_send_expression(&mut self, channel: &dyn Expression, value: &dyn Expression) -> Result<(), Error> {
         let operation = self.compile_send_operation(channel, value, true)?;
         
         // Add instructions to IR output
@@ -572,7 +572,7 @@ impl ChannelExpressionCompiler for LlvmChannelCompiler {
     }
 
     #[instrument(skip(self))]
-    fn compile_receive_expression(&mut self, channel: &dyn Expression) -> Result<LlvmValue, Error> {
+    fn compile_receive_expression(&mut self, channel: &dyn Expression) -> Result<(), Error> {
         let operation = self.compile_receive_operation(channel, true)?;
         
         // Add instructions to IR output
@@ -585,7 +585,7 @@ impl ChannelExpressionCompiler for LlvmChannelCompiler {
     }
 
     #[instrument(skip(self))]
-    fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<LlvmValue, Error> {
+    fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<(), Error> {
         let operation = self.compile_channel_creation(element_type, buffer_size)?;
         
         // Add instructions to IR output

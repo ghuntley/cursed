@@ -150,7 +150,7 @@ impl TypeMapper {
 
     /// periodt Map CURSED type to SQL type
     #[instrument(skip(self))]
-    pub fn map_to_sql(&self, cursed_type: &str) -> Result<SqlTypeMapping, DatabaseError> {
+    pub fn map_to_sql(&self, cursed_type: &str) -> Result<(), Error> {
         debug!(cursed_type = cursed_type, "Mapping CURSED type to SQL");
         
         // Check built-in mappings first
@@ -182,7 +182,7 @@ impl TypeMapper {
 
     /// bestie Map SQL value to CURSED value
     #[instrument(skip(self))]
-    pub fn map_from_sql(&self, sql_value: &SqlValue, target_type: &str) -> Result<Box<dyn std::any::Any>, DatabaseError> {
+    pub fn map_from_sql(&self, sql_value: &SqlValue, target_type: &str) -> Result<(), Error> {
         debug!(target_type = target_type, "Mapping SQL value to CURSED type");
         
         match (sql_value, target_type) {
@@ -214,7 +214,7 @@ impl TypeMapper {
 
     /// yolo Register custom mapping
     #[instrument(skip(self, mapping))]
-    pub fn register_custom_mapping(&self, cursed_type: &str, mapping: Box<dyn CustomMapping>) -> Result<(), DatabaseError> {
+    pub fn register_custom_mapping(&self, cursed_type: &str, mapping: Box<dyn CustomMapping>) -> Result<(), Error> {
         debug!(cursed_type = cursed_type, "Registering custom mapping");
         
         if let Ok(mut custom_mappings) = self.custom_mappings.lock() {
@@ -348,10 +348,10 @@ pub trait CustomMapping: Send + Sync + std::fmt::Debug {
     fn to_sql_mapping(&self) -> SqlTypeMapping;
     
     /// Convert CURSED value to SQL value
-    fn to_sql_value(&self, value: Box<dyn std::any::Any>) -> Result<SqlValue, DatabaseError>;
+    fn to_sql_value(&self, value: Box<dyn std::any::Any>) -> Result<(), Error>;
     
     /// Convert SQL value to CURSED value
-    fn from_sql_value(&self, sql_value: &SqlValue) -> Result<Box<dyn std::any::Any>, DatabaseError>;
+    fn from_sql_value(&self, sql_value: &SqlValue) -> Result<(), Error>;
 }
 
 /// fr fr Column mapper for result mapping
@@ -383,7 +383,7 @@ impl ColumnMapper {
 
     /// periodt Map database row to entity fields
     #[instrument(skip(self, row))]
-    pub fn map_row(&self, row: &HashMap<String, SqlValue>) -> Result<HashMap<String, Box<dyn std::any::Any>>, DatabaseError> {
+    pub fn map_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error> {
         debug!("Mapping database row to entity fields");
         
         let mut mapped_fields = HashMap::new();
@@ -443,7 +443,7 @@ impl ResultMapper {
 
     /// facts Map query results to entities
     #[instrument(skip(self, rows))]
-    pub fn map_to_entities<T: Entity>(&self, rows: &[HashMap<String, SqlValue>]) -> Result<Vec<T>, DatabaseError> {
+    pub fn map_to_entities<T: Entity>(&self, rows: &[HashMap<String, SqlValue>]) -> Result<(), Error> {
         debug!(entity = T::table_name(), row_count = rows.len(), "Mapping query results to entities");
         
         let mut entities = Vec::new();
@@ -459,7 +459,7 @@ impl ResultMapper {
 
     /// periodt Map single row to entity
     #[instrument(skip(self, row))]
-    pub fn map_to_entity<T: Entity>(&self, row: &HashMap<String, SqlValue>) -> Result<T, DatabaseError> {
+    pub fn map_to_entity<T: Entity>(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error> {
         debug!(entity = T::table_name(), "Mapping row to entity");
         T::from_row(row)
     }
@@ -500,7 +500,7 @@ impl MappingRegistry {
 
     /// facts Register type mapping
     #[instrument(skip(self))]
-    pub fn register_type_mapping(&self, type_name: &str, mapping: SqlTypeMapping) -> Result<(), DatabaseError> {
+    pub fn register_type_mapping(&self, type_name: &str, mapping: SqlTypeMapping) -> Result<(), Error> {
         debug!(type_name = type_name, "Registering type mapping");
         
         if let Ok(mut mappings) = self.type_mappings.lock() {

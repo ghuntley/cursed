@@ -81,7 +81,7 @@ impl ProfileVersion {
             "1.0" => Ok(ProfileVersion::V1_0),
             "1.1" => Ok(ProfileVersion::V1_1),
             "2.0" => Ok(ProfileVersion::V2_0),
-            _ => Err(Error::Other(format!("Unknown profile version: {}", s))),
+            _ => Err(Error::General(format!("Unknown profile version: {}", s))),
         }
     }
 
@@ -481,7 +481,7 @@ impl ProfileStorage {
 
         // Validate file exists
         if !actual_path.exists() {
-            return Err(Error::Other(format!("Profile file not found: {}", actual_path.display())));
+            return Err(Error::General(format!("Profile file not found: {}", actual_path.display())));
         }
 
         // Check file age if configured
@@ -532,11 +532,11 @@ impl ProfileStorage {
         info!("Merging {} profiles", profile_ids.len());
 
         if profile_ids.is_empty() {
-            return Err(Error::Other("No profiles to merge".to_string()));
+            return Err(Error::General("No profiles to merge".to_string()));
         }
 
         if profile_ids.len() > self.merger.config.max_merge_count {
-            return Err(Error::Other(format!(
+            return Err(Error::General(format!(
                 "Too many profiles to merge: {} > {}", 
                 profile_ids.len(), 
                 self.merger.config.max_merge_count
@@ -559,7 +559,7 @@ impl ProfileStorage {
         }
 
         if profiles.is_empty() {
-            return Err(Error::Other("No profiles meet quality threshold for merging".to_string()));
+            return Err(Error::General("No profiles meet quality threshold for merging".to_string()));
         }
 
         // Perform merge
@@ -654,7 +654,7 @@ impl ProfileStorage {
         if profile_data.function_profiles.is_empty() && 
            profile_data.branch_profiles.is_empty() &&
            profile_data.loop_profiles.is_empty() {
-            return Err(Error::Other("Profile data appears to be empty".to_string()));
+            return Err(Error::General("Profile data appears to be empty".to_string()));
         }
 
         Ok(())
@@ -719,7 +719,7 @@ impl ProfileStorage {
         path.file_stem()
             .and_then(|stem| stem.to_str())
             .map(|s| s.to_string())
-            .ok_or_else(|| Error::Other("Invalid profile path".to_string()))
+            .ok_or_else(|| Error::General("Invalid profile path".to_string()))
     }
 
     fn write_profile_data(&self, path: &PathBuf, profile_data: &ProfileData) -> Result<usize> {
@@ -734,13 +734,13 @@ impl ProfileStorage {
         match self.format {
             ProfileFormat::Binary => {
                 let serialized = bincode::serialize(profile_data)
-                    .map_err(|e| Error::Other(format!("Serialization failed: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Serialization failed: {}", e)))?;
                 writer.write_all(&serialized)?;
                 Ok(serialized.len())
             }
             ProfileFormat::CompressedBinary => {
                 let serialized = bincode::serialize(profile_data)
-                    .map_err(|e| Error::Other(format!("Serialization failed: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Serialization failed: {}", e)))?;
                 
                 // Simulate compression (in real implementation would use actual compression)
                 let compressed = self.compress_data(&serialized)?;
@@ -749,11 +749,11 @@ impl ProfileStorage {
             }
             ProfileFormat::Json => {
                 let serialized = serde_json::to_vec_pretty(profile_data)
-                    .map_err(|e| Error::Other(format!("JSON serialization failed: {}", e)))?;
+                    .map_err(|e| Error::General(format!("JSON serialization failed: {}", e)))?;
                 writer.write_all(&serialized)?;
                 Ok(serialized.len())
             }
-            _ => Err(Error::Other("Unsupported storage format".to_string())),
+            _ => Err(Error::General("Unsupported storage format".to_string())),
         }
     }
 
@@ -766,18 +766,18 @@ impl ProfileStorage {
         match self.format {
             ProfileFormat::Binary => {
                 bincode::deserialize(&buffer)
-                    .map_err(|e| Error::Other(format!("Deserialization failed: {}", e)))
+                    .map_err(|e| Error::General(format!("Deserialization failed: {}", e)))
             }
             ProfileFormat::CompressedBinary => {
                 let decompressed = self.decompress_data(&buffer)?;
                 bincode::deserialize(&decompressed)
-                    .map_err(|e| Error::Other(format!("Deserialization failed: {}", e)))
+                    .map_err(|e| Error::General(format!("Deserialization failed: {}", e)))
             }
             ProfileFormat::Json => {
                 serde_json::from_slice(&buffer)
-                    .map_err(|e| Error::Other(format!("JSON deserialization failed: {}", e)))
+                    .map_err(|e| Error::General(format!("JSON deserialization failed: {}", e)))
             }
-            _ => Err(Error::Other("Unsupported storage format".to_string())),
+            _ => Err(Error::General("Unsupported storage format".to_string())),
         }
     }
 
@@ -882,13 +882,13 @@ impl ProfileDatabase {
     pub fn load_metadata(&self, profile_id: &str) -> Result<ProfileMetadata> {
         self.metadata_cache.get(profile_id)
             .cloned()
-            .ok_or_else(|| Error::Other(format!("Profile metadata not found: {}", profile_id)))
+            .ok_or_else(|| Error::General(format!("Profile metadata not found: {}", profile_id)))
     }
 
     /// Get mutable metadata reference
     pub fn get_metadata_mut(&mut self, profile_id: &str) -> Result<&mut ProfileMetadata> {
         self.metadata_cache.get_mut(profile_id)
-            .ok_or_else(|| Error::Other(format!("Profile metadata not found: {}", profile_id)))
+            .ok_or_else(|| Error::General(format!("Profile metadata not found: {}", profile_id)))
     }
 
     /// Delete metadata
@@ -919,7 +919,7 @@ impl ProfileMerger {
         let start_time = std::time::Instant::now();
         
         if profiles.is_empty() {
-            return Err(Error::Other("No profiles to merge".to_string()));
+            return Err(Error::General("No profiles to merge".to_string()));
         }
 
         if profiles.len() == 1 {

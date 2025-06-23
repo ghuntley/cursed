@@ -21,7 +21,7 @@ pub use specialized::*;
 pub use search::*;
 
 /// Result type for SortaFresh operations
-pub type SortaFreshResult<T> = Result<T, CollectionsError>;
+pub type SortaFreshResult<(), Error>;
 
 /// Core interface for sortable collections
 /// Equivalent to `Sortable` interface in the spec

@@ -203,7 +203,7 @@ impl MongoDbQueryBuilder {
     }
 
     /// Add a filter condition
-    pub fn filter(mut self, key: &str, value: &Value) -> Result<Self, MongoDbError> {
+    pub fn filter(mut self, key: &str, value: &Value) -> Result<(), Error> {
         let bson_value = value_to_bson(value)?;
         self.filter.insert(key, bson_value);
         Ok(self)
@@ -280,7 +280,7 @@ impl MongoDbCollection {
     }
 
     /// Find documents
-    pub async fn find(&self, query: MongoDbQueryBuilder) -> Result<Vec<Value>, MongoDbError> {
+    pub async fn find(&self, query: MongoDbQueryBuilder) -> Result<(), Error> {
         let filter = query.get_filter().clone();
         let options = query.build_find_options();
         
@@ -299,7 +299,7 @@ impl MongoDbCollection {
     }
 
     /// Find one document
-    pub async fn find_one(&self, query: MongoDbQueryBuilder) -> Result<Option<Value>, MongoDbError> {
+    pub async fn find_one(&self, query: MongoDbQueryBuilder) -> Result<(), Error> {
         let filter = query.get_filter().clone();
         let options = query.build_find_options();
         
@@ -315,7 +315,7 @@ impl MongoDbCollection {
     }
 
     /// Insert one document
-    pub async fn insert_one(&self, document: &Value) -> Result<String, MongoDbError> {
+    pub async fn insert_one(&self, document: &Value) -> Result<(), Error> {
         let doc = value_to_document(document)?;
         let result = self.collection
             .insert_one(doc, None)
@@ -326,8 +326,8 @@ impl MongoDbCollection {
     }
 
     /// Insert many documents
-    pub async fn insert_many(&self, documents: &[Value]) -> Result<Vec<String>, MongoDbError> {
-        let docs: Result<Vec<Document>, MongoDbError> = documents
+    pub async fn insert_many(&self, documents: &[Value]) -> Result<(), Error> {
+        let docs: Result<(), Error> = documents
             .iter()
             .map(value_to_document)
             .collect();
@@ -346,7 +346,7 @@ impl MongoDbCollection {
         &self,
         filter: MongoDbQueryBuilder,
         update: &Value,
-    ) -> Result<u64, MongoDbError> {
+    ) -> Result<(), Error> {
         let filter_doc = filter.get_filter().clone();
         let update_doc = value_to_document(update)?;
         let update_doc = doc! { "$set": update_doc };
@@ -364,7 +364,7 @@ impl MongoDbCollection {
         &self,
         filter: MongoDbQueryBuilder,
         update: &Value,
-    ) -> Result<u64, MongoDbError> {
+    ) -> Result<(), Error> {
         let filter_doc = filter.get_filter().clone();
         let update_doc = value_to_document(update)?;
         let update_doc = doc! { "$set": update_doc };
@@ -378,7 +378,7 @@ impl MongoDbCollection {
     }
 
     /// Delete one document
-    pub async fn delete_one(&self, filter: MongoDbQueryBuilder) -> Result<u64, MongoDbError> {
+    pub async fn delete_one(&self, filter: MongoDbQueryBuilder) -> Result<(), Error> {
         let filter_doc = filter.get_filter().clone();
 
         let result = self.collection
@@ -390,7 +390,7 @@ impl MongoDbCollection {
     }
 
     /// Delete many documents
-    pub async fn delete_many(&self, filter: MongoDbQueryBuilder) -> Result<u64, MongoDbError> {
+    pub async fn delete_many(&self, filter: MongoDbQueryBuilder) -> Result<(), Error> {
         let filter_doc = filter.get_filter().clone();
 
         let result = self.collection
@@ -402,7 +402,7 @@ impl MongoDbCollection {
     }
 
     /// Count documents
-    pub async fn count_documents(&self, filter: MongoDbQueryBuilder) -> Result<u64, MongoDbError> {
+    pub async fn count_documents(&self, filter: MongoDbQueryBuilder) -> Result<(), Error> {
         let filter_doc = filter.get_filter().clone();
 
         let count = self.collection
@@ -414,7 +414,7 @@ impl MongoDbCollection {
     }
 
     /// Aggregate pipeline
-    pub async fn aggregate(&self, pipeline: Vec<Document>) -> Result<Vec<Value>, MongoDbError> {
+    pub async fn aggregate(&self, pipeline: Vec<Document>) -> Result<(), Error> {
         let mut cursor = self.collection
             .aggregate(pipeline, None)
             .await
@@ -430,7 +430,7 @@ impl MongoDbCollection {
     }
 
     /// Create index
-    pub async fn create_index(&self, keys: Document, options: Option<IndexOptions>) -> Result<String, MongoDbError> {
+    pub async fn create_index(&self, keys: Document, options: Option<IndexOptions>) -> Result<(), Error> {
         let index_model = IndexModel::builder()
             .keys(keys)
             .options(options)
@@ -445,7 +445,7 @@ impl MongoDbCollection {
     }
 
     /// Drop index
-    pub async fn drop_index(&self, index_name: &str) -> Result<(), MongoDbError> {
+    pub async fn drop_index(&self, index_name: &str) -> Result<(), Error> {
         self.collection
             .drop_index(index_name, None)
             .await
@@ -455,7 +455,7 @@ impl MongoDbCollection {
     }
 
     /// List indexes
-    pub async fn list_indexes(&self) -> Result<Vec<Value>, MongoDbError> {
+    pub async fn list_indexes(&self) -> Result<(), Error> {
         let mut cursor = self.collection
             .list_indexes(None)
             .await
@@ -496,7 +496,7 @@ impl MongoDbDatabase {
     }
 
     /// Create collection
-    pub async fn create_collection(&self, name: &str, options: Option<CreateCollectionOptions>) -> Result<(), MongoDbError> {
+    pub async fn create_collection(&self, name: &str, options: Option<CreateCollectionOptions>) -> Result<(), Error> {
         self.database
             .create_collection(name, options)
             .await
@@ -506,7 +506,7 @@ impl MongoDbDatabase {
     }
 
     /// Drop collection
-    pub async fn drop_collection(&self, name: &str) -> Result<(), MongoDbError> {
+    pub async fn drop_collection(&self, name: &str) -> Result<(), Error> {
         self.database
             .collection::<Document>(name)
             .drop(None)
@@ -517,7 +517,7 @@ impl MongoDbDatabase {
     }
 
     /// List collections
-    pub async fn list_collections(&self) -> Result<Vec<String>, MongoDbError> {
+    pub async fn list_collections(&self) -> Result<(), Error> {
         let mut cursor = self.database
             .list_collections(None, None)
             .await
@@ -534,7 +534,7 @@ impl MongoDbDatabase {
     }
 
     /// Run command
-    pub async fn run_command(&self, command: Document) -> Result<Value, MongoDbError> {
+    pub async fn run_command(&self, command: Document) -> Result<(), Error> {
         let result = self.database
             .run_command(command, None)
             .await
@@ -553,7 +553,7 @@ pub struct MongoDbConnection {
 
 impl MongoDbConnection {
     /// Create a new connection
-    pub async fn new(config: MongoDbConfig) -> Result<Self, MongoDbError> {
+    pub async fn new(config: MongoDbConfig) -> Result<(), Error> {
         let client_options = Self::build_client_options(&config).await?;
         let client = Client::with_options(client_options)
             .map_err(MongoDbError::from)?;
@@ -569,7 +569,7 @@ impl MongoDbConnection {
     }
 
     /// Build client options from config
-    async fn build_client_options(config: &MongoDbConfig) -> Result<ClientOptions, MongoDbError> {
+    async fn build_client_options(config: &MongoDbConfig) -> Result<(), Error> {
         let mut client_options = ClientOptions::parse(&config.connection_string)
             .await
             .map_err(|e| MongoDbError::InvalidConfiguration(e.to_string()))?;
@@ -683,7 +683,7 @@ impl MongoDbConnection {
     }
 
     /// List databases
-    pub async fn list_databases(&self) -> Result<Vec<String>, MongoDbError> {
+    pub async fn list_databases(&self) -> Result<(), Error> {
         let databases = self.client
             .list_databases(None, None)
             .await
@@ -693,7 +693,7 @@ impl MongoDbConnection {
     }
 
     /// Drop database
-    pub async fn drop_database(&self, name: &str) -> Result<(), MongoDbError> {
+    pub async fn drop_database(&self, name: &str) -> Result<(), Error> {
         self.client
             .database(name)
             .drop(None)
@@ -704,7 +704,7 @@ impl MongoDbConnection {
     }
 
     /// Test connection
-    pub async fn ping(&self) -> Result<(), MongoDbError> {
+    pub async fn ping(&self) -> Result<(), Error> {
         self.client
             .database("admin")
             .run_command(doc! {"ping": 1}, None)
@@ -735,7 +735,7 @@ impl MongoDbDriver {
     }
 
     /// Add a connection with a name
-    pub async fn add_connection(&self, name: String, config: MongoDbConfig) -> Result<(), MongoDbError> {
+    pub async fn add_connection(&self, name: String, config: MongoDbConfig) -> Result<(), Error> {
         let connection = MongoDbConnection::new(config).await?;
         let mut connections = self.connections.write().await;
         connections.insert(name, connection);
@@ -743,7 +743,7 @@ impl MongoDbDriver {
     }
 
     /// Get a connection by name
-    pub async fn get_connection(&self, name: &str) -> Result<MongoDbConnection, MongoDbError> {
+    pub async fn get_connection(&self, name: &str) -> Result<(), Error> {
         let connections = self.connections.read().await;
         connections.get(name)
             .cloned()
@@ -751,7 +751,7 @@ impl MongoDbDriver {
     }
 
     /// Remove a connection
-    pub async fn remove_connection(&self, name: &str) -> Result<(), MongoDbError> {
+    pub async fn remove_connection(&self, name: &str) -> Result<(), Error> {
         let mut connections = self.connections.write().await;
         connections.remove(name)
             .ok_or_else(|| MongoDbError::ConnectionFailed(format!("Connection '{}' not found", name)))?;
@@ -765,12 +765,12 @@ impl MongoDbDriver {
     }
 
     /// Create a default connection
-    pub async fn connect(config: MongoDbConfig) -> Result<MongoDbConnection, MongoDbError> {
+    pub async fn connect(config: MongoDbConfig) -> Result<(), Error> {
         MongoDbConnection::new(config).await
     }
 
     /// Create connection with default configuration
-    pub async fn connect_default() -> Result<MongoDbConnection, MongoDbError> {
+    pub async fn connect_default() -> Result<(), Error> {
         Self::connect(MongoDbConfig::default()).await
     }
 }
@@ -782,7 +782,7 @@ impl Default for MongoDbDriver {
 }
 
 /// Utility functions for BSON/Value conversion
-fn value_to_bson(value: &Value) -> Result<Bson, MongoDbError> {
+fn value_to_bson(value: &Value) -> Result<(), Error> {
     match value {
         Value::Null => Ok(Bson::Null),
         Value::Bool(b) => Ok(Bson::Boolean(*b)),
@@ -790,7 +790,7 @@ fn value_to_bson(value: &Value) -> Result<Bson, MongoDbError> {
         Value::Float(f) => Ok(Bson::Double(*f)),
         Value::String(s) => Ok(Bson::String(s.clone())),
         Value::Array(arr) => {
-            let bson_arr: Result<Vec<Bson>, MongoDbError> = arr.iter()
+            let bson_arr: Result<(), Error> = arr.iter()
                 .map(value_to_bson)
                 .collect();
             Ok(Bson::Array(bson_arr?))
@@ -805,7 +805,7 @@ fn value_to_bson(value: &Value) -> Result<Bson, MongoDbError> {
     }
 }
 
-fn bson_to_value(bson: &Bson) -> Result<Value, MongoDbError> {
+fn bson_to_value(bson: &Bson) -> Result<(), Error> {
     match bson {
         Bson::Null => Ok(Value::Null),
         Bson::Boolean(b) => Ok(Value::Bool(*b)),
@@ -814,7 +814,7 @@ fn bson_to_value(bson: &Bson) -> Result<Value, MongoDbError> {
         Bson::Double(f) => Ok(Value::Float(*f)),
         Bson::String(s) => Ok(Value::String(s.clone())),
         Bson::Array(arr) => {
-            let values: Result<Vec<Value>, MongoDbError> = arr.iter()
+            let values: Result<(), Error> = arr.iter()
                 .map(bson_to_value)
                 .collect();
             Ok(Value::Array(values?))
@@ -834,7 +834,7 @@ fn bson_to_value(bson: &Bson) -> Result<Value, MongoDbError> {
     }
 }
 
-fn value_to_document(value: &Value) -> Result<Document, MongoDbError> {
+fn value_to_document(value: &Value) -> Result<(), Error> {
     match value {
         Value::Object(obj) => {
             let mut doc = Document::new();
@@ -950,7 +950,7 @@ pub struct MongoDbTransaction {
 
 impl MongoDbTransaction {
     /// Start a new transaction
-    pub async fn start(connection: &MongoDbConnection) -> Result<Self, MongoDbError> {
+    pub async fn start(connection: &MongoDbConnection) -> Result<(), Error> {
         let mut session = connection.client.start_session(None)
             .await
             .map_err(MongoDbError::from)?;
@@ -963,7 +963,7 @@ impl MongoDbTransaction {
     }
 
     /// Commit the transaction
-    pub async fn commit(mut self) -> Result<(), MongoDbError> {
+    pub async fn commit(mut self) -> Result<(), Error> {
         self.session.commit_transaction()
             .await
             .map_err(MongoDbError::from)?;
@@ -972,7 +972,7 @@ impl MongoDbTransaction {
     }
 
     /// Abort the transaction
-    pub async fn abort(mut self) -> Result<(), MongoDbError> {
+    pub async fn abort(mut self) -> Result<(), Error> {
         self.session.abort_transaction()
             .await
             .map_err(MongoDbError::from)?;

@@ -70,7 +70,7 @@ struct LlvmProfileWriter {
 impl LlvmProfileWriter {
     fn new(file_path: &Path) -> Result<Self> {
         let file = File::create(file_path).map_err(|e| {
-            Error::Other(format!("Failed to create profile file: {}", e))
+            Error::General(format!("Failed to create profile file: {}", e))
         })?;
 
         Ok(Self {
@@ -113,13 +113,13 @@ impl ProfileDataWriter for LlvmProfileWriter {
     fn flush(&mut self) -> Result<()> {
         if !self.buffer.is_empty() {
             self.file.write_all(&self.buffer).map_err(|e| {
-                Error::Other(format!("Failed to write profile data: {}", e))
+                Error::General(format!("Failed to write profile data: {}", e))
             })?;
             self.buffer.clear();
         }
         
         self.file.flush().map_err(|e| {
-            Error::Other(format!("Failed to flush profile data: {}", e))
+            Error::General(format!("Failed to flush profile data: {}", e))
         })?;
         
         Ok(())
@@ -167,7 +167,7 @@ impl PerformanceCounterCollector {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|e| Error::Other(format!("Failed to start perf: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to start perf: {}", e)))?;
 
         self.perf_process = Some(child);
         debug!("Started performance counter collection for PID {}", pid);
@@ -178,11 +178,11 @@ impl PerformanceCounterCollector {
     fn stop_collection(&mut self) -> Result<HashMap<String, u64>> {
         if let Some(mut child) = self.perf_process.take() {
             child.terminate().map_err(|e| {
-                Error::Other(format!("Failed to terminate perf process: {}", e))
+                Error::General(format!("Failed to terminate perf process: {}", e))
             })?;
 
             child.wait().map_err(|e| {
-                Error::Other(format!("Failed to wait for perf process: {}", e))
+                Error::General(format!("Failed to wait for perf process: {}", e))
             })?;
         }
 
@@ -199,14 +199,14 @@ impl PerformanceCounterCollector {
         }
 
         let file = File::open(&self.output_file).map_err(|e| {
-            Error::Other(format!("Failed to open perf output: {}", e))
+            Error::General(format!("Failed to open perf output: {}", e))
         })?;
 
         let reader = BufReader::new(file);
         
         for line in reader.split("\n") {
             let line = line.map_err(|e| {
-                Error::Other(format!("Failed to read perf output line: {}", e))
+                Error::General(format!("Failed to read perf output line: {}", e))
             })?;
 
             // Parse lines like "1,234,567      cycles"
@@ -256,7 +256,7 @@ impl SamplingProfiler {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|e| Error::Other(format!("Failed to start perf record: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to start perf record: {}", e)))?;
 
         self.profiler_process = Some(child);
         debug!("Started sampling profiler for PID {} at {}Hz", pid, self.sampling_rate);
@@ -267,11 +267,11 @@ impl SamplingProfiler {
     fn stop_sampling(&mut self) -> Result<()> {
         if let Some(mut child) = self.profiler_process.take() {
             child.terminate().map_err(|e| {
-                Error::Other(format!("Failed to terminate sampling profiler: {}", e))
+                Error::General(format!("Failed to terminate sampling profiler: {}", e))
             })?;
 
             child.wait().map_err(|e| {
-                Error::Other(format!("Failed to wait for sampling profiler: {}", e))
+                Error::General(format!("Failed to wait for sampling profiler: {}", e))
             })?;
         }
 
@@ -289,7 +289,7 @@ impl SamplingProfiler {
             .arg("-i")
             .arg(&self.output_file)
             .output()
-            .map_err(|e| Error::Other(format!("Failed to run perf script: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to run perf script: {}", e)))?;
 
         let script_output = String::from_utf8_lossy(&output.stdout);
         self.parse_perf_script_output(&script_output)
@@ -548,13 +548,13 @@ impl ProfileCollector {
         info!("Loading profile data from: {:?}", profile_path);
 
         let data = std::fs::read_to_string(profile_path).map_err(|e| {
-            Error::Other(format!("Failed to read profile data: {}", e))
+            Error::General(format!("Failed to read profile data: {}", e))
         })?;
 
         if profile_path.extension().and_then(|s| s.to_str()) == Some("json") {
             // JSON format
             serde_json::from_str(&data).map_err(|e| {
-                Error::Other(format!("Failed to parse JSON profile data: {}", e))
+                Error::General(format!("Failed to parse JSON profile data: {}", e))
             })
         } else {
             // Custom binary format or LLVM profdata format
@@ -570,11 +570,11 @@ impl ProfileCollector {
         if profile_path.extension().and_then(|s| s.to_str()) == Some("json") {
             // Save as JSON
             let data = serde_json::to_string_pretty(profile_data).map_err(|e| {
-                Error::Other(format!("Failed to serialize profile data: {}", e))
+                Error::General(format!("Failed to serialize profile data: {}", e))
             })?;
 
             std::fs::write(profile_path, data).map_err(|e| {
-                Error::Other(format!("Failed to write profile data: {}", e))
+                Error::General(format!("Failed to write profile data: {}", e))
             })?;
         } else {
             // Save in LLVM profdata format
@@ -599,7 +599,7 @@ impl ProfileCollector {
         }
 
         let content = std::fs::read_to_string(&profile_file).map_err(|e| {
-            Error::Other(format!("Failed to read raw profile data: {}", e))
+            Error::General(format!("Failed to read raw profile data: {}", e))
         })?;
 
         self.parse_raw_profile_data(&content)

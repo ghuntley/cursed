@@ -44,7 +44,7 @@ extern "C" {
 }
 
 /// Initialize the async runtime system
-pub fn initialize_async_runtime() -> Result<(), crate::error::Error> {
+pub fn initialize_async_runtime() -> Result<(), Error> {
     runtime::initialize_global_async_runtime()
 }
 

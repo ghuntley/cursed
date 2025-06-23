@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use std::collections::VecDeque;
 
 /// fr fr Result type for timing analysis
-pub type TimingAnalysisResult<T> = Result<T, SecurityAnalysisError>;
+pub type TimingAnalysisResult<(), Error>;
 
 /// fr fr Timing analysis result
 #[derive(Debug, Clone)]

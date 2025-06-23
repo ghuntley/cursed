@@ -377,6 +377,31 @@ impl DatabaseError {
             _ => ErrorSeverity::Error,
         }
     }
+
+    /// slay Create a connection error
+    pub fn Connection(message: String) -> Self {
+        Self::new(DatabaseErrorKind::ConnectionError, &message)
+    }
+
+    /// slay Create a query error
+    pub fn Query(message: String) -> Self {
+        Self::new(DatabaseErrorKind::QueryError, &message)
+    }
+
+    /// slay Create a transaction error
+    pub fn Transaction(message: String) -> Self {
+        Self::new(DatabaseErrorKind::TransactionError, &message)
+    }
+
+    /// slay Create a general error
+    pub fn General(message: String) -> Self {
+        Self::new(DatabaseErrorKind::Unknown, &message)
+    }
+
+    /// slay Create a configuration error
+    pub fn Configuration(message: String) -> Self {
+        Self::new(DatabaseErrorKind::ConfigurationError, &message)
+    }
 }
 
 impl Display for DatabaseError {
@@ -559,7 +584,7 @@ impl DatabaseError {
 }
 
 /// fr fr Result type alias for database operations
-pub type DatabaseResult<T> = Result<T, DatabaseError>;
+pub type DatabaseResult<(), Error>;
 
 /// fr fr Helper macro for creating database errors with location
 #[macro_export]

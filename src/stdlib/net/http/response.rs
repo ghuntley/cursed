@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// HTTP response types for CURSED networking
 
 use crate::stdlib::net::http::{Status, HttpHeaders, HttpVersion};

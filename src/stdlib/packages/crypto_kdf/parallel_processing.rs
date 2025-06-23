@@ -468,7 +468,7 @@ impl ParallelUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Parallel KDF computation
-pub fn parallel_kdf(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn parallel_kdf(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("parallel_kdf requires password, salt, and iterations arguments".to_string()));
     }

@@ -221,7 +221,7 @@ pub struct DocumentationSystem {
 impl DocumentationSystem {
     /// Create a new documentation system with the given configuration
     #[instrument(skip(config))]
-    pub fn new(config: DocumentationConfig) -> Result<Self, Error> {
+    pub fn new(config: DocumentationConfig) -> Result<(), Error> {
         info!("Initializing documentation system");
         debug!("Output directory: {:?}", config.output_dir);
         debug!("Source directories: {:?}", config.source_dirs);
@@ -241,7 +241,7 @@ impl DocumentationSystem {
 
     /// Generate documentation for all configured source directories
     #[instrument(skip(self))]
-    pub async fn generate_all(&mut self) -> Result<DocumentationResult, Error> {
+    pub async fn generate_all(&mut self) -> Result<(), Error> {
         info!("Starting documentation generation for all sources");
         
         let start_time = std::time::Instant::now();
@@ -304,7 +304,7 @@ impl DocumentationSystem {
 
     /// Process a single directory for documentation
     #[instrument(skip(self))]
-    async fn process_directory(&mut self, dir: &Path) -> Result<(usize, usize), Error> {
+    async fn process_directory(&mut self, dir: &Path) -> Result<(), Error> {
         let mut files_processed = 0;
         let mut items_extracted = 0;
         
@@ -332,7 +332,7 @@ impl DocumentationSystem {
 
     /// Process a single CURSED source file
     #[instrument(skip(self))]
-    async fn process_file(&mut self, file_path: &Path) -> Result<ExtractedDocumentation, Error> {
+    async fn process_file(&mut self, file_path: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Read source code
@@ -364,7 +364,7 @@ impl DocumentationSystem {
     }
 
     /// Find all CURSED source files in a directory
-    fn find_source_files(&self, dir: &Path) -> Result<Vec<PathBuf>, Error> {
+    fn find_source_files(&self, dir: &Path) -> Result<(), Error> {
         let mut source_files = Vec::new();
         
         if dir.is_file() {
@@ -562,7 +562,7 @@ impl DocumentationSystem {
 }
 
 /// Load configuration from file
-pub fn load_config(config_path: &Path) -> Result<DocumentationConfig, Error> {
+pub fn load_config(config_path: &Path) -> Result<(), Error> {
     let config_str = std::fs::read_to_string(config_path)
         .map_err(|e| Error::FileReadError(config_path.to_path_buf(), e.to_string()))?;
     

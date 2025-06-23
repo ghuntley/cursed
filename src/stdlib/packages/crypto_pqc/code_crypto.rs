@@ -53,7 +53,7 @@ impl CodeConfig {
     }
     
     /// vibes Validate code configuration
-    pub fn validate(&self) -> Result<(), CodeError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.dimension >= self.code_length {
             return Err(CodeError::InvalidConfig("Dimension must be less than code length".to_string()));
         }
@@ -141,7 +141,7 @@ pub struct CodeEngine {
 
 impl CodeEngine {
     /// slay Create new code-based engine
-    pub fn new(config: CodeConfig) -> Result<Self, CodeError> {
+    pub fn new(config: CodeConfig) -> Result<(), Error> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -157,7 +157,7 @@ impl CodeEngine {
     }
     
     /// bestie Generate code-based key pair
-    pub fn generate_keypair(&mut self) -> Result<CodeKeyPair, CodeError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         match self.config.scheme_type {
             CodeSchemeType::McEliece => self.generate_mceliece_keypair(),
             CodeSchemeType::Niederreiter => self.generate_niederreiter_keypair(),
@@ -166,7 +166,7 @@ impl CodeEngine {
     }
     
     /// vibes Generate McEliece key pair
-    fn generate_mceliece_keypair(&mut self) -> Result<CodeKeyPair, CodeError> {
+    fn generate_mceliece_keypair(&mut self) -> Result<(), Error> {
         let n = self.config.code_length;
         let k = self.config.dimension;
         let t = self.config.error_capacity;
@@ -216,14 +216,14 @@ impl CodeEngine {
     }
     
     /// periodt Generate Niederreiter key pair
-    fn generate_niederreiter_keypair(&mut self) -> Result<CodeKeyPair, CodeError> {
+    fn generate_niederreiter_keypair(&mut self) -> Result<(), Error> {
         // Similar to McEliece but uses parity check matrix instead
         // This is a placeholder for the full implementation
         Err(CodeError::UnsupportedScheme("Niederreiter not fully implemented".to_string()))
     }
     
     /// sus Encrypt message using code-based cryptosystem
-    pub fn encrypt(&mut self, message: &[u8], public_key: &CodePublicKey) -> Result<Vec<u8>, CodeError> {
+    pub fn encrypt(&mut self, message: &[u8], public_key: &CodePublicKey) -> Result<(), Error> {
         let n = public_key.code_length;
         let k = public_key.dimension;
         let t = public_key.error_capacity;
@@ -247,7 +247,7 @@ impl CodeEngine {
     }
     
     /// facts Decrypt ciphertext using code-based cryptosystem
-    pub fn decrypt(&mut self, ciphertext: &[u8], private_key: &CodePrivateKey) -> Result<Vec<u8>, CodeError> {
+    pub fn decrypt(&mut self, ciphertext: &[u8], private_key: &CodePrivateKey) -> Result<(), Error> {
         let n = private_key.code_length;
         let k = private_key.dimension;
         
@@ -271,7 +271,7 @@ impl CodeEngine {
     }
     
     /// yolo Generate Goppa polynomial
-    fn generate_goppa_polynomial(&mut self, degree: usize) -> Result<Vec<u32>, CodeError> {
+    fn generate_goppa_polynomial(&mut self, degree: usize) -> Result<(), Error> {
         let mut coefficients = Vec::with_capacity(degree + 1);
         
         // Generate random polynomial of specified degree
@@ -293,14 +293,14 @@ impl CodeEngine {
     }
     
     /// stan Check if polynomial is irreducible (simplified)
-    fn is_irreducible(&self, _poly: &[u32]) -> Result<bool, CodeError> {
+    fn is_irreducible(&self, _poly: &[u32]) -> Result<(), Error> {
         // Simplified irreducibility test
         // In practice, use proper irreducibility testing algorithms
         Ok(true)
     }
     
     /// bestie Generate random invertible matrix
-    fn generate_random_invertible_matrix(&mut self, size: usize) -> Result<Matrix, CodeError> {
+    fn generate_random_invertible_matrix(&mut self, size: usize) -> Result<(), Error> {
         loop {
             let matrix = self.generate_random_matrix(size, size)?;
             if self.is_invertible(&matrix)? {
@@ -310,7 +310,7 @@ impl CodeEngine {
     }
     
     /// vibes Generate random matrix
-    fn generate_random_matrix(&mut self, rows: usize, cols: usize) -> Result<Matrix, CodeError> {
+    fn generate_random_matrix(&mut self, rows: usize, cols: usize) -> Result<(), Error> {
         let mut data = Vec::with_capacity(rows * cols);
         
         for _ in 0..(rows * cols) {
@@ -322,14 +322,14 @@ impl CodeEngine {
     }
     
     /// periodt Check if matrix is invertible
-    fn is_invertible(&self, matrix: &Matrix) -> Result<bool, CodeError> {
+    fn is_invertible(&self, matrix: &Matrix) -> Result<(), Error> {
         // Simplified invertibility check using determinant
         // In practice, use proper Gaussian elimination
         Ok(matrix.rows == matrix.cols && matrix.rows > 0)
     }
     
     /// sus Generate permutation matrix
-    fn generate_permutation_matrix(&mut self, size: usize) -> Result<PermutationMatrix, CodeError> {
+    fn generate_permutation_matrix(&mut self, size: usize) -> Result<(), Error> {
         let mut permutation = (0..size).collect::<Vec<_>>();
         
         // Fisher-Yates shuffle
@@ -342,7 +342,7 @@ impl CodeEngine {
     }
     
     /// facts Helper methods for bit/byte conversion
-    fn bytes_to_bits(&self, bytes: &[u8], target_length: usize) -> Result<Vec<u8>, CodeError> {
+    fn bytes_to_bits(&self, bytes: &[u8], target_length: usize) -> Result<(), Error> {
         let mut bits = Vec::new();
         
         for &byte in bytes {
@@ -356,7 +356,7 @@ impl CodeEngine {
         Ok(bits)
     }
     
-    fn bits_to_bytes(&self, bits: &[u8]) -> Result<Vec<u8>, CodeError> {
+    fn bits_to_bytes(&self, bits: &[u8]) -> Result<(), Error> {
         let mut bytes = Vec::new();
         
         for chunk in bits.chunks(8) {
@@ -373,14 +373,14 @@ impl CodeEngine {
     }
     
     /// yolo Matrix multiplication S * G * P
-    fn multiply_matrices_sgp(&self, s: &Matrix, g: &Matrix, p: &PermutationMatrix) -> Result<Matrix, CodeError> {
+    fn multiply_matrices_sgp(&self, s: &Matrix, g: &Matrix, p: &PermutationMatrix) -> Result<(), Error> {
         // This is a simplified implementation
         // In practice, use optimized matrix operations
         let sg = self.multiply_matrices(s, g)?;
         self.multiply_matrix_permutation(&sg, p)
     }
     
-    fn multiply_matrices(&self, a: &Matrix, b: &Matrix) -> Result<Matrix, CodeError> {
+    fn multiply_matrices(&self, a: &Matrix, b: &Matrix) -> Result<(), Error> {
         if a.cols != b.rows {
             return Err(CodeError::MatrixError("Matrix dimensions don't match for multiplication".to_string()));
         }
@@ -400,7 +400,7 @@ impl CodeEngine {
         Ok(Matrix::new(result, a.rows, b.cols))
     }
     
-    fn multiply_matrix_permutation(&self, matrix: &Matrix, perm: &PermutationMatrix) -> Result<Matrix, CodeError> {
+    fn multiply_matrix_permutation(&self, matrix: &Matrix, perm: &PermutationMatrix) -> Result<(), Error> {
         let mut result = vec![0u8; matrix.rows * matrix.cols];
         
         for i in 0..matrix.rows {
@@ -414,7 +414,7 @@ impl CodeEngine {
     }
     
     /// stan Placeholder methods for Goppa decoding
-    fn encode_message(&self, message: &[u8], generator: &Matrix) -> Result<Vec<u8>, CodeError> {
+    fn encode_message(&self, message: &[u8], generator: &Matrix) -> Result<(), Error> {
         // Simplified encoding: multiply message vector by generator matrix
         if message.len() != generator.rows {
             return Err(CodeError::EncodingError("Message length doesn't match generator matrix".to_string()));
@@ -433,7 +433,7 @@ impl CodeEngine {
         Ok(codeword)
     }
     
-    fn generate_error_vector(&mut self, length: usize, weight: usize) -> Result<Vec<u8>, CodeError> {
+    fn generate_error_vector(&mut self, length: usize, weight: usize) -> Result<(), Error> {
         let mut error = vec![0u8; length];
         let mut positions = Vec::new();
         
@@ -449,7 +449,7 @@ impl CodeEngine {
         Ok(error)
     }
     
-    fn add_vectors(&self, a: &[u8], b: &[u8]) -> Result<Vec<u8>, CodeError> {
+    fn add_vectors(&self, a: &[u8], b: &[u8]) -> Result<(), Error> {
         if a.len() != b.len() {
             return Err(CodeError::VectorError("Vector lengths don't match".to_string()));
         }
@@ -458,7 +458,7 @@ impl CodeEngine {
         Ok(result)
     }
     
-    fn apply_inverse_permutation(&self, vector: &[u8], perm: &PermutationMatrix) -> Result<Vec<u8>, CodeError> {
+    fn apply_inverse_permutation(&self, vector: &[u8], perm: &PermutationMatrix) -> Result<(), Error> {
         let mut result = vec![0u8; vector.len()];
         
         for (i, &pos) in perm.permutation.iter().enumerate() {
@@ -468,19 +468,19 @@ impl CodeEngine {
         Ok(result)
     }
     
-    fn decode_goppa(&self, _vector: &[u8], _private_key: &CodePrivateKey) -> Result<Vec<u8>, CodeError> {
+    fn decode_goppa(&self, _vector: &[u8], _private_key: &CodePrivateKey) -> Result<(), Error> {
         // Placeholder for Goppa decoding algorithm
         // In practice, implement Patterson's algorithm or similar
         Err(CodeError::DecodingError("Goppa decoding not implemented".to_string()))
     }
     
-    fn apply_inverse_s_matrix(&self, codeword: &[u8], _s_matrix: &Matrix, k: usize) -> Result<Vec<u8>, CodeError> {
+    fn apply_inverse_s_matrix(&self, codeword: &[u8], _s_matrix: &Matrix, k: usize) -> Result<(), Error> {
         // Placeholder for S matrix inversion
         // Return first k bits as message (simplified)
         Ok(codeword[..k].to_vec())
     }
     
-    fn remove_padding(&self, bytes: &[u8]) -> Result<Vec<u8>, CodeError> {
+    fn remove_padding(&self, bytes: &[u8]) -> Result<(), Error> {
         // Remove trailing zeros (simplified padding removal)
         let mut result = bytes.to_vec();
         while let Some(&0) = result.last() {
@@ -537,7 +537,7 @@ pub struct FiniteField {
 }
 
 impl FiniteField {
-    pub fn new(size: u32) -> Result<Self, CodeError> {
+    pub fn new(size: u32) -> Result<(), Error> {
         if !size.is_power_of_two() {
             return Err(CodeError::InvalidConfig("Field size must be power of 2".to_string()));
         }
@@ -559,7 +559,7 @@ pub struct GoppaCode {
 }
 
 impl GoppaCode {
-    pub fn new(polynomial: Vec<u32>, length: usize, dimension: usize, error_capacity: usize, _field: &FiniteField) -> Result<Self, CodeError> {
+    pub fn new(polynomial: Vec<u32>, length: usize, dimension: usize, error_capacity: usize, _field: &FiniteField) -> Result<(), Error> {
         Ok(Self {
             polynomial,
             length,
@@ -568,7 +568,7 @@ impl GoppaCode {
         })
     }
     
-    pub fn generator_matrix(&self) -> Result<Matrix, CodeError> {
+    pub fn generator_matrix(&self) -> Result<(), Error> {
         // Placeholder for generator matrix computation
         // In practice, compute from Goppa polynomial
         let data = vec![0u8; self.dimension * self.length];
@@ -586,19 +586,19 @@ pub struct CodeKeyPair {
 
 impl CodeKeyPair {
     /// slay Generate new code-based key pair
-    pub fn generate(config: &CodeConfig) -> Result<Self, CodeError> {
+    pub fn generate(config: &CodeConfig) -> Result<(), Error> {
         let mut engine = CodeEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Encrypt message with public key
-    pub fn encrypt(&self, message: &[u8]) -> Result<Vec<u8>, CodeError> {
+    pub fn encrypt(&self, message: &[u8]) -> Result<(), Error> {
         let mut engine = CodeEngine::new(self.config.clone())?;
         engine.encrypt(message, &self.public_key)
     }
     
     /// vibes Decrypt ciphertext with private key
-    pub fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, CodeError> {
+    pub fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
         let mut engine = CodeEngine::new(self.config.clone())?;
         engine.decrypt(ciphertext, &self.private_key)
     }
@@ -683,7 +683,7 @@ impl CodeUtils {
     }
     
     /// bestie Validate code parameters for production
-    pub fn validate_for_production(config: &CodeConfig) -> Result<CodeSecurityValidation, CodeError> {
+    pub fn validate_for_production(config: &CodeConfig) -> Result<(), Error> {
         let security_bits = Self::estimate_security_level(config);
         let is_secure = security_bits >= 128.0;
         

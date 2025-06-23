@@ -198,7 +198,7 @@ impl CopyManager {
         table: &str,
         reader: R,
         options: CopyOptions,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let copy_sql = self.build_copy_in_sql(table, &options);
         
         let conn = self.conn.lock().map_err(|_| {
@@ -240,7 +240,7 @@ impl CopyManager {
         table: &str,
         writer: W,
         options: CopyOptions,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let copy_sql = self.build_copy_out_sql(table, &options);
         
         let conn = self.conn.lock().map_err(|_| {
@@ -294,7 +294,7 @@ impl CopyManager {
         query: &str,
         writer: W,
         options: CopyOptions,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let copy_sql = format!("COPY ({}) TO STDOUT {}", query, options.to_pg_options());
         
         let conn = self.conn.lock().map_err(|_| {
@@ -343,7 +343,7 @@ impl CopyManager {
         table: &str,
         data: Vec<Vec<SqlValue>>,
         options: CopyOptions,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         // Convert structured data to format suitable for COPY
         let formatted_data = self.format_data_for_copy(data, &options)?;
         let cursor = std::io::Cursor::new(formatted_data);
@@ -379,7 +379,7 @@ impl CopyManager {
         conn: &SafePGconn,
         reader: &mut R,
         bytes_copied: &mut u64,
-    ) -> Result<(), PostgreSQLError> {
+    ) -> Result<(), Error> {
         let mut line = String::new();
         
         loop {
@@ -417,7 +417,7 @@ impl CopyManager {
         conn: &SafePGconn,
         reader: &mut R,
         bytes_copied: &mut u64,
-    ) -> Result<(), PostgreSQLError> {
+    ) -> Result<(), Error> {
         let mut buffer = [0u8; 8192]; // 8KB buffer
         
         loop {
@@ -454,7 +454,7 @@ impl CopyManager {
         &self,
         data: Vec<Vec<SqlValue>>,
         options: &CopyOptions,
-    ) -> Result<Vec<u8>, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let mut result = Vec::new();
         
         match options.format {
@@ -497,7 +497,7 @@ impl CopyManager {
     }
     
     /// slay Format SqlValue for text COPY format
-    fn format_value_for_text(&self, value: &SqlValue, null_str: &str) -> Result<String, PostgreSQLError> {
+    fn format_value_for_text(&self, value: &SqlValue, null_str: &str) -> Result<(), Error> {
         match value {
             SqlValue::Null => Ok(null_str.to_string()),
             SqlValue::Boolean(b) => Ok(if *b { "t".to_string() } else { "f".to_string() }),
@@ -526,7 +526,7 @@ impl CopyManager {
     }
     
     /// slay Format SqlValue for CSV COPY format
-    fn format_value_for_csv(&self, value: &SqlValue, null_str: &str, quote_char: char) -> Result<String, PostgreSQLError> {
+    fn format_value_for_csv(&self, value: &SqlValue, null_str: &str, quote_char: char) -> Result<(), Error> {
         match value {
             SqlValue::Null => Ok(null_str.to_string()),
             SqlValue::Boolean(b) => Ok(if *b { "true".to_string() } else { "false".to_string() }),
@@ -583,7 +583,7 @@ impl BulkOperations {
         reader: R,
         has_header: bool,
         delimiter: Option<String>,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let options = CopyOptions::csv()
             .delimiter(delimiter.unwrap_or_else(|| ",".to_string()));
         
@@ -603,7 +603,7 @@ impl BulkOperations {
         writer: W,
         include_header: bool,
         delimiter: Option<String>,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let options = CopyOptions::csv()
             .delimiter(delimiter.unwrap_or_else(|| ",".to_string()));
         
@@ -622,7 +622,7 @@ impl BulkOperations {
         table: &str,
         data: Vec<Vec<SqlValue>>,
         columns: Option<Vec<String>>,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let options = if let Some(cols) = columns {
             CopyOptions::text().columns(cols)
         } else {
@@ -638,7 +638,7 @@ impl BulkOperations {
         query: &str,
         writer: W,
         format: CopyFormat,
-    ) -> Result<u64, PostgreSQLError> {
+    ) -> Result<(), Error> {
         let options = match format {
             CopyFormat::Text => CopyOptions::text(),
             CopyFormat::Csv => CopyOptions::csv().with_header(),

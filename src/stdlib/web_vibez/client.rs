@@ -266,7 +266,7 @@ impl RequestBuilder {
     }
 
     /// Execute the request
-    pub fn send(self) -> Result<HttpResponse, HttpError> {
+    pub fn send(self) -> Result<(), Error> {
         // Use async runtime to execute the HTTP request
         let runtime = tokio::runtime::Runtime::new()
             .map_err(|e| HttpError::Other(format!("Failed to create async runtime: {}", e)))?;
@@ -275,7 +275,7 @@ impl RequestBuilder {
     }
 
     /// Execute the request asynchronously
-    async fn send_async(self) -> Result<HttpResponse, HttpError> {
+    async fn send_async(self) -> Result<(), Error> {
         // Validate URL
         Url::parse(&self.url)
             .map_err(|_| HttpError::InvalidUrl(self.url.clone()))?;
@@ -397,7 +397,7 @@ impl HttpResponse {
     }
 
     /// Get response body as string
-    pub fn text(&self) -> Result<String, std::string::FromUtf8Error> {
+    pub fn text(&self) -> Result<(), Error> {
         String::from_utf8(self.body.clone())
     }
 
@@ -423,7 +423,7 @@ impl HttpResponse {
     }
 
     /// Parse JSON response (simplified)
-    pub fn json(&self) -> Result<String, HttpError> {
+    pub fn json(&self) -> Result<(), Error> {
         // In a real implementation, this would parse JSON using a proper parser
         // For now, just return the text if it looks like JSON
         let text = self.text().map_err(|_| HttpError::InvalidResponse)?;

@@ -63,7 +63,7 @@ impl LspServer {
 
     /// Start the LSP server
     #[instrument(skip(self))]
-    pub async fn start(self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start(self) -> Result<(), Error>> {
         info!("Starting CURSED Language Server");
         info!("Server mode: {:?}", self.config.mode);
         

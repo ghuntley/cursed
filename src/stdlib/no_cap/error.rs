@@ -28,7 +28,7 @@ impl fmt::Display for NoCapError {
 impl std::error::Error for NoCapError {}
 
 /// Result type for no_cap operations
-pub type NoCapResult<T> = Result<T, NoCapError>;
+pub type NoCapResult<(), Error>;
 
 /// Standard error instances as specified in the API
 pub struct ErrorConstants;

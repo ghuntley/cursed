@@ -153,7 +153,7 @@ pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) ->
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        let package_config = crate::codegen::crate::codegen::llvm::LlvmPackageConfig::default();
         
         codegen.initialize_package_integration(package_manager, package_config)?;
         
@@ -206,7 +206,7 @@ pub fn run_file_enhanced(
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        let package_config = crate::codegen::crate::codegen::llvm::LlvmPackageConfig::default();
         
         codegen.initialize_package_integration(package_manager, package_config)?;
         
@@ -292,7 +292,7 @@ pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        let package_config = crate::codegen::crate::codegen::llvm::LlvmPackageConfig::default();
         
         codegen.initialize_package_integration(package_manager, package_config)?;
         
@@ -324,12 +324,12 @@ pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::
 }
 
 /// Compile CURSED source to LLVM IR
-pub fn compile_to_ir(source: &str) -> Result<String, Error> {
+pub fn compile_to_ir(source: &str) -> Result<(), Error> {
     compile_to_ir_with_packages(source, None)
 }
 
 /// Compile CURSED source to LLVM IR with specified optimization level
-pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> Result<String, Error> {
+pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> Result<(), Error> {
     compile_to_ir_with_optimization_and_packages(source, optimization_level, None)
 }
 
@@ -338,7 +338,7 @@ pub fn compile_to_ir_with_optimization_and_packages(
     source: &str, 
     optimization_level: Option<&str>, 
     source_file: Option<&std::path::Path>
-) -> Result<String, Error> {
+) -> Result<(), Error> {
     tracing::info!("Compiling CURSED source to LLVM IR with optimization and package management");
     
     let rt = tokio::runtime::Runtime::new()
@@ -353,7 +353,7 @@ pub fn compile_to_ir_with_optimization_and_packages(
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        let package_config = crate::codegen::crate::codegen::llvm::LlvmPackageConfig::default();
         
         codegen.initialize_package_integration(package_manager, package_config)?;
         
@@ -390,7 +390,7 @@ pub fn compile_to_ir_with_optimization_and_packages(
 }
 
 /// Compile CURSED source to LLVM IR with package management
-pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<String, Error> {
+pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<(), Error> {
     tracing::info!("Compiling CURSED source to LLVM IR with package management");
     
     let rt = tokio::runtime::Runtime::new()
@@ -405,7 +405,7 @@ pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path:
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        let package_config = crate::codegen::crate::codegen::llvm::LlvmPackageConfig::default();
         
         codegen.initialize_package_integration(package_manager, package_config)?;
         
@@ -441,7 +441,7 @@ pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) 
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        let package_config = crate::codegen::crate::codegen::llvm::LlvmPackageConfig::default();
         
         codegen.initialize_package_integration(package_manager, package_config)?;
         
@@ -457,7 +457,7 @@ pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) 
 }
 
 /// Format CURSED source code
-pub fn format(source: &str) -> Result<String, Error> {
+pub fn format(source: &str) -> Result<(), Error> {
     tracing::info!("Formatting CURSED source code");
     
     // Create lexer and parser to validate syntax first
@@ -482,7 +482,7 @@ pub fn format(source: &str) -> Result<String, Error> {
 }
 
 /// Execute CURSED code in REPL context
-pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager) -> Result<String, Error> {
+pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager) -> Result<(), Error> {
     use crate::repl::SessionManager;
     
     tracing::info!("Executing REPL code: {}", code);
@@ -519,7 +519,7 @@ pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager)
 }
 
 /// Helper function to try parsing and evaluating REPL input
-fn try_parse_and_evaluate(code: &str) -> Result<String, Error> {
+fn try_parse_and_evaluate(code: &str) -> Result<(), Error> {
     // Create lexer and parser
     let lexer = crate::lexer::Lexer::new(code.to_string());
     let mut parser = crate::parser::Parser::new(lexer)?;

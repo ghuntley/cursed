@@ -23,7 +23,7 @@ pub struct Promise<T> {
 
 struct PromiseInner<T> {
     state: PromiseState,
-    result: Option<Result<T, FutureError>>,
+    result: Option<Result<(), Error>>,
     wakers: Vec<Waker>,
 }
 
@@ -158,7 +158,7 @@ pub struct PromiseResolver<T> {
 
 impl<T> PromiseResolver<T> {
     /// Resolve the promise with a value
-    pub fn resolve(self, value: T) -> Result<(), FutureError> {
+    pub fn resolve(self, value: T) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
 
         if inner.state != PromiseState::Pending {
@@ -189,7 +189,7 @@ pub struct PromiseRejecter<T> {
 
 impl<T> PromiseRejecter<T> {
     /// Reject the promise with an error
-    pub fn reject(self, error: FutureError) -> Result<(), FutureError> {
+    pub fn reject(self, error: FutureError) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
 
         if inner.state != PromiseState::Pending {
@@ -213,7 +213,7 @@ impl<T> PromiseRejecter<T> {
     }
 
     /// Reject with a simple message
-    pub fn reject_with_message(self, message: &str) -> Result<(), FutureError> {
+    pub fn reject_with_message(self, message: &str) -> Result<(), Error> {
         self.reject(FutureError::Failed(message.to_string()))
     }
 }

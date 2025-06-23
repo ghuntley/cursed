@@ -18,7 +18,7 @@ pub struct ExampleGenerator {
 
 impl ExampleGenerator {
     /// Create new example generator
-    pub fn new(cursed_binary: PathBuf) -> Result<Self, Error> {
+    pub fn new(cursed_binary: PathBuf) -> Result<(), Error> {
         let temp_dir = std::env::temp_dir().join("cursed_doc_examples");
         fs::create_dir_all(&temp_dir).map_err(Error::Io)?;
         
@@ -55,7 +55,7 @@ impl ExampleGenerator {
     }
 
     /// Generate example for a function
-    fn generate_function_example(&self, item: &DocumentationItem) -> Result<Option<Example>, Error> {
+    fn generate_function_example(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut example_code = String::new();
         
         // Import statement
@@ -100,7 +100,7 @@ impl ExampleGenerator {
     }
 
     /// Generate example for a struct
-    fn generate_struct_example(&self, item: &DocumentationItem) -> Result<Option<Example>, Error> {
+    fn generate_struct_example(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut example_code = String::new();
         
         // Import statement
@@ -141,7 +141,7 @@ impl ExampleGenerator {
     }
 
     /// Generate example for an interface
-    fn generate_interface_example(&self, item: &DocumentationItem) -> Result<Option<Example>, Error> {
+    fn generate_interface_example(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut example_code = String::new();
         
         // Import statement
@@ -183,7 +183,7 @@ impl ExampleGenerator {
     }
 
     /// Generate function call with appropriate parameters
-    fn generate_function_call(&self, name: &str, parameters: &[crate::docs::generator::Parameter]) -> Result<String, Error> {
+    fn generate_function_call(&self, name: &str, parameters: &[crate::docs::generator::Parameter]) -> Result<(), Error> {
         let mut call = format!("{}(", name);
         
         let mut param_values = Vec::new();
@@ -199,7 +199,7 @@ impl ExampleGenerator {
     }
 
     /// Generate default value for a type
-    fn generate_default_value(&self, type_name: &Option<String>) -> Result<String, Error> {
+    fn generate_default_value(&self, type_name: &Option<String>) -> Result<(), Error> {
         match type_name.as_deref() {
             Some("i32") | Some("i64") | Some("int") => Ok("42".to_string()),
             Some("f32") | Some("f64") | Some("float") => Ok("3.14".to_string()),
@@ -249,7 +249,7 @@ impl ExampleGenerator {
     }
 
     /// Extract examples from test files
-    pub fn extract_examples_from_tests(&self, test_dir: &Path) -> Result<HashMap<String, Vec<Example>>, Error> {
+    pub fn extract_examples_from_tests(&self, test_dir: &Path) -> Result<(), Error> {
         let mut examples = HashMap::new();
         
         if !test_dir.exists() {
@@ -273,7 +273,7 @@ impl ExampleGenerator {
     }
 
     /// Extract examples from a single test file
-    fn extract_examples_from_file(&self, file_path: &Path) -> Result<HashMap<String, Vec<Example>>, Error> {
+    fn extract_examples_from_file(&self, file_path: &Path) -> Result<(), Error> {
         let content = fs::read_to_string(file_path).map_err(Error::Io)?;
         let mut examples = HashMap::new();
         
@@ -296,7 +296,7 @@ impl ExampleGenerator {
     }
 
     /// Extract example from a test function
-    fn extract_test_example(&self, lines: &[&str], start: usize) -> Result<Option<(String, Example)>, Error> {
+    fn extract_test_example(&self, lines: &[&str], start: usize) -> Result<(), Error> {
         // Find the test function
         let mut func_start = start;
         while func_start < lines.len() && !lines[func_start].contains("fn ") {
@@ -364,7 +364,7 @@ impl ExampleGenerator {
     }
 
     /// Clean test code to make it suitable for documentation
-    fn clean_test_code(&self, code: String) -> Result<String, Error> {
+    fn clean_test_code(&self, code: String) -> Result<(), Error> {
         let mut cleaned = code;
         
         // Remove test-specific annotations
@@ -389,7 +389,7 @@ impl ExampleGenerator {
     }
 
     /// Generate comprehensive example collection
-    pub fn generate_example_collection(&self, items: &[DocumentationItem], test_dir: Option<&Path>) -> Result<Vec<Example>, Error> {
+    pub fn generate_example_collection(&self, items: &[DocumentationItem], test_dir: Option<&Path>) -> Result<(), Error> {
         let mut all_examples = Vec::new();
         
         // Generate examples for each documented item
@@ -412,7 +412,7 @@ impl ExampleGenerator {
     }
 
     /// Generate comprehensive examples showcasing language features
-    fn generate_comprehensive_examples(&self) -> Result<Vec<Example>, Error> {
+    fn generate_comprehensive_examples(&self) -> Result<(), Error> {
         let mut examples = Vec::new();
         
         // Basic syntax example

@@ -8,7 +8,7 @@ use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 use super::{
     discovery::TestInfo,
     TestError, TestFrameworkResult

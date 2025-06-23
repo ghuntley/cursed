@@ -194,7 +194,7 @@ impl ChaCha20Poly1305 {
 }
 
 impl SymmetricCipher for ChaCha20Poly1305 {
-    fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn encrypt(&self, plaintext: &[u8]) -> Result<(), Error> {
         let result = Self::encrypt(self, plaintext)
             .map_err(|e| CipherError::OperationFailed(e.to_string()))?;
         
@@ -206,7 +206,7 @@ impl SymmetricCipher for ChaCha20Poly1305 {
         Ok(combined)
     }
     
-    fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, CipherError> {
+    fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
         if ciphertext.len() < CHACHA20_NONCE_SIZE + POLY1305_TAG_SIZE {
             return Err(CipherError::OperationFailed("Ciphertext too short".to_string()));
         }
@@ -309,7 +309,7 @@ impl ChaCha20Poly1305 {
 // Type aliases and constants
 pub type ChaCha20Key = SecureMemory;
 pub type ChaCha20Nonce = Vec<u8>;
-pub type ChaCha20Result<T> = Result<T, AdvancedCryptoError>;
+pub type ChaCha20Result<(), Error>;
 pub type ChaCha20Error = AdvancedCryptoError;
 
 /// Constants

@@ -255,21 +255,7 @@ pub enum ExitReason {
     Error(String),
 }
 
-/// Process priority levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Priority {
-    Highest,
-    High, 
-    Normal,
-    Low,
-    Lowest,
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Normal
-    }
-}
+// Priority enum is imported from control module to avoid duplication
 
 /// Process hierarchy tracking
 #[derive(Debug, Clone)]

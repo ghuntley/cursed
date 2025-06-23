@@ -137,7 +137,7 @@ impl CompilationCache {
         
         // Create cache directory structure
         fs::create_dir_all(&cache_directory)
-            .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create cache directory: {}", e)))?;
         
         for cache_type in [
             CacheType::CompiledObject,
@@ -149,7 +149,7 @@ impl CompilationCache {
         ] {
             let subdir = cache_directory.join(cache_type.file_extension());
             fs::create_dir_all(&subdir)
-                .map_err(|e| Error::Other(format!("Failed to create cache subdirectory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to create cache subdirectory: {}", e)))?;
         }
         
         // Load existing metadata
@@ -191,7 +191,7 @@ impl CompilationCache {
         
         // Include source content hash
         let source_content = fs::read(source_path)
-            .map_err(|e| Error::Other(format!("Failed to read source file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read source file: {}", e)))?;
         hasher.update(&source_content);
         
         // Include dependencies
@@ -199,7 +199,7 @@ impl CompilationCache {
             hasher.update(dep.to_string_lossy().as_bytes());
             if dep.exists() {
                 let dep_content = fs::read(dep)
-                    .map_err(|e| Error::Other(format!("Failed to read dependency: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to read dependency: {}", e)))?;
                 hasher.update(&dep_content);
             }
         }
@@ -258,7 +258,7 @@ impl CompilationCache {
         // Ensure parent directory exists
         if let Some(parent) = cache_file.parent() {
             fs::create_dir_all(parent)
-                .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to create cache directory: {}", e)))?;
         }
         
         // Write data (with compression if enabled)
@@ -266,7 +266,7 @@ impl CompilationCache {
             self.write_compressed(&cache_file, data)?
         } else {
             fs::write(&cache_file, data)
-                .map_err(|e| Error::Other(format!("Failed to write cache file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to write cache file: {}", e)))?;
             data.len()
         };
         
@@ -321,7 +321,7 @@ impl CompilationCache {
             self.read_compressed(cache_file)?
         } else {
             fs::read(cache_file)
-                .map_err(|e| Error::Other(format!("Failed to read cache file: {}", e)))?
+                .map_err(|e| Error::General(format!("Failed to read cache file: {}", e)))?
         };
         
         Ok(Some(data))
@@ -333,7 +333,7 @@ impl CompilationCache {
             // Remove file
             if entry.file_path.exists() {
                 fs::remove_file(&entry.file_path)
-                    .map_err(|e| Error::Other(format!("Failed to remove cache file: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to remove cache file: {}", e)))?;
             }
             
             self.stats.entry_count -= 1;
@@ -428,14 +428,14 @@ impl CompilationCache {
     /// Write compressed data
     fn write_compressed(&self, path: &Path, data: &[u8]) -> Result<usize> {
         let file = File::create(path)
-            .map_err(|e| Error::Other(format!("Failed to create compressed file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create compressed file: {}", e)))?;
         
         let mut encoder = GzEncoder::new(file, Compression::default());
         encoder.write_all(data)
-            .map_err(|e| Error::Other(format!("Failed to write compressed data: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write compressed data: {}", e)))?;
         
         encoder.finish()
-            .map_err(|e| Error::Other(format!("Failed to finalize compressed file: {}", e)))
+            .map_err(|e| Error::General(format!("Failed to finalize compressed file: {}", e)))
             .map(|_| {
                 // Return compressed size
                 path.metadata().map(|m| m.len() as usize).unwrap_or(data.len())
@@ -445,12 +445,12 @@ impl CompilationCache {
     /// Read compressed data
     fn read_compressed(&self, path: &Path) -> Result<Vec<u8>> {
         let file = File::open(path)
-            .map_err(|e| Error::Other(format!("Failed to open compressed file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to open compressed file: {}", e)))?;
         
         let mut decoder = GzDecoder::new(file);
         let mut data = Vec::new();
         decoder.read_to_end(&mut data)
-            .map_err(|e| Error::Other(format!("Failed to decompress data: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to decompress data: {}", e)))?;
         
         Ok(data)
     }
@@ -458,7 +458,7 @@ impl CompilationCache {
     /// Calculate file hash
     fn calculate_file_hash(&self, file_path: &Path) -> Result<String> {
         let content = fs::read(file_path)
-            .map_err(|e| Error::Other(format!("Failed to read file for hashing: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read file for hashing: {}", e)))?;
         
         let mut hasher = Sha256::new();
         hasher.update(&content);
@@ -475,7 +475,7 @@ impl CompilationCache {
             hasher.update(dep.to_string_lossy().as_bytes());
             if dep.exists() {
                 let content = fs::read(dep)
-                    .map_err(|e| Error::Other(format!("Failed to read dependency: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to read dependency: {}", e)))?;
                 hasher.update(&content);
             }
         }
@@ -577,21 +577,21 @@ impl CompilationCache {
     /// Load cache metadata
     fn load_metadata(path: &Path) -> Result<HashMap<String, CacheEntry>> {
         let file = File::open(path)
-            .map_err(|e| Error::Other(format!("Failed to open metadata file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to open metadata file: {}", e)))?;
         
         let reader = BufReader::new(file);
         serde_json::from_reader(reader)
-            .map_err(|e| Error::Other(format!("Failed to parse metadata: {}", e)))
+            .map_err(|e| Error::General(format!("Failed to parse metadata: {}", e)))
     }
     
     /// Save cache metadata
     fn save_metadata(&self) -> Result<()> {
         let file = File::create(&self.metadata_file)
-            .map_err(|e| Error::Other(format!("Failed to create metadata file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create metadata file: {}", e)))?;
         
         let writer = BufWriter::new(file);
         serde_json::to_writer_pretty(writer, &self.entries)
-            .map_err(|e| Error::Other(format!("Failed to write metadata: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write metadata: {}", e)))?;
         
         Ok(())
     }

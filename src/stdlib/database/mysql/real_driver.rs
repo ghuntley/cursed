@@ -31,7 +31,7 @@ impl MySqlError {
     }
 }
 
-pub type MySqlResult<T> = Result<T, MySqlError>;
+pub type MySqlResult<(), Error>;
 
 /// MySQL configuration
 #[derive(Debug, Clone)]
@@ -101,7 +101,7 @@ impl RealMySqlDriver {
 }
 
 impl Driver for RealMySqlDriver {
-    fn open(&self, _data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, _data_source_name: &str) -> Result<(), Error> {
         let conn = RealMySqlConnection::new(self.pool.clone())
             .map_err(|e| e.to_database_error())?;
         Ok(Box::new(conn))
@@ -158,14 +158,14 @@ impl RealMySqlConnection {
     }
 
     /// Get a connection from the pool
-    fn get_conn(&self) -> Result<PooledConn, DatabaseError> {
+    fn get_conn(&self) -> Result<(), Error> {
         self.pool.get_conn()
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))
     }
 }
 
 impl DriverConn for RealMySqlConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         let stmt = RealMySqlStatement::new(
             self.pool.clone(),
             query.to_string()
@@ -173,7 +173,7 @@ impl DriverConn for RealMySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         let mut conn = self.get_conn()?;
         
         // For simplicity, execute query without parameters for now
@@ -209,7 +209,7 @@ impl DriverConn for RealMySqlConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         let mut conn = self.get_conn()?;
         
         // For simplicity, execute query without parameters for now
@@ -225,7 +225,7 @@ impl DriverConn for RealMySqlConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         let tx = RealMySqlTransaction::new(
             self.pool.clone(),
             opts
@@ -233,14 +233,14 @@ impl DriverConn for RealMySqlConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         let mut conn = self.get_conn()?;
         conn.query_drop("SELECT 1")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Ping failed: {}", e)))?;
         Ok(())
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Connection pool handles cleanup automatically
         Ok(())
     }
@@ -286,7 +286,7 @@ impl RealMySqlStatement {
 }
 
 impl DriverStmt for RealMySqlStatement {
-    fn execute(&mut self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&mut self, args: &[SqlValue]) -> Result<(), Error> {
         let mut conn = self.pool.get_conn()
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
         
@@ -303,7 +303,7 @@ impl DriverStmt for RealMySqlStatement {
         })
     }
 
-    fn query(&mut self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&mut self, args: &[SqlValue]) -> Result<(), Error> {
         let mut conn = self.pool.get_conn()
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
         
@@ -338,7 +338,7 @@ impl DriverStmt for RealMySqlStatement {
         })
     }
 
-    fn close(&mut self) -> Result<(), DatabaseError> {
+    fn close(&mut self) -> Result<(), Error> {
         Ok(())
     }
 }
@@ -359,19 +359,19 @@ impl RealMySqlTransaction {
 }
 
 impl DriverTx for RealMySqlTransaction {
-    fn commit(&mut self) -> Result<(), DatabaseError> {
+    fn commit(&mut self) -> Result<(), Error> {
         // Simplified implementation
         Ok(())
     }
 
-    fn rollback(&mut self) -> Result<(), DatabaseError> {
+    fn rollback(&mut self) -> Result<(), Error> {
         // Simplified implementation
         Ok(())
     }
 }
 
 /// Convert MySQL value to CURSED SqlValue
-fn convert_value_from_mysql(row: &mysql::Row, index: usize) -> Result<SqlValue, DatabaseError> {
+fn convert_value_from_mysql(row: &mysql::Row, index: usize) -> Result<(), Error> {
     // This is a simplified conversion
     match row.get_opt::<mysql::Value, usize>(index) {
         Some(Ok(mysql::Value::NULL)) => Ok(SqlValue::Null),

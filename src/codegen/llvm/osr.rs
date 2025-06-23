@@ -13,7 +13,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{FunctionValue, BasicValueEnum},
-    types::{BasicTypeEnum, StructType},
+    crate::types::{BasicTypeEnum, StructType},
     builder::Builder,
     basic_block::BasicBlock,
     AddressSpace,
@@ -398,7 +398,7 @@ impl<'ctx> OSRManager<'ctx> {
         &mut self,
         function_name: &str,
         current_stack_frame: &StackFrame,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         let start_time = Instant::now();
 
         tracing::info!(
@@ -511,7 +511,7 @@ impl<'ctx> OSRManager<'ctx> {
         &self,
         original_function: &FunctionValue<'ctx>,
         optimized_function: &FunctionValue<'ctx>,
-    ) -> Result<StackFrameMapping, Error> {
+    ) -> Result<(), Error> {
         let mut variable_mapping = HashMap::new();
         let mut register_mapping = HashMap::new();
         let mut memory_layout_changes = Vec::new();
@@ -547,7 +547,7 @@ impl<'ctx> OSRManager<'ctx> {
     fn identify_osr_entry_points(
         &self,
         optimized_function: &FunctionValue<'ctx>,
-    ) -> Result<Vec<OSREntryPoint<'ctx>>, Error> {
+    ) -> Result<(), Error> {
         let mut entry_points = Vec::new();
 
         // Iterate through basic blocks to find suitable OSR entry points
@@ -591,7 +591,7 @@ impl<'ctx> OSRManager<'ctx> {
     }
 
     /// Determine trigger conditions for OSR
-    fn determine_trigger_conditions(&self, function_name: &str) -> Result<Vec<OSRTrigger>, Error> {
+    fn determine_trigger_conditions(&self, function_name: &str) -> Result<(), Error> {
         let mut triggers = Vec::new();
         
         // Function execution count trigger
@@ -613,7 +613,7 @@ impl<'ctx> OSRManager<'ctx> {
         &self,
         stack_frame: &StackFrame,
         frame_mapping: &StackFrameMapping,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         // Check if all required variables are present and mappable
         for local_var in &stack_frame.local_variables {
             if !frame_mapping.variable_mapping.contains_key(local_var.0) {
@@ -644,7 +644,7 @@ impl<'ctx> OSRManager<'ctx> {
         &self,
         replacement: &OSRReplacement<'ctx>,
         current_stack_frame: &StackFrame,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         tracing::debug!("Executing OSR transition");
 
         // In a production implementation, this would:
@@ -701,7 +701,7 @@ impl<'ctx> OSRManager<'ctx> {
     }
 
     /// Preserve current state for deoptimization
-    fn preserve_current_state(&self, function_name: &str) -> Result<HashMap<String, VariableValue>, Error> {
+    fn preserve_current_state(&self, function_name: &str) -> Result<(), Error> {
         let mut preserved_state = HashMap::new();
 
         // Get current stack frame

@@ -29,7 +29,7 @@
 /// - Concurrent revocation operation testing
 
 use crate::stdlib::packages::crypto_pki::error::{PkiError, PkiResult, CertificateErrorCode};
-use crate::stdlib::packages::crypto_pki::types::{
+use crate::stdlib::packages::crypto_pki::crate::types::{
     X509Certificate, SerialNumber, DistinguishedName, SignatureAlgorithm,
     CertificateChain, ValidationResult, ValidationContext, X509Extension,
     ExtensionData, PublicKeyAlgorithm

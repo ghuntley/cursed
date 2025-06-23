@@ -398,32 +398,32 @@ impl TemplateCache {
 
     /// Put a template AST into the cache (level 0)
     #[instrument(skip(self, ast))]
-    pub async fn put_template(&self, key: String, ast: TemplateAst, source_hash: u64) -> Result<(), CursedError> {
+    pub async fn put_template(&self, key: String, ast: TemplateAst, source_hash: u64) -> Result<(), Error> {
         self.put_entry(key, CacheEntryType::TemplateAst(ast), 0, source_hash, Vec::new()).await
     }
 
     /// Put rendered output into the cache (level 1)
     #[instrument(skip(self, output))]
-    pub async fn put_rendered(&self, key: String, output: String, source_hash: u64) -> Result<(), CursedError> {
+    pub async fn put_rendered(&self, key: String, output: String, source_hash: u64) -> Result<(), Error> {
         self.put_entry(key, CacheEntryType::RenderedOutput(output), 1, source_hash, Vec::new()).await
     }
 
     /// Put component into the cache (level 2)
     #[instrument(skip(self, component))]
-    pub async fn put_component(&self, key: String, component: TemplateComponent, source_hash: u64) -> Result<(), CursedError> {
+    pub async fn put_component(&self, key: String, component: TemplateComponent, source_hash: u64) -> Result<(), Error> {
         let dependencies = component.dependencies.clone();
         self.put_entry(key, CacheEntryType::Component(component), 2, source_hash, dependencies).await
     }
 
     /// Put fragment into the cache (level 3)
     #[instrument(skip(self, fragment))]
-    pub async fn put_fragment(&self, key: String, fragment: String, source_hash: u64) -> Result<(), CursedError> {
+    pub async fn put_fragment(&self, key: String, fragment: String, source_hash: u64) -> Result<(), Error> {
         self.put_entry(key, CacheEntryType::Fragment(fragment), 3, source_hash, Vec::new()).await
     }
 
     /// Generic method to put any entry type into the cache
     #[instrument(skip(self, entry_type))]
-    async fn put_entry(&self, key: String, entry_type: CacheEntryType, level: u8, source_hash: u64, dependencies: Vec<String>) -> Result<(), CursedError> {
+    async fn put_entry(&self, key: String, entry_type: CacheEntryType, level: u8, source_hash: u64, dependencies: Vec<String>) -> Result<(), Error> {
         debug!(key = key, level = level, "Cache put entry");
 
         // Check level-specific limits
@@ -497,7 +497,7 @@ impl TemplateCache {
 
     /// Backward compatibility method
     #[instrument(skip(self, ast))]
-    pub async fn put(&self, key: String, ast: TemplateAst, source_hash: u64) -> Result<(), CursedError> {
+    pub async fn put(&self, key: String, ast: TemplateAst, source_hash: u64) -> Result<(), Error> {
         self.put_template(key, ast, source_hash).await
     }
 
@@ -507,7 +507,7 @@ impl TemplateCache {
     }
 
     /// Legacy eviction method (not used in new implementation)
-    fn evict_entry(&self, _entries: &mut HashMap<String, CacheEntry>) -> Result<(), CursedError> {
+    fn evict_entry(&self, _entries: &mut HashMap<String, CacheEntry>) -> Result<(), Error> {
         // This method is kept for backward compatibility but not used
         // The new implementation uses evict_entry_for_level
         Ok(())
@@ -552,7 +552,7 @@ impl TemplateCache {
         }
     }
 
-    async fn compress_entry_type(&self, entry_type: CacheEntryType) -> Result<CacheEntryType, CursedError> {
+    async fn compress_entry_type(&self, entry_type: CacheEntryType) -> Result<(), Error> {
         // Simplified compression - in a real implementation, you'd use actual compression
         match entry_type {
             CacheEntryType::RenderedOutput(output) => {
@@ -566,7 +566,7 @@ impl TemplateCache {
         }
     }
 
-    async fn evict_entry_for_level(&self, level: u8) -> Result<(), CursedError> {
+    async fn evict_entry_for_level(&self, level: u8) -> Result<(), Error> {
         if let Some(level_config) = self.config.level_configs.get(&level) {
             let key_to_evict = match &level_config.eviction_policy {
                 EvictionPolicy::Lru => self.find_lru_key_for_level(level).await,

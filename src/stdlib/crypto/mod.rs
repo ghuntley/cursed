@@ -1,3 +1,5 @@
+use crate::stdlib::web_vibez::SecurityContext;
+use crate::stdlib::crypto::asymmetric::Ed25519PublicKey;
 /// fr fr Comprehensive cryptography for CURSED - secure everything periodt
 /// 
 /// This module provides a unified cryptographic ecosystem including symmetric,
@@ -172,7 +174,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 
 /// fr fr Initialize the comprehensive crypto ecosystem
-pub fn init_crypto() -> Result<(), CursedError> {
+pub fn init_crypto() -> Result<(), Error> {
     println!("🚀 Initializing comprehensive CURSED crypto ecosystem...");
 
     // Initialize the unified crypto ecosystem using package manager
@@ -225,7 +227,7 @@ pub fn init_crypto() -> Result<(), CursedError> {
 }
 
 /// fr fr Get comprehensive crypto module information
-pub fn get_crypto_info(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn get_crypto_info(_args: Vec<Value>) -> Result<(), Error> {
     let mut info = HashMap::new();
     
     // Basic module info
@@ -253,7 +255,7 @@ pub fn get_crypto_info(_args: Vec<Value>) -> Result<Value, CursedError> {
         let package_values: Vec<Value> = packages.into_iter()
             .map(|pkg| {
                 let mut pkg_obj = HashMap::new();
-                pkg_obj.insert("name".to_string(), Value::String(pkg.name));
+                pkg_obj.insert("name".to_string(), Value::String(pkg.to_string()));
                 pkg_obj.insert("version".to_string(), Value::String(pkg.version));
                 pkg_obj.insert("description".to_string(), Value::String(pkg.description));
                 pkg_obj.insert("security_level".to_string(), Value::String(pkg.security_level));
@@ -305,7 +307,7 @@ pub fn get_crypto_info(_args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// fr fr Comprehensive crypto functionality testing
-pub fn test_crypto(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn test_crypto(_args: Vec<Value>) -> Result<(), Error> {
     let mut results = HashMap::new();
     
     println!("🧪 Running comprehensive crypto ecosystem tests...");

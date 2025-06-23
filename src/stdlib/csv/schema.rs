@@ -106,7 +106,7 @@ impl SchemaColumn {
     }
     
     /// Set a regex pattern for validation
-    pub fn with_pattern(mut self, pattern: &str) -> Result<Self, CsvError> {
+    pub fn with_pattern(mut self, pattern: &str) -> Result<(), Error> {
         // Simple pattern validation - in real implementation use regex crate
         self.constraint.pattern = Some(pattern.to_string());
         Ok(self)
@@ -169,7 +169,7 @@ impl SchemaColumn {
     }
     
     /// Validate a field value against this column's constraints
-    pub fn validate(&self, value: &str, line_number: usize, column_index: usize) -> Result<(), ValidationError> {
+    pub fn validate(&self, value: &str, line_number: usize, column_index: usize) -> Result<(), Error> {
         // Check if required but empty
         if self.constraint.required && value.is_empty() {
             return Err(ValidationError {

@@ -4,7 +4,7 @@
 //! AST analysis, and semantic information for keywords, variables, functions, types, etc.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument, info};
 
 use crate::lexer::{Lexer, TokenType};
@@ -122,7 +122,7 @@ impl CompletionProvider {
     }
     
     /// Parse content to get AST for context analysis
-    async fn parse_content_for_context(&self, content: &str) -> Result<Program, CursedError> {
+    async fn parse_content_for_context(&self, content: &str) -> Result<(), Error> {
         let lexer = Lexer::new(content);
         let mut parser = Parser::new(lexer)?;
         parser.parse_program()

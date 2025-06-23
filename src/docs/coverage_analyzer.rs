@@ -264,7 +264,7 @@ impl CoverageAnalyzer {
     }
 
     /// Analyze documentation coverage for a set of files
-    pub fn analyze_files(&mut self, files: &[PathBuf]) -> Result<CoverageReport, Error> {
+    pub fn analyze_files(&mut self, files: &[PathBuf]) -> Result<(), Error> {
         self.stats = CoverageStatistics::default();
         self.quality_metrics = QualityMetrics::default();
 
@@ -303,7 +303,7 @@ impl CoverageAnalyzer {
     }
 
     /// Extract documentable items from a file
-    fn extract_items_from_file(&self, content: &str, file_path: &Path) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_items_from_file(&self, content: &str, file_path: &Path) -> Result<(), Error> {
         let mut items = Vec::new();
 
         // Parse the file to get AST

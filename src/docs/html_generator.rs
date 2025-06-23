@@ -178,7 +178,7 @@ impl HtmlGenerator {
     }
 
     /// Generate documentation for a single item
-    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<String, Error> {
+    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut content = String::new();
         
         content.push_str(&format!("<div class=\"item\" id=\"{}\">\n", item.name.to_lowercase()));
@@ -294,7 +294,7 @@ impl HtmlGenerator {
     }
 
     /// Get HTML header with navigation
-    fn get_html_header(&self, title: &str, current_module: &str) -> Result<String, Error> {
+    fn get_html_header(&self, title: &str, current_module: &str) -> Result<(), Error> {
         let header = format!(r#"<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -325,7 +325,7 @@ impl HtmlGenerator {
     }
 
     /// Get HTML footer
-    fn get_html_footer(&self) -> Result<String, Error> {
+    fn get_html_footer(&self) -> Result<(), Error> {
         let footer = format!(r#"    <footer class="footer">
         <div class="container">
             <p>&copy; {} {}. Generated with CURSED documentation system.</p>

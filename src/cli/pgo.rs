@@ -835,7 +835,7 @@ fn execute_merge_command(args: MergeArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Merging {} profiles", args.profiles.len());
     
     if args.profiles.len() < 2 {
-        return Err(Error::Other("Need at least 2 profiles to merge".to_string()));
+        return Err(Error::General("Need at least 2 profiles to merge".to_string()));
     }
     
     // Load profile storage
@@ -981,7 +981,7 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
     // Get the compiled LLVM module
     let module_ref = codegen.get_module();
     let module_guard = module_ref.lock()
-        .map_err(|_| Error::Other("Failed to lock LLVM module".to_string()))?;
+        .map_err(|_| Error::General("Failed to lock LLVM module".to_string()))?;
     
     // Use the existing PGO system's optimize_with_profile method
     let optimization_result = pgo_system.optimize_with_profile(&*module_guard)?;
@@ -1096,7 +1096,7 @@ fn save_analysis_report(analysis: &ProfileAnalysisResult, output_file: &std::pat
     match format {
         "json" => {
             let json_data = serde_json::to_string_pretty(analysis)
-                .map_err(|e| Error::Other(format!("JSON serialization failed: {}", e)))?;
+                .map_err(|e| Error::General(format!("JSON serialization failed: {}", e)))?;
             std::fs::write(output_file, json_data)?;
         }
         "html" => {

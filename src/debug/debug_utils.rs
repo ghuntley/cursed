@@ -371,7 +371,7 @@ impl DebugSessionConfig {
     }
     
     /// Load configuration from a file
-    pub fn load_from_file(path: &Path) -> Result<Self, Error> {
+    pub fn load_from_file(path: &Path) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| Error::Compile(format!("Failed to read debug config: {}", e)))?;
         

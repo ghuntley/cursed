@@ -18,6 +18,14 @@ pub mod flate;
 pub mod bzip2;
 pub mod lzw;
 pub mod utils;
+
+pub use utils::{
+    validate_compression_level as is_valid_compression_level,
+    convert_quality_to_level as quality_to_level,
+    get_recommended_buffer_size as recommended_buffer_size,
+    use_parallel_compression as should_use_parallel,
+    get_optimal_chunk_size as optimal_chunk_size,
+};
 pub mod enhanced;
 pub mod adaptive;
 pub mod constants;
@@ -31,11 +39,10 @@ pub mod dictionary;
 pub use error::{SquishError, SquishResult, CompressionError, DecompressionError};
 
 // Constants and types needed by stdlib
-pub use constants::{MIN_COMPRESSION_LEVEL, MAX_COMPRESSION_LEVEL};
-pub use core::{CompressionQuality, CompressionStrategy, FlushMode};
+pub use constants::{MIN_COMPRESSION_LEVEL, MAX_COMPRESSION_LEVEL, CompressionQuality, CompressionStrategy, FlushMode};
 pub use utils::{
-    is_valid_compression_level, quality_to_level, recommended_buffer_size,
-    should_use_parallel, optimal_chunk_size
+    validate_compression_level, convert_quality_to_level, get_recommended_buffer_size,
+    use_parallel_compression, get_optimal_chunk_size
 };
 pub use statistics::{get_module_stats, cleanup};
 

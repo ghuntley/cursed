@@ -72,7 +72,7 @@ impl AsymmetricCrypto {
     }
 
     /// Generate a key pair for the specified algorithm
-    pub fn generate_keypair(&mut self, algorithm: &str) -> Result<Value, CursedError> {
+    pub fn generate_keypair(&mut self, algorithm: &str) -> Result<(), Error> {
         match algorithm.to_uppercase().as_str() {
             "RSA-2048" => {
                 let keypair = self.rsa_engine.generate_keypair(2048)?;
@@ -111,7 +111,7 @@ impl AsymmetricCrypto {
     }
 
     /// Sign a message with the specified algorithm and private key
-    pub fn sign(&self, algorithm: &str, private_key: &str, message: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn sign(&self, algorithm: &str, private_key: &str, message: &[u8]) -> Result<(), Error> {
         match algorithm.to_uppercase().as_str() {
             "RSA-2048" | "RSA-3072" | "RSA-4096" => {
                 // Parse private key and sign
@@ -156,7 +156,7 @@ impl AsymmetricCrypto {
     }
 
     /// Verify a signature with the specified algorithm and public key
-    pub fn verify(&self, algorithm: &str, public_key: &str, message: &[u8], signature: &[u8]) -> Result<bool, CursedError> {
+    pub fn verify(&self, algorithm: &str, public_key: &str, message: &[u8], signature: &[u8]) -> Result<(), Error> {
         match algorithm.to_uppercase().as_str() {
             "RSA-2048" | "RSA-3072" | "RSA-4096" => {
                 super::rsa::rsa_verify(vec![
@@ -199,7 +199,7 @@ impl AsymmetricCrypto {
     }
 
     /// Perform key exchange with the specified algorithm
-    pub fn key_exchange(&self, algorithm: &str, private_key: &str, public_key: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn key_exchange(&self, algorithm: &str, private_key: &str, public_key: &str) -> Result<(), Error> {
         match algorithm.to_uppercase().as_str() {
             "X25519" => {
                 x25519_key_exchange(vec![
@@ -244,7 +244,7 @@ impl AsymmetricCrypto {
     }
 
     /// Encrypt data with RSA
-    pub fn rsa_encrypt(&self, public_key: &str, data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn rsa_encrypt(&self, public_key: &str, data: &[u8]) -> Result<(), Error> {
         super::rsa::rsa_encrypt(vec![
             Value::String(public_key.to_string()),
             Value::String(base64::encode(data)),
@@ -258,7 +258,7 @@ impl AsymmetricCrypto {
     }
 
     /// Decrypt data with RSA
-    pub fn rsa_decrypt(&self, private_key: &str, encrypted_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn rsa_decrypt(&self, private_key: &str, encrypted_data: &[u8]) -> Result<(), Error> {
         super::rsa::rsa_decrypt(vec![
             Value::String(private_key.to_string()),
             Value::String(base64::encode(encrypted_data)),
@@ -272,7 +272,7 @@ impl AsymmetricCrypto {
     }
 
     /// Parse a private key from string format
-    fn parse_private_key(&self, private_key: &str) -> Result<Vec<u8>, CursedError> {
+    fn parse_private_key(&self, private_key: &str) -> Result<(), Error> {
         // Try different formats
         if private_key.starts_with("-----BEGIN") {
             // PEM format
@@ -289,7 +289,7 @@ impl AsymmetricCrypto {
     }
 
     /// Parse PEM private key
-    fn parse_pem_private_key(&self, pem_data: &str) -> Result<Vec<u8>, CursedError> {
+    fn parse_pem_private_key(&self, pem_data: &str) -> Result<(), Error> {
         // Basic PEM parsing - extract base64 content
         let lines: Vec<&str> = pem_data.split("\n").collect();
         let mut base64_content = String::new();
@@ -331,7 +331,7 @@ impl AsymmetricCrypto {
     }
 
     /// Get algorithm capabilities
-    pub fn get_algorithm_info(&self, algorithm: &str) -> Result<Value, CursedError> {
+    pub fn get_algorithm_info(&self, algorithm: &str) -> Result<(), Error> {
         let mut info = HashMap::new();
         
         match algorithm.to_uppercase().as_str() {
@@ -423,7 +423,7 @@ impl Default for AsymmetricCrypto {
 // High-level API functions for CURSED stdlib
 
 /// Generate an asymmetric key pair
-pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Algorithm name required".to_string()));
     }
@@ -438,7 +438,7 @@ pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<Value, CursedErro
 }
 
 /// Sign a message with asymmetric cryptography
-pub fn asymmetric_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn asymmetric_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Required: algorithm, private_key, message".to_string()));
     }
@@ -475,7 +475,7 @@ pub fn asymmetric_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Verify a signature with asymmetric cryptography
-pub fn asymmetric_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn asymmetric_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Required: algorithm, public_key, message, signature".to_string()));
     }
@@ -528,7 +528,7 @@ pub fn asymmetric_verify(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Perform asymmetric key exchange
-pub fn asymmetric_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn asymmetric_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Required: algorithm, private_key, public_key".to_string()));
     }
@@ -555,7 +555,7 @@ pub fn asymmetric_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Get information about supported algorithms
-pub fn get_asymmetric_algorithms() -> Result<Value, CursedError> {
+pub fn get_asymmetric_algorithms() -> Result<(), Error> {
     let crypto = AsymmetricCrypto::new();
     let algorithms = crypto.supported_algorithms();
     
@@ -570,7 +570,7 @@ pub fn get_asymmetric_algorithms() -> Result<Value, CursedError> {
 }
 
 /// Get comprehensive asymmetric crypto capabilities
-pub fn get_asymmetric_capabilities() -> Result<Value, CursedError> {
+pub fn get_asymmetric_capabilities() -> Result<(), Error> {
     let mut capabilities = HashMap::new();
     
     capabilities.insert("algorithms".to_string(), Value::Array(vec![

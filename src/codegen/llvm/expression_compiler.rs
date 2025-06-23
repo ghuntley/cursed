@@ -21,7 +21,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, FloatValue},
-    types::{BasicTypeEnum, BasicType},
+    crate::types::{BasicTypeEnum, BasicType},
     AddressSpace,
     IntPredicate, FloatPredicate,
 };
@@ -255,7 +255,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile any expression to LLVM IR
     #[instrument(skip(self, expr))]
-    pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<LlvmValue, Error> {
+    pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         debug!("Compiling expression: {}", expr.string());
         
         // Try to downcast to specific expression types
@@ -288,7 +288,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile literal expressions
     #[instrument(skip(self, literal))]
-    fn compile_literal(&mut self, literal: &Literal) -> Result<LlvmValue, Error> {
+    fn compile_literal(&mut self, literal: &Literal) -> Result<(), Error> {
         debug!("Compiling literal: {:?}", literal.value);
         
         match &literal.value {
@@ -373,7 +373,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile binary expressions (arithmetic, logical, comparison)
     #[instrument(skip(self, binary))]
-    fn compile_binary_expression(&mut self, binary: &BinaryExpression) -> Result<LlvmValue, Error> {
+    fn compile_binary_expression(&mut self, binary: &BinaryExpression) -> Result<(), Error> {
         debug!("Compiling binary expression: {} {} {}", 
                binary.left.string(), binary.operator, binary.right.string());
         
@@ -673,7 +673,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile unary expressions
     #[instrument(skip(self, unary))]
-    fn compile_unary_expression(&mut self, unary: &UnaryExpression) -> Result<LlvmValue, Error> {
+    fn compile_unary_expression(&mut self, unary: &UnaryExpression) -> Result<(), Error> {
         debug!("Compiling unary expression: {} {}", unary.operator, unary.operand.string());
         
         let operand_val = self.compile_expression(unary.operand.as_ref())?;
@@ -725,7 +725,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile identifier (variable access)
     #[instrument(skip(self, identifier))]
-    fn compile_identifier(&mut self, identifier: &Identifier) -> Result<LlvmValue, Error> {
+    fn compile_identifier(&mut self, identifier: &Identifier) -> Result<(), Error> {
         debug!("Compiling identifier: {}", identifier.value);
         
         // Use variable manager to load the variable
@@ -760,7 +760,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile function call expressions
     #[instrument(skip(self, call))]
-    fn compile_call_expression(&mut self, call: &CallExpression) -> Result<LlvmValue, Error> {
+    fn compile_call_expression(&mut self, call: &CallExpression) -> Result<(), Error> {
         debug!("Compiling function call: {}", call.function.string());
         
         let func_name = call.function.string();
@@ -829,7 +829,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
     
     /// Get or create function type
-    fn get_or_create_function_type(&self, func_name: &str, arg_types: &[LlvmType], return_type: &LlvmType) -> Result<inkwell::types::FunctionType, Error> {
+    fn get_or_create_function_type(&self, func_name: &str, arg_types: &[LlvmType], return_type: &LlvmType) -> Result<(), Error> {
         // Convert LLVM types to inkwell types
         let param_types: Result<Vec<_>, _> = arg_types.iter()
             .map(|arg_type| self.llvm_type_to_inkwell_type(arg_type))
@@ -840,17 +840,17 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         
         // Create function type
         match return_inkwell_type {
-            inkwell::types::BasicTypeEnum::ArrayType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::FloatType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::IntType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::PointerType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::StructType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::VectorType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::crate::types::BasicTypeEnum::ArrayType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::crate::types::BasicTypeEnum::FloatType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::crate::types::BasicTypeEnum::IntType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::crate::types::BasicTypeEnum::PointerType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::crate::types::BasicTypeEnum::StructType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::crate::types::BasicTypeEnum::VectorType(t) => Ok(t.fn_type(&param_types, false)),
         }
     }
     
     /// Convert LlvmType to inkwell BasicTypeEnum
-    fn llvm_type_to_inkwell_type(&self, llvm_type: &LlvmType) -> Result<inkwell::types::BasicTypeEnum, Error> {
+    fn llvm_type_to_inkwell_type(&self, llvm_type: &LlvmType) -> Result<(), Error> {
         match llvm_type {
             LlvmType::Int32 => Ok(self.llvm_context.i32_type().into()),
             LlvmType::Int64 => Ok(self.llvm_context.i64_type().into()),
@@ -873,13 +873,13 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile assignment expressions
     #[instrument(skip(self, assignment))]
-    fn compile_assignment_expression(&mut self, assignment: &AssignmentExpression) -> Result<LlvmValue, Error> {
+    fn compile_assignment_expression(&mut self, assignment: &AssignmentExpression) -> Result<(), Error> {
         debug!("Compiling assignment expression");
         
         let value_result = self.compile_expression(assignment.value.as_ref())?;
         
         // Get the target variable name
-        if let Some(identifier) = assignment.name.as_any().downcast_ref::<Identifier>() {
+        if let Some(identifier) = assignment.to_string().as_any().downcast_ref::<Identifier>() {
             // Use variable manager to handle the assignment
             if let Some(ref var_manager) = self.variable_manager {
                 let mut var_manager_ref = var_manager.borrow_mut();
@@ -887,7 +887,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 // Create assignment expression for the variable manager
                 let assign_expr = crate::ast::operators::AssignmentExpression::new(
                     assignment.token.clone(),
-                    assignment.name.clone(),
+                    assignment.to_string().clone(),
                     assignment.value.clone(),
                 );
                 
@@ -907,7 +907,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
     
     /// Compile index expressions (array access)
-    fn compile_index_expression(&mut self, index: &IndexExpression) -> Result<LlvmValue, Error> {
+    fn compile_index_expression(&mut self, index: &IndexExpression) -> Result<(), Error> {
         let array_val = self.compile_expression(index.left.as_ref())?;
         let index_val = self.compile_expression(index.index.as_ref())?;
         
@@ -952,14 +952,14 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     
     /// Compile parenthesized expressions
     #[instrument(skip(self, paren))]
-    fn compile_parenthesized_expression(&mut self, paren: &ParenthesizedExpression) -> Result<LlvmValue, Error> {
+    fn compile_parenthesized_expression(&mut self, paren: &ParenthesizedExpression) -> Result<(), Error> {
         debug!("Compiling parenthesized expression");
         // Parentheses don't change the expression, just compile the inner expression
         self.compile_expression(paren.expression.as_ref())
     }
     
     /// Compile question mark operator expressions
-    pub fn compile_question_mark_expression(&mut self, question_mark: &QuestionMarkExpression) -> Result<LlvmValue, Error> {
+    pub fn compile_question_mark_expression(&mut self, question_mark: &QuestionMarkExpression) -> Result<(), Error> {
         // Compile the inner expression first
         let inner_value = self.compile_expression(question_mark.expression.as_ref())?;
         
@@ -1099,7 +1099,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
     
     /// Resolve the result type of binary operations
-    fn resolve_binary_type(&self, left: &LlvmType, right: &LlvmType, operator: &str) -> Result<LlvmType, Error> {
+    fn resolve_binary_type(&self, left: &LlvmType, right: &LlvmType, operator: &str) -> Result<(), Error> {
         match (left, right, operator) {
             // Arithmetic operations
             (LlvmType::Int64, LlvmType::Int64, "+"|"-"|"*"|"/"|"%") => Ok(LlvmType::Int64),
@@ -1181,7 +1181,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
     
     /// Extract value and error types from Result<T, E> string
-    fn extract_result_types(&self, result_type_string: &str) -> Result<(LlvmType, LlvmType), Error> {
+    fn extract_result_types(&self, result_type_string: &str) -> Result<(), Error> {
         if !result_type_string.starts_with("Result<") || !result_type_string.ends_with('>') {
             return Err(Error::Compile("Invalid Result type format".to_string()));
         }
@@ -1201,7 +1201,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
     
     /// Extract value type from Option<T> string
-    fn extract_option_type(&self, option_type_string: &str) -> Result<LlvmType, Error> {
+    fn extract_option_type(&self, option_type_string: &str) -> Result<(), Error> {
         if !option_type_string.starts_with("Option<") || !option_type_string.ends_with('>') {
             return Err(Error::Compile("Invalid Option type format".to_string()));
         }
@@ -1212,7 +1212,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
     
     /// Parse a type string into LlvmType
-    fn parse_type_string(&self, type_str: &str) -> Result<LlvmType, Error> {
+    fn parse_type_string(&self, type_str: &str) -> Result<(), Error> {
         match type_str {
             "bool" | "facts" => Ok(LlvmType::Boolean),
             "i32" | "normie" => Ok(LlvmType::Int32),
@@ -1240,7 +1240,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         &mut self,
         call: &CallExpression,
         type_context: &mut TypeCompilationContext
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         let function_name = call.function.string();
         
         // Check if function name contains generic type indicators
@@ -1268,7 +1268,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     }
 
     /// Parse generic call syntax to extract base name and type arguments
-    fn parse_generic_call(&self, function_name: &str) -> Result<(String, Vec<String>), Error> {
+    fn parse_generic_call(&self, function_name: &str) -> Result<(), Error> {
         // Handle syntax like "function<T, U>" or "function_T_U"
         if function_name.contains('<') && function_name.contains('>') {
             let parts: Vec<&str> = function_name.splitn(2, '<').collect();
@@ -1304,7 +1304,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         &mut self,
         instance: &CompiledGenericInstance,
         call: &CallExpression
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         // Compile arguments
         let mut arg_values = Vec::new();
         let mut arg_types = Vec::new();
@@ -1343,7 +1343,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         &mut self,
         expr: &dyn Expression,
         _type_context: &TypeCompilationContext
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         // For now, just fall back to regular compilation
         // TODO: Integrate proper type inference
         self.compile_expression(expr)
@@ -1354,7 +1354,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         &mut self,
         expr: &dyn Expression,
         inferred_type: &str
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         let literal_value = expr.string();
         let temp_name = self.context.next_temp();
         

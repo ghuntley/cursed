@@ -2,7 +2,7 @@
 use std::fmt;
 
 /// Result type for GlyphGang operations
-pub type GlyphGangResult<T> = Result<T, GlyphGangError>;
+pub type GlyphGangResult<(), Error>;
 
 /// Comprehensive error types for Unicode operations
 #[derive(Debug, Clone, PartialEq)]

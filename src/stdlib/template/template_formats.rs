@@ -165,7 +165,7 @@ impl TemplateFormatRenderer {
 
     /// Render data in the specified format
     #[instrument(skip(self, data))]
-    pub fn render(&self, data: &CursedObject) -> Result<String, CursedError> {
+    pub fn render(&self, data: &CursedObject) -> Result<(), Error> {
         debug!(format = ?self.format, "Rendering template in format");
 
         match &self.format {
@@ -185,7 +185,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as plain text
-    fn render_text(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_text(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -211,7 +211,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as HTML
-    fn render_html(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_html(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::String(s) => Ok(self.escape_html(s)),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -242,7 +242,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as JSON
-    fn render_json(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_json(&self, data: &CursedObject) -> Result<(), Error> {
         let json_value = self.cursed_to_json(data)?;
         serde_json::to_string_pretty(&json_value)
             .map_err(|e| CursedError::TemplateError {
@@ -252,7 +252,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as YAML
-    fn render_yaml(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_yaml(&self, data: &CursedObject) -> Result<(), Error> {
         let json_value = self.cursed_to_json(data)?;
         serde_yaml::to_string(&json_value)
             .map_err(|e| CursedError::TemplateError {
@@ -262,7 +262,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as XML
-    fn render_xml(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_xml(&self, data: &CursedObject) -> Result<(), Error> {
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.push_str("<root>\n");
         xml.push_str(&self.render_xml_element("data", data, 1)?);
@@ -271,7 +271,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render XML element recursively
-    fn render_xml_element(&self, tag: &str, data: &CursedObject, depth: usize) -> Result<String, CursedError> {
+    fn render_xml_element(&self, tag: &str, data: &CursedObject, depth: usize) -> Result<(), Error> {
         let indent = "  ".repeat(depth);
         let safe_tag = self.sanitize_xml_tag(tag);
 
@@ -314,7 +314,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as Markdown
-    fn render_markdown(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_markdown(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -342,7 +342,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as CSV
-    fn render_csv(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_csv(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Array(arr) => {
                 if arr.is_empty() {
@@ -387,7 +387,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render CSV from array of maps
-    fn render_csv_from_maps(&self, arr: &[CursedObject]) -> Result<String, CursedError> {
+    fn render_csv_from_maps(&self, arr: &[CursedObject]) -> Result<(), Error> {
         if arr.is_empty() {
             return Ok(String::new());
         }
@@ -431,7 +431,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as email template
-    fn render_email(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_email(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let subject = map.get("subject")
@@ -481,7 +481,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render configuration files
-    fn render_config(&self, data: &CursedObject, format: &ConfigFormat) -> Result<String, CursedError> {
+    fn render_config(&self, data: &CursedObject, format: &ConfigFormat) -> Result<(), Error> {
         match format {
             ConfigFormat::Toml => self.render_toml(data),
             ConfigFormat::Ini => self.render_ini(data),
@@ -496,7 +496,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as TOML
-    fn render_toml(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_toml(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut toml = String::new();
@@ -549,7 +549,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as INI
-    fn render_ini(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_ini(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut ini = String::new();
@@ -579,7 +579,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as environment variables
-    fn render_env(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_env(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut env = String::new();
@@ -598,7 +598,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as shell script
-    fn render_shell(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_shell(&self, data: &CursedObject) -> Result<(), Error> {
         let mut script = String::from("#!/bin/bash\n\n");
         match data {
             CursedObject::Map(map) => {
@@ -623,7 +623,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as Dockerfile
-    fn render_dockerfile(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_dockerfile(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut dockerfile = String::new();
@@ -689,7 +689,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as Nginx configuration
-    fn render_nginx(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_nginx(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut nginx = String::new();
@@ -727,7 +727,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as Apache configuration
-    fn render_apache(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_apache(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut apache = String::new();
@@ -783,7 +783,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render as Kubernetes YAML
-    fn render_kubernetes(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_kubernetes(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut k8s = String::from("apiVersion: v1\n");
@@ -812,7 +812,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render Docker Compose
-    fn render_docker_compose(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_docker_compose(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut compose = String::from("version: '3.8'\n\n");
@@ -847,7 +847,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render document templates
-    fn render_document(&self, data: &CursedObject, format: &DocumentFormat) -> Result<String, CursedError> {
+    fn render_document(&self, data: &CursedObject, format: &DocumentFormat) -> Result<(), Error> {
         match format {
             DocumentFormat::Readme => self.render_readme(data),
             DocumentFormat::License => self.render_license(data),
@@ -860,7 +860,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render API specifications
-    fn render_api(&self, data: &CursedObject, format: &ApiFormat) -> Result<String, CursedError> {
+    fn render_api(&self, data: &CursedObject, format: &ApiFormat) -> Result<(), Error> {
         match format {
             ApiFormat::OpenApi => self.render_openapi(data),
             ApiFormat::GraphQL => self.render_graphql(data),
@@ -872,7 +872,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render build system files
-    fn render_build(&self, data: &CursedObject, format: &BuildFormat) -> Result<String, CursedError> {
+    fn render_build(&self, data: &CursedObject, format: &BuildFormat) -> Result<(), Error> {
         match format {
             BuildFormat::Makefile => self.render_makefile(data),
             BuildFormat::BuildRs => self.render_build_rs(data),
@@ -886,7 +886,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render README file
-    fn render_readme(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_readme(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut readme = String::new();
@@ -926,7 +926,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render OpenAPI specification
-    fn render_openapi(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_openapi(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut openapi = String::from("openapi: 3.0.0\n");
@@ -950,7 +950,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render Makefile
-    fn render_makefile(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_makefile(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut makefile = String::new();
@@ -1001,7 +1001,7 @@ impl TemplateFormatRenderer {
     }
 
     // Utility methods for the new formats
-    fn render_kubernetes_object(&self, obj: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_kubernetes_object(&self, obj: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -1046,7 +1046,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render license file
-    fn render_license(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_license(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut license = String::new();
@@ -1206,7 +1206,7 @@ impl TemplateFormatRenderer {
             }
         }
     }
-    fn render_changelog(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_changelog(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut changelog = String::new();
@@ -1259,7 +1259,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render a single changelog version entry
-    fn render_changelog_version(&self, version_obj: &CursedObject) -> Result<String, CursedError> {
+    fn render_changelog_version(&self, version_obj: &CursedObject) -> Result<(), Error> {
         match version_obj {
             CursedObject::Map(version_map) => {
                 let mut version_text = String::new();
@@ -1314,7 +1314,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render a changelog section (list of changes)
-    fn render_changelog_section(&self, section_data: &CursedObject) -> Result<String, CursedError> {
+    fn render_changelog_section(&self, section_data: &CursedObject) -> Result<(), Error> {
         match section_data {
             CursedObject::Array(changes) => {
                 let mut section_text = String::new();
@@ -1353,7 +1353,7 @@ impl TemplateFormatRenderer {
         }
     }
     /// Render code documentation
-    fn render_code_doc(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_code_doc(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut doc = String::new();
@@ -1468,7 +1468,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render modules section
-    fn render_modules(&self, modules: &CursedObject, language: &str) -> Result<String, CursedError> {
+    fn render_modules(&self, modules: &CursedObject, language: &str) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(module_array) = modules {
@@ -1524,7 +1524,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render functions section
-    fn render_functions(&self, functions: &CursedObject, language: &str, module_name: Option<&str>) -> Result<String, CursedError> {
+    fn render_functions(&self, functions: &CursedObject, language: &str, module_name: Option<&str>) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(func_array) = functions {
@@ -1593,7 +1593,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render classes section
-    fn render_classes(&self, classes: &CursedObject, language: &str) -> Result<String, CursedError> {
+    fn render_classes(&self, classes: &CursedObject, language: &str) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(class_array) = classes {
@@ -1639,7 +1639,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render constants section
-    fn render_constants(&self, constants: &CursedObject, language: &str) -> Result<String, CursedError> {
+    fn render_constants(&self, constants: &CursedObject, language: &str) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(const_array) = constants {
@@ -1675,7 +1675,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render types/interfaces section
-    fn render_types(&self, types: &CursedObject, language: &str) -> Result<String, CursedError> {
+    fn render_types(&self, types: &CursedObject, language: &str) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(type_array) = types {
@@ -1715,7 +1715,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render examples section
-    fn render_examples(&self, examples: &CursedObject, language: &str) -> Result<String, CursedError> {
+    fn render_examples(&self, examples: &CursedObject, language: &str) -> Result<(), Error> {
         let mut doc = String::new();
         
         match examples {
@@ -1764,7 +1764,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render function parameters
-    fn render_parameters(&self, parameters: &CursedObject) -> Result<String, CursedError> {
+    fn render_parameters(&self, parameters: &CursedObject) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(param_array) = parameters {
@@ -1818,7 +1818,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render return type information
-    fn render_return_type(&self, returns: &CursedObject) -> Result<String, CursedError> {
+    fn render_return_type(&self, returns: &CursedObject) -> Result<(), Error> {
         match returns {
             CursedObject::Map(return_map) => {
                 let return_type = return_map.get("type")
@@ -1847,7 +1847,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render error/exception information
-    fn render_errors(&self, throws: &CursedObject) -> Result<String, CursedError> {
+    fn render_errors(&self, throws: &CursedObject) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(error_array) = throws {
@@ -1874,7 +1874,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render properties/fields table
-    fn render_properties(&self, properties: &CursedObject) -> Result<String, CursedError> {
+    fn render_properties(&self, properties: &CursedObject) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(prop_array) = properties {
@@ -1905,7 +1905,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render function examples with proper formatting
-    fn render_function_examples(&self, examples: &CursedObject, language: &str) -> Result<String, CursedError> {
+    fn render_function_examples(&self, examples: &CursedObject, language: &str) -> Result<(), Error> {
         let mut doc = String::new();
         
         if let CursedObject::Array(example_array) = examples {
@@ -1946,7 +1946,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Generate function signature based on language
-    fn generate_function_signature(&self, func_map: &std::collections::HashMap<String, CursedObject>, language: &str) -> Result<String, CursedError> {
+    fn generate_function_signature(&self, func_map: &std::collections::HashMap<String, CursedObject>, language: &str) -> Result<(), Error> {
         let func_name = func_map.get("name")
             .map(|n| self.render_text(n))
             .unwrap_or_else(|| Ok("function".to_string()))?;
@@ -2044,9 +2044,9 @@ impl TemplateFormatRenderer {
     }
     
     /// Format parameters for Rust
-    fn format_rust_parameters(&self, parameters: &CursedObject) -> Result<String, CursedError> {
+    fn format_rust_parameters(&self, parameters: &CursedObject) -> Result<(), Error> {
         if let CursedObject::Array(param_array) = parameters {
-            let params: Result<Vec<String>, CursedError> = param_array.iter()
+            let params: Result<(), Error> = param_array.iter()
                 .map(|param| {
                     if let CursedObject::Map(param_map) = param {
                         let name = param_map.get("name")
@@ -2068,9 +2068,9 @@ impl TemplateFormatRenderer {
     }
     
     /// Format parameters for Python
-    fn format_python_parameters(&self, parameters: &CursedObject) -> Result<String, CursedError> {
+    fn format_python_parameters(&self, parameters: &CursedObject) -> Result<(), Error> {
         if let CursedObject::Array(param_array) = parameters {
-            let params: Result<Vec<String>, CursedError> = param_array.iter()
+            let params: Result<(), Error> = param_array.iter()
                 .map(|param| {
                     if let CursedObject::Map(param_map) = param {
                         let name = param_map.get("name")
@@ -2102,9 +2102,9 @@ impl TemplateFormatRenderer {
     }
     
     /// Format parameters for JavaScript/TypeScript
-    fn format_js_parameters(&self, parameters: &CursedObject, include_types: bool) -> Result<String, CursedError> {
+    fn format_js_parameters(&self, parameters: &CursedObject, include_types: bool) -> Result<(), Error> {
         if let CursedObject::Array(param_array) = parameters {
-            let params: Result<Vec<String>, CursedError> = param_array.iter()
+            let params: Result<(), Error> = param_array.iter()
                 .map(|param| {
                     if let CursedObject::Map(param_map) = param {
                         let name = param_map.get("name")
@@ -2138,9 +2138,9 @@ impl TemplateFormatRenderer {
     }
     
     /// Format parameters generically
-    fn format_generic_parameters(&self, parameters: &CursedObject) -> Result<String, CursedError> {
+    fn format_generic_parameters(&self, parameters: &CursedObject) -> Result<(), Error> {
         if let CursedObject::Array(param_array) = parameters {
-            let params: Result<Vec<String>, CursedError> = param_array.iter()
+            let params: Result<(), Error> = param_array.iter()
                 .map(|param| {
                     if let CursedObject::Map(param_map) = param {
                         let name = param_map.get("name")
@@ -2189,7 +2189,7 @@ impl TemplateFormatRenderer {
         }
     }
     /// Render API documentation
-    fn render_api_doc(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_api_doc(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut doc = String::new();
@@ -2301,7 +2301,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render project documentation
-    fn render_project_doc(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_project_doc(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut doc = String::new();
@@ -2385,7 +2385,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render release notes
-    fn render_release_notes(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_release_notes(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut notes = String::new();
@@ -2545,7 +2545,7 @@ impl TemplateFormatRenderer {
         }
     }
     /// Render as GraphQL schema
-    fn render_graphql(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut schema = String::new();
@@ -2584,7 +2584,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL schema definition
-    fn render_graphql_schema_definition(&self, schema_def: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_schema_definition(&self, schema_def: &CursedObject) -> Result<(), Error> {
         match schema_def {
             CursedObject::Map(map) => {
                 let mut schema = String::from("schema {\n");
@@ -2612,7 +2612,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL custom scalars
-    fn render_graphql_scalars(&self, scalars: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_scalars(&self, scalars: &CursedObject) -> Result<(), Error> {
         match scalars {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -2645,7 +2645,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL directive definitions
-    fn render_graphql_directives(&self, directives: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_directives(&self, directives: &CursedObject) -> Result<(), Error> {
         match directives {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -2672,7 +2672,7 @@ impl TemplateFormatRenderer {
                                 result.push_str(" on ");
                                 match locations {
                                     CursedObject::Array(loc_arr) => {
-                                        let locs: Result<Vec<String>, CursedError> = loc_arr.iter()
+                                        let locs: Result<(), Error> = loc_arr.iter()
                                             .map(|loc| self.render_text(loc))
                                             .collect();
                                         result.push_str(&locs?.join(" | "));
@@ -2695,7 +2695,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL types
-    fn render_graphql_types(&self, types: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_types(&self, types: &CursedObject) -> Result<(), Error> {
         match types {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -2712,7 +2712,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render individual GraphQL type definition
-    fn render_graphql_type_definition(&self, type_map: &std::collections::HashMap<String, CursedObject>) -> Result<String, CursedError> {
+    fn render_graphql_type_definition(&self, type_map: &std::collections::HashMap<String, CursedObject>) -> Result<(), Error> {
         let kind = type_map.get("kind")
             .map(|k| self.render_text(k))
             .unwrap_or_else(|| Ok("object".to_string()))?;
@@ -2738,7 +2738,7 @@ impl TemplateFormatRenderer {
                     type_def.push_str(" implements ");
                     match implements {
                         CursedObject::Array(impl_arr) => {
-                            let interfaces: Result<Vec<String>, CursedError> = impl_arr.iter()
+                            let interfaces: Result<(), Error> = impl_arr.iter()
                                 .map(|iface| self.render_text(iface))
                                 .collect();
                             type_def.push_str(&interfaces?.join(" & "));
@@ -2772,7 +2772,7 @@ impl TemplateFormatRenderer {
                     type_def.push_str(" implements ");
                     match implements {
                         CursedObject::Array(impl_arr) => {
-                            let interfaces: Result<Vec<String>, CursedError> = impl_arr.iter()
+                            let interfaces: Result<(), Error> = impl_arr.iter()
                                 .map(|iface| self.render_text(iface))
                                 .collect();
                             type_def.push_str(&interfaces?.join(" & "));
@@ -2811,7 +2811,7 @@ impl TemplateFormatRenderer {
                     type_def.push_str(" = ");
                     match types {
                         CursedObject::Array(type_arr) => {
-                            let union_types: Result<Vec<String>, CursedError> = type_arr.iter()
+                            let union_types: Result<(), Error> = type_arr.iter()
                                 .map(|t| self.render_text(t))
                                 .collect();
                             type_def.push_str(&union_types?.join(" | "));
@@ -2882,7 +2882,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL fields
-    fn render_graphql_fields(&self, fields: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_fields(&self, fields: &CursedObject) -> Result<(), Error> {
         match fields {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -2899,7 +2899,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render individual GraphQL field
-    fn render_graphql_field(&self, field_map: &std::collections::HashMap<String, CursedObject>) -> Result<String, CursedError> {
+    fn render_graphql_field(&self, field_map: &std::collections::HashMap<String, CursedObject>) -> Result<(), Error> {
         let mut field_def = String::new();
         
         // Add description if present
@@ -2936,7 +2936,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL input fields
-    fn render_graphql_input_fields(&self, fields: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_input_fields(&self, fields: &CursedObject) -> Result<(), Error> {
         match fields {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -2953,7 +2953,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render individual GraphQL input field
-    fn render_graphql_input_field(&self, field_map: &std::collections::HashMap<String, CursedObject>) -> Result<String, CursedError> {
+    fn render_graphql_input_field(&self, field_map: &std::collections::HashMap<String, CursedObject>) -> Result<(), Error> {
         let mut field_def = String::new();
         
         // Add description if present
@@ -2991,7 +2991,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL enum values
-    fn render_graphql_enum_values(&self, values: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_enum_values(&self, values: &CursedObject) -> Result<(), Error> {
         match values {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -3033,7 +3033,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL arguments
-    fn render_graphql_arguments(&self, arguments: &CursedObject, add_spacing: bool) -> Result<String, CursedError> {
+    fn render_graphql_arguments(&self, arguments: &CursedObject, add_spacing: bool) -> Result<(), Error> {
         match arguments {
             CursedObject::Array(arr) => {
                 if arr.is_empty() {
@@ -3080,7 +3080,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL field directives
-    fn render_graphql_field_directives(&self, directives: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_field_directives(&self, directives: &CursedObject) -> Result<(), Error> {
         match directives {
             CursedObject::Array(arr) => {
                 let mut result = String::new();
@@ -3118,7 +3118,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GraphQL value (for default values, directive arguments, etc.)
-    fn render_graphql_value(&self, value: &CursedObject) -> Result<String, CursedError> {
+    fn render_graphql_value(&self, value: &CursedObject) -> Result<(), Error> {
         match value {
             CursedObject::String(s) => Ok(format!("\"{}\"", s.replace('"', "\\\""))),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -3127,7 +3127,7 @@ impl TemplateFormatRenderer {
             CursedObject::Char(c) => Ok(format!("\"{}\"", c)),
             CursedObject::Nil => Ok("null".to_string()),
             CursedObject::Array(arr) => {
-                let values: Result<Vec<String>, CursedError> = arr.iter()
+                let values: Result<(), Error> = arr.iter()
                     .map(|item| self.render_graphql_value(item))
                     .collect();
                 Ok(format!("[{}]", values?.join(", ")))
@@ -3148,7 +3148,7 @@ impl TemplateFormatRenderer {
             }
         }
     }
-    fn render_protobuf(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_protobuf(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut proto = String::new();
@@ -3233,7 +3233,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf enum definition
-    fn render_protobuf_enum(&self, enum_def: &CursedObject) -> Result<String, CursedError> {
+    fn render_protobuf_enum(&self, enum_def: &CursedObject) -> Result<(), Error> {
         if let CursedObject::Map(enum_map) = enum_def {
             let name = enum_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
@@ -3284,7 +3284,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf message definition
-    fn render_protobuf_message(&self, message: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_protobuf_message(&self, message: &CursedObject, indent_level: usize) -> Result<(), Error> {
         if let CursedObject::Map(message_map) = message {
             let name = message_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
@@ -3363,7 +3363,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf oneof definition
-    fn render_protobuf_oneof(&self, oneof: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_protobuf_oneof(&self, oneof: &CursedObject, indent_level: usize) -> Result<(), Error> {
         if let CursedObject::Map(oneof_map) = oneof {
             let name = oneof_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
@@ -3395,7 +3395,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf field definition
-    fn render_protobuf_field(&self, field: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_protobuf_field(&self, field: &CursedObject, indent_level: usize) -> Result<(), Error> {
         if let CursedObject::Map(field_map) = field {
             let field_type = field_map.get("type")
                 .ok_or_else(|| CursedError::TemplateError {
@@ -3471,7 +3471,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf service definition
-    fn render_protobuf_service(&self, service: &CursedObject) -> Result<String, CursedError> {
+    fn render_protobuf_service(&self, service: &CursedObject) -> Result<(), Error> {
         if let CursedObject::Map(service_map) = service {
             let name = service_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
@@ -3514,7 +3514,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf RPC method definition
-    fn render_protobuf_rpc_method(&self, method: &CursedObject) -> Result<String, CursedError> {
+    fn render_protobuf_rpc_method(&self, method: &CursedObject) -> Result<(), Error> {
         if let CursedObject::Map(method_map) = method {
             let name = method_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
@@ -3582,7 +3582,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render protobuf option value with proper formatting
-    fn render_protobuf_option_value(&self, value: &CursedObject) -> Result<String, CursedError> {
+    fn render_protobuf_option_value(&self, value: &CursedObject) -> Result<(), Error> {
         match value {
             CursedObject::String(s) => Ok(format!("\"{}\"", s)),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -3600,7 +3600,7 @@ impl TemplateFormatRenderer {
             }
         }
     }
-    fn render_json_schema(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_json_schema(&self, data: &CursedObject) -> Result<(), Error> {
         let schema = self.build_json_schema(data)?;
         serde_json::to_string_pretty(&schema)
             .map_err(|e| CursedError::TemplateError {
@@ -3610,7 +3610,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Build JSON Schema from CursedObject
-    fn build_json_schema(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_json_schema(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut schema = Map::new();
@@ -3689,7 +3689,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Build properties object for JSON Schema
-    fn build_schema_properties(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_schema_properties(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(props) => {
                 let mut properties = Map::new();
@@ -3708,11 +3708,11 @@ impl TemplateFormatRenderer {
     }
 
     /// Build items schema for arrays
-    fn build_schema_items(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_schema_items(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Array(items) => {
                 // Array of schemas (tuple validation)
-                let schemas: Result<Vec<JsonValue>, CursedError> = items.iter()
+                let schemas: Result<(), Error> = items.iter()
                     .map(|item| self.build_json_schema(item))
                     .collect();
                 Ok(JsonValue::Array(schemas?))
@@ -3725,10 +3725,10 @@ impl TemplateFormatRenderer {
     }
 
     /// Build required array
-    fn build_required_array(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_required_array(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Array(arr) => {
-                let required: Result<Vec<JsonValue>, CursedError> = arr.iter()
+                let required: Result<(), Error> = arr.iter()
                     .map(|item| match item {
                         CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
                         _ => Err(CursedError::TemplateError {
@@ -3747,10 +3747,10 @@ impl TemplateFormatRenderer {
     }
 
     /// Build enum array
-    fn build_enum_array(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_enum_array(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Array(arr) => {
-                let enum_values: Result<Vec<JsonValue>, CursedError> = arr.iter()
+                let enum_values: Result<(), Error> = arr.iter()
                     .map(|item| self.cursed_to_json(item))
                     .collect();
                 Ok(JsonValue::Array(enum_values?))
@@ -3763,7 +3763,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Build schema definitions
-    fn build_schema_definitions(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_schema_definitions(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(defs) => {
                 let mut definitions = Map::new();
@@ -3782,10 +3782,10 @@ impl TemplateFormatRenderer {
     }
 
     /// Build schema array for allOf, anyOf, oneOf
-    fn build_schema_array(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn build_schema_array(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Array(schemas) => {
-                let schema_array: Result<Vec<JsonValue>, CursedError> = schemas.iter()
+                let schema_array: Result<(), Error> = schemas.iter()
                     .map(|schema| self.build_json_schema(schema))
                     .collect();
                 Ok(JsonValue::Array(schema_array?))
@@ -3798,7 +3798,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Infer schema from a value
-    fn infer_schema_from_value(&self, data: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn infer_schema_from_value(&self, data: &CursedObject) -> Result<(), Error> {
         let mut schema = Map::new();
         
         // Set default schema version
@@ -3863,7 +3863,7 @@ impl TemplateFormatRenderer {
         Ok(JsonValue::Object(schema))
     }
     /// Render WSDL (Web Services Description Language)
-    fn render_wsdl(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_wsdl(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut wsdl = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -4045,7 +4045,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render AsyncAPI specification  
-    fn render_asyncapi(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_asyncapi(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut asyncapi = String::new();
@@ -4191,7 +4191,7 @@ impl TemplateFormatRenderer {
         }
     }
     /// Render Rust build.rs file
-    fn render_build_rs(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_build_rs(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut build_rs = String::from("// Build script generated by CURSED template\n");
@@ -4318,7 +4318,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render CMakeLists.txt file
-    fn render_cmake(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_cmake(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut cmake = String::new();
@@ -4560,7 +4560,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render Gradle build.gradle file (Kotlin DSL preferred)
-    fn render_gradle(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_gradle(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut gradle = String::new();
@@ -4759,7 +4759,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render Maven pom.xml file
-    fn render_maven(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_maven(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut pom = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -4985,7 +4985,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Helper method to render Maven plugin configuration
-    fn render_maven_configuration(&self, config: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_maven_configuration(&self, config: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "    ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5022,7 +5022,7 @@ impl TemplateFormatRenderer {
 
         Ok(result)
     }
-    fn render_package_json(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_package_json(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut package_json = serde_json::Map::new();
@@ -5104,7 +5104,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json object fields (dependencies, scripts, etc.)
-    fn render_package_object(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_object(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::Map(map) => {
                 let mut json_map = serde_json::Map::new();
@@ -5131,10 +5131,10 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json array fields (keywords, files, etc.)
-    fn render_package_array(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_array(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::Array(arr) => {
-                let json_arr: Result<Vec<JsonValue>, CursedError> = arr.iter()
+                let json_arr: Result<(), Error> = arr.iter()
                     .map(|item| self.cursed_to_json(item))
                     .collect();
                 Ok(JsonValue::Array(json_arr?))
@@ -5148,7 +5148,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json workspaces field
-    fn render_package_workspaces(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_workspaces(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::Array(_) => self.render_package_array(obj),
             CursedObject::Map(map) => {
@@ -5176,7 +5176,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json exports/imports field
-    fn render_package_exports(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_exports(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(_) => self.cursed_to_json(obj),
             CursedObject::Map(map) => {
@@ -5199,7 +5199,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json person field (author, contributors, etc.)
-    fn render_package_person(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_person(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
             CursedObject::Map(map) => {
@@ -5221,7 +5221,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json repository/bugs field
-    fn render_package_repository(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_repository(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
             CursedObject::Map(map) => {
@@ -5241,7 +5241,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render package.json bin field
-    fn render_package_bin(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn render_package_bin(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
             CursedObject::Map(_) => self.render_package_object(obj),
@@ -5249,7 +5249,7 @@ impl TemplateFormatRenderer {
         }
     }
     /// Render as GitHub Actions workflow
-    fn render_github_actions(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_github_actions(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut workflow = String::new();
@@ -5311,7 +5311,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render GitHub Actions workflow triggers
-    fn render_github_actions_triggers(&self, triggers: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_triggers(&self, triggers: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5384,7 +5384,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render GitHub Actions environment variables
-    fn render_github_actions_env(&self, env: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_env(&self, env: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5410,7 +5410,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render GitHub Actions jobs
-    fn render_github_actions_jobs(&self, jobs: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_jobs(&self, jobs: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5432,7 +5432,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render a single GitHub Actions job
-    fn render_github_actions_job(&self, job: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_job(&self, job: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5550,7 +5550,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render GitHub Actions strategy (matrix builds)
-    fn render_github_actions_strategy(&self, strategy: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_strategy(&self, strategy: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5604,7 +5604,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render GitHub Actions steps
-    fn render_github_actions_steps(&self, steps: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_steps(&self, steps: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5625,7 +5625,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render a single GitHub Actions step
-    fn render_github_actions_step(&self, step: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_step(&self, step: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5782,7 +5782,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render GitHub Actions 'with' parameters
-    fn render_github_actions_with(&self, with: &CursedObject, indent_level: usize) -> Result<String, CursedError> {
+    fn render_github_actions_with(&self, with: &CursedObject, indent_level: usize) -> Result<(), Error> {
         let indent = "  ".repeat(indent_level);
         let mut result = String::new();
 
@@ -5814,7 +5814,7 @@ impl TemplateFormatRenderer {
         Ok(result)
     }
     /// Render CI/CD configuration
-    fn render_ci_cd(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_ci_cd(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 // Detect CI/CD platform from data or default to generic
@@ -5837,7 +5837,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render GitLab CI configuration
-    fn render_gitlab_ci(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_gitlab_ci(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut gitlab_ci = String::new();
@@ -5957,7 +5957,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render Jenkins pipeline
-    fn render_jenkins(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_jenkins(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut jenkins = String::from("pipeline {\n");
@@ -6037,7 +6037,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render Travis CI configuration
-    fn render_travis_ci(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_travis_ci(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut travis = String::new();
@@ -6113,7 +6113,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render CircleCI configuration
-    fn render_circle_ci(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_circle_ci(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut circle = String::from("version: 2.1\n\n");
@@ -6155,7 +6155,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render Azure Pipelines configuration
-    fn render_azure_pipelines(&self, data: &CursedObject) -> Result<String, CursedError> {
+    fn render_azure_pipelines(&self, data: &CursedObject) -> Result<(), Error> {
         match data {
             CursedObject::Map(map) => {
                 let mut azure = String::new();
@@ -6217,7 +6217,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render Azure Pipeline step
-    fn render_azure_step(&self, step: &CursedObject) -> Result<String, CursedError> {
+    fn render_azure_step(&self, step: &CursedObject) -> Result<(), Error> {
         match step {
             CursedObject::Map(step_map) => {
                 let mut step_yaml = String::new();
@@ -6257,7 +6257,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Render API endpoints
-    fn render_api_endpoints(&self, endpoints: &CursedObject) -> Result<String, CursedError> {
+    fn render_api_endpoints(&self, endpoints: &CursedObject) -> Result<(), Error> {
         let mut doc = String::new();
         
         match endpoints {
@@ -6337,7 +6337,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render API errors
-    fn render_api_errors(&self, errors: &CursedObject) -> Result<String, CursedError> {
+    fn render_api_errors(&self, errors: &CursedObject) -> Result<(), Error> {
         let mut doc = String::new();
         
         match errors {
@@ -6393,7 +6393,7 @@ impl TemplateFormatRenderer {
     }
     
     /// Render API examples
-    fn render_api_examples(&self, examples: &CursedObject) -> Result<String, CursedError> {
+    fn render_api_examples(&self, examples: &CursedObject) -> Result<(), Error> {
         let mut doc = String::new();
         
         match examples {
@@ -6479,7 +6479,7 @@ impl TemplateFormatRenderer {
             .to_string()
     }
 
-    fn cursed_to_json(&self, obj: &CursedObject) -> Result<JsonValue, CursedError> {
+    fn cursed_to_json(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
             CursedObject::Integer(n) => Ok(JsonValue::Number(serde_json::Number::from(*n))),
@@ -6494,7 +6494,7 @@ impl TemplateFormatRenderer {
             CursedObject::Char(c) => Ok(JsonValue::String(c.to_string())),
             CursedObject::Nil => Ok(JsonValue::Null),
             CursedObject::Array(arr) => {
-                let json_arr: Result<Vec<JsonValue>, CursedError> = arr.iter()
+                let json_arr: Result<(), Error> = arr.iter()
                     .map(|item| self.cursed_to_json(item))
                     .collect();
                 Ok(JsonValue::Array(json_arr?))
@@ -6509,7 +6509,7 @@ impl TemplateFormatRenderer {
         }
     }
 
-    fn cursed_to_csv_value(&self, obj: &CursedObject) -> Result<String, CursedError> {
+    fn cursed_to_csv_value(&self, obj: &CursedObject) -> Result<(), Error> {
         let text = self.render_text(obj)?;
         Ok(self.escape_csv(&text))
     }
@@ -6550,7 +6550,7 @@ impl TemplateFormatRenderer {
     }
 
     /// Validate rendered output for the format
-    pub fn validate(&self, content: &str) -> Result<(), CursedError> {
+    pub fn validate(&self, content: &str) -> Result<(), Error> {
         if !self.options.validate {
             return Ok(());
         }
@@ -6747,7 +6747,7 @@ impl FormatConverter {
         from: TemplateFormat,
         to: TemplateFormat,
         data: &CursedObject,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         // For now, just re-render with the target format
         let renderer = TemplateFormatRenderer::new(to);
         renderer.render(data)
@@ -6757,7 +6757,7 @@ impl FormatConverter {
     pub fn compose(
         templates: &[(TemplateFormat, &CursedObject)],
         separator: &str,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let mut result = String::new();
         
         for (i, (format, data)) in templates.iter().enumerate() {

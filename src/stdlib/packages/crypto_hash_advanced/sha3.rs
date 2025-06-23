@@ -361,7 +361,7 @@ impl Sha3Utils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay SHA3-224 hash function
-pub fn sha3_224(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn sha3_224(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-224 requires input data".to_string()));
     }
@@ -376,7 +376,7 @@ pub fn sha3_224(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay SHA3-256 hash function
-pub fn sha3_256(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn sha3_256(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-256 requires input data".to_string()));
     }
@@ -391,7 +391,7 @@ pub fn sha3_256(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay SHA3-384 hash function
-pub fn sha3_384(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn sha3_384(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-384 requires input data".to_string()));
     }
@@ -406,7 +406,7 @@ pub fn sha3_384(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay SHA3-512 hash function
-pub fn sha3_512(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn sha3_512(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-512 requires input data".to_string()));
     }
@@ -421,7 +421,7 @@ pub fn sha3_512(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay SHAKE128 extendable output function
-pub fn shake128(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn shake128(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("SHAKE128 requires input data and output length".to_string()));
     }
@@ -445,7 +445,7 @@ pub fn shake128(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay SHAKE256 extendable output function
-pub fn shake256(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn shake256(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("SHAKE256 requires input data and output length".to_string()));
     }
@@ -469,7 +469,7 @@ pub fn shake256(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Create streaming SHA-3 hasher
-pub fn create_sha3_hasher(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn create_sha3_hasher(args: Vec<Value>) -> Result<(), Error> {
     let variant_str = if args.is_empty() {
         "SHA3-256"
     } else {

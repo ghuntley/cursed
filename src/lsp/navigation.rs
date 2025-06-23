@@ -3,7 +3,7 @@
 //! Provides go to definition, find references, hover information, etc.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, TokenType};
@@ -241,7 +241,7 @@ impl NavigationProvider {
             ("replace", "```cursed\nslay replace(string: string, old: string, new: string) -> string\n```\n\nReplaces all occurrences of old with new.\n\n**Example:**\n```cursed\nfacts result = replace(\"hello world\", \"world\", \"CURSED\") // \"hello CURSED\"\n```"),
             
             // Error handling functions
-            ("try", "```cursed\nslay try(expression: T) -> Result<T, Error>\n```\n\nTries an expression and returns a Result.\n\n**Example:**\n```cursed\nfacts result = try(risky_operation())\n```"),
+            ("try", "```cursed\nslay try(expression: T) -> Result<(), Error>\n```\n\nTries an expression and returns a Result.\n\n**Example:**\n```cursed\nfacts result = try(risky_operation())\n```"),
             ("unwrap", "```cursed\nslay unwrap(result: Result<T, E>) -> T\n```\n\nUnwraps a Result or panics.\n\n**Example:**\n```cursed\nfacts value = unwrap(result)\n```"),
             ("expect", "```cursed\nslay expect(result: Result<T, E>, message: string) -> T\n```\n\nUnwraps a Result or panics with message.\n\n**Example:**\n```cursed\nfacts value = expect(result, \"Failed to parse number\")\n```"),
         ]);

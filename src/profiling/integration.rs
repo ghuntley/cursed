@@ -26,7 +26,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn setup_profiling_build(&mut self) -> Result<(), ProfilerError> {
+    pub fn setup_profiling_build(&mut self) -> Result<(), Error> {
         info!("Setting up profiling build integration");
         
         let profiler_config = ProfilerConfig {
@@ -47,7 +47,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn profile_build(&mut self, target: &str) -> Result<BuildProfileResult, ProfilerError> {
+    pub fn profile_build(&mut self, target: &str) -> Result<(), Error> {
         info!("Starting profiled build for target: {}", target);
         
         let session_name = format!("build_{}_{}", target, chrono::Utc::now().format("%Y%m%d_%H%M%S"));
@@ -85,7 +85,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn run_performance_tests(&self) -> Result<PerformanceTestResults, ProfilerError> {
+    pub fn run_performance_tests(&self) -> Result<(), Error> {
         info!("Running performance tests");
         
         let mut test_results = HashMap::new();
@@ -124,7 +124,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn detect_performance_regressions(&self, current: &PerformanceTestResults) -> Result<RegressionReport, ProfilerError> {
+    pub fn detect_performance_regressions(&self, current: &PerformanceTestResults) -> Result<(), Error> {
         info!("Detecting performance regressions");
         
         let mut regressions = Vec::new();
@@ -165,7 +165,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn generate_ci_report(&self, results: &PerformanceTestResults) -> Result<CiReport, ProfilerError> {
+    pub fn generate_ci_report(&self, results: &PerformanceTestResults) -> Result<(), Error> {
         info!("Generating CI/CD report");
         
         let regression_report = self.detect_performance_regressions(results)?;
@@ -205,7 +205,7 @@ impl BuildIntegration {
         Ok(report)
     }
     
-    fn execute_build_command(&self, target: &str) -> Result<BuildCommandResult, ProfilerError> {
+    fn execute_build_command(&self, target: &str) -> Result<(), Error> {
         let mut command = Command::new(&self.config.build_command);
         command.args(&self.config.build_args);
         command.arg(target);
@@ -221,7 +221,7 @@ impl BuildIntegration {
         })
     }
     
-    fn collect_build_artifacts(&self, target: &str) -> Result<Vec<BuildArtifact>, ProfilerError> {
+    fn collect_build_artifacts(&self, target: &str) -> Result<(), Error> {
         let mut artifacts = Vec::new();
         
         // Collect binary artifacts
@@ -263,7 +263,7 @@ impl BuildIntegration {
         Ok(artifacts)
     }
     
-    fn load_benchmarks_from_file(&self, suite: &mut BenchmarkSuite, _path: &Path) -> Result<(), ProfilerError> {
+    fn load_benchmarks_from_file(&self, suite: &mut BenchmarkSuite, _path: &Path) -> Result<(), Error> {
         // In a real implementation, this would parse benchmark files
         // and add them to the suite
         warn!("Benchmark file loading not yet implemented");
@@ -306,7 +306,7 @@ impl BuildIntegration {
         }
     }
     
-    fn collect_ci_artifacts(&self, _results: &PerformanceTestResults) -> Result<Vec<CiArtifact>, ProfilerError> {
+    fn collect_ci_artifacts(&self, _results: &PerformanceTestResults) -> Result<(), Error> {
         let mut artifacts = Vec::new();
         
         // Collect HTML reports

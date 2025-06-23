@@ -5,12 +5,12 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::Parser;
-use crate::ast::*;
+use crate::ast::{self, *};
 
 /// Extension trait to add missing methods to &str
 trait StrExt {
@@ -284,8 +284,8 @@ impl EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_types::StructField {
-        core_types::StructField {
+    fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_crate::types::StructField {
+        core_crate::types::StructField {
             name: field.name.value.clone(),
             field_type: field.field_type.clone(),
             is_public: field.is_public,
@@ -293,8 +293,8 @@ impl EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_types::InterfaceMethod {
-        core_types::InterfaceMethod {
+    fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_crate::types::InterfaceMethod {
+        core_crate::types::InterfaceMethod {
             name: method.name.value.clone(),
             parameters: method.parameters.clone(),
             return_type: method.return_type.clone(),
@@ -302,8 +302,8 @@ impl EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_types::InterfaceMethod {
-        core_types::InterfaceMethod {
+    fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_crate::types::InterfaceMethod {
+        core_crate::types::InterfaceMethod {
             name: method.name.value.clone(),
             parameters: method.parameters.clone(),
             return_type: method.return_type.clone(),
@@ -311,8 +311,8 @@ impl EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_types::VariableDeclaration {
-        core_types::VariableDeclaration {
+    fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_crate::types::VariableDeclaration {
+        core_crate::types::VariableDeclaration {
             name: var_decl.name.value.clone(),
             var_type: var_decl.var_type.clone(),
             value: var_decl.value.clone(),
@@ -1651,9 +1651,9 @@ impl EnhancedSymbolProvider {
 
     async fn scan_workspace_for_symbols(
         &mut self,
-        _workspace_folders: &[tower_lsp::lsp_types::WorkspaceFolder],
+        _workspace_folders: &[tower_lsp::lsp_crate::types::WorkspaceFolder],
         query: &str,
-        results: &mut Vec<tower_lsp::lsp_types::WorkspaceSymbol>,
+        results: &mut Vec<tower_lsp::lsp_crate::types::WorkspaceSymbol>,
     ) {
         // Placeholder implementation - would scan workspace files for symbols
         // For now, just return empty results
@@ -1661,8 +1661,8 @@ impl EnhancedSymbolProvider {
 }
 
 impl Default for EnhancedSymbolProvider {
-    fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_types::StructField {
-        core_types::StructField {
+    fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_crate::types::StructField {
+        core_crate::types::StructField {
             name: field.name.value.clone(),
             field_type: field.field_type.clone(),
             is_public: field.is_public,
@@ -1670,8 +1670,8 @@ impl Default for EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_types::InterfaceMethod {
-        core_types::InterfaceMethod {
+    fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_crate::types::InterfaceMethod {
+        core_crate::types::InterfaceMethod {
             name: method.name.value.clone(),
             parameters: method.parameters.clone(),
             return_type: method.return_type.clone(),
@@ -1679,8 +1679,8 @@ impl Default for EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_types::InterfaceMethod {
-        core_types::InterfaceMethod {
+    fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_crate::types::InterfaceMethod {
+        core_crate::types::InterfaceMethod {
             name: method.name.value.clone(),
             parameters: method.parameters.clone(),
             return_type: method.return_type.clone(),
@@ -1688,8 +1688,8 @@ impl Default for EnhancedSymbolProvider {
         }
     }
 
-    fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_types::VariableDeclaration {
-        core_types::VariableDeclaration {
+    fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_crate::types::VariableDeclaration {
+        core_crate::types::VariableDeclaration {
             name: var_decl.name.value.clone(),
             var_type: var_decl.var_type.clone(),
             value: var_decl.value.clone(),

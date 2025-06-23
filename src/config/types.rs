@@ -62,14 +62,14 @@ impl CursedConfig {
     }
 
     /// Load configuration from file
-    pub fn load_from_file(path: &std::path::Path) -> Result<Self, crate::error::Error> {
+    pub fn load_from_file(path: &std::path::Path) -> Result<(), Error> {
         // Implementation would read from TOML/JSON file
         // For now, return default
         Ok(Self::new())
     }
 
     /// Save configuration to file
-    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), crate::error::Error> {
+    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), Error> {
         // Implementation would write to TOML/JSON file
         Ok(())
     }

@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Request and response context for HTTP request processing
 /// 
 /// Provides thread-safe context passing through middleware chains
@@ -194,7 +195,7 @@ impl RequestContext {
     }
 
     /// Get request body as string
-    pub fn body_string(&self) -> Result<String, std::string::FromUtf8Error> {
+    pub fn body_string(&self) -> Result<(), Error> {
         String::from_utf8(self.body.clone())
     }
 
@@ -279,7 +280,7 @@ impl RequestContext {
     }
 
     /// Parse JSON body
-    pub fn json<T>(&self) -> Result<T, serde_json::Error>
+    pub fn json<T>(&self) -> Result<(), Error>
     where
         T: serde::de::DeserializeOwned,
     {
@@ -371,7 +372,7 @@ impl ResponseContext {
     }
 
     /// Set JSON response body
-    pub fn set_json<T>(&mut self, data: &T) -> Result<(), serde_json::Error>
+    pub fn set_json<T>(&mut self, data: &T) -> Result<(), Error>
     where
         T: serde::Serialize,
     {
@@ -572,7 +573,7 @@ impl ContextUtils {
 }
 
 /// Simple URL decoding function
-fn url_decode(input: &str) -> Result<String, std::string::FromUtf8Error> {
+fn url_decode(input: &str) -> Result<(), Error> {
     let mut result = Vec::new();
     let mut chars = input.chars();
     
@@ -660,7 +661,7 @@ mod base64 {
         }
         
         /// Decode a Base64 string to bytes
-        pub fn decode(&self, input: &str) -> Result<Vec<u8>, Base64Error> {
+        pub fn decode(&self, input: &str) -> Result<(), Error> {
             if input.is_empty() {
                 return Err(Base64Error::Empty);
             }

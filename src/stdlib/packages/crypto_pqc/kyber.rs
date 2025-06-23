@@ -85,7 +85,7 @@ pub trait SecureDrop: Drop {
 }
 
 /// Cryptographic result type for Kyber operations
-pub type KyberResult<T> = Result<T, CryptoError>;
+pub type KyberResult<(), Error>;
 
 /// Cryptographic error types for Kyber
 #[derive(Debug, Clone, PartialEq)]
@@ -493,7 +493,7 @@ impl KyberPoly {
     }
     
     /// Decompress polynomial
-    fn decompress(data: &[u8], d: u8) -> Result<Self, CryptoError> {
+    fn decompress(data: &[u8], d: u8) -> Result<(), Error> {
         if data.len() != KYBER_N {
             return Err(CryptoError::InvalidCiphertext(
                 format!("Invalid compressed polynomial size: expected {}, got {}", KYBER_N, data.len())
@@ -560,7 +560,7 @@ impl KyberPolyVec {
     }
     
     /// Deserialize polynomial vector
-    fn from_bytes(data: &[u8], k: usize) -> Result<Self, CryptoError> {
+    fn from_bytes(data: &[u8], k: usize) -> Result<(), Error> {
         let expected_size = k * KYBER_N * 2; // 2 bytes per coefficient
         if data.len() != expected_size {
             return Err(CryptoError::InvalidKey(

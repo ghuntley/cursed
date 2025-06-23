@@ -251,7 +251,7 @@ impl HkdfUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay HKDF key derivation function
-pub fn hkdf_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hkdf_derive_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("hkdf_derive_key requires at least input_key_material and length arguments".to_string()));
     }
@@ -292,7 +292,7 @@ pub fn hkdf_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay HKDF extract phase
-pub fn hkdf_extract(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hkdf_extract(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("hkdf_extract requires input_key_material argument".to_string()));
     }
@@ -319,7 +319,7 @@ pub fn hkdf_extract(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay HKDF expand phase
-pub fn hkdf_expand(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hkdf_expand(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("hkdf_expand requires prk and length arguments".to_string()));
     }

@@ -3,7 +3,7 @@ use std::fmt;
 use crate::error::CursedError;
 
 /// Result type for reflection operations
-pub type LookinGlassResult<T> = Result<T, LookinGlassError>;
+pub type LookinGlassResult<(), Error>;
 
 /// Errors that can occur during reflection operations
 #[derive(Debug, Clone)]

@@ -1,3 +1,4 @@
+use crate::stdlib::web_vibez::SecurityContext;
 /// Runtime system for CURSED
 pub mod value;
 pub mod goroutine;
@@ -150,7 +151,7 @@ impl Runtime {
     }
     
     /// Initialize all runtime components
-    pub fn initialize(&mut self) -> Result<(), crate::error::Error> {
+    pub fn initialize(&mut self) -> Result<(), Error> {
         // Initialize panic runtime
         initialize_panic_runtime();
         if let Some(runtime) = get_panic_runtime() {

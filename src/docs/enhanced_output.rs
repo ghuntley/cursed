@@ -322,7 +322,7 @@ impl EnhancedOutputGenerator {
         &mut self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<GenerationResults, Error> {
+    ) -> Result<(), Error> {
         let mut results = GenerationResults::default();
 
         // Create output directory structure
@@ -380,7 +380,7 @@ impl EnhancedOutputGenerator {
         &self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<HtmlGenerationResult, Error> {
+    ) -> Result<(), Error> {
         let html_dir = match &self.config.output_structure {
             OutputStructure::Organized => output_dir.join("html"),
             _ => output_dir.to_path_buf(),
@@ -420,7 +420,7 @@ impl EnhancedOutputGenerator {
     }
 
     /// Generate responsive index page
-    fn generate_responsive_index(&self, documentation: &ExtractedDocumentation) -> Result<String, Error> {
+    fn generate_responsive_index(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let template = self.template_manager.html_templates.get("responsive_index")
             .ok_or_else(|| Error::SystemError("Responsive index template not found".to_string()))?;
 
@@ -570,7 +570,7 @@ slay main() {{
     }
 
     /// Generate individual item page
-    fn generate_item_page(&self, item: &DocumentationItem, documentation: &ExtractedDocumentation) -> Result<String, Error> {
+    fn generate_item_page(&self, item: &DocumentationItem, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let template = self.template_manager.html_templates.get("item_page")
             .ok_or_else(|| Error::SystemError("Item page template not found".to_string()))?;
 
@@ -773,7 +773,7 @@ slay main() {{
         &self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<PdfGenerationResult, Error> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         let pdf_dir = match &self.config.output_structure {
@@ -828,7 +828,7 @@ slay main() {{
     }
 
     /// Generate HTML optimized for PDF conversion
-    fn generate_pdf_html(&self, documentation: &ExtractedDocumentation) -> Result<String, Error> {
+    fn generate_pdf_html(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut html = String::new();
         
         // Add PDF-specific styling
@@ -1013,7 +1013,7 @@ slay main() {{
         &self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<ApiDocumentationResult, Error> {
+    ) -> Result<(), Error> {
         let api_dir = match &self.config.output_structure {
             OutputStructure::Organized => output_dir.join("api"),
             _ => output_dir.to_path_buf(),
@@ -1029,7 +1029,7 @@ slay main() {{
     }
 
     /// Generate OpenAPI 3.0 specification
-    fn generate_openapi_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<ApiDocumentationResult, Error> {
+    fn generate_openapi_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
         let spec = self.build_openapi_spec(documentation)?;
         let spec_json = serde_json::to_string_pretty(&spec)
             .map_err(|e| Error::SystemError(format!("Failed to serialize OpenAPI spec: {}", e)))?;
@@ -1054,7 +1054,7 @@ slay main() {{
     }
 
     /// Build OpenAPI specification from documentation
-    fn build_openapi_spec(&self, documentation: &ExtractedDocumentation) -> Result<serde_json::Value, Error> {
+    fn build_openapi_spec(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut paths = serde_json::Map::new();
         let mut components = serde_json::Map::new();
         let mut schemas = serde_json::Map::new();
@@ -1091,7 +1091,7 @@ slay main() {{
     }
 
     /// Convert function to OpenAPI path specification
-    fn function_to_openapi_path(&self, item: &DocumentationItem) -> Result<serde_json::Value, Error> {
+    fn function_to_openapi_path(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut parameters = Vec::new();
         
         for param in &item.parameters {
@@ -1128,7 +1128,7 @@ slay main() {{
     }
 
     /// Convert struct to OpenAPI schema
-    fn struct_to_openapi_schema(&self, item: &DocumentationItem) -> Result<serde_json::Value, Error> {
+    fn struct_to_openapi_schema(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut properties = serde_json::Map::new();
         
         // Extract properties from parameters (representing struct fields)
@@ -1187,7 +1187,7 @@ slay main() {{
     }
 
     /// Generate API Blueprint documentation
-    fn generate_api_blueprint(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<ApiDocumentationResult, Error> {
+    fn generate_api_blueprint(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
         // Placeholder implementation for API Blueprint
         let blueprint_content = format!(
             r#"FORMAT: 1A
@@ -1270,7 +1270,7 @@ This is the API documentation for the CURSED programming language, generated fro
     }
 
     /// Generate Swagger 2.0 specification
-    fn generate_swagger_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<ApiDocumentationResult, Error> {
+    fn generate_swagger_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
         // Similar to OpenAPI but using Swagger 2.0 format
         let spec = serde_json::json!({
             "swagger": "2.0",
@@ -1303,7 +1303,7 @@ This is the API documentation for the CURSED programming language, generated fro
     }
 
     /// Generate RAML specification
-    fn generate_raml_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<ApiDocumentationResult, Error> {
+    fn generate_raml_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
         let raml_content = format!(
             r#"#%RAML 1.0
 title: CURSED API Documentation
@@ -1375,7 +1375,7 @@ types:
     }
 
     /// Generate custom API format
-    fn generate_custom_api_format(&self, documentation: &ExtractedDocumentation, output_dir: &Path, format: &str) -> Result<ApiDocumentationResult, Error> {
+    fn generate_custom_api_format(&self, documentation: &ExtractedDocumentation, output_dir: &Path, format: &str) -> Result<(), Error> {
         // Placeholder for custom format implementation
         let custom_content = format!(
             "# Custom API Documentation Format: {}\n\nGenerated from CURSED source code\n\nTotal items: {}",
@@ -1397,7 +1397,7 @@ types:
     }
 
     /// Deploy to hosting platforms
-    fn deploy_to_hosting_platforms(&mut self, output_dir: &Path) -> Result<HashMap<String, DeploymentResult>, Error> {
+    fn deploy_to_hosting_platforms(&mut self, output_dir: &Path) -> Result<(), Error> {
         let mut results = HashMap::new();
 
         for platform in &self.config.hosting_platforms.clone() {
@@ -1432,7 +1432,7 @@ types:
     }
 
     /// Deploy to GitHub Pages
-    fn deploy_to_github_pages(&self, output_dir: &Path) -> Result<DeploymentResult, Error> {
+    fn deploy_to_github_pages(&self, output_dir: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // This would typically involve:
@@ -1473,7 +1473,7 @@ jobs:
     }
 
     /// Deploy to GitLab Pages
-    fn deploy_to_gitlab_pages(&self, output_dir: &Path) -> Result<DeploymentResult, Error> {
+    fn deploy_to_gitlab_pages(&self, output_dir: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         let gitlab_ci = r#"pages:
@@ -1501,7 +1501,7 @@ jobs:
     }
 
     /// Deploy to Netlify
-    fn deploy_to_netlify(&self, output_dir: &Path) -> Result<DeploymentResult, Error> {
+    fn deploy_to_netlify(&self, output_dir: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Create Netlify configuration
@@ -1530,7 +1530,7 @@ jobs:
     }
 
     /// Deploy to Vercel
-    fn deploy_to_vercel(&self, output_dir: &Path) -> Result<DeploymentResult, Error> {
+    fn deploy_to_vercel(&self, output_dir: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         let vercel_json = serde_json::json!({
@@ -1565,7 +1565,7 @@ jobs:
     }
 
     /// Deploy to AWS S3
-    fn deploy_to_aws_s3(&self, output_dir: &Path) -> Result<DeploymentResult, Error> {
+    fn deploy_to_aws_s3(&self, output_dir: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Create AWS deployment script
@@ -1588,7 +1588,7 @@ aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --path
     }
 
     /// Deploy to custom platform
-    fn deploy_to_custom_platform(&self, output_dir: &Path, config: &HostingConfig) -> Result<DeploymentResult, Error> {
+    fn deploy_to_custom_platform(&self, output_dir: &Path, config: &HostingConfig) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Execute custom deployment command

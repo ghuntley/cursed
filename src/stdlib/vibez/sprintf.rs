@@ -53,7 +53,7 @@ impl fmt::Display for SprintfError {
 
 impl std::error::Error for SprintfError {}
 
-pub type SprintfResult<T> = Result<T, SprintfError>;
+pub type SprintfResult<(), Error>;
 
 /// Format specifier information
 #[derive(Debug, Clone)]

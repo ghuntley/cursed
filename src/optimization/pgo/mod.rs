@@ -249,7 +249,7 @@ impl PgoSystem {
     /// Collect runtime profile data
     pub fn collect_profile_data(&mut self, execution_context: &ExecutionContext) -> Result<ProfileData> {
         if !self.config.enable_collection {
-            return Err(Error::Other("Profile collection is disabled".to_string()));
+            return Err(Error::General("Profile collection is disabled".to_string()));
         }
 
         self.collector.collect_execution_profile(execution_context)
@@ -263,7 +263,7 @@ impl PgoSystem {
     /// Optimize code using collected profile data
     pub fn optimize_with_profile(&mut self, module: &inkwell::module::Module) -> Result<OptimizationResult> {
         if !self.config.enable_optimization {
-            return Err(Error::Other("PGO optimization is disabled".to_string()));
+            return Err(Error::General("PGO optimization is disabled".to_string()));
         }
 
         self.integration.optimize_module(module)

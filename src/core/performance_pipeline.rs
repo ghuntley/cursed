@@ -258,7 +258,7 @@ impl PerformancePipeline {
         rayon::ThreadPoolBuilder::new()
             .num_threads(num_threads)
             .build_global()
-            .map_err(|e| Error::Other(format!("Failed to initialize thread pool: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to initialize thread pool: {}", e)))?;
         
         // Initialize incremental compilation cache
         if self.incremental_config.enabled {
@@ -426,7 +426,7 @@ impl PerformancePipeline {
         
         // Simulate random failures for testing
         if job.file_path.to_string_lossy().contains("error") {
-            return Err(Error::Other("Simulated compilation error".to_string()));
+            return Err(Error::General("Simulated compilation error".to_string()));
         }
         
         Ok(())
@@ -438,10 +438,10 @@ impl PerformancePipeline {
         
         if cache_file.exists() {
             let cache_data = std::fs::read_to_string(&cache_file)
-                .map_err(|e| Error::Other(format!("Failed to read cache file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to read cache file: {}", e)))?;
             
             let cache_entries: HashMap<PathBuf, CacheEntry> = serde_json::from_str(&cache_data)
-                .map_err(|e| Error::Other(format!("Failed to parse cache file: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to parse cache file: {}", e)))?;
             
             *self.cache.lock().unwrap() = cache_entries;
             println!("📦 Loaded compilation cache with {} entries", self.cache.lock().unwrap().len());
@@ -454,16 +454,16 @@ impl PerformancePipeline {
     fn save_cache(&self) -> Result<()> {
         if !self.incremental_config.cache_dir.exists() {
             std::fs::create_dir_all(&self.incremental_config.cache_dir)
-                .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to create cache directory: {}", e)))?;
         }
         
         let cache_file = self.incremental_config.cache_dir.join("compilation_cache.json");
         let cache = self.cache.lock().unwrap();
         let cache_data = serde_json::to_string_pretty(&*cache)
-            .map_err(|e| Error::Other(format!("Failed to serialize cache: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize cache: {}", e)))?;
         
         std::fs::write(&cache_file, cache_data)
-            .map_err(|e| Error::Other(format!("Failed to write cache file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write cache file: {}", e)))?;
         
         Ok(())
     }

@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// CURSED Web Framework - web_vibez
 /// 
 /// A high-performance HTTP framework with flexible routing and middleware

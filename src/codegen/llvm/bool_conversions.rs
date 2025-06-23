@@ -41,22 +41,22 @@ pub trait BoolConversions {
     fn create_bool_literal(&self, value: bool) -> BoolValue;
     
     /// Convert bool to integer type
-    fn convert_bool_to_integer(&self, bool_val: BoolValue, target_type: impl Into<String>) -> Result<BoolValue, Error>;
+    fn convert_bool_to_integer(&self, bool_val: BoolValue, target_type: impl Into<String>) -> Result<(), Error>;
     
     /// Convert bool to float type
-    fn convert_bool_to_float(&self, bool_val: BoolValue, target_type: impl Into<String>) -> Result<BoolValue, Error>;
+    fn convert_bool_to_float(&self, bool_val: BoolValue, target_type: impl Into<String>) -> Result<(), Error>;
     
     /// Convert integer to bool
-    fn convert_integer_to_bool(&self, int_val: BoolValue) -> Result<BoolValue, Error>;
+    fn convert_integer_to_bool(&self, int_val: BoolValue) -> Result<(), Error>;
     
     /// Convert float to bool
-    fn convert_float_to_bool(&self, float_val: BoolValue) -> Result<BoolValue, Error>;
+    fn convert_float_to_bool(&self, float_val: BoolValue) -> Result<(), Error>;
     
     /// Convert pointer to bool (null check)
-    fn convert_pointer_to_bool(&self, ptr_val: BoolValue) -> Result<BoolValue, Error>;
+    fn convert_pointer_to_bool(&self, ptr_val: BoolValue) -> Result<(), Error>;
     
     /// Convert any value to bool
-    fn convert_value_to_bool(&self, value: BoolValue) -> Result<BoolValue, Error>;
+    fn convert_value_to_bool(&self, value: BoolValue) -> Result<(), Error>;
     
     /// Check if a value is of bool type
     fn is_bool_type(&self, value: BoolValue) -> bool;
@@ -65,16 +65,16 @@ pub trait BoolConversions {
     fn is_bool_basic_type(&self, basic_type: impl Into<String>) -> bool;
     
     /// Bool logical AND operation
-    fn bool_logical_and(&self, left: BoolValue, right: BoolValue) -> Result<BoolValue, Error>;
+    fn bool_logical_and(&self, left: BoolValue, right: BoolValue) -> Result<(), Error>;
     
     /// Bool logical OR operation
-    fn bool_logical_or(&self, left: BoolValue, right: BoolValue) -> Result<BoolValue, Error>;
+    fn bool_logical_or(&self, left: BoolValue, right: BoolValue) -> Result<(), Error>;
     
     /// Bool logical NOT operation
-    fn bool_logical_not(&self, value: BoolValue) -> Result<BoolValue, Error>;
+    fn bool_logical_not(&self, value: BoolValue) -> Result<(), Error>;
     
     /// Compare bool values for equality
-    fn compare_bool_equality(&self, left: BoolValue, right: BoolValue) -> Result<BoolValue, Error>;
+    fn compare_bool_equality(&self, left: BoolValue, right: BoolValue) -> Result<(), Error>;
     
     /// Build conditional branch with automatic bool conversion
     fn build_conditional_branch_auto(&self, condition: BoolValue, then_block: impl Into<String>, else_block: impl Into<String>) -> Result<(), Error>;
@@ -86,27 +86,27 @@ impl BoolConversions for crate::codegen::llvm::LlvmCodeGenerator {
         BoolValue
     }
     
-    fn convert_bool_to_integer(&self, _bool_val: BoolValue, _target_type: impl Into<String>) -> Result<BoolValue, Error> {
+    fn convert_bool_to_integer(&self, _bool_val: BoolValue, _target_type: impl Into<String>) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn convert_bool_to_float(&self, _bool_val: BoolValue, _target_type: impl Into<String>) -> Result<BoolValue, Error> {
+    fn convert_bool_to_float(&self, _bool_val: BoolValue, _target_type: impl Into<String>) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn convert_integer_to_bool(&self, _int_val: BoolValue) -> Result<BoolValue, Error> {
+    fn convert_integer_to_bool(&self, _int_val: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn convert_float_to_bool(&self, _float_val: BoolValue) -> Result<BoolValue, Error> {
+    fn convert_float_to_bool(&self, _float_val: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn convert_pointer_to_bool(&self, _ptr_val: BoolValue) -> Result<BoolValue, Error> {
+    fn convert_pointer_to_bool(&self, _ptr_val: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn convert_value_to_bool(&self, _value: BoolValue) -> Result<BoolValue, Error> {
+    fn convert_value_to_bool(&self, _value: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
@@ -118,19 +118,19 @@ impl BoolConversions for crate::codegen::llvm::LlvmCodeGenerator {
         true
     }
     
-    fn bool_logical_and(&self, _left: BoolValue, _right: BoolValue) -> Result<BoolValue, Error> {
+    fn bool_logical_and(&self, _left: BoolValue, _right: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn bool_logical_or(&self, _left: BoolValue, _right: BoolValue) -> Result<BoolValue, Error> {
+    fn bool_logical_or(&self, _left: BoolValue, _right: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn bool_logical_not(&self, _value: BoolValue) -> Result<BoolValue, Error> {
+    fn bool_logical_not(&self, _value: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     
-    fn compare_bool_equality(&self, _left: BoolValue, _right: BoolValue) -> Result<BoolValue, Error> {
+    fn compare_bool_equality(&self, _left: BoolValue, _right: BoolValue) -> Result<(), Error> {
         Ok(BoolValue)
     }
     

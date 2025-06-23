@@ -11,7 +11,7 @@ use glob;
 
 use crate::error::Error as CursedError;
 
-pub type CursedResult<T> = Result<T, CursedError>;
+pub type CursedResult<(), Error>;
 
 /// Configuration for file watching behavior
 #[derive(Debug, Clone)]

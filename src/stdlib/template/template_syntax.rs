@@ -377,7 +377,7 @@ impl<'a> TemplateLexer<'a> {
     }
 
     #[instrument(skip(self))]
-    pub fn tokenize(&mut self) -> Result<Vec<TemplateToken>, CursedError> {
+    pub fn tokenize(&mut self) -> Result<(), Error> {
         debug!(input_length = self.input.len(), "Starting template tokenization");
         let mut tokens = Vec::new();
 
@@ -395,7 +395,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(tokens)
     }
 
-    fn tokenize_text(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
+    fn tokenize_text(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
         let start = self.position;
 
         while !self.is_at_end() {
@@ -432,7 +432,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn tokenize_variable(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
+    fn tokenize_variable(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
         self.skip_whitespace();
 
         if self.check_delimiter(&self.delimiters.variable.1) {
@@ -520,7 +520,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn tokenize_block(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
+    fn tokenize_block(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
         self.skip_whitespace();
 
         if self.check_delimiter(&self.delimiters.block.1) {
@@ -646,7 +646,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn tokenize_comment(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
+    fn tokenize_comment(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
         let start = self.position;
 
         while !self.is_at_end() && !self.check_delimiter(&self.delimiters.comment.1) {
@@ -667,7 +667,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn read_string(&mut self) -> Result<String, CursedError> {
+    fn read_string(&mut self) -> Result<(), Error> {
         let quote_char = self.current_char();
         self.advance(); // Skip opening quote
 
@@ -706,7 +706,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(value)
     }
 
-    fn read_number(&mut self) -> Result<f64, CursedError> {
+    fn read_number(&mut self) -> Result<(), Error> {
         let start = self.position;
         while !self.is_at_end() && (self.current_char().is_ascii_digit() || self.current_char() == '.') {
             self.advance();
@@ -781,7 +781,7 @@ impl TemplateParser {
     }
 
     #[instrument(skip(self))]
-    pub fn parse(&mut self) -> Result<TemplateAst, CursedError> {
+    pub fn parse(&mut self) -> Result<(), Error> {
         debug!(token_count = self.tokens.len(), "Starting template parsing");
         let mut nodes = Vec::new();
 
@@ -793,7 +793,7 @@ impl TemplateParser {
         Ok(TemplateAst { nodes })
     }
 
-    fn parse_node(&mut self) -> Result<TemplateNode, CursedError> {
+    fn parse_node(&mut self) -> Result<(), Error> {
         match &self.tokens[self.current] {
             TemplateToken::Text(text) => {
                 let text = text.clone();
@@ -831,7 +831,7 @@ impl TemplateParser {
         }
     }
 
-    fn parse_variable(&mut self) -> Result<TemplateNode, CursedError> {
+    fn parse_variable(&mut self) -> Result<(), Error> {
         let location = self.current_location();
         let expression = self.parse_expression()?;
 
@@ -856,7 +856,7 @@ impl TemplateParser {
         ErrorSourceLocation::new(1, 1) // Convert to error module's SourceLocation
     }
 
-    fn parse_filter(&mut self) -> Result<FilterCall, CursedError> {
+    fn parse_filter(&mut self) -> Result<(), Error> {
         let name = match &self.tokens[self.current] {
             TemplateToken::Identifier(name) => name.clone(),
             _ => return Err(CursedError::TemplateError {
@@ -875,7 +875,7 @@ impl TemplateParser {
         Ok(FilterCall { name, args })
     }
 
-    fn parse_block(&mut self) -> Result<TemplateNode, CursedError> {
+    fn parse_block(&mut self) -> Result<(), Error> {
         let location = self.current_location();
         
         match &self.tokens[self.current] {
@@ -1047,7 +1047,7 @@ impl TemplateParser {
         }
     }
 
-    fn parse_block_body(&mut self) -> Result<Vec<TemplateNode>, CursedError> {
+    fn parse_block_body(&mut self) -> Result<(), Error> {
         let mut body = Vec::new();
 
         while !self.is_at_end() {
@@ -1072,11 +1072,11 @@ impl TemplateParser {
         Ok(body)
     }
 
-    fn parse_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_expression(&mut self) -> Result<(), Error> {
         self.parse_conditional_expression()
     }
 
-    fn parse_conditional_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_conditional_expression(&mut self) -> Result<(), Error> {
         let mut expr = self.parse_logical_or_expression()?;
 
         if matches!(self.tokens[self.current], TemplateToken::Question) {
@@ -1094,7 +1094,7 @@ impl TemplateParser {
         Ok(expr)
     }
 
-    fn parse_logical_or_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_logical_or_expression(&mut self) -> Result<(), Error> {
         let mut left = self.parse_logical_and_expression()?;
 
         while matches!(self.tokens[self.current], TemplateToken::Or) {
@@ -1110,7 +1110,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_logical_and_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_logical_and_expression(&mut self) -> Result<(), Error> {
         let mut left = self.parse_equality_expression()?;
 
         while matches!(self.tokens[self.current], TemplateToken::And) {
@@ -1126,7 +1126,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_equality_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_equality_expression(&mut self) -> Result<(), Error> {
         let mut left = self.parse_relational_expression()?;
 
         while matches!(self.tokens[self.current], 
@@ -1151,7 +1151,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_relational_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_relational_expression(&mut self) -> Result<(), Error> {
         let mut left = self.parse_additive_expression()?;
 
         while matches!(self.tokens[self.current], 
@@ -1179,7 +1179,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_additive_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_additive_expression(&mut self) -> Result<(), Error> {
         let mut left = self.parse_multiplicative_expression()?;
 
         while matches!(self.tokens[self.current], TemplateToken::Plus | TemplateToken::Minus) {
@@ -1200,7 +1200,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_multiplicative_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_multiplicative_expression(&mut self) -> Result<(), Error> {
         let mut left = self.parse_unary_expression()?;
 
         while matches!(self.tokens[self.current], 
@@ -1223,7 +1223,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_unary_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_unary_expression(&mut self) -> Result<(), Error> {
         match &self.tokens[self.current] {
             TemplateToken::Not => {
                 self.advance();
@@ -1260,7 +1260,7 @@ impl TemplateParser {
         }
     }
 
-    fn parse_postfix_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_postfix_expression(&mut self) -> Result<(), Error> {
         let mut expr = self.parse_primary_expression()?;
 
         loop {
@@ -1317,7 +1317,7 @@ impl TemplateParser {
         Ok(expr)
     }
 
-    fn parse_primary_expression(&mut self) -> Result<TemplateExpression, CursedError> {
+    fn parse_primary_expression(&mut self) -> Result<(), Error> {
         match &self.tokens[self.current] {
             TemplateToken::Identifier(name) => {
                 let name = name.clone();
@@ -1393,7 +1393,7 @@ impl TemplateParser {
         }
     }
 
-    fn expect(&mut self, expected: &TemplateToken) -> Result<(), CursedError> {
+    fn expect(&mut self, expected: &TemplateToken) -> Result<(), Error> {
         if std::mem::discriminant(&self.tokens[self.current]) == std::mem::discriminant(expected) {
             self.advance();
             Ok(())

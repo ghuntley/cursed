@@ -3,7 +3,7 @@
 //! Defines custom LSP methods and protocol extensions specific to CURSED
 
 use serde::{Deserialize, Serialize};
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use std::collections::HashMap;
 
 /// CURSED-specific LSP method names

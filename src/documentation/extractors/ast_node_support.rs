@@ -224,7 +224,7 @@ pub struct Expression {
 impl crate::ast::traits::Node for Expression {
     fn string(&self) -> String {
         match &self.expr_type {
-            ExpressionType::Identifier(id) => id.name.clone(),
+            ExpressionType::Identifier(id) => id.to_string().clone(),
             ExpressionType::Literal(lit) => lit.value.clone(),
             ExpressionType::FunctionCall(call) => {
                 format!("{}({})", call.function.string(), 
@@ -245,7 +245,7 @@ impl crate::ast::traits::Node for Expression {
     
     fn token_literal(&self) -> String {
         match &self.expr_type {
-            ExpressionType::Identifier(id) => id.name.clone(),
+            ExpressionType::Identifier(id) => id.to_string().clone(),
             ExpressionType::Literal(lit) => lit.value.clone(),
             _ => "expression".to_string()
         }

@@ -58,7 +58,7 @@ pub fn sieve_of_eratosthenes(n: usize) -> Vec<i64> {
 }
 
 /// Prime factorization of a number
-pub fn prime_factorization(mut n: i64) -> Result<Vec<(i64, i64)>, MathError> {
+pub fn prime_factorization(mut n: i64) -> Result<(), Error> {
     if n <= 0 {
         return Err(negative_input_error("prime_factorization", n as f64));
     }
@@ -107,7 +107,7 @@ pub fn next_prime(n: i64) -> i64 {
 }
 
 /// Euler's totient function φ(n) - count of integers ≤ n that are coprime to n
-pub fn euler_totient(n: i64) -> Result<i64, MathError> {
+pub fn euler_totient(n: i64) -> Result<(), Error> {
     if n <= 0 {
         return Err(negative_input_error("euler_totient", n as f64));
     }
@@ -129,7 +129,7 @@ pub fn euler_totient(n: i64) -> Result<i64, MathError> {
 // ============================================================================
 
 /// Factorial function with overflow protection
-pub fn factorial(n: i64) -> Result<i64, MathError> {
+pub fn factorial(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("factorial", n as f64));
     }
@@ -149,7 +149,7 @@ pub fn factorial(n: i64) -> Result<i64, MathError> {
 }
 
 /// Double factorial n!! = n * (n-2) * (n-4) * ...
-pub fn double_factorial(n: i64) -> Result<i64, MathError> {
+pub fn double_factorial(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("double_factorial", n as f64));
     }
@@ -167,7 +167,7 @@ pub fn double_factorial(n: i64) -> Result<i64, MathError> {
 }
 
 /// Stirling's approximation for factorial (returns f64)
-pub fn factorial_stirling(n: i64) -> Result<f64, MathError> {
+pub fn factorial_stirling(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("factorial_stirling", n as f64));
     }
@@ -183,7 +183,7 @@ pub fn factorial_stirling(n: i64) -> Result<f64, MathError> {
 }
 
 /// Number of permutations P(n, r) = n! / (n-r)!
-pub fn permutations(n: i64, r: i64) -> Result<i64, MathError> {
+pub fn permutations(n: i64, r: i64) -> Result<(), Error> {
     if n < 0 || r < 0 {
         return Err(domain_error("permutations", n as f64, &format!("n={}, r={} (both must be non-negative)", n, r)));
     }
@@ -203,7 +203,7 @@ pub fn permutations(n: i64, r: i64) -> Result<i64, MathError> {
 }
 
 /// Number of combinations C(n, r) = n! / (r! * (n-r)!)
-pub fn combinations(n: i64, r: i64) -> Result<i64, MathError> {
+pub fn combinations(n: i64, r: i64) -> Result<(), Error> {
     if n < 0 || r < 0 {
         return Err(domain_error("combinations", n as f64, &format!("n={}, r={} (both must be non-negative)", n, r)));
     }
@@ -227,12 +227,12 @@ pub fn combinations(n: i64, r: i64) -> Result<i64, MathError> {
 }
 
 /// Binomial coefficient using Pascal's triangle (alternative implementation)
-pub fn binomial_coefficient(n: i64, k: i64) -> Result<i64, MathError> {
+pub fn binomial_coefficient(n: i64, k: i64) -> Result<(), Error> {
     combinations(n, k)
 }
 
 /// Multicombinations - combinations with repetition
-pub fn multicombinations(n: i64, r: i64) -> Result<i64, MathError> {
+pub fn multicombinations(n: i64, r: i64) -> Result<(), Error> {
     if n <= 0 || r < 0 {
         return Err(domain_error("multicombinations", n as f64, &format!("n={}, r={} (n must be positive, r non-negative)", n, r)));
     }
@@ -241,7 +241,7 @@ pub fn multicombinations(n: i64, r: i64) -> Result<i64, MathError> {
 }
 
 /// Catalan number C_n = (1/(n+1)) * C(2n, n)
-pub fn catalan_number(n: i64) -> Result<i64, MathError> {
+pub fn catalan_number(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("catalan_number", n as f64));
     }
@@ -257,7 +257,7 @@ pub fn catalan_number(n: i64) -> Result<i64, MathError> {
 // ============================================================================
 
 /// Gamma function Γ(x) using simple recurrence and approximation
-pub fn gamma_function(x: f64) -> Result<f64, MathError> {
+pub fn gamma_function(x: f64) -> Result<(), Error> {
     validate_float("gamma_function", "x", x)?;
     
     if x <= 0.0 {
@@ -306,7 +306,7 @@ pub fn gamma_function(x: f64) -> Result<f64, MathError> {
 }
 
 /// Beta function B(x, y) = Γ(x)Γ(y)/Γ(x+y)
-pub fn beta_function(x: f64, y: f64) -> Result<f64, MathError> {
+pub fn beta_function(x: f64, y: f64) -> Result<(), Error> {
     validate_float("beta_function", "x", x)?;
     validate_float("beta_function", "y", y)?;
     
@@ -324,7 +324,7 @@ pub fn beta_function(x: f64, y: f64) -> Result<f64, MathError> {
 }
 
 /// Error function erf(x) using series expansion
-pub fn error_function(x: f64) -> Result<f64, MathError> {
+pub fn error_function(x: f64) -> Result<(), Error> {
     validate_float("error_function", "x", x)?;
     
     if x == 0.0 { return Ok(0.0); }
@@ -358,7 +358,7 @@ pub fn error_function(x: f64) -> Result<f64, MathError> {
 }
 
 /// Complementary error function erfc(x) = 1 - erf(x)
-pub fn complementary_error_function(x: f64) -> Result<f64, MathError> {
+pub fn complementary_error_function(x: f64) -> Result<(), Error> {
     let erf_x = error_function(x)?;
     Ok(1.0 - erf_x)
 }
@@ -368,7 +368,7 @@ pub fn complementary_error_function(x: f64) -> Result<f64, MathError> {
 // ============================================================================
 
 /// Simpson's rule for numerical integration
-pub fn simpson_integration<F>(f: F, a: f64, b: f64, n: usize) -> Result<f64, MathError> 
+pub fn simpson_integration<F>(f: F, a: f64, b: f64, n: usize) -> Result<(), Error> 
 where
     F: Fn(f64) -> f64,
 {
@@ -401,7 +401,7 @@ where
 }
 
 /// Numerical differentiation using central difference
-pub fn numerical_derivative<F>(f: F, x: f64, h: f64) -> Result<f64, MathError>
+pub fn numerical_derivative<F>(f: F, x: f64, h: f64) -> Result<(), Error>
 where
     F: Fn(f64) -> f64,
 {
@@ -428,7 +428,7 @@ where
 }
 
 /// Newton-Raphson method for root finding
-pub fn newton_raphson<F, DF>(f: F, df: DF, x0: f64, tolerance: f64, max_iterations: usize) -> Result<f64, MathError>
+pub fn newton_raphson<F, DF>(f: F, df: DF, x0: f64, tolerance: f64, max_iterations: usize) -> Result<(), Error>
 where
     F: Fn(f64) -> f64,
     DF: Fn(f64) -> f64,
@@ -474,7 +474,7 @@ where
 }
 
 /// Bisection method for root finding
-pub fn bisection_method<F>(f: F, a: f64, b: f64, tolerance: f64, max_iterations: usize) -> Result<f64, MathError>
+pub fn bisection_method<F>(f: F, a: f64, b: f64, tolerance: f64, max_iterations: usize) -> Result<(), Error>
 where
     F: Fn(f64) -> f64,
 {
@@ -537,7 +537,7 @@ where
 // ============================================================================
 
 /// Fibonacci number (iterative implementation for efficiency)
-pub fn fibonacci(n: i64) -> Result<i64, MathError> {
+pub fn fibonacci(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("fibonacci", n as f64));
     }
@@ -564,7 +564,7 @@ pub fn fibonacci(n: i64) -> Result<i64, MathError> {
 }
 
 /// Lucas number L_n = L_{n-1} + L_{n-2}, L_0 = 2, L_1 = 1
-pub fn lucas_number(n: i64) -> Result<i64, MathError> {
+pub fn lucas_number(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("lucas_number", n as f64));
     }
@@ -587,7 +587,7 @@ pub fn lucas_number(n: i64) -> Result<i64, MathError> {
 }
 
 /// Tribonacci number T_n = T_{n-1} + T_{n-2} + T_{n-3}
-pub fn tribonacci(n: i64) -> Result<i64, MathError> {
+pub fn tribonacci(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("tribonacci", n as f64));
     }
@@ -612,7 +612,7 @@ pub fn tribonacci(n: i64) -> Result<i64, MathError> {
 }
 
 /// Factorial sequence sum: sum of k! for k from 0 to n
-pub fn factorial_sequence_sum(n: i64) -> Result<i64, MathError> {
+pub fn factorial_sequence_sum(n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("factorial_sequence_sum", n as f64));
     }
@@ -635,7 +635,7 @@ pub fn factorial_sequence_sum(n: i64) -> Result<i64, MathError> {
 }
 
 /// Harmonic number H_n = 1 + 1/2 + 1/3 + ... + 1/n
-pub fn harmonic_number(n: i64) -> Result<f64, MathError> {
+pub fn harmonic_number(n: i64) -> Result<(), Error> {
     if n < 1 {
         return Err(domain_error("harmonic_number", n as f64, "n must be positive"));
     }
@@ -654,7 +654,7 @@ pub fn harmonic_number(n: i64) -> Result<f64, MathError> {
 // ============================================================================
 
 /// Modular exponentiation: (base^exp) mod modulus
-pub fn mod_pow(base: i64, exp: i64, modulus: i64) -> Result<i64, MathError> {
+pub fn mod_pow(base: i64, exp: i64, modulus: i64) -> Result<(), Error> {
     if modulus <= 0 {
         return Err(domain_error("mod_pow", modulus as f64, "modulus must be positive"));
     }
@@ -680,7 +680,7 @@ pub fn mod_pow(base: i64, exp: i64, modulus: i64) -> Result<i64, MathError> {
 }
 
 /// Modular multiplicative inverse using extended Euclidean algorithm
-pub fn mod_inverse(a: i64, m: i64) -> Result<i64, MathError> {
+pub fn mod_inverse(a: i64, m: i64) -> Result<(), Error> {
     if m <= 0 {
         return Err(domain_error("mod_inverse", m as f64, "modulus must be positive"));
     }
@@ -698,7 +698,7 @@ pub fn mod_inverse(a: i64, m: i64) -> Result<i64, MathError> {
 }
 
 /// Convert number from one base to another
-pub fn convert_base(number: &str, from_base: u32, to_base: u32) -> Result<String, MathError> {
+pub fn convert_base(number: &str, from_base: u32, to_base: u32) -> Result<(), Error> {
     if from_base < 2 || from_base > 36 || to_base < 2 || to_base > 36 {
         return Err(domain_error("convert_base", from_base as f64, "base must be between 2 and 36"));
     }
@@ -733,7 +733,7 @@ pub fn convert_base(number: &str, from_base: u32, to_base: u32) -> Result<String
 }
 
 /// Greatest common divisor of multiple numbers
-pub fn gcd_multiple(numbers: &[i64]) -> Result<i64, MathError> {
+pub fn gcd_multiple(numbers: &[i64]) -> Result<(), Error> {
     if numbers.is_empty() {
         return Err(MathError::ComputationError {
             function: "gcd_multiple".to_string(),
@@ -751,7 +751,7 @@ pub fn gcd_multiple(numbers: &[i64]) -> Result<i64, MathError> {
 }
 
 /// Least common multiple of multiple numbers
-pub fn lcm_multiple(numbers: &[i64]) -> Result<i64, MathError> {
+pub fn lcm_multiple(numbers: &[i64]) -> Result<(), Error> {
     if numbers.is_empty() {
         return Err(MathError::ComputationError {
             function: "lcm_multiple".to_string(),
@@ -798,7 +798,7 @@ impl FibonacciMemo {
         FibonacciMemo { cache }
     }
     
-    pub fn fibonacci(&mut self, n: i64) -> Result<i64, MathError> {
+    pub fn fibonacci(&mut self, n: i64) -> Result<(), Error> {
         if n < 0 {
             return Err(negative_input_error("fibonacci_memo", n as f64));
         }
@@ -823,7 +823,7 @@ impl FibonacciMemo {
 }
 
 /// Perfect number checker
-pub fn is_perfect_number(n: i64) -> Result<bool, MathError> {
+pub fn is_perfect_number(n: i64) -> Result<(), Error> {
     if n <= 0 {
         return Err(negative_input_error("is_perfect_number", n as f64));
     }
@@ -851,7 +851,7 @@ pub fn is_perfect_number(n: i64) -> Result<bool, MathError> {
 }
 
 /// Digital root (repeated sum of digits until single digit)
-pub fn digital_root(mut n: i64) -> Result<i64, MathError> {
+pub fn digital_root(mut n: i64) -> Result<(), Error> {
     if n < 0 {
         return Err(negative_input_error("digital_root", n as f64));
     }

@@ -148,7 +148,7 @@ impl CursedLinter {
     }
     
     /// Main linting function - analyzes CURSED source code
-    pub fn lint(&mut self, source: &str) -> Result<Vec<LintResult>, Error> {
+    pub fn lint(&mut self, source: &str) -> Result<(), Error> {
         self.results.clear();
         self.source_lines = source.split("\n").map(|s| s.to_string()).collect();
         

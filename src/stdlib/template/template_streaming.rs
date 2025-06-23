@@ -159,7 +159,7 @@ impl StreamingTemplateRenderer {
         ast: &TemplateAst,
         context: RenderContext,
         writer: W,
-    ) -> Result<StreamingResult, CursedError> {
+    ) -> Result<(), Error> {
         let start_time = Instant::now();
         info!("Starting streaming template render");
         
@@ -296,7 +296,7 @@ impl StreamingTemplateRenderer {
         ast: TemplateAst,
         context: RenderContext,
         chunk_sender: mpsc::Sender<StreamChunk>,
-    ) -> Result<JoinHandle<Result<bool, CursedError>>, CursedError> {
+    ) -> Result<(), CursedError> {
         let config = self.config.clone();
         
         let handle = tokio::spawn(async move {
@@ -345,7 +345,7 @@ impl StreamingTemplateRenderer {
         node: &TemplateNode,
         context: &RenderContext,
         config: &StreamingConfig,
-    ) -> Result<Vec<StreamChunk>, CursedError> {
+    ) -> Result<(), Error> {
         let mut chunks = Vec::new();
         
         match node {
@@ -410,14 +410,14 @@ impl StreamingTemplateRenderer {
         value: &CursedObject,
         _filters: &[String],
         _context: &RenderContext,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         // For streaming, we'll use a simplified filter application
         // In a full implementation, this would use the FilterRegistry
         Ok(value.clone())
     }
     
     /// Apply security escaping
-    fn apply_security_escaping(text: &str, context: &RenderContext) -> Result<String, CursedError> {
+    fn apply_security_escaping(text: &str, context: &RenderContext) -> Result<(), Error> {
         match context.security_level {
             SecurityLevel::Strict | SecurityLevel::Moderate => {
                 match context.output_format {
@@ -432,7 +432,7 @@ impl StreamingTemplateRenderer {
     }
     
     /// Convert object to string
-    fn object_to_string(obj: &CursedObject) -> Result<String, CursedError> {
+    fn object_to_string(obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -447,7 +447,7 @@ impl StreamingTemplateRenderer {
                 Ok(format!("[{}]", items.join(", ")))
             }
             CursedObject::Map(map) => {
-                let items: Result<Vec<String>, CursedError> = map.iter()
+                let items: Result<(), Error> = map.iter()
                     .map(|(k, v)| Ok(format!("{}: {}", k, Self::object_to_string(v)?)))
                     .collect();
                 Ok(format!("{{{}}}", items?.join(", ")))
@@ -504,7 +504,7 @@ impl StreamingTemplateRenderer {
         &self,
         ast: &TemplateAst,
         context: RenderContext,
-    ) -> Result<(String, StreamingResult), CursedError> {
+    ) -> Result<(), Error> {
         let mut output = Vec::new();
         let result = self.stream_to_writer(ast, context, &mut output).await?;
         
@@ -523,7 +523,7 @@ pub struct TemplateStream {
     /// Chunk receiver
     chunk_receiver: mpsc::Receiver<StreamChunk>,
     /// Background processing handle
-    _processing_handle: JoinHandle<Result<bool, CursedError>>,
+    _processing_handle: JoinHandle<Result<(), Error>>,
 }
 
 impl TemplateStream {
@@ -532,7 +532,7 @@ impl TemplateStream {
         renderer: &StreamingTemplateRenderer,
         ast: TemplateAst,
         context: RenderContext,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         let (chunk_sender, chunk_receiver) = mpsc::channel::<StreamChunk>(renderer.config.max_concurrent_operations);
         let processing_handle = renderer.start_background_processing(ast, context, chunk_sender).await?;
         
@@ -544,7 +544,7 @@ impl TemplateStream {
 }
 
 impl Stream for TemplateStream {
-    type Item = Result<StreamChunk, CursedError>;
+    type Item = Result<(), Error>;
     
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,

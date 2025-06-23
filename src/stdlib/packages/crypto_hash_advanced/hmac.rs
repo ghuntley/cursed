@@ -60,7 +60,7 @@ pub struct HmacEngine {
 
 impl HmacEngine {
     /// slay Create new HMAC engine with specified algorithm and key
-    pub fn new(algorithm: HmacAlgorithm, key: &[u8]) -> Result<Self, HmacError> {
+    pub fn new(algorithm: HmacAlgorithm, key: &[u8]) -> Result<(), Error> {
         if key.is_empty() {
             return Err(HmacError::InvalidKey("HMAC key cannot be empty".to_string()));
         }
@@ -348,37 +348,37 @@ impl HmacUtils {
     }
     
     /// periodt HMAC-SHA256 in one shot
-    pub fn hmac_sha256(key: &[u8], message: &[u8]) -> Result<Vec<u8>, HmacError> {
+    pub fn hmac_sha256(key: &[u8], message: &[u8]) -> Result<(), Error> {
         let engine = HmacEngine::new(HmacAlgorithm::Sha256, key)?;
         Ok(engine.compute(message))
     }
     
     /// facts HMAC-SHA512 in one shot
-    pub fn hmac_sha512(key: &[u8], message: &[u8]) -> Result<Vec<u8>, HmacError> {
+    pub fn hmac_sha512(key: &[u8], message: &[u8]) -> Result<(), Error> {
         let engine = HmacEngine::new(HmacAlgorithm::Sha512, key)?;
         Ok(engine.compute(message))
     }
     
     /// yolo HMAC-BLAKE3 in one shot
-    pub fn hmac_blake3(key: &[u8], message: &[u8]) -> Result<Vec<u8>, HmacError> {
+    pub fn hmac_blake3(key: &[u8], message: &[u8]) -> Result<(), Error> {
         let engine = HmacEngine::new(HmacAlgorithm::Blake3, key)?;
         Ok(engine.compute(message))
     }
     
     /// slay HMAC string with SHA-256
-    pub fn hmac_sha256_string(key: &str, message: &str) -> Result<String, HmacError> {
+    pub fn hmac_sha256_string(key: &str, message: &str) -> Result<(), Error> {
         let mac = Self::hmac_sha256(key.as_bytes(), message.as_bytes())?;
         Ok(Self::to_hex(&mac))
     }
     
     /// bestie HMAC string with SHA-512
-    pub fn hmac_sha512_string(key: &str, message: &str) -> Result<String, HmacError> {
+    pub fn hmac_sha512_string(key: &str, message: &str) -> Result<(), Error> {
         let mac = Self::hmac_sha512(key.as_bytes(), message.as_bytes())?;
         Ok(Self::to_hex(&mac))
     }
     
     /// vibes HMAC string with BLAKE3
-    pub fn hmac_blake3_string(key: &str, message: &str) -> Result<String, HmacError> {
+    pub fn hmac_blake3_string(key: &str, message: &str) -> Result<(), Error> {
         let mac = Self::hmac_blake3(key.as_bytes(), message.as_bytes())?;
         Ok(Self::to_hex(&mac))
     }
@@ -387,7 +387,7 @@ impl HmacUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay HMAC-SHA256 function
-pub fn hmac_sha256(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hmac_sha256(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC-SHA256 requires key and message".to_string()));
     }
@@ -409,7 +409,7 @@ pub fn hmac_sha256(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay HMAC-SHA512 function
-pub fn hmac_sha512(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hmac_sha512(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC-SHA512 requires key and message".to_string()));
     }
@@ -431,7 +431,7 @@ pub fn hmac_sha512(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay HMAC-BLAKE3 function
-pub fn hmac_blake3(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hmac_blake3(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC-BLAKE3 requires key and message".to_string()));
     }
@@ -453,7 +453,7 @@ pub fn hmac_blake3(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Verify HMAC
-pub fn hmac_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hmac_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("HMAC verify requires algorithm, key, message, and expected MAC".to_string()));
     }
@@ -504,7 +504,7 @@ pub fn hmac_verify(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Generate HMAC key
-pub fn hmac_generate_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn hmac_generate_key(args: Vec<Value>) -> Result<(), Error> {
     let algorithm_str = if args.is_empty() {
         "SHA256"
     } else {
@@ -526,7 +526,7 @@ pub fn hmac_generate_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Create streaming HMAC computer
-pub fn create_hmac_stream(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn create_hmac_stream(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC stream requires algorithm and key".to_string()));
     }

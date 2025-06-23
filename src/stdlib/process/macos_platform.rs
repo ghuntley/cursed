@@ -1,3 +1,6 @@
+use crate::crate::types::SecurityContext;
+use crate::stdlib::web_vibez::SecurityContext;
+use crate::stdlib::process::EnhancedProcess;
 /// macOS-specific process management and IPC implementation
 /// 
 /// This module provides macOS-specific implementations for the unified
@@ -36,7 +39,7 @@ pub struct MacOSPlatformHandler {
 
 impl MacOSPlatformHandler {
     /// Create a new macOS platform handler
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             launchd_integration: true,
             security_framework: true,
@@ -47,7 +50,7 @@ impl MacOSPlatformHandler {
 
 impl PlatformHandler for MacOSPlatformHandler {
     /// Initialize macOS-specific features
-    fn initialize(&self) -> Result<(), CursedError> {
+    fn initialize(&self) -> Result<(), Error> {
         info!("Initializing macOS platform handler");
         
         // Initialize launchd integration if enabled
@@ -64,7 +67,7 @@ impl PlatformHandler for MacOSPlatformHandler {
     }
     
     /// Create macOS-specific IPC mechanism
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<Box<dyn IpcConnection>, CursedError> {
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error> {
         match ipc_type {
             IpcType::UnixSockets => {
                 Ok(Box::new(MacOSUnixSocket::new(name)?))
@@ -82,7 +85,7 @@ impl PlatformHandler for MacOSPlatformHandler {
     }
     
     /// Apply macOS-specific security settings
-    fn apply_security(&self, process: &mut EnhancedProcess, settings: &SecuritySettings) -> Result<(), CursedError> {
+    fn apply_security(&self, process: &mut EnhancedProcess, settings: &SecuritySettings) -> Result<(), Error> {
         debug!("Applying macOS security settings");
         
         // Apply sandbox if enabled
@@ -104,7 +107,7 @@ impl PlatformHandler for MacOSPlatformHandler {
     }
     
     /// Cleanup macOS-specific resources
-    fn cleanup(&self) -> Result<(), CursedError> {
+    fn cleanup(&self) -> Result<(), Error> {
         info!("Cleaning up macOS platform handler");
         Ok(())
     }
@@ -117,7 +120,7 @@ struct MacOSUnixSocket {
 }
 
 impl MacOSUnixSocket {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -125,19 +128,19 @@ impl MacOSUnixSocket {
 }
 
 impl IpcConnection for MacOSUnixSocket {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         // Stub implementation
         debug!("Sending {} bytes via macOS Unix socket: {}", message.len(), self.name);
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         // Stub implementation
         debug!("Receiving from macOS Unix socket: {}", self.name);
         Ok(Vec::new())
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         debug!("Closing macOS Unix socket: {}", self.name);
         Ok(())
     }
@@ -150,7 +153,7 @@ struct MacOSNamedPipe {
 }
 
 impl MacOSNamedPipe {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -158,17 +161,17 @@ impl MacOSNamedPipe {
 }
 
 impl IpcConnection for MacOSNamedPipe {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         debug!("Sending {} bytes via macOS named pipe: {}", message.len(), self.name);
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         debug!("Receiving from macOS named pipe: {}", self.name);
         Ok(Vec::new())
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         debug!("Closing macOS named pipe: {}", self.name);
         Ok(())
     }
@@ -181,7 +184,7 @@ struct MacOSSharedMemory {
 }
 
 impl MacOSSharedMemory {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -189,17 +192,17 @@ impl MacOSSharedMemory {
 }
 
 impl IpcConnection for MacOSSharedMemory {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         debug!("Writing {} bytes to macOS shared memory: {}", message.len(), self.name);
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         debug!("Reading from macOS shared memory: {}", self.name);
         Ok(Vec::new())
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         debug!("Closing macOS shared memory: {}", self.name);
         Ok(())
     }

@@ -12,7 +12,7 @@ use crate::stdlib::database::{
 };
 use super::config::PostgresConfig;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
-use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
+use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::statement::PostgresStatement;
 use super::transaction::PostgresTransaction;
 
@@ -178,7 +178,7 @@ impl PostgresConnection {
         self.update_stats(|stats| stats.queries_executed += 1);
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows = tokio::time::timeout(
@@ -232,7 +232,7 @@ impl PostgresConnection {
         self.update_stats(|stats| stats.queries_executed += 1);
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = tokio::time::timeout(
@@ -361,7 +361,7 @@ impl PostgresConnection {
 }
 
 impl DriverConn for PostgresConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, crate::stdlib::database::DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         // For async prepare, we need to use a runtime
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
@@ -376,7 +376,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, crate::stdlib::database::DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
             self.client.as_ref().unwrap().clone(), // This would need proper handling
@@ -388,7 +388,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, crate::stdlib::database::DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
             self.client.as_ref().unwrap().clone(), // This would need proper handling
@@ -400,7 +400,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, crate::stdlib::database::DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
             self.client.as_ref().unwrap().clone(), // This would need proper handling
@@ -414,7 +414,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn ping(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         let handle = tokio::runtime::Handle::current();
         let client = self.client.as_ref().ok_or_else(|| {
             crate::stdlib::database::DatabaseError::new(
@@ -428,7 +428,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| PostgresError::from(e).to_database_error())
     }
 
-    fn close(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // tokio-postgres connections close automatically when dropped
         Ok(())
     }

@@ -449,7 +449,7 @@ impl OptimizationCache {
         // Ensure cache directory exists
         if config.enable_incremental {
             std::fs::create_dir_all(&cache_dir)
-                .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to create cache directory: {}", e)))?;
         }
         
         Ok(Self {
@@ -481,9 +481,9 @@ impl OptimizationCache {
         
         if self.cache_dir.exists() {
             std::fs::remove_dir_all(&self.cache_dir)
-                .map_err(|e| Error::Other(format!("Failed to clear cache: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to clear cache: {}", e)))?;
             std::fs::create_dir_all(&self.cache_dir)
-                .map_err(|e| Error::Other(format!("Failed to recreate cache directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to recreate cache directory: {}", e)))?;
         }
         
         info!("Cache cleared successfully");

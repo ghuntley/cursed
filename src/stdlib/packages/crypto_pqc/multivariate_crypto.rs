@@ -76,7 +76,7 @@ impl MultivariateConfig {
     }
     
     /// sus Validate configuration
-    pub fn validate(&self) -> Result<(), MultivariateError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.variables == 0 || self.equations == 0 {
             return Err(MultivariateError::InvalidConfig("Variables and equations must be positive".to_string()));
         }
@@ -346,7 +346,7 @@ impl LinearTransformation {
     }
     
     /// Create random invertible transformation
-    pub fn random_invertible(size: usize, field_size: u8, rng: &mut dyn LatticeRng) -> Result<Self, MultivariateError> {
+    pub fn random_invertible(size: usize, field_size: u8, rng: &mut dyn LatticeRng) -> Result<(), Error> {
         let mut attempts = 0;
         while attempts < 100 {
             let mut matrix = vec![vec![FieldElement::zero(field_size); size]; size];
@@ -419,19 +419,19 @@ pub struct MultivariateKeyPair {
 
 impl MultivariateKeyPair {
     /// Generate new multivariate key pair
-    pub fn generate(config: &MultivariateConfig) -> Result<Self, MultivariateError> {
+    pub fn generate(config: &MultivariateConfig) -> Result<(), Error> {
         let mut engine = MultivariateEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// Sign message
-    pub fn sign(&self, message: &[u8]) -> Result<MultivariateSignature, MultivariateError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         let mut engine = MultivariateEngine::new(self.config.clone())?;
         engine.sign(message, &self.private_key)
     }
     
     /// Verify signature
-    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature) -> Result<bool, MultivariateError> {
+    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature) -> Result<(), Error> {
         let engine = MultivariateEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -487,7 +487,7 @@ impl MultivariateSignature {
     }
     
     /// Deserialize signature
-    pub fn deserialize(data: &[u8], algorithm: String) -> Result<Self, MultivariateError> {
+    pub fn deserialize(data: &[u8], algorithm: String) -> Result<(), Error> {
         if data.len() < 8 {
             return Err(MultivariateError::InvalidSignature("Invalid signature data".to_string()));
         }
@@ -550,7 +550,7 @@ pub struct MultivariateEngine {
 
 impl MultivariateEngine {
     /// Create new multivariate engine
-    pub fn new(config: MultivariateConfig) -> Result<Self, MultivariateError> {
+    pub fn new(config: MultivariateConfig) -> Result<(), Error> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -560,7 +560,7 @@ impl MultivariateEngine {
     }
     
     /// Generate key pair
-    pub fn generate_keypair(&mut self) -> Result<MultivariateKeyPair, MultivariateError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         match self.config.scheme_type {
             MultivariateScheme::Rainbow => self.generate_rainbow_keypair(),
             MultivariateScheme::UOV => self.generate_uov_keypair(),
@@ -569,7 +569,7 @@ impl MultivariateEngine {
     }
     
     /// Generate Rainbow key pair
-    fn generate_rainbow_keypair(&mut self) -> Result<MultivariateKeyPair, MultivariateError> {
+    fn generate_rainbow_keypair(&mut self) -> Result<(), Error> {
         // Step 1: Generate secret polynomial system with special structure
         let secret_system = self.generate_rainbow_secret_system()?;
         
@@ -609,7 +609,7 @@ impl MultivariateEngine {
     }
     
     /// Generate UOV key pair
-    fn generate_uov_keypair(&mut self) -> Result<MultivariateKeyPair, MultivariateError> {
+    fn generate_uov_keypair(&mut self) -> Result<(), Error> {
         // UOV key generation follows similar pattern but with oil-vinegar structure
         let secret_system = self.generate_uov_secret_system()?;
         
@@ -647,7 +647,7 @@ impl MultivariateEngine {
     }
     
     /// Generate Rainbow secret system with special structure
-    fn generate_rainbow_secret_system(&mut self) -> Result<PolynomialSystem, MultivariateError> {
+    fn generate_rainbow_secret_system(&mut self) -> Result<(), Error> {
         // Rainbow has a special layered structure
         let mut system = PolynomialSystem::new(self.config.variables, self.config.field_size);
         
@@ -661,7 +661,7 @@ impl MultivariateEngine {
     }
     
     /// Generate UOV secret system with oil-vinegar structure
-    fn generate_uov_secret_system(&mut self) -> Result<PolynomialSystem, MultivariateError> {
+    fn generate_uov_secret_system(&mut self) -> Result<(), Error> {
         // UOV has oil-vinegar structure where oil variables don't interact with each other
         let mut system = PolynomialSystem::new(self.config.variables, self.config.field_size);
         
@@ -680,13 +680,13 @@ impl MultivariateEngine {
         secret_system: &PolynomialSystem, 
         s_transform: &LinearTransformation, 
         t_transform: &LinearTransformation
-    ) -> Result<PolynomialSystem, MultivariateError> {
+    ) -> Result<(), Error> {
         // Simplified composition: in practice this involves complex polynomial arithmetic
         Ok(secret_system.apply_transformation(s_transform))
     }
     
     /// Sign message
-    pub fn sign(&mut self, message: &[u8], private_key: &MultivariatePrivateKey) -> Result<MultivariateSignature, MultivariateError> {
+    pub fn sign(&mut self, message: &[u8], private_key: &MultivariatePrivateKey) -> Result<(), Error> {
         // Step 1: Hash message
         let message_hash = self.hash_message(message)?;
         let target = self.hash_to_field_elements(&message_hash)?;
@@ -708,7 +708,7 @@ impl MultivariateEngine {
     }
     
     /// Verify signature
-    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature, public_key: &MultivariatePublicKey) -> Result<bool, MultivariateError> {
+    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature, public_key: &MultivariatePublicKey) -> Result<(), Error> {
         // Step 1: Hash message and compare
         let message_hash = self.hash_message(message)?;
         if message_hash != signature.message_hash {
@@ -736,7 +736,7 @@ impl MultivariateEngine {
     }
     
     /// Hash message
-    fn hash_message(&self, message: &[u8]) -> Result<Vec<u8>, MultivariateError> {
+    fn hash_message(&self, message: &[u8]) -> Result<(), Error> {
         // Simplified hash function (use SHA-256 in practice)
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -749,7 +749,7 @@ impl MultivariateEngine {
     }
     
     /// Convert hash to field elements
-    fn hash_to_field_elements(&self, hash: &[u8]) -> Result<Vec<FieldElement>, MultivariateError> {
+    fn hash_to_field_elements(&self, hash: &[u8]) -> Result<(), Error> {
         let mut elements = Vec::new();
         
         for &byte in hash.iter().take(self.config.equations) {
@@ -765,7 +765,7 @@ impl MultivariateEngine {
     }
     
     /// Solve secret polynomial system (trapdoor operation)
-    fn solve_secret_system(&mut self, system: &PolynomialSystem, target: &[FieldElement]) -> Result<Vec<FieldElement>, MultivariateError> {
+    fn solve_secret_system(&mut self, system: &PolynomialSystem, target: &[FieldElement]) -> Result<(), Error> {
         // This is where the trapdoor structure allows efficient solution
         // For Rainbow: use the layered structure to solve layer by layer
         // For UOV: fix vinegar variables and solve for oil variables
@@ -778,7 +778,7 @@ impl MultivariateEngine {
     }
     
     /// Solve Rainbow system using layered structure
-    fn solve_rainbow_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> Result<Vec<FieldElement>, MultivariateError> {
+    fn solve_rainbow_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> Result<(), Error> {
         // Simplified Rainbow solving
         let mut solution = Vec::new();
         
@@ -791,7 +791,7 @@ impl MultivariateEngine {
     }
     
     /// Solve UOV system using oil-vinegar structure
-    fn solve_uov_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> Result<Vec<FieldElement>, MultivariateError> {
+    fn solve_uov_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> Result<(), Error> {
         // Simplified UOV solving
         let mut solution = Vec::new();
         
@@ -865,7 +865,7 @@ impl MultivariateUtils {
     }
     
     /// Validate multivariate parameters for production
-    pub fn validate_for_production(config: &MultivariateConfig) -> Result<MultivariateSecurityValidation, MultivariateError> {
+    pub fn validate_for_production(config: &MultivariateConfig) -> Result<(), Error> {
         let security_bits = Self::estimate_security_level(config);
         let is_secure = security_bits >= 128.0;
         

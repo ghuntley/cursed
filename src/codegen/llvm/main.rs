@@ -11,7 +11,7 @@ use crate::common::optimization_level::OptimizationLevel as OptLevel;
 use crate::optimization::coordinator::{
     OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults
 };
-use crate::optimization::types::ComprehensiveOptimizationResult;
+use crate::optimization::crate::types::ComprehensiveOptimizationResult;
 
 /// Optimization preset configurations
 #[derive(Debug, Clone, Copy)]
@@ -30,7 +30,7 @@ use inkwell::{
     module::Module,
     builder::Builder,
     values::BasicValueEnum,
-    types::BasicTypeEnum,
+    crate::types::BasicTypeEnum,
 };
 
 // Import from sibling modules
@@ -62,7 +62,7 @@ use super::package_integration::{
     LlvmPackageContext, LlvmPackageConfig, LlvmPackageError, 
     LlvmPackageIntegration, CompiledPackageModule, LlvmPackageStats
 };
-use super::result_types::{
+use super::result_crate::types::{
     ResultTypeCompiler as ProductionResultTypeCompiler, 
     result_type_utils as production_result_utils,
     TypeLayout, ResultDiscriminant, OptionDiscriminant
@@ -100,7 +100,7 @@ pub use inkwell::{
     context::Context as LlvmContext,
     builder::Builder as LlvmBuilder,
     values::{FunctionValue, PointerValue, IntValue, FloatValue},
-    types::{IntType, FloatType, PointerType, FunctionType},
+    crate::types::{IntType, FloatType, PointerType, FunctionType},
     basic_block::BasicBlock,
     AddressSpace,
 };
@@ -251,11 +251,11 @@ pub struct LlvmCodeGeneratorReal<'ctx> {
 }
 
 impl LlvmCodeGenerator {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         Self::new_with_runtime(crate::runtime::Runtime::new()?)
     }
     
-    pub fn new_with_runtime(runtime: std::sync::Arc<crate::runtime::Runtime>) -> Result<Self, Error> {
+    pub fn new_with_runtime(runtime: std::sync::Arc<crate::runtime::Runtime>) -> Result<(), Error> {
         // Create real LLVM context, module, and builder
         let context = std::sync::Arc::new(inkwell::context::Context::create());
         let module_name = "cursed_module";
@@ -325,7 +325,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Get or initialize optimization engine
-    pub fn get_optimization_engine(&mut self) -> Result<&mut OptimizationEngine<'static>, Error> {
+    pub fn get_optimization_engine(&mut self) -> Result<(), Error> {
         if self.optimization_engine.is_none() {
             let config = OptimizationEngineConfig::default();
             self.initialize_optimization_engine(config)?;
@@ -345,7 +345,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Get or initialize real pass manager
-    pub fn get_real_pass_manager(&mut self) -> Result<&RealLlvmPassManager<'static>, Error> {
+    pub fn get_real_pass_manager(&mut self) -> Result<(), Error> {
         if self.real_pass_manager.is_none() {
             self.initialize_real_pass_manager()?;
         }
@@ -368,7 +368,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Get or initialize enhanced pass manager
-    pub fn get_enhanced_pass_manager(&mut self) -> Result<&EnhancedLlvmPassManager<'static>, Error> {
+    pub fn get_enhanced_pass_manager(&mut self) -> Result<(), Error> {
         if self.enhanced_pass_manager.is_none() {
             self.initialize_enhanced_pass_manager()?;
         }
@@ -395,7 +395,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Get template compiler (initialize if needed)
-    pub fn get_template_compiler(&mut self) -> Result<std::sync::Arc<std::sync::Mutex<LlvmTemplateCompiler>>, Error> {
+    pub fn get_template_compiler(&mut self) -> Result<(), Error> {
         if self.template_compiler.is_none() {
             self.initialize_template_compiler()?;
         }
@@ -407,7 +407,7 @@ impl LlvmCodeGenerator {
         &mut self,
         ast: &crate::stdlib::template::TemplateAst,
         context: &TemplateCompilationContext,
-    ) -> Result<CompiledTemplate, Error> {
+    ) -> Result<(), Error> {
         let template_compiler = self.get_template_compiler()?;
         let mut compiler = template_compiler.lock().map_err(|_| {
             Error::TemplateError {
@@ -429,7 +429,7 @@ impl LlvmCodeGenerator {
         template_name: String,
         source: &str,
         config: &crate::stdlib::template::TemplateConfig,
-    ) -> Result<CompiledTemplate, Error> {
+    ) -> Result<(), Error> {
         // Parse template to AST
         let mut lexer = crate::stdlib::template::TemplateLexer::new(source, &config.delimiters);
         let tokens = lexer.tokenize()?;
@@ -449,7 +449,7 @@ impl LlvmCodeGenerator {
         module: inkwell::module::Module<'ctx>,
         builder: inkwell::builder::Builder<'ctx>,
         runtime: std::sync::Arc<crate::runtime::Runtime>,
-    ) -> Result<LlvmCodeGeneratorReal<'ctx>, Error> {
+    ) -> Result<(), Error> {
         // Initialize optimization manager with default configuration
         let optimization_config = crate::optimization::OptimizationConfig::default();
         let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&optimization_config)
@@ -477,7 +477,7 @@ impl LlvmCodeGenerator {
         })
     }
     
-    pub fn new_with_debug(debug_config: DebugConfig) -> Result<Self, Error> {
+    pub fn new_with_debug(debug_config: DebugConfig) -> Result<(), Error> {
         // Create required components for debug mode
         let context = std::sync::Arc::new(inkwell::context::Context::create());
         let module_name = "debug_module";
@@ -526,7 +526,7 @@ impl LlvmCodeGenerator {
         })
     }
     
-    pub fn generate_ir(&self, source: &str) -> Result<String, Error> {
+    pub fn generate_ir(&self, source: &str) -> Result<(), Error> {
         tracing::info!("Generating LLVM IR from real LLVM module");
         
         // Get the real LLVM module and convert to string
@@ -611,7 +611,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Generate IR with full debug information
-    pub fn generate_ir_with_debug(&mut self, source_file: PathBuf, _source: &str) -> Result<String, Error> {
+    pub fn generate_ir_with_debug(&mut self, source_file: PathBuf, _source: &str) -> Result<(), Error> {
         // Initialize debug info
         self.debug_generator.initialize_debug_info(source_file.clone(), "CURSED Compiler v1.0".to_string())?;
         
@@ -784,7 +784,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Run comprehensive optimization on compilation units
-    pub fn optimize_compilation_units(&mut self, units: &mut [crate::optimization::metrics::CompilationUnit]) -> Result<ComprehensiveOptimizationResult, Error> {
+    pub fn optimize_compilation_units(&mut self, units: &mut [crate::optimization::metrics::CompilationUnit]) -> Result<(), Error> {
         // Ensure coordinator is initialized
         self.initialize_optimization_coordinator()?;
         
@@ -844,7 +844,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Perform comprehensive optimization during compilation
-    pub fn apply_comprehensive_optimization(&mut self, source: &str) -> Result<String, Error> {
+    pub fn apply_comprehensive_optimization(&mut self, source: &str) -> Result<(), Error> {
         tracing::debug!("Applying comprehensive optimization to compilation");
         
         // Initialize coordinator if needed
@@ -1047,7 +1047,7 @@ impl LlvmCodeGenerator {
     
     /// Pre-declare a function to enable forward references
     fn predeclare_function(&mut self, func: &crate::ast::FunctionStatement) -> Result<(), Error> {
-        tracing::debug!(function = %func.name.value, "Pre-declaring function");
+        tracing::debug!(function = %func.to_string().value, "Pre-declaring function");
         
         // This would create the function signature in the LLVM module
         // For now, we'll just log it and let the actual compilation handle it
@@ -1069,29 +1069,29 @@ impl LlvmCodeGenerator {
         
         // Try to downcast to specific statement types and compile accordingly
         if let Some(function_stmt) = statement.as_any().downcast_ref::<FunctionStatement>() {
-            tracing::debug!(function = %function_stmt.name.value, "Compiling function");
+            tracing::debug!(function = %function_stmt.to_string().value, "Compiling function");
             self.compile_function_declaration(function_stmt)?;
             
         } else if let Some(struct_stmt) = statement.as_any().downcast_ref::<SquadStatement>() {
-            tracing::debug!(struct_name = %struct_stmt.name.value, "Compiling struct");
+            tracing::debug!(struct_name = %struct_stmt.to_string().value, "Compiling struct");
             // Struct was already registered in first pass, generate constructors if needed
             self.generate_struct_constructors();
             
         } else if let Some(interface_stmt) = statement.as_any().downcast_ref::<CollabStatement>() {
-            tracing::debug!(interface = %interface_stmt.name.value, "Compiling interface");
+            tracing::debug!(interface = %interface_stmt.to_string().value, "Compiling interface");
             // Interface was already registered, generate dispatch methods
             self.generate_interface_dispatch();
             
         } else if let Some(let_stmt) = statement.as_any().downcast_ref::<LetStatement>() {
-            tracing::debug!(variable = %let_stmt.name.value, "Compiling variable declaration");
+            tracing::debug!(variable = %let_stmt.to_string().value, "Compiling variable declaration");
             self.compile_global_variable(let_stmt)?;
             
         } else if let Some(facts_stmt) = statement.as_any().downcast_ref::<FactsStatement>() {
-            tracing::debug!(constant = %facts_stmt.name.value, "Compiling constant declaration");
+            tracing::debug!(constant = %facts_stmt.to_string().value, "Compiling constant declaration");
             self.compile_global_constant(facts_stmt)?;
             
         } else if let Some(var_stmt) = statement.as_any().downcast_ref::<VariableStatement>() {
-            tracing::debug!(variable = %var_stmt.name, "Compiling parser variable statement");
+            tracing::debug!(variable = %var_stmt.to_string(), "Compiling parser variable statement");
             self.compile_parser_variable(var_stmt)?;
             
         } else if let Some(expr_stmt) = statement.as_any().downcast_ref::<ParserExpressionStatement>() {
@@ -1099,7 +1099,7 @@ impl LlvmCodeGenerator {
             self.compile_top_level_expression(&*expr_stmt.expression)?;
             
         } else if let Some(package_stmt) = statement.as_any().downcast_ref::<PackageStatement>() {
-            tracing::debug!(package = %package_stmt.name, "Processing package statement");
+            tracing::debug!(package = %package_stmt.to_string(), "Processing package statement");
             // Package already handled in main compile method
             
         } else if let Some(import_stmt) = statement.as_any().downcast_ref::<ImportStatement>() {
@@ -1119,7 +1119,7 @@ impl LlvmCodeGenerator {
     
     /// Compile a global variable declaration
     fn compile_global_variable(&mut self, let_stmt: &crate::ast::LetStatement) -> Result<(), Error> {
-        tracing::debug!(variable = %let_stmt.name.value, "Compiling global variable");
+        tracing::debug!(variable = %let_stmt.to_string().value, "Compiling global variable");
         
         // Determine variable type
         let var_type = if let Some(type_annotation) = &let_stmt.type_annotation {
@@ -1132,7 +1132,7 @@ impl LlvmCodeGenerator {
         };
         
         // Generate global variable declaration
-        let global_name = format!("@{}", let_stmt.name.value);
+        let global_name = format!("@{}", let_stmt.to_string().value);
         
         // For now, create a placeholder global variable
         // In a full implementation, this would generate proper LLVM global variable IR
@@ -1147,7 +1147,7 @@ impl LlvmCodeGenerator {
     
     /// Compile a global constant declaration
     fn compile_global_constant(&mut self, facts_stmt: &crate::ast::FactsStatement) -> Result<(), Error> {
-        tracing::debug!(constant = %facts_stmt.name.value, "Compiling global constant");
+        tracing::debug!(constant = %facts_stmt.to_string().value, "Compiling global constant");
         
         // Generate constant value
         let const_type = if let Some(type_annotation) = &facts_stmt.type_annotation {
@@ -1156,7 +1156,7 @@ impl LlvmCodeGenerator {
             self.infer_type_from_expression(facts_stmt.value.as_ref())?
         };
         
-        let const_name = format!("@{}", facts_stmt.name.value);
+        let const_name = format!("@{}", facts_stmt.to_string().value);
         
         // For now, create a placeholder constant
         tracing::debug!(
@@ -1170,7 +1170,7 @@ impl LlvmCodeGenerator {
     
     /// Compile a parser variable statement
     fn compile_parser_variable(&mut self, var_stmt: &crate::ast::parser_support::VariableStatement) -> Result<(), Error> {
-        tracing::debug!(variable = %var_stmt.name, "Compiling parser variable");
+        tracing::debug!(variable = %var_stmt.to_string(), "Compiling parser variable");
         
         let var_type = if let Some(type_str) = &var_stmt.var_type {
             self.map_cursed_type_to_llvm(type_str)
@@ -1180,7 +1180,7 @@ impl LlvmCodeGenerator {
             "i8*".to_string()
         };
         
-        let global_name = format!("@{}", var_stmt.name);
+        let global_name = format!("@{}", var_stmt.to_string());
         
         tracing::debug!(
             global = %global_name,
@@ -1205,7 +1205,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Infer LLVM type from expression
-    fn infer_type_from_expression(&self, expr: &dyn crate::ast::Expression) -> Result<String, Error> {
+    fn infer_type_from_expression(&self, expr: &dyn crate::ast::Expression) -> Result<(), Error> {
         use crate::ast::expressions::{Literal, LiteralValue};
         
         // Try to infer type from literal values
@@ -1225,7 +1225,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Complete compilation workflow: compile program and generate IR
-    pub fn compile_program(&mut self, program: &crate::ast::Program, source: &str) -> Result<String, Error> {
+    pub fn compile_program(&mut self, program: &crate::ast::Program, source: &str) -> Result<(), Error> {
         tracing::info!("Starting complete program compilation");
         
         // Compile the program AST
@@ -1277,7 +1277,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile an expression to LLVM IR
-    pub fn compile_expression(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<LlvmValue, Error> {
+    pub fn compile_expression(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         self.expression_compiler.compile_expression(expr)
     }
     
@@ -1297,12 +1297,12 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile a struct declaration (squad statement)
-    pub fn compile_struct(&mut self, squad: &crate::ast::declarations::SquadStatement) -> Result<CompiledStructType, Error> {
+    pub fn compile_struct(&mut self, squad: &crate::ast::declarations::SquadStatement) -> Result<(), Error> {
         self.type_context.compile_struct(squad)
     }
     
     /// Compile an interface declaration (collab statement)
-    pub fn compile_interface(&mut self, collab: &crate::ast::declarations::CollabStatement) -> Result<CompiledInterfaceType, Error> {
+    pub fn compile_interface(&mut self, collab: &crate::ast::declarations::CollabStatement) -> Result<(), Error> {
         self.type_context.compile_interface(collab)
     }
     
@@ -1638,7 +1638,7 @@ impl LlvmCodeGenerator {
     fn parse_type_switch_from_statement(
         &self,
         switch_stmt: &crate::ast::conditionals::SwitchStatement
-    ) -> Result<(Box<dyn crate::ast::traits::Expression>, Vec<crate::codegen::llvm::type_switch::TypeCase>, Option<Vec<Box<dyn crate::ast::traits::Statement>>>), Error> {
+    ) -> Result<(), Error> {
         use crate::codegen::llvm::type_switch::TypeCase;
         
         // Extract the switch expression
@@ -1675,7 +1675,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Extract type name from case value expression
-    fn extract_type_name_from_case(&self, case_expr: &dyn crate::ast::traits::Expression) -> Result<String, Error> {
+    fn extract_type_name_from_case(&self, case_expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         // For type switches, case values should be type identifiers
         // This is a simplified implementation - would need more sophisticated parsing
         let case_string = case_expr.string();
@@ -1690,7 +1690,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Parse type case binding (e.g., "Type as variable")
-    fn parse_type_case_binding(&self, type_str: &str) -> Result<(String, Option<String>), Error> {
+    fn parse_type_case_binding(&self, type_str: &str) -> Result<(), Error> {
         if type_str.contains(" as ") {
             let parts: Vec<&str> = type_str.splitn(2, " as ").collect();
             if parts.len() == 2 {
@@ -1709,7 +1709,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Compile a basic expression
-    pub fn compile_basic_expression(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<LlvmValue, Error> {
+    pub fn compile_basic_expression(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         use crate::ast::expressions::{Literal, LiteralValue};
         use crate::ast::identifiers::Identifier;
         use crate::ast::operators::BinaryExpression;
@@ -1736,7 +1736,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile a literal value
-    fn compile_literal_value(&mut self, literal: &crate::ast::expressions::Literal) -> Result<LlvmValue, Error> {
+    fn compile_literal_value(&mut self, literal: &crate::ast::expressions::Literal) -> Result<(), Error> {
         use crate::ast::expressions::LiteralValue;
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
@@ -1782,7 +1782,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile an identifier value
-    fn compile_identifier_value(&mut self, identifier: &crate::ast::identifiers::Identifier) -> Result<LlvmValue, Error> {
+    fn compile_identifier_value(&mut self, identifier: &crate::ast::identifiers::Identifier) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         let var_name = &identifier.value;
@@ -1797,7 +1797,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile a binary expression value
-    fn compile_binary_value(&mut self, binary: &crate::ast::operators::BinaryExpression) -> Result<LlvmValue, Error> {
+    fn compile_binary_value(&mut self, binary: &crate::ast::operators::BinaryExpression) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         // Compile operands
@@ -1819,7 +1819,7 @@ impl LlvmCodeGenerator {
     
     
     /// Compile a function call value
-    fn compile_function_call_value(&mut self, call: &crate::ast::calls::CallExpression) -> Result<LlvmValue, Error> {
+    fn compile_function_call_value(&mut self, call: &crate::ast::calls::CallExpression) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         let func_name = call.function.string();
@@ -1892,7 +1892,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile a string literal
-    pub fn compile_string_literal(&mut self, literal: &crate::ast::expressions::Literal) -> Result<LlvmValue, Error> {
+    pub fn compile_string_literal(&mut self, literal: &crate::ast::expressions::Literal) -> Result<(), Error> {
         use crate::ast::expressions::LiteralValue;
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
@@ -1918,7 +1918,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile string literal from debug representation (compatibility)
-    pub fn compile_string_literal_debug(&mut self, literal_debug: &dyn std::fmt::Debug) -> Result<LlvmValue, Error> {
+    pub fn compile_string_literal_debug(&mut self, literal_debug: &dyn std::fmt::Debug) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         // Extract string content from debug representation
@@ -1943,7 +1943,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Convert to reference for chaining (stub implementation)
-    pub fn as_ref(&self) -> Result<&Self, Error> {
+    pub fn as_ref(&self) -> Result<(), Error> {
         Ok(self)
     }
     
@@ -1965,7 +1965,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Generate LLVM IR with GC integration
-    pub fn generate_ir_with_gc(&self, source: &str) -> Result<String, Error> {
+    pub fn generate_ir_with_gc(&self, source: &str) -> Result<(), Error> {
         let mut ir = String::new();
         
         // Module header
@@ -1991,7 +1991,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Generate main function with GC safe points
-    fn generate_gc_aware_main(&self, _source: &str) -> Result<String, Error> {
+    fn generate_gc_aware_main(&self, _source: &str) -> Result<(), Error> {
         let mut ir = String::new();
         
         ir.push_str("define i32 @main() {\n");
@@ -2017,7 +2017,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Generate allocation IR for a specific type
-    pub fn generate_gc_allocation(&self, type_name: &str, temp_var: &str) -> Result<String, Error> {
+    pub fn generate_gc_allocation(&self, type_name: &str, temp_var: &str) -> Result<(), Error> {
         if let Some(ref gc) = self.gc_integration {
             gc.generate_allocation_ir(type_name, temp_var)
         } else {
@@ -2053,7 +2053,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Get GC integration statistics
-    pub fn get_gc_stats(&self) -> Result<GcIntegrationStats, Error> {
+    pub fn get_gc_stats(&self) -> Result<(), Error> {
         if let Some(ref gc) = self.gc_integration {
             gc.get_stats()
         } else {
@@ -2099,7 +2099,7 @@ impl LlvmCodeGenerator {
         &mut self,
         source: &str,
         source_file: Option<&std::path::Path>,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         if let Some(ref mut context) = self.package_context {
             context.compile_with_packages(source, source_file).await
                 .map_err(|e| Error::from_str(&format!("Package compilation failed: {}", e)))
@@ -2110,7 +2110,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Resolve a specific package import for manual use
-    pub async fn resolve_single_package_import(&mut self, import_path: &str) -> Result<CompiledPackageModule, Error> {
+    pub async fn resolve_single_package_import(&mut self, import_path: &str) -> Result<(), Error> {
         if let Some(ref mut context) = self.package_context {
             context.resolve_package_import(import_path).await
                 .map_err(|e| Error::from_str(&format!("Failed to resolve package import: {}", e)))
@@ -2183,7 +2183,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Install a package for compilation
-    pub async fn install_package(&mut self, package_name: &str) -> Result<crate::package_manager::PackageMetadata, Error> {
+    pub async fn install_package(&mut self, package_name: &str) -> Result<(), Error> {
         if let Some(ref mut context) = self.package_context {
             context.install_package(package_name).await
                 .map_err(|e| Error::from_str(&format!("Failed to install package: {}", e)))
@@ -2288,13 +2288,13 @@ impl LlvmCodeGenerator {
     }
     
     /// Compile expression and return its LLVM IR representation as string
-    pub fn compile_expression_to_string(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<String, Error> {
+    pub fn compile_expression_to_string(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         let llvm_value = self.compile_expression(expr)?;
         Ok(llvm_value.llvm_name)
     }
     
     /// Compile expression and return its LLVM IR
-    pub fn compile_expression_to_ir(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<String, Error> {
+    pub fn compile_expression_to_ir(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         let llvm_value = self.compile_expression(expr)?;
         // For now, just return the value name - in full implementation this would be complete IR
         Ok(format!("  {} = {}", llvm_value.llvm_name, "expression_compilation_result"))
@@ -2314,7 +2314,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Infer the type of an expression
-    pub fn infer_expression_type(&self, expr: &dyn crate::ast::traits::Expression) -> Result<LlvmType, Error> {
+    pub fn infer_expression_type(&self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         // Placeholder implementation - in reality this would analyze the expression
         // and return its inferred type
         Ok(LlvmType::Int32)
@@ -2376,7 +2376,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Enhanced compile_expression that returns proper LLVM value with type information
-    pub fn compile_expression_with_type(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<(LlvmValue, LlvmType), Error> {
+    pub fn compile_expression_with_type(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         let value = self.compile_expression(expr)?;
         let expr_type = self.infer_expression_type(expr)?;
         Ok((value, expr_type))
@@ -2461,7 +2461,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Infer the type of an expression and return as string (for legacy compatibility)
-    pub fn infer_expression_type_string(&self, expr: &dyn crate::ast::traits::Expression) -> Result<String, Error> {
+    pub fn infer_expression_type_string(&self, expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         // Placeholder implementation - in reality this would analyze the expression
         // and return its inferred type as a string
         Ok("Result<i32, String>".to_string())
@@ -2530,7 +2530,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Add a string constant to the module
-    pub fn add_string_constant(&mut self, string_value: &str) -> Result<String, Error> {
+    pub fn add_string_constant(&mut self, string_value: &str) -> Result<(), Error> {
         let string_id = format!("str_{}", self.next_temp_id());
         let escaped_string = string_value.escape_default().to_string();
         
@@ -2818,7 +2818,7 @@ impl<'ctx> LlvmCodeGeneratorReal<'ctx> {
         module: inkwell::module::Module<'ctx>,
         builder: inkwell::builder::Builder<'ctx>,
         runtime: std::sync::Arc<crate::runtime::Runtime>,
-    ) -> Result<Self, Error> {
+    ) -> Result<(), Error> {
         Ok(Self {
             context,
             module,
@@ -2913,7 +2913,7 @@ impl<'ctx> LlvmCodeGeneratorReal<'ctx> {
     }
     
     /// Compile a goroutine spawn expression (stan keyword)
-    pub fn compile_goroutine_spawn(&mut self, spawn: &crate::ast::expressions::GoroutineSpawn) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn compile_goroutine_spawn(&mut self, spawn: &crate::ast::expressions::GoroutineSpawn) -> Result<(), Error> {
         use crate::codegen::llvm::goroutine::GoroutineCompiler;
         GoroutineCompiler::compile_goroutine_spawn(self, spawn)
     }
@@ -2950,7 +2950,7 @@ impl<'ctx> ErrorHandlingCompiler<'ctx> for LlvmCodeGenerator {
         severity: PanicSeverity,
         category: PanicCategory,
         location: Option<crate::error::SourceLocation>,
-    ) -> Result<(), crate::error::Error> {
+    ) -> Result<(), Error> {
         tracing::info!(
             message = message,
             severity = ?severity,
@@ -3041,9 +3041,9 @@ impl<'ctx> ErrorHandlingCompiler<'ctx> for LlvmCodeGenerator {
         protected_operation: F,
         _recovery_handler: Option<F>,
         _location: Option<crate::error::SourceLocation>,
-    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error>
+    ) -> Result<(), Error>
     where
-        F: FnOnce(&mut Self) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error>,
+        F: FnOnce(&mut Self) -> Result<(), Error>,
     {
         // For now, just execute the protected operation
         // TODO: Add proper recovery block generation
@@ -3056,7 +3056,7 @@ impl<'ctx> ErrorHandlingCompiler<'ctx> for LlvmCodeGenerator {
         result_type: crate::codegen::llvm::expression_compiler::LlvmType,
         location: Option<crate::error::SourceLocation>,
         function_name: Option<String>,
-    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+    ) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         tracing::info!(
@@ -3203,7 +3203,7 @@ impl<'ctx> ErrorHandlingCompiler<'ctx> for LlvmCodeGenerator {
         &mut self,
         value: crate::codegen::llvm::expression_compiler::LlvmValue,
         value_type: crate::codegen::llvm::expression_compiler::LlvmType,
-    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+    ) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         tracing::info!(
@@ -3336,7 +3336,7 @@ impl<'ctx> ErrorHandlingCompiler<'ctx> for LlvmCodeGenerator {
     fn generate_stack_trace_capture(
         &mut self,
         max_depth: Option<usize>,
-    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+    ) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
         
         let max_depth = max_depth.unwrap_or(32); // Default to 32 frames
@@ -3470,7 +3470,7 @@ stack_trace_success:
         error_message: &str,
         location: Option<crate::error::SourceLocation>,
         function_name: Option<String>,
-    ) -> Result<crate::codegen::llvm::expression_compiler::LlvmValue, crate::error::Error> {
+    ) -> Result<(), Error> {
         // For now, return a placeholder pointer value
         // TODO: Generate actual error context creation LLVM IR
         tracing::info!(
@@ -3492,7 +3492,7 @@ stack_trace_success:
 
 /// ProcessCompilation trait implementation for LlvmCodeGeneratorReal
 impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
-    fn compile_process_spawn(&mut self, command: &str, args: &[String]) -> Result<IntValue<'ctx>, Error> {
+    fn compile_process_spawn(&mut self, command: &str, args: &[String]) -> Result<(), Error> {
         tracing::info!("Compiling process spawn operation for command: {}", command);
         
         // Use the ProcessExecutionCompiler trait for the actual implementation
@@ -3502,7 +3502,7 @@ impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
         Ok(pid)
     }
 
-    fn compile_process_control(&mut self, pid_expr: &dyn crate::ast::traits::Expression, operation: ProcessControlOp) -> Result<IntValue<'ctx>, Error> {
+    fn compile_process_control(&mut self, pid_expr: &dyn crate::ast::traits::Expression, operation: ProcessControlOp) -> Result<(), Error> {
         tracing::info!("Compiling process control operation");
         
         match operation {
@@ -3529,32 +3529,32 @@ impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_ipc_channel_create(&mut self, _channel_type: IpcChannelType, _config: &dyn crate::ast::traits::Expression) -> Result<IntValue<'ctx>, Error> {
+    fn compile_ipc_channel_create(&mut self, _channel_type: IpcChannelType, _config: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("IPC channel creation not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_ipc_send(&mut self, _channel_expr: &dyn crate::ast::traits::Expression, _data_expr: &dyn crate::ast::traits::Expression) -> Result<IntValue<'ctx>, Error> {
+    fn compile_ipc_send(&mut self, _channel_expr: &dyn crate::ast::traits::Expression, _data_expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("IPC send not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_ipc_receive(&mut self, _channel_expr: &dyn crate::ast::traits::Expression, _timeout_expr: Option<&dyn crate::ast::traits::Expression>) -> Result<IntValue<'ctx>, Error> {
+    fn compile_ipc_receive(&mut self, _channel_expr: &dyn crate::ast::traits::Expression, _timeout_expr: Option<&dyn crate::ast::traits::Expression>) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("IPC receive not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_shared_memory(&mut self, _operation: SharedMemoryOp, _args: &[&dyn crate::ast::traits::Expression]) -> Result<IntValue<'ctx>, Error> {
+    fn compile_shared_memory(&mut self, _operation: SharedMemoryOp, _args: &[&dyn crate::ast::traits::Expression]) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("Shared memory operations not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_signal_operation(&mut self, _operation: SignalOp, _args: &[&dyn crate::ast::traits::Expression]) -> Result<IntValue<'ctx>, Error> {
+    fn compile_signal_operation(&mut self, _operation: SignalOp, _args: &[&dyn crate::ast::traits::Expression]) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("Signal operations not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn crate::ast::traits::Expression>) -> Result<IntValue<'ctx>, Error> {
+    fn compile_slay_command(&mut self, command: &str, args: &[String], options: Option<&dyn crate::ast::traits::Expression>) -> Result<(), Error> {
         tracing::info!("Compiling slay command");
         
         // Use the ProcessExecutionCompiler trait
@@ -3566,7 +3566,7 @@ impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_slay_pipeline(&mut self, commands: &[&dyn crate::ast::traits::Expression], _options: Option<&dyn crate::ast::traits::Expression>) -> Result<IntValue<'ctx>, Error> {
+    fn compile_slay_pipeline(&mut self, commands: &[&dyn crate::ast::traits::Expression], _options: Option<&dyn crate::ast::traits::Expression>) -> Result<(), Error> {
         tracing::info!("Compiling slay pipeline");
         
         // Convert expressions to command/args pairs (simplified)
@@ -3584,7 +3584,7 @@ impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_slay_background_task(&mut self, command_expr: &dyn crate::ast::traits::Expression) -> Result<IntValue<'ctx>, Error> {
+    fn compile_slay_background_task(&mut self, command_expr: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         tracing::info!("Compiling slay background task");
         
         let handle = ProcessExecutionCompiler::compile_background_task(self, command_expr)?;
@@ -3595,7 +3595,7 @@ impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn crate::ast::traits::Expression>) -> Result<IntValue<'ctx>, Error> {
+    fn compile_vibez_command(&mut self, command: &str, args: &[String], context: Option<&dyn crate::ast::traits::Expression>) -> Result<(), Error> {
         tracing::info!("Compiling vibez command");
         
         let result = ProcessExecutionCompiler::compile_exec_vibez(self, command, args, context)?;
@@ -3606,12 +3606,12 @@ impl<'ctx> ProcessCompilation<'ctx> for LlvmCodeGeneratorReal<'ctx> {
         }
     }
 
-    fn compile_vibez_process_group(&mut self, _commands: &[&dyn crate::ast::traits::Expression], _config: Option<&dyn crate::ast::traits::Expression>) -> Result<IntValue<'ctx>, Error> {
+    fn compile_vibez_process_group(&mut self, _commands: &[&dyn crate::ast::traits::Expression], _config: Option<&dyn crate::ast::traits::Expression>) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("Vibez process group not yet implemented for real LLVM generator".to_string()))
     }
 
-    fn compile_vibez_output_streaming(&mut self, _command_expr: &dyn crate::ast::traits::Expression, _callback: &dyn crate::ast::traits::Expression) -> Result<IntValue<'ctx>, Error> {
+    fn compile_vibez_output_streaming(&mut self, _command_expr: &dyn crate::ast::traits::Expression, _callback: &dyn crate::ast::traits::Expression) -> Result<(), Error> {
         // Placeholder implementation
         Err(Error::Compile("Vibez output streaming not yet implemented for real LLVM generator".to_string()))
     }

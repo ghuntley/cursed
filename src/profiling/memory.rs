@@ -35,7 +35,7 @@ impl MemoryProfiler {
         size: usize,
         address: u64,
         stack_trace: Vec<String>,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() || size < self.tracking_threshold {
             return Ok(());
         }
@@ -65,7 +65,7 @@ impl MemoryProfiler {
         &self,
         address: u64,
         stack_trace: Vec<String>,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -91,7 +91,7 @@ impl MemoryProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn track_gc_event(&self, gc_event: GcEvent) -> Result<(), ProfilerError> {
+    pub fn track_gc_event(&self, gc_event: GcEvent) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -149,7 +149,7 @@ impl MemoryProfiler {
 
 impl DataCollector for MemoryProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), ProfilerError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("Memory profiler already collecting".to_string()));
         }
@@ -162,7 +162,7 @@ impl DataCollector for MemoryProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<Vec<u8>, ProfilerError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("Memory profiler not collecting".to_string()));
         }
@@ -515,7 +515,7 @@ impl AllocationHooks {
         Self { installed: false }
     }
     
-    fn install(&mut self) -> Result<(), ProfilerError> {
+    fn install(&mut self) -> Result<(), Error> {
         if self.installed {
             return Ok(());
         }
@@ -531,7 +531,7 @@ impl AllocationHooks {
         Ok(())
     }
     
-    fn uninstall(&mut self) -> Result<(), ProfilerError> {
+    fn uninstall(&mut self) -> Result<(), Error> {
         if !self.installed {
             return Ok(());
         }

@@ -30,12 +30,12 @@ impl JsonHandler {
     }
 
     /// Parse JSON string to value
-    pub fn parse(&self, json_str: &str) -> Result<JsonValue, JsonError> {
+    pub fn parse(&self, json_str: &str) -> Result<(), Error> {
         JsonParser::new(json_str).parse()
     }
 
     /// Serialize value to JSON string
-    pub fn stringify(&self, value: &JsonValue) -> Result<String, JsonError> {
+    pub fn stringify(&self, value: &JsonValue) -> Result<(), Error> {
         if self.pretty {
             self.stringify_pretty(value, 0)
         } else {
@@ -44,7 +44,7 @@ impl JsonHandler {
     }
 
     /// Serialize value to pretty JSON string
-    fn stringify_pretty(&self, value: &JsonValue, depth: usize) -> Result<String, JsonError> {
+    fn stringify_pretty(&self, value: &JsonValue, depth: usize) -> Result<(), Error> {
         let indent_str = " ".repeat(depth * self.indent);
         let next_indent = " ".repeat((depth + 1) * self.indent);
 
@@ -93,7 +93,7 @@ impl JsonHandler {
     }
 
     /// Extract JSON from request body
-    pub fn from_request_body(&self, body: &str, content_type: &str) -> Result<JsonValue, JsonError> {
+    pub fn from_request_body(&self, body: &str, content_type: &str) -> Result<(), Error> {
         if !content_type.contains("application/json") {
             return Err(JsonError::InvalidContentType(content_type.to_string()));
         }
@@ -102,7 +102,7 @@ impl JsonHandler {
     }
 
     /// Create JSON response
-    pub fn create_response(&self, value: &JsonValue) -> Result<JsonResponse, JsonError> {
+    pub fn create_response(&self, value: &JsonValue) -> Result<(), Error> {
         let body = self.stringify(value)?;
         Ok(JsonResponse {
             body,
@@ -348,12 +348,12 @@ impl JsonParser {
         }
     }
 
-    fn parse(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse(&mut self) -> Result<(), Error> {
         self.skip_whitespace();
         self.parse_value()
     }
 
-    fn parse_value(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_value(&mut self) -> Result<(), Error> {
         self.skip_whitespace();
         
         if self.pos >= self.input.len() {
@@ -371,7 +371,7 @@ impl JsonParser {
         }
     }
 
-    fn parse_null(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_null(&mut self) -> Result<(), Error> {
         if self.input[self.pos..].iter().take(4).collect::<String>() == "null" {
             self.pos += 4;
             Ok(JsonValue::Null)
@@ -380,7 +380,7 @@ impl JsonParser {
         }
     }
 
-    fn parse_bool(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_bool(&mut self) -> Result<(), Error> {
         if self.input[self.pos..].iter().take(4).collect::<String>() == "true" {
             self.pos += 4;
             Ok(JsonValue::Bool(true))
@@ -392,7 +392,7 @@ impl JsonParser {
         }
     }
 
-    fn parse_string(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_string(&mut self) -> Result<(), Error> {
         self.pos += 1; // Skip opening quote
         let mut string = String::new();
 
@@ -430,7 +430,7 @@ impl JsonParser {
         Err(JsonError::UnexpectedEnd)
     }
 
-    fn parse_number(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_number(&mut self) -> Result<(), Error> {
         let start = self.pos;
         
         if self.input[self.pos] == '-' {
@@ -469,7 +469,7 @@ impl JsonParser {
         }
     }
 
-    fn parse_array(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_array(&mut self) -> Result<(), Error> {
         self.pos += 1; // Skip '['
         self.skip_whitespace();
 
@@ -504,7 +504,7 @@ impl JsonParser {
         Ok(JsonValue::Array(array))
     }
 
-    fn parse_object(&mut self) -> Result<JsonValue, JsonError> {
+    fn parse_object(&mut self) -> Result<(), Error> {
         self.pos += 1; // Skip '{'
         self.skip_whitespace();
 

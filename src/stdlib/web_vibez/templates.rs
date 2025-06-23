@@ -79,7 +79,7 @@ impl TemplateEngine {
     }
 
     /// Load template from filesystem
-    pub fn load_template(&mut self, name: &str) -> Result<(), TemplateError> {
+    pub fn load_template(&mut self, name: &str) -> Result<(), Error> {
         let template_path = self.resolve_template_path(name)?;
         
         // Check if template exists
@@ -157,7 +157,7 @@ impl TemplateEngine {
     }
 
     /// Render template with context
-    pub fn render(&self, name: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    pub fn render(&self, name: &str, context: &TemplateContext) -> Result<(), Error> {
         let cached_template = self.templates.get(name)
             .ok_or_else(|| TemplateError::TemplateNotFound(name.to_string()))?;
 
@@ -183,13 +183,13 @@ impl TemplateEngine {
     }
 
     /// Render template with legacy string context (for backward compatibility)
-    pub fn render_legacy(&self, name: &str, context: &HashMap<String, String>) -> Result<String, TemplateError> {
+    pub fn render_legacy(&self, name: &str, context: &HashMap<String, String>) -> Result<(), Error> {
         let template_context = TemplateContext::from_string_map(context);
         self.render(name, &template_context)
     }
 
     /// Resolve template file path
-    fn resolve_template_path(&self, name: &str) -> Result<PathBuf, TemplateError> {
+    fn resolve_template_path(&self, name: &str) -> Result<(), Error> {
         let mut path = self.config.template_dir.join(name);
         
         // Add extension if not present
@@ -201,7 +201,7 @@ impl TemplateEngine {
     }
 
     /// Parse template metadata (extends, includes, variables)
-    fn parse_template_metadata(&self, content: &str) -> Result<(Option<String>, Vec<String>, Vec<String>), TemplateError> {
+    fn parse_template_metadata(&self, content: &str) -> Result<(), Error> {
         let mut extends = None;
         let mut includes = Vec::new();
         let mut variables = Vec::new();
@@ -268,7 +268,7 @@ impl TemplateEngine {
     }
 
     /// Build inheritance chain for template
-    fn build_inheritance_chain(&mut self, child: &str, parent: &str) -> Result<(), TemplateError> {
+    fn build_inheritance_chain(&mut self, child: &str, parent: &str) -> Result<(), Error> {
         let mut chain = vec![child.to_string()];
         let mut current = parent;
 
@@ -305,14 +305,14 @@ impl TemplateEngine {
     }
 
     /// Compile template content
-    fn compile_template(&self, template: &Template) -> Result<String, TemplateError> {
+    fn compile_template(&self, template: &Template) -> Result<(), Error> {
         // For now, return content as-is
         // In a full implementation, this would compile to an optimized format
         Ok(template.content.clone())
     }
 
     /// Render template with inheritance
-    fn render_with_inheritance(&self, child: &str, parent: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    fn render_with_inheritance(&self, child: &str, parent: &str, context: &TemplateContext) -> Result<(), Error> {
         let parent_template = self.templates.get(parent)
             .ok_or_else(|| TemplateError::TemplateNotFound(parent.to_string()))?;
 
@@ -327,7 +327,7 @@ impl TemplateEngine {
     }
 
     /// Process template includes
-    fn process_includes(&self, content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    fn process_includes(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
         let mut result = content.to_string();
         
         // Find and replace include directives
@@ -358,7 +358,7 @@ impl TemplateEngine {
     }
 
     /// Simple template rendering
-    fn render_simple(&self, content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    fn render_simple(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
         let mut rendered = content.to_string();
         
         // Replace variables in context
@@ -379,19 +379,19 @@ impl TemplateEngine {
     }
 
     /// Handlebars-style template rendering
-    fn render_handlebars(&self, content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    fn render_handlebars(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
         // Basic handlebars-style rendering
         self.render_simple(content, context)
     }
 
     /// Mustache-style template rendering
-    fn render_mustache(&self, content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    fn render_mustache(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
         // Basic mustache-style rendering
         self.render_simple(content, context)
     }
 
     /// Jinja2-style template rendering
-    fn render_jinja2(&self, content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    fn render_jinja2(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
         // Basic jinja2-style rendering with different delimiters
         let mut rendered = content.to_string();
         
@@ -429,17 +429,17 @@ impl TemplateRenderer {
     }
 
     /// Render template to string with rich context
-    pub fn render_to_string(&self, template: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    pub fn render_to_string(&self, template: &str, context: &TemplateContext) -> Result<(), Error> {
         self.engine.render(template, context)
     }
 
     /// Render template to string with string context (backward compatibility)
-    pub fn render_to_string_legacy(&self, template: &str, context: &HashMap<String, String>) -> Result<String, TemplateError> {
+    pub fn render_to_string_legacy(&self, template: &str, context: &HashMap<String, String>) -> Result<(), Error> {
         self.engine.render_legacy(template, context)
     }
 
     /// Load template into the engine
-    pub fn load_template(&mut self, name: &str) -> Result<(), TemplateError> {
+    pub fn load_template(&mut self, name: &str) -> Result<(), Error> {
         self.engine.load_template(name)
     }
 

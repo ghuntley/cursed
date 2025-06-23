@@ -131,7 +131,7 @@ impl From<TemplateCompilationError> for CursedError {
 }
 
 /// Result type for template compilation operations
-pub type TemplateCompilationResult<T> = Result<T, TemplateCompilationError>;
+pub type TemplateCompilationResult<(), Error>;
 
 /// Template compilation context with LLVM integration
 #[derive(Debug, Clone)]
@@ -2465,7 +2465,7 @@ pub mod runtime {
 }
 
 /// LLVM function declarations for template runtime support
-pub fn declare_template_runtime_functions(module: &DummyModule) -> Result<HashMap<String, DummyFunction>, TemplateCompilationError> {
+pub fn declare_template_runtime_functions(module: &DummyModule) -> Result<(), Error> {
     let mut functions = HashMap::new();
 
     // String manipulation functions

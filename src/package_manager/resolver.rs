@@ -251,7 +251,7 @@ impl DependencyResolver {
 
     /// Main dependency resolution entry point using constraint satisfaction
     #[instrument(skip(self, package))]
-    pub async fn resolve_dependencies(&mut self, package: &PackageInfo) -> Result<Vec<ResolvedDependency>, PackageManagerError> {
+    pub async fn resolve_dependencies(&mut self, package: &PackageInfo) -> Result<(), Error> {
         let start_time = Instant::now();
         info!("Starting constraint-based dependency resolution for {}@{}", package.name, package.version);
 
@@ -316,7 +316,7 @@ impl DependencyResolver {
         root_package: &PackageInfo,
         all_packages: &mut HashSet<String>,
         package_constraints: &mut HashMap<String, Vec<DependencyConstraint>>
-    ) -> Result<(), PackageManagerError> {
+    ) -> Result<(), Error> {
         let mut to_process = VecDeque::new();
         let mut visited = HashSet::new();
         
@@ -429,7 +429,7 @@ impl DependencyResolver {
     async fn solve_with_backtracking(
         &mut self,
         package_constraints: &HashMap<String, Vec<DependencyConstraint>>
-    ) -> Result<BTreeMap<String, Version>, PackageManagerError> {
+    ) -> Result<(), Error> {
         let start_time = Instant::now();
         let mut attempts = 0;
 
@@ -496,7 +496,7 @@ impl DependencyResolver {
         &mut self,
         solution: BTreeMap<String, Version>,
         package_constraints: &HashMap<String, Vec<DependencyConstraint>>
-    ) -> Result<Vec<ResolvedDependency>, PackageManagerError> {
+    ) -> Result<(), Error> {
         let mut resolved_deps = Vec::new();
 
         for (package_name, version) in solution {
@@ -535,7 +535,7 @@ impl DependencyResolver {
     }
 
     /// Non-recursive dependency resolution with cycle detection
-    async fn resolve_package(&mut self, package: &PackageMetadata, context: &mut ResolutionContext, to_process: &mut VecDeque<PackageMetadata>) -> Result<(), PackageManagerError> {
+    async fn resolve_package(&mut self, package: &PackageMetadata, context: &mut ResolutionContext, to_process: &mut VecDeque<PackageMetadata>) -> Result<(), Error> {
         let package_key = format!("{}@{}", package.name, package.version);
         
         // Check depth limit
@@ -616,7 +616,7 @@ impl DependencyResolver {
         is_dev: bool,
         context: &mut ResolutionContext,
         to_process: &mut VecDeque<PackageMetadata>
-    ) -> Result<(), PackageManagerError> {
+    ) -> Result<(), Error> {
         
         // Parse version constraint
         let version_req = VersionReq::parse(version_constraint)
@@ -687,7 +687,7 @@ impl DependencyResolver {
     }
 
     /// Select the best version for a dependency given constraints
-    async fn select_version(&mut self, package_name: &str, version_req: &VersionReq, context: &ResolutionContext) -> Result<VersionSelection, PackageManagerError> {
+    async fn select_version(&mut self, package_name: &str, version_req: &VersionReq, context: &ResolutionContext) -> Result<(), Error> {
         
         // Get available versions (mock implementation)
         let available_versions = self.get_available_versions(package_name).await?;
@@ -738,7 +738,7 @@ impl DependencyResolver {
     }
 
     /// Handle version conflicts between dependencies
-    async fn handle_version_conflict(&mut self, package_name: &str, new_req: &VersionReq, context: &mut ResolutionContext, to_process: &mut VecDeque<PackageMetadata>) -> Result<(), PackageManagerError> {
+    async fn handle_version_conflict(&mut self, package_name: &str, new_req: &VersionReq, context: &mut ResolutionContext, to_process: &mut VecDeque<PackageMetadata>) -> Result<(), Error> {
         
         self.stats.backtrack_attempts += 1;
         
@@ -991,7 +991,7 @@ impl DependencyResolver {
     }
 
     /// Get available versions for a package from registry
-    async fn get_available_versions(&mut self, package_name: &str) -> Result<Vec<Version>, PackageManagerError> {
+    async fn get_available_versions(&mut self, package_name: &str) -> Result<(), Error> {
         // Check cache first
         if let Some(cached_versions) = self.version_cache.get(package_name) {
             debug!("Using cached versions for package {}", package_name);
@@ -1034,7 +1034,7 @@ impl DependencyResolver {
     }
 
     /// Get dependency metadata from registry with caching
-    async fn get_dependency_metadata(&mut self, name: &str, version: &Version) -> Result<PackageMetadata, PackageManagerError> {
+    async fn get_dependency_metadata(&mut self, name: &str, version: &Version) -> Result<(), Error> {
         let cache_key = format!("{}@{}", name, version);
         
         // Check cache first
@@ -1261,7 +1261,7 @@ impl DependencyResolver {
     }
 
     /// Validate an existing lock file against current dependencies
-    pub async fn validate_lock_file(&mut self, lock_file: &LockFile, current_deps: &[ResolvedDependency]) -> Result<bool, PackageManagerError> {
+    pub async fn validate_lock_file(&mut self, lock_file: &LockFile, current_deps: &[ResolvedDependency]) -> Result<(), Error> {
         info!("Validating lock file with {} packages", lock_file.packages.len());
 
         // Check if all current dependencies are in lock file with compatible versions
@@ -1317,7 +1317,7 @@ impl DependencyResolver {
     }
 
     /// Export resolution result to different formats
-    pub fn export_resolution(&self, dependencies: &[ResolvedDependency], format: ExportFormat) -> Result<String, PackageManagerError> {
+    pub fn export_resolution(&self, dependencies: &[ResolvedDependency], format: ExportFormat) -> Result<(), Error> {
         match format {
             ExportFormat::Json => {
                 // Create a simplified representation for JSON export

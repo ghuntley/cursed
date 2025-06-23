@@ -79,7 +79,7 @@ impl DebugFormatter {
     }
 
     /// Format a stack trace with enhanced output
-    pub fn format_stack_trace(&mut self, trace: &StackTrace) -> Result<String, CursedError> {
+    pub fn format_stack_trace(&mut self, trace: &StackTrace) -> Result<(), Error> {
         let mut output = String::new();
         
         // Header with Gen Z flair
@@ -126,7 +126,7 @@ impl DebugFormatter {
     }
 
     /// Format an enhanced stack trace
-    pub fn format_enhanced_stack_trace(&mut self, trace: &EnhancedStackTrace) -> Result<String, CursedError> {
+    pub fn format_enhanced_stack_trace(&mut self, trace: &EnhancedStackTrace) -> Result<(), Error> {
         let mut output = String::new();
         
         // Header
@@ -153,7 +153,7 @@ impl DebugFormatter {
     }
 
     /// Format a contextual stack walk
-    pub fn format_contextual_stack_walk(&mut self, walk: &ContextualStackWalk) -> Result<String, CursedError> {
+    pub fn format_contextual_stack_walk(&mut self, walk: &ContextualStackWalk) -> Result<(), Error> {
         let mut output = String::new();
         
         // Header
@@ -190,7 +190,7 @@ impl DebugFormatter {
     }
 
     /// Format a single call frame
-    fn format_call_frame(&mut self, frame: &CallFrame, index: usize) -> Result<String, CursedError> {
+    fn format_call_frame(&mut self, frame: &CallFrame, index: usize) -> Result<(), Error> {
         let mut output = String::new();
         
         // Frame header
@@ -247,7 +247,7 @@ impl DebugFormatter {
     }
 
     /// Format an enhanced stack frame
-    fn format_enhanced_frame(&mut self, frame: &EnhancedStackFrame) -> Result<String, CursedError> {
+    fn format_enhanced_frame(&mut self, frame: &EnhancedStackFrame) -> Result<(), Error> {
         let mut output = String::new();
         
         // Frame header
@@ -309,7 +309,7 @@ impl DebugFormatter {
     }
 
     /// Format a raw stack frame
-    fn format_raw_frame(&self, frame: &RawStackFrame, index: usize) -> Result<String, CursedError> {
+    fn format_raw_frame(&self, frame: &RawStackFrame, index: usize) -> Result<(), Error> {
         let mut output = String::new();
         
         // Frame header
@@ -387,7 +387,7 @@ impl DebugFormatter {
     }
 
     /// Get source code context around a location
-    fn get_source_context(&mut self, location: &SourceLocation) -> Result<String, CursedError> {
+    fn get_source_context(&mut self, location: &SourceLocation) -> Result<(), Error> {
         if !self.config.show_source_context {
             return Ok(String::new());
         }
@@ -565,19 +565,19 @@ impl DebugFormatter {
     }
 
     /// Print debug output to writer
-    pub fn print_to_writer<W: Write>(&mut self, output: &str, writer: &mut W) -> Result<(), CursedError> {
+    pub fn print_to_writer<W: Write>(&mut self, output: &str, writer: &mut W) -> Result<(), Error> {
         writeln!(writer, "{}", output)
             .map_err(|e| CursedError::Runtime(format!("Failed to write debug output: {}", e)))
     }
 
     /// Print to stdout
-    pub fn print(&mut self, output: &str) -> Result<(), CursedError> {
+    pub fn print(&mut self, output: &str) -> Result<(), Error> {
         let mut stdout = io::stdout();
         self.print_to_writer(output, &mut stdout)
     }
 
     /// Print to stderr
-    pub fn print_error(&mut self, output: &str) -> Result<(), CursedError> {
+    pub fn print_error(&mut self, output: &str) -> Result<(), Error> {
         let mut stderr = io::stderr();
         self.print_to_writer(output, &mut stderr)
     }
@@ -631,7 +631,7 @@ impl GenZMessages {
 }
 
 /// Convenience functions for common debug output scenarios
-pub fn format_panic_trace(trace: &StackTrace) -> Result<String, CursedError> {
+pub fn format_panic_trace(trace: &StackTrace) -> Result<(), Error> {
     let mut formatter = DebugFormatter::new();
     let mut output = String::new();
     
@@ -645,7 +645,7 @@ pub fn format_panic_trace(trace: &StackTrace) -> Result<String, CursedError> {
     Ok(output)
 }
 
-pub fn format_error_with_context(error: &CursedError, trace: Option<&StackTrace>) -> Result<String, CursedError> {
+pub fn format_error_with_context(error: &CursedError, trace: Option<&StackTrace>) -> Result<(), Error> {
     let mut formatter = DebugFormatter::new();
     let mut output = String::new();
     

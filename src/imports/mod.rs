@@ -69,7 +69,7 @@ impl ImportManager {
     pub fn new(
         package_manager: Arc<Mutex<PackageManager>>,
         config: ImportResolverConfig,
-    ) -> Result<Self, ImportError> {
+    ) -> Result<(), Error> {
         let resolver = ImportResolver::new(config);
         let package_resolver = PackageImportResolver::new(package_manager.clone());
         let module_loader = ModuleLoader::new();
@@ -89,7 +89,7 @@ impl ImportManager {
         &mut self,
         imports: &[ImportStatement],
         context_path: Option<&Path>,
-    ) -> Result<Vec<ResolvedImport>, ImportError> {
+    ) -> Result<(), Error> {
         let mut resolved = Vec::new();
         let mut processing = std::collections::HashSet::new();
         
@@ -111,7 +111,7 @@ impl ImportManager {
         import: &ImportStatement,
         context_path: Option<&Path>,
         processing: &mut std::collections::HashSet<String>,
-    ) -> Result<ResolvedImport, ImportError> {
+    ) -> Result<(), Error> {
         let import_path = &import.path;
         
         // Check cache first
@@ -151,7 +151,7 @@ impl ImportManager {
     pub async fn load_module(
         &mut self,
         resolved: &ResolvedImport,
-    ) -> Result<Arc<LoadedModule>, ImportError> {
+    ) -> Result<(), Error> {
         let module_key = resolved.get_cache_key();
         
         // Check cache first
@@ -170,7 +170,7 @@ impl ImportManager {
     }
     
     /// Ensure package is installed before resolving its imports
-    pub async fn ensure_package_installed(&mut self, package_name: &str) -> Result<PackageMetadata, ImportError> {
+    pub async fn ensure_package_installed(&mut self, package_name: &str) -> Result<(), Error> {
         let mut package_manager = self.package_manager.lock().map_err(|_| {
             ImportError::ModuleLoadError {
                 module: package_name.to_string(),
@@ -195,7 +195,7 @@ impl ImportManager {
     }
     
     /// Get all available packages for import resolution
-    pub fn get_available_packages(&self) -> Result<Vec<PackageMetadata>, ImportError> {
+    pub fn get_available_packages(&self) -> Result<(), Error> {
         let package_manager = self.package_manager.lock().map_err(|_| {
             ImportError::ModuleLoadError {
                 module: "package_manager".to_string(),

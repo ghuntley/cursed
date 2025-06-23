@@ -16,7 +16,7 @@ impl Base64Encoder {
 
     /// Decode standard base64
     #[instrument(skip(encoded))]
-    pub fn decode_standard(encoded: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn decode_standard(encoded: &str) -> Result<(), Error> {
         let decoded = base64::engine::general_purpose::STANDARD.decode(encoded.trim())
             .map_err(|e| CursedError::new("base64_error", &format!("Invalid base64: {}", e)))?;
         debug!(input_length = encoded.len(), output_length = decoded.len(), "Decoded from standard base64");
@@ -33,7 +33,7 @@ impl Base64Encoder {
 
     /// Decode URL-safe base64
     #[instrument(skip(encoded))]
-    pub fn decode_url_safe(encoded: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn decode_url_safe(encoded: &str) -> Result<(), Error> {
         let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(encoded.trim())
             .map_err(|e| CursedError::new("base64_error", &format!("Invalid URL-safe base64: {}", e)))?;
         debug!(input_length = encoded.len(), output_length = decoded.len(), "Decoded from URL-safe base64");
@@ -42,7 +42,7 @@ impl Base64Encoder {
 
     /// Encode with custom alphabet and padding
     #[instrument(skip(data, alphabet))]
-    pub fn encode_custom(data: &[u8], alphabet: &str, padding: Option<char>) -> Result<String, CursedError> {
+    pub fn encode_custom(data: &[u8], alphabet: &str, padding: Option<char>) -> Result<(), Error> {
         if alphabet.len() != 64 {
             return Err(CursedError::new("base64_error", "Custom alphabet must be exactly 64 characters"));
         }
@@ -114,7 +114,7 @@ impl HexEncoder {
 
     /// Decode hex string to bytes
     #[instrument(skip(hex))]
-    pub fn decode(hex: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn decode(hex: &str) -> Result<(), Error> {
         let clean_hex = hex.trim().replace(' ', "");
         
         if clean_hex.len() % 2 != 0 {
@@ -154,7 +154,7 @@ impl HexEncoder {
 
     /// Decode formatted hex (ignores separators)
     #[instrument(skip(formatted_hex))]
-    pub fn decode_formatted(formatted_hex: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn decode_formatted(formatted_hex: &str) -> Result<(), Error> {
         let clean_hex: String = formatted_hex.chars()
             .filter(|c| c.is_ascii_hexdigit())
             .collect();
@@ -203,7 +203,7 @@ impl Base32Encoder {
 
     /// Decode base32 to bytes
     #[instrument(skip(encoded))]
-    pub fn decode(encoded: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn decode(encoded: &str) -> Result<(), Error> {
         let clean = encoded.trim().replace('=', "").to_uppercase();
         let mut result = Vec::new();
         let mut buffer = 0u64;
@@ -234,7 +234,7 @@ impl Base32Encoder {
 
     /// Encode with custom alphabet
     #[instrument(skip(data, alphabet))]
-    pub fn encode_custom(data: &[u8], alphabet: &str) -> Result<String, CursedError> {
+    pub fn encode_custom(data: &[u8], alphabet: &str) -> Result<(), Error> {
         if alphabet.len() != 32 {
             return Err(CursedError::new("base32_error", "Custom alphabet must be exactly 32 characters"));
         }
@@ -270,7 +270,7 @@ pub struct Asn1Parser;
 impl Asn1Parser {
     /// Parse ASN.1 tag and length
     #[instrument(skip(data))]
-    pub fn parse_tag_length(data: &[u8]) -> Result<Asn1Element, CursedError> {
+    pub fn parse_tag_length(data: &[u8]) -> Result<(), Error> {
         if data.is_empty() {
             return Err(CursedError::new("asn1_error", "Empty ASN.1 data"));
         }
@@ -328,7 +328,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 sequence
     #[instrument(skip(data))]
-    pub fn parse_sequence(data: &[u8]) -> Result<Vec<Asn1Element>, CursedError> {
+    pub fn parse_sequence(data: &[u8]) -> Result<(), Error> {
         let sequence_element = Self::parse_tag_length(data)?;
         
         if sequence_element.tag != 0x30 {
@@ -351,7 +351,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 integer
     #[instrument(skip(data))]
-    pub fn parse_integer(data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn parse_integer(data: &[u8]) -> Result<(), Error> {
         let element = Self::parse_tag_length(data)?;
         
         if element.tag != 0x02 {
@@ -368,7 +368,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 octet string
     #[instrument(skip(data))]
-    pub fn parse_octet_string(data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn parse_octet_string(data: &[u8]) -> Result<(), Error> {
         let element = Self::parse_tag_length(data)?;
         
         if element.tag != 0x04 {
@@ -381,7 +381,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 bit string
     #[instrument(skip(data))]
-    pub fn parse_bit_string(data: &[u8]) -> Result<Asn1BitString, CursedError> {
+    pub fn parse_bit_string(data: &[u8]) -> Result<(), Error> {
         let element = Self::parse_tag_length(data)?;
         
         if element.tag != 0x03 {
@@ -482,7 +482,7 @@ impl UrlEncoder {
 
     /// URL decode string
     #[instrument(skip(encoded))]
-    pub fn decode(encoded: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn decode(encoded: &str) -> Result<(), Error> {
         let mut result = Vec::new();
         let mut chars = encoded.chars().peekable();
         

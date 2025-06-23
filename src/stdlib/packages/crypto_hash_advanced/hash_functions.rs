@@ -5,7 +5,7 @@ use super::hash_traits::Hasher;
 use crate::error::CursedError;
 
 /// Hash data using the specified advanced hash algorithm
-pub fn hash_with_algorithm(algorithm: AdvancedHashAlgorithm, data: &[u8]) -> Result<Vec<u8>, CursedError> {
+pub fn hash_with_algorithm(algorithm: AdvancedHashAlgorithm, data: &[u8]) -> Result<(), Error> {
     match algorithm {
         AdvancedHashAlgorithm::Sha256 => {
             // Use SHA-256 implementation (simplified with BLAKE3 for now)
@@ -30,22 +30,22 @@ pub fn hash_with_algorithm(algorithm: AdvancedHashAlgorithm, data: &[u8]) -> Res
 }
 
 /// Quick hash using SHA-256
-pub fn sha256(data: &[u8]) -> Result<Vec<u8>, CursedError> {
+pub fn sha256(data: &[u8]) -> Result<(), Error> {
     hash_with_algorithm(AdvancedHashAlgorithm::Sha256, data)
 }
 
 /// Quick hash using SHA-512 
-pub fn sha512(data: &[u8]) -> Result<Vec<u8>, CursedError> {
+pub fn sha512(data: &[u8]) -> Result<(), Error> {
     hash_with_algorithm(AdvancedHashAlgorithm::Sha512, data)
 }
 
 /// Quick hash using BLAKE3
-pub fn blake3(data: &[u8]) -> Result<Vec<u8>, CursedError> {
+pub fn blake3(data: &[u8]) -> Result<(), Error> {
     hash_with_algorithm(AdvancedHashAlgorithm::Blake3, data)
 }
 
 /// Verify hash against expected value
-pub fn verify_hash(algorithm: AdvancedHashAlgorithm, data: &[u8], expected: &[u8]) -> Result<bool, CursedError> {
+pub fn verify_hash(algorithm: AdvancedHashAlgorithm, data: &[u8], expected: &[u8]) -> Result<(), Error> {
     let computed = hash_with_algorithm(algorithm, data)?;
     Ok(super::hash_traits::constant_time_eq(&computed, expected))
 }

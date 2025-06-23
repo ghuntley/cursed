@@ -175,12 +175,12 @@ impl std::fmt::Display for OutputFormat {
 
 impl DocumentationSystem {
     /// Create a new documentation system
-    pub fn new(config: DocumentationConfig) -> Result<Self, Error> {
+    pub fn new(config: DocumentationConfig) -> Result<(), Error> {
         Ok(Self { config })
     }
 
     /// Generate documentation for all configured formats
-    pub async fn generate_all(&mut self) -> Result<DocumentationResult, Error> {
+    pub async fn generate_all(&mut self) -> Result<(), Error> {
         let start_time = Instant::now();
         let mut result = DocumentationResult {
             files_processed: 0,
@@ -217,7 +217,7 @@ impl DocumentationSystem {
         source_files: &[PathBuf],
         format: &OutputFormat,
         result: &mut DocumentationResult,
-    ) -> Result<Vec<PathBuf>, Error> {
+    ) -> Result<(), Error> {
         let doc_config = self.build_doc_generator_config(format);
         let mut generator = DocumentationGenerator::new(doc_config);
 
@@ -269,7 +269,7 @@ impl DocumentationSystem {
     }
 
     /// Discover source files in configured directories
-    fn discover_source_files(&self) -> Result<Vec<PathBuf>, Error> {
+    fn discover_source_files(&self) -> Result<(), Error> {
         let mut files = Vec::new();
 
         for source_dir in &self.config.source_dirs {
@@ -337,7 +337,7 @@ impl DocumentationSystem {
 }
 
 /// Load configuration from file
-pub fn load_config(path: &Path) -> Result<DocumentationConfig, Error> {
+pub fn load_config(path: &Path) -> Result<(), Error> {
     let content = std::fs::read_to_string(path).map_err(Error::Io)?;
     
     if path.extension().map_or(false, |ext| ext == "json") {

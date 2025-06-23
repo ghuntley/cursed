@@ -8,7 +8,7 @@ use crate::stdlib::packages::{
         ExecuteResult, TransactionIsolation
     },
     db_sql::{SqlDriver, SqlDialectTrait, SqlValue, SqlResultSet, SqlExecuteResult},
-    // types::ParameterDirection  // Explicit import to resolve E0659
+    // crate::types::ParameterDirection  // Explicit import to resolve E0659
 };
 use crate::stdlib::packages::db_sql::drivers::{
     SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
@@ -184,7 +184,7 @@ impl MySqlConnection {
     fn convert_parameters(parameters: &[Parameter]) -> Vec<MySqlValue> {
         parameters.iter()
             .filter_map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+                crate::stdlib::packages::crate::types::ParameterDirection::In => {
                     Some(Self::convert_parameter_value(&p.value))
                 }
                 _ => Some(MySqlValue::NULL),

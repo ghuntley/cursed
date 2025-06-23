@@ -140,7 +140,7 @@ pub enum PackageManagerError {
 
 impl PackageManager {
     /// Create a new package manager with default configuration
-    pub fn new(config: PackageManagerConfig) -> Result<Self, PackageManagerError> {
+    pub fn new(config: PackageManagerConfig) -> Result<(), Error> {
         let registry = Arc::new(Mutex::new(PackageRegistry::new(config.registry_url.clone())?));
         let cache = PackageCache::new(config.cache_dir.clone(), config.max_cache_size)?;
         let resolver = DependencyResolver::new();
@@ -183,7 +183,7 @@ impl PackageManager {
         &mut self,
         package_name: &str,
         version: Option<&str>
-    ) -> Result<Vec<PackageMetadata>, PackageManagerError> {
+    ) -> Result<(), Error> {
         tracing::info!(package = package_name, ?version, "Installing package");
         
         // Check lock file for locked version
@@ -245,7 +245,7 @@ impl PackageManager {
         &mut self,
         query: &str,
         limit: Option<usize>
-    ) -> Result<Vec<PackageMetadata>, PackageManagerError> {
+    ) -> Result<(), Error> {
         let mut registry = self.registry.lock().map_err(|_| PackageManagerError::RegistryError {
             message: "Failed to lock registry".to_string(),
         })?;
@@ -253,23 +253,23 @@ impl PackageManager {
     }
     
     /// Remove a package from cache and workspace
-    pub fn remove_package(&mut self, package_name: &str) -> Result<(), PackageManagerError> {
+    pub fn remove_package(&mut self, package_name: &str) -> Result<(), Error> {
         tracing::info!(package = package_name, "Removing package");
         self.cache.remove_package(package_name)
     }
     
     /// List installed packages
-    pub fn list_installed(&self) -> Result<Vec<PackageMetadata>, PackageManagerError> {
+    pub fn list_installed(&self) -> Result<(), Error> {
         self.cache.list_packages()
     }
     
     /// Clean package cache
-    pub fn clean_cache(&mut self) -> Result<(), PackageManagerError> {
+    pub fn clean_cache(&mut self) -> Result<(), Error> {
         self.cache.clean()
     }
     
     /// Update package registry index
-    pub async fn update_registry(&mut self) -> Result<(), PackageManagerError> {
+    pub async fn update_registry(&mut self) -> Result<(), Error> {
         let mut registry = self.registry.lock().map_err(|_| PackageManagerError::RegistryError {
             message: "Failed to lock registry".to_string(),
         })?;
@@ -280,7 +280,7 @@ impl PackageManager {
     async fn install_single_package(
         &mut self,
         package: &PackageMetadata
-    ) -> Result<PackageMetadata, PackageManagerError> {
+    ) -> Result<(), Error> {
         // Check if already cached
         if let Some(cached) = self.cache.get_package(&package.name, &package.version)? {
             tracing::debug!(package = package.name, version = package.version, "Package found in cache");
@@ -342,7 +342,7 @@ impl PackageManager {
     /// Install dependencies from lock file
     async fn install_locked_dependencies(
         &mut self,
-    ) -> Result<Vec<PackageMetadata>, PackageManagerError> {
+    ) -> Result<(), Error> {
         // Extract packages first to avoid borrowing conflicts
         let packages_to_install = if let Some(ref lock_manager) = self.lock_file_manager {
             let packages = lock_manager.get_packages()
@@ -380,7 +380,7 @@ impl PackageManager {
     }
     
     /// Update lock file with installed packages
-    fn update_lock_file(&mut self, packages: &[PackageMetadata]) -> Result<(), PackageManagerError> {
+    fn update_lock_file(&mut self, packages: &[PackageMetadata]) -> Result<(), Error> {
         if let Some(ref mut lock_manager) = self.lock_file_manager {
             lock_manager.update_dependencies(packages)?;
             tracing::info!("Lock file updated with {} packages", packages.len());
@@ -389,7 +389,7 @@ impl PackageManager {
     }
     
     /// Generate lock file
-    pub fn generate_lock_file(&mut self) -> Result<(), PackageManagerError> {
+    pub fn generate_lock_file(&mut self) -> Result<(), Error> {
         // Get installed packages first
         let installed = self.list_installed()?;
         let workspace_root = self.workspace_manager.as_ref()
@@ -418,14 +418,14 @@ impl PackageManager {
         &mut self,
         root: P,
         members: Vec<String>,
-    ) -> Result<(), PackageManagerError> {
+    ) -> Result<(), Error> {
         let workspace = WorkspaceManager::init_workspace(root, members)?;
         self.workspace_manager = Some(workspace);
         Ok(())
     }
     
     /// Install all workspace dependencies
-    pub async fn install_workspace(&mut self) -> Result<(), PackageManagerError> {
+    pub async fn install_workspace(&mut self) -> Result<(), Error> {
         // Extract dependencies to install first to avoid borrowing conflicts
         let dependencies_to_install = if let Some(ref mut workspace) = self.workspace_manager {
             workspace.generate_lock_file()?;
@@ -456,7 +456,7 @@ impl PackageManager {
     }
     
     /// Build workspace in dependency order
-    pub async fn build_workspace(&mut self) -> Result<(), PackageManagerError> {
+    pub async fn build_workspace(&mut self) -> Result<(), Error> {
         if let Some(workspace) = self.workspace_manager.as_ref() {
             let build_order = workspace.get_build_order()
                 .map_err(|e| PackageManagerError::Workspace(e))?;
@@ -473,7 +473,7 @@ impl PackageManager {
     }
     
     /// Clean workspace
-    pub fn clean_workspace(&mut self) -> Result<(), PackageManagerError> {
+    pub fn clean_workspace(&mut self) -> Result<(), Error> {
         if let Some(workspace) = self.workspace_manager.as_ref() {
             for member in workspace.members() {
                 tracing::info!(member = member.name, "Cleaning workspace member");
@@ -493,7 +493,7 @@ impl PackageManager {
     }
     
     /// Validate lock file integrity
-    pub fn validate_lock_file(&mut self) -> Result<(), PackageManagerError> {
+    pub fn validate_lock_file(&mut self) -> Result<(), Error> {
         if let Some(ref mut lock_manager) = self.lock_file_manager {
             if lock_manager.exists() {
                 lock_manager.load()?;
@@ -510,7 +510,7 @@ impl PackageManager {
     }
     
     /// Get cache statistics  
-    pub fn get_cache_stats(&self) -> Result<cache::CacheStats, PackageManagerError> {
+    pub fn get_cache_stats(&self) -> Result<(), Error> {
         self.cache.stats()
     }
     
@@ -520,7 +520,7 @@ impl PackageManager {
     }
     
     /// Install locked dependencies from lock file
-    pub async fn install_locked_dependencies(&mut self) -> Result<(), PackageManagerError> {
+    pub async fn install_locked_dependencies(&mut self) -> Result<(), Error> {
         // Stub implementation
         tracing::info!("Installing locked dependencies");
         Ok(())
@@ -545,7 +545,7 @@ pub fn init_package(
     name: &str,
     version: Option<&str>,
     description: Option<&str>
-) -> Result<(), PackageManagerError> {
+) -> Result<(), Error> {
     let package_file = PathBuf::from("CursedPackage.toml");
     
     if package_file.exists() {

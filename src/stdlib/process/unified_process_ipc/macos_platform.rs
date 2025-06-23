@@ -17,17 +17,17 @@ impl MacOSProcessManager {
         }
     }
 
-    pub fn spawn_process(&self, _config: &ProcessConfig) -> Result<u32, CursedError> {
+    pub fn spawn_process(&self, _config: &ProcessConfig) -> Result<(), Error> {
         // TODO: Implement macOS-specific process spawning
         Ok(0)
     }
 
-    pub fn kill_process(&self, _pid: u32) -> Result<(), CursedError> {
+    pub fn kill_process(&self, _pid: u32) -> Result<(), Error> {
         // TODO: Implement macOS-specific process termination
         Ok(())
     }
 
-    pub fn list_processes(&self) -> Result<Vec<ProcessInfo>, CursedError> {
+    pub fn list_processes(&self) -> Result<(), Error> {
         // TODO: Implement macOS-specific process listing
         Ok(vec![])
     }
@@ -44,17 +44,17 @@ impl MacOSIPCManager {
         }
     }
 
-    pub fn create_channel(&self, _name: &str) -> Result<String, CursedError> {
+    pub fn create_channel(&self, _name: &str) -> Result<(), Error> {
         // TODO: Implement macOS-specific IPC channel creation
         Ok(String::new())
     }
 
-    pub fn send_message(&self, _channel: &str, _message: &[u8]) -> Result<(), CursedError> {
+    pub fn send_message(&self, _channel: &str, _message: &[u8]) -> Result<(), Error> {
         // TODO: Implement macOS-specific message sending
         Ok(())
     }
 
-    pub fn receive_message(&self, _channel: &str, _timeout: Duration) -> Result<Vec<u8>, CursedError> {
+    pub fn receive_message(&self, _channel: &str, _timeout: Duration) -> Result<(), Error> {
         // TODO: Implement macOS-specific message receiving
         Ok(vec![])
     }

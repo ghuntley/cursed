@@ -34,7 +34,7 @@ impl LlvmDebugCodeGenerator {
         &mut self,
         name: String,
         location: SourceLocation,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(function = %name, location = ?location, "Beginning function with debug info");
         
         self.debug_manager.begin_function(name.clone(), location.clone().into())?;
@@ -63,7 +63,7 @@ impl LlvmDebugCodeGenerator {
 
     /// End function generation with debug information
     #[instrument(skip(self))]
-    pub fn end_function_with_debug(&mut self) -> Result<String, Error> {
+    pub fn end_function_with_debug(&mut self) -> Result<(), Error> {
         debug!("Ending function with debug info");
         
         self.debug_manager.end_function()?;
@@ -80,7 +80,7 @@ impl LlvmDebugCodeGenerator {
         name: String,
         type_name: String,
         location: SourceLocation,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(name = %name, type_name = %type_name, location = ?location, "Generating variable with debug");
         
         self.debug_manager.add_variable(name.clone(), type_name.clone(), location.clone().into())?;
@@ -112,7 +112,7 @@ impl LlvmDebugCodeGenerator {
         variable: String,
         value: String,
         location: SourceLocation,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(variable = %variable, value = %value, location = ?location, "Generating assignment with debug");
         
         // Generate store instruction with debug location
@@ -131,7 +131,7 @@ impl LlvmDebugCodeGenerator {
         function: String,
         args: Vec<String>,
         location: SourceLocation,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(function = %function, args = ?args, location = ?location, "Generating call with debug");
         
         // Generate call instruction with debug location
@@ -150,7 +150,7 @@ impl LlvmDebugCodeGenerator {
         &mut self,
         value: Option<String>,
         location: SourceLocation,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(value = ?value, location = ?location, "Generating return with debug");
         
         let mut ir = String::new();
@@ -167,7 +167,7 @@ impl LlvmDebugCodeGenerator {
 
     /// Generate debug metadata for the entire module
     #[instrument(skip(self))]
-    pub fn generate_debug_metadata(&mut self) -> Result<String, Error> {
+    pub fn generate_debug_metadata(&mut self) -> Result<(), Error> {
         debug!("Generating module debug metadata");
         
         let mut metadata = self.debug_manager.generate_llvm_debug_metadata()?;
@@ -222,7 +222,7 @@ impl LlvmDebugCodeGenerator {
         &mut self,
         module_name: String,
         functions: Vec<(String, SourceLocation)>,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(module = %module_name, function_count = functions.len(), "Generating module with debug");
         
         self.current_module = Some(module_name.clone());

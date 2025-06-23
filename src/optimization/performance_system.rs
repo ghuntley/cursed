@@ -89,13 +89,13 @@ pub struct PerformanceStatus {
 
 impl PerformanceSystem {
     /// Create a new performance system with default configuration
-    pub fn new() -> Result<Self, crate::error::Error> {
+    pub fn new() -> Result<(), Error> {
         let config = PerformanceSystemConfig::default();
         Self::with_config(config)
     }
 
     /// Create a new performance system with custom configuration
-    pub fn with_config(config: PerformanceSystemConfig) -> Result<Self, crate::error::Error> {
+    pub fn with_config(config: PerformanceSystemConfig) -> Result<(), Error> {
         let pgo_config = if config.enable_pgo {
             PgoSystemConfig::default()
         } else {

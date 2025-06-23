@@ -213,7 +213,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         jit_engine: CursedJitEngine<'ctx>,
         codegen: LlvmCodeGenerator,
         config: JitCompilationConfig,
-    ) -> Result<Self, Error> {
+    ) -> Result<(), Error> {
         let hot_path_detector = HotPathDetector::new(config.hot_path_threshold);
         let osr_manager = OSRManager::new(context, config.osr_config.clone());
         let tiered_manager = TieredCompilationManager::new(context, config.tiered_config.clone())?;
@@ -236,7 +236,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         context: &'ctx Context,
         jit_engine: CursedJitEngine<'ctx>,
         codegen: LlvmCodeGenerator,
-    ) -> Result<Self, Error> {
+    ) -> Result<(), Error> {
         Self::new(context, jit_engine, codegen, JitCompilationConfig::default())
     }
 
@@ -318,7 +318,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     }
 
     /// Execute a JIT-compiled function
-    pub fn execute_function(&mut self, function_name: &str) -> Result<i32, Error> {
+    pub fn execute_function(&mut self, function_name: &str) -> Result<(), Error> {
         let start_time = Instant::now();
 
         // Check for OSR opportunity before execution
@@ -434,7 +434,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     }
 
     /// Compile a complete CURSED program for JIT execution
-    pub fn compile_program(&mut self, program: &Program) -> Result<Vec<String>, Error> {
+    pub fn compile_program(&mut self, program: &Program) -> Result<(), Error> {
         let start_time = Instant::now();
         let mut compiled_functions = Vec::new();
 
@@ -470,7 +470,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     }
 
     /// Optimize hot path functions
-    pub fn optimize_hot_paths(&mut self) -> Result<u64, Error> {
+    pub fn optimize_hot_paths(&mut self) -> Result<(), Error> {
         let candidates = self.hot_path_detector.get_optimization_candidates();
         let mut optimized_count = 0;
 
@@ -629,7 +629,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     }
 
     /// Profile function execution
-    pub fn profile_function_execution(&mut self, function_name: &str, iterations: u32) -> Result<Duration, Error> {
+    pub fn profile_function_execution(&mut self, function_name: &str, iterations: u32) -> Result<(), Error> {
         if !self.has_function(function_name) {
             return Err(Error::from_str(&format!("Function '{}' not found", function_name)));
         }
@@ -655,7 +655,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     }
 
     /// Execute CURSED code directly in REPL context
-    pub fn execute_repl_code(&mut self, code: &str) -> Result<i32, Error> {
+    pub fn execute_repl_code(&mut self, code: &str) -> Result<(), Error> {
         let function_name = format!("repl_expr_{}", self.generate_unique_id());
         
         tracing::debug!(
@@ -789,7 +789,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     }
 
     /// Create current stack frame for OSR
-    fn create_current_stack_frame(&self, function_name: &str) -> Result<StackFrame, Error> {
+    fn create_current_stack_frame(&self, function_name: &str) -> Result<(), Error> {
         // In a production implementation, this would capture the actual stack state
         // For this implementation, we'll create a mock stack frame
         let mut local_variables = HashMap::new();
@@ -953,7 +953,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
 /// Create a JIT compilation interface with optimal settings
 pub fn create_optimized_jit_interface<'ctx>(
     context: &'ctx Context,
-) -> Result<JitCompilationInterface<'ctx>, Error> {
+) -> Result<(), Error> {
     let jit_engine = crate::codegen::llvm::jit_engine::create_optimized_jit_engine(context)?;
     let codegen = LlvmCodeGenerator::new()?;
     
@@ -978,7 +978,7 @@ pub fn create_optimized_jit_interface<'ctx>(
 /// Create a JIT compilation interface for development
 pub fn create_debug_jit_interface<'ctx>(
     context: &'ctx Context,
-) -> Result<JitCompilationInterface<'ctx>, Error> {
+) -> Result<(), Error> {
     let jit_engine = crate::codegen::llvm::jit_engine::create_debug_jit_engine(context)?;
     let codegen = LlvmCodeGenerator::new()?;
     

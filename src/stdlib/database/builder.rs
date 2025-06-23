@@ -186,25 +186,25 @@ impl SelectBuilder {
     }
 
     /// slay Execute query and return SlayRows
-    pub fn exec(&self, db: &DB) -> Result<SlayRows, DatabaseError> {
+    pub fn exec(&self, db: &DB) -> Result<(), Error> {
         let (query, params) = self.build();
         db.slay_query(query, params)
     }
 
     /// slay Execute query and return first row as map
-    pub fn one(&self, db: &DB) -> Result<HashMap<String, SqlValue>, DatabaseError> {
+    pub fn one(&self, db: &DB) -> Result<(), Error> {
         let mut result = self.exec(db)?;
         result.first()
     }
 
     /// slay Execute query and return all rows as maps
-    pub fn all(&self, db: &DB) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    pub fn all(&self, db: &DB) -> Result<(), Error> {
         let mut result = self.exec(db)?;
         result.all()
     }
 
     /// slay Execute query and return count
-    pub fn count(&self, db: &DB) -> Result<i64, DatabaseError> {
+    pub fn count(&self, db: &DB) -> Result<(), Error> {
         let mut builder = self.clone();
         builder.columns = Vec::from(["COUNT(*)".to_string()]);
         let (query, params) = builder.build();
@@ -290,7 +290,7 @@ impl InsertBuilder {
     }
 
     /// slay Execute the INSERT
-    pub fn exec(&self, db: &DB) -> Result<SlayResult, DatabaseError> {
+    pub fn exec(&self, db: &DB) -> Result<(), Error> {
         let (query, params) = self.build();
         db.slay_exec(query, params)
     }
@@ -367,7 +367,7 @@ impl UpdateBuilder {
     }
 
     /// slay Execute the UPDATE
-    pub fn exec(&self, db: &DB) -> Result<SlayResult, DatabaseError> {
+    pub fn exec(&self, db: &DB) -> Result<(), Error> {
         let (query, params) = self.build();
         db.slay_exec(query, params)
     }
@@ -414,7 +414,7 @@ impl DeleteBuilder {
     }
 
     /// slay Execute the DELETE
-    pub fn exec(&self, db: &DB) -> Result<SlayResult, DatabaseError> {
+    pub fn exec(&self, db: &DB) -> Result<(), Error> {
         let (query, params) = self.build();
         db.slay_exec(query, params)
     }

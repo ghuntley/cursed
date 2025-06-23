@@ -27,7 +27,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 
 /// Main result type for test operations
-pub type TestResult<T> = Result<T, TestError>;
+pub type TestResult<(), Error>;
 
 /// Comprehensive test error types
 #[derive(Debug, Clone)]

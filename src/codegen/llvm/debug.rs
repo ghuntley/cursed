@@ -39,7 +39,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, PointerValue, InstructionValue};
-use inkwell::types::{BasicTypeEnum, FunctionType};
+use inkwell::crate::types::{BasicTypeEnum, FunctionType};
 
 // NOTE: Debug info types temporarily disabled due to LLVM API changes
 // These types are not available in newer LLVM versions through inkwell
@@ -123,7 +123,7 @@ impl<'ctx> LlvmDebugBuilder<'ctx> {
         module: &Module<'ctx>,
         file_path: &Path,
         config: LlvmDebugConfig,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         info!("Creating simplified LLVM debug builder (DWARF generation disabled)");
 
         let mut builder = Self {
@@ -156,7 +156,7 @@ impl<'ctx> LlvmDebugBuilder<'ctx> {
         _parameter_types: &[()],
         _is_local: bool,
         _is_definition: bool,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.config.enabled {
             return Ok(());
         }
@@ -183,7 +183,7 @@ impl<'ctx> LlvmDebugBuilder<'ctx> {
         column: u32,
         is_parameter: bool,
         parameter_index: Option<u32>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.config.enabled || (!self.config.generate_variable_info && !is_parameter) {
             return Ok(());
         }
@@ -206,7 +206,7 @@ impl<'ctx> LlvmDebugBuilder<'ctx> {
         _file: (),
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!(line = %line, column = %column, "Entered lexical scope (simplified)");
         Ok(())
     }
@@ -228,7 +228,7 @@ impl<'ctx> LlvmDebugBuilder<'ctx> {
 
     /// Finalize debug information (simplified)
     #[instrument(skip(self))]
-    pub fn finalize(self) -> Result<(), CursedError> {
+    pub fn finalize(self) -> Result<(), Error> {
         info!("Finalizing simplified LLVM debug information");
         debug!("Debug information finalization complete (simplified)");
         Ok(())
@@ -266,7 +266,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         module: &'ctx Module<'ctx>,
         source_file: &Path,
         producer: &str,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         let mut config = LlvmDebugConfig::default();
         config.producer = producer.to_string();
 
@@ -291,7 +291,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         name: &str,
         file_path: &Path,
         line: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!("Generating simplified function debug information");
 
         // Create simplified LLVM debug info
@@ -327,7 +327,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         value: BasicValueEnum<'ctx>,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!("Generating simplified variable debug information");
 
         // For simplified implementation, we just track the variable info
@@ -358,7 +358,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
 
     /// Finalize debug information generation (simplified)
     #[instrument(skip(self))]
-    pub fn finalize(self) -> Result<String, CursedError> {
+    pub fn finalize(self) -> Result<(), Error> {
         info!("Finalizing simplified debug information generation");
 
         // Finalize LLVM debug builder
@@ -390,7 +390,7 @@ impl<'ctx> LlvmDebugManager<'ctx> {
         module: &'ctx Module<'ctx>,
         source_file: &Path,
         debug_enabled: bool,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         let config = LlvmDebugConfig {
             enabled: debug_enabled,
             ..Default::default()
@@ -416,7 +416,7 @@ impl<'ctx> LlvmDebugManager<'ctx> {
 
     /// Add function debug information
     #[instrument(skip(self, debug_info), fields(name = %name))]
-    pub fn add_function_debug(&mut self, name: String, debug_info: DebugInfo) -> Result<(), CursedError> {
+    pub fn add_function_debug(&mut self, name: String, debug_info: DebugInfo) -> Result<(), Error> {
         if !self.config.enabled {
             return Ok(());
         }
@@ -426,7 +426,7 @@ impl<'ctx> LlvmDebugManager<'ctx> {
 
     /// Generate complete debug information
     #[instrument(skip(self))]
-    pub fn generate_debug_metadata(&mut self) -> Result<String, CursedError> {
+    pub fn generate_debug_metadata(&mut self) -> Result<(), Error> {
         if !self.config.enabled {
             return Ok(String::new());
         }
@@ -485,7 +485,7 @@ impl<'ctx> CursedDebugBuilder<'ctx> {
         module: &'ctx Module<'ctx>,
         file_path: &Path,
         config: LlvmDebugConfig,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         let llvm_builder = LlvmDebugBuilder::new(context, module, file_path, config.clone())?;
 
         Ok(Self {
@@ -503,7 +503,7 @@ impl<'ctx> CursedDebugBuilder<'ctx> {
         file_path: &Path,
         line: u32,
         parameters: &[(&str, &str)], // (name, type)
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.config.enabled {
             return Ok(());
         }
@@ -546,7 +546,7 @@ impl<'ctx> CursedDebugBuilder<'ctx> {
 
     /// Finalize the debug builder
     #[instrument(skip(self))]
-    pub fn finalize(self) -> Result<(), CursedError> {
+    pub fn finalize(self) -> Result<(), Error> {
         self.llvm_builder.finalize()
     }
 }

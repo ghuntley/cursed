@@ -13,7 +13,7 @@ use crate::debug::enhanced_debug::{
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::values::{FunctionValue, PointerValue, BasicValueEnum};
-use inkwell::types::{BasicTypeEnum, StructType};
+use inkwell::crate::types::{BasicTypeEnum, StructType};
 
 // NOTE: Debug info types temporarily disabled due to LLVM API changes
 // use inkwell::debug_info::{
@@ -78,7 +78,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         module: &'ctx Module<'ctx>,
         source_file: &Path,
         enabled: bool,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         info!("Creating simplified LLVM debug generator");
 
         let debug_registry = Arc::new(RwLock::new(DebugInfoRegistry::new()));
@@ -105,7 +105,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         name: &str,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -136,7 +136,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         line: u32,
         column: u32,
         is_parameter: bool,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -166,7 +166,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         name: &str,
         llvm_type: BasicTypeEnum<'ctx>,
         line: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -199,7 +199,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         struct_type: StructType<'ctx>,
         fields: &[(String, String)], // (field_name, field_type)
         line: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -246,7 +246,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
 
     /// Enter a new scope (simplified)
     #[instrument(skip(self))]
-    pub fn enter_scope(&mut self, scope_name: &str, line: u32, column: u32) -> Result<(), CursedError> {
+    pub fn enter_scope(&mut self, scope_name: &str, line: u32, column: u32) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -282,7 +282,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
 
     /// Finalize debug information generation (simplified)
     #[instrument(skip(self))]
-    pub fn finalize(&mut self) -> Result<(), CursedError> {
+    pub fn finalize(&mut self) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -352,7 +352,7 @@ pub trait EnhancedDebugBuilder<'ctx> {
         name: &str,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create variable debug information
     fn create_variable_debug(
@@ -363,7 +363,7 @@ pub trait EnhancedDebugBuilder<'ctx> {
         line: u32,
         column: u32,
         is_parameter: bool,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Set current debug location
     fn set_current_location(&mut self, line: u32, column: u32, file: Option<PathBuf>);
@@ -379,7 +379,7 @@ impl<'ctx> EnhancedDebugBuilder<'ctx> for LlvmDebugGenerator<'ctx> {
         name: &str,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.create_function_debug(function, name, line, column)
     }
 
@@ -391,7 +391,7 @@ impl<'ctx> EnhancedDebugBuilder<'ctx> for LlvmDebugGenerator<'ctx> {
         line: u32,
         column: u32,
         is_parameter: bool,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.create_variable_debug(name, type_name, storage, line, column, is_parameter)
     }
 

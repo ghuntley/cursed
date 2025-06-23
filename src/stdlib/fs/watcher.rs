@@ -535,7 +535,7 @@ impl FileWatcher {
     }
     
     /// Gets current state of a file
-    fn get_file_state(path: &Path) -> Result<FileState, std::io::Error> {
+    fn get_file_state(path: &Path) -> Result<(), Error> {
         let metadata = fs::metadata(path)?;
         
         Ok(FileState {

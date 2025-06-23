@@ -5,7 +5,7 @@
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    types::{
+    crate::types::{
         X509Certificate, CertificateChain, DistinguishedName, SerialNumber,
         ValidationResult, ValidationError, TrustStore, TrustStoreConfig,
         KeyUsage, ExtendedKeyUsage, BasicConstraints
@@ -556,7 +556,7 @@ impl TrustChainBuilder {
         for extension in &certificate.extensions {
             if extension.oid == "2.5.29.19" { // Basic Constraints OID
                 if let Some(ref data) = extension.parsed_data {
-                    if let crate::stdlib::packages::crypto_pki::types::ExtensionData::BasicConstraints { is_ca, .. } = data {
+                    if let crate::stdlib::packages::crypto_pki::crate::types::ExtensionData::BasicConstraints { is_ca, .. } = data {
                         return *is_ca;
                     }
                 }
@@ -888,7 +888,7 @@ impl ComprehensiveChainValidator {
         for extension in &certificate.extensions {
             if extension.oid == "2.5.29.19" { // Basic Constraints OID
                 if let Some(ref data) = extension.parsed_data {
-                    if let crate::stdlib::packages::crypto_pki::types::ExtensionData::BasicConstraints { is_ca, path_length_constraint } = data {
+                    if let crate::stdlib::packages::crypto_pki::crate::types::ExtensionData::BasicConstraints { is_ca, path_length_constraint } = data {
                         // If this is not the end entity certificate, it must be a CA
                         if position > 0 && !is_ca {
                             errors.push(ValidationError::InvalidBasicConstraints {
@@ -1134,7 +1134,7 @@ mod tests {
     
     // Helper function to create test certificate
     fn create_test_certificate(subject_cn: &str, issuer_cn: &str, is_ca: bool) -> X509Certificate {
-        use crate::stdlib::packages::crypto_pki::types::*;
+        use crate::stdlib::packages::crypto_pki::crate::types::*;
         
         X509Certificate {
             version: 3,

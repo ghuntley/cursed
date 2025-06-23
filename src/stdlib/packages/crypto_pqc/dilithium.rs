@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Placeholder secure random function
-fn secure_random(buffer: &mut [u8]) -> Result<(), CryptoError> {
+fn secure_random(buffer: &mut [u8]) -> Result<(), Error> {
     for byte in buffer.iter_mut() {
         *byte = 42; // Placeholder value
     }
@@ -120,7 +120,7 @@ pub struct DilithiumPublicKey {
 
 impl DilithiumPublicKey {
     /// Create new public key from raw data
-    pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> Result<Self, CryptoError> {
+    pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> Result<(), Error> {
         let params = DilithiumParams::new(level);
         
         if data.len() != params.pk_size {
@@ -153,7 +153,7 @@ impl DilithiumPublicKey {
     }
 
     /// Verify signature using this public key
-    pub fn verify(&self, message: &[u8], signature: &DilithiumSignature) -> Result<bool, CryptoError> {
+    pub fn verify(&self, message: &[u8], signature: &DilithiumSignature) -> Result<(), Error> {
         verify_signature(self, message, signature)
     }
 }
@@ -180,7 +180,7 @@ pub struct DilithiumPrivateKey {
 
 impl DilithiumPrivateKey {
     /// Create new private key from raw data
-    pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> Result<Self, CryptoError> {
+    pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> Result<(), Error> {
         let params = DilithiumParams::new(level);
         
         if data.len() != params.sk_size {
@@ -238,7 +238,7 @@ impl DilithiumPrivateKey {
     }
 
     /// Sign message using this private key
-    pub fn sign(&self, message: &[u8]) -> Result<DilithiumSignature, CryptoError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         sign_message(self, message)
     }
 }
@@ -271,7 +271,7 @@ pub struct DilithiumSignature {
 
 impl DilithiumSignature {
     /// Create signature from raw bytes
-    pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> Result<Self, CryptoError> {
+    pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> Result<(), Error> {
         let params = DilithiumParams::new(level);
         
         if data.len() != params.sig_size {
@@ -323,12 +323,12 @@ pub struct DilithiumKeyPair {
 
 impl DilithiumKeyPair {
     /// Generate new key pair for specified security level
-    pub fn generate(level: DilithiumLevel) -> Result<Self, CryptoError> {
+    pub fn generate(level: DilithiumLevel) -> Result<(), Error> {
         generate_keypair(level)
     }
 
     /// Create key pair from existing keys
-    pub fn from_keys(public_key: DilithiumPublicKey, private_key: DilithiumPrivateKey) -> Result<Self, CryptoError> {
+    pub fn from_keys(public_key: DilithiumPublicKey, private_key: DilithiumPrivateKey) -> Result<(), Error> {
         // Verify keys are compatible
         if public_key.params.level != private_key.params.level {
             return Err(CryptoError::InvalidKeyPair(
@@ -343,18 +343,18 @@ impl DilithiumKeyPair {
     }
 
     /// Sign message with private key
-    pub fn sign(&self, message: &[u8]) -> Result<DilithiumSignature, CryptoError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         self.private_key.sign(message)
     }
 
     /// Verify signature with public key
-    pub fn verify(&self, message: &[u8], signature: &DilithiumSignature) -> Result<bool, CryptoError> {
+    pub fn verify(&self, message: &[u8], signature: &DilithiumSignature) -> Result<(), Error> {
         self.public_key.verify(message, signature)
     }
 }
 
 /// Generate Dilithium key pair
-pub fn generate_keypair(level: DilithiumLevel) -> Result<DilithiumKeyPair, CryptoError> {
+pub fn generate_keypair(level: DilithiumLevel) -> Result<(), Error> {
     let params = DilithiumParams::new(level);
     
     // Generate random seed
@@ -422,7 +422,7 @@ pub fn generate_keypair(level: DilithiumLevel) -> Result<DilithiumKeyPair, Crypt
 }
 
 /// Sign message with Dilithium private key
-pub fn sign_message(private_key: &DilithiumPrivateKey, message: &[u8]) -> Result<DilithiumSignature, CryptoError> {
+pub fn sign_message(private_key: &DilithiumPrivateKey, message: &[u8]) -> Result<(), Error> {
     let params = &private_key.params;
     
     // Generate random nonce
@@ -471,7 +471,7 @@ pub fn sign_message(private_key: &DilithiumPrivateKey, message: &[u8]) -> Result
 }
 
 /// Verify Dilithium signature
-pub fn verify_signature(public_key: &DilithiumPublicKey, message: &[u8], signature: &DilithiumSignature) -> Result<bool, CryptoError> {
+pub fn verify_signature(public_key: &DilithiumPublicKey, message: &[u8], signature: &DilithiumSignature) -> Result<(), Error> {
     let params = &public_key.params;
     
     // Verify signature format
@@ -495,7 +495,7 @@ pub fn verify_signature(public_key: &DilithiumPublicKey, message: &[u8], signatu
 }
 
 /// Generate secret vector using rejection sampling
-fn generate_secret_vector(params: &DilithiumParams, dimension: usize) -> Result<Vec<u8>, CryptoError> {
+fn generate_secret_vector(params: &DilithiumParams, dimension: usize) -> Result<(), Error> {
     let mut vector = vec![0u8; dimension * params.n * 3]; // 3 bytes per coefficient
     
     for i in 0..dimension * params.n {
@@ -520,7 +520,7 @@ fn generate_secret_vector(params: &DilithiumParams, dimension: usize) -> Result<
 }
 
 /// Compute t vector (simplified simulation)
-fn compute_t_vector(params: &DilithiumParams, rho: &[u8], s1: &[u8], s2: &[u8]) -> Result<Vec<u8>, CryptoError> {
+fn compute_t_vector(params: &DilithiumParams, rho: &[u8], s1: &[u8], s2: &[u8]) -> Result<(), Error> {
     // Simplified simulation of t = A * s1 + s2
     let mut t = vec![0u8; params.k * params.n * 4]; // 4 bytes per coefficient
     
@@ -549,7 +549,7 @@ fn compute_t_vector(params: &DilithiumParams, rho: &[u8], s1: &[u8], s2: &[u8]) 
 }
 
 /// Split t vector into t1 and t0
-fn split_t_vector(params: &DilithiumParams, t: &[u8]) -> Result<(Vec<u8>, Vec<u8>), CryptoError> {
+fn split_t_vector(params: &DilithiumParams, t: &[u8]) -> Result<(), Error> {
     let mut t1 = Vec::new();
     let mut t0 = Vec::new();
     
@@ -577,7 +577,7 @@ fn split_t_vector(params: &DilithiumParams, t: &[u8]) -> Result<(Vec<u8>, Vec<u8
 }
 
 /// Generate commitment vector for signing
-fn generate_commitment_vector(params: &DilithiumParams) -> Result<Vec<u8>, CryptoError> {
+fn generate_commitment_vector(params: &DilithiumParams) -> Result<(), Error> {
     let mut y = vec![0u8; params.l * params.n * 3]; // 3 bytes per coefficient
     
     for i in 0..params.l * params.n {
@@ -601,7 +601,7 @@ fn generate_commitment_vector(params: &DilithiumParams) -> Result<Vec<u8>, Crypt
 }
 
 /// Compute commitment from y vector
-fn compute_commitment(params: &DilithiumParams, rho: &[u8], y: &[u8]) -> Result<Vec<u8>, CryptoError> {
+fn compute_commitment(params: &DilithiumParams, rho: &[u8], y: &[u8]) -> Result<(), Error> {
     let mut w = vec![0u8; params.k * params.n * 3]; // 3 bytes per coefficient
     
     // Simplified computation of w = A * y
@@ -644,7 +644,7 @@ fn high_bits(w: &[u8], q: i32) -> Vec<u8> {
 }
 
 /// Compute challenge hash
-fn compute_challenge(params: &DilithiumParams, w1: &[u8], message: &[u8]) -> Result<Vec<u8>, CryptoError> {
+fn compute_challenge(params: &DilithiumParams, w1: &[u8], message: &[u8]) -> Result<(), Error> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     
@@ -665,7 +665,7 @@ fn compute_challenge(params: &DilithiumParams, w1: &[u8], message: &[u8]) -> Res
 }
 
 /// Compute signature response
-fn compute_response(params: &DilithiumParams, c: &[u8], s1: &[u8], y: &[u8]) -> Result<Vec<u8>, CryptoError> {
+fn compute_response(params: &DilithiumParams, c: &[u8], s1: &[u8], y: &[u8]) -> Result<(), Error> {
     let mut z = vec![0u8; params.l * params.n * 3]; // 3 bytes per coefficient
     
     // Compute z = y + c * s1 (coefficient-wise)
@@ -713,7 +713,7 @@ fn is_valid_signature(params: &DilithiumParams, z: &[u8], c: &[u8]) -> bool {
 }
 
 /// Compute hint for signature
-fn compute_hint(params: &DilithiumParams, s2: &[u8], c: &[u8], w: &[u8]) -> Result<Vec<u8>, CryptoError> {
+fn compute_hint(params: &DilithiumParams, s2: &[u8], c: &[u8], w: &[u8]) -> Result<(), Error> {
     let mut h = vec![0u8; params.k * params.n / 8]; // 1 bit per coefficient
     
     // Simplified hint computation
@@ -745,7 +745,7 @@ fn compute_hint(params: &DilithiumParams, s2: &[u8], c: &[u8], w: &[u8]) -> Resu
 }
 
 /// Recompute commitment for verification
-fn recompute_commitment(params: &DilithiumParams, public_key: &DilithiumPublicKey, c: &[u8], z: &[u8], h: &[u8]) -> Result<Vec<u8>, CryptoError> {
+fn recompute_commitment(params: &DilithiumParams, public_key: &DilithiumPublicKey, c: &[u8], z: &[u8], h: &[u8]) -> Result<(), Error> {
     // Simplified verification computation
     let mut w_prime = vec![0u8; params.k * params.n * 2]; // 2 bytes per coefficient for w1
     
@@ -799,7 +799,7 @@ pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 }
 
 /// Generate test vectors for validation
-pub fn generate_test_vectors(level: DilithiumLevel) -> Result<HashMap<String, Vec<u8>>, CryptoError> {
+pub fn generate_test_vectors(level: DilithiumLevel) -> Result<(), Error> {
     let mut vectors = HashMap::new();
     
     // Generate deterministic key pair for testing
@@ -827,7 +827,7 @@ pub struct DilithiumBenchmark {
 }
 
 impl DilithiumBenchmark {
-    pub fn run(level: DilithiumLevel, message: &[u8]) -> Result<Self, CryptoError> {
+    pub fn run(level: DilithiumLevel, message: &[u8]) -> Result<(), Error> {
         let start = std::time::Instant::now();
         let keypair = generate_keypair(level)?;
         let keygen_time = start.elapsed();

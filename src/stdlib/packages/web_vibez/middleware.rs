@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// fr fr Middleware system for web_vibez - request/response processing pipeline
 use std::sync::Arc;
 use std::future::Future;
@@ -10,7 +11,7 @@ use crate::stdlib::packages::web_vibez::{
     response::HttpResponse,
     handler::Handler,
     error::{WebError, WebResult},
-    types::Headers,
+    crate::types::Headers,
 };
 
 /// fr fr Middleware trait for request/response processing - pipeline component

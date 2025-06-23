@@ -54,7 +54,7 @@ impl ModuleLoader {
     }
     
     /// Load a module from a resolved import
-    pub async fn load_module(&mut self, resolved: &ResolvedImport) -> Result<LoadedModule, ImportError> {
+    pub async fn load_module(&mut self, resolved: &ResolvedImport) -> Result<(), Error> {
         let module_key = resolved.get_cache_key();
         
         // Check if already loaded
@@ -79,7 +79,7 @@ impl ModuleLoader {
     }
     
     /// Internal module loading implementation
-    async fn load_module_internal(&mut self, resolved: &ResolvedImport) -> Result<LoadedModule, ImportError> {
+    async fn load_module_internal(&mut self, resolved: &ResolvedImport) -> Result<(), Error> {
         let load_start = std::time::Instant::now();
         
         // Read source file
@@ -148,7 +148,7 @@ impl ModuleLoader {
     }
     
     /// Generate source code for built-in modules
-    fn generate_module_source(&self, resolved: &ResolvedImport) -> Result<String, ImportError> {
+    fn generate_module_source(&self, resolved: &ResolvedImport) -> Result<(), Error> {
         match &resolved.original_path {
             path if path.starts_with("stdlib::io") => {
                 Ok(r#"
@@ -237,7 +237,7 @@ squad Stack<T> {
     }
     
     /// Extract module information from parsed program
-    fn extract_module_info(&self, program: &Program, resolved: &ResolvedImport) -> Result<ModuleInfo, ImportError> {
+    fn extract_module_info(&self, program: &Program, resolved: &ResolvedImport) -> Result<(), Error> {
         let mut exports = Vec::new();
         let mut types = Vec::new();
         let mut dependencies = Vec::new();

@@ -619,12 +619,12 @@ impl ProcessOutput {
     }
 
     /// Get stdout as string
-    pub fn stdout_string(&self) -> Result<String, std::string::FromUtf8Error> {
+    pub fn stdout_string(&self) -> Result<(), Error> {
         String::from_utf8(self.stdout.clone())
     }
 
     /// Get stderr as string
-    pub fn stderr_string(&self) -> Result<String, std::string::FromUtf8Error> {
+    pub fn stderr_string(&self) -> Result<(), Error> {
         String::from_utf8(self.stderr.clone())
     }
 

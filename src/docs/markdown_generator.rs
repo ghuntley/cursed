@@ -238,7 +238,7 @@ impl MarkdownGenerator {
     }
 
     /// Generate documentation for a single item
-    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<String, Error> {
+    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut content = String::new();
         
         // Item header

@@ -663,3 +663,29 @@ use crate::stdlib::process::error::ProcessError;
         assert!(!comparison.completely_isolated());
     }
 }
+
+/// Options for namespace configuration
+#[derive(Debug, Clone)]
+pub struct NamespaceOptions {
+    pub mount_namespace: bool,
+    pub uts_namespace: bool,
+    pub ipc_namespace: bool,
+    pub pid_namespace: bool,
+    pub network_namespace: bool,
+    pub user_namespace: bool,
+    pub cgroup_namespace: bool,
+}
+
+impl Default for NamespaceOptions {
+    fn default() -> Self {
+        Self {
+            mount_namespace: false,
+            uts_namespace: false,
+            ipc_namespace: false,
+            pid_namespace: false,
+            network_namespace: false,
+            user_namespace: false,
+            cgroup_namespace: false,
+        }
+    }
+}

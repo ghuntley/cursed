@@ -45,7 +45,7 @@ pub struct ResourceLimitSpec {
 // Import real inkwell types for LLVM integration
 use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, ArrayValue},
-    types::{BasicTypeEnum, IntType, PointerType, FunctionType, ArrayType},
+    crate::types::{BasicTypeEnum, IntType, PointerType, FunctionType, ArrayType},
     basic_block::BasicBlock,
     AddressSpace,
     IntPredicate,
@@ -69,43 +69,43 @@ pub fn get_runtime_process_manager() -> Option<*mut crate::stdlib::process::core
 /// Trait for compiling process execution operations to LLVM IR
 pub trait ProcessExecutionCompiler<'ctx> {
     /// Compile exec_slay process execution
-    fn compile_exec_slay(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_exec_slay(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> Result<(), Error>;
     
     /// Compile exec_vibez enhanced process execution  
-    fn compile_exec_vibez(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_exec_vibez(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> Result<(), Error>;
     
     /// Compile process spawning with full options
-    fn compile_process_spawn(&mut self, command: &str, args: &[String], env: Option<&HashMap<String, String>>) -> Result<IntValue<'ctx>, Error>;
+    fn compile_process_spawn(&mut self, command: &str, args: &[String], env: Option<&HashMap<String, String>>) -> Result<(), Error>;
     
     /// Compile process waiting and status checking
-    fn compile_process_wait(&mut self, pid_expr: &dyn Expression) -> Result<IntValue<'ctx>, Error>;
+    fn compile_process_wait(&mut self, pid_expr: &dyn Expression) -> Result<(), Error>;
     
     /// Compile signal sending to process
-    fn compile_process_signal(&mut self, pid_expr: &dyn Expression, signal: i32) -> Result<IntValue<'ctx>, Error>;
+    fn compile_process_signal(&mut self, pid_expr: &dyn Expression, signal: i32) -> Result<(), Error>;
     
     /// Compile unified process-IPC coordination
-    fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> Result<(), Error>;
     
     /// Compile IPC connection creation
-    fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> Result<(), Error>;
     
     /// Compile security context application
-    fn compile_security_context(&mut self, process: &dyn Expression, security_settings: &SecuritySpec) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_security_context(&mut self, process: &dyn Expression, security_settings: &SecuritySpec) -> Result<(), Error>;
     
     /// Compile resource limit enforcement
-    fn compile_resource_limits(&mut self, process: &dyn Expression, limits: &ResourceLimitSpec) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_resource_limits(&mut self, process: &dyn Expression, limits: &ResourceLimitSpec) -> Result<(), Error>;
     
     /// Compile process termination
-    fn compile_process_terminate(&mut self, pid_expr: &dyn Expression, force: bool) -> Result<IntValue<'ctx>, Error>;
+    fn compile_process_terminate(&mut self, pid_expr: &dyn Expression, force: bool) -> Result<(), Error>;
     
     /// Compile pipeline execution
-    fn compile_process_pipeline(&mut self, commands: &[(&str, &[String])]) -> Result<PointerValue<'ctx>, Error>;
+    fn compile_process_pipeline(&mut self, commands: &[(&str, &[String])]) -> Result<(), Error>;
     
     /// Compile background task execution
-    fn compile_background_task(&mut self, command_expr: &dyn Expression) -> Result<PointerValue<'ctx>, Error>;
+    fn compile_background_task(&mut self, command_expr: &dyn Expression) -> Result<(), Error>;
     
     /// Compile input/output redirection
-    fn compile_io_redirection(&mut self, stdin: Option<&str>, stdout: Option<&str>, stderr: Option<&str>) -> Result<PointerValue<'ctx>, Error>;
+    fn compile_io_redirection(&mut self, stdin: Option<&str>, stdout: Option<&str>, stderr: Option<&str>) -> Result<(), Error>;
     
     /// Declare runtime FFI functions in the module
     fn declare_process_execution_runtime_functions(&mut self) -> Result<(), Error>;
@@ -113,7 +113,7 @@ pub trait ProcessExecutionCompiler<'ctx> {
 
 /// Implementation of ProcessExecutionCompiler for the real LLVM code generator
 impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
-    fn compile_exec_slay(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_exec_slay(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> Result<(), Error> {
         tracing::info!("Compiling exec_slay process execution");
         
         // Ensure runtime functions are declared
@@ -166,7 +166,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(result)
     }
     
-    fn compile_exec_vibez(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_exec_vibez(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> Result<(), Error> {
         tracing::info!("Compiling exec_vibez process execution");
         
         // Ensure runtime functions are declared
@@ -219,7 +219,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(result)
     }
     
-    fn compile_process_spawn(&mut self, command: &str, args: &[String], env: Option<&HashMap<String, String>>) -> Result<IntValue<'ctx>, Error> {
+    fn compile_process_spawn(&mut self, command: &str, args: &[String], env: Option<&HashMap<String, String>>) -> Result<(), Error> {
         tracing::info!("Compiling process spawn");
         
         // Ensure runtime functions are declared
@@ -280,7 +280,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(pid)
     }
     
-    fn compile_process_wait(&mut self, pid_expr: &dyn Expression) -> Result<IntValue<'ctx>, Error> {
+    fn compile_process_wait(&mut self, pid_expr: &dyn Expression) -> Result<(), Error> {
         tracing::info!("Compiling process wait");
         
         // Ensure runtime functions are declared
@@ -314,7 +314,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(exit_code)
     }
     
-    fn compile_process_signal(&mut self, pid_expr: &dyn Expression, signal: i32) -> Result<IntValue<'ctx>, Error> {
+    fn compile_process_signal(&mut self, pid_expr: &dyn Expression, signal: i32) -> Result<(), Error> {
         tracing::info!(signal = signal, "Compiling process signal");
         
         // Ensure runtime functions are declared
@@ -350,7 +350,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(result)
     }
     
-    fn compile_process_terminate(&mut self, pid_expr: &dyn Expression, force: bool) -> Result<IntValue<'ctx>, Error> {
+    fn compile_process_terminate(&mut self, pid_expr: &dyn Expression, force: bool) -> Result<(), Error> {
         tracing::info!(force = force, "Compiling process terminate");
         
         // Ensure runtime functions are declared
@@ -386,7 +386,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(result)
     }
     
-    fn compile_process_pipeline(&mut self, commands: &[(&str, &[String])]) -> Result<PointerValue<'ctx>, Error> {
+    fn compile_process_pipeline(&mut self, commands: &[(&str, &[String])]) -> Result<(), Error> {
         tracing::info!("Compiling process pipeline");
         
         // Ensure runtime functions are declared
@@ -431,7 +431,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(handle)
     }
     
-    fn compile_background_task(&mut self, command_expr: &dyn Expression) -> Result<PointerValue<'ctx>, Error> {
+    fn compile_background_task(&mut self, command_expr: &dyn Expression) -> Result<(), Error> {
         tracing::info!("Compiling background task");
         
         // Ensure runtime functions are declared
@@ -464,7 +464,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(handle)
     }
     
-    fn compile_io_redirection(&mut self, stdin: Option<&str>, stdout: Option<&str>, stderr: Option<&str>) -> Result<PointerValue<'ctx>, Error> {
+    fn compile_io_redirection(&mut self, stdin: Option<&str>, stdout: Option<&str>, stderr: Option<&str>) -> Result<(), Error> {
         tracing::info!("Compiling I/O redirection");
         
         // Ensure runtime functions are declared
@@ -622,7 +622,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(())
     }
     
-    fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> Result<(), Error> {
         tracing::info!("Compiling unified process IPC");
         
         // Ensure runtime functions are declared
@@ -641,7 +641,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(self.context().i32_type().const_int(0, false).into())
     }
 
-    fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> Result<(), Error> {
         tracing::info!("Compiling IPC connection");
         
         // Compile source and target process expressions
@@ -656,7 +656,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(self.context().i32_type().const_int(0, false).into())
     }
 
-    fn compile_security_context(&mut self, process: &dyn Expression, _security_settings: &SecuritySpec) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_security_context(&mut self, process: &dyn Expression, _security_settings: &SecuritySpec) -> Result<(), Error> {
         tracing::info!("Compiling security context");
         
         // Compile process expression
@@ -666,7 +666,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         Ok(self.context().i32_type().const_int(0, false).into())
     }
 
-    fn compile_resource_limits(&mut self, process: &dyn Expression, _limits: &ResourceLimitSpec) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_resource_limits(&mut self, process: &dyn Expression, _limits: &ResourceLimitSpec) -> Result<(), Error> {
         tracing::info!("Compiling resource limits");
         
         // Compile process expression
@@ -680,7 +680,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
 /// Helper implementations for LlvmCodeGeneratorReal
 impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
     /// Get runtime process manager pointer
-    fn get_runtime_process_manager_ptr(&self) -> Result<PointerValue<'ctx>, Error> {
+    fn get_runtime_process_manager_ptr(&self) -> Result<(), Error> {
         // Get the static process manager pointer from the runtime
         let manager_opt = get_runtime_process_manager();
         let manager_ptr_raw = manager_opt
@@ -717,7 +717,7 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
     }
     
     /// Create an array of string pointers
-    fn create_string_array(&self, strings: &[String]) -> Result<PointerValue<'ctx>, Error> {
+    fn create_string_array(&self, strings: &[String]) -> Result<(), Error> {
         if strings.is_empty() {
             return Ok(self.context().i8_type().ptr_type(AddressSpace::Generic).const_null());
         }
@@ -770,7 +770,7 @@ pub fn compile_exec_slay_command<'ctx>(
     command: &str,
     args: &[String],
     options: Option<&dyn Expression>,
-) -> Result<BasicValueEnum<'ctx>, Error> {
+) -> Result<(), Error> {
     generator.compile_exec_slay(command, args, options)
 }
 
@@ -780,7 +780,7 @@ pub fn compile_exec_vibez_command<'ctx>(
     command: &str,
     args: &[String],
     context: Option<&dyn Expression>,
-) -> Result<BasicValueEnum<'ctx>, Error> {
+) -> Result<(), Error> {
     generator.compile_exec_vibez(command, args, context)
 }
 
@@ -789,7 +789,7 @@ pub mod runtime_integration {
     use super::*;
     
     /// Initialize a runtime process manager and set it as the global manager
-    pub fn initialize_process_manager() -> Result<*mut crate::stdlib::process::core::ProcessManager, Error> {
+    pub fn initialize_process_manager() -> Result<(), Error> {
         let manager = Box::new(crate::stdlib::process::core::ProcessManager::new());
         let manager_ptr = Box::into_raw(manager);
         set_runtime_process_manager(manager_ptr);

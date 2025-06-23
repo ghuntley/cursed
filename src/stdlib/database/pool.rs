@@ -193,7 +193,7 @@ pub struct ConnectionPool {
 
 impl ConnectionPool {
     /// slay Create a new connection pool
-    pub fn new(driver_name: &str, data_source_name: &str) -> Result<Self, DatabaseError> {
+    pub fn new(driver_name: &str, data_source_name: &str) -> Result<(), Error> {
         let driver = get_driver(driver_name)?;
         let config = PoolConfig::default();
         
@@ -206,7 +206,7 @@ impl ConnectionPool {
         driver: Box<dyn Driver>, 
         data_source_name: String, 
         config: PoolConfig
-    ) -> Result<Self, DatabaseError> {
+    ) -> Result<(), Error> {
         let state = Arc::new(Mutex::new(PoolState::new()));
         let available_signal = Arc::new(Condvar::new());
         
@@ -226,7 +226,7 @@ impl ConnectionPool {
     }
 
     /// slay Acquire a connection from the pool
-    pub fn acquire_connection(&self, timeout: Option<Duration>) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    pub fn acquire_connection(&self, timeout: Option<Duration>) -> Result<(), Error> {
         let timeout = timeout.unwrap_or(self.config.connection_timeout);
         let start_time = Instant::now();
         
@@ -255,7 +255,7 @@ impl ConnectionPool {
     }
 
     /// slay Try to acquire an existing idle connection
-    fn try_acquire_existing_connection(&self) -> Result<Option<Box<dyn DriverConn>>, DatabaseError> {
+    fn try_acquire_existing_connection(&self) -> Result<(), Error> {
         let mut state = self.state.lock().map_err(|_| {
             DatabaseError::pool_error("Failed to acquire pool state lock")
         })?;
@@ -296,7 +296,7 @@ impl ConnectionPool {
     }
 
     /// slay Try to create a new connection if under limits
-    fn try_create_new_connection(&self) -> Result<Option<Box<dyn DriverConn>>, DatabaseError> {
+    fn try_create_new_connection(&self) -> Result<(), Error> {
         let mut state = self.state.lock().map_err(|_| {
             DatabaseError::pool_error("Failed to acquire pool state lock")
         })?;
@@ -333,7 +333,7 @@ impl ConnectionPool {
     }
 
     /// slay Create a connection with retry logic
-    fn create_connection_with_retry(&self) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn create_connection_with_retry(&self) -> Result<(), Error> {
         let mut last_error = None;
         
         for attempt in 0..=self.config.connection_retry_count {
@@ -354,7 +354,7 @@ impl ConnectionPool {
     }
 
     /// slay Wait for a connection to become available
-    fn wait_for_available_connection(&self, timeout: Duration) -> Result<(), DatabaseError> {
+    fn wait_for_available_connection(&self, timeout: Duration) -> Result<(), Error> {
         let mut state = self.state.lock().map_err(|_| {
             DatabaseError::pool_error("Failed to acquire pool state lock")
         })?;
@@ -384,7 +384,7 @@ impl ConnectionPool {
     }
 
     /// slay Return a connection to the pool
-    pub fn return_connection(&self, conn: Box<dyn DriverConn>) -> Result<(), DatabaseError> {
+    pub fn return_connection(&self, conn: Box<dyn DriverConn>) -> Result<(), Error> {
         let mut state = self.state.lock().map_err(|_| {
             DatabaseError::pool_error("Failed to acquire pool state lock")
         })?;
@@ -486,7 +486,7 @@ impl ConnectionPool {
     }
 
     /// slay Close the connection pool
-    pub fn close(&self) -> Result<(), DatabaseError> {
+    pub fn close(&self) -> Result<(), Error> {
         let mut state = self.state.lock().map_err(|_| {
             DatabaseError::pool_error("Failed to acquire pool state lock")
         })?;
@@ -509,7 +509,7 @@ impl ConnectionPool {
     }
 
     /// slay Get current pool statistics
-    pub fn stats(&self) -> Result<PoolStats, DatabaseError> {
+    pub fn stats(&self) -> Result<(), Error> {
         let state = self.state.lock().map_err(|_| {
             DatabaseError::pool_error("Failed to acquire pool state lock")
         })?;
@@ -656,7 +656,7 @@ impl ConnectionPoolBuilder {
     }
 
     /// slay Build the connection pool
-    pub fn build(self, driver: Box<dyn Driver>, data_source_name: String) -> Result<ConnectionPool, DatabaseError> {
+    pub fn build(self, driver: Box<dyn Driver>, data_source_name: String) -> Result<(), Error> {
         ConnectionPool::with_config(driver, data_source_name, self.config)
     }
 }

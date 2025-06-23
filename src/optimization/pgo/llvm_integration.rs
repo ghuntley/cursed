@@ -14,7 +14,7 @@ use inkwell::{
     module::Module,
     passes::{PassManager},
     values::{FunctionValue, BasicValueEnum},
-    types::{IntType, PointerType},
+    crate::types::{IntType, PointerType},
     builder::Builder,
     AddressSpace,
 };
@@ -260,12 +260,12 @@ impl LlvmPgoIntegration {
     ) -> Result<()> {
         let context = function.get_type().get_context();
         let module = function.get_parent().ok_or_else(|| {
-            Error::Other("Function has no parent module".to_string())
+            Error::General("Function has no parent module".to_string())
         })?;
 
         // Get instrumentation runtime function
         let increment_fn = module.get_function("__llvm_profile_increment_step")
-            .ok_or_else(|| Error::Other("Profile increment function not found".to_string()))?;
+            .ok_or_else(|| Error::General("Profile increment function not found".to_string()))?;
 
         let function_name = function.get_name().to_str().unwrap_or("unknown");
         let counter_name = format!("__prof_counter_{}", function_name);

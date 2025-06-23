@@ -27,7 +27,7 @@ pub trait ErrorHandlingCompiler<'ctx> {
         severity: PanicSeverity,
         category: PanicCategory,
         location: Option<SourceLocation>,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile a recovery block
     fn compile_recovery_block<F>(
@@ -35,9 +35,9 @@ pub trait ErrorHandlingCompiler<'ctx> {
         protected_operation: F,
         recovery_handler: Option<F>,
         location: Option<SourceLocation>,
-    ) -> Result<LlvmValue, CursedError>
+    ) -> Result<(), Error>
     where
-        F: FnOnce(&mut Self) -> Result<LlvmValue, CursedError>;
+        F: FnOnce(&mut Self) -> Result<(), Error>;
 
     /// Compile error propagation for the `?` operator
     fn compile_error_propagation(
@@ -46,20 +46,20 @@ pub trait ErrorHandlingCompiler<'ctx> {
         result_type: LlvmType,
         location: Option<SourceLocation>,
         function_name: Option<String>,
-    ) -> Result<LlvmValue, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate error checking code
     fn generate_error_check(
         &mut self,
         value: LlvmValue,
         value_type: LlvmType,
-    ) -> Result<LlvmValue, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate stack trace capture
     fn generate_stack_trace_capture(
         &mut self,
         max_depth: Option<usize>,
-    ) -> Result<LlvmValue, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate error context creation
     fn generate_error_context(
@@ -67,7 +67,7 @@ pub trait ErrorHandlingCompiler<'ctx> {
         error_message: &str,
         location: Option<SourceLocation>,
         function_name: Option<String>,
-    ) -> Result<LlvmValue, CursedError>;
+    ) -> Result<(), Error>;
 }
 
 /// Error handling function registry for LLVM

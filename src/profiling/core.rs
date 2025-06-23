@@ -154,7 +154,7 @@ impl CursedProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn start_session(&mut self, session_name: String) -> Result<(), ProfilerError> {
+    pub fn start_session(&mut self, session_name: String) -> Result<(), Error> {
         if self.session.is_some() {
             return Err(ProfilerError::SessionAlreadyActive);
         }
@@ -177,7 +177,7 @@ impl CursedProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn stop_session(&mut self) -> Result<ProfileData, ProfilerError> {
+    pub fn stop_session(&mut self) -> Result<(), Error> {
         let session = self.session.take()
             .ok_or(ProfilerError::NoActiveSession)?;
         
@@ -324,8 +324,8 @@ impl ProfilerStats {
 
 /// Data collector trait for different profiling modes
 pub trait DataCollector: Send + Sync {
-    fn start_collection(&mut self) -> Result<(), ProfilerError>;
-    fn stop_collection(&mut self) -> Result<Vec<u8>, ProfilerError>;
+    fn start_collection(&mut self) -> Result<(), Error>;
+    fn stop_collection(&mut self) -> Result<(), Error>;
     fn is_collecting(&self) -> bool;
     fn get_stats(&self) -> CollectorStats;
 }

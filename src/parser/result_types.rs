@@ -7,7 +7,7 @@ use crate::parser::Parser;
 use crate::lexer::{Token, TokenType};
 use crate::ast::traits::Expression;
 use crate::ast::identifiers::Identifier;
-use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
+use crate::crate::types::result::{ResultTypeExpression, OptionTypeExpression};
 use crate::error::CursedError;
 use std::any::Any;
 
@@ -265,32 +265,32 @@ impl Expression for ResultConstructorExpression {
 /// Parser extension for Result/Option types
 pub trait ResultTypeParser {
     /// Parse Result<T, E> type expression
-    fn parse_result_type(&mut self) -> Result<ResultTypeExpression, CursedError>;
+    fn parse_result_type(&mut self) -> Result<(), Error>;
 
     /// Parse Option<T> type expression
-    fn parse_option_type(&mut self) -> Result<OptionTypeExpression, CursedError>;
+    fn parse_option_type(&mut self) -> Result<(), Error>;
 
     /// Parse match expression for Result/Option
-    fn parse_result_match(&mut self) -> Result<ResultMatchExpression, CursedError>;
+    fn parse_result_match(&mut self) -> Result<(), Error>;
 
     /// Parse try expression (? operator)
-    fn parse_try_expression(&mut self, left: Box<dyn Expression>) -> Result<TryExpression, CursedError>;
+    fn parse_try_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error>;
 
     /// Parse unwrap expression
-    fn parse_unwrap_expression(&mut self, left: Box<dyn Expression>) -> Result<UnwrapExpression, CursedError>;
+    fn parse_unwrap_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error>;
 
     /// Parse Result/Option constructor
-    fn parse_result_constructor(&mut self) -> Result<ResultConstructorExpression, CursedError>;
+    fn parse_result_constructor(&mut self) -> Result<(), Error>;
 
     /// Parse pattern for match arms
-    fn parse_result_pattern(&mut self) -> Result<ResultPattern, CursedError>;
+    fn parse_result_pattern(&mut self) -> Result<(), Error>;
 
     /// Parse match arm
-    fn parse_match_arm(&mut self) -> Result<MatchArm, CursedError>;
+    fn parse_match_arm(&mut self) -> Result<(), Error>;
 }
 
 impl ResultTypeParser for Parser {
-    fn parse_result_type(&mut self) -> Result<ResultTypeExpression, CursedError> {
+    fn parse_result_type(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         // Expect "Result"
@@ -342,7 +342,7 @@ impl ResultTypeParser for Parser {
         Ok(ResultTypeExpression::new(token, ok_type, err_type))
     }
 
-    fn parse_option_type(&mut self) -> Result<OptionTypeExpression, CursedError> {
+    fn parse_option_type(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         // Expect "Option"
@@ -380,7 +380,7 @@ impl ResultTypeParser for Parser {
         Ok(OptionTypeExpression::new(token, inner_type))
     }
 
-    fn parse_result_match(&mut self) -> Result<ResultMatchExpression, CursedError> {
+    fn parse_result_match(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         // Expect "match"
@@ -430,7 +430,7 @@ impl ResultTypeParser for Parser {
         Ok(ResultMatchExpression::new(token, value, arms))
     }
 
-    fn parse_try_expression(&mut self, left: Box<dyn Expression>) -> Result<TryExpression, CursedError> {
+    fn parse_try_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         // Current token should be "?"
@@ -447,7 +447,7 @@ impl ResultTypeParser for Parser {
         Ok(TryExpression::new(token, left))
     }
 
-    fn parse_unwrap_expression(&mut self, left: Box<dyn Expression>) -> Result<UnwrapExpression, CursedError> {
+    fn parse_unwrap_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         // Expect ".unwrap"
@@ -528,7 +528,7 @@ impl ResultTypeParser for Parser {
         }
     }
 
-    fn parse_result_constructor(&mut self) -> Result<ResultConstructorExpression, CursedError> {
+    fn parse_result_constructor(&mut self) -> Result<(), Error> {
         let token = self.current_token.literal.clone();
         
         if !self.current_token_is(&TokenType::Identifier) {
@@ -630,7 +630,7 @@ impl ResultTypeParser for Parser {
         Ok(ResultConstructorExpression::new(token, constructor))
     }
 
-    fn parse_result_pattern(&mut self) -> Result<ResultPattern, CursedError> {
+    fn parse_result_pattern(&mut self) -> Result<(), Error> {
         if !self.current_token_is(&TokenType::Identifier) {
             return Err(CursedError::parse_error_with_location(
                 "Expected pattern".to_string(),
@@ -731,7 +731,7 @@ impl ResultTypeParser for Parser {
         }
     }
 
-    fn parse_match_arm(&mut self) -> Result<MatchArm, CursedError> {
+    fn parse_match_arm(&mut self) -> Result<(), Error> {
         // Parse pattern
         let pattern = self.parse_result_pattern()?;
 

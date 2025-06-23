@@ -25,7 +25,7 @@ pub struct TypeExtractor {
 impl TypeExtractor {
     /// Create a new type extractor
     #[instrument]
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         let mut primitives = HashSet::new();
         
         // CURSED primitive types
@@ -99,8 +99,8 @@ impl TypeExtractor {
     pub fn extract_function_type_info(
         &self,
         func_decl: &FunctionDeclaration,
-    ) -> Result<CompleteTypeInfo, Error> {
-        debug!("Extracting function type info for: {}", func_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting function type info for: {}", func_decl.to_string());
 
         // Build function signature
         let mut signature_parts = Vec::new();
@@ -111,7 +111,7 @@ impl TypeExtractor {
         }
         
         signature_parts.push("slay".to_string());
-        signature_parts.push(func_decl.name.clone());
+        signature_parts.push(func_decl.to_string().clone());
 
         // Add generic parameters
         if let Some(ref generics) = func_decl.generic_params {
@@ -127,9 +127,9 @@ impl TypeExtractor {
                     .map(|t| self.format_type_expression(t))
                     .transpose()?
                     .unwrap_or_else(|| "any".to_string());
-                Ok(format!("{}: {}", param.name, type_str))
+                Ok(format!("{}: {}", param.to_string(), type_str))
             })
-            .collect::<Result<Vec<_>, Error>>()?;
+            .collect::<Result<(), Error>>()?;
 
         signature_parts.push(format!("({})", param_strings.join(", ")));
 
@@ -155,7 +155,7 @@ impl TypeExtractor {
         }
 
         Ok(CompleteTypeInfo {
-            type_name: func_decl.name.clone(),
+            type_name: func_decl.to_string().clone(),
             type_signature,
             type_kind: TypeKind::Function,
             type_parameters: func_decl.generic_params.clone().unwrap_or_default(),
@@ -175,13 +175,13 @@ impl TypeExtractor {
     pub fn extract_struct_type_info(
         &self,
         struct_decl: &StructDeclaration,
-    ) -> Result<CompleteTypeInfo, Error> {
-        debug!("Extracting struct type info for: {}", struct_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting struct type info for: {}", struct_decl.to_string());
 
         // Build struct signature
         let mut signature_parts = Vec::new();
         signature_parts.push("squad".to_string());
-        signature_parts.push(struct_decl.name.clone());
+        signature_parts.push(struct_decl.to_string().clone());
 
         // Add generic parameters
         if let Some(ref generics) = struct_decl.generic_params {
@@ -197,9 +197,9 @@ impl TypeExtractor {
                     .map(|t| self.format_type_expression(t))
                     .transpose()?
                     .unwrap_or_else(|| "any".to_string());
-                Ok(format!("{}: {}", field.name, type_str))
+                Ok(format!("{}: {}", field.to_string(), type_str))
             })
-            .collect::<Result<Vec<_>, Error>>()?;
+            .collect::<Result<(), Error>>()?;
 
         signature_parts.push(format!("{{ {} }}", field_strings.join(", ")));
 
@@ -217,7 +217,7 @@ impl TypeExtractor {
         let size_info = self.calculate_struct_size(struct_decl)?;
 
         Ok(CompleteTypeInfo {
-            type_name: struct_decl.name.clone(),
+            type_name: struct_decl.to_string().clone(),
             type_signature,
             type_kind: TypeKind::Struct,
             type_parameters: struct_decl.generic_params.clone().unwrap_or_default(),
@@ -232,13 +232,13 @@ impl TypeExtractor {
     pub fn extract_interface_type_info(
         &self,
         interface_decl: &InterfaceDeclaration,
-    ) -> Result<CompleteTypeInfo, Error> {
-        debug!("Extracting interface type info for: {}", interface_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting interface type info for: {}", interface_decl.to_string());
 
         // Build interface signature
         let mut signature_parts = Vec::new();
         signature_parts.push("collab".to_string());
-        signature_parts.push(interface_decl.name.clone());
+        signature_parts.push(interface_decl.to_string().clone());
 
         // Add generic parameters
         if let Some(ref generics) = interface_decl.generic_params {
@@ -256,18 +256,18 @@ impl TypeExtractor {
                             .map(|t| self.format_type_expression(t))
                             .transpose()?
                             .unwrap_or_else(|| "any".to_string());
-                        Ok(format!("{}: {}", param.name, type_str))
+                        Ok(format!("{}: {}", param.to_string(), type_str))
                     })
-                    .collect::<Result<Vec<_>, Error>>()?;
+                    .collect::<Result<(), Error>>()?;
 
                 let return_str = method.return_type.as_ref()
                     .map(|t| format!(" -> {}", self.format_type_expression(t)?))
                     .transpose()?
                     .unwrap_or_default();
 
-                Ok(format!("{}({}){}", method.name, param_strings.join(", "), return_str))
+                Ok(format!("{}({}){}", method.to_string(), param_strings.join(", "), return_str))
             })
-            .collect::<Result<Vec<_>, Error>>()?;
+            .collect::<Result<(), Error>>()?;
 
         signature_parts.push(format!("{{ {} }}", method_strings.join("; ")));
 
@@ -277,7 +277,7 @@ impl TypeExtractor {
         let nested_types = Vec::new(); // Methods are handled separately
 
         Ok(CompleteTypeInfo {
-            type_name: interface_decl.name.clone(),
+            type_name: interface_decl.to_string().clone(),
             type_signature,
             type_kind: TypeKind::Interface,
             type_parameters: interface_decl.generic_params.clone().unwrap_or_default(),
@@ -297,18 +297,18 @@ impl TypeExtractor {
     pub fn extract_enum_type_info(
         &self,
         enum_decl: &EnumDeclaration,
-    ) -> Result<CompleteTypeInfo, Error> {
-        debug!("Extracting enum type info for: {}", enum_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting enum type info for: {}", enum_decl.to_string());
 
         // Build enum signature
         let mut signature_parts = Vec::new();
         signature_parts.push("enum".to_string());
-        signature_parts.push(enum_decl.name.clone());
+        signature_parts.push(enum_decl.to_string().clone());
 
         let variant_strings: Vec<String> = enum_decl.variants.iter()
             .map(|variant| {
                 if variant.fields.is_empty() {
-                    variant.name.clone()
+                    variant.to_string().clone()
                 } else {
                     let field_strings: Vec<String> = variant.fields.iter()
                         .map(|field| {
@@ -317,11 +317,11 @@ impl TypeExtractor {
                                 .transpose()
                                 .map(|opt| opt.unwrap_or_else(|| "any".to_string()))
                         })
-                        .collect::<Result<Vec<_>, Error>>()?;
-                    Ok(format!("{}({})", variant.name, field_strings.join(", ")))
+                        .collect::<Result<(), Error>>()?;
+                    Ok(format!("{}({})", variant.to_string(), field_strings.join(", ")))
                 }
             })
-            .collect::<Result<Vec<_>, Error>>()?;
+            .collect::<Result<(), Error>>()?;
 
         signature_parts.push(format!("{{ {} }}", variant_strings.join(" | ")));
 
@@ -338,7 +338,7 @@ impl TypeExtractor {
         }
 
         Ok(CompleteTypeInfo {
-            type_name: enum_decl.name.clone(),
+            type_name: enum_decl.to_string().clone(),
             type_signature,
             type_kind: TypeKind::Enum,
             type_parameters: Vec::new(),
@@ -353,16 +353,16 @@ impl TypeExtractor {
     pub fn extract_type_alias_info(
         &self,
         type_alias: &TypeAliasDeclaration,
-    ) -> Result<CompleteTypeInfo, Error> {
-        debug!("Extracting type alias info for: {}", type_alias.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting type alias info for: {}", type_alias.to_string());
 
         let target_type_str = self.format_type_expression(&type_alias.target_type)?;
-        let type_signature = format!("type {} = {}", type_alias.name, target_type_str);
+        let type_signature = format!("type {} = {}", type_alias.to_string(), target_type_str);
 
         let nested_types = vec![self.extract_type_info_from_expression(&type_alias.target_type)?];
 
         Ok(CompleteTypeInfo {
-            type_name: type_alias.name.clone(),
+            type_name: type_alias.to_string().clone(),
             type_signature,
             type_kind: TypeKind::Custom,
             type_parameters: Vec::new(),
@@ -377,10 +377,10 @@ impl TypeExtractor {
     pub fn extract_type_info_from_expression(
         &self,
         expr: &dyn Expression,
-    ) -> Result<CompleteTypeInfo, Error> {
+    ) -> Result<(), Error> {
         match &expr.expr_type {
             ExpressionType::Identifier(id) => {
-                self.extract_identifier_type_info(&id.name)
+                self.extract_identifier_type_info(&id.to_string())
             }
             ExpressionType::ArrayAccess(arr) => {
                 let element_type = self.extract_type_info_from_expression(&arr.array)?;
@@ -404,7 +404,7 @@ impl TypeExtractor {
                 let base_type = self.extract_type_info_from_expression(&call.function)?;
                 let arg_types: Vec<CompleteTypeInfo> = call.arguments.iter()
                     .map(|arg| self.extract_type_info_from_expression(arg))
-                    .collect::<Result<Vec<_>, Error>>()?;
+                    .collect::<Result<(), Error>>()?;
 
                 let type_args: Vec<String> = arg_types.iter()
                     .map(|t| t.type_name.clone())
@@ -451,7 +451,7 @@ impl TypeExtractor {
     }
 
     /// Extract type information for an identifier
-    fn extract_identifier_type_info(&self, name: &str) -> Result<CompleteTypeInfo, Error> {
+    fn extract_identifier_type_info(&self, name: &str) -> Result<(), Error> {
         let type_kind = if self.primitives.contains(name) {
             TypeKind::Primitive
         } else {
@@ -470,7 +470,7 @@ impl TypeExtractor {
     }
 
     /// Extract type information for a literal
-    fn extract_literal_type_info(&self, literal: &Literal) -> Result<CompleteTypeInfo, Error> {
+    fn extract_literal_type_info(&self, literal: &Literal) -> Result<(), Error> {
         let (type_name, type_kind, size_info) = match literal {
             Literal::String(_) => ("string", TypeKind::Primitive, Some(SizeInfo {
                 size_bytes: None, // Variable size
@@ -495,7 +495,7 @@ impl TypeExtractor {
             Literal::Array(arr) => {
                 let element_types: Vec<CompleteTypeInfo> = arr.iter()
                     .map(|elem| self.extract_type_info_from_expression(elem))
-                    .collect::<Result<Vec<_>, Error>>()?;
+                    .collect::<Result<(), Error>>()?;
 
                 return Ok(CompleteTypeInfo {
                     type_name: format!("[{}; {}]", 
@@ -537,16 +537,16 @@ impl TypeExtractor {
 
     /// Format a type expression as a string
     #[instrument(skip(self, expr))]
-    pub fn format_type_expression(&self, expr: &dyn Expression) -> Result<String, Error> {
+    pub fn format_type_expression(&self, expr: &dyn Expression) -> Result<(), Error> {
         match &expr.expr_type {
-            ExpressionType::Identifier(id) => Ok(id.name.clone()),
+            ExpressionType::Identifier(id) => Ok(id.to_string().clone()),
             ExpressionType::ArrayAccess(arr) => {
                 Ok(format!("{}[]", self.format_type_expression(&arr.array)?))
             }
             ExpressionType::FunctionCall(call) => {
                 let args: Vec<String> = call.arguments.iter()
                     .map(|arg| self.format_type_expression(arg))
-                    .collect::<Result<Vec<_>, Error>>()?;
+                    .collect::<Result<(), Error>>()?;
                 Ok(format!("{}<{}>", 
                     self.format_type_expression(&call.function)?,
                     args.join(", ")))
@@ -565,13 +565,13 @@ impl TypeExtractor {
                     Literal::Array(arr) => {
                         let elements: Vec<String> = arr.iter()
                             .map(|elem| self.format_type_expression(elem))
-                            .collect::<Result<Vec<_>, Error>>()?;
+                            .collect::<Result<(), Error>>()?;
                         Ok(format!("[{}]", elements.join(", ")))
                     }
                     Literal::Object(obj) => {
                         let fields: Vec<String> = obj.iter()
                             .map(|(k, v)| Ok(format!("{}: {}", k, self.format_type_expression(v)?)))
-                            .collect::<Result<Vec<_>, Error>>()?;
+                            .collect::<Result<(), Error>>()?;
                         Ok(format!("{{{}}}", fields.join(", ")))
                     }
                 }
@@ -581,7 +581,7 @@ impl TypeExtractor {
     }
 
     /// Calculate struct size (simplified)
-    fn calculate_struct_size(&self, struct_decl: &StructDeclaration) -> Result<SizeInfo, Error> {
+    fn calculate_struct_size(&self, struct_decl: &StructDeclaration) -> Result<(), Error> {
         let mut total_size = 0;
         let mut max_alignment = 1;
         let mut has_dst = false;
@@ -619,7 +619,7 @@ impl TypeExtractor {
     }
 
     /// Calculate enum size (simplified)
-    fn calculate_enum_size(&self, enum_decl: &EnumDeclaration) -> Result<Option<SizeInfo>, Error> {
+    fn calculate_enum_size(&self, enum_decl: &EnumDeclaration) -> Result<(), Error> {
         let discriminant_size = std::mem::size_of::<u32>(); // Enum discriminant
         let mut max_variant_size = 0;
         let mut max_alignment = std::mem::align_of::<u32>();

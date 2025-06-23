@@ -3,7 +3,7 @@
 //! Provides document formatting integration with the CURSED formatter
 
 use std::collections::HashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, error, instrument, warn};
 
 use crate::tools::formatter::{FormatterConfig, BraceStyle, CursedFormatter, OperatorSpacing, CommaSpacing};
@@ -26,7 +26,7 @@ impl FormattingProvider {
 
     /// Format entire document
     #[instrument(skip(self, content))]
-    pub async fn format_document(&self, content: &str) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn format_document(&self, content: &str) -> Result<(), Error>> {
         debug!("Formatting document");
         
         // Create formatter with default config

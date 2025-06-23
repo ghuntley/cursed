@@ -11,7 +11,7 @@ use inkwell::{
     module::Module,
     builder::Builder,
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue},
-    types::{BasicType, IntType},
+    crate::types::{BasicType, IntType},
     AddressSpace,
 };
 

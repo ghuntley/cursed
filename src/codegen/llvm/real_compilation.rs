@@ -22,7 +22,7 @@ use crate::codegen::llvm::symbol_table::{SymbolTable, Symbol};
 use crate::optimization::llvm_passes::{LlvmPassManager, LtoManager, PgoManager};
 use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, FloatValue},
-    types::{BasicTypeEnum, BasicType},
+    crate::types::{BasicTypeEnum, BasicType},
     builder::Builder,
     module::Module,
     context::Context,
@@ -33,7 +33,7 @@ use std::collections::HashMap;
 /// Real LLVM compilation implementation
 impl crate::codegen::llvm::LlvmCodeGenerator {
     /// Compile a literal expression to real LLVM value
-    pub fn compile_literal_real(&self, literal: &Literal) -> Result<LlvmValue, Error> {
+    pub fn compile_literal_real(&self, literal: &Literal) -> Result<(), Error> {
         let module_guard = self.module.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire module lock".to_string())
         })?;
@@ -129,7 +129,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile a function declaration to real LLVM function
-    pub fn compile_function_real(&self, func: &FunctionStatement) -> Result<FunctionValue<'static>, Error> {
+    pub fn compile_function_real(&self, func: &FunctionStatement) -> Result<(), Error> {
         let module_guard = self.module.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire module lock".to_string())
         })?;
@@ -138,7 +138,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
         
-        tracing::info!("Compiling function: {}", func.name.value);
+        tracing::info!("Compiling function: {}", func.to_string().value);
         
         // Determine return type
         let return_type = if let Some(ref return_annotation) = func.return_type {
@@ -168,7 +168,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         };
         
         // Create function in module
-        let function = module_guard.add_function(&func.name.value, function_type, None);
+        let function = module_guard.add_function(&func.to_string().value, function_type, None);
         
         // Create entry basic block
         let entry_block = self.context.append_basic_block(function, "entry");
@@ -177,7 +177,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // Set parameter names
         for (i, param) in func.parameters.iter().enumerate() {
             if let Some(param_value) = function.get_nth_param(i as u32) {
-                param_value.set_name(&param.name.value);
+                param_value.set_name(&param.to_string().value);
             }
         }
         
@@ -202,10 +202,10 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // Verify function
         if !function.verify(true) {
             function.print_to_stderr();
-            return Err(Error::CompilationError(format!("Function {} failed verification", func.name.value)));
+            return Err(Error::CompilationError(format!("Function {} failed verification", func.to_string().value)));
         }
         
-        tracing::debug!("Successfully compiled function: {}", func.name.value);
+        tracing::debug!("Successfully compiled function: {}", func.to_string().value);
         Ok(function)
     }
     
@@ -236,7 +236,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Convert CURSED type string to LLVM type
-    fn cursed_type_to_llvm_type(&self, type_str: &str) -> Result<BasicTypeEnum<'static>, Error> {
+    fn cursed_type_to_llvm_type(&self, type_str: &str) -> Result<(), Error> {
         match type_str {
             "normie" | "sus" | "i32" => Ok(self.context.i32_type().into()),
             "i64" => Ok(self.context.i64_type().into()),
@@ -251,7 +251,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Get zero value for a given LLVM type
-    fn get_zero_value(&self, llvm_type: BasicTypeEnum<'static>) -> Result<BasicValueEnum<'static>, Error> {
+    fn get_zero_value(&self, llvm_type: BasicTypeEnum<'static>) -> Result<(), Error> {
         match llvm_type {
             BasicTypeEnum::IntType(int_type) => Ok(int_type.const_zero().into()),
             BasicTypeEnum::FloatType(float_type) => Ok(float_type.const_zero().into()),
@@ -263,7 +263,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile an identifier (variable reference) to real LLVM value
-    pub fn compile_identifier_real(&self, identifier: &Identifier) -> Result<LlvmValue, Error> {
+    pub fn compile_identifier_real(&self, identifier: &Identifier) -> Result<(), Error> {
         let builder_guard = self.builder.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
@@ -323,7 +323,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
         
-        tracing::debug!("Compiling variable declaration: {}", let_stmt.name.value);
+        tracing::debug!("Compiling variable declaration: {}", let_stmt.to_string().value);
         
         // Determine variable type
         let var_type = if let Some(ref type_annotation) = let_stmt.type_annotation {
@@ -345,17 +345,17 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         };
         
         // Generate actual LLVM alloca instruction
-        let alloca_ptr = builder_guard.build_alloca(var_type, &let_stmt.name.value)
+        let alloca_ptr = builder_guard.build_alloca(var_type, &let_stmt.to_string().value)
             .map_err(|e| Error::CompilationError(format!("Failed to build alloca: {:?}", e)))?;
         
         // Generate LLVM name for the variable
-        let llvm_name = format!("%{}", let_stmt.name.value);
+        let llvm_name = format!("%{}", let_stmt.to_string().value);
         
         // Add to symbol table with alloca pointer
         if let Some(ref symbol_table_ref) = self.symbol_table {
             let mut symbol_table = symbol_table_ref.borrow_mut();
             symbol_table.declare_variable(
-                let_stmt.name.value.clone(),
+                let_stmt.to_string().value.clone(),
                 match var_type {
                     BasicTypeEnum::IntType(int_type) if int_type.get_bit_width() == 32 => LlvmType::Int32,
                     BasicTypeEnum::IntType(_) => LlvmType::Int64,
@@ -367,7 +367,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             )?;
             
             // Update symbol with alloca pointer
-            if let Some(symbol) = symbol_table.lookup_mut(&let_stmt.name.value) {
+            if let Some(symbol) = symbol_table.lookup_mut(&let_stmt.to_string().value) {
                 symbol.alloca_pointer = Some(alloca_ptr);
             }
         }
@@ -389,15 +389,15 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             builder_guard.build_store(alloca_ptr, store_value)
                 .map_err(|e| Error::CompilationError(format!("Failed to build store: {:?}", e)))?;
             
-            tracing::debug!("Variable {} initialized with value: {}", let_stmt.name.value, compiled_value.llvm_name);
+            tracing::debug!("Variable {} initialized with value: {}", let_stmt.to_string().value, compiled_value.llvm_name);
         }
         
-        tracing::debug!("Successfully compiled variable: {}", let_stmt.name.value);
+        tracing::debug!("Successfully compiled variable: {}", let_stmt.to_string().value);
         Ok(())
     }
     
     /// Compile an expression to real LLVM value (dispatcher)
-    pub fn compile_expression_real(&mut self, expr: &dyn Expression) -> Result<LlvmValue, Error> {
+    pub fn compile_expression_real(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         tracing::debug!("Compiling expression: {}", expr.string());
         
         // Try to downcast to specific expression types
@@ -584,7 +584,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile binary expressions (arithmetic, logical, comparison)
-    pub fn compile_binary_expression_real(&mut self, binary: &BinaryExpression) -> Result<LlvmValue, Error> {
+    pub fn compile_binary_expression_real(&mut self, binary: &BinaryExpression) -> Result<(), Error> {
         let builder_guard = self.builder.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
@@ -743,7 +743,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile unary expressions (negation, logical not, etc.)
-    pub fn compile_unary_expression_real(&mut self, unary: &UnaryExpression) -> Result<LlvmValue, Error> {
+    pub fn compile_unary_expression_real(&mut self, unary: &UnaryExpression) -> Result<(), Error> {
         let builder_guard = self.builder.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
@@ -800,7 +800,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile function call expressions
-    pub fn compile_call_expression_real(&mut self, call: &CallExpression) -> Result<LlvmValue, Error> {
+    pub fn compile_call_expression_real(&mut self, call: &CallExpression) -> Result<(), Error> {
         let builder_guard = self.builder.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
@@ -832,7 +832,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile assignment expressions
-    pub fn compile_assignment_expression_real(&mut self, assignment: &AssignmentExpression) -> Result<LlvmValue, Error> {
+    pub fn compile_assignment_expression_real(&mut self, assignment: &AssignmentExpression) -> Result<(), Error> {
         let builder_guard = self.builder.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
@@ -841,7 +841,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         let value_result = self.compile_expression_real(assignment.value.as_ref())?;
         
         // Get the target variable name
-        if let Some(identifier) = assignment.name.as_any().downcast_ref::<Identifier>() {
+        if let Some(identifier) = assignment.to_string().as_any().downcast_ref::<Identifier>() {
             // Update symbol table with the new value
             if let Some(ref symbol_table_ref) = self.symbol_table {
                 let symbol_table = symbol_table_ref.borrow();
@@ -881,7 +881,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     /// Compile index expressions (array access)
-    pub fn compile_index_expression_real(&mut self, index: &IndexExpression) -> Result<LlvmValue, Error> {
+    pub fn compile_index_expression_real(&mut self, index: &IndexExpression) -> Result<(), Error> {
         let builder_guard = self.builder.lock().map_err(|_| {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
@@ -920,7 +920,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             Error::CompilationError("Failed to acquire builder lock".to_string())
         })?;
         
-        tracing::debug!("Compiling constant declaration: {}", facts_stmt.name.value);
+        tracing::debug!("Compiling constant declaration: {}", facts_stmt.to_string().value);
         
         // Compile the initial value
         let value_result = self.compile_expression_real(facts_stmt.value.as_ref())?;
@@ -936,15 +936,15 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // Add to symbol table as constant
         if let Some(ref symbol_table_ref) = self.symbol_table {
             let mut symbol_table = symbol_table_ref.borrow_mut();
-            let llvm_name = format!("@{}", facts_stmt.name.value);
+            let llvm_name = format!("@{}", facts_stmt.to_string().value);
             symbol_table.declare_constant(
-                facts_stmt.name.value.clone(),
+                facts_stmt.to_string().value.clone(),
                 const_type.clone(),
                 llvm_name,
             )?;
         }
         
-        tracing::debug!("Successfully compiled constant: {}", facts_stmt.name.value);
+        tracing::debug!("Successfully compiled constant: {}", facts_stmt.to_string().value);
         Ok(())
     }
     
@@ -1002,7 +1002,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         let value_result = self.compile_expression_real(assignment_stmt.value.as_ref())?;
         
         // Get the target variable name
-        if let Some(identifier) = assignment_stmt.name.as_any().downcast_ref::<Identifier>() {
+        if let Some(identifier) = assignment_stmt.to_string().as_any().downcast_ref::<Identifier>() {
             // Update symbol table and generate store instruction
             if let Some(ref symbol_table_ref) = self.symbol_table {
                 let symbol_table = symbol_table_ref.borrow();

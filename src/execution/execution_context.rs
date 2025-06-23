@@ -120,7 +120,7 @@ impl ExecutionContext {
         name: String,
         value: CursedValue,
         is_mutable: bool,
-    ) -> Result<(), crate::error::Error> {
+    ) -> Result<(), Error> {
         let variable_info = VariableInfo {
             name: name.clone(),
             value_type: value.get_type(),
@@ -139,7 +139,7 @@ impl ExecutionContext {
     }
 
     /// Set a variable value (if mutable)
-    pub fn set_variable(&mut self, name: &str, value: CursedValue) -> Result<(), crate::error::Error> {
+    pub fn set_variable(&mut self, name: &str, value: CursedValue) -> Result<(), Error> {
         self.symbol_table.set_variable(name, value)
     }
 
@@ -164,7 +164,7 @@ impl ExecutionContext {
     }
 
     /// Remove the current scope
-    pub fn pop_scope(&mut self) -> Result<(), crate::error::Error> {
+    pub fn pop_scope(&mut self) -> Result<(), Error> {
         if self.current_scope_id == self.symbol_table.global_scope_id {
             return Err(crate::error::Error::RuntimeError("Cannot pop global scope".to_string()));
         }
@@ -269,7 +269,7 @@ impl SymbolTable {
         scope_id: ScopeId,
         name: String,
         variable_info: VariableInfo,
-    ) -> Result<(), crate::error::Error> {
+    ) -> Result<(), Error> {
         if let Some(scope) = self.scopes.get_mut(&scope_id) {
             if scope.variables.contains_key(&name) {
                 return Err(crate::error::Error::RuntimeError(
@@ -298,7 +298,7 @@ impl SymbolTable {
     }
 
     /// Set a variable value
-    pub fn set_variable(&mut self, name: &str, value: CursedValue) -> Result<(), crate::error::Error> {
+    pub fn set_variable(&mut self, name: &str, value: CursedValue) -> Result<(), Error> {
         for &scope_id in self.scope_stack.iter().rev() {
             if let Some(scope) = self.scopes.get_mut(&scope_id) {
                 if let Some(variable) = scope.variables.get_mut(name) {

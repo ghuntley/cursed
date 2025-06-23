@@ -33,7 +33,7 @@ pub enum FutureState {
 }
 
 /// Result type for futures
-pub type FutureResult<T> = Result<T, FutureError>;
+pub type FutureResult<(), Error>;
 
 /// Error types specific to futures
 #[derive(Debug, Clone)]
@@ -509,12 +509,12 @@ pub mod utils {
     }
 
     /// Create a future that completes immediately with a value
-    pub fn ok<T>(value: T) -> ReadyFuture<Result<T, FutureError>> {
+    pub fn ok<T>(value: T) -> ReadyFuture<Result<(), Error>> {
         ReadyFuture::new(Ok(value))
     }
 
     /// Create a future that completes immediately with an error
-    pub fn err<T>(error: FutureError) -> ReadyFuture<Result<T, FutureError>> {
+    pub fn err<T>(error: FutureError) -> ReadyFuture<Result<(), Error>> {
         ReadyFuture::new(Err(error))
     }
 

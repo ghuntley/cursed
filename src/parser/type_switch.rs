@@ -31,7 +31,7 @@ impl Parser {
     ///         // var is available as Type1
     /// }
     /// ```
-    pub fn parse_type_switch_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    pub fn parse_type_switch_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::VibeCheck)?;
         
         // Parse the expression which should be a type assertion
@@ -112,7 +112,7 @@ impl Parser {
     }
     
     /// Parse type switch expression (handles both simple expr.(type) and var := expr.(type))
-    fn parse_type_switch_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_type_switch_expression(&mut self) -> Result<(), Error> {
         // Check for variable binding syntax (var := expr.(type))
         if self.current_token_is(&TokenType::Identifier) && self.peek_token_is(&TokenType::ShortVarDecl) {
             // Parse variable binding
@@ -132,7 +132,7 @@ impl Parser {
     }
     
     /// Parse type assertion expression (expr.(type) or expr.(type)?)
-    fn parse_type_assertion_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_type_assertion_expression(&mut self) -> Result<(), Error> {
         let expr = self.parse_primary_expression()?;
         
         // Check for .(type) syntax
@@ -169,7 +169,7 @@ impl Parser {
     }
     
     /// Parse type case label (just the type name in mood clauses)
-    fn parse_type_case_label(&mut self) -> Result<Box<dyn Expression>, Error> {
+    fn parse_type_case_label(&mut self) -> Result<(), Error> {
         if self.current_token_is(&TokenType::Identifier) {
             let type_name = self.current_token.literal.clone();
             self.advance_token()?;

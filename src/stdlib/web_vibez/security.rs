@@ -462,7 +462,7 @@ impl InputValidator {
     }
 
     /// Validate input data
-    pub fn validate(&self, data: &HashMap<String, String>) -> Result<(), Vec<ValidationError>> {
+    pub fn validate(&self, data: &HashMap<String, String>) -> Result<(), Error>> {
         let mut errors = Vec::new();
 
         for (field, rule) in &self.rules {

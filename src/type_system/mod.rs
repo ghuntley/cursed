@@ -38,10 +38,10 @@ pub use type_inference::{
 pub use constraint_resolver::{
     ConstraintResolver, ConstraintSolution, ConstraintViolation, ViolationReason
 };
-pub use associated_types::{
+pub use associated_crate::types::{
     AssociatedTypeRegistry, AssociatedType, AssociatedTypeProjection, AssociatedTypeHandler
 };
-pub use higher_kinded_types::{
+pub use higher_kinded_crate::types::{
     HigherKindedTypeRegistry, TypeConstructor, HigherKindedTypeHandler, Kind
 };
 pub use variance::{
@@ -250,7 +250,7 @@ impl TypeSystem {
         &mut self,
         base_type: &str,
         type_args: &[TypeExpression],
-    ) -> Result<InstantiatedType, Error> {
+    ) -> Result<(), Error> {
         self.generic_instantiator.instantiate(
             base_type,
             type_args,
@@ -264,7 +264,7 @@ impl TypeSystem {
         &mut self,
         expression: &dyn crate::ast::traits::Expression,
         context: &InferenceContext,
-    ) -> Result<TypeExpression, Error> {
+    ) -> Result<(), Error> {
         self.type_inference.infer_expression(expression, context, &self.type_environment)
     }
 
@@ -273,7 +273,7 @@ impl TypeSystem {
         &self,
         type_expr: &TypeExpression,
         constraints: &[GenericConstraint],
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         // Use the constraint resolver to check satisfaction
         self.constraint_resolver.check_satisfaction(type_expr, constraints, &self.type_environment)
     }
@@ -327,7 +327,7 @@ impl TypeSystem {
     pub fn resolve_constraints(
         &mut self,
         context: &ConstraintContext,
-    ) -> Result<ConstraintSolution, Error> {
+    ) -> Result<(), Error> {
         self.constraint_resolver.resolve_constraints(context, &self.type_environment)
     }
 
@@ -335,7 +335,7 @@ impl TypeSystem {
     pub fn validate_constraint(
         &self,
         constraint: &GenericConstraint,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         self.constraint_resolver.validate_constraint(constraint, &self.type_environment)
     }
 

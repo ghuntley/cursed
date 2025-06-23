@@ -37,19 +37,19 @@ pub struct XChaCha20Key {
 
 impl XChaCha20Key {
     /// Generate a new random key using a cryptographically secure RNG
-    pub fn generate() -> Result<Self, CursedError> {
+    pub fn generate() -> Result<(), Error> {
         Self::generate_with_rng(&mut OsRng)
     }
 
     /// Generate a new random key using the provided RNG
-    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Result<Self, CursedError> {
+    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Result<(), Error> {
         let mut key = [0u8; XCHACHA20_KEY_SIZE];
         rng.fill_bytes(&mut key);
         Ok(Self { key })
     }
 
     /// Create a key from existing bytes
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, CursedError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<(), Error> {
         if bytes.len() != XCHACHA20_KEY_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Invalid key size: expected {}, got {}", 
@@ -89,19 +89,19 @@ pub struct XChaCha20Nonce {
 
 impl XChaCha20Nonce {
     /// Generate a new random nonce using a cryptographically secure RNG
-    pub fn generate() -> Result<Self, CursedError> {
+    pub fn generate() -> Result<(), Error> {
         Self::generate_with_rng(&mut OsRng)
     }
 
     /// Generate a new random nonce using the provided RNG
-    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Result<Self, CursedError> {
+    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Result<(), Error> {
         let mut nonce = [0u8; XCHACHA20_NONCE_SIZE];
         rng.fill_bytes(&mut nonce);
         Ok(Self { nonce })
     }
 
     /// Create a nonce from existing bytes
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, CursedError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<(), Error> {
         if bytes.len() != XCHACHA20_NONCE_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Invalid nonce size: expected {}, got {}", 
@@ -143,7 +143,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         plaintext: &[u8],
         associated_data: &[u8],
-    ) -> Result<Vec<u8>, CursedError> {
+    ) -> Result<(), Error> {
         if plaintext.len() as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Plaintext too large: {} bytes exceeds maximum of {} bytes",
@@ -168,7 +168,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         ciphertext: &[u8],
         associated_data: &[u8],
-    ) -> Result<Vec<u8>, CursedError> {
+    ) -> Result<(), Error> {
         let payload = Payload {
             msg: ciphertext,
             aad: associated_data,
@@ -185,7 +185,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         associated_data: &[u8],
         buffer: &mut [u8],
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if buffer.len() as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Buffer too large: {} bytes exceeds maximum of {} bytes",
@@ -205,7 +205,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         associated_data: &[u8],
         buffer: &mut [u8],
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.cipher
             .decrypt_in_place(nonce.to_chacha_nonce(), associated_data, buffer)
             .map_err(|e| CursedError::Crypto(format!("In-place decryption failed: {}", e)))
@@ -235,7 +235,7 @@ impl XChaCha20Poly1305StreamingEncoder {
         &mut self,
         chunk: &[u8],
         associated_data: &[u8],
-    ) -> Result<Vec<u8>, CursedError> {
+    ) -> Result<(), Error> {
         if self.processed_bytes + chunk.len() as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Total data size would exceed maximum: {} + {} > {}",
@@ -292,7 +292,7 @@ impl XChaCha20Poly1305StreamingDecoder {
         &mut self,
         chunk: &[u8],
         associated_data: &[u8],
-    ) -> Result<Vec<u8>, CursedError> {
+    ) -> Result<(), Error> {
         let payload = Payload {
             msg: chunk,
             aad: associated_data,
@@ -322,12 +322,12 @@ pub struct XChaCha20Poly1305Api;
 
 impl XChaCha20Poly1305Api {
     /// Generate a new random key
-    pub fn generate_key() -> Result<XChaCha20Key, CursedError> {
+    pub fn generate_key() -> Result<(), Error> {
         XChaCha20Key::generate()
     }
 
     /// Generate a new random nonce
-    pub fn generate_nonce() -> Result<XChaCha20Nonce, CursedError> {
+    pub fn generate_nonce() -> Result<(), Error> {
         XChaCha20Nonce::generate()
     }
 
@@ -336,7 +336,7 @@ impl XChaCha20Poly1305Api {
         key: &XChaCha20Key,
         plaintext: &[u8],
         associated_data: Option<&[u8]>,
-    ) -> Result<(XChaCha20Nonce, Vec<u8>), CursedError> {
+    ) -> Result<(), Error> {
         let nonce = Self::generate_nonce()?;
         let cipher = XChaCha20Poly1305Cipher::new(key);
         let ciphertext = cipher.encrypt(&nonce, plaintext, associated_data.unwrap_or(&[]))?;
@@ -349,7 +349,7 @@ impl XChaCha20Poly1305Api {
         nonce: &XChaCha20Nonce,
         ciphertext: &[u8],
         associated_data: Option<&[u8]>,
-    ) -> Result<Vec<u8>, CursedError> {
+    ) -> Result<(), Error> {
         let cipher = XChaCha20Poly1305Cipher::new(key);
         cipher.decrypt(nonce, ciphertext, associated_data.unwrap_or(&[]))
     }
@@ -357,7 +357,7 @@ impl XChaCha20Poly1305Api {
     /// Create a streaming encoder for large data
     pub fn create_streaming_encoder(
         key: &XChaCha20Key,
-    ) -> Result<XChaCha20Poly1305StreamingEncoder, CursedError> {
+    ) -> Result<(), Error> {
         let nonce = Self::generate_nonce()?;
         Ok(XChaCha20Poly1305StreamingEncoder::new(key, nonce))
     }
@@ -382,7 +382,7 @@ pub mod key_derivation {
         input_key_material: &[u8],
         salt: Option<&[u8]>,
         info: &[u8],
-    ) -> Result<XChaCha20Key, CursedError> {
+    ) -> Result<(), Error> {
         let hk = Hkdf::<Sha256>::new(salt, input_key_material);
         let mut derived_key = [0u8; XCHACHA20_KEY_SIZE];
         
@@ -397,7 +397,7 @@ pub mod key_derivation {
         input_key_material: &[u8],
         salt: Option<&[u8]>,
         count: usize,
-    ) -> Result<Vec<XChaCha20Key>, CursedError> {
+    ) -> Result<(), Error> {
         let mut keys = Vec::with_capacity(count);
         
         for i in 0..count {
@@ -415,7 +415,7 @@ pub mod utils {
     use super::*;
 
     /// Validate that the data size is within limits for XChaCha20-Poly1305
-    pub fn validate_data_size(size: usize) -> Result<(), CursedError> {
+    pub fn validate_data_size(size: usize) -> Result<(), Error> {
         if size as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Data size {} exceeds maximum allowed size of {} bytes",
@@ -432,7 +432,7 @@ pub mod utils {
     }
 
     /// Calculate the plaintext size from ciphertext size
-    pub fn calculate_plaintext_size(ciphertext_size: usize) -> Result<usize, CursedError> {
+    pub fn calculate_plaintext_size(ciphertext_size: usize) -> Result<(), Error> {
         if ciphertext_size < XCHACHA20_TAG_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Ciphertext too small: {} bytes, minimum {} bytes required",

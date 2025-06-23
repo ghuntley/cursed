@@ -23,7 +23,7 @@ pub enum KeyFormat {
 }
 
 impl KeyFormat {
-    pub fn from_str(s: &str) -> Result<Self, CursedError> {
+    pub fn from_str(s: &str) -> Result<(), Error> {
         match s.to_lowercase().as_str() {
             "pem" => Ok(KeyFormat::Pem),
             "der" => Ok(KeyFormat::Der),
@@ -96,7 +96,7 @@ pub struct FormatConverter;
 
 impl FormatConverter {
     /// slay Convert RSA public key to JWK format
-    pub fn rsa_public_key_to_jwk(public_key: &RsaPublicKeyWrapper, key_id: Option<String>) -> Result<JsonWebKey, CursedError> {
+    pub fn rsa_public_key_to_jwk(public_key: &RsaPublicKeyWrapper, key_id: Option<String>) -> Result<(), Error> {
         use rsa::traits::PublicKeyParts;
         
         let n_bytes = public_key.inner.n().to_bytes_be();
@@ -126,7 +126,7 @@ impl FormatConverter {
     }
     
     /// slay Convert RSA private key to JWK format (WARNING: Contains private data)
-    pub fn rsa_private_key_to_jwk(private_key: &RsaPrivateKeyWrapper, key_id: Option<String>) -> Result<JsonWebKey, CursedError> {
+    pub fn rsa_private_key_to_jwk(private_key: &RsaPrivateKeyWrapper, key_id: Option<String>) -> Result<(), Error> {
         use rsa::traits::PublicKeyParts;
         
         let public_key = private_key.inner.to_public_key();
@@ -173,7 +173,7 @@ impl FormatConverter {
     }
     
     /// slay Convert ECDSA public key to JWK format
-    pub fn ecdsa_public_key_to_jwk(public_key: &EcdsaPublicKey, key_id: Option<String>) -> Result<JsonWebKey, CursedError> {
+    pub fn ecdsa_public_key_to_jwk(public_key: &EcdsaPublicKey, key_id: Option<String>) -> Result<(), Error> {
         use crate::stdlib::crypto::asymmetric::{EcPublicKeyData};
         
         let (crv, x_bytes, y_bytes) = match &public_key.data {
@@ -224,7 +224,7 @@ impl FormatConverter {
     }
     
     /// slay Convert ECDSA private key to JWK format (WARNING: Contains private data)
-    pub fn ecdsa_private_key_to_jwk(private_key: &EcdsaPrivateKey, key_id: Option<String>) -> Result<JsonWebKey, CursedError> {
+    pub fn ecdsa_private_key_to_jwk(private_key: &EcdsaPrivateKey, key_id: Option<String>) -> Result<(), Error> {
         use crate::stdlib::crypto::asymmetric::{EcPrivateKeyData, EcPublicKeyData};
         
         let (crv, x_bytes, y_bytes, d_bytes) = match &private_key.data {
@@ -278,7 +278,7 @@ impl FormatConverter {
     }
     
     /// slay Parse RSA public key from JWK format
-    pub fn rsa_public_key_from_jwk(jwk: &JsonWebKey) -> Result<RsaPublicKeyWrapper, CursedError> {
+    pub fn rsa_public_key_from_jwk(jwk: &JsonWebKey) -> Result<(), Error> {
         if jwk.kty != "RSA" {
             return Err(CursedError::InvalidArgument(format!("Expected RSA key type, got {}", jwk.kty)));
         }
@@ -314,7 +314,7 @@ impl FormatConverter {
     }
     
     /// slay Parse ECDSA public key from JWK format
-    pub fn ecdsa_public_key_from_jwk(jwk: &JsonWebKey) -> Result<EcdsaPublicKey, CursedError> {
+    pub fn ecdsa_public_key_from_jwk(jwk: &JsonWebKey) -> Result<(), Error> {
         if jwk.kty != "EC" {
             return Err(CursedError::InvalidArgument(format!("Expected EC key type, got {}", jwk.kty)));
         }
@@ -394,19 +394,19 @@ impl FormatConverter {
     }
     
     /// slay Convert JWK to JSON string
-    pub fn jwk_to_json(jwk: &JsonWebKey) -> Result<String, CursedError> {
+    pub fn jwk_to_json(jwk: &JsonWebKey) -> Result<(), Error> {
         serde_json::to_string_pretty(jwk)
             .map_err(|e| CursedError::InvalidArgument(format!("JWK serialization failed: {}", e)))
     }
     
     /// slay Parse JWK from JSON string
-    pub fn jwk_from_json(json: &str) -> Result<JsonWebKey, CursedError> {
+    pub fn jwk_from_json(json: &str) -> Result<(), Error> {
         serde_json::from_str(json)
             .map_err(|e| CursedError::InvalidArgument(format!("JWK parsing failed: {}", e)))
     }
     
     /// slay Enhanced DER encoding with error recovery
-    pub fn enhanced_der_encode(data: &[u8], tag: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn enhanced_der_encode(data: &[u8], tag: &str) -> Result<(), Error> {
         use der::{Encode, Tag, Header, Length};
         
         // Validate input
@@ -439,7 +439,7 @@ impl FormatConverter {
     }
     
     /// slay Enhanced DER decoding with validation
-    pub fn enhanced_der_decode(der_data: &[u8]) -> Result<(String, Vec<u8>), CursedError> {
+    pub fn enhanced_der_decode(der_data: &[u8]) -> Result<(), Error> {
         use der::{Decode, Header, Tag};
         
         if der_data.is_empty() {
@@ -513,7 +513,7 @@ impl FormatConverter {
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay Convert key to JWK format
-pub fn key_to_jwk(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn key_to_jwk(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("key_to_jwk requires: key_data, key_type, [key_id]".to_string()));
     }
@@ -566,7 +566,7 @@ pub fn key_to_jwk(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Parse JWK from JSON
-pub fn jwk_from_json(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn jwk_from_json(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("jwk_from_json requires: json_string".to_string()));
     }
@@ -583,7 +583,7 @@ pub fn jwk_from_json(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Convert to DER format
-pub fn key_to_der(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn key_to_der(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("key_to_der requires: key_data, tag".to_string()));
     }
@@ -612,7 +612,7 @@ pub fn key_to_der(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Parse DER format
-pub fn der_decode(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn der_decode(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("der_decode requires: der_data".to_string()));
     }
@@ -633,7 +633,7 @@ pub fn der_decode(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Detect key format
-pub fn detect_format(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn detect_format(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("detect_format requires: key_data".to_string()));
     }

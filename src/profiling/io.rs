@@ -32,7 +32,7 @@ impl IoProfiler {
         path: String,
         size: Option<usize>,
         duration: Duration,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -63,7 +63,7 @@ impl IoProfiler {
         address: String,
         size: Option<usize>,
         duration: Duration,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -94,7 +94,7 @@ impl IoProfiler {
         resource: String,
         error: String,
         duration: Duration,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -160,7 +160,7 @@ impl IoProfiler {
 
 impl DataCollector for IoProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), ProfilerError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("I/O profiler already collecting".to_string()));
         }
@@ -171,7 +171,7 @@ impl DataCollector for IoProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<Vec<u8>, ProfilerError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("I/O profiler not collecting".to_string()));
         }

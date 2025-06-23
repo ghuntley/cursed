@@ -39,7 +39,7 @@ pub struct DB {
 impl DB {
     /// slay Open a new database connection pool
     /// fr fr This is the main constructor for database connections
-    pub fn open(driver_name: String, data_source_name: String) -> Result<Self, DatabaseError> {
+    pub fn open(driver_name: String, data_source_name: String) -> Result<(), Error> {
         let pool = ConnectionPool::new(&driver_name, &data_source_name)?;
         
         Ok(DB {
@@ -52,24 +52,24 @@ impl DB {
     }
 
     /// slay Begin a new transaction
-    pub fn begin(&self) -> Result<Tx, DatabaseError> {
+    pub fn begin(&self) -> Result<(), Error> {
         self.begin_tx(VibeContext::default(), None)
     }
 
     /// slay Begin a transaction with specific context and options
-    pub fn begin_tx(&self, ctx: VibeContext, opts: Option<TxOptions>) -> Result<Tx, DatabaseError> {
+    pub fn begin_tx(&self, ctx: VibeContext, opts: Option<TxOptions>) -> Result<(), Error> {
         let conn = self.pool.acquire_connection(ctx.timeout)?;
         let tx = conn.begin_transaction(opts.unwrap_or_default())?;
         Ok(Tx::new(tx, conn))
     }
 
     /// slay Close the database connection pool
-    pub fn close(&self) -> Result<(), DatabaseError> {
+    pub fn close(&self) -> Result<(), Error> {
         self.pool.close()
     }
 
     /// slay Get a single connection from the pool
-    pub fn conn(&self, ctx: VibeContext) -> Result<Conn, DatabaseError> {
+    pub fn conn(&self, ctx: VibeContext) -> Result<(), Error> {
         let conn = self.pool.acquire_connection(ctx.timeout)?;
         Ok(Conn::new(conn))
     }
@@ -80,12 +80,12 @@ impl DB {
     }
 
     /// slay Execute a query without returning rows
-    pub fn exec(&self, query: String, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         self.exec_context(VibeContext::default(), query, args)
     }
 
     /// slay Execute a query with context
-    pub fn exec_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let conn = self.pool.acquire_connection(ctx.timeout)?;
         let result = conn.execute(&query, &args)?;
         
@@ -99,35 +99,35 @@ impl DB {
     }
 
     /// slay Ping the database to check connectivity
-    pub fn ping(&self) -> Result<(), DatabaseError> {
+    pub fn ping(&self) -> Result<(), Error> {
         self.ping_context(VibeContext::default())
     }
 
     /// slay Ping the database with context
-    pub fn ping_context(&self, ctx: VibeContext) -> Result<(), DatabaseError> {
+    pub fn ping_context(&self, ctx: VibeContext) -> Result<(), Error> {
         let conn = self.pool.acquire_connection(ctx.timeout)?;
         conn.ping()
     }
 
     /// slay Prepare a statement for reuse
-    pub fn prepare(&self, query: String) -> Result<Stmt, DatabaseError> {
+    pub fn prepare(&self, query: String) -> Result<(), Error> {
         self.prepare_context(VibeContext::default(), query)
     }
 
     /// slay Prepare a statement with context
-    pub fn prepare_context(&self, ctx: VibeContext, query: String) -> Result<Stmt, DatabaseError> {
+    pub fn prepare_context(&self, ctx: VibeContext, query: String) -> Result<(), Error> {
         let conn = self.pool.acquire_connection(ctx.timeout)?;
         let stmt = conn.prepare(&query)?;
         Ok(Stmt::new(stmt, query))
     }
 
     /// slay Execute a query that returns rows
-    pub fn query(&self, query: String, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         self.query_context(VibeContext::default(), query, args)
     }
 
     /// slay Execute a query with context that returns rows
-    pub fn query_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let conn = self.pool.acquire_connection(ctx.timeout)?;
         let result = conn.query(&query, &args)?;
         
@@ -185,18 +185,18 @@ impl DB {
     }
 
     /// slay Enhanced query that returns SlayRows with additional functionality
-    pub fn slay_query(&self, query: String, args: Vec<SqlValue>) -> Result<SlayRows, DatabaseError> {
+    pub fn slay_query(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let rows = self.query(query, args)?;
         Ok(SlayRows::new(rows))
     }
 
     /// slay Enhanced execution with detailed result information
-    pub fn slay_exec(&self, query: String, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn slay_exec(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         self.exec(query, args)
     }
 
     /// slay Query that returns results as a map
-    pub fn map_query(&self, query: String, args: Vec<SqlValue>) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    pub fn map_query(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let mut rows = self.query(query, args)?;
         let mut results = Vec::new();
         
@@ -209,7 +209,7 @@ impl DB {
     }
 
     /// slay Query that maps results to a struct
-    pub fn struct_query<T>(&self, query: String, dest: &mut Vec<T>) -> Result<(), DatabaseError> 
+    pub fn struct_query<T>(&self, query: String, dest: &mut Vec<T>) -> Result<(), Error> 
     where 
         T: serde::de::DeserializeOwned,
     {
@@ -235,7 +235,7 @@ impl DB {
     }
 
     /// slay Execute multiple queries in a batch
-    pub fn batch_exec(&self, queries: Vec<String>) -> Result<Vec<SlayResult>, DatabaseError> {
+    pub fn batch_exec(&self, queries: Vec<String>) -> Result<(), Error> {
         let mut results = Vec::new();
         
         for query in queries {
@@ -261,35 +261,35 @@ impl Conn {
     }
 
     /// slay Begin a transaction on this connection
-    pub fn begin_tx(&self, ctx: VibeContext, opts: Option<TxOptions>) -> Result<Tx, DatabaseError> {
+    pub fn begin_tx(&self, ctx: VibeContext, opts: Option<TxOptions>) -> Result<(), Error> {
         let tx = self.driver_conn.begin_transaction(opts.unwrap_or_default())?;
         Ok(Tx::new(tx, self.driver_conn.clone()))
     }
 
     /// slay Close this connection
-    pub fn close(&self) -> Result<(), DatabaseError> {
+    pub fn close(&self) -> Result<(), Error> {
         self.driver_conn.close()
     }
 
     /// slay Execute a query on this connection
-    pub fn exec_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let result = self.driver_conn.execute(&query, &args)?;
         Ok(SlayResult::new(result.last_insert_id, result.rows_affected))
     }
 
     /// slay Ping this connection
-    pub fn ping_context(&self, ctx: VibeContext) -> Result<(), DatabaseError> {
+    pub fn ping_context(&self, ctx: VibeContext) -> Result<(), Error> {
         self.driver_conn.ping()
     }
 
     /// slay Prepare a statement on this connection
-    pub fn prepare_context(&self, ctx: VibeContext, query: String) -> Result<Stmt, DatabaseError> {
+    pub fn prepare_context(&self, ctx: VibeContext, query: String) -> Result<(), Error> {
         let stmt = self.driver_conn.prepare(&query)?;
         Ok(Stmt::new(stmt, query))
     }
 
     /// slay Query this connection
-    pub fn query_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let result = self.driver_conn.query(&query, &args)?;
         Ok(Rows::new(result))
     }
@@ -309,9 +309,9 @@ impl Conn {
     }
 
     /// slay Execute raw operations on the underlying driver connection
-    pub fn raw<F, R>(&self, f: F) -> Result<R, DatabaseError>
+    pub fn raw<F, R>(&self, f: F) -> Result<(), Error>
     where
-        F: FnOnce(&dyn super::driver::DriverConn) -> Result<R, DatabaseError>,
+        F: FnOnce(&dyn super::driver::DriverConn) -> Result<(), Error>,
     {
         f(self.driver_conn.as_ref())
     }
@@ -339,7 +339,7 @@ impl Tx {
     }
 
     /// slay Commit this transaction
-    pub fn commit(&mut self) -> Result<(), DatabaseError> {
+    pub fn commit(&mut self) -> Result<(), Error> {
         if self.finished {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -353,7 +353,7 @@ impl Tx {
     }
 
     /// slay Rollback this transaction
-    pub fn rollback(&mut self) -> Result<(), DatabaseError> {
+    pub fn rollback(&mut self) -> Result<(), Error> {
         if self.finished {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -367,34 +367,34 @@ impl Tx {
     }
 
     /// slay Execute a query in this transaction
-    pub fn exec(&self, query: String, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         self.exec_context(VibeContext::default(), query, args)
     }
 
     /// slay Execute a query with context in this transaction
-    pub fn exec_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let result = self.driver_tx.execute(&query, &args)?;
         Ok(SlayResult::new(result.last_insert_id, result.rows_affected))
     }
 
     /// slay Prepare a statement in this transaction
-    pub fn prepare(&self, query: String) -> Result<Stmt, DatabaseError> {
+    pub fn prepare(&self, query: String) -> Result<(), Error> {
         self.prepare_context(VibeContext::default(), query)
     }
 
     /// slay Prepare a statement with context in this transaction
-    pub fn prepare_context(&self, ctx: VibeContext, query: String) -> Result<Stmt, DatabaseError> {
+    pub fn prepare_context(&self, ctx: VibeContext, query: String) -> Result<(), Error> {
         let stmt = self.driver_tx.prepare(&query)?;
         Ok(Stmt::new(stmt, query))
     }
 
     /// slay Query in this transaction
-    pub fn query(&self, query: String, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query(&self, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         self.query_context(VibeContext::default(), query, args)
     }
 
     /// slay Query with context in this transaction
-    pub fn query_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query_context(&self, ctx: VibeContext, query: String, args: Vec<SqlValue>) -> Result<(), Error> {
         let result = self.driver_tx.query(&query, &args)?;
         Ok(Rows::new(result))
     }
@@ -419,12 +419,12 @@ impl Tx {
     }
 
     /// slay Get a statement from another statement within this transaction
-    pub fn stmt(&self, stmt: &Stmt) -> Result<Stmt, DatabaseError> {
+    pub fn stmt(&self, stmt: &Stmt) -> Result<(), Error> {
         self.stmt_context(VibeContext::default(), stmt)
     }
 
     /// slay Get a statement with context from another statement within this transaction
-    pub fn stmt_context(&self, ctx: VibeContext, stmt: &Stmt) -> Result<Stmt, DatabaseError> {
+    pub fn stmt_context(&self, ctx: VibeContext, stmt: &Stmt) -> Result<(), Error> {
         // In a real implementation, this would create a transaction-specific version of the statement
         Ok(stmt.clone())
     }
@@ -463,28 +463,28 @@ impl Stmt {
     }
 
     /// slay Close this statement
-    pub fn close(&self) -> Result<(), DatabaseError> {
+    pub fn close(&self) -> Result<(), Error> {
         self.driver_stmt.close()
     }
 
     /// slay Execute this statement
-    pub fn exec(&self, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec(&self, args: Vec<SqlValue>) -> Result<(), Error> {
         self.exec_context(VibeContext::default(), args)
     }
 
     /// slay Execute this statement with context
-    pub fn exec_context(&self, ctx: VibeContext, args: Vec<SqlValue>) -> Result<SlayResult, DatabaseError> {
+    pub fn exec_context(&self, ctx: VibeContext, args: Vec<SqlValue>) -> Result<(), Error> {
         let result = self.driver_stmt.execute(&args)?;
         Ok(SlayResult::new(result.last_insert_id, result.rows_affected))
     }
 
     /// slay Query using this statement
-    pub fn query(&self, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query(&self, args: Vec<SqlValue>) -> Result<(), Error> {
         self.query_context(VibeContext::default(), args)
     }
 
     /// slay Query with context using this statement
-    pub fn query_context(&self, ctx: VibeContext, args: Vec<SqlValue>) -> Result<Rows, DatabaseError> {
+    pub fn query_context(&self, ctx: VibeContext, args: Vec<SqlValue>) -> Result<(), Error> {
         let result = self.driver_stmt.query(&args)?;
         Ok(Rows::new(result))
     }
@@ -535,7 +535,7 @@ impl Row {
     }
 
     /// slay Scan row data into variables
-    pub fn scan(&self, dest: &mut [&mut dyn std::any::Any]) -> Result<(), DatabaseError> {
+    pub fn scan(&self, dest: &mut [&mut dyn std::any::Any]) -> Result<(), Error> {
         if let Some(ref err) = self.error {
             return Err(err.clone());
         }
@@ -556,7 +556,7 @@ impl Row {
     }
 
     /// slay Scan row data into a map
-    pub fn scan_map(&self) -> Result<HashMap<String, SqlValue>, DatabaseError> {
+    pub fn scan_map(&self) -> Result<(), Error> {
         if let Some(ref err) = self.error {
             return Err(err.clone());
         }
@@ -575,7 +575,7 @@ impl Row {
     }
 
     /// slay Scan row data into a struct
-    pub fn scan_struct<T>(&self, dest: &mut T) -> Result<(), DatabaseError> 
+    pub fn scan_struct<T>(&self, dest: &mut T) -> Result<(), Error> 
     where 
         T: serde::de::DeserializeOwned,
     {
@@ -616,18 +616,18 @@ impl Rows {
     }
 
     /// slay Close the rows iterator
-    pub fn close(&self) -> Result<(), DatabaseError> {
+    pub fn close(&self) -> Result<(), Error> {
         // In a real implementation, this would clean up resources
         Ok(())
     }
 
     /// slay Get column types
-    pub fn column_types(&self) -> Result<Vec<String>, DatabaseError> {
+    pub fn column_types(&self) -> Result<(), Error> {
         Ok(self.result.column_types.clone())
     }
 
     /// slay Get column names
-    pub fn columns(&self) -> Result<Vec<String>, DatabaseError> {
+    pub fn columns(&self) -> Result<(), Error> {
         Ok(self.result.column_names.clone())
     }
 
@@ -653,7 +653,7 @@ impl Rows {
     }
 
     /// slay Scan current row data
-    pub fn scan(&self, dest: &mut [&mut dyn std::any::Any]) -> Result<(), DatabaseError> {
+    pub fn scan(&self, dest: &mut [&mut dyn std::any::Any]) -> Result<(), Error> {
         if self.current_index == 0 || self.current_index > self.result.rows.len() {
             return Err(DatabaseError::new(DatabaseErrorKind::NoRows, "No current row"));
         }
@@ -671,7 +671,7 @@ impl Rows {
     }
 
     /// slay Scan current row into a map
-    pub fn scan_map(&self) -> Result<HashMap<String, SqlValue>, DatabaseError> {
+    pub fn scan_map(&self) -> Result<(), Error> {
         if self.current_index == 0 || self.current_index > self.result.rows.len() {
             return Err(DatabaseError::new(DatabaseErrorKind::NoRows, "No current row"));
         }
@@ -690,7 +690,7 @@ impl Rows {
     }
 
     /// slay Scan current row into a struct
-    pub fn scan_struct<T>(&self, dest: &mut T) -> Result<(), DatabaseError> 
+    pub fn scan_struct<T>(&self, dest: &mut T) -> Result<(), Error> 
     where 
         T: serde::de::DeserializeOwned,
     {
@@ -712,7 +712,7 @@ impl Rows {
     }
 
     /// slay Scan all rows into a slice of structs
-    pub fn scan_all<T>(&mut self, dest: &mut Vec<T>) -> Result<(), DatabaseError> 
+    pub fn scan_all<T>(&mut self, dest: &mut Vec<T>) -> Result<(), Error> 
     where 
         T: serde::de::DeserializeOwned,
     {
@@ -752,7 +752,7 @@ impl SlayRows {
     }
 
     /// slay Get all rows as maps
-    pub fn all(&mut self) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    pub fn all(&mut self) -> Result<(), Error> {
         let mut results = Vec::new();
         
         // Reset to beginning
@@ -767,7 +767,7 @@ impl SlayRows {
     }
 
     /// slay Get all rows as structs
-    pub fn all_structs<T>(&mut self, dest: &mut Vec<T>) -> Result<(), DatabaseError> 
+    pub fn all_structs<T>(&mut self, dest: &mut Vec<T>) -> Result<(), Error> 
     where 
         T: serde::de::DeserializeOwned,
     {
@@ -775,7 +775,7 @@ impl SlayRows {
     }
 
     /// slay Get first row as map
-    pub fn first(&mut self) -> Result<HashMap<String, SqlValue>, DatabaseError> {
+    pub fn first(&mut self) -> Result<(), Error> {
         self.rows.current_index = 0;
         if self.rows.next() {
             self.rows.scan_map()
@@ -785,7 +785,7 @@ impl SlayRows {
     }
 
     /// slay Get first row as struct
-    pub fn first_struct<T>(&mut self, dest: &mut T) -> Result<(), DatabaseError> 
+    pub fn first_struct<T>(&mut self, dest: &mut T) -> Result<(), Error> 
     where 
         T: serde::de::DeserializeOwned,
     {
@@ -798,14 +798,14 @@ impl SlayRows {
     }
 
     /// slay Count total rows
-    pub fn count(&self) -> Result<usize, DatabaseError> {
+    pub fn count(&self) -> Result<(), Error> {
         Ok(self.rows.result.rows.len())
     }
 
     /// slay Execute function for each row
-    pub fn for_each<F>(&mut self, mut f: F) -> Result<(), DatabaseError> 
+    pub fn for_each<F>(&mut self, mut f: F) -> Result<(), Error> 
     where 
-        F: FnMut(HashMap<String, SqlValue>) -> Result<(), DatabaseError>,
+        F: FnMut(HashMap<String, SqlValue>) -> Result<(), Error>,
     {
         self.rows.current_index = 0;
         
@@ -818,7 +818,7 @@ impl SlayRows {
     }
 
     /// slay Convert all rows to JSON
-    pub fn to_json(&mut self) -> Result<Vec<u8>, DatabaseError> {
+    pub fn to_json(&mut self) -> Result<(), Error> {
         let maps = self.all()?;
         let json_maps: Vec<HashMap<String, serde_json::Value>> = maps
             .into_iter()
@@ -869,14 +869,14 @@ impl SlayResult {
     }
 
     /// slay Get last insert ID
-    pub fn last_insert_id(&self) -> Result<i64, DatabaseError> {
+    pub fn last_insert_id(&self) -> Result<(), Error> {
         self.last_insert_id.ok_or_else(|| 
             DatabaseError::new(DatabaseErrorKind::NoLastInsertId, "No last insert ID available")
         )
     }
 
     /// slay Get rows affected
-    pub fn rows_affected(&self) -> Result<i64, DatabaseError> {
+    pub fn rows_affected(&self) -> Result<(), Error> {
         if let Some(ref err) = self.error {
             Err(err.clone())
         } else {

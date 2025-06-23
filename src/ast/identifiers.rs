@@ -80,11 +80,11 @@ impl QualifiedName {
 
 impl Node for QualifiedName {
     fn string(&self) -> String {
-        format!("{}.{}", self.package, self.name)
+        format!("{}.{}", self.package, self.to_string())
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -131,12 +131,12 @@ impl TypeIdentifier {
 impl Node for TypeIdentifier {
     fn string(&self) -> String {
         if self.type_args.is_empty() {
-            self.name.clone()
+            self.to_string().clone()
         } else {
             let args: Vec<String> = self.type_args.iter()
                 .map(|arg| arg.string())
                 .collect();
-            format!("{}<{}>", self.name, args.join(", "))
+            format!("{}<{}>", self.to_string(), args.join(", "))
         }
     }
 
@@ -152,7 +152,7 @@ impl Expression for TypeIdentifier {
     
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(TypeIdentifier {
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             token: self.token.clone(),
             type_args: self.type_args.iter().map(|arg| arg.clone_box()).collect(),
         })
@@ -174,15 +174,15 @@ impl PackageIdentifier {
 
 impl Node for PackageIdentifier {
     fn string(&self) -> String {
-        if self.name != self.path {
-            format!("{} \"{}\"", self.name, self.path)
+        if self.to_string() != self.path {
+            format!("{} \"{}\"", self.to_string(), self.path)
         } else {
             format!("\"{}\"", self.path)
         }
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 

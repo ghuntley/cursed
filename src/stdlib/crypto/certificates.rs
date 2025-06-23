@@ -193,7 +193,7 @@ impl fmt::Display for CertificateError {
 
 impl std::error::Error for CertificateError {}
 
-pub type CertificateResult<T> = Result<T, CertificateError>;
+pub type CertificateResult<(), Error>;
 
 /// fr fr Certificate encoding formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1328,7 +1328,7 @@ impl ObjectIdentifier {
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay Parse certificate from PEM
-pub fn parse_certificate_pem(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn parse_certificate_pem(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("parse_certificate_pem requires PEM data".to_string()));
     }
@@ -1353,7 +1353,7 @@ pub fn parse_certificate_pem(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Parse certificate from DER
-pub fn parse_certificate_der(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn parse_certificate_der(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("parse_certificate_der requires DER data".to_string()));
     }
@@ -1400,7 +1400,7 @@ pub fn parse_certificate_der(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Validate certificate
-pub fn validate_certificate(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn validate_certificate(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("validate_certificate requires certificate data".to_string()));
     }
@@ -1466,7 +1466,7 @@ pub fn validate_certificate(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Validate certificate chain
-pub fn validate_certificate_chain(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn validate_certificate_chain(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("validate_certificate_chain requires certificate chain".to_string()));
     }
@@ -1476,7 +1476,7 @@ pub fn validate_certificate_chain(args: Vec<Value>) -> Result<Value, CursedError
 }
 
 /// slay Get certificate fingerprint
-pub fn get_certificate_fingerprint(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn get_certificate_fingerprint(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("get_certificate_fingerprint requires certificate".to_string()));
     }
@@ -1505,7 +1505,7 @@ pub fn get_certificate_fingerprint(args: Vec<Value>) -> Result<Value, CursedErro
 }
 
 /// slay Parse CSR from PEM
-pub fn parse_csr_pem(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn parse_csr_pem(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("parse_csr_pem requires PEM data".to_string()));
     }
@@ -1528,7 +1528,7 @@ pub fn parse_csr_pem(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Convert PEM to DER
-pub fn pem_to_der(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn pem_to_der(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("pem_to_der requires PEM data".to_string()));
     }
@@ -1546,7 +1546,7 @@ pub fn pem_to_der(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Convert DER to PEM
-pub fn der_to_pem(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn der_to_pem(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("der_to_pem requires DER data".to_string()));
     }

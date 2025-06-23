@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue},
-    types::{BasicTypeEnum, FunctionType},
+    crate::types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
 use crate::error::CursedError;
@@ -21,7 +21,7 @@ pub trait AsyncAwaitCompiler {
         parameters: &[String],
         body: &[String],
         return_type: BasicTypeEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         // Placeholder implementation - would create actual async function
         Err(CursedError::Runtime("Async function compilation not implemented".to_string()))
     }
@@ -30,7 +30,7 @@ pub trait AsyncAwaitCompiler {
     fn compile_await_expression<'ctx>(
         &mut self,
         future_expr: &str,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         // Placeholder implementation - would compile await expression
         Err(CursedError::Runtime("Await expression compilation not implemented".to_string()))
     }
@@ -40,19 +40,19 @@ pub trait AsyncAwaitCompiler {
         &mut self,
         function: FunctionValue<'ctx>,
         await_points: &[AwaitPoint<'ctx>],
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Placeholder implementation
         Ok(())
     }
 
     /// Create future type for async function (placeholder)
-    fn create_future_type<'ctx>(&mut self, return_type: BasicTypeEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, CursedError> {
+    fn create_future_type<'ctx>(&mut self, return_type: BasicTypeEnum<'ctx>) -> Result<(), Error> {
         // Placeholder implementation - would create future type
         Err(CursedError::Runtime("Future type creation not implemented".to_string()))
     }
 
     /// Generate yield point for async function (placeholder)
-    fn generate_yield_point<'ctx>(&mut self, yield_value: Option<BasicValueEnum<'ctx>>) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    fn generate_yield_point<'ctx>(&mut self, yield_value: Option<BasicValueEnum<'ctx>>) -> Result<(), Error> {
         // Placeholder implementation - would generate yield point
         Err(CursedError::Runtime("Yield point generation not implemented".to_string()))
     }
@@ -79,7 +79,7 @@ pub struct AsyncFunctionContext<'ctx> {
 }
 
 impl<'ctx> AsyncFunctionContext<'ctx> {
-    pub fn new(function: FunctionValue<'ctx>, context_struct: BasicTypeEnum<'ctx>) -> Result<Self, CursedError> {
+    pub fn new(function: FunctionValue<'ctx>, context_struct: BasicTypeEnum<'ctx>) -> Result<(), Error> {
         // Placeholder implementation - would create proper async context
         Err(CursedError::Runtime("AsyncFunctionContext creation not implemented".to_string()))
     }

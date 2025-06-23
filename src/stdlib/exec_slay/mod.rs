@@ -35,7 +35,7 @@ mod timeout;
 mod enhanced_command;
 
 /// Result type for exec_slay operations
-pub type SlayResult<T> = Result<T, CursedError>;
+pub type SlayResult<(), Error>;
 
 /// Configuration options for command execution
 #[derive(Debug, Clone)]
@@ -162,7 +162,7 @@ impl Default for ProcessStats {
 
 /// Internal shared state for process management
 #[derive(Debug)]
-pub(crate) struct SharedProcessState {
+pub struct SharedProcessState {
     /// Child process handle
     pub child: Option<Child>,
     /// Process start time

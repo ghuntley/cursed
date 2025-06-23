@@ -14,6 +14,7 @@
 
 use std::collections::HashSet;
 use std::ffi::CString;
+use std::path::PathBuf;
 
 use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
@@ -789,5 +790,27 @@ use crate::stdlib::process::error::ProcessError;
         
         let caps = manager.get_current_capabilities();
         assert!(caps.is_ok());
+    }
+}
+
+/// Options for privilege configuration
+#[derive(Debug, Clone)]
+pub struct PrivilegeOptions {
+    pub drop_privileges: bool,
+    pub target_uid: Option<u32>,
+    pub target_gid: Option<u32>,
+    pub retain_capabilities: Vec<String>,
+    pub chroot_path: Option<PathBuf>,
+}
+
+impl Default for PrivilegeOptions {
+    fn default() -> Self {
+        Self {
+            drop_privileges: false,
+            target_uid: None,
+            target_gid: None,
+            retain_capabilities: Vec::new(),
+            chroot_path: None,
+        }
     }
 }

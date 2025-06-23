@@ -39,7 +39,7 @@ impl KeyExchangeAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "DIFFIE-HELLMAN" | "DH" => Ok(KeyExchangeAlgorithm::DiffieHellman),
             "X25519" => Ok(KeyExchangeAlgorithm::X25519),
@@ -73,7 +73,7 @@ impl KeyExchangeResult {
         }
     }
     
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -132,7 +132,7 @@ pub struct DhKeyPair {
 }
 
 impl DhKeyPair {
-    pub fn generate(parameters: DhParameters) -> Result<Self, CursedError> {
+    pub fn generate(parameters: DhParameters) -> Result<(), Error> {
         let mut rng = OsRng;
         
         // Generate random private key (1 < private_key < p-1)
@@ -146,7 +146,7 @@ impl DhKeyPair {
         })
     }
     
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String("Diffie-Hellman".to_string()));
@@ -161,7 +161,7 @@ impl DhKeyPair {
 }
 
 /// Diffie-Hellman key exchange
-pub fn dh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn dh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("DH key exchange requires: private_key, other_public_key".to_string()));
     }
@@ -204,14 +204,14 @@ pub fn dh_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Generate DH key pair
-pub fn dh_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn dh_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let parameters = DhParameters::rfc3526_2048();
     let keypair = DhKeyPair::generate(parameters)?;
     keypair.to_value()
 }
 
 /// X25519 key exchange
-pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X25519 key exchange requires: private_key, public_key".to_string()));
     }
@@ -265,7 +265,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Generate X25519 key pair
-pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let mut rng = OsRng;
     let private_key = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&private_key);
@@ -280,7 +280,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> 
 }
 
 /// Generate ephemeral X25519 key pair
-pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let mut rng = OsRng;
     let ephemeral_secret = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&ephemeral_secret);
@@ -296,7 +296,7 @@ pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<Value, Cur
 }
 
 /// X448 key exchange implementation
-pub fn x448_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
     }
@@ -344,7 +344,7 @@ pub fn x448_key_exchange(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Generate X448 key pair
-pub fn x448_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn x448_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let mut rng = OsRng;
     let mut private_key = [0u8; 56];
     rng.fill_bytes(&mut private_key);
@@ -365,7 +365,7 @@ pub fn x448_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// X448 scalar multiplication (basic implementation)
-fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> Result<(), Error> {
     if scalar.len() != 56 || point.len() != 56 {
         return Err(CursedError::InvalidArgument("X448 requires 56-byte keys".to_string()));
     }
@@ -392,7 +392,7 @@ fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> Result<Vec<u8>, CursedError>
 }
 
 /// Generate X448 public key from private key
-fn x448_generate_public_key(private_key: &[u8; 56]) -> Result<[u8; 56], CursedError> {
+fn x448_generate_public_key(private_key: &[u8; 56]) -> Result<(), Error> {
     // X448 base point (u = 5)
     let base_point = {
         let mut point = [0u8; 56];
@@ -422,7 +422,7 @@ pub fn validate_key_exchange_params(
     algorithm: KeyExchangeAlgorithm,
     private_key: &[u8],
     public_key: &[u8],
-) -> Result<(), CursedError> {
+) -> Result<(), Error> {
     match algorithm {
         KeyExchangeAlgorithm::X25519 => {
             if private_key.len() != 32 {
@@ -467,7 +467,7 @@ pub fn derive_key_from_shared_secret(
     shared_secret: &[u8],
     key_length: usize,
     info: Option<&str>,
-) -> Result<Vec<u8>, CursedError> {
+) -> Result<(), Error> {
     if key_length == 0 || key_length > 255 * 32 {
         return Err(CursedError::InvalidArgument(format!("Invalid key length: {}", key_length)));
     }

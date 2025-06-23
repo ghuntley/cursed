@@ -43,7 +43,7 @@ impl Default for SimplePostgresDriver {
 }
 
 impl Driver for SimplePostgresDriver {
-    fn open(&self, data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, data_source_name: &str) -> Result<(), Error> {
         // Validate connection string first
         PostgresConnectionString::parse(data_source_name)
             .map_err(|e| DatabaseError::new(

@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::types::Type;
+use crate::ast::crate::types::Type;
 use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 
@@ -161,7 +161,7 @@ impl GenericOptimizer {
         type_args: &[Type],
         execution_time: u64,
         memory_usage: usize,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let mut stats = self.usage_stats.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
 
@@ -205,7 +205,7 @@ impl GenericOptimizer {
 
     /// Make optimization decision for a generic function
     #[instrument(skip(self))]
-    pub fn make_optimization_decision(&self, function_name: &str) -> Result<OptimizationDecision, CursedError> {
+    pub fn make_optimization_decision(&self, function_name: &str) -> Result<(), Error> {
         // Check cache first
         {
             let cache = self.decisions_cache.read()
@@ -232,7 +232,7 @@ impl GenericOptimizer {
 
     /// Internal analysis and decision logic
     #[instrument(skip(self))]
-    fn analyze_and_decide(&self, function_name: &str) -> Result<OptimizationDecision, CursedError> {
+    fn analyze_and_decide(&self, function_name: &str) -> Result<(), Error> {
         let stats = self.usage_stats.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
 
@@ -256,7 +256,7 @@ impl GenericOptimizer {
 
     /// Make adaptive optimization decision based on runtime behavior
     #[instrument(skip(self))]
-    fn make_adaptive_decision(&self, usage_info: &GenericUsageInfo) -> Result<OptimizationDecision, CursedError> {
+    fn make_adaptive_decision(&self, usage_info: &GenericUsageInfo) -> Result<(), Error> {
         let instantiation_count = usage_info.instantiations.len();
         let total_calls = usage_info.total_calls;
         let memory_usage = usage_info.memory_usage.total_allocated;
@@ -310,7 +310,7 @@ impl GenericOptimizer {
 
     /// Make static optimization decision based on configuration
     #[instrument(skip(self))]
-    fn make_static_decision(&self, usage_info: &GenericUsageInfo) -> Result<OptimizationDecision, CursedError> {
+    fn make_static_decision(&self, usage_info: &GenericUsageInfo) -> Result<(), Error> {
         let instantiation_count = usage_info.instantiations.len();
 
         if instantiation_count <= self.config.monomorphization_threshold {
@@ -332,7 +332,7 @@ impl GenericOptimizer {
 
     /// Trigger JIT compilation for a function
     #[instrument(skip(self))]
-    pub fn trigger_jit_compilation(&self, function_name: &str, type_args: &[Type]) -> Result<(), CursedError> {
+    pub fn trigger_jit_compilation(&self, function_name: &str, type_args: &[Type]) -> Result<(), Error> {
         let mut jit_state = self.jit_state.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
 
@@ -371,7 +371,7 @@ impl GenericOptimizer {
         type_args: &[Type],
         speedup_ratio: f64,
         memory_usage: usize,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let mut jit_state = self.jit_state.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
 
@@ -393,7 +393,7 @@ impl GenericOptimizer {
 
     /// Mark JIT compilation as failed
     #[instrument(skip(self))]
-    pub fn mark_jit_compilation_failed(&self, function_name: &str, type_args: &[Type], error: &str) -> Result<(), CursedError> {
+    pub fn mark_jit_compilation_failed(&self, function_name: &str, type_args: &[Type], error: &str) -> Result<(), Error> {
         let mut jit_state = self.jit_state.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
 
@@ -411,7 +411,7 @@ impl GenericOptimizer {
 
     /// Get optimization statistics
     #[instrument(skip(self))]
-    pub fn get_statistics(&self) -> Result<OptimizationStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let usage_stats = self.usage_stats.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         let decisions_cache = self.decisions_cache.read()
@@ -445,7 +445,7 @@ impl GenericOptimizer {
 
     /// Clear all optimization data (useful for testing)
     #[instrument(skip(self))]
-    pub fn clear_all_data(&self) -> Result<(), CursedError> {
+    pub fn clear_all_data(&self) -> Result<(), Error> {
         {
             let mut usage_stats = self.usage_stats.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
@@ -469,7 +469,7 @@ impl GenericOptimizer {
 
     /// Optimize generic instantiations in the type environment
     #[instrument(skip(self, _type_environment))]
-    pub fn optimize_instantiations(&self, _type_environment: &mut crate::type_system::TypeEnvironment) -> Result<(), CursedError> {
+    pub fn optimize_instantiations(&self, _type_environment: &mut crate::type_system::TypeEnvironment) -> Result<(), Error> {
         // For now, this is a placeholder that analyzes existing usage data
         // and could trigger optimizations based on patterns
         
@@ -508,18 +508,18 @@ pub struct OptimizationStatistics {
 /// Trait for optimizing generic code
 pub trait GenericCodeOptimizer {
     /// Optimize a generic function based on usage patterns
-    fn optimize_function(&self, function_name: &str, usage_info: &GenericUsageInfo) -> Result<OptimizationDecision, CursedError>;
+    fn optimize_function(&self, function_name: &str, usage_info: &GenericUsageInfo) -> Result<(), Error>;
     
     /// Generate monomorphized code
-    fn generate_monomorphized_code(&self, function_name: &str, type_args: &[Type]) -> Result<String, CursedError>;
+    fn generate_monomorphized_code(&self, function_name: &str, type_args: &[Type]) -> Result<(), Error>;
     
     /// Generate dynamic dispatch code
-    fn generate_dynamic_dispatch_code(&self, function_name: &str) -> Result<String, CursedError>;
+    fn generate_dynamic_dispatch_code(&self, function_name: &str) -> Result<(), Error>;
 }
 
 impl GenericCodeOptimizer for GenericOptimizer {
     #[instrument(skip(self))]
-    fn optimize_function(&self, function_name: &str, usage_info: &GenericUsageInfo) -> Result<OptimizationDecision, CursedError> {
+    fn optimize_function(&self, function_name: &str, usage_info: &GenericUsageInfo) -> Result<(), Error> {
         if self.config.enable_adaptive {
             self.make_adaptive_decision(usage_info)
         } else {
@@ -528,14 +528,14 @@ impl GenericCodeOptimizer for GenericOptimizer {
     }
 
     #[instrument(skip(self))]
-    fn generate_monomorphized_code(&self, function_name: &str, type_args: &[Type]) -> Result<String, CursedError> {
+    fn generate_monomorphized_code(&self, function_name: &str, type_args: &[Type]) -> Result<(), Error> {
         // This would generate actual specialized code in a real implementation
         let specialized_name = format!("{}_{:?}", function_name, type_args);
         Ok(format!("// Monomorphized version: {}", specialized_name))
     }
 
     #[instrument(skip(self))]
-    fn generate_dynamic_dispatch_code(&self, function_name: &str) -> Result<String, CursedError> {
+    fn generate_dynamic_dispatch_code(&self, function_name: &str) -> Result<(), Error> {
         // This would generate vtable-based dispatch code in a real implementation
         Ok(format!("// Dynamic dispatch version: {}", function_name))
     }
@@ -572,7 +572,7 @@ impl MemoryLayoutOptimizer {
 
     /// Optimize memory layout for a generic type
     #[instrument(skip(self))]
-    pub fn optimize_layout(&self, type_args: &[Type]) -> Result<MemoryLayout, CursedError> {
+    pub fn optimize_layout(&self, type_args: &[Type]) -> Result<(), Error> {
         // Check cache first
         {
             let cache = self.layout_cache.read()
@@ -598,7 +598,7 @@ impl MemoryLayoutOptimizer {
 
     /// Compute the optimal memory layout
     #[instrument(skip(self))]
-    fn compute_optimal_layout(&self, type_args: &[Type]) -> Result<MemoryLayout, CursedError> {
+    fn compute_optimal_layout(&self, type_args: &[Type]) -> Result<(), Error> {
         let mut total_size = 0;
         let mut max_alignment = 1;
         let mut field_offsets = Vec::new();
@@ -629,7 +629,7 @@ impl MemoryLayoutOptimizer {
 
     /// Get size and alignment for a type
     #[instrument(skip(self))]
-    fn get_type_size_and_alignment(&self, type_ref: &Type) -> Result<(usize, usize), CursedError> {
+    fn get_type_size_and_alignment(&self, type_ref: &Type) -> Result<(), Error> {
         match type_ref {
             Type::Integer => Ok((8, 8)),
             Type::Float => Ok((8, 8)),

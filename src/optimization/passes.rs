@@ -150,7 +150,7 @@ impl CursedOptimizationPasses {
         if let Some(pass) = self.passes.iter_mut().find(|p| p.name() == pass_name) {
             pass.run(ast)
         } else {
-            Err(Error::Other(format!("Unknown optimization pass: {}", pass_name)))
+            Err(Error::General(format!("Unknown optimization pass: {}", pass_name)))
         }
     }
     
@@ -190,7 +190,7 @@ impl CursedOptimizationPasses {
         ordered: &mut Vec<String>,
     ) -> Result<()> {
         if temp_mark.contains(pass_name) {
-            return Err(Error::Other("Circular dependency in optimization passes".to_string()));
+            return Err(Error::General("Circular dependency in optimization passes".to_string()));
         }
         
         if visited.contains(pass_name) {

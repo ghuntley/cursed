@@ -1,10 +1,11 @@
+use crate::web::StatusCode;
 /// fr fr Error handling for web_vibez package - comprehensive error management
 use std::fmt;
 use std::error::Error as StdError;
 use crate::stdlib::packages::web_vibez::status::StatusCode;
 
 /// fr fr Result type alias for web operations - clean error handling
-pub type WebResult<T> = Result<T, WebError>;
+pub type WebResult<(), Error>;
 
 /// fr fr Comprehensive error types for web operations - covers all the things
 #[derive(Debug, Clone)]
@@ -508,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_error_context() {
-        let result: Result<(), WebError> = Err(WebError::bad_request("test"));
+        let result: Result<(), Error> = Err(WebError::bad_request("test"));
         let with_context = result.with_context("Processing user request");
         assert!(with_context.is_err());
     }

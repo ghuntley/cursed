@@ -46,14 +46,14 @@ pub fn init_scheduler() -> Result<(), Error> {
 }
 
 /// Get reference to global scheduler
-fn get_scheduler() -> Result<Arc<Mutex<Option<GoroutineScheduler>>>, Error> {
+fn get_scheduler() -> Result<(), Error> {
     Ok(GLOBAL_SCHEDULER.get_or_init(|| {
         Arc::new(Mutex::new(None))
     }).clone())
 }
 
 /// Get the current number of goroutines
-pub fn num_goroutine() -> Result<i32, Error> {
+pub fn num_goroutine() -> Result<(), Error> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
         .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
@@ -68,7 +68,7 @@ pub fn num_goroutine() -> Result<i32, Error> {
 }
 
 /// Get the current goroutine ID
-pub fn go_id() -> Result<i64, Error> {
+pub fn go_id() -> Result<(), Error> {
     // Try to get from thread-local storage first
     let current_id = CURRENT_GOROUTINE_ID.with(|id| id.get());
     
@@ -95,7 +95,7 @@ pub fn clear_current_goroutine_id() {
 }
 
 /// Get stack trace for all goroutines
-pub fn stack() -> Result<Vec<u8>, Error> {
+pub fn stack() -> Result<(), Error> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
         .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
@@ -134,12 +134,12 @@ pub fn stack() -> Result<Vec<u8>, Error> {
 }
 
 /// Get the number of logical CPUs usable by the current process
-pub fn num_cpu() -> Result<i32, Error> {
+pub fn num_cpu() -> Result<(), Error> {
     Ok(num_cpus::get() as i32)
 }
 
 /// Set/get maximum number of CPUs that can execute simultaneously
-pub fn gomaxprocs(n: i32) -> Result<i32, Error> {
+pub fn gomaxprocs(n: i32) -> Result<(), Error> {
     static MAXPROCS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(0);
     
     if n <= 0 {
@@ -165,7 +165,7 @@ pub fn gomaxprocs(n: i32) -> Result<i32, Error> {
 }
 
 /// Get detailed information about all goroutines
-pub fn get_all_goroutine_info() -> Result<Vec<(u64, GoroutineInfo)>, Error> {
+pub fn get_all_goroutine_info() -> Result<(), Error> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
         .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
@@ -219,7 +219,7 @@ pub fn block_profile(enabled: bool) -> Result<(), Error> {
 }
 
 /// Get information about a specific goroutine
-pub fn goroutine_info(goroutine_id: u64) -> Result<Option<GoroutineInfo>, Error> {
+pub fn goroutine_info(goroutine_id: u64) -> Result<(), Error> {
     let all_infos = get_all_goroutine_info()?;
     
     for (id, info) in all_infos {
@@ -232,7 +232,7 @@ pub fn goroutine_info(goroutine_id: u64) -> Result<Option<GoroutineInfo>, Error>
 }
 
 /// Coordinate with garbage collection
-pub fn coordinate_gc(timeout_ms: u64) -> Result<bool, Error> {
+pub fn coordinate_gc(timeout_ms: u64) -> Result<(), Error> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
         .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
@@ -247,7 +247,7 @@ pub fn coordinate_gc(timeout_ms: u64) -> Result<bool, Error> {
 }
 
 /// Get stack bounds for GC scanning
-pub fn get_stack_bounds() -> Result<Vec<(*mut u8, *mut u8)>, Error> {
+pub fn get_stack_bounds() -> Result<(), Error> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
         .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;

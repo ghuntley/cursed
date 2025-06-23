@@ -13,7 +13,7 @@ use inkwell::{
     values::{FunctionValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, BasicValue},
     basic_block::BasicBlock,
     builder::Builder,
-    types::{BasicType, BasicTypeEnum},
+    crate::types::{BasicType, BasicTypeEnum},
     IntPredicate, FloatPredicate,
 };
 use std::collections::{HashMap, HashSet, VecDeque};

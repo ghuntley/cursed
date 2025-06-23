@@ -33,7 +33,7 @@ impl CpuProfiler {
     }
     
     #[instrument(skip(self))]
-    fn start_sampling(&mut self) -> Result<(), ProfilerError> {
+    fn start_sampling(&mut self) -> Result<(), Error> {
         let collecting = Arc::clone(&self.collecting);
         let data = Arc::clone(&self.data);
         let stats = Arc::clone(&self.stats);
@@ -90,7 +90,7 @@ impl CpuProfiler {
         }
     }
     
-    fn capture_stack_trace(max_depth: usize) -> Result<StackTrace, ProfilerError> {
+    fn capture_stack_trace(max_depth: usize) -> Result<(), Error> {
         // In a real implementation, this would use platform-specific APIs
         // like libunwind, Windows StackWalk, or signal-based sampling
         
@@ -133,7 +133,7 @@ impl CpuProfiler {
         self.data.read().unwrap().clone()
     }
     
-    pub fn generate_flame_graph(&self) -> Result<FlameGraph, ProfilerError> {
+    pub fn generate_flame_graph(&self) -> Result<(), Error> {
         let profile_data = self.get_profile_data();
         FlameGraph::from_cpu_profile(&profile_data)
     }
@@ -141,7 +141,7 @@ impl CpuProfiler {
 
 impl DataCollector for CpuProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), ProfilerError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("CPU profiler already collecting".to_string()));
         }
@@ -150,7 +150,7 @@ impl DataCollector for CpuProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<Vec<u8>, ProfilerError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("CPU profiler not collecting".to_string()));
         }
@@ -323,7 +323,7 @@ pub struct FlameGraph {
 }
 
 impl FlameGraph {
-    pub fn from_cpu_profile(profile: &CpuProfileData) -> Result<FlameGraph, ProfilerError> {
+    pub fn from_cpu_profile(profile: &CpuProfileData) -> Result<(), Error> {
         let mut nodes = Vec::new();
         let mut stack_counts: HashMap<Vec<String>, u64> = HashMap::new();
         

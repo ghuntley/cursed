@@ -15,13 +15,13 @@ use tracing::{debug, error, info, instrument, warn};
 /// Question mark operator compiler for LLVM
 pub trait QuestionMarkCompiler {
     /// Compile question mark expression for Result types
-    fn compile_result_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
+    fn compile_result_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<(), Error>;
     
     /// Compile question mark expression for Option types
-    fn compile_option_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
+    fn compile_option_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<(), Error>;
     
     /// Generate error propagation runtime call
-    fn generate_error_propagation_call(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError>;
+    fn generate_error_propagation_call(&mut self, expr: &QuestionMarkExpression) -> Result<(), Error>;
 }
 
 /// Error propagation runtime integration
@@ -47,7 +47,7 @@ pub struct ErrorContext {
 
 impl QuestionMarkCompiler for LlvmCodeGenerator {
     #[instrument(skip(self, expr))]
-    fn compile_result_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError> {
+    fn compile_result_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<(), Error> {
         debug!("Compiling Result question mark operator");
         
         // Generate temporary values
@@ -113,7 +113,7 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
     }
     
     #[instrument(skip(self, expr))]
-    fn compile_option_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError> {
+    fn compile_option_question_mark(&mut self, expr: &QuestionMarkExpression) -> Result<(), Error> {
         debug!("Compiling Option question mark operator");
         
         // Generate temporary values
@@ -174,7 +174,7 @@ impl QuestionMarkCompiler for LlvmCodeGenerator {
     }
     
     #[instrument(skip(self, expr))]
-    fn generate_error_propagation_call(&mut self, expr: &QuestionMarkExpression) -> Result<String, CursedError> {
+    fn generate_error_propagation_call(&mut self, expr: &QuestionMarkExpression) -> Result<(), Error> {
         debug!("Generating error propagation runtime call");
         
         // Determine expression type

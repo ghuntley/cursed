@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use inkwell::context::Context;
 use inkwell::module::Module;
-use inkwell::types::{BasicTypeEnum, FunctionType, BasicType, BasicMetadataTypeEnum};
+use inkwell::crate::types::{BasicTypeEnum, FunctionType, BasicType, BasicMetadataTypeEnum};
 use inkwell::values::FunctionValue;
 use inkwell::AddressSpace;
 

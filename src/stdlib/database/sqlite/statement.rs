@@ -4,7 +4,7 @@
 /// and result set management for SQLite connections.
 
 use std::sync::{Arc, Mutex};
-use rusqlite::{Connection, types::Value as SqliteValue};
+use rusqlite::{Connection, crate::types::Value as SqliteValue};
 use super::{SqliteError, SqliteResult, SqliteType, SqliteColumnInfo};
 use super::ffi::{SqliteFFI, SqliteStmtHandle};
 use super::super::{DriverStmt, DatabaseError, SqlValue};
@@ -123,7 +123,7 @@ impl SqliteStatement {
 }
 
 impl DriverStmt for SqliteStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<super::super::driver::QueryResult, DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
         let connection = self.connection.lock().unwrap();
         if let Some(ref conn) = *connection {
             let mut stmt = conn.prepare(&self.info.sql)
@@ -165,7 +165,7 @@ impl DriverStmt for SqliteStatement {
         }
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<super::super::driver::ExecuteResult, DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
         let connection = self.connection.lock().unwrap();
         if let Some(ref conn) = *connection {
             let mut stmt = conn.prepare(&self.info.sql)
@@ -190,7 +190,7 @@ impl DriverStmt for SqliteStatement {
         }
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         let mut handle = self.handle.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::ConnectionError,
@@ -259,12 +259,12 @@ mod tests {
 }
 
 /// Convert CURSED SqlValue to rusqlite parameters
-fn convert_args_to_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusqlite::ToSql>>, DatabaseError> {
+fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
     let mut params = Vec::new();
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Null => params.push(Box::new(rusqlite::crate::types::Null) as Box<dyn rusqlite::ToSql>),
             SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
             SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
@@ -281,7 +281,7 @@ fn convert_args_to_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusqlite::ToS
 }
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<SqlValue, DatabaseError> {
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     

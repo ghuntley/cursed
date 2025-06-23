@@ -354,7 +354,7 @@ impl PanicRuntime {
     }
 
     /// Initialize the panic runtime system
-    pub fn initialize(&self) -> Result<(), CursedError> {
+    pub fn initialize(&self) -> Result<(), Error> {
         if self.active.load(Ordering::SeqCst) {
             return Err(CursedError::Runtime("Panic runtime already initialized".to_string()));
         }
@@ -393,7 +393,7 @@ impl PanicRuntime {
     }
 
     /// Shutdown the panic runtime system
-    pub fn shutdown(&self) -> Result<(), CursedError> {
+    pub fn shutdown(&self) -> Result<(), Error> {
         if !self.active.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -455,7 +455,7 @@ impl PanicRuntime {
     }
 
     /// Attempt to recover from a panic
-    pub fn recover<T, F>(&self, operation: F) -> Result<T, CursedError>
+    pub fn recover<T, F>(&self, operation: F) -> Result<(), Error>
     where
         F: FnOnce() -> T + std::panic::UnwindSafe,
     {
@@ -523,7 +523,7 @@ impl PanicRuntime {
     }
 
     /// Register a recovery handler for the current thread
-    pub fn register_recovery_handler<F>(&self, handler: F) -> Result<(), CursedError>
+    pub fn register_recovery_handler<F>(&self, handler: F) -> Result<(), Error>
     where
         F: Fn(&CursedPanicInfo) -> RecoveryAction + Send + Sync + 'static,
     {
@@ -539,7 +539,7 @@ impl PanicRuntime {
     }
 
     /// Register a global recovery handler
-    pub fn register_global_handler<F>(&self, handler: F) -> Result<(), CursedError>
+    pub fn register_global_handler<F>(&self, handler: F) -> Result<(), Error>
     where
         F: Fn(&CursedPanicInfo) -> RecoveryAction + Send + Sync + 'static,
     {
@@ -577,14 +577,14 @@ impl PanicRuntime {
     }
 
     /// Get panic statistics
-    pub fn get_statistics(&self) -> Result<PanicStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access panic statistics".to_string()))
     }
 
     /// Update panic configuration
-    pub fn update_config<F>(&self, updater: F) -> Result<(), CursedError>
+    pub fn update_config<F>(&self, updater: F) -> Result<(), Error>
     where
         F: FnOnce(&mut PanicConfig),
     {
@@ -633,7 +633,7 @@ impl PanicRuntime {
     }
 
     /// Set debug manager for enhanced stack traces
-    pub fn set_debug_manager(&self, debug_manager: Arc<DebugManager>) -> Result<(), CursedError> {
+    pub fn set_debug_manager(&self, debug_manager: Arc<DebugManager>) -> Result<(), Error> {
         if let Ok(mut config) = self.config.write() {
             config.debug_manager = Some(debug_manager);
             Ok(())
@@ -650,7 +650,7 @@ impl Default for PanicRuntime {
 }
 
 /// Initialize the global panic runtime
-pub fn initialize_panic_runtime() -> Result<(), CursedError> {
+pub fn initialize_panic_runtime() -> Result<(), Error> {
     let runtime = Arc::new(PanicRuntime::new());
     runtime.initialize()?;
     
@@ -666,7 +666,7 @@ pub fn get_panic_runtime() -> Option<&'static Arc<PanicRuntime>> {
 }
 
 /// Shutdown the global panic runtime
-pub fn shutdown_panic_runtime() -> Result<(), CursedError> {
+pub fn shutdown_panic_runtime() -> Result<(), Error> {
     if let Some(runtime) = get_panic_runtime() {
         runtime.shutdown()
     } else {

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use cursed::package_manager::{PackageManager, PackageManagerConfig};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Error>> {
     // Initialize tracing for logging
     tracing_subscriber::fmt::init();
     
@@ -68,7 +68,7 @@ fn print_help() {
     println!("  help            Show this help message");
 }
 
-fn handle_init(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_init(name: &str) -> Result<(), Error>> {
     println!("📦 Initializing package: {}", name);
     
     // Create basic CursedPackage.toml
@@ -101,7 +101,7 @@ authors = ["Your Name <your.email@example.com>"]
     Ok(())
 }
 
-async fn handle_install(package_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_install(package_name: &str) -> Result<(), Error>> {
     println!("📦 Installing package: {}", package_name);
     
     // Create package manager with default configuration
@@ -141,7 +141,7 @@ async fn handle_install(package_name: &str) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
-async fn handle_search(query: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_search(query: &str) -> Result<(), Error>> {
     println!("🔍 Searching for packages matching: {}", query);
     
     // Create package manager with default configuration
@@ -185,7 +185,7 @@ async fn handle_search(query: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn handle_list() -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_list() -> Result<(), Error>> {
     println!("📋 Listing installed packages");
     
     // Create package manager with default configuration
@@ -211,7 +211,7 @@ async fn handle_list() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn handle_clean() -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_clean() -> Result<(), Error>> {
     println!("🧹 Cleaning package cache");
     
     // Create package manager with default configuration

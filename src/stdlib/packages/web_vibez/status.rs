@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// fr fr HTTP status codes for web_vibez - all the statuses you need bestie
 use std::fmt;
 

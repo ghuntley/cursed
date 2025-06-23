@@ -4,7 +4,7 @@
 //! return types, and implicit conversions.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, Token, TokenType};

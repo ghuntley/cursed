@@ -154,7 +154,7 @@ impl Lexer {
     }
     
     /// Tokenize the entire input and return all tokens
-    pub fn tokenize(&mut self) -> Result<Vec<Token>, Error> {
+    pub fn tokenize(&mut self) -> Result<(), Error> {
         let mut tokens = Vec::new();
         
         loop {
@@ -170,7 +170,7 @@ impl Lexer {
         Ok(tokens)
     }
     
-    pub fn next_token(&mut self) -> Result<Token, Error> {
+    pub fn next_token(&mut self) -> Result<(), Error> {
         // Skip whitespace
         while self.position < self.input.len() {
             let ch = self.current_char();
@@ -601,7 +601,7 @@ impl Lexer {
         }
     }
     
-    fn read_identifier(&mut self, start_location: SourceLocation) -> Result<Token, Error> {
+    fn read_identifier(&mut self, start_location: SourceLocation) -> Result<(), Error> {
         let start_pos = self.position;
         
         while self.position < self.input.len() && 
@@ -654,7 +654,7 @@ impl Lexer {
         })
     }
     
-    fn read_number(&mut self, start_location: SourceLocation) -> Result<Token, Error> {
+    fn read_number(&mut self, start_location: SourceLocation) -> Result<(), Error> {
         let start_pos = self.position;
         let mut is_float = false;
         
@@ -740,7 +740,7 @@ impl Lexer {
         })
     }
     
-    fn read_string(&mut self, start_location: SourceLocation) -> Result<Token, Error> {
+    fn read_string(&mut self, start_location: SourceLocation) -> Result<(), Error> {
         self.advance(); // Skip opening quote
         let start_pos = self.position;
         
@@ -776,7 +776,7 @@ impl Lexer {
         &self.input[self.position..self.position + pattern.len()] == pattern
     }
     
-    fn read_line_comment(&mut self) -> Result<Token, Error> {
+    fn read_line_comment(&mut self) -> Result<(), Error> {
         let start_location = self.current_location();
         let start_pos = self.position;
         
@@ -800,7 +800,7 @@ impl Lexer {
         })
     }
     
-    fn read_block_comment(&mut self) -> Result<Token, Error> {
+    fn read_block_comment(&mut self) -> Result<(), Error> {
         let start_location = self.current_location();
         let start_pos = self.position;
         

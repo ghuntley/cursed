@@ -99,9 +99,9 @@ impl Semaphore {
         stats.created_at = SystemTime::now();
 
         let handle = if let Some(ref name) = config.name {
-            IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Semaphore)
+            IpcHandle::named(name, crate::stdlib::ipc::crate::types::IpcHandleType::Semaphore)
         } else {
-            IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Semaphore)
+            IpcHandle::anonymous(crate::stdlib::ipc::crate::types::IpcHandleType::Semaphore)
         };
 
         let mut semaphore = Self {
