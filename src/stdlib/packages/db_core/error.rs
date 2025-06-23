@@ -7,7 +7,7 @@ use std::fmt;
 use std::error::Error as StdError;
 
 /// fr fr Main database result type - our error-aware return type
-pub type DatabaseResult<T> = Result<T, DatabaseError>;
+pub type DatabaseResult<(), Error>;
 
 /// fr fr Main database error type
 #[derive(Debug, Clone)]

@@ -365,7 +365,7 @@ impl<F> Future for Timeout<F>
 where
     F: Future,
 {
-    type Output = Result<F::Output, FutureError>;
+    type Output = Result<(), Error>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = unsafe { self.get_unchecked_mut() };
@@ -403,7 +403,7 @@ impl<F> StdFuture for Timeout<F>
 where
     F: Future,
 {
-    type Output = Result<F::Output, FutureError>;
+    type Output = Result<(), Error>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Delegate to the custom Future implementation

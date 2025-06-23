@@ -95,7 +95,7 @@ pub enum CacheError {
 
 impl IncrementalCache {
     /// Create a new incremental cache
-    pub fn new(cache_dir: PathBuf) -> Result<Self, CacheError> {
+    pub fn new(cache_dir: PathBuf) -> Result<(), Error> {
         std::fs::create_dir_all(&cache_dir)?;
         
         let metadata_path = cache_dir.join("metadata.json");
@@ -153,7 +153,7 @@ impl IncrementalCache {
         outputs: Vec<PathBuf>,
         artifacts: HashMap<String, PathBuf>,
         files_count: usize,
-    ) -> Result<(), CacheError> {
+    ) -> Result<(), Error> {
         info!("Caching build result for target: {}", target_name);
         
         // Calculate source checksums for validation
@@ -202,7 +202,7 @@ impl IncrementalCache {
     
     /// Remove a cache entry
     #[instrument(skip(self))]
-    pub fn remove(&mut self, target_name: &str) -> Result<bool, CacheError> {
+    pub fn remove(&mut self, target_name: &str) -> Result<(), Error> {
         debug!("Removing cache entry for target: {}", target_name);
         
         let removed = self.entries.remove(target_name).is_some();
@@ -216,7 +216,7 @@ impl IncrementalCache {
     
     /// Clear all cache entries
     #[instrument(skip(self))]
-    pub fn clear(&mut self) -> Result<(), CacheError> {
+    pub fn clear(&mut self) -> Result<(), Error> {
         info!("Clearing all cache entries");
         
         self.entries.clear();
@@ -229,7 +229,7 @@ impl IncrementalCache {
     
     /// Check if target needs rebuilding based on source changes
     #[instrument(skip(self))]
-    pub fn needs_rebuild(&self, target_name: &str, source_paths: &[PathBuf]) -> Result<bool, CacheError> {
+    pub fn needs_rebuild(&self, target_name: &str, source_paths: &[PathBuf]) -> Result<(), Error> {
         let entry = match self.get(target_name) {
             Some(entry) => entry,
             None => {
@@ -289,7 +289,7 @@ impl IncrementalCache {
     
     /// Cleanup old cache entries
     #[instrument(skip(self))]
-    pub fn cleanup(&mut self, max_age: std::time::Duration) -> Result<usize, CacheError> {
+    pub fn cleanup(&mut self, max_age: std::time::Duration) -> Result<(), Error> {
         let cutoff_time = SystemTime::now() - max_age;
         let mut removed_count = 0;
         
@@ -314,7 +314,7 @@ impl IncrementalCache {
     }
     
     /// Save cache to disk
-    fn save_to_disk(&self) -> Result<(), CacheError> {
+    fn save_to_disk(&self) -> Result<(), Error> {
         let metadata_path = self.cache_dir.join("metadata.json");
         let entries_path = self.cache_dir.join("entries.json");
         
@@ -400,7 +400,7 @@ impl IncrementalCache {
     }
     
     /// Enhanced cache invalidation with dependency tracking
-    pub fn invalidate_dependents(&mut self, changed_files: &[PathBuf]) -> Result<usize, CacheError> {
+    pub fn invalidate_dependents(&mut self, changed_files: &[PathBuf]) -> Result<(), Error> {
         let mut invalidated = 0;
         let mut to_invalidate = Vec::new();
         
@@ -511,7 +511,7 @@ impl IncrementalCache {
 
 impl CacheManager {
     /// Create a new cache manager
-    pub fn new(cache_dir: PathBuf) -> Result<Self, CacheError> {
+    pub fn new(cache_dir: PathBuf) -> Result<(), Error> {
         std::fs::create_dir_all(&cache_dir)?;
         
         Ok(CacheManager {
@@ -521,7 +521,7 @@ impl CacheManager {
     }
     
     /// Get or create a cache for a specific project
-    pub fn get_cache(&mut self, project_name: &str) -> Result<&mut IncrementalCache, CacheError> {
+    pub fn get_cache(&mut self, project_name: &str) -> Result<(), Error> {
         if !self.caches.contains_key(project_name) {
             let cache_dir = self.global_cache_dir.join(project_name);
             let cache = IncrementalCache::new(cache_dir)?;
@@ -532,7 +532,7 @@ impl CacheManager {
     }
     
     /// Cleanup all caches
-    pub fn cleanup_all(&mut self, max_age: std::time::Duration) -> Result<usize, CacheError> {
+    pub fn cleanup_all(&mut self, max_age: std::time::Duration) -> Result<(), Error> {
         let mut total_removed = 0;
         
         for cache in self.caches.values_mut() {
@@ -593,7 +593,7 @@ pub struct GlobalCacheStatistics {
 }
 
 /// Calculate SHA-256 checksum of a file
-fn calculate_file_checksum(path: &Path) -> Result<String, CacheError> {
+fn calculate_file_checksum(path: &Path) -> Result<(), Error> {
     use std::io::Read;
     
     let mut file = std::fs::File::open(path)?;
@@ -626,7 +626,7 @@ mod tests {
     }
     
     #[test]
-    fn test_cache_entry_operations() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_cache_entry_operations() -> Result<(), Error>> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut cache = IncrementalCache::new(cache_path)?;
@@ -652,7 +652,7 @@ mod tests {
     }
     
     #[test]
-    fn test_rebuild_detection() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_rebuild_detection() -> Result<(), Error>> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut cache = IncrementalCache::new(cache_path)?;
@@ -688,7 +688,7 @@ mod tests {
     }
     
     #[test]
-    fn test_cache_cleanup() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_cache_cleanup() -> Result<(), Error>> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut cache = IncrementalCache::new(cache_path)?;
@@ -707,7 +707,7 @@ mod tests {
     }
     
     #[test]
-    fn test_cache_manager() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_cache_manager() -> Result<(), Error>> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut manager = CacheManager::new(cache_path)?;

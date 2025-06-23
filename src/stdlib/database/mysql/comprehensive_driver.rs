@@ -532,7 +532,7 @@ impl ComprehensiveMySqlDriver {
         if status.pool_initialized {
             match self.get_connection() {
                 Ok(mut conn) => {
-                    let test_result: Result<Vec<mysql::Row>, mysql::Error> = conn.query("SELECT 1 as test");
+                    let test_result: Result<(), Error> = conn.query("SELECT 1 as test");
                     status.basic_functionality = test_result.is_ok();
                     self.return_connection(conn);
                 }
@@ -724,7 +724,7 @@ impl ComprehensiveMySqlConnection {
 }
 
 impl DriverConn for ComprehensiveMySqlConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         // Check statement cache first
         if let Some(_cached_stmt) = self.driver.stmt_cache.get(query) {
             // For now, we'll create a new statement even if cached
@@ -743,7 +743,7 @@ impl DriverConn for ComprehensiveMySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         // Convert CURSED SqlValue args to MySQL Values
         let mut mysql_params = Vec::new();
         for arg in args {
@@ -778,7 +778,7 @@ impl DriverConn for ComprehensiveMySqlConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         // Convert CURSED SqlValue args to MySQL Values
         let mut mysql_params = Vec::new();
         for arg in args {
@@ -805,7 +805,7 @@ impl DriverConn for ComprehensiveMySqlConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         // Convert isolation level to MySQL format
         let isolation_sql = match opts.isolation_level {
             Some(SqlIsolationLevel::LevelReadUncommitted) => "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED",
@@ -830,12 +830,12 @@ impl DriverConn for ComprehensiveMySqlConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         // Simple ping test
         Ok(())
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Connection is automatically returned to pool on drop
         Ok(())
     }
@@ -872,7 +872,7 @@ impl ComprehensiveMySqlStatement {
         query: String,
         driver: Arc<ComprehensiveMySqlDriver>,
         connection_id: String,
-    ) -> Result<Self, DatabaseError> {
+    ) -> Result<(), Error> {
         let statement_id = uuid::Uuid::new_v4().to_string();
         
         // Count parameters in the query (? placeholders)
@@ -890,7 +890,7 @@ impl ComprehensiveMySqlStatement {
 }
 
 impl DriverStmt for ComprehensiveMySqlStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
         // Validate parameter count
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
@@ -930,7 +930,7 @@ impl DriverStmt for ComprehensiveMySqlStatement {
         })
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
         // Validate parameter count
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
@@ -963,7 +963,7 @@ impl DriverStmt for ComprehensiveMySqlStatement {
         })
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Statement cleanup would happen here
         Ok(())
     }
@@ -990,7 +990,7 @@ impl ComprehensiveMySqlTransaction {
         driver: Arc<ComprehensiveMySqlDriver>,
         connection_id: String,
         options: TxOptions,
-    ) -> Result<Self, DatabaseError> {
+    ) -> Result<(), Error> {
         let transaction_id = uuid::Uuid::new_v4().to_string();
         
         // In real implementation, would execute BEGIN TRANSACTION on the connection
@@ -1007,7 +1007,7 @@ impl ComprehensiveMySqlTransaction {
 }
 
 impl DriverTx for ComprehensiveMySqlTransaction {
-    fn commit(&self) -> Result<(), DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         if !self.is_active.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1028,7 +1028,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         if !self.is_active.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1053,7 +1053,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         self.is_active.load(std::sync::atomic::Ordering::SeqCst)
     }
 
-    fn savepoint(&self, name: &str) -> Result<(), DatabaseError> {
+    fn savepoint(&self, name: &str) -> Result<(), Error> {
         if !self.is_active() {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1067,7 +1067,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         Ok(())
     }
 
-    fn rollback_to_savepoint(&self, name: &str) -> Result<(), DatabaseError> {
+    fn rollback_to_savepoint(&self, name: &str) -> Result<(), Error> {
         if !self.is_active() {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1081,7 +1081,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         Ok(())
     }
 
-    fn release_savepoint(&self, name: &str) -> Result<(), DatabaseError> {
+    fn release_savepoint(&self, name: &str) -> Result<(), Error> {
         if !self.is_active() {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1109,42 +1109,42 @@ impl SimpleMySqlConnection {
 }
 
 impl DriverConn for SimpleMySqlConnection {
-    fn prepare(&self, _query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, _query: &str) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn begin_transaction(&self, _opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, _opts: TxOptions) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         Ok(())
     }
 
@@ -1175,7 +1175,7 @@ impl DriverConn for SimpleMySqlConnection {
 
 /// fr fr Implementation of Driver trait for comprehensive MySQL driver
 impl Driver for ComprehensiveMySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, data_source_name: &str) -> Result<(), Error> {
         // Initialize pool if not already done
         if let Ok(pool_guard) = self.pool.read() {
             if pool_guard.is_none() {

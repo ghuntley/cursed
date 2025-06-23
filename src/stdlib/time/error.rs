@@ -3,7 +3,7 @@ use std::fmt;
 use crate::error::CursedError;
 
 /// Result type for time operations
-pub type TimeResult<T> = Result<T, TimeError>;
+pub type TimeResult<(), Error>;
 
 /// Comprehensive error type for time and date operations
 #[derive(Debug, Clone, PartialEq)]

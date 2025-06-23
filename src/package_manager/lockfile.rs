@@ -149,7 +149,7 @@ impl LockFileManager {
     }
     
     /// Load existing lock file
-    pub fn load(&mut self) -> Result<(), LockFileError> {
+    pub fn load(&mut self) -> Result<(), Error> {
         if !self.lock_file_path.exists() {
             return Err(LockFileError::NotFound {
                 path: self.lock_file_path.clone(),
@@ -176,7 +176,7 @@ impl LockFileManager {
         &mut self,
         dependencies: &[PackageMetadata],
         workspace_root: Option<String>,
-    ) -> Result<(), LockFileError> {
+    ) -> Result<(), Error> {
         let mut packages = Vec::new();
         
         for dep in dependencies {
@@ -209,7 +209,7 @@ impl LockFileManager {
     }
     
     /// Save lock file to disk
-    pub fn save(&self) -> Result<(), LockFileError> {
+    pub fn save(&self) -> Result<(), Error> {
         let lock_file = self.lock_file.as_ref().ok_or_else(|| {
             LockFileError::Corrupted {
                 reason: "No lock file data to save".to_string(),
@@ -229,7 +229,7 @@ impl LockFileManager {
     }
     
     /// Validate lock file integrity
-    pub fn validate(&self) -> Result<(), LockFileError> {
+    pub fn validate(&self) -> Result<(), Error> {
         let lock_file = self.lock_file.as_ref().ok_or_else(|| {
             LockFileError::Corrupted {
                 reason: "No lock file loaded".to_string(),
@@ -292,7 +292,7 @@ impl LockFileManager {
     }
     
     /// Update lock file with new dependencies
-    pub fn update_dependencies(&mut self, new_dependencies: &[PackageMetadata]) -> Result<(), LockFileError> {
+    pub fn update_dependencies(&mut self, new_dependencies: &[PackageMetadata]) -> Result<(), Error> {
         self.generate_from_dependencies(new_dependencies, None)?;
         self.save()
     }
@@ -303,7 +303,7 @@ impl LockFileManager {
     }
     
     /// Verify package checksum
-    pub fn verify_package_checksum(&self, package: &PackageMetadata) -> Result<bool, LockFileError> {
+    pub fn verify_package_checksum(&self, package: &PackageMetadata) -> Result<(), Error> {
         let locked_package = self.get_locked_version(&package.name)
             .ok_or_else(|| LockFileError::PackageNotLocked {
                 package: package.name.clone(),
@@ -315,7 +315,7 @@ impl LockFileManager {
     }
     
     /// Calculate checksum for a package
-    fn calculate_checksum(&self, package: &PackageMetadata) -> Result<String, LockFileError> {
+    fn calculate_checksum(&self, package: &PackageMetadata) -> Result<(), Error> {
         let mut hasher = Sha256::new();
         
         // Hash package metadata in a deterministic way

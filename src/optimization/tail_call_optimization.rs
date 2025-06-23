@@ -17,7 +17,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValueEnum, CallSiteValue},
     basic_block::BasicBlock,
     builder::Builder,
-    types::BasicType,
+    crate::types::BasicType,
 };
 
 /// Tail call optimizer

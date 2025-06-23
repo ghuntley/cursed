@@ -749,7 +749,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Analyze documentation quality
-    pub fn analyze_quality(&mut self, documentation: &ExtractedDocumentation) -> Result<QualityAnalysisResult, Error> {
+    pub fn analyze_quality(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut issues = Vec::new();
 
         // Run all quality checks
@@ -799,7 +799,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check grammar in documentation
-    fn check_grammar(&self, documentation: &ExtractedDocumentation) -> Result<Vec<QualityIssue>, Error> {
+    fn check_grammar(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -826,7 +826,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check spelling in documentation
-    fn check_spelling(&self, documentation: &ExtractedDocumentation) -> Result<Vec<QualityIssue>, Error> {
+    fn check_spelling(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -873,7 +873,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check style consistency
-    fn check_style(&self, documentation: &ExtractedDocumentation) -> Result<Vec<QualityIssue>, Error> {
+    fn check_style(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -914,7 +914,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check best practices
-    fn check_best_practices(&self, documentation: &ExtractedDocumentation) -> Result<Vec<QualityIssue>, Error> {
+    fn check_best_practices(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {

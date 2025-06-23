@@ -418,14 +418,14 @@ impl VibeRequest {
 
 // Add some external dependencies that would be needed
 mod base64 {
-    pub fn decode(input: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    pub fn decode(input: &str) -> Result<(), Error>> {
         // Simplified base64 decode - in real implementation use base64 crate
         Ok(input.as_bytes().to_vec())
     }
 }
 
 mod urlencoding {
-    pub fn decode(input: &str) -> Result<std::borrow::Cow<str>, Box<dyn std::error::Error>> {
+    pub fn decode(input: &str) -> Result<(), Error>> {
         // Simplified URL decode - in real implementation use percent-encoding crate
         Ok(std::borrow::Cow::Borrowed(input))
     }

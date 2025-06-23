@@ -6,7 +6,7 @@
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::CursedError;
-use inkwell::types::{BasicTypeEnum, StructType, IntType, BasicType};
+use inkwell::crate::types::{BasicTypeEnum, StructType, IntType, BasicType};
 use inkwell::values::{BasicValueEnum, StructValue, IntValue, BasicValue};
 use inkwell::IntPredicate;
 use std::collections::HashMap;
@@ -18,13 +18,13 @@ pub trait ResultTypeCompiler {
         &mut self,
         ok_type: BasicTypeEnum<'_>,
         err_type: BasicTypeEnum<'_>,
-    ) -> Result<StructType<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate LLVM struct type for Option<T>
     fn generate_option_type(
         &mut self,
         inner_type: BasicTypeEnum<'_>,
-    ) -> Result<StructType<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create Result::Ok value with proper type handling
     fn create_result_ok(
@@ -32,7 +32,7 @@ pub trait ResultTypeCompiler {
         ok_type: BasicTypeEnum<'_>,
         err_type: BasicTypeEnum<'_>,
         value: BasicValueEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create Result::Err value with proper type handling
     fn create_result_err(
@@ -40,65 +40,65 @@ pub trait ResultTypeCompiler {
         ok_type: BasicTypeEnum<'_>,
         err_type: BasicTypeEnum<'_>,
         error: BasicValueEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create Option::Some value with proper type handling
     fn create_option_some(
         &mut self,
         inner_type: BasicTypeEnum<'_>,
         value: BasicValueEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create Option::None value with proper type handling
     fn create_option_none(
         &mut self,
         inner_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Check if Result is Ok
     fn is_result_ok(
         &mut self,
         result_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Check if Result is Err
     fn is_result_err(
         &mut self,
         result_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Check if Option is Some
     fn is_option_some(
         &mut self,
         option_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Check if Option is None
     fn is_option_none(
         &mut self,
         option_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Extract Ok value from Result (assumes Ok)
     fn extract_result_ok(
         &mut self,
         result_value: BasicValueEnum<'_>,
         ok_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Extract Err value from Result (assumes Err)
     fn extract_result_err(
         &mut self,
         result_value: BasicValueEnum<'_>,
         err_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Extract Some value from Option (assumes Some)
     fn extract_option_some(
         &mut self,
         option_value: BasicValueEnum<'_>,
         inner_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Get LLVM representation string for debugging
     fn get_result_type_string(&self, ok_type: &str, err_type: &str) -> String;
@@ -141,7 +141,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         ok_type: BasicTypeEnum<'_>,
         err_type: BasicTypeEnum<'_>,
-    ) -> Result<StructType<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let context = &*self.context;
         
         // Calculate the maximum size needed for the union
@@ -180,7 +180,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn generate_option_type(
         &mut self,
         inner_type: BasicTypeEnum<'_>,
-    ) -> Result<StructType<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let context = &*self.context;
         
         // Calculate the size needed for the inner type
@@ -219,7 +219,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         ok_type: BasicTypeEnum<'_>,
         err_type: BasicTypeEnum<'_>,
         value: BasicValueEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let result_type = self.generate_result_type(ok_type, err_type)?;
         let builder = &self.builder.lock().unwrap();
         
@@ -256,7 +256,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         ok_type: BasicTypeEnum<'_>,
         err_type: BasicTypeEnum<'_>,
         error: BasicValueEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let result_type = self.generate_result_type(ok_type, err_type)?;
         let builder = &self.builder.lock().unwrap();
         
@@ -292,7 +292,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         inner_type: BasicTypeEnum<'_>,
         value: BasicValueEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let option_type = self.generate_option_type(inner_type)?;
         let builder = &self.builder.lock().unwrap();
         
@@ -327,7 +327,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn create_option_none(
         &mut self,
         inner_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let option_type = self.generate_option_type(inner_type)?;
         let builder = &self.builder.lock().unwrap();
         
@@ -352,7 +352,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn is_result_ok(
         &mut self,
         result_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract discriminant from index 0
@@ -378,7 +378,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn is_result_err(
         &mut self,
         result_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract discriminant from index 0
@@ -404,7 +404,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn is_option_some(
         &mut self,
         option_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract discriminant from index 0
@@ -430,7 +430,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn is_option_none(
         &mut self,
         option_value: BasicValueEnum<'_>,
-    ) -> Result<IntValue<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract discriminant from index 0
@@ -457,7 +457,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         result_value: BasicValueEnum<'_>,
         ok_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract data field from index 1
@@ -475,7 +475,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         result_value: BasicValueEnum<'_>,
         err_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract data field from index 1
@@ -493,7 +493,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         option_value: BasicValueEnum<'_>,
         inner_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Extract data field from index 1
@@ -518,7 +518,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
 
 impl LlvmCodeGenerator {
     /// Get the approximate size of a BasicTypeEnum in bytes
-    fn get_type_size(&self, type_enum: BasicTypeEnum<'_>) -> Result<usize, CursedError> {
+    fn get_type_size(&self, type_enum: BasicTypeEnum<'_>) -> Result<(), Error> {
         match type_enum {
             BasicTypeEnum::IntType(int_type) => {
                 Ok((int_type.get_bit_width() / 8) as usize)
@@ -557,7 +557,7 @@ impl LlvmCodeGenerator {
         value: BasicValueEnum<'_>,
         original_type: BasicTypeEnum<'_>,
         struct_type: &StructType<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
         
         // Get the type of the data field (index 1)
@@ -641,7 +641,7 @@ impl LlvmCodeGenerator {
         &self,
         data_field: BasicValueEnum<'_>,
         target_type: BasicTypeEnum<'_>,
-    ) -> Result<BasicValueEnum<'_>, CursedError> {
+    ) -> Result<(), Error> {
         let builder = &self.builder.lock().unwrap();
 
         // If the data field already matches the target type, use it directly

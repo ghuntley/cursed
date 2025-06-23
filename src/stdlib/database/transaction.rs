@@ -21,7 +21,7 @@ impl TransactionManager {
     }
 
     /// slay Begin a new transaction
-    pub fn begin(&self, tx: Box<dyn DriverTx>) -> Result<(), DatabaseError> {
+    pub fn begin(&self, tx: Box<dyn DriverTx>) -> Result<(), Error> {
         let mut active = self.active_tx.lock().map_err(|_| {
             DatabaseError::transaction_error("Failed to acquire transaction lock")
         })?;
@@ -35,7 +35,7 @@ impl TransactionManager {
     }
 
     /// slay Commit the active transaction
-    pub fn commit(&self) -> Result<(), DatabaseError> {
+    pub fn commit(&self) -> Result<(), Error> {
         let mut active = self.active_tx.lock().map_err(|_| {
             DatabaseError::transaction_error("Failed to acquire transaction lock")
         })?;
@@ -48,7 +48,7 @@ impl TransactionManager {
     }
 
     /// slay Rollback the active transaction
-    pub fn rollback(&self) -> Result<(), DatabaseError> {
+    pub fn rollback(&self) -> Result<(), Error> {
         let mut active = self.active_tx.lock().map_err(|_| {
             DatabaseError::transaction_error("Failed to acquire transaction lock")
         })?;

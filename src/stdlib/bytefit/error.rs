@@ -33,7 +33,7 @@ impl fmt::Display for ByteFitError {
 impl std::error::Error for ByteFitError {}
 
 /// Result type for ByteFit operations
-pub type ByteFitResult<T> = Result<T, ByteFitError>;
+pub type ByteFitResult<(), Error>;
 
 /// Helper functions for creating errors
 pub fn invalid_utf8(msg: &str) -> ByteFitError {

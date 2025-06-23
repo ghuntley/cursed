@@ -4,7 +4,7 @@
 /// isolation levels, and proper ACID compliance for SQLite.
 
 use std::sync::{Arc, Mutex};
-use rusqlite::{Connection, types::Value as SqliteValue};
+use rusqlite::{Connection, crate::types::Value as SqliteValue};
 use super::{SqliteError, SqliteResult};
 use super::connection::SqliteConnection;
 use super::super::{DriverTx, DatabaseError, SqlValue, TxOptions, SqlIsolationLevel};
@@ -143,7 +143,7 @@ impl SqliteTransaction {
 }
 
 impl DriverTx for SqliteTransaction {
-    fn prepare(&self, query: &str) -> Result<Box<dyn super::super::DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -155,7 +155,7 @@ impl DriverTx for SqliteTransaction {
         (self.connection.as_ref() as &dyn super::super::DriverConn).prepare(query)
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -167,7 +167,7 @@ impl DriverTx for SqliteTransaction {
         (self.connection.as_ref() as &dyn super::super::DriverConn).query(query, args)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -179,7 +179,7 @@ impl DriverTx for SqliteTransaction {
         (self.connection.as_ref() as &dyn super::super::DriverConn).execute(query, args)
     }
 
-    fn commit(&self) -> Result<(), DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -198,7 +198,7 @@ impl DriverTx for SqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -247,7 +247,7 @@ pub struct RealSqliteTransaction {
 
 impl RealSqliteTransaction {
     /// Create new transaction with connection handle
-    pub fn new(connection: Arc<Mutex<Option<Connection>>>, options: TxOptions) -> Result<Self, DatabaseError> {
+    pub fn new(connection: Arc<Mutex<Option<Connection>>>, options: TxOptions) -> Result<(), Error> {
         {
             let handle = connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -266,7 +266,7 @@ impl RealSqliteTransaction {
 }
 
 impl DriverTx for RealSqliteTransaction {
-    fn prepare(&self, query: &str) -> Result<Box<dyn super::super::DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -279,7 +279,7 @@ impl DriverTx for RealSqliteTransaction {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -328,7 +328,7 @@ impl DriverTx for RealSqliteTransaction {
         }
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -360,7 +360,7 @@ impl DriverTx for RealSqliteTransaction {
         }
     }
 
-    fn commit(&self) -> Result<(), DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -384,7 +384,7 @@ impl DriverTx for RealSqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -435,12 +435,12 @@ impl RealSqliteTransaction {
 }
 
 /// Convert CURSED SqlValue to rusqlite parameters
-fn convert_args_to_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusqlite::ToSql>>, DatabaseError> {
+fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
     let mut params = Vec::new();
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Null => params.push(Box::new(rusqlite::crate::types::Null) as Box<dyn rusqlite::ToSql>),
             SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
             SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
@@ -457,7 +457,7 @@ fn convert_args_to_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusqlite::ToS
 }
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<SqlValue, DatabaseError> {
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     

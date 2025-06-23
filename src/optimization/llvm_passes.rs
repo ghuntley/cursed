@@ -615,7 +615,7 @@ impl PgoManager {
             stats.cold_functions_identified = 45;
         } else {
             warn!("No profile data path specified for PGO");
-            return Err(Error::Other("PGO enabled but no profile data path provided".to_string()));
+            return Err(Error::General("PGO enabled but no profile data path provided".to_string()));
         }
         
         // Apply profile-guided optimizations

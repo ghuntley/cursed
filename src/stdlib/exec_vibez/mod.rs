@@ -18,7 +18,7 @@ pub mod enhanced;
 // Re-export all public APIs
 pub use core::*;
 pub use cmd::{Cmd, Command, CommandContext};
-pub use process::{Process, ProcessState};
+pub use process::{Process, ProcessState as ExecProcessState}; // Rename to avoid conflict
 pub use groups::{ProcessGroup, ProcessGroupOptions, NewProcessGroup};
 pub use environment::{Environment, NewEnvironment, CommandWithEnv};
 pub use streaming::{OutputStreamer, NewOutputStreamer, InputGenerator, NewInputGenerator};

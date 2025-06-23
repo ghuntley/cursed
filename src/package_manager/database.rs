@@ -99,7 +99,7 @@ pub enum DatabaseError {
 impl PackageDatabase {
     /// Create a new package database
     #[instrument(skip(db_path))]
-    pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self, DatabaseError> {
+    pub fn new<P: AsRef<Path>>(db_path: P) -> Result<(), Error> {
         let db_path = db_path.as_ref().to_path_buf();
         
         // Ensure parent directory exists
@@ -122,7 +122,7 @@ impl PackageDatabase {
     }
     
     /// Initialize database schema
-    fn initialize_schema(&mut self) -> Result<(), DatabaseError> {
+    fn initialize_schema(&mut self) -> Result<(), Error> {
         // Enable foreign keys
         self.connection.execute("PRAGMA foreign_keys = ON", [])?;
         
@@ -169,7 +169,7 @@ impl PackageDatabase {
     }
     
     /// Create database tables
-    fn create_tables(&mut self) -> Result<(), DatabaseError> {
+    fn create_tables(&mut self) -> Result<(), Error> {
         // Packages table
         self.connection.execute(
             "CREATE TABLE packages (
@@ -255,7 +255,7 @@ impl PackageDatabase {
     
     /// Add a package to the database
     #[instrument(skip(self, package), fields(package = %package.name, version = %package.version))]
-    pub fn add_package(&mut self, package: &InstalledPackage) -> Result<(), DatabaseError> {
+    pub fn add_package(&mut self, package: &InstalledPackage) -> Result<(), Error> {
         let tx = self.connection.transaction()?;
         
         // Insert package record
@@ -339,7 +339,7 @@ impl PackageDatabase {
     
     /// Get a package from the database
     #[instrument(skip(self), fields(package_name))]
-    pub fn get_package(&self, name: &str) -> Result<InstalledPackage, DatabaseError> {
+    pub fn get_package(&self, name: &str) -> Result<(), Error> {
         let mut stmt = self.connection.prepare(
             "SELECT name, version, install_time, install_path, metadata_json, file_operations_json 
              FROM packages WHERE name = ?1"
@@ -348,16 +348,16 @@ impl PackageDatabase {
         let package = stmt.query_row(params![name], |row| {
             let install_time_str: String = row.get(2)?;
             let install_time = DateTime::parse_from_rfc3339(&install_time_str)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::types::Type::Text))?
+                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::crate::types::Type::Text))?
                 .with_timezone(&Utc);
             
             let metadata_json: String = row.get(4)?;
             let metadata: PackageMetadata = serde_json::from_str(&metadata_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
             
             let file_operations_json: String = row.get(5)?;
             let file_operations: Vec<FileOperation> = serde_json::from_str(&file_operations_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
             
             Ok(InstalledPackage {
                 name: row.get(0)?,
@@ -374,7 +374,7 @@ impl PackageDatabase {
     
     /// Remove a package from the database
     #[instrument(skip(self), fields(package_name))]
-    pub fn remove_package(&mut self, name: &str) -> Result<(), DatabaseError> {
+    pub fn remove_package(&mut self, name: &str) -> Result<(), Error> {
         let tx = self.connection.transaction()?;
         
         let rows_affected = tx.execute("DELETE FROM packages WHERE name = ?1", params![name])?;
@@ -399,7 +399,7 @@ impl PackageDatabase {
     }
     
     /// List all installed packages
-    pub fn list_packages(&self) -> Result<Vec<InstalledPackage>, DatabaseError> {
+    pub fn list_packages(&self) -> Result<(), Error> {
         let mut stmt = self.connection.prepare(
             "SELECT name, version, install_time, install_path, metadata_json, file_operations_json 
              FROM packages ORDER BY name"
@@ -408,16 +408,16 @@ impl PackageDatabase {
         let package_iter = stmt.query_map([], |row| {
             let install_time_str: String = row.get(2)?;
             let install_time = DateTime::parse_from_rfc3339(&install_time_str)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::types::Type::Text))?
+                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::crate::types::Type::Text))?
                 .with_timezone(&Utc);
             
             let metadata_json: String = row.get(4)?;
             let metadata: PackageMetadata = serde_json::from_str(&metadata_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
             
             let file_operations_json: String = row.get(5)?;
             let file_operations: Vec<FileOperation> = serde_json::from_str(&file_operations_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
             
             Ok(InstalledPackage {
                 name: row.get(0)?,
@@ -438,7 +438,7 @@ impl PackageDatabase {
     }
     
     /// Get package dependencies
-    pub fn get_dependencies(&self, package_name: &str) -> Result<Vec<PackageDependency>, DatabaseError> {
+    pub fn get_dependencies(&self, package_name: &str) -> Result<(), Error> {
         let mut stmt = self.connection.prepare(
             "SELECT package_name, dependency_name, version_constraint, is_dev_dependency 
              FROM dependencies WHERE package_name = ?1"
@@ -462,7 +462,7 @@ impl PackageDatabase {
     }
     
     /// Get packages that depend on a given package
-    pub fn get_dependents(&self, dependency_name: &str) -> Result<Vec<PackageDependency>, DatabaseError> {
+    pub fn get_dependents(&self, dependency_name: &str) -> Result<(), Error> {
         let mut stmt = self.connection.prepare(
             "SELECT package_name, dependency_name, version_constraint, is_dev_dependency 
              FROM dependencies WHERE dependency_name = ?1"
@@ -486,7 +486,7 @@ impl PackageDatabase {
     }
     
     /// Check if a package is installed
-    pub fn is_installed(&self, name: &str) -> Result<bool, DatabaseError> {
+    pub fn is_installed(&self, name: &str) -> Result<(), Error> {
         let count: i32 = self.connection.query_row(
             "SELECT COUNT(*) FROM packages WHERE name = ?1",
             params![name],
@@ -501,7 +501,7 @@ impl PackageDatabase {
         &self,
         package_name: Option<&str>,
         limit: Option<usize>,
-    ) -> Result<Vec<InstallationHistory>, DatabaseError> {
+    ) -> Result<(), Error> {
         let (query, params): (String, Vec<String>) = match package_name {
             Some(name) => (
                 format!(
@@ -529,12 +529,12 @@ impl PackageDatabase {
         let history_iter = stmt.query_map(params_refs.as_slice(), |row| {
             let timestamp_str: String = row.get(4)?;
             let timestamp = DateTime::parse_from_rfc3339(&timestamp_str)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid datetime: {}", e).into(), rusqlite::types::Type::Text))?
+                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid datetime: {}", e).into(), rusqlite::crate::types::Type::Text))?
                 .with_timezone(&Utc);
             
             let action_str: String = row.get(3)?;
             let action: InstallAction = serde_json::from_str(&format!("\"{}\"", action_str))
-                .map_err(|e| rusqlite::Error::InvalidColumnType(3, format!("Invalid action: {}", e).into(), rusqlite::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(3, format!("Invalid action: {}", e).into(), rusqlite::crate::types::Type::Text))?;
             
             Ok(InstallationHistory {
                 id: row.get(0)?,
@@ -563,7 +563,7 @@ impl PackageDatabase {
         action: InstallAction,
         success: bool,
         error_message: Option<String>,
-    ) -> Result<(), DatabaseError> {
+    ) -> Result<(), Error> {
         self.connection.execute(
             "INSERT INTO installation_history 
              (package_name, version, action, timestamp, success, error_message) 
@@ -582,14 +582,14 @@ impl PackageDatabase {
     }
     
     /// Vacuum database to reclaim space
-    pub fn vacuum(&self) -> Result<(), DatabaseError> {
+    pub fn vacuum(&self) -> Result<(), Error> {
         self.connection.execute("VACUUM", [])?;
         info!("Database vacuumed");
         Ok(())
     }
     
     /// Get database statistics
-    pub fn get_statistics(&self) -> Result<DatabaseStatistics, DatabaseError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let package_count: i32 = self.connection.query_row(
             "SELECT COUNT(*) FROM packages",
             [],
@@ -619,7 +619,7 @@ impl PackageDatabase {
     }
     
     /// Verify database integrity
-    pub fn verify_integrity(&self) -> Result<bool, DatabaseError> {
+    pub fn verify_integrity(&self) -> Result<(), Error> {
         // Run SQLite integrity check
         let integrity_result: String = self.connection.query_row(
             "PRAGMA integrity_check",
@@ -678,16 +678,16 @@ pub struct SharedPackageDatabase {
 }
 
 impl SharedPackageDatabase {
-    pub fn new(db_path: impl AsRef<Path>) -> Result<Self, DatabaseError> {
+    pub fn new(db_path: impl AsRef<Path>) -> Result<(), Error> {
         let db = PackageDatabase::new(db_path)?;
         Ok(Self {
             inner: Arc::new(Mutex::new(db)),
         })
     }
     
-    pub fn with_db<F, R>(&self, f: F) -> Result<R, DatabaseError>
+    pub fn with_db<F, R>(&self, f: F) -> Result<(), Error>
     where
-        F: FnOnce(&mut PackageDatabase) -> Result<R, DatabaseError>,
+        F: FnOnce(&mut PackageDatabase) -> Result<(), Error>,
     {
         let mut db = self.inner.lock()
             .map_err(|e| DatabaseError::TransactionFailed {

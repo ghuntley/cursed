@@ -26,89 +26,89 @@ pub trait ResultTypeCompiler {
         &mut self,
         ok_type: &str,
         err_type: &str,
-    ) -> Result<ResultTypeLayout, Error>;
+    ) -> Result<(), Error>;
 
     /// Generate LLVM type for Option<T>
     fn generate_option_type(
         &mut self,
         inner_type: &str,
-    ) -> Result<OptionTypeLayout, Error>;
+    ) -> Result<(), Error>;
 
     /// Create Result::Ok value
     fn create_result_ok(
         &mut self,
         layout: &ResultTypeLayout,
         value_name: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Create Result::Err value
     fn create_result_err(
         &mut self,
         layout: &ResultTypeLayout,
         error_name: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Create Option::Some value
     fn create_option_some(
         &mut self,
         layout: &OptionTypeLayout,
         value_name: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Create Option::None value
     fn create_option_none(
         &mut self,
         layout: &OptionTypeLayout,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Check if Result is Ok
     fn is_result_ok(
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Check if Result is Err
     fn is_result_err(
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Check if Option is Some
     fn is_option_some(
         &mut self,
         layout: &OptionTypeLayout,
         option_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Check if Option is None
     fn is_option_none(
         &mut self,
         layout: &OptionTypeLayout,
         option_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Extract Ok value from Result
     fn extract_result_ok(
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Extract Err value from Result
     fn extract_result_err(
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Extract Some value from Option
     fn extract_option_some(
         &mut self,
         layout: &OptionTypeLayout,
         option_value: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Generate question mark operator for Result
     fn generate_result_question_mark(
@@ -117,7 +117,7 @@ pub trait ResultTypeCompiler {
         result_value: &str,
         continue_block: &str,
         return_block: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 
     /// Generate question mark operator for Option
     fn generate_option_question_mark(
@@ -126,7 +126,7 @@ pub trait ResultTypeCompiler {
         option_value: &str,
         continue_block: &str,
         return_block: &str,
-    ) -> Result<String, Error>;
+    ) -> Result<(), Error>;
 }
 
 impl ResultTypeCompiler for LlvmCodeGenerator {
@@ -134,7 +134,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         ok_type: &str,
         err_type: &str,
-    ) -> Result<ResultTypeLayout, Error> {
+    ) -> Result<(), Error> {
         let type_name = format!("Result<{}, {}>", ok_type, err_type);
         
         Ok(ResultTypeLayout {
@@ -147,7 +147,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn generate_option_type(
         &mut self,
         inner_type: &str,
-    ) -> Result<OptionTypeLayout, Error> {
+    ) -> Result<(), Error> {
         let type_name = format!("Option<{}>", inner_type);
         
         Ok(OptionTypeLayout {
@@ -160,7 +160,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &ResultTypeLayout,
         value_name: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%result_ok_{} = insertvalue {} undef, i8 0, 0\n  %result_ok_val_{} = insertvalue {} %result_ok_{}, {} {}, 1", 
                   temp_id, layout.type_name, temp_id, layout.type_name, temp_id, layout.ok_type_name, value_name))
@@ -170,7 +170,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &ResultTypeLayout,
         error_name: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%result_err_{} = insertvalue {} undef, i8 1, 0\n  %result_err_val_{} = insertvalue {} %result_err_{}, {} {}, 1", 
                   temp_id, layout.type_name, temp_id, layout.type_name, temp_id, layout.err_type_name, error_name))
@@ -180,7 +180,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &OptionTypeLayout,
         value_name: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%option_some_{} = insertvalue {} undef, i8 1, 0\n  %option_some_val_{} = insertvalue {} %option_some_{}, {} {}, 1", 
                   temp_id, layout.type_name, temp_id, layout.type_name, temp_id, layout.inner_type_name, value_name))
@@ -189,7 +189,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
     fn create_option_none(
         &mut self,
         layout: &OptionTypeLayout,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%option_none_{} = insertvalue {} undef, i8 0, 0", 
                   temp_id, layout.type_name))
@@ -199,7 +199,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%tag_{} = extractvalue {} {}, 0\n  %is_ok_{} = icmp eq i8 %tag_{}, 0", 
                   temp_id, layout.type_name, result_value, temp_id, temp_id))
@@ -209,7 +209,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%tag_{} = extractvalue {} {}, 0\n  %is_err_{} = icmp eq i8 %tag_{}, 1", 
                   temp_id, layout.type_name, result_value, temp_id, temp_id))
@@ -219,7 +219,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &OptionTypeLayout,
         option_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%tag_{} = extractvalue {} {}, 0\n  %is_some_{} = icmp eq i8 %tag_{}, 1", 
                   temp_id, layout.type_name, option_value, temp_id, temp_id))
@@ -229,7 +229,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &OptionTypeLayout,
         option_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%tag_{} = extractvalue {} {}, 0\n  %is_none_{} = icmp eq i8 %tag_{}, 0", 
                   temp_id, layout.type_name, option_value, temp_id, temp_id))
@@ -239,7 +239,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%ok_value_{} = extractvalue {} {}, 1", 
                   temp_id, layout.type_name, result_value))
@@ -249,7 +249,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &ResultTypeLayout,
         result_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%err_value_{} = extractvalue {} {}, 1", 
                   temp_id, layout.type_name, result_value))
@@ -259,7 +259,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         &mut self,
         layout: &OptionTypeLayout,
         option_value: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         Ok(format!("%some_value_{} = extractvalue {} {}, 1", 
                   temp_id, layout.type_name, option_value))
@@ -271,7 +271,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         result_value: &str,
         continue_block: &str,
         return_block: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         let check_ir = self.is_result_ok(layout, result_value)?;
         let extract_ir = self.extract_result_ok(layout, result_value)?;
@@ -288,7 +288,7 @@ impl ResultTypeCompiler for LlvmCodeGenerator {
         option_value: &str,
         continue_block: &str,
         return_block: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let temp_id = self.next_temp_id();
         let check_ir = self.is_option_some(layout, option_value)?;
         let extract_ir = self.extract_option_some(layout, option_value)?;

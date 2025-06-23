@@ -33,12 +33,12 @@ impl TypeExpression {
 impl Node for TypeExpression {
     fn string(&self) -> String {
         if self.type_args.is_empty() {
-            self.name.clone()
+            self.to_string().clone()
         } else {
             let args: Vec<String> = self.type_args.iter()
                 .map(|arg| arg.string())
                 .collect();
-            format!("{}<{}>", self.name, args.join(", "))
+            format!("{}<{}>", self.to_string(), args.join(", "))
         }
     }
 
@@ -55,7 +55,7 @@ impl Expression for TypeExpression {
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(TypeExpression {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             type_args: self.type_args.iter().map(|arg| arg.clone_box()).collect(),
         })
     }
@@ -63,7 +63,7 @@ impl Expression for TypeExpression {
 
 impl TypeNode for TypeExpression {
     fn type_name(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
     
     fn is_generic(&self) -> bool {

@@ -66,7 +66,7 @@ impl From<std::string::FromUtf8Error> for ArchiveError {
     }
 }
 
-pub type ArchiveResult<T> = Result<T, ArchiveError>;
+pub type ArchiveResult<(), Error>;
 
 // Helper functions for creating specific errors
 pub fn io_error(msg: &str) -> ArchiveError {

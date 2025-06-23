@@ -2,7 +2,7 @@
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult},
-    types::*,
+    crate::types::*,
 };
 
 /// Encoding format enumeration

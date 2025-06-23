@@ -162,7 +162,7 @@ pub struct TestDiscovery {
 
 impl TestDiscovery {
     /// Create a new test discovery instance
-    pub fn new(config: TestDiscoveryConfig) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(config: TestDiscoveryConfig) -> Result<(), Error>> {
         let test_fn_regex = Regex::new(r"#\[test\]\s*(?:#\[.*?\])?\s*(?:async\s+)?fn\s+(\w+)")?;
         let benchmark_regex = Regex::new(r"#\[bench\]")?;
         let ignore_regex = Regex::new(r"#\[ignore\]")?;
@@ -179,7 +179,7 @@ impl TestDiscovery {
     
     /// Discover all tests in the project
     #[instrument(skip(self))]
-    pub fn discover_tests(&self) -> Result<TestDiscoveryResult, Box<dyn std::error::Error>> {
+    pub fn discover_tests(&self) -> Result<(), Error>> {
         info!("Starting test discovery in: {}", self.config.root_dir.display());
         
         let mut all_tests = Vec::new();
@@ -262,7 +262,7 @@ impl TestDiscovery {
     }
     
     /// Discover integration tests in tests/ directory
-    fn discover_integration_tests(&self, tests_dir: &Path) -> Result<(Vec<TestFunction>, usize, usize), Box<dyn std::error::Error>> {
+    fn discover_integration_tests(&self, tests_dir: &Path) -> Result<(), Error>> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -292,7 +292,7 @@ impl TestDiscovery {
     }
     
     /// Discover unit tests in src/ directory
-    fn discover_unit_tests(&self, src_dir: &Path) -> Result<(Vec<TestFunction>, usize, usize), Box<dyn std::error::Error>> {
+    fn discover_unit_tests(&self, src_dir: &Path) -> Result<(), Error>> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -322,7 +322,7 @@ impl TestDiscovery {
     }
     
     /// Discover benchmark tests in benches/ directory
-    fn discover_benchmark_tests(&self, benches_dir: &Path) -> Result<(Vec<TestFunction>, usize, usize), Box<dyn std::error::Error>> {
+    fn discover_benchmark_tests(&self, benches_dir: &Path) -> Result<(), Error>> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -347,7 +347,7 @@ impl TestDiscovery {
     }
     
     /// Discover example tests in examples/ directory
-    fn discover_example_tests(&self, examples_dir: &Path) -> Result<(Vec<TestFunction>, usize, usize), Box<dyn std::error::Error>> {
+    fn discover_example_tests(&self, examples_dir: &Path) -> Result<(), Error>> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -372,7 +372,7 @@ impl TestDiscovery {
     }
     
     /// Parse a single test file to extract test functions
-    fn parse_test_file(&self, file_path: &Path, default_category: TestCategory) -> Result<Vec<TestFunction>, Box<dyn std::error::Error>> {
+    fn parse_test_file(&self, file_path: &Path, default_category: TestCategory) -> Result<(), Error>> {
         let content = fs::read_to_string(file_path)?;
         let mut tests = Vec::new();
         
@@ -405,7 +405,7 @@ impl TestDiscovery {
         start_index: usize,
         file_path: &Path,
         default_category: TestCategory,
-    ) -> Result<Option<TestFunction>, Box<dyn std::error::Error>> {
+    ) -> Result<(), Error>> {
         let mut attributes = Vec::new();
         let mut ignored = false;
         let mut is_benchmark = false;
@@ -628,7 +628,7 @@ mod tests {
     }
     
     #[test]
-    fn test_parse_simple_test() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_parse_simple_test() -> Result<(), Error>> {
         let temp_dir = tempdir()?;
         let test_file = temp_dir.path().join("test.rs");
         
@@ -656,7 +656,7 @@ mod tests {
     }
     
     #[test]
-    fn test_parse_ignored_test() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_parse_ignored_test() -> Result<(), Error>> {
         let temp_dir = tempdir()?;
         let test_file = temp_dir.path().join("test.rs");
         
@@ -684,7 +684,7 @@ mod tests {
     }
     
     #[test]
-    fn test_filter_application() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_filter_application() -> Result<(), Error>> {
         let discovery_result = TestDiscoveryResult {
             tests: vec![
                 TestFunction {

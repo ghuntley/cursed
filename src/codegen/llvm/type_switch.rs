@@ -67,7 +67,7 @@ pub trait TypeSwitchCompilation<'ctx> {
         interface_value: BasicValueEnum<'ctx>,
         target_type: &str,
         type_registry: &LlvmTypeRegistry,
-    ) -> Result<IntValue<'ctx>, Error>;
+    ) -> Result<(), Error>;
 
     /// Bind a type variable with proper type safety
     fn bind_type_variable(
@@ -79,7 +79,7 @@ pub trait TypeSwitchCompilation<'ctx> {
         target_type: &str,
         variable_name: &str,
         ctx: &mut TypeSwitchContext<'ctx>,
-    ) -> Result<PointerValue<'ctx>, Error>;
+    ) -> Result<(), Error>;
 
     /// Extract concrete value from interface
     fn extract_interface_value(
@@ -89,7 +89,7 @@ pub trait TypeSwitchCompilation<'ctx> {
         interface_value: BasicValueEnum<'ctx>,
         target_type: &str,
         type_registry: &LlvmTypeRegistry,
-    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    ) -> Result<(), Error>;
 }
 
 /// Implementation of type switch compilation
@@ -206,7 +206,7 @@ impl<'a> IntegratedTypeSwitchCompiler<'a> {
         &mut self,
         interface_value: &LlvmValue,
         target_type: &str,
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         tracing::debug!("Generating integrated type check for type: {}", target_type);
         
         // Extract type ID from interface value
@@ -232,7 +232,7 @@ impl<'a> IntegratedTypeSwitchCompiler<'a> {
     }
     
     /// Extract type ID from interface value
-    fn extract_integrated_type_id(&mut self, interface_value: &LlvmValue) -> Result<LlvmValue, Error> {
+    fn extract_integrated_type_id(&mut self, interface_value: &LlvmValue) -> Result<(), Error> {
         let type_id_result = LlvmValue {
             value_type: crate::codegen::llvm::expression_compiler::LlvmType::Int64,
             llvm_name: format!("%type_id_{}", self.generator.next_temp_id()),
@@ -266,7 +266,7 @@ impl<'a> IntegratedTypeSwitchCompiler<'a> {
         interface_value: &LlvmValue,
         target_type: &str,
         variable_name: &str,
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         tracing::debug!("Generating integrated type binding for variable '{}'", variable_name);
         
         // Extract concrete value from interface
@@ -301,7 +301,7 @@ impl<'a> IntegratedTypeSwitchCompiler<'a> {
         &mut self,
         interface_value: &LlvmValue,
         target_type: &str,
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         let extracted_value = LlvmValue {
             value_type: self.map_cursed_type_to_llvm(target_type),
             llvm_name: format!("%extracted_{}", self.generator.next_temp_id()),
@@ -472,7 +472,7 @@ impl<'ctx> TypeSwitchCompilation<'ctx> for LlvmTypeSwitchCompiler {
         interface_value: BasicValueEnum<'ctx>,
         target_type: &str,
         type_registry: &LlvmTypeRegistry,
-    ) -> Result<IntValue<'ctx>, Error> {
+    ) -> Result<(), Error> {
         debug!("Generating type check for target type: {}", target_type);
 
         // Extract type ID from interface value
@@ -503,7 +503,7 @@ impl<'ctx> TypeSwitchCompilation<'ctx> for LlvmTypeSwitchCompiler {
         target_type: &str,
         variable_name: &str,
         ctx: &mut TypeSwitchContext<'ctx>,
-    ) -> Result<PointerValue<'ctx>, Error> {
+    ) -> Result<(), Error> {
         debug!("Binding variable '{}' to type '{}'", variable_name, target_type);
 
         // Extract the concrete value from the interface
@@ -541,7 +541,7 @@ impl<'ctx> TypeSwitchCompilation<'ctx> for LlvmTypeSwitchCompiler {
         interface_value: BasicValueEnum<'ctx>,
         target_type: &str,
         type_registry: &LlvmTypeRegistry,
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         debug!("Extracting interface value for type: {}", target_type);
 
         // Interface values are stored as {data_ptr, vtable_ptr}
@@ -627,7 +627,7 @@ impl LlvmTypeSwitchCompiler {
         context: &'ctx Context,
         builder: &Builder<'ctx>,
         interface_value: BasicValueEnum<'ctx>,
-    ) -> Result<IntValue<'ctx>, Error> {
+    ) -> Result<(), Error> {
         // Interface value structure: {data_ptr: i8*, vtable_ptr: i8*}
         // Type ID is embedded in the vtable pointer (or derived from it)
         
@@ -649,7 +649,7 @@ impl LlvmTypeSwitchCompiler {
         context: &'ctx Context,
         builder: &Builder<'ctx>,
         interface_value: BasicValueEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         // Interface structure: {i8* data_ptr, i8* vtable_ptr}
         let interface_ptr = if interface_value.is_pointer_value() {
             interface_value.into_pointer_value()
@@ -679,7 +679,7 @@ impl LlvmTypeSwitchCompiler {
         context: &'ctx Context,
         builder: &Builder<'ctx>,
         interface_value: BasicValueEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         // Interface structure: {i8* data_ptr, i8* vtable_ptr}
         let interface_ptr = if interface_value.is_pointer_value() {
             interface_value.into_pointer_value()
@@ -707,7 +707,7 @@ impl LlvmTypeSwitchCompiler {
         &self,
         type_name: &str,
         type_registry: &LlvmTypeRegistry,
-    ) -> Result<u64, Error> {
+    ) -> Result<(), Error> {
         // Check if it's an interface type
         if let Some(interface_type) = type_registry.get_interface(type_name) {
             return Ok(interface_type.type_id);
@@ -744,7 +744,7 @@ impl LlvmTypeSwitchCompiler {
         &self,
         cursed_type: &str,
         type_registry: &LlvmTypeRegistry,
-    ) -> Result<(String, usize), Error> {
+    ) -> Result<(), Error> {
         match cursed_type {
             "normie" => Ok(("i64".to_string(), 8)),
             "facts" => Ok(("i1".to_string(), 1)),
@@ -768,7 +768,7 @@ impl LlvmTypeSwitchCompiler {
         &self,
         context: &'ctx Context,
         type_str: &str,
-    ) -> Result<inkwell::types::BasicTypeEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         match type_str {
             "i1" => Ok(context.bool_type().into()),
             "i8" => Ok(context.i8_type().into()),
@@ -797,7 +797,7 @@ impl LlvmTypeSwitchCompiler {
         builder: &Builder<'ctx>,
         expr: &dyn Expression,
         ctx: &mut TypeSwitchContext<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         // We need access to the main LlvmCodeGenerator to compile expressions
         // This is a placeholder that would need to be provided by the integration layer
         let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::Generic);
@@ -884,7 +884,7 @@ pub struct TypeSwitchUtils;
 
 impl TypeSwitchUtils {
     /// Parse type switch expression to extract interface expression and type
-    pub fn parse_type_switch_expr(expr_str: &str) -> Result<(String, String), Error> {
+    pub fn parse_type_switch_expr(expr_str: &str) -> Result<(), Error> {
         // Parse "variable.(Type)" syntax
         if let Some(dot_pos) = expr_str.find(".(") {
             if let Some(end_pos) = expr_str.rfind(')') {

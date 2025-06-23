@@ -17,7 +17,7 @@ pub struct ConstantTimeResult {
 /// Constant time comparison of two byte arrays
 /// Returns true if arrays are equal, false otherwise
 /// Executes in constant time regardless of input values
-pub fn constant_time_compare(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_compare(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 2 {
         return Err(CursedError::InvalidArgument(
             "constant_time_compare requires exactly 2 arguments".to_string()
@@ -34,7 +34,7 @@ pub fn constant_time_compare(args: Vec<Value>) -> Result<Value, CursedError> {
 /// Constant time conditional selection
 /// Returns a if condition is true, b if condition is false
 /// Executes in constant time regardless of condition value
-pub fn constant_time_select(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_select(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 3 {
         return Err(CursedError::InvalidArgument(
             "constant_time_select requires exactly 3 arguments (condition, a, b)".to_string()
@@ -60,7 +60,7 @@ pub fn constant_time_select(args: Vec<Value>) -> Result<Value, CursedError> {
 /// Constant time byte array copy
 /// Copies src to dst if condition is true, otherwise dst remains unchanged
 /// Executes in constant time regardless of condition
-pub fn constant_time_copy(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_copy(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 3 {
         return Err(CursedError::InvalidArgument(
             "constant_time_copy requires exactly 3 arguments (condition, src, dst)".to_string()
@@ -85,7 +85,7 @@ pub fn constant_time_copy(args: Vec<Value>) -> Result<Value, CursedError> {
 
 /// Constant time memory clear
 /// Clears memory in a timing-safe manner
-pub fn constant_time_clear(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_clear(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 1 {
         return Err(CursedError::InvalidArgument(
             "constant_time_clear requires exactly 1 argument".to_string()
@@ -100,7 +100,7 @@ pub fn constant_time_clear(args: Vec<Value>) -> Result<Value, CursedError> {
 
 /// Constant time integer comparison
 /// Returns 1 if a == b, 0 otherwise, in constant time
-pub fn constant_time_int_equal(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_int_equal(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 2 {
         return Err(CursedError::InvalidArgument(
             "constant_time_int_equal requires exactly 2 arguments".to_string()
@@ -127,7 +127,7 @@ pub fn constant_time_int_equal(args: Vec<Value>) -> Result<Value, CursedError> {
 
 /// Constant time less than comparison
 /// Returns 1 if a < b, 0 otherwise, in constant time
-pub fn constant_time_less_than(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_less_than(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 2 {
         return Err(CursedError::InvalidArgument(
             "constant_time_less_than requires exactly 2 arguments".to_string()
@@ -154,7 +154,7 @@ pub fn constant_time_less_than(args: Vec<Value>) -> Result<Value, CursedError> {
 
 /// Constant time key derivation
 /// Derives a key from input material in constant time
-pub fn constant_time_key_derive(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn constant_time_key_derive(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 2 {
         return Err(CursedError::InvalidArgument(
             "constant_time_key_derive requires exactly 2 arguments (input, length)".to_string()
@@ -211,7 +211,7 @@ fn constant_time_u64_less_than(a: u64, b: u64) -> u32 {
 }
 
 /// Constant time conditional selection between two values
-fn constant_time_conditional_select(condition: bool, a: &Value, b: &Value) -> Result<Value, CursedError> {
+fn constant_time_conditional_select(condition: bool, a: &Value, b: &Value) -> Result<(), Error> {
     let mask = if condition { !0u8 } else { 0u8 };
     
     match (a, b) {
@@ -291,7 +291,7 @@ fn constant_time_derive_key(input: &[u8], length: usize) -> Vec<u8> {
 }
 
 /// Extract bytes from a Value in a consistent manner
-fn extract_bytes(value: &Value) -> Result<Vec<u8>, CursedError> {
+fn extract_bytes(value: &Value) -> Result<(), Error> {
     match value {
         Value::String(s) => Ok(s.as_bytes().to_vec()),
         Value::Array(arr) => {

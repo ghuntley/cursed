@@ -254,7 +254,7 @@ impl LaTeXGenerator {
         &mut self,
         docs: &[crate::documentation::ExtractedDocumentation],
         output_dir: &Path,
-    ) -> Result<Vec<PathBuf>, Error> {
+    ) -> Result<(), Error> {
         info!("Generating LaTeX documentation for {} modules", docs.len());
         
         std::fs::create_dir_all(output_dir)
@@ -329,7 +329,7 @@ impl LaTeXGenerator {
     fn generate_main_document(
         &mut self,
         docs: &[crate::documentation::ExtractedDocumentation],
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut latex = String::new();
 
         // Document class and options
@@ -380,7 +380,7 @@ impl LaTeXGenerator {
 
     /// Generate LaTeX preamble with packages and configurations
     #[instrument(skip(self))]
-    fn generate_preamble(&self) -> Result<String, Error> {
+    fn generate_preamble(&self) -> Result<(), Error> {
         let mut preamble = String::new();
 
         // Unicode support
@@ -468,7 +468,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate code highlighting setup
-    fn generate_code_highlighting_setup(&self) -> Result<String, Error> {
+    fn generate_code_highlighting_setup(&self) -> Result<(), Error> {
         let mut setup = String::new();
 
         if self.config.syntax_highlighting.use_minted {
@@ -544,7 +544,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate title page
-    fn generate_title_page(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<String, Error> {
+    fn generate_title_page(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
         let mut title = String::new();
 
         match self.config.document_class {
@@ -580,7 +580,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate table of contents
-    fn generate_table_of_contents(&self) -> Result<String, Error> {
+    fn generate_table_of_contents(&self) -> Result<(), Error> {
         let mut toc = String::new();
 
         match self.config.document_class {
@@ -616,7 +616,7 @@ impl LaTeXGenerator {
     fn generate_main_content(
         &mut self,
         docs: &[crate::documentation::ExtractedDocumentation],
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut content = String::new();
 
         // Introduction section
@@ -637,7 +637,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate introduction section
-    fn generate_introduction_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<String, Error> {
+    fn generate_introduction_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
         let mut intro = String::new();
 
         let section_cmd = match self.config.document_class {
@@ -697,7 +697,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate quick reference section
-    fn generate_quick_reference_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<String, Error> {
+    fn generate_quick_reference_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
         let mut reference = String::new();
 
         let section_cmd = match self.config.document_class {
@@ -788,7 +788,7 @@ impl LaTeXGenerator {
         &mut self,
         doc: &crate::documentation::ExtractedDocumentation,
         index: usize,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut module = String::new();
 
         let module_name = doc.source_file.file_stem()
@@ -870,7 +870,7 @@ impl LaTeXGenerator {
         func: &crate::documentation::FunctionDoc,
         module_name: &str,
         index: usize,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut doc = String::new();
 
         // Function header
@@ -984,7 +984,7 @@ impl LaTeXGenerator {
         type_doc: &crate::documentation::TypeDoc,
         module_name: &str,
         index: usize,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut doc = String::new();
 
         // Type header
@@ -1085,7 +1085,7 @@ impl LaTeXGenerator {
         constant: &crate::documentation::DocumentationItem,
         module_name: &str,
         index: usize,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut doc = String::new();
 
         // Constant header
@@ -1119,7 +1119,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate API reference appendix
-    fn generate_api_reference_appendix(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<String, Error> {
+    fn generate_api_reference_appendix(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
         let mut appendix = String::new();
 
         let section_cmd = match self.config.document_class {
@@ -1198,7 +1198,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate bibliography section
-    fn generate_bibliography_section(&self) -> Result<String, Error> {
+    fn generate_bibliography_section(&self) -> Result<(), Error> {
         let mut bib = String::new();
 
         match self.config.document_class {
@@ -1221,7 +1221,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate index section
-    fn generate_index_section(&self) -> Result<String, Error> {
+    fn generate_index_section(&self) -> Result<(), Error> {
         let mut index = String::new();
 
         if !matches!(self.config.document_class, DocumentClass::Beamer) {
@@ -1232,7 +1232,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate module document (for separate compilation)
-    fn generate_module_document(&mut self, doc: &crate::documentation::ExtractedDocumentation) -> Result<String, Error> {
+    fn generate_module_document(&mut self, doc: &crate::documentation::ExtractedDocumentation) -> Result<(), Error> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -1248,7 +1248,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate bibliography file
-    fn generate_bibliography(&self) -> Result<String, Error> {
+    fn generate_bibliography(&self) -> Result<(), Error> {
         let mut bib = String::new();
 
         // Add standard CURSED language reference
@@ -1279,7 +1279,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate Makefile for LaTeX compilation
-    fn generate_makefile(&self) -> Result<String, Error> {
+    fn generate_makefile(&self) -> Result<(), Error> {
         let mut makefile = String::new();
 
         makefile.push_str("# LaTeX Documentation Makefile for CURSED\n");
@@ -1346,7 +1346,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate compilation script
-    fn generate_compile_script(&self) -> Result<String, Error> {
+    fn generate_compile_script(&self) -> Result<(), Error> {
         let mut script = String::new();
 
         script.push_str("#!/bin/bash\n");

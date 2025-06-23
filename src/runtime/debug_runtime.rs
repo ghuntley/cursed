@@ -47,7 +47,7 @@ impl RuntimeDebugger {
     }
 
     /// Register debug information
-    pub fn register_debug_info(&self, debug_info: EnhancedDebugInfo) -> Result<(), CursedError> {
+    pub fn register_debug_info(&self, debug_info: EnhancedDebugInfo) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(());
         }
@@ -62,7 +62,7 @@ impl RuntimeDebugger {
     }
 
     /// Enter function scope
-    pub fn enter_function(&self, function_name: &str, file_path: &Path, line: u32) -> Result<u64, CursedError> {
+    pub fn enter_function(&self, function_name: &str, file_path: &Path, line: u32) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(0);
         }
@@ -99,7 +99,7 @@ impl RuntimeDebugger {
     }
 
     /// Exit function scope
-    pub fn exit_function(&self, frame_id: u64) -> Result<(), CursedError> {
+    pub fn exit_function(&self, frame_id: u64) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(());
         }
@@ -135,7 +135,7 @@ impl RuntimeDebugger {
         value: Value, 
         var_type: String,
         line: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(());
         }
@@ -151,7 +151,7 @@ impl RuntimeDebugger {
     }
 
     /// Update variable value
-    pub fn update_variable(&self, name: &str, value: Value) -> Result<(), CursedError> {
+    pub fn update_variable(&self, name: &str, value: Value) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(());
         }
@@ -165,7 +165,7 @@ impl RuntimeDebugger {
     }
 
     /// Get variable value
-    pub fn get_variable(&self, name: &str) -> Result<Option<Value>, CursedError> {
+    pub fn get_variable(&self, name: &str) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(None);
         }
@@ -177,7 +177,7 @@ impl RuntimeDebugger {
     }
 
     /// Get current stack trace
-    pub fn get_stack_trace(&self) -> Result<Vec<RuntimeStackFrame>, CursedError> {
+    pub fn get_stack_trace(&self) -> Result<(), Error> {
         let stack_frames = self.stack_frames.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire stack frames lock".to_string()))?;
         
@@ -185,7 +185,7 @@ impl RuntimeDebugger {
     }
 
     /// Inspect variable with detailed information
-    pub fn inspect_variable(&self, name: &str) -> Result<Option<VariableInspection>, CursedError> {
+    pub fn inspect_variable(&self, name: &str) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(None);
         }
@@ -201,7 +201,7 @@ impl RuntimeDebugger {
     }
 
     /// Set breakpoint
-    pub fn set_breakpoint(&self, file_path: PathBuf, line: u32) -> Result<u64, CursedError> {
+    pub fn set_breakpoint(&self, file_path: PathBuf, line: u32) -> Result<(), Error> {
         let mut breakpoints = self.breakpoints.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire breakpoints lock".to_string()))?;
         
@@ -209,7 +209,7 @@ impl RuntimeDebugger {
     }
 
     /// Remove breakpoint
-    pub fn remove_breakpoint(&self, breakpoint_id: u64) -> Result<bool, CursedError> {
+    pub fn remove_breakpoint(&self, breakpoint_id: u64) -> Result<(), Error> {
         let mut breakpoints = self.breakpoints.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire breakpoints lock".to_string()))?;
         
@@ -217,7 +217,7 @@ impl RuntimeDebugger {
     }
 
     /// Check if breakpoint should trigger
-    pub fn check_breakpoint(&self, file_path: &Path, line: u32) -> Result<Option<Breakpoint>, CursedError> {
+    pub fn check_breakpoint(&self, file_path: &Path, line: u32) -> Result<(), Error> {
         if !self.debug_enabled {
             return Ok(None);
         }
@@ -229,7 +229,7 @@ impl RuntimeDebugger {
     }
 
     /// Get all variables in current scope
-    pub fn get_scope_variables(&self) -> Result<HashMap<String, Value>, CursedError> {
+    pub fn get_scope_variables(&self) -> Result<(), Error> {
         let symbol_table = self.symbol_table.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol table lock".to_string()))?;
         
@@ -237,7 +237,7 @@ impl RuntimeDebugger {
     }
 
     /// Generate debug report
-    pub fn generate_debug_report(&self) -> Result<DebugReport, CursedError> {
+    pub fn generate_debug_report(&self) -> Result<(), Error> {
         let stack_trace = self.get_stack_trace()?;
         let scope_vars = self.get_scope_variables()?;
         
@@ -424,7 +424,7 @@ impl VariableInspector {
     }
 
     /// Inspect variable with detailed information
-    pub fn inspect_variable(&self, variable: &RuntimeVariable) -> Result<VariableInspection, CursedError> {
+    pub fn inspect_variable(&self, variable: &RuntimeVariable) -> Result<(), Error> {
         let size_estimate = self.estimate_size(&variable.value);
         let type_info = self.analyze_type(&variable.value);
         let contents = self.dump_contents(&variable.value, 0)?;
@@ -470,7 +470,7 @@ impl VariableInspector {
     }
 
     /// Dump variable contents
-    fn dump_contents(&self, value: &Value, depth: usize) -> Result<String, CursedError> {
+    fn dump_contents(&self, value: &Value, depth: usize) -> Result<(), Error> {
         if depth > self.max_depth {
             return Ok("... (max depth reached)".to_string());
         }
@@ -566,7 +566,7 @@ impl BreakpointManager {
     }
 
     /// Set breakpoint
-    pub fn set_breakpoint(&mut self, file_path: PathBuf, line: u32) -> Result<u64, CursedError> {
+    pub fn set_breakpoint(&mut self, file_path: PathBuf, line: u32) -> Result<(), Error> {
         let id = self.next_id;
         self.next_id += 1;
 

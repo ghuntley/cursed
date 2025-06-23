@@ -1,3 +1,4 @@
+use crate::crypto::Ed25519PublicKey;
 /// Ed25519 cryptographic key types for CURSED
 
 use crate::error::{Error, Result};

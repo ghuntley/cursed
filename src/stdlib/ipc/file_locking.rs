@@ -12,7 +12,7 @@ use std::time::{Duration, SystemTime, Instant};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::stdlib::ipc::error::{IpcError, IpcResult};
-use crate::stdlib::ipc::types::{
+use crate::stdlib::ipc::crate::types::{
     IpcHandle, IpcAddress, IpcPermissions, IpcTimeout, IpcStatistics,
     ResourceLimits
 };

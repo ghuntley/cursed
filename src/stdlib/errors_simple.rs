@@ -7,7 +7,7 @@ use crate::error::SourceLocation;
 
 // Re-export CursedError for use by other stdlib modules
 pub use crate::error::CursedError;
-use crate::error::types::{
+use crate::error::crate::types::{
     ErrorManager, ErrorManagerConfig, ErrorCategory, ErrorSeverity
 };
 use std::sync::{Arc, OnceLock};
@@ -16,7 +16,7 @@ use std::sync::{Arc, OnceLock};
 static GLOBAL_ERROR_MANAGER: OnceLock<Arc<ErrorManager>> = OnceLock::new();
 
 /// Initialize the global error manager
-pub fn init_error_system() -> std::result::Result<(), CursedError> {
+pub fn init_error_system() -> std::result::Result<(), Error> {
     let config = ErrorManagerConfig {
         max_error_chains: 10000,
         auto_cleanup: true,
@@ -34,7 +34,7 @@ pub fn init_error_system() -> std::result::Result<(), CursedError> {
 }
 
 /// Get the global error manager
-pub fn get_error_manager() -> std::result::Result<Arc<ErrorManager>, CursedError> {
+pub fn get_error_manager() -> std::result::Result<(), Error> {
     GLOBAL_ERROR_MANAGER.get()
         .cloned()
         .ok_or_else(|| CursedError::system_error("Error manager not initialized"))
@@ -45,14 +45,14 @@ pub mod std_errors {
     use super::*;
 
     /// File system errors
-    pub fn file_not_found(path: &str) -> std::result::Result<(), CursedError> {
+    pub fn file_not_found(path: &str) -> std::result::Result<(), Error> {
         Err(CursedError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             format!("File not found: {}", path)
         )))
     }
 
-    pub fn permission_denied(path: &str) -> std::result::Result<(), CursedError> {
+    pub fn permission_denied(path: &str) -> std::result::Result<(), Error> {
         Err(CursedError::Io(std::io::Error::new(
             std::io::ErrorKind::PermissionDenied,
             format!("Permission denied: {}", path)
@@ -60,7 +60,7 @@ pub mod std_errors {
     }
 
     /// Parsing errors
-    pub fn syntax_error(message: &str, line: usize, column: usize) -> std::result::Result<(), CursedError> {
+    pub fn syntax_error(message: &str, line: usize, column: usize) -> std::result::Result<(), Error> {
         Err(CursedError::parse_error_with_location(
             message.to_string(),
             line,
@@ -69,7 +69,7 @@ pub mod std_errors {
     }
 
     /// Runtime errors
-    pub fn division_by_zero(line: usize, column: usize) -> std::result::Result<(), CursedError> {
+    pub fn division_by_zero(line: usize, column: usize) -> std::result::Result<(), Error> {
         Err(CursedError::parse_error_with_location(
             "Division by zero".to_string(),
             line,
@@ -77,7 +77,7 @@ pub mod std_errors {
         ))
     }
 
-    pub fn type_mismatch(expected: &str, actual: &str) -> std::result::Result<(), CursedError> {
+    pub fn type_mismatch(expected: &str, actual: &str) -> std::result::Result<(), Error> {
         Err(CursedError::Type(format!("Type mismatch: expected {}, got {}", expected, actual)))
     }
 }
@@ -91,9 +91,9 @@ pub mod recovery {
         mut operation: F,
         max_attempts: usize,
         base_delay_ms: u64,
-    ) -> std::result::Result<T, CursedError>
+    ) -> std::result::Result<(), Error>
     where
-        F: FnMut() -> std::result::Result<T, CursedError>,
+        F: FnMut() -> std::result::Result<(), Error>,
     {
         let mut attempts = 0;
         let mut delay = base_delay_ms;
@@ -119,7 +119,7 @@ pub mod recovery {
     /// Try an operation and return Option instead of Result
     pub fn try_or_none<T, F>(operation: F) -> std::option::Option<T>
     where
-        F: FnOnce() -> std::result::Result<T, CursedError>,
+        F: FnOnce() -> std::result::Result<(), Error>,
     {
         match operation() {
             Ok(value) => std::option::Option::Some(value),
@@ -130,7 +130,7 @@ pub mod recovery {
     /// Try an operation and return default on error
     pub fn try_or_default<T, F>(operation: F, default: T) -> T
     where
-        F: FnOnce() -> std::result::Result<T, CursedError>,
+        F: FnOnce() -> std::result::Result<(), Error>,
     {
         match operation() {
             Ok(value) => value,

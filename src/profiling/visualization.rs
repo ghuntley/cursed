@@ -21,7 +21,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, cpu_data))]
-    pub fn generate_flame_graph(&self, cpu_data: &CpuProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_flame_graph(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
         info!("Generating flame graph visualization");
         
         let flame_graph = FlameGraph::from_cpu_profile(cpu_data)?;
@@ -31,7 +31,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, cpu_data))]
-    pub fn generate_call_graph(&self, cpu_data: &CpuProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_call_graph(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
         info!("Generating call graph visualization");
         
         let call_graph = cpu_data.get_call_graph();
@@ -40,7 +40,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, memory_data))]
-    pub fn generate_memory_timeline(&self, memory_data: &MemoryProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_memory_timeline(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
         info!("Generating memory timeline visualization");
         
         let analysis = memory_data.analyze_patterns();
@@ -49,7 +49,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, memory_data))]
-    pub fn generate_allocation_heatmap(&self, memory_data: &MemoryProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_allocation_heatmap(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
         info!("Generating allocation heatmap");
         
         let analysis = memory_data.analyze_patterns();
@@ -58,7 +58,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, concurrency_data))]
-    pub fn generate_goroutine_timeline(&self, concurrency_data: &ConcurrencyProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_goroutine_timeline(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
         info!("Generating goroutine timeline visualization");
         
         let timeline = concurrency_data.generate_goroutine_timeline();
@@ -67,7 +67,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, concurrency_data))]
-    pub fn generate_channel_flow_diagram(&self, concurrency_data: &ConcurrencyProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_channel_flow_diagram(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
         info!("Generating channel flow diagram");
         
         let analysis = concurrency_data.analyze_channels();
@@ -76,14 +76,14 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self))]
-    pub fn generate_interactive_dashboard(&self, profile_data: &crate::profiling::core::ProfileData) -> Result<String, ProfilerError> {
+    pub fn generate_interactive_dashboard(&self, profile_data: &crate::profiling::core::ProfileData) -> Result<(), Error> {
         info!("Generating interactive dashboard");
         
         let html = self.generate_dashboard_html(profile_data)?;
         Ok(html)
     }
     
-    fn flame_graph_to_svg(&self, flame_graph: &FlameGraph) -> Result<String, ProfilerError> {
+    fn flame_graph_to_svg(&self, flame_graph: &FlameGraph) -> Result<(), Error> {
         let mut svg = String::new();
         
         let width = self.config.flame_graph_width;
@@ -167,7 +167,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn call_graph_to_dot(&self, call_graph: &crate::profiling::cpu::CallGraph) -> Result<String, ProfilerError> {
+    fn call_graph_to_dot(&self, call_graph: &crate::profiling::cpu::CallGraph) -> Result<(), Error> {
         let mut dot = String::new();
         
         dot.push_str("digraph CallGraph {\n");
@@ -212,7 +212,7 @@ impl VisualizationGenerator {
         Ok(dot)
     }
     
-    fn memory_timeline_to_svg(&self, timeline: &[crate::profiling::memory::TemporalAllocation]) -> Result<String, ProfilerError> {
+    fn memory_timeline_to_svg(&self, timeline: &[crate::profiling::memory::TemporalAllocation]) -> Result<(), Error> {
         let mut svg = String::new();
         
         let width = self.config.timeline_width;
@@ -284,7 +284,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn allocation_heatmap_to_svg(&self, histogram: &HashMap<usize, u64>) -> Result<String, ProfilerError> {
+    fn allocation_heatmap_to_svg(&self, histogram: &HashMap<usize, u64>) -> Result<(), Error> {
         let mut svg = String::new();
         
         let width = self.config.heatmap_width;
@@ -350,7 +350,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn goroutine_timeline_to_svg(&self, timeline: &[crate::profiling::concurrency::GoroutineTimeline]) -> Result<String, ProfilerError> {
+    fn goroutine_timeline_to_svg(&self, timeline: &[crate::profiling::concurrency::GoroutineTimeline]) -> Result<(), Error> {
         let mut svg = String::new();
         
         let width = self.config.timeline_width;
@@ -410,7 +410,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn channel_flow_to_svg(&self, analysis: &crate::profiling::concurrency::ChannelAnalysis) -> Result<String, ProfilerError> {
+    fn channel_flow_to_svg(&self, analysis: &crate::profiling::concurrency::ChannelAnalysis) -> Result<(), Error> {
         let mut svg = String::new();
         
         let width = self.config.flow_diagram_width;
@@ -463,7 +463,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn generate_dashboard_html(&self, _profile_data: &crate::profiling::core::ProfileData) -> Result<String, ProfilerError> {
+    fn generate_dashboard_html(&self, _profile_data: &crate::profiling::core::ProfileData) -> Result<(), Error> {
         let html = r#"
 <!DOCTYPE html>
 <html>

@@ -254,7 +254,7 @@ pub mod pki {
 
 
 /// fr fr Initialize the crypto_pki package
-pub fn init_crypto_pki() -> Result<(), CursedError> {
+pub fn init_crypto_pki() -> Result<(), Error> {
     println!("🏛️ Initializing PKI package...");
     
     // Test certificate parsing

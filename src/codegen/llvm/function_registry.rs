@@ -105,7 +105,7 @@ impl FunctionSignature {
     }
 
     /// Create function signature from AST function statement
-    pub fn from_function_statement(func: &FunctionStatement) -> Result<Self, Error> {
+    pub fn from_function_statement(func: &FunctionStatement) -> Result<(), Error> {
         let name = func.name.string();
         
         // Parse parameters
@@ -148,7 +148,7 @@ impl FunctionSignature {
     }
 
     /// Parse CURSED type to LLVM type
-    fn parse_cursed_type_to_llvm(cursed_type: &str) -> Result<LlvmType, Error> {
+    fn parse_cursed_type_to_llvm(cursed_type: &str) -> Result<(), Error> {
         match cursed_type.trim() {
             // CURSED Gen Z types
             "normie" | "sus" => Ok(LlvmType::Int64),

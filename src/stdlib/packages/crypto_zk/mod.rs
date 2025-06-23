@@ -289,7 +289,7 @@ fn test_field_arithmetic() -> AdvancedCryptoResult<()> {
     if matches!(sum, Value::String(_)) && matches!(product, Value::String(_)) {
         Ok(())
     } else {
-        Err(crate::stdlib::error::CryptoError::GeneralError("Field arithmetic test failed".to_string()))
+        Err(crate::crate::stdlib::error::CryptoError::GeneralError("Field arithmetic test failed".to_string()))
     }
 }
 
@@ -306,7 +306,7 @@ fn test_merkle_trees() -> AdvancedCryptoResult<()> {
     if matches!(verification, Value::Boolean(true)) {
         Ok(())
     } else {
-        Err(crate::stdlib::error::CryptoError::GeneralError("Merkle tree test failed".to_string()))
+        Err(crate::crate::stdlib::error::CryptoError::GeneralError("Merkle tree test failed".to_string()))
     }
 }
 
@@ -320,7 +320,7 @@ fn test_commitments() -> AdvancedCryptoResult<()> {
     if matches!(verification, Value::Boolean(true)) {
         Ok(())
     } else {
-        Err(crate::stdlib::error::CryptoError::GeneralError("Commitment test failed".to_string()))
+        Err(crate::crate::stdlib::error::CryptoError::GeneralError("Commitment test failed".to_string()))
     }
 }
 
@@ -332,7 +332,7 @@ fn test_circuit_builder() -> AdvancedCryptoResult<()> {
     if matches!(outputs, Value::Array(_)) {
         Ok(())
     } else {
-        Err(crate::stdlib::error::CryptoError::GeneralError("Circuit builder test failed".to_string()))
+        Err(crate::crate::stdlib::error::CryptoError::GeneralError("Circuit builder test failed".to_string()))
     }
 }
 
@@ -344,7 +344,7 @@ fn test_groth16() -> AdvancedCryptoResult<()> {
     if matches!(setup, Value::Object(_)) && matches!(proof_size, Value::Object(_)) {
         Ok(())
     } else {
-        Err(crate::stdlib::error::CryptoError::GeneralError("Groth16 test failed".to_string()))
+        Err(crate::crate::stdlib::error::CryptoError::GeneralError("Groth16 test failed".to_string()))
     }
 }
 
@@ -358,7 +358,7 @@ fn test_plonk() -> AdvancedCryptoResult<()> {
        matches!(proof_size, Value::Object(_)) {
         Ok(())
     } else {
-        Err(crate::stdlib::error::CryptoError::GeneralError("PLONK test failed".to_string()))
+        Err(crate::crate::stdlib::error::CryptoError::GeneralError("PLONK test failed".to_string()))
     }
 }
 

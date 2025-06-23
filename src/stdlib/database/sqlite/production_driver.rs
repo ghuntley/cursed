@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::collections::HashMap;
 use std::time::{SystemTime, Duration, Instant};
 use std::thread;
-use rusqlite::{Connection, OpenFlags, Statement, Transaction, Savepoint, types::Value as SqliteValue, params};
+use rusqlite::{Connection, OpenFlags, Statement, Transaction, Savepoint, crate::types::Value as SqliteValue, params};
 use super::{SqliteError, SqliteResult, SqliteConfig};
 use super::super::{
     DriverConn, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, 
@@ -252,9 +252,9 @@ impl ProductionSqliteConnection {
     }
 
     /// Execute query with timing and error handling
-    fn execute_with_timing<F, R>(&self, operation: F) -> Result<R, DatabaseError>
+    fn execute_with_timing<F, R>(&self, operation: F) -> Result<(), Error>
     where
-        F: FnOnce() -> Result<R, DatabaseError>,
+        F: FnOnce() -> Result<(), Error>,
     {
         let start = Instant::now();
         let result = operation();
@@ -352,7 +352,7 @@ impl ProductionSqliteConnection {
 }
 
 impl DriverConn for ProductionSqliteConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         self.execute_with_timing(|| {
             self.get_or_prepare_statement(query)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
@@ -367,7 +367,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -415,7 +415,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -442,7 +442,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         let mut in_tx = self.in_transaction.lock().unwrap();
         if *in_tx {
             // Already in transaction, create savepoint
@@ -473,7 +473,7 @@ impl DriverConn for ProductionSqliteConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -489,7 +489,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Clean up cached statements
         let _ = self.cleanup_statement_cache();
         
@@ -565,7 +565,7 @@ impl ProductionSqliteStatement {
         connection: Arc<Mutex<Option<Connection>>>,
         query: String,
         stats: Arc<Mutex<ConnectionStats>>
-    ) -> Result<Self, DatabaseError> {
+    ) -> Result<(), Error> {
         Ok(Self {
             connection,
             query,
@@ -576,7 +576,7 @@ impl ProductionSqliteStatement {
     }
 
     /// Get parameter count by parsing the query
-    fn get_parameter_count(&mut self) -> Result<usize, DatabaseError> {
+    fn get_parameter_count(&mut self) -> Result<(), Error> {
         if let Some(count) = self.parameter_count {
             return Ok(count);
         }
@@ -599,7 +599,7 @@ impl ProductionSqliteStatement {
 }
 
 impl DriverStmt for ProductionSqliteStatement {
-    fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
         let start = Instant::now();
         
         let handle = self.connection.lock().unwrap();
@@ -633,7 +633,7 @@ impl DriverStmt for ProductionSqliteStatement {
         }
     }
 
-    fn query(&self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
         let start = Instant::now();
         
         let handle = self.connection.lock().unwrap();
@@ -686,7 +686,7 @@ impl DriverStmt for ProductionSqliteStatement {
         }
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Statement cleanup is handled automatically by rusqlite
         Ok(())
     }
@@ -745,7 +745,7 @@ impl ProductionSqliteTransaction {
         options: TxOptions,
         stats: Arc<Mutex<ConnectionStats>>,
         in_transaction: Arc<Mutex<bool>>
-    ) -> Result<Self, DatabaseError> {
+    ) -> Result<(), Error> {
         // Begin transaction
         {
             let handle = connection.lock().unwrap();
@@ -782,7 +782,7 @@ impl ProductionSqliteTransaction {
         savepoint_name: String,
         stats: Arc<Mutex<ConnectionStats>>,
         savepoint_stack: Arc<Mutex<Vec<String>>>
-    ) -> Result<Self, DatabaseError> {
+    ) -> Result<(), Error> {
         // Create savepoint
         {
             let handle = connection.lock().unwrap();
@@ -807,7 +807,7 @@ impl ProductionSqliteTransaction {
 }
 
 impl DriverTx for ProductionSqliteTransaction {
-    fn commit(&self) -> Result<(), DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             if self.is_savepoint {
@@ -841,7 +841,7 @@ impl DriverTx for ProductionSqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             if self.is_savepoint {
@@ -875,7 +875,7 @@ impl DriverTx for ProductionSqliteTransaction {
         Ok(())
     }
 
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         let stmt = ProductionSqliteStatement::new(
             self.connection.clone(),
             query.to_string(),
@@ -884,12 +884,12 @@ impl DriverTx for ProductionSqliteTransaction {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         let stmt = self.prepare(query)?;
         stmt.query(args)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         let stmt = self.prepare(query)?;
         stmt.execute(args)
     }
@@ -930,12 +930,12 @@ impl DriverTx for ProductionSqliteTransaction {
 }
 
 /// Convert CURSED SqlValue arguments to rusqlite parameters
-fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusqlite::ToSql>>, DatabaseError> {
+fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<(), Error> {
     let mut params = Vec::new();
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Null => params.push(Box::new(rusqlite::crate::types::Null) as Box<dyn rusqlite::ToSql>),
             SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
             SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
@@ -962,7 +962,7 @@ fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<Vec<Box<dyn rusq
 }
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> Result<SqlValue, DatabaseError> {
+fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     

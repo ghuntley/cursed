@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 //! HTTP middleware support for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::GlowUpResult;

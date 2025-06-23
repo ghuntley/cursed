@@ -10,7 +10,7 @@ use crate::stdlib::database::{
     driver::{QueryResult, ExecuteResult}
 };
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
-use super::types::{map_postgres_value, prepare_parameters, extract_column_info, PostgresParam};
+use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info, PostgresParam};
 
 /// PostgreSQL prepared statement wrapper
 #[derive(Debug)]
@@ -22,9 +22,9 @@ pub struct PostgresStatement {
     /// Statement statistics
     stats: Arc<std::sync::Mutex<StatementStats>>,
     /// Parameter types information
-    param_types: Vec<tokio_postgres::types::Type>,
+    param_types: Vec<tokio_postgres::crate::types::Type>,
     /// Column types information
-    column_types: Vec<tokio_postgres::types::Type>,
+    column_types: Vec<tokio_postgres::crate::types::Type>,
 }
 
 /// Statement execution statistics
@@ -71,7 +71,7 @@ impl PostgresStatement {
 
         // Convert parameters
         let params = self.convert_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
 
         // Execute query
@@ -117,7 +117,7 @@ impl PostgresStatement {
 
         // Convert parameters
         let params = self.convert_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
 
         // Execute statement
@@ -226,7 +226,7 @@ impl PostgresStatement {
 }
 
 impl DriverStmt for PostgresStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<QueryResult, crate::stdlib::database::DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
         Err(crate::stdlib::database::DatabaseError::new(
@@ -235,7 +235,7 @@ impl DriverStmt for PostgresStatement {
         ))
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, crate::stdlib::database::DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
         Err(crate::stdlib::database::DatabaseError::new(
@@ -244,7 +244,7 @@ impl DriverStmt for PostgresStatement {
         ))
     }
 
-    fn close(&self) -> Result<(), crate::stdlib::database::DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // tokio-postgres handles cleanup automatically
         Ok(())
     }
@@ -325,7 +325,7 @@ impl std::fmt::Display for StatementStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio_postgres::types::Type;
+    use tokio_postgres::crate::types::Type;
 
     #[test]
     fn test_statement_info() {

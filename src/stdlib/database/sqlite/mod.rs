@@ -51,7 +51,7 @@ use super::{DatabaseError, DatabaseErrorKind, SqlValue, Driver};
 use super::driver::DriverCapabilities;
 
 /// fr fr SQLite result type
-pub type Result<T> = std::result::Result<T, SqliteError>;
+pub type Result<(), Error>;
 
 /// fr fr SQLite data types supported by the driver
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -481,27 +481,27 @@ struct ManagedSqliteConnection {
 }
 
 impl DriverConn for ManagedSqliteConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn super::super::DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         self.connection.prepare(query)
     }
 
-    fn query(&self, query: &str, args: &[super::super::SqlValue]) -> Result<super::super::driver::QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[super::super::SqlValue]) -> Result<(), Error> {
         self.connection.query(query, args)
     }
 
-    fn execute(&self, query: &str, args: &[super::super::SqlValue]) -> Result<super::super::driver::ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[super::super::SqlValue]) -> Result<(), Error> {
         self.connection.execute(query, args)
     }
 
-    fn begin_transaction(&self, opts: super::super::TxOptions) -> Result<Box<dyn super::super::DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: super::super::TxOptions) -> Result<(), Error> {
         self.connection.begin_transaction(opts)
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         self.connection.ping()
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         let result = self.connection.close();
         // Unregister from driver
         let _ = self.driver.unregister_connection(&self.connection_id);
@@ -534,7 +534,7 @@ impl Drop for ManagedSqliteConnection {
 
 /// fr fr Main Driver trait implementation for SqliteDriver
 impl Driver for SqliteDriver {
-    fn open(&self, data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, data_source_name: &str) -> Result<(), Error> {
         let connection_string = SqliteConnectionString::parse(data_source_name)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &e.to_string()))?;
         

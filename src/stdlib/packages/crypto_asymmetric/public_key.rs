@@ -42,7 +42,7 @@ impl PublicKeyFormat {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "PKCS1-PEM" | "PKCS#1-PEM" => Ok(PublicKeyFormat::Pkcs1Pem),
             "PKCS1-DER" | "PKCS#1-DER" => Ok(PublicKeyFormat::Pkcs1Der),
@@ -79,7 +79,7 @@ impl PublicKeyAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "RSA" => Ok(PublicKeyAlgorithm::Rsa),
             "ECDSA-P256" | "P256" => Ok(PublicKeyAlgorithm::EcdsaP256),
@@ -131,13 +131,13 @@ impl PublicKeyInfo {
     }
     
     fn compute_md5_fingerprint(data: &[u8]) -> String {
-        let mut hasher = md5::Md5::new();
+        let mut hasher = md5::Digest::new();
         hasher.update(data);
         let result = hasher.finalize();
         hex::encode(result)
     }
     
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -152,7 +152,7 @@ impl PublicKeyInfo {
 }
 
 /// Extract public key from private key
-pub fn extract_public_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn extract_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Public key extraction requires: algorithm, private_key".to_string()));
     }
@@ -182,7 +182,7 @@ pub fn extract_public_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Extract RSA public key
-fn extract_rsa_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn extract_rsa_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
     let private_key = RsaPrivateKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode RSA private key: {}", e)))?;
     
@@ -206,7 +206,7 @@ fn extract_rsa_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError
 }
 
 /// Extract P-256 public key
-fn extract_p256_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn extract_p256_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
     let private_key = P256SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -230,7 +230,7 @@ fn extract_p256_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedErro
 }
 
 /// Extract P-384 public key
-fn extract_p384_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn extract_p384_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
     let private_key = P384SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -254,7 +254,7 @@ fn extract_p384_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedErro
 }
 
 /// Extract P-521 public key
-fn extract_p521_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn extract_p521_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
     let private_key = P521SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-521 private key: {}", e)))?;
     
@@ -278,7 +278,7 @@ fn extract_p521_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedErro
 }
 
 /// Extract Ed25519 public key
-fn extract_ed25519_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn extract_ed25519_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
     if private_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("Ed25519 private key must be 32 bytes".to_string()));
     }
@@ -305,7 +305,7 @@ fn extract_ed25519_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedE
 }
 
 /// Extract X25519 public key
-fn extract_x25519_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedError> {
+fn extract_x25519_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
     if private_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
     }
@@ -332,7 +332,7 @@ fn extract_x25519_public_key(private_key_bytes: &[u8]) -> Result<Value, CursedEr
 }
 
 /// Validate public key format
-pub fn validate_public_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn validate_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Public key validation requires: algorithm, public_key".to_string()));
     }
@@ -404,7 +404,7 @@ fn validate_x25519_public_key(public_key_bytes: &[u8]) -> bool {
 }
 
 /// Convert public key between formats
-pub fn convert_public_key_format(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn convert_public_key_format(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Format conversion requires: algorithm, public_key, from_format, to_format".to_string()));
     }
@@ -451,7 +451,7 @@ fn convert_rsa_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -516,7 +516,7 @@ fn convert_p256_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -569,7 +569,7 @@ fn convert_p384_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -622,7 +622,7 @@ fn convert_p521_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -675,7 +675,7 @@ fn convert_ed25519_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Raw => {
@@ -727,7 +727,7 @@ fn convert_x25519_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Validate key length
     if public_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
@@ -757,7 +757,7 @@ fn convert_x25519_public_key_format(
 }
 
 /// Generate public key fingerprint
-pub fn public_key_fingerprint(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn public_key_fingerprint(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 1 {
         return Err(CursedError::InvalidArgument("Fingerprint generation requires: public_key".to_string()));
     }
@@ -796,7 +796,7 @@ pub fn public_key_fingerprint(args: Vec<Value>) -> Result<Value, CursedError> {
             hex::encode(hasher.finalize())
         },
         "MD5" => {
-            let mut hasher = md5::Md5::new();
+            let mut hasher = md5::Digest::new();
             hasher.update(&public_key_bytes);
             hex::encode(hasher.finalize())
         },

@@ -107,7 +107,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a complete program
-    pub fn extract_program_documentation(&mut self, program: &Program, file_path: &Path) -> Result<ModuleDocumentation, Error> {
+    pub fn extract_program_documentation(&mut self, program: &Program, file_path: &Path) -> Result<(), Error> {
         let module_name = self.derive_module_name(file_path);
         
         // Extract package-level documentation
@@ -156,7 +156,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from individual statements
-    pub fn extract_statement_documentation(&mut self, statement: &dyn Statement, module: &str) -> Result<Option<DocElement>, Error> {
+    pub fn extract_statement_documentation(&mut self, statement: &dyn Statement, module: &str) -> Result<(), Error> {
         use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
         use crate::ast::VariableStatement;
         
@@ -188,7 +188,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract function documentation
-    fn extract_function_documentation(&mut self, func: &FunctionStatement, module: &str) -> Result<DocElement, Error> {
+    fn extract_function_documentation(&mut self, func: &FunctionStatement, module: &str) -> Result<(), Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         // Extract function name and signature
@@ -235,7 +235,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract struct documentation
-    fn extract_struct_documentation(&mut self, struct_stmt: &SquadStatement, module: &str) -> Result<DocElement, Error> {
+    fn extract_struct_documentation(&mut self, struct_stmt: &SquadStatement, module: &str) -> Result<(), Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         let struct_name = &struct_stmt.name.value;
@@ -284,7 +284,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract interface documentation
-    fn extract_interface_documentation(&mut self, interface: &CollabStatement, module: &str) -> Result<DocElement, Error> {
+    fn extract_interface_documentation(&mut self, interface: &CollabStatement, module: &str) -> Result<(), Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         let interface_name = &interface.name.value;
@@ -333,7 +333,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract variable documentation
-    fn extract_variable_documentation(&mut self, var: &VariableStatement, module: &str) -> Result<DocElement, Error> {
+    fn extract_variable_documentation(&mut self, var: &VariableStatement, module: &str) -> Result<(), Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         let var_name = &var.name;
@@ -450,7 +450,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract parameter documentation
-    fn extract_parameter_docs(&self, parameters: &[crate::ast::expressions::Parameter]) -> Result<Vec<ParameterDoc>, Error> {
+    fn extract_parameter_docs(&self, parameters: &[crate::ast::expressions::Parameter]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut param_docs = Vec::new();
@@ -470,7 +470,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract field documentation
-    fn extract_field_docs(&self, fields: &[crate::ast::declarations::FieldStatement]) -> Result<Vec<FieldDoc>, Error> {
+    fn extract_field_docs(&self, fields: &[crate::ast::declarations::FieldStatement]) -> Result<(), Error> {
         let mut field_docs = Vec::new();
         
         for field in fields {
@@ -488,7 +488,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract method documentation
-    fn extract_method_docs(&self, methods: &[crate::ast::declarations::MethodDeclaration]) -> Result<Vec<MethodDoc>, Error> {
+    fn extract_method_docs(&self, methods: &[crate::ast::declarations::MethodDeclaration]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut method_docs = Vec::new();
@@ -509,7 +509,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract import documentation
-    fn extract_import_docs(&self, imports: &[ImportStatement]) -> Result<Vec<ImportDoc>, Error> {
+    fn extract_import_docs(&self, imports: &[ImportStatement]) -> Result<(), Error> {
         let mut import_docs = Vec::new();
         
         for import in imports {
@@ -547,7 +547,7 @@ impl DocumentationExtractor {
     }
 
     /// Find cross-references for a documentation item
-    fn find_references_for_item(&self, item: &DocElement) -> Result<Vec<CrossReference>, Error> {
+    fn find_references_for_item(&self, item: &DocElement) -> Result<(), Error> {
         let mut refs = Vec::new();
         
         // Search in signature
@@ -569,7 +569,7 @@ impl DocumentationExtractor {
     }
 
     /// Find references in text content
-    fn find_references_in_text(&self, text: &str, location: &SourceLocation) -> Result<Vec<CrossReference>, Error> {
+    fn find_references_in_text(&self, text: &str, location: &SourceLocation) -> Result<(), Error> {
         let mut refs = Vec::new();
         
         // Simple implementation - look for known symbols
@@ -619,7 +619,7 @@ impl DocumentationExtractor {
     }
 
     /// Gather source file information
-    fn gather_source_info(&self, file_path: &Path) -> Result<SourceInfo, Error> {
+    fn gather_source_info(&self, file_path: &Path) -> Result<(), Error> {
         use std::fs;
         
         let metadata = fs::metadata(file_path).map_err(Error::Io)?;
@@ -1089,7 +1089,7 @@ impl CommentParser {
     }
 
     /// Parse documentation for a specific location
-    pub fn parse_documentation_for_location(&self, _location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<CodeExample>), Error> {
+    pub fn parse_documentation_for_location(&self, _location: &SourceLocation) -> Result<(), Error> {
         // Simplified implementation - in practice would extract comments from token stream
         Ok((
             String::new(),      // summary
@@ -1100,7 +1100,7 @@ impl CommentParser {
     }
 
     /// Parse documentation content
-    pub fn parse_documentation_content(&self, content: &str) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<CodeExample>), Error> {
+    pub fn parse_documentation_content(&self, content: &str) -> Result<(), Error> {
         let mut summary = String::new();
         let mut description = String::new();
         let mut tags = HashMap::new();

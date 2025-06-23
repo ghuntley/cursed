@@ -489,7 +489,7 @@ fn handle_report_command(matches: &ArgMatches) -> Result<()> {
     println!("   Format: {}", format);
 
     if !profile_dir.exists() {
-        return Err(Error::Other(format!(
+        return Err(Error::General(format!(
             "Profile directory does not exist: {}", 
             profile_dir.display()
         )));
@@ -517,7 +517,7 @@ fn handle_report_command(matches: &ArgMatches) -> Result<()> {
             std::fs::write(output_file, content)?;
         }
         _ => {
-            return Err(Error::Other(format!("Unsupported format: {}", format)));
+            return Err(Error::General(format!("Unsupported format: {}", format)));
         }
     }
 
@@ -781,7 +781,7 @@ fn analyze_source_file(path: &std::path::Path) -> Result<SourceFileStats> {
     use std::fs;
     
     let content = fs::read_to_string(path)
-        .map_err(|e| Error::Other(format!("Failed to read file {}: {}", path.display(), e)))?;
+        .map_err(|e| Error::General(format!("Failed to read file {}: {}", path.display(), e)))?;
     
     let size = content.len();
     let lines = content.split("\n").count();
@@ -880,10 +880,10 @@ struct BenchmarkResult {
 /// Write benchmark results to file
 fn write_benchmark_results(results: &[BenchmarkResult], output_file: &PathBuf) -> Result<()> {
     let json = serde_json::to_string_pretty(results)
-        .map_err(|e| Error::Other(format!("Failed to serialize results: {}", e)))?;
+        .map_err(|e| Error::General(format!("Failed to serialize results: {}", e)))?;
     
     std::fs::write(output_file, json)
-        .map_err(|e| Error::Other(format!("Failed to write results: {}", e)))?;
+        .map_err(|e| Error::General(format!("Failed to write results: {}", e)))?;
     
     Ok(())
 }

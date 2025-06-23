@@ -53,9 +53,9 @@ lazy_static::lazy_static! {
 
 /// Helper function to acquire logger lock with proper error handling
 #[inline]
-fn with_logger<F, R>(f: F) -> Result<R, CursedError>
+fn with_logger<F, R>(f: F) -> Result<(), Error>
 where
-    F: FnOnce(&Logger) -> Result<R, CursedError>,
+    F: FnOnce(&Logger) -> Result<(), Error>,
 {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
@@ -65,9 +65,9 @@ where
 
 /// Helper function to acquire mutable logger lock with proper error handling
 #[inline]
-fn with_logger_mut<F, R>(f: F) -> Result<R, CursedError>
+fn with_logger_mut<F, R>(f: F) -> Result<(), Error>
 where
-    F: FnOnce(&mut Logger) -> Result<R, CursedError>,
+    F: FnOnce(&mut Logger) -> Result<(), Error>,
 {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
@@ -102,7 +102,7 @@ where
 /// ];
 /// spill(&args)?; // Prints: "Hello world\n"
 /// ```
-pub fn spill(args: &[Value]) -> Result<(), CursedError> {
+pub fn spill(args: &[Value]) -> Result<(), Error> {
     with_logger(|logger| logger.spill(args))
 }
 
@@ -126,7 +126,7 @@ pub fn spill(args: &[Value]) -> Result<(), CursedError> {
 ///     Value::Integer(5),
 /// ])?; // Prints: "Hello, Alice! You have 5 messages.\n"
 /// ```
-pub fn spillf(format: &str, args: &[Value]) -> Result<(), CursedError> {
+pub fn spillf(format: &str, args: &[Value]) -> Result<(), Error> {
     with_logger(|logger| logger.spillf(format, args))
 }
 
@@ -260,7 +260,7 @@ pub fn shookf(format: &str, args: &[Value]) -> ! {
 /// 
 /// set_flags(Ldate | Ltime)?; // Enable date and time in output
 /// ```
-pub fn set_flags(flags: i32) -> Result<(), CursedError> {
+pub fn set_flags(flags: i32) -> Result<(), Error> {
     with_logger_mut(|logger| {
         logger.set_flags(flags);
         Ok(())
@@ -286,7 +286,7 @@ pub fn set_flags(flags: i32) -> Result<(), CursedError> {
 /// let file = File::create("log.txt")?;
 /// set_output(Box::new(file))?; // Redirect output to file
 /// ```
-pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), CursedError> {
+pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), Error> {
     with_logger_mut(|logger| {
         logger.set_output(writer);
         Ok(())
@@ -311,7 +311,7 @@ pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), CursedError> {
 /// spill(&[Value::String("test".to_string())])?; 
 /// // Output: "MyApp: test"
 /// ```
-pub fn set_prefix(prefix: &str) -> Result<(), CursedError> {
+pub fn set_prefix(prefix: &str) -> Result<(), Error> {
     with_logger_mut(|logger| {
         logger.set_prefix(prefix.to_string());
         Ok(())
@@ -331,7 +331,7 @@ pub fn set_prefix(prefix: &str) -> Result<(), CursedError> {
 /// let current_flags = flags()?;
 /// println!("Current flags: {}", current_flags);
 /// ```
-pub fn flags() -> Result<i32, CursedError> {
+pub fn flags() -> Result<(), Error> {
     with_logger(|logger| Ok(logger.flags()))
 }
 
@@ -348,7 +348,7 @@ pub fn flags() -> Result<i32, CursedError> {
 /// let current_prefix = prefix()?;
 /// println!("Current prefix: '{}'", current_prefix);
 /// ```
-pub fn prefix() -> Result<String, CursedError> {
+pub fn prefix() -> Result<(), Error> {
     with_logger(|logger| Ok(logger.prefix()))
 }
 
@@ -367,7 +367,7 @@ pub fn prefix() -> Result<String, CursedError> {
 /// let writer_info = writer()?;
 /// println!("Current writer: {}", writer_info);
 /// ```
-pub fn writer() -> Result<String, CursedError> {
+pub fn writer() -> Result<(), Error> {
     with_logger(|logger| {
         // Since we can't actually return the writer due to type system limitations,
         // we return a descriptive string instead
@@ -389,7 +389,7 @@ pub fn writer() -> Result<String, CursedError> {
 /// spill(&[Value::String("Important message".to_string())])?;
 /// flush()?; // Ensure message is written immediately
 /// ```
-pub fn flush() -> Result<(), CursedError> {
+pub fn flush() -> Result<(), Error> {
     with_logger(|logger| logger.flush())
 }
 
@@ -406,7 +406,7 @@ pub fn flush() -> Result<(), CursedError> {
 /// ```
 /// reset_standard_logger()?; // Reset to defaults
 /// ```
-pub fn reset_standard_logger() -> Result<(), CursedError> {
+pub fn reset_standard_logger() -> Result<(), Error> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
     })?;
@@ -429,7 +429,7 @@ pub fn reset_standard_logger() -> Result<(), CursedError> {
 /// let logger_clone = get_standard_logger()?;
 /// // Use logger_clone independently
 /// ```
-pub fn get_standard_logger() -> Result<Logger, CursedError> {
+pub fn get_standard_logger() -> Result<(), Error> {
     with_logger(|logger| Ok(logger.clone()))
 }
 

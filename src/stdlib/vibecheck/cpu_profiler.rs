@@ -210,7 +210,7 @@ impl CpuProfiler {
     }
 
     /// Stop CPU profiling and return results
-    pub fn stop(&self) -> Result<CpuProfile, Error> {
+    pub fn stop(&self) -> Result<(), Error> {
         if !self.is_profiling.load(Ordering::SeqCst) {
             return Err(Error::Runtime("CPU profiler not running".to_string()));
         }
@@ -305,7 +305,7 @@ impl CpuProfiler {
     }
 
     /// Generate complete CPU profile
-    fn generate_profile(&self, profiling_duration: Duration) -> Result<CpuProfile, Error> {
+    fn generate_profile(&self, profiling_duration: Duration) -> Result<(), Error> {
         let function_calls = {
             let calls = self.function_calls.read()
                 .map_err(|_| Error::Runtime("Failed to lock function calls".to_string()))?;
@@ -334,7 +334,7 @@ impl CpuProfiler {
     }
 
     /// Build call graph from function calls
-    fn build_call_graph(&self, function_calls: &[FunctionCall]) -> Result<HashMap<String, CallGraphNode>, Error> {
+    fn build_call_graph(&self, function_calls: &[FunctionCall]) -> Result<(), Error> {
         if !self.config.call_graph {
             return Ok(HashMap::new());
         }
@@ -387,7 +387,7 @@ impl CpuProfiler {
     }
 
     /// Identify hot paths from CPU samples
-    fn identify_hot_paths(&self, samples: &[CpuSample]) -> Result<Vec<HotPath>, Error> {
+    fn identify_hot_paths(&self, samples: &[CpuSample]) -> Result<(), Error> {
         let mut path_counts = HashMap::new();
         let total_samples = samples.len() as u64;
 
@@ -425,7 +425,7 @@ impl CpuProfiler {
     }
 
     /// Detect performance bottlenecks
-    fn detect_bottlenecks(&self, function_calls: &[FunctionCall], call_graph: &HashMap<String, CallGraphNode>) -> Result<Vec<PerformanceBottleneck>, Error> {
+    fn detect_bottlenecks(&self, function_calls: &[FunctionCall], call_graph: &HashMap<String, CallGraphNode>) -> Result<(), Error> {
         let mut bottlenecks = Vec::new();
 
         // Find CPU-intensive functions
@@ -670,7 +670,7 @@ pub fn start_cpu_profiling() -> Result<(), Error> {
 }
 
 /// Stop CPU profiling and return results
-pub fn stop_cpu_profiling() -> Result<CpuProfile, Error> {
+pub fn stop_cpu_profiling() -> Result<(), Error> {
     let profiler = get_cpu_profiler();
     profiler.stop()
 }
@@ -694,7 +694,7 @@ pub struct FunctionProfileGuard {
 
 impl FunctionProfileGuard {
     /// Create a new function profile guard
-    pub fn new(name: String, module: String) -> Result<Self, Error> {
+    pub fn new(name: String, module: String) -> Result<(), Error> {
         profile_function_enter(name, module)?;
         Ok(Self { _phantom: std::marker::PhantomData })
     }

@@ -27,6 +27,7 @@ pub mod orm;
 // Database-specific drivers
 pub mod sqlite;
 pub mod postgres;
+pub mod redis;
 // pub mod mysql;  // Temporarily disabled - mysql crate not available
 
 // Re-export main types for easy access

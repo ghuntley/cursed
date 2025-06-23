@@ -51,7 +51,7 @@ pub mod utils {
     use std::time::Duration;
 
     /// Convert a synchronous function to an async one by running it in a thread pool
-    pub async fn spawn_blocking<F, R>(f: F) -> Result<R, FutureError>
+    pub async fn spawn_blocking<F, R>(f: F) -> Result<(), Error>
     where
         F: FnOnce() -> R + Send + 'static,
         R: Send + 'static,
@@ -102,7 +102,7 @@ pub mod utils {
         join.await
     }
 
-    /// Convert a Result<Future, Error> to a Future<Result<T, Error>>
+    /// Convert a Result<(), Error> to a Future<Result<(), Error>>
     pub async fn flatten_result<T, E, F>(result: Result<F, E>) -> Result<T, E>
     where
         F: std::future::Future<Output = T>,
@@ -216,7 +216,7 @@ impl From<FutureError> for AsyncError {
 }
 
 /// Result type for async operations
-pub type AsyncResult<T> = Result<T, AsyncError>;
+pub type AsyncResult<(), Error>;
 
 /// Helper functions for error conversion
 pub fn io_error(msg: &str) -> AsyncError {
@@ -240,7 +240,7 @@ pub fn timeout_error() -> AsyncError {
 }
 
 /// Initialize the async stdlib module
-pub fn initialize() -> Result<(), crate::error::Error> {
+pub fn initialize() -> Result<(), Error> {
     // Initialize any global async state
     crate::runtime::r#async::initialize_async_runtime()
 }

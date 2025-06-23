@@ -19,7 +19,7 @@ pub struct CryptoLlvmRegistry {
 pub struct CryptoLlvmFunction {
     pub name: String,
     pub signature: String,
-    pub implementation: Box<dyn Fn(&[Value]) -> Result<Value, CursedError> + Send + Sync>,
+    pub implementation: Box<dyn Fn(&[Value]) -> Result<(), Error> + Send + Sync>,
     pub intrinsic: bool,
     pub hardware_accelerated: bool,
 }
@@ -385,20 +385,20 @@ impl Default for CryptoLlvmRegistry {
 /// fr fr Crypto LLVM integration trait
 pub trait CryptoLlvmIntegration {
     /// slay Register crypto functions with LLVM
-    fn register_crypto_functions(&mut self) -> Result<(), CursedError>;
+    fn register_crypto_functions(&mut self) -> Result<(), Error>;
     
     /// slay Generate LLVM code for crypto operation
-    fn generate_crypto_operation(&mut self, operation: &str, args: &[Value]) -> Result<String, CursedError>;
+    fn generate_crypto_operation(&mut self, operation: &str, args: &[Value]) -> Result<(), Error>;
     
     /// slay Optimize crypto operations
-    fn optimize_crypto_operations(&mut self) -> Result<(), CursedError>;
+    fn optimize_crypto_operations(&mut self) -> Result<(), Error>;
     
     /// slay Enable hardware acceleration
-    fn enable_hardware_acceleration(&mut self) -> Result<(), CursedError>;
+    fn enable_hardware_acceleration(&mut self) -> Result<(), Error>;
 }
 
 impl CryptoLlvmIntegration for LlvmCodeGenerator {
-    fn register_crypto_functions(&mut self) -> Result<(), CursedError> {
+    fn register_crypto_functions(&mut self) -> Result<(), Error> {
         let registry = CryptoLlvmRegistry::new();
         
         // Register all crypto functions
@@ -414,7 +414,7 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
         Ok(())
     }
     
-    fn generate_crypto_operation(&mut self, operation: &str, args: &[Value]) -> Result<String, CursedError> {
+    fn generate_crypto_operation(&mut self, operation: &str, args: &[Value]) -> Result<(), Error> {
         let registry = CryptoLlvmRegistry::new();
         
         match registry.get_function(operation) {
@@ -484,7 +484,7 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
         }
     }
     
-    fn optimize_crypto_operations(&mut self) -> Result<(), CursedError> {
+    fn optimize_crypto_operations(&mut self) -> Result<(), Error> {
         // Enable LLVM crypto optimizations
         println!("Enabling crypto-specific LLVM optimizations:");
         println!("  - Constant-time operation enforcement");
@@ -497,7 +497,7 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
         Ok(())
     }
     
-    fn enable_hardware_acceleration(&mut self) -> Result<(), CursedError> {
+    fn enable_hardware_acceleration(&mut self) -> Result<(), Error> {
         println!("Enabling hardware acceleration for crypto operations:");
         println!("  - Intel AES-NI instructions");
         println!("  - Intel SHA extensions");
@@ -525,7 +525,7 @@ impl SecureKeyStorage {
     }
     
     /// slay Store key securely
-    pub fn store_key(&mut self, key_id: &str, key_data: Vec<u8>) -> Result<(), CursedError> {
+    pub fn store_key(&mut self, key_id: &str, key_data: Vec<u8>) -> Result<(), Error> {
         if self.protected {
             // In production, encrypt the key data
             self.keys.insert(key_id.to_string(), key_data);
@@ -536,14 +536,14 @@ impl SecureKeyStorage {
     }
     
     /// slay Retrieve key securely
-    pub fn retrieve_key(&self, key_id: &str) -> Result<Vec<u8>, CursedError> {
+    pub fn retrieve_key(&self, key_id: &str) -> Result<(), Error> {
         self.keys.get(key_id)
             .cloned()
             .ok_or_else(|| CursedError::Runtime(format!("Key not found: {}", key_id)))
     }
     
     /// slay Delete key securely
-    pub fn delete_key(&mut self, key_id: &str) -> Result<(), CursedError> {
+    pub fn delete_key(&mut self, key_id: &str) -> Result<(), Error> {
         if let Some(mut key_data) = self.keys.remove(key_id) {
             // Securely zero the key data
             for byte in &mut key_data {
@@ -566,7 +566,7 @@ impl Default for SecureKeyStorage {
 }
 
 /// fr fr Initialize crypto LLVM integration
-pub fn init_crypto_llvm_integration(codegen: &mut LlvmCodeGenerator) -> Result<(), CursedError> {
+pub fn init_crypto_llvm_integration(codegen: &mut LlvmCodeGenerator) -> Result<(), Error> {
     // Register crypto functions
     codegen.register_crypto_functions()?;
     

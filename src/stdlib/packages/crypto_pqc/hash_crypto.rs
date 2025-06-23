@@ -71,7 +71,7 @@ impl HashConfig {
     }
     
     /// periodt Validate hash configuration
-    pub fn validate(&self) -> Result<(), HashError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.winternitz_parameter < 2 || self.winternitz_parameter > 256 {
             return Err(HashError::InvalidConfig("Winternitz parameter must be between 2 and 256".to_string()));
         }
@@ -211,7 +211,7 @@ pub struct HashEngine {
 
 impl HashEngine {
     /// slay Create new hash-based engine
-    pub fn new(config: HashConfig) -> Result<Self, HashError> {
+    pub fn new(config: HashConfig) -> Result<(), Error> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -226,7 +226,7 @@ impl HashEngine {
     }
     
     /// bestie Generate hash-based key pair
-    pub fn generate_keypair(&mut self) -> Result<HashKeyPair, HashError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         match self.config.scheme_type {
             HashSchemeType::Lamport => self.generate_lamport_keypair(),
             HashSchemeType::Wots => self.generate_wots_keypair(),
@@ -237,7 +237,7 @@ impl HashEngine {
     }
     
     /// vibes Generate Lamport key pair
-    fn generate_lamport_keypair(&mut self) -> Result<HashKeyPair, HashError> {
+    fn generate_lamport_keypair(&mut self) -> Result<(), Error> {
         let hash_size = self.config.hash_output_size;
         let message_bits = hash_size * 8;
         
@@ -280,7 +280,7 @@ impl HashEngine {
     }
     
     /// periodt Generate WOTS key pair
-    fn generate_wots_keypair(&mut self) -> Result<HashKeyPair, HashError> {
+    fn generate_wots_keypair(&mut self) -> Result<(), Error> {
         let w = self.config.winternitz_parameter as usize;
         let hash_size = self.config.hash_output_size;
         
@@ -331,14 +331,14 @@ impl HashEngine {
     }
     
     /// sus Generate WOTS+ key pair (enhanced version)
-    fn generate_wots_plus_keypair(&mut self) -> Result<HashKeyPair, HashError> {
+    fn generate_wots_plus_keypair(&mut self) -> Result<(), Error> {
         // Similar to WOTS but with improved security properties
         // For now, delegate to WOTS implementation
         self.generate_wots_keypair()
     }
     
     /// facts Generate Merkle tree key pair
-    fn generate_merkle_keypair(&mut self) -> Result<HashKeyPair, HashError> {
+    fn generate_merkle_keypair(&mut self) -> Result<(), Error> {
         let tree_height = self.config.tree_height;
         let num_leaves = 1 << tree_height; // 2^height
         
@@ -379,7 +379,7 @@ impl HashEngine {
     }
     
     /// yolo Build Merkle tree from leaf key pairs
-    fn build_merkle_tree(&mut self, leaf_keypairs: &[HashKeyPair]) -> Result<MerkleTree, HashError> {
+    fn build_merkle_tree(&mut self, leaf_keypairs: &[HashKeyPair]) -> Result<(), Error> {
         if leaf_keypairs.is_empty() {
             return Err(HashError::TreeError("Cannot build tree from empty leaves".to_string()));
         }
@@ -424,7 +424,7 @@ impl HashEngine {
     }
     
     /// stan Sign message using hash-based scheme
-    pub fn sign(&mut self, message: &[u8], private_key: &mut HashPrivateKey) -> Result<HashSignature, HashError> {
+    pub fn sign(&mut self, message: &[u8], private_key: &mut HashPrivateKey) -> Result<(), Error> {
         if private_key.signature_count >= private_key.max_signatures {
             return Err(HashError::SigningError("Private key exhausted".to_string()));
         }
@@ -444,7 +444,7 @@ impl HashEngine {
     }
     
     /// bestie Sign with Lamport scheme
-    fn sign_lamport(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<HashSignature, HashError> {
+    fn sign_lamport(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<(), Error> {
         let hash_size = self.config.hash_output_size;
         let mut signature_data = Vec::new();
         
@@ -469,7 +469,7 @@ impl HashEngine {
     }
     
     /// vibes Sign with WOTS scheme
-    fn sign_wots(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<HashSignature, HashError> {
+    fn sign_wots(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<(), Error> {
         let w = self.config.winternitz_parameter as usize;
         let hash_size = self.config.hash_output_size;
         
@@ -508,14 +508,14 @@ impl HashEngine {
     }
     
     /// periodt Sign with WOTS+ scheme
-    fn sign_wots_plus(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<HashSignature, HashError> {
+    fn sign_wots_plus(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<(), Error> {
         // For now, use WOTS implementation
         // Real WOTS+ would include additional security measures
         self.sign_wots(message_hash, private_key)
     }
     
     /// sus Verify signature
-    pub fn verify(&mut self, message: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<bool, HashError> {
+    pub fn verify(&mut self, message: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
         let message_hash = self.hasher.hash(message)?;
         
         match signature.scheme_type {
@@ -527,7 +527,7 @@ impl HashEngine {
     }
     
     /// facts Verify Lamport signature
-    fn verify_lamport(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<bool, HashError> {
+    fn verify_lamport(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
         if signature.signature_data.len() != message_hash.len() * 8 {
             return Ok(false);
         }
@@ -551,7 +551,7 @@ impl HashEngine {
     }
     
     /// yolo Verify WOTS signature
-    fn verify_wots(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<bool, HashError> {
+    fn verify_wots(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
         let w = self.config.winternitz_parameter as usize;
         
         // Convert message hash to base-w representation
@@ -582,13 +582,13 @@ impl HashEngine {
     }
     
     /// stan Verify WOTS+ signature
-    fn verify_wots_plus(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<bool, HashError> {
+    fn verify_wots_plus(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
         // For now, use WOTS verification
         self.verify_wots(message_hash, signature, public_key)
     }
     
     /// bestie Convert bytes to base-w representation
-    fn to_base_w(&self, input: &[u8], w: usize) -> Result<Vec<usize>, HashError> {
+    fn to_base_w(&self, input: &[u8], w: usize) -> Result<(), Error> {
         if !w.is_power_of_two() || w < 2 {
             return Err(HashError::InvalidConfig("Winternitz parameter must be power of 2 >= 2".to_string()));
         }
@@ -609,7 +609,7 @@ impl HashEngine {
     }
     
     /// vibes Calculate WOTS checksum
-    fn calculate_wots_checksum(&self, base_w_msg: &[usize], w: usize) -> Result<Vec<u8>, HashError> {
+    fn calculate_wots_checksum(&self, base_w_msg: &[usize], w: usize) -> Result<(), Error> {
         let checksum_value: usize = base_w_msg.iter().map(|&x| w - 1 - x).sum();
         
         // Convert checksum to bytes (simplified)
@@ -642,14 +642,14 @@ pub struct HashFunctionImpl {
 }
 
 impl HashFunctionImpl {
-    pub fn new(function_type: HashFunction, output_size: usize) -> Result<Self, HashError> {
+    pub fn new(function_type: HashFunction, output_size: usize) -> Result<(), Error> {
         Ok(Self {
             function_type,
             output_size,
         })
     }
     
-    pub fn hash(&self, input: &[u8]) -> Result<Vec<u8>, HashError> {
+    pub fn hash(&self, input: &[u8]) -> Result<(), Error> {
         // Simplified hash implementation using SHA-256-like structure
         // In production, use proper cryptographic hash functions
         
@@ -720,20 +720,20 @@ pub struct HashKeyPair {
 
 impl HashKeyPair {
     /// slay Generate new hash-based key pair
-    pub fn generate(config: &HashConfig) -> Result<Self, HashError> {
+    pub fn generate(config: &HashConfig) -> Result<(), Error> {
         let mut engine = HashEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Sign message with private key
-    pub fn sign(&self, message: &[u8]) -> Result<HashSignature, HashError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         let mut engine = HashEngine::new(self.config.clone())?;
         let mut private_key = self.private_key.clone();
         engine.sign(message, &mut private_key)
     }
     
     /// vibes Verify signature with public key
-    pub fn verify(&self, message: &[u8], signature: &HashSignature) -> Result<bool, HashError> {
+    pub fn verify(&self, message: &[u8], signature: &HashSignature) -> Result<(), Error> {
         let mut engine = HashEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -810,7 +810,7 @@ impl HashUtils {
     }
     
     /// bestie Validate hash-based parameters for production
-    pub fn validate_for_production(config: &HashConfig) -> Result<HashSecurityValidation, HashError> {
+    pub fn validate_for_production(config: &HashConfig) -> Result<(), Error> {
         let is_secure = config.security_level.bits() >= 128;
         let estimated_signature_size = config.estimate_signature_size();
         

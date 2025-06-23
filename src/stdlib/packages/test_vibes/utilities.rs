@@ -14,7 +14,7 @@ pub struct TempFile {
 
 impl TempFile {
     /// fr fr Create a new temporary file
-    pub fn new(t: &mut VibeTest, pattern: &str) -> Result<(Self, String), std::io::Error> {
+    pub fn new(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
         let temp_dir = std::env::temp_dir();
         let file_name = format!("{}_{}", pattern, generate_random_suffix());
         let path = temp_dir.join(file_name);
@@ -36,7 +36,7 @@ impl TempFile {
     }
 
     /// fr fr Write content to the file
-    pub fn write_all(&mut self, content: &[u8]) -> Result<(), std::io::Error> {
+    pub fn write_all(&mut self, content: &[u8]) -> Result<(), Error> {
         if let Some(ref mut file) = self.file {
             file.write_all(content)?;
             file.flush()?;
@@ -45,7 +45,7 @@ impl TempFile {
     }
 
     /// fr fr Write string content to the file
-    pub fn write_string(&mut self, content: &str) -> Result<(), std::io::Error> {
+    pub fn write_string(&mut self, content: &str) -> Result<(), Error> {
         self.write_all(content.as_bytes())
     }
 }
@@ -64,7 +64,7 @@ pub struct TempDir {
 
 impl TempDir {
     /// fr fr Create a new temporary directory
-    pub fn new(t: &mut VibeTest, pattern: &str) -> Result<(Self, String), std::io::Error> {
+    pub fn new(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
         let temp_base = std::env::temp_dir();
         let dir_name = format!("{}_{}", pattern, generate_random_suffix());
         let path = temp_base.join(dir_name);
@@ -84,14 +84,14 @@ impl TempDir {
     }
 
     /// fr fr Create a file in the temporary directory
-    pub fn create_file(&self, name: &str) -> Result<PathBuf, std::io::Error> {
+    pub fn create_file(&self, name: &str) -> Result<(), Error> {
         let file_path = self.path.join(name);
         File::create(&file_path)?;
         Ok(file_path)
     }
 
     /// fr fr Create a subdirectory
-    pub fn create_dir(&self, name: &str) -> Result<PathBuf, std::io::Error> {
+    pub fn create_dir(&self, name: &str) -> Result<(), Error> {
         let dir_path = self.path.join(name);
         create_dir_all(&dir_path)?;
         Ok(dir_path)
@@ -108,12 +108,12 @@ impl Drop for TempDir {
 /// fr fr Convenience functions for temporary resources
 
 /// fr fr Create a temporary file
-pub fn temp_file(t: &mut VibeTest, pattern: &str) -> Result<(TempFile, String), std::io::Error> {
+pub fn temp_file(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
     TempFile::new(t, pattern)
 }
 
 /// fr fr Create a temporary directory
-pub fn temp_dir(t: &mut VibeTest, pattern: &str) -> Result<(TempDir, String), std::io::Error> {
+pub fn temp_dir(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
     TempDir::new(t, pattern)
 }
 
@@ -256,7 +256,7 @@ pub fn random_bytes(n: usize) -> Vec<u8> {
 /// fr fr File system test utilities
 
 /// fr fr Create a test file with content
-pub fn create_test_file(path: &Path, content: &str) -> Result<(), std::io::Error> {
+pub fn create_test_file(path: &Path, content: &str) -> Result<(), Error> {
     let mut file = File::create(path)?;
     file.write_all(content.as_bytes())?;
     file.flush()?;
@@ -264,7 +264,7 @@ pub fn create_test_file(path: &Path, content: &str) -> Result<(), std::io::Error
 }
 
 /// fr fr Read file content as string
-pub fn read_test_file(path: &Path) -> Result<String, std::io::Error> {
+pub fn read_test_file(path: &Path) -> Result<(), Error> {
     std::fs::read_to_string(path)
 }
 

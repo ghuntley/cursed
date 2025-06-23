@@ -95,7 +95,7 @@ pub trait QueryExecutor: Send + Sync {
         query: &str,
         args: &[SqlValue],
         context: QueryContext,
-    ) -> Result<QueryResult, DatabaseError>;
+    ) -> Result<(), Error>;
 
     /// slay Execute a query that doesn't return rows
     fn execute_statement(
@@ -103,16 +103,16 @@ pub trait QueryExecutor: Send + Sync {
         query: &str,
         args: &[SqlValue],
         context: QueryContext,
-    ) -> Result<QueryResult, DatabaseError>;
+    ) -> Result<(), Error>;
 
     /// slay Prepare a statement for later execution
-    fn prepare_statement(&self, query: &str) -> Result<Box<dyn PreparedStatement>, DatabaseError>;
+    fn prepare_statement(&self, query: &str) -> Result<(), Error>;
 }
 
 /// fr fr Prepared statement interface
 pub trait PreparedStatement: Send + Sync {
     /// slay Execute this prepared statement with arguments
-    fn execute(&self, args: &[SqlValue], context: QueryContext) -> Result<QueryResult, DatabaseError>;
+    fn execute(&self, args: &[SqlValue], context: QueryContext) -> Result<(), Error>;
 
     /// slay Get the original query string
     fn query(&self) -> &str;
@@ -121,5 +121,5 @@ pub trait PreparedStatement: Send + Sync {
     fn parameter_count(&self) -> usize;
 
     /// slay Close this prepared statement
-    fn close(&self) -> Result<(), DatabaseError>;
+    fn close(&self) -> Result<(), Error>;
 }

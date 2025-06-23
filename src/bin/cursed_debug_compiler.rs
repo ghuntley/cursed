@@ -170,7 +170,7 @@ fn parse_args() -> CliArgs {
 }
 
 /// Run the compiler with the given arguments
-fn run_compiler(args: CliArgs) -> Result<(), CursedError> {
+fn run_compiler(args: CliArgs) -> Result<(), Error> {
     let start_time = std::time::Instant::now();
     
     info!("Compiling CURSED file: {}", args.input_file.display());
@@ -251,7 +251,7 @@ fn run_compiler(args: CliArgs) -> Result<(), CursedError> {
 }
 
 /// Create a test AST for demonstration
-fn create_test_ast(source_file: &Path) -> Result<AST, CursedError> {
+fn create_test_ast(source_file: &Path) -> Result<(), Error> {
     let location = SourceLocation::new(source_file.to_path_buf(), 1, 1);
     
     // Create a simple test program with minimal AST structure
@@ -268,7 +268,7 @@ fn create_test_ast(source_file: &Path) -> Result<AST, CursedError> {
 }
 
 /// Output compilation results
-fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs) -> Result<(), CursedError> {
+fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs) -> Result<(), Error> {
     let output_path = args.output_file.as_ref()
         .cloned()
         .unwrap_or_else(|| {
@@ -329,7 +329,7 @@ fn demonstrate_debug_features() {
 }
 
 /// Validate debug information
-fn validate_debug_info(llvm_ir: &str) -> Result<(), CursedError> {
+fn validate_debug_info(llvm_ir: &str) -> Result<(), Error> {
     info!("Validating debug information in generated LLVM IR");
     
     let validation_checks = [

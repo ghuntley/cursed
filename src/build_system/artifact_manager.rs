@@ -276,13 +276,13 @@ pub enum SignatureAlgorithm {
 
 /// Storage backend trait
 pub trait StorageBackend: Send + Sync + std::fmt::Debug {
-    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), ArtifactError>;
-    fn retrieve_artifact(&self, artifact_id: &str) -> Result<Vec<u8>, ArtifactError>;
-    fn delete_artifact(&mut self, artifact_id: &str) -> Result<(), ArtifactError>;
-    fn list_artifacts(&self, filter: &ArtifactFilter) -> Result<Vec<String>, ArtifactError>;
-    fn get_artifact_info(&self, artifact_id: &str) -> Result<BuildArtifact, ArtifactError>;
-    fn health_check(&self) -> Result<StorageHealth, ArtifactError>;
-    fn get_storage_statistics(&self) -> Result<StorageStatistics, ArtifactError>;
+    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), Error>;
+    fn retrieve_artifact(&self, artifact_id: &str) -> Result<(), Error>;
+    fn delete_artifact(&mut self, artifact_id: &str) -> Result<(), Error>;
+    fn list_artifacts(&self, filter: &ArtifactFilter) -> Result<(), Error>;
+    fn get_artifact_info(&self, artifact_id: &str) -> Result<(), Error>;
+    fn health_check(&self) -> Result<(), Error>;
+    fn get_storage_statistics(&self) -> Result<(), Error>;
 }
 
 /// Artifact filter for querying
@@ -625,7 +625,7 @@ impl Default for ArtifactConfig {
 
 impl ArtifactManager {
     /// Create new artifact manager
-    pub fn new(config: ArtifactConfig) -> Result<Self, ArtifactError> {
+    pub fn new(config: ArtifactConfig) -> Result<(), Error> {
         let storage_backend = Self::create_storage_backend(&config)?;
         let version_manager = VersionManager::new(VersioningStrategy::Semantic);
         let cleanup_manager = CleanupManager::new();
@@ -661,7 +661,7 @@ impl ArtifactManager {
         build_result: &BuildResult,
         build_config: &BuildConfig,
         profile: &BuildProfile,
-    ) -> Result<Vec<String>, ArtifactError> {
+    ) -> Result<(), Error> {
         info!("Storing {} artifacts from build", build_result.outputs.len());
         
         let mut stored_artifact_ids = Vec::new();
@@ -707,7 +707,7 @@ impl ArtifactManager {
     
     /// Retrieve artifact by ID
     #[instrument(skip(self))]
-    pub async fn retrieve_artifact(&mut self, artifact_id: &str) -> Result<Vec<u8>, ArtifactError> {
+    pub async fn retrieve_artifact(&mut self, artifact_id: &str) -> Result<(), Error> {
         debug!("Retrieving artifact: {}", artifact_id);
         
         // Check metadata first
@@ -735,7 +735,7 @@ impl ArtifactManager {
     
     /// Search artifacts by filter
     #[instrument(skip(self))]
-    pub async fn search_artifacts(&self, filter: &ArtifactFilter) -> Result<Vec<BuildArtifact>, ArtifactError> {
+    pub async fn search_artifacts(&self, filter: &ArtifactFilter) -> Result<(), Error> {
         debug!("Searching artifacts with filter");
         
         let artifact_ids = self.storage_backend.list_artifacts(filter)?;
@@ -752,7 +752,7 @@ impl ArtifactManager {
     
     /// Clean up artifacts based on policies
     #[instrument(skip(self))]
-    pub async fn cleanup_artifacts(&mut self) -> Result<CleanupStatistics, ArtifactError> {
+    pub async fn cleanup_artifacts(&mut self) -> Result<(), Error> {
         info!("Starting artifact cleanup");
         
         let cleanup_result = self.cleanup_manager.run_cleanup(
@@ -777,7 +777,7 @@ impl ArtifactManager {
     pub async fn distribute_artifacts(
         &mut self,
         artifact_ids: &[String],
-    ) -> Result<DistributionStatistics, ArtifactError> {
+    ) -> Result<(), Error> {
         info!("Distributing {} artifacts", artifact_ids.len());
         
         let distribution_result = self.distribution_manager.distribute_artifacts(
@@ -799,7 +799,7 @@ impl ArtifactManager {
     
     /// Optimize storage (deduplication, compression, etc.)
     #[instrument(skip(self))]
-    pub async fn optimize_storage(&mut self) -> Result<(), ArtifactError> {
+    pub async fn optimize_storage(&mut self) -> Result<(), Error> {
         info!("Starting storage optimization");
         
         // Run deduplication
@@ -824,7 +824,7 @@ impl ArtifactManager {
         build_result: &BuildResult,
         build_config: &BuildConfig,
         profile: &BuildProfile,
-    ) -> Result<BuildArtifact, ArtifactError> {
+    ) -> Result<(), Error> {
         let metadata = fs::metadata(output_path)
             .map_err(|e| ArtifactError::IoError(e))?;
         
@@ -905,7 +905,7 @@ impl ArtifactManager {
     }
     
     /// Compress data using configured algorithm with real implementations
-    fn compress_data(&self, data: &[u8]) -> Result<Vec<u8>, ArtifactError> {
+    fn compress_data(&self, data: &[u8]) -> Result<(), Error> {
         use std::io::Write;
         
         match self.config.compression_algorithm {
@@ -943,7 +943,7 @@ impl ArtifactManager {
     }
     
     /// Decompress data with real implementations
-    fn decompress_data(&self, data: &[u8]) -> Result<Vec<u8>, ArtifactError> {
+    fn decompress_data(&self, data: &[u8]) -> Result<(), Error> {
         use std::io::Read;
         
         match self.config.compression_algorithm {
@@ -982,7 +982,7 @@ impl ArtifactManager {
     }
     
     /// Verify artifact integrity
-    fn verify_artifact_integrity(&self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), ArtifactError> {
+    fn verify_artifact_integrity(&self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), Error> {
         let calculated_checksum = self.calculate_checksum(data);
         if calculated_checksum != artifact.checksum {
             return Err(ArtifactError::IntegrityError(
@@ -993,7 +993,7 @@ impl ArtifactManager {
     }
     
     /// Create storage backend based on configuration
-    fn create_storage_backend(config: &ArtifactConfig) -> Result<Box<dyn StorageBackend>, ArtifactError> {
+    fn create_storage_backend(config: &ArtifactConfig) -> Result<(), Error> {
         match config.storage_backend {
             StorageBackendType::Local => Ok(Box::new(LocalStorageBackend::new(config.storage_dir.clone())?)),
             _ => Err(ArtifactError::ConfigurationError("Unsupported storage backend".to_string())),
@@ -1001,19 +1001,19 @@ impl ArtifactManager {
     }
     
     /// Run deduplication process
-    async fn run_deduplication(&mut self) -> Result<(), ArtifactError> {
+    async fn run_deduplication(&mut self) -> Result<(), Error> {
         // Placeholder for deduplication logic
         Ok(())
     }
     
     /// Optimize compression settings
-    async fn optimize_compression(&mut self) -> Result<(), ArtifactError> {
+    async fn optimize_compression(&mut self) -> Result<(), Error> {
         // Placeholder for compression optimization
         Ok(())
     }
     
     /// Update storage statistics
-    async fn update_storage_statistics(&mut self, artifact_ids: &[String]) -> Result<(), ArtifactError> {
+    async fn update_storage_statistics(&mut self, artifact_ids: &[String]) -> Result<(), Error> {
         self.statistics.total_artifacts += artifact_ids.len();
         self.statistics.artifacts_created_today += artifact_ids.len();
         
@@ -1040,7 +1040,7 @@ pub struct LocalStorageBackend {
 }
 
 impl LocalStorageBackend {
-    fn new(storage_dir: PathBuf) -> Result<Self, ArtifactError> {
+    fn new(storage_dir: PathBuf) -> Result<(), Error> {
         fs::create_dir_all(&storage_dir)
             .map_err(|e| ArtifactError::IoError(e))?;
         
@@ -1049,7 +1049,7 @@ impl LocalStorageBackend {
 }
 
 impl StorageBackend for LocalStorageBackend {
-    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), ArtifactError> {
+    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), Error> {
         let artifact_path = self.storage_dir.join(&artifact.artifact_id);
         fs::write(&artifact_path, data)
             .map_err(|e| ArtifactError::IoError(e))?;
@@ -1064,13 +1064,13 @@ impl StorageBackend for LocalStorageBackend {
         Ok(())
     }
     
-    fn retrieve_artifact(&self, artifact_id: &str) -> Result<Vec<u8>, ArtifactError> {
+    fn retrieve_artifact(&self, artifact_id: &str) -> Result<(), Error> {
         let artifact_path = self.storage_dir.join(artifact_id);
         fs::read(&artifact_path)
             .map_err(|e| ArtifactError::IoError(e))
     }
     
-    fn delete_artifact(&mut self, artifact_id: &str) -> Result<(), ArtifactError> {
+    fn delete_artifact(&mut self, artifact_id: &str) -> Result<(), Error> {
         let artifact_path = self.storage_dir.join(artifact_id);
         let metadata_path = self.storage_dir.join(format!("{}.meta", artifact_id));
         
@@ -1087,7 +1087,7 @@ impl StorageBackend for LocalStorageBackend {
         Ok(())
     }
     
-    fn list_artifacts(&self, _filter: &ArtifactFilter) -> Result<Vec<String>, ArtifactError> {
+    fn list_artifacts(&self, _filter: &ArtifactFilter) -> Result<(), Error> {
         let mut artifact_ids = Vec::new();
         
         for entry in fs::read_dir(&self.storage_dir)
@@ -1105,7 +1105,7 @@ impl StorageBackend for LocalStorageBackend {
         Ok(artifact_ids)
     }
     
-    fn get_artifact_info(&self, artifact_id: &str) -> Result<BuildArtifact, ArtifactError> {
+    fn get_artifact_info(&self, artifact_id: &str) -> Result<(), Error> {
         let metadata_path = self.storage_dir.join(format!("{}.meta", artifact_id));
         let metadata_json = fs::read_to_string(&metadata_path)
             .map_err(|e| ArtifactError::IoError(e))?;
@@ -1114,7 +1114,7 @@ impl StorageBackend for LocalStorageBackend {
             .map_err(|e| ArtifactError::StorageError(e.to_string()))
     }
     
-    fn health_check(&self) -> Result<StorageHealth, ArtifactError> {
+    fn health_check(&self) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Check if storage directory is accessible
@@ -1137,7 +1137,7 @@ impl StorageBackend for LocalStorageBackend {
         })
     }
     
-    fn get_storage_statistics(&self) -> Result<StorageStatistics, ArtifactError> {
+    fn get_storage_statistics(&self) -> Result<(), Error> {
         // Count artifacts
         let artifacts = self.list_artifacts(&ArtifactFilter::default())?;
         let total_artifacts = artifacts.len();
@@ -1161,7 +1161,7 @@ impl VersionManager {
         }
     }
     
-    fn add_version(&mut self, artifact: &BuildArtifact) -> Result<(), ArtifactError> {
+    fn add_version(&mut self, artifact: &BuildArtifact) -> Result<(), Error> {
         let version = self.generate_version(artifact)?;
         
         let history = self.version_store.entry(artifact.name.clone())
@@ -1188,7 +1188,7 @@ impl VersionManager {
         Ok(())
     }
     
-    fn generate_version(&self, artifact: &BuildArtifact) -> Result<Version, ArtifactError> {
+    fn generate_version(&self, artifact: &BuildArtifact) -> Result<(), Error> {
         match self.versioning_strategy {
             VersioningStrategy::Semantic => {
                 // Generate semantic version based on existing versions
@@ -1240,7 +1240,7 @@ impl CleanupManager {
         &mut self,
         storage: &mut dyn StorageBackend,
         metadata: &mut MetadataStore,
-    ) -> Result<CleanupStatistics, ArtifactError> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         let mut stats = CleanupStatistics {
             total_cleanups: 1,
@@ -1279,7 +1279,7 @@ impl CleanupManager {
         &self,
         policy: &CleanupPolicy,
         storage: &dyn StorageBackend,
-    ) -> Result<Vec<String>, ArtifactError> {
+    ) -> Result<(), Error> {
         // Simplified cleanup logic
         let all_artifacts = storage.list_artifacts(&ArtifactFilter::default())?;
         let mut artifacts_to_clean = Vec::new();
@@ -1337,7 +1337,7 @@ impl DistributionManager {
         artifact_ids: &[String],
         storage: &dyn StorageBackend,
         metadata: &MetadataStore,
-    ) -> Result<DistributionStatistics, ArtifactError> {
+    ) -> Result<(), Error> {
         let mut stats = DistributionStatistics {
             total_distributions: artifact_ids.len(),
             successful_distributions: 0,
@@ -1367,7 +1367,7 @@ impl DistributionManager {
         artifact_id: &str,
         storage: &dyn StorageBackend,
         metadata: &MetadataStore,
-    ) -> Result<usize, ArtifactError> {
+    ) -> Result<(), Error> {
         let artifact = metadata.get_metadata(artifact_id)?;
         let data = storage.retrieve_artifact(artifact_id)?;
         
@@ -1386,7 +1386,7 @@ impl DistributionManager {
         artifact: &BuildArtifact,
         data: &[u8],
         channel: &DistributionChannel,
-    ) -> Result<(), ArtifactError> {
+    ) -> Result<(), Error> {
         // Placeholder for actual distribution logic
         debug!("Distributing artifact {} to channel {}", artifact.artifact_id, channel.name);
         Ok(())
@@ -1402,7 +1402,7 @@ impl MetadataStore {
         }
     }
     
-    fn store_metadata(&mut self, artifact: &BuildArtifact) -> Result<(), ArtifactError> {
+    fn store_metadata(&mut self, artifact: &BuildArtifact) -> Result<(), Error> {
         self.artifact_metadata.insert(artifact.artifact_id.clone(), artifact.clone());
         
         // Update search indices
@@ -1411,19 +1411,19 @@ impl MetadataStore {
         Ok(())
     }
     
-    fn get_metadata(&self, artifact_id: &str) -> Result<BuildArtifact, ArtifactError> {
+    fn get_metadata(&self, artifact_id: &str) -> Result<(), Error> {
         self.artifact_metadata.get(artifact_id)
             .cloned()
             .ok_or_else(|| ArtifactError::ArtifactNotFound(artifact_id.to_string()))
     }
     
-    fn remove_metadata(&mut self, artifact_id: &str) -> Result<(), ArtifactError> {
+    fn remove_metadata(&mut self, artifact_id: &str) -> Result<(), Error> {
         self.artifact_metadata.remove(artifact_id);
         self.metadata_cache.remove(artifact_id);
         Ok(())
     }
     
-    fn update_access_time(&mut self, artifact_id: &str) -> Result<(), ArtifactError> {
+    fn update_access_time(&mut self, artifact_id: &str) -> Result<(), Error> {
         if let Some(artifact) = self.artifact_metadata.get_mut(artifact_id) {
             artifact.last_accessed = SystemTime::now();
         }
@@ -1442,7 +1442,7 @@ impl MetadataStore {
         target_index.insert(artifact.artifact_id.clone());
     }
     
-    async fn rebuild_indices(&mut self) -> Result<(), ArtifactError> {
+    async fn rebuild_indices(&mut self) -> Result<(), Error> {
         self.search_indices.clear();
         
         for artifact in self.artifact_metadata.values() {

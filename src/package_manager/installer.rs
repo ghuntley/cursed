@@ -127,7 +127,7 @@ impl PackageInstaller {
     pub fn new(
         database: Arc<Mutex<PackageDatabase>>,
         config: InstallerConfig,
-    ) -> Result<Self, InstallError> {
+    ) -> Result<(), Error> {
         let temp_dir = TempDir::new()
             .map_err(|e| InstallError::Io(e))?;
         
@@ -150,7 +150,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<InstalledPackage, InstallError> {
+    ) -> Result<(), Error> {
         info!("Starting installation");
         
         // Check if already installed
@@ -195,7 +195,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<InstalledPackage, InstallError> {
+    ) -> Result<(), Error> {
         info!("Starting package upgrade");
         
         let existing = self.get_installed_package(&package.name)?;
@@ -220,7 +220,7 @@ impl PackageInstaller {
     
     /// Uninstall a package
     #[instrument(skip(self), fields(package_name))]
-    pub fn uninstall_package(&mut self, package_name: &str) -> Result<(), InstallError> {
+    pub fn uninstall_package(&mut self, package_name: &str) -> Result<(), Error> {
         info!("Starting package uninstallation");
         
         let installed = self.get_installed_package(package_name)?;
@@ -245,7 +245,7 @@ impl PackageInstaller {
     }
     
     /// List all installed packages
-    pub fn list_installed(&self) -> Result<Vec<InstalledPackage>, InstallError> {
+    pub fn list_installed(&self) -> Result<(), Error> {
         let db = self.database.lock()
             .map_err(|e| InstallError::Database(format!("Lock failed: {}", e)))?;
         db.list_packages()
@@ -253,7 +253,7 @@ impl PackageInstaller {
     }
     
     /// Get specific installed package
-    pub fn get_installed_package(&self, name: &str) -> Result<InstalledPackage, InstallError> {
+    pub fn get_installed_package(&self, name: &str) -> Result<(), Error> {
         let db = self.database.lock()
             .map_err(|e| InstallError::Database(format!("Lock failed: {}", e)))?;
         db.get_package(name)
@@ -261,7 +261,7 @@ impl PackageInstaller {
     }
     
     /// Check package integrity
-    pub fn verify_package(&self, package_name: &str) -> Result<bool, InstallError> {
+    pub fn verify_package(&self, package_name: &str) -> Result<(), Error> {
         let installed = self.get_installed_package(package_name)?;
         
         for file_op in &installed.file_operations {
@@ -287,7 +287,7 @@ impl PackageInstaller {
     fn create_installation_context(
         &self,
         package: &PackageMetadata,
-    ) -> Result<InstallationContext, InstallError> {
+    ) -> Result<(), Error> {
         let temp_extract_dir = self.temp_dir.path().join(format!("{}-{}", package.name, package.version));
         fs::create_dir_all(&temp_extract_dir)?;
         
@@ -316,7 +316,7 @@ impl PackageInstaller {
         &self,
         package_data: &[u8],
         context: &mut InstallationContext,
-    ) -> Result<(), InstallError> {
+    ) -> Result<(), Error> {
         let format = self.detect_package_format(package_data)?;
         
         match format {
@@ -333,7 +333,7 @@ impl PackageInstaller {
         &self,
         package_data: &[u8],
         context: &mut InstallationContext,
-    ) -> Result<(), InstallError> {
+    ) -> Result<(), Error> {
         let gz_decoder = GzDecoder::new(package_data);
         let mut archive = Archive::new(gz_decoder);
         
@@ -387,7 +387,7 @@ impl PackageInstaller {
         &self,
         package_data: &[u8],
         context: &mut InstallationContext,
-    ) -> Result<(), InstallError> {
+    ) -> Result<(), Error> {
         let cursor = std::io::Cursor::new(package_data);
         let mut archive = ZipArchive::new(cursor)
             .map_err(|e| InstallError::ExtractionFailed { reason: e.to_string() })?;
@@ -443,7 +443,7 @@ impl PackageInstaller {
     }
     
     /// Detect package format from data
-    fn detect_package_format(&self, data: &[u8]) -> Result<PackageFormat, InstallError> {
+    fn detect_package_format(&self, data: &[u8]) -> Result<(), Error> {
         if data.len() < 4 {
             return Err(InstallError::UnsupportedFormat {
                 format: "Unknown format - insufficient data".to_string(),
@@ -466,7 +466,7 @@ impl PackageInstaller {
     }
     
     /// Validate extracted files
-    fn validate_extracted_files(&self, context: &InstallationContext) -> Result<(), InstallError> {
+    fn validate_extracted_files(&self, context: &InstallationContext) -> Result<(), Error> {
         // Check for required files (customize based on package requirements)
         let required_files = vec!["CursedPackage.toml"];
         
@@ -486,7 +486,7 @@ impl PackageInstaller {
     async fn execute_pre_install_scripts(
         &self,
         context: &InstallationContext,
-    ) -> Result<(), InstallError> {
+    ) -> Result<(), Error> {
         for script in &context.scripts {
             if script.phase == "pre-install" {
                 let script_context = ScriptContext {
@@ -511,7 +511,7 @@ impl PackageInstaller {
     async fn execute_post_install_scripts(
         &self,
         context: &InstallationContext,
-    ) -> Result<(), InstallError> {
+    ) -> Result<(), Error> {
         for script in &context.scripts {
             if script.phase == "post-install" {
                 let script_context = ScriptContext {
@@ -536,7 +536,7 @@ impl PackageInstaller {
     fn install_files(
         &mut self,
         context: &mut InstallationContext,
-    ) -> Result<Vec<FileOperation>, InstallError> {
+    ) -> Result<(), Error> {
         let mut file_operations = Vec::new();
         
         for file_path in &context.installed_files {
@@ -606,7 +606,7 @@ impl PackageInstaller {
         &self,
         context: &InstallationContext,
         file_operations: Vec<FileOperation>,
-    ) -> Result<InstalledPackage, InstallError> {
+    ) -> Result<(), Error> {
         let installed_package = InstalledPackage {
             name: context.package.name.clone(),
             version: context.package.version.clone(),
@@ -626,7 +626,7 @@ impl PackageInstaller {
     }
     
     /// Calculate file checksum (SHA-256)
-    fn calculate_file_checksum(&self, path: &Path) -> Result<String, InstallError> {
+    fn calculate_file_checksum(&self, path: &Path) -> Result<(), Error> {
         use sha2::{Sha256, Digest};
         
         let mut file = File::open(path)?;
@@ -666,7 +666,7 @@ impl PackageInstaller {
     }
     
     /// Create rollback point for upgrade
-    fn create_rollback_point(&self, package: &InstalledPackage) -> Result<RollbackData, InstallError> {
+    fn create_rollback_point(&self, package: &InstalledPackage) -> Result<(), Error> {
         info!("Creating rollback point for package {}", package.name);
         
         let rollback_dir = self.temp_dir.path().join(format!("rollback-{}-{}", package.name, package.version));
@@ -760,7 +760,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<InstalledPackage, InstallError> {
+    ) -> Result<(), Error> {
         // Remove old version first
         self.uninstall_package(&package.name)?;
         
@@ -773,7 +773,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<InstalledPackage, InstallError> {
+    ) -> Result<(), Error> {
         info!("Starting direct installation");
         
         // Create installation context
@@ -802,13 +802,13 @@ impl PackageInstaller {
     }
     
     /// Cleanup rollback point
-    fn cleanup_rollback_point(&self, _rollback_data: RollbackData) -> Result<(), InstallError> {
+    fn cleanup_rollback_point(&self, _rollback_data: RollbackData) -> Result<(), Error> {
         // Implementation would clean up rollback data
         Ok(())
     }
     
     /// Perform rollback
-    fn perform_rollback(&self, rollback_data: RollbackData) -> Result<(), InstallError> {
+    fn perform_rollback(&self, rollback_data: RollbackData) -> Result<(), Error> {
         info!("Performing rollback for package {}@{}", rollback_data.package_name, rollback_data.package_version);
         
         // Verify rollback data exists
@@ -967,20 +967,20 @@ impl PackageInstaller {
     }
     
     /// Check dependencies before uninstall
-    fn check_uninstall_dependencies(&self, _package: &InstalledPackage) -> Result<(), InstallError> {
+    fn check_uninstall_dependencies(&self, _package: &InstalledPackage) -> Result<(), Error> {
         // Check if other packages depend on this one
         // For now, just succeed
         Ok(())
     }
     
     /// Execute uninstall scripts
-    fn execute_uninstall_scripts(&self, _package: &InstalledPackage, _phase: &str) -> Result<(), InstallError> {
+    fn execute_uninstall_scripts(&self, _package: &InstalledPackage, _phase: &str) -> Result<(), Error> {
         // Implementation would execute uninstall scripts
         Ok(())
     }
     
     /// Remove package files
-    fn remove_package_files(&self, package: &InstalledPackage) -> Result<(), InstallError> {
+    fn remove_package_files(&self, package: &InstalledPackage) -> Result<(), Error> {
         for file_op in &package.file_operations {
             if file_op.path.exists() {
                 if file_op.path.is_dir() {
@@ -1004,7 +1004,7 @@ impl PackageInstaller {
     }
     
     /// Unregister package from database
-    fn unregister_package(&self, package_name: &str) -> Result<(), InstallError> {
+    fn unregister_package(&self, package_name: &str) -> Result<(), Error> {
         let mut db = self.database.lock()
             .map_err(|e| InstallError::Database(format!("Lock failed: {}", e)))?;
         

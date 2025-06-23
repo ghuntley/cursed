@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use dashmap::DashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, error, info, instrument, warn};
 use walkdir::WalkDir;
 
@@ -275,7 +275,7 @@ impl WorkspaceManager {
     }
 
     /// Analyze file semantically using CURSED compiler infrastructure
-    pub async fn analyze_file_semantically(&self, content: &str, uri: &Url) -> Result<Vec<WorkspaceSymbol>, CursedError> {
+    pub async fn analyze_file_semantically(&self, content: &str, uri: &Url) -> Result<(), Error> {
         debug!("Performing semantic analysis on {}", uri);
         
         // Parse the file using CURSED lexer and parser
@@ -665,7 +665,7 @@ impl WorkspaceManager {
     }
     
     /// Update file content and reanalyze
-    pub async fn update_file_content(&self, uri: &Url, content: &str) -> Result<(), CursedError> {
+    pub async fn update_file_content(&self, uri: &Url, content: &str) -> Result<(), Error> {
         debug!("Updating file content for: {}", uri);
         
         // Perform semantic analysis on updated content

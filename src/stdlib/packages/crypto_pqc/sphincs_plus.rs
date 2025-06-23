@@ -72,7 +72,7 @@ impl SphincsConfig {
     }
     
     /// vibes Validate SPHINCS+ configuration
-    pub fn validate(&self) -> Result<(), SphincsError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.n < 16 || self.n > 64 {
             return Err(SphincsError::InvalidConfig("n must be between 16 and 64".to_string()));
         }
@@ -193,7 +193,7 @@ pub struct SphincsEngine {
 
 impl SphincsEngine {
     /// slay Create new SPHINCS+ engine
-    pub fn new(config: SphincsConfig) -> Result<Self, SphincsError> {
+    pub fn new(config: SphincsConfig) -> Result<(), Error> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -213,7 +213,7 @@ impl SphincsEngine {
     }
     
     /// bestie Generate SPHINCS+ key pair
-    pub fn generate_keypair(&mut self) -> Result<SphincsKeyPair, SphincsError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         // Generate random seed SK.seed
         let mut sk_seed = vec![0u8; self.config.n];
         for byte in &mut sk_seed {
@@ -257,7 +257,7 @@ impl SphincsEngine {
     }
     
     /// vibes Sign message using SPHINCS+
-    pub fn sign(&mut self, message: &[u8], private_key: &SphincsPrivateKey) -> Result<SphincsSignature, SphincsError> {
+    pub fn sign(&mut self, message: &[u8], private_key: &SphincsPrivateKey) -> Result<(), Error> {
         // Step 1: Generate randomizer
         let randomizer = self.generate_randomizer(message, private_key)?;
         
@@ -308,7 +308,7 @@ impl SphincsEngine {
     }
     
     /// periodt Verify SPHINCS+ signature
-    pub fn verify(&mut self, message: &[u8], signature: &SphincsSignature, public_key: &SphincsPublicKey) -> Result<bool, SphincsError> {
+    pub fn verify(&mut self, message: &[u8], signature: &SphincsSignature, public_key: &SphincsPublicKey) -> Result<(), Error> {
         // Step 1: Compute message digest
         let digest = self.compute_message_digest(message, &signature.randomizer, &public_key.pk_seed, &public_key.pk_root)?;
         
@@ -352,7 +352,7 @@ impl SphincsEngine {
     }
     
     /// sus Generate randomizer for signatures
-    fn generate_randomizer(&mut self, message: &[u8], private_key: &SphincsPrivateKey) -> Result<Vec<u8>, SphincsError> {
+    fn generate_randomizer(&mut self, message: &[u8], private_key: &SphincsPrivateKey) -> Result<(), Error> {
         // PRF(SK.prf, opt_rand, M) where opt_rand can be random or deterministic
         let mut input = private_key.sk_prf.clone();
         input.extend_from_slice(message);
@@ -362,7 +362,7 @@ impl SphincsEngine {
     }
     
     /// facts Compute message digest
-    fn compute_message_digest(&mut self, message: &[u8], randomizer: &[u8], pk_seed: &[u8], pk_root: &[u8]) -> Result<Vec<u8>, SphincsError> {
+    fn compute_message_digest(&mut self, message: &[u8], randomizer: &[u8], pk_seed: &[u8], pk_root: &[u8]) -> Result<(), Error> {
         let mut input = Vec::new();
         input.extend_from_slice(randomizer);
         input.extend_from_slice(pk_seed);
@@ -374,7 +374,7 @@ impl SphincsEngine {
     }
     
     /// yolo Extract indices from message digest
-    fn extract_indices(&self, digest: &[u8]) -> Result<(usize, usize, Vec<usize>), SphincsError> {
+    fn extract_indices(&self, digest: &[u8]) -> Result<(), Error> {
         if digest.len() < 4 {
             return Err(SphincsError::InvalidInput("Digest too short".to_string()));
         }
@@ -402,7 +402,7 @@ impl SphincsEngine {
     }
     
     /// stan Compute root of hypertree
-    fn compute_root(&mut self, sk_seed: &[u8], pk_seed: &[u8]) -> Result<Vec<u8>, SphincsError> {
+    fn compute_root(&mut self, sk_seed: &[u8], pk_seed: &[u8]) -> Result<(), Error> {
         // Simplified root computation
         // In practice, this would build the actual hypertree
         let mut input = Vec::new();
@@ -415,7 +415,7 @@ impl SphincsEngine {
     }
     
     /// bestie Helper methods (simplified implementations)
-    fn derive_wots_private_key(&mut self, sk_seed: &[u8], layer: usize, tree: usize, leaf: usize) -> Result<Vec<Vec<u8>>, SphincsError> {
+    fn derive_wots_private_key(&mut self, sk_seed: &[u8], layer: usize, tree: usize, leaf: usize) -> Result<(), Error> {
         // Derive WOTS+ private key for specific tree position
         let chain_length = self.config.wots_chain_length();
         let mut wots_sk = Vec::new();
@@ -435,7 +435,7 @@ impl SphincsEngine {
         Ok(wots_sk)
     }
     
-    fn generate_auth_path(&mut self, layer: usize, tree: usize, leaf: usize, sk_seed: &[u8], pk_seed: &[u8]) -> Result<Vec<Vec<u8>>, SphincsError> {
+    fn generate_auth_path(&mut self, layer: usize, tree: usize, leaf: usize, sk_seed: &[u8], pk_seed: &[u8]) -> Result<(), Error> {
         // Generate authentication path for given position (simplified)
         let tree_height = self.config.tree_height();
         let mut auth_path = Vec::new();
@@ -457,7 +457,7 @@ impl SphincsEngine {
         Ok(auth_path)
     }
     
-    fn compute_parent_public_key(&mut self, child_pk: &[u8], layer: usize, tree: usize, leaf: usize) -> Result<Vec<u8>, SphincsError> {
+    fn compute_parent_public_key(&mut self, child_pk: &[u8], layer: usize, tree: usize, leaf: usize) -> Result<(), Error> {
         // Compute parent public key (simplified)
         let mut input = child_pk.to_vec();
         input.extend_from_slice(&layer.to_le_bytes());
@@ -469,7 +469,7 @@ impl SphincsEngine {
             .map_err(|e| SphincsError::SigningError(format!("Failed to compute parent PK: {}", e)))
     }
     
-    fn compute_tree_root(&mut self, leaf: &[u8], leaf_index: usize, auth_path: &[Vec<u8>]) -> Result<Vec<u8>, SphincsError> {
+    fn compute_tree_root(&mut self, leaf: &[u8], leaf_index: usize, auth_path: &[Vec<u8>]) -> Result<(), Error> {
         let mut current = leaf.to_vec();
         let mut index = leaf_index;
         
@@ -506,7 +506,7 @@ pub struct ForsEngine {
 }
 
 impl ForsEngine {
-    pub fn new(config: &SphincsConfig) -> Result<Self, SphincsError> {
+    pub fn new(config: &SphincsConfig) -> Result<(), Error> {
         Ok(Self {
             k: config.fors_trees,
             a: config.fors_height,
@@ -514,12 +514,12 @@ impl ForsEngine {
         })
     }
     
-    pub fn sign(&mut self, _digest: &[u8], _indices: &[usize], _sk_seed: &[u8], _pk_seed: &[u8]) -> Result<Vec<Vec<u8>>, SphincsError> {
+    pub fn sign(&mut self, _digest: &[u8], _indices: &[usize], _sk_seed: &[u8], _pk_seed: &[u8]) -> Result<(), Error> {
         // FORS signature generation (simplified)
         Ok(vec![vec![0u8; self.n]; self.k])
     }
     
-    pub fn public_key_from_signature(&mut self, _digest: &[u8], _signature: &[Vec<u8>], _indices: &[usize], _pk_seed: &[u8]) -> Result<Vec<u8>, SphincsError> {
+    pub fn public_key_from_signature(&mut self, _digest: &[u8], _signature: &[Vec<u8>], _indices: &[usize], _pk_seed: &[u8]) -> Result<(), Error> {
         // Compute FORS public key from signature (simplified)
         Ok(vec![0u8; self.n])
     }
@@ -534,7 +534,7 @@ pub struct WotsEngine {
 }
 
 impl WotsEngine {
-    pub fn new(config: &SphincsConfig) -> Result<Self, SphincsError> {
+    pub fn new(config: &SphincsConfig) -> Result<(), Error> {
         Ok(Self {
             w: config.wots_w,
             len: config.wots_chain_length(),
@@ -542,12 +542,12 @@ impl WotsEngine {
         })
     }
     
-    pub fn sign(&mut self, _message: &[u8], _private_key: &[Vec<u8>], _pk_seed: &[u8]) -> Result<Vec<Vec<u8>>, SphincsError> {
+    pub fn sign(&mut self, _message: &[u8], _private_key: &[Vec<u8>], _pk_seed: &[u8]) -> Result<(), Error> {
         // WOTS+ signature generation (simplified)
         Ok(vec![vec![0u8; self.n]; self.len])
     }
     
-    pub fn public_key_from_signature(&mut self, _message: &[u8], _signature: &[Vec<u8>], _pk_seed: &[u8]) -> Result<Vec<u8>, SphincsError> {
+    pub fn public_key_from_signature(&mut self, _message: &[u8], _signature: &[Vec<u8>], _pk_seed: &[u8]) -> Result<(), Error> {
         // Compute WOTS+ public key from signature (simplified)
         Ok(vec![0u8; self.n])
     }
@@ -563,19 +563,19 @@ pub struct SphincsKeyPair {
 
 impl SphincsKeyPair {
     /// slay Generate new SPHINCS+ key pair
-    pub fn generate(config: &SphincsConfig) -> Result<Self, SphincsError> {
+    pub fn generate(config: &SphincsConfig) -> Result<(), Error> {
         let mut engine = SphincsEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Sign message with private key
-    pub fn sign(&self, message: &[u8]) -> Result<SphincsSignature, SphincsError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         let mut engine = SphincsEngine::new(self.config.clone())?;
         engine.sign(message, &self.private_key)
     }
     
     /// vibes Verify signature with public key
-    pub fn verify(&self, message: &[u8], signature: &SphincsSignature) -> Result<bool, SphincsError> {
+    pub fn verify(&self, message: &[u8], signature: &SphincsSignature) -> Result<(), Error> {
         let mut engine = SphincsEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -657,7 +657,7 @@ impl SphincsUtils {
     }
     
     /// bestie Validate SPHINCS+ parameters for production
-    pub fn validate_for_production(config: &SphincsConfig) -> Result<SphincsSecurityValidation, SphincsError> {
+    pub fn validate_for_production(config: &SphincsConfig) -> Result<(), Error> {
         let is_secure = config.security_level.bits() >= 128;
         let signature_size = config.signature_size();
         

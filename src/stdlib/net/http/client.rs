@@ -950,7 +950,7 @@ mod json {
     
     impl<T: JsonSerialize> JsonSerialize for Vec<T> {
         fn to_json(&self) -> NetResult<String> {
-            let items: Result<Vec<String>, NetError> = self.iter()
+            let items: Result<(), Error> = self.iter()
                 .map(|item| item.to_json())
                 .collect();
             let items = items?;
@@ -960,7 +960,7 @@ mod json {
     
     impl<T: JsonSerialize> JsonSerialize for HashMap<String, T> {
         fn to_json(&self) -> NetResult<String> {
-            let items: Result<Vec<String>, NetError> = self.iter()
+            let items: Result<(), Error> = self.iter()
                 .map(|(k, v)| {
                     let value_json = v.to_json()?;
                     Ok(format!("\"{}\":{}", escape_json_string(k), value_json))

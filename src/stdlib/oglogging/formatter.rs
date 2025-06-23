@@ -9,7 +9,7 @@ pub fn format_log_entry(
     flags: i32,
     call_depth: usize,
     message: &str,
-) -> Result<String, CursedError> {
+) -> Result<(), Error> {
     let mut parts = Vec::new();
     
     // Handle prefix placement
@@ -59,7 +59,7 @@ pub fn format_log_entry(
 }
 
 /// Format date according to flags
-fn format_date(flags: i32) -> Result<String, CursedError> {
+fn format_date(flags: i32) -> Result<(), Error> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| CursedError::Runtime(format!("Failed to get system time: {}", e)))?;
@@ -80,7 +80,7 @@ fn format_date(flags: i32) -> Result<String, CursedError> {
 }
 
 /// Format time according to flags
-fn format_time(flags: i32) -> Result<String, CursedError> {
+fn format_time(flags: i32) -> Result<(), Error> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| CursedError::Runtime(format!("Failed to get system time: {}", e)))?;
@@ -112,7 +112,7 @@ fn format_time(flags: i32) -> Result<String, CursedError> {
 }
 
 /// Format file information according to flags
-fn format_file_info(flags: i32, call_depth: usize) -> Result<String, CursedError> {
+fn format_file_info(flags: i32, call_depth: usize) -> Result<(), Error> {
     // For now, we'll provide a basic implementation
     // In a full implementation, this would use stack inspection
     // to get the actual caller information
@@ -143,7 +143,7 @@ struct CallerInfo {
 /// Get caller information from the stack
 /// This is a simplified implementation - a full implementation would use
 /// backtrace crates or other stack inspection mechanisms
-fn get_caller_info(_call_depth: usize) -> Result<CallerInfo, CursedError> {
+fn get_caller_info(_call_depth: usize) -> Result<(), Error> {
     // For now, return placeholder information
     // In a production implementation, this would use:
     // - backtrace crate for stack inspection
@@ -158,7 +158,7 @@ fn get_caller_info(_call_depth: usize) -> Result<CallerInfo, CursedError> {
 }
 
 /// Utility function to get current timestamp as a formatted string
-pub fn get_timestamp(use_utc: bool, include_microseconds: bool) -> Result<String, CursedError> {
+pub fn get_timestamp(use_utc: bool, include_microseconds: bool) -> Result<(), Error> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| CursedError::Runtime(format!("Failed to get system time: {}", e)))?;

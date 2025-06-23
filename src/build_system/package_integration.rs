@@ -111,7 +111,7 @@ pub struct PackageStats {
 
 impl PackageIntegration {
     /// Create new package integration
-    pub fn new(config: PackageIntegrationConfig) -> Result<Self, PackageIntegrationError> {
+    pub fn new(config: PackageIntegrationConfig) -> Result<(), Error> {
         let package_manager = Arc::new(Mutex::new(
             PackageManager::new(config.package_manager_config.clone())?
         ));
@@ -134,7 +134,7 @@ impl PackageIntegration {
         &mut self,
         source: &str,
         source_file: Option<&Path>,
-    ) -> Result<IntegratedBuildResult, PackageIntegrationError> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         tracing::info!("Starting package-aware compilation");
@@ -241,7 +241,7 @@ impl PackageIntegration {
         &self,
         type_checker: &mut TypeChecker,
         loaded_modules: &HashMap<String, Arc<LoadedModule>>,
-    ) -> Result<(), PackageIntegrationError> {
+    ) -> Result<(), Error> {
         for (module_name, module) in loaded_modules {
             tracing::debug!(module = module_name, types = ?module.info.types, "Registering module types");
             
@@ -260,7 +260,7 @@ impl PackageIntegration {
     async fn generate_ir_with_packages(
         &mut self,
         context: &CompilationContext,
-    ) -> Result<String, PackageIntegrationError> {
+    ) -> Result<(), Error> {
         let mut codegen = LlvmCodeGenerator::new()?;
         
         // Compile package modules first
@@ -286,7 +286,7 @@ impl PackageIntegration {
     }
     
     /// Install packages from a package file
-    pub async fn install_dependencies(&mut self, package_file: &Path) -> Result<Vec<PackageMetadata>, PackageIntegrationError> {
+    pub async fn install_dependencies(&mut self, package_file: &Path) -> Result<(), Error> {
         // Read package metadata
         let content = std::fs::read_to_string(package_file)
             .map_err(|e| PackageIntegrationError::Compilation(Error::Io(e.into())))?;
@@ -319,7 +319,7 @@ impl PackageIntegration {
     }
     
     /// Check if all dependencies are satisfied
-    pub fn validate_dependencies(&self, package_file: &Path) -> Result<Vec<String>, PackageIntegrationError> {
+    pub fn validate_dependencies(&self, package_file: &Path) -> Result<(), Error> {
         let content = std::fs::read_to_string(package_file)
             .map_err(|e| PackageIntegrationError::Compilation(Error::Io(e.into())))?;
         
@@ -371,19 +371,19 @@ pub struct PackageAwareCompiler {
 
 impl PackageAwareCompiler {
     /// Create new package-aware compiler
-    pub fn new(config: PackageIntegrationConfig) -> Result<Self, PackageIntegrationError> {
+    pub fn new(config: PackageIntegrationConfig) -> Result<(), Error> {
         let integration = PackageIntegration::new(config)?;
         Ok(Self { integration })
     }
     
     /// Compile source with automatic package resolution
-    pub async fn compile(&mut self, source: &str, source_file: Option<&Path>) -> Result<String, PackageIntegrationError> {
+    pub async fn compile(&mut self, source: &str, source_file: Option<&Path>) -> Result<(), Error> {
         let result = self.integration.compile_with_packages(source, source_file).await?;
         Ok(result.llvm_ir)
     }
     
     /// Check source for errors including package dependencies
-    pub async fn check(&mut self, source: &str, source_file: Option<&Path>) -> Result<(), PackageIntegrationError> {
+    pub async fn check(&mut self, source: &str, source_file: Option<&Path>) -> Result<(), Error> {
         // Compilation check includes dependency resolution
         let _result = self.integration.compile_with_packages(source, source_file).await?;
         Ok(())

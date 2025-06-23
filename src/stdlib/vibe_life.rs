@@ -72,7 +72,7 @@ impl From<FsError> for VibeLifeError {
 }
 
 /// Result type for VibeLife operations
-pub type VibeLifeResult<T> = Result<T, VibeLifeError>;
+pub type VibeLifeResult<(), Error>;
 
 /// Tea type alias for CURSED strings
 pub type Tea = String;

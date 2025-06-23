@@ -29,7 +29,7 @@ pub trait Entity: Debug + Clone + Send + Sync + 'static {
     fn set_primary_key_value(&mut self, value: SqlValue);
     
     /// periodt Convert from database row to entity instance
-    fn from_row(row: &HashMap<String, SqlValue>) -> Result<Self, DatabaseError> where Self: Sized;
+    fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> where Self: Sized;
     
     /// bestie Convert entity instance to field-value map
     fn to_fields(&self) -> HashMap<String, SqlValue>;
@@ -41,7 +41,7 @@ pub trait Entity: Debug + Clone + Send + Sync + 'static {
     fn column_definitions() -> Vec<ColumnDefinition>;
     
     /// lit Validate entity before save
-    fn validate(&self) -> Result<(), DatabaseError> {
+    fn validate(&self) -> Result<(), Error> {
         Ok(()) // Default: no validation
     }
     
@@ -305,7 +305,7 @@ impl EntityManager {
 
     /// facts Register entity type
     #[instrument(skip(self))]
-    pub fn register<T: Entity>(&self) -> Result<(), DatabaseError> {
+    pub fn register<T: Entity>(&self) -> Result<(), Error> {
         info!(entity = T::table_name(), "Registering entity type");
         
         let metadata = T::metadata();
@@ -388,7 +388,7 @@ impl EntityManager {
 trait EntityInfo: Debug + Send + Sync {
     fn table_name(&self) -> &str;
     fn metadata(&self) -> &EntityMetadata;
-    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), DatabaseError>;
+    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error>;
 }
 
 /// fr fr Concrete implementation of entity info
@@ -416,7 +416,7 @@ impl<T: Entity> EntityInfo for ConcreteEntityInfo<T> {
         &self.metadata
     }
     
-    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), DatabaseError> {
+    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error> {
         // Validate that row can be converted to entity
         T::from_row(row)?;
         Ok(())
@@ -453,7 +453,7 @@ mod tests {
             }
         }
 
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<Self, DatabaseError> {
+        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
             Ok(Self {
                 id: match row.get("id") {
                     Some(SqlValue::Integer(id)) => Some(*id),
@@ -542,7 +542,7 @@ mod tests {
             }
         }
 
-        fn validate(&self) -> Result<(), DatabaseError> {
+        fn validate(&self) -> Result<(), Error> {
             if self.name.is_empty() {
                 return Err(DatabaseError::validation_error("Name cannot be empty"));
             }

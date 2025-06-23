@@ -68,7 +68,7 @@ pub struct StackFrame {
 
 /// Get caller frame information
 /// Skip n frames in the call stack
-pub fn caller(skip: i32) -> Result<(usize, String, i32, bool), Error> {
+pub fn caller(skip: i32) -> Result<(), Error> {
     // In a full implementation, this would use backtrace or similar
     // to walk the call stack and get symbol information
     
@@ -91,7 +91,7 @@ pub fn caller(skip: i32) -> Result<(usize, String, i32, bool), Error> {
 }
 
 /// Get function information for a program counter
-pub fn func_for_pc(pc: usize) -> Result<FuncInfo, Error> {
+pub fn func_for_pc(pc: usize) -> Result<(), Error> {
     // In a full implementation, this would resolve symbols
     // For now, provide a placeholder
     Ok(FuncInfo {
@@ -130,7 +130,7 @@ impl FuncInfo {
 }
 
 /// Get simplified call stack
-fn get_call_stack() -> Result<Vec<StackFrame>, Error> {
+fn get_call_stack() -> Result<(), Error> {
     // This is a simplified implementation
     // A full implementation would use backtrace crate or platform-specific APIs
     

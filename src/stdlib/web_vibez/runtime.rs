@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Runtime implementation for web_vibez HTTP server functions
 /// 
 /// This module provides the actual runtime implementations that the LLVM-generated
@@ -28,7 +29,7 @@ static mut GLOBAL_ROUTER: Option<Arc<Router>> = None;
 static mut GLOBAL_CLIENT: Option<Arc<HttpClient>> = None;
 
 /// Initialize the global HTTP server instance
-fn initialize_server() -> Result<(), ServerError> {
+fn initialize_server() -> Result<(), Error> {
     unsafe {
         if GLOBAL_SERVER.is_none() {
             let config = WebVibezConfig::default();
@@ -44,7 +45,7 @@ fn initialize_server() -> Result<(), ServerError> {
 }
 
 /// Get the global server instance
-fn get_server() -> Result<Arc<HttpServer>, ServerError> {
+fn get_server() -> Result<(), Error> {
     unsafe {
         GLOBAL_SERVER.clone().ok_or_else(|| {
             ServerError::ConfigError("Server not initialized".to_string())
@@ -53,7 +54,7 @@ fn get_server() -> Result<Arc<HttpServer>, ServerError> {
 }
 
 /// Get the global router instance
-fn get_router() -> Result<Arc<Router>, ServerError> {
+fn get_router() -> Result<(), Error> {
     unsafe {
         GLOBAL_ROUTER.clone().ok_or_else(|| {
             ServerError::ConfigError("Router not initialized".to_string())
@@ -62,7 +63,7 @@ fn get_router() -> Result<Arc<Router>, ServerError> {
 }
 
 /// Get the global client instance
-fn get_client() -> Result<Arc<HttpClient>, ServerError> {
+fn get_client() -> Result<(), Error> {
     unsafe {
         GLOBAL_CLIENT.clone().ok_or_else(|| {
             ServerError::ConfigError("Client not initialized".to_string())
@@ -71,7 +72,7 @@ fn get_client() -> Result<Arc<HttpClient>, ServerError> {
 }
 
 /// Convert C string to Rust string
-fn c_str_to_string(c_str: *const c_char) -> Result<String, ServerError> {
+fn c_str_to_string(c_str: *const c_char) -> Result<(), Error> {
     if c_str.is_null() {
         return Err(ServerError::ParseError("Null string pointer".to_string()));
     }
@@ -238,7 +239,7 @@ pub extern "C" fn web_vibez_handle_func(
 }
 
 /// Handle an incoming HTTP connection
-fn handle_connection(mut stream: TcpStream) -> Result<(), ServerError> {
+fn handle_connection(mut stream: TcpStream) -> Result<(), Error> {
     let mut buffer = [0; 1024];
     let bytes_read = stream.read(&mut buffer)
         .map_err(|e| ServerError::ConnectionError(format!("Read error: {}", e)))?;
@@ -424,7 +425,7 @@ fn make_http_request(
     url: &str,
     content_type: Option<&str>,
     body: Option<&str>,
-) -> Result<String, ServerError> {
+) -> Result<(), Error> {
     // This is a very basic HTTP client implementation
     // In production, you would use a proper HTTP client library like reqwest
     

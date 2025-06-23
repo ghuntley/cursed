@@ -135,7 +135,7 @@ impl RelationshipManager {
 
     /// facts Register relationship for entity
     #[instrument(skip(self))]
-    pub fn register_relationship(&self, entity_name: &str, relationship: Relationship) -> Result<(), DatabaseError> {
+    pub fn register_relationship(&self, entity_name: &str, relationship: Relationship) -> Result<(), Error> {
         debug!(entity = entity_name, relationship = %relationship.name, "Registering relationship");
         
         if let Ok(mut relationships) = self.relationships.lock() {
@@ -166,7 +166,7 @@ impl RelationshipManager {
         entity: &T,
         relationship_name: &str,
         db: Arc<DB>,
-    ) -> Result<Vec<R>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             entity = T::table_name(),
             relationship = relationship_name,
@@ -196,7 +196,7 @@ impl RelationshipManager {
         entity: &T,
         relationship_names: &[&str],
         db: Arc<DB>,
-    ) -> Result<HashMap<String, Vec<HashMap<String, SqlValue>>>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             entity = T::table_name(),
             relationships = ?relationship_names,
@@ -227,7 +227,7 @@ impl RelationshipManager {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    ) -> Result<(), Error> {
         match &relationship.relationship_type {
             RelationshipType::HasMany { foreign_key, local_key } => {
                 let local_value = entity.primary_key_value()
@@ -327,7 +327,7 @@ impl LazyLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<Vec<R>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             entity = T::table_name(),
             relationship = %relationship.name,
@@ -379,7 +379,7 @@ impl LazyLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             relationship_type = ?relationship.relationship_type,
             "Executing relationship query"
@@ -455,7 +455,7 @@ impl EagerLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<Vec<R>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             entity = T::table_name(),
             relationship = %relationship.name,
@@ -483,7 +483,7 @@ impl EagerLoader {
         entities: &[T],
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<HashMap<SqlValue, Vec<R>>, DatabaseError> {
+    ) -> Result<(), Error> {
         info!(
             entity_count = entities.len(),
             relationship = %relationship.name,
@@ -531,7 +531,7 @@ impl EagerLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             relationship_type = ?relationship.relationship_type,
             "Batch loading relationship for single entity"
@@ -581,7 +581,7 @@ impl EagerLoader {
         relationship: &Relationship,
         primary_keys: &[SqlValue],
         db: Arc<DB>,
-    ) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    ) -> Result<(), Error> {
         debug!(
             relationship = %relationship.name,
             key_count = primary_keys.len(),
@@ -758,7 +758,7 @@ mod tests {
         fn set_primary_key_value(&mut self, value: SqlValue) { 
             if let SqlValue::Integer(id) = value { self.id = Some(id); }
         }
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<Self, DatabaseError> {
+        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
             Ok(Self { id: None, name: "Test".to_string() })
         }
         fn to_fields(&self) -> HashMap<String, SqlValue> { HashMap::new() }
@@ -783,7 +783,7 @@ mod tests {
         fn set_primary_key_value(&mut self, value: SqlValue) { 
             if let SqlValue::Integer(id) = value { self.id = Some(id); }
         }
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<Self, DatabaseError> {
+        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
             Ok(Self { id: None, user_id: 1, title: "Test".to_string() })
         }
         fn to_fields(&self) -> HashMap<String, SqlValue> { 

@@ -477,12 +477,12 @@ impl ProfileData {
 }
 
 /// Serialize profile data to JSON
-pub fn serialize_to_json(profile_data: &ProfileData) -> Result<String, serde_json::Error> {
+pub fn serialize_to_json(profile_data: &ProfileData) -> Result<(), Error> {
     serde_json::to_string_pretty(profile_data)
 }
 
 /// Deserialize profile data from JSON
-pub fn deserialize_from_json(json_data: &str) -> Result<ProfileData, serde_json::Error> {
+pub fn deserialize_from_json(json_data: &str) -> Result<(), Error> {
     serde_json::from_str(json_data)
 }
 

@@ -30,7 +30,7 @@ use crate::stdlib::ipc::{
     IpcResult, IpcError, IpcHandle, IpcPermissions,
     permission_denied, connection_failed, timeout_error, resource_error
 };
-use crate::stdlib::ipc::types::IpcHandleType;
+use crate::stdlib::ipc::crate::types::IpcHandleType;
 use crate::stdlib::ipc::error::{communication_error_detailed, system_error};
 
 #[cfg(unix)]

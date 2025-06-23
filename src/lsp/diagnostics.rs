@@ -4,7 +4,7 @@
 //! using CURSED's actual compiler infrastructure
 
 use std::collections::HashMap;
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, error, instrument, warn, info};
 
 use crate::lexer::{Lexer, Token, TokenType};
@@ -81,7 +81,7 @@ impl DiagnosticsProvider {
     }
     
     /// Comprehensive analysis using CURSED compiler infrastructure
-    async fn analyze_with_compiler(&self, content: &str) -> Result<Vec<Diagnostic>, CursedError> {
+    async fn analyze_with_compiler(&self, content: &str) -> Result<(), Error> {
         info!("Running comprehensive compiler analysis");
         let mut diagnostics = Vec::new();
         
@@ -141,7 +141,7 @@ impl DiagnosticsProvider {
     }
     
     /// Analyze semantics using AST
-    async fn analyze_semantics(&self, ast: &Program) -> Result<Vec<Diagnostic>, CursedError> {
+    async fn analyze_semantics(&self, ast: &Program) -> Result<(), Error> {
         let mut diagnostics = Vec::new();
         
         // Check for unreachable code
@@ -160,7 +160,7 @@ impl DiagnosticsProvider {
     }
     
     /// Analyze types using type checker
-    async fn analyze_types(&self, ast: &Program) -> Result<Vec<Diagnostic>, CursedError> {
+    async fn analyze_types(&self, ast: &Program) -> Result<(), Error> {
         let mut diagnostics = Vec::new();
         
         if let Ok(mut type_checker) = self.type_checker.write() {
@@ -179,7 +179,7 @@ impl DiagnosticsProvider {
     }
     
     /// Analyze imports using import resolver
-    async fn analyze_imports(&self, ast: &Program) -> Result<Vec<Diagnostic>, CursedError> {
+    async fn analyze_imports(&self, ast: &Program) -> Result<(), Error> {
         let mut diagnostics = Vec::new();
         
         if let Ok(mut import_resolver) = self.import_resolver.write() {
@@ -437,7 +437,7 @@ impl DiagnosticsProvider {
     }
 
     /// Analyze lexer errors
-    fn analyze_lexer_errors(&self, content: &str) -> Result<Vec<Diagnostic>, Box<dyn std::error::Error>> {
+    fn analyze_lexer_errors(&self, content: &str) -> Result<(), Error>> {
         let mut diagnostics = Vec::new();
         let mut lexer = Lexer::new(content.to_string());
         
@@ -487,7 +487,7 @@ impl DiagnosticsProvider {
     }
 
     /// Analyze parser errors
-    fn analyze_parser_errors(&self, content: &str) -> Result<Vec<Diagnostic>, Box<dyn std::error::Error>> {
+    fn analyze_parser_errors(&self, content: &str) -> Result<(), Error>> {
         let mut diagnostics = Vec::new();
         let lexer = Lexer::new(content.to_string());
         let mut parser = match Parser::new(lexer) {
@@ -893,42 +893,42 @@ impl DiagnosticsProvider {
 
 
     /// Check type errors in content
-    pub fn check_type_errors(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_type_errors(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_type_errors_impl(content)
     }
 
     /// Check variable usage
-    pub fn check_variable_usage(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_variable_usage(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_variable_usage_impl(content)
     }
 
     /// Check function calls
-    pub fn check_function_calls(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_function_calls(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_function_calls_impl(content)
     }
 
     /// Check imports
-    pub fn check_imports(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_imports(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_imports_impl(content)
     }
 
     /// Check style issues
-    pub fn check_style_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_style_issues(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_style_issues_impl(content)
     }
 
     /// Check best practices
-    pub fn check_best_practices(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_best_practices(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_best_practices_impl(content)
     }
 
     /// Check performance issues
-    pub fn check_performance_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_performance_issues(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_performance_issues_impl(content)
     }
 
     /// Check security issues
-    pub fn check_security_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+    pub fn check_security_issues(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
         self.check_security_issues_impl(content)
     }
 }

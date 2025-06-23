@@ -189,7 +189,7 @@ impl From<X25519Error> for KeyGeneratorError {
     }
 }
 
-type KeyGeneratorResult<T> = Result<T, KeyGeneratorError>;
+type KeyGeneratorResult<(), Error>;
 
 /// fr fr Unified key generator for all asymmetric algorithms
 /// 
@@ -426,7 +426,7 @@ impl Default for KeyGenerator {
 use crate::stdlib::value::Value;
 
 /// slay Generate key pair for specified algorithm
-pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<(), Error> {
     let algorithm_name = if args.is_empty() {
         "Ed25519".to_string()
     } else {
@@ -464,7 +464,7 @@ pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<Value, CursedErro
 }
 
 /// slay List supported algorithms
-pub fn list_asymmetric_algorithms(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn list_asymmetric_algorithms(_args: Vec<Value>) -> Result<(), Error> {
     let algorithms = KeyGenerator::supported_algorithms();
     let mut result = Vec::new();
     

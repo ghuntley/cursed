@@ -75,7 +75,7 @@ impl LockFileManager {
 
     /// Load existing lock file from disk
     #[instrument(skip(self))]
-    pub fn load(&mut self) -> Result<Option<&LockFile>, PackageManagerError> {
+    pub fn load(&mut self) -> Result<(), Error> {
         if !self.lock_file_path.exists() {
             debug!("Lock file does not exist: {:?}", self.lock_file_path);
             return Ok(None);
@@ -109,7 +109,7 @@ impl LockFileManager {
 
     /// Save lock file to disk
     #[instrument(skip(self, lock_file))]
-    pub fn save(&mut self, lock_file: &LockFile) -> Result<(), PackageManagerError> {
+    pub fn save(&mut self, lock_file: &LockFile) -> Result<(), Error> {
         info!("Saving lock file to {:?} with {} packages", 
               self.lock_file_path, lock_file.packages.len());
 
@@ -282,7 +282,7 @@ impl LockFileManager {
     }
 
     /// Delete lock file from disk
-    pub fn delete(&mut self) -> Result<(), PackageManagerError> {
+    pub fn delete(&mut self) -> Result<(), Error> {
         if self.lock_file_path.exists() {
             fs::remove_file(&self.lock_file_path)
                 .map_err(|e| PackageManagerError::FileSystemError { 
@@ -319,7 +319,7 @@ impl LockFileManager {
     }
 
     /// Export lock file in different formats
-    pub fn export(&self, format: LockFileExportFormat) -> Result<String, PackageManagerError> {
+    pub fn export(&self, format: LockFileExportFormat) -> Result<(), Error> {
         let Some(lock_file) = &self.current_lock else {
             return Err(PackageManagerError::InvalidMetadata { 
                 reason: "No lock file loaded".to_string()
@@ -404,7 +404,7 @@ impl LockFileManager {
     }
     
     /// Load lock file from disk
-    pub fn load(&mut self) -> Result<(), PackageManagerError> {
+    pub fn load(&mut self) -> Result<(), Error> {
         self.load_from_disk()?;
         Ok(())
     }

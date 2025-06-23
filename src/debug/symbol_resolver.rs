@@ -35,7 +35,7 @@ impl SymbolResolver {
         qualified_name: String,
         metadata: SymbolMetadata,
         location: SymbolLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let resolved_symbol = ResolvedSymbol::new(qualified_name.clone(), metadata, location);
 
         {
@@ -54,7 +54,7 @@ impl SymbolResolver {
     }
 
     /// Resolve symbol by qualified name
-    pub fn resolve_symbol(&self, qualified_name: &str) -> Result<Option<ResolvedSymbol>, CursedError> {
+    pub fn resolve_symbol(&self, qualified_name: &str) -> Result<(), Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
 
@@ -62,7 +62,7 @@ impl SymbolResolver {
     }
 
     /// Find symbols by pattern
-    pub fn find_symbols(&self, pattern: &str) -> Result<Vec<ResolvedSymbol>, CursedError> {
+    pub fn find_symbols(&self, pattern: &str) -> Result<(), Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
 
@@ -76,7 +76,7 @@ impl SymbolResolver {
     }
 
     /// Find symbols by type
-    pub fn find_symbols_by_type(&self, symbol_type: SymbolType) -> Result<Vec<ResolvedSymbol>, CursedError> {
+    pub fn find_symbols_by_type(&self, symbol_type: SymbolType) -> Result<(), Error> {
         let indices = self.symbol_indices.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol indices lock".to_string()))?;
 
@@ -96,7 +96,7 @@ impl SymbolResolver {
     }
 
     /// Find symbols in file
-    pub fn find_symbols_in_file(&self, file_path: &PathBuf) -> Result<Vec<ResolvedSymbol>, CursedError> {
+    pub fn find_symbols_in_file(&self, file_path: &PathBuf) -> Result<(), Error> {
         let indices = self.symbol_indices.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol indices lock".to_string()))?;
 
@@ -116,7 +116,7 @@ impl SymbolResolver {
     }
 
     /// Find symbols with Gen Z keyword
-    pub fn find_gen_z_symbols(&self, keyword: &str) -> Result<Vec<ResolvedSymbol>, CursedError> {
+    pub fn find_gen_z_symbols(&self, keyword: &str) -> Result<(), Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
 
@@ -132,7 +132,7 @@ impl SymbolResolver {
     }
 
     /// Register type information
-    pub fn register_type(&self, type_name: String, type_info: TypeDebugInfo) -> Result<(), CursedError> {
+    pub fn register_type(&self, type_name: String, type_info: TypeDebugInfo) -> Result<(), Error> {
         let mut types = self.types.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
 
@@ -141,7 +141,7 @@ impl SymbolResolver {
     }
 
     /// Resolve type information
-    pub fn resolve_type(&self, type_name: &str) -> Result<Option<TypeDebugInfo>, CursedError> {
+    pub fn resolve_type(&self, type_name: &str) -> Result<(), Error> {
         let types = self.types.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
 
@@ -149,7 +149,7 @@ impl SymbolResolver {
     }
 
     /// Get symbol completion suggestions
-    pub fn get_completions(&self, prefix: &str, max_results: usize) -> Result<Vec<SymbolCompletion>, CursedError> {
+    pub fn get_completions(&self, prefix: &str, max_results: usize) -> Result<(), Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
 
@@ -182,7 +182,7 @@ impl SymbolResolver {
     }
 
     /// Get symbol statistics
-    pub fn get_statistics(&self) -> Result<SymbolStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
         let types = self.types.read()
@@ -215,7 +215,7 @@ impl SymbolResolver {
     }
 
     /// Clear all symbols
-    pub fn clear(&self) -> Result<(), CursedError> {
+    pub fn clear(&self) -> Result<(), Error> {
         {
             let mut symbols = self.symbols.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;

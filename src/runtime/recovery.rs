@@ -163,7 +163,7 @@ impl RecoveryManager {
     }
 
     /// Enter a new recovery scope
-    pub fn enter_scope(&self, scope_id: String, config: Option<RecoveryConfig>) -> Result<(), CursedError> {
+    pub fn enter_scope(&self, scope_id: String, config: Option<RecoveryConfig>) -> Result<(), Error> {
         let thread_id = thread::current().id();
         let config = config.unwrap_or_else(|| self.default_config.clone());
         
@@ -183,7 +183,7 @@ impl RecoveryManager {
     }
 
     /// Exit the current recovery scope
-    pub fn exit_scope(&self) -> Result<Option<String>, CursedError> {
+    pub fn exit_scope(&self) -> Result<(), Error> {
         let thread_id = thread::current().id();
         
         let mut scopes = self.scopes.lock()
@@ -200,7 +200,7 @@ impl RecoveryManager {
     }
 
     /// Get the current recovery scope
-    pub fn current_scope(&self) -> Result<Option<RecoveryScope>, CursedError> {
+    pub fn current_scope(&self) -> Result<(), Error> {
         let thread_id = thread::current().id();
         
         let scopes = self.scopes.lock()
@@ -228,14 +228,14 @@ impl RecoveryManager {
     }
 
     /// Get recovery statistics
-    pub fn get_statistics(&self) -> Result<RecoveryStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.read()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access recovery statistics".to_string()))
     }
 
     /// Update recovery statistics
-    fn update_stats<F>(&self, updater: F) -> Result<(), CursedError>
+    fn update_stats<F>(&self, updater: F) -> Result<(), Error>
     where
         F: FnOnce(&mut RecoveryStatistics),
     {
@@ -257,7 +257,7 @@ impl Default for RecoveryManager {
 static RECOVERY_MANAGER: std::sync::OnceLock<Arc<RecoveryManager>> = std::sync::OnceLock::new();
 
 /// Initialize the global recovery manager
-pub fn initialize_recovery_manager() -> Result<(), CursedError> {
+pub fn initialize_recovery_manager() -> Result<(), Error> {
     let manager = Arc::new(RecoveryManager::new());
     
     RECOVERY_MANAGER.set(manager)
@@ -272,7 +272,7 @@ pub fn get_recovery_manager() -> Option<&'static Arc<RecoveryManager>> {
 }
 
 /// Catch panic and attempt recovery
-pub fn catch_panic<T, F>(operation: F) -> Result<T, CursedError>
+pub fn catch_panic<T, F>(operation: F) -> Result<(), Error>
 where
     F: FnOnce() -> T + std::panic::UnwindSafe,
 {
@@ -283,7 +283,7 @@ where
 pub fn catch_panic_with_config<T, F>(
     operation: F,
     config: Option<RecoveryConfig>,
-) -> Result<T, CursedError>
+) -> Result<(), Error>
 where
     F: FnOnce() -> T + std::panic::UnwindSafe,
 {
@@ -402,7 +402,7 @@ pub struct RecoveryScopeGuard {
 
 impl RecoveryScopeGuard {
     /// Create a new recovery scope guard
-    pub fn new(scope_id: String, config: Option<RecoveryConfig>) -> Result<Self, CursedError> {
+    pub fn new(scope_id: String, config: Option<RecoveryConfig>) -> Result<(), Error> {
         let manager = get_recovery_manager().cloned();
         
         if let Some(ref mgr) = manager {

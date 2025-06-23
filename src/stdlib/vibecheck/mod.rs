@@ -21,8 +21,8 @@ pub use mem_stats::{
 pub use goroutine::*;
 pub use version::*;
 pub use gc::{
-    GcStats, GcError, collect_garbage, gc_enabled, enable_gc, disable_gc,
-    free_os_memory as gc_free_os_memory
+    GcStats, run_gc as collect_garbage, is_gc_enabled as gc_enabled, 
+    free_os_memory as gc_free_os_memory, get_gc_stats, configure_gc
 };
 
 // Re-export profiling functionality
@@ -126,7 +126,7 @@ fn get_runtime_state() -> Arc<Mutex<RuntimeState>> {
 }
 
 /// Get the start time of the program in nanoseconds since epoch
-pub fn start_time() -> Result<i64, Error> {
+pub fn start_time() -> Result<(), Error> {
     let state = get_runtime_state();
     let runtime = state.lock().map_err(|_| Error::Runtime("Failed to lock runtime state".to_string()))?;
     
@@ -217,21 +217,21 @@ pub fn set_cpu_profile_rate(rate: u32) -> Result<(), Error> {
 }
 
 /// Get current memory limit
-pub fn get_memory_limit() -> Result<Option<usize>, Error> {
+pub fn get_memory_limit() -> Result<(), Error> {
     let state = get_runtime_state();
     let runtime = state.lock().map_err(|_| Error::Runtime("Failed to lock runtime state".to_string()))?;
     Ok(runtime.hooks.memory_limit)
 }
 
 /// Get current CPU profile rate
-pub fn get_cpu_profile_rate() -> Result<Option<u32>, Error> {
+pub fn get_cpu_profile_rate() -> Result<(), Error> {
     let state = get_runtime_state();
     let runtime = state.lock().map_err(|_| Error::Runtime("Failed to lock runtime state".to_string()))?;
     Ok(runtime.hooks.cpu_profile_rate)
 }
 
 // Internal access for other modules
-pub(crate) fn get_alloc_stats() -> Result<AllocatorStats, Error> {
+pub(crate) fn get_alloc_stats() -> Result<(), Error> {
     let state = get_runtime_state();
     let runtime = state.lock().map_err(|_| Error::Runtime("Failed to lock runtime state".to_string()))?;
     Ok(AllocatorStats {
@@ -244,7 +244,7 @@ pub(crate) fn get_alloc_stats() -> Result<AllocatorStats, Error> {
     })
 }
 
-pub(crate) fn get_gc_state() -> Result<GcState, Error> {
+pub(crate) fn get_gc_state() -> Result<(), Error> {
     let state = get_runtime_state();
     let runtime = state.lock().map_err(|_| Error::Runtime("Failed to lock runtime state".to_string()))?;
     Ok(GcState {
@@ -256,7 +256,7 @@ pub(crate) fn get_gc_state() -> Result<GcState, Error> {
     })
 }
 
-pub(crate) fn set_gc_target_percent(percent: i32) -> Result<i32, Error> {
+pub(crate) fn set_gc_target_percent(percent: i32) -> Result<(), Error> {
     let state = get_runtime_state();
     let mut runtime = state.lock().map_err(|_| Error::Runtime("Failed to lock runtime state".to_string()))?;
     let old_percent = runtime.gc_state.target_percent;

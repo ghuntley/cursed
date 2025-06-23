@@ -19,7 +19,7 @@ use inkwell::{
     builder::Builder,
     passes::{PassManager},
     OptimizationLevel as InkwellOptLevel,
-    types::{BasicType, BasicTypeEnum, FunctionType},
+    crate::types::{BasicType, BasicTypeEnum, FunctionType},
     IntPredicate, FloatPredicate,
     AddressSpace,
 };

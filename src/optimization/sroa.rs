@@ -15,7 +15,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{FunctionValue, InstructionValue, StructValue, ArrayValue, BasicValueEnum, AggregateValueEnum},
-    types::{StructType, ArrayType, BasicType, AnyType},
+    crate::types::{StructType, ArrayType, BasicType, AnyType},
     basic_block::BasicBlock,
     builder::Builder,
 };
@@ -752,11 +752,11 @@ impl<'ctx> SroaOptimizer<'ctx> {
     
     // Helper methods
     
-    fn is_aggregate_type(&self, type_val: inkwell::types::AnyTypeEnum<'ctx>) -> bool {
+    fn is_aggregate_type(&self, type_val: inkwell::crate::types::AnyTypeEnum<'ctx>) -> bool {
         type_val.is_struct_type() || type_val.is_array_type()
     }
     
-    fn get_type_name(&self, type_val: inkwell::types::BasicTypeEnum<'ctx>) -> String {
+    fn get_type_name(&self, type_val: inkwell::crate::types::BasicTypeEnum<'ctx>) -> String {
         // Simplified type name extraction
         format!("{:?}", type_val)
     }
@@ -769,10 +769,10 @@ impl<'ctx> SroaOptimizer<'ctx> {
         format!("array_{}_{}", array_type.len(), self.get_type_name(array_type.get_element_type()))
     }
     
-    fn calculate_size_info(&self, type_val: inkwell::types::AnyTypeEnum<'ctx>) -> SizeInfo {
+    fn calculate_size_info(&self, type_val: inkwell::crate::types::AnyTypeEnum<'ctx>) -> SizeInfo {
         // Real size calculation based on LLVM type system
         let (static_size, alignment, element_count) = match type_val {
-            inkwell::types::AnyTypeEnum::ArrayType(array_type) => {
+            inkwell::crate::types::AnyTypeEnum::ArrayType(array_type) => {
                 let element_type = array_type.get_element_type();
                 let len = array_type.len() as usize;
                 let element_size = self.get_type_size_bits(&element_type) / 8;
@@ -782,7 +782,7 @@ impl<'ctx> SroaOptimizer<'ctx> {
                     Some(len)
                 )
             }
-            inkwell::types::AnyTypeEnum::StructType(struct_type) => {
+            inkwell::crate::types::AnyTypeEnum::StructType(struct_type) => {
                 let field_types = struct_type.get_field_types();
                 let mut total_size = 0;
                 let mut max_alignment = 1;

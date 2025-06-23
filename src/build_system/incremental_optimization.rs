@@ -523,7 +523,7 @@ impl Default for IncrementalConfig {
 
 impl IncrementalOptimizer {
     /// Create new incremental optimizer
-    pub fn new(config: IncrementalConfig, work_dir: PathBuf) -> Result<Self, BuildError> {
+    pub fn new(config: IncrementalConfig, work_dir: PathBuf) -> Result<(), Error> {
         let dependency_tracker = DependencyTracker::new(&config)?;
         let change_detector = ChangeDetector::new(&config)?;
         let invalidation_engine = InvalidationEngine::new(&config)?;
@@ -555,7 +555,7 @@ impl IncrementalOptimizer {
         &mut self,
         targets: &[BuildTarget],
         profile: &BuildProfile,
-    ) -> Result<IncrementalBuildPlan, BuildError> {
+    ) -> Result<(), Error> {
         info!("Analyzing incremental build for {} targets", targets.len());
         let start_time = Instant::now();
         
@@ -595,7 +595,7 @@ impl IncrementalOptimizer {
         &self,
         targets: &[BuildTarget],
         invalidation_result: &InvalidationResult,
-    ) -> Result<IncrementalBuildPlan, BuildError> {
+    ) -> Result<(), Error> {
         let mut files_to_compile = Vec::new();
         let mut files_from_cache = Vec::new();
         let mut compilation_order = Vec::new();
@@ -722,7 +722,7 @@ impl IncrementalOptimizer {
     }
     
     /// Optimize cache for better performance
-    pub async fn optimize_cache(&mut self) -> Result<(), BuildError> {
+    pub async fn optimize_cache(&mut self) -> Result<(), Error> {
         info!("Optimizing compilation cache");
         
         // Remove stale cache entries
@@ -757,7 +757,7 @@ pub struct ParallelGroup {
 }
 
 impl DependencyTracker {
-    fn new(config: &IncrementalConfig) -> Result<Self, BuildError> {
+    fn new(config: &IncrementalConfig) -> Result<(), Error> {
         Ok(DependencyTracker {
             file_dependencies: HashMap::new(),
             symbol_dependencies: HashMap::new(),
@@ -777,13 +777,13 @@ impl DependencyTracker {
         })
     }
     
-    async fn analyze_impact(&self, changes: &[ChangeRecord]) -> Result<Vec<ChangeRecord>, BuildError> {
+    async fn analyze_impact(&self, changes: &[ChangeRecord]) -> Result<(), Error> {
         // Analyze the impact of changes on the dependency graph
         // This is a placeholder implementation
         Ok(changes.to_vec())
     }
     
-    fn get_compilation_order(&self, files: &[PathBuf]) -> Result<Vec<PathBuf>, BuildError> {
+    fn get_compilation_order(&self, files: &[PathBuf]) -> Result<(), Error> {
         // Return topologically sorted compilation order
         // This is a placeholder implementation
         Ok(files.to_vec())
@@ -800,7 +800,7 @@ impl DependencyTracker {
 }
 
 impl ChangeDetector {
-    fn new(config: &IncrementalConfig) -> Result<Self, BuildError> {
+    fn new(config: &IncrementalConfig) -> Result<(), Error> {
         Ok(ChangeDetector {
             file_watchers: HashMap::new(),
             content_analyzers: HashMap::new(),
@@ -819,7 +819,7 @@ impl ChangeDetector {
         })
     }
     
-    async fn detect_changes(&mut self, targets: &[BuildTarget]) -> Result<Vec<ChangeRecord>, BuildError> {
+    async fn detect_changes(&mut self, targets: &[BuildTarget]) -> Result<(), Error> {
         let mut changes = Vec::new();
         
         for target in targets {
@@ -831,7 +831,7 @@ impl ChangeDetector {
         Ok(changes)
     }
     
-    async fn check_file_changes(&self, file_path: &PathBuf) -> Result<Option<ChangeRecord>, BuildError> {
+    async fn check_file_changes(&self, file_path: &PathBuf) -> Result<(), Error> {
         let metadata = fs::metadata(file_path).map_err(|e| BuildError::IoError(e))?;
         let modified = metadata.modified().map_err(|e| BuildError::IoError(e))?;
         
@@ -856,7 +856,7 @@ impl ChangeDetector {
 }
 
 impl InvalidationEngine {
-    fn new(config: &IncrementalConfig) -> Result<Self, BuildError> {
+    fn new(config: &IncrementalConfig) -> Result<(), Error> {
         Ok(InvalidationEngine {
             invalidation_rules: Vec::new(),
             propagation_analyzer: PropagationAnalyzer {
@@ -875,7 +875,7 @@ impl InvalidationEngine {
         })
     }
     
-    async fn compute_invalidation(&self, changes: &[ChangeRecord]) -> Result<InvalidationResult, BuildError> {
+    async fn compute_invalidation(&self, changes: &[ChangeRecord]) -> Result<(), Error> {
         let mut files_to_recompile = Vec::new();
         let mut symbols_to_reanalyze = Vec::new();
         let mut modules_to_rebuild = Vec::new();
@@ -899,7 +899,7 @@ impl InvalidationEngine {
 }
 
 impl CompilationCache {
-    fn new(config: &IncrementalConfig, work_dir: PathBuf) -> Result<Self, BuildError> {
+    fn new(config: &IncrementalConfig, work_dir: PathBuf) -> Result<(), Error> {
         Ok(CompilationCache {
             file_cache: HashMap::new(),
             symbol_cache: HashMap::new(),
@@ -915,15 +915,15 @@ impl CompilationCache {
         })
     }
     
-    fn has_valid_cache(&self, file_path: &PathBuf) -> Result<bool, BuildError> {
+    fn has_valid_cache(&self, file_path: &PathBuf) -> Result<(), Error> {
         Ok(self.file_cache.contains_key(file_path))
     }
     
-    fn get_file_cache_entry(&self, file_path: &PathBuf) -> Result<Option<&FileCacheEntry>, BuildError> {
+    fn get_file_cache_entry(&self, file_path: &PathBuf) -> Result<(), Error> {
         Ok(self.file_cache.get(file_path))
     }
     
-    async fn cleanup_stale_entries(&mut self) -> Result<(), BuildError> {
+    async fn cleanup_stale_entries(&mut self) -> Result<(), Error> {
         // Remove cache entries for files that no longer exist or are outdated
         let mut stale_keys = Vec::new();
         
@@ -946,7 +946,7 @@ impl CompilationCache {
         Ok(())
     }
     
-    async fn compact_storage(&mut self) -> Result<(), BuildError> {
+    async fn compact_storage(&mut self) -> Result<(), Error> {
         // Compact cache storage by removing redundant entries
         // This is a placeholder implementation
         Ok(())

@@ -52,7 +52,7 @@ impl MultipartProcessor {
         self
     }
 
-    pub fn parse(&self, data: &[u8]) -> Result<MultipartData, MultipartError> {
+    pub fn parse(&self, data: &[u8]) -> Result<(), Error> {
         if self.boundary.is_empty() {
             return Err(MultipartError::InvalidBoundary);
         }
@@ -141,7 +141,7 @@ impl MultipartProcessor {
     }
 
     /// Parse individual multipart part
-    fn parse_part(&self, part_data: &[u8]) -> Result<ParsedPart, MultipartError> {
+    fn parse_part(&self, part_data: &[u8]) -> Result<(), Error> {
         // Find separator between headers and body
         let header_end = if let Some(pos) = Self::find_sequence(part_data, b"\r\n\r\n") {
             pos

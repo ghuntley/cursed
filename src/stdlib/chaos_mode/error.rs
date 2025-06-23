@@ -47,7 +47,7 @@ impl fmt::Display for ChaosError {
 
 impl std::error::Error for ChaosError {}
 
-pub type ChaosResult<T> = Result<T, ChaosError>;
+pub type ChaosResult<(), Error>;
 
 // Helper functions for creating errors
 pub fn runtime_error(msg: &str) -> ChaosError {
@@ -101,8 +101,8 @@ impl From<std::io::Error> for ChaosError {
     }
 }
 
-impl From<crate::error::types::RuntimeError> for ChaosError {
-    fn from(err: crate::error::types::RuntimeError) -> Self {
+impl From<crate::error::crate::types::RuntimeError> for ChaosError {
+    fn from(err: crate::error::crate::types::RuntimeError) -> Self {
         ChaosError::RuntimeError(err.to_string())
     }
 }

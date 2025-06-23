@@ -83,7 +83,7 @@ impl LlvmPackageContext {
     pub fn new(
         package_manager: Arc<Mutex<PackageManager>>,
         config: LlvmPackageConfig,
-    ) -> Result<Self, LlvmPackageError> {
+    ) -> Result<(), Error> {
         let import_config = ImportResolverConfig::default();
         let import_manager = ImportManager::new(package_manager.clone(), import_config)?;
         
@@ -101,7 +101,7 @@ impl LlvmPackageContext {
         &mut self,
         source: &str,
         source_file: Option<&Path>,
-    ) -> Result<String, LlvmPackageError> {
+    ) -> Result<(), Error> {
         tracing::info!("Starting LLVM compilation with package integration");
         
         // Parse the main program to extract imports
@@ -127,7 +127,7 @@ impl LlvmPackageContext {
     }
     
     /// Parse program and extract imports
-    fn parse_program(&self, source: &str) -> Result<Program, LlvmPackageError> {
+    fn parse_program(&self, source: &str) -> Result<(), Error> {
         let lexer = crate::lexer::Lexer::new(source.to_string());
         let mut parser = crate::parser::Parser::new(lexer)?;
         let program = parser.parse_program()?;
@@ -147,7 +147,7 @@ impl LlvmPackageContext {
         &mut self,
         imports: &[ImportStatement],
         source_file: Option<&Path>,
-    ) -> Result<Vec<ResolvedImport>, LlvmPackageError> {
+    ) -> Result<(), Error> {
         let mut resolved = Vec::new();
         
         for import in imports {
@@ -186,7 +186,7 @@ impl LlvmPackageContext {
     }
     
     /// Install a package using the package manager
-    pub async fn install_package(&mut self, package_name: &str) -> Result<PackageMetadata, LlvmPackageError> {
+    pub async fn install_package(&mut self, package_name: &str) -> Result<(), Error> {
         let mut package_manager = self.package_manager.lock().map_err(|_| {
             LlvmPackageError::PackageManager(PackageManagerError::RegistryError {
                 message: "Failed to lock package manager".to_string(),
@@ -196,7 +196,7 @@ impl LlvmPackageContext {
         let installed_packages = package_manager.install_package(package_name, None).await?;
         
         installed_packages.into_iter()
-            .find(|p| p.name == package_name)
+            .find(|p| p.to_string() == package_name)
             .ok_or_else(|| LlvmPackageError::PackageNotInstalled {
                 package: package_name.to_string(),
             })
@@ -206,7 +206,7 @@ impl LlvmPackageContext {
     async fn load_and_compile_packages(
         &mut self,
         resolved_imports: &[ResolvedImport],
-    ) -> Result<Vec<CompiledPackageModule>, LlvmPackageError> {
+    ) -> Result<(), Error> {
         let mut compiled_modules = Vec::new();
         
         for resolved in resolved_imports {
@@ -233,7 +233,7 @@ impl LlvmPackageContext {
         &mut self,
         loaded_module: &LoadedModule,
         resolved_import: &ResolvedImport,
-    ) -> Result<CompiledPackageModule, LlvmPackageError> {
+    ) -> Result<(), Error> {
         let package_name = match &resolved_import.source {
             ImportSource::InstalledPackage { package_name } => package_name.clone(),
             ImportSource::LocalFile { .. } => "local".to_string(),
@@ -241,7 +241,7 @@ impl LlvmPackageContext {
             ImportSource::StandardLibrary { .. } => "stdlib".to_string(),
         };
         
-        let module_name = loaded_module.info.name.clone();
+        let module_name = loaded_module.info.to_string().clone();
         
         // Check cache first
         let cache_key = format!("{}::{}", package_name, module_name);
@@ -304,7 +304,7 @@ impl LlvmPackageContext {
     fn register_package_symbols(
         &mut self,
         modules: &[CompiledPackageModule],
-    ) -> Result<(), LlvmPackageError> {
+    ) -> Result<(), Error> {
         for module in modules {
             for symbol in &module.exported_symbols {
                 let qualified_name = format!("{}::{}", module.module_name, symbol);
@@ -322,7 +322,7 @@ impl LlvmPackageContext {
     }
     
     /// Compile main program with package symbol resolution
-    async fn compile_main_program(&mut self, program: &Program) -> Result<String, LlvmPackageError> {
+    async fn compile_main_program(&mut self, program: &Program) -> Result<(), Error> {
         // Create a code generator for main program
         let mut codegen = LlvmCodeGenerator::new()?;
         
@@ -341,7 +341,7 @@ impl LlvmPackageContext {
         &self,
         main_ir: String,
         package_modules: Vec<CompiledPackageModule>,
-    ) -> Result<String, LlvmPackageError> {
+    ) -> Result<(), Error> {
         let mut final_ir = String::new();
         
         // Add target information
@@ -394,7 +394,7 @@ impl LlvmPackageContext {
     }
     
     /// Resolve a specific package import
-    pub async fn resolve_package_import(&mut self, import_path: &str) -> Result<CompiledPackageModule, LlvmPackageError> {
+    pub async fn resolve_package_import(&mut self, import_path: &str) -> Result<(), Error> {
         // Create a minimal import statement
         let import = ImportStatement {
             token: crate::lexer::Token::new(crate::lexer::TokenType::Identifier, import_path),
@@ -430,16 +430,16 @@ pub trait LlvmPackageIntegration {
         &mut self,
         source: &str,
         source_file: Option<&Path>,
-    ) -> Result<String, LlvmPackageError>;
+    ) -> Result<(), Error>;
     
     /// Resolve and compile a package import
     async fn resolve_package_import(
         &mut self,
         import_path: &str,
-    ) -> Result<CompiledPackageModule, LlvmPackageError>;
+    ) -> Result<(), Error>;
     
     /// Check if packages are available for compilation
-    fn validate_package_dependencies(&self, imports: &[ImportStatement]) -> Result<(), LlvmPackageError>;
+    fn validate_package_dependencies(&self, imports: &[ImportStatement]) -> Result<(), Error>;
 }
 
 impl LlvmPackageIntegration for LlvmCodeGenerator {
@@ -447,7 +447,7 @@ impl LlvmPackageIntegration for LlvmCodeGenerator {
         &mut self,
         source: &str,
         source_file: Option<&Path>,
-    ) -> Result<String, LlvmPackageError> {
+    ) -> Result<(), Error> {
         // Create package integration context
         let package_manager = Arc::new(Mutex::new(
             crate::package_manager::PackageManager::new(
@@ -465,7 +465,7 @@ impl LlvmPackageIntegration for LlvmCodeGenerator {
     async fn resolve_package_import(
         &mut self,
         import_path: &str,
-    ) -> Result<CompiledPackageModule, LlvmPackageError> {
+    ) -> Result<(), Error> {
         // Create package integration context
         let package_manager = Arc::new(Mutex::new(
             crate::package_manager::PackageManager::new(
@@ -480,7 +480,7 @@ impl LlvmPackageIntegration for LlvmCodeGenerator {
         context.resolve_package_import(import_path).await
     }
     
-    fn validate_package_dependencies(&self, imports: &[ImportStatement]) -> Result<(), LlvmPackageError> {
+    fn validate_package_dependencies(&self, imports: &[ImportStatement]) -> Result<(), Error> {
         // Basic validation - check if import paths are valid
         for import in imports {
             if import.path.is_empty() {

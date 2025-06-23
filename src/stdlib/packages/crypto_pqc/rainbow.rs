@@ -77,7 +77,7 @@ impl RainbowConfig {
     }
     
     /// sus Validate Rainbow configuration
-    pub fn validate(&self) -> Result<(), RainbowError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.v1 == 0 || self.o1 == 0 || self.o2 == 0 {
             return Err(RainbowError::InvalidConfig("All layer sizes must be positive".to_string()));
         }
@@ -343,19 +343,19 @@ pub struct RainbowKeyPair {
 
 impl RainbowKeyPair {
     /// Generate new Rainbow key pair
-    pub fn generate(config: &RainbowConfig) -> Result<Self, RainbowError> {
+    pub fn generate(config: &RainbowConfig) -> Result<(), Error> {
         let mut engine = RainbowEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// Sign message with Rainbow signature
-    pub fn sign(&self, message: &[u8]) -> Result<RainbowSignature, RainbowError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         let mut engine = RainbowEngine::new(self.config.clone())?;
         engine.sign(message, &self.private_key)
     }
     
     /// Verify Rainbow signature
-    pub fn verify(&self, message: &[u8], signature: &RainbowSignature) -> Result<bool, RainbowError> {
+    pub fn verify(&self, message: &[u8], signature: &RainbowSignature) -> Result<(), Error> {
         let engine = RainbowEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -411,7 +411,7 @@ impl RainbowSignature {
     }
     
     /// Deserialize Rainbow signature
-    pub fn deserialize(data: &[u8], algorithm: String) -> Result<Self, RainbowError> {
+    pub fn deserialize(data: &[u8], algorithm: String) -> Result<(), Error> {
         if data.len() < 8 {
             return Err(RainbowError::InvalidSignature("Invalid signature data".to_string()));
         }
@@ -474,7 +474,7 @@ pub struct RainbowEngine {
 
 impl RainbowEngine {
     /// Create new Rainbow engine
-    pub fn new(config: RainbowConfig) -> Result<Self, RainbowError> {
+    pub fn new(config: RainbowConfig) -> Result<(), Error> {
         config.validate()?;
         let params = config.derived_params();
         
@@ -485,7 +485,7 @@ impl RainbowEngine {
     }
     
     /// Generate Rainbow key pair
-    pub fn generate_keypair(&mut self) -> Result<RainbowKeyPair, RainbowError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         // Step 1: Generate secret Rainbow layers with proper structure
         let secret_layers = self.generate_secret_layers()?;
         
@@ -525,7 +525,7 @@ impl RainbowEngine {
     }
     
     /// Generate secret Rainbow layers with proper oil-vinegar structure
-    fn generate_secret_layers(&mut self) -> Result<Vec<RainbowLayer>, RainbowError> {
+    fn generate_secret_layers(&mut self) -> Result<(), Error> {
         let mut layers = Vec::new();
         
         // Layer 1: v1 vinegar variables, o1 oil variables
@@ -573,7 +573,7 @@ impl RainbowEngine {
         _secret_layers: &[RainbowLayer],
         _s_transform: &LinearTransformation,
         _t_transform: &LinearTransformation,
-    ) -> Result<Vec<Polynomial>, RainbowError> {
+    ) -> Result<(), Error> {
         // Simplified composition: in practice this involves complex polynomial arithmetic
         // The public map is P = T ∘ F ∘ S where F is the Rainbow map
         let mut public_polynomials = Vec::new();
@@ -593,7 +593,7 @@ impl RainbowEngine {
     }
     
     /// Sign message using Rainbow signature scheme
-    pub fn sign(&mut self, message: &[u8], private_key: &RainbowPrivateKey) -> Result<RainbowSignature, RainbowError> {
+    pub fn sign(&mut self, message: &[u8], private_key: &RainbowPrivateKey) -> Result<(), Error> {
         // Step 1: Hash message to get target
         let message_hash = self.hash_message(message)?;
         let target = self.hash_to_field_elements(&message_hash)?;
@@ -615,7 +615,7 @@ impl RainbowEngine {
     }
     
     /// Solve Rainbow system using layered structure
-    fn solve_rainbow_system(&mut self, layers: &[RainbowLayer], target: &[FieldElement]) -> Result<Vec<FieldElement>, RainbowError> {
+    fn solve_rainbow_system(&mut self, layers: &[RainbowLayer], target: &[FieldElement]) -> Result<(), Error> {
         let mut solution = vec![FieldElement::zero(self.params.field_size); self.params.n];
         let mut target_idx = 0;
         
@@ -643,7 +643,7 @@ impl RainbowEngine {
         layer: &RainbowLayer,
         target: &[FieldElement],
         solution: &mut [FieldElement],
-    ) -> Result<(), RainbowError> {
+    ) -> Result<(), Error> {
         // Assign random values to vinegar variables
         for &vinegar_var in &layer.vinegar_variables {
             let value = (self.rng.next_u32() % self.params.field_size as u32) as u8;
@@ -688,7 +688,7 @@ impl RainbowEngine {
         layer: &RainbowLayer,
         target: &[FieldElement],
         solution: &mut [FieldElement],
-    ) -> Result<(), RainbowError> {
+    ) -> Result<(), Error> {
         // Vinegar variables are already assigned from layer 1
         
         // Build and solve quadratic system for oil variables
@@ -702,7 +702,7 @@ impl RainbowEngine {
     }
     
     /// Verify Rainbow signature
-    pub fn verify(&self, message: &[u8], signature: &RainbowSignature, public_key: &RainbowPublicKey) -> Result<bool, RainbowError> {
+    pub fn verify(&self, message: &[u8], signature: &RainbowSignature, public_key: &RainbowPublicKey) -> Result<(), Error> {
         // Step 1: Hash message and compare
         let message_hash = self.hash_message(message)?;
         if message_hash != signature.message_hash {
@@ -735,7 +735,7 @@ impl RainbowEngine {
     }
     
     /// Hash message
-    fn hash_message(&self, message: &[u8]) -> Result<Vec<u8>, RainbowError> {
+    fn hash_message(&self, message: &[u8]) -> Result<(), Error> {
         // Simplified hash function (use SHA-256 in practice)
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -748,7 +748,7 @@ impl RainbowEngine {
     }
     
     /// Convert hash to field elements
-    fn hash_to_field_elements(&self, hash: &[u8]) -> Result<Vec<FieldElement>, RainbowError> {
+    fn hash_to_field_elements(&self, hash: &[u8]) -> Result<(), Error> {
         let mut elements = Vec::new();
         
         for &byte in hash.iter().take(self.params.m) {
@@ -834,7 +834,7 @@ impl RainbowUtils {
     }
     
     /// Validate Rainbow parameters for security
-    pub fn validate_security(config: &RainbowConfig) -> Result<RainbowSecurityReport, RainbowError> {
+    pub fn validate_security(config: &RainbowConfig) -> Result<(), Error> {
         let params = config.derived_params();
         
         // Estimate security against direct attacks

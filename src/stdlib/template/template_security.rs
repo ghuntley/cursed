@@ -228,7 +228,7 @@ impl TemplateSecurityValidator {
         template_ast: &TemplateAst,
         template_path: Option<&Path>,
         template_source: &str,
-    ) -> Result<SecurityValidationResult, CursedError> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         info!("Starting security validation");
         
@@ -287,7 +287,7 @@ impl TemplateSecurityValidator {
         path: &Path,
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Check path traversal
         if self.policy.enable_path_traversal_protection {
             let path_str = path.to_string_lossy();
@@ -349,7 +349,7 @@ impl TemplateSecurityValidator {
         template_source: &str,
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let size = template_source.len();
         
         if size > self.policy.max_template_size {
@@ -375,7 +375,7 @@ impl TemplateSecurityValidator {
         template_source: &str,
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Check for XSS patterns
         if self.policy.enable_xss_protection {
             for pattern in &self.xss_patterns {
@@ -422,7 +422,7 @@ impl TemplateSecurityValidator {
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
         recommendations: &mut Vec<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let mut nesting_depth = 0;
         self.validate_ast_nodes(&ast.nodes, &mut nesting_depth, issues, warnings, recommendations)?;
         Ok(())
@@ -436,7 +436,7 @@ impl TemplateSecurityValidator {
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
         recommendations: &mut Vec<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         *nesting_depth += 1;
         
         // Check nesting depth
@@ -466,7 +466,7 @@ impl TemplateSecurityValidator {
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
         recommendations: &mut Vec<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         match node {
             TemplateNode::Text(_) => {
                 // Text nodes are generally safe

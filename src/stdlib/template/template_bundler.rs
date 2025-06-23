@@ -212,7 +212,7 @@ impl DependencyAnalyzer {
     
     /// Analyze dependencies for a template
     #[instrument(skip(self, ast))]
-    pub fn analyze_dependencies(&mut self, template_name: &str, ast: &TemplateAst) -> Result<HashSet<String>, CursedError> {
+    pub fn analyze_dependencies(&mut self, template_name: &str, ast: &TemplateAst) -> Result<(), Error> {
         let mut deps = HashSet::new();
         self.analyze_nodes(&ast.nodes, &mut deps)?;
         self.dependencies.insert(template_name.to_string(), deps.clone());
@@ -220,7 +220,7 @@ impl DependencyAnalyzer {
     }
     
     /// Analyze nodes for dependencies
-    fn analyze_nodes(&self, nodes: &[TemplateNode], deps: &mut HashSet<String>) -> Result<(), CursedError> {
+    fn analyze_nodes(&self, nodes: &[TemplateNode], deps: &mut HashSet<String>) -> Result<(), Error> {
         for node in nodes {
             match node {
                 TemplateNode::Block { block, .. } => {
@@ -251,7 +251,7 @@ impl DependencyAnalyzer {
     }
     
     /// Analyze block nodes for dependencies
-    fn analyze_block_nodes(&self, block: &BlockNode, deps: &mut HashSet<String>) -> Result<(), CursedError> {
+    fn analyze_block_nodes(&self, block: &BlockNode, deps: &mut HashSet<String>) -> Result<(), Error> {
         match block {
             BlockNode::If { then_branch, else_branch, .. } => {
                 self.analyze_nodes(then_branch, deps)?;
@@ -312,7 +312,7 @@ impl DependencyAnalyzer {
     }
     
     /// Detect circular dependencies
-    pub fn detect_circular_dependencies(&self) -> Result<Vec<Vec<String>>, CursedError> {
+    pub fn detect_circular_dependencies(&self) -> Result<(), Error> {
         let mut cycles = Vec::new();
         let mut visited = HashSet::new();
         let mut rec_stack = HashSet::new();
@@ -404,7 +404,7 @@ impl TemplateBundler {
     
     /// Create a bundle from a list of template names
     #[instrument(skip(self, template_names))]
-    pub async fn create_bundle(&mut self, template_names: &[String], bundle_id: &str) -> Result<TemplateBundle, CursedError> {
+    pub async fn create_bundle(&mut self, template_names: &[String], bundle_id: &str) -> Result<(), Error> {
         let start_time = Instant::now();
         info!(bundle_id = bundle_id, template_count = template_names.len(), "Creating template bundle");
         
@@ -553,7 +553,7 @@ impl TemplateBundler {
     }
     
     /// Parse template source into AST
-    fn parse_template(&self, source: &str) -> Result<TemplateAst, CursedError> {
+    fn parse_template(&self, source: &str) -> Result<(), Error> {
         use super::template_syntax::{TemplateLexer, TemplateParser};
         use super::template_core::TemplateDelimiters;
         
@@ -570,7 +570,7 @@ impl TemplateBundler {
     }
     
     /// Generate bundle version based on versioning strategy
-    fn generate_version(&self, templates: &HashSet<String>) -> Result<String, CursedError> {
+    fn generate_version(&self, templates: &HashSet<String>) -> Result<(), Error> {
         match &self.config.versioning_strategy {
             VersioningStrategy::None => Ok("1.0.0".to_string()),
             VersioningStrategy::Timestamp => {
@@ -604,7 +604,7 @@ impl TemplateBundler {
     }
     
     /// Calculate compressed size for all bundle entries
-    fn calculate_compressed_size(&self, entries: &HashMap<String, BundleEntry>) -> Result<usize, CursedError> {
+    fn calculate_compressed_size(&self, entries: &HashMap<String, BundleEntry>) -> Result<(), Error> {
         if !self.config.enable_compression {
             return Ok(entries.values().map(|e| e.content.len()).sum());
         }
@@ -636,7 +636,7 @@ impl TemplateBundler {
     }
 
     /// Calculate bundle checksum
-    fn calculate_checksum(&self, entries: &HashMap<String, BundleEntry>) -> Result<String, CursedError> {
+    fn calculate_checksum(&self, entries: &HashMap<String, BundleEntry>) -> Result<(), Error> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         
@@ -653,7 +653,7 @@ impl TemplateBundler {
     }
     
     /// Create bundle manifest
-    fn create_bundle_manifest(&self, entries: &HashMap<String, BundleEntry>, metadata: &BundleMetadata) -> Result<BundleManifest, CursedError> {
+    fn create_bundle_manifest(&self, entries: &HashMap<String, BundleEntry>, metadata: &BundleMetadata) -> Result<(), Error> {
         let mut templates = HashMap::new();
         let mut offset = 0;
         
@@ -678,7 +678,7 @@ impl TemplateBundler {
     }
     
     /// Calculate checksum for a single entry
-    fn calculate_entry_checksum(&self, entry: &BundleEntry) -> Result<String, CursedError> {
+    fn calculate_entry_checksum(&self, entry: &BundleEntry) -> Result<(), Error> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         
@@ -688,7 +688,7 @@ impl TemplateBundler {
     }
     
     /// Serialize bundle to bytes
-    pub fn serialize_bundle(&self, bundle: &TemplateBundle) -> Result<Vec<u8>, CursedError> {
+    pub fn serialize_bundle(&self, bundle: &TemplateBundle) -> Result<(), Error> {
         serde_json::to_vec(bundle).map_err(|e| CursedError::TemplateError {
             message: format!("Failed to serialize bundle: {}", e),
             source_location: None,
@@ -696,7 +696,7 @@ impl TemplateBundler {
     }
     
     /// Deserialize bundle from bytes
-    pub fn deserialize_bundle(&self, data: &[u8]) -> Result<TemplateBundle, CursedError> {
+    pub fn deserialize_bundle(&self, data: &[u8]) -> Result<(), Error> {
         serde_json::from_slice(data).map_err(|e| CursedError::TemplateError {
             message: format!("Failed to deserialize bundle: {}", e),
             source_location: None,
@@ -747,7 +747,7 @@ pub enum OptimizerType {
 /// Template optimizer trait
 pub trait TemplateOptimizer: Send + Sync {
     /// Optimize template content and AST
-    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<OptimizationResult, CursedError>;
+    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<(), Error>;
     
     /// Get optimizer type
     fn optimizer_type(&self) -> OptimizerType;
@@ -777,7 +777,7 @@ impl MinificationOptimizer {
 }
 
 impl TemplateOptimizer for MinificationOptimizer {
-    fn optimize(&self, content: &mut String, _ast: &mut TemplateAst) -> Result<OptimizationResult, CursedError> {
+    fn optimize(&self, content: &mut String, _ast: &mut TemplateAst) -> Result<(), Error> {
         let original_size = content.len();
         let mut optimizations_applied = 0;
         
@@ -1140,7 +1140,7 @@ impl DeadCodeEliminationOptimizer {
     }
     
     /// Regenerate template content from optimized AST
-    fn regenerate_content_from_ast(&self, ast: &TemplateAst) -> Result<String, CursedError> {
+    fn regenerate_content_from_ast(&self, ast: &TemplateAst) -> Result<(), Error> {
         let mut content = String::new();
         
         for node in &ast.nodes {
@@ -1151,7 +1151,7 @@ impl DeadCodeEliminationOptimizer {
     }
     
     /// Regenerate content for a single node
-    fn regenerate_node_content(&self, node: &TemplateNode, content: &mut String) -> Result<(), CursedError> {
+    fn regenerate_node_content(&self, node: &TemplateNode, content: &mut String) -> Result<(), Error> {
         match node {
             TemplateNode::Text(text) => {
                 content.push_str(text);
@@ -1209,7 +1209,7 @@ impl DeadCodeEliminationOptimizer {
     }
     
     /// Regenerate expression content
-    fn regenerate_expression_content(&self, expr: &TemplateExpression, content: &mut String) -> Result<(), CursedError> {
+    fn regenerate_expression_content(&self, expr: &TemplateExpression, content: &mut String) -> Result<(), Error> {
         match expr {
             TemplateExpression::Variable(name) => content.push_str(name),
             TemplateExpression::String(s) => {
@@ -1227,7 +1227,7 @@ impl DeadCodeEliminationOptimizer {
 }
 
 impl TemplateOptimizer for DeadCodeEliminationOptimizer {
-    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<OptimizationResult, CursedError> {
+    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<(), Error> {
         let original_size = content.len();
         let mut optimizations_applied = 0;
         let mut warnings = Vec::new();
@@ -1387,7 +1387,7 @@ impl DependencyOptimizer {
     }
     
     /// Inline a template by replacing includes with actual content
-    fn inline_template(&self, ast: &mut TemplateAst, template_name: &str) -> Result<usize, CursedError> {
+    fn inline_template(&self, ast: &mut TemplateAst, template_name: &str) -> Result<(), Error> {
         let mut bytes_saved = 0;
         
         // For this implementation, we'll simulate template inlining
@@ -1542,7 +1542,7 @@ impl DependencyOptimizer {
     }
     
     /// Regenerate optimized content from AST
-    fn regenerate_optimized_content(&self, ast: &TemplateAst) -> Result<String, CursedError> {
+    fn regenerate_optimized_content(&self, ast: &TemplateAst) -> Result<(), Error> {
         let mut content = String::new();
         
         for node in &ast.nodes {
@@ -1553,7 +1553,7 @@ impl DependencyOptimizer {
     }
     
     /// Regenerate content for a single optimized node
-    fn regenerate_optimized_node_content(&self, node: &TemplateNode, content: &mut String) -> Result<(), CursedError> {
+    fn regenerate_optimized_node_content(&self, node: &TemplateNode, content: &mut String) -> Result<(), Error> {
         match node {
             TemplateNode::Text(text) => {
                 content.push_str(text);
@@ -1585,7 +1585,7 @@ impl DependencyOptimizer {
 }
 
 impl TemplateOptimizer for DependencyOptimizer {
-    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<OptimizationResult, CursedError> {
+    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<(), Error> {
         let original_size = content.len();
         let mut optimizations_applied = 0;
         let mut warnings = Vec::new();

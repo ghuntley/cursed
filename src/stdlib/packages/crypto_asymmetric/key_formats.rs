@@ -42,7 +42,7 @@ pub fn convert_public_key_format_enhanced(
     algorithm: PublicKeyAlgorithm,
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     let public_key_bytes = hex::decode(public_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid public key hex: {}", e)))?;
     
@@ -69,7 +69,7 @@ pub fn convert_private_key_format_enhanced(
     algorithm: PublicKeyAlgorithm,
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     let private_key_bytes = hex::decode(private_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid private key hex: {}", e)))?;
     
@@ -95,7 +95,7 @@ fn convert_rsa_public_key_enhanced(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse RSA public key from source format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -163,7 +163,7 @@ fn convert_rsa_private_key_enhanced(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse RSA private key from source format
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -229,7 +229,7 @@ fn convert_ecc_public_key_enhanced(
     curve: EccCurve,
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     match curve {
         EccCurve::P256 => convert_p256_public_key(public_key_bytes, from_format, to_format),
         EccCurve::P384 => convert_p384_public_key(public_key_bytes, from_format, to_format),
@@ -243,7 +243,7 @@ fn convert_ecc_private_key_enhanced(
     curve: EccCurve,
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     match curve {
         EccCurve::P256 => convert_p256_private_key(private_key_bytes, from_format, to_format),
         EccCurve::P384 => convert_p384_private_key(private_key_bytes, from_format, to_format),
@@ -256,7 +256,7 @@ fn convert_p256_public_key(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse P-256 public key
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -313,7 +313,7 @@ fn convert_p256_private_key(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse P-256 private key
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -367,7 +367,7 @@ fn convert_p384_public_key(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse P-384 public key
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -423,7 +423,7 @@ fn convert_p384_private_key(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse P-384 private key
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -476,7 +476,7 @@ fn convert_p521_public_key(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse P-521 public key
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -532,7 +532,7 @@ fn convert_p521_private_key(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse P-521 private key
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -586,7 +586,7 @@ fn convert_ed25519_public_key_enhanced(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse Ed25519 public key
     let public_key = match from_format {
         PublicKeyFormat::Raw => {
@@ -635,7 +635,7 @@ fn convert_ed25519_private_key_enhanced(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     // Parse Ed25519 private key
     let private_key = match from_format {
         PrivateKeyFormat::Raw => {
@@ -665,7 +665,7 @@ fn convert_ed25519_private_key_enhanced(
 
 /// fr fr JWK format parsers and encoders
 
-fn parse_rsa_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<RsaPublicKey, CursedError> {
+fn parse_rsa_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid JWK string: {}", e)))?;
     
@@ -680,7 +680,7 @@ fn parse_rsa_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<RsaPublicKey, Curse
     }
 }
 
-fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<RsaPrivateKey, CursedError> {
+fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -723,7 +723,7 @@ fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<RsaPrivateKey, Cur
     Ok(private_key)
 }
 
-fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> Result<String, CursedError> {
+fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> Result<(), Error> {
     // Basic JWK encoding for RSA public key
     // In production, would use proper base64url encoding and JSON formatting
     let n = public_key.n();
@@ -738,7 +738,7 @@ fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> Result<String, Cur
     Ok(jwk)
 }
 
-fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<String, CursedError> {
+fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<(), Error> {
     // Extract RSA private key components
     let n = private_key.n();
     let e = private_key.e();
@@ -766,7 +766,7 @@ fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<String, 
     Ok(jwk)
 }
 
-fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> Result<String, CursedError> {
+fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> Result<(), Error> {
     // Get RSA parameters
     let n = public_key.n();
     let e = public_key.e();
@@ -798,26 +798,26 @@ fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> Result<String, Cur
 
 fn encode_p256_public_key_to_ssh(
     public_key: &P256PublicKey
-) -> Result<String, CursedError> {
+) -> Result<(), Error> {
     encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp256")
 }
 
 fn encode_p384_public_key_to_ssh(
     public_key: &P384PublicKey
-) -> Result<String, CursedError> {
+) -> Result<(), Error> {
     encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp384")
 }
 
 fn encode_p521_public_key_to_ssh(
     public_key: &P521PublicKey
-) -> Result<String, CursedError> {
+) -> Result<(), Error> {
     encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp521")
 }
 
 fn encode_ecdsa_point_to_ssh(
     point_bytes: &[u8], 
     curve_name: &str
-) -> Result<String, CursedError> {
+) -> Result<(), Error> {
     let algorithm = format!("ecdsa-sha2-{}", curve_name);
     
     let mut ssh_data = Vec::new();
@@ -840,7 +840,7 @@ fn encode_ecdsa_point_to_ssh(
     Ok(format!("{} {} cursed-generated-key", algorithm, b64_data))
 }
 
-fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> Result<String, CursedError> {
+fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> Result<(), Error> {
     let algorithm = b"ssh-ed25519";
     
     let mut ssh_data = Vec::new();
@@ -860,7 +860,7 @@ fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> Result<String,
     Ok(format!("ssh-ed25519 {} cursed-generated-key", b64_data))
 }
 
-fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256PublicKey, CursedError> {
+fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -899,7 +899,7 @@ fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256PublicKey, Cur
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-256 public key from JWK: {}", e)))
 }
 
-fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256SecretKey, CursedError> {
+fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -929,7 +929,7 @@ fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P256SecretKey, Cu
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-256 private key from JWK: {}", e)))
 }
 
-fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> Result<String, CursedError> {
+fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let encoded_point = public_key.to_encoded_point(false);
@@ -952,7 +952,7 @@ fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> Result<String, C
     Ok(jwk)
 }
 
-fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<String, CursedError> {
+fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = P256PublicKey::from(private_key);
@@ -978,7 +978,7 @@ fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<String,
     Ok(jwk)
 }
 
-fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<String, CursedError> {
+fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<(), Error> {
     let jwk = format!(
         r#"{{"kty":"OKP","crv":"Ed25519","x":"{}"}}"#,
         general_purpose::URL_SAFE_NO_PAD.encode(public_key.as_bytes())
@@ -986,7 +986,7 @@ fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<String,
     Ok(jwk)
 }
 
-fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> Result<String, CursedError> {
+fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> Result<(), Error> {
     let jwk = format!(
         r#"{{"kty":"OKP","crv":"Ed25519","d":"{}","x":"{}"}}"#,
         general_purpose::URL_SAFE_NO_PAD.encode(&private_key.to_bytes()),
@@ -996,7 +996,7 @@ fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> Result<String,
 }
 
 /// P-384 JWK functions
-fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P384PublicKey, CursedError> {
+fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1035,7 +1035,7 @@ fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P384PublicKey, Cur
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-384 public key from JWK: {}", e)))
 }
 
-fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P384SecretKey, CursedError> {
+fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1065,7 +1065,7 @@ fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P384SecretKey, Cu
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-384 private key from JWK: {}", e)))
 }
 
-fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> Result<String, CursedError> {
+fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let encoded_point = public_key.to_encoded_point(false);
@@ -1088,7 +1088,7 @@ fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> Result<String, C
     Ok(jwk)
 }
 
-fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> Result<String, CursedError> {
+fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = P384PublicKey::from(private_key);
@@ -1115,7 +1115,7 @@ fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> Result<String,
 }
 
 /// P-521 JWK functions
-fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P521PublicKey, CursedError> {
+fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1154,7 +1154,7 @@ fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<P521PublicKey, Cur
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-521 public key from JWK: {}", e)))
 }
 
-fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P521SecretKey, CursedError> {
+fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1184,7 +1184,7 @@ fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<P521SecretKey, Cu
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-521 private key from JWK: {}", e)))
 }
 
-fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> Result<String, CursedError> {
+fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let encoded_point = public_key.to_encoded_point(false);
@@ -1207,7 +1207,7 @@ fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> Result<String, C
     Ok(jwk)
 }
 
-fn encode_p521_private_key_to_jwk(private_key: &P521SecretKey) -> Result<String, CursedError> {
+fn encode_p521_private_key_to_jwk(private_key: &P521SecretKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = P521PublicKey::from(private_key);
@@ -1239,7 +1239,7 @@ fn create_conversion_result(
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
     converted_data: Vec<u8>,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String(algorithm.to_string()));
     result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));

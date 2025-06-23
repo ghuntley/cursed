@@ -8,7 +8,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, PointerValue, IntValue, BasicValue, BasicMetadataValueEnum};
-use inkwell::types::{BasicTypeEnum, FunctionType, StructType, PointerType, IntType};
+use inkwell::crate::types::{BasicTypeEnum, FunctionType, StructType, PointerType, IntType};
 use inkwell::{AddressSpace, IntPredicate};
 use std::collections::HashMap;
 use crate::error::{Error, CursedError};
@@ -73,7 +73,7 @@ pub struct GcMetadataRegistry<'ctx> {
 
 impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     /// Create new web_vibez LLVM integration
-    pub fn new(context: &'ctx Context, module: &'ctx Module<'ctx>) -> Result<Self, Error> {
+    pub fn new(context: &'ctx Context, module: &'ctx Module<'ctx>) -> Result<(), Error> {
         let builder = context.create_builder();
         
         // Initialize type registry
@@ -561,7 +561,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         &self, 
         function_name: &str, 
         args: &[BasicValueEnum<'ctx>]
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
+    ) -> Result<(), Error> {
         
         match function_name {
             "ListenAndServe" => self.compile_listen_and_serve(args),
@@ -586,7 +586,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
 
     /// Compile ListenAndServe function call with performance optimizations
-    fn compile_listen_and_serve(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_listen_and_serve(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.len() != 2 {
             return Err(Error::Compile("ListenAndServe requires 2 arguments".to_string()));
         }
@@ -613,7 +613,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile HTTP GET request with optimized networking
-    fn compile_http_get(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_http_get(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.is_empty() {
             return Err(Error::Compile("Get requires at least 1 argument".to_string()));
         }
@@ -642,7 +642,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile client timeout configuration
-    fn compile_client_timeout(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_client_timeout(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         let func = self.runtime_functions
             .get("web_vibez_client_timeout")
             .ok_or_else(|| Error::Compile("web_vibez_client_timeout runtime function not found".to_string()))?;
@@ -657,7 +657,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile HTTP POST request with body handling
-    fn compile_http_post(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_http_post(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.len() < 3 {
             return Err(Error::Compile("Post requires at least 3 arguments".to_string()));
         }
@@ -680,16 +680,16 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile other HTTP methods (HEAD, DELETE)
-    fn compile_http_head(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_http_head(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         self.compile_simple_http_method("Head", args)
     }
     
-    fn compile_http_delete(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_http_delete(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         self.compile_simple_http_method("Delete", args)
     }
     
     /// Generic compilation for simple HTTP methods
-    fn compile_simple_http_method(&self, method: &str, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_simple_http_method(&self, method: &str, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         let func = self.function_declarations
             .get(method)
             .ok_or_else(|| Error::Compile(format!("{} function not found", method)))?;
@@ -704,7 +704,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile HandleFunc registration
-    fn compile_handle_func(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_handle_func(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.len() != 2 {
             return Err(Error::Compile("HandleFunc requires 2 arguments".to_string()));
         }
@@ -722,7 +722,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile response writing operations
-    fn compile_response_write(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_response_write(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.len() != 2 {
             return Err(Error::Compile("ResponseWriter.Write requires 2 arguments".to_string()));
         }
@@ -740,7 +740,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         }))
     }
     
-    fn compile_response_write_header(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_response_write_header(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.len() != 2 {
             return Err(Error::Compile("ResponseWriter.WriteHeader requires 2 arguments".to_string()));
         }
@@ -757,20 +757,20 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Compile request property access
-    fn compile_request_url(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_request_url(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         self.compile_request_property("Request.URL", args)
     }
     
-    fn compile_request_method(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_request_method(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         self.compile_request_property("Request.Method", args)
     }
     
-    fn compile_request_body(&self, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_request_body(&self, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         self.compile_request_property("Request.Body", args)
     }
     
     /// Generic request property compilation
-    fn compile_request_property(&self, property: &str, args: &[BasicValueEnum<'ctx>]) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_request_property(&self, property: &str, args: &[BasicValueEnum<'ctx>]) -> Result<(), Error> {
         if args.len() != 1 {
             return Err(Error::Compile(format!("{} requires 1 argument", property)));
         }
@@ -790,7 +790,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     }
     
     /// Allocate GC-managed object for HTTP types
-    fn allocate_gc_object(&self, type_name: &str) -> Result<PointerValue<'ctx>, Error> {
+    fn allocate_gc_object(&self, type_name: &str) -> Result<(), Error> {
         let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
         
         // Get object size based on type
@@ -927,7 +927,7 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
 
 impl<'ctx> HttpTypeRegistry<'ctx> {
     /// Create new HTTP type registry with all required types
-    pub fn new(context: &'ctx Context) -> Result<Self, Error> {
+    pub fn new(context: &'ctx Context) -> Result<(), Error> {
         let i8_type = context.i8_type();
         let i32_type = context.i32_type();
         let i64_type = context.i64_type();
@@ -1033,7 +1033,7 @@ impl<'ctx> HttpTypeRegistry<'ctx> {
 
 impl<'ctx> GcMetadataRegistry<'ctx> {
     /// Create new GC metadata registry
-    pub fn new(context: &'ctx Context, module: &'ctx Module<'ctx>) -> Result<Self, Error> {
+    pub fn new(context: &'ctx Context, module: &'ctx Module<'ctx>) -> Result<(), Error> {
         let mut gc_object_types = HashMap::new();
         let mut ref_count_funcs = HashMap::new();
         let mut cleanup_funcs = HashMap::new();

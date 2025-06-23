@@ -106,7 +106,7 @@ pub enum WorkspaceError {
 
 impl WorkspaceManager {
     /// Create a new workspace manager
-    pub fn discover<P: AsRef<Path>>(root: P) -> Result<Self, WorkspaceError> {
+    pub fn discover<P: AsRef<Path>>(root: P) -> Result<(), Error> {
         let root = root.as_ref().to_path_buf();
         let package_file = root.join("CursedPackage.toml");
         
@@ -167,7 +167,7 @@ impl WorkspaceManager {
     }
     
     /// Discover workspace members from configuration
-    fn discover_members(&mut self) -> Result<(), WorkspaceError> {
+    fn discover_members(&mut self) -> Result<(), Error> {
         let config = self.config.as_ref().ok_or(WorkspaceError::NotFound)?;
         
         let mut discovered_paths = HashSet::new();
@@ -237,7 +237,7 @@ impl WorkspaceManager {
     }
     
     /// Find dependencies that are local to the workspace
-    fn find_local_dependencies(&self, metadata: &PackageMetadata) -> Result<Vec<String>, WorkspaceError> {
+    fn find_local_dependencies(&self, metadata: &PackageMetadata) -> Result<(), Error> {
         let mut local_deps = Vec::new();
         
         for (dep_name, _version) in &metadata.dependencies {
@@ -251,7 +251,7 @@ impl WorkspaceManager {
     }
     
     /// Validate that workspace has no circular dependencies
-    fn validate_dependency_graph(&self) -> Result<(), WorkspaceError> {
+    fn validate_dependency_graph(&self) -> Result<(), Error> {
         let mut visited = HashSet::new();
         let mut visiting = HashSet::new();
         
@@ -270,7 +270,7 @@ impl WorkspaceManager {
         member_name: &str,
         visited: &mut HashSet<String>,
         visiting: &mut HashSet<String>,
-    ) -> Result<(), WorkspaceError> {
+    ) -> Result<(), Error> {
         if visiting.contains(member_name) {
             // Found a cycle
             let cycle: Vec<String> = visiting.iter().cloned().collect();
@@ -297,7 +297,7 @@ impl WorkspaceManager {
     }
     
     /// Get build order for workspace members
-    pub fn get_build_order(&self) -> Result<Vec<&WorkspaceMember>, WorkspaceError> {
+    pub fn get_build_order(&self) -> Result<(), Error> {
         let mut build_order = Vec::new();
         let mut built = HashSet::new();
         
@@ -339,7 +339,7 @@ impl WorkspaceManager {
     pub fn init_workspace<P: AsRef<Path>>(
         root: P,
         members: Vec<String>,
-    ) -> Result<Self, WorkspaceError> {
+    ) -> Result<(), Error> {
         let root = root.as_ref().to_path_buf();
         let package_file = root.join("CursedPackage.toml");
         
@@ -416,7 +416,7 @@ impl WorkspaceManager {
     }
     
     /// Add a member to the workspace
-    pub fn add_member(&mut self, member_pattern: String) -> Result<(), WorkspaceError> {
+    pub fn add_member(&mut self, member_pattern: String) -> Result<(), Error> {
         let config = self.config.as_mut().ok_or(WorkspaceError::NotFound)?;
         
         if !config.members.contains(&member_pattern) {
@@ -429,7 +429,7 @@ impl WorkspaceManager {
     }
     
     /// Remove a member from the workspace
-    pub fn remove_member(&mut self, member_pattern: &str) -> Result<(), WorkspaceError> {
+    pub fn remove_member(&mut self, member_pattern: &str) -> Result<(), Error> {
         let config = self.config.as_mut().ok_or(WorkspaceError::NotFound)?;
         
         config.members.retain(|pattern| pattern != member_pattern);
@@ -440,7 +440,7 @@ impl WorkspaceManager {
     }
     
     /// Save workspace configuration
-    fn save_config(&self) -> Result<(), WorkspaceError> {
+    fn save_config(&self) -> Result<(), Error> {
         let config = self.config.as_ref().ok_or(WorkspaceError::NotFound)?;
         let package_file = self.root.join("CursedPackage.toml");
         
@@ -481,7 +481,7 @@ impl WorkspaceManager {
     }
     
     /// Generate workspace-level lock file
-    pub fn generate_lock_file(&mut self) -> Result<(), WorkspaceError> {
+    pub fn generate_lock_file(&mut self) -> Result<(), Error> {
         // Collect all dependencies from workspace members
         let mut all_dependencies: HashMap<String, String> = HashMap::new();
         
@@ -528,7 +528,7 @@ impl WorkspaceManager {
     }
     
     /// Load workspace lock file
-    pub fn load_lock_file(&mut self) -> Result<(), WorkspaceError> {
+    pub fn load_lock_file(&mut self) -> Result<(), Error> {
         self.lock_file_manager.load().map_err(Into::into)
     }
     
@@ -561,7 +561,7 @@ impl WorkspaceManager {
     }
     
     /// Validate workspace integrity
-    pub fn validate(&self) -> Result<(), WorkspaceError> {
+    pub fn validate(&self) -> Result<(), Error> {
         // Check that all local dependencies exist in workspace
         for member in &self.members {
             for local_dep in &member.local_dependencies {

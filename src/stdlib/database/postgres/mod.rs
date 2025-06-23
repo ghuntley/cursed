@@ -24,7 +24,7 @@ pub use error::{PostgresError, PostgresErrorKind};
 pub use config::{PostgresConfig, PostgresConnectionString, SslMode};
 
 /// Initialize PostgreSQL driver and register it with the database system
-pub fn init_postgres() -> Result<(), crate::stdlib::database::DatabaseError> {
+pub fn init_postgres() -> Result<(), Error> {
     let driver = PostgresDriver::new();
     crate::stdlib::database::driver::DriverRegistry::register("postgres", Box::new(driver))?;
     crate::stdlib::database::driver::DriverRegistry::register("postgresql", Box::new(driver.clone()))?;
@@ -37,6 +37,6 @@ pub fn new_postgres_driver() -> PostgresDriver {
 }
 
 /// Parse PostgreSQL connection string and create config
-pub fn parse_connection_string(dsn: &str) -> Result<PostgresConfig, PostgresError> {
+pub fn parse_connection_string(dsn: &str) -> Result<(), Error> {
     PostgresConnectionString::parse(dsn)
 }

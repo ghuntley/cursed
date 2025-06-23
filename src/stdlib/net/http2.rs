@@ -41,7 +41,7 @@ pub enum FrameType {
 impl TryFrom<u8> for FrameType {
     type Error = NetError;
     
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
+    fn try_from(value: u8) -> Result<(), Error> {
         match value {
             0x0 => Ok(FrameType::Data),
             0x1 => Ok(FrameType::Headers),
@@ -250,7 +250,7 @@ pub enum SettingsParameter {
 impl TryFrom<u16> for SettingsParameter {
     type Error = NetError;
     
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
+    fn try_from(value: u16) -> Result<(), Error> {
         match value {
             1 => Ok(SettingsParameter::HeaderTableSize),
             2 => Ok(SettingsParameter::EnablePush),

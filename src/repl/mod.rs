@@ -30,7 +30,7 @@ pub use interface::{ReplInterface, InterfaceConfig, MessageType};
 use crate::error::CursedError;
 
 /// Result type for REPL operations
-pub type ReplResult<T> = Result<T, CursedError>;
+pub type ReplResult<(), Error>;
 
 /// REPL configuration options
 #[derive(Debug, Clone)]

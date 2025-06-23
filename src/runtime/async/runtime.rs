@@ -90,7 +90,7 @@ impl RuntimeCoordinator {
     }
 
     /// Coordinate with goroutine scheduler for GC safe points
-    pub fn coordinate_gc_safe_point(&self) -> Result<(), crate::error::Error> {
+    pub fn coordinate_gc_safe_point(&self) -> Result<(), Error> {
         if let Some(scheduler) = &self.goroutine_scheduler {
             scheduler.coordinate_gc(Duration::from_millis(100))
         } else {
@@ -123,7 +123,7 @@ impl AsyncRuntime {
     }
 
     /// Initialize the runtime with an executor
-    pub fn initialize(&self) -> Result<(), crate::error::Error> {
+    pub fn initialize(&self) -> Result<(), Error> {
         let mut executor_opt = self.executor.lock().unwrap();
         
         if executor_opt.is_none() {
@@ -141,7 +141,7 @@ impl AsyncRuntime {
     }
 
     /// Initialize goroutine integration
-    fn initialize_goroutine_integration(&self) -> Result<(), crate::error::Error> {
+    fn initialize_goroutine_integration(&self) -> Result<(), Error> {
         // Try to get the global goroutine scheduler
         if let Some(scheduler) = crate::runtime::goroutine::get_global_scheduler() {
             let mut coordinator = self.coordinator.lock().unwrap();
@@ -339,7 +339,7 @@ impl AsyncRuntime {
     }
 
     /// Coordinate with goroutine scheduler for GC
-    pub fn coordinate_gc(&self) -> Result<(), crate::error::Error> {
+    pub fn coordinate_gc(&self) -> Result<(), Error> {
         let coordinator = self.coordinator.lock().unwrap();
         coordinator.coordinate_gc_safe_point()
     }
@@ -352,7 +352,7 @@ impl Drop for AsyncRuntime {
 }
 
 /// Initialize the global async runtime
-pub fn initialize_global_async_runtime() -> Result<(), crate::error::Error> {
+pub fn initialize_global_async_runtime() -> Result<(), Error> {
     RUNTIME_INIT.call_once(|| {
         let config = AsyncRuntimeConfig::default();
         let runtime = Arc::new(AsyncRuntime::new(config));

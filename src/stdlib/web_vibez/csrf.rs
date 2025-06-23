@@ -499,7 +499,7 @@ impl CsrfMiddleware {
     }
 
     /// Process request and validate CSRF token
-    pub fn process_request(&mut self, headers: &std::collections::HashMap<String, String>, session_id: Option<String>) -> Result<(), CsrfError> {
+    pub fn process_request(&mut self, headers: &std::collections::HashMap<String, String>, session_id: Option<String>) -> Result<(), Error> {
         if let Some(token) = headers.get("X-CSRF-Token") {
             if self.validator.validate_token(token, session_id) {
                 Ok(())

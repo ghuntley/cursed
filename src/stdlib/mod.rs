@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Standard library for CURSED
 pub mod core;
 pub mod dot_registry;

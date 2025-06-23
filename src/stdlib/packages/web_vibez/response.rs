@@ -1,10 +1,11 @@
+use crate::web::StatusCode;
 /// fr fr HTTP response handling for web_vibez - comprehensive response building
 use std::collections::HashMap;
 use std::fmt;
 
 use crate::stdlib::packages::web_vibez::{
     status::StatusCode,
-    types::{Headers, ContentType, Cookie},
+    crate::types::{Headers, ContentType, Cookie},
     error::{WebError, WebResult},
 };
 

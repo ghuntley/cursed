@@ -23,7 +23,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, profile_data))]
-    pub fn generate_report(&self, profile_data: &ProfileData) -> Result<PerformanceReport, ProfilerError> {
+    pub fn generate_report(&self, profile_data: &ProfileData) -> Result<(), Error> {
         info!("Generating performance report for session: {}", profile_data.session_name);
         
         let mut report = PerformanceReport::new(
@@ -52,7 +52,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, benchmark_results))]
-    pub fn generate_benchmark_report(&self, benchmark_results: &BenchmarkResults) -> Result<BenchmarkReport, ProfilerError> {
+    pub fn generate_benchmark_report(&self, benchmark_results: &BenchmarkResults) -> Result<(), Error> {
         info!("Generating benchmark report for suite: {}", benchmark_results.suite_name);
         
         let report = BenchmarkReport {
@@ -69,7 +69,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, report))]
-    pub fn export_html(&self, report: &PerformanceReport, output_path: &str) -> Result<(), ProfilerError> {
+    pub fn export_html(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
         let html = self.generate_html_report(report)?;
         std::fs::write(output_path, html).map_err(ProfilerError::IoError)?;
         info!("HTML report exported to: {}", output_path);
@@ -77,7 +77,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, report))]
-    pub fn export_markdown(&self, report: &PerformanceReport, output_path: &str) -> Result<(), ProfilerError> {
+    pub fn export_markdown(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
         let markdown = self.generate_markdown_report(report)?;
         std::fs::write(output_path, markdown).map_err(ProfilerError::IoError)?;
         info!("Markdown report exported to: {}", output_path);
@@ -85,7 +85,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, report))]
-    pub fn export_json(&self, report: &PerformanceReport, output_path: &str) -> Result<(), ProfilerError> {
+    pub fn export_json(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
         let json = serde_json::to_string_pretty(report)
             .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
         std::fs::write(output_path, json).map_err(ProfilerError::IoError)?;
@@ -95,7 +95,7 @@ impl ReportGenerator {
     
     /// Import a performance report from JSON file
     #[instrument(skip(self))]
-    pub fn import_json(&self, input_path: &str) -> Result<PerformanceReport, ProfilerError> {
+    pub fn import_json(&self, input_path: &str) -> Result<(), Error> {
         let json = std::fs::read_to_string(input_path)
             .map_err(ProfilerError::IoError)?;
         let report: PerformanceReport = serde_json::from_str(&json)
@@ -106,7 +106,7 @@ impl ReportGenerator {
     
     /// Import a benchmark report from JSON file
     #[instrument(skip(self))]
-    pub fn import_benchmark_json(&self, input_path: &str) -> Result<BenchmarkReport, ProfilerError> {
+    pub fn import_benchmark_json(&self, input_path: &str) -> Result<(), Error> {
         let json = std::fs::read_to_string(input_path)
             .map_err(ProfilerError::IoError)?;
         let report: BenchmarkReport = serde_json::from_str(&json)
@@ -117,7 +117,7 @@ impl ReportGenerator {
     
     /// Import a performance report from binary format
     #[instrument(skip(self))]
-    pub fn import_binary(&self, input_path: &str) -> Result<PerformanceReport, ProfilerError> {
+    pub fn import_binary(&self, input_path: &str) -> Result<(), Error> {
         let data = std::fs::read(input_path)
             .map_err(ProfilerError::IoError)?;
         let report: PerformanceReport = bincode::deserialize(&data)
@@ -128,7 +128,7 @@ impl ReportGenerator {
     
     /// Export a performance report to binary format
     #[instrument(skip(self, report))]
-    pub fn export_binary(&self, report: &PerformanceReport, output_path: &str) -> Result<(), ProfilerError> {
+    pub fn export_binary(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
         let data = bincode::serialize(report)
             .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
         std::fs::write(output_path, data).map_err(ProfilerError::IoError)?;
@@ -136,7 +136,7 @@ impl ReportGenerator {
         Ok(())
     }
     
-    fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<Option<CpuProfileData>, ProfilerError> {
+    fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Cpu) {
             let cpu_data: CpuProfileData = bincode::deserialize(data)
                 .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
@@ -146,7 +146,7 @@ impl ReportGenerator {
         }
     }
     
-    fn extract_memory_data(&self, profile_data: &ProfileData) -> Result<Option<MemoryProfileData>, ProfilerError> {
+    fn extract_memory_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Memory) {
             let memory_data: MemoryProfileData = bincode::deserialize(data)
                 .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
@@ -156,7 +156,7 @@ impl ReportGenerator {
         }
     }
     
-    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<Option<ConcurrencyProfileData>, ProfilerError> {
+    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Concurrency) {
             let concurrency_data: ConcurrencyProfileData = bincode::deserialize(data)
                 .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
@@ -166,7 +166,7 @@ impl ReportGenerator {
         }
     }
     
-    fn generate_cpu_analysis(&self, cpu_data: &CpuProfileData) -> Result<CpuAnalysisReport, ProfilerError> {
+    fn generate_cpu_analysis(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
         let hot_functions = cpu_data.get_hot_functions(self.config.max_functions);
         let call_graph = cpu_data.get_call_graph();
         let flame_graph = FlameGraph::from_cpu_profile(cpu_data)?;
@@ -197,7 +197,7 @@ impl ReportGenerator {
         })
     }
     
-    fn generate_memory_analysis(&self, memory_data: &MemoryProfileData) -> Result<MemoryAnalysisReport, ProfilerError> {
+    fn generate_memory_analysis(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
         let current_usage = memory_data.calculate_current_usage();
         let allocation_analysis = memory_data.analyze_patterns();
         let memory_leaks = memory_data.detect_leaks();
@@ -214,7 +214,7 @@ impl ReportGenerator {
         })
     }
     
-    fn generate_concurrency_analysis(&self, concurrency_data: &ConcurrencyProfileData) -> Result<ConcurrencyAnalysisReport, ProfilerError> {
+    fn generate_concurrency_analysis(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
         let goroutine_timeline = concurrency_data.generate_goroutine_timeline();
         let channel_analysis = concurrency_data.analyze_channels();
         let deadlocks = concurrency_data.detect_deadlocks();
@@ -404,7 +404,7 @@ impl ReportGenerator {
         ]
     }
     
-    fn generate_html_report(&self, report: &PerformanceReport) -> Result<String, ProfilerError> {
+    fn generate_html_report(&self, report: &PerformanceReport) -> Result<(), Error> {
         let mut html = String::new();
         
         html.push_str("<!DOCTYPE html><html><head>");
@@ -480,7 +480,7 @@ impl ReportGenerator {
         Ok(html)
     }
     
-    fn generate_markdown_report(&self, report: &PerformanceReport) -> Result<String, ProfilerError> {
+    fn generate_markdown_report(&self, report: &PerformanceReport) -> Result<(), Error> {
         let mut md = String::new();
         
         md.push_str(&format!("# Performance Report: {}\n\n", report.session_name));

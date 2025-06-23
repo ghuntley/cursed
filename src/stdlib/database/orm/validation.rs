@@ -127,7 +127,7 @@ pub trait Validator: Send + Sync + Debug {
     fn rule_name(&self) -> &str;
     
     /// Validate a field value
-    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> Result<(), ValidationError>;
+    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> Result<(), Error>;
     
     /// Check if validator applies to field type
     fn applies_to(&self, _field_type: &str) -> bool {
@@ -244,7 +244,7 @@ impl EntityValidator {
 
     /// yolo Validate entity with all rules
     #[instrument(skip(self, context))]
-    pub fn validate(&self, context: &ValidationContext) -> Result<(), Vec<ValidationError>> {
+    pub fn validate(&self, context: &ValidationContext) -> Result<(), Error>> {
         debug!(entity = %context.entity_type, "Validating entity");
         
         let mut errors = Vec::new();
@@ -307,7 +307,7 @@ impl Validator for Required {
         "required"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::Null => Err(ValidationError::new(field, "required", "Field is required")),
             SqlValue::String(s) if s.is_empty() => Err(ValidationError::new(field, "required", "Field cannot be empty")),
@@ -327,7 +327,7 @@ impl Validator for MinLength {
         "min_length"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 if s.len() < self.min {
@@ -362,7 +362,7 @@ impl Validator for MaxLength {
         "max_length"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 if s.len() > self.max {
@@ -397,7 +397,7 @@ impl Validator for ExactLength {
         "exact_length"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 if s.len() != self.length {
@@ -428,7 +428,7 @@ impl Validator for MinValue {
         "min_value"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         let numeric_value = match value {
             SqlValue::Integer(i) => *i as f64,
             SqlValue::Float(f) => *f,
@@ -464,7 +464,7 @@ impl Validator for MaxValue {
         "max_value"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         let numeric_value = match value {
             SqlValue::Integer(i) => *i as f64,
             SqlValue::Float(f) => *f,
@@ -497,7 +497,7 @@ impl Validator for Range {
         "range"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         let numeric_value = match value {
             SqlValue::Integer(i) => *i as f64,
             SqlValue::Float(f) => *f,
@@ -527,7 +527,7 @@ impl Validator for EmailFormat {
         "email_format"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 // Simple email validation (would use proper regex in production)
@@ -555,7 +555,7 @@ impl Validator for UrlFormat {
         "url_format"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 // Simple URL validation
@@ -579,7 +579,7 @@ impl Validator for PhoneFormat {
         "phone_format"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 // Simple phone validation (digits, spaces, dashes, parentheses)
@@ -607,7 +607,7 @@ impl Validator for Pattern {
         "pattern"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         match value {
             SqlValue::String(s) => {
                 // Simplified pattern matching (would use proper regex crate)
@@ -634,7 +634,7 @@ impl Validator for In {
         "in"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         let string_value = match value {
             SqlValue::String(s) => s.clone(),
             SqlValue::Integer(i) => i.to_string(),
@@ -668,7 +668,7 @@ impl Validator for NotIn {
         "not_in"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
         let string_value = match value {
             SqlValue::String(s) => s.clone(),
             SqlValue::Integer(i) => i.to_string(),
@@ -702,7 +702,7 @@ impl Validator for CustomValidator {
         self.validator.rule_name()
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> Result<(), ValidationError> {
+    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> Result<(), Error> {
         self.validator.validate(field, value, context)
     }
 

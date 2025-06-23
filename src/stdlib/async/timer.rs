@@ -44,7 +44,7 @@ impl Interval {
     }
 
     /// Tick the interval (wait for next fire)
-    pub async fn tick(&mut self) -> Result<(), AsyncError> {
+    pub async fn tick(&mut self) -> Result<(), Error> {
         if self.cancelled {
             return Err(AsyncError::Runtime("Interval cancelled".to_string()));
         }
@@ -99,7 +99,7 @@ impl<F> Future for Timeout<F>
 where
     F: Future,
 {
-    type Output = Result<F::Output, AsyncError>;
+    type Output = Result<(), Error>;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
@@ -136,7 +136,7 @@ impl<F> StdFuture for Timeout<F>
 where
     F: Future,
 {
-    type Output = Result<F::Output, AsyncError>;
+    type Output = Result<(), Error>;
 
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
         // Delegate to the custom Future implementation
@@ -160,7 +160,7 @@ pub mod timeout_utils {
     pub async fn race_timeout<F, T>(
         duration: Duration,
         future: F,
-    ) -> Result<T, AsyncError>
+    ) -> Result<(), Error>
     where
         F: Future<Output = T>,
     {
@@ -172,7 +172,7 @@ pub mod timeout_utils {
         duration: Duration,
         future: F,
         message: &str,
-    ) -> Result<T, AsyncError>
+    ) -> Result<(), Error>
     where
         F: Future<Output = T>,
     {
@@ -245,7 +245,7 @@ pub mod rate_limit {
         }
 
         /// Wait for a token (rate limit)
-        pub async fn acquire(&self) -> Result<(), AsyncError> {
+        pub async fn acquire(&self) -> Result<(), Error> {
             loop {
                 {
                     let now = Instant::now();

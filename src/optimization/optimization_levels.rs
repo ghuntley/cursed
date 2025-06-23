@@ -359,7 +359,7 @@ impl OptimizationSettings {
     /// Get configuration for level
     pub fn get_config(&self, level: OptimizationLevel) -> Result<&LevelConfig> {
         self.level_configs.get(&level)
-            .ok_or_else(|| Error::Other(format!("No configuration for optimization level: {:?}", level)))
+            .ok_or_else(|| Error::General(format!("No configuration for optimization level: {:?}", level)))
     }
     
     /// Get all available levels

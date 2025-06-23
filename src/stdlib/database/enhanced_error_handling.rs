@@ -547,9 +547,9 @@ impl DatabaseCircuitBreaker {
 
     /// facts Execute operation through circuit breaker
     #[instrument(skip(self, operation))]
-    pub async fn execute<F, T>(&self, operation: F) -> Result<T, CircuitBreakerError>
+    pub async fn execute<F, T>(&self, operation: F) -> Result<(), Error>
     where
-        F: FnOnce() -> Result<T, DatabaseError>,
+        F: FnOnce() -> Result<(), Error>,
         T: Send,
     {
         let current_state = {
@@ -579,7 +579,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// lowkey Record successful operation
-    async fn record_success(&self) -> Result<(), CircuitBreakerError> {
+    async fn record_success(&self) -> Result<(), Error> {
         trace!("Recording successful operation");
         
         let now = Instant::now();
@@ -606,7 +606,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// periodt Record failed operation
-    async fn record_failure(&self) -> Result<(), CircuitBreakerError> {
+    async fn record_failure(&self) -> Result<(), Error> {
         trace!("Recording failed operation");
         
         let now = Instant::now();
@@ -669,7 +669,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// highkey Transition to open state
-    async fn transition_to_open(&self) -> Result<(), CircuitBreakerError> {
+    async fn transition_to_open(&self) -> Result<(), Error> {
         warn!("Circuit breaker transitioning to OPEN state");
         
         if let Ok(mut state) = self.state.write() {
@@ -695,7 +695,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// facts Transition to closed state
-    async fn transition_to_closed(&self) -> Result<(), CircuitBreakerError> {
+    async fn transition_to_closed(&self) -> Result<(), Error> {
         info!("Circuit breaker transitioning to CLOSED state");
         
         if let Ok(mut state) = self.state.write() {
@@ -769,7 +769,7 @@ pub struct ErrorRecoveryCoordinator {
 /// fr fr Recovery handler trait for pluggable recovery strategies
 pub trait RecoveryHandler: Send + Sync + std::fmt::Debug {
     fn can_handle(&self, error: &EnhancedSqlError) -> bool;
-    fn recover(&self, error: &EnhancedSqlError) -> Result<RecoveryAction, DatabaseError>;
+    fn recover(&self, error: &EnhancedSqlError) -> Result<(), Error>;
 }
 
 #[derive(Debug)]
@@ -810,7 +810,7 @@ impl ErrorRecoveryCoordinator {
 
     /// facts Handle database error with comprehensive recovery
     #[instrument(skip(self, error, context))]
-    pub async fn handle_error(&self, error: DatabaseError, context: ErrorContext) -> Result<RecoveryAction, DatabaseError> {
+    pub async fn handle_error(&self, error: DatabaseError, context: ErrorContext) -> Result<(), Error> {
         let enhanced_error = self.error_analyzer.analyze_error(error, context);
         
         info!(
@@ -858,7 +858,7 @@ impl ErrorRecoveryCoordinator {
     }
 
     /// periodt Apply default recovery strategy
-    async fn apply_default_recovery(&self, error: &EnhancedSqlError) -> Result<RecoveryAction, DatabaseError> {
+    async fn apply_default_recovery(&self, error: &EnhancedSqlError) -> Result<(), Error> {
         match &error.recovery_strategy {
             RecoveryStrategy::Retry { max_attempts, base_delay, .. } => {
                 if error.retry_count < *max_attempts {

@@ -11,6 +11,7 @@ use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
+use crate::stdlib::web_vibez::SecurityContext;
 
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
@@ -25,7 +26,7 @@ use crate::stdlib::process::real_monitoring::{
 };
 
 // Re-export types from exec_vibez_types
-pub use crate::stdlib::process::exec_vibez_types::{
+pub use crate::stdlib::process::exec_vibez_crate::types::{
     VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits, SecurityContext,
     ExecutionMode, Priority
 };

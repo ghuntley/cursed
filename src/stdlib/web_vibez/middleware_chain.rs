@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Advanced middleware chain composition and execution system
 /// 
 /// Provides sophisticated middleware ordering, conditional execution,

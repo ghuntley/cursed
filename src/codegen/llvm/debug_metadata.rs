@@ -15,7 +15,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, PointerValue, InstructionValue};
-use inkwell::types::{BasicTypeEnum, StructType, FunctionType};
+use inkwell::crate::types::{BasicTypeEnum, StructType, FunctionType};
 
 // NOTE: Debug info types temporarily disabled due to LLVM API changes
 // use inkwell::debug_info::{
@@ -130,7 +130,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
         builder: &'ctx Builder<'ctx>,
         source_file: &Path,
         config: DebugConfig,
-    ) -> Result<Self, CursedError> {
+    ) -> Result<(), Error> {
         info!("Creating simplified LLVM debug metadata generator");
 
         let mut metadata = Self {
@@ -155,7 +155,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
     /// Generate debug metadata from source (simplified)
     /// NOTE: AST processing temporarily disabled due to type complexity
     #[instrument(skip(self))]
-    pub fn generate_from_source(&mut self, source_file: &Path) -> Result<(), CursedError> {
+    pub fn generate_from_source(&mut self, source_file: &Path) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -178,7 +178,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
         file_path: &Path,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -211,7 +211,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
         line: u32,
         column: u32,
         is_parameter: bool,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -259,7 +259,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
 
     /// Enter a new lexical scope (simplified)
     #[instrument(skip(self))]
-    pub fn enter_scope(&mut self, scope_name: &str, line: u32, column: u32) -> Result<(), CursedError> {
+    pub fn enter_scope(&mut self, scope_name: &str, line: u32, column: u32) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -285,7 +285,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
         name: &str,
         llvm_type: BasicTypeEnum<'ctx>,
         line: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -303,7 +303,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
         struct_type: StructType<'ctx>,
         fields: &[(String, String)], // (field_name, field_type)
         line: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -315,7 +315,7 @@ impl<'ctx> LlvmDebugMetadata<'ctx> {
 
     /// Finalize debug metadata generation (simplified)
     #[instrument(skip(self))]
-    pub fn finalize(&mut self) -> Result<(), CursedError> {
+    pub fn finalize(&mut self) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -398,7 +398,7 @@ pub trait DebugMetadataBuilder<'ctx> {
         file_path: &Path,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create variable debug information
     fn create_variable_debug(
@@ -410,7 +410,7 @@ pub trait DebugMetadataBuilder<'ctx> {
         line: u32,
         column: u32,
         is_parameter: bool,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Set current location
     fn set_current_location(&mut self, location: SourceLocation);
@@ -427,7 +427,7 @@ impl<'ctx> DebugMetadataBuilder<'ctx> for LlvmDebugMetadata<'ctx> {
         file_path: &Path,
         line: u32,
         column: u32,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.create_function_debug(function, name, file_path, line, column)
     }
 
@@ -440,7 +440,7 @@ impl<'ctx> DebugMetadataBuilder<'ctx> for LlvmDebugMetadata<'ctx> {
         line: u32,
         column: u32,
         is_parameter: bool,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.create_variable_debug(name, type_name, storage, file_path, line, column, is_parameter)
     }
 

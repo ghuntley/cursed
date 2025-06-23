@@ -553,7 +553,7 @@ impl MemoryHardUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Memory-hard hash computation
-pub fn memory_hard_hash(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn memory_hard_hash(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("memory_hard_hash requires input argument".to_string()));
     }

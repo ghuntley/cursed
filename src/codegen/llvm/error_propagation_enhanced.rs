@@ -11,7 +11,7 @@ use tracing::{debug, instrument};
 /// Enhanced error propagation compilation trait (non-conflicting)
 pub trait EnhancedErrorPropagationCompiler {
     /// Compile error propagation expression with enhanced context
-    fn compile_enhanced_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<String, CursedError>;
+    fn compile_enhanced_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<(), Error>;
 }
 
 /// Error propagation context
@@ -47,7 +47,7 @@ impl ErrorPropagationContext {
 
 impl EnhancedErrorPropagationCompiler for LlvmCodeGenerator {
     #[instrument(skip(self, expr))]
-    fn compile_enhanced_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<String, CursedError> {
+    fn compile_enhanced_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<(), Error> {
         debug!("Compiling enhanced error propagation");
         
         let context = ErrorPropagationContext::new(SourceLocation::new(1, 1))
@@ -63,7 +63,7 @@ impl LlvmCodeGenerator {
         &mut self,
         expr: &ErrorPropagation,
         context: &ErrorPropagationContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         // Compile the inner expression
         let inner_ir = self.compile_expression_to_string(expr.expression.as_ref())
             .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;

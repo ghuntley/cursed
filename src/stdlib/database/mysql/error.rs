@@ -202,7 +202,7 @@ impl MySqlError {
 }
 
 /// Result type for MySQL operations
-pub type MySqlResult<T> = Result<T, MySqlError>;
+pub type MySqlResult<(), Error>;
 
 /// Convert mysql crate errors to MySqlError
 impl From<mysql::Error> for MySqlError {
@@ -235,7 +235,7 @@ impl From<mysql::Error> for MySqlError {
                     format!("target struct: {:?}", row)
                 )
             }
-            mysql::Error::Other(other) => {
+            mysql::Error::General(other) => {
                 MySqlError::Unknown(format!("Other Error: {}", other))
             }
             _ => MySqlError::Unknown(format!("Unknown MySQL Error: {:?}", err)),

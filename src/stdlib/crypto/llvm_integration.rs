@@ -10,7 +10,7 @@ use inkwell::{
     builder::Builder,
     context::Context,
     module::Module,
-    types::{IntType, PointerType, VoidType, StructType},
+    crate::types::{IntType, PointerType, VoidType, StructType},
     values::{FunctionValue, PointerValue},
     AddressSpace,
 };
@@ -19,49 +19,49 @@ use tracing::{debug, info, warn, error, instrument};
 /// LLVM integration for crypto functions
 pub trait CryptoLLVMIntegration {
     /// Register all crypto functions with LLVM module
-    fn register_crypto_functions(&mut self, context: &Context, module: &Module, builder: &Builder) -> Result<(), CursedError>;
+    fn register_crypto_functions(&mut self, context: &Context, module: &Module, builder: &Builder) -> Result<(), Error>;
     
     /// Generate JWT token
-    fn generate_jwt_token(&mut self, secret: &[u8], claims_json: &str, expiry: u64) -> Result<String, CursedError>;
+    fn generate_jwt_token(&mut self, secret: &[u8], claims_json: &str, expiry: u64) -> Result<(), Error>;
     
     /// Validate JWT token
-    fn validate_jwt_token(&mut self, secret: &[u8], token: &str) -> Result<String, CursedError>;
+    fn validate_jwt_token(&mut self, secret: &[u8], token: &str) -> Result<(), Error>;
     
     /// Create HMAC signature
-    fn create_hmac_signature(&mut self, key: &[u8], data: &[u8]) -> Result<Vec<u8>, CursedError>;
+    fn create_hmac_signature(&mut self, key: &[u8], data: &[u8]) -> Result<(), Error>;
     
     /// Verify HMAC signature
-    fn verify_hmac_signature(&mut self, key: &[u8], data: &[u8], signature: &[u8]) -> Result<bool, CursedError>;
+    fn verify_hmac_signature(&mut self, key: &[u8], data: &[u8], signature: &[u8]) -> Result<(), Error>;
     
     /// Generate TOTP token
-    fn generate_totp(&mut self, secret: &[u8], digits: usize, time_step: u64) -> Result<String, CursedError>;
+    fn generate_totp(&mut self, secret: &[u8], digits: usize, time_step: u64) -> Result<(), Error>;
     
     /// Verify TOTP token
-    fn verify_totp(&mut self, secret: &[u8], token: &str, digits: usize, time_step: u64, window: u32) -> Result<bool, CursedError>;
+    fn verify_totp(&mut self, secret: &[u8], token: &str, digits: usize, time_step: u64, window: u32) -> Result<(), Error>;
     
     /// Generate secure random bytes
-    fn generate_random_bytes(&mut self, count: usize) -> Result<Vec<u8>, CursedError>;
+    fn generate_random_bytes(&mut self, count: usize) -> Result<(), Error>;
     
     /// Generate UUID v4
-    fn generate_uuid(&mut self) -> Result<String, CursedError>;
+    fn generate_uuid(&mut self) -> Result<(), Error>;
     
     /// Generate cryptographic salt
-    fn generate_salt(&mut self, length: usize) -> Result<Vec<u8>, CursedError>;
+    fn generate_salt(&mut self, length: usize) -> Result<(), Error>;
     
     /// Generate nonce
-    fn generate_nonce(&mut self, length: usize) -> Result<Vec<u8>, CursedError>;
+    fn generate_nonce(&mut self, length: usize) -> Result<(), Error>;
     
     /// Encode data as base64
     fn encode_base64(&self, data: &[u8], url_safe: bool) -> String;
     
     /// Decode base64 data
-    fn decode_base64(&self, encoded: &str, url_safe: bool) -> Result<Vec<u8>, CursedError>;
+    fn decode_base64(&self, encoded: &str, url_safe: bool) -> Result<(), Error>;
     
     /// Encode data as hex
     fn encode_hex(&self, data: &[u8], uppercase: bool) -> String;
     
     /// Decode hex data
-    fn decode_hex(&self, hex: &str) -> Result<Vec<u8>, CursedError>;
+    fn decode_hex(&self, hex: &str) -> Result<(), Error>;
     
     /// Hash data with SHA-256
     fn hash_sha256(&self, data: &[u8]) -> Vec<u8>;
@@ -101,7 +101,7 @@ impl CryptoRuntimeState {
         }
     }
 
-    fn ensure_generators(&mut self) -> Result<(), CursedError> {
+    fn ensure_generators(&mut self) -> Result<(), Error> {
         if self.random_generator.is_none() {
             self.random_generator = Some(SecureRandom::new()?);
         }
@@ -121,7 +121,7 @@ impl CryptoRuntimeState {
 impl CryptoLLVMIntegrationImpl {
     /// Create new crypto LLVM integration
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         info!("Creating crypto LLVM integration");
         Ok(Self {
             platform: Arc::new(Mutex::new(CryptoPlatform::new()?)),
@@ -149,7 +149,7 @@ impl CryptoLLVMIntegrationImpl {
     }
 
     /// Create LLVM function type for crypto operations
-    fn create_crypto_function_type(&self, context: &Context, return_type: &str, param_types: &[&str]) -> Result<inkwell::types::FunctionType, CursedError> {
+    fn create_crypto_function_type(&self, context: &Context, return_type: &str, param_types: &[&str]) -> Result<(), Error> {
         let i8_type = context.i8_type();
         let i32_type = context.i32_type();
         let i64_type = context.i64_type();
@@ -179,7 +179,7 @@ impl CryptoLLVMIntegrationImpl {
     }
 
     /// Register a crypto function with LLVM
-    fn register_function(&mut self, module: &Module, name: &str, fn_type: inkwell::types::FunctionType) -> Result<FunctionValue, CursedError> {
+    fn register_function(&mut self, module: &Module, name: &str, fn_type: inkwell::crate::types::FunctionType) -> Result<(), Error> {
         let function = module.add_function(name, fn_type, None);
         debug!(function_name = name, "Registered crypto function with LLVM");
         Ok(function)
@@ -188,7 +188,7 @@ impl CryptoLLVMIntegrationImpl {
 
 impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     #[instrument(skip(self, context, module, builder))]
-    fn register_crypto_functions(&mut self, context: &Context, module: &Module, builder: &Builder) -> Result<(), CursedError> {
+    fn register_crypto_functions(&mut self, context: &Context, module: &Module, builder: &Builder) -> Result<(), Error> {
         info!("Registering crypto functions with LLVM");
 
         // JWT functions
@@ -251,7 +251,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, secret, claims_json))]
-    fn generate_jwt_token(&mut self, secret: &[u8], claims_json: &str, expiry: u64) -> Result<String, CursedError> {
+    fn generate_jwt_token(&mut self, secret: &[u8], claims_json: &str, expiry: u64) -> Result<(), Error> {
         let handler = self.get_jwt_handler(secret, expiry);
         let claims: std::collections::HashMap<String, serde_json::Value> = 
             serde_json::from_str(claims_json)
@@ -262,7 +262,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, secret, token))]
-    fn validate_jwt_token(&mut self, secret: &[u8], token: &str) -> Result<String, CursedError> {
+    fn validate_jwt_token(&mut self, secret: &[u8], token: &str) -> Result<(), Error> {
         let handler = self.get_jwt_handler(secret, 3600); // Default expiry for validation
         let claims = handler.validate_token(token)?;
         let claims_json = serde_json::to_string(&claims)
@@ -272,7 +272,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, key, data))]
-    fn create_hmac_signature(&mut self, key: &[u8], data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    fn create_hmac_signature(&mut self, key: &[u8], data: &[u8]) -> Result<(), Error> {
         let auth = self.get_hmac_auth(key);
         let signature = auth.sign(data)?;
         debug!(data_length = data.len(), signature_length = signature.len(), "Created HMAC signature");
@@ -280,7 +280,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, key, data, signature))]
-    fn verify_hmac_signature(&mut self, key: &[u8], data: &[u8], signature: &[u8]) -> Result<bool, CursedError> {
+    fn verify_hmac_signature(&mut self, key: &[u8], data: &[u8], signature: &[u8]) -> Result<(), Error> {
         let auth = self.get_hmac_auth(key);
         let is_valid = auth.verify(data, signature)?;
         debug!(is_valid, "Verified HMAC signature");
@@ -288,7 +288,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, secret))]
-    fn generate_totp(&mut self, secret: &[u8], digits: usize, time_step: u64) -> Result<String, CursedError> {
+    fn generate_totp(&mut self, secret: &[u8], digits: usize, time_step: u64) -> Result<(), Error> {
         let generator = self.get_totp_generator(secret, digits, time_step);
         let token = generator.generate_current()?;
         debug!(digits, time_step, token = %token, "Generated TOTP");
@@ -296,7 +296,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, secret, token))]
-    fn verify_totp(&mut self, secret: &[u8], token: &str, digits: usize, time_step: u64, window: u32) -> Result<bool, CursedError> {
+    fn verify_totp(&mut self, secret: &[u8], token: &str, digits: usize, time_step: u64, window: u32) -> Result<(), Error> {
         let generator = self.get_totp_generator(secret, digits, time_step);
         let is_valid = generator.verify(token, window)?;
         debug!(is_valid, window, "Verified TOTP token");
@@ -304,7 +304,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self))]
-    fn generate_random_bytes(&mut self, count: usize) -> Result<Vec<u8>, CursedError> {
+    fn generate_random_bytes(&mut self, count: usize) -> Result<(), Error> {
         self.runtime_state.ensure_generators()?;
         let bytes = self.runtime_state.random_generator.as_mut().unwrap().generate_bytes(count)?;
         debug!(bytes_generated = count, "Generated random bytes");
@@ -312,7 +312,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self))]
-    fn generate_uuid(&mut self) -> Result<String, CursedError> {
+    fn generate_uuid(&mut self) -> Result<(), Error> {
         self.runtime_state.ensure_generators()?;
         let uuid = self.runtime_state.uuid_generator.as_mut().unwrap().generate()?;
         debug!(uuid = %uuid, "Generated UUID");
@@ -320,7 +320,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self))]
-    fn generate_salt(&mut self, length: usize) -> Result<Vec<u8>, CursedError> {
+    fn generate_salt(&mut self, length: usize) -> Result<(), Error> {
         self.runtime_state.ensure_generators()?;
         let salt = self.runtime_state.salt_generator.as_mut().unwrap().generate_salt(length)?;
         debug!(salt_length = length, "Generated salt");
@@ -328,7 +328,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self))]
-    fn generate_nonce(&mut self, length: usize) -> Result<Vec<u8>, CursedError> {
+    fn generate_nonce(&mut self, length: usize) -> Result<(), Error> {
         self.runtime_state.ensure_generators()?;
         let nonce = self.runtime_state.nonce_generator.as_mut().unwrap().generate_nonce(length)?;
         debug!(nonce_length = length, "Generated nonce");
@@ -347,7 +347,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, encoded))]
-    fn decode_base64(&self, encoded: &str, url_safe: bool) -> Result<Vec<u8>, CursedError> {
+    fn decode_base64(&self, encoded: &str, url_safe: bool) -> Result<(), Error> {
         let decoded = if url_safe {
             Base64Encoder::decode_url_safe(encoded)?
         } else {
@@ -369,7 +369,7 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
     }
 
     #[instrument(skip(self, hex))]
-    fn decode_hex(&self, hex: &str) -> Result<Vec<u8>, CursedError> {
+    fn decode_hex(&self, hex: &str) -> Result<(), Error> {
         let decoded = HexEncoder::decode(hex)?;
         debug!(input_length = hex.len(), output_length = decoded.len(), "Decoded hex");
         Ok(decoded)
@@ -398,7 +398,7 @@ static mut CRYPTO_LLVM_INTEGRATION: Option<CryptoLLVMIntegrationImpl> = None;
 
 /// Register crypto functions with LLVM module
 #[instrument(skip(context, module, builder))]
-pub fn register_crypto_functions(context: &Context, module: &Module, builder: &Builder) -> Result<(), CursedError> {
+pub fn register_crypto_functions(context: &Context, module: &Module, builder: &Builder) -> Result<(), Error> {
     unsafe {
         if CRYPTO_LLVM_INTEGRATION.is_none() {
             CRYPTO_LLVM_INTEGRATION = Some(CryptoLLVMIntegrationImpl::new()?);
@@ -414,7 +414,7 @@ pub fn register_crypto_functions(context: &Context, module: &Module, builder: &B
 }
 
 /// Get global crypto LLVM integration instance
-pub fn get_crypto_integration() -> Result<&'static mut CryptoLLVMIntegrationImpl, CursedError> {
+pub fn get_crypto_integration() -> Result<(), Error> {
     unsafe {
         if CRYPTO_LLVM_INTEGRATION.is_none() {
             CRYPTO_LLVM_INTEGRATION = Some(CryptoLLVMIntegrationImpl::new()?);

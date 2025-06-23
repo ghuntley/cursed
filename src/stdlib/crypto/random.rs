@@ -14,7 +14,7 @@ pub struct SecureRandom {
 impl SecureRandom {
     /// Create a new secure random generator
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         let mut generator = Self {
             state: ChaCha20State::new()?,
             reseed_counter: 0,
@@ -27,7 +27,7 @@ impl SecureRandom {
 
     /// Generate random bytes
     #[instrument(skip(self))]
-    pub fn generate_bytes(&mut self, count: usize) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_bytes(&mut self, count: usize) -> Result<(), Error> {
         if self.reseed_counter >= self.max_requests_before_reseed {
             self.reseed()?;
         }
@@ -42,14 +42,14 @@ impl SecureRandom {
 
     /// Generate a random u32
     #[instrument(skip(self))]
-    pub fn generate_u32(&mut self) -> Result<u32, CursedError> {
+    pub fn generate_u32(&mut self) -> Result<(), Error> {
         let bytes = self.generate_bytes(4)?;
         Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
     /// Generate a random u64
     #[instrument(skip(self))]
-    pub fn generate_u64(&mut self) -> Result<u64, CursedError> {
+    pub fn generate_u64(&mut self) -> Result<(), Error> {
         let bytes = self.generate_bytes(8)?;
         Ok(u64::from_le_bytes([
             bytes[0], bytes[1], bytes[2], bytes[3],
@@ -59,7 +59,7 @@ impl SecureRandom {
 
     /// Generate random number in range [0, max)
     #[instrument(skip(self))]
-    pub fn generate_range(&mut self, max: u64) -> Result<u64, CursedError> {
+    pub fn generate_range(&mut self, max: u64) -> Result<(), Error> {
         if max == 0 {
             return Ok(0);
         }
@@ -77,7 +77,7 @@ impl SecureRandom {
 
     /// Reseed the generator with fresh entropy
     #[instrument(skip(self))]
-    fn reseed(&mut self) -> Result<(), CursedError> {
+    fn reseed(&mut self) -> Result<(), Error> {
         let entropy = collect_entropy()?;
         self.state.reseed(&entropy)?;
         self.reseed_counter = 0;
@@ -95,7 +95,7 @@ struct ChaCha20State {
 }
 
 impl ChaCha20State {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             key: [0u32; 8],
             counter: 0,
@@ -103,7 +103,7 @@ impl ChaCha20State {
         })
     }
 
-    fn reseed(&mut self, entropy: &[u8]) -> Result<(), CursedError> {
+    fn reseed(&mut self, entropy: &[u8]) -> Result<(), Error> {
         if entropy.len() < 32 {
             return Err(CursedError::new("random_error", "Insufficient entropy"));
         }
@@ -129,7 +129,7 @@ impl ChaCha20State {
         Ok(())
     }
 
-    fn fill_bytes(&mut self, output: &mut [u8]) -> Result<(), CursedError> {
+    fn fill_bytes(&mut self, output: &mut [u8]) -> Result<(), Error> {
         let mut offset = 0;
         while offset < output.len() {
             let block = self.generate_block();
@@ -207,7 +207,7 @@ pub struct UuidV4Generator {
 impl UuidV4Generator {
     /// Create new UUID generator
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         info!("Creating UUID v4 generator");
         Ok(Self {
             rng: SecureRandom::new()?,
@@ -216,7 +216,7 @@ impl UuidV4Generator {
 
     /// Generate a UUID v4
     #[instrument(skip(self))]
-    pub fn generate(&mut self) -> Result<String, CursedError> {
+    pub fn generate(&mut self) -> Result<(), Error> {
         let mut bytes = self.rng.generate_bytes(16)?;
         
         // Set version to 4
@@ -240,7 +240,7 @@ impl UuidV4Generator {
 
     /// Generate multiple UUIDs at once
     #[instrument(skip(self))]
-    pub fn generate_batch(&mut self, count: usize) -> Result<Vec<String>, CursedError> {
+    pub fn generate_batch(&mut self, count: usize) -> Result<(), Error> {
         let mut uuids = Vec::with_capacity(count);
         for _ in 0..count {
             uuids.push(self.generate()?);
@@ -258,7 +258,7 @@ pub struct SaltGenerator {
 impl SaltGenerator {
     /// Create new salt generator
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         info!("Creating salt generator");
         Ok(Self {
             rng: SecureRandom::new()?,
@@ -267,7 +267,7 @@ impl SaltGenerator {
 
     /// Generate cryptographic salt
     #[instrument(skip(self))]
-    pub fn generate_salt(&mut self, length: usize) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_salt(&mut self, length: usize) -> Result<(), Error> {
         if length == 0 {
             return Err(CursedError::new("salt_error", "Salt length must be greater than 0"));
         }
@@ -282,7 +282,7 @@ impl SaltGenerator {
 
     /// Generate salt as hex string
     #[instrument(skip(self))]
-    pub fn generate_salt_hex(&mut self, byte_length: usize) -> Result<String, CursedError> {
+    pub fn generate_salt_hex(&mut self, byte_length: usize) -> Result<(), Error> {
         let salt = self.generate_salt(byte_length)?;
         let hex = salt.iter().map(|b| format!("{:02x}", b)).collect::<String>();
         debug!(byte_length, hex_length = hex.len(), "Generated salt as hex");
@@ -291,7 +291,7 @@ impl SaltGenerator {
 
     /// Generate salt as base64 string
     #[instrument(skip(self))]
-    pub fn generate_salt_base64(&mut self, byte_length: usize) -> Result<String, CursedError> {
+    pub fn generate_salt_base64(&mut self, byte_length: usize) -> Result<(), Error> {
         let salt = self.generate_salt(byte_length)?;
         let b64 = base64::engine::general_purpose::STANDARD.encode(&salt);
         debug!(byte_length, base64_length = b64.len(), "Generated salt as base64");
@@ -307,7 +307,7 @@ pub struct NonceGenerator {
 impl NonceGenerator {
     /// Create new nonce generator
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         info!("Creating nonce generator");
         Ok(Self {
             rng: SecureRandom::new()?,
@@ -316,7 +316,7 @@ impl NonceGenerator {
 
     /// Generate cryptographic nonce
     #[instrument(skip(self))]
-    pub fn generate_nonce(&mut self, length: usize) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_nonce(&mut self, length: usize) -> Result<(), Error> {
         if length == 0 {
             return Err(CursedError::new("nonce_error", "Nonce length must be greater than 0"));
         }
@@ -331,7 +331,7 @@ impl NonceGenerator {
 
     /// Generate time-based nonce (includes timestamp)
     #[instrument(skip(self))]
-    pub fn generate_time_nonce(&mut self, random_bytes: usize) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_time_nonce(&mut self, random_bytes: usize) -> Result<(), Error> {
         use std::time::{SystemTime, UNIX_EPOCH};
         
         let timestamp = SystemTime::now()
@@ -351,7 +351,7 @@ impl NonceGenerator {
 
     /// Generate nonce for specific purpose
     #[instrument(skip(self))]
-    pub fn generate_purpose_nonce(&mut self, purpose: &str, length: usize) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_purpose_nonce(&mut self, purpose: &str, length: usize) -> Result<(), Error> {
         let mut nonce = self.generate_nonce(length)?;
         
         // Mix in purpose string for domain separation
@@ -376,7 +376,7 @@ static ENTROPY_POOL: OnceLock<std::sync::Mutex<Vec<u8>>> = OnceLock::new();
 
 /// Collect system entropy for seeding random generators
 #[instrument]
-fn collect_entropy() -> Result<Vec<u8>, CursedError> {
+fn collect_entropy() -> Result<(), Error> {
     let mut entropy = Vec::with_capacity(256);
     
     // Add timestamp

@@ -149,7 +149,7 @@ pub struct TimeoutRedisSessionStore {
 }
 
 impl TimeoutRedisSessionStore {
-    pub async fn new(redis_url: &str, config: SessionConfig) -> Result<Self, SessionError> {
+    pub async fn new(redis_url: &str, config: SessionConfig) -> Result<(), Error> {
         let client = RedisClient::open(redis_url)
             .map_err(|e| SessionError::StoreError(format!("Failed to create Redis client: {}", e)))?;
         
@@ -168,12 +168,12 @@ impl TimeoutRedisSessionStore {
         format!("{}{}", self.key_prefix, session_id)
     }
 
-    fn serialize_session(&self, session: &Session) -> Result<String, SessionError> {
+    fn serialize_session(&self, session: &Session) -> Result<(), Error> {
         serde_json::to_string(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
     }
 
-    fn deserialize_session(&self, data: &str) -> Result<Session, SessionError> {
+    fn deserialize_session(&self, data: &str) -> Result<(), Error> {
         serde_json::from_str(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
     }
@@ -433,7 +433,7 @@ pub struct TimeoutDatabaseSessionStore {
 }
 
 impl TimeoutDatabaseSessionStore {
-    pub async fn new(database_config: DatabaseConfig, config: SessionConfig) -> Result<Self, SessionError> {
+    pub async fn new(database_config: DatabaseConfig, config: SessionConfig) -> Result<(), Error> {
         let pool = ConnectionPool::new(database_config)
             .await
             .map_err(|e| SessionError::StoreError(format!("Failed to create database pool: {}", e)))?;
@@ -450,7 +450,7 @@ impl TimeoutDatabaseSessionStore {
         Ok(store)
     }
 
-    async fn initialize_table(&self) -> Result<(), SessionError> {
+    async fn initialize_table(&self) -> Result<(), Error> {
         let mut conn = self.pool.get_connection().await
             .map_err(|e| SessionError::StoreError(format!("Failed to get database connection: {}", e)))?;
 
@@ -475,12 +475,12 @@ impl TimeoutDatabaseSessionStore {
         Ok(())
     }
 
-    fn serialize_session(&self, session: &Session) -> Result<String, SessionError> {
+    fn serialize_session(&self, session: &Session) -> Result<(), Error> {
         serde_json::to_string(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
     }
 
-    fn deserialize_session(&self, data: &str) -> Result<Session, SessionError> {
+    fn deserialize_session(&self, data: &str) -> Result<(), Error> {
         serde_json::from_str(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
     }
@@ -931,7 +931,7 @@ pub struct TimeoutFileSessionStore {
 }
 
 impl TimeoutFileSessionStore {
-    pub fn new(directory: PathBuf, config: SessionConfig) -> Result<Self, SessionError> {
+    pub fn new(directory: PathBuf, config: SessionConfig) -> Result<(), Error> {
         // Ensure directory exists
         if !directory.exists() {
             fs::create_dir_all(&directory)
@@ -948,12 +948,12 @@ impl TimeoutFileSessionStore {
         self.directory.join(format!("{}.session", session_id))
     }
 
-    fn serialize_session(&self, session: &Session) -> Result<Vec<u8>, SessionError> {
+    fn serialize_session(&self, session: &Session) -> Result<(), Error> {
         serde_json::to_vec(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
     }
 
-    fn deserialize_session(&self, data: &[u8]) -> Result<Session, SessionError> {
+    fn deserialize_session(&self, data: &[u8]) -> Result<(), Error> {
         serde_json::from_slice(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
     }
@@ -1164,7 +1164,7 @@ pub struct TimeoutSessionManager {
 
 impl TimeoutSessionManager {
     /// Create session manager with timeout support
-    pub async fn new(config: SessionConfig) -> Result<Self, SessionError> {
+    pub async fn new(config: SessionConfig) -> Result<(), Error> {
         let store = match &config.store_type {
             SessionStoreType::Memory => {
                 TimeoutAwareSessionStore::Memory(TimeoutMemorySessionStore::new(config.clone()))

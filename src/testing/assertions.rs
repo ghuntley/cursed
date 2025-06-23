@@ -28,7 +28,7 @@ pub struct AssertionError {
 }
 
 /// Result type for assertions
-pub type AssertionResult<T = ()> = Result<T, AssertionError>;
+pub type AssertionResult<(), Error>;
 
 impl Assert {
     /// Assert that a condition is true

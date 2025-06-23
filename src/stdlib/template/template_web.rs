@@ -138,7 +138,7 @@ impl WebTemplateRenderer {
         template_name: &str,
         context: TemplateContext,
         request: &WebTemplateRequest,
-    ) -> Result<TemplateResponse, CursedError> {
+    ) -> Result<(), Error> {
         debug!(template = template_name, "Rendering web template");
 
         // Create enhanced context with web-specific variables
@@ -174,7 +174,7 @@ impl WebTemplateRenderer {
         context: TemplateContext,
         request: &WebTemplateRequest,
         format: TemplateFormat,
-    ) -> Result<TemplateResponse, CursedError> {
+    ) -> Result<(), Error> {
         debug!(template = template_name, format = ?format, "Rendering template with format");
 
         let web_context = self.create_web_context(context, request)?;
@@ -212,14 +212,14 @@ impl WebTemplateRenderer {
         &self,
         template_name: &str,
         context: TemplateContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         debug!(template = template_name, "Rendering partial template");
         self.engine.render(template_name, context)
     }
 
     /// Render JSON response
     #[instrument(skip(self, data))]
-    pub fn render_json(&self, data: &CursedObject) -> Result<TemplateResponse, CursedError> {
+    pub fn render_json(&self, data: &CursedObject) -> Result<(), Error> {
         debug!("Rendering JSON response");
 
         let formatter = TemplateFormatRenderer::new(TemplateFormat::Json);
@@ -243,7 +243,7 @@ impl WebTemplateRenderer {
         error: &CursedError,
         status_code: u16,
         request: &WebTemplateRequest,
-    ) -> Result<TemplateResponse, CursedError> {
+    ) -> Result<(), Error> {
         debug!(status = status_code, "Rendering error page");
 
         let mut context = TemplateContext::new();
@@ -276,7 +276,7 @@ impl WebTemplateRenderer {
         &self,
         mut context: TemplateContext,
         request: &WebTemplateRequest,
-    ) -> Result<TemplateContext, CursedError> {
+    ) -> Result<(), Error> {
         // Add request information
         context.set("request_method", CursedObject::String(request.method.clone()));
         context.set("request_url", CursedObject::String(request.url.clone()));
@@ -308,7 +308,7 @@ impl WebTemplateRenderer {
     }
 
     /// Add web helper functions to context
-    fn add_web_helpers(&self, context: &mut TemplateContext) -> Result<(), CursedError> {
+    fn add_web_helpers(&self, context: &mut TemplateContext) -> Result<(), Error> {
         // Add current timestamp
         context.set("now", CursedObject::Integer(
             std::time::SystemTime::now()
@@ -326,7 +326,7 @@ impl WebTemplateRenderer {
     }
 
     /// Generate CSRF token
-    fn generate_csrf_token(&self, request: &WebTemplateRequest) -> Result<String, CursedError> {
+    fn generate_csrf_token(&self, request: &WebTemplateRequest) -> Result<(), Error> {
         use sha2::{Sha256, Digest};
         
         let mut hasher = Sha256::new();
@@ -348,13 +348,13 @@ impl WebTemplateRenderer {
         &self,
         token: &str,
         request: &WebTemplateRequest,
-    ) -> Result<bool, CursedError> {
+    ) -> Result<(), Error> {
         let expected_token = self.generate_csrf_token(request)?;
         Ok(token == expected_token)
     }
 
     /// Add security headers to response
-    fn add_security_headers(&self, response: &mut TemplateResponse) -> Result<(), CursedError> {
+    fn add_security_headers(&self, response: &mut TemplateResponse) -> Result<(), Error> {
         if self.web_config.enable_xss_protection {
             response.headers.insert(
                 "X-XSS-Protection".to_string(),
@@ -388,7 +388,7 @@ impl WebTemplateRenderer {
     }
 
     /// Parse template output into CursedObject
-    fn parse_template_output(&self, output: &str) -> Result<CursedObject, CursedError> {
+    fn parse_template_output(&self, output: &str) -> Result<(), Error> {
         // Simple parsing - in a real implementation, you might want more sophisticated parsing
         if output.trim().starts_with('{') && output.trim().ends_with('}') {
             // Try to parse as JSON
@@ -402,7 +402,7 @@ impl WebTemplateRenderer {
     }
 
     /// Convert JSON value to CursedObject
-    fn json_to_cursed(&self, json: &JsonValue) -> Result<CursedObject, CursedError> {
+    fn json_to_cursed(&self, json: &JsonValue) -> Result<(), Error> {
         match json {
             JsonValue::Null => Ok(CursedObject::Nil),
             JsonValue::Bool(b) => Ok(CursedObject::Boolean(*b)),
@@ -417,7 +417,7 @@ impl WebTemplateRenderer {
             }
             JsonValue::String(s) => Ok(CursedObject::String(s.clone())),
             JsonValue::Array(arr) => {
-                let cursed_array: Result<Vec<CursedObject>, CursedError> = arr.iter()
+                let cursed_array: Result<(), Error> = arr.iter()
                     .map(|item| self.json_to_cursed(item))
                     .collect();
                 Ok(CursedObject::Array(cursed_array?))
@@ -433,7 +433,7 @@ impl WebTemplateRenderer {
     }
 
     /// Render default error page
-    fn render_default_error(&self, error: &CursedError, status_code: u16) -> Result<String, CursedError> {
+    fn render_default_error(&self, error: &CursedError, status_code: u16) -> Result<(), Error> {
         let error_message = match status_code {
             404 => "Page Not Found",
             500 => "Internal Server Error",
@@ -501,7 +501,7 @@ impl TemplateMiddleware {
         request: &WebTemplateRequest,
         template_name: &str,
         context: TemplateContext,
-    ) -> Result<TemplateResponse, CursedError> {
+    ) -> Result<(), Error> {
         self.renderer.render_response(template_name, context, request)
     }
 
@@ -511,7 +511,7 @@ impl TemplateMiddleware {
         error: &CursedError,
         status_code: u16,
         request: &WebTemplateRequest,
-    ) -> Result<TemplateResponse, CursedError> {
+    ) -> Result<(), Error> {
         self.renderer.render_error(error, status_code, request)
     }
 }

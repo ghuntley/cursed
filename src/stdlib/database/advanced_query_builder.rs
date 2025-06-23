@@ -400,7 +400,7 @@ impl AdvancedSelectBuilder {
 
     /// yolo Build the final query with optimizations
     #[instrument(skip(self))]
-    pub fn build_optimized(&self) -> Result<(String, Vec<SqlValue>), DatabaseError> {
+    pub fn build_optimized(&self) -> Result<(), Error> {
         info!("Building optimized advanced SQL query");
         
         let mut query_parts = Vec::new();
@@ -488,7 +488,7 @@ impl AdvancedSelectBuilder {
 
 impl QueryBuilder for AdvancedSelectBuilder {
     #[instrument(skip(self))]
-    fn build(&self) -> Result<String, DatabaseError> {
+    fn build(&self) -> Result<(), Error> {
         let (query, _) = self.build_optimized()?;
         Ok(query)
     }
@@ -497,7 +497,7 @@ impl QueryBuilder for AdvancedSelectBuilder {
         self.parameters.clone()
     }
 
-    fn validate(&self) -> Result<(), DatabaseError> {
+    fn validate(&self) -> Result<(), Error> {
         if self.select_fields.is_empty() {
             return Err(DatabaseError::query_error("SELECT clause cannot be empty"));
         }

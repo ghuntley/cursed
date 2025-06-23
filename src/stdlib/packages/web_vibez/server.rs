@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// fr fr HTTP server implementation for web_vibez - the main server engine
 use std::sync::Arc;
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -13,7 +14,7 @@ use crate::stdlib::packages::web_vibez::{
     handler::Handler,
     middleware::MiddlewareChain,
     method::HttpMethod,
-    types::{RequestBody, ContentType},
+    crate::types::{RequestBody, ContentType},
     error::{WebError, WebResult, NetworkErrorKind},
     status::StatusCode,
 };

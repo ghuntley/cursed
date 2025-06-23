@@ -6,7 +6,7 @@
 /// - VibeTestingManager: Test suite manager
 
 use crate::stdlib::value::Value;
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 use super::{TestVibesResult, TestVibesError, test_failed, test_skipped};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

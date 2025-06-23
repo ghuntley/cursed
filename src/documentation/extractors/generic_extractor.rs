@@ -22,7 +22,7 @@ pub struct GenericExtractor {
 impl GenericExtractor {
     /// Create a new generic extractor
     #[instrument]
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         let mut constraint_keywords = HashSet::new();
         
         // CURSED constraint keywords
@@ -61,8 +61,8 @@ impl GenericExtractor {
     pub fn extract_function_generics(
         &self,
         func_decl: &FunctionDeclaration,
-    ) -> Result<GenericInfo, Error> {
-        debug!("Extracting function generics for: {}", func_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting function generics for: {}", func_decl.to_string());
 
         let parameters = if let Some(ref generics) = func_decl.generic_params {
             self.extract_generic_parameters(generics)?
@@ -90,8 +90,8 @@ impl GenericExtractor {
     pub fn extract_struct_generics(
         &self,
         struct_decl: &StructDeclaration,
-    ) -> Result<GenericInfo, Error> {
-        debug!("Extracting struct generics for: {}", struct_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting struct generics for: {}", struct_decl.to_string());
 
         let parameters = if let Some(ref generics) = struct_decl.generic_params {
             self.extract_generic_parameters(generics)?
@@ -119,8 +119,8 @@ impl GenericExtractor {
     pub fn extract_interface_generics(
         &self,
         interface_decl: &InterfaceDeclaration,
-    ) -> Result<GenericInfo, Error> {
-        debug!("Extracting interface generics for: {}", interface_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting interface generics for: {}", interface_decl.to_string());
 
         let parameters = if let Some(ref generics) = interface_decl.generic_params {
             self.extract_generic_parameters(generics)?
@@ -148,7 +148,7 @@ impl GenericExtractor {
     fn extract_generic_parameters(
         &self,
         param_names: &[String],
-    ) -> Result<Vec<GenericParameter>, Error> {
+    ) -> Result<(), Error> {
         let mut parameters = Vec::new();
 
         for param_name in param_names {
@@ -167,7 +167,7 @@ impl GenericExtractor {
     }
 
     /// Parse parameter constraints from parameter string
-    fn parse_parameter_constraints(&self, param_str: &str) -> Result<(String, Vec<String>), Error> {
+    fn parse_parameter_constraints(&self, param_str: &str) -> Result<(), Error> {
         // Handle formats like "T: Clone + Debug" or "T where T: Clone"
         if let Some(colon_pos) = param_str.find(':') {
             let name = param_str[..colon_pos].trim().to_string();
@@ -190,7 +190,7 @@ impl GenericExtractor {
     }
 
     /// Parse where clause constraints
-    fn parse_where_constraints(&self, constraints_str: &str) -> Result<Vec<String>, Error> {
+    fn parse_where_constraints(&self, constraints_str: &str) -> Result<(), Error> {
         // Handle multiple constraints separated by commas
         let clauses: Vec<&str> = constraints_str.split(',').collect();
         let mut constraints = Vec::new();
@@ -228,14 +228,14 @@ impl GenericExtractor {
     fn extract_generic_constraints(
         &self,
         constraints: &[GenericConstraint],
-    ) -> Result<Vec<GenericConstraint>, Error> {
+    ) -> Result<(), Error> {
         // For now, return the constraints as-is
         // In a real implementation, we'd parse and validate them
         Ok(constraints.clone())
     }
 
     /// Extract bounds from function declaration
-    fn extract_function_bounds(&self, func_decl: &FunctionDeclaration) -> Result<Vec<GenericBound>, Error> {
+    fn extract_function_bounds(&self, func_decl: &FunctionDeclaration) -> Result<(), Error> {
         let mut bounds = Vec::new();
 
         // Extract bounds from parameter types
@@ -254,7 +254,7 @@ impl GenericExtractor {
     }
 
     /// Extract bounds from struct declaration
-    fn extract_struct_bounds(&self, struct_decl: &StructDeclaration) -> Result<Vec<GenericBound>, Error> {
+    fn extract_struct_bounds(&self, struct_decl: &StructDeclaration) -> Result<(), Error> {
         let mut bounds = Vec::new();
 
         // Extract bounds from field types
@@ -268,7 +268,7 @@ impl GenericExtractor {
     }
 
     /// Extract bounds from interface declaration
-    fn extract_interface_bounds(&self, interface_decl: &InterfaceDeclaration) -> Result<Vec<GenericBound>, Error> {
+    fn extract_interface_bounds(&self, interface_decl: &InterfaceDeclaration) -> Result<(), Error> {
         let mut bounds = Vec::new();
 
         // Extract bounds from method signatures
@@ -294,16 +294,16 @@ impl GenericExtractor {
     fn extract_bounds_from_type_expression(
         &self,
         expr: &dyn Expression,
-    ) -> Result<Vec<GenericBound>, Error> {
+    ) -> Result<(), Error> {
         let mut bounds = Vec::new();
 
         match &expr.expr_type {
             ExpressionType::Identifier(id) => {
                 // Check if this identifier represents a bound
-                if self.builtin_traits.contains(&id.name) {
+                if self.builtin_traits.contains(&id.to_string()) {
                     bounds.push(GenericBound {
-                        bound_type: id.name.clone(),
-                        expression: id.name.clone(),
+                        bound_type: id.to_string().clone(),
+                        expression: id.to_string().clone(),
                         lifetime: None,
                     });
                 }
@@ -371,7 +371,7 @@ impl GenericExtractor {
     pub fn extract_constraint_relationships(
         &self,
         constraints: &[GenericConstraint],
-    ) -> Result<Vec<ConstraintRelationship>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         for constraint in constraints {
@@ -390,7 +390,7 @@ impl GenericExtractor {
     }
 
     /// Classify constraint type
-    fn classify_constraint(&self, constraint_type: &str) -> Result<ConstraintRelationshipType, Error> {
+    fn classify_constraint(&self, constraint_type: &str) -> Result<(), Error> {
         match constraint_type.to_lowercase().as_str() {
             "implements" | "impl" => Ok(ConstraintRelationshipType::Implements),
             "extends" | "super" => Ok(ConstraintRelationshipType::Extends),
@@ -411,7 +411,7 @@ impl GenericExtractor {
     pub fn validate_generic_constraints(
         &self,
         generic_info: &GenericInfo,
-    ) -> Result<Vec<ConstraintValidationResult>, Error> {
+    ) -> Result<(), Error> {
         let mut results = Vec::new();
 
         for constraint in &generic_info.constraints {
@@ -427,10 +427,10 @@ impl GenericExtractor {
         &self,
         constraint: &GenericConstraint,
         parameters: &[GenericParameter],
-    ) -> Result<ConstraintValidationResult, Error> {
+    ) -> Result<(), Error> {
         // Check if target type exists in parameters
         let target_exists = parameters.iter()
-            .any(|param| param.name == constraint.target_type);
+            .any(|param| param.to_string() == constraint.target_type);
 
         // Check if constraint type is valid
         let constraint_valid = self.builtin_traits.contains(&constraint.constraint_type) ||
@@ -466,7 +466,7 @@ impl GenericExtractor {
     fn generate_constraint_suggestions(
         &self,
         constraint: &GenericConstraint,
-    ) -> Result<Vec<String>, Error> {
+    ) -> Result<(), Error> {
         let mut suggestions = Vec::new();
 
         // Suggest common traits if constraint is unrecognized

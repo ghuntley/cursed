@@ -187,7 +187,7 @@ impl PropagationValidator {
     pub fn validate_propagation(
         expr: &ErrorPropagation,
         context: &PropagationContext,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Check if we're in a valid function context
         if context.current_function.is_none() {
             return Err(CursedError::ErrorPropagation {
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn test_type_compatibility() {
         assert!(PropagationValidator::types_compatible("i32", "i32"));
-        assert!(PropagationValidator::types_compatible("Result<i32, String>", "Result<i32, Error>"));
+        assert!(PropagationValidator::types_compatible("Result<(), Error>"));
         assert!(PropagationValidator::types_compatible("Option<i32>", "Option<String>"));
         assert!(!PropagationValidator::types_compatible("i32", "String"));
     }

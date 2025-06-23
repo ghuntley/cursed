@@ -165,7 +165,7 @@ pub struct TemplateMetadata {
 
 impl Template {
     /// Create a new template from source
-    pub fn from_source(name: String, source: String, delimiters: &TemplateDelimiters) -> Result<Self, TemplateError> {
+    pub fn from_source(name: String, source: String, delimiters: &TemplateDelimiters) -> Result<(), Error> {
         let parse_start = Instant::now();
         
         let mut lexer = TemplateLexer::new(&source, delimiters);
@@ -400,7 +400,7 @@ impl Default for TemplateConfig {
 /// Trait for loading templates from various sources
 pub trait TemplateLoader: Send + Sync {
     /// Load a template by name/path
-    fn load(&self, name: &str) -> Result<String, CursedError>;
+    fn load(&self, name: &str) -> Result<(), Error>;
     
     /// Check if a template exists
     fn exists(&self, name: &str) -> bool;
@@ -436,7 +436,7 @@ impl FileSystemLoader {
 
 impl TemplateLoader for FileSystemLoader {
     #[instrument(skip(self))]
-    fn load(&self, name: &str) -> Result<String, CursedError> {
+    fn load(&self, name: &str) -> Result<(), Error> {
         let template_path = self.base_dir.join(name);
         
         // Security check: ensure template is within base directory
@@ -523,7 +523,7 @@ impl TemplateContext {
     }
     
     /// Create a scoped context for loops with iteration variables
-    pub fn create_loop_scope(&self, loop_var: String, loop_value: CursedObject, index: usize) -> Result<Self, CursedError> {
+    pub fn create_loop_scope(&self, loop_var: String, loop_value: CursedObject, index: usize) -> Result<(), Error> {
         let scope = Self::with_parent_and_isolation(self.clone(), ContextIsolationLevel::Local);
         scope.set_local(loop_var, loop_value)?;
         scope.set_local("loop".to_string(), CursedObject::Map({
@@ -539,12 +539,12 @@ impl TemplateContext {
     }
     
     /// Set a variable in this context (thread-safe)
-    pub fn set<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), CursedError> {
+    pub fn set<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), Error> {
         self.set_local(key, value)
     }
     
     /// Set a variable in this context only (no parent traversal)
-    pub fn set_local<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), CursedError> {
+    pub fn set_local<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), Error> {
         let key_str = key.into();
         let mut variables = self.variables.write()
             .map_err(|_| CursedError::TemplateError {
@@ -557,7 +557,7 @@ impl TemplateContext {
     }
     
     /// Update an existing variable in this context or parent contexts
-    pub fn update<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<bool, CursedError> {
+    pub fn update<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), Error> {
         let key_str = key.into();
         
         match self.isolation_level {
@@ -600,7 +600,7 @@ impl TemplateContext {
     }
     
     /// Update variable in parent chain (helper for None isolation level)
-    fn update_in_parent_chain(&self, key: &str, value: &CursedObject) -> Result<bool, CursedError> {
+    fn update_in_parent_chain(&self, key: &str, value: &CursedObject) -> Result<(), Error> {
         // Check if variable exists in current context
         {
             let variables = self.variables.read()
@@ -676,7 +676,7 @@ impl TemplateContext {
     }
     
     /// Merge another context into this one (thread-safe)
-    pub fn merge(&self, other: &TemplateContext) -> Result<(), CursedError> {
+    pub fn merge(&self, other: &TemplateContext) -> Result<(), Error> {
         let other_variables = other.variables.read()
             .map_err(|_| CursedError::TemplateError {
                 message: "Failed to acquire read lock for source context during merge".to_string(),
@@ -697,7 +697,7 @@ impl TemplateContext {
     }
     
     /// Create a context with additional variables for includes
-    pub fn create_include_context(&self, include_vars: HashMap<String, CursedObject>) -> Result<Self, CursedError> {
+    pub fn create_include_context(&self, include_vars: HashMap<String, CursedObject>) -> Result<(), Error> {
         let include_context = Self::with_parent_and_isolation(self.clone(), ContextIsolationLevel::Local);
         
         for (key, value) in include_vars {
@@ -765,7 +765,7 @@ impl TemplateEngine {
     
     /// Set a global context variable available to all templates
     #[instrument(skip(self, key, value))]
-    pub fn set_global<K: Into<String> + std::fmt::Debug>(&self, key: K, value: CursedObject) -> Result<(), CursedError> {
+    pub fn set_global<K: Into<String> + std::fmt::Debug>(&self, key: K, value: CursedObject) -> Result<(), Error> {
         let mut context = self.global_context.write()
             .map_err(|_| CursedError::TemplateError {
                 message: "Failed to acquire global context lock".to_string(),
@@ -777,9 +777,9 @@ impl TemplateEngine {
     }
     
     /// Register a custom filter
-    pub fn register_filter<F>(&self, name: &str, filter: F) -> Result<(), CursedError>
+    pub fn register_filter<F>(&self, name: &str, filter: F) -> Result<(), Error>
     where
-        F: Fn(&FilterContext, &[CursedObject]) -> Result<CursedObject, CursedError> + Send + Sync + 'static,
+        F: Fn(&FilterContext, &[CursedObject]) -> Result<(), Error> + Send + Sync + 'static,
     {
         self.filters.register(name, filter);
         Ok(())
@@ -787,7 +787,7 @@ impl TemplateEngine {
     
     /// Render a template by name with the given context
     #[instrument(skip(self, context))]
-    pub fn render(&self, template_name: &str, context: TemplateContext) -> Result<String, CursedError> {
+    pub fn render(&self, template_name: &str, context: TemplateContext) -> Result<(), Error> {
         info!(template = template_name, "Starting template render");
         let render_start = Instant::now();
         
@@ -852,7 +852,7 @@ impl TemplateEngine {
     
     /// Load and compile a template, caching the result
     #[instrument(skip(self))]
-    fn load_and_compile_template(&self, template_name: &str) -> Result<Arc<Template>, CursedError> {
+    fn load_and_compile_template(&self, template_name: &str) -> Result<(), Error> {
         // Load template source
         let template_source = self.loader.load(template_name)?;
         
@@ -875,7 +875,7 @@ impl TemplateEngine {
     
     /// Render a template from a string with the given context
     #[instrument(skip(self, template_source, context))]
-    pub fn render_string(&self, template_source: &str, context: TemplateContext) -> Result<String, CursedError> {
+    pub fn render_string(&self, template_source: &str, context: TemplateContext) -> Result<(), Error> {
         debug!(source_length = template_source.len(), "Rendering template from string");
         let render_start = Instant::now();
         
@@ -932,7 +932,7 @@ impl TemplateEngine {
     
     /// Parse a template source into an AST
     #[instrument(skip(self, source))]
-    pub fn parse_template(&self, source: &str) -> Result<TemplateAst, CursedError> {
+    pub fn parse_template(&self, source: &str) -> Result<(), Error> {
         debug!(source_length = source.len(), "Parsing template");
         
         let mut lexer = TemplateLexer::new(source, &self.config.delimiters);
@@ -979,14 +979,14 @@ impl TemplateEngine {
     
     /// Precompile a template for better performance
     #[instrument(skip(self))]
-    pub fn precompile_template(&self, template_name: &str) -> Result<(), CursedError> {
+    pub fn precompile_template(&self, template_name: &str) -> Result<(), Error> {
         self.load_and_compile_template(template_name)?;
         Ok(())
     }
     
     /// Validate a template without rendering
     #[instrument(skip(self))]
-    pub fn validate_template(&self, template_name: &str) -> Result<(), TemplateError> {
+    pub fn validate_template(&self, template_name: &str) -> Result<(), Error> {
         let template_source = self.loader.load(template_name)
             .map_err(|e| TemplateError::LoadError {
                 template_name: template_name.to_string(),
@@ -1004,7 +1004,7 @@ impl TemplateEngine {
     
     /// Validate template source string
     #[instrument(skip(self, source))]
-    pub fn validate_template_source(&self, source: &str) -> Result<(), TemplateError> {
+    pub fn validate_template_source(&self, source: &str) -> Result<(), Error> {
         Template::from_source(
             "validation".to_string(),
             source.to_string(),

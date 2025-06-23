@@ -140,7 +140,7 @@ pub trait LlvmDebugManagerTrait {
         name: &str,
         file_path: &Path,
         line: u32,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
     
     fn create_variable_debug(
         &mut self,
@@ -148,7 +148,7 @@ pub trait LlvmDebugManagerTrait {
         type_name: &str,
         file_path: &Path,
         line: u32,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
     
     fn finalize(&mut self);
 }
@@ -197,7 +197,7 @@ impl DebugInfoManager {
         &mut self,
         file: PathBuf,
         producer: String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -251,7 +251,7 @@ impl DebugInfoManager {
         &mut self,
         name: String,
         location: ErrorSourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -332,7 +332,7 @@ impl DebugInfoManager {
     }
 
     /// End function debug information
-    pub fn end_function(&mut self) -> Result<(), CursedError> {
+    pub fn end_function(&mut self) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -377,7 +377,7 @@ impl DebugInfoManager {
         name: String,
         type_name: String,
         location: ErrorSourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         if !self.enabled {
             return Ok(());
         }
@@ -438,7 +438,7 @@ impl DebugInfoManager {
     }
 
     /// Generate LLVM debug metadata
-    pub fn generate_llvm_debug_metadata(&self) -> Result<String, CursedError> {
+    pub fn generate_llvm_debug_metadata(&self) -> Result<(), Error> {
         if !self.enabled {
             return Ok(String::new());
         }
@@ -680,7 +680,7 @@ impl DebugInfoManager {
     }
 
     /// Update statistics with a closure
-    fn update_statistics<F>(&self, updater: F) -> Result<(), CursedError>
+    fn update_statistics<F>(&self, updater: F) -> Result<(), Error>
     where
         F: FnOnce(&mut DebugStatistics),
     {

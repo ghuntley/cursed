@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::ffi::CString;
 
-use inkwell::types::{IntType, PointerType, StructType, VoidType};
+use inkwell::crate::types::{IntType, PointerType, StructType, VoidType};
 use inkwell::values::{FunctionValue, IntValue, PointerValue, CallSiteValue};
 use inkwell::AddressSpace;
 use inkwell::IntPredicate;
@@ -20,30 +20,30 @@ use crate::error::CursedError;
 /// LLVM integration trait for process management
 pub trait ProcessLlvmIntegration {
     /// Compile process spawn operation
-    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> Result<IntValue, CursedError>;
+    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> Result<(), Error>;
     
     /// Compile process wait operation
-    fn compile_wait_process(&mut self, pid: IntValue) -> Result<IntValue, CursedError>;
+    fn compile_wait_process(&mut self, pid: IntValue) -> Result<(), Error>;
     
     /// Compile process kill operation
-    fn compile_kill_process(&mut self, pid: IntValue) -> Result<IntValue, CursedError>;
+    fn compile_kill_process(&mut self, pid: IntValue) -> Result<(), Error>;
     
     /// Compile IPC named pipe creation
-    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> Result<PointerValue, CursedError>;
+    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> Result<(), Error>;
     
     /// Compile shared memory creation
-    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> Result<PointerValue, CursedError>;
+    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> Result<(), Error>;
     
     /// Compile message queue creation
-    fn compile_create_message_queue(&mut self, name: &str) -> Result<PointerValue, CursedError>;
+    fn compile_create_message_queue(&mut self, name: &str) -> Result<(), Error>;
     
     /// Compile pipeline execution
-    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> Result<PointerValue, CursedError>;
+    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> Result<(), Error>;
 }
 
 impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     #[instrument(skip(self))]
-    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> Result<IntValue, CursedError> {
+    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_spawn_process";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -119,7 +119,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_wait_process(&mut self, pid: IntValue) -> Result<IntValue, CursedError> {
+    fn compile_wait_process(&mut self, pid: IntValue) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_wait_process";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -145,7 +145,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_kill_process(&mut self, pid: IntValue) -> Result<IntValue, CursedError> {
+    fn compile_kill_process(&mut self, pid: IntValue) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_kill_process";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -171,7 +171,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> Result<PointerValue, CursedError> {
+    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_create_named_pipe";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -217,7 +217,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> Result<PointerValue, CursedError> {
+    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_create_shared_memory";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -268,7 +268,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_create_message_queue(&mut self, name: &str) -> Result<PointerValue, CursedError> {
+    fn compile_create_message_queue(&mut self, name: &str) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_create_message_queue";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -303,7 +303,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> Result<PointerValue, CursedError> {
+    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> Result<(), Error> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_execute_pipeline";
         let function = if let Some(function) = self.module.get_function(function_name) {

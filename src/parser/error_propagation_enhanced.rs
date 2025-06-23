@@ -16,7 +16,7 @@ impl Parser {
     /// 
     /// This method handles the `?` operator as a postfix operator with high precedence.
     /// It validates the context and provides detailed error messages.
-    pub fn parse_error_propagation_enhanced(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
+    pub fn parse_error_propagation_enhanced(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         // Validate that we're on the question mark token
         if !self.current_token_is(&TokenType::Question) {
             return Err(CursedError::ParseError {
@@ -47,7 +47,7 @@ impl Parser {
     }
     
     /// Validate that error propagation is allowed in the current context (enhanced version)
-    fn validate_error_propagation_context_enhanced(&self, location: &SourceLocation) -> Result<(), CursedError> {
+    fn validate_error_propagation_context_enhanced(&self, location: &SourceLocation) -> Result<(), Error> {
         // Check if we're inside a function
         if !self.is_in_function_context() {
             return Err(CursedError::ErrorPropagation {
@@ -122,7 +122,7 @@ impl Parser {
     }
     
     /// Parse chained error propagations (expr?.field?.method()?)
-    pub fn parse_chained_error_propagations(&mut self, mut expr: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
+    pub fn parse_chained_error_propagations(&mut self, mut expr: Box<dyn Expression>) -> Result<(), Error> {
         let mut propagation_count = 0;
         const MAX_PROPAGATION_CHAIN: usize = 50; // Prevent extremely long chains
         
@@ -153,7 +153,7 @@ impl Parser {
     }
     
     /// Parse error propagation with error recovery
-    pub fn parse_error_propagation_with_recovery(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
+    pub fn parse_error_propagation_with_recovery(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         match self.parse_error_propagation_enhanced(left.clone()) {
             Ok(expr) => Ok(expr),
             Err(err) => {
@@ -168,7 +168,7 @@ impl Parser {
     }
     
     /// Recover from error propagation parsing errors
-    fn recover_from_error_propagation_error(&mut self) -> Result<(), CursedError> {
+    fn recover_from_error_propagation_error(&mut self) -> Result<(), Error> {
         // Skip the problematic token and try to continue
         if self.current_token_is(&TokenType::Question) {
             self.lexer.next_token();

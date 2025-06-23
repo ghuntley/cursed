@@ -105,7 +105,7 @@ impl Default for JitEngineConfig {
 
 impl<'ctx> CursedJitEngine<'ctx> {
     /// Create a new JIT engine with the given context and configuration
-    pub fn new(context: &'ctx Context, config: JitEngineConfig) -> Result<Self, Error> {
+    pub fn new(context: &'ctx Context, config: JitEngineConfig) -> Result<(), Error> {
         // Initialize LLVM targets
         Target::initialize_native(&inkwell::targets::InitializationConfig::default())
             .map_err(|e| Error::from_str(&format!("Failed to initialize LLVM targets: {}", e)))?;
@@ -129,7 +129,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
     }
 
     /// Create a new JIT engine with default configuration
-    pub fn new_with_default_config(context: &'ctx Context) -> Result<Self, Error> {
+    pub fn new_with_default_config(context: &'ctx Context) -> Result<(), Error> {
         Self::new(context, JitEngineConfig::default())
     }
 
@@ -205,7 +205,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
     }
 
     /// Create a default function module for testing purposes
-    fn create_default_function_module(&self, function_name: &str) -> Result<Module, Error> {
+    fn create_default_function_module(&self, function_name: &str) -> Result<(), Error> {
         let module = self.context.create_module(&format!("jit_module_{}", function_name));
         
         let i32_type = self.context.i32_type();
@@ -224,7 +224,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
     }
 
     /// Parse and compile LLVM IR code
-    fn parse_and_compile_ir(&self, function_name: &str, llvm_ir: &str) -> Result<Module, Error> {
+    fn parse_and_compile_ir(&self, function_name: &str, llvm_ir: &str) -> Result<(), Error> {
         // Create module from IR string
         let module = self.context.create_module(&format!("jit_module_{}", function_name));
         
@@ -292,7 +292,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
     /// 
     /// # Returns
     /// * Result containing function pointer or error
-    pub fn get_function(&self, function_name: &str) -> Result<JitFunction<()>, Error> {
+    pub fn get_function(&self, function_name: &str) -> Result<(), Error> {
         // Check cache first
         if self.config.enable_function_cache {
             let cache = self.compiled_functions.lock().unwrap();
@@ -318,7 +318,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
     /// 
     /// # Returns
     /// * Result containing execution result or error
-    pub fn execute_function(&mut self, function_name: &str) -> Result<i32, Error> {
+    pub fn execute_function(&mut self, function_name: &str) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
 
         let function = self.get_function(function_name)?;
@@ -439,7 +439,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
     }
 
     /// Compile multiple functions from a module
-    pub fn compile_module(&mut self, module_name: &str, llvm_ir: &str) -> Result<Vec<String>, Error> {
+    pub fn compile_module(&mut self, module_name: &str, llvm_ir: &str) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
 
         // Parse module and extract function names
@@ -492,7 +492,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
 /// Helper functions for JIT engine management
 
 /// Create a new JIT engine with optimal configuration for the current system
-pub fn create_optimized_jit_engine(context: &Context) -> Result<CursedJitEngine, Error> {
+pub fn create_optimized_jit_engine(context: &Context) -> Result<(), Error> {
     let mut config = JitEngineConfig::default();
     
     // Set optimization level based on build configuration
@@ -517,7 +517,7 @@ pub fn create_optimized_jit_engine(context: &Context) -> Result<CursedJitEngine,
 }
 
 /// Create a JIT engine for development/debugging
-pub fn create_debug_jit_engine(context: &Context) -> Result<CursedJitEngine, Error> {
+pub fn create_debug_jit_engine(context: &Context) -> Result<(), Error> {
     let config = JitEngineConfig {
         optimization_level: OptimizationLevel::O0,
         enable_function_cache: true,
@@ -532,7 +532,7 @@ pub fn create_debug_jit_engine(context: &Context) -> Result<CursedJitEngine, Err
 }
 
 /// Create a JIT engine for production use
-pub fn create_production_jit_engine(context: &Context) -> Result<CursedJitEngine, Error> {
+pub fn create_production_jit_engine(context: &Context) -> Result<(), Error> {
     let config = JitEngineConfig {
         optimization_level: OptimizationLevel::O3,
         enable_function_cache: true,

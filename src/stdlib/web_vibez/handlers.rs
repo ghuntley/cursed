@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Request handlers for HTTP routes
 /// 
 /// Provides trait definitions and common handler implementations
@@ -14,7 +15,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument};
 
 /// Result type for request handlers
-pub type HandlerResult = Result<ResponseContext, HandlerError>;
+pub type HandlerResult = Result<(), Error>;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -26,7 +27,7 @@ pub trait RequestHandler: Send + Sync {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>>;
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>>;
 
     /// Get handler name for debugging
     fn name(&self) -> &'static str {
@@ -73,7 +74,7 @@ impl RouteHandler {
         &self,
         context: &RequestContext,
         response: &mut ResponseContext,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), Error> {
         debug!(
             handler = self.handler.name(),
             request_id = %context.request_id,
@@ -156,7 +157,7 @@ impl RequestHandler for StaticHandler {
         &'a self,
         _context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         let status = self.status;
         let content_type = self.content_type.clone();
         let content = self.content.clone();
@@ -181,7 +182,7 @@ impl RequestHandler for StaticHandler {
 /// JSON API handler for REST endpoints
 pub struct JsonApiHandler {
     /// Handler function for different HTTP methods
-    handlers: HashMap<String, Box<dyn Fn(&RequestContext) -> Result<serde_json::Value, HandlerError> + Send + Sync>>,
+    handlers: HashMap<String, Box<dyn Fn(&RequestContext) -> Result<(), Error> + Send + Sync>>,
 }
 
 impl std::fmt::Debug for JsonApiHandler {
@@ -201,7 +202,7 @@ impl JsonApiHandler {
 
     pub fn on_get<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<serde_json::Value, HandlerError> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
     {
         self.handlers.insert("GET".to_string(), Box::new(handler));
         self
@@ -209,7 +210,7 @@ impl JsonApiHandler {
 
     pub fn on_post<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<serde_json::Value, HandlerError> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
     {
         self.handlers.insert("POST".to_string(), Box::new(handler));
         self
@@ -217,7 +218,7 @@ impl JsonApiHandler {
 
     pub fn on_put<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<serde_json::Value, HandlerError> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
     {
         self.handlers.insert("PUT".to_string(), Box::new(handler));
         self
@@ -225,7 +226,7 @@ impl JsonApiHandler {
 
     pub fn on_delete<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<serde_json::Value, HandlerError> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
     {
         self.handlers.insert("DELETE".to_string(), Box::new(handler));
         self
@@ -237,7 +238,7 @@ impl RequestHandler for JsonApiHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         Box::pin(async move {
         let method_str = context.method.to_string();
         
@@ -344,7 +345,7 @@ impl RequestHandler for TemplateHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         Box::pin(async move {
         let mut data = HashMap::new();
         
@@ -449,7 +450,7 @@ impl RequestHandler for FileHandler {
         &'a self,
         _context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         Box::pin(async move {
         let content = std::fs::read(&self.file_path)
             .map_err(|e| HandlerError::FileSystem(format!("Failed to read file {:?}: {}", self.file_path, e)))?;
@@ -514,7 +515,7 @@ impl RequestHandler for RedirectHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         Box::pin(async move {
         let mut target_url = self.target_url.clone();
 
@@ -604,7 +605,7 @@ impl ProxyHandler {
     }
 
     /// Build the target URL from base URL and request path
-    fn build_target_url(&self, path: &str, query: &str) -> Result<String, HandlerError> {
+    fn build_target_url(&self, path: &str, query: &str) -> Result<(), Error> {
         let base = self.target_base_url.trim_end_matches('/');
         let path = if path.starts_with('/') { path } else { &format!("/{}", path) };
         
@@ -700,7 +701,7 @@ impl RequestHandler for ProxyHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         Box::pin(async move {
         // Build target URL with query parameters
         let query_string = context.query_params.iter()
@@ -797,7 +798,7 @@ impl RequestHandler for ProxyHandler {
 
 impl ProxyHandler {
     /// Convert CURSED HttpMethod to reqwest Method
-    fn convert_method(&self, method: &crate::stdlib::web_vibez::HttpMethod) -> Result<reqwest::Method, HandlerError> {
+    fn convert_method(&self, method: &crate::stdlib::web_vibez::HttpMethod) -> Result<(), Error> {
         use crate::stdlib::web_vibez::HttpMethod;
         
         let method_str = match method {
@@ -870,7 +871,7 @@ impl RequestHandler for CompositeHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         Box::pin(async move {
         // Check conditional handlers first
         for (condition, handler) in &self.conditional_handlers {

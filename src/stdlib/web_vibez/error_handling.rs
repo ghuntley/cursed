@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Error handling for the web_vibez framework
 /// 
 /// Provides comprehensive error types and handling for routing,

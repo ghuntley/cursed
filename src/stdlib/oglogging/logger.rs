@@ -32,7 +32,7 @@ impl Logger {
     }
 
     /// spill - Print args followed by newline
-    pub fn spill(&self, args: &[Value]) -> Result<(), CursedError> {
+    pub fn spill(&self, args: &[Value]) -> Result<(), Error> {
         let message = args.iter()
             .map(|v| v.to_string())
             .collect::<Vec<_>>()
@@ -41,7 +41,7 @@ impl Logger {
     }
 
     /// spillf - Print formatted string
-    pub fn spillf(&self, format: &str, args: &[Value]) -> Result<(), CursedError> {
+    pub fn spillf(&self, format: &str, args: &[Value]) -> Result<(), Error> {
         let formatted = self.format_string(format, args)?;
         self.output(2, &formatted)
     }
@@ -71,7 +71,7 @@ impl Logger {
     }
 
     /// output - Low-level output method
-    pub fn output(&self, call_depth: usize, message: &str) -> Result<(), CursedError> {
+    pub fn output(&self, call_depth: usize, message: &str) -> Result<(), Error> {
         let mut inner = self.inner.lock().map_err(|_| {
             CursedError::Runtime("Failed to acquire logger lock".to_string())
         })?;
@@ -130,7 +130,7 @@ impl Logger {
     }
 
     /// Simple format string implementation for spillf
-    fn format_string(&self, format: &str, args: &[Value]) -> Result<String, CursedError> {
+    fn format_string(&self, format: &str, args: &[Value]) -> Result<(), Error> {
         let mut result = String::new();
         let mut chars = format.chars().peekable();
         let mut arg_index = 0;

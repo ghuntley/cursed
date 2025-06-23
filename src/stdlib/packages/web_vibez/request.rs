@@ -6,7 +6,7 @@ use url::Url;
 
 use crate::stdlib::packages::web_vibez::{
     method::HttpMethod,
-    types::{Headers, QueryParams, FormData, RequestBody, Cookie},
+    crate::types::{Headers, QueryParams, FormData, RequestBody, Cookie},
     error::{WebError, WebResult},
 };
 

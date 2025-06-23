@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
 /// Result type for performance operations
-pub type PerformanceResult<T> = Result<T, CursedError>;
+pub type PerformanceResult<(), Error>;
 
 /// Performance metrics for a hash function
 #[derive(Debug, Clone)]

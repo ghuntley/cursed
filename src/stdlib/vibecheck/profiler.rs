@@ -207,7 +207,7 @@ impl Profiler {
     }
 
     /// Stop profiling and return results
-    pub fn stop(&self) -> Result<ProfileData, Error> {
+    pub fn stop(&self) -> Result<(), Error> {
         let mut state = self.state.write()
             .map_err(|_| Error::Runtime("Failed to lock profiler state".to_string()))?;
 
@@ -285,14 +285,14 @@ impl Profiler {
     }
 
     /// Get current profiling state
-    pub fn get_state(&self) -> Result<ProfilerState, Error> {
+    pub fn get_state(&self) -> Result<(), Error> {
         let state = self.state.read()
             .map_err(|_| Error::Runtime("Failed to lock profiler state".to_string()))?;
         Ok(state.clone())
     }
 
     /// Get current profiling statistics
-    pub fn get_stats(&self) -> Result<ProfilingStats, Error> {
+    pub fn get_stats(&self) -> Result<(), Error> {
         let mut stats = self.stats.lock()
             .map_err(|_| Error::Runtime("Failed to lock profiler stats".to_string()))?;
 
@@ -405,7 +405,7 @@ impl Profiler {
     }
 
     /// Generate profile report
-    pub fn generate_report(&self, config: ProfileReportConfig) -> Result<String, Error> {
+    pub fn generate_report(&self, config: ProfileReportConfig) -> Result<(), Error> {
         let profile_data = self.profile_data.lock()
             .map_err(|_| Error::Runtime("Failed to lock profile data".to_string()))?;
         
@@ -570,19 +570,19 @@ pub fn start_profiling() -> Result<(), Error> {
 }
 
 /// Stop global profiling
-pub fn stop_profiling() -> Result<ProfileData, Error> {
+pub fn stop_profiling() -> Result<(), Error> {
     let profiler = get_profiler();
     profiler.stop()
 }
 
 /// Get current profiling statistics
-pub fn profiling_stats() -> Result<ProfilingStats, Error> {
+pub fn profiling_stats() -> Result<(), Error> {
     let profiler = get_profiler();
     profiler.get_stats()
 }
 
 /// Generate a profiling report
-pub fn generate_profiling_report(config: ProfileReportConfig) -> Result<String, Error> {
+pub fn generate_profiling_report(config: ProfileReportConfig) -> Result<(), Error> {
     let profiler = get_profiler();
     profiler.generate_report(config)
 }
@@ -594,14 +594,14 @@ pub struct ProfileScope {
 
 impl ProfileScope {
     /// Create a new profile scope that starts profiling
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         let profiler = get_profiler();
         profiler.start()?;
         Ok(Self { profiler })
     }
 
     /// Create a new profile scope with custom configuration
-    pub fn with_config(config: ProfilerConfig) -> Result<Self, Error> {
+    pub fn with_config(config: ProfilerConfig) -> Result<(), Error> {
         configure_profiler(config)?;
         Self::new()
     }

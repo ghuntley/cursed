@@ -12,7 +12,7 @@ use crate::stdlib::database::{
     driver::{QueryResult, ExecuteResult}
 };
 use super::error::{MySqlError, MySqlResult};
-use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
+use super::crate::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
 
 /// fr fr MySQL prepared statement wrapper
@@ -171,17 +171,17 @@ impl MySqlStatement {
 }
 
 impl DriverStmt for MySqlStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_query_internal(args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_command_internal(args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // MySQL prepared statements are automatically cleaned up when connections are returned to pool
         Ok(())
     }

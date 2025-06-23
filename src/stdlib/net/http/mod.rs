@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// HTTP client library for the CURSED networking module
 /// 
 /// This module provides a comprehensive HTTP client implementation supporting

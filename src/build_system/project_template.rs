@@ -194,7 +194,7 @@ impl TemplateManager {
         &self,
         template_name: &str,
         context: TemplateContext,
-    ) -> Result<(), TemplateError> {
+    ) -> Result<(), Error> {
         info!("Generating project '{}' from template '{}'", context.project_name, template_name);
         
         let template = self.templates.get(template_name)
@@ -270,7 +270,7 @@ impl TemplateManager {
     }
     
     /// Validate template context
-    fn validate_context(&self, template: &ProjectTemplate, context: &TemplateContext) -> Result<(), TemplateError> {
+    fn validate_context(&self, template: &ProjectTemplate, context: &TemplateContext) -> Result<(), Error> {
         for (name, variable) in &template.variables {
             if variable.required && !context.variables.contains_key(name) {
                 return Err(TemplateError::MissingVariable { variable: name.clone() });
@@ -290,7 +290,7 @@ impl TemplateManager {
         name: &str,
         value: &str,
         variable: &TemplateVariable,
-    ) -> Result<(), TemplateError> {
+    ) -> Result<(), Error> {
         match &variable.var_type {
             VariableType::String => {
                 // String validation (could add length checks, etc.)
@@ -317,7 +317,7 @@ impl TemplateManager {
     }
     
     /// Process template content with variable substitution
-    pub fn process_template_content(&self, content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
+    pub fn process_template_content(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
         let mut result = content.to_string();
         
         // Replace project name
@@ -333,7 +333,7 @@ impl TemplateManager {
     }
     
     /// Process build configuration with template variables
-    fn process_build_config(&self, config: &mut BuildConfig, context: &TemplateContext) -> Result<(), TemplateError> {
+    fn process_build_config(&self, config: &mut BuildConfig, context: &TemplateContext) -> Result<(), Error> {
         // Update project metadata
         if let Some(description) = context.variables.get("description") {
             config.project.description = Some(description.clone());
@@ -351,7 +351,7 @@ impl TemplateManager {
     }
     
     /// Evaluate a template condition
-    fn evaluate_condition(&self, condition: &str, context: &TemplateContext) -> Result<bool, TemplateError> {
+    fn evaluate_condition(&self, condition: &str, context: &TemplateContext) -> Result<(), Error> {
         // Simple condition evaluation - can be expanded
         if condition.starts_with("var:") {
             let var_name = &condition[4..];
@@ -371,7 +371,7 @@ impl TemplateManager {
     }
     
     /// Run post-generation script
-    fn run_post_script(&self, script: &str, context: &TemplateContext) -> Result<(), TemplateError> {
+    fn run_post_script(&self, script: &str, context: &TemplateContext) -> Result<(), Error> {
         debug!("Running post-script: {}", script);
         
         let mut cmd = if cfg!(target_os = "windows") {
@@ -1699,7 +1699,7 @@ mod tests {
     }
     
     #[test]
-    fn test_template_generation() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_template_generation() -> Result<(), Error>> {
         let manager = TemplateManager::new();
         let dir = tempdir()?;
         

@@ -349,7 +349,7 @@ impl ConstraintResolver {
         &self,
         constraint: &GenericConstraint,
         environment: &TypeEnvironment,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         // Check if constraint refers to valid types
         for type_param in &constraint.type_parameters {
             if !self.is_valid_type_parameter(type_param, environment) {
@@ -377,7 +377,7 @@ impl ConstraintResolver {
         type_expr: &TypeExpression,
         constraints: &[GenericConstraint],
         environment: &TypeEnvironment,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         // Generate cache key
         let cache_key = self.generate_cache_key(type_expr, constraints);
         
@@ -413,7 +413,7 @@ impl ConstraintResolver {
         &mut self,
         context: &ConstraintContext,
         environment: &TypeEnvironment,
-    ) -> Result<ConstraintSolution, Error> {
+    ) -> Result<(), Error> {
         let solution = self.resolve_constraints_internal(context, environment)?;
         
         // Cache result for performance
@@ -428,7 +428,7 @@ impl ConstraintResolver {
         &self,
         context: &ConstraintContext,
         environment: &TypeEnvironment,
-    ) -> Result<ConstraintSolution, Error> {
+    ) -> Result<(), Error> {
         let mut solution = ConstraintSolution {
             is_satisfied: true,
             substitutions: HashMap::new(),
@@ -475,7 +475,7 @@ impl ConstraintResolver {
         graph: &ConstraintGraph,
         environment: &TypeEnvironment,
         substitutions: &mut HashMap<String, TypeExpression>,
-    ) -> Result<SingleConstraintResult, Error> {
+    ) -> Result<(), Error> {
         let node = graph.nodes.get(constraint_id)
             .ok_or_else(|| Error::Type(format!("Constraint node '{}' not found", constraint_id)))?;
 
@@ -713,7 +713,7 @@ impl ConstraintPropagator {
     pub fn build_constraint_graph(
         &self,
         constraints: &[ConstraintBinding],
-    ) -> Result<ConstraintGraph, Error> {
+    ) -> Result<(), Error> {
         let mut graph = ConstraintGraph::new();
 
         // Add constraint nodes
@@ -791,7 +791,7 @@ impl ConstraintGraph {
     }
 
     /// Perform topological sort to determine resolution order
-    pub fn topological_sort(&self) -> Result<Vec<String>, Error> {
+    pub fn topological_sort(&self) -> Result<(), Error> {
         let mut visited = HashSet::new();
         let mut temp_visited = HashSet::new();
         let mut result = Vec::new();
@@ -857,7 +857,7 @@ impl TypeUnifier {
         &mut self,
         type1: &TypeExpression,
         type2: &TypeExpression,
-    ) -> Result<HashMap<String, TypeExpression>, Error> {
+    ) -> Result<(), Error> {
         let step = UnificationStep {
             step_type: self.determine_unification_type(type1, type2),
             type1: type1.clone(),
@@ -879,7 +879,7 @@ impl TypeUnifier {
         &mut self,
         type1: &TypeExpression,
         type2: &TypeExpression,
-    ) -> Result<HashMap<String, TypeExpression>, Error> {
+    ) -> Result<(), Error> {
         match (type1, type2) {
             // Variable unification
             (TypeExpression::Parameter(var), other) => {
@@ -1032,7 +1032,7 @@ impl ConstraintValidator {
         constraint: &GenericConstraint,
         type_expr: &TypeExpression,
         environment: &TypeEnvironment,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         if let Some(builtin) = self.builtin_constraints.get(&constraint.constraint_name) {
             let args: Vec<TypeExpression> = constraint.type_parameters.iter()
                 .map(|param| TypeExpression::named(param))
@@ -1050,7 +1050,7 @@ impl ConstraintValidator {
         constraint: &GenericConstraint,
         type_expr: &TypeExpression,
         environment: &TypeEnvironment,
-    ) -> Result<bool, Error> {
+    ) -> Result<(), Error> {
         // For now, assume user-defined constraints are interfaces
         if let TypeExpression::Named(type_name) = type_expr {
             if let Some(type_def) = environment.type_definitions.get(type_name) {

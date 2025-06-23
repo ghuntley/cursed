@@ -401,7 +401,7 @@ impl<'ctx> JitRuntime<'ctx> {
     }
 
     /// Execute a JIT-compiled function with runtime integration
-    pub fn execute_function(&self, function_name: &str) -> Result<i32, Error> {
+    pub fn execute_function(&self, function_name: &str) -> Result<(), Error> {
         let start_time = Instant::now();
 
         tracing::debug!(function_name = function_name, "Executing JIT function");
@@ -448,7 +448,7 @@ impl<'ctx> JitRuntime<'ctx> {
         &self,
         jit_interface: &mut JitCompilationInterface<'ctx>,
         function_name: &str,
-    ) -> Result<i32, Error> {
+    ) -> Result<(), Error> {
         // Set up panic hook
         let original_hook = std::panic::take_hook();
         let panic_occurred = Arc::new(Mutex::new(false));
@@ -674,7 +674,7 @@ impl<'ctx> JitRuntime<'ctx> {
     }
 
     /// Trigger manual optimization of hot paths
-    pub fn optimize_hot_paths(&self) -> Result<u64, Error> {
+    pub fn optimize_hot_paths(&self) -> Result<(), Error> {
         let mut jit_interface = self.jit_interface.lock().unwrap();
         jit_interface.optimize_hot_paths()
     }

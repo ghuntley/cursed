@@ -10,7 +10,7 @@ use std::net::AddrParseError;
 use crate::error::{CursedError, ErrorContext};
 
 /// Result type for networking operations
-pub type NetResult<T> = Result<T, NetError>;
+pub type NetResult<(), Error>;
 
 /// Comprehensive networking error types
 #[derive(Debug, Clone)]

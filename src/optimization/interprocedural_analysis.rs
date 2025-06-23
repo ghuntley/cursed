@@ -15,7 +15,7 @@ use inkwell::{
     values::{FunctionValue, BasicValueEnum, InstructionValue, CallSiteValue},
     basic_block::BasicBlock,
     builder::Builder,
-    types::BasicType,
+    crate::types::BasicType,
 };
 
 /// Interprocedural analysis coordinator

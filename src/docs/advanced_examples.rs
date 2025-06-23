@@ -241,7 +241,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from source files and tests
-    pub fn extract_examples(&mut self, source_paths: &[PathBuf]) -> Result<ExtractionResult, Error> {
+    pub fn extract_examples(&mut self, source_paths: &[PathBuf]) -> Result<(), Error> {
         let start_time = Instant::now();
         let mut total_extracted = 0;
         let mut extraction_errors = Vec::new();
@@ -291,7 +291,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from a single file
-    fn extract_from_file(&mut self, file_path: &Path) -> Result<usize, Error> {
+    fn extract_from_file(&mut self, file_path: &Path) -> Result<(), Error> {
         let content = fs::read_to_string(file_path)
             .map_err(|e| Error::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
 
@@ -312,7 +312,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from documentation comments
-    fn extract_doc_examples(&mut self, content: &str, file_path: &Path) -> Result<usize, Error> {
+    fn extract_doc_examples(&mut self, content: &str, file_path: &Path) -> Result<(), Error> {
         let mut count = 0;
         let lines: Vec<&str> = content.split("\n").collect();
 
@@ -409,7 +409,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from comment blocks
-    fn extract_comment_examples(&mut self, content: &str, file_path: &Path) -> Result<usize, Error> {
+    fn extract_comment_examples(&mut self, content: &str, file_path: &Path) -> Result<(), Error> {
         let mut count = 0;
         
         // Use regex or simple pattern matching to find comment examples
@@ -482,7 +482,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract a standalone example file
-    fn extract_standalone_example(&mut self, content: &str, file_path: &Path) -> Result<usize, Error> {
+    fn extract_standalone_example(&mut self, content: &str, file_path: &Path) -> Result<(), Error> {
         // Parse the file to understand its structure
         let example_id = format!("standalone_{}", file_path.file_stem().unwrap_or_default().to_string_lossy());
         
@@ -556,7 +556,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from test files
-    fn extract_from_test_pattern(&mut self, pattern: &str) -> Result<usize, Error> {
+    fn extract_from_test_pattern(&mut self, pattern: &str) -> Result<(), Error> {
         // Simple glob pattern matching implementation
         let mut count = 0;
         
@@ -579,7 +579,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from a test directory
-    fn extract_from_test_directory(&mut self, dir: &Path) -> Result<usize, Error> {
+    fn extract_from_test_directory(&mut self, dir: &Path) -> Result<(), Error> {
         let mut count = 0;
         
         if let Ok(entries) = fs::read_dir(dir) {
@@ -602,7 +602,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from test files
-    fn extract_test_examples(&mut self, file_path: &Path) -> Result<usize, Error> {
+    fn extract_test_examples(&mut self, file_path: &Path) -> Result<(), Error> {
         let content = fs::read_to_string(file_path)
             .map_err(|e| Error::SystemError(format!("Failed to read test file {}: {}", file_path.display(), e)))?;
 
@@ -820,7 +820,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Validate a single example by attempting to compile and run it
-    fn validate_example(&self, example: &ExtractedExample) -> Result<ValidationResult, Error> {
+    fn validate_example(&self, example: &ExtractedExample) -> Result<(), Error> {
         if !self.config.validate_examples {
             return Ok(ValidationResult {
                 success: true,

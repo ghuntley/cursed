@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// Middleware system for HTTP request/response processing
 /// 
 /// Provides a flexible middleware chain system with common middleware
@@ -26,7 +27,7 @@ pub trait Middleware: Send + Sync {
         &self,
         context: &mut RequestContext,
         response: &mut ResponseContext,
-    ) -> Result<(), MiddlewareError> {
+    ) -> Result<(), Error> {
         Ok(())
     }
 
@@ -35,7 +36,7 @@ pub trait Middleware: Send + Sync {
         &self,
         context: &RequestContext,
         response: &mut ResponseContext,
-    ) -> Result<(), MiddlewareError> {
+    ) -> Result<(), Error> {
         Ok(())
     }
 
@@ -45,7 +46,7 @@ pub trait Middleware: Send + Sync {
         context: &RequestContext,
         response: &mut ResponseContext,
         error: &MiddlewareError,
-    ) -> Result<(), MiddlewareError> {
+    ) -> Result<(), Error> {
         let error_msg = format!("Middleware error: {}", error);
         response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
         response.set_text(&error_msg);
@@ -70,7 +71,7 @@ impl std::fmt::Debug for dyn Middleware {
 }
 
 /// Result type for middleware operations
-pub type MiddlewareResult = Result<(), MiddlewareError>;
+pub type MiddlewareResult = Result<(), Error>;
 
 /// Authentication middleware
 #[derive(Debug)]
@@ -763,7 +764,7 @@ impl Middleware for StaticFileMiddleware {
 }
 
 impl StaticFileMiddleware {
-    async fn serve_file(&self, file_path: &Path, response: &mut ResponseContext) -> Result<(), MiddlewareError> {
+    async fn serve_file(&self, file_path: &Path, response: &mut ResponseContext) -> Result<(), Error> {
         let content = std::fs::read(file_path)
             .map_err(|e| MiddlewareError::FileSystem(format!("Failed to read file: {}", e)))?;
 

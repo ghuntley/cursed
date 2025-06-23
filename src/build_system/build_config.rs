@@ -537,7 +537,7 @@ fn default_incremental() -> bool { true }
 
 impl BuildConfig {
     /// Load configuration from TOML file
-    pub fn load_from_file(path: &PathBuf) -> Result<Self, ConfigError> {
+    pub fn load_from_file(path: &PathBuf) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| ConfigError::IoError(e))?;
         
@@ -549,7 +549,7 @@ impl BuildConfig {
     }
     
     /// Save configuration to TOML file
-    pub fn save_to_file(&self, path: &PathBuf) -> Result<(), ConfigError> {
+    pub fn save_to_file(&self, path: &PathBuf) -> Result<(), Error> {
         let content = toml::to_string_pretty(self)
             .map_err(|e| ConfigError::SerializeError(e))?;
         
@@ -560,7 +560,7 @@ impl BuildConfig {
     }
     
     /// Validate the configuration
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    pub fn validate(&self) -> Result<(), Error> {
         // Validate project name
         if self.project.name.trim().is_empty() {
             return Err(ConfigError::ValidationError("Project name cannot be empty".to_string()));
@@ -595,12 +595,12 @@ impl BuildConfig {
     }
     
     /// Get effective profile configuration (with inheritance resolved)
-    pub fn get_effective_profile(&self, profile_name: &str) -> Result<BuildProfile, ConfigError> {
+    pub fn get_effective_profile(&self, profile_name: &str) -> Result<(), Error> {
         let mut visited = std::collections::HashSet::new();
         self.resolve_profile(profile_name, &mut visited)
     }
     
-    fn resolve_profile(&self, name: &str, visited: &mut std::collections::HashSet<String>) -> Result<BuildProfile, ConfigError> {
+    fn resolve_profile(&self, name: &str, visited: &mut std::collections::HashSet<String>) -> Result<(), Error> {
         if visited.contains(name) {
             return Err(ConfigError::ValidationError(
                 format!("Circular profile inheritance detected: {}", name)

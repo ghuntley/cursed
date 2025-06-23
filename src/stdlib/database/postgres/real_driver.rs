@@ -85,7 +85,7 @@ pub struct PoolStatus {
 }
 
 impl Driver for RealPostgresDriver {
-    fn open(&self, _data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, _data_source_name: &str) -> Result<(), Error> {
         let conn = RealPostgresConnection::new(self.pool.clone(), self.runtime.clone())
             .map_err(|e| e.to_database_error())?;
         Ok(Box::new(conn))
@@ -146,7 +146,7 @@ impl RealPostgresConnection {
 }
 
 impl DriverConn for RealPostgresConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         let stmt = RealPostgresStatement::new(
             self.pool.clone(),
             self.runtime.clone(),
@@ -155,7 +155,7 @@ impl DriverConn for RealPostgresConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.runtime.block_on(async {
             let client = self.pool.get().await
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
@@ -192,7 +192,7 @@ impl DriverConn for RealPostgresConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.runtime.block_on(async {
             let client = self.pool.get().await
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
@@ -208,7 +208,7 @@ impl DriverConn for RealPostgresConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         let tx = RealPostgresTransaction::new(
             self.pool.clone(),
             self.runtime.clone(),
@@ -217,7 +217,7 @@ impl DriverConn for RealPostgresConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         self.runtime.block_on(async {
             let client = self.pool.get().await
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
@@ -229,7 +229,7 @@ impl DriverConn for RealPostgresConnection {
         })
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Connection pool handles cleanup automatically
         Ok(())
     }
@@ -278,7 +278,7 @@ impl RealPostgresStatement {
 }
 
 impl DriverStmt for RealPostgresStatement {
-    fn execute(&mut self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&mut self, args: &[SqlValue]) -> Result<(), Error> {
         self.runtime.block_on(async {
             let client = self.pool.get().await
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
@@ -294,7 +294,7 @@ impl DriverStmt for RealPostgresStatement {
         })
     }
 
-    fn query(&mut self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&mut self, args: &[SqlValue]) -> Result<(), Error> {
         self.runtime.block_on(async {
             let client = self.pool.get().await
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
@@ -331,7 +331,7 @@ impl DriverStmt for RealPostgresStatement {
         })
     }
 
-    fn close(&mut self) -> Result<(), DatabaseError> {
+    fn close(&mut self) -> Result<(), Error> {
         Ok(())
     }
 }
@@ -354,13 +354,13 @@ impl RealPostgresTransaction {
 }
 
 impl DriverTx for RealPostgresTransaction {
-    fn commit(&mut self) -> Result<(), DatabaseError> {
+    fn commit(&mut self) -> Result<(), Error> {
         // For proper transaction handling, we'd need to maintain a transaction context
         // This is a simplified implementation
         Ok(())
     }
 
-    fn rollback(&mut self) -> Result<(), DatabaseError> {
+    fn rollback(&mut self) -> Result<(), Error> {
         // For proper transaction handling, we'd need to maintain a transaction context
         // This is a simplified implementation
         Ok(())
@@ -368,14 +368,14 @@ impl DriverTx for RealPostgresTransaction {
 }
 
 /// Convert CURSED SqlValue to PostgreSQL parameters
-fn convert_args_to_postgres_params(args: &[SqlValue]) -> Result<Vec<&(dyn tokio_postgres::types::ToSql + Sync)>, DatabaseError> {
+fn convert_args_to_postgres_params(args: &[SqlValue]) -> Result<(), Error> {
     // This is simplified - in practice we'd need to handle this more carefully
     // For now, return empty params to avoid lifetime issues
     Ok(Vec::new())
 }
 
 /// Convert PostgreSQL value to CURSED SqlValue
-fn convert_value_from_postgres(row: &Row, index: usize) -> Result<SqlValue, DatabaseError> {
+fn convert_value_from_postgres(row: &Row, index: usize) -> Result<(), Error> {
     // This is a simplified conversion - in practice we'd need proper type handling
     match row.try_get::<_, Option<String>>(index) {
         Ok(Some(s)) => Ok(SqlValue::Text(s)),

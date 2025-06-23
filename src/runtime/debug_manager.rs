@@ -45,7 +45,7 @@ impl SourceFile {
     }
 
     /// Load file content and build line index
-    pub fn load_content(&mut self) -> Result<(), CursedError> {
+    pub fn load_content(&mut self) -> Result<(), Error> {
         let content = fs::read_to_string(&self.path)
             .map_err(|e| CursedError::Runtime(format!("Failed to read file {}: {}", self.path.display(), e)))?;
 
@@ -295,7 +295,7 @@ impl DebugManager {
     }
 
     /// Set symbol resolver
-    pub fn set_symbol_resolver<R>(&self, resolver: R) -> Result<(), CursedError>
+    pub fn set_symbol_resolver<R>(&self, resolver: R) -> Result<(), Error>
     where
         R: SymbolResolver + Send + Sync + 'static,
     {
@@ -308,7 +308,7 @@ impl DebugManager {
     }
 
     /// Register a source file
-    pub fn register_source_file<P: AsRef<Path>>(&self, path: P) -> Result<(), CursedError> {
+    pub fn register_source_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
         let path = path.as_ref().to_path_buf();
         let mut source_file = SourceFile::new(&path);
 
@@ -334,7 +334,7 @@ impl DebugManager {
     }
 
     /// Register function debug information
-    pub fn register_function(&self, function_info: FunctionDebugInfo) -> Result<(), CursedError> {
+    pub fn register_function(&self, function_info: FunctionDebugInfo) -> Result<(), Error> {
         let function_name = function_info.name.clone();
         
         // Update IP to function mapping
@@ -361,7 +361,7 @@ impl DebugManager {
     }
 
     /// Get source file content
-    pub fn get_source_file<P: AsRef<Path>>(&self, path: P) -> Result<Option<SourceFile>, CursedError> {
+    pub fn get_source_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
         let path = path.as_ref().to_path_buf();
         
         if let Ok(mut files) = self.source_files.write() {
@@ -391,7 +391,7 @@ impl DebugManager {
     }
 
     /// Get function debug information by name
-    pub fn get_function(&self, name: &str) -> Result<Option<FunctionDebugInfo>, CursedError> {
+    pub fn get_function(&self, name: &str) -> Result<(), Error> {
         if let Ok(functions) = self.functions.read() {
             Ok(functions.get(name).cloned())
         } else {
@@ -400,7 +400,7 @@ impl DebugManager {
     }
 
     /// Add function debug information
-    pub fn add_function_debug(&self, name: String, debug_info: crate::runtime::debug_info::DebugInfo) -> Result<(), CursedError> {
+    pub fn add_function_debug(&self, name: String, debug_info: crate::runtime::debug_info::DebugInfo) -> Result<(), Error> {
         let function_debug = FunctionDebugInfo::new(name.clone(), debug_info.file_path.clone(), debug_info.line)
             .with_end_line(debug_info.line)
             .with_module(name.clone()); // Use name as module for now
@@ -414,7 +414,7 @@ impl DebugManager {
     }
 
     /// Get function debug information by instruction pointer
-    pub fn get_function_by_ip(&self, ip: usize) -> Result<Option<FunctionDebugInfo>, CursedError> {
+    pub fn get_function_by_ip(&self, ip: usize) -> Result<(), Error> {
         // First try direct IP lookup
         if let Ok(ip_map) = self.ip_to_function.read() {
             if let Some(function_name) = ip_map.get(&ip) {
@@ -435,7 +435,7 @@ impl DebugManager {
     }
 
     /// Resolve symbol information for an instruction pointer
-    pub fn resolve_symbol(&self, ip: usize) -> Result<Option<SymbolInfo>, CursedError> {
+    pub fn resolve_symbol(&self, ip: usize) -> Result<(), Error> {
         // Check cache first
         if let Ok(cache) = self.location_cache.read() {
             if let Some(debug_info) = cache.get(&ip) {
@@ -494,7 +494,7 @@ impl DebugManager {
         file_path: &Path,
         line: u32,
         context_lines: u32,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         if let Some(source_file) = self.get_source_file(file_path)? {
             if let Some(lines) = source_file.get_lines_with_context(line, context_lines) {
                 let mut snippet = String::new();
@@ -514,7 +514,7 @@ impl DebugManager {
     }
 
     /// Create enhanced stack frame from instruction pointer
-    pub fn create_enhanced_frame(&self, ip: usize, frame_index: usize) -> Result<Option<EnhancedStackFrame>, CursedError> {
+    pub fn create_enhanced_frame(&self, ip: usize, frame_index: usize) -> Result<(), Error> {
         if let Some(symbol_info) = self.resolve_symbol(ip)? {
             let debug_info = DebugInfo::new(
                 symbol_info.file.as_ref().unwrap_or(&PathBuf::from("unknown")),
@@ -539,7 +539,7 @@ impl DebugManager {
     }
 
     /// Cache debug location
-    pub fn cache_location(&self, ip: usize, debug_info: DebugInfo) -> Result<(), CursedError> {
+    pub fn cache_location(&self, ip: usize, debug_info: DebugInfo) -> Result<(), Error> {
         if let Ok(mut cache) = self.location_cache.write() {
             cache.insert(ip, debug_info);
             Ok(())
@@ -549,7 +549,7 @@ impl DebugManager {
     }
 
     /// Get debug manager statistics
-    pub fn get_statistics(&self) -> Result<DebugManagerStats, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         if let Ok(stats) = self.stats.lock() {
             Ok(stats.clone())
         } else {
@@ -558,7 +558,7 @@ impl DebugManager {
     }
 
     /// Clear caches
-    pub fn clear_caches(&self) -> Result<(), CursedError> {
+    pub fn clear_caches(&self) -> Result<(), Error> {
         if let Ok(mut cache) = self.location_cache.write() {
             cache.clear();
         }

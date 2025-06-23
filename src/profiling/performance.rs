@@ -387,7 +387,7 @@ impl PerformanceMonitor {
     fn generate_json_report(&self) -> Result<String> {
         let metrics = self.metrics.lock().unwrap();
         serde_json::to_string_pretty(&*metrics)
-            .map_err(|e| Error::Other(format!("Failed to serialize metrics: {}", e)))
+            .map_err(|e| Error::General(format!("Failed to serialize metrics: {}", e)))
     }
     
     /// Generate CSV format report
@@ -473,7 +473,7 @@ impl PerformanceMonitor {
     pub fn write_report_to_file(&self, path: &str) -> Result<()> {
         let report = self.generate_report()?;
         std::fs::write(path, report)
-            .map_err(|e| Error::Other(format!("Failed to write report to {}: {}", path, e)))
+            .map_err(|e| Error::General(format!("Failed to write report to {}: {}", path, e)))
     }
     
     /// Get specific phase metrics

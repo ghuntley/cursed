@@ -477,7 +477,7 @@ impl Blake3Utils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay BLAKE3 hash function
-pub fn blake3(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn blake3(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("BLAKE3 requires input data".to_string()));
     }
@@ -492,7 +492,7 @@ pub fn blake3(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay BLAKE3 keyed hash function
-pub fn blake3_keyed(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn blake3_keyed(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("BLAKE3 keyed hash requires key and data".to_string()));
     }
@@ -531,7 +531,7 @@ pub fn blake3_keyed(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay BLAKE3 key derivation function
-pub fn blake3_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn blake3_derive_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("BLAKE3 KDF requires context, key material, and output length".to_string()));
     }
@@ -560,13 +560,13 @@ pub fn blake3_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Generate BLAKE3 key
-pub fn blake3_generate_key(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn blake3_generate_key(_args: Vec<Value>) -> Result<(), Error> {
     let key = Blake3Utils::generate_key();
     Ok(Value::String(Blake3Utils::to_hex(&key)))
 }
 
 /// slay Create streaming BLAKE3 hasher
-pub fn create_blake3_hasher(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn create_blake3_hasher(args: Vec<Value>) -> Result<(), Error> {
     let mode = if args.is_empty() {
         Blake3Mode::Regular
     } else {

@@ -23,7 +23,7 @@ pub mod error;
 pub mod value;
 
 // Type aliases for convenience
-pub type JsonResult<T> = Result<T, CursedError>;
+pub type JsonResult<(), Error>;
 pub type JsonObject = HashMap<String, JsonValue>;
 pub type JsonArray = Vec<JsonValue>;
 

@@ -22,7 +22,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, profile_data))]
-    pub fn analyze_performance(&self, profile_data: &ProfileData) -> Result<PerformanceInsights, ProfilerError> {
+    pub fn analyze_performance(&self, profile_data: &ProfileData) -> Result<(), Error> {
         info!("Running comprehensive performance analysis");
         
         let mut insights = PerformanceInsights::new(profile_data.session_name.clone());
@@ -51,7 +51,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, cpu_data))]
-    fn analyze_cpu_performance(&self, cpu_data: &CpuProfileData) -> Result<CpuInsights, ProfilerError> {
+    fn analyze_cpu_performance(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
         let hot_functions = cpu_data.get_hot_functions(self.config.max_hot_functions);
         let call_graph = cpu_data.get_call_graph();
         
@@ -84,7 +84,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, memory_data))]
-    fn analyze_memory_performance(&self, memory_data: &MemoryProfileData) -> Result<MemoryInsights, ProfilerError> {
+    fn analyze_memory_performance(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
         let allocation_analysis = memory_data.analyze_patterns();
         let memory_leaks = memory_data.detect_leaks();
         
@@ -105,7 +105,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, concurrency_data))]
-    fn analyze_concurrency_performance(&self, concurrency_data: &ConcurrencyProfileData) -> Result<ConcurrencyInsights, ProfilerError> {
+    fn analyze_concurrency_performance(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
         let timeline = concurrency_data.generate_goroutine_timeline();
         let channel_analysis = concurrency_data.analyze_channels();
         let deadlocks = concurrency_data.detect_deadlocks();
@@ -381,17 +381,17 @@ impl PerformanceAnalyzer {
     }
     
     // Helper methods with simplified implementations
-    fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<Option<CpuProfileData>, ProfilerError> {
+    fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
         // Simplified - in real implementation would deserialize from profile_data
         Ok(None)
     }
     
-    fn extract_memory_data(&self, profile_data: &ProfileData) -> Result<Option<MemoryProfileData>, ProfilerError> {
+    fn extract_memory_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
         // Simplified - in real implementation would deserialize from profile_data
         Ok(None)
     }
     
-    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<Option<ConcurrencyProfileData>, ProfilerError> {
+    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
         // Simplified - in real implementation would deserialize from profile_data
         Ok(None)
     }

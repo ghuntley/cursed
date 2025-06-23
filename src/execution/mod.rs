@@ -26,7 +26,7 @@ pub struct CursedExecutionEngine {
 
 impl CursedExecutionEngine {
     /// Create a new execution engine
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         let executor = jit_executor::CursedExecutor::new()?;
         let value_manager = value_manager::ValueManager::new();
         let context = execution_context::ExecutionContext::new();
@@ -41,7 +41,7 @@ impl CursedExecutionEngine {
     }
 
     /// Execute CURSED source code and return the result
-    pub fn execute(&mut self, source: &str) -> Result<CursedValue, Error> {
+    pub fn execute(&mut self, source: &str) -> Result<(), Error> {
         tracing::info!("Executing CURSED source code");
 
         // Parse and compile the source code
@@ -69,14 +69,14 @@ impl CursedExecutionEngine {
     }
 
     /// Execute a CURSED file
-    pub fn execute_file(&mut self, path: &str) -> Result<CursedValue, Error> {
+    pub fn execute_file(&mut self, path: &str) -> Result<(), Error> {
         let source = std::fs::read_to_string(path)
             .map_err(|e| Error::Io(e.into()))?;
         self.execute(&source)
     }
 
     /// Execute REPL code and return formatted result
-    pub fn execute_repl(&mut self, code: &str) -> Result<String, Error> {
+    pub fn execute_repl(&mut self, code: &str) -> Result<(), Error> {
         let result = self.execute(code)?;
         Ok(self.value_manager.format_value(&result))
     }

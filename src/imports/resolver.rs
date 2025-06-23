@@ -138,7 +138,7 @@ impl ImportResolver {
     }
     
     /// Resolve standard library import
-    pub fn resolve_stdlib_import(&self, import_path: &str) -> Result<ResolvedImport, ImportError> {
+    pub fn resolve_stdlib_import(&self, import_path: &str) -> Result<(), Error> {
         // Parse stdlib path (e.g., "stdlib::io::console")
         let parts: Vec<&str> = import_path.split("::").collect();
         if parts.len() < 2 || parts[0] != "stdlib" {
@@ -178,7 +178,7 @@ impl ImportResolver {
         &self, 
         import_path: &str, 
         context_path: Option<&Path>
-    ) -> Result<ResolvedImport, ImportError> {
+    ) -> Result<(), Error> {
         let mut search_paths = self.config.local_search_paths.clone();
         
         // Add context path if provided

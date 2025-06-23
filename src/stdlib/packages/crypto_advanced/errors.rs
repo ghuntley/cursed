@@ -2,10 +2,10 @@
 use std::fmt;
 
 /// Result type for crypto_advanced operations
-pub type AdvancedCryptoResult<T> = Result<T, AdvancedCryptoError>;
+pub type AdvancedCryptoResult<(), Error>;
 
 /// Result type for cipher operations  
-pub type CipherResult<T> = Result<T, CipherError>;
+pub type CipherResult<(), Error>;
 
 /// Errors for advanced crypto operations
 #[derive(Debug, Clone)]
@@ -84,4 +84,4 @@ impl std::fmt::Display for SecurityAnalysisError {
 impl std::error::Error for SecurityAnalysisError {}
 
 /// Result type for security analysis operations
-pub type SecurityAnalysisResult<T> = Result<T, SecurityAnalysisError>;
+pub type SecurityAnalysisResult<(), Error>;

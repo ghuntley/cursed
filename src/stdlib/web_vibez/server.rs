@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// HTTP server core implementation for the CURSED web_vibez framework
 /// 
 /// Provides HTTP/1.1 and HTTP/2 server functionality with:
@@ -162,7 +163,7 @@ impl HttpServer {
         config: WebVibezConfig,
         router: Router,
         middleware: MiddlewareChain,
-    ) -> Result<Self, ServerError> {
+    ) -> Result<(), Error> {
         let config = Arc::new(config);
         let router = Arc::new(router);
         let middleware = Arc::new(middleware);
@@ -196,7 +197,7 @@ impl HttpServer {
     
     /// Start the HTTP server
     #[instrument(skip(self))]
-    pub fn start(&self) -> Result<(), ServerError> {
+    pub fn start(&self) -> Result<(), Error> {
         if self.state.running.load(Ordering::Acquire) {
             return Err(ServerError::AlreadyRunning);
         }
@@ -223,7 +224,7 @@ impl HttpServer {
     
     /// Stop the HTTP server gracefully
     #[instrument(skip(self))]
-    pub fn stop(&self) -> Result<(), ServerError> {
+    pub fn stop(&self) -> Result<(), Error> {
         if !self.state.running.load(Ordering::Acquire) {
             return Ok(());
         }
@@ -266,7 +267,7 @@ impl HttpServer {
     
     /// Main accept loop for handling incoming connections
     #[instrument(skip(self, listener))]
-    fn run_accept_loop(&self, listener: TcpListener) -> Result<(), ServerError> {
+    fn run_accept_loop(&self, listener: TcpListener) -> Result<(), Error> {
         let mut thread_handles = Vec::new();
         
         while self.state.running.load(Ordering::Acquire) && 
@@ -340,7 +341,7 @@ impl HttpServer {
     }
     
     /// Install signal handlers for graceful shutdown
-    fn install_signal_handlers(&self) -> Result<(), ServerError> {
+    fn install_signal_handlers(&self) -> Result<(), Error> {
         // Note: In a real implementation, this would use proper signal handling
         // For now, we'll use a simplified approach
         info!("Signal handlers installed for graceful shutdown");
@@ -382,7 +383,7 @@ impl ConnectionHandler {
     
     /// Handle the HTTP connection
     #[instrument(skip(self))]
-    pub fn handle(mut self) -> Result<(), ServerError> {
+    pub fn handle(mut self) -> Result<(), Error> {
         // Set timeouts
         self.stream.set_read_timeout(Some(self.config.server.request_timeout))
             .map_err(|e| ServerError::ConnectionError(e.to_string()))?;
@@ -439,7 +440,7 @@ impl ConnectionHandler {
     
     /// Process a single HTTP request
     #[instrument(skip(self))]
-    fn process_request(&mut self) -> Result<HttpResponse, ServerError> {
+    fn process_request(&mut self) -> Result<(), Error> {
         // Parse HTTP request
         let http_request = self.parse_http_request()?;
         
@@ -457,7 +458,7 @@ impl ConnectionHandler {
     
     /// Parse raw HTTP request from stream
     #[instrument(skip(self))]
-    fn parse_http_request(&mut self) -> Result<HttpRequest, ServerError> {
+    fn parse_http_request(&mut self) -> Result<(), Error> {
         let mut reader = BufReader::new(&mut self.stream);
         let mut request_line = String::new();
         
@@ -531,7 +532,7 @@ impl ConnectionHandler {
     }
     
     /// Parse HTTP version
-    fn parse_http_version(&self, version_str: &str) -> Result<HttpVersion, ServerError> {
+    fn parse_http_version(&self, version_str: &str) -> Result<(), Error> {
         match version_str {
             "HTTP/1.0" => Ok(HttpVersion::Http1_0),
             "HTTP/1.1" => Ok(HttpVersion::Http1_1),
@@ -541,7 +542,7 @@ impl ConnectionHandler {
     }
     
     /// Parse HTTP headers
-    fn parse_headers(&self, reader: &mut BufReader<&mut std::net::TcpStream>) -> Result<HashMap<String, String>, ServerError> {
+    fn parse_headers(&self, reader: &mut BufReader<&mut std::net::TcpStream>) -> Result<(), Error> {
         let mut headers = HashMap::new();
         let mut header_line = String::new();
         
@@ -570,7 +571,7 @@ impl ConnectionHandler {
         &self, 
         reader: &mut BufReader<&mut std::net::TcpStream>, 
         headers: &HashMap<String, String>
-    ) -> Result<Vec<u8>, ServerError> {
+    ) -> Result<(), Error> {
         let mut body = Vec::new();
         
         if let Some(content_length_str) = headers.get("content-length") {
@@ -590,7 +591,7 @@ impl ConnectionHandler {
     }
     
     /// Build RequestContext from HttpRequest
-    fn build_request_context(&self, http_request: HttpRequest) -> Result<RequestContext, ServerError> {
+    fn build_request_context(&self, http_request: HttpRequest) -> Result<(), Error> {
         let mut context = RequestContext::new(
             http_request.method,
             &http_request.path,
@@ -620,7 +621,7 @@ impl ConnectionHandler {
     }
     
     /// Process request through middleware and router pipeline
-    fn process_through_pipeline(&self, request_context: &mut RequestContext) -> Result<ResponseContext, ServerError> {
+    fn process_through_pipeline(&self, request_context: &mut RequestContext) -> Result<(), Error> {
         // Process through middleware chain
         let middleware_result = self.middleware.process(request_context)
             .map_err(|e| ServerError::MiddlewareError(format!("{:?}", e)))?;
@@ -647,7 +648,7 @@ impl ConnectionHandler {
     }
     
     /// Build HTTP response from ResponseContext
-    fn build_http_response(&self, response_context: ResponseContext) -> Result<HttpResponse, ServerError> {
+    fn build_http_response(&self, response_context: ResponseContext) -> Result<(), Error> {
         let status = response_context.status();
         let headers = response_context.headers().clone();
         let body = response_context.body().unwrap_or_default();
@@ -668,7 +669,7 @@ impl ConnectionHandler {
     
     /// Send HTTP response to client
     #[instrument(skip(self, response))]
-    fn send_response(&mut self, response: HttpResponse) -> Result<(), ServerError> {
+    fn send_response(&mut self, response: HttpResponse) -> Result<(), Error> {
         let mut writer = BufWriter::new(&mut self.stream);
         
         // Write status line

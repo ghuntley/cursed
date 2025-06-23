@@ -25,7 +25,7 @@ pub struct RelationshipExtractor {
 impl RelationshipExtractor {
     /// Create a new relationship extractor
     #[instrument]
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             relationship_cache: HashMap::new(),
             known_types: HashSet::new(),
@@ -39,8 +39,8 @@ impl RelationshipExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
-        debug!("Extracting module relationships for: {}", module_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting module relationships for: {}", module_decl.to_string());
         
         let mut relationships = Vec::new();
 
@@ -64,8 +64,8 @@ impl RelationshipExtractor {
         &self,
         func_decl: &FunctionDeclaration,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
-        debug!("Extracting function relationships for: {}", func_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting function relationships for: {}", func_decl.to_string());
         
         let mut relationships = Vec::new();
 
@@ -73,7 +73,7 @@ impl RelationshipExtractor {
         for param in &func_decl.parameters {
             if let Some(ref param_type) = param.param_type {
                 relationships.extend(self.extract_type_usage_relationships(
-                    &func_decl.name,
+                    &func_decl.to_string(),
                     param_type,
                     RelationshipType::Uses,
                 )?);
@@ -83,7 +83,7 @@ impl RelationshipExtractor {
         // Extract return type relationships
         if let Some(ref return_type) = func_decl.return_type {
             relationships.extend(self.extract_type_usage_relationships(
-                &func_decl.name,
+                &func_decl.to_string(),
                 return_type,
                 RelationshipType::Uses,
             )?);
@@ -91,14 +91,14 @@ impl RelationshipExtractor {
 
         // Extract function call relationships from body
         relationships.extend(self.extract_function_call_relationships(
-            &func_decl.name,
+            &func_decl.to_string(),
             &func_decl.body,
         )?);
 
         // Extract generic constraint relationships
         if let Some(ref constraints) = func_decl.constraints {
             relationships.extend(self.extract_constraint_relationships(
-                &func_decl.name,
+                &func_decl.to_string(),
                 constraints,
             )?);
         }
@@ -112,8 +112,8 @@ impl RelationshipExtractor {
         &self,
         struct_decl: &StructDeclaration,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
-        debug!("Extracting struct relationships for: {}", struct_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting struct relationships for: {}", struct_decl.to_string());
         
         let mut relationships = Vec::new();
 
@@ -121,7 +121,7 @@ impl RelationshipExtractor {
         for field in &struct_decl.fields {
             if let Some(ref field_type) = field.field_type {
                 relationships.extend(self.extract_type_usage_relationships(
-                    &struct_decl.name,
+                    &struct_decl.to_string(),
                     field_type,
                     RelationshipType::Contains,
                 )?);
@@ -130,20 +130,20 @@ impl RelationshipExtractor {
 
         // Extract implementation relationships
         relationships.extend(self.extract_struct_implementations(
-            &struct_decl.name,
+            &struct_decl.to_string(),
             source_code,
         )?);
 
         // Extract inheritance relationships
         relationships.extend(self.extract_inheritance_relationships(
-            &struct_decl.name,
+            &struct_decl.to_string(),
             source_code,
         )?);
 
         // Extract generic constraint relationships
         if let Some(ref constraints) = struct_decl.constraints {
             relationships.extend(self.extract_constraint_relationships(
-                &struct_decl.name,
+                &struct_decl.to_string(),
                 constraints,
             )?);
         }
@@ -157,8 +157,8 @@ impl RelationshipExtractor {
         &self,
         interface_decl: &InterfaceDeclaration,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
-        debug!("Extracting interface relationships for: {}", interface_decl.name);
+    ) -> Result<(), Error> {
+        debug!("Extracting interface relationships for: {}", interface_decl.to_string());
         
         let mut relationships = Vec::new();
 
@@ -168,7 +168,7 @@ impl RelationshipExtractor {
             for param in &method.parameters {
                 if let Some(ref param_type) = param.param_type {
                     relationships.extend(self.extract_type_usage_relationships(
-                        &interface_decl.name,
+                        &interface_decl.to_string(),
                         param_type,
                         RelationshipType::References,
                     )?);
@@ -178,7 +178,7 @@ impl RelationshipExtractor {
             // Return type relationships
             if let Some(ref return_type) = method.return_type {
                 relationships.extend(self.extract_type_usage_relationships(
-                    &interface_decl.name,
+                    &interface_decl.to_string(),
                     return_type,
                     RelationshipType::References,
                 )?);
@@ -187,13 +187,13 @@ impl RelationshipExtractor {
 
         // Extract interface inheritance relationships
         relationships.extend(self.extract_interface_inheritance(
-            &interface_decl.name,
+            &interface_decl.to_string(),
             source_code,
         )?);
 
         // Extract implementation relationships (who implements this interface)
         relationships.extend(self.extract_interface_implementors(
-            &interface_decl.name,
+            &interface_decl.to_string(),
             source_code,
         )?);
 
@@ -207,15 +207,15 @@ impl RelationshipExtractor {
         source_name: &str,
         type_expr: &dyn Expression,
         relationship_type: RelationshipType,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         match &type_expr.expr_type {
             ExpressionType::Identifier(id) => {
-                if self.is_known_type(&id.name) {
+                if self.is_known_type(&id.to_string()) {
                     relationships.push(RelationshipInfo {
                         relationship_type: relationship_type.clone(),
-                        target: id.name.clone(),
+                        target: id.to_string().clone(),
                         strength: RelationshipStrength::Strong,
                         context: Some(format!("Type usage in {}", source_name)),
                     });
@@ -268,7 +268,7 @@ impl RelationshipExtractor {
         &self,
         caller_name: &str,
         body: &AstNode,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Recursively search for function calls in the AST
@@ -346,7 +346,7 @@ impl RelationshipExtractor {
                 if let ExpressionType::Identifier(id) = &call.function.expr_type {
                     relationships.push(RelationshipInfo {
                         relationship_type: RelationshipType::Calls,
-                        target: id.name.clone(),
+                        target: id.to_string().clone(),
                         strength: RelationshipStrength::Strong,
                         context: Some(format!("Function call from {}", caller_name)),
                     });
@@ -401,7 +401,7 @@ impl RelationshipExtractor {
         &self,
         source_name: &str,
         constraints: &[GenericConstraint],
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         for constraint in constraints {
@@ -421,7 +421,7 @@ impl RelationshipExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Parse import statements from source code
@@ -433,7 +433,7 @@ impl RelationshipExtractor {
                         relationship_type: RelationshipType::DependsOn,
                         target: module_name,
                         strength: RelationshipStrength::Strong,
-                        context: Some(format!("Import in module {}", module_decl.name)),
+                        context: Some(format!("Import in module {}", module_decl.to_string())),
                     });
                 }
             }
@@ -447,7 +447,7 @@ impl RelationshipExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Parse export statements from source code
@@ -467,7 +467,7 @@ impl RelationshipExtractor {
         &self,
         body: &AstNode,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // This would recursively analyze the module body
@@ -480,7 +480,7 @@ impl RelationshipExtractor {
         &self,
         struct_name: &str,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Look for impl blocks in source code
@@ -506,7 +506,7 @@ impl RelationshipExtractor {
         &self,
         struct_name: &str,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Look for inheritance patterns in source code
@@ -533,7 +533,7 @@ impl RelationshipExtractor {
         &self,
         interface_name: &str,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Look for interface inheritance patterns
@@ -559,7 +559,7 @@ impl RelationshipExtractor {
         &self,
         interface_name: &str,
         source_code: &str,
-    ) -> Result<Vec<RelationshipInfo>, Error> {
+    ) -> Result<(), Error> {
         let mut relationships = Vec::new();
 
         // Look for types that implement this interface

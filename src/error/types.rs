@@ -862,7 +862,7 @@ impl ErrorManager {
         }
     }
 
-    pub fn add_error(&self, error: Box<dyn CursedErrorTrait>) -> Result<(), CursedError> {
+    pub fn add_error(&self, error: Box<dyn CursedErrorTrait>) -> Result<(), Error> {
         let mut errors = self.errors.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error manager lock"))?;
 
@@ -883,7 +883,7 @@ impl ErrorManager {
         Ok(())
     }
 
-    pub fn add_error_to_chain(&self, chain_id: &str, error: Box<dyn CursedErrorTrait>) -> Result<(), CursedError> {
+    pub fn add_error_to_chain(&self, chain_id: &str, error: Box<dyn CursedErrorTrait>) -> Result<(), Error> {
         let mut errors = self.errors.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error manager lock"))?;
 
@@ -897,7 +897,7 @@ impl ErrorManager {
         }
     }
 
-    pub fn get_errors_by_category(&self, category: ErrorCategory) -> Result<Vec<ErrorChain>, CursedError> {
+    pub fn get_errors_by_category(&self, category: ErrorCategory) -> Result<(), Error> {
         let errors = self.errors.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error manager lock"))?;
 
@@ -909,7 +909,7 @@ impl ErrorManager {
             .collect())
     }
 
-    pub fn get_errors_by_severity(&self, severity: ErrorSeverity) -> Result<Vec<ErrorChain>, CursedError> {
+    pub fn get_errors_by_severity(&self, severity: ErrorSeverity) -> Result<(), Error> {
         let errors = self.errors.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error manager lock"))?;
 
@@ -919,21 +919,21 @@ impl ErrorManager {
             .collect())
     }
 
-    pub fn get_error_count_by_category(&self, category: ErrorCategory) -> Result<usize, CursedError> {
+    pub fn get_error_count_by_category(&self, category: ErrorCategory) -> Result<(), Error> {
         let categories = self.categories.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire categories lock"))?;
 
         Ok(categories.get(&category).copied().unwrap_or(0))
     }
 
-    pub fn get_error_count_by_severity(&self, severity: ErrorSeverity) -> Result<usize, CursedError> {
+    pub fn get_error_count_by_severity(&self, severity: ErrorSeverity) -> Result<(), Error> {
         let severities = self.severities.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire severities lock"))?;
 
         Ok(severities.get(&severity).copied().unwrap_or(0))
     }
 
-    pub fn clear_errors(&self) -> Result<(), CursedError> {
+    pub fn clear_errors(&self) -> Result<(), Error> {
         let mut errors = self.errors.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error manager lock"))?;
         
@@ -950,7 +950,7 @@ impl ErrorManager {
         Ok(())
     }
 
-    pub fn get_statistics(&self) -> Result<ErrorStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let errors = self.errors.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire error manager lock"))?;
         
@@ -972,7 +972,7 @@ impl ErrorManager {
         })
     }
 
-    fn update_category_stats(&self, category: ErrorCategory) -> Result<(), CursedError> {
+    fn update_category_stats(&self, category: ErrorCategory) -> Result<(), Error> {
         let mut categories = self.categories.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire categories lock"))?;
         
@@ -980,7 +980,7 @@ impl ErrorManager {
         Ok(())
     }
 
-    fn update_severity_stats(&self, severity: ErrorSeverity) -> Result<(), CursedError> {
+    fn update_severity_stats(&self, severity: ErrorSeverity) -> Result<(), Error> {
         let mut severities = self.severities.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire severities lock"))?;
         

@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::types::Type;
+use crate::ast::crate::types::Type;
 use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 
@@ -122,7 +122,7 @@ impl VarianceRegistry {
 
     /// Analyze the variance of type parameters in a type definition
     #[instrument(skip(self))]
-    pub fn analyze_type_variance(&self, type_name: &str, definition: &Type) -> Result<Vec<TypeParameterVariance>, CursedError> {
+    pub fn analyze_type_variance(&self, type_name: &str, definition: &Type) -> Result<(), Error> {
         debug!("Analyzing variance for type: {}", type_name);
 
         let mut variance_analyzer = VarianceAnalyzer::new();
@@ -142,7 +142,7 @@ impl VarianceRegistry {
 
     /// Get variance information for a type
     #[instrument(skip(self))]
-    pub fn get_type_variance(&self, type_name: &str) -> Result<Vec<TypeParameterVariance>, CursedError> {
+    pub fn get_type_variance(&self, type_name: &str) -> Result<(), Error> {
         let type_variances = self.type_variances.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
@@ -151,7 +151,7 @@ impl VarianceRegistry {
 
     /// Check if one type is a subtype of another (considering variance)
     #[instrument(skip(self))]
-    pub fn is_subtype(&self, subtype: &Type, supertype: &Type) -> Result<bool, CursedError> {
+    pub fn is_subtype(&self, subtype: &Type, supertype: &Type) -> Result<(), Error> {
         // Check cache first
         let cache_key = (subtype.clone(), supertype.clone());
         {
@@ -180,7 +180,7 @@ impl VarianceRegistry {
 
     /// Internal implementation for computing subtyping relationships
     #[instrument(skip(self))]
-    fn compute_subtyping_relationship(&self, subtype: &Type, supertype: &Type) -> Result<bool, CursedError> {
+    fn compute_subtyping_relationship(&self, subtype: &Type, supertype: &Type) -> Result<(), Error> {
         // Reflexivity: T <: T
         if subtype == supertype {
             return Ok(true);
@@ -243,7 +243,7 @@ impl VarianceRegistry {
 
     /// Check subtyping for generic types considering variance
     #[instrument(skip(self))]
-    fn check_generic_subtyping(&self, type_name: &str, sub_args: &[Type], super_args: &[Type]) -> Result<bool, CursedError> {
+    fn check_generic_subtyping(&self, type_name: &str, sub_args: &[Type], super_args: &[Type]) -> Result<(), Error> {
         let variances = self.get_type_variance(type_name)?;
         
         if variances.len() != sub_args.len() {
@@ -280,7 +280,7 @@ impl VarianceRegistry {
         sub_return: &Type,
         super_params: &[Type],
         super_return: &Type,
-    ) -> Result<bool, CursedError> {
+    ) -> Result<(), Error> {
         // Functions are contravariant in parameters and covariant in return type
         if sub_params.len() != super_params.len() {
             return Ok(false);
@@ -299,7 +299,7 @@ impl VarianceRegistry {
 
     /// Register safe variance relationships
     #[instrument(skip(self))]
-    pub fn register_safe_variance(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), CursedError> {
+    pub fn register_safe_variance(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error> {
         let mut relationships = self.safe_variance_relationships.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
         
@@ -310,7 +310,7 @@ impl VarianceRegistry {
 
     /// Check if a variance relationship is safe
     #[instrument(skip(self))]
-    pub fn is_variance_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<bool, CursedError> {
+    pub fn is_variance_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error> {
         let relationships = self.safe_variance_relationships.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
@@ -319,7 +319,7 @@ impl VarianceRegistry {
 
     /// Register built-in type variances
     #[instrument(skip(self))]
-    fn register_builtin_variances(&self) -> Result<(), CursedError> {
+    fn register_builtin_variances(&self) -> Result<(), Error> {
         // Array<T> is covariant in T
         self.register_safe_variance("Array", "T", Variance::Covariant)?;
 
@@ -346,7 +346,7 @@ impl VarianceRegistry {
 
     /// Clear all caches
     #[instrument(skip(self))]
-    pub fn clear_caches(&self) -> Result<(), CursedError> {
+    pub fn clear_caches(&self) -> Result<(), Error> {
         {
             let mut cache = self.subtyping_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
@@ -358,7 +358,7 @@ impl VarianceRegistry {
 
     /// Get statistics about the variance registry
     #[instrument(skip(self))]
-    pub fn get_statistics(&self) -> Result<VarianceStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let type_variances = self.type_variances.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         let subtyping_cache = self.subtyping_cache.read()
@@ -403,7 +403,7 @@ impl VarianceAnalyzer {
     }
 
     #[instrument(skip(self))]
-    fn analyze_type(&mut self, type_ref: &Type) -> Result<Vec<TypeParameterVariance>, CursedError> {
+    fn analyze_type(&mut self, type_ref: &Type) -> Result<(), Error> {
         self.visit_type(type_ref, Variance::Covariant)?;
         
         let mut result = Vec::new();
@@ -420,7 +420,7 @@ impl VarianceAnalyzer {
     }
 
     #[instrument(skip(self))]
-    fn visit_type(&mut self, type_ref: &Type, context_variance: Variance) -> Result<(), CursedError> {
+    fn visit_type(&mut self, type_ref: &Type, context_variance: Variance) -> Result<(), Error> {
         match type_ref {
             Type::Generic(name) => {
                 // This is a type parameter usage
@@ -512,18 +512,18 @@ impl VarianceAnalyzer {
 /// Trait for working with variance in the type system
 pub trait VarianceHandler {
     /// Check if a variance assignment is safe for a given usage pattern
-    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<bool, CursedError>;
+    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error>;
     
     /// Get the most restrictive variance for a type parameter
-    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> Result<Variance, CursedError>;
+    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> Result<(), Error>;
     
     /// Validate variance annotations against actual usage
-    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> Result<Vec<String>, CursedError>;
+    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> Result<(), Error>;
 }
 
 impl VarianceHandler for VarianceRegistry {
     #[instrument(skip(self))]
-    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<bool, CursedError> {
+    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error> {
         let type_variances = self.get_type_variance(type_name)?;
         
         if let Some(param_variance) = type_variances.iter().find(|pv| pv.parameter_name == param_name) {
@@ -547,7 +547,7 @@ impl VarianceHandler for VarianceRegistry {
     }
 
     #[instrument(skip(self))]
-    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> Result<Variance, CursedError> {
+    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> Result<(), Error> {
         let type_variances = self.get_type_variance(type_name)?;
         
         if let Some(param_variance) = type_variances.iter().find(|pv| pv.parameter_name == param_name) {
@@ -559,7 +559,7 @@ impl VarianceHandler for VarianceRegistry {
     }
 
     #[instrument(skip(self))]
-    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> Result<Vec<String>, CursedError> {
+    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> Result<(), Error> {
         let mut errors = Vec::new();
         
         for (param_name, requested_variance) in annotations {

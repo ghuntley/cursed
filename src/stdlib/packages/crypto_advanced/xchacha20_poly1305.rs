@@ -15,7 +15,7 @@ impl XChaCha20Poly1305 {
 // Type aliases and constants
 pub type XChaCha20Key = Vec<u8>;
 pub type XChaCha20Nonce = Vec<u8>;
-pub type XChaCha20Result<T> = Result<T, AdvancedCryptoError>;
+pub type XChaCha20Result<(), Error>;
 pub type XChaCha20Error = AdvancedCryptoError;
 pub const XCHACHA20_KEY_SIZE: usize = 32;
 pub const XCHACHA20_NONCE_SIZE: usize = 24;

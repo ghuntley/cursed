@@ -230,7 +230,7 @@ impl ErrorPropagationRuntime {
         error: Error,
         location: ErrorSourceLocation,
         function_context: Option<String>,
-    ) -> Result<(), ErrorPropagationError> {
+    ) -> Result<(), Error> {
         let start_time = Instant::now();
         
         // Check propagation depth
@@ -306,7 +306,7 @@ impl ErrorPropagationRuntime {
     }
     
     /// Check if propagation depth is within limits
-    fn check_propagation_depth(&self, location: &ErrorSourceLocation) -> Result<(), ErrorPropagationError> {
+    fn check_propagation_depth(&self, location: &ErrorSourceLocation) -> Result<(), Error> {
         if self.propagation_stack.len() >= self.config.max_propagation_depth {
             return Err(ErrorPropagationError::new(
                 Error::ErrorPropagation {
@@ -324,7 +324,7 @@ impl ErrorPropagationRuntime {
     }
     
     /// Update thread-local propagation state
-    fn update_thread_local_state(&mut self) -> Result<(), ErrorPropagationError> {
+    fn update_thread_local_state(&mut self) -> Result<(), Error> {
         let thread_id = thread::current().id();
         let mut state_map = self.thread_local_state.write()
             .map_err(|_| ErrorPropagationError::new(
@@ -351,7 +351,7 @@ impl ErrorPropagationRuntime {
         error: &Error,
         frame: &PropagationFrame,
         _panic_runtime: &Option<String>,
-    ) -> Result<(), ErrorPropagationError> {
+    ) -> Result<(), Error> {
         // Create panic from error propagation failure
         let panic_message = format!(
             "Unhandled error propagation: {} at {}:{}",
@@ -578,7 +578,7 @@ impl ErrorPropagationRuntime {
     }
     
     /// Get current propagation statistics
-    pub fn get_statistics(&self) -> Result<PropagationStatistics, Error> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         self.statistics.lock()
             .map(|stats| stats.clone())
             .map_err(|_| Error::Runtime("Failed to acquire statistics lock".to_string()))

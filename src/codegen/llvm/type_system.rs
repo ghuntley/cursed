@@ -12,7 +12,7 @@
 
 use crate::ast::declarations::{SquadStatement, CollabStatement, FieldStatement, MethodDeclaration, GenericConstraint};
 use crate::ast::identifiers::Identifier;
-use crate::ast::types::{TypeExpression, Type, StructType, InterfaceType};
+use crate::ast::crate::types::{TypeExpression, Type, StructType, InterfaceType};
 use crate::ast::traits::{Node, Expression};
 use crate::error::Error;
 use crate::type_system::{
@@ -194,7 +194,7 @@ impl TypeCompilationContext {
         name: &str,
         type_parameters: &[String],
         constraints: &[GenericConstraint]
-    ) -> Result<CompiledGenericType, Error> {
+    ) -> Result<(), Error> {
         // Validate constraints using type system (simplified for now)
         for constraint in constraints {
             self.type_system.check_constraints(
@@ -228,7 +228,7 @@ impl TypeCompilationContext {
         &mut self,
         base_name: &str,
         type_args: &[String]
-    ) -> Result<CompiledGenericInstance, Error> {
+    ) -> Result<(), Error> {
         // Get the generic type
         let generic_type = self.generic_cache.get(base_name)
             .ok_or_else(|| Error::TypeCompilation(format!("Generic type '{}' not found", base_name)))?
@@ -274,8 +274,8 @@ impl TypeCompilationContext {
     }
 
     /// Compile a struct declaration to LLVM types
-    pub fn compile_struct(&mut self, squad: &SquadStatement) -> Result<CompiledStructType, Error> {
-        let struct_name = squad.name.value.clone();
+    pub fn compile_struct(&mut self, squad: &SquadStatement) -> Result<(), Error> {
+        let struct_name = squad.to_string().value.clone();
         
         // Check for circular dependencies
         if self.compilation_order.contains(&struct_name) {
@@ -324,7 +324,7 @@ impl TypeCompilationContext {
             size_bytes: total_size,
             alignment: max_alignment,
             is_generic: !squad.type_parameters.is_empty(),
-            generic_params: squad.type_parameters.iter().map(|p| p.name.clone()).collect(),
+            generic_params: squad.type_parameters.iter().map(|p| p.to_string().clone()).collect(),
         };
 
         self.registry.register_struct(struct_name.clone(), compiled_struct.clone());
@@ -334,8 +334,8 @@ impl TypeCompilationContext {
     }
 
     /// Compile an interface declaration to LLVM types
-    pub fn compile_interface(&mut self, collab: &CollabStatement) -> Result<CompiledInterfaceType, Error> {
-        let interface_name = collab.name.value.clone();
+    pub fn compile_interface(&mut self, collab: &CollabStatement) -> Result<(), Error> {
+        let interface_name = collab.to_string().value.clone();
 
         // Compile methods
         let mut compiled_methods = Vec::new();
@@ -371,8 +371,8 @@ impl TypeCompilationContext {
     }
 
     /// Compile a field declaration
-    fn compile_field(&self, field: &FieldStatement) -> Result<CompiledField, Error> {
-        let field_name = field.name.value.clone();
+    fn compile_field(&self, field: &FieldStatement) -> Result<(), Error> {
+        let field_name = field.to_string().value.clone();
         let type_name = field.type_name.value.clone();
         
         let (llvm_type, size) = self.map_cursed_type_to_llvm(&type_name)?;
@@ -387,8 +387,8 @@ impl TypeCompilationContext {
     }
 
     /// Compile a method declaration
-    fn compile_method(&self, method: &MethodDeclaration, vtable_index: usize) -> Result<CompiledMethod, Error> {
-        let method_name = method.name.value.clone();
+    fn compile_method(&self, method: &MethodDeclaration, vtable_index: usize) -> Result<(), Error> {
+        let method_name = method.to_string().value.clone();
         
         // Build function signature
         let mut param_types = vec!["i8*".to_string()]; // self pointer
@@ -424,7 +424,7 @@ impl TypeCompilationContext {
     }
 
     /// Map CURSED types to LLVM types
-    fn map_cursed_type_to_llvm(&self, cursed_type: &str) -> Result<(String, usize), Error> {
+    fn map_cursed_type_to_llvm(&self, cursed_type: &str) -> Result<(), Error> {
         match cursed_type {
             // Primitive types
             "normie" => Ok(("i64".to_string(), 8)),
@@ -509,8 +509,8 @@ impl TypeCompilationContext {
         
         ir.push_str(&format!(
             "define %struct.{}* @new_{}({}) {{\n",
-            struct_type.name,
-            struct_type.name,
+            struct_type.to_string(),
+            struct_type.to_string(),
             param_types.iter().enumerate()
                 .map(|(i, t)| format!("{} %param{}", t, i))
                 .collect::<Vec<_>>()
@@ -524,14 +524,14 @@ impl TypeCompilationContext {
         ));
         ir.push_str(&format!(
             "  %struct_ptr = bitcast i8* %ptr to %struct.{}*\n",
-            struct_type.name
+            struct_type.to_string()
         ));
         
         // Initialize fields
         for (i, field) in struct_type.fields.iter().enumerate() {
             ir.push_str(&format!(
                 "  %field_ptr{} = getelementptr inbounds %struct.{}, %struct.{}* %struct_ptr, i32 0, i32 {}\n",
-                i, struct_type.name, struct_type.name, i
+                i, struct_type.to_string(), struct_type.to_string(), i
             ));
             ir.push_str(&format!(
                 "  store {} %param{}, {}* %field_ptr{}\n",
@@ -539,7 +539,7 @@ impl TypeCompilationContext {
             ));
         }
         
-        ir.push_str(&format!("  ret %struct.{}* %struct_ptr\n", struct_type.name));
+        ir.push_str(&format!("  ret %struct.{}* %struct_ptr\n", struct_type.to_string()));
         ir.push_str("}\n\n");
         
         ir
@@ -570,8 +570,8 @@ impl TypeCompilationContext {
         ir.push_str(&format!(
             "define {} @{}_{}({}) {{\n",
             method.llvm_function_type.split('(').next().unwrap_or("void"),
-            interface_type.name,
-            method.name,
+            interface_type.to_string(),
+            method.to_string(),
             params
         ));
         
@@ -581,11 +581,11 @@ impl TypeCompilationContext {
         ir.push_str("  %vtable = load i8*, i8** %vtable_ptr\n");
         ir.push_str(&format!(
             "  %vtable_typed = bitcast i8* %vtable to %vtable.{}*\n",
-            interface_type.name
+            interface_type.to_string()
         ));
         ir.push_str(&format!(
             "  %method_ptr = getelementptr inbounds %vtable.{}, %vtable.{}* %vtable_typed, i32 0, i32 {}\n",
-            interface_type.name, interface_type.name, method.vtable_index
+            interface_type.to_string(), interface_type.to_string(), method.vtable_index
         ));
         ir.push_str(&format!(
             "  %method = load {}*, {}** %method_ptr\n",
@@ -631,7 +631,7 @@ impl TypeCompilationContext {
     }
 
     /// Compile a generic constraint to LLVM representation
-    fn compile_constraint(&self, constraint: &GenericConstraint) -> Result<CompiledConstraint, Error> {
+    fn compile_constraint(&self, constraint: &GenericConstraint) -> Result<(), Error> {
         let param_name = constraint.type_parameters.first()
             .unwrap_or(&"T".to_string()).clone();
         let constraint_type = constraint.constraint_name.clone();
@@ -658,7 +658,7 @@ impl TypeCompilationContext {
         name: &str,
         type_parameters: &[String],
         constraints: &[CompiledConstraint]
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut template = String::new();
         
         // Generate parameterized struct definition
@@ -682,7 +682,7 @@ impl TypeCompilationContext {
     }
 
     /// Generate constraint checking template
-    fn generate_constraint_check_template(&self, constraint: &CompiledConstraint) -> Result<String, Error> {
+    fn generate_constraint_check_template(&self, constraint: &CompiledConstraint) -> Result<(), Error> {
         let mut template = String::new();
         
         template.push_str(&format!(
@@ -759,7 +759,7 @@ impl TypeCompilationContext {
         &self,
         template: &str,
         substitutions: &HashMap<String, String>
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut result = template.to_string();
         
         for (param, concrete_type) in substitutions {
@@ -821,7 +821,7 @@ impl TypeCastingOperations {
         interface_val: &str,
         target_type: &str,
         registry: &LlvmTypeRegistry,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut ir = String::new();
         
         // Extract type ID from interface value
@@ -871,7 +871,7 @@ impl TypeCastingOperations {
         to_type: &str,
         value: &str,
         registry: &LlvmTypeRegistry,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let mut ir = String::new();
         
         match (from_type, to_type) {
@@ -911,7 +911,7 @@ impl GenericTypeHandler {
         base_type: &str,
         type_args: &[String],
         registry: &mut LlvmTypeRegistry,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let instance_name = format!("{}_{}", base_type, type_args.join("_"));
         
         // Check if already instantiated
@@ -969,7 +969,7 @@ mod tests {
         assert!(result.is_ok());
         
         let compiled = result.unwrap();
-        assert_eq!(compiled.name, "Person");
+        assert_eq!(compiled.to_string(), "Person");
         assert_eq!(compiled.fields.len(), 2);
         assert!(compiled.llvm_type.contains("struct.Person"));
     }
@@ -991,7 +991,7 @@ mod tests {
         assert!(result.is_ok());
         
         let compiled = result.unwrap();
-        assert_eq!(compiled.name, "Drawable");
+        assert_eq!(compiled.to_string(), "Drawable");
         assert!(compiled.vtable_type.contains("vtable.Drawable"));
     }
 

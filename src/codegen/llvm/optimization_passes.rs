@@ -366,7 +366,7 @@ impl PassRegistry {
         let _span = span!(Level::DEBUG, "select_passes").entered();
         
         let passes = self.passes.read()
-            .map_err(|_| Error::Other("Failed to read pass registry".to_string()))?;
+            .map_err(|_| Error::General("Failed to read pass registry".to_string()))?;
         
         let mut selected_passes = Vec::new();
         
@@ -413,7 +413,7 @@ impl PassRegistry {
     /// Topologically sort passes based on dependencies
     fn topological_sort(&self, selected_passes: &[String]) -> Result<Vec<String>> {
         let deps = self.dependency_graph.read()
-            .map_err(|_| Error::Other("Failed to read dependency graph".to_string()))?;
+            .map_err(|_| Error::General("Failed to read dependency graph".to_string()))?;
         
         let mut in_degree = HashMap::new();
         let mut graph: HashMap<String, Vec<String>> = HashMap::new();
@@ -464,7 +464,7 @@ impl PassRegistry {
         
         // Check for cycles
         if result.len() != selected_passes.len() {
-            return Err(Error::Other("Circular dependency detected in pass ordering".to_string()));
+            return Err(Error::General("Circular dependency detected in pass ordering".to_string()));
         }
         
         Ok(result)

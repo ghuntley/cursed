@@ -524,7 +524,7 @@ impl<T> Sender<T> {
     }
 
     /// Try to send without waiting
-    pub fn try_send(&self, value: T) -> Result<(), AsyncError> {
+    pub fn try_send(&self, value: T) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
         
         if inner.closed {
@@ -584,7 +584,7 @@ impl<T> Receiver<T> {
     }
 
     /// Try to receive without waiting
-    pub fn try_recv(&self) -> Result<T, AsyncError> {
+    pub fn try_recv(&self) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
         
         if let Some(value) = inner.queue.pop_front() {

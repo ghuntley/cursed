@@ -552,7 +552,7 @@ impl ProductionMySqlConnection {
 }
 
 impl DriverConn for ProductionMySqlConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -565,7 +565,7 @@ impl DriverConn for ProductionMySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -581,7 +581,7 @@ impl DriverConn for ProductionMySqlConnection {
         
         // Execute query
         let mut conn = &self.connection;
-        let result: Result<Vec<Row>, mysql::Error> = if mysql_params.is_empty() {
+        let result: Result<(), Error> = if mysql_params.is_empty() {
             conn.query(query)
         } else {
             conn.exec(query, mysql_params)
@@ -603,7 +603,7 @@ impl DriverConn for ProductionMySqlConnection {
         self.convert_rows_to_result(rows)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -647,7 +647,7 @@ impl DriverConn for ProductionMySqlConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         // Check if transaction is already active
         if let Ok(tx_active) = self.transaction_active.lock() {
             if *tx_active {
@@ -668,14 +668,14 @@ impl DriverConn for ProductionMySqlConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         let mut conn = &self.connection;
         conn.query_drop("SELECT 1")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Ping failed: {}", e)))?;
         Ok(())
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Connection will be returned to pool automatically on drop
         if let Ok(mut stats) = self.driver.stats.write() {
             if stats.active_connections > 0 {
@@ -710,7 +710,7 @@ impl DriverConn for ProductionMySqlConnection {
 
 impl ProductionMySqlConnection {
     /// Convert MySQL rows to QueryResult
-    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<QueryResult, DatabaseError> {
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<(), Error> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
                 Vec::new(),
@@ -722,7 +722,7 @@ impl ProductionMySqlConnection {
         // Extract column information from the first row
         let column_names: Vec<String> = rows[0].columns()
             .iter()
-            .map(|col| col.name_str().to_string())
+            .map(|col| col.to_string()_str().to_string())
             .collect();
         
         let column_types: Vec<String> = rows[0].columns()
@@ -745,7 +745,7 @@ impl ProductionMySqlConnection {
     }
     
     /// Convert MySQL value at specific index
-    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<SqlValue, DatabaseError> {
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<(), Error> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
@@ -798,7 +798,7 @@ impl ProductionMySqlStatement {
 }
 
 impl DriverStmt for ProductionMySqlStatement {
-    fn execute(&self, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::QueryError,
@@ -842,7 +842,7 @@ impl DriverStmt for ProductionMySqlStatement {
         })
     }
 
-    fn query(&self, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::QueryError,
@@ -878,7 +878,7 @@ impl DriverStmt for ProductionMySqlStatement {
         self.convert_rows_to_result(rows)
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Statement will be dropped automatically
         Ok(())
     }
@@ -903,7 +903,7 @@ impl DriverStmt for ProductionMySqlStatement {
 
 impl ProductionMySqlStatement {
     /// Convert rows to QueryResult
-    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<QueryResult, DatabaseError> {
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<(), Error> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
                 Vec::new(),
@@ -915,7 +915,7 @@ impl ProductionMySqlStatement {
         // Extract column information
         let column_names: Vec<String> = rows[0].columns()
             .iter()
-            .map(|col| col.name_str().to_string())
+            .map(|col| col.to_string()_str().to_string())
             .collect();
         
         let column_types: Vec<String> = rows[0].columns()
@@ -938,7 +938,7 @@ impl ProductionMySqlStatement {
     }
     
     /// Convert MySQL value at index
-    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<SqlValue, DatabaseError> {
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<(), Error> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
@@ -1022,7 +1022,7 @@ impl ProductionMySqlTransaction {
 }
 
 impl DriverTx for ProductionMySqlTransaction {
-    fn commit(&self) -> Result<(), DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         let committed = self.committed.lock().map_err(|_| 
             DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
         let rolled_back = self.rolled_back.lock().map_err(|_| 
@@ -1053,7 +1053,7 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         let committed = self.committed.lock().map_err(|_| 
             DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
         let rolled_back = self.rolled_back.lock().map_err(|_| 
@@ -1090,7 +1090,7 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(())
     }
 
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -1103,7 +1103,7 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -1119,7 +1119,7 @@ impl DriverTx for ProductionMySqlTransaction {
         
         // Execute query
         let mut conn = &self.connection;
-        let result: Result<Vec<Row>, mysql::Error> = if mysql_params.is_empty() {
+        let result: Result<(), Error> = if mysql_params.is_empty() {
             conn.query(query)
         } else {
             conn.exec(query, mysql_params)
@@ -1141,7 +1141,7 @@ impl DriverTx for ProductionMySqlTransaction {
         self.convert_rows_to_result(rows)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -1210,7 +1210,7 @@ impl DriverTx for ProductionMySqlTransaction {
 
 impl ProductionMySqlTransaction {
     /// Convert MySQL rows to QueryResult
-    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<QueryResult, DatabaseError> {
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<(), Error> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
                 Vec::new(),
@@ -1222,7 +1222,7 @@ impl ProductionMySqlTransaction {
         // Extract column information from the first row
         let column_names: Vec<String> = rows[0].columns()
             .iter()
-            .map(|col| col.name_str().to_string())
+            .map(|col| col.to_string()_str().to_string())
             .collect();
         
         let column_types: Vec<String> = rows[0].columns()
@@ -1245,7 +1245,7 @@ impl ProductionMySqlTransaction {
     }
     
     /// Convert MySQL value at specific index
-    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<SqlValue, DatabaseError> {
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<(), Error> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
@@ -1340,42 +1340,42 @@ impl FailedConnection {
 }
 
 impl DriverConn for FailedConnection {
-    fn prepare(&self, _query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, _query: &str) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn begin_transaction(&self, _opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, _opts: TxOptions) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         Ok(())
     }
 
@@ -1401,7 +1401,7 @@ impl DriverConn for FailedConnection {
 }
 
 impl Driver for ProductionMySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, data_source_name: &str) -> Result<(), Error> {
         // Parse DSN and initialize pool if needed
         if let Ok(pool_guard) = self.pool.read() {
             if pool_guard.is_none() {
@@ -1510,7 +1510,7 @@ mod tests {
     #[test]
     fn test_driver_creation() {
         let driver = ProductionMySqlDriver::new();
-        assert_eq!(driver.name(), "Production MySQL Driver for CURSED");
+        assert_eq!(driver.to_string()(), "Production MySQL Driver for CURSED");
         assert!(driver.capabilities().supports_transactions);
         assert!(driver.capabilities().supports_prepared_statements);
     }

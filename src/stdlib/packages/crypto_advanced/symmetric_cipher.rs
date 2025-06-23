@@ -4,10 +4,10 @@ pub use super::errors::*;
 /// Trait for symmetric cipher operations
 pub trait SymmetricCipher: std::fmt::Debug {
     /// Encrypt data
-    fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>, CipherError>;
+    fn encrypt(&self, plaintext: &[u8]) -> Result<(), Error>;
     
     /// Decrypt data  
-    fn decrypt(&self, ciphertext: &[u8]) -> Result<Vec<u8>, CipherError>;
+    fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error>;
     
     /// Get cipher name
     fn name(&self) -> &str;

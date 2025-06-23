@@ -84,7 +84,7 @@ impl XmlGenerator {
     }
 
     /// Generate XML for a single module
-    fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> Result<String, Error> {
+    fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> Result<(), Error> {
         let mut content = String::new();
         
         content.push_str(&format!("    <module name=\"{}\">\n", self.xml_escape(&doc.module_name)));
@@ -128,7 +128,7 @@ impl XmlGenerator {
     }
 
     /// Generate XML for a single documentation item
-    fn generate_item_xml(&self, item: &DocumentationItem) -> Result<String, Error> {
+    fn generate_item_xml(&self, item: &DocumentationItem) -> Result<(), Error> {
         let mut content = String::new();
         
         let kind_str = match item.kind {

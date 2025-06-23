@@ -177,7 +177,7 @@ pub enum WorkspaceCommands {
 
 impl PackageManagerCli {
     /// Execute the CLI command
-    pub async fn execute(&self) -> Result<(), PackageManagerError> {
+    pub async fn execute(&self) -> Result<(), Error> {
         let config = PackageManagerConfig::default();
         let mut manager = PackageManager::new(config)?;
         
@@ -339,7 +339,7 @@ impl PackageManagerCli {
     }
     
     /// Load configuration from file and apply CLI overrides
-    pub fn load_config(&self) -> Result<PackageManagerConfig, PackageManagerError> {
+    pub fn load_config(&self) -> Result<(), Error> {
         let mut config = PackageManagerConfig::default();
         
         // Apply CLI overrides

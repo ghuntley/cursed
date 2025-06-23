@@ -307,7 +307,7 @@ impl<'ctx> ComprehensivePerformanceSystem<'ctx> {
     #[instrument(skip(self))]
     pub async fn run_benchmarks(&mut self, benchmark_name: &str) -> Result<BenchmarkResults> {
         if !self.config.enable_benchmarking {
-            return Err(Error::Other("Benchmarking is not enabled".to_string()));
+            return Err(Error::General("Benchmarking is not enabled".to_string()));
         }
         
         info!("Running comprehensive performance benchmarks: {}", benchmark_name);
@@ -546,7 +546,7 @@ impl<'ctx> AdvancedLlvmOptimizer<'ctx> {
             inkwell::OptimizationLevel::O2,
             inkwell::targets::RelocMode::Default,
             inkwell::targets::CodeModel::Default,
-        ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))?;
+        ).ok_or_else(|| Error::General("Failed to create target machine".to_string()))?;
         
         Ok(target_machine)
     }

@@ -1188,3 +1188,40 @@ use crate::stdlib::process::error::ProcessError;
         assert_eq!(entry.status, ProcessStatus::Running);
     }
 }
+
+/// System information structure
+#[derive(Debug, Clone)]
+pub struct SystemInfo {
+    pub hostname: String,
+    pub os_name: String,
+    pub os_version: String,
+    pub architecture: String,
+    pub cpu_count: u32,
+    pub total_memory: u64,
+    pub available_memory: u64,
+    pub uptime: Duration,
+    pub load_average: Vec<f64>,
+}
+
+impl SystemInfo {
+    /// Create a new SystemInfo instance
+    pub fn new() -> Self {
+        Self {
+            hostname: String::new(),
+            os_name: String::new(),
+            os_version: String::new(),
+            architecture: String::new(),
+            cpu_count: 0,
+            total_memory: 0,
+            available_memory: 0,
+            uptime: Duration::new(0, 0),
+            load_average: Vec::new(),
+        }
+    }
+}
+
+impl Default for SystemInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -485,7 +485,7 @@ struct TestSession {
 impl DocumentationTester {
     /// Create a new documentation tester
     #[instrument(skip(config))]
-    pub fn new(config: DocumentationTestConfig) -> Result<Self, CursedError> {
+    pub fn new(config: DocumentationTestConfig) -> Result<(), Error> {
         info!("Creating documentation tester");
         
         // Create test output directory
@@ -520,7 +520,7 @@ impl DocumentationTester {
     
     /// Run comprehensive documentation tests
     #[instrument(skip(self, docs_dir))]
-    pub async fn run_tests(&mut self, docs_dir: &Path) -> Result<DocumentationTestResult, CursedError> {
+    pub async fn run_tests(&mut self, docs_dir: &Path) -> Result<(), Error> {
         let test_run_id = Uuid::new_v4().to_string();
         let started_at = SystemTime::now();
         
@@ -618,7 +618,7 @@ impl DocumentationTester {
     
     /// Run example tests
     #[instrument(skip(self, docs_dir))]
-    async fn run_example_tests(&mut self, docs_dir: &Path) -> Result<Vec<ExampleTestResult>, CursedError> {
+    async fn run_example_tests(&mut self, docs_dir: &Path) -> Result<(), Error> {
         info!("Running example tests");
         
         let examples = self.extract_examples_from_docs(docs_dir).await?;
@@ -659,7 +659,7 @@ impl DocumentationTester {
         example: ExtractedExample,
         interactive_docs: &mut InteractiveDocumentation,
         config: &DocumentationTestConfig,
-    ) -> Result<ExampleTestResult, CursedError> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         // Check if example should be skipped
@@ -755,7 +755,7 @@ impl DocumentationTester {
     
     /// Validate links in documentation
     #[instrument(skip(self, docs_dir))]
-    async fn validate_links(&self, docs_dir: &Path) -> Result<LinkValidationResult, CursedError> {
+    async fn validate_links(&self, docs_dir: &Path) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         info!("Validating links in documentation");
         
@@ -873,7 +873,7 @@ impl DocumentationTester {
     
     /// Generate coverage report
     #[instrument(skip(self, docs_dir))]
-    async fn generate_coverage_report(&self, docs_dir: &Path) -> Result<CoverageResult, CursedError> {
+    async fn generate_coverage_report(&self, docs_dir: &Path) -> Result<(), Error> {
         info!("Generating documentation coverage report");
         
         // This would analyze the source code and documentation to determine coverage
@@ -897,7 +897,7 @@ impl DocumentationTester {
     }
     
     /// Extract examples from documentation
-    async fn extract_examples_from_docs(&self, docs_dir: &Path) -> Result<Vec<ExtractedExample>, CursedError> {
+    async fn extract_examples_from_docs(&self, docs_dir: &Path) -> Result<(), Error> {
         let mut examples = Vec::new();
         
         // Walk through documentation files
@@ -918,7 +918,7 @@ impl DocumentationTester {
     }
     
     /// Extract examples from a single file
-    async fn extract_examples_from_file(&self, file_path: &Path) -> Result<Vec<ExtractedExample>, CursedError> {
+    async fn extract_examples_from_file(&self, file_path: &Path) -> Result<(), Error> {
         let content = std::fs::read_to_string(file_path)
             .map_err(|e| CursedError::system_error(&format!("Failed to read file: {}", e)))?;
         
@@ -974,7 +974,7 @@ impl DocumentationTester {
     }
     
     /// Extract links from documentation
-    async fn extract_links_from_docs(&self, docs_dir: &Path) -> Result<Vec<ExtractedLink>, CursedError> {
+    async fn extract_links_from_docs(&self, docs_dir: &Path) -> Result<(), Error> {
         let mut links = Vec::new();
         
         // Walk through documentation files
@@ -995,7 +995,7 @@ impl DocumentationTester {
     }
     
     /// Extract links from a single file
-    async fn extract_links_from_file(&self, file_path: &Path) -> Result<Vec<ExtractedLink>, CursedError> {
+    async fn extract_links_from_file(&self, file_path: &Path) -> Result<(), Error> {
         let content = std::fs::read_to_string(file_path)
             .map_err(|e| CursedError::system_error(&format!("Failed to read file: {}", e)))?;
         
@@ -1122,7 +1122,7 @@ impl DocumentationTester {
     }
     
     /// Generate test reports
-    async fn generate_test_reports(&self, result: &DocumentationTestResult) -> Result<(), CursedError> {
+    async fn generate_test_reports(&self, result: &DocumentationTestResult) -> Result<(), Error> {
         // Generate JSON report
         let json_report = serde_json::to_string_pretty(result)
             .map_err(|e| CursedError::system_error(&format!("Failed to serialize JSON report: {}", e)))?;
@@ -1145,7 +1145,7 @@ impl DocumentationTester {
     }
     
     /// Generate HTML test report
-    fn generate_html_report(&self, result: &DocumentationTestResult) -> Result<String, CursedError> {
+    fn generate_html_report(&self, result: &DocumentationTestResult) -> Result<(), Error> {
         let html = format!(
             r#"<!DOCTYPE html>
 <html>
@@ -1237,7 +1237,7 @@ impl DocumentationTester {
     }
     
     /// Create a test session
-    async fn create_test_session(&mut self, test_run_id: &str) -> Result<&TestSession, CursedError> {
+    async fn create_test_session(&mut self, test_run_id: &str) -> Result<(), Error> {
         let test_dir = self.config.test_output_dir.join(test_run_id);
         
         if !test_dir.exists() {

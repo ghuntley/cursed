@@ -154,7 +154,7 @@ pub async fn sleep(duration: Duration) {
 }
 
 /// Async timeout wrapper
-pub async fn timeout<F>(duration: Duration, future: F) -> Result<F::Output, FutureError>
+pub async fn timeout<F>(duration: Duration, future: F) -> Result<(), Error>
 where
     F: Future + Send,
 {

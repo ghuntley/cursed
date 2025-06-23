@@ -7,7 +7,7 @@ use super::super::errors::*;
 use std::collections::HashMap;
 
 /// fr fr Result type for entropy validation
-pub type EntropyResult<T> = Result<T, SecurityAnalysisError>;
+pub type EntropyResult<(), Error>;
 
 /// fr fr Entropy validation metrics
 #[derive(Debug, Clone)]

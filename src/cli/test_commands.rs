@@ -135,7 +135,7 @@ pub fn add_test_commands(cmd: Command) -> Command {
 pub async fn handle_test_command(
     matches: &clap::ArgMatches,
     shutdown: Arc<AtomicBool>
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let watch = matches.get_flag("watch");
 
     if watch {
@@ -146,7 +146,7 @@ pub async fn handle_test_command(
 }
 
 /// Handle single test execution (non-watch mode)
-async fn handle_single_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_single_test_command(matches: &clap::ArgMatches) -> Result<(), Error>> {
     println!("🧪 Running CURSED tests");
     
     // Parse command-line arguments
@@ -199,7 +199,7 @@ async fn handle_single_test_command(matches: &clap::ArgMatches) -> Result<(), Bo
 async fn handle_watch_test_command(
     matches: &clap::ArgMatches, 
     shutdown: Arc<AtomicBool>
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let patterns = matches.get_many::<String>("watch-pattern")
         .map(|v| v.map(|s| s.clone()).collect())
         .unwrap_or_else(|| vec!["*.csd".to_string(), "*.toml".to_string()]);
@@ -234,7 +234,7 @@ async fn handle_watch_test_command(
 }
 
 /// Parse test configuration from command-line arguments
-fn parse_test_config(matches: &clap::ArgMatches) -> Result<TestConfig, Box<dyn std::error::Error>> {
+fn parse_test_config(matches: &clap::ArgMatches) -> Result<(), Error>> {
     let mut config = TestConfig::default();
 
     // Pattern filtering
@@ -283,7 +283,7 @@ fn parse_test_config(matches: &clap::ArgMatches) -> Result<TestConfig, Box<dyn s
 }
 
 /// Parse report format from command-line arguments
-fn parse_report_format(matches: &clap::ArgMatches) -> Result<ReportFormat, Box<dyn std::error::Error>> {
+fn parse_report_format(matches: &clap::ArgMatches) -> Result<(), Error>> {
     let format_str = matches.get_one::<String>("format").unwrap();
     
     match format_str.as_str() {

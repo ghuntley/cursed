@@ -10,7 +10,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, IntValue, PointerValue};
-use inkwell::types::{BasicTypeEnum, IntType, PointerType};
+use inkwell::crate::types::{BasicTypeEnum, IntType, PointerType};
 use inkwell::basic_block::BasicBlock;
 use inkwell::IntPredicate;
 use std::collections::HashMap;
@@ -24,38 +24,38 @@ pub trait PanicCompiler {
         severity: PanicSeverity,
         category: PanicCategory,
         source_location: Option<SourceLocation>,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate LLVM IR for a recovery block
     fn compile_recovery_block<F>(
         &mut self,
         protected_code: F,
         recovery_handler: Option<&str>,
-    ) -> Result<BasicValueEnum, CursedError>
+    ) -> Result<(), Error>
     where
-        F: FnOnce(&mut Self) -> Result<BasicValueEnum, CursedError>;
+        F: FnOnce(&mut Self) -> Result<(), Error>;
 
     /// Generate LLVM IR to check if a panic is active
-    fn compile_panic_check(&mut self) -> Result<IntValue, CursedError>;
+    fn compile_panic_check(&mut self) -> Result<(), Error>;
 
     /// Generate LLVM IR to get panic message
-    fn compile_get_panic_message(&mut self) -> Result<PointerValue, CursedError>;
+    fn compile_get_panic_message(&mut self) -> Result<(), Error>;
 
     /// Generate LLVM IR for panic cleanup
-    fn compile_panic_cleanup(&mut self) -> Result<(), CursedError>;
+    fn compile_panic_cleanup(&mut self) -> Result<(), Error>;
 
     /// Generate LLVM IR for entering a recovery scope
     fn compile_enter_recovery_scope(
         &mut self,
         scope_id: &str,
         config: Option<&RecoveryConfig>,
-    ) -> Result<IntValue, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate LLVM IR for exiting recovery scope
-    fn compile_exit_recovery_scope(&mut self) -> Result<IntValue, CursedError>;
+    fn compile_exit_recovery_scope(&mut self) -> Result<(), Error>;
 
     /// Generate LLVM IR to check if in recovery scope
-    fn compile_in_recovery_scope(&mut self) -> Result<IntValue, CursedError>;
+    fn compile_in_recovery_scope(&mut self) -> Result<(), Error>;
 
     /// Register panic-related FFI functions
     fn register_panic_functions(
@@ -63,7 +63,7 @@ pub trait PanicCompiler {
         context: &Context,
         module: &Module,
         builder: &Builder,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 }
 
 /// LLVM panic code generator implementation
@@ -167,7 +167,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the panic function, declaring it if necessary
-    fn get_panic_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_panic_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.panic_fn {
             return Ok(func);
         }
@@ -207,7 +207,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the recover function, declaring it if necessary
-    fn get_recover_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_recover_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.recover_fn {
             return Ok(func);
         }
@@ -221,7 +221,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the has_panic function, declaring it if necessary
-    fn get_has_panic_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_has_panic_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.has_panic_fn {
             return Ok(func);
         }
@@ -235,7 +235,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the get_panic_message function, declaring it if necessary
-    fn get_get_panic_message_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_get_panic_message_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.get_panic_message_fn {
             return Ok(func);
         }
@@ -255,7 +255,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the enter_recovery_scope function, declaring it if necessary
-    fn get_enter_recovery_scope_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_enter_recovery_scope_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.enter_recovery_scope_fn {
             return Ok(func);
         }
@@ -276,7 +276,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the exit_recovery_scope function, declaring it if necessary
-    fn get_exit_recovery_scope_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_exit_recovery_scope_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.exit_recovery_scope_fn {
             return Ok(func);
         }
@@ -290,7 +290,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the in_recovery_scope function, declaring it if necessary
-    fn get_in_recovery_scope_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_in_recovery_scope_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.in_recovery_scope_fn {
             return Ok(func);
         }
@@ -304,7 +304,7 @@ impl<'ctx> LlvmPanicGenerator<'ctx> {
     }
 
     /// Get the attempt_recovery function, declaring it if necessary
-    fn get_attempt_recovery_function(&mut self) -> Result<FunctionValue<'ctx>, CursedError> {
+    fn get_attempt_recovery_function(&mut self) -> Result<(), Error> {
         if let Some(func) = self.attempt_recovery_fn {
             return Ok(func);
         }
@@ -363,7 +363,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         severity: PanicSeverity,
         category: PanicCategory,
         source_location: Option<SourceLocation>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let panic_fn = self.get_panic_function()?;
         
         // Create string constants
@@ -420,16 +420,16 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         &mut self,
         protected_code: F,
         _recovery_handler: Option<&str>,
-    ) -> Result<BasicValueEnum, CursedError>
+    ) -> Result<(), Error>
     where
-        F: FnOnce(&mut Self) -> Result<BasicValueEnum, CursedError>,
+        F: FnOnce(&mut Self) -> Result<(), Error>,
     {
         // For now, just execute the protected code without recovery logic
         // This simplification avoids borrow checker issues while still compiling
         protected_code(self)
     }
 
-    fn compile_panic_check(&mut self) -> Result<IntValue, CursedError> {
+    fn compile_panic_check(&mut self) -> Result<(), Error> {
         let has_panic_fn = self.get_has_panic_function()?;
         let panic_check = self.builder.build_call(has_panic_fn, &[], "panic_check")
             .map_err(|e| CursedError::Compile(format!("Failed to build panic check call: {:?}", e)))?;
@@ -441,7 +441,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
             .map_err(|_| CursedError::Compile("Panic check result is not an integer".to_string()))
     }
 
-    fn compile_get_panic_message(&mut self) -> Result<PointerValue, CursedError> {
+    fn compile_get_panic_message(&mut self) -> Result<(), Error> {
         // Allocate a buffer for the panic message
         let buffer_size = 1024_u64;
         let buffer_type = self.i8_type.array_type(buffer_size as u32);
@@ -466,7 +466,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         Ok(buffer_ptr)
     }
 
-    fn compile_panic_cleanup(&mut self) -> Result<(), CursedError> {
+    fn compile_panic_cleanup(&mut self) -> Result<(), Error> {
         // In a full implementation, this would generate cleanup code
         // For now, it's a no-op placeholder
         Ok(())
@@ -476,7 +476,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         &mut self,
         scope_id: &str,
         config: Option<&RecoveryConfig>,
-    ) -> Result<IntValue, CursedError> {
+    ) -> Result<(), Error> {
         let enter_fn = self.get_enter_recovery_scope_function()?;
         
         // Create string constant for scope ID
@@ -509,7 +509,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
             .map_err(|_| CursedError::Compile("Enter recovery scope result is not an integer".to_string()))
     }
 
-    fn compile_exit_recovery_scope(&mut self) -> Result<IntValue, CursedError> {
+    fn compile_exit_recovery_scope(&mut self) -> Result<(), Error> {
         let exit_fn = self.get_exit_recovery_scope_function()?;
         
         let call_result = self.builder.build_call(exit_fn, &[], "exit_recovery_scope")
@@ -522,7 +522,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
             .map_err(|_| CursedError::Compile("Exit recovery scope result is not an integer".to_string()))
     }
 
-    fn compile_in_recovery_scope(&mut self) -> Result<IntValue, CursedError> {
+    fn compile_in_recovery_scope(&mut self) -> Result<(), Error> {
         let in_scope_fn = self.get_in_recovery_scope_function()?;
         
         let call_result = self.builder.build_call(in_scope_fn, &[], "in_recovery_scope")
@@ -540,7 +540,7 @@ impl<'ctx> PanicCompiler for LlvmPanicGenerator<'ctx> {
         _context: &Context,
         _module: &Module,
         _builder: &Builder,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Pre-declare all panic-related functions
         self.get_panic_function()?;
         self.get_recover_function()?;

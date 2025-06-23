@@ -27,7 +27,7 @@ impl SourceMapper {
     }
 
     /// Load source file into cache
-    pub fn load_source_file(&self, file_path: &Path) -> Result<(), CursedError> {
+    pub fn load_source_file(&self, file_path: &Path) -> Result<(), Error> {
         let content = fs::read_to_string(file_path)
             .map_err(|e| CursedError::Io(e.into()))?;
 
@@ -54,7 +54,7 @@ impl SourceMapper {
         file_path: &Path,
         line: u32,
         context_lines: u32,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         // Ensure file is loaded
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
@@ -86,7 +86,7 @@ impl SourceMapper {
     }
 
     /// Get specific line content
-    pub fn get_line(&self, file_path: &Path, line: u32) -> Result<String, CursedError> {
+    pub fn get_line(&self, file_path: &Path, line: u32) -> Result<(), Error> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
         }
@@ -116,7 +116,7 @@ impl SourceMapper {
     }
 
     /// Get cached files
-    pub fn get_cached_files(&self) -> Result<Vec<PathBuf>, CursedError> {
+    pub fn get_cached_files(&self) -> Result<(), Error> {
         let cache = self.source_cache.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
 
@@ -124,7 +124,7 @@ impl SourceMapper {
     }
 
     /// Clear cache
-    pub fn clear_cache(&self) -> Result<(), CursedError> {
+    pub fn clear_cache(&self) -> Result<(), Error> {
         {
             let mut source_cache = self.source_cache.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
@@ -141,7 +141,7 @@ impl SourceMapper {
     }
 
     /// Get file line count
-    pub fn get_line_count(&self, file_path: &Path) -> Result<usize, CursedError> {
+    pub fn get_line_count(&self, file_path: &Path) -> Result<(), Error> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
         }
@@ -162,7 +162,7 @@ impl SourceMapper {
         file_path: &Path,
         pattern: &str,
         case_sensitive: bool,
-    ) -> Result<Vec<(u32, String)>, CursedError> {
+    ) -> Result<(), Error> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
         }
@@ -199,7 +199,7 @@ impl SourceMapper {
         column: u32,
         length: u32,
         context_lines: u32,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let snippet = self.get_source_snippet(file_path, line, context_lines)?;
         
         // TODO: Add highlighting logic for the specific column and length

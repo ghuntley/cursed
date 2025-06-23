@@ -18,7 +18,7 @@ pub struct CryptoPlatform {
 
 impl CryptoPlatform {
     /// Create a new crypto platform
-    pub fn new() -> Result<Self, CryptoError> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             platform_id: "default".to_string(),
             supported_algorithms: vec![
@@ -73,7 +73,7 @@ impl Ed25519PublicKey {
     }
 
     /// Create from byte slice
-    pub fn from_slice(bytes: &[u8]) -> Result<Self, CryptoError> {
+    pub fn from_slice(bytes: &[u8]) -> Result<(), Error> {
         if bytes.len() != 32 {
             return Err(CryptoError::InvalidKeySize);
         }
@@ -83,7 +83,7 @@ impl Ed25519PublicKey {
     }
 
     /// Verify a signature with this public key
-    pub fn verify(&self, message: &[u8], signature: &Ed25519Signature) -> Result<bool, CryptoError> {
+    pub fn verify(&self, message: &[u8], signature: &Ed25519Signature) -> Result<(), Error> {
         // Mock implementation - in real usage would use actual Ed25519 verification
         Ok(message.len() > 0 && signature.bytes.len() == 64)
     }
@@ -103,7 +103,7 @@ impl Ed25519PrivateKey {
     }
 
     /// Generate a new random private key
-    pub fn generate() -> Result<Self, CryptoError> {
+    pub fn generate() -> Result<(), Error> {
         // Mock implementation - in real usage would use secure random number generation
         let mut bytes = [0u8; 32];
         for i in 0..32 {
@@ -123,7 +123,7 @@ impl Ed25519PrivateKey {
     }
 
     /// Sign a message with this private key
-    pub fn sign(&self, message: &[u8]) -> Result<Ed25519Signature, CryptoError> {
+    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
         // Mock implementation - in real usage would use actual Ed25519 signing
         let mut sig_bytes = [0u8; 64];
         for i in 0..32 {
@@ -155,7 +155,7 @@ impl Ed25519Signature {
     }
 
     /// Create from byte slice
-    pub fn from_slice(bytes: &[u8]) -> Result<Self, CryptoError> {
+    pub fn from_slice(bytes: &[u8]) -> Result<(), Error> {
         if bytes.len() != 64 {
             return Err(CryptoError::InvalidSignatureSize);
         }

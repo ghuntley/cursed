@@ -232,7 +232,7 @@ pub struct DocumentationGenerator {
 impl DocumentationGenerator {
     /// Create a new documentation generator
     #[instrument(skip(config))]
-    pub fn new(config: super::DocumentationConfig) -> Result<Self, Error> {
+    pub fn new(config: super::DocumentationConfig) -> Result<(), Error> {
         info!("Initializing documentation generator");
         
         let generator_config = DocGeneratorConfig {
@@ -260,7 +260,7 @@ impl DocumentationGenerator {
         ast: &AstNode,
         file_path: &Path,
         source_code: &str,
-    ) -> Result<super::ExtractedDocumentation, Error> {
+    ) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         debug!("Extracting documentation from AST for: {:?}", file_path);
@@ -429,7 +429,7 @@ impl DocumentationGenerator {
 
     /// Extract module documentation
     #[instrument(skip(self, source_code))]
-    fn extract_module_doc(&self, file_path: &Path, source_code: &str) -> Result<Option<ModuleDoc>, Error> {
+    fn extract_module_doc(&self, file_path: &Path, source_code: &str) -> Result<(), Error> {
         // Look for module-level documentation at the beginning of the file
         let lines: Vec<&str> = source_code.split("\n").collect();
         let mut description = None;
@@ -482,7 +482,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract function documentation
-    fn extract_function_doc(&self, func_decl: &FunctionDeclaration, source_code: &str) -> Result<Option<FunctionDoc>, Error> {
+    fn extract_function_doc(&self, func_decl: &FunctionDeclaration, source_code: &str) -> Result<(), Error> {
         // Check visibility - skip private functions if not including them
         if !self.generator_config.include_private && !func_decl.is_public {
             return Ok(None);
@@ -495,10 +495,10 @@ impl DocumentationGenerator {
         let mut parameters = Vec::new();
         for param in &func_decl.parameters {
             // Extract parameter documentation from preceding comment
-            let param_description = self.extract_param_documentation(&param.name, &func_decl.location, source_code)?;
+            let param_description = self.extract_param_documentation(&param.to_string(), &func_decl.location, source_code)?;
             
             parameters.push(ParameterDoc {
-                name: param.name.clone(),
+                name: param.to_string().clone(),
                 param_type: param.param_type.as_ref()
                     .map(|t| self.format_type_from_core_expr(t))
                     .unwrap_or_else(|| "Any".to_string()),
@@ -542,7 +542,7 @@ impl DocumentationGenerator {
         };
         
         Ok(Some(FunctionDoc {
-            name: func_decl.name.clone(),
+            name: func_decl.to_string().clone(),
             description,
             parameters,
             return_type,
@@ -556,7 +556,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract struct documentation
-    fn extract_struct_doc(&self, struct_decl: &StructDeclaration, source_code: &str) -> Result<Option<TypeDoc>, Error> {
+    fn extract_struct_doc(&self, struct_decl: &StructDeclaration, source_code: &str) -> Result<(), Error> {
         // Check visibility
         if !self.generator_config.include_private && !struct_decl.is_public {
             return Ok(None);
@@ -568,10 +568,10 @@ impl DocumentationGenerator {
         let mut fields = Vec::new();
         for field in &struct_decl.fields {
             // Extract field documentation from preceding comment
-            let field_description = self.extract_field_documentation(&field.name, &struct_decl.location, source_code)?;
+            let field_description = self.extract_field_documentation(&field.to_string(), &struct_decl.location, source_code)?;
             
             fields.push(FieldDoc {
-                name: field.name.clone(),
+                name: field.to_string().clone(),
                 field_type: field.field_type.as_ref()
                     .map(|t| self.format_type_from_core_expr(t))
                     .unwrap_or_else(|| "Any".to_string()),
@@ -588,10 +588,10 @@ impl DocumentationGenerator {
         };
         
         // Extract associated methods
-        let methods = self.extract_associated_methods(&struct_decl.name, source_code)?;
+        let methods = self.extract_associated_methods(&struct_decl.to_string(), source_code)?;
 
         Ok(Some(TypeDoc {
-            name: struct_decl.name.clone(),
+            name: struct_decl.to_string().clone(),
             description,
             type_def: "struct".to_string(),
             fields,
@@ -604,7 +604,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract interface documentation
-    fn extract_interface_doc(&self, interface_decl: &InterfaceDeclaration, source_code: &str) -> Result<Option<TypeDoc>, Error> {
+    fn extract_interface_doc(&self, interface_decl: &InterfaceDeclaration, source_code: &str) -> Result<(), Error> {
         // Check visibility
         if !self.generator_config.include_private && !interface_decl.is_public {
             return Ok(None);
@@ -627,7 +627,7 @@ impl DocumentationGenerator {
         };
         
         Ok(Some(TypeDoc {
-            name: interface_decl.name.clone(),
+            name: interface_decl.to_string().clone(),
             description,
             type_def: "interface".to_string(),
             fields: Vec::new(),
@@ -640,9 +640,9 @@ impl DocumentationGenerator {
     }
 
     /// Convert variable statement to core variable declaration
-    fn convert_variable_statement_to_core(&self, var_stmt: &crate::ast::VariableStatement) -> Result<crate::ast::VariableDeclaration, Error> {
+    fn convert_variable_statement_to_core(&self, var_stmt: &crate::ast::VariableStatement) -> Result<(), Error> {
         Ok(crate::ast::VariableDeclaration {
-            name: var_stmt.name.to_string(),
+            name: var_stmt.to_string().to_string(),
             var_type: None, // Would need more sophisticated conversion
             init: None,     // Would need more sophisticated conversion
             is_mutable: var_stmt.is_mutable,
@@ -653,7 +653,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract variable documentation
-    fn extract_variable_doc(&self, var_decl: &crate::ast::VariableDeclaration, source_code: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_variable_doc(&self, var_decl: &crate::ast::VariableDeclaration, source_code: &str) -> Result<(), Error> {
         // Check visibility
         if !self.generator_config.include_private && !var_decl.is_public {
             return Ok(None);
@@ -676,7 +676,7 @@ impl DocumentationGenerator {
         }
         
         Ok(Some(DocumentationItem {
-            name: var_decl.name.clone(),
+            name: var_decl.to_string().clone(),
             kind: if !var_decl.is_mutable { ItemKind::Constant } else { ItemKind::Variable },
             description,
             location: var_decl.location.clone(),
@@ -687,7 +687,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract documentation comment before a location
-    fn extract_doc_comment_before(&self, location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
+    fn extract_doc_comment_before(&self, location: &SourceLocation, source_code: &str) -> Result<(), Error> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line <= 1 || location.line > lines.len() {
@@ -730,7 +730,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract source code snippet for a location
-    fn extract_source_snippet(&self, location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
+    fn extract_source_snippet(&self, location: &SourceLocation, source_code: &str) -> Result<(), Error> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line > lines.len() {
@@ -785,7 +785,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract examples from documentation description
-    fn extract_examples_from_description(&self, description: &Option<String>) -> Result<Vec<ExampleDoc>, Error> {
+    fn extract_examples_from_description(&self, description: &Option<String>) -> Result<(), Error> {
         let mut examples = Vec::new();
         
         if let Some(desc) = description {
@@ -835,7 +835,7 @@ impl DocumentationGenerator {
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<FunctionDoc, Error> {
+    ) -> Result<(), Error> {
         use crate::documentation::extractors::ast_extractor::{TypeKind, CompleteTypeInfo};
         
         let base = &enhanced_item.base;
@@ -883,11 +883,11 @@ impl DocumentationGenerator {
 
         // Extract generic parameters
         let generic_params = enhanced_item.generic_info.as_ref()
-            .map(|gi| gi.parameters.iter().map(|p| p.name.clone()).collect())
+            .map(|gi| gi.parameters.iter().map(|p| p.to_string().clone()).collect())
             .unwrap_or_default();
 
         Ok(FunctionDoc {
-            name: base.name.clone(),
+            name: base.to_string().clone(),
             description: base.description.clone(),
             parameters,
             return_type,
@@ -908,7 +908,7 @@ impl DocumentationGenerator {
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<TypeDoc, Error> {
+    ) -> Result<(), Error> {
         use crate::documentation::extractors::ast_extractor::TypeKind;
         
         let base = &enhanced_item.base;
@@ -933,11 +933,11 @@ impl DocumentationGenerator {
 
         // Extract generic parameters
         let generic_params = enhanced_item.generic_info.as_ref()
-            .map(|gi| gi.parameters.iter().map(|p| p.name.clone()).collect())
+            .map(|gi| gi.parameters.iter().map(|p| p.to_string().clone()).collect())
             .unwrap_or_default();
 
         Ok(TypeDoc {
-            name: base.name.clone(),
+            name: base.to_string().clone(),
             description: base.description.clone(),
             type_def,
             fields,
@@ -954,7 +954,7 @@ impl DocumentationGenerator {
     fn convert_to_module_doc(
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
-    ) -> Result<ModuleDoc, Error> {
+    ) -> Result<(), Error> {
         let base = &enhanced_item.base;
         
         // Extract exports from relationships
@@ -984,7 +984,7 @@ impl DocumentationGenerator {
             .collect();
 
         Ok(ModuleDoc {
-            name: base.name.clone(),
+            name: base.to_string().clone(),
             description: base.description.clone(),
             path: std::path::PathBuf::from(&base.location.file),
             exports,
@@ -997,7 +997,7 @@ impl DocumentationGenerator {
     fn extract_fields_from_enhanced_item(
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
-    ) -> Result<Vec<FieldDoc>, Error> {
+    ) -> Result<(), Error> {
         let mut fields = Vec::new();
 
         // Extract fields from type information
@@ -1022,7 +1022,7 @@ impl DocumentationGenerator {
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<Vec<FunctionDoc>, Error> {
+    ) -> Result<(), Error> {
         let mut methods = Vec::new();
 
         // Extract methods from implementations
@@ -1058,7 +1058,7 @@ impl DocumentationGenerator {
     /// Format a type for documentation (using documentation AST expressions)
     fn format_type(&self, type_expr: &ast_node_support::Expression) -> String {
         match &type_expr.expr_type {
-            ExpressionType::Identifier(id) => id.name.clone(),
+            ExpressionType::Identifier(id) => id.to_string().clone(),
             ExpressionType::ArrayAccess(arr) => {
                 format!("{}[]", self.format_type(&arr.array))
             }
@@ -1148,7 +1148,7 @@ impl DocumentationGenerator {
             ExpressionType::Super => "super".to_string(),
             ExpressionType::ArrowFunction(arrow) => {
                 let params = arrow.parameters.iter()
-                    .map(|param| param.name.clone())
+                    .map(|param| param.to_string().clone())
                     .collect::<Vec<_>>()
                     .join(", ");
                 format!("({}) => {}", params, self.format_type(&arrow.body))
@@ -1294,7 +1294,7 @@ impl DocumentationGenerator {
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
         search_index: &[super::SearchIndexEntry],
         format: OutputFormat,
-    ) -> Result<Vec<PathBuf>, Error> {
+    ) -> Result<(), Error> {
         info!("Generating {} documentation", format);
         
         match format {
@@ -1312,7 +1312,7 @@ impl DocumentationGenerator {
         extracted_docs: &[super::ExtractedDocumentation],
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
         search_index: &[super::SearchIndexEntry],
-    ) -> Result<Vec<PathBuf>, Error> {
+    ) -> Result<(), Error> {
         let output_dir = &self.config.output_dir;
         std::fs::create_dir_all(output_dir)
             .map_err(|e| Error::FileWriteError(output_dir.clone(), e.to_string()))?;
@@ -1359,7 +1359,7 @@ impl DocumentationGenerator {
         &self,
         extracted_docs: &[super::ExtractedDocumentation],
         search_index: &[super::SearchIndexEntry],
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let project = &self.config.project;
         
         let mut content = format!(
@@ -1385,8 +1385,8 @@ impl DocumentationGenerator {
             <h2>Modules</h2>
             <ul>
 "#,
-            project.name,
-            project.name,
+            project.to_string(),
+            project.to_string(),
             project.version,
             project.description.as_deref().unwrap_or("CURSED project documentation")
         );
@@ -1426,7 +1426,7 @@ impl DocumentationGenerator {
         &self,
         doc: &super::ExtractedDocumentation,
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -1447,7 +1447,7 @@ impl DocumentationGenerator {
     </header>
     <main>
 "#,
-            module_name, self.config.project.name, module_name
+            module_name, self.config.project.to_string(), module_name
         );
         
         // Module description
@@ -1501,12 +1501,12 @@ impl DocumentationGenerator {
     }
 
     /// Format function documentation as HTML
-    fn format_function_html(&self, func: &FunctionDoc) -> Result<String, Error> {
+    fn format_function_html(&self, func: &FunctionDoc) -> Result<(), Error> {
         let mut html = format!(
             r#"            <div class="function" id="{}">
                 <h3>{}</h3>
 "#,
-            func.name, func.name
+            func.to_string(), func.to_string()
         );
         
         if let Some(ref description) = func.description {
@@ -1524,7 +1524,7 @@ impl DocumentationGenerator {
             for param in &func.parameters {
                 html.push_str(&format!(
                     "                    <li><code>{}</code>: {} {}</li>\n",
-                    html_escape(&param.name),
+                    html_escape(&param.to_string()),
                     html_escape(&param.param_type),
                     param.description.as_ref()
                         .map(|d| format!("- {}", html_escape(d)))
@@ -1539,7 +1539,7 @@ impl DocumentationGenerator {
         if let Some(ref return_type) = func.return_type {
             html.push_str(&format!(
                 "                <h4>Returns</h4>\n                <p><code>{}</code></p>\n",
-                html_escape(&return_type.name)
+                html_escape(&return_type.to_string())
             ));
         }
         
@@ -1567,12 +1567,12 @@ impl DocumentationGenerator {
     }
 
     /// Format type documentation as HTML
-    fn format_type_html(&self, type_doc: &TypeDoc) -> Result<String, Error> {
+    fn format_type_html(&self, type_doc: &TypeDoc) -> Result<(), Error> {
         let mut html = format!(
             r#"            <div class="type" id="{}">
                 <h3>{} ({})</h3>
 "#,
-            type_doc.name, type_doc.name, type_doc.type_def
+            type_doc.to_string(), type_doc.to_string(), type_doc.type_def
         );
         
         if let Some(ref description) = type_doc.description {
@@ -1590,7 +1590,7 @@ impl DocumentationGenerator {
             for field in &type_doc.fields {
                 html.push_str(&format!(
                     "                    <li><code>{}</code>: {}</li>\n",
-                    html_escape(&field.name),
+                    html_escape(&field.to_string()),
                     html_escape(&field.field_type)
                 ));
             }
@@ -1614,7 +1614,7 @@ impl DocumentationGenerator {
     async fn generate_markdown_output(
         &self,
         extracted_docs: &[super::ExtractedDocumentation],
-    ) -> Result<Vec<PathBuf>, Error> {
+    ) -> Result<(), Error> {
         let output_dir = &self.config.output_dir;
         std::fs::create_dir_all(output_dir)
             .map_err(|e| Error::FileWriteError(output_dir.clone(), e.to_string()))?;
@@ -1644,12 +1644,12 @@ impl DocumentationGenerator {
     }
 
     /// Generate Markdown index
-    fn generate_markdown_index(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+    fn generate_markdown_index(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         let project = &self.config.project;
         
         let mut content = format!(
             "# {}\n\nVersion: {}\n\n{}\n\n## Modules\n\n",
-            project.name,
+            project.to_string(),
             project.version,
             project.description.as_deref().unwrap_or("CURSED project documentation")
         );
@@ -1674,7 +1674,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate Markdown module page
-    fn generate_markdown_module_page(&self, doc: &super::ExtractedDocumentation) -> Result<String, Error> {
+    fn generate_markdown_module_page(&self, doc: &super::ExtractedDocumentation) -> Result<(), Error> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -1714,8 +1714,8 @@ impl DocumentationGenerator {
     }
 
     /// Format function documentation as Markdown
-    fn format_function_markdown(&self, func: &FunctionDoc) -> Result<String, Error> {
-        let mut markdown = format!("### {}\n\n", func.name);
+    fn format_function_markdown(&self, func: &FunctionDoc) -> Result<(), Error> {
+        let mut markdown = format!("### {}\n\n", func.to_string());
         
         if let Some(ref description) = func.description {
             markdown.push_str(&format!("{}\n\n", description));
@@ -1727,7 +1727,7 @@ impl DocumentationGenerator {
             for param in &func.parameters {
                 markdown.push_str(&format!(
                     "- `{}`: {}{}\n",
-                    param.name,
+                    param.to_string(),
                     param.param_type,
                     param.description.as_ref()
                         .map(|d| format!(" - {}", d))
@@ -1739,7 +1739,7 @@ impl DocumentationGenerator {
         
         // Return type
         if let Some(ref return_type) = func.return_type {
-            markdown.push_str(&format!("**Returns:** `{}`\n\n", return_type.name));
+            markdown.push_str(&format!("**Returns:** `{}`\n\n", return_type.to_string()));
         }
         
         // Examples
@@ -1754,8 +1754,8 @@ impl DocumentationGenerator {
     }
 
     /// Format type documentation as Markdown
-    fn format_type_markdown(&self, type_doc: &TypeDoc) -> Result<String, Error> {
-        let mut markdown = format!("### {} ({})\n\n", type_doc.name, type_doc.type_def);
+    fn format_type_markdown(&self, type_doc: &TypeDoc) -> Result<(), Error> {
+        let mut markdown = format!("### {} ({})\n\n", type_doc.to_string(), type_doc.type_def);
         
         if let Some(ref description) = type_doc.description {
             markdown.push_str(&format!("{}\n\n", description));
@@ -1765,7 +1765,7 @@ impl DocumentationGenerator {
         if !type_doc.fields.is_empty() {
             markdown.push_str("**Fields:**\n\n");
             for field in &type_doc.fields {
-                markdown.push_str(&format!("- `{}`: {}\n", field.name, field.field_type));
+                markdown.push_str(&format!("- `{}`: {}\n", field.to_string(), field.field_type));
             }
             markdown.push_str("\n");
         }
@@ -1787,7 +1787,7 @@ impl DocumentationGenerator {
         extracted_docs: &[super::ExtractedDocumentation],
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
         search_index: &[super::SearchIndexEntry],
-    ) -> Result<Vec<PathBuf>, Error> {
+    ) -> Result<(), Error> {
         let output_dir = &self.config.output_dir;
         std::fs::create_dir_all(output_dir)
             .map_err(|e| Error::FileWriteError(output_dir.clone(), e.to_string()))?;
@@ -1816,7 +1816,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate XML documentation
-    async fn generate_xml_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<Vec<PathBuf>, Error> {
+    async fn generate_xml_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         use std::io::Write;
         
         info!("Generating XML documentation for {} files", extracted_docs.len());
@@ -1863,7 +1863,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate LaTeX documentation
-    async fn generate_latex_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<Vec<PathBuf>, Error> {
+    async fn generate_latex_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         info!("Generating LaTeX documentation for {} files using enhanced LaTeX generator", extracted_docs.len());
         
         // Use the enhanced LaTeX generator
@@ -1895,7 +1895,7 @@ impl DocumentationGenerator {
     }
 
     /// Build main XML documentation structure
-    fn build_main_xml_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+    fn build_main_xml_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         let mut xml = String::new();
         
         // XML declaration with DTD reference
@@ -1906,7 +1906,7 @@ impl DocumentationGenerator {
         xml.push_str("<documentation>\n");
         xml.push_str("  <metadata>\n");
         xml.push_str(&format!("    <project_name>{}</project_name>\n", 
-            self.escape_xml(&self.config.project.name)));
+            self.escape_xml(&self.config.project.to_string())));
         xml.push_str(&format!("    <version>{}</version>\n", 
             self.escape_xml(&self.config.project.version)));
         
@@ -1961,7 +1961,7 @@ impl DocumentationGenerator {
             
             if let Some(module_doc) = &doc.module_doc {
                 xml.push_str(&format!("      <module_name>{}</module_name>\n", 
-                    self.escape_xml(&module_doc.name)));
+                    self.escape_xml(&module_doc.to_string())));
                 if let Some(description) = &module_doc.description {
                     xml.push_str(&format!("      <module_description>{}</module_description>\n", 
                         self.escape_xml(description)));
@@ -1979,7 +1979,7 @@ impl DocumentationGenerator {
     }
 
     /// Build module-specific XML documentation
-    fn build_module_xml_doc(&self, doc: &super::ExtractedDocumentation) -> Result<String, Error> {
+    fn build_module_xml_doc(&self, doc: &super::ExtractedDocumentation) -> Result<(), Error> {
         let mut xml = String::new();
         
         xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -2000,7 +2000,7 @@ impl DocumentationGenerator {
         // Module documentation if available
         if let Some(module_doc) = &doc.module_doc {
             xml.push_str("  <module_info>\n");
-            xml.push_str(&format!("    <name>{}</name>\n", self.escape_xml(&module_doc.name)));
+            xml.push_str(&format!("    <name>{}</name>\n", self.escape_xml(&module_doc.to_string())));
             if let Some(description) = &module_doc.description {
                 xml.push_str(&format!("    <description>{}</description>\n", 
                     self.escape_xml(description)));
@@ -2013,7 +2013,7 @@ impl DocumentationGenerator {
             xml.push_str("  <functions>\n");
             for func in &doc.functions {
                 xml.push_str("    <function>\n");
-                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&func.name)));
+                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&func.to_string())));
                 if let Some(description) = &func.description {
                     xml.push_str(&format!("      <description>{}</description>\n", 
                         self.escape_xml(description)));
@@ -2025,7 +2025,7 @@ impl DocumentationGenerator {
                 
                 if let Some(return_type) = &func.return_type {
                     xml.push_str(&format!("      <return_type>{}</return_type>\n", 
-                        self.escape_xml(&return_type.name)));
+                        self.escape_xml(&return_type.to_string())));
                 }
                 
                 // Function location
@@ -2040,7 +2040,7 @@ impl DocumentationGenerator {
                     for param in &func.parameters {
                         xml.push_str("        <parameter>\n");
                         xml.push_str(&format!("          <name>{}</name>\n", 
-                            self.escape_xml(&param.name)));
+                            self.escape_xml(&param.to_string())));
                         xml.push_str(&format!("          <type>{}</type>\n", 
                             self.escape_xml(&param.param_type)));
                         if let Some(description) = &param.description {
@@ -2071,7 +2071,7 @@ impl DocumentationGenerator {
             xml.push_str("  <types>\n");
             for type_doc in &doc.types {
                 xml.push_str("    <type>\n");
-                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&type_doc.name)));
+                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&type_doc.to_string())));
                 xml.push_str(&format!("      <kind>{}</kind>\n", 
                     self.escape_xml(&type_doc.type_def)));
                 if let Some(description) = &type_doc.description {
@@ -2095,7 +2095,7 @@ impl DocumentationGenerator {
             xml.push_str("  <constants>\n");
             for constant in &doc.constants {
                 xml.push_str("    <constant>\n");
-                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&constant.name)));
+                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&constant.to_string())));
                 xml.push_str(&format!("      <kind>{}</kind>\n", 
                     self.escape_xml(&constant.kind.to_string())));
                 if let Some(description) = &constant.description {
@@ -2120,7 +2120,7 @@ impl DocumentationGenerator {
     }
 
     /// Build API index XML
-    fn build_api_index_xml(&self, docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+    fn build_api_index_xml(&self, docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         let mut xml = String::new();
         
         xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -2138,7 +2138,7 @@ impl DocumentationGenerator {
         for doc in docs {
             for func in &doc.functions {
                 xml.push_str("    <function_ref>\n");
-                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&func.name)));
+                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&func.to_string())));
                 xml.push_str(&format!("      <file>{}</file>\n", 
                     self.escape_xml(&doc.source_file.display().to_string())));
                 if let Some(description) = &func.description {
@@ -2147,7 +2147,7 @@ impl DocumentationGenerator {
                 }
                 xml.push_str(&format!("      <file_ref>{}.xml#{}</file_ref>\n", 
                     doc.source_file.file_stem().unwrap_or_default().to_string_lossy(),
-                    func.name));
+                    func.to_string()));
                 xml.push_str("    </function_ref>\n");
             }
         }
@@ -2158,14 +2158,14 @@ impl DocumentationGenerator {
         for doc in docs {
             for type_doc in &doc.types {
                 xml.push_str("    <type_ref>\n");
-                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&type_doc.name)));
+                xml.push_str(&format!("      <name>{}</name>\n", self.escape_xml(&type_doc.to_string())));
                 xml.push_str(&format!("      <kind>{}</kind>\n", 
                     self.escape_xml(&type_doc.type_def)));
                 xml.push_str(&format!("      <file>{}</file>\n", 
                     self.escape_xml(&doc.source_file.display().to_string())));
                 xml.push_str(&format!("      <file_ref>{}.xml#{}</file_ref>\n", 
                     doc.source_file.file_stem().unwrap_or_default().to_string_lossy(),
-                    type_doc.name));
+                    type_doc.to_string()));
                 xml.push_str("    </type_ref>\n");
             }
         }
@@ -2177,7 +2177,7 @@ impl DocumentationGenerator {
     }
 
     /// Build DTD content for XML validation
-    fn build_dtd_content(&self) -> Result<String, Error> {
+    fn build_dtd_content(&self) -> Result<(), Error> {
         let dtd = r#"<!-- CURSED Documentation DTD -->
 <!ELEMENT documentation (metadata, summary, files)>
 <!ELEMENT metadata (project_name, version, description?, authors?, homepage?, repository?, generated_at, generator)>
@@ -2273,7 +2273,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract parameter documentation from function documentation
-    fn extract_param_documentation(&self, param_name: &str, func_location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
+    fn extract_param_documentation(&self, param_name: &str, func_location: &SourceLocation, source_code: &str) -> Result<(), Error> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if func_location.line <= 1 || func_location.line > lines.len() {
@@ -2335,13 +2335,13 @@ impl DocumentationGenerator {
                     _ => Some("(complex)".to_string()),
                 }
             }
-            ExpressionType::Identifier(id) => Some(id.name.clone()),
+            ExpressionType::Identifier(id) => Some(id.to_string().clone()),
             _ => Some("(expression)".to_string()),
         }
     }
 
     /// Extract field documentation
-    fn extract_field_documentation(&self, field_name: &str, struct_location: &SourceLocation, source_code: &str) -> Result<Option<String>, Error> {
+    fn extract_field_documentation(&self, field_name: &str, struct_location: &SourceLocation, source_code: &str) -> Result<(), Error> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         // Find the struct definition and look for field comments
@@ -2395,14 +2395,14 @@ impl DocumentationGenerator {
             match &field_type.expr_type {
                 ExpressionType::Identifier(id) => {
                     // Check for Option<T> or similar optional type patterns
-                    id.name.starts_with("Option") || 
-                    id.name.starts_with("Maybe") ||
-                    id.name.contains("?")
+                    id.to_string().starts_with("Option") || 
+                    id.to_string().starts_with("Maybe") ||
+                    id.to_string().contains("?")
                 }
                 ExpressionType::FunctionCall(call) => {
                     // Check for Option(T) or Maybe(T) patterns
                     if let ExpressionType::Identifier(id) = &call.function.expr_type {
-                        id.name == "Option" || id.name == "Maybe"
+                        id.to_string() == "Option" || id.to_string() == "Maybe"
                     } else {
                         false
                     }
@@ -2415,7 +2415,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract associated methods for a type using enhanced AST-based parsing
-    fn extract_associated_methods(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
+    fn extract_associated_methods(&self, type_name: &str, source_code: &str) -> Result<(), Error> {
         let mut methods = Vec::new();
         
         // Use the enhanced AST extractor for better parsing
@@ -2447,7 +2447,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse implementation methods from source code using enhanced parsing
-    fn parse_impl_methods_from_source(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
+    fn parse_impl_methods_from_source(&self, type_name: &str, source_code: &str) -> Result<(), Error> {
         let mut methods = Vec::new();
         let lines: Vec<&str> = source_code.split("\n").collect();
         
@@ -2464,7 +2464,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse methods within an impl block with full AST-based parameter and return type extraction
-    fn parse_impl_block_methods(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<Vec<FunctionDoc>, Error> {
+    fn parse_impl_block_methods(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<(), Error> {
         let mut methods = Vec::new();
         let mut brace_count = 0;
         let mut in_impl = false;
@@ -2507,7 +2507,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse a complete method signature including parameters and return type
-    fn parse_method_signature(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<FunctionDoc, Error> {
+    fn parse_method_signature(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<(), Error> {
         let mut signature_lines = Vec::new();
         let mut paren_count = 0;
         let mut brace_count = 0;
@@ -2549,7 +2549,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract method components (name, parameters, return type) from signature
-    fn extract_method_components(&self, signature: &str, line_number: usize, type_name: &str) -> Result<FunctionDoc, Error> {
+    fn extract_method_components(&self, signature: &str, line_number: usize, type_name: &str) -> Result<(), Error> {
         // Parse method visibility and modifiers
         let is_async = signature.contains("async");
         let is_public = signature.contains("pub");
@@ -2592,7 +2592,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract method name from signature
-    fn extract_method_name(&self, signature: &str) -> Result<String, Error> {
+    fn extract_method_name(&self, signature: &str) -> Result<(), Error> {
         // Handle various function declaration patterns
         let patterns = [
             "pub async fn ",
@@ -2621,7 +2621,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract method parameters with enhanced type parsing
-    fn extract_method_parameters(&self, signature: &str) -> Result<Vec<ParameterDoc>, Error> {
+    fn extract_method_parameters(&self, signature: &str) -> Result<(), Error> {
         let mut parameters = Vec::new();
         
         // Find the parameter list between parentheses
@@ -2646,7 +2646,7 @@ impl DocumentationGenerator {
     }
 
     /// Smart parameter splitting that handles nested generics and complex types
-    fn split_parameters_smart(&self, params_str: &str) -> Result<Vec<String>, Error> {
+    fn split_parameters_smart(&self, params_str: &str) -> Result<(), Error> {
         let mut parameters = Vec::new();
         let mut current_param = String::new();
         let mut angle_bracket_depth = 0;
@@ -2681,7 +2681,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse individual parameter with type and default value
-    fn parse_parameter(&self, param_str: &str) -> Result<ParameterDoc, Error> {
+    fn parse_parameter(&self, param_str: &str) -> Result<(), Error> {
         // Handle different parameter patterns:
         // name: Type
         // name: Type = default
@@ -2740,7 +2740,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract return type from method signature
-    fn extract_method_return_type(&self, signature: &str) -> Result<Option<TypeDoc>, Error> {
+    fn extract_method_return_type(&self, signature: &str) -> Result<(), Error> {
         // Look for -> return_type pattern
         if let Some(arrow_pos) = signature.find("->") {
             let after_arrow = &signature[arrow_pos + 2..];
@@ -2775,7 +2775,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract generic parameters from method signature
-    fn extract_method_generics(&self, signature: &str) -> Result<Vec<String>, Error> {
+    fn extract_method_generics(&self, signature: &str) -> Result<(), Error> {
         let mut generics = Vec::new();
         
         // Look for generic parameters after function name
@@ -2809,7 +2809,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract generic parameters from type string
-    fn extract_type_generics(&self, type_str: &str) -> Result<Vec<String>, Error> {
+    fn extract_type_generics(&self, type_str: &str) -> Result<(), Error> {
         let mut generics = Vec::new();
         
         if let Some(generic_start) = type_str.find('<') {
@@ -2830,7 +2830,7 @@ impl DocumentationGenerator {
     }
 
     /// Smart generic splitting that handles nested generics
-    fn split_generics_smart(&self, generics_str: &str) -> Result<Vec<String>, Error> {
+    fn split_generics_smart(&self, generics_str: &str) -> Result<(), Error> {
         let mut generics = Vec::new();
         let mut current_generic = String::new();
         let mut angle_bracket_depth = 0;
@@ -2864,7 +2864,7 @@ impl DocumentationGenerator {
     }
 
     /// Fallback line-based method extraction (legacy support)
-    fn extract_methods_line_based(&self, type_name: &str, source_code: &str) -> Result<Vec<FunctionDoc>, Error> {
+    fn extract_methods_line_based(&self, type_name: &str, source_code: &str) -> Result<(), Error> {
         let mut methods = Vec::new();
         let lines: Vec<&str> = source_code.split("\n").collect();
         
@@ -2929,7 +2929,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract exports from source code
-    fn extract_exports(&self, source_code: &str) -> Result<Vec<String>, Error> {
+    fn extract_exports(&self, source_code: &str) -> Result<(), Error> {
         let mut exports = Vec::new();
         
         for line in source_code.split("\n") {
@@ -2949,7 +2949,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract submodules from source code
-    fn extract_submodules(&self, source_code: &str) -> Result<Vec<String>, Error> {
+    fn extract_submodules(&self, source_code: &str) -> Result<(), Error> {
         let mut submodules = Vec::new();
         
         for line in source_code.split("\n") {
@@ -2975,7 +2975,7 @@ impl DocumentationGenerator {
     }
 
     /// Build main LaTeX document
-    fn build_main_latex_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+    fn build_main_latex_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         let mut latex = String::new();
         
         // Document preamble
@@ -3038,7 +3038,7 @@ impl DocumentationGenerator {
 \newpage
 
 "#, 
-            self.escape_latex(&self.config.project.name),
+            self.escape_latex(&self.config.project.to_string()),
             self.config.project.authors.join(", ")));
 
         // Introduction section
@@ -3114,7 +3114,7 @@ impl DocumentationGenerator {
     }
 
     /// Build module-specific LaTeX document
-    fn build_module_latex_doc(&self, doc: &super::ExtractedDocumentation) -> Result<String, Error> {
+    fn build_module_latex_doc(&self, doc: &super::ExtractedDocumentation) -> Result<(), Error> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -3143,10 +3143,10 @@ impl DocumentationGenerator {
     }
 
     /// Format function for LaTeX
-    fn format_function_latex(&self, func: &FunctionDoc) -> Result<String, Error> {
+    fn format_function_latex(&self, func: &FunctionDoc) -> Result<(), Error> {
         let mut latex = format!(r#"\subsubsection{{{}}}
 
-"#, self.escape_latex(&func.name));
+"#, self.escape_latex(&func.to_string()));
 
         if let Some(ref description) = func.description {
             latex.push_str(&format!("{}\n\n", self.escape_latex(description)));
@@ -3159,7 +3159,7 @@ impl DocumentationGenerator {
 "#);
             for param in &func.parameters {
                 latex.push_str(&format!(r#"\item \texttt{{{}}} ({}){}"#,
-                    self.escape_latex(&param.name),
+                    self.escape_latex(&param.to_string()),
                     self.escape_latex(&param.param_type),
                     param.description.as_ref()
                         .map(|d| format!(" -- {}", self.escape_latex(d)))
@@ -3175,7 +3175,7 @@ impl DocumentationGenerator {
         if let Some(ref return_type) = func.return_type {
             latex.push_str(&format!(r#"\paragraph{{Returns:}} \texttt{{{}}}
 
-"#, self.escape_latex(&return_type.name)));
+"#, self.escape_latex(&return_type.to_string())));
         }
 
         // Examples
@@ -3196,11 +3196,11 @@ impl DocumentationGenerator {
     }
 
     /// Format type for LaTeX
-    fn format_type_latex(&self, type_doc: &TypeDoc) -> Result<String, Error> {
+    fn format_type_latex(&self, type_doc: &TypeDoc) -> Result<(), Error> {
         let mut latex = format!(r#"\subsubsection{{{} ({})}}
 
 "#, 
-            self.escape_latex(&type_doc.name),
+            self.escape_latex(&type_doc.to_string()),
             self.escape_latex(&type_doc.type_def));
 
         if let Some(ref description) = type_doc.description {
@@ -3214,7 +3214,7 @@ impl DocumentationGenerator {
 "#);
             for field in &type_doc.fields {
                 latex.push_str(&format!(r#"\item \texttt{{{}}} ({})"#,
-                    self.escape_latex(&field.name),
+                    self.escape_latex(&field.to_string()),
                     self.escape_latex(&field.field_type)));
                 latex.push_str("\n");
             }
@@ -3227,7 +3227,7 @@ impl DocumentationGenerator {
     }
 
     /// Build bibliography
-    fn build_bibliography(&self, _docs: &[super::ExtractedDocumentation]) -> Result<String, Error> {
+    fn build_bibliography(&self, _docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
         let bib = format!(r#"@misc{{cursed_docs,
     title={{CURSED Programming Language Documentation}},
     author={{{}}},
@@ -3242,7 +3242,7 @@ impl DocumentationGenerator {
     }
 
     /// Build LaTeX Makefile
-    fn build_latex_makefile(&self) -> Result<String, Error> {
+    fn build_latex_makefile(&self) -> Result<(), Error> {
         let makefile = r#"# LaTeX Documentation Makefile
 
 MAIN = documentation
@@ -3301,7 +3301,7 @@ help:
         
         // Add function name
         signature.push_str("fn ");
-        signature.push_str(&func.name);
+        signature.push_str(&func.to_string());
         
         // Add generic parameters if any
         if !func.generic_params.is_empty() {
@@ -3314,7 +3314,7 @@ help:
         signature.push('(');
         let param_strings: Vec<String> = func.parameters.iter()
             .map(|param| {
-                let mut param_str = param.name.clone();
+                let mut param_str = param.to_string().clone();
                 param_str.push_str(": ");
                 param_str.push_str(&param.param_type);
                 if param.is_optional {
@@ -3332,7 +3332,7 @@ help:
         // Add return type if any
         if let Some(ref return_type) = func.return_type {
             signature.push_str(" -> ");
-            signature.push_str(&return_type.name);
+            signature.push_str(&return_type.to_string());
         }
         
         signature

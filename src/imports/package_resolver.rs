@@ -142,7 +142,7 @@ impl PackageImportResolver {
     }
     
     /// Resolve package import (e.g., "cursed-http::client")
-    pub async fn resolve_package_import(&self, import_path: &str) -> Result<ResolvedImport, ImportError> {
+    pub async fn resolve_package_import(&self, import_path: &str) -> Result<(), Error> {
         // Parse package import path
         let parts: Vec<&str> = import_path.split("::").collect();
         if parts.len() < 2 {
@@ -197,7 +197,7 @@ impl PackageImportResolver {
     }
     
     /// Ensure package is available for import
-    async fn ensure_package_available(&self, package_name: &str) -> Result<PackageMetadata, ImportError> {
+    async fn ensure_package_available(&self, package_name: &str) -> Result<(), Error> {
         let mut package_manager = self.package_manager.lock().map_err(|_| {
             ImportError::ModuleLoadError {
                 module: package_name.to_string(),
@@ -224,7 +224,7 @@ impl PackageImportResolver {
     }
     
     /// Update package export information from installed packages
-    pub async fn update_package_exports(&mut self) -> Result<(), ImportError> {
+    pub async fn update_package_exports(&mut self) -> Result<(), Error> {
         let installed = {
             let package_manager = self.package_manager.lock().map_err(|_| {
                 ImportError::ModuleLoadError {
@@ -246,7 +246,7 @@ impl PackageImportResolver {
     }
     
     /// Discover exports for an unknown package
-    fn discover_package_exports(&mut self, package: &PackageMetadata) -> Result<(), ImportError> {
+    fn discover_package_exports(&mut self, package: &PackageMetadata) -> Result<(), Error> {
         // In a real implementation, this would parse the package files
         // For now, create a basic export info
         let mut modules = HashMap::new();

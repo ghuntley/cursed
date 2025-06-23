@@ -12,7 +12,7 @@ use crate::parser::error_propagation::{
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
-use inkwell::types::{BasicType, BasicTypeEnum, PointerType, StructType};
+use inkwell::crate::types::{BasicType, BasicTypeEnum, PointerType, StructType};
 use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue, IntValue, PointerValue, StructValue};
 use inkwell::{AddressSpace, FloatPredicate, IntPredicate};
 use std::collections::HashMap;
@@ -24,68 +24,68 @@ pub trait ErrorPropagationCodegen<'ctx> {
     fn compile_enhanced_question_mark(
         &mut self,
         expr: &EnhancedQuestionMarkExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile typed error propagation expression
     fn compile_typed_error_propagation(
         &mut self,
         expr: &TypedErrorPropagation,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile unwrap-or expression
     fn compile_unwrap_or_expression(
         &mut self,
         expr: &UnwrapOrExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile try expression
     fn compile_try_expression(
         &mut self,
         expr: &TryExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile field access expression
     fn compile_field_access_expression(
         &mut self,
         expr: &FieldAccessExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile method call expression
     fn compile_method_call_expression(
         &mut self,
         expr: &MethodCallExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate error handling code
     fn generate_error_handling(
         &mut self,
         result_value: BasicValueEnum<'ctx>,
         error_handler: Option<BasicValueEnum<'ctx>>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Check if value represents an error
     fn is_error_value(
         &mut self,
         value: BasicValueEnum<'ctx>,
-    ) -> Result<IntValue<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Extract success value from Result/Option
     fn extract_success_value(
         &mut self,
         result_value: BasicValueEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Extract error value from Result
     fn extract_error_value(
         &mut self,
         result_value: BasicValueEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate early return for error propagation
     fn generate_early_return(
         &mut self,
         error_value: BasicValueEnum<'ctx>,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 }
 
 /// Implementation of error propagation codegen
@@ -111,7 +111,7 @@ impl<'ctx> ErrorPropagationCompiler<'ctx> {
     }
 
     /// Compile an expression (placeholder for integration with expression compiler)
-    fn compile_expression(&mut self, expr: &dyn Expression) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    fn compile_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         // This is a placeholder that would integrate with the main expression compiler
         // For now, return a simple value to enable testing
         debug!("Compiling expression (placeholder)");
@@ -157,7 +157,7 @@ impl<'ctx> ErrorPropagationCompiler<'ctx> {
     }
 
     /// Create Result::Ok value
-    fn create_result_ok(&self, value: BasicValueEnum<'ctx>, error_type: BasicTypeEnum<'ctx>) -> Result<StructValue<'ctx>, CursedError> {
+    fn create_result_ok(&self, value: BasicValueEnum<'ctx>, error_type: BasicTypeEnum<'ctx>) -> Result<(), Error> {
         let result_type = self.get_result_type(value.get_type(), error_type);
         let result_value = result_type.get_undef();
         
@@ -190,7 +190,7 @@ impl<'ctx> ErrorPropagationCompiler<'ctx> {
     }
 
     /// Create Result::Err value
-    fn create_result_err(&self, error: BasicValueEnum<'ctx>, success_type: BasicTypeEnum<'ctx>) -> Result<StructValue<'ctx>, CursedError> {
+    fn create_result_err(&self, error: BasicValueEnum<'ctx>, success_type: BasicTypeEnum<'ctx>) -> Result<(), Error> {
         let result_type = self.get_result_type(success_type, error.get_type());
         let result_value = result_type.get_undef();
         
@@ -223,7 +223,7 @@ impl<'ctx> ErrorPropagationCompiler<'ctx> {
     }
 
     /// Create Option::Some value
-    fn create_option_some(&self, value: BasicValueEnum<'ctx>) -> Result<StructValue<'ctx>, CursedError> {
+    fn create_option_some(&self, value: BasicValueEnum<'ctx>) -> Result<(), Error> {
         let option_type = self.get_option_type(value.get_type());
         let option_value = option_type.get_undef();
         
@@ -248,7 +248,7 @@ impl<'ctx> ErrorPropagationCompiler<'ctx> {
     }
 
     /// Create Option::None value
-    fn create_option_none(&self, inner_type: BasicTypeEnum<'ctx>) -> Result<StructValue<'ctx>, CursedError> {
+    fn create_option_none(&self, inner_type: BasicTypeEnum<'ctx>) -> Result<(), Error> {
         let option_type = self.get_option_type(inner_type);
         let option_value = option_type.get_undef();
         
@@ -270,7 +270,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn compile_enhanced_question_mark(
         &mut self,
         expr: &EnhancedQuestionMarkExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Compiling enhanced question mark expression");
 
         // Compile the inner expression that should return Result<T, E>
@@ -313,7 +313,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn compile_typed_error_propagation(
         &mut self,
         expr: &TypedErrorPropagation,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Compiling typed error propagation expression");
 
         // Compile the inner expression
@@ -330,7 +330,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn compile_unwrap_or_expression(
         &mut self,
         expr: &UnwrapOrExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Compiling unwrap-or expression: {}", expr.method_name);
 
         // Compile the base expression (Result or Option)
@@ -387,7 +387,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn compile_try_expression(
         &mut self,
         expr: &TryExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Compiling try expression");
 
         // Compile the try block
@@ -410,7 +410,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn compile_field_access_expression(
         &mut self,
         expr: &FieldAccessExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Compiling field access expression: {}", expr.field_name);
 
         // Compile the base expression
@@ -444,7 +444,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn compile_method_call_expression(
         &mut self,
         expr: &MethodCallExpression,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Compiling method call expression: {}", expr.method_name);
 
         // Compile the receiver expression
@@ -510,7 +510,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
         &mut self,
         result_value: BasicValueEnum<'ctx>,
         error_handler: Option<BasicValueEnum<'ctx>>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Generating error handling code");
 
         let current_fn = self.current_function()
@@ -579,7 +579,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn is_error_value(
         &mut self,
         value: BasicValueEnum<'ctx>,
-    ) -> Result<IntValue<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Checking if value is error");
 
         // Extract the is_ok field from the Result struct
@@ -610,7 +610,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn extract_success_value(
         &mut self,
         result_value: BasicValueEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Extracting success value from result");
 
         if let BasicValueEnum::StructValue(struct_val) = result_value {
@@ -643,7 +643,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn extract_error_value(
         &mut self,
         result_value: BasicValueEnum<'ctx>,
-    ) -> Result<BasicValueEnum<'ctx>, CursedError> {
+    ) -> Result<(), Error> {
         debug!("Extracting error value from result");
 
         if let BasicValueEnum::StructValue(struct_val) = result_value {
@@ -677,7 +677,7 @@ impl<'ctx> ErrorPropagationCodegen<'ctx> for ErrorPropagationCompiler<'ctx> {
     fn generate_early_return(
         &mut self,
         error_value: BasicValueEnum<'ctx>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!("Generating early return for error propagation");
 
         let current_fn = self.current_function()

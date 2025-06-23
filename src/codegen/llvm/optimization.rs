@@ -356,7 +356,7 @@ impl<'ctx> OptimizationManager<'ctx> {
         
         // Initialize the pass manager with the module
         if !fpm.initialize() {
-            return Err(Error::Other("Failed to initialize function pass manager".to_string()));
+            return Err(Error::General("Failed to initialize function pass manager".to_string()));
         }
         self.function_pass_manager = Some(fpm);
         
@@ -808,7 +808,7 @@ impl<'ctx> OptimizationManager<'ctx> {
                 let thread_pool = rayon::ThreadPoolBuilder::new()
                     .num_threads((rayon::current_num_threads() / 2).max(1))
                     .build()
-                    .map_err(|e| Error::Other(format!("Failed to create thread pool: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to create thread pool: {}", e)))?;
                 
                 thread_pool.install(|| {
                     cold_functions.par_iter().for_each(|function| {
@@ -2002,10 +2002,10 @@ impl<'ctx> OptimizationManager<'ctx> {
     /// Create a target machine for code generation
     pub fn create_target_machine(&self, target_triple: &str) -> Result<TargetMachine> {
         Target::initialize_native(&inkwell::targets::InitializationConfig::default())
-            .map_err(|e| Error::Other(format!("Failed to initialize target: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to initialize target: {}", e)))?;
         
         let target = Target::from_triple(target_triple)
-            .map_err(|e| Error::Other(format!("Failed to create target from triple: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create target from triple: {}", e)))?;
         
         let cpu = self.config.target_cpu.as_deref().unwrap_or("generic");
         let features = self.config.target_features.join(",");
@@ -2017,7 +2017,7 @@ impl<'ctx> OptimizationManager<'ctx> {
             self.config.level.to_inkwell_level(),
             RelocMode::Default,
             CodeModel::Default,
-        ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))
+        ).ok_or_else(|| Error::General("Failed to create target machine".to_string()))
     }
     
     /// Generate optimized object code
@@ -2025,7 +2025,7 @@ impl<'ctx> OptimizationManager<'ctx> {
         let target_machine = self.create_target_machine(target_triple)?;
         
         target_machine.write_to_memory_buffer(module, FileType::Object)
-            .map_err(|e| Error::Other(format!("Failed to generate object code: {}", e)))
+            .map_err(|e| Error::General(format!("Failed to generate object code: {}", e)))
             .map(|buffer| buffer.as_slice().to_vec())
     }
     
@@ -2034,10 +2034,10 @@ impl<'ctx> OptimizationManager<'ctx> {
         let target_machine = self.create_target_machine(target_triple)?;
         
         target_machine.write_to_memory_buffer(module, FileType::Assembly)
-            .map_err(|e| Error::Other(format!("Failed to generate assembly: {}", e)))
+            .map_err(|e| Error::General(format!("Failed to generate assembly: {}", e)))
             .and_then(|buffer| {
                 String::from_utf8(buffer.as_slice().to_vec())
-                    .map_err(|e| Error::Other(format!("Invalid UTF-8 in assembly: {}", e)))
+                    .map_err(|e| Error::General(format!("Invalid UTF-8 in assembly: {}", e)))
             })
     }
     

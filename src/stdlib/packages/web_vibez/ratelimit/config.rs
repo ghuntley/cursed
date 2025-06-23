@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 /// fr fr Rate limiting configuration - comprehensive settings
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
@@ -86,7 +87,7 @@ impl RateLimitConfig {
     }
 
     /// fr fr Validate configuration - ensure settings are valid
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.max_requests == 0 {
             return Err(ConfigError::InvalidMaxRequests("max_requests must be greater than 0".to_string()));
         }
@@ -146,7 +147,7 @@ impl BucketConfig {
     }
 
     /// fr fr Validate bucket configuration
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.capacity <= 0.0 {
             return Err(ConfigError::InvalidCapacity("capacity must be greater than 0".to_string()));
         }
@@ -247,7 +248,7 @@ impl ErrorConfig {
     }
 
     /// fr fr Validate error configuration
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.status_code < 400 || self.status_code >= 600 {
             return Err(ConfigError::InvalidStatusCode("status_code must be a valid 4xx or 5xx status code".to_string()));
         }
@@ -333,7 +334,7 @@ impl CleanupConfig {
     }
 
     /// fr fr Validate cleanup configuration
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.enabled {
             if self.interval.as_secs() == 0 {
                 return Err(ConfigError::InvalidInterval("cleanup interval must be greater than 0".to_string()));

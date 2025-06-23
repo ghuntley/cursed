@@ -10,7 +10,7 @@ use crate::optimization::{
     build_profiles::{BuildProfile, ProfileManager},
     config::OptimizationConfig,
     compilation_speed::CompilationUnit,
-    benchmarking_types::{BenchmarkType, BenchmarkConfig, BenchmarkResults, BenchmarkingEngine},
+    benchmarking_crate::types::{BenchmarkType, BenchmarkConfig, BenchmarkResults, BenchmarkingEngine},
     performance_system::{
         PerformanceSystemConfig, PerformanceMonitoringLevel, ParallelConfig, CacheConfig,
         CompilationPerformanceMetrics, AdaptiveDecision, AdaptiveDecisionType, PerformanceRecommendation,

@@ -369,20 +369,20 @@ impl BenchmarkRunner {
 
         // Execute compilation
         let output = cmd.output()
-            .map_err(|e| Error::Other(format!("Failed to execute compiler: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to execute compiler: {}", e)))?;
 
         let compile_time = start_time.elapsed();
 
         if !output.status.success() {
             let error_msg = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Other(format!("Compilation failed: {}", error_msg)));
+            return Err(Error::General(format!("Compilation failed: {}", error_msg)));
         }
 
         // Measure binary size
         let output_path = self.work_dir.join("benchmark_output");
         let binary_size = if output_path.exists() {
             std::fs::metadata(&output_path)
-                .map_err(|e| Error::Other(format!("Failed to get binary size: {}", e)))?
+                .map_err(|e| Error::General(format!("Failed to get binary size: {}", e)))?
                 .len() as usize
         } else {
             0
@@ -411,11 +411,11 @@ impl BenchmarkRunner {
            .arg("--output").arg(self.work_dir.join("warmup_output"));
 
         let output = cmd.output()
-            .map_err(|e| Error::Other(format!("Failed to execute compiler: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to execute compiler: {}", e)))?;
 
         if !output.status.success() {
             let error_msg = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Other(format!("Warmup compilation failed: {}", error_msg)));
+            return Err(Error::General(format!("Warmup compilation failed: {}", error_msg)));
         }
 
         Ok(())
@@ -598,10 +598,10 @@ impl BenchmarkRunner {
     /// Save benchmark results to file
     pub fn save_results(&self, results: &BenchmarkSuiteResult, output_path: &Path) -> Result<()> {
         let json = serde_json::to_string_pretty(results)
-            .map_err(|e| Error::Other(format!("Failed to serialize results: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize results: {}", e)))?;
         
         std::fs::write(output_path, json)
-            .map_err(|e| Error::Other(format!("Failed to write results: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write results: {}", e)))?;
         
         info!("Benchmark results saved to: {}", output_path.display());
         Ok(())
@@ -610,10 +610,10 @@ impl BenchmarkRunner {
     /// Load baseline results for comparison
     pub fn load_baseline(&self, baseline_path: &Path) -> Result<BenchmarkSuiteResult> {
         let content = std::fs::read_to_string(baseline_path)
-            .map_err(|e| Error::Other(format!("Failed to read baseline: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read baseline: {}", e)))?;
         
         serde_json::from_str(&content)
-            .map_err(|e| Error::Other(format!("Failed to parse baseline: {}", e)))
+            .map_err(|e| Error::General(format!("Failed to parse baseline: {}", e)))
     }
 
     /// Measure runtime performance of a compiled binary
@@ -641,7 +641,7 @@ impl BenchmarkRunner {
         let start_time = std::time::Instant::now();
         let output = std::process::Command::new(&output_path)
             .output()
-            .map_err(|e| Error::Other(format!("Failed to execute binary: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to execute binary: {}", e)))?;
         
         let runtime = start_time.elapsed();
         
@@ -909,7 +909,7 @@ impl BenchmarkRunner {
         if let Some(ref mut storage) = self.baseline_storage {
             storage.set_default_baseline(baseline_id)
         } else {
-            Err(Error::Other("Baseline storage not available".to_string()))
+            Err(Error::General("Baseline storage not available".to_string()))
         }
     }
 
@@ -930,7 +930,7 @@ impl BenchmarkRunner {
         if let Some(ref storage) = self.baseline_storage {
             storage.export_baselines(export_path, baseline_ids)
         } else {
-            Err(Error::Other("Baseline storage not available".to_string()))
+            Err(Error::General("Baseline storage not available".to_string()))
         }
     }
 
@@ -939,7 +939,7 @@ impl BenchmarkRunner {
         if let Some(ref mut storage) = self.baseline_storage {
             storage.import_baselines(import_path, overwrite_existing)
         } else {
-            Err(Error::Other("Baseline storage not available".to_string()))
+            Err(Error::General("Baseline storage not available".to_string()))
         }
     }
 }

@@ -428,7 +428,7 @@ impl PerformanceIntegrationSystem {
     #[instrument(skip(self))]
     pub fn run_performance_benchmarks(&self, benchmark_name: &str) -> Result<crate::optimization::benchmarking::BenchmarkResults> {
         let config = self.config.benchmark_configs.get(benchmark_name)
-            .ok_or_else(|| Error::Other(format!("Unknown benchmark configuration: {}", benchmark_name)))?;
+            .ok_or_else(|| Error::General(format!("Unknown benchmark configuration: {}", benchmark_name)))?;
         
         info!("Running performance benchmark: {}", benchmark_name);
         self.benchmarking_engine.run_benchmark(config.clone())

@@ -46,7 +46,7 @@ impl Default for SimpleMySqlDriver {
 }
 
 impl Driver for SimpleMySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<Box<dyn DriverConn>, DatabaseError> {
+    fn open(&self, data_source_name: &str) -> Result<(), Error> {
         // Delegate to comprehensive driver for real functionality
         self.comprehensive_driver.open(data_source_name)
     }

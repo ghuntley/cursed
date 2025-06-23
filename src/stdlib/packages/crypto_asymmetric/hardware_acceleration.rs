@@ -127,7 +127,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Get cached capabilities or detect if cache is expired
-    pub fn get_capabilities(&self) -> Result<HardwareCapabilities, CursedError> {
+    pub fn get_capabilities(&self) -> Result<(), Error> {
         let now = Instant::now();
         
         // Check if we have valid cached data
@@ -158,7 +158,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Force refresh of capabilities detection
-    pub fn refresh_capabilities(&self) -> Result<HardwareCapabilities, CursedError> {
+    pub fn refresh_capabilities(&self) -> Result<(), Error> {
         // Clear cache
         {
             let mut cache_time = self.cache_timestamp.lock().unwrap();
@@ -172,7 +172,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect all hardware acceleration capabilities
-    fn detect_capabilities(&self) -> Result<HardwareCapabilities, CursedError> {
+    fn detect_capabilities(&self) -> Result<(), Error> {
         let start_time = Instant::now();
 
         let cpu_features = self.detect_cpu_features()?;
@@ -194,7 +194,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect CPU cryptographic features
-    fn detect_cpu_features(&self) -> Result<CpuFeatures, CursedError> {
+    fn detect_cpu_features(&self) -> Result<(), Error> {
         let mut features = CpuFeatures::default();
 
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -217,7 +217,7 @@ impl HardwareAccelerationDetector {
 
     /// Detect x86/x86_64 CPU features using CPUID
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    fn detect_x86_features(&self) -> Result<CpuFeatures, CursedError> {
+    fn detect_x86_features(&self) -> Result<(), Error> {
         let mut features = CpuFeatures::default();
 
         unsafe {
@@ -263,7 +263,7 @@ impl HardwareAccelerationDetector {
 
     /// Detect AArch64 CPU features
     #[cfg(target_arch = "aarch64")]
-    fn detect_aarch64_features(&self) -> Result<CpuFeatures, CursedError> {
+    fn detect_aarch64_features(&self) -> Result<(), Error> {
         let mut features = CpuFeatures::default();
 
         // Check for AES and SHA extensions via system registers or /proc/cpuinfo
@@ -278,7 +278,7 @@ impl HardwareAccelerationDetector {
 
     /// Detect ARM CPU features
     #[cfg(target_arch = "arm")]
-    fn detect_arm_features(&self) -> Result<CpuFeatures, CursedError> {
+    fn detect_arm_features(&self) -> Result<(), Error> {
         let mut features = CpuFeatures::default();
 
         // Check for cryptographic extensions via /proc/cpuinfo
@@ -291,7 +291,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect Hardware Security Modules
-    fn detect_hsms(&self) -> Result<Vec<HsmInfo>, CursedError> {
+    fn detect_hsms(&self) -> Result<(), Error> {
         let mut hsms = Vec::new();
 
         // Check for common HSM interfaces
@@ -303,7 +303,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for PKCS#11 HSMs
-    fn check_pkcs11_hsms(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), CursedError> {
+    fn check_pkcs11_hsms(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), Error> {
         // Common PKCS#11 library paths
         let pkcs11_paths = vec![
             "/usr/lib/pkcs11/",
@@ -333,7 +333,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for TPM modules
-    fn check_tpm_modules(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), CursedError> {
+    fn check_tpm_modules(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), Error> {
         // Check for TPM 2.0 device
         if std::path::Path::new("/dev/tpm0").exists() {
             hsms.push(HsmInfo {
@@ -358,7 +358,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for secure enclaves
-    fn check_secure_enclaves(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), CursedError> {
+    fn check_secure_enclaves(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), Error> {
         // Intel SGX
         if std::path::Path::new("/dev/isgx").exists() || 
            std::path::Path::new("/dev/sgx").exists() {
@@ -384,7 +384,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect GPU acceleration capabilities
-    fn detect_gpu_acceleration(&self) -> Result<GpuAcceleration, CursedError> {
+    fn detect_gpu_acceleration(&self) -> Result<(), Error> {
         let mut gpu_accel = GpuAcceleration {
             opencl_available: false,
             cuda_available: false,
@@ -408,7 +408,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check OpenCL support
-    fn check_opencl_support(&self) -> Result<bool, CursedError> {
+    fn check_opencl_support(&self) -> Result<(), Error> {
         // Check for OpenCL libraries
         let opencl_libs = vec![
             "libOpenCL.so.1",
@@ -442,7 +442,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check CUDA support
-    fn check_cuda_support(&self) -> Result<bool, CursedError> {
+    fn check_cuda_support(&self) -> Result<(), Error> {
         // Check for CUDA runtime libraries
         let cuda_libs = vec![
             "/usr/local/cuda/lib64/libcudart.so",
@@ -465,7 +465,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check Vulkan Compute support
-    fn check_vulkan_compute(&self) -> Result<bool, CursedError> {
+    fn check_vulkan_compute(&self) -> Result<(), Error> {
         // Check for Vulkan libraries
         let vulkan_libs = vec![
             "libvulkan.so.1",
@@ -484,7 +484,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Enumerate GPU devices
-    fn enumerate_gpu_devices(&self) -> Result<Vec<GpuDevice>, CursedError> {
+    fn enumerate_gpu_devices(&self) -> Result<(), Error> {
         let mut devices = Vec::new();
 
         // Try to get NVIDIA GPU information
@@ -536,7 +536,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect cryptographic coprocessors
-    fn detect_crypto_coprocessors(&self) -> Result<Vec<CryptoCoprocessor>, CursedError> {
+    fn detect_crypto_coprocessors(&self) -> Result<(), Error> {
         let mut coprocessors = Vec::new();
 
         // Check for IBM Crypto Express cards
@@ -552,7 +552,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for IBM Crypto Express cards
-    fn check_ibm_crypto_express(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), CursedError> {
+    fn check_ibm_crypto_express(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), Error> {
         // Check for IBM crypto devices in /sys/bus/ap/devices
         if let Ok(entries) = std::fs::read_dir("/sys/bus/ap/devices") {
             for entry in entries.flatten() {
@@ -578,7 +578,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for Cavium/Marvell crypto cards
-    fn check_cavium_crypto(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), CursedError> {
+    fn check_cavium_crypto(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), Error> {
         // Check lspci output for Cavium devices
         if let Ok(output) = std::process::Command::new("lspci").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
@@ -604,7 +604,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for other PCIe crypto cards
-    fn check_pcie_crypto_cards(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), CursedError> {
+    fn check_pcie_crypto_cards(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), Error> {
         // Check for various crypto accelerator vendors
         if let Ok(output) = std::process::Command::new("lspci").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
@@ -653,7 +653,7 @@ pub fn get_hardware_detector() -> &'static HardwareAccelerationDetector {
 }
 
 /// Check hardware acceleration support
-pub fn check_hardware_support(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn check_hardware_support(_args: Vec<Value>) -> Result<(), Error> {
     let detector = get_hardware_detector();
     let capabilities = detector.get_capabilities()?;
     
@@ -726,7 +726,7 @@ pub fn check_hardware_support(_args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Get specific CPU feature availability
-pub fn has_cpu_feature(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn has_cpu_feature(args: Vec<Value>) -> Result<(), Error> {
     if args.len() != 1 {
         return Err(CursedError::InvalidArguments("Expected 1 argument (feature_name)".to_string()));
     }
@@ -756,7 +756,7 @@ pub fn has_cpu_feature(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Get available HSMs
-pub fn get_available_hsms(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn get_available_hsms(_args: Vec<Value>) -> Result<(), Error> {
     let detector = get_hardware_detector();
     let capabilities = detector.get_capabilities()?;
     
@@ -769,7 +769,7 @@ pub fn get_available_hsms(_args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Refresh hardware detection cache
-pub fn refresh_hardware_detection(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn refresh_hardware_detection(_args: Vec<Value>) -> Result<(), Error> {
     let detector = get_hardware_detector();
     let capabilities = detector.refresh_capabilities()?;
     

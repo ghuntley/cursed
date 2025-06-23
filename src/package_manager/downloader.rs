@@ -99,13 +99,13 @@ pub struct DownloadedPackage {
 
 impl PackageDownloader {
     /// Create a new package downloader with default configuration
-    pub fn new() -> Result<Self, PackageManagerError> {
+    pub fn new() -> Result<(), Error> {
         Self::with_config(DownloadConfig::default())
     }
 
     /// Create a new package downloader with custom configuration
     #[instrument(fields(temp_dir = ?config.temp_dir, max_concurrent = config.max_concurrent))]
-    pub fn with_config(config: DownloadConfig) -> Result<Self, PackageManagerError> {
+    pub fn with_config(config: DownloadConfig) -> Result<(), Error> {
         info!("Initializing package downloader");
         
         // Create temporary download directory
@@ -133,7 +133,7 @@ impl PackageDownloader {
         version: &str,
         extract_to: Option<&Path>,
         progress_callback: Option<ProgressCallback>,
-    ) -> Result<DownloadedPackage, PackageManagerError> {
+    ) -> Result<(), Error> {
         let start_time = Instant::now();
         
         info!(package = package_name, version = version, "Starting package download");
@@ -307,7 +307,7 @@ impl PackageDownloader {
         extract_to: &Path,
         package_name: &str,
         version: &str,
-    ) -> Result<PathBuf, PackageManagerError> {
+    ) -> Result<(), Error> {
         info!(
             archive = ?archive_path,
             extract_to = ?extract_to,
@@ -353,7 +353,7 @@ impl PackageDownloader {
     }
 
     /// Extract tar.gz archive
-    async fn extract_tar_gz(&self, archive_path: &Path, extract_to: &Path) -> Result<(), PackageManagerError> {
+    async fn extract_tar_gz(&self, archive_path: &Path, extract_to: &Path) -> Result<(), Error> {
         let file = File::open(archive_path)
             .map_err(|e| PackageManagerError::FileSystemError {
                 path: archive_path.to_path_buf(),
@@ -374,7 +374,7 @@ impl PackageDownloader {
     }
 
     /// Extract zip archive
-    async fn extract_zip(&self, archive_path: &Path, extract_to: &Path) -> Result<(), PackageManagerError> {
+    async fn extract_zip(&self, archive_path: &Path, extract_to: &Path) -> Result<(), Error> {
         let file = File::open(archive_path)
             .map_err(|e| PackageManagerError::FileSystemError {
                 path: archive_path.to_path_buf(),
@@ -429,7 +429,7 @@ impl PackageDownloader {
     }
 
     /// Get download statistics
-    pub fn get_stats(&self) -> Result<DownloadStats, PackageManagerError> {
+    pub fn get_stats(&self) -> Result<(), Error> {
         let stats = self.stats.lock().map_err(|_| PackageManagerError::RegistryError {
             message: "Failed to lock download stats".to_string(),
         })?;
@@ -438,7 +438,7 @@ impl PackageDownloader {
 
     /// Clean up temporary download files
     #[instrument(skip(self))]
-    pub fn cleanup(&self) -> Result<(), PackageManagerError> {
+    pub fn cleanup(&self) -> Result<(), Error> {
         info!("Cleaning up temporary download files");
         
         if self.temp_dir.exists() {

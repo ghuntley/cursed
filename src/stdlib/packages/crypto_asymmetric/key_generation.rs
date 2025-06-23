@@ -39,7 +39,7 @@ impl AsymmetricAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "RSA-2048" | "RSA2048" => Ok(AsymmetricAlgorithm::Rsa2048),
             "RSA-3072" | "RSA3072" => Ok(AsymmetricAlgorithm::Rsa3072),
@@ -90,7 +90,7 @@ impl GeneratedKeyPair {
     }
     
     /// Convert to CURSED Value
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -129,7 +129,7 @@ impl std::fmt::Display for KeyGenerationError {
 }
 
 /// Generate cryptographic key pair
-pub fn generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn generate_keypair(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Algorithm name required".to_string()));
     }
@@ -158,7 +158,7 @@ pub fn generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
 pub fn generate_asymmetric_keypair(
     algorithm: AsymmetricAlgorithm,
     custom_key_size: Option<usize>,
-) -> Result<Value, CursedError> {
+) -> Result<(), Error> {
     match algorithm {
         AsymmetricAlgorithm::Rsa2048 => generate_rsa_keypair(2048),
         AsymmetricAlgorithm::Rsa3072 => generate_rsa_keypair(3072),
@@ -171,7 +171,7 @@ pub fn generate_asymmetric_keypair(
 }
 
 /// Generate RSA key pair
-fn generate_rsa_keypair(key_size: usize) -> Result<Value, CursedError> {
+fn generate_rsa_keypair(key_size: usize) -> Result<(), Error> {
     if key_size < 2048 {
         return Err(CursedError::InvalidArgument(format!("RSA key size {} too small (minimum 2048)", key_size)));
     }
@@ -209,7 +209,7 @@ fn generate_rsa_keypair(key_size: usize) -> Result<Value, CursedError> {
 }
 
 /// Generate ECDSA P-256 key pair
-fn generate_ecdsa_p256_keypair() -> Result<Value, CursedError> {
+fn generate_ecdsa_p256_keypair() -> Result<(), Error> {
     let mut rng = OsRng;
     let private_key = P256SecretKey::random(&mut rng);
     let public_key = P256PublicKey::from(&private_key);
@@ -235,7 +235,7 @@ fn generate_ecdsa_p256_keypair() -> Result<Value, CursedError> {
 }
 
 /// Generate ECDSA P-384 key pair
-fn generate_ecdsa_p384_keypair() -> Result<Value, CursedError> {
+fn generate_ecdsa_p384_keypair() -> Result<(), Error> {
     let mut rng = OsRng;
     let private_key = P384SecretKey::random(&mut rng);
     let public_key = P384PublicKey::from(&private_key);
@@ -259,7 +259,7 @@ fn generate_ecdsa_p384_keypair() -> Result<Value, CursedError> {
 }
 
 /// Generate Ed25519 key pair
-fn generate_ed25519_keypair() -> Result<Value, CursedError> {
+fn generate_ed25519_keypair() -> Result<(), Error> {
     let mut rng = OsRng;
     let signing_key = SigningKey::generate(&mut rng);
     let verifying_key = signing_key.verifying_key();
@@ -278,7 +278,7 @@ fn generate_ed25519_keypair() -> Result<Value, CursedError> {
 }
 
 /// Generate X25519 key pair
-fn generate_x25519_keypair() -> Result<Value, CursedError> {
+fn generate_x25519_keypair() -> Result<(), Error> {
     let mut rng = OsRng;
     let private_key = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&private_key);
@@ -310,7 +310,7 @@ pub fn list_asymmetric_algorithms() -> Vec<String> {
 }
 
 /// Validate algorithm and key size combination
-pub fn validate_algorithm_key_size(algorithm: AsymmetricAlgorithm, key_size: Option<usize>) -> Result<(), CursedError> {
+pub fn validate_algorithm_key_size(algorithm: AsymmetricAlgorithm, key_size: Option<usize>) -> Result<(), Error> {
     match algorithm {
         AsymmetricAlgorithm::Rsa2048 => {
             if let Some(size) = key_size {

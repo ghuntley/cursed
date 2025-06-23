@@ -57,7 +57,7 @@ pub enum HashContext {
     Sha3_512(Sha3_512),
     Blake3(blake3::Hasher),
     Sha1(sha1::Sha1),
-    Md5(md5::Md5),
+    Md5(md5::Digest),
 }
 
 /// Hash result with metadata
@@ -155,7 +155,7 @@ impl HashAlgorithmManager {
             }
             HashAlgorithm::Md5 => {
                 use md5::Digest;
-                let mut hasher = md5::Md5::new();
+                let mut hasher = md5::Digest::new();
                 hasher.update(data);
                 hasher.finalize().to_vec()
             }
@@ -181,7 +181,7 @@ impl HashAlgorithmManager {
             HashAlgorithm::Sha3_512 => HashContext::Sha3_512(Sha3_512::new()),
             HashAlgorithm::Blake3 => HashContext::Blake3(blake3::Hasher::new()),
             HashAlgorithm::Sha1 => HashContext::Sha1(sha1::Sha1::new()),
-            HashAlgorithm::Md5 => HashContext::Md5(md5::Md5::new()),
+            HashAlgorithm::Md5 => HashContext::Md5(md5::Digest::new()),
         };
 
         Ok(context)

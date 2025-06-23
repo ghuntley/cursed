@@ -85,7 +85,7 @@ impl FrodoConfig {
     }
     
     /// facts Validate FrodoKEM configuration
-    pub fn validate(&self) -> Result<(), FrodoError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.n < 256 || self.n > 2048 {
             return Err(FrodoError::InvalidConfig("n must be between 256 and 2048".to_string()));
         }
@@ -207,7 +207,7 @@ pub struct FrodoEngine {
 
 impl FrodoEngine {
     /// slay Create new FrodoKEM engine
-    pub fn new(config: FrodoConfig) -> Result<Self, FrodoError> {
+    pub fn new(config: FrodoConfig) -> Result<(), Error> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -222,7 +222,7 @@ impl FrodoEngine {
     }
     
     /// bestie Generate FrodoKEM key pair
-    pub fn generate_keypair(&mut self) -> Result<FrodoKeyPair, FrodoError> {
+    pub fn generate_keypair(&mut self) -> Result<(), Error> {
         let n = self.config.n;
         let n_bar = self.config.n_bar;
         let q = self.config.q;
@@ -268,7 +268,7 @@ impl FrodoEngine {
     }
     
     /// vibes Encapsulate (generate shared secret and ciphertext)
-    pub fn encapsulate(&mut self, public_key: &FrodoPublicKey) -> Result<(Vec<u8>, Vec<u8>), FrodoError> {
+    pub fn encapsulate(&mut self, public_key: &FrodoPublicKey) -> Result<(), Error> {
         let n = self.config.n;
         let n_bar = self.config.n_bar;
         let m_bar = self.config.m_bar;
@@ -314,7 +314,7 @@ impl FrodoEngine {
     }
     
     /// periodt Decapsulate (recover shared secret from ciphertext)
-    pub fn decapsulate(&mut self, ciphertext: &[u8], private_key: &FrodoPrivateKey) -> Result<Vec<u8>, FrodoError> {
+    pub fn decapsulate(&mut self, ciphertext: &[u8], private_key: &FrodoPrivateKey) -> Result<(), Error> {
         let n = self.config.n;
         let n_bar = self.config.n_bar;
         let m_bar = self.config.m_bar;
@@ -343,7 +343,7 @@ impl FrodoEngine {
     }
     
     /// sus Generate random seed
-    fn generate_seed(&mut self) -> Result<Vec<u8>, FrodoError> {
+    fn generate_seed(&mut self) -> Result<(), Error> {
         let mut seed = vec![0u8; 16]; // 128-bit seed
         for byte in &mut seed {
             *byte = (self.rng.next_u32() & 0xFF) as u8;
@@ -352,7 +352,7 @@ impl FrodoEngine {
     }
     
     /// facts Sample error matrix from discrete Gaussian distribution
-    fn sample_error_matrix(&mut self, rows: usize, cols: usize) -> Result<FrodoMatrix, FrodoError> {
+    fn sample_error_matrix(&mut self, rows: usize, cols: usize) -> Result<(), Error> {
         let mut matrix = Vec::new();
         
         for _ in 0..rows {
@@ -369,7 +369,7 @@ impl FrodoEngine {
     }
     
     /// yolo Sample from discrete Gaussian distribution
-    fn sample_discrete_gaussian(&mut self) -> Result<u32, FrodoError> {
+    fn sample_discrete_gaussian(&mut self) -> Result<(), Error> {
         // Simplified discrete Gaussian sampling using rejection method
         // In practice, use proper discrete Gaussian sampling
         
@@ -387,7 +387,7 @@ impl FrodoEngine {
     }
     
     /// stan Matrix operations
-    fn matrix_multiply(&self, a: &FrodoMatrix, b: &FrodoMatrix) -> Result<FrodoMatrix, FrodoError> {
+    fn matrix_multiply(&self, a: &FrodoMatrix, b: &FrodoMatrix) -> Result<(), Error> {
         if a.cols() != b.rows() {
             return Err(FrodoError::DimensionError("Matrix dimensions don't match for multiplication".to_string()));
         }
@@ -410,7 +410,7 @@ impl FrodoEngine {
         Ok(FrodoMatrix::new(result, self.config.q))
     }
     
-    fn matrix_add(&self, a: &FrodoMatrix, b: &FrodoMatrix) -> Result<FrodoMatrix, FrodoError> {
+    fn matrix_add(&self, a: &FrodoMatrix, b: &FrodoMatrix) -> Result<(), Error> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
             return Err(FrodoError::DimensionError("Matrix dimensions don't match for addition".to_string()));
         }
@@ -428,7 +428,7 @@ impl FrodoEngine {
         Ok(FrodoMatrix::new(result, self.config.q))
     }
     
-    fn matrix_subtract(&self, a: &FrodoMatrix, b: &FrodoMatrix) -> Result<FrodoMatrix, FrodoError> {
+    fn matrix_subtract(&self, a: &FrodoMatrix, b: &FrodoMatrix) -> Result<(), Error> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
             return Err(FrodoError::DimensionError("Matrix dimensions don't match for subtraction".to_string()));
         }
@@ -448,7 +448,7 @@ impl FrodoEngine {
     }
     
     /// bestie Pack matrix for transmission
-    fn pack_matrix(&self, matrix: &FrodoMatrix, bits_per_element: usize) -> Result<Vec<u8>, FrodoError> {
+    fn pack_matrix(&self, matrix: &FrodoMatrix, bits_per_element: usize) -> Result<(), Error> {
         let rows = matrix.rows();
         let cols = matrix.cols();
         let total_bits = rows * cols * bits_per_element;
@@ -476,7 +476,7 @@ impl FrodoEngine {
     }
     
     /// vibes Unpack matrix from transmission
-    fn unpack_matrix(&self, packed: &[u8], rows: usize, cols: usize, bits_per_element: usize) -> Result<FrodoMatrix, FrodoError> {
+    fn unpack_matrix(&self, packed: &[u8], rows: usize, cols: usize, bits_per_element: usize) -> Result<(), Error> {
         let expected_bits = rows * cols * bits_per_element;
         let expected_bytes = (expected_bits + 7) / 8;
         
@@ -509,7 +509,7 @@ impl FrodoEngine {
     }
     
     /// periodt Generate random message
-    fn generate_message(&mut self, length_bits: usize) -> Result<Vec<u8>, FrodoError> {
+    fn generate_message(&mut self, length_bits: usize) -> Result<(), Error> {
         let length_bytes = (length_bits + 7) / 8;
         let mut message = vec![0u8; length_bytes];
         
@@ -521,7 +521,7 @@ impl FrodoEngine {
     }
     
     /// sus Encode message into matrix
-    fn encode_message(&self, message: &[u8], rows: usize, cols: usize, q: u32, b: usize) -> Result<FrodoMatrix, FrodoError> {
+    fn encode_message(&self, message: &[u8], rows: usize, cols: usize, q: u32, b: usize) -> Result<(), Error> {
         let mut matrix = vec![vec![0u32; cols]; rows];
         let scale_factor = q >> b; // q / 2^b
         let mut bit_index = 0;
@@ -542,7 +542,7 @@ impl FrodoEngine {
     }
     
     /// facts Decode message from matrix
-    fn decode_message(&self, matrix: &FrodoMatrix, rows: usize, cols: usize, q: u32, b: usize) -> Result<Vec<u8>, FrodoError> {
+    fn decode_message(&self, matrix: &FrodoMatrix, rows: usize, cols: usize, q: u32, b: usize) -> Result<(), Error> {
         let scale_factor = q >> b;
         let threshold = scale_factor / 2;
         let total_bits = rows * cols;
@@ -569,7 +569,7 @@ impl FrodoEngine {
     }
     
     /// yolo Derive shared secret from message
-    fn derive_shared_secret(&self, message: &[u8]) -> Result<Vec<u8>, FrodoError> {
+    fn derive_shared_secret(&self, message: &[u8]) -> Result<(), Error> {
         // Use a simple hash of the message as shared secret
         // In practice, use a proper key derivation function like SHAKE-256
         let mut hash_input = message.to_vec();
@@ -585,7 +585,7 @@ impl FrodoEngine {
     }
     
     /// stan Serialize ciphertext
-    fn serialize_ciphertext(&self, c1: &[u8], c2: &[u8]) -> Result<Vec<u8>, FrodoError> {
+    fn serialize_ciphertext(&self, c1: &[u8], c2: &[u8]) -> Result<(), Error> {
         let mut ciphertext = Vec::new();
         ciphertext.extend_from_slice(c1);
         ciphertext.extend_from_slice(c2);
@@ -593,7 +593,7 @@ impl FrodoEngine {
     }
     
     /// bestie Deserialize ciphertext
-    fn deserialize_ciphertext(&self, ciphertext: &[u8]) -> Result<(Vec<u8>, Vec<u8>), FrodoError> {
+    fn deserialize_ciphertext(&self, ciphertext: &[u8]) -> Result<(), Error> {
         let c1_size = self.config.m_bar * self.config.n * self.config.d / 8;
         let c2_size = self.config.m_bar * self.config.n_bar * self.config.d / 8;
         
@@ -656,7 +656,7 @@ pub struct MatrixGenerator {
 
 impl MatrixGenerator {
     /// slay Create new matrix generator
-    pub fn new(use_shake: bool, dimension: usize, modulus: u32) -> Result<Self, FrodoError> {
+    pub fn new(use_shake: bool, dimension: usize, modulus: u32) -> Result<(), Error> {
         Ok(Self {
             use_shake,
             dimension,
@@ -665,7 +665,7 @@ impl MatrixGenerator {
     }
     
     /// bestie Generate matrix A from seed
-    pub fn generate_matrix(&self, seed: &[u8]) -> Result<FrodoMatrix, FrodoError> {
+    pub fn generate_matrix(&self, seed: &[u8]) -> Result<(), Error> {
         let mut matrix = vec![vec![0u32; self.dimension]; self.dimension];
         
         // Simplified matrix generation using seed as entropy source
@@ -710,19 +710,19 @@ pub struct FrodoKeyPair {
 
 impl FrodoKeyPair {
     /// slay Generate new FrodoKEM key pair
-    pub fn generate(config: &FrodoConfig) -> Result<Self, FrodoError> {
+    pub fn generate(config: &FrodoConfig) -> Result<(), Error> {
         let mut engine = FrodoEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Encapsulate shared secret
-    pub fn encapsulate(&self) -> Result<(Vec<u8>, Vec<u8>), FrodoError> {
+    pub fn encapsulate(&self) -> Result<(), Error> {
         let mut engine = FrodoEngine::new(self.config.clone())?;
         engine.encapsulate(&self.public_key)
     }
     
     /// vibes Decapsulate shared secret
-    pub fn decapsulate(&self, ciphertext: &[u8]) -> Result<Vec<u8>, FrodoError> {
+    pub fn decapsulate(&self, ciphertext: &[u8]) -> Result<(), Error> {
         let mut engine = FrodoEngine::new(self.config.clone())?;
         engine.decapsulate(ciphertext, &self.private_key)
     }
@@ -803,7 +803,7 @@ impl FrodoUtils {
     }
     
     /// bestie Validate FrodoKEM parameters for production
-    pub fn validate_for_production(config: &FrodoConfig) -> Result<FrodoSecurityValidation, FrodoError> {
+    pub fn validate_for_production(config: &FrodoConfig) -> Result<(), Error> {
         let security_bits = Self::estimate_security_level(config);
         let is_secure = security_bits >= 128.0;
         

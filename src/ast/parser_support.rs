@@ -76,11 +76,11 @@ impl FieldDefinition {
 
 impl Node for FieldDefinition {
     fn string(&self) -> String {
-        format!("{} {}", self.name, self.field_type)
+        format!("{} {}", self.to_string(), self.field_type)
     }
 
     fn token_literal(&self) -> String {
-        self.name.clone()
+        self.to_string().clone()
     }
 }
 
@@ -99,7 +99,7 @@ pub struct VariableStatement {
 impl Node for VariableStatement {
     fn string(&self) -> String {
         let keyword = if self.is_mutable { "sus" } else { "facts" };
-        let mut result = format!("{} {}", keyword, self.name);
+        let mut result = format!("{} {}", keyword, self.to_string());
         
         if let Some(ref var_type) = self.var_type {
             result.push_str(&format!(" {}", var_type));
@@ -125,7 +125,7 @@ impl Statement for VariableStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(VariableStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             var_type: self.var_type.clone(),
             value: self.value.as_ref().map(|v| v.clone_box()),
             is_mutable: self.is_mutable,

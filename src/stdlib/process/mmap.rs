@@ -174,7 +174,7 @@ impl MmapHandle {
     }
 
     /// Get a slice view of the mapped memory (read-only)
-    pub fn as_slice(&self) -> Result<&[u8], CursedError> {
+    pub fn as_slice(&self) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -187,7 +187,7 @@ impl MmapHandle {
     }
 
     /// Get a mutable slice view of the mapped memory
-    pub fn as_mut_slice(&mut self) -> Result<&mut [u8], CursedError> {
+    pub fn as_mut_slice(&mut self) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -233,7 +233,7 @@ impl MmapHandle {
     }
 
     /// Flush changes to disk synchronously
-    pub fn sync(&self, sync_type: SyncType) -> Result<(), CursedError> {
+    pub fn sync(&self, sync_type: SyncType) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -260,7 +260,7 @@ impl MmapHandle {
             use winapi::um::memoryapi::FlushViewOfFile;
             use winapi::um::fileapi::FlushFileBuffers;
 
-            let result = unsafe { FlushViewOfFile(self.ptr as *const winapi::ctypes::c_void, self.length) };
+            let result = unsafe { FlushViewOfFile(self.ptr as *const winapi::ccrate::types::c_void, self.length) };
             if result == 0 {
                 return Err(CursedError::Memory(format!(
                     "Failed to flush view of file: {}",
@@ -270,7 +270,7 @@ impl MmapHandle {
 
             // Also flush file buffers if we have a file handle
             if let Some(handle) = self.file_handle {
-                let result = unsafe { FlushFileBuffers(handle as *mut winapi::ctypes::c_void) };
+                let result = unsafe { FlushFileBuffers(handle as *mut winapi::ccrate::types::c_void) };
                 if result == 0 {
                     return Err(CursedError::Memory(format!(
                         "Failed to flush file buffers: {}",
@@ -284,7 +284,7 @@ impl MmapHandle {
     }
 
     /// Change protection flags for the mapping
-    pub fn protect(&mut self, new_protection: ProtectionFlags) -> Result<(), CursedError> {
+    pub fn protect(&mut self, new_protection: ProtectionFlags) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -320,7 +320,7 @@ impl MmapHandle {
             let mut old_protect = 0;
             let result = unsafe {
                 VirtualProtect(
-                    self.ptr as *mut winapi::ctypes::c_void,
+                    self.ptr as *mut winapi::ccrate::types::c_void,
                     self.length,
                     protect,
                     &mut old_protect,
@@ -339,7 +339,7 @@ impl MmapHandle {
     }
 
     /// Lock pages in physical memory
-    pub fn lock_pages(&mut self) -> Result<(), CursedError> {
+    pub fn lock_pages(&mut self) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -363,7 +363,7 @@ impl MmapHandle {
         {
             use winapi::um::memoryapi::VirtualLock;
 
-            let result = unsafe { VirtualLock(self.ptr as *mut winapi::ctypes::c_void, self.length) };
+            let result = unsafe { VirtualLock(self.ptr as *mut winapi::ccrate::types::c_void, self.length) };
             if result == 0 {
                 return Err(CursedError::Memory(format!(
                     "Failed to lock pages: {}",
@@ -377,7 +377,7 @@ impl MmapHandle {
     }
 
     /// Unlock pages from physical memory
-    pub fn unlock_pages(&mut self) -> Result<(), CursedError> {
+    pub fn unlock_pages(&mut self) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -401,7 +401,7 @@ impl MmapHandle {
         {
             use winapi::um::memoryapi::VirtualUnlock;
 
-            let result = unsafe { VirtualUnlock(self.ptr as *mut winapi::ctypes::c_void, self.length) };
+            let result = unsafe { VirtualUnlock(self.ptr as *mut winapi::ccrate::types::c_void, self.length) };
             if result == 0 {
                 return Err(CursedError::Memory(format!(
                     "Failed to unlock pages: {}",
@@ -415,7 +415,7 @@ impl MmapHandle {
     }
 
     /// Provide memory usage advice to the kernel
-    pub fn advise(&self, advice: MemoryAdvice) -> Result<(), CursedError> {
+    pub fn advise(&self, advice: MemoryAdvice) -> Result<(), Error> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -516,10 +516,10 @@ impl Drop for MmapHandle {
                 use winapi::um::handleapi::CloseHandle;
 
                 unsafe {
-                    UnmapViewOfFile(self.ptr as *const winapi::ctypes::c_void);
+                    UnmapViewOfFile(self.ptr as *const winapi::ccrate::types::c_void);
                     
                     if let Some(handle) = self.mapping_handle {
-                        CloseHandle(handle as *mut winapi::ctypes::c_void);
+                        CloseHandle(handle as *mut winapi::ccrate::types::c_void);
                     }
                 }
             }
@@ -547,7 +547,7 @@ impl MmapManager {
         &self,
         file: &File,
         config: MmapConfig,
-    ) -> Result<Arc<MmapHandle>, CursedError> {
+    ) -> Result<(), Error> {
         if config.length == 0 {
             return Err(CursedError::InvalidInput("Mapping length cannot be zero".to_string()));
         }
@@ -624,7 +624,7 @@ impl MmapManager {
 
             let mapping_handle = unsafe {
                 CreateFileMappingW(
-                    file_handle as *mut winapi::ctypes::c_void,
+                    file_handle as *mut winapi::ccrate::types::c_void,
                     ptr::null_mut(),
                     protect,
                     ((config.offset + config.length as u64) >> 32) as u32,
@@ -653,7 +653,7 @@ impl MmapManager {
 
             let ptr = unsafe {
                 MapViewOfFile(
-                    mapping_handle as *mut winapi::ctypes::c_void,
+                    mapping_handle as *mut winapi::ccrate::types::c_void,
                     access,
                     (config.offset >> 32) as u32,
                     (config.offset & 0xFFFFFFFF) as u32,
@@ -663,7 +663,7 @@ impl MmapManager {
 
             if ptr.is_null() {
                 use winapi::um::handleapi::CloseHandle;
-                unsafe { CloseHandle(mapping_handle as *mut winapi::ctypes::c_void) };
+                unsafe { CloseHandle(mapping_handle as *mut winapi::ccrate::types::c_void) };
                 return Err(CursedError::Memory(format!(
                     "Failed to map view of file: {}",
                     std::io::Error::last_os_error()
@@ -689,7 +689,7 @@ impl MmapManager {
     }
 
     /// Create an anonymous memory mapping (not backed by a file)
-    pub fn map_anonymous(&self, config: MmapConfig) -> Result<Arc<MmapHandle>, CursedError> {
+    pub fn map_anonymous(&self, config: MmapConfig) -> Result<(), Error> {
         if config.length == 0 {
             return Err(CursedError::InvalidInput("Mapping length cannot be zero".to_string()));
         }
@@ -753,7 +753,7 @@ impl MmapManager {
 
             let ptr = unsafe {
                 VirtualAlloc(
-                    config.addr_hint.unwrap_or(ptr::null_mut()) as *mut winapi::ctypes::c_void,
+                    config.addr_hint.unwrap_or(ptr::null_mut()) as *mut winapi::ccrate::types::c_void,
                     config.length,
                     MEM_COMMIT | MEM_RESERVE,
                     protect,
@@ -819,7 +819,7 @@ pub struct SharedMemoryRegion {
 
 impl SharedMemoryRegion {
     /// Create a new shared memory region
-    pub fn create(name: &str, size: usize) -> Result<Self, CursedError> {
+    pub fn create(name: &str, size: usize) -> Result<(), Error> {
         let manager = MmapManager::new();
         let config = MmapConfig {
             protection: ProtectionFlags::ReadWrite,
@@ -888,17 +888,17 @@ pub fn get_mmap_manager() -> &'static MmapManager {
 }
 
 /// Convenience function to create a file-backed memory mapping
-pub fn map_file(file: &File, config: MmapConfig) -> Result<Arc<MmapHandle>, CursedError> {
+pub fn map_file(file: &File, config: MmapConfig) -> Result<(), Error> {
     get_mmap_manager().map_file(file, config)
 }
 
 /// Convenience function to create an anonymous memory mapping
-pub fn map_anonymous(config: MmapConfig) -> Result<Arc<MmapHandle>, CursedError> {
+pub fn map_anonymous(config: MmapConfig) -> Result<(), Error> {
     get_mmap_manager().map_anonymous(config)
 }
 
 /// Convenience function to create a shared memory region
-pub fn create_shared_memory(name: &str, size: usize) -> Result<SharedMemoryRegion, CursedError> {
+pub fn create_shared_memory(name: &str, size: usize) -> Result<(), Error> {
     SharedMemoryRegion::create(name, size)
 }
 
@@ -1048,5 +1048,31 @@ mod tests {
         
         let slice2 = handle2.as_slice().unwrap();
         assert_eq!(slice2[0], 123);
+    }
+}
+
+/// Options for memory mapping configuration
+#[derive(Debug, Clone)]
+pub struct MmapOptions {
+    pub read: bool,
+    pub write: bool,
+    pub execute: bool,
+    pub shared: bool,
+    pub private: bool,
+    pub anonymous: bool,
+    pub huge_pages: bool,
+}
+
+impl Default for MmapOptions {
+    fn default() -> Self {
+        Self {
+            read: true,
+            write: false,
+            execute: false,
+            shared: false,
+            private: true,
+            anonymous: false,
+            huge_pages: false,
+        }
     }
 }

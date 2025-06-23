@@ -83,7 +83,7 @@ impl From<IoError> for CursedError {
 }
 
 /// Result type for I/O operations
-pub type IoResult<T> = Result<T, IoError>;
+pub type IoResult<(), Error>;
 
 /// Helper function to create IoError from system error
 pub fn system_error(code: i32, message: impl Into<String>) -> IoError {

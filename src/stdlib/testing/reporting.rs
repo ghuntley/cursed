@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::time::Duration;
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 use super::{
     discovery::TestInfo,
     executor::{TestResult, TestStatus},

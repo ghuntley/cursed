@@ -1,10 +1,6 @@
-use crate::stdlib::process::core::ProcessHandle;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-use crate::stdlib::process::real_ipc::IpcMessage;
-use crate::stdlib::process::real_ipc::IpcChannel;
+use crate::stdlib::web_vibez::SecurityContext;
+use crate::stdlib::process::EnhancedProcess;
+// Remove duplicate imports - these are re-exported below
 /// Process management and system interaction for CURSED
 /// 
 /// This module provides comprehensive process management functionality including:
@@ -114,7 +110,7 @@ pub use exec_vibez::{
     VibezCommand as ProcessVibezCommand,
     VibezResult as ProcessVibezResult
 };
-pub use exec_vibez_types::{
+pub use exec_vibez_crate::types::{
     VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits as ExecResourceLimits,
     SecurityContext as ExecSecurityContext, ExecutionMode, Priority
 };
@@ -147,10 +143,10 @@ pub use real_ipc::{RealIpcManager, IpcChannel, IpcMessage};
 
 // System-level operations
 pub use fork::{ForkManager, ForkOptions};
-pub use resource_limits::{ResourceLimitManager, ResourceLimits};
+pub use resource_limits::{ResourceLimitManager, ResourceLimit as ResourceLimits};
 pub use namespaces::{NamespaceManager, NamespaceOptions};
 pub use privileges::{PrivilegeManager, PrivilegeOptions};
-pub use mmap::{MemoryMapManager, MmapOptions};
+pub use mmap::{MmapManager, MmapOptions};
 
 // Unified process-IPC system exports
 pub use unified_process_ipc::{

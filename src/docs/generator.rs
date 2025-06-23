@@ -149,7 +149,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract documentation from a single file
-    fn extract_from_file(&self, file_path: &Path) -> Result<ExtractedDocumentation, Error> {
+    fn extract_from_file(&self, file_path: &Path) -> Result<(), Error> {
         let source = fs::read_to_string(file_path)
             .map_err(|e| Error::Io(e))?;
 
@@ -158,7 +158,7 @@ impl DocumentationGenerator {
     }
 
     /// Find all CURSED source files in directory
-    fn find_cursed_files(&self, dir: &Path) -> Result<Vec<PathBuf>, Error> {
+    fn find_cursed_files(&self, dir: &Path) -> Result<(), Error> {
         let mut files = Vec::new();
         
         fn walk_dir(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), Error> {
@@ -717,7 +717,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from source code
-    pub fn extract_from_source(&self, source: &str, file_path: &Path) -> Result<ExtractedDocumentation, Error> {
+    pub fn extract_from_source(&self, source: &str, file_path: &Path) -> Result<(), Error> {
         // Parse the source code
         let mut lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer)?;
@@ -768,7 +768,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a statement with documentation comments
-    fn extract_from_statement_with_docs(&self, statement: &Box<dyn Statement>, module: &str, source: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_from_statement_with_docs(&self, statement: &Box<dyn Statement>, module: &str, source: &str) -> Result<(), Error> {
         use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
         use crate::ast::statements::variable::VariableStatement;
         use crate::ast::traits::Locatable;
@@ -826,13 +826,13 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from a statement (legacy method)
-    fn extract_from_statement(&self, statement: &Box<dyn Statement>, module: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_from_statement(&self, statement: &Box<dyn Statement>, module: &str) -> Result<(), Error> {
         // Fallback to old method without source context
         self.extract_from_statement_with_docs(statement, module, "")
     }
 
     /// Extract documentation from function declaration with doc comments
-    fn extract_function_documentation_with_docs(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+    fn extract_function_documentation_with_docs(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let func_name = func.name.value.clone();
@@ -891,12 +891,12 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from function declaration (legacy method)
-    fn extract_function_documentation(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    fn extract_function_documentation(&self, func: &crate::ast::declarations::FunctionStatement, module: &str, location: &SourceLocation) -> Result<(), Error> {
         self.extract_function_documentation_with_docs(func, module, location, "")
     }
 
     /// Extract documentation from struct declaration with doc comments
-    fn extract_struct_documentation_with_docs(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+    fn extract_struct_documentation_with_docs(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let struct_name = struct_stmt.name.value.clone();
@@ -956,12 +956,12 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from struct declaration (legacy method)
-    fn extract_struct_documentation(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    fn extract_struct_documentation(&self, struct_stmt: &crate::ast::declarations::SquadStatement, module: &str, location: &SourceLocation) -> Result<(), Error> {
         self.extract_struct_documentation_with_docs(struct_stmt, module, location, "")
     }
 
     /// Extract documentation from interface declaration with doc comments
-    fn extract_interface_documentation_with_docs(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+    fn extract_interface_documentation_with_docs(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let interface_name = interface_stmt.name.value.clone();
@@ -1011,12 +1011,12 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from interface declaration (legacy method)
-    fn extract_interface_documentation(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    fn extract_interface_documentation(&self, interface_stmt: &crate::ast::declarations::CollabStatement, module: &str, location: &SourceLocation) -> Result<(), Error> {
         self.extract_interface_documentation_with_docs(interface_stmt, module, location, "")
     }
 
     /// Extract documentation from variable declaration with doc comments
-    fn extract_variable_documentation_with_docs(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+    fn extract_variable_documentation_with_docs(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let var_name = var_stmt.name.clone();
@@ -1073,12 +1073,12 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from variable declaration (legacy method)
-    fn extract_variable_documentation(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation) -> Result<DocumentationItem, Error> {
+    fn extract_variable_documentation(&self, var_stmt: &crate::ast::statements::variable::VariableStatement, module: &str, location: &SourceLocation) -> Result<(), Error> {
         self.extract_variable_documentation_with_docs(var_stmt, module, location, "")
     }
 
     /// Extract documentation from package declaration
-    fn extract_package_documentation(&self, pkg_stmt: &PackageStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+    fn extract_package_documentation(&self, pkg_stmt: &PackageStatement, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         // Extract documentation comments
@@ -1114,7 +1114,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from import declaration
-    fn extract_import_documentation(&self, import_stmt: &ImportStatement, module: &str, location: &SourceLocation, source: &str) -> Result<DocumentationItem, Error> {
+    fn extract_import_documentation(&self, import_stmt: &ImportStatement, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         // Extract documentation comments
@@ -1152,7 +1152,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from type alias declarations
-    fn extract_type_alias_documentation(&self, any_stmt: &dyn std::any::Any, module: &str, location: &SourceLocation, source: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_type_alias_documentation(&self, any_stmt: &dyn std::any::Any, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         // In a full implementation, this would check for type alias statements
         // For now, we'll create a placeholder that can be extended when type alias AST nodes are available
         if let Some(_type_alias) = any_stmt.downcast_ref::<()>() { // Placeholder type - replace with actual type alias AST node
@@ -1179,7 +1179,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from constant declarations
-    fn extract_constant_documentation(&self, any_stmt: &dyn std::any::Any, module: &str, location: &SourceLocation, source: &str) -> Result<Option<DocumentationItem>, Error> {
+    fn extract_constant_documentation(&self, any_stmt: &dyn std::any::Any, module: &str, location: &SourceLocation, source: &str) -> Result<(), Error> {
         // In a full implementation, this would check for constant declaration statements
         // For now, we'll create a placeholder that can be extended when constant AST nodes are available
         if let Some(_const_stmt) = any_stmt.downcast_ref::<()>() { // Placeholder type - replace with actual constant AST node
@@ -1206,7 +1206,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract module-level documentation
-    fn extract_module_level_docs(&self, source: &str, module_name: &str) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_module_level_docs(&self, source: &str, module_name: &str) -> Result<(), Error> {
         use crate::docs::comment_parser::CommentParser;
         
         let parser = CommentParser::new()?;
@@ -1240,7 +1240,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation from constant declaration (simplified - legacy method)
-    fn extract_constant_docs(&self, _const_stmt: &dyn std::any::Any, module: &str) -> Result<DocumentationItem, Error> {
+    fn extract_constant_docs(&self, _const_stmt: &dyn std::any::Any, module: &str) -> Result<(), Error> {
         let location = SourceLocation { line: 1, column: 1, file: None };
         
         Ok(DocumentationItem {
@@ -1261,7 +1261,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation comments from source at a specific location
-    fn extract_doc_comments(&self, source: &str, location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<Example>), Error> {
+    fn extract_doc_comments(&self, source: &str, location: &SourceLocation) -> Result<(), Error> {
         use crate::docs::comment_parser::CommentParser;
         
         let parser = CommentParser::new()?;
@@ -1276,7 +1276,7 @@ impl DocumentationExtractor {
     }
 
     /// Gather source file information
-    fn gather_source_info(&self, source: &str, file_path: &Path) -> Result<SourceInfo, Error> {
+    fn gather_source_info(&self, source: &str, file_path: &Path) -> Result<(), Error> {
         let file_size = source.len() as u64;
         let line_count = source.split("\n").count();
         
@@ -1380,7 +1380,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract function parameters with enhanced optional parameter detection
-    fn extract_function_parameters(&self, parameters: &[crate::ast::expressions::Parameter]) -> Result<Vec<Parameter>, Error> {
+    fn extract_function_parameters(&self, parameters: &[crate::ast::expressions::Parameter]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut param_docs = Vec::new();
@@ -1417,7 +1417,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract struct fields with visibility detection and default values
-    fn extract_struct_fields(&self, fields: &[crate::ast::declarations::FieldStatement]) -> Result<Vec<Parameter>, Error> {
+    fn extract_struct_fields(&self, fields: &[crate::ast::declarations::FieldStatement]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut field_docs = Vec::new();
@@ -1450,7 +1450,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract interface methods as parameters
-    fn extract_interface_methods(&self, methods: &[crate::ast::declarations::MethodDeclaration]) -> Result<Vec<Parameter>, Error> {
+    fn extract_interface_methods(&self, methods: &[crate::ast::declarations::MethodDeclaration]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut method_docs = Vec::new();
@@ -1477,7 +1477,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract generic parameters from type parameter list
-    fn extract_generic_parameters(&self, type_params: &[crate::ast::types::TypeParameter]) -> Result<Vec<Parameter>, Error> {
+    fn extract_generic_parameters(&self, type_params: &[crate::ast::crate::types::TypeParameter]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut generic_docs = Vec::new();
@@ -1512,7 +1512,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract submodules from module statements
-    fn extract_submodules(&self, statements: &[Box<dyn Statement>]) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_submodules(&self, statements: &[Box<dyn Statement>]) -> Result<(), Error> {
         let mut submodules = Vec::new();
         let location = SourceLocation { line: 1, column: 1, file: None };
         
@@ -1549,7 +1549,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract constants from constant declarations
-    fn extract_constants(&self, statements: &[Box<dyn Statement>]) -> Result<Vec<DocumentationItem>, Error> {
+    fn extract_constants(&self, statements: &[Box<dyn Statement>]) -> Result<(), Error> {
         let mut constants = Vec::new();
         let location = SourceLocation { line: 1, column: 1, file: None };
         
@@ -1585,7 +1585,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract interface implementations
-    fn extract_interface_implementations(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> Result<Vec<String>, Error> {
+    fn extract_interface_implementations(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> Result<(), Error> {
         let mut implementations = Vec::new();
         
         // Check if the struct has interface implementations (when available in AST)
@@ -1615,7 +1615,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract associated methods for structs
-    fn extract_associated_methods(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> Result<Vec<Parameter>, Error> {
+    fn extract_associated_methods(&self, struct_stmt: &crate::ast::declarations::SquadStatement) -> Result<(), Error> {
         let mut methods = Vec::new();
         
         // For now, we'll create placeholder methods based on common patterns
@@ -1683,7 +1683,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract documentation comments from source location
-    fn extract_documentation_comments(&self, source: &str, location: &SourceLocation) -> Result<(String, String, HashMap<String, Vec<String>>, Vec<Example>), Error> {
+    fn extract_documentation_comments(&self, source: &str, location: &SourceLocation) -> Result<(), Error> {
         let lines = source.split("\n").collect::<Vec<_>>();
         let mut summary = String::new();
         let mut description = String::new();

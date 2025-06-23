@@ -1,6 +1,6 @@
 /// X.509 Operations
 
-use crate::stdlib::packages::crypto_pki::types::{PkiResult, X509Certificate};
+use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, X509Certificate};
 
 pub struct X509Operations;
 pub type X509 = X509Operations;
@@ -12,7 +12,7 @@ impl X509Parser {
 
 // Commented out types that need proper implementation later
 /*
-pub type X509Certificate = crate::stdlib::packages::crypto_pki::types::X509Certificate;
+pub type X509Certificate = crate::stdlib::packages::crypto_pki::crate::types::X509Certificate;
 pub type X509CertificateRequest = Vec<u8>;
 pub type X509Crl = Vec<u8>;
 pub type X509Extensions = std::collections::HashMap<String, Vec<u8>>;
@@ -22,7 +22,7 @@ pub type X509Signature = Vec<u8>;
 pub type X509Time = std::time::SystemTime;
 pub type X509Builder = String;
 pub type X509Validator = String;
-pub type X509Error = crate::stdlib::packages::crypto_pki::types::PkiError;
+pub type X509Error = crate::stdlib::packages::crypto_pki::crate::types::PkiError;
 pub type X509Result<T> = PkiResult<T>;
 pub type X509Format = String;
 pub type X509Encoding = String;

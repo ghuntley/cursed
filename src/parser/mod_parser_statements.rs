@@ -18,7 +18,7 @@ pub struct TypeAliasStatement {
 
 impl Node for TypeAliasStatement {
     fn string(&self) -> String {
-        format!("be_like {} {}", self.name, self.target_type)
+        format!("be_like {} {}", self.to_string(), self.target_type)
     }
 
     fn token_literal(&self) -> String {
@@ -46,7 +46,7 @@ use crate::lexer::TokenType;
 
 impl Parser {
     /// Parse any statement
-    pub fn parse_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    pub fn parse_statement(&mut self) -> Result<(), Error> {
         match &self.current_token.token_type {
             TokenType::Sus | TokenType::Facts => self.parse_variable_declaration(),
             TokenType::Slay => {
@@ -81,7 +81,7 @@ impl Parser {
     }
     
     /// Parse variable declaration (sus/facts)
-    fn parse_variable_declaration(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_variable_declaration(&mut self) -> Result<(), Error> {
         let is_mutable = self.current_token_is(&TokenType::Sus);
         let token = self.current_token.clone();
         self.advance_token()?;
@@ -116,7 +116,7 @@ impl Parser {
     }
     
     /// Parse function declaration (slay)
-    fn parse_function_declaration(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_function_declaration(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Slay)?;
         let name = self.expect_token(TokenType::Identifier)?.literal;
         
@@ -200,7 +200,7 @@ impl Parser {
     }
     
     /// Parse struct declaration (squad)
-    fn parse_struct_declaration(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_struct_declaration(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Squad)?;
         let name = self.expect_token(TokenType::Identifier)?.literal;
         
@@ -244,7 +244,7 @@ impl Parser {
     }
     
     /// Parse interface declaration (collab)
-    fn parse_interface_declaration(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_interface_declaration(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Collab)?;
         let name = self.expect_token(TokenType::Identifier)?.literal;
         
@@ -313,7 +313,7 @@ impl Parser {
     }
     
     /// Parse type alias (be_like)
-    fn parse_type_alias(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_type_alias(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::BeLike)?;
         let name = self.expect_token(TokenType::Identifier)?.literal;
         let target_type = self.expect_token(TokenType::Identifier)?.literal;
@@ -326,7 +326,7 @@ impl Parser {
     }
     
     /// Parse return statement (yolo)
-    fn parse_return_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_return_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Yolo)?;
         
         let value = if !self.current_token_is(&TokenType::Newline) && 
@@ -344,7 +344,7 @@ impl Parser {
     }
     
     /// Parse if statement (lowkey/highkey)
-    fn parse_if_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_if_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Lowkey)?;
         
         // Optional parentheses around condition
@@ -390,7 +390,7 @@ impl Parser {
     }
     
     /// Parse switch statement (vibe_check)
-    fn parse_switch_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_switch_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::VibeCheck)?;
         
         let value = self.parse_expression()?;
@@ -468,7 +468,7 @@ impl Parser {
     }
     
     /// Parse for statement (bestie)
-    fn parse_for_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_for_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Bestie)?;
         
         // Check for range-based for loop (bestie x := flex items)
@@ -523,7 +523,7 @@ impl Parser {
     }
     
     /// Parse range-based for statement (bestie x := flex items)
-    fn parse_range_for_statement(&mut self, token: crate::lexer::Token) -> Result<Box<dyn Statement>, Error> {
+    fn parse_range_for_statement(&mut self, token: crate::lexer::Token) -> Result<(), Error> {
         let key_var = if self.current_token_is(&TokenType::Identifier) {
             let var = self.current_token.literal.clone();
             self.advance_token()?;
@@ -568,7 +568,7 @@ impl Parser {
     }
     
     /// Parse while statement (periodt)
-    fn parse_while_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_while_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Periodt)?;
         let condition = self.parse_expression()?;
         let body = self.parse_block_statement()?;
@@ -588,7 +588,7 @@ impl Parser {
     }
     
     /// Parse break statement (ghosted)
-    fn parse_break_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_break_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Ghosted)?;
         Ok(Box::new(BreakStatement { 
             token: token.literal,
@@ -597,7 +597,7 @@ impl Parser {
     }
     
     /// Parse continue statement (simp)
-    fn parse_continue_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_continue_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::Simp)?;
         Ok(Box::new(ContinueStatement { 
             token: token.literal, 
@@ -606,7 +606,7 @@ impl Parser {
     }
     
     /// Parse block statement
-    pub fn parse_block_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    pub fn parse_block_statement(&mut self) -> Result<(), Error> {
         let token = self.expect_token(TokenType::LeftBrace)?;
         let mut statements = Vec::new();
         
@@ -632,7 +632,7 @@ impl Parser {
     }
     
     /// Parse expression statement
-    fn parse_expression_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_expression_statement(&mut self) -> Result<(), Error> {
         let expression = self.parse_expression()?;
         
         Ok(Box::new(ExpressionStatement {
@@ -642,7 +642,7 @@ impl Parser {
     }
     
     /// Parse generic parameters [T, U, ...]
-    fn parse_generic_parameters(&mut self) -> Result<Vec<TypeParameter>, Error> {
+    fn parse_generic_parameters(&mut self) -> Result<(), Error> {
         self.expect_token(TokenType::LeftBracket)?;
         let mut params = Vec::new();
         
@@ -676,7 +676,7 @@ impl Parser {
     }
     
     /// Parse panic statement (yeet_error message)
-    fn parse_panic_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_panic_statement(&mut self) -> Result<(), Error> {
         use crate::ast::statements::PanicStatement;
         
         let token = self.current_token.clone();
@@ -688,7 +688,7 @@ impl Parser {
     }
     
     /// Parse recovery statement (catch { ... })
-    fn parse_recovery_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    fn parse_recovery_statement(&mut self) -> Result<(), Error> {
         use crate::ast::statements::RecoveryStatement;
         
         let token = self.current_token.clone();

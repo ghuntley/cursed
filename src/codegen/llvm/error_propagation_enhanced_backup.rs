@@ -1,10 +1,10 @@
 use crate::ast::expressions::{ErrorPropagation, QuestionMarkExpression};
 use crate::ast::traits::Expression;
-use crate::codegen::llvm::{LlvmCodeGenerator, ResultTypeCompiler, result_types::{ResultTypeLayout, OptionTypeLayout}};
+use crate::codegen::llvm::{LlvmCodeGenerator, ResultTypeCompiler, result_crate::types::{ResultTypeLayout, OptionTypeLayout}};
 use crate::error::{CursedError, ErrorPropagationError, SourceLocation};
 use crate::runtime::panic_recovery::PanicRecoveryRuntime;
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue, StructValue, IntValue, BasicValue};
-use inkwell::types::{BasicTypeEnum, StructType, IntType};
+use inkwell::crate::types::{BasicTypeEnum, StructType, IntType};
 use inkwell::basic_block::BasicBlock;
 use inkwell::{IntPredicate, AddressSpace};
 use std::collections::HashMap;
@@ -67,61 +67,61 @@ use std::collections::HashMap;
 
 pub trait ErrorPropagationCompiler {
     /// Compile error propagation expression to LLVM IR
-    fn compile_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<BasicValueEnum<'static>, CursedError>;
+    fn compile_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<(), Error>;
     
     /// Compile enhanced error propagation with full context
     fn compile_error_propagation_enhanced(
         &mut self, 
         expr: &ErrorPropagation,
         context: &ErrorPropagationContext,
-    ) -> Result<BasicValueEnum<'static>, CursedError>;
+    ) -> Result<(), Error>;
     
     /// Generate error checking logic for Result<T, E> types
     fn generate_result_error_check(
         &mut self,
         result_value: BasicValueEnum<'static>,
         layout: &ResultTypeLayout<'static>,
-    ) -> Result<ErrorCheckResult<'static>, CursedError>;
+    ) -> Result<(), Error>;
     
     /// Generate error checking logic for Option<T> types
     fn generate_option_error_check(
         &mut self,
         option_value: BasicValueEnum<'static>,
         layout: &OptionTypeLayout<'static>,
-    ) -> Result<ErrorCheckResult<'static>, CursedError>;
+    ) -> Result<(), Error>;
     
     /// Generate early return with error propagation
     fn generate_early_return_with_context(
         &mut self,
         error_value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
     
     /// Generate stack unwinding for error propagation
     fn generate_stack_unwinding(
         &mut self,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
     
     /// Create error propagation runtime call
     fn create_error_propagation_call(
         &mut self,
         error_value: BasicValueEnum<'static>,
         source_location: &SourceLocation,
-    ) -> Result<BasicValueEnum<'static>, CursedError>;
+    ) -> Result<(), Error>;
     
     /// Generate panic integration for unhandled errors
     fn generate_panic_integration(
         &mut self,
         error_value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
     
     /// Optimize error propagation paths
     fn optimize_error_propagation(
         &mut self,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 }
 
 /// Result of error checking operations
@@ -209,7 +209,7 @@ impl ErrorPropagationContext {
 }
 
 impl ErrorPropagationCompiler for LlvmCodeGenerator {
-    fn compile_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<String, CursedError> {
+    fn compile_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<(), Error> {
         let context = ErrorPropagationContext::new(SourceLocation::new(1, 1))
             .with_tail_position(false);
             
@@ -220,7 +220,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
     &mut self,
     expr: &ErrorPropagation,
     context: &ErrorPropagationContext,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
     // Compile the inner expression
     let inner_ir = self.compile_expression_to_string(expr.expression.as_ref())
     .map_err(|e| CursedError::code_generation_error(e.to_string(), None, None))?;
@@ -240,7 +240,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         &mut self,
         _result_value: String,
         _layout: String,
-    ) -> Result<String, CursedError> {
+    ) -> Result<(), Error> {
         let current_function = self.get_current_function()
             .ok_or_else(|| CursedError::CodeGeneration {
                 message: "Error propagation used outside function".to_string(),
@@ -308,7 +308,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         &mut self,
         option_value: BasicValueEnum<'static>,
         layout: &OptionTypeLayout<'static>,
-    ) -> Result<ErrorCheckResult<'static>, CursedError> {
+    ) -> Result<(), Error> {
         let current_function = self.get_current_function()
             .ok_or_else(|| CursedError::CodeGeneration {
                 message: "Error propagation used outside function".to_string(),
@@ -373,7 +373,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         &mut self,
         error_value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Generate debug information if requested
         if context.generate_debug_info {
             self.generate_error_debug_info(error_value, &context.source_location)?;
@@ -426,7 +426,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
     fn generate_stack_unwinding(
         &mut self,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Generate calls to error handlers in reverse order
         for handler in context.error_handlers.iter().rev() {
             self.generate_error_handler_call(handler, &context.source_location)?;
@@ -439,7 +439,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         &mut self,
         error_value: BasicValueEnum<'static>,
         source_location: &SourceLocation,
-    ) -> Result<BasicValueEnum<'static>, CursedError> {
+    ) -> Result<(), Error> {
         // Create call to runtime error propagation function
         let error_prop_fn = self.get_or_create_error_propagation_function()?;
         
@@ -466,7 +466,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
         &mut self,
         error_value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Generate panic call for unhandled errors
         let panic_fn = self.get_or_create_panic_function()?;
         
@@ -498,7 +498,7 @@ impl ErrorPropagationCompiler for LlvmCodeGenerator {
     fn optimize_error_propagation(
         &mut self,
         context: &ErrorPropagationContext,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         match context.optimization_level {
             0 => {
                 // No optimization: keep all error checks
@@ -528,7 +528,7 @@ impl LlvmCodeGenerator {
         &mut self,
         result_value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<BasicValueEnum<'static>, CursedError> {
+    ) -> Result<(), Error> {
         // Create Result type layout
         let ok_type = self.context.i32_type().into(); // Simplified
         let err_type = self.context.i8_type().ptr_type(AddressSpace::default()).into();
@@ -545,7 +545,7 @@ impl LlvmCodeGenerator {
         &mut self,
         option_value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<BasicValueEnum<'static>, CursedError> {
+    ) -> Result<(), Error> {
         // Create Option type layout
         let inner_type = self.context.i32_type().into(); // Simplified
         let layout = self.generate_option_type(inner_type)?;
@@ -561,7 +561,7 @@ impl LlvmCodeGenerator {
         &mut self,
         value: BasicValueEnum<'static>,
         context: &ErrorPropagationContext,
-    ) -> Result<BasicValueEnum<'static>, CursedError> {
+    ) -> Result<(), Error> {
         // For generic types, use a simple null/zero check
         match value {
             BasicValueEnum::PointerValue(ptr) => {
@@ -633,7 +633,7 @@ impl LlvmCodeGenerator {
         &mut self,
         _error_value: BasicValueEnum<'static>,
         _location: &SourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Placeholder for debug info generation
         Ok(())
     }
@@ -643,13 +643,13 @@ impl LlvmCodeGenerator {
         &mut self,
         _handler: &str,
         _location: &SourceLocation,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Placeholder for error handler calls
         Ok(())
     }
     
     /// Get or create error propagation runtime function
-    fn get_or_create_error_propagation_function(&mut self) -> Result<FunctionValue<'static>, CursedError> {
+    fn get_or_create_error_propagation_function(&mut self) -> Result<(), Error> {
         // Create or get existing error propagation function
         let fn_type = self.context.void_type().fn_type(&[
             self.context.i8_type().ptr_type(AddressSpace::default()).into(), // error value
@@ -661,7 +661,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Get or create panic function
-    fn get_or_create_panic_function(&mut self) -> Result<FunctionValue<'static>, CursedError> {
+    fn get_or_create_panic_function(&mut self) -> Result<(), Error> {
         let fn_type = self.context.void_type().fn_type(&[
             self.context.i8_type().ptr_type(AddressSpace::default()).into(), // message
         ], false);
@@ -673,7 +673,7 @@ impl LlvmCodeGenerator {
     fn create_error_message_string(
         &mut self,
         _error_value: BasicValueEnum<'static>,
-    ) -> Result<PointerValue<'static>, CursedError> {
+    ) -> Result<(), Error> {
         // Create a simple error message
         let message = "Error propagation failed";
         let message_global = self.builder.build_global_string_ptr(message, "error_msg")
@@ -687,7 +687,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Optimize simple error checks by eliminating redundant patterns
-    fn optimize_simple_error_checks(&mut self) -> Result<(), CursedError> {
+    fn optimize_simple_error_checks(&mut self) -> Result<(), Error> {
         use inkwell::passes::{PassManager};
         
         // Create a function pass manager for local optimizations
@@ -735,7 +735,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Optimize redundant error checks using domination analysis
-    fn optimize_redundant_error_checks(&mut self) -> Result<(), CursedError> {
+    fn optimize_redundant_error_checks(&mut self) -> Result<(), Error> {
         use std::collections::{HashMap, HashSet};
         
         // Track redundant checks across the module
@@ -766,7 +766,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Optimize speculative error propagation for better performance
-    fn optimize_speculative_error_propagation(&mut self) -> Result<(), CursedError> {
+    fn optimize_speculative_error_propagation(&mut self) -> Result<(), Error> {
         use inkwell::basic_block::BasicBlock;
         use std::collections::{HashMap, VecDeque};
         
@@ -814,7 +814,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Analyze and optimize error checks within a single function
-    fn optimize_function_error_checks(&mut self, function: &FunctionValue<'static>) -> Result<usize, CursedError> {
+    fn optimize_function_error_checks(&mut self, function: &FunctionValue<'static>) -> Result<(), Error> {
         use inkwell::values::InstructionValue;
         use std::collections::HashMap;
         
@@ -850,7 +850,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Eliminate redundant error checks in a function using domination analysis
-    fn eliminate_redundant_checks_in_function(&mut self, function: &FunctionValue<'static>) -> Result<usize, CursedError> {
+    fn eliminate_redundant_checks_in_function(&mut self, function: &FunctionValue<'static>) -> Result<(), Error> {
         use std::collections::{HashMap, HashSet, VecDeque};
         
         let mut eliminated = 0;
@@ -907,7 +907,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Optimize speculative execution paths within a function
-    fn optimize_speculative_paths_in_function(&mut self, function: &FunctionValue<'static>) -> Result<(usize, usize), CursedError> {
+    fn optimize_speculative_paths_in_function(&mut self, function: &FunctionValue<'static>) -> Result<(), Error> {
         use std::collections::{HashMap, HashSet};
         
         let mut optimized_blocks = 0;
@@ -963,7 +963,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Extract a pattern identifier for an error check
-    fn extract_error_check_pattern(&self, instruction: &InstructionValue) -> Result<String, CursedError> {
+    fn extract_error_check_pattern(&self, instruction: &InstructionValue) -> Result<(), Error> {
         // Create a pattern based on the instruction's operands and type
         let opcode = instruction.get_opcode();
         let num_operands = instruction.get_num_operands();
@@ -976,7 +976,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Check if an error check can be safely eliminated
-    fn can_eliminate_check(&self, candidate: &InstructionValue, existing: &InstructionValue) -> Result<bool, CursedError> {
+    fn can_eliminate_check(&self, candidate: &InstructionValue, existing: &InstructionValue) -> Result<(), Error> {
         // Simple heuristic: if both instructions have the same pattern and are in the same block,
         // and there are no intervening instructions that could change the error state, we can eliminate
         
@@ -989,7 +989,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Eliminate a redundant instruction
-    fn eliminate_redundant_instruction(&mut self, instruction: &InstructionValue) -> Result<(), CursedError> {
+    fn eliminate_redundant_instruction(&mut self, instruction: &InstructionValue) -> Result<(), Error> {
         // Replace all uses of the instruction with the previous equivalent check
         // This is a simplified implementation
         
@@ -1045,7 +1045,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Apply speculative optimization to a basic block
-    fn apply_speculative_optimization(&mut self, block: &BasicBlock, terminator: &InstructionValue) -> Result<bool, CursedError> {
+    fn apply_speculative_optimization(&mut self, block: &BasicBlock, terminator: &InstructionValue) -> Result<(), Error> {
         // Implement speculative execution by:
         // 1. Identifying the likely path (success vs error)
         // 2. Reordering instructions to favor the likely path
@@ -1069,7 +1069,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Count the number of speculative paths created from a block
-    fn count_speculative_paths(&self, _block: &BasicBlock) -> Result<usize, CursedError> {
+    fn count_speculative_paths(&self, _block: &BasicBlock) -> Result<(), Error> {
         // In a real implementation, this would count the number of execution paths
         // that benefit from speculative optimization
         Ok(1) // Simplified
@@ -1137,7 +1137,7 @@ mod tests {
             }
         }
         
-        fn extract_error_check_pattern(&self, instruction: &inkwell::values::InstructionValue) -> Result<String, CursedError> {
+        fn extract_error_check_pattern(&self, instruction: &inkwell::values::InstructionValue) -> Result<(), Error> {
             let opcode = instruction.get_opcode();
             let num_operands = instruction.get_num_operands();
             let pattern = format!("{:?}_{}", opcode, num_operands);
@@ -1149,7 +1149,7 @@ mod tests {
             true // Assume domination for test purposes
         }
         
-        fn count_speculative_paths(&self, _block: &inkwell::basic_block::BasicBlock) -> Result<usize, CursedError> {
+        fn count_speculative_paths(&self, _block: &inkwell::basic_block::BasicBlock) -> Result<(), Error> {
             Ok(1) // Simplified for testing
         }
         

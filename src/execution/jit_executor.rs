@@ -75,12 +75,12 @@ impl Default for ExecutionConfig {
 
 impl CursedExecutor {
     /// Create a new CURSED executor
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         Self::new_with_config(ExecutionConfig::default())
     }
 
     /// Create a new CURSED executor with custom configuration
-    pub fn new_with_config(config: ExecutionConfig) -> Result<Self, Error> {
+    pub fn new_with_config(config: ExecutionConfig) -> Result<(), Error> {
         let llvm_context = Arc::new(Context::create());
         
         // Create JIT engine configuration
@@ -110,7 +110,7 @@ impl CursedExecutor {
     }
 
     /// Execute LLVM IR and return the result
-    pub fn execute_ir(&mut self, ir: &str, context: &mut ExecutionContext) -> Result<CursedValue, Error> {
+    pub fn execute_ir(&mut self, ir: &str, context: &mut ExecutionContext) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
 
         tracing::info!("Executing LLVM IR with JIT engine");
@@ -133,7 +133,7 @@ impl CursedExecutor {
     }
 
     /// Analyze IR to determine how to execute it
-    fn analyze_ir(&self, ir: &str) -> Result<ExecutionStrategy, Error> {
+    fn analyze_ir(&self, ir: &str) -> Result<(), Error> {
         if ir.contains("define") {
             // Contains function definitions
             if ir.contains("define i32 @main()") {
@@ -160,7 +160,7 @@ impl CursedExecutor {
     }
 
     /// Execute a simple expression
-    fn execute_simple_expression(&mut self, ir: &str, expr_type: ValueType) -> Result<CursedValue, Error> {
+    fn execute_simple_expression(&mut self, ir: &str, expr_type: ValueType) -> Result<(), Error> {
         tracing::debug!("Executing simple expression of type: {:?}", expr_type);
 
         // For simple expressions, we can often evaluate them directly from the IR
@@ -212,14 +212,14 @@ impl CursedExecutor {
     }
 
     /// Execute a function using JIT
-    fn execute_function(&mut self, ir: &str, func_name: &str, _context: &mut ExecutionContext) -> Result<CursedValue, Error> {
+    fn execute_function(&mut self, ir: &str, func_name: &str, _context: &mut ExecutionContext) -> Result<(), Error> {
         tracing::info!("Executing function: {}", func_name);
         
         self.execute_with_jit(func_name, ir, ValueType::Integer)
     }
 
     /// Execute a complete program
-    fn execute_program(&mut self, ir: &str, _context: &mut ExecutionContext) -> Result<CursedValue, Error> {
+    fn execute_program(&mut self, ir: &str, _context: &mut ExecutionContext) -> Result<(), Error> {
         tracing::info!("Executing complete program");
         
         // Programs typically have a main function that returns an exit code
@@ -227,7 +227,7 @@ impl CursedExecutor {
     }
 
     /// Execute using JIT compilation
-    fn execute_with_jit(&mut self, func_name: &str, ir: &str, expected_type: ValueType) -> Result<CursedValue, Error> {
+    fn execute_with_jit(&mut self, func_name: &str, ir: &str, expected_type: ValueType) -> Result<(), Error> {
         let compilation_start = std::time::Instant::now();
 
         let mut jit_engine = self.jit_engine.lock().map_err(|_| {
@@ -340,7 +340,7 @@ impl CursedExecutor {
     }
 
     /// Extract function name from IR
-    fn extract_function_name(&self, ir: &str) -> Result<String, Error> {
+    fn extract_function_name(&self, ir: &str) -> Result<(), Error> {
         if let Some(captures) = regex::Regex::new(r"define.*@([a-zA-Z_][a-zA-Z0-9_]*)")
             .map_err(|e| Error::Parse(format!("Regex error: {}", e)))?
             .captures(ir) {

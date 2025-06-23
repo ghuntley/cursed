@@ -47,6 +47,7 @@ use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519Veri
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
+use crate::stdlib::crypto::asymmetric::Ed25519PublicKey;
 
 // ============================================================================
 // ERROR HANDLING AND TYPES
@@ -129,7 +130,7 @@ impl From<ProtocolError> for CursedError {
 }
 
 /// Result type for protocol operations
-pub type ProtocolResult<T> = Result<T, ProtocolError>;
+pub type ProtocolResult<(), Error>;
 
 /// Security level enumeration with key sizes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

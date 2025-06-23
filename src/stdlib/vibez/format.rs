@@ -53,7 +53,7 @@ impl fmt::Display for FormatError {
 
 impl std::error::Error for FormatError {}
 
-pub type FormatResult<T> = Result<T, FormatError>;
+pub type FormatResult<(), Error>;
 
 /// Format specification options
 #[derive(Debug, Clone)]

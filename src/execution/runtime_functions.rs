@@ -18,7 +18,7 @@ pub struct BuiltinFunction {
     pub name: String,
     pub parameter_types: Vec<ValueType>,
     pub return_type: ValueType,
-    pub implementation: fn(&[CursedValue]) -> Result<CursedValue, Error>,
+    pub implementation: fn(&[CursedValue]) -> Result<(), Error>,
     pub description: String,
 }
 
@@ -54,7 +54,7 @@ impl RuntimeFunctionRegistry {
     }
 
     /// Call a built-in function
-    pub fn call_builtin(&self, name: &str, args: &[CursedValue]) -> Result<CursedValue, Error> {
+    pub fn call_builtin(&self, name: &str, args: &[CursedValue]) -> Result<(), Error> {
         if let Some(function) = self.builtin_functions.get(name) {
             // Validate argument types
             if args.len() != function.parameter_types.len() {
@@ -254,7 +254,7 @@ pub fn register_builtin_functions(registry: &mut RuntimeFunctionRegistry) {
 
 // Built-in function implementations
 
-fn builtin_add(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_add(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Integer(a + b))
     } else {
@@ -262,7 +262,7 @@ fn builtin_add(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_subtract(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_subtract(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Integer(a - b))
     } else {
@@ -270,7 +270,7 @@ fn builtin_subtract(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_multiply(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_multiply(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Integer(a * b))
     } else {
@@ -278,7 +278,7 @@ fn builtin_multiply(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_divide(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_divide(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         if *b == 0 {
             Err(Error::RuntimeError("Division by zero".to_string()))
@@ -290,7 +290,7 @@ fn builtin_divide(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_concat(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_concat(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::String(a), CursedValue::String(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::String(format!("{}{}", a, b)))
     } else {
@@ -298,7 +298,7 @@ fn builtin_concat(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_length(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_length(args: &[CursedValue]) -> Result<(), Error> {
     if let CursedValue::String(s) = &args[0] {
         Ok(CursedValue::Integer(s.len() as i64))
     } else {
@@ -306,7 +306,7 @@ fn builtin_length(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_print(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_print(args: &[CursedValue]) -> Result<(), Error> {
     if let CursedValue::String(s) = &args[0] {
         print!("{}", s);
         std::io::Write::flush(&mut std::io::stdout()).map_err(|e| {
@@ -318,7 +318,7 @@ fn builtin_print(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_println(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_println(args: &[CursedValue]) -> Result<(), Error> {
     if let CursedValue::String(s) = &args[0] {
         println!("{}", s);
         Ok(CursedValue::Nil)
@@ -327,7 +327,7 @@ fn builtin_println(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_to_string(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_to_string(args: &[CursedValue]) -> Result<(), Error> {
     if let CursedValue::Integer(i) = &args[0] {
         Ok(CursedValue::String(i.to_string()))
     } else {
@@ -335,7 +335,7 @@ fn builtin_to_string(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_to_int(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_to_int(args: &[CursedValue]) -> Result<(), Error> {
     if let CursedValue::String(s) = &args[0] {
         match s.parse::<i64>() {
             Ok(i) => Ok(CursedValue::Integer(i)),
@@ -346,7 +346,7 @@ fn builtin_to_int(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_equals(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_equals(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Boolean(a == b))
     } else {
@@ -354,7 +354,7 @@ fn builtin_equals(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_less_than(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_less_than(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Boolean(a < b))
     } else {
@@ -362,7 +362,7 @@ fn builtin_less_than(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_abs(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_abs(args: &[CursedValue]) -> Result<(), Error> {
     if let CursedValue::Integer(i) = &args[0] {
         Ok(CursedValue::Integer(i.abs()))
     } else {
@@ -370,7 +370,7 @@ fn builtin_abs(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_max(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_max(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Integer(*a.max(b)))
     } else {
@@ -378,7 +378,7 @@ fn builtin_max(args: &[CursedValue]) -> Result<CursedValue, Error> {
     }
 }
 
-fn builtin_min(args: &[CursedValue]) -> Result<CursedValue, Error> {
+fn builtin_min(args: &[CursedValue]) -> Result<(), Error> {
     if let (CursedValue::Integer(a), CursedValue::Integer(b)) = (&args[0], &args[1]) {
         Ok(CursedValue::Integer(*a.min(b)))
     } else {

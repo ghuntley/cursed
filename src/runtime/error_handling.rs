@@ -243,7 +243,7 @@ impl ErrorRuntime {
 
     /// Initialize the error runtime system
     #[instrument(skip(self))]
-    pub fn initialize(&self) -> Result<(), CursedError> {
+    pub fn initialize(&self) -> Result<(), Error> {
         if self.active.load(Ordering::SeqCst) {
             return Err(CursedError::Runtime("Error runtime already initialized".to_string()));
         }
@@ -255,7 +255,7 @@ impl ErrorRuntime {
 
     /// Shutdown the error runtime system
     #[instrument(skip(self))]
-    pub fn shutdown(&self) -> Result<(), CursedError> {
+    pub fn shutdown(&self) -> Result<(), Error> {
         if !self.active.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -278,7 +278,7 @@ impl ErrorRuntime {
         error: CursedError,
         source_location: Option<SourceLocation>,
         function_name: Option<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let thread_id = thread::current().id();
         let start_time = Instant::now();
 
@@ -375,7 +375,7 @@ impl ErrorRuntime {
         error: CursedError,
         source_location: Option<SourceLocation>,
         function_name: Option<String>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         warn!("Converting error to panic: {}", error);
 
         // Update statistics
@@ -458,14 +458,14 @@ impl ErrorRuntime {
     }
 
     /// Get error handling statistics
-    pub fn get_statistics(&self) -> Result<ErrorHandlingStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access error handling statistics".to_string()))
     }
 
     /// Update error propagation configuration
-    pub fn update_config<F>(&self, updater: F) -> Result<(), CursedError>
+    pub fn update_config<F>(&self, updater: F) -> Result<(), Error>
     where
         F: FnOnce(&mut ErrorPropagationConfig),
     {
@@ -529,7 +529,7 @@ impl Default for ErrorRuntime {
 }
 
 /// Initialize the global error runtime
-pub fn initialize_error_runtime() -> Result<(), CursedError> {
+pub fn initialize_error_runtime() -> Result<(), Error> {
     let runtime = Arc::new(ErrorRuntime::new());
     runtime.initialize()?;
     
@@ -545,7 +545,7 @@ pub fn get_error_runtime() -> Option<&'static Arc<ErrorRuntime>> {
 }
 
 /// Shutdown the global error runtime
-pub fn shutdown_error_runtime() -> Result<(), CursedError> {
+pub fn shutdown_error_runtime() -> Result<(), Error> {
     if let Some(runtime) = get_error_runtime() {
         runtime.shutdown()
     } else {

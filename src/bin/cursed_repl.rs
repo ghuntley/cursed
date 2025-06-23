@@ -80,7 +80,7 @@ fn build_cli() -> Command {
         )
 }
 
-fn run_repl(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+fn run_repl(matches: &clap::ArgMatches) -> Result<(), Error>> {
     let verbose = matches.get_flag("verbose");
     let enable_history = !matches.get_flag("no-history");
     let enable_syntax_highlighting = !matches.get_flag("no-syntax-highlighting");

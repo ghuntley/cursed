@@ -10,7 +10,7 @@ use crate::error::CursedError;
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue},
-    types::{BasicTypeEnum, FunctionType},
+    crate::types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
 
@@ -23,26 +23,26 @@ pub trait AsyncAwaitCompiler {
         parameters: &[String],
         body: &[String], // Simplified from dyn Statement
         return_type: LLVMTypeRef,
-    ) -> Result<LLVMValueRef, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Compile an await expression (placeholder)
     fn compile_await_expression(
         &mut self,
         future_expr: &str, // Simplified from dyn Expression
-    ) -> Result<LLVMValueRef, CursedError>;
+    ) -> Result<(), Error>;
 
     /// Generate async runtime state machine (placeholder)
     fn generate_async_state_machine(
         &mut self,
         function: LLVMValueRef,
         await_points: &[AwaitPoint],
-    ) -> Result<(), CursedError>;
+    ) -> Result<(), Error>;
 
     /// Create future type for async function (placeholder)
     fn create_future_type(&mut self, return_type: LLVMTypeRef) -> LLVMTypeRef;
 
     /// Generate yield point for async function (placeholder)
-    fn generate_yield_point(&mut self, yield_value: Option<LLVMValueRef>) -> Result<LLVMValueRef, CursedError>;
+    fn generate_yield_point(&mut self, yield_value: Option<LLVMValueRef>) -> Result<(), Error>;
 }
 
 /// Information about an await point in async function
@@ -96,7 +96,7 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
         parameters: &[String],
         body: &[dyn Statement],
         return_type: LLVMTypeRef,
-    ) -> Result<LLVMValueRef, Error> {
+    ) -> Result<(), Error> {
         unsafe {
             // Create future type for this async function
             let future_type = self.create_future_type(return_type);
@@ -152,7 +152,7 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
     fn compile_await_expression(
         &mut self,
         future_expr: &dyn Expression,
-    ) -> Result<LLVMValueRef, Error> {
+    ) -> Result<(), Error> {
         unsafe {
             // Compile the future expression
             let future_value = self.compile_expression(future_expr)?;
@@ -282,7 +282,7 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
         }
     }
 
-    fn generate_yield_point(&mut self, yield_value: Option<LLVMValueRef>) -> Result<LLVMValueRef, Error> {
+    fn generate_yield_point(&mut self, yield_value: Option<LLVMValueRef>) -> Result<(), Error> {
         unsafe {
             // Create call to yield runtime function
             let yield_fn_name = CString::new("cursed_yield_goroutine").unwrap();
@@ -323,7 +323,7 @@ impl LlvmCodeGenerator {
         &mut self,
         parameters: &[String],
         return_type: LLVMTypeRef,
-    ) -> Result<LLVMTypeRef, Error> {
+    ) -> Result<(), Error> {
         unsafe {
             // struct AsyncContext {
             //     int state;
@@ -364,7 +364,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Allocate async context on heap
-    fn allocate_async_context(&mut self, context_type: LLVMTypeRef) -> Result<LLVMValueRef, Error> {
+    fn allocate_async_context(&mut self, context_type: LLVMTypeRef) -> Result<(), Error> {
         unsafe {
             let size = LLVMSizeOf(context_type);
             let malloc_fn_name = CString::new("malloc").unwrap();
@@ -517,7 +517,7 @@ impl LlvmCodeGenerator {
     }
 
     /// Generate await point
-    fn generate_await_point(&mut self, future_value: LLVMValueRef) -> Result<usize, Error> {
+    fn generate_await_point(&mut self, future_value: LLVMValueRef) -> Result<(), Error> {
         // Generate unique await point ID
         static mut AWAIT_POINT_COUNTER: usize = 0;
         let id = unsafe {
@@ -553,7 +553,7 @@ impl LlvmCodeGenerator {
         &mut self,
         context: LLVMValueRef,
         future_type: LLVMTypeRef,
-    ) -> Result<LLVMValueRef, Error> {
+    ) -> Result<(), Error> {
         unsafe {
             // Allocate future struct
             let future_alloc = LLVMBuildAlloca(
@@ -731,7 +731,7 @@ impl LlvmCodeGenerator {
     fn generate_future_ready_check(
         &mut self,
         await_point: &AwaitPoint,
-    ) -> Result<LLVMValueRef, Error> {
+    ) -> Result<(), Error> {
         unsafe {
             // Create call to runtime future ready check
             let ready_fn_name = CString::new("cursed_future_is_ready").unwrap();

@@ -226,7 +226,7 @@ impl StackWalker {
 
     /// Walk the current call stack
     #[instrument(skip(self))]
-    pub fn walk_stack(&self) -> Result<Vec<RawStackFrame>, CursedError> {
+    pub fn walk_stack(&self) -> Result<(), Error> {
         let start_time = std::time::Instant::now();
         
         debug!("Starting stack walk with max_frames: {}", self.config.max_frames);
@@ -250,7 +250,7 @@ impl StackWalker {
     }
 
     /// Internal stack walking implementation
-    fn walk_stack_impl(&self) -> Result<Vec<RawStackFrame>, CursedError> {
+    fn walk_stack_impl(&self) -> Result<(), Error> {
         let mut frames = Vec::new();
         
         // Use platform-specific stack walking implementation
@@ -286,7 +286,7 @@ impl StackWalker {
 
     /// Linux-specific stack walking using backtrace
     #[cfg(target_os = "linux")]
-    fn walk_stack_linux(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+    fn walk_stack_linux(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), Error> {
         use std::ffi::c_void;
         use std::mem;
         
@@ -363,7 +363,7 @@ impl StackWalker {
 
     /// macOS-specific stack walking using backtrace
     #[cfg(target_os = "macos")]
-    fn walk_stack_macos(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+    fn walk_stack_macos(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), Error> {
         use std::ffi::c_void;
         
         // macOS uses similar backtrace API to Linux
@@ -434,7 +434,7 @@ impl StackWalker {
 
     /// Windows-specific stack walking using StackWalk64
     #[cfg(target_os = "windows")]
-    fn walk_stack_windows(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+    fn walk_stack_windows(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), Error> {
         use std::ffi::c_void;
         use std::mem;
         
@@ -527,7 +527,7 @@ impl StackWalker {
 
     /// Generic stack walking fallback for unsupported platforms
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-    fn walk_stack_generic(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), CursedError> {
+    fn walk_stack_generic(&self, frames: &mut Vec<RawStackFrame>) -> Result<(), Error> {
         warn!("Stack walking not fully supported on this platform, using generic implementation");
         
         // Try to use Rust's backtrace if available
@@ -590,7 +590,7 @@ impl StackWalker {
     }
 
     /// Resolve symbol for a specific instruction pointer address
-    fn resolve_symbol_for_frame_addr(&self, ip: usize) -> Result<Option<String>, CursedError> {
+    fn resolve_symbol_for_frame_addr(&self, ip: usize) -> Result<(), Error> {
         // Check cache first
         if let Ok(cache) = self.symbol_cache.lock() {
             if let Some(cached_symbol) = cache.get(&ip) {
@@ -641,7 +641,7 @@ impl StackWalker {
 
     /// Resolve symbol using addr2line utility on Unix systems
     #[cfg(any(target_os = "linux", target_os = "macos"))]
-    fn resolve_symbol_with_addr2line(&self, ip: usize) -> Result<Option<String>, CursedError> {
+    fn resolve_symbol_with_addr2line(&self, ip: usize) -> Result<(), Error> {
         use std::process::Command;
         
         // Get the current executable path
@@ -676,7 +676,7 @@ impl StackWalker {
     }
 
     /// Extract source information for a specific instruction pointer address
-    fn extract_source_info_for_addr(&self, ip: usize) -> Result<Option<SourceFrameInfo>, CursedError> {
+    fn extract_source_info_for_addr(&self, ip: usize) -> Result<(), Error> {
         // Try symbol resolver first if available
         if let Some(resolver) = &self.symbol_resolver {
             if let Some(symbol_info) = resolver.resolve_symbol(ip) {
@@ -730,7 +730,7 @@ impl StackWalker {
 
     /// Extract source information using addr2line utility
     #[cfg(any(target_os = "linux", target_os = "macos"))]
-    fn extract_source_info_with_addr2line(&self, ip: usize) -> Result<Option<SourceFrameInfo>, CursedError> {
+    fn extract_source_info_with_addr2line(&self, ip: usize) -> Result<(), Error> {
         use std::process::Command;
         
         // Get the current executable path
@@ -787,7 +787,7 @@ impl StackWalker {
     }
 
     /// Extract source information from DWARF debug information
-    fn extract_source_info_from_dwarf(&self, ip: usize) -> Result<Option<SourceFrameInfo>, CursedError> {
+    fn extract_source_info_from_dwarf(&self, ip: usize) -> Result<(), Error> {
         // This would integrate with a DWARF parser library like gimli
         // For now, this is a placeholder for future DWARF integration
         debug!("DWARF debug info parsing not yet implemented for address 0x{:x}", ip);
@@ -911,7 +911,7 @@ impl StackWalker {
         &self,
         thread_id: Option<std::thread::ThreadId>,
         goroutine_id: Option<u64>,
-    ) -> Result<ContextualStackWalk, CursedError> {
+    ) -> Result<(), Error> {
         let frames = self.walk_stack()?;
         
         Ok(ContextualStackWalk {
@@ -924,7 +924,7 @@ impl StackWalker {
     }
 
     /// Get statistics
-    pub fn get_statistics(&self) -> Result<StackWalkStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access stack walk statistics".to_string()))
@@ -1017,7 +1017,7 @@ pub fn initialize_global_stack_walker(config: StackWalkConfig) {
 }
 
 /// Convenience function to walk current stack
-pub fn walk_current_stack() -> Result<Vec<RawStackFrame>, CursedError> {
+pub fn walk_current_stack() -> Result<(), Error> {
     let walker = get_global_stack_walker();
     let result = if let Ok(w) = walker.lock() {
         w.walk_stack()

@@ -156,7 +156,7 @@ impl From<PqcError> for CursedError {
 }
 
 /// Result type for PQC operations
-pub type PqcResult<T> = Result<T, PqcError>;
+pub type PqcResult<(), Error>;
 
 /// NIST security levels with quantum attack complexity
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

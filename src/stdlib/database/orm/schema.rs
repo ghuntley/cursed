@@ -134,7 +134,7 @@ impl TableSchema {
 
     /// facts Create table schema from entity
     #[instrument]
-    pub fn from_entity<T: Entity + Debug>() -> Result<Self, DatabaseError> {
+    pub fn from_entity<T: Entity + Debug>() -> Result<(), Error> {
         info!(entity = T::table_name(), "Creating table schema from entity");
         
         let mut table = Self::new(T::table_name());

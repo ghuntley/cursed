@@ -4,7 +4,7 @@
 /// test attribute macros in CURSED syntax.
 
 use std::collections::HashMap;
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 use super::{TestError, TestFrameworkResult};
 
 /// Generate a test function with proper CURSED syntax

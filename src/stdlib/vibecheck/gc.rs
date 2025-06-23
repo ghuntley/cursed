@@ -81,7 +81,7 @@ pub fn run_gc() -> Result<(), Error> {
 
 /// Set garbage collector target percentage
 /// Returns the previous percentage setting
-pub fn set_gc_percent(percent: i32) -> Result<i32, Error> {
+pub fn set_gc_percent(percent: i32) -> Result<(), Error> {
     let old_percent = GC_TARGET_PERCENT.swap(percent, Ordering::SeqCst);
     
     // Update the runtime state
@@ -119,7 +119,7 @@ pub fn free_os_memory() -> Result<(), Error> {
 }
 
 /// Get current GC statistics
-pub fn get_gc_stats() -> Result<GcStats, Error> {
+pub fn get_gc_stats() -> Result<(), Error> {
     let gc_state = super::get_gc_state()?;
     
     let avg_pause = if gc_state.gc_count > 0 {
@@ -214,13 +214,13 @@ impl Default for JitStats {
 }
 
 /// Get JIT compiler statistics
-pub fn jit_stats() -> Result<JitStats, Error> {
+pub fn jit_stats() -> Result<(), Error> {
     // This would integrate with the LLVM JIT system when available
     Ok(JitStats::default())
 }
 
 /// Set JIT optimization level (0-3)
-pub fn set_jit_opt_level(level: u32) -> Result<u32, Error> {
+pub fn set_jit_opt_level(level: u32) -> Result<(), Error> {
     if level > 3 {
         return Err(Error::Runtime("JIT optimization level must be 0-3".to_string()));
     }
@@ -246,7 +246,7 @@ pub struct RuntimeMetrics {
 }
 
 /// Get comprehensive runtime metrics
-pub fn get_metrics() -> Result<RuntimeMetrics, Error> {
+pub fn get_metrics() -> Result<(), Error> {
     let gc_stats = get_gc_stats()?;
     let jit_stats = jit_stats()?;
     
@@ -301,7 +301,7 @@ impl CpuProfile {
 }
 
 /// Start CPU profiling
-pub fn cpu_profile() -> Result<CpuProfile, Error> {
+pub fn cpu_profile() -> Result<(), Error> {
     Ok(CpuProfile::new())
 }
 

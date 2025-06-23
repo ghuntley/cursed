@@ -157,7 +157,7 @@ impl std::fmt::Display for EccError {
 
 impl std::error::Error for EccError {}
 
-type EccResult<T> = Result<T, EccError>;
+type EccResult<(), Error>;
 
 /// fr fr ECC engine for cryptographic operations
 pub struct EccEngine {
@@ -527,7 +527,7 @@ impl Default for EccEngine {
 use crate::stdlib::value::Value;
 
 /// slay Generate ECC key pair
-pub fn ecc_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecc_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
     let curve_name = if args.is_empty() {
         "P-256".to_string()
     } else {
@@ -572,7 +572,7 @@ pub fn ecc_generate_keypair(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay ECDSA sign message
-pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("ECDSA sign requires private key, message, and curve".to_string()));
     }
@@ -627,7 +627,7 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay ECDSA verify signature
-pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("ECDSA verify requires public key, message, signature, and curve".to_string()));
     }

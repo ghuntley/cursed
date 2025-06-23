@@ -14,7 +14,7 @@ use inkwell::{
     builder::Builder,
     context::Context,
     module::Module,
-    types::{BasicTypeEnum, PointerType},
+    crate::types::{BasicTypeEnum, PointerType},
     values::{BasicValueEnum, PointerValue, FunctionValue},
     AddressSpace,
 };
@@ -100,7 +100,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Get LLVM type from CURSED type
     #[instrument(skip(self))]
-    fn get_llvm_type(&self, cursed_type: &Type) -> Result<BasicTypeEnum<'ctx>, Error> {
+    fn get_llvm_type(&self, cursed_type: &Type) -> Result<(), Error> {
         debug!(?cursed_type, "Converting CURSED type to LLVM type");
         
         match cursed_type {
@@ -129,8 +129,8 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Declare a variable (sus keyword for mutable, facts keyword for immutable)
     #[instrument(skip(self, let_stmt))]
-    pub fn declare_variable(&mut self, let_stmt: &LetStatement) -> Result<PointerValue<'ctx>, Error> {
-        let var_name = let_stmt.name.value.clone();
+    pub fn declare_variable(&mut self, let_stmt: &LetStatement) -> Result<(), Error> {
+        let var_name = let_stmt.to_string().value.clone();
         info!(variable_name = %var_name, is_mutable = %let_stmt.token == "sus", "Declaring variable");
 
         // Determine variable type
@@ -182,7 +182,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Allocate local variable
     #[instrument(skip(self, llvm_type))]
-    fn allocate_local_variable(&self, name: &str, llvm_type: BasicTypeEnum<'ctx>) -> Result<PointerValue<'ctx>, Error> {
+    fn allocate_local_variable(&self, name: &str, llvm_type: BasicTypeEnum<'ctx>) -> Result<(), Error> {
         debug!(variable_name = %name, "Allocating local variable");
         
         // Build alloca instruction at the beginning of the function
@@ -212,7 +212,7 @@ impl<'ctx> VariableManager<'ctx> {
         &self, 
         type_name: &str, 
         gc_integration: &LlvmGcIntegration
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!(type_name = %type_name, "Allocating GC-managed object");
         
         // Generate unique temporary variable for allocation
@@ -235,7 +235,7 @@ impl<'ctx> VariableManager<'ctx> {
         pointer: PointerValue<'ctx>,
         value: BasicValueEnum<'ctx>,
         gc_integration: Option<&LlvmGcIntegration>
-    ) -> Result<String, Error> {
+    ) -> Result<(), Error> {
         debug!("Storing value with potential write barrier");
         
         let mut ir = String::new();
@@ -265,7 +265,7 @@ impl<'ctx> VariableManager<'ctx> {
         name: &str,
         llvm_type: BasicTypeEnum<'ctx>,
         var_type: &Type
-    ) -> Result<PointerValue<'ctx>, Error> {
+    ) -> Result<(), Error> {
         debug!(variable_name = %name, "Allocating global variable");
         
         let global = self.module.add_global(llvm_type, Some(AddressSpace::default()), name);
@@ -295,7 +295,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Infer variable type from declaration
     #[instrument(skip(self, let_stmt))]
-    fn infer_variable_type(&self, let_stmt: &LetStatement) -> Result<Type, Error> {
+    fn infer_variable_type(&self, let_stmt: &LetStatement) -> Result<(), Error> {
         debug!("Inferring variable type");
         
         // Check for explicit type annotation
@@ -315,7 +315,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Get type from type annotation expression
     #[instrument(skip(self, expr))]
-    fn type_from_annotation(&self, expr: &dyn Expression) -> Result<Type, Error> {
+    fn type_from_annotation(&self, expr: &dyn Expression) -> Result<(), Error> {
         debug!("Getting type from annotation");
         
         // Check if it's an identifier representing a type
@@ -344,7 +344,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Infer type from expression
     #[instrument(skip(self, expr))]
-    fn infer_type_from_expression(&self, expr: &dyn Expression) -> Result<Type, Error> {
+    fn infer_type_from_expression(&self, expr: &dyn Expression) -> Result<(), Error> {
         debug!("Inferring type from expression");
         
         // This is a simplified type inference
@@ -432,11 +432,11 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Compile assignment expression
     #[instrument(skip(self, assignment))]
-    pub fn compile_assignment(&mut self, assignment: &AssignmentExpression) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn compile_assignment(&mut self, assignment: &AssignmentExpression) -> Result<(), Error> {
         info!("Compiling assignment expression");
         
         // Get the variable name from the left-hand side
-        let var_name = if let Some(ident) = assignment.name.as_any().downcast_ref::<Identifier>() {
+        let var_name = if let Some(ident) = assignment.to_string().as_any().downcast_ref::<Identifier>() {
             ident.value.clone()
         } else {
             error!("Assignment to non-identifier not supported");
@@ -460,11 +460,11 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Compile compound assignment expression (+=, -=, etc.)
     #[instrument(skip(self, assignment))]
-    pub fn compile_compound_assignment(&mut self, assignment: &CompoundAssignmentExpression) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn compile_compound_assignment(&mut self, assignment: &CompoundAssignmentExpression) -> Result<(), Error> {
         info!(operator = %assignment.token, "Compiling compound assignment");
         
         // Get the variable name
-        let var_name = if let Some(ident) = assignment.name.as_any().downcast_ref::<Identifier>() {
+        let var_name = if let Some(ident) = assignment.to_string().as_any().downcast_ref::<Identifier>() {
             ident.value.clone()
         } else {
             error!("Compound assignment to non-identifier not supported");
@@ -506,7 +506,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Load variable value
     #[instrument(skip(self))]
-    pub fn load_variable(&self, name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn load_variable(&self, name: &str) -> Result<(), Error> {
         debug!(variable_name = %name, "Loading variable value");
         
         let (var_ptr, var_type) = self.get_variable(name)
@@ -522,7 +522,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Placeholder for expression compilation - this would be implemented elsewhere
     #[instrument(skip(self, expr))]
-    fn compile_expression(&self, expr: &dyn Expression) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_expression(&self, expr: &dyn Expression) -> Result<(), Error> {
         // This is a placeholder - in a real implementation, this would delegate
         // to the main expression compiler
         debug!("Compiling expression (placeholder)");
@@ -550,7 +550,7 @@ impl<'ctx> VariableManager<'ctx> {
 
     /// Compile arithmetic operations for compound assignments
     #[instrument(skip(self, lhs, rhs))]
-    fn compile_addition(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_addition(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<(), Error> {
         debug!("Compiling addition operation");
         
         match var_type {
@@ -576,7 +576,7 @@ impl<'ctx> VariableManager<'ctx> {
     }
 
     #[instrument(skip(self, lhs, rhs))]
-    fn compile_subtraction(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_subtraction(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<(), Error> {
         debug!("Compiling subtraction operation");
         
         match var_type {
@@ -602,7 +602,7 @@ impl<'ctx> VariableManager<'ctx> {
     }
 
     #[instrument(skip(self, lhs, rhs))]
-    fn compile_multiplication(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_multiplication(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<(), Error> {
         debug!("Compiling multiplication operation");
         
         match var_type {
@@ -628,7 +628,7 @@ impl<'ctx> VariableManager<'ctx> {
     }
 
     #[instrument(skip(self, lhs, rhs))]
-    fn compile_division(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_division(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<(), Error> {
         debug!("Compiling division operation");
         
         match var_type {
@@ -654,7 +654,7 @@ impl<'ctx> VariableManager<'ctx> {
     }
 
     #[instrument(skip(self, lhs, rhs))]
-    fn compile_modulo(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_modulo(&self, lhs: BasicValueEnum<'ctx>, rhs: BasicValueEnum<'ctx>, var_type: &Type) -> Result<(), Error> {
         debug!("Compiling modulo operation");
         
         match var_type {
@@ -714,7 +714,7 @@ pub trait VariableHandling<'ctx> {
     fn get_variable_ptr(&self, name: &str) -> Option<PointerValue<'ctx>>;
     
     /// Load a variable value
-    fn load_variable_value(&self, name: &str) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn load_variable_value(&self, name: &str) -> Result<(), Error>;
 }
 
 #[cfg(test)]

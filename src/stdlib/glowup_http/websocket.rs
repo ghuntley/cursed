@@ -1,3 +1,4 @@
+use crate::web::StatusCode;
 //! WebSocket support for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};

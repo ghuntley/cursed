@@ -98,7 +98,7 @@ impl From<PqcError> for CursedError {
 }
 
 /// Result type for PQC operations
-pub type PqcResult<T> = Result<T, PqcError>;
+pub type PqcResult<(), Error>;
 
 /// Security levels corresponding to classical cryptographic strength
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

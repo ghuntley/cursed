@@ -91,7 +91,7 @@ impl From<ChannelBufferError> for ChannelError {
 }
 
 /// Result type for channel operations
-pub type ChannelResult<T> = Result<T, ChannelError>;
+pub type ChannelResult<(), Error>;
 
 /// Channel send result
 #[derive(Debug, Clone)]

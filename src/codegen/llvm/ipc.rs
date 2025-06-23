@@ -8,11 +8,11 @@ use crate::error::CursedError;
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue, PointerValue},
-    types::{BasicTypeEnum, FunctionType},
+    crate::types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
 
-type CursedResult<T> = Result<T, CursedError>;
+type CursedResult<(), Error>;
 
 /// Trait for compiling IPC operations to LLVM IR (placeholder)
 pub trait IpcCompiler {
@@ -23,7 +23,7 @@ pub trait IpcCompiler {
         name: &str,
         size: Option<usize>,
         data: Option<&str>,
-    ) -> Result<BasicValueEnum<'static>, CursedError> {
+    ) -> Result<(), Error> {
         Ok(BasicValueEnum::PointerValue(PointerValue::new(std::ptr::null_mut())))
     }
 
@@ -136,7 +136,7 @@ pub struct LlvmCodeGenerator {
 }
 
 impl LlvmCodeGenerator {
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             placeholder: true,
         })

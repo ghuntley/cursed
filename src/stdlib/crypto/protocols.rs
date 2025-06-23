@@ -50,7 +50,7 @@ impl JwtHandler {
 
     /// Create a JWT token with claims
     #[instrument(skip(self))]
-    pub fn create_token(&self, claims: HashMap<String, Value>) -> Result<String, CursedError> {
+    pub fn create_token(&self, claims: HashMap<String, Value>) -> Result<(), Error> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| CursedError::new("jwt_error", &format!("Time error: {}", e)))?
@@ -79,7 +79,7 @@ impl JwtHandler {
 
     /// Validate and decode a JWT token
     #[instrument(skip(self, token))]
-    pub fn validate_token(&self, token: &str) -> Result<HashMap<String, Value>, CursedError> {
+    pub fn validate_token(&self, token: &str) -> Result<(), Error> {
         let parts: Vec<&str> = token.split('.').collect();
         if parts.len() != 3 {
             return Err(CursedError::new("jwt_error", "Invalid token format"));
@@ -119,14 +119,14 @@ impl JwtHandler {
         Ok(claims)
     }
 
-    fn sign_message(&self, message: &str) -> Result<Vec<u8>, CursedError> {
+    fn sign_message(&self, message: &str) -> Result<(), Error> {
         let mut mac = HmacSha256::new_from_slice(&self.secret_key)
             .map_err(|e| CursedError::new("jwt_error", &format!("HMAC error: {}", e)))?;
         mac.update(message.as_bytes());
         Ok(mac.finalize().into_bytes().to_vec())
     }
 
-    fn verify_signature(&self, message: &str, signature: &[u8]) -> Result<bool, CursedError> {
+    fn verify_signature(&self, message: &str, signature: &[u8]) -> Result<(), Error> {
         let expected = self.sign_message(message)?;
         Ok(constant_time_eq(&expected, signature))
     }
@@ -148,7 +148,7 @@ impl HmacAuth {
 
     /// Create HMAC signature for data
     #[instrument(skip(self, data))]
-    pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn sign(&self, data: &[u8]) -> Result<(), Error> {
         let mut mac = HmacSha256::new_from_slice(&self.key)
             .map_err(|e| CursedError::new("hmac_error", &format!("HMAC creation error: {}", e)))?;
         mac.update(data);
@@ -159,7 +159,7 @@ impl HmacAuth {
 
     /// Verify HMAC signature
     #[instrument(skip(self, data, signature))]
-    pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, CursedError> {
+    pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), Error> {
         let expected = self.sign(data)?;
         let is_valid = constant_time_eq(&expected, signature);
         debug!(is_valid, "HMAC signature verification result");
@@ -168,7 +168,7 @@ impl HmacAuth {
 
     /// Create authenticated message with embedded signature
     #[instrument(skip(self, message))]
-    pub fn create_authenticated_message(&self, message: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn create_authenticated_message(&self, message: &[u8]) -> Result<(), Error> {
         let signature = self.sign(message)?;
         let mut result = Vec::with_capacity(message.len() + signature.len() + 4);
         result.extend_from_slice(&(signature.len() as u32).to_be_bytes());
@@ -180,7 +180,7 @@ impl HmacAuth {
 
     /// Verify and extract message from authenticated format
     #[instrument(skip(self, authenticated_data))]
-    pub fn verify_authenticated_message(&self, authenticated_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn verify_authenticated_message(&self, authenticated_data: &[u8]) -> Result<(), Error> {
         if authenticated_data.len() < 4 {
             return Err(CursedError::new("hmac_error", "Invalid authenticated message format"));
         }
@@ -228,7 +228,7 @@ impl TotpGenerator {
 
     /// Generate TOTP for current time
     #[instrument(skip(self))]
-    pub fn generate_current(&self) -> Result<String, CursedError> {
+    pub fn generate_current(&self) -> Result<(), Error> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| CursedError::new("totp_error", &format!("Time error: {}", e)))?
@@ -238,7 +238,7 @@ impl TotpGenerator {
 
     /// Generate TOTP for specific time
     #[instrument(skip(self))]
-    pub fn generate_at_time(&self, unix_time: u64) -> Result<String, CursedError> {
+    pub fn generate_at_time(&self, unix_time: u64) -> Result<(), Error> {
         let time_counter = unix_time / self.time_step;
         let counter_bytes = time_counter.to_be_bytes();
 
@@ -265,7 +265,7 @@ impl TotpGenerator {
 
     /// Verify TOTP with time window tolerance
     #[instrument(skip(self))]
-    pub fn verify(&self, token: &str, time_window: u32) -> Result<bool, CursedError> {
+    pub fn verify(&self, token: &str, time_window: u32) -> Result<(), Error> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| CursedError::new("totp_error", &format!("Time error: {}", e)))?
@@ -319,7 +319,7 @@ impl TlsHandshake {
 
     /// Generate client hello random
     #[instrument(skip(self))]
-    pub fn generate_client_random(&mut self) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_client_random(&mut self) -> Result<(), Error> {
         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         self.client_random = rng.generate_bytes(32)?;
@@ -329,7 +329,7 @@ impl TlsHandshake {
 
     /// Generate server hello random
     #[instrument(skip(self))]
-    pub fn generate_server_random(&mut self) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_server_random(&mut self) -> Result<(), Error> {
         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         self.server_random = rng.generate_bytes(32)?;
@@ -339,7 +339,7 @@ impl TlsHandshake {
 
     /// Generate session ID
     #[instrument(skip(self))]
-    pub fn generate_session_id(&mut self) -> Result<Vec<u8>, CursedError> {
+    pub fn generate_session_id(&mut self) -> Result<(), Error> {
         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         self.session_id = rng.generate_bytes(32)?;
@@ -349,7 +349,7 @@ impl TlsHandshake {
 
     /// Create pre-master secret
     #[instrument(skip(self))]
-    pub fn create_pre_master_secret(&self) -> Result<Vec<u8>, CursedError> {
+    pub fn create_pre_master_secret(&self) -> Result<(), Error> {
         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         let pre_master = rng.generate_bytes(48)?;
@@ -359,7 +359,7 @@ impl TlsHandshake {
 
     /// Derive master secret from pre-master secret
     #[instrument(skip(self, pre_master_secret))]
-    pub fn derive_master_secret(&self, pre_master_secret: &[u8]) -> Result<Vec<u8>, CursedError> {
+    pub fn derive_master_secret(&self, pre_master_secret: &[u8]) -> Result<(), Error> {
         if self.client_random.is_empty() || self.server_random.is_empty() {
             return Err(CursedError::new("tls_error", "Client and server randoms must be set"));
         }
@@ -378,7 +378,7 @@ impl TlsHandshake {
 
     /// Derive key material from master secret
     #[instrument(skip(self, master_secret))]
-    pub fn derive_keys(&self, master_secret: &[u8], key_length: usize) -> Result<TlsKeys, CursedError> {
+    pub fn derive_keys(&self, master_secret: &[u8], key_length: usize) -> Result<(), Error> {
         // Simplified key derivation (real TLS uses more complex PRF)
         let mut hasher = Sha256::new();
         hasher.update(master_secret);
@@ -454,13 +454,13 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 // ============================================================================
 
 /// Initialize comprehensive cryptographic protocols
-pub fn init_crypto_protocols() -> Result<(), CursedError> {
+pub fn init_crypto_protocols() -> Result<(), Error> {
     info!("Initializing comprehensive cryptographic protocols module");
     Ok(())
 }
 
 /// Create new protocol suite with specified security level
-pub fn create_protocol_suite(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn create_protocol_suite(args: Vec<CursedValue>) -> Result<(), Error> {
     let security_level = if args.is_empty() {
         SecurityLevel::Level256
     } else {
@@ -480,7 +480,7 @@ pub fn create_protocol_suite(args: Vec<CursedValue>) -> Result<CursedValue, Curs
 }
 
 /// Generate X25519 keypair for key exchange
-pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> Result<(), Error> {
     let security_level = SecurityLevel::Level256;
     let exchange = X25519KeyExchange::new(security_level);
     let public_key = exchange.public_key();
@@ -493,7 +493,7 @@ pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> Result<CursedValue, Cu
 }
 
 /// Perform X25519 key exchange
-pub fn x25519_exchange(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn x25519_exchange(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("x25519_exchange requires private_key and peer_public_key".to_string()));
     }
@@ -506,7 +506,7 @@ pub fn x25519_exchange(args: Vec<CursedValue>) -> Result<CursedValue, CursedErro
 }
 
 /// Create secure communication channel
-pub fn create_secure_channel(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn create_secure_channel(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("create_secure_channel requires shared_secret".to_string()));
     }
@@ -518,7 +518,7 @@ pub fn create_secure_channel(args: Vec<CursedValue>) -> Result<CursedValue, Curs
 }
 
 /// Send message through secure channel
-pub fn send_secure_message(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn send_secure_message(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("send_secure_message requires channel_id and message".to_string()));
     }
@@ -533,7 +533,7 @@ pub fn send_secure_message(args: Vec<CursedValue>) -> Result<CursedValue, Cursed
 }
 
 /// Receive message from secure channel
-pub fn receive_secure_message(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn receive_secure_message(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("receive_secure_message requires channel_id and encrypted_message".to_string()));
     }
@@ -553,7 +553,7 @@ pub fn receive_secure_message(args: Vec<CursedValue>) -> Result<CursedValue, Cur
 }
 
 /// Initiate challenge-response authentication
-pub fn initiate_authentication(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn initiate_authentication(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("initiate_authentication requires peer_public_key".to_string()));
     }
@@ -568,7 +568,7 @@ pub fn initiate_authentication(args: Vec<CursedValue>) -> Result<CursedValue, Cu
 }
 
 /// Respond to authentication challenges
-pub fn respond_to_challenges(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn respond_to_challenges(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("respond_to_challenges requires challenge_set".to_string()));
     }
@@ -583,7 +583,7 @@ pub fn respond_to_challenges(args: Vec<CursedValue>) -> Result<CursedValue, Curs
 }
 
 /// Verify authentication responses
-pub fn verify_authentication(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn verify_authentication(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("verify_authentication requires response_set".to_string()));
     }
@@ -598,7 +598,7 @@ pub fn verify_authentication(args: Vec<CursedValue>) -> Result<CursedValue, Curs
 }
 
 /// Initiate multi-party computation
-pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("initiate_mpc_computation requires participants and threshold".to_string()));
     }
@@ -616,14 +616,14 @@ pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> Result<CursedValue, C
 }
 
 /// Get protocol statistics
-pub fn get_protocol_statistics(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn get_protocol_statistics(args: Vec<CursedValue>) -> Result<(), Error> {
     let suite = ProtocolSuite::new(SecurityLevel::Level256);
     let stats = suite.get_protocol_statistics();
     Ok(CursedValue::Object(stats))
 }
 
 /// Perform security audit
-pub fn security_audit(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn security_audit(args: Vec<CursedValue>) -> Result<(), Error> {
     let suite = ProtocolSuite::new(SecurityLevel::Level256);
     let audit = suite.security_audit();
     
@@ -637,7 +637,7 @@ pub fn security_audit(args: Vec<CursedValue>) -> Result<CursedValue, CursedError
 }
 
 /// Get protocol health status
-pub fn get_health_status(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn get_health_status(args: Vec<CursedValue>) -> Result<(), Error> {
     let suite = ProtocolSuite::new(SecurityLevel::Level256);
     let health = suite.get_health_status();
     
@@ -651,7 +651,7 @@ pub fn get_health_status(args: Vec<CursedValue>) -> Result<CursedValue, CursedEr
 }
 
 /// Log protocol error for debugging
-pub fn log_error(args: Vec<CursedValue>) -> Result<CursedValue, CursedError> {
+pub fn log_error(args: Vec<CursedValue>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("log_error requires error_message".to_string()));
     }

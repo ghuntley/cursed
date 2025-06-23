@@ -10,11 +10,11 @@ use std::collections::HashMap;
 use inkwell::{
     values::{BasicValueEnum, PointerValue},
     AddressSpace,
-    types::{BasicTypeEnum, IntType, PointerType},
+    crate::types::{BasicTypeEnum, IntType, PointerType},
 };
 
 // Type aliases for consistency
-type CursedResult<T> = Result<T, CursedError>;
+type CursedResult<(), Error>;
 
 /// Trait for compiling IPC operations to LLVM IR
 pub trait IpcCompiler {
@@ -25,7 +25,7 @@ pub trait IpcCompiler {
         name: &LlvmValue,
         size: Option<&LlvmValue>,
         data: Option<&LlvmValue>,
-    ) -> Result<LlvmValue, Error>;
+    ) -> Result<(), Error>;
 
     /// Compile named pipe operations
     fn compile_pipe_op(
@@ -127,7 +127,7 @@ impl IpcCompiler for LlvmCodeGenerator {
         name: &LlvmValue,
         size: Option<&LlvmValue>,
         data: Option<&LlvmValue>,
-    ) -> Result<LlvmValue, Error> {
+    ) -> Result<(), Error> {
         // Ensure FFI functions are declared
         self.declare_ipc_ffi_functions()?;
 

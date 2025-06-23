@@ -11,7 +11,7 @@
 /// - Enables panic handling and memory management
 
 use crate::stdlib::value::Value;
-use crate::stdlib::errors_simple::CursedError;
+use crate::crate::stdlib::errors_simple::CursedError;
 use std::collections::HashMap;
 use std::any::Any;
 use std::panic;
@@ -20,7 +20,7 @@ use std::panic;
 pub type CoreError = CursedError;
 
 /// Result type for Core operations
-pub type CoreResult<T> = Result<T, CoreError>;
+pub type CoreResult<(), Error>;
 
 // ================================
 // CURSED TYPE ALIASES

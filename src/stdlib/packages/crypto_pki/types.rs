@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
 /// Result type for PKI operations
-pub type PkiResult<T> = Result<T, PkiError>;
+pub type PkiResult<(), Error>;
 
 /// PKI-specific error types
 #[derive(Debug, Clone, PartialEq)]

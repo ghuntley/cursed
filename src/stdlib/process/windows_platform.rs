@@ -17,19 +17,19 @@ pub struct WindowsPlatformHandler {
 
 impl WindowsPlatformHandler {
     /// Create a new Windows platform handler (placeholder)
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             enabled: true,
         })
     }
     
     /// Initialize (placeholder)
-    pub fn initialize(&self) -> Result<(), CursedError> {
+    pub fn initialize(&self) -> Result<(), Error> {
         Ok(())
     }
     
     /// Cleanup (placeholder)
-    pub fn cleanup(&self) -> Result<(), CursedError> {
+    pub fn cleanup(&self) -> Result<(), Error> {
         Ok(())
     }
 }
@@ -41,7 +41,7 @@ pub struct WindowsNamedPipe {
 }
 
 impl WindowsNamedPipe {
-    pub fn new(name: &str) -> Result<Self, CursedError> {
+    pub fn new(name: &str) -> Result<(), Error> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -55,7 +55,7 @@ pub struct WindowsSharedMemoryConnection {
 }
 
 impl WindowsSharedMemoryConnection {
-    pub fn new(name: &str) -> Result<Self, CursedError> {
+    pub fn new(name: &str) -> Result<(), Error> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -69,7 +69,7 @@ pub struct WindowsSemaphoreConnection {
 }
 
 impl WindowsSemaphoreConnection {
-    pub fn new(name: &str) -> Result<Self, CursedError> {
+    pub fn new(name: &str) -> Result<(), Error> {
         Ok(Self {
             name: name.to_string(),
         })

@@ -49,7 +49,7 @@ use warp::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 use warp::{Filter, Rejection, Reply};
 
-pub type LiveServerResult<T> = Result<T, CursedError>;
+pub type LiveServerResult<(), Error>;
 
 /// Configuration for the live documentation server
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1041,7 +1041,7 @@ impl LiveDocumentationServer {
     
     /// Execute code in the playground
     #[instrument(skip(code))]
-    async fn execute_code_playground(code: &str, language: &str) -> Result<String, CursedError> {
+    async fn execute_code_playground(code: &str, language: &str) -> Result<(), Error> {
         if language != "cursed" && language != "csd" {
             return Err(CursedError::system_error("Only CURSED language is supported"));
         }
@@ -1060,7 +1060,7 @@ impl LiveDocumentationServer {
     async fn execute_api_method(
         method_name: &str, 
         parameters: &HashMap<String, serde_json::Value>
-    ) -> Result<serde_json::Value, CursedError> {
+    ) -> Result<(), Error> {
         info!("Executing API method: {} with {} parameters", method_name, parameters.len());
         
         // This would integrate with the CURSED runtime to call actual methods

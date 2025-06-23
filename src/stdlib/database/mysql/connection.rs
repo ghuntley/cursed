@@ -15,7 +15,7 @@ use crate::stdlib::database::{
     driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverStmt, DriverTx}
 };
 use super::error::{MySqlError, MySqlResult};
-use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
+use super::crate::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
 use super::statement::MySqlStatement;
 use super::transaction::MySqlTransaction;
@@ -144,8 +144,8 @@ impl MySqlConnection {
         let server_version = version_result.unwrap_or_else(|| "Unknown".to_string());
 
         // Parse DSN for metadata
-        let conn_info = super::types::parse_connection_string(&self.dsn)
-            .unwrap_or_else(|_| super::types::MySqlConnectionInfo {
+        let conn_info = super::crate::types::parse_connection_string(&self.dsn)
+            .unwrap_or_else(|_| super::crate::types::MySqlConnectionInfo {
                 host: "localhost".to_string(),
                 port: 3306,
                 user: "unknown".to_string(),
@@ -177,7 +177,7 @@ impl MySqlConnection {
 }
 
 impl DriverConn for MySqlConnection {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         let statement = MySqlStatement::new(
             Arc::clone(&self.pool),
             query.to_string(),
@@ -187,17 +187,17 @@ impl DriverConn for MySqlConnection {
         Ok(Box::new(statement))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_query_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_command_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<Box<dyn DriverTx>, DatabaseError> {
+    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
         let transaction = MySqlTransaction::new(
             Arc::clone(&self.pool),
             opts,
@@ -207,7 +207,7 @@ impl DriverConn for MySqlConnection {
         Ok(Box::new(transaction))
     }
 
-    fn ping(&self) -> Result<(), DatabaseError> {
+    fn ping(&self) -> Result<(), Error> {
         let mut conn = self.get_pooled_connection()
             .map_err(|e| e.to_database_error())?;
 
@@ -215,7 +215,7 @@ impl DriverConn for MySqlConnection {
             .map_err(|e| DatabaseError::connection_error(&format!("Ping failed: {}", e)))
     }
 
-    fn close(&self) -> Result<(), DatabaseError> {
+    fn close(&self) -> Result<(), Error> {
         // Connection pool handles cleanup automatically
         // Individual connections are returned to the pool when dropped
         Ok(())

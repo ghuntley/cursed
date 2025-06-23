@@ -42,9 +42,9 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// facts Execute operation within transaction
     #[instrument(skip(self, operation))]
-    pub async fn with_transaction<F, R>(&self, operation: F) -> Result<R, DatabaseError>
+    pub async fn with_transaction<F, R>(&self, operation: F) -> Result<(), Error>
     where
-        F: FnOnce(&Repository<T>) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<R, DatabaseError>> + Send>>,
+        F: FnOnce(&Repository<T>) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), Error>> + Send>>,
         R: Send,
     {
         info!(entity = T::table_name(), "Executing operation with transaction");
@@ -70,7 +70,7 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// periodt Begin new transaction
     #[instrument(skip(self))]
-    pub async fn begin_transaction(&self) -> Result<Arc<Tx>, DatabaseError> {
+    pub async fn begin_transaction(&self) -> Result<(), Error> {
         debug!("Beginning new transaction");
         
         // Create transaction using DB connection
@@ -87,7 +87,7 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// bestie Commit transaction
     #[instrument(skip(self, tx))]
-    pub async fn commit_transaction(&self, tx: Arc<Tx>) -> Result<(), DatabaseError> {
+    pub async fn commit_transaction(&self, tx: Arc<Tx>) -> Result<(), Error> {
         debug!("Committing transaction");
         
         // Create a mutable reference to commit the transaction
@@ -109,7 +109,7 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// yolo Rollback transaction
     #[instrument(skip(self, tx))]
-    pub async fn rollback_transaction(&self, tx: Arc<Tx>) -> Result<(), DatabaseError> {
+    pub async fn rollback_transaction(&self, tx: Arc<Tx>) -> Result<(), Error> {
         debug!("Rolling back transaction");
         
         // Create a mutable reference to rollback the transaction
@@ -175,7 +175,7 @@ impl TransactionScope {
 
     /// facts Begin transaction scope
     #[instrument(skip(self))]
-    pub async fn begin(&self) -> Result<(), DatabaseError> {
+    pub async fn begin(&self) -> Result<(), Error> {
         info!("Beginning transaction scope");
         
         // Update state
@@ -199,9 +199,9 @@ impl TransactionScope {
 
     /// periodt Execute operation within scope
     #[instrument(skip(self, operation))]
-    pub async fn execute<F, R>(&self, operation_name: &str, operation: F) -> Result<R, DatabaseError>
+    pub async fn execute<F, R>(&self, operation_name: &str, operation: F) -> Result<(), Error>
     where
-        F: std::future::Future<Output = Result<R, DatabaseError>>,
+        F: std::future::Future<Output = Result<(), Error>>,
     {
         debug!(operation = operation_name, "Executing operation in transaction scope");
         
@@ -244,7 +244,7 @@ impl TransactionScope {
 
     /// bestie Commit transaction scope
     #[instrument(skip(self))]
-    pub async fn commit(&self) -> Result<(), DatabaseError> {
+    pub async fn commit(&self) -> Result<(), Error> {
         info!("Committing transaction scope");
         
         // Check state
@@ -270,7 +270,7 @@ impl TransactionScope {
 
     /// yolo Rollback transaction scope
     #[instrument(skip(self))]
-    pub async fn rollback(&self) -> Result<(), DatabaseError> {
+    pub async fn rollback(&self) -> Result<(), Error> {
         warn!("Rolling back transaction scope");
         
         // Check state
@@ -399,7 +399,7 @@ impl UnitOfWork {
 
     /// yolo Commit all changes
     #[instrument(skip(self))]
-    pub async fn commit(&self) -> Result<(), DatabaseError> {
+    pub async fn commit(&self) -> Result<(), Error> {
         info!("Committing unit of work");
         
         // Begin transaction scope
@@ -459,7 +459,7 @@ impl UnitOfWork {
 
     /// slay Rollback all changes
     #[instrument(skip(self))]
-    pub async fn rollback(&self) -> Result<(), DatabaseError> {
+    pub async fn rollback(&self) -> Result<(), Error> {
         warn!("Rolling back unit of work");
         
         // Rollback transaction scope
@@ -668,7 +668,7 @@ mod tests {
         fn set_primary_key_value(&mut self, value: super::super::super::SqlValue) { 
             if let super::super::super::SqlValue::Integer(id) = value { self.id = Some(id); }
         }
-        fn from_row(row: &HashMap<String, super::super::super::SqlValue>) -> Result<Self, DatabaseError> {
+        fn from_row(row: &HashMap<String, super::super::super::SqlValue>) -> Result<(), Error> {
             Ok(Self { id: None, name: "Test".to_string() })
         }
         fn to_fields(&self) -> HashMap<String, super::super::super::SqlValue> { HashMap::new() }

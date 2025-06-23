@@ -19,7 +19,7 @@ use crate::error::CursedError;
 use crate::stdlib::ipc::{IpcResult, IpcError};
 
 /// Result type for ExecSlay operations
-pub type SlayResult<T> = Result<T, CursedError>;
+pub type SlayResult<(), Error>;
 
 /// Enhanced SlayCommand with full specification compliance
 #[derive(Debug)]

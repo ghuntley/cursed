@@ -88,7 +88,7 @@ impl Message {
     }
 
     /// Convert to string (if data is UTF-8)
-    pub fn to_string(&self) -> Result<String, std::string::FromUtf8Error> {
+    pub fn to_string(&self) -> Result<(), Error> {
         String::from_utf8(self.data.clone())
     }
 

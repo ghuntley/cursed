@@ -11,7 +11,7 @@ use crate::memory::gc::GarbageCollector;
 use crate::error::Error as CursedError;
 
 /// Result type for buffer operations
-pub type BufferResult<T> = Result<T, ChannelBufferError>;
+pub type BufferResult<(), Error>;
 
 /// Errors that can occur during buffer operations
 #[derive(Debug, Clone, PartialEq)]
@@ -1118,10 +1118,10 @@ pub fn create_channel_buffer<T: Send + Sync + 'static>(config: BufferConfig) -> 
 /// Integration with CURSED's garbage collection system
 pub trait GcIntegration<T> {
     /// Register buffer contents with GC
-    fn register_with_gc(&self, gc: &mut GarbageCollector) -> Result<(), CursedError>;
+    fn register_with_gc(&self, gc: &mut GarbageCollector) -> Result<(), Error>;
     
     /// Update GC roots for buffer contents
-    fn update_gc_roots(&self, gc: &mut GarbageCollector) -> Result<(), CursedError>;
+    fn update_gc_roots(&self, gc: &mut GarbageCollector) -> Result<(), Error>;
 }
 
 impl<T> GcIntegration<T> for BufferedChannel<T> 
@@ -1129,7 +1129,7 @@ where
     T: 'static,
 {
     #[instrument(skip(self, gc))]
-    fn register_with_gc(&self, gc: &mut GarbageCollector) -> Result<(), CursedError> {
+    fn register_with_gc(&self, gc: &mut GarbageCollector) -> Result<(), Error> {
         // Register the buffer itself as a GC root
         // This ensures that any GC-managed objects stored in the buffer
         // are not collected while the buffer exists
@@ -1141,7 +1141,7 @@ where
     }
 
     #[instrument(skip(self, gc))]
-    fn update_gc_roots(&self, gc: &mut GarbageCollector) -> Result<(), CursedError> {
+    fn update_gc_roots(&self, gc: &mut GarbageCollector) -> Result<(), Error> {
         // Update GC roots when buffer contents change
         debug!(operation = "updating_gc_roots_for_buffer");
         

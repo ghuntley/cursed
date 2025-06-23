@@ -35,7 +35,7 @@ impl ConcurrencyProfiler {
         goroutine_id: u64,
         parent_id: Option<u64>,
         stack_trace: Vec<String>,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -64,7 +64,7 @@ impl ConcurrencyProfiler {
         &self,
         goroutine_id: u64,
         completion_type: GoroutineCompletionType,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -89,7 +89,7 @@ impl ConcurrencyProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn track_goroutine_yield(&self, goroutine_id: u64) -> Result<(), ProfilerError> {
+    pub fn track_goroutine_yield(&self, goroutine_id: u64) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -117,7 +117,7 @@ impl ConcurrencyProfiler {
         operation: ChannelOperation,
         goroutine_id: u64,
         duration: Option<Duration>,
-    ) -> Result<(), ProfilerError> {
+    ) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -143,7 +143,7 @@ impl ConcurrencyProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn track_scheduler_event(&self, event: SchedulerEvent) -> Result<(), ProfilerError> {
+    pub fn track_scheduler_event(&self, event: SchedulerEvent) -> Result<(), Error> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -199,7 +199,7 @@ impl ConcurrencyProfiler {
 
 impl DataCollector for ConcurrencyProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), ProfilerError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("Concurrency profiler already collecting".to_string()));
         }
@@ -213,7 +213,7 @@ impl DataCollector for ConcurrencyProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<Vec<u8>, ProfilerError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("Concurrency profiler not collecting".to_string()));
         }
@@ -676,17 +676,17 @@ impl GoroutineTracker {
         }
     }
     
-    fn start_tracking(&mut self) -> Result<(), ProfilerError> {
+    fn start_tracking(&mut self) -> Result<(), Error> {
         self.tracking = true;
         Ok(())
     }
     
-    fn stop_tracking(&mut self) -> Result<(), ProfilerError> {
+    fn stop_tracking(&mut self) -> Result<(), Error> {
         self.tracking = false;
         Ok(())
     }
     
-    fn track_spawn(&self, goroutine_id: u64, parent_id: Option<u64>) -> Result<(), ProfilerError> {
+    fn track_spawn(&self, goroutine_id: u64, parent_id: Option<u64>) -> Result<(), Error> {
         if !self.tracking {
             return Ok(());
         }
@@ -705,7 +705,7 @@ impl GoroutineTracker {
         Ok(())
     }
     
-    fn track_completion(&self, goroutine_id: u64) -> Result<(), ProfilerError> {
+    fn track_completion(&self, goroutine_id: u64) -> Result<(), Error> {
         if !self.tracking {
             return Ok(());
         }
@@ -742,17 +742,17 @@ impl ChannelTracker {
         }
     }
     
-    fn start_tracking(&mut self) -> Result<(), ProfilerError> {
+    fn start_tracking(&mut self) -> Result<(), Error> {
         self.tracking = true;
         Ok(())
     }
     
-    fn stop_tracking(&mut self) -> Result<(), ProfilerError> {
+    fn stop_tracking(&mut self) -> Result<(), Error> {
         self.tracking = false;
         Ok(())
     }
     
-    fn track_operation(&self, event: &ChannelEvent) -> Result<(), ProfilerError> {
+    fn track_operation(&self, event: &ChannelEvent) -> Result<(), Error> {
         if !self.tracking {
             return Ok(());
         }

@@ -150,7 +150,7 @@ pub fn update_allocation_stats(size: usize, is_alloc: bool) {
 }
 
 /// Get system memory information (platform-specific)
-fn get_system_memory_info() -> Result<(u64, u64, u64), Error> {
+fn get_system_memory_info() -> Result<(), Error> {
     // Get heap system memory
     let heap_sys = GLOBAL_SYSTEM_BYTES.load(Ordering::SeqCst);
     
@@ -164,7 +164,7 @@ fn get_system_memory_info() -> Result<(u64, u64, u64), Error> {
 }
 
 /// Estimate stack memory usage
-fn get_stack_usage() -> Result<u64, Error> {
+fn get_stack_usage() -> Result<(), Error> {
     // Try to get goroutine stack information if available
     if let Ok(goroutine_count) = super::goroutine::num_goroutine() {
         // Estimate: each goroutine has approximately 64KB stack
@@ -176,7 +176,7 @@ fn get_stack_usage() -> Result<u64, Error> {
 }
 
 /// Estimate total stack system memory
-fn estimate_stack_system_memory() -> Result<u64, Error> {
+fn estimate_stack_system_memory() -> Result<(), Error> {
     // Stack system memory is typically larger than in-use due to guard pages
     let stack_inuse = get_stack_usage()?;
     Ok(stack_inuse + (stack_inuse / 4)) // Add 25% overhead for guard pages
@@ -204,7 +204,7 @@ pub struct GcOverhead {
 }
 
 /// Create a memory profile snapshot
-pub fn memory_profile() -> Result<MemoryProfile, Error> {
+pub fn memory_profile() -> Result<(), Error> {
     let mut stats = MemStats::new();
     read_mem_stats(&mut stats)?;
     

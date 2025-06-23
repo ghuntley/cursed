@@ -22,10 +22,10 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
 use crate::stdlib::value::Value;
-use crate::stdlib::errors::CursedError;
+use crate::crate::stdlib::errors::CursedError;
 
 /// fr fr Result type for quick test operations
-pub type QuickTestResult<T> = Result<T, CursedError>;
+pub type QuickTestResult<(), Error>;
 
 /// fr fr Configuration for how a test is run
 #[derive(Debug, Clone)]

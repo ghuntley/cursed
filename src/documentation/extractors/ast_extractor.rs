@@ -269,7 +269,7 @@ pub struct SizeInfo {
 
 impl AstExtractor {
     /// Convert ModuleStatement to documentation ModuleDeclaration
-    fn convert_module_statement_to_doc(&self, module_stmt: &crate::ast::statements::control_flow::ModuleStatement) -> Result<ModuleDeclaration, Error> {
+    fn convert_module_statement_to_doc(&self, module_stmt: &crate::ast::statements::control_flow::ModuleStatement) -> Result<(), Error> {
         Ok(ModuleDeclaration {
             name: module_stmt.name.to_string(),
             body: None, // Would need more sophisticated conversion
@@ -279,7 +279,7 @@ impl AstExtractor {
     }
 
     /// Convert EnumStatement to documentation EnumDeclaration
-    fn convert_enum_statement_to_doc(&self, enum_stmt: &crate::ast::statements::control_flow::EnumStatement) -> Result<EnumDeclaration, Error> {
+    fn convert_enum_statement_to_doc(&self, enum_stmt: &crate::ast::statements::control_flow::EnumStatement) -> Result<(), Error> {
         Ok(EnumDeclaration {
             name: enum_stmt.name.to_string(),
             variants: Vec::new(), // Would need more sophisticated conversion
@@ -289,7 +289,7 @@ impl AstExtractor {
     }
 
     /// Convert TypeAliasStatement to documentation TypeAliasDeclaration
-    fn convert_type_alias_statement_to_doc(&self, type_alias_stmt: &crate::ast::statements::control_flow::TypeAliasStatement) -> Result<TypeAliasDeclaration, Error> {
+    fn convert_type_alias_statement_to_doc(&self, type_alias_stmt: &crate::ast::statements::control_flow::TypeAliasStatement) -> Result<(), Error> {
         Ok(TypeAliasDeclaration {
             name: type_alias_stmt.name.to_string(),
             target_type: Expression::default(),
@@ -299,7 +299,7 @@ impl AstExtractor {
     }
 
     /// Convert VariableStatement to documentation VariableDeclaration
-    fn convert_variable_statement_to_doc(&self, var_stmt: &crate::ast::VariableStatement) -> Result<VariableDeclaration, Error> {
+    fn convert_variable_statement_to_doc(&self, var_stmt: &crate::ast::VariableStatement) -> Result<(), Error> {
         Ok(VariableDeclaration {
             name: var_stmt.name.to_string(),
             var_type: None,
@@ -312,7 +312,7 @@ impl AstExtractor {
     }
 
     /// Convert ConstantStatement to documentation ConstantDeclaration
-    fn convert_constant_statement_to_doc(&self, const_stmt: &crate::ast::statements::control_flow::ConstantStatement) -> Result<ConstantDeclaration, Error> {
+    fn convert_constant_statement_to_doc(&self, const_stmt: &crate::ast::statements::control_flow::ConstantStatement) -> Result<(), Error> {
         Ok(ConstantDeclaration {
             name: const_stmt.name.to_string(),
             const_type: None,
@@ -324,7 +324,7 @@ impl AstExtractor {
 
     /// Create a new AST extractor with the given configuration
     #[instrument(skip(config))]
-    pub fn new(config: ExtractionConfig) -> Result<Self, Error> {
+    pub fn new(config: ExtractionConfig) -> Result<(), Error> {
         debug!("Initializing comprehensive AST extractor");
         
         Ok(Self {
@@ -343,7 +343,7 @@ impl AstExtractor {
         node: &AstNode,
         file_path: &Path,
         source_code: &str,
-    ) -> Result<Vec<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         debug!("Extracting complete documentation from AST");
         
         let mut items = Vec::new();
@@ -481,7 +481,7 @@ impl AstExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !module_decl.is_public {
             return Ok(None);
@@ -533,7 +533,7 @@ impl AstExtractor {
         &self,
         import_stmt: &ImportStatement,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Create mock location for now since token is just a String
         let mock_location = crate::error::SourceLocation { line: 1, column: 1, file: None };
         let comments = self.comment_extractor.extract_comments_before(
@@ -587,7 +587,7 @@ impl AstExtractor {
         &self,
         func_decl: &FunctionDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         // Note: visibility checking simplified due to current AST structure
 
@@ -666,7 +666,7 @@ impl AstExtractor {
         &self,
         struct_decl: &StructDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !struct_decl.is_public {
             return Ok(None);
@@ -737,7 +737,7 @@ impl AstExtractor {
         &self,
         interface_decl: &InterfaceDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !interface_decl.is_public {
             return Ok(None);
@@ -800,7 +800,7 @@ impl AstExtractor {
         &self,
         enum_decl: &EnumDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !enum_decl.is_public {
             return Ok(None);
@@ -849,7 +849,7 @@ impl AstExtractor {
         &self,
         type_alias: &TypeAliasDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !type_alias.is_public {
             return Ok(None);
@@ -899,7 +899,7 @@ impl AstExtractor {
         &self,
         var_decl: &VariableDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !var_decl.is_public {
             return Ok(None);
@@ -950,7 +950,7 @@ impl AstExtractor {
         &self,
         const_decl: &ConstantDeclaration,
         source_code: &str,
-    ) -> Result<Option<EnhancedDocumentationItem>, Error> {
+    ) -> Result<(), Error> {
         // Check visibility
         if !self.config.include_private && !const_decl.is_public {
             return Ok(None);
@@ -998,7 +998,7 @@ impl AstExtractor {
         &self,
         func_decl: &FunctionDeclaration,
         comments: &[crate::documentation::comment_parser::ParsedComment],
-    ) -> Result<Option<ErrorInfo>, Error> {
+    ) -> Result<(), Error> {
         // Look for @throws tags in documentation
         let throws_tags = self.comment_extractor.get_tags_by_name(comments, "throws");
         
@@ -1038,7 +1038,7 @@ impl AstExtractor {
         &self,
         struct_decl: &StructDeclaration,
         source_code: &str,
-    ) -> Result<Vec<ImplementationInfo>, Error> {
+    ) -> Result<(), Error> {
         // This would require more complex analysis of the entire source file
         // to find impl blocks for this struct
         // For now, return empty vector - this could be enhanced with symbol table
@@ -1050,7 +1050,7 @@ impl AstExtractor {
         &self,
         location: &SourceLocation,
         source_code: &str,
-    ) -> Result<Option<String>, Error> {
+    ) -> Result<(), Error> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line > lines.len() {

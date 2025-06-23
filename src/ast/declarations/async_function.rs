@@ -93,7 +93,7 @@ impl Node for AsyncFunctionStatement {
             .map(|p| p.string())
             .collect();
         
-        let mut result = format!("slay async {}({})", self.name.string(), params.join(", "));
+        let mut result = format!("slay async {}({})", self.to_string().string(), params.join(", "));
         
         if let Some(ret_type) = &self.return_type {
             result.push_str(&format!(" -> {}", ret_type.string()));
@@ -118,7 +118,7 @@ impl Statement for AsyncFunctionStatement {
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(AsyncFunctionStatement {
             token: self.token.clone(),
-            name: self.name.clone(),
+            name: self.to_string().clone(),
             parameters: self.parameters.clone(),
             return_type: self.return_type.as_ref().map(|t| t.clone_box()),
             body: self.body.clone(),
@@ -153,7 +153,7 @@ mod tests {
         );
 
         assert!(async_func.is_async);
-        assert_eq!(async_func.name.value, "test_func");
+        assert_eq!(async_func.to_string().value, "test_func");
         assert!(async_func.parameters.is_empty());
         assert!(async_func.return_type.is_none());
     }
@@ -207,7 +207,7 @@ mod tests {
         );
 
         let cloned = async_func.clone();
-        assert_eq!(async_func.name.value, cloned.name.value);
+        assert_eq!(async_func.to_string().value, cloned.to_string().value);
         assert_eq!(async_func.is_async, cloned.is_async);
         assert_eq!(async_func.token, cloned.token);
     }

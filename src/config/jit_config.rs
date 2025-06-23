@@ -344,7 +344,7 @@ impl JitConfig {
     }
 
     /// Load configuration from a TOML file
-    pub fn from_toml_file<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+    pub fn from_toml_file<P: AsRef<Path>>(path: P) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| Error::from_str(&format!("Failed to read config file: {}", e)))?;
         
@@ -353,7 +353,7 @@ impl JitConfig {
     }
 
     /// Load configuration from a JSON file
-    pub fn from_json_file<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+    pub fn from_json_file<P: AsRef<Path>>(path: P) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| Error::from_str(&format!("Failed to read config file: {}", e)))?;
         
@@ -362,7 +362,7 @@ impl JitConfig {
     }
 
     /// Load configuration from environment variables
-    pub fn from_env() -> Result<Self, Error> {
+    pub fn from_env() -> Result<(), Error> {
         let mut config = Self::default();
 
         // Engine configuration
@@ -649,7 +649,7 @@ impl JitConfig {
 }
 
 /// Convert optimization level string to inkwell OptimizationLevel
-pub fn parse_optimization_level(level: &str) -> Result<inkwell::OptimizationLevel, Error> {
+pub fn parse_optimization_level(level: &str) -> Result<(), Error> {
     match level.to_lowercase().as_str() {
         "none" => Ok(inkwell::OptimizationLevel::O0),
         "less" => Ok(inkwell::OptimizationLevel::O1),

@@ -63,7 +63,7 @@ impl LtoBuildIntegration {
 
         // Create output directory
         std::fs::create_dir_all(&config.output_directory)
-            .map_err(|e| Error::Other(format!("Failed to create LTO output directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create LTO output directory: {}", e)))?;
 
         let cache = LtoBuildCache::new(&config)?;
 
@@ -223,7 +223,7 @@ impl LtoBuildIntegration {
         for unit in compilation_units {
             if let Some(ref bitcode_path) = unit.bitcode_path {
                 let metadata = std::fs::metadata(bitcode_path)
-                    .map_err(|e| Error::Other(format!("Failed to get file metadata: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to get file metadata: {}", e)))?;
                 
                 if metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH) > entry.timestamp {
                     return Ok(false);
@@ -311,7 +311,7 @@ impl LtoBuildIntegration {
                     
                     // In a real implementation, this would write actual object code
                     std::fs::write(&output_path, b"mock object code")
-                        .map_err(|e| Error::Other(format!("Failed to write LTO output: {}", e)))?;
+                        .map_err(|e| Error::General(format!("Failed to write LTO output: {}", e)))?;
                     
                     output_files.push(output_path);
                 }
@@ -322,7 +322,7 @@ impl LtoBuildIntegration {
                 
                 // In a real implementation, this would write actual merged object code
                 std::fs::write(&output_path, b"mock merged object code")
-                    .map_err(|e| Error::Other(format!("Failed to write LTO output: {}", e)))?;
+                    .map_err(|e| Error::General(format!("Failed to write LTO output: {}", e)))?;
                 
                 output_files.push(output_path);
             }
@@ -332,7 +332,7 @@ impl LtoBuildIntegration {
         let report_path = self.config.output_directory.join("lto_report.md");
         let report_content = format!("# LTO Optimization Report\n\n{:?}", lto_result.statistics);
         std::fs::write(&report_path, report_content)
-            .map_err(|e| Error::Other(format!("Failed to write LTO report: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write LTO report: {}", e)))?;
 
         info!("Generated {} LTO output files", output_files.len());
         Ok(output_files)
@@ -404,7 +404,7 @@ impl LtoBuildIntegration {
         // Clean up output directory
         if self.config.output_directory.exists() {
             std::fs::remove_dir_all(&self.config.output_directory)
-                .map_err(|e| Error::Other(format!("Failed to clean LTO output directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to clean LTO output directory: {}", e)))?;
         }
 
         // Clean up cache

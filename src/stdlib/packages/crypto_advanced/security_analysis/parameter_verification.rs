@@ -8,7 +8,7 @@ use super::super::CryptoParameters;
 use std::collections::HashMap;
 
 /// fr fr Result type for parameter verification
-pub type ParameterResult<T> = Result<T, SecurityAnalysisError>;
+pub type ParameterResult<(), Error>;
 
 /// fr fr Parameter verification result
 #[derive(Debug, Clone)]

@@ -91,7 +91,7 @@ impl PackageMetadata {
     }
     
     /// Save metadata to file
-    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
+    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), Error> {
         let toml_string = toml::to_string(self)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         std::fs::write(path, toml_string)?;
@@ -99,7 +99,7 @@ impl PackageMetadata {
     }
     
     /// Load metadata from file
-    pub fn from_file(path: &std::path::Path) -> Result<Self, std::io::Error> {
+    pub fn from_file(path: &std::path::Path) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)?;
         let metadata: PackageMetadata = toml::from_str(&content)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;

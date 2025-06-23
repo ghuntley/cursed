@@ -19,7 +19,7 @@ impl Parser {
     /// 
     /// This is typically called as a postfix operator during expression parsing.
     /// The precedence should be high (similar to function calls and array indexing).
-    pub fn parse_question_mark_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
+    pub fn parse_question_mark_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         // We should be sitting on the '?' token
         if !self.current_token_is(&TokenType::Question) {
             return Err(CursedError::parse_error_with_location(
@@ -48,7 +48,7 @@ impl Parser {
     /// 
     /// This maintains compatibility with the existing ErrorPropagation type
     /// while we transition to the new QuestionMarkExpression.
-    pub fn parse_error_propagation(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
+    pub fn parse_error_propagation(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
         if !self.current_token_is(&TokenType::Question) {
             return Err(CursedError::parse_error_with_location(
                 format!("Expected '?' token, found {:?}", self.current_token.token_type),
@@ -129,7 +129,7 @@ impl std::error::Error for QuestionMarkParseError {}
 /// Helper functions for parsing question mark expressions
 impl Parser {
     /// Validate that the expression is suitable for question mark operator
-    pub fn validate_question_mark_expression(&self, expr: &dyn Expression) -> Result<(), QuestionMarkParseError> {
+    pub fn validate_question_mark_expression(&self, expr: &dyn Expression) -> Result<(), Error> {
         // In CURSED, the question mark operator can be applied to any expression
         // that returns a Result-like type. For now, we'll allow it on all expressions
         // and let the type checker handle the validation.
@@ -147,7 +147,7 @@ impl Parser {
     }
     
     /// Parse chained question marks (expr??.foo?)
-    pub fn parse_chained_question_marks(&mut self, mut expr: Box<dyn Expression>) -> Result<Box<dyn Expression>, CursedError> {
+    pub fn parse_chained_question_marks(&mut self, mut expr: Box<dyn Expression>) -> Result<(), Error> {
         while self.is_question_mark() {
             expr = self.parse_question_mark_expression(expr)?;
         }

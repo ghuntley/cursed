@@ -239,7 +239,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// slay Execute query and return entities
     #[instrument(skip(self))]
-    pub async fn execute(self) -> Result<Vec<T>, DatabaseError> {
+    pub async fn execute(self) -> Result<(), Error> {
         info!(table = %self.table, "Executing query");
         
         let sql = self.build_sql()?;
@@ -261,14 +261,14 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// lit Execute and return first result
     #[instrument(skip(self))]
-    pub async fn first_vibe(self) -> Result<Option<T>, DatabaseError> {
+    pub async fn first_vibe(self) -> Result<(), Error> {
         let mut results = self.limit(1).execute().await?;
         Ok(results.pop())
     }
 
     /// tea Execute and return single result (error if not exactly one)
     #[instrument(skip(self))]
-    pub async fn single_main_character(self) -> Result<T, DatabaseError> {
+    pub async fn single_main_character(self) -> Result<(), Error> {
         let results = self.limit(2).execute().await?;
         
         match results.len() {
@@ -280,7 +280,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// flex Count total matching records
     #[instrument(skip(self))]
-    pub async fn count_the_vibes(mut self) -> Result<u64, DatabaseError> {
+    pub async fn count_the_vibes(mut self) -> Result<(), Error> {
         debug!(table = %self.table, "Counting records");
         
         // Modify query for counting
@@ -315,14 +315,14 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// vibe Check if any records exist
     #[instrument(skip(self))]
-    pub async fn exists_no_cap(self) -> Result<bool, DatabaseError> {
+    pub async fn exists_no_cap(self) -> Result<(), Error> {
         let count = self.count_the_vibes().await?;
         Ok(count > 0)
     }
 
     /// sus Build SQL query string
     #[instrument(skip(self))]
-    fn build_sql(&self) -> Result<String, DatabaseError> {
+    fn build_sql(&self) -> Result<(), Error> {
         let mut sql = String::new();
         
         // SELECT clause
@@ -399,7 +399,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
     }
 
     /// facts Execute SQL and return raw rows with real database execution
-    async fn execute_sql(&self, sql: &str) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    async fn execute_sql(&self, sql: &str) -> Result<(), Error> {
         debug!(sql = %sql, params = ?self.parameters, "Executing SQL query");
         
         // Execute query with parameters using the connection pool
@@ -524,7 +524,7 @@ impl QueryExecutor {
 
     /// facts Execute raw SQL query
     #[instrument(skip(self))]
-    pub async fn execute_raw(&self, sql: &str, params: &[SqlValue]) -> Result<Vec<HashMap<String, SqlValue>>, DatabaseError> {
+    pub async fn execute_raw(&self, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
         info!(sql = sql, param_count = params.len(), "Executing raw SQL");
         
         // Check cache first
@@ -572,7 +572,7 @@ pub trait VibeQuery<T: Entity> {
     fn limit(&self, count: u64) -> FluentQueryBuilder<T>;
     
     /// Execute and get results
-    fn get_vibes(&self) -> impl std::future::Future<Output = Result<Vec<T>, DatabaseError>> + Send;
+    fn get_vibes(&self) -> impl std::future::Future<Output = Result<(), Error>> + Send;
 }
 
 #[cfg(test)]
@@ -603,7 +603,7 @@ mod tests {
             }
         }
 
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<Self, DatabaseError> {
+        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
             Ok(Self {
                 id: match row.get("id") {
                     Some(SqlValue::Integer(id)) => Some(*id),

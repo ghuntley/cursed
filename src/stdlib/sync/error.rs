@@ -4,7 +4,7 @@ use std::error::Error as StdError;
 use std::time::Duration;
 
 /// Result type for sync operations
-pub type SyncResult<T> = Result<T, SyncError>;
+pub type SyncResult<(), Error>;
 
 /// Comprehensive error types for synchronization operations
 #[derive(Debug, Clone, PartialEq)]

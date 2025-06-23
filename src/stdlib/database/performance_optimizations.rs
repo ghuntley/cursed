@@ -107,7 +107,7 @@ impl QueryPlanCache {
 
     /// facts Get cached query plan or generate new one
     #[instrument(skip(self))]
-    pub async fn get_or_create_plan(&self, sql: &str, params: &[SqlValue]) -> Result<CachedQueryPlan, DatabaseError> {
+    pub async fn get_or_create_plan(&self, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
         let fingerprint = self.generate_fingerprint(sql, params)?;
         
         // Try to get from cache first
@@ -149,7 +149,7 @@ impl QueryPlanCache {
     }
 
     /// lowkey Generate fingerprint for query caching
-    fn generate_fingerprint(&self, sql: &str, params: &[SqlValue]) -> Result<QueryFingerprint, DatabaseError> {
+    fn generate_fingerprint(&self, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
         let normalized_sql = self.normalize_sql(sql);
         let parameter_types = params.iter()
             .map(|p| self.sql_value_to_type_info(p))
@@ -187,7 +187,7 @@ impl QueryPlanCache {
     }
 
     /// yolo Generate actual query plan (mock implementation)
-    async fn generate_query_plan(&self, sql: &str, _params: &[SqlValue]) -> Result<CachedQueryPlan, DatabaseError> {
+    async fn generate_query_plan(&self, sql: &str, _params: &[SqlValue]) -> Result<(), Error> {
         trace!(sql = %sql, "Generating query execution plan");
         
         // Simulate plan generation delay
@@ -396,7 +396,7 @@ impl PreparedStatementPool {
 
     /// facts Get or create prepared statement
     #[instrument(skip(self))]
-    pub async fn get_or_prepare(&self, sql: &str) -> Result<PooledStatement, DatabaseError> {
+    pub async fn get_or_prepare(&self, sql: &str) -> Result<(), Error> {
         let statement_key = self.generate_statement_key(sql);
         
         // Update usage stats
@@ -457,7 +457,7 @@ impl PreparedStatementPool {
     }
 
     /// bestie Create new prepared statement
-    async fn create_prepared_statement(&self, sql: &str) -> Result<PooledStatement, DatabaseError> {
+    async fn create_prepared_statement(&self, sql: &str) -> Result<(), Error> {
         trace!(sql = %sql, "Creating prepared statement");
         
         // Simulate statement preparation
@@ -479,7 +479,7 @@ impl PreparedStatementPool {
     }
 
     /// yolo Store statement in pool with LRU eviction
-    async fn store_statement(&self, key: String, statement: PooledStatement) -> Result<(), DatabaseError> {
+    async fn store_statement(&self, key: String, statement: PooledStatement) -> Result<(), Error> {
         if let Ok(mut pool) = self.pool.write() {
             // Check if we need to evict
             if pool.len() >= self.max_statements {
@@ -493,7 +493,7 @@ impl PreparedStatementPool {
     }
 
     /// slay Evict least recently used statement
-    async fn evict_least_recently_used(&self, pool: &mut HashMap<String, PooledStatement>) -> Result<(), DatabaseError> {
+    async fn evict_least_recently_used(&self, pool: &mut HashMap<String, PooledStatement>) -> Result<(), Error> {
         let mut oldest_key = None;
         let mut oldest_time = Instant::now();
         
@@ -544,7 +544,7 @@ impl PreparedStatementPool {
 
     /// highkey Clean up expired statements
     #[instrument(skip(self))]
-    pub async fn cleanup_expired(&self) -> Result<u32, DatabaseError> {
+    pub async fn cleanup_expired(&self) -> Result<(), Error> {
         let mut removed_count = 0;
         
         if let Ok(mut pool) = self.pool.write() {
@@ -610,7 +610,7 @@ impl ConnectionWarmer {
 
     /// facts Start connection warming process
     #[instrument(skip(self))]
-    pub async fn start_warming(&self) -> Result<(), DatabaseError> {
+    pub async fn start_warming(&self) -> Result<(), Error> {
         if let Ok(mut warming) = self.warming_in_progress.lock() {
             if *warming {
                 debug!("Connection warming already in progress");
@@ -660,7 +660,7 @@ impl ConnectionWarmer {
     }
 
     /// lowkey Execute warmup query on connection
-    async fn execute_warmup_query(&self, connection_id: &str, query: &str) -> Result<(), DatabaseError> {
+    async fn execute_warmup_query(&self, connection_id: &str, query: &str) -> Result<(), Error> {
         trace!(
             connection = %connection_id,
             query = %query,
@@ -691,7 +691,7 @@ impl ConnectionWarmer {
 
     /// bestie Return connection to warm pool
     #[instrument(skip(self))]
-    pub async fn return_connection(&self, connection_id: String) -> Result<(), DatabaseError> {
+    pub async fn return_connection(&self, connection_id: String) -> Result<(), Error> {
         if let Ok(mut warm_conns) = self.warm_connections.lock() {
             if warm_conns.len() < self.target_connections {
                 warm_conns.push_back(connection_id);
@@ -777,7 +777,7 @@ impl BatchOperationOptimizer {
 
     /// facts Add operation to batch
     #[instrument(skip(self, operation))]
-    pub async fn add_operation(&self, operation: BatchOperation) -> Result<bool, DatabaseError> {
+    pub async fn add_operation(&self, operation: BatchOperation) -> Result<(), Error> {
         let should_flush = {
             if let Ok(mut pending) = self.pending_operations.lock() {
                 pending.push(operation);
@@ -805,7 +805,7 @@ impl BatchOperationOptimizer {
 
     /// periodt Flush pending batch operations
     #[instrument(skip(self))]
-    pub async fn flush_batch(&self) -> Result<u32, DatabaseError> {
+    pub async fn flush_batch(&self) -> Result<(), Error> {
         let operations = {
             if let Ok(mut pending) = self.pending_operations.lock() {
                 let ops = pending.clone();
@@ -873,7 +873,7 @@ impl BatchOperationOptimizer {
     }
 
     /// lowkey Execute batch insert operation
-    async fn execute_batch_insert(&self, table: &str, value_sets: Vec<HashMap<String, SqlValue>>) -> Result<u32, DatabaseError> {
+    async fn execute_batch_insert(&self, table: &str, value_sets: Vec<HashMap<String, SqlValue>>) -> Result<(), Error> {
         if value_sets.is_empty() {
             return Ok(0);
         }
@@ -923,7 +923,7 @@ impl BatchOperationOptimizer {
     }
 
     /// bestie Execute single operation
-    async fn execute_single_operation(&self, operation: BatchOperation) -> Result<(), DatabaseError> {
+    async fn execute_single_operation(&self, operation: BatchOperation) -> Result<(), Error> {
         match operation {
             BatchOperation::Update { table, values, conditions } => {
                 debug!(table = %table, "Executing update operation");

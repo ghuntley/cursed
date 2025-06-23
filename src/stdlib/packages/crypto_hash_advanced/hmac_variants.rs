@@ -4,7 +4,7 @@ use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::collections::HashMap;
 
 /// Result type for HMAC operations
-pub type HmacResult<T> = Result<T, CursedError>;
+pub type HmacResult<(), Error>;
 
 /// HMAC variant algorithms
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -452,7 +452,7 @@ impl AsyncScheduler {
     }
 
     /// Integrate with goroutine safe points
-    pub fn coordinate_with_goroutines(&self) -> Result<(), crate::error::Error> {
+    pub fn coordinate_with_goroutines(&self) -> Result<(), Error> {
         if let Some(ref scheduler) = self.goroutine_scheduler {
             scheduler.coordinate_gc(Duration::from_millis(10))
         } else {

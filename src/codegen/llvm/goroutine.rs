@@ -14,7 +14,7 @@ use std::collections::HashMap;
 // Import real inkwell types for LLVM integration
 use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue},
-    types::{BasicTypeEnum, IntType, PointerType, FunctionType},
+    crate::types::{BasicTypeEnum, IntType, PointerType, FunctionType},
     basic_block::BasicBlock,
     AddressSpace,
     IntPredicate,
@@ -38,7 +38,7 @@ pub fn get_runtime_scheduler() -> Option<*mut crate::runtime::goroutine::Gorouti
 /// Trait for compiling goroutine operations to LLVM IR
 pub trait GoroutineCompiler<'ctx> {
     /// Compile goroutine spawn expression (stan)
-    fn compile_goroutine_spawn(&mut self, spawn: &GoroutineSpawn) -> Result<BasicValueEnum<'ctx>, Error>;
+    fn compile_goroutine_spawn(&mut self, spawn: &GoroutineSpawn) -> Result<(), Error>;
     
     /// Generate yield point for cooperative scheduling
     fn generate_yield_point(&mut self, location: &str) -> Result<(), Error>;
@@ -47,7 +47,7 @@ pub trait GoroutineCompiler<'ctx> {
     fn generate_safe_point(&mut self, location: &str) -> Result<(), Error>;
     
     /// Generate goroutine scheduler setup code
-    fn setup_goroutine_runtime(&mut self) -> Result<PointerValue<'ctx>, Error>;
+    fn setup_goroutine_runtime(&mut self) -> Result<(), Error>;
     
     /// Declare runtime FFI functions in the module
     fn declare_goroutine_runtime_functions(&mut self) -> Result<(), Error>;
@@ -55,7 +55,7 @@ pub trait GoroutineCompiler<'ctx> {
 
 /// Implementation of GoroutineCompiler for the real LLVM code generator
 impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
-    fn compile_goroutine_spawn(&mut self, spawn: &GoroutineSpawn) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn compile_goroutine_spawn(&mut self, spawn: &GoroutineSpawn) -> Result<(), Error> {
         tracing::info!("Compiling goroutine spawn expression (stan keyword)");
         
         // Ensure runtime functions are declared
@@ -193,7 +193,7 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         Ok(())
     }
     
-    fn setup_goroutine_runtime(&mut self) -> Result<PointerValue<'ctx>, Error> {
+    fn setup_goroutine_runtime(&mut self) -> Result<(), Error> {
         tracing::info!("Setting up goroutine runtime");
         
         // Ensure runtime functions are declared
@@ -256,7 +256,7 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
 /// Helper implementations for LlvmCodeGeneratorReal
 impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
     /// Extract function name from goroutine spawn expression
-    fn extract_function_name(&self, spawn: &GoroutineSpawn) -> Result<String, Error> {
+    fn extract_function_name(&self, spawn: &GoroutineSpawn) -> Result<(), Error> {
         // Extract function name from the AST node
         let spawn_str = spawn.string();
         
@@ -273,7 +273,7 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
     }
     
     /// Get runtime scheduler pointer
-    fn get_runtime_scheduler_ptr(&self) -> Result<PointerValue<'ctx>, Error> {
+    fn get_runtime_scheduler_ptr(&self) -> Result<(), Error> {
         // Get the static scheduler pointer from the runtime
         let scheduler_opt = get_runtime_scheduler();
         let scheduler_ptr_raw = scheduler_opt
@@ -336,7 +336,7 @@ pub mod runtime_integration {
     use super::*;
     
     /// Initialize a runtime scheduler and set it as the global scheduler
-    pub fn initialize_scheduler() -> Result<*mut crate::runtime::goroutine::GoroutineScheduler, Error> {
+    pub fn initialize_scheduler() -> Result<(), Error> {
         let mut scheduler = Box::new(crate::runtime::goroutine::GoroutineScheduler::new());
         scheduler.start()
             .map_err(|e| Error::Runtime(format!("Failed to start scheduler: {}", e)))?;

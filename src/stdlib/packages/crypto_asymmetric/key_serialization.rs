@@ -69,7 +69,7 @@ impl SerializationFormat {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "PEM" => Ok(SerializationFormat::Pem),
             "DER" => Ok(SerializationFormat::Der),
@@ -134,7 +134,7 @@ impl KeyType {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<Self, CursedError> {
+    pub fn from_name(name: &str) -> Result<(), Error> {
         match name.to_uppercase().as_str() {
             "RSA-PRIVATE" => Ok(KeyType::RsaPrivate),
             "RSA-PUBLIC" => Ok(KeyType::RsaPublic),
@@ -183,11 +183,11 @@ impl SerializationResult {
         }
     }
     
-    pub fn to_value(&self) -> Result<Value, CursedError> {
+    pub fn to_value(&self) -> Result<(), Error> {
         let mut map = HashMap::new();
         
-        map.insert("format".to_string(), Value::String(self.format.name().to_string()));
-        map.insert("key_type".to_string(), Value::String(self.key_type.name().to_string()));
+        map.insert("format".to_string(), Value::String(self.format.to_string()().to_string()));
+        map.insert("key_type".to_string(), Value::String(self.key_type.to_string()().to_string()));
         map.insert("encoding".to_string(), Value::String(self.encoding.clone()));
         
         // Include both raw bytes and appropriate string representation
@@ -213,7 +213,7 @@ impl SerializationResult {
 }
 
 /// Serialize key to format
-pub fn serialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn serialize_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Key serialization requires: key_type, key_data, format".to_string()));
     }
@@ -253,7 +253,7 @@ pub fn serialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Serialize RSA private key
-fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     let private_key = RsaPrivateKey::from_pkcs8_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode RSA private key: {}", e)))?;
     
@@ -291,7 +291,7 @@ fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> Re
 }
 
 /// Serialize RSA public key
-fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     let public_key = RsaPublicKey::from_public_key_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode RSA public key: {}", e)))?;
     
@@ -329,7 +329,7 @@ fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> Res
 }
 
 /// Create SSH format for RSA public key
-fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> Result<Vec<u8>, CursedError> {
+fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> Result<(), Error> {
     // SSH RSA public key format: ssh-rsa <base64-encoded-key> [comment]
     let der = public_key.to_public_key_der()
         .map_err(|e| CursedError::CryptoError(format!("Failed to encode RSA public key: {}", e)))?;
@@ -341,7 +341,7 @@ fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> Result<Vec<u8>, Curse
 }
 
 /// Create JWK format for RSA public key
-fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> Result<(), Error> {
     use rsa::traits::PublicKeyParts;
     
     let n = public_key.n();
@@ -367,7 +367,7 @@ fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> Result<Vec<u8>, Curse
 }
 
 /// Create JWK format for RSA private key  
-fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> Result<(), Error> {
     use rsa::traits::PublicKeyParts;
     
     let public_key = private_key.to_public_key();
@@ -398,7 +398,7 @@ fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> Result<Vec<u8>, Cu
 }
 
 /// Create JWK format for P-256 private key
-fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = private_key.public_key();
@@ -433,7 +433,7 @@ fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> Result<Vec<u8>, C
 }
 
 /// Create JWK format for P-256 public key
-fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -463,7 +463,7 @@ fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> Result<Vec<u8>, Cur
 }
 
 /// Create SSH format for P-256 public key
-fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> Result<Vec<u8>, CursedError> {
+fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -474,7 +474,7 @@ fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> Result<Vec<u8>, Cur
 }
 
 /// Create JWK format for P-384 private key
-fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = private_key.public_key();
@@ -509,7 +509,7 @@ fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> Result<Vec<u8>, C
 }
 
 /// Create JWK format for P-384 public key
-fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -539,7 +539,7 @@ fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> Result<Vec<u8>, Cur
 }
 
 /// Create SSH format for P-384 public key
-fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> Result<Vec<u8>, CursedError> {
+fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> Result<(), Error> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -550,7 +550,7 @@ fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> Result<Vec<u8>, Cur
 }
 
 /// Create PEM format for Ed25519 private key
-fn create_ed25519_private_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_ed25519_private_key_pem(key_data: &[u8]) -> Result<(), Error> {
     let der = create_ed25519_private_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
@@ -565,7 +565,7 @@ fn create_ed25519_private_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedErro
 }
 
 /// Create DER format for Ed25519 private key  
-fn create_ed25519_private_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_ed25519_private_key_der(key_data: &[u8]) -> Result<(), Error> {
     // Ed25519 PKCS#8 DER format
     let mut der = Vec::new();
     
@@ -593,7 +593,7 @@ fn create_ed25519_private_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedErro
 }
 
 /// Create PEM format for Ed25519 public key
-fn create_ed25519_public_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_ed25519_public_key_pem(key_data: &[u8]) -> Result<(), Error> {
     let der = create_ed25519_public_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----\n",
@@ -608,7 +608,7 @@ fn create_ed25519_public_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError
 }
 
 /// Create DER format for Ed25519 public key
-fn create_ed25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_ed25519_public_key_der(key_data: &[u8]) -> Result<(), Error> {
     // Ed25519 SubjectPublicKeyInfo DER format
     let mut der = Vec::new();
     
@@ -629,7 +629,7 @@ fn create_ed25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError
 }
 
 /// Create JWK format for Ed25519 private key
-fn create_jwk_ed25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_ed25519_private_key(key_data: &[u8]) -> Result<(), Error> {
     let signing_key = SigningKey::from_bytes(
         key_data.try_into()
             .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 private key length".to_string()))?
@@ -653,7 +653,7 @@ fn create_jwk_ed25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedErro
 }
 
 /// Create JWK format for Ed25519 public key
-fn create_jwk_ed25519_public_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_ed25519_public_key(key_data: &[u8]) -> Result<(), Error> {
     let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
     
     let jwk = serde_json::json!({
@@ -669,7 +669,7 @@ fn create_jwk_ed25519_public_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError
 }
 
 /// Create PEM format for X25519 private key
-fn create_x25519_private_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_x25519_private_key_pem(key_data: &[u8]) -> Result<(), Error> {
     let der = create_x25519_private_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
@@ -684,7 +684,7 @@ fn create_x25519_private_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError
 }
 
 /// Create DER format for X25519 private key  
-fn create_x25519_private_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_x25519_private_key_der(key_data: &[u8]) -> Result<(), Error> {
     // X25519 PKCS#8 DER format
     let mut der = Vec::new();
     
@@ -712,7 +712,7 @@ fn create_x25519_private_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError
 }
 
 /// Create PEM format for X25519 public key
-fn create_x25519_public_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_x25519_public_key_pem(key_data: &[u8]) -> Result<(), Error> {
     let der = create_x25519_public_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----\n",
@@ -727,7 +727,7 @@ fn create_x25519_public_key_pem(key_data: &[u8]) -> Result<Vec<u8>, CursedError>
 }
 
 /// Create DER format for X25519 public key
-fn create_x25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_x25519_public_key_der(key_data: &[u8]) -> Result<(), Error> {
     // X25519 SubjectPublicKeyInfo DER format
     let mut der = Vec::new();
     
@@ -748,7 +748,7 @@ fn create_x25519_public_key_der(key_data: &[u8]) -> Result<Vec<u8>, CursedError>
 }
 
 /// Create JWK format for X25519 private key
-fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<(), Error> {
     let key_array: [u8; 32] = key_data.try_into()
         .map_err(|_| CursedError::InvalidArgument("Invalid X25519 private key length".to_string()))?;
     let private_key = EphemeralSecret::from(key_array);
@@ -771,7 +771,7 @@ fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError
 }
 
 /// Create JWK format for X25519 public key
-fn create_jwk_x25519_public_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError> {
+fn create_jwk_x25519_public_key(key_data: &[u8]) -> Result<(), Error> {
     let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
     
     let jwk = serde_json::json!({
@@ -787,7 +787,7 @@ fn create_jwk_x25519_public_key(key_data: &[u8]) -> Result<Vec<u8>, CursedError>
 }
 
 /// Serialize P-256 private key
-fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     let private_key = P256SecretKey::from_pkcs8_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -823,7 +823,7 @@ fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> R
 }
 
 /// Serialize P-256 public key
-fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     let public_key = P256PublicKey::from_public_key_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 public key: {}", e)))?;
     
@@ -860,7 +860,7 @@ fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> Re
 }
 
 /// Serialize P-384 private key
-fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     let private_key = P384SecretKey::from_pkcs8_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -896,7 +896,7 @@ fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> R
 }
 
 /// Serialize P-384 public key
-fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     let public_key = P384PublicKey::from_public_key_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 public key: {}", e)))?;
     
@@ -933,7 +933,7 @@ fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> Re
 }
 
 /// Serialize Ed25519 private key
-fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("Ed25519 private key must be 32 bytes".to_string()));
     }
@@ -965,7 +965,7 @@ fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -
 }
 
 /// Serialize Ed25519 public key
-fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("Ed25519 public key must be 32 bytes".to_string()));
     }
@@ -999,7 +999,7 @@ fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) ->
 }
 
 /// Serialize X25519 private key
-fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
     }
@@ -1026,7 +1026,7 @@ fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) ->
 }
 
 /// Serialize X25519 public key
-fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> Result<Value, CursedError> {
+fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
     }
@@ -1053,7 +1053,7 @@ fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> 
 }
 
 /// Deserialize key from format
-pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn deserialize_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Key deserialization requires: format, serialized_data, expected_key_type".to_string()));
     }
@@ -1112,8 +1112,8 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
     };
     
     let mut result = HashMap::new();
-    result.insert("format".to_string(), Value::String(format.name().to_string()));
-    result.insert("key_type".to_string(), Value::String(expected_key_type.name().to_string()));
+    result.insert("format".to_string(), Value::String(format.to_string()().to_string()));
+    result.insert("key_type".to_string(), Value::String(expected_key_type.to_string()().to_string()));
     result.insert("valid".to_string(), Value::Boolean(validation_result.is_ok()));
     result.insert("key_data".to_string(), Value::String(hex::encode(&data_bytes)));
     
@@ -1125,7 +1125,7 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Parse PEM to raw bytes
-fn parse_pem_to_bytes(pem_data: &str) -> Result<Vec<u8>, CursedError> {
+fn parse_pem_to_bytes(pem_data: &str) -> Result<(), Error> {
     // Remove PEM headers and decode base64 content
     let lines: Vec<&str> = pem_data.split("\n").collect();
     
@@ -1160,7 +1160,7 @@ fn parse_pem_to_bytes(pem_data: &str) -> Result<Vec<u8>, CursedError> {
 }
 
 /// Parse SSH key to raw bytes
-fn parse_ssh_to_bytes(ssh_data: &str) -> Result<Vec<u8>, CursedError> {
+fn parse_ssh_to_bytes(ssh_data: &str) -> Result<(), Error> {
     // SSH public key format: <algorithm> <base64-key> [comment]
     let parts: Vec<&str> = ssh_data.trim().split_whitespace().collect();
     
@@ -1183,7 +1183,7 @@ fn parse_ssh_to_bytes(ssh_data: &str) -> Result<Vec<u8>, CursedError> {
 }
 
 /// Parse JWK to raw bytes
-fn parse_jwk_to_bytes(jwk_str: &str, expected_key_type: &KeyType) -> Result<Vec<u8>, CursedError> {
+fn parse_jwk_to_bytes(jwk_str: &str, expected_key_type: &KeyType) -> Result<(), Error> {
     let jwk: serde_json::Value = serde_json::from_str(jwk_str)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid JWK JSON: {}", e)))?;
     
@@ -1410,12 +1410,12 @@ fn validate_x25519_public_key_data(data: &[u8]) -> Result<(), String> {
 /// List supported serialization formats
 pub fn list_serialization_formats() -> Vec<String> {
     vec![
-        SerializationFormat::Pem.name().to_string(),
-        SerializationFormat::Der.name().to_string(),
-        SerializationFormat::Jwk.name().to_string(),
-        SerializationFormat::Ssh.name().to_string(),
-        SerializationFormat::Raw.name().to_string(),
-        SerializationFormat::Hex.name().to_string(),
+        SerializationFormat::Pem.to_string()().to_string(),
+        SerializationFormat::Der.to_string()().to_string(),
+        SerializationFormat::Jwk.to_string()().to_string(),
+        SerializationFormat::Ssh.to_string()().to_string(),
+        SerializationFormat::Raw.to_string()().to_string(),
+        SerializationFormat::Hex.to_string()().to_string(),
     ]
 }
 
@@ -1477,7 +1477,7 @@ pub fn get_format_compatibility() -> HashMap<String, Vec<String>> {
 }
 
 /// Get detailed format information
-pub fn get_format_info(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn get_format_info(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Format name required".to_string()));
     }
@@ -1490,7 +1490,7 @@ pub fn get_format_info(args: Vec<Value>) -> Result<Value, CursedError> {
     let format = SerializationFormat::from_name(&format_name)?;
     
     let mut info = HashMap::new();
-    info.insert("name".to_string(), Value::String(format.name().to_string()));
+    info.insert("name".to_string(), Value::String(format.to_string()().to_string()));
     info.insert("description".to_string(), Value::String(format.description().to_string()));
     info.insert("file_extension".to_string(), Value::String(format.file_extension().to_string()));
     
@@ -1515,7 +1515,7 @@ pub fn get_format_info(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// Convert between key formats
-pub fn convert_key_format(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn convert_key_format(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Key format conversion requires: key_type, key_data, source_format, target_format".to_string()));
     }

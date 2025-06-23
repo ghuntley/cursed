@@ -30,7 +30,7 @@ pub use regex::{
 };
 
 // String manipulation result type
-pub type StringResult<T> = Result<T, StringError>;
+pub type StringResult<(), Error>;
 
 /// Errors that can occur during string operations
 #[derive(Debug, Clone, PartialEq)]

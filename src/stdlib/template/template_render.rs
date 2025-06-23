@@ -1,3 +1,4 @@
+use crate::crate::types::SecurityContext;
 /// Template Renderer - Executes template AST and generates output
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -9,6 +10,7 @@ use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateConfig, TemplateContext, TemplateLoader};
 use super::template_syntax::{
+use crate::stdlib::web_vibez::SecurityContext;
     TemplateAst, TemplateNode, BlockNode, TemplateExpression, FilterCall, BinaryOperator, UnaryOperator
 };
 use super::template_filters::FilterRegistry;
@@ -72,11 +74,11 @@ impl RenderContext {
         self.template_context.get(key)
     }
 
-    pub fn set(&mut self, key: String, value: CursedObject) -> Result<(), CursedError> {
+    pub fn set(&mut self, key: String, value: CursedObject) -> Result<(), Error> {
         self.template_context.set(key, value)
     }
     
-    pub fn update(&mut self, key: String, value: CursedObject) -> Result<bool, CursedError> {
+    pub fn update(&mut self, key: String, value: CursedObject) -> Result<(), Error> {
         self.template_context.update(key, value)
     }
 
@@ -223,14 +225,14 @@ impl TemplateRenderer {
 
     /// Render a template AST with the given context
     #[instrument(skip(self, ast, context))]
-    pub fn render(&self, ast: &TemplateAst, context: TemplateContext) -> Result<String, CursedError> {
+    pub fn render(&self, ast: &TemplateAst, context: TemplateContext) -> Result<(), Error> {
         let render_context = RenderContext::new(context);
         self.render_with_context(ast, render_context)
     }
 
     /// Render with comprehensive context and return detailed results
     #[instrument(skip(self, ast, render_context))]
-    pub fn render_with_context(&self, ast: &TemplateAst, render_context: RenderContext) -> Result<String, CursedError> {
+    pub fn render_with_context(&self, ast: &TemplateAst, render_context: RenderContext) -> Result<(), Error> {
         let start_time = Instant::now();
         info!(nodes = ast.nodes.len(), "Starting template rendering");
         
@@ -262,7 +264,7 @@ impl TemplateRenderer {
 
     /// Render with full result metadata
     #[instrument(skip(self, ast, render_context))]
-    pub fn render_with_result(&self, ast: &TemplateAst, render_context: RenderContext) -> Result<RenderResult, CursedError> {
+    pub fn render_with_result(&self, ast: &TemplateAst, render_context: RenderContext) -> Result<(), Error> {
         let start_time = Instant::now();
         info!(nodes = ast.nodes.len(), "Starting comprehensive template rendering");
         
@@ -325,7 +327,7 @@ impl TemplateRenderer {
         nodes: &[TemplateNode],
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.render_nodes_with_context(nodes, &render_context, output)
     }
@@ -337,7 +339,7 @@ impl TemplateRenderer {
         nodes: &[TemplateNode],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         for node in nodes {
             self.render_node_with_context(node, render_context, output)?;
             self.nodes_processed += 1;
@@ -352,7 +354,7 @@ impl TemplateRenderer {
         node: &TemplateNode,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.render_node_with_context(node, &render_context, output)
     }
@@ -364,7 +366,7 @@ impl TemplateRenderer {
         node: &TemplateNode,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         match node {
             TemplateNode::Text(text) => {
                 output.push_str(text);
@@ -418,7 +420,7 @@ impl TemplateRenderer {
         filters: &[FilterCall],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Track variable resolution
         self.variables_resolved += 1;
 
@@ -447,7 +449,7 @@ impl TemplateRenderer {
         filters: &[FilterCall],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Track variable resolution
         self.variables_resolved += 1;
 
@@ -481,7 +483,7 @@ impl TemplateRenderer {
         block: &BlockNode,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.render_block_with_context(block, &render_context, output)
     }
@@ -493,7 +495,7 @@ impl TemplateRenderer {
         block: &BlockNode,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         match block {
             BlockNode::If { condition, then_branch, elsif_branches, else_branch } => {
                 let condition_value = self.evaluate_expression_with_context(condition, render_context)?;
@@ -666,7 +668,7 @@ impl TemplateRenderer {
         name: &str,
         value: &TemplateExpression,
         render_context: &RenderContext,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let evaluated_value = self.evaluate_expression_with_context(value, render_context)?;
         
         // Actually update the template context
@@ -689,7 +691,7 @@ impl TemplateRenderer {
         else_branch: &Option<Vec<TemplateNode>>,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let condition_value = self.evaluate_expression_with_context(condition, render_context)?;
         if self.is_truthy_cursed(&condition_value) {
             self.render_nodes_with_context(then_branch, render_context, output)?;
@@ -708,7 +710,7 @@ impl TemplateRenderer {
         body: &[TemplateNode],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let iterable = self.evaluate_expression_with_context(iterator, render_context)?;
         let items = self.make_iterable(&iterable)?;
         
@@ -741,7 +743,7 @@ impl TemplateRenderer {
         name: &str,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Load the base template
         let template_source = self.loader.load(name)?;
         debug!(template = name, "Loading base template - lowkey extends vibes");
@@ -781,7 +783,7 @@ impl TemplateRenderer {
         ast: &TemplateAst,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         for node in &ast.nodes {
             match node {
                 TemplateNode::BlockDef { name, content, .. } => {
@@ -811,7 +813,7 @@ impl TemplateRenderer {
         include_context: &Option<HashMap<String, TemplateExpression>>,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.render_include_with_context(template_name, include_context, &render_context, output)
     }
@@ -824,7 +826,7 @@ impl TemplateRenderer {
         include_context: &Option<HashMap<String, TemplateExpression>>,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Prevent infinite recursion
         if self.nesting_depth >= self.config.max_nesting_depth {
             return Err(CursedError::TemplateError {
@@ -881,7 +883,7 @@ impl TemplateRenderer {
         blocks: &HashMap<String, Vec<TemplateNode>>,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.render_layout_with_context(name, blocks, &render_context, output)
     }
@@ -894,7 +896,7 @@ impl TemplateRenderer {
         blocks: &HashMap<String, Vec<TemplateNode>>,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         // Load the layout template
         let layout_source = self.loader.load(name)?;
         let lexer = super::template_syntax::TemplateLexer::new(&layout_source, &self.config.delimiters);
@@ -923,7 +925,7 @@ impl TemplateRenderer {
         &self,
         expr: &TemplateExpression,
         context: &TemplateContext,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.evaluate_expression_with_context(expr, &render_context)
     }
@@ -934,7 +936,7 @@ impl TemplateRenderer {
         &self,
         expr: &TemplateExpression,
         render_context: &RenderContext,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         match expr {
             TemplateExpression::Variable(name) => {
                 // Support CURSED-style variable names
@@ -1045,7 +1047,7 @@ impl TemplateRenderer {
         args: &[TemplateExpression],
         value: CursedObject,
         context: &TemplateContext,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let render_context = RenderContext::new(context.clone());
         self.apply_filter_with_context(filter_name, args, value, &render_context)
     }
@@ -1058,7 +1060,7 @@ impl TemplateRenderer {
         args: &[TemplateExpression],
         value: CursedObject,
         render_context: &RenderContext,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         let mut filter_args = vec![value];
         for arg_expr in args {
             filter_args.push(self.evaluate_expression_with_context(arg_expr, render_context)?);
@@ -1098,7 +1100,7 @@ impl TemplateRenderer {
         left: &CursedObject,
         op: &BinaryOperator,
         right: &CursedObject,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         match op {
             BinaryOperator::Add => self.add_objects(left, right),
             BinaryOperator::Sub => self.sub_objects(left, right),
@@ -1130,7 +1132,7 @@ impl TemplateRenderer {
         &self,
         op: &UnaryOperator,
         operand: &CursedObject,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         match op {
             UnaryOperator::Not => Ok(CursedObject::Boolean(!self.is_truthy(operand))),
             UnaryOperator::Minus => match operand {
@@ -1157,7 +1159,7 @@ impl TemplateRenderer {
     }
 
     /// Helper methods for arithmetic operations
-    fn add_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<CursedObject, CursedError> {
+    fn add_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => Ok(CursedObject::Integer(a + b)),
             (CursedObject::Float(a), CursedObject::Float(b)) => Ok(CursedObject::Float(a + b)),
@@ -1171,7 +1173,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn sub_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<CursedObject, CursedError> {
+    fn sub_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => Ok(CursedObject::Integer(a - b)),
             (CursedObject::Float(a), CursedObject::Float(b)) => Ok(CursedObject::Float(a - b)),
@@ -1184,7 +1186,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn mul_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<CursedObject, CursedError> {
+    fn mul_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => Ok(CursedObject::Integer(a * b)),
             (CursedObject::Float(a), CursedObject::Float(b)) => Ok(CursedObject::Float(a * b)),
@@ -1197,7 +1199,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn div_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<CursedObject, CursedError> {
+    fn div_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => {
                 if *b == 0 {
@@ -1242,7 +1244,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn mod_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<CursedObject, CursedError> {
+    fn mod_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => {
                 if *b == 0 {
@@ -1260,7 +1262,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn compare_objects<F>(&self, left: &CursedObject, right: &CursedObject, op: F) -> Result<CursedObject, CursedError>
+    fn compare_objects<F>(&self, left: &CursedObject, right: &CursedObject, op: F) -> Result<(), Error>
     where
         F: Fn(f64, f64) -> bool,
     {
@@ -1281,7 +1283,7 @@ impl TemplateRenderer {
     }
 
     /// Extract numeric value from object
-    fn extract_number(&self, obj: &CursedObject) -> Result<f64, CursedError> {
+    fn extract_number(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::Integer(n) => Ok(*n as f64),
             CursedObject::Float(n) => Ok(*n),
@@ -1293,7 +1295,7 @@ impl TemplateRenderer {
     }
 
     /// Get property from object
-    fn get_property(&self, obj: &CursedObject, property: &str) -> Result<CursedObject, CursedError> {
+    fn get_property(&self, obj: &CursedObject, property: &str) -> Result<(), Error> {
         match obj {
             CursedObject::Map(map) => {
                 Ok(map.get(property).cloned().unwrap_or(CursedObject::Nil))
@@ -1306,7 +1308,7 @@ impl TemplateRenderer {
     }
 
     /// Get property from object with CURSED-style slang support
-    fn get_property_cursed(&self, obj: &CursedObject, property: &str) -> Result<CursedObject, CursedError> {
+    fn get_property_cursed(&self, obj: &CursedObject, property: &str) -> Result<(), Error> {
         // Normalize property name for CURSED-style access
         let normalized_property = match property {
             "flex" => "length",
@@ -1334,7 +1336,7 @@ impl TemplateRenderer {
     }
 
     /// Get index from object with CURSED-style support
-    fn get_index_cursed(&self, obj: &CursedObject, index: &CursedObject) -> Result<CursedObject, CursedError> {
+    fn get_index_cursed(&self, obj: &CursedObject, index: &CursedObject) -> Result<(), Error> {
         match (obj, index) {
             (CursedObject::Array(arr), CursedObject::Integer(i)) => {
                 let idx = *i as usize;
@@ -1362,7 +1364,7 @@ impl TemplateRenderer {
         left: &CursedObject,
         op: &BinaryOperator,
         right: &CursedObject,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         // Support CURSED-style Gen Z truthiness and operators
         match op {
             BinaryOperator::And => Ok(CursedObject::Boolean(
@@ -1392,7 +1394,7 @@ impl TemplateRenderer {
         &self,
         op: &UnaryOperator,
         operand: &CursedObject,
-    ) -> Result<CursedObject, CursedError> {
+    ) -> Result<(), Error> {
         match op {
             UnaryOperator::Not => Ok(CursedObject::Boolean(!self.is_truthy_cursed(operand))),
             UnaryOperator::Sus => Ok(CursedObject::Boolean(self.is_truthy_cursed(operand))), // Truthiness check
@@ -1474,7 +1476,7 @@ impl TemplateRenderer {
     }
 
     /// Convert object to iterable list
-    fn make_iterable(&self, obj: &CursedObject) -> Result<Vec<CursedObject>, CursedError> {
+    fn make_iterable(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::Array(arr) => Ok(arr.clone()),
             CursedObject::String(s) => Ok(s.chars().map(|c| CursedObject::String(c.to_string())).collect()),
@@ -1500,7 +1502,7 @@ impl TemplateRenderer {
     }
 
     /// Convert object to string
-    fn object_to_string(&self, obj: &CursedObject) -> Result<String, CursedError> {
+    fn object_to_string(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -1513,7 +1515,7 @@ impl TemplateRenderer {
     }
 
     /// Apply security escaping based on output format and security level
-    fn apply_security_escaping(&self, s: &str, render_context: &RenderContext) -> Result<String, CursedError> {
+    fn apply_security_escaping(&self, s: &str, render_context: &RenderContext) -> Result<(), Error> {
         match render_context.security_level {
             SecurityLevel::Strict | SecurityLevel::Moderate => {
                 match render_context.output_format {
@@ -1584,7 +1586,7 @@ impl TemplateRenderer {
     }
 
     /// Convert object to string with CURSED-style Gen Z slang
-    fn object_to_string_cursed(&self, obj: &CursedObject) -> Result<String, CursedError> {
+    fn object_to_string_cursed(&self, obj: &CursedObject) -> Result<(), Error> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -1600,7 +1602,7 @@ impl TemplateRenderer {
                 Ok(format!("[{}]", items.join(", ")))
             }
             CursedObject::Map(map) => {
-                let items: Result<Vec<String>, CursedError> = map.iter()
+                let items: Result<(), Error> = map.iter()
                     .map(|(k, v)| Ok(format!("{}: {}", k, self.object_to_string_cursed(v)?)))
                     .collect();
                 Ok(format!("{{{}}}", items?.join(", ")))

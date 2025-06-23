@@ -52,7 +52,7 @@ impl ScryptConfig {
     }
     
     /// periodt Validate scrypt parameters
-    pub fn validate(&self) -> Result<(), ScryptError> {
+    pub fn validate(&self) -> Result<(), Error> {
         if self.n == 0 || (self.n & (self.n - 1)) != 0 {
             return Err(ScryptError::InvalidConfig("N must be a power of 2".to_string()));
         }
@@ -125,13 +125,13 @@ pub struct ScryptEngine {
 
 impl ScryptEngine {
     /// slay Create new scrypt engine
-    pub fn new(config: ScryptConfig) -> Result<Self, ScryptError> {
+    pub fn new(config: ScryptConfig) -> Result<(), Error> {
         config.validate()?;
         Ok(Self { config })
     }
     
     /// bestie Derive key using scrypt (REAL IMPLEMENTATION)
-    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<Vec<u8>, ScryptError> {
+    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<(), Error> {
         // Validate inputs
         if password.is_empty() {
             return Err(ScryptError::InvalidPassword("Password cannot be empty".to_string()));
@@ -167,7 +167,7 @@ impl ScryptEngine {
     }
     
     /// vibes Hash password with scrypt (REAL IMPLEMENTATION)
-    pub fn hash_password(&self, password: &[u8]) -> Result<String, ScryptError> {
+    pub fn hash_password(&self, password: &[u8]) -> Result<(), Error> {
         use rand::RngCore;
         
         // Generate random salt
@@ -192,7 +192,7 @@ impl ScryptEngine {
     }
     
     /// periodt Verify password against scrypt hash (REAL IMPLEMENTATION)
-    pub fn verify_password(&self, password: &[u8], hash: &str) -> Result<bool, ScryptError> {
+    pub fn verify_password(&self, password: &[u8], hash: &str) -> Result<(), Error> {
         // Parse scrypt hash format
         let parts: Vec<&str> = hash.split('$').collect();
         if parts.len() != 5 || parts[1] != "scrypt" {
@@ -251,7 +251,7 @@ impl ScryptEngine {
 
     // Helper methods for real scrypt implementation
     
-    fn pbkdf2_sha256(&self, password: &[u8], salt: &[u8], iterations: u32, output_length: usize) -> Result<Vec<u8>, ScryptError> {
+    fn pbkdf2_sha256(&self, password: &[u8], salt: &[u8], iterations: u32, output_length: usize) -> Result<(), Error> {
         use hmac::{Hmac, Mac};
         use sha2::Sha256;
         
@@ -293,7 +293,7 @@ impl ScryptEngine {
         Ok(output)
     }
     
-    fn scrypt_romix(&self, block: &mut [u8]) -> Result<(), ScryptError> {
+    fn scrypt_romix(&self, block: &mut [u8]) -> Result<(), Error> {
         use sha2::{Sha256, Digest};
         
         if block.len() != 128 {
@@ -333,7 +333,7 @@ impl ScryptEngine {
         Ok(())
     }
     
-    fn scrypt_blockmix(&self, input: &[u8], output: &mut [u8]) -> Result<(), ScryptError> {
+    fn scrypt_blockmix(&self, input: &[u8], output: &mut [u8]) -> Result<(), Error> {
         if input.len() != 128 || output.len() != 128 {
             return Err(ScryptError::InternalError("Blocks must be 128 bytes".to_string()));
         }
@@ -366,7 +366,7 @@ impl ScryptEngine {
         Ok(())
     }
     
-    fn salsa20_hash(&self, block: &mut [u8; 64]) -> Result<(), ScryptError> {
+    fn salsa20_hash(&self, block: &mut [u8; 64]) -> Result<(), Error> {
         use sha2::{Sha256, Digest};
         
         // Simplified Salsa20-like operation using SHA256
@@ -414,7 +414,7 @@ impl ScryptEngine {
     }
     
     /// facts Generate secure random salt
-    pub fn generate_salt(&self) -> Result<Vec<u8>, ScryptError> {
+    pub fn generate_salt(&self) -> Result<(), Error> {
         use rand::RngCore;
         let mut salt = vec![0u8; self.config.salt_len];
         rand::thread_rng().fill_bytes(&mut salt);
@@ -457,7 +457,7 @@ impl ScryptUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay scrypt key derivation function
-pub fn scrypt_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn scrypt_derive_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("scrypt_derive_key requires at least password and salt arguments".to_string()));
     }
@@ -488,7 +488,7 @@ pub fn scrypt_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Hash password with scrypt
-pub fn scrypt_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn scrypt_hash_password(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("scrypt_hash_password requires password argument".to_string()));
     }
@@ -514,7 +514,7 @@ pub fn scrypt_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Verify password with scrypt
-pub fn scrypt_verify_password(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn scrypt_verify_password(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("scrypt_verify_password requires password and hash arguments".to_string()));
     }
@@ -541,7 +541,7 @@ pub fn scrypt_verify_password(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Create scrypt configuration
-pub fn create_scrypt_config(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn create_scrypt_config(args: Vec<Value>) -> Result<(), Error> {
     let n = if args.is_empty() {
         16384
     } else {

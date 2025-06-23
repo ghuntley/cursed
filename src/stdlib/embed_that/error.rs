@@ -106,7 +106,7 @@ impl From<toml::de::Error> for EmbedError {
 }
 
 /// Type alias for Results in embed operations
-pub type EmbedResult<T> = Result<T, EmbedError>;
+pub type EmbedResult<(), Error>;
 
 /// Helper functions for creating specific embed errors
 pub fn file_not_found(file: &str) -> EmbedError {

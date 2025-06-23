@@ -134,7 +134,7 @@ impl Argon2Engine {
     }
     
     /// bestie Derive key using Argon2 (REAL IMPLEMENTATION)
-    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<Vec<u8>, Argon2Error> {
+    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<(), Error> {
         // Validate input parameters
         if password.is_empty() {
             return Err(Argon2Error::InvalidPassword("Password cannot be empty".to_string()));
@@ -191,7 +191,7 @@ impl Argon2Engine {
     }
     
     /// vibes Hash password with Argon2 (REAL IMPLEMENTATION)
-    pub fn hash_password(&self, password: &[u8]) -> Result<String, Argon2Error> {
+    pub fn hash_password(&self, password: &[u8]) -> Result<(), Error> {
         use rand::RngCore;
         
         // Generate random salt
@@ -223,7 +223,7 @@ impl Argon2Engine {
     }
     
     /// periodt Verify password against Argon2 hash (REAL IMPLEMENTATION)
-    pub fn verify_password(&self, password: &[u8], hash: &str) -> Result<bool, Argon2Error> {
+    pub fn verify_password(&self, password: &[u8], hash: &str) -> Result<(), Error> {
         // Parse PHC format hash
         let parts: Vec<&str> = hash.split('$').collect();
         if parts.len() != 6 {
@@ -284,7 +284,7 @@ impl Argon2Engine {
 
     // Helper methods for real Argon2 implementation
     
-    fn blake2b_hash(&self, input: &[u8], salt: &[u8], config: &Argon2Config) -> Result<Vec<u8>, Argon2Error> {
+    fn blake2b_hash(&self, input: &[u8], salt: &[u8], config: &Argon2Config) -> Result<(), Error> {
         use sha3::{Sha3_512, Digest};
         
         // Simplified Blake2b using SHA3-512 as base
@@ -313,7 +313,7 @@ impl Argon2Engine {
         Ok(result)
     }
     
-    fn compute_reference_index(&self, current: usize, pass: usize, slice: usize, prev_block: &[u8]) -> Result<usize, Argon2Error> {
+    fn compute_reference_index(&self, current: usize, pass: usize, slice: usize, prev_block: &[u8]) -> Result<(), Error> {
         // Simplified reference index computation
         let pseudo_random = u64::from_le_bytes([
             prev_block[0], prev_block[1], prev_block[2], prev_block[3],
@@ -331,7 +331,7 @@ impl Argon2Engine {
         Ok(relative_position as usize)
     }
     
-    fn compress_blocks(&self, prev: &[u8], reference: &[u8], current: &[u8]) -> Result<Vec<u8>, Argon2Error> {
+    fn compress_blocks(&self, prev: &[u8], reference: &[u8], current: &[u8]) -> Result<(), Error> {
         use sha3::{Sha3_256, Digest};
         
         // Simplified block compression using XOR and hashing
@@ -373,7 +373,7 @@ impl Argon2Engine {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Argon2 key derivation function
-pub fn argon2_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn argon2_derive_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("argon2_derive_key requires at least password and salt arguments".to_string()));
     }
@@ -403,7 +403,7 @@ pub fn argon2_derive_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Hash password with Argon2
-pub fn argon2_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn argon2_hash_password(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("argon2_hash_password requires password argument".to_string()));
     }
@@ -428,7 +428,7 @@ pub fn argon2_hash_password(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Verify password with Argon2
-pub fn argon2_verify_password(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn argon2_verify_password(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("argon2_verify_password requires password and hash arguments".to_string()));
     }

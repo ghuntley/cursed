@@ -4,7 +4,7 @@
 //! extract function/variable, organize imports, and code transformation.
 
 use std::collections::{HashMap, HashSet};
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_crate::types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, Token, TokenType};

@@ -26,7 +26,7 @@ pub use timing_attacks::*;
 use crate::error::CursedError;
 
 /// fr fr Common KDF result type
-pub type KdfResult<T> = Result<T, KdfError>;
+pub type KdfResult<(), Error>;
 
 /// fr fr Common KDF error types
 #[derive(Debug, Clone, PartialEq)]
@@ -53,7 +53,7 @@ impl std::fmt::Display for KdfError {
 impl std::error::Error for KdfError {}
 
 /// fr fr Initialize KDF package with production implementations
-pub fn init_crypto_kdf() -> Result<(), CursedError> {
+pub fn init_crypto_kdf() -> Result<(), Error> {
     // Test PBKDF2 implementation (fully implemented)
     let _pbkdf2_config = pbkdf2::Pbkdf2Config::new();
     let _pbkdf2_engine = pbkdf2::Pbkdf2Engine::default();

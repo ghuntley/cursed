@@ -322,7 +322,7 @@ fn classify_tokio_postgres_error(error: &tokio_postgres::Error) -> PostgresError
 }
 
 /// Type alias for PostgreSQL result
-pub type PostgresResult<T> = Result<T, PostgresError>;
+pub type PostgresResult<(), Error>;
 
 #[cfg(test)]
 mod tests {

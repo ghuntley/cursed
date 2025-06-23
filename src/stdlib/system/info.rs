@@ -9,7 +9,7 @@ use std::env;
 use std::fs;
 
 /// System information result type
-pub type SystemResult<T> = Result<T, SystemError>;
+pub type SystemResult<(), Error>;
 
 /// System information errors
 #[derive(Debug, Clone)]

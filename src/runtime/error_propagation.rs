@@ -6,7 +6,7 @@
 
 use crate::error::{CursedError, SourceLocation};
 // use crate::runtime::value::Value;
-use crate::types::result::{Result as CursedResult, Option as CursedOption};
+use crate::crate::types::result::{Result as CursedResult, Option as CursedOption};
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::sync::{Arc, Mutex, RwLock};
@@ -103,7 +103,7 @@ impl ErrorPropagationOperator {
         option_value: CursedOption<T>,
         source_location: SourceLocation,
         function_context: Option<String>,
-    ) -> Result<T, PropagationError<NoneError>>
+    ) -> Result<(), Error>>
     where
         T: Clone + fmt::Debug,
     {
@@ -155,14 +155,14 @@ impl ErrorPropagationOperator {
     }
 
     /// Get the current error context chain
-    pub fn get_error_context_chain(&self) -> Result<Vec<ErrorPropagationContext>, CursedError> {
+    pub fn get_error_context_chain(&self) -> Result<(), Error> {
         let stack = self.context_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire context stack lock"))?;
         Ok(stack.get_contexts())
     }
 
     /// Clear the error context stack
-    pub fn clear_context_stack(&self) -> Result<(), CursedError> {
+    pub fn clear_context_stack(&self) -> Result<(), Error> {
         let mut stack = self.context_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire context stack lock"))?;
         stack.clear();
@@ -170,7 +170,7 @@ impl ErrorPropagationOperator {
     }
 
     /// Get propagation statistics
-    pub fn get_statistics(&self) -> Result<PropagationStatistics, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let stats = self.statistics.read()
             .map_err(|_| CursedError::system_error("Failed to acquire statistics lock"))?;
         Ok(stats.clone())
@@ -512,7 +512,7 @@ pub mod helpers {
         line: usize,
         column: usize,
         function: Option<&str>,
-    ) -> PropagationResult<T, NoneError>
+    ) -> PropagationResult<(), Error>
     where
         T: Clone + fmt::Debug,
     {
@@ -549,7 +549,7 @@ mod tests {
     #[test]
     fn test_result_success_propagation() {
         let operator = ErrorPropagationOperator::new();
-        let result: crate::types::result::Result<i32, String> = CursedResult::Ok(42);
+        let result: crate::crate::types::result::Result<i32, String> = CursedResult::Ok(42);
         let location = SourceLocation::new(1, 5);
 
         let propagated = operator.apply_question_mark(result, location, None);
@@ -565,7 +565,7 @@ mod tests {
     #[test]
     fn test_result_error_propagation() {
         let operator = ErrorPropagationOperator::new();
-        let result: crate::types::result::Result<i32, String> = CursedResult::Err("test error".to_string());
+        let result: crate::crate::types::result::Result<i32, String> = CursedResult::Err("test error".to_string());
         let location = SourceLocation::new(1, 5);
 
         let propagated = operator.apply_question_mark(result, location, Some("test_function".to_string()));
@@ -660,7 +660,7 @@ mod tests {
     fn test_helper_functions() {
         let operator = helpers::create_default_propagator();
         
-        let result: crate::types::result::Result<i32, String> = CursedResult::Ok(42);
+        let result: crate::crate::types::result::Result<i32, String> = CursedResult::Ok(42);
         let propagated = helpers::propagate_result(&operator, result, 1, 5, Some("test"));
         assert!(propagated.is_ok());
 

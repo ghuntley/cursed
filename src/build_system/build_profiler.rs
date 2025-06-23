@@ -348,15 +348,15 @@ pub struct BuildPhase {
 
 /// Metrics collector trait
 pub trait MetricsCollector: Send + Sync + std::fmt::Debug {
-    fn start_collection(&mut self) -> Result<(), BuildError>;
-    fn stop_collection(&mut self) -> Result<(), BuildError>;
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError>;
+    fn start_collection(&mut self) -> Result<(), Error>;
+    fn stop_collection(&mut self) -> Result<(), Error>;
+    fn collect_metrics(&self) -> Result<(), Error>;
     fn reset(&mut self);
 }
 
 /// Performance analyzer trait
 pub trait PerformanceAnalyzer: Send + Sync + std::fmt::Debug {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<AnalysisResult, BuildError>;
+    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error>;
     fn get_analyzer_name(&self) -> String;
 }
 
@@ -619,7 +619,7 @@ impl Default for ProfilerConfig {
 
 impl BuildProfiler {
     /// Create new build profiler
-    pub fn new(config: ProfilerConfig) -> Result<Self, BuildError> {
+    pub fn new(config: ProfilerConfig) -> Result<(), Error> {
         let session = ProfilingSession::new();
         let collectors = Self::create_collectors(&config)?;
         let analyzers = Self::create_analyzers(&config)?;
@@ -641,7 +641,7 @@ impl BuildProfiler {
         build_config: BuildConfig,
         targets: Vec<BuildTarget>,
         profile: BuildProfile,
-    ) -> Result<(), BuildError> {
+    ) -> Result<(), Error> {
         info!("Starting build profiling for {} targets", targets.len());
         
         self.session = ProfilingSession::new();
@@ -668,7 +668,7 @@ impl BuildProfiler {
     
     /// Stop profiling and generate report
     #[instrument(skip(self))]
-    pub async fn stop_profiling(&mut self) -> Result<ProfilingReport, BuildError> {
+    pub async fn stop_profiling(&mut self) -> Result<(), Error> {
         info!("Stopping build profiling and generating report");
         
         self.session.end_time = Some(Instant::now());
@@ -825,7 +825,7 @@ impl BuildProfiler {
     }
     
     /// Create metrics collectors based on configuration
-    fn create_collectors(config: &ProfilerConfig) -> Result<Vec<Box<dyn MetricsCollector>>, BuildError> {
+    fn create_collectors(config: &ProfilerConfig) -> Result<(), Error> {
         let mut collectors: Vec<Box<dyn MetricsCollector>> = Vec::new();
         
         if config.detailed_timing {
@@ -852,7 +852,7 @@ impl BuildProfiler {
     }
     
     /// Create performance analyzers based on configuration
-    fn create_analyzers(config: &ProfilerConfig) -> Result<Vec<Box<dyn PerformanceAnalyzer>>, BuildError> {
+    fn create_analyzers(config: &ProfilerConfig) -> Result<(), Error> {
         let mut analyzers: Vec<Box<dyn PerformanceAnalyzer>> = Vec::new();
         
         if config.bottleneck_detection {
@@ -876,7 +876,7 @@ impl BuildProfiler {
     }
     
     /// Merge metrics from multiple collectors
-    fn merge_metrics(&self, metrics_list: Vec<ProfilingMetrics>) -> Result<ProfilingMetrics, BuildError> {
+    fn merge_metrics(&self, metrics_list: Vec<ProfilingMetrics>) -> Result<(), Error> {
         // This is a simplified merge - in practice, would intelligently combine metrics
         if let Some(first) = metrics_list.first() {
             Ok(first.clone())
@@ -1010,17 +1010,17 @@ impl TimingCollector {
 }
 
 impl MetricsCollector for TimingCollector {
-    fn start_collection(&mut self) -> Result<(), BuildError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         self.start_time = Some(Instant::now());
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), BuildError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         // Finalize timing collection
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError> {
+    fn collect_metrics(&self) -> Result<(), Error> {
         let total_time = self.start_time.map(|start| start.elapsed()).unwrap_or_default();
         
         // Create timing metrics
@@ -1134,17 +1134,17 @@ impl ResourceCollector {
 }
 
 impl MetricsCollector for ResourceCollector {
-    fn start_collection(&mut self) -> Result<(), BuildError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         self.monitoring_active = true;
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), BuildError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         self.monitoring_active = false;
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError> {
+    fn collect_metrics(&self) -> Result<(), Error> {
         // Placeholder resource metrics
         let resource_metrics = ResourceMetrics {
             peak_memory_usage: 512 * 1024 * 1024, // 512MB placeholder
@@ -1255,7 +1255,7 @@ impl BottleneckAnalyzer {
 }
 
 impl PerformanceAnalyzer for BottleneckAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<AnalysisResult, BuildError> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
         let mut bottlenecks = Vec::new();
         let mut optimizations = Vec::new();
         
@@ -1321,7 +1321,7 @@ impl OptimizationAnalyzer {
 }
 
 impl PerformanceAnalyzer for OptimizationAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<AnalysisResult, BuildError> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
         let mut optimizations = Vec::new();
         
         // Suggest parallelization improvements
@@ -1369,7 +1369,7 @@ impl PerformanceAnalyzer for OptimizationAnalyzer {
 }
 
 impl ReportGenerator {
-    fn new(config: ProfilerConfig) -> Result<Self, BuildError> {
+    fn new(config: ProfilerConfig) -> Result<(), Error> {
         Ok(ReportGenerator {
             config,
             template_engine: TemplateEngine::new(),
@@ -1381,7 +1381,7 @@ impl ReportGenerator {
         &self,
         session: &ProfilingSession,
         analysis_results: Vec<AnalysisResult>,
-    ) -> Result<ProfilingReport, BuildError> {
+    ) -> Result<(), Error> {
         let build_summary = BuildSummary {
             total_duration: session.start_time.elapsed(),
             targets_built: session.targets.len(),
@@ -1487,15 +1487,15 @@ impl CompilationCollector {
 }
 
 impl MetricsCollector for CompilationCollector {
-    fn start_collection(&mut self) -> Result<(), BuildError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), BuildError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError> {
+    fn collect_metrics(&self) -> Result<(), Error> {
         let compilation_metrics = CompilationMetrics {
             files_compiled: self.files_compiled + 5, // Estimate
             lines_compiled: self.files_compiled * 100, // 100 lines per file estimate
@@ -1611,15 +1611,15 @@ impl CacheCollector {
 }
 
 impl MetricsCollector for CacheCollector {
-    fn start_collection(&mut self) -> Result<(), BuildError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), BuildError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError> {
+    fn collect_metrics(&self) -> Result<(), Error> {
         let cache_metrics = CacheMetrics {
             cache_hits: self.cache_hits + 15, // Estimate
             cache_misses: self.cache_misses + 5, // Estimate
@@ -1731,15 +1731,15 @@ impl DependencyCollector {
 }
 
 impl MetricsCollector for DependencyCollector {
-    fn start_collection(&mut self) -> Result<(), BuildError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), BuildError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError> {
+    fn collect_metrics(&self) -> Result<(), Error> {
         let dependency_metrics = DependencyMetrics {
             total_dependencies: self.dependencies_analyzed + 15,
             direct_dependencies: 5,
@@ -1849,15 +1849,15 @@ impl ParallelizationCollector {
 }
 
 impl MetricsCollector for ParallelizationCollector {
-    fn start_collection(&mut self) -> Result<(), BuildError> {
+    fn start_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), BuildError> {
+    fn stop_collection(&mut self) -> Result<(), Error> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<ProfilingMetrics, BuildError> {
+    fn collect_metrics(&self) -> Result<(), Error> {
         let parallelization_metrics = ParallelizationMetrics {
             parallel_efficiency: 0.72, // 72% efficiency estimate
             cpu_utilization: 0.65, // 65% CPU utilization
@@ -1973,7 +1973,7 @@ impl CriticalPathAnalyzer {
 }
 
 impl PerformanceAnalyzer for CriticalPathAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<AnalysisResult, BuildError> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
         let mut optimizations = Vec::new();
         
         // Analyze critical path
@@ -2027,7 +2027,7 @@ impl ResourceUtilizationAnalyzer {
 }
 
 impl PerformanceAnalyzer for ResourceUtilizationAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<AnalysisResult, BuildError> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
         let mut optimizations = Vec::new();
         let mut bottlenecks = Vec::new();
         
@@ -2095,7 +2095,7 @@ impl TrendAnalyzer {
 }
 
 impl PerformanceAnalyzer for TrendAnalyzer {
-    fn analyze(&self, _metrics: &ProfilingMetrics) -> Result<AnalysisResult, BuildError> {
+    fn analyze(&self, _metrics: &ProfilingMetrics) -> Result<(), Error> {
         let optimizations = vec![
             OptimizationOpportunity {
                 opportunity_type: OptimizationType::ConfigurationOptimization,

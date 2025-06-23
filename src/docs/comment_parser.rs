@@ -30,7 +30,7 @@ pub struct CommentParser {
 
 impl CommentParser {
     /// Create a new comment parser with default settings
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             allow_html: true,
             extract_examples: true,
@@ -48,7 +48,7 @@ impl CommentParser {
     }
 
     /// Parse documentation content from a raw string
-    pub fn parse_doc_content(&self, content: &str) -> Result<ParsedDocumentation, Error> {
+    pub fn parse_doc_content(&self, content: &str) -> Result<(), Error> {
         let mut parsed = ParsedDocumentation {
             summary: String::new(),
             description: String::new(),
@@ -141,13 +141,13 @@ impl CommentParser {
     }
 
     /// Parse documentation for a specific item at a location
-    pub fn parse_item_documentation(&self, source: &str, location: &SourceLocation) -> Result<ParsedDocumentation, Error> {
+    pub fn parse_item_documentation(&self, source: &str, location: &SourceLocation) -> Result<(), Error> {
         let doc_content = self.extract_doc_comments_at_location(source, location)?;
         self.parse_doc_content(&doc_content)
     }
 
     /// Extract documentation comments preceding a location
-    fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> Result<String, Error> {
+    fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> Result<(), Error> {
         let lines = source.split("\n").collect::<Vec<_>>();
         let mut doc_lines = Vec::new();
         
@@ -325,7 +325,7 @@ impl CommentParser {
     }
 
     /// Extract all documentation from source file
-    pub fn extract_all_documentation(&self, source: &str) -> Result<Vec<(SourceLocation, ParsedDocumentation)>, Error> {
+    pub fn extract_all_documentation(&self, source: &str) -> Result<(), Error> {
         let lines = source.split("\n").collect::<Vec<_>>();
         let mut results = Vec::new();
         let mut current_doc_start: Option<usize> = None;

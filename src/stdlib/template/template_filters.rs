@@ -11,7 +11,7 @@ use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 
 /// Filter function type
-pub type FilterFn = Box<dyn Fn(&FilterContext, &[CursedObject]) -> Result<CursedObject, CursedError> + Send + Sync>;
+pub type FilterFn = Box<dyn Fn(&FilterContext, &[CursedObject]) -> Result<(), Error> + Send + Sync>;
 
 /// Template filter trait for implementing custom filters
 pub trait TemplateFilter: Send + Sync {
@@ -25,7 +25,7 @@ pub trait TemplateFilter: Send + Sync {
     fn required_args(&self) -> Option<usize> { None }
     
     /// Apply the filter
-    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> Result<CursedObject, CursedError>;
+    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> Result<(), Error>;
     
     /// Whether this filter can be cached
     fn cacheable(&self) -> bool { true }
@@ -70,7 +70,7 @@ impl FilterContext {
     }
     
     /// Increment chain depth
-    pub fn deeper(&self) -> Result<Self, CursedError> {
+    pub fn deeper(&self) -> Result<(), Error> {
         if self.chain_depth >= self.max_chain_depth {
             return Err(CursedError::TemplateError {
                 message: format!("Filter chain depth exceeded maximum of {}", self.max_chain_depth),
@@ -162,7 +162,7 @@ impl FilterRegistry {
     /// Register a custom filter function
     pub fn register<F>(&self, name: &str, filter: F)
     where
-        F: Fn(&FilterContext, &[CursedObject]) -> Result<CursedObject, CursedError> + Send + Sync + 'static,
+        F: Fn(&FilterContext, &[CursedObject]) -> Result<(), Error> + Send + Sync + 'static,
     {
         if let Ok(mut filters) = self.filters.write() {
             filters.insert(name.to_string(), Box::new(filter));
@@ -182,14 +182,14 @@ impl FilterRegistry {
 
     /// Apply a filter to values with context
     #[instrument(skip(self, args))]
-    pub fn apply(&self, name: &str, args: &[CursedObject]) -> Result<CursedObject, CursedError> {
+    pub fn apply(&self, name: &str, args: &[CursedObject]) -> Result<(), Error> {
         let context = FilterContext::new();
         self.apply_with_context(name, &context, args)
     }
     
     /// Apply a filter with explicit context
     #[instrument(skip(self, args))]
-    pub fn apply_with_context(&self, name: &str, context: &FilterContext, args: &[CursedObject]) -> Result<CursedObject, CursedError> {
+    pub fn apply_with_context(&self, name: &str, context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
         let start_time = Instant::now();
         
         // Check cache first if enabled
@@ -390,7 +390,7 @@ impl FilterRegistry {
         self.register("join", |_context, args| {
             let arr = extract_array(&args[0])?;
             let sep = extract_string(&args[1])?;
-            let strings: Result<Vec<String>, CursedError> = arr.iter()
+            let strings: Result<(), Error> = arr.iter()
                 .map(extract_string)
                 .collect();
             Ok(CursedObject::String(strings?.join(&sep)))
@@ -975,7 +975,7 @@ impl FilterRegistry {
         self.register("bestie", |_context, args| {
             let arr = extract_array(&args[0])?;
             let sep = if args.len() > 1 { extract_string(&args[1])? } else { ", ".to_string() };
-            let strings: Result<Vec<String>, CursedError> = arr.iter()
+            let strings: Result<(), Error> = arr.iter()
                 .map(extract_string)
                 .collect();
             Ok(CursedObject::String(strings?.join(&sep)))
@@ -1189,7 +1189,7 @@ impl FilterRegistry {
             let arr = extract_array(&args[0])?;
             let operation = if args.len() > 1 { extract_string(&args[1])? } else { "toString".to_string() };
             
-            let mapped: Result<Vec<CursedObject>, CursedError> = arr.iter()
+            let mapped: Result<(), Error> = arr.iter()
                 .map(|item| {
                     match operation.as_str() {
                         "upper" => match item {
@@ -1279,7 +1279,7 @@ impl TemplateFilter for CapitalizeFilter {
     fn description(&self) -> &str { "Capitalize the first letter of each word" }
     fn required_args(&self) -> Option<usize> { Some(1) }
     
-    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> Result<CursedObject, CursedError> {
+    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
         let s = extract_string(&args[0])?;
         let result = s.split_whitespace()
             .map(|word| {
@@ -1302,7 +1302,7 @@ impl TemplateFilter for ReverseStringFilter {
     fn description(&self) -> &str { "Reverse a string character by character" }
     fn required_args(&self) -> Option<usize> { Some(1) }
     
-    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> Result<CursedObject, CursedError> {
+    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
         let s = extract_string(&args[0])?;
         let reversed: String = s.chars().rev().collect();
         Ok(CursedObject::String(reversed))
@@ -1316,7 +1316,7 @@ impl TemplateFilter for ChainableFilter {
     fn description(&self) -> &str { "Apply multiple filters in sequence" }
     fn cacheable(&self) -> bool { false } // Don't cache chained operations
     
-    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> Result<CursedObject, CursedError> {
+    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
         if args.len() < 2 {
             return Err(CursedError::TemplateError {
                 message: "chain filter requires at least 2 arguments: value and filter name".to_string(),
@@ -1348,7 +1348,7 @@ impl Default for FilterRegistry {
 }
 
 /// Helper function to extract string from CursedObject
-fn extract_string(obj: &CursedObject) -> Result<String, CursedError> {
+fn extract_string(obj: &CursedObject) -> Result<(), Error> {
     match obj {
         CursedObject::String(s) => Ok(s.clone()),
         CursedObject::Integer(n) => Ok(n.to_string()),
@@ -1363,7 +1363,7 @@ fn extract_string(obj: &CursedObject) -> Result<String, CursedError> {
 }
 
 /// Helper function to extract integer from CursedObject
-fn extract_int(obj: &CursedObject) -> Result<i64, CursedError> {
+fn extract_int(obj: &CursedObject) -> Result<(), Error> {
     match obj {
         CursedObject::Integer(n) => Ok(*n),
         CursedObject::Float(n) => Ok(*n as i64),
@@ -1381,7 +1381,7 @@ fn extract_int(obj: &CursedObject) -> Result<i64, CursedError> {
 }
 
 /// Helper function to extract float from CursedObject
-fn extract_float(obj: &CursedObject) -> Result<f64, CursedError> {
+fn extract_float(obj: &CursedObject) -> Result<(), Error> {
     match obj {
         CursedObject::Float(n) => Ok(*n),
         CursedObject::Integer(n) => Ok(*n as f64),
@@ -1399,7 +1399,7 @@ fn extract_float(obj: &CursedObject) -> Result<f64, CursedError> {
 }
 
 /// Helper function to extract array from CursedObject
-fn extract_array(obj: &CursedObject) -> Result<Vec<CursedObject>, CursedError> {
+fn extract_array(obj: &CursedObject) -> Result<(), Error> {
     match obj {
         CursedObject::Array(arr) => Ok(arr.clone()),
         _ => Err(CursedError::TemplateError {
@@ -1436,7 +1436,7 @@ fn is_truthy(obj: &CursedObject) -> bool {
 }
 
 /// Advanced string formatting function with printf-style placeholders
-fn format_string_cursed(format: &str, args: &[CursedObject]) -> Result<CursedObject, CursedError> {
+fn format_string_cursed(format: &str, args: &[CursedObject]) -> Result<(), Error> {
     let mut result = String::new();
     let mut chars = format.chars().peekable();
     let mut arg_index = 0;
@@ -1540,7 +1540,7 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> Result<CursedObj
 }
 
 /// Parse a printf-style format specifier
-fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<FormatSpecifier, CursedError> {
+fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<(), Error> {
     let mut spec = FormatSpecifier::default();
     
     // Parse flags, width, precision, and conversion character
@@ -1649,7 +1649,7 @@ fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> R
 }
 
 /// Parse a placeholder like {0} or {name}
-fn parse_placeholder(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<String, CursedError> {
+fn parse_placeholder(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<(), Error> {
     let mut placeholder = String::new();
     
     while let Some(&ch) = chars.peek() {
@@ -1678,7 +1678,7 @@ struct FormatSpecifier {
 }
 
 /// Format an argument according to a format specifier
-fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> Result<String, CursedError> {
+fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> Result<(), Error> {
     let result = match spec.conversion {
         'c' => {
             match arg {

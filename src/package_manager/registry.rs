@@ -105,7 +105,7 @@ pub struct IndexInfo {
 
 impl PackageRegistry {
     /// Create a new package registry client
-    pub fn new(base_url: String) -> Result<Self, PackageManagerError> {
+    pub fn new(base_url: String) -> Result<(), Error> {
         let config = RegistryConfig {
             base_url: base_url.clone(),
             ..Default::default()
@@ -114,7 +114,7 @@ impl PackageRegistry {
     }
 
     /// Create a new package registry client with custom configuration
-    pub fn with_config(config: RegistryConfig) -> Result<Self, PackageManagerError> {
+    pub fn with_config(config: RegistryConfig) -> Result<(), Error> {
         let client = ClientBuilder::new()
             .timeout(config.timeout)
             .user_agent(&config.user_agent)
@@ -140,7 +140,7 @@ impl PackageRegistry {
     }
 
     /// Get all available versions for a package
-    pub async fn get_package_versions(&mut self, name: &str) -> Result<Vec<Version>, PackageManagerError> {
+    pub async fn get_package_versions(&mut self, name: &str) -> Result<(), Error> {
         let start_time = SystemTime::now();
         self.stats.search_count += 1;
 
@@ -187,7 +187,7 @@ impl PackageRegistry {
     }
 
     /// Get package metadata for a specific version
-    pub async fn get_package_metadata(&mut self, name: &str, version: &str) -> Result<PackageMetadata, PackageManagerError> {
+    pub async fn get_package_metadata(&mut self, name: &str, version: &str) -> Result<(), Error> {
         let start_time = SystemTime::now();
         self.stats.search_count += 1;
 
@@ -216,7 +216,7 @@ impl PackageRegistry {
     }
 
     /// Search for a specific package version
-    pub async fn search_package(&mut self, name: &str, version: Option<&str>) -> Result<PackageInfo, PackageManagerError> {
+    pub async fn search_package(&mut self, name: &str, version: Option<&str>) -> Result<(), Error> {
         let start_time = SystemTime::now();
         self.stats.search_count += 1;
 
@@ -249,7 +249,7 @@ impl PackageRegistry {
     }
 
     /// Search for packages with a text query
-    pub async fn search_packages(&mut self, query: &str, limit: Option<usize>) -> Result<Vec<PackageMetadata>, PackageManagerError> {
+    pub async fn search_packages(&mut self, query: &str, limit: Option<usize>) -> Result<(), Error> {
         let start_time = SystemTime::now();
         self.stats.search_count += 1;
 
@@ -285,7 +285,7 @@ impl PackageRegistry {
     }
 
     /// Download a package archive from the registry
-    pub async fn download_package(&mut self, name: &str, version: &str) -> Result<PackageData, PackageManagerError> {
+    pub async fn download_package(&mut self, name: &str, version: &str) -> Result<(), Error> {
         let start_time = SystemTime::now();
         self.stats.download_count += 1;
 
@@ -329,7 +329,7 @@ impl PackageRegistry {
     }
 
     /// Update the package index from the registry
-    pub async fn update_index(&mut self) -> Result<(), PackageManagerError> {
+    pub async fn update_index(&mut self) -> Result<(), Error> {
         let start_time = SystemTime::now();
         
         let url = format!("{}/api/v1/index", self.config.base_url);
@@ -361,7 +361,7 @@ impl PackageRegistry {
     }
 
     /// Verify package integrity by comparing checksums
-    pub async fn verify_package(&self, name: &str, version: &str, data: &[u8], expected_checksum: &str) -> Result<bool, PackageManagerError> {
+    pub async fn verify_package(&self, name: &str, version: &str, data: &[u8], expected_checksum: &str) -> Result<(), Error> {
         let mut hasher = Sha256::new();
         hasher.update(data);
         let calculated_checksum = hex::encode(hasher.finalize());
@@ -381,7 +381,7 @@ impl PackageRegistry {
     }
 
     /// Make an HTTP request with retry logic
-    async fn make_request(&self, url: &str) -> Result<Response, PackageManagerError> {
+    async fn make_request(&self, url: &str) -> Result<(), Error> {
         let mut last_error = None;
 
         for attempt in 0..=self.config.max_retries {
@@ -468,7 +468,7 @@ impl PackageRegistry {
     }
     
     /// Search for packages matching name and version
-    pub async fn search_package(&self, name: &str, version: &str) -> Result<Vec<PackageInfo>, PackageManagerError> {
+    pub async fn search_package(&self, name: &str, version: &str) -> Result<(), Error> {
         // Stub implementation
         tracing::info!("Searching for package: {} version: {}", name, version);
         Ok(vec![])

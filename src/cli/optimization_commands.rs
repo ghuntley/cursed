@@ -791,7 +791,7 @@ pub fn add_optimization_commands(cmd: Command) -> Command {
 }
 
 /// Handle optimization commands
-pub async fn handle_optimization_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_optimization_command(matches: &ArgMatches) -> Result<(), Error>> {
     match matches.subcommand() {
         Some(("analyze", sub_matches)) => handle_analyze_command(sub_matches).await,
         Some(("benchmark", sub_matches)) => handle_benchmark_command(sub_matches).await,
@@ -810,7 +810,7 @@ pub async fn handle_optimization_command(matches: &ArgMatches) -> Result<(), Box
     }
 }
 
-async fn handle_analyze_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_analyze_command(matches: &ArgMatches) -> Result<(), Error>> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
     let format = matches.get_one::<String>("format").unwrap();
@@ -863,7 +863,7 @@ async fn handle_analyze_command(matches: &ArgMatches) -> Result<(), Box<dyn std:
     Ok(())
 }
 
-async fn handle_benchmark_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_benchmark_command(matches: &ArgMatches) -> Result<(), Error>> {
     let file = matches.get_one::<String>("file").unwrap();
     let levels_str = matches.get_one::<String>("levels").unwrap();
     let iterations: usize = matches.get_one::<String>("iterations").unwrap().parse()?;
@@ -942,7 +942,7 @@ async fn handle_benchmark_command(matches: &ArgMatches) -> Result<(), Box<dyn st
     Ok(())
 }
 
-async fn handle_profile_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_profile_command(matches: &ArgMatches) -> Result<(), Error>> {
     let file = matches.get_one::<String>("file").unwrap();
     let opt_level = matches.get_one::<String>("opt-level").unwrap();
     let profile_phases = matches.get_flag("phases");
@@ -1009,7 +1009,7 @@ async fn handle_profile_command(matches: &ArgMatches) -> Result<(), Box<dyn std:
     Ok(())
 }
 
-async fn handle_enable_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_enable_command(matches: &ArgMatches) -> Result<(), Error>> {
     let passes_str = matches.get_one::<String>("passes").unwrap();
     let global = matches.get_flag("global");
     let project = matches.get_flag("project");
@@ -1041,7 +1041,7 @@ async fn handle_enable_command(matches: &ArgMatches) -> Result<(), Box<dyn std::
     Ok(())
 }
 
-async fn handle_disable_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_disable_command(matches: &ArgMatches) -> Result<(), Error>> {
     let passes_str = matches.get_one::<String>("passes").unwrap();
     let global = matches.get_flag("global");
     let project = matches.get_flag("project");
@@ -1073,7 +1073,7 @@ async fn handle_disable_command(matches: &ArgMatches) -> Result<(), Box<dyn std:
     Ok(())
 }
 
-async fn handle_config_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_config_command(matches: &ArgMatches) -> Result<(), Error>> {
     let show = matches.get_flag("show");
     let set_values = matches.get_many::<String>("set");
     let unset_values = matches.get_many::<String>("unset");
@@ -1161,7 +1161,7 @@ async fn handle_config_command(matches: &ArgMatches) -> Result<(), Box<dyn std::
     Ok(())
 }
 
-async fn handle_reset_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_reset_command(matches: &ArgMatches) -> Result<(), Error>> {
     let global = matches.get_flag("global");
     let project = matches.get_flag("project");
     let confirm = matches.get_flag("confirm");
@@ -1203,7 +1203,7 @@ async fn handle_reset_command(matches: &ArgMatches) -> Result<(), Box<dyn std::e
     Ok(())
 }
 
-async fn handle_interactive_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_interactive_command(matches: &ArgMatches) -> Result<(), Error>> {
     let file = matches.get_one::<String>("file");
     let quick = matches.get_flag("quick");
     let advanced = matches.get_flag("advanced");
@@ -1242,7 +1242,7 @@ async fn handle_interactive_command(matches: &ArgMatches) -> Result<(), Box<dyn 
     Ok(())
 }
 
-async fn handle_apply_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_apply_command(matches: &ArgMatches) -> Result<(), Error>> {
     let file = matches.get_one::<String>("file").unwrap();
     let profile = matches.get_one::<String>("profile");
     let dry_run = matches.get_flag("dry-run");
@@ -1310,7 +1310,7 @@ async fn handle_apply_command(matches: &ArgMatches) -> Result<(), Box<dyn std::e
     Ok(())
 }
 
-async fn handle_profiles_command(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_profiles_command(matches: &ArgMatches) -> Result<(), Error>> {
     let list = matches.get_flag("list");
     let create = matches.get_one::<String>("create");
     let delete = matches.get_one::<String>("delete");
@@ -1429,7 +1429,7 @@ async fn handle_profiles_command(matches: &ArgMatches) -> Result<(), Box<dyn std
 
 // Helper functions for interactive optimization
 
-async fn analyze_file_for_recommendations(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn analyze_file_for_recommendations(file_path: &str) -> Result<(), Error>> {
     println!("   🔍 Analyzing file structure and patterns...");
     
     let source = fs::read_to_string(file_path)?;
@@ -1456,7 +1456,7 @@ async fn analyze_file_for_recommendations(file_path: &str) -> Result<(), Box<dyn
     Ok(())
 }
 
-async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: bool) -> Result<OptimizationCliConfig, Box<dyn std::error::Error>> {
+async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: bool) -> Result<(), Error>> {
     use std::io::{self, Write};
 
     println!("\n🎛️  Interactive Configuration Wizard");
@@ -1519,7 +1519,7 @@ async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: boo
     Ok(config)
 }
 
-async fn run_quick_wizard(mut config: OptimizationCliConfig) -> Result<OptimizationCliConfig, Box<dyn std::error::Error>> {
+async fn run_quick_wizard(mut config: OptimizationCliConfig) -> Result<(), Error>> {
     println!("\n⚡ Quick optimization setup");
     println!("   Applying balanced performance settings...");
     
@@ -1537,7 +1537,7 @@ async fn run_quick_wizard(mut config: OptimizationCliConfig) -> Result<Optimizat
     Ok(config)
 }
 
-async fn analyze_file_for_specific_recommendations(file_path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+async fn analyze_file_for_specific_recommendations(file_path: &str) -> Result<(), Error>> {
     let source = fs::read_to_string(file_path)?;
     let mut recommendations = Vec::new();
     
@@ -1627,7 +1627,7 @@ fn print_applied_optimizations_summary(config: &OptimizationCliConfig, recommend
     }
 }
 
-async fn create_interactive_profile(name: String) -> Result<ProjectProfile, Box<dyn std::error::Error>> {
+async fn create_interactive_profile(name: String) -> Result<(), Error>> {
     use std::io::{self, Write};
     
     println!("Creating profile: {}", name);
@@ -1664,7 +1664,7 @@ async fn create_interactive_profile(name: String) -> Result<ProjectProfile, Box<
 }
 
 // Helper functions for configuration management
-fn get_config_path(global: bool, project: bool) -> Result<PathBuf, Box<dyn std::error::Error>> {
+fn get_config_path(global: bool, project: bool) -> Result<(), Error>> {
     if global {
         let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE"))
             .map_err(|_| "Could not determine home directory")?;
@@ -1677,7 +1677,7 @@ fn get_config_path(global: bool, project: bool) -> Result<PathBuf, Box<dyn std::
     }
 }
 
-fn load_optimization_config(global: bool, project: bool) -> Result<OptimizationCliConfig, Box<dyn std::error::Error>> {
+fn load_optimization_config(global: bool, project: bool) -> Result<(), Error>> {
     let config_path = get_config_path(global, project)?;
     
     if config_path.exists() {
@@ -1689,7 +1689,7 @@ fn load_optimization_config(global: bool, project: bool) -> Result<OptimizationC
     }
 }
 
-fn save_optimization_config(config: &OptimizationCliConfig, global: bool, project: bool) -> Result<(), Box<dyn std::error::Error>> {
+fn save_optimization_config(config: &OptimizationCliConfig, global: bool, project: bool) -> Result<(), Error>> {
     let config_path = get_config_path(global, project)?;
     
     // Create directory if it doesn't exist
@@ -1737,7 +1737,7 @@ fn generate_analysis_report(
     format: &str,
     detailed: bool,
     suggestions: bool,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     match format {
         "json" => generate_json_analysis_report(result),
         "markdown" => generate_markdown_analysis_report(result, detailed, suggestions),
@@ -1748,7 +1748,7 @@ fn generate_analysis_report(
 
 fn generate_json_analysis_report(
     result: &crate::optimization::analysis::AnalysisResult,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let json_report = serde_json::json!({
         "analysis_timestamp": result.analysis_timestamp,
         "source_file": result.source_file,
@@ -1871,7 +1871,7 @@ fn generate_markdown_analysis_report(
     result: &crate::optimization::analysis::AnalysisResult,
     detailed: bool,
     suggestions: bool,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let mut report = String::new();
     
     // Header
@@ -2116,7 +2116,7 @@ fn generate_markdown_analysis_report(
 
 fn generate_table_analysis_report(
     result: &crate::optimization::analysis::AnalysisResult,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let mut report = String::new();
     
     report.push_str("CURSED COMPILATION PERFORMANCE ANALYSIS\n");
@@ -2236,7 +2236,7 @@ fn generate_table_analysis_report(
 fn generate_benchmark_report(
     results: &HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>,
     previous: Option<&HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let mut report = String::new();
     
     report.push_str("# CURSED Compiler Benchmark Report\n\n");
@@ -2432,7 +2432,7 @@ fn generate_benchmark_report(
 fn generate_profiling_report(
     result: &crate::optimization::real_compilation_profiler::ProfileResult,
     flamegraph: bool,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(), Error>> {
     let mut report = String::new();
     
     report.push_str("# CURSED Compilation Profiling Report\n\n");
@@ -2687,7 +2687,7 @@ fn generate_profiling_report(
     Ok(report)
 }
 
-fn load_benchmark_results(file: &str) -> Result<Option<HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>, Box<dyn std::error::Error>> {
+fn load_benchmark_results(file: &str) -> Result<(), Error>> {
     use std::fs;
     use std::path::Path;
     

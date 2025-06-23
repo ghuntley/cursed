@@ -154,7 +154,7 @@ impl ResourceMonitor {
         // Check memory usage
         let current_memory = self.current_memory.load(Ordering::Relaxed);
         if current_memory > self.memory_limit {
-            return Err(Error::Other(format!(
+            return Err(Error::General(format!(
                 "Memory limit exceeded: {} MB used, {} MB limit",
                 current_memory / 1024 / 1024,
                 self.memory_limit / 1024 / 1024
@@ -329,7 +329,7 @@ impl ParallelCompiler {
     pub fn add_job(&self, job: CompilationJob) -> Result<()> {
         if let Some(ref sender) = self.job_sender {
             sender.send(job.clone())
-                .map_err(|e| Error::Other(format!("Failed to queue job: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to queue job: {}", e)))?;
             
             // Update stats
             let mut stats = self.stats.lock().unwrap();
@@ -337,7 +337,7 @@ impl ParallelCompiler {
             
             Ok(())
         } else {
-            Err(Error::Other("Parallel compiler not started".to_string()))
+            Err(Error::General("Parallel compiler not started".to_string()))
         }
     }
     
@@ -445,7 +445,7 @@ impl ParallelCompiler {
             let remaining_jobs: Vec<String> = job_map.keys()
                 .map(|path| path.to_string_lossy().to_string())
                 .collect();
-            return Err(Error::Other(format!(
+            return Err(Error::General(format!(
                 "Circular dependencies detected in jobs: {:?}. Dependency resolution failed at level {}",
                 remaining_jobs, level
             )));
@@ -465,7 +465,7 @@ impl ParallelCompiler {
                 // Check timeout
                 if let Some(timeout_duration) = timeout {
                     if start_time.elapsed() > timeout_duration {
-                        return Err(Error::Other("Compilation timeout".to_string()));
+                        return Err(Error::General("Compilation timeout".to_string()));
                     }
                 }
                 
@@ -582,7 +582,7 @@ impl ParallelCompiler {
         
         // Check for circular dependencies
         if result.len() != job_map.len() + result.len() {
-            return Err(Error::Other("Circular dependencies detected".to_string()));
+            return Err(Error::General("Circular dependencies detected".to_string()));
         }
         
         Ok(result)
@@ -757,13 +757,13 @@ impl ParallelCompiler {
         
         // Validate input file exists
         if !job.source_path.exists() {
-            return Err(Error::Other(format!("Source file not found: {}", job.source_path.display())));
+            return Err(Error::General(format!("Source file not found: {}", job.source_path.display())));
         }
         
         // Create output directory if it doesn't exist
         if let Some(output_dir) = job.output_path.parent() {
             fs::create_dir_all(output_dir)
-                .map_err(|e| Error::Other(format!("Failed to create output directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to create output directory: {}", e)))?;
         }
         
         // Check if this is a CURSED source file
@@ -828,12 +828,12 @@ impl ParallelCompiler {
         
         // Read source file
         let source_content = fs::read_to_string(&job.source_path)
-            .map_err(|e| Error::Other(format!("Failed to read source file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read source file: {}", e)))?;
         
         // Parse CURSED source
         let mut parser = Parser::new(&source_content);
         let ast = parser.parse()
-            .map_err(|e| Error::Other(format!("Failed to parse CURSED source: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to parse CURSED source: {}", e)))?;
         
         // Set up optimization configuration
         let mut opt_config = OptimizationConfig::default();
@@ -848,7 +848,7 @@ impl ParallelCompiler {
         // Generate optimized LLVM IR
         let mut codegen = LlvmCodeGenerator::new();
         let llvm_module = codegen.compile_program(&ast)
-            .map_err(|e| Error::Other(format!("Failed to generate LLVM IR: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to generate LLVM IR: {}", e)))?;
         
         // Apply optimization passes
         let optimization_result = Self::apply_optimization_passes(&llvm_module, &opt_config)?;
@@ -948,12 +948,12 @@ impl ParallelCompiler {
         
         // Initialize target
         Target::initialize_native(&inkwell::targets::InitializationConfig::default())
-            .map_err(|e| Error::Other(format!("Failed to initialize target: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to initialize target: {}", e)))?;
         
         // Get target triple
         let target_triple = TargetMachine::get_default_triple();
         let target = Target::from_triple(&target_triple)
-            .map_err(|e| Error::Other(format!("Failed to get target: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to get target: {}", e)))?;
         
         // Create target machine
         let target_machine = target.create_target_machine(
@@ -963,11 +963,11 @@ impl ParallelCompiler {
             OptimizationLevel::O2,
             RelocMode::Default,
             CodeModel::Default,
-        ).ok_or_else(|| Error::Other("Failed to create target machine".to_string()))?;
+        ).ok_or_else(|| Error::General("Failed to create target machine".to_string()))?;
         
         // Generate object file
         target_machine.write_to_file(module, FileType::Object, output_path)
-            .map_err(|e| Error::Other(format!("Failed to write object file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write object file: {}", e)))?;
         
         Ok(())
     }
@@ -1002,11 +1002,11 @@ impl ParallelCompiler {
         
         // Execute compilation
         let output = cmd.output()
-            .map_err(|e| Error::Other(format!("Failed to execute CURSED compiler: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to execute CURSED compiler: {}", e)))?;
         
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Other(format!("CURSED compilation failed: {}", stderr)));
+            return Err(Error::General(format!("CURSED compilation failed: {}", stderr)));
         }
         
         println!("Worker {} successfully compiled (fallback): {}", worker_id, job.source_path.display());
@@ -1028,11 +1028,11 @@ impl ParallelCompiler {
         }
         
         let output = cmd.output()
-            .map_err(|e| Error::Other(format!("Failed to execute rustc: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to execute rustc: {}", e)))?;
         
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Other(format!("Rust compilation failed: {}", stderr)));
+            return Err(Error::General(format!("Rust compilation failed: {}", stderr)));
         }
         
         println!("Worker {} successfully compiled Rust file: {}", worker_id, job.source_path.display());
@@ -1064,11 +1064,11 @@ impl ParallelCompiler {
         }
         
         let output = cmd.output()
-            .map_err(|e| Error::Other(format!("Failed to execute {}: {}", compiler, e)))?;
+            .map_err(|e| Error::General(format!("Failed to execute {}: {}", compiler, e)))?;
         
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Other(format!("C/C++ compilation failed: {}", stderr)));
+            return Err(Error::General(format!("C/C++ compilation failed: {}", stderr)));
         }
         
         println!("Worker {} successfully compiled C/C++ file: {}", worker_id, job.source_path.display());
@@ -1081,7 +1081,7 @@ impl ParallelCompiler {
         
         // For unknown file types, just copy to output location
         fs::copy(&job.source_path, &job.output_path)
-            .map_err(|e| Error::Other(format!("Failed to copy file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to copy file: {}", e)))?;
         
         println!("Worker {} copied file: {} -> {}", 
                 worker_id, 

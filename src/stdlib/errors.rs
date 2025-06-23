@@ -4,11 +4,11 @@
 //! and integration utilities for the CURSED error handling system.
 
 use crate::error::{CursedError, SourceLocation};
-use crate::error::types::{
+use crate::error::crate::types::{
     CursedErrorTrait, ErrorCategory, ErrorSeverity, IoError, ParseError, RuntimeError,
     ErrorManager, ErrorManagerConfig, error_constructors
 };
-use crate::types::result::{Result as CursedResultType, Option as CursedOptionType, error_patterns};
+use crate::crate::types::result::{Result as CursedResultType, Option as CursedOptionType, error_patterns};
 use crate::stdlib::value::Value;
 use crate::stdlib::io::error::IoError as StdlibIoError;
 
@@ -21,7 +21,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 static GLOBAL_ERROR_MANAGER: OnceLock<Arc<ErrorManager>> = OnceLock::new();
 
 /// Initialize the global error manager
-pub fn init_error_system() -> Result<(), CursedError> {
+pub fn init_error_system() -> Result<(), Error> {
     let config = ErrorManagerConfig {
         max_error_chains: 10000,
         auto_cleanup: true,
@@ -39,14 +39,14 @@ pub fn init_error_system() -> Result<(), CursedError> {
 }
 
 /// Get the global error manager
-pub fn get_error_manager() -> Result<Arc<ErrorManager>, CursedError> {
+pub fn get_error_manager() -> Result<(), Error> {
     GLOBAL_ERROR_MANAGER.get()
         .cloned()
         .ok_or_else(|| CursedError::system_error("Error manager not initialized"))
 }
 
 /// Common error result type for CURSED standard library
-pub type CursedResult<T> = std::result::Result<T, CursedError>;
+pub type CursedResult<(), Error>;
 
 /// Common option type for CURSED standard library  
 pub type CursedOption<T> = std::option::Option<T>;
@@ -358,7 +358,7 @@ pub struct ErrorReporter {
 }
 
 impl ErrorReporter {
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         Ok(Self {
             manager: get_error_manager()?,
             formatter: ErrorFormatter::new(),
@@ -389,7 +389,7 @@ impl ErrorReporter {
     }
 
     /// Report an error
-    pub fn report_error(&self, error: &CursedError) -> Result<(), CursedError> {
+    pub fn report_error(&self, error: &CursedError) -> Result<(), Error> {
         // Add to error manager
         if let Some(error_trait) = self.convert_to_trait(error) {
             self.manager.add_error(error_trait)?;
@@ -411,7 +411,7 @@ impl ErrorReporter {
     }
 
     /// Report multiple errors
-    pub fn report_errors(&self, errors: &[CursedError]) -> Result<(), CursedError> {
+    pub fn report_errors(&self, errors: &[CursedError]) -> Result<(), Error> {
         for error in errors {
             self.report_error(error)?;
         }
@@ -419,13 +419,13 @@ impl ErrorReporter {
     }
 
     /// Get error statistics
-    pub fn get_statistics(&self) -> Result<String, CursedError> {
+    pub fn get_statistics(&self) -> Result<(), Error> {
         let stats = self.manager.get_statistics()?;
         Ok(format!("{}", stats))
     }
 
     /// Clear all errors
-    pub fn clear_errors(&self) -> Result<(), CursedError> {
+    pub fn clear_errors(&self) -> Result<(), Error> {
         self.manager.clear_errors()
     }
 

@@ -514,7 +514,7 @@ impl fmt::Display for SessionState {
 
 // Implement Serialize and Deserialize for SessionResumptionData
 impl serde::Serialize for SessionResumptionData {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<(), Error>
     where
         S: serde::Serializer,
     {
@@ -529,7 +529,7 @@ impl serde::Serialize for SessionResumptionData {
 }
 
 impl<'de> serde::Deserialize<'de> for SessionResumptionData {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<(), Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -546,7 +546,7 @@ impl<'de> serde::Deserialize<'de> for SessionResumptionData {
                 formatter.write_str("struct SessionResumptionData")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<SessionResumptionData, V::Error>
+            fn visit_map<V>(self, mut map: V) -> Result<(), Error>
             where
                 V: serde::de::MapAccess<'de>,
             {

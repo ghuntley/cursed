@@ -383,10 +383,10 @@ impl OptimizationConfig {
     /// Load configuration from TOML file
     pub fn from_file(path: &PathBuf) -> Result<Self> {
         let content = fs::read_to_string(path)
-            .map_err(|e| Error::Other(format!("Failed to read config file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to read config file: {}", e)))?;
         
         let config: OptimizationConfig = toml::from_str(&content)
-            .map_err(|e| Error::Other(format!("Failed to parse config file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to parse config file: {}", e)))?;
         
         Ok(config)
     }
@@ -394,15 +394,15 @@ impl OptimizationConfig {
     /// Save configuration to TOML file
     pub fn to_file(&self, path: &PathBuf) -> Result<()> {
         let content = toml::to_string_pretty(self)
-            .map_err(|e| Error::Other(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to serialize config: {}", e)))?;
         
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)
-                .map_err(|e| Error::Other(format!("Failed to create config directory: {}", e)))?;
+                .map_err(|e| Error::General(format!("Failed to create config directory: {}", e)))?;
         }
         
         fs::write(path, content)
-            .map_err(|e| Error::Other(format!("Failed to write config file: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to write config file: {}", e)))?;
         
         Ok(())
     }
@@ -456,22 +456,22 @@ impl OptimizationConfig {
     /// Validate configuration
     pub fn validate(&self) -> Result<()> {
         if self.parallel_workers == 0 {
-            return Err(Error::Other("Parallel workers must be greater than 0".to_string()));
+            return Err(Error::General("Parallel workers must be greater than 0".to_string()));
         }
         
         if self.cache_max_size < 10 {
-            return Err(Error::Other("Cache max size must be at least 10 MB".to_string()));
+            return Err(Error::General("Cache max size must be at least 10 MB".to_string()));
         }
         
         if self.benchmark_iterations == 0 {
-            return Err(Error::Other("Benchmark iterations must be greater than 0".to_string()));
+            return Err(Error::General("Benchmark iterations must be greater than 0".to_string()));
         }
         
         // Validate cache directory if specified
         if let Some(ref cache_dir) = self.cache_directory {
             if let Some(parent) = cache_dir.parent() {
                 if !parent.exists() {
-                    return Err(Error::Other(format!(
+                    return Err(Error::General(format!(
                         "Cache directory parent does not exist: {}", 
                         parent.display()
                     )));

@@ -1,6 +1,6 @@
 /// Certificate Chain Operations
 
-use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
+use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError};
 use crate::stdlib::packages::crypto_pki::certificate::Certificate;
 
 pub struct CertificateChain {

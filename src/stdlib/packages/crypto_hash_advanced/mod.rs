@@ -35,7 +35,7 @@ pub use hmac_variants::*;
 use crate::error::CursedError;
 
 /// Initialize advanced cryptographic hash package with comprehensive functionality
-pub fn init_crypto_hash_advanced() -> Result<(), CursedError> {
+pub fn init_crypto_hash_advanced() -> Result<(), Error> {
     println!("🔒 Initializing CURSED Advanced Cryptographic Hash Package...");
     
     // Test core hash implementations
@@ -80,7 +80,7 @@ pub fn get_supported_algorithms() -> Vec<hash_traits::HashAlgorithmInfo> {
 }
 
 /// Quick hash function for common use cases
-pub fn quick_hash(algorithm: &str, data: &[u8]) -> Result<Vec<u8>, CursedError> {
+pub fn quick_hash(algorithm: &str, data: &[u8]) -> Result<(), Error> {
     match algorithm.to_lowercase().as_str() {
         "blake3" => {
             let mut hasher = blake3::Blake3Hasher::new();
@@ -106,13 +106,13 @@ pub fn quick_hash(algorithm: &str, data: &[u8]) -> Result<Vec<u8>, CursedError> 
 }
 
 /// Hash a password with secure defaults
-pub fn hash_password(password: &str) -> Result<password_hashing::PasswordHash, CursedError> {
+pub fn hash_password(password: &str) -> Result<(), Error> {
     let hasher = password_hashing::PasswordHasher::with_defaults();
     hasher.hash_password(password)
 }
 
 /// Verify a password against a hash
-pub fn verify_password(password: &str, hash: &password_hashing::PasswordHash) -> Result<bool, CursedError> {
+pub fn verify_password(password: &str, hash: &password_hashing::PasswordHash) -> Result<(), Error> {
     let hasher = password_hashing::PasswordHasher::new(hash.config.clone());
     hasher.verify_password(password, hash)
 }

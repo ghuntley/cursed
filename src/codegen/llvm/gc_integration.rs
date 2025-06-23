@@ -96,7 +96,7 @@ impl std::fmt::Debug for LlvmGcIntegration {
 impl LlvmGcIntegration {
     /// Create new LLVM GC integration
     #[instrument]
-    pub fn new(_gc_config: GcConfig) -> Result<Self, Error> {
+    pub fn new(_gc_config: GcConfig) -> Result<(), Error> {
         let gc = Arc::new(GarbageCollector::new());
         
         Ok(Self {
@@ -156,7 +156,7 @@ impl LlvmGcIntegration {
 
     /// Generate LLVM IR for object allocation
     #[instrument]
-    pub fn generate_allocation_ir(&self, type_name: &str, temp_var: &str) -> Result<String, Error> {
+    pub fn generate_allocation_ir(&self, type_name: &str, temp_var: &str) -> Result<(), Error> {
         let type_size = self.type_sizes.get(type_name)
             .ok_or_else(|| Error::from_str(&format!("Unknown type for allocation: {}", type_name)))?;
         
@@ -294,7 +294,7 @@ impl LlvmGcIntegration {
     }
 
     /// Get GC integration statistics
-    pub fn get_stats(&self) -> Result<GcIntegrationStats, Error> {
+    pub fn get_stats(&self) -> Result<(), Error> {
         self.stats.read()
             .map(|stats| (*stats).clone())
             .map_err(|e| Error::from_str(&format!("Failed to read GC integration stats: {}", e)))

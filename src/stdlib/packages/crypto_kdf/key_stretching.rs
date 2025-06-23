@@ -437,7 +437,7 @@ impl StretchingUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Key stretching function
-pub fn stretch_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn stretch_key(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("stretch_key requires key and target_length arguments".to_string()));
     }
@@ -469,7 +469,7 @@ pub fn stretch_key(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Strengthen weak key
-pub fn strengthen_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn strengthen_key(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("strengthen_key requires key argument".to_string()));
     }

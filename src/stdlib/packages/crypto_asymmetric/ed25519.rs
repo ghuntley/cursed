@@ -104,7 +104,7 @@ impl From<pkcs8::Error> for Ed25519Error {
     }
 }
 
-type Ed25519Result<T> = Result<T, Ed25519Error>;
+type Ed25519Result<(), Error>;
 
 /// fr fr Ed25519 engine for cryptographic operations
 pub struct Ed25519Engine {
@@ -326,7 +326,7 @@ impl Default for Ed25519Engine {
 use crate::stdlib::value::Value;
 
 /// slay Generate Ed25519 key pair
-pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
     let mut engine = Ed25519Engine::new();
     match engine.generate_keypair() {
         Ok(keypair) => {
@@ -352,7 +352,7 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError>
 }
 
 /// slay Generate Ed25519 key pair from seed
-pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("Ed25519 key generation from seed requires seed".to_string()));
     }
@@ -389,7 +389,7 @@ pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<Value, Cur
 }
 
 /// slay Ed25519 sign message
-pub fn ed25519_sign(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_sign(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("Ed25519 sign requires private key and message".to_string()));
     }
@@ -418,7 +418,7 @@ pub fn ed25519_sign(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Ed25519 verify signature
-pub fn ed25519_verify(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_verify(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify requires public key, message, and signature".to_string()));
     }
@@ -456,7 +456,7 @@ pub fn ed25519_verify(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Ed25519 verify with raw public key
-pub fn ed25519_verify_raw(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_verify_raw(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify raw requires public key hex, message, and signature".to_string()));
     }
@@ -494,7 +494,7 @@ pub fn ed25519_verify_raw(args: Vec<Value>) -> Result<Value, CursedError> {
 }
 
 /// slay Derive Ed25519 public key from private key
-pub fn ed25519_derive_public_key(args: Vec<Value>) -> Result<Value, CursedError> {
+pub fn ed25519_derive_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
         return Err(CursedError::Runtime("Ed25519 derive public key requires private key".to_string()));
     }

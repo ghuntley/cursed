@@ -433,7 +433,7 @@ fn read_line_input() -> io::Result<String> {
 }
 
 /// Parse a string value into the appropriate CURSED Value type
-fn parse_value_from_str(s: &str, target_type: &Value) -> Result<Value, io::Error> {
+fn parse_value_from_str(s: &str, target_type: &Value) -> Result<(), Error> {
     match target_type {
         Value::String(_) => Ok(Value::String(s.to_string())),
         Value::Int(_) => {

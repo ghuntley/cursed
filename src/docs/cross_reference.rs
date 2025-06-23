@@ -519,7 +519,7 @@ impl CrossReferenceAnalyzer {
         &mut self,
         documentation: &ExtractedDocumentation,
         source_files: &[PathBuf],
-    ) -> Result<CrossReferenceResult, Error> {
+    ) -> Result<(), Error> {
         // Phase 1: Build semantic model
         if self.config.enable_semantic_analysis {
             self.build_semantic_model(source_files)?;
@@ -1061,7 +1061,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate concept suggestions
-    fn generate_concept_suggestions(&self) -> Result<Vec<ConceptSuggestion>, Error> {
+    fn generate_concept_suggestions(&self) -> Result<(), Error> {
         let mut suggestions = Vec::new();
 
         // Similar types suggestions
@@ -1090,7 +1090,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate related function suggestions
-    fn generate_related_function_suggestions(&self) -> Result<Vec<ConceptSuggestion>, Error> {
+    fn generate_related_function_suggestions(&self) -> Result<(), Error> {
         let mut suggestions = Vec::new();
 
         // Group functions by naming patterns
@@ -1153,7 +1153,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate usage pattern suggestions
-    fn generate_usage_pattern_suggestions(&self) -> Result<Vec<ConceptSuggestion>, Error> {
+    fn generate_usage_pattern_suggestions(&self) -> Result<(), Error> {
         let mut suggestions = Vec::new();
 
         // Find common usage patterns

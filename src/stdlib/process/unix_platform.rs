@@ -1,3 +1,5 @@
+use crate::stdlib::web_vibez::SecurityContext;
+use crate::stdlib::process::EnhancedProcess;
 /// Unix-specific process management and IPC implementation
 /// 
 /// This module provides Unix-specific implementations for the unified
@@ -15,6 +17,7 @@ use std::os::unix::io::{AsRawFd, RawFd};
 use std::os::unix::net::{UnixStream, UnixListener};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicPtr, Ordering};
 use std::time::Duration;
 
 use tracing::{info, warn, error, debug, instrument};
@@ -227,17 +230,21 @@ struct ShmSegment {
     /// File descriptor
     fd: RawFd,
     /// Memory address
-    addr: *mut libc::c_void,
+    addr: AtomicPtr<libc::c_void>,
     /// Segment size
     size: usize,
     /// Connected processes
     connected_processes: Vec<Pid>,
 }
 
+// SAFETY: We manage the shared memory properly and ensure thread safety
+unsafe impl Send for ShmSegment {}
+unsafe impl Sync for ShmSegment {}
+
 impl UnixPlatformHandler {
     /// Create a new Unix platform handler
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         info!("Creating Unix platform handler");
         
         let settings = UnixSettings {
@@ -261,7 +268,7 @@ impl UnixPlatformHandler {
     
     /// Create a process namespace
     #[instrument(skip(self))]
-    fn create_namespace(&self, namespace_type: NamespaceType) -> Result<RawFd, CursedError> {
+    fn create_namespace(&self, namespace_type: NamespaceType) -> Result<(), Error> {
         if !self.settings.enable_namespaces {
             return Err(CursedError::Platform("Namespaces not enabled".to_string()));
         }
@@ -309,7 +316,7 @@ impl UnixPlatformHandler {
     
     /// Create a cgroup for process resource management
     #[instrument(skip(self))]
-    fn create_cgroup(&self, name: &str, limits: CgroupLimits) -> Result<PathBuf, CursedError> {
+    fn create_cgroup(&self, name: &str, limits: CgroupLimits) -> Result<(), Error> {
         if !self.settings.enable_cgroups {
             return Err(CursedError::Platform("Cgroups not enabled".to_string()));
         }
@@ -332,7 +339,7 @@ impl UnixPlatformHandler {
     
     /// Apply resource limits to a cgroup
     #[instrument(skip(self))]
-    fn apply_cgroup_limits(&self, cgroup_path: &Path, limits: &CgroupLimits) -> Result<(), CursedError> {
+    fn apply_cgroup_limits(&self, cgroup_path: &Path, limits: &CgroupLimits) -> Result<(), Error> {
         debug!("Applying cgroup resource limits");
         
         // CPU limit
@@ -369,7 +376,7 @@ impl UnixPlatformHandler {
     
     /// Create a Unix domain socket
     #[instrument(skip(self))]
-    fn create_unix_socket(&self, name: &str, socket_type: UnixSocketType) -> Result<UnixSocketConnection, CursedError> {
+    fn create_unix_socket(&self, name: &str, socket_type: UnixSocketType) -> Result<(), Error> {
         debug!(name = name, socket_type = ?socket_type, "Creating Unix domain socket");
         
         let socket_manager = self.socket_manager.lock().unwrap();
@@ -405,7 +412,7 @@ impl UnixPlatformHandler {
     
     /// Create shared memory segment
     #[instrument(skip(self))]
-    fn create_shared_memory(&self, name: &str, size: usize) -> Result<UnixSharedMemoryConnection, CursedError> {
+    fn create_shared_memory(&self, name: &str, size: usize) -> Result<(), Error> {
         debug!(name = name, size = size, "Creating shared memory segment");
         
         let shm_path = format!("/dev/shm/{}", name);
@@ -443,7 +450,7 @@ impl UnixPlatformHandler {
         Ok(UnixSharedMemoryConnection {
             name: name.to_string(),
             fd,
-            addr,
+            addr: AtomicPtr::new(addr),
             size,
         })
     }
@@ -454,7 +461,7 @@ impl UnixPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!("Applying Unix-specific security");
         
         // Apply process group isolation
@@ -473,7 +480,7 @@ impl UnixPlatformHandler {
 
 impl PlatformHandler for UnixPlatformHandler {
     #[instrument(skip(self))]
-    fn initialize(&self) -> Result<(), CursedError> {
+    fn initialize(&self) -> Result<(), Error> {
         info!("Initializing Unix platform handler");
         
         // Check if running as root for namespace support
@@ -497,7 +504,7 @@ impl PlatformHandler for UnixPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<Box<dyn IpcConnection>, CursedError> {
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error> {
         info!(ipc_type = ?ipc_type, name = name, "Creating Unix IPC mechanism");
         
         match ipc_type {
@@ -531,7 +538,7 @@ impl PlatformHandler for UnixPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.apply_unix_security(process, settings)
     }
     
@@ -541,14 +548,17 @@ impl PlatformHandler for UnixPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn cleanup(&self) -> Result<(), CursedError> {
+    fn cleanup(&self) -> Result<(), Error> {
         info!("Cleaning up Unix platform handler");
         
         // Cleanup shared memory segments
         let mut shm_manager = self.shm_manager.lock().unwrap();
         for segment in shm_manager.active_segments.values() {
             unsafe {
-                let _ = munmap(segment.addr, segment.size);
+                let addr = segment.addr.load(Ordering::Acquire);
+                if !addr.is_null() {
+                    let _ = munmap(addr, segment.size);
+                }
                 let _ = libc::close(segment.fd);
             }
         }
@@ -579,7 +589,7 @@ enum UnixSocketConnection {
 }
 
 impl IpcConnection for UnixSocketConnection {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         match self {
             UnixSocketConnection::Stream { stream, .. } => {
                 if let Some(ref mut stream) = stream.as_ref() {
@@ -593,7 +603,7 @@ impl IpcConnection for UnixSocketConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         match self {
             UnixSocketConnection::Stream { stream, .. } => {
                 if let Some(ref mut stream) = stream.as_ref() {
@@ -609,7 +619,7 @@ impl IpcConnection for UnixSocketConnection {
         }
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         match self {
             UnixSocketConnection::Stream { path, .. } => {
                 if path.exists() {
@@ -627,20 +637,28 @@ impl IpcConnection for UnixSocketConnection {
 struct UnixSharedMemoryConnection {
     name: String,
     fd: RawFd,
-    addr: *mut libc::c_void,
+    addr: AtomicPtr<libc::c_void>,
     size: usize,
 }
 
+// SAFETY: We manage the shared memory properly and ensure thread safety
+unsafe impl Send for UnixSharedMemoryConnection {}
+unsafe impl Sync for UnixSharedMemoryConnection {}
+
 impl IpcConnection for UnixSharedMemoryConnection {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         if message.len() > self.size {
             return Err(CursedError::Platform("Message too large for shared memory".to_string()));
         }
         
         unsafe {
+            let addr = self.addr.load(Ordering::Acquire);
+            if addr.is_null() {
+                return Err(CursedError::Platform("Shared memory not initialized".to_string()));
+            }
             std::ptr::copy_nonoverlapping(
                 message.as_ptr(),
-                self.addr as *mut u8,
+                addr as *mut u8,
                 message.len(),
             );
         }
@@ -648,11 +666,15 @@ impl IpcConnection for UnixSharedMemoryConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         let mut buffer = vec![0u8; self.size];
         unsafe {
+            let addr = self.addr.load(Ordering::Acquire);
+            if addr.is_null() {
+                return Err(CursedError::Platform("Shared memory not initialized".to_string()));
+            }
             std::ptr::copy_nonoverlapping(
-                self.addr as *const u8,
+                addr as *const u8,
                 buffer.as_mut_ptr(),
                 self.size,
             );
@@ -666,9 +688,12 @@ impl IpcConnection for UnixSharedMemoryConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         unsafe {
-            let _ = munmap(self.addr, self.size);
+            let addr = self.addr.load(Ordering::Acquire);
+            if !addr.is_null() {
+                let _ = munmap(addr, self.size);
+            }
             let _ = libc::close(self.fd);
         }
         let shm_path = format!("/dev/shm/{}", self.name);
@@ -688,7 +713,7 @@ struct UnixNamedPipeConnection {
 }
 
 impl UnixNamedPipeConnection {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         let pipe_path = PathBuf::from(format!("/tmp/{}.fifo", name));
         
         // Create FIFO
@@ -711,7 +736,7 @@ impl UnixNamedPipeConnection {
 }
 
 impl IpcConnection for UnixNamedPipeConnection {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
             .open(&self.path)
@@ -723,7 +748,7 @@ impl IpcConnection for UnixNamedPipeConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .read(true)
             .open(&self.path)
@@ -736,7 +761,7 @@ impl IpcConnection for UnixNamedPipeConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         if self.path.exists() {
             std::fs::remove_file(&self.path)
                 .map_err(|e| CursedError::Platform(format!("Failed to remove FIFO: {}", e)))?;
@@ -749,11 +774,15 @@ impl IpcConnection for UnixNamedPipeConnection {
 #[derive(Debug)]
 struct UnixSemaphoreConnection {
     name: String,
-    semaphore: *mut libc::sem_t,
+    semaphore: AtomicPtr<libc::sem_t>,
 }
 
+// SAFETY: We manage the semaphore properly and ensure thread safety
+unsafe impl Send for UnixSemaphoreConnection {}
+unsafe impl Sync for UnixSemaphoreConnection {}
+
 impl UnixSemaphoreConnection {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         let sem_name = CString::new(format!("/{}", name))
             .map_err(|e| CursedError::Platform(format!("Invalid semaphore name: {}", e)))?;
         
@@ -775,15 +804,19 @@ impl UnixSemaphoreConnection {
         
         Ok(Self {
             name: name.to_string(),
-            semaphore,
+            semaphore: AtomicPtr::new(semaphore),
         })
     }
 }
 
 impl IpcConnection for UnixSemaphoreConnection {
-    fn send(&self, _message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, _message: &[u8]) -> Result<(), Error> {
         // Post (increment) semaphore
-        let result = unsafe { libc::sem_post(self.semaphore) };
+        let semaphore = self.semaphore.load(Ordering::Acquire);
+        if semaphore.is_null() {
+            return Err(CursedError::Platform("Semaphore not initialized".to_string()));
+        }
+        let result = unsafe { libc::sem_post(semaphore) };
         if result != 0 {
             return Err(CursedError::Platform(format!(
                 "Failed to post semaphore: {}",
@@ -793,9 +826,13 @@ impl IpcConnection for UnixSemaphoreConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         // Wait (decrement) semaphore
-        let result = unsafe { libc::sem_wait(self.semaphore) };
+        let semaphore = self.semaphore.load(Ordering::Acquire);
+        if semaphore.is_null() {
+            return Err(CursedError::Platform("Semaphore not initialized".to_string()));
+        }
+        let result = unsafe { libc::sem_wait(semaphore) };
         if result != 0 {
             return Err(CursedError::Platform(format!(
                 "Failed to wait on semaphore: {}",
@@ -805,11 +842,14 @@ impl IpcConnection for UnixSemaphoreConnection {
         Ok(vec![1]) // Success signal
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         unsafe {
-            let _ = libc::sem_close(self.semaphore);
-            let sem_name = CString::new(format!("/{}", self.name)).unwrap();
-            let _ = libc::sem_unlink(sem_name.as_ptr());
+            let semaphore = self.semaphore.load(Ordering::Acquire);
+            if !semaphore.is_null() {
+                let _ = libc::sem_close(semaphore);
+                let sem_name = CString::new(format!("/{}", self.name)).unwrap();
+                let _ = libc::sem_unlink(sem_name.as_ptr());
+            }
         }
         Ok(())
     }
@@ -817,7 +857,7 @@ impl IpcConnection for UnixSemaphoreConnection {
 
 // Implementation stubs for required types
 impl UnixNamespaceManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             active_namespaces: HashMap::new(),
             enabled_namespaces: Vec::new(),
@@ -826,7 +866,7 @@ impl UnixNamespaceManager {
 }
 
 impl UnixCgroupsManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             base_path: PathBuf::from("/sys/fs/cgroup"),
             active_cgroups: HashMap::new(),
@@ -836,7 +876,7 @@ impl UnixCgroupsManager {
 }
 
 impl UnixSocketManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         let socket_dir = PathBuf::from("/tmp/cursed_sockets");
         std::fs::create_dir_all(&socket_dir)
             .map_err(|e| CursedError::Platform(format!("Failed to create socket directory: {}", e)))?;
@@ -849,7 +889,7 @@ impl UnixSocketManager {
 }
 
 impl UnixSignalManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             signal_handlers: HashMap::new(),
             pending_signals: Vec::new(),
@@ -858,7 +898,7 @@ impl UnixSignalManager {
 }
 
 impl UnixSharedMemoryManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             active_segments: HashMap::new(),
             shm_dir: PathBuf::from("/dev/shm"),

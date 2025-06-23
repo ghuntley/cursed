@@ -13,7 +13,7 @@ use crate::stdlib::database::{
     driver::{QueryResult, ExecuteResult}
 };
 use super::error::{MySqlError, MySqlResult};
-use super::types::{convert_from_sql_value, convert_isolation_level, extract_value_by_index, get_column_info};
+use super::crate::types::{convert_from_sql_value, convert_isolation_level, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
 use super::statement::MySqlStatement;
 
@@ -172,7 +172,7 @@ impl MySqlTransaction {
 }
 
 impl DriverTx for MySqlTransaction {
-    fn prepare(&self, query: &str) -> Result<Box<dyn DriverStmt>, DatabaseError> {
+    fn prepare(&self, query: &str) -> Result<(), Error> {
         if !self.is_transaction_active() {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -189,17 +189,17 @@ impl DriverTx for MySqlTransaction {
         Ok(Box::new(statement))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_query_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<ExecuteResult, DatabaseError> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
         self.execute_command_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn commit(&self) -> Result<(), DatabaseError> {
+    fn commit(&self) -> Result<(), Error> {
         if !self.is_transaction_active() {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -218,7 +218,7 @@ impl DriverTx for MySqlTransaction {
         }
     }
 
-    fn rollback(&self) -> Result<(), DatabaseError> {
+    fn rollback(&self) -> Result<(), Error> {
         if !self.is_transaction_active() {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }

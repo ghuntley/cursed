@@ -1,3 +1,5 @@
+use crate::stdlib::web_vibez::SecurityContext;
+use crate::stdlib::process::EnhancedProcess;
 /// Windows-specific process management and IPC implementation
 /// 
 /// This module provides Windows-specific implementations for the unified
@@ -15,7 +17,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use tracing::{info, warn, error, debug, instrument};
-use winapi::ctypes::c_void;
+use winapi::ccrate::types::c_void;
 use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
 use winapi::shared::ntdef::{HANDLE, NULL};
 use winapi::shared::winerror::{ERROR_SUCCESS, ERROR_INSUFFICIENT_BUFFER};
@@ -152,7 +154,7 @@ struct JobSecurityRestrictions {
 impl WindowsPlatformHandler {
     /// Create a new Windows platform handler
     #[instrument]
-    pub fn new() -> Result<Self, CursedError> {
+    pub fn new() -> Result<(), Error> {
         info!("Creating Windows platform handler");
         
         let settings = WindowsSettings {
@@ -175,7 +177,7 @@ impl WindowsPlatformHandler {
     
     /// Create a Windows job object for process management
     #[instrument(skip(self))]
-    fn create_job_object(&mut self, name: Option<&str>) -> Result<HANDLE, CursedError> {
+    fn create_job_object(&mut self, name: Option<&str>) -> Result<(), Error> {
         debug!("Creating Windows job object");
         
         let job_name = name.map(|s| {
@@ -205,7 +207,7 @@ impl WindowsPlatformHandler {
     
     /// Configure job object with limits and restrictions
     #[instrument(skip(self))]
-    fn configure_job_object(&self, job_handle: HANDLE) -> Result<(), CursedError> {
+    fn configure_job_object(&self, job_handle: HANDLE) -> Result<(), Error> {
         debug!("Configuring job object limits");
         
         // Set basic limits
@@ -251,7 +253,7 @@ impl WindowsPlatformHandler {
     
     /// Assign a process to a job object
     #[instrument(skip(self))]
-    fn assign_process_to_job(&self, process_handle: HANDLE, job_handle: HANDLE) -> Result<(), CursedError> {
+    fn assign_process_to_job(&self, process_handle: HANDLE, job_handle: HANDLE) -> Result<(), Error> {
         debug!("Assigning process to job object");
         
         let result = unsafe { AssignProcessToJobObject(job_handle, process_handle) };
@@ -269,7 +271,7 @@ impl WindowsPlatformHandler {
     
     /// Create a Windows named pipe
     #[instrument(skip(self))]
-    fn create_named_pipe(&self, name: &str, mode: PipeMode) -> Result<WindowsNamedPipe, CursedError> {
+    fn create_named_pipe(&self, name: &str, mode: PipeMode) -> Result<(), Error> {
         debug!(name = name, mode = ?mode, "Creating Windows named pipe");
         
         let pipe_name = format!(r"\\.\pipe\{}", name);
@@ -346,7 +348,7 @@ impl WindowsPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         debug!("Applying Windows-specific security");
         
         if self.settings.enable_security_tokens {
@@ -368,7 +370,7 @@ impl WindowsPlatformHandler {
     
     /// Create a restricted security token
     #[instrument(skip(self, process))]
-    fn create_restricted_token(&self, process: &mut EnhancedProcess) -> Result<HANDLE, CursedError> {
+    fn create_restricted_token(&self, process: &mut EnhancedProcess) -> Result<(), Error> {
         debug!("Creating restricted security token");
         
         let mut token_manager = self.token_manager.lock().unwrap();
@@ -426,7 +428,7 @@ impl WindowsPlatformHandler {
 
 impl PlatformHandler for WindowsPlatformHandler {
     #[instrument(skip(self))]
-    fn initialize(&self) -> Result<(), CursedError> {
+    fn initialize(&self) -> Result<(), Error> {
         info!("Initializing Windows platform handler");
         
         // Initialize Windows-specific subsystems
@@ -448,7 +450,7 @@ impl PlatformHandler for WindowsPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<Box<dyn IpcConnection>, CursedError> {
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error> {
         info!(ipc_type = ?ipc_type, name = name, "Creating Windows IPC mechanism");
         
         match ipc_type {
@@ -476,7 +478,7 @@ impl PlatformHandler for WindowsPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), CursedError> {
+    ) -> Result<(), Error> {
         self.apply_windows_security(process, settings)
     }
     
@@ -486,7 +488,7 @@ impl PlatformHandler for WindowsPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn cleanup(&self) -> Result<(), CursedError> {
+    fn cleanup(&self) -> Result<(), Error> {
         info!("Cleaning up Windows platform handler");
         
         // Cleanup job objects
@@ -521,13 +523,13 @@ struct WindowsNamedPipeConnection {
 }
 
 impl WindowsNamedPipeConnection {
-    fn new(pipe: WindowsNamedPipe) -> Result<Self, CursedError> {
+    fn new(pipe: WindowsNamedPipe) -> Result<(), Error> {
         Ok(Self { pipe })
     }
 }
 
 impl IpcConnection for WindowsNamedPipeConnection {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         let mut bytes_written: DWORD = 0;
         let result = unsafe {
             WriteFile(
@@ -546,7 +548,7 @@ impl IpcConnection for WindowsNamedPipeConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         let mut buffer = vec![0u8; 8192];
         let mut bytes_read: DWORD = 0;
         
@@ -568,7 +570,7 @@ impl IpcConnection for WindowsNamedPipeConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         let result = unsafe { CloseHandle(self.pipe.handle) };
         if result == FALSE {
             return Err(CursedError::Platform(format!(
@@ -589,7 +591,7 @@ struct WindowsSharedMemoryConnection {
 }
 
 impl WindowsSharedMemoryConnection {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         let mapping_name = CString::new(name)
             .map_err(|e| CursedError::Platform(format!("Invalid mapping name: {}", e)))?;
         
@@ -638,7 +640,7 @@ impl WindowsSharedMemoryConnection {
 }
 
 impl IpcConnection for WindowsSharedMemoryConnection {
-    fn send(&self, message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, message: &[u8]) -> Result<(), Error> {
         if message.len() > 8192 {
             return Err(CursedError::Platform("Message too large for shared memory".to_string()));
         }
@@ -654,7 +656,7 @@ impl IpcConnection for WindowsSharedMemoryConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         // For simplicity, read the entire shared memory segment
         // In practice, you'd implement a proper protocol
         let mut buffer = vec![0u8; 8192];
@@ -675,7 +677,7 @@ impl IpcConnection for WindowsSharedMemoryConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         unsafe {
             UnmapViewOfFile(self.view_ptr);
             CloseHandle(self.mapping_handle);
@@ -692,7 +694,7 @@ struct WindowsSemaphoreConnection {
 }
 
 impl WindowsSemaphoreConnection {
-    fn new(name: &str) -> Result<Self, CursedError> {
+    fn new(name: &str) -> Result<(), Error> {
         let semaphore_name = CString::new(name)
             .map_err(|e| CursedError::Platform(format!("Invalid semaphore name: {}", e)))?;
         
@@ -720,7 +722,7 @@ impl WindowsSemaphoreConnection {
 }
 
 impl IpcConnection for WindowsSemaphoreConnection {
-    fn send(&self, _message: &[u8]) -> Result<(), CursedError> {
+    fn send(&self, _message: &[u8]) -> Result<(), Error> {
         // Release semaphore (signal)
         let result = unsafe { ReleaseSemaphore(self.semaphore_handle, 1, ptr::null_mut()) };
         if result == FALSE {
@@ -732,7 +734,7 @@ impl IpcConnection for WindowsSemaphoreConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<Vec<u8>, CursedError> {
+    fn receive(&self) -> Result<(), Error> {
         // Wait for semaphore
         let result = unsafe { WaitForSingleObject(self.semaphore_handle, INFINITE) };
         match result {
@@ -746,7 +748,7 @@ impl IpcConnection for WindowsSemaphoreConnection {
         }
     }
     
-    fn close(&self) -> Result<(), CursedError> {
+    fn close(&self) -> Result<(), Error> {
         let result = unsafe { CloseHandle(self.semaphore_handle) };
         if result == FALSE {
             return Err(CursedError::Platform(format!(
@@ -760,7 +762,7 @@ impl IpcConnection for WindowsSemaphoreConnection {
 
 // Implementation stubs for required types
 impl WindowsTokenManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             current_token: None,
             restricted_tokens: HashMap::new(),
@@ -770,7 +772,7 @@ impl WindowsTokenManager {
 }
 
 impl WindowsNamedPipeManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             active_pipes: HashMap::new(),
             security_descriptors: HashMap::new(),
@@ -779,7 +781,7 @@ impl WindowsNamedPipeManager {
 }
 
 impl WindowsProcessGroupManager {
-    fn new() -> Result<Self, CursedError> {
+    fn new() -> Result<(), Error> {
         Ok(Self {
             job_objects: HashMap::new(),
             configurations: HashMap::new(),

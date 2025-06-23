@@ -29,7 +29,7 @@ impl LtoLevel {
             "none" | "off" | "false" => Ok(LtoLevel::None),
             "thin" => Ok(LtoLevel::Thin),
             "full" | "fat" => Ok(LtoLevel::Full),
-            _ => Err(Error::Other(format!("Invalid LTO level: {}", s))),
+            _ => Err(Error::General(format!("Invalid LTO level: {}", s))),
         }
     }
 
@@ -500,7 +500,7 @@ impl LtoOptimizer {
         info!("Applying LTO optimizations");
 
         let analysis = self.analysis.as_ref()
-            .ok_or_else(|| Error::Other("No analysis results available".to_string()))?;
+            .ok_or_else(|| Error::General("No analysis results available".to_string()))?;
 
         let mut results = OptimizationResults::default();
 
@@ -858,7 +858,7 @@ impl LtoCache {
         });
 
         std::fs::create_dir_all(&cache_dir)
-            .map_err(|e| Error::Other(format!("Failed to create cache directory: {}", e)))?;
+            .map_err(|e| Error::General(format!("Failed to create cache directory: {}", e)))?;
 
         Ok(Self {
             cache_dir,

@@ -69,6 +69,49 @@ pub struct ResourceLimits {
     pub max_file_descriptors: Option<u32>,
 }
 
+/// Resource type enumeration for process limits
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResourceType {
+    Memory,
+    Cpu,
+    FileDescriptors,
+    ExecutionTime,
+}
+
+/// Security context for process isolation
+#[derive(Debug, Clone)]
+pub struct SecurityContext {
+    pub user_id: Option<u32>,
+    pub group_id: Option<u32>,
+    pub capabilities: Vec<String>,
+    pub sandbox_mode: bool,
+}
+
+/// Process isolation configuration
+#[derive(Debug, Clone)]
+pub struct ProcessIsolation {
+    pub filesystem_isolation: bool,
+    pub network_isolation: bool,
+    pub pid_isolation: bool,
+    pub user_isolation: bool,
+}
+
+/// Security check result
+#[derive(Debug, Clone)]
+pub enum SecurityCheck {
+    Passed,
+    Failed(String),
+    Warning(String),
+}
+
+/// Process guard for safe process management
+#[derive(Debug)]
+pub struct ProcessGuard {
+    pub pid: u32,
+    pub security_context: SecurityContext,
+    pub isolation: ProcessIsolation,
+}
+
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {

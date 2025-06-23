@@ -18,7 +18,7 @@ use inkwell::{
     values::{FunctionValue, BasicValue, InstructionValue},
     basic_block::BasicBlock,
     builder::Builder,
-    types::{BasicTypeEnum, IntType},
+    crate::types::{BasicTypeEnum, IntType},
     IntPredicate,
 };
 
@@ -367,7 +367,7 @@ impl<'ctx> PgoPassManager<'ctx> {
 
         // Check timeout
         if start_time.elapsed() > self.config.max_optimization_time {
-            return Err(Error::Other("Pass execution timeout".to_string()));
+            return Err(Error::General("Pass execution timeout".to_string()));
         }
 
         // Execute the pass
