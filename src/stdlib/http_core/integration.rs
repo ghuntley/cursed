@@ -1,7 +1,7 @@
 use crate::web::StatusCode;
-//! Integration utilities for CURSED web_vibez package
-//!
-//! Higher-level utilities that combine multiple components for common use cases.
+// Integration utilities for CURSED web_vibez package
+//
+// Higher-level utilities that combine multiple components for common use cases.
 
 use std::collections::HashMap;
 use std::io::Write;

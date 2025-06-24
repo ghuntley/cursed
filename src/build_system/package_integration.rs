@@ -12,7 +12,7 @@ use crate::ast::Program;
 use crate::package_manager::{PackageManager, PackageManagerConfig, PackageManagerError, PackageMetadata};
 use crate::imports::{ImportManager, ImportError, ImportResolverConfig, ResolvedImport, LoadedModule};
 use crate::codegen::LlvmCodeGenerator;
-use crate::core::type_checker::TypeChecker;
+use crate::type_system::TypeChecker;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::error::Error;

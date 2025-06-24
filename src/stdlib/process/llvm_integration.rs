@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::ffi::CString;
 
-use inkwell::crate::types::{IntType, PointerType, StructType, VoidType};
+use inkwell::types::{IntType, PointerType, StructType, VoidType};
 use inkwell::values::{FunctionValue, IntValue, PointerValue, CallSiteValue};
 use inkwell::AddressSpace;
 use inkwell::IntPredicate;

@@ -10,7 +10,7 @@ use tracing::{debug, info, instrument};
 use std::iter::Iterator;
 use std::string::ToString;
 
-use crate::core::type_checker::{TypeChecker, Type};
+use crate::type_system::TypeChecker, Type;
 use crate::ast::Program;
 use crate::imports::{ImportResolver, ImportResolverConfig};
 

@@ -1042,7 +1042,7 @@ pub struct ObjectFile {
 mod tests {
     use super::*;
     use inkwell::context::Context;
-    use inkwell::crate::types::BasicTypeEnum;
+    use inkwell::types::BasicTypeEnum;
 
     #[test]
     fn test_llvm_lto_integration_creation() {

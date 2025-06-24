@@ -5,12 +5,12 @@
 
 use crate::runtime::panic::{PanicSeverity, PanicCategory};
 use crate::runtime::recovery::{RecoveryConfig, get_recovery_manager};
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error::{Error as CursedError, Error, SourceLocation};
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, IntValue, PointerValue};
-use inkwell::crate::types::{BasicTypeEnum, IntType, PointerType};
+use inkwell::types::{BasicTypeEnum, IntType, PointerType};
 use inkwell::basic_block::BasicBlock;
 use inkwell::IntPredicate;
 use std::collections::HashMap;

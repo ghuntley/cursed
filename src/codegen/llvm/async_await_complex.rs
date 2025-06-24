@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::ffi::CString;
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue},

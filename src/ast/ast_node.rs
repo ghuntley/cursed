@@ -1,4 +1,4 @@
-use crate::ast::ASTNode;
+// Remove circular import - ASTNode is defined in this file
 /// Core AST node type for the CURSED programming language
 
 use crate::ast::traits::{Node, Statement, Expression};

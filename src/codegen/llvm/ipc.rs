@@ -4,7 +4,7 @@
 /// Currently provides stubs for future integration with real LLVM backend.
 
 use std::collections::HashMap;
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue, PointerValue},
@@ -12,7 +12,7 @@ use inkwell::{
     basic_block::BasicBlock,
 };
 
-type CursedResult<(), Error>;
+type CursedResult<T> = Result<T, Error>;
 
 /// Trait for compiling IPC operations to LLVM IR (placeholder)
 pub trait IpcCompiler {

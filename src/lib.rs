@@ -14,6 +14,26 @@ pub mod lexer;
 pub mod parser;
 pub mod codegen;
 pub mod common;
+pub mod core;
+
+// Standard library module
+pub mod stdlib;
+
+// Basic debug module for compatibility
+pub mod debug {
+    pub use crate::error::SourceLocation;
+    
+    #[derive(Debug, Clone)]
+    pub struct DebugConfig {
+        pub enabled: bool,
+    }
+    
+    impl Default for DebugConfig {
+        fn default() -> Self {
+            Self { enabled: false }
+        }
+    }
+}
 
 // Minimal memory management
 pub mod memory {

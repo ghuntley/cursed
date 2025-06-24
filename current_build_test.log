@@ -1,0 +1,2641 @@
+🔧 CURSED Linking Fix - Setting up Nix environment for compilation...
+📚 Library Path: /nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib
+🛠️  Rust Flags: -C linker=gcc -C link-arg=-fuse-ld=bfd
+🚀 Executing: cargo build
+
+   Compiling cursed v0.1.0 (/home/ghuntley/code/cursed)
+error[E0432]: unresolved import `crate::runtime::debug_info`
+ --> src/error/debug_context.rs:8:21
+  |
+8 | use crate::runtime::debug_info::{EnhancedStackTrace, EnhancedStackFrame, DebugInfo};
+  |                     ^^^^^^^^^^ could not find `debug_info` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::debug_manager`
+ --> src/error/debug_context.rs:9:21
+  |
+9 | use crate::runtime::debug_manager::DebugManager;
+  |                     ^^^^^^^^^^^^^ could not find `debug_manager` in `runtime`
+
+error[E0433]: failed to resolve: unresolved import
+  --> src/parser/result_types.rs:10:12
+   |
+10 | use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
+   |            ^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `inkwell::types`
+
+error[E0433]: failed to resolve: unresolved import
+ --> src/codegen/llvm/main.rs:7:12
+  |
+7 | use crate::optimization::real_llvm_passes::RealLlvmPassManager;
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+ --> src/codegen/llvm/main.rs:8:12
+  |
+8 | use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+ --> src/codegen/llvm/main.rs:9:12
+  |
+9 | use crate::optimization::config::OptimizationConfig as OptConfig;
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+  --> src/codegen/llvm/main.rs:11:12
+   |
+11 | use crate::optimization::coordinator::{
+   |            ^^^^^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+  --> src/codegen/llvm/main.rs:14:12
+   |
+14 | use crate::optimization::crate::types::ComprehensiveOptimizationResult;
+   |            ^^^^^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/main.rs:33:5
+   |
+33 |     crate::types::BasicTypeEnum,
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0432]: unresolved import `crate::runtime::debug_runtime`
+  --> src/error/debug_context.rs:11:21
+   |
+11 | use crate::runtime::debug_runtime::{RuntimeDebugger, VariableInspection};
+   |                     ^^^^^^^^^^^^^ could not find `debug_runtime` in `runtime`
+
+error[E0432]: unresolved imports `super::enhanced_codegen::EnhancedLlvmCodegen`, `super::enhanced_codegen::CodegenConfig`, `super::enhanced_codegen::CodegenStats`, `super::enhanced_codegen::CodegenResult`
+  --> src/codegen/llvm/main.rs:40:31
+   |
+40 | use super::enhanced_codegen::{EnhancedLlvmCodegen, CodegenConfig, CodegenStats, CodegenResult};
+   |                               ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^  ^^^^^^^^^^^^^ no `CodegenResult` in `codegen::llvm::enhanced_codegen`
+   |                               |                    |              |
+   |                               |                    |              no `CodegenStats` in `codegen::llvm::enhanced_codegen`
+   |                               |                    no `CodegenConfig` in `codegen::llvm::enhanced_codegen`
+   |                               no `EnhancedLlvmCodegen` in `codegen::llvm::enhanced_codegen`
+
+error[E0432]: unresolved imports `super::variable_management::VariableManager`, `super::variable_management::VariableHandling`
+  --> src/codegen/llvm/main.rs:47:34
+   |
+47 | use super::variable_management::{VariableManager, VariableHandling};
+   |                                  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^ no `VariableHandling` in `codegen::llvm::variable_management`
+   |                                  |
+   |                                  no `VariableManager` in `codegen::llvm::variable_management`
+
+error[E0432]: unresolved imports `super::process::ProcessCompilation`, `super::process::ProcessControlOp`, `super::process::IpcChannelType`, `super::process::SharedMemoryOp`, `super::process::SignalOp`
+  --> src/codegen/llvm/main.rs:53:22
+   |
+53 | use super::process::{ProcessCompilation, ProcessControlOp, IpcChannelType, SharedMemoryOp, SignalOp};
+   |                      ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^ no `SignalOp` in `codegen::llvm::process`
+   |                      |                   |                 |               |
+   |                      |                   |                 |               no `SharedMemoryOp` in `codegen::llvm::process`
+   |                      |                   |                 no `IpcChannelType` in `codegen::llvm::process`
+   |                      |                   no `ProcessControlOp` in `codegen::llvm::process`
+   |                      no `ProcessCompilation` in `codegen::llvm::process`
+
+error[E0432]: unresolved imports `super::question_mark::QuestionMarkCompiler`, `super::question_mark::ErrorPropagationRuntime`, `super::question_mark::ErrorContext`
+  --> src/codegen/llvm/main.rs:60:28
+   |
+60 | use super::question_mark::{QuestionMarkCompiler, ErrorPropagationRuntime, ErrorContext};
+   |                            ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^ no `ErrorContext` in `codegen::llvm::question_mark`
+   |                            |                     |
+   |                            |                     no `ErrorPropagationRuntime` in `codegen::llvm::question_mark`
+   |                            no `QuestionMarkCompiler` in `codegen::llvm::question_mark`
+
+error[E0432]: unresolved imports `super::package_integration::LlvmPackageContext`, `super::package_integration::LlvmPackageConfig`, `super::package_integration::LlvmPackageError`, `super::package_integration::LlvmPackageIntegration`, `super::package_integration::CompiledPackageModule`, `super::package_integration::LlvmPackageStats`
+  --> src/codegen/llvm/main.rs:62:5
+   |
+62 |     LlvmPackageContext, LlvmPackageConfig, LlvmPackageError, 
+   |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^ no `LlvmPackageError` in `codegen::llvm::package_integration`
+   |     |                   |
+   |     |                   no `LlvmPackageConfig` in `codegen::llvm::package_integration`
+   |     no `LlvmPackageContext` in `codegen::llvm::package_integration`
+63 |     LlvmPackageIntegration, CompiledPackageModule, LlvmPackageStats
+   |     ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^ no `LlvmPackageStats` in `codegen::llvm::package_integration`
+   |     |                       |
+   |     |                       no `CompiledPackageModule` in `codegen::llvm::package_integration`
+   |     no `LlvmPackageIntegration` in `codegen::llvm::package_integration`
+
+error[E0432]: unresolved imports `super::optimization::OptimizationManager`, `super::optimization::OptimizationLevel`, `super::optimization::OptimizationConfig`, `super::optimization::OptimizationStats`, `super::optimization::utils`
+  --> src/codegen/llvm/main.rs:71:27
+   |
+71 | use super::optimization::{OptimizationManager, OptimizationLevel, OptimizationConfig, OptimizationStats, utils as optimization_utils};
+   |                           ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `utils` in `codegen::llvm::optimization`
+   |                           |                    |                  |                   |
+   |                           |                    |                  |                   no `OptimizationStats` in `codegen::llvm::optimization`
+   |                           |                    |                  no `OptimizationConfig` in `codegen::llvm::optimization`
+   |                           |                    no `OptimizationLevel` in `codegen::llvm::optimization`
+   |                           no `OptimizationManager` in `codegen::llvm::optimization`
+   |                           help: a similar name exists in the module: `OptimizationDisabled`
+   |
+   = help: consider importing one of these enums instead:
+           crate::OptimizationLevel
+           inkwell::OptimizationLevel
+   = help: consider importing this struct instead:
+           crate::codegen::llvm::optimization_integration::OptimizationStats
+   = help: consider importing this module instead:
+           crate::core::performance_pipeline::utils
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+   --> src/codegen/llvm/main.rs:103:5
+    |
+103 |     crate::types::{IntType, FloatType, PointerType, FunctionType},
+    |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0432]: unresolved imports `super::template::TemplateCompiler`, `super::template::LlvmTemplateCompiler`, `super::template::TemplateCompilationContext`, `super::template::TemplateOptimizationLevel`, `super::template::CompiledTemplate`, `super::template::CompiledTemplateMetadata`, `super::template::TemplateCompilationStats`, `super::template::TemplateCompilationError`, `super::template::declare_template_runtime_functions`, `super::template::register_standard_filters`, `super::template::runtime`
+  --> src/codegen/llvm/main.rs:87:5
+   |
+87 |     TemplateCompiler, LlvmTemplateCompiler, TemplateCompilationContext, TemplateOptimizationLevel,
+   |     ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^ no `TemplateOptimizationLevel` in `codegen::llvm::template`
+   |     |                 |                     |
+   |     |                 |                     no `TemplateCompilationContext` in `codegen::llvm::template`
+   |     |                 no `LlvmTemplateCompiler` in `codegen::llvm::template`
+   |     no `TemplateCompiler` in `codegen::llvm::template`
+88 |     CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationStats, TemplateCompilationError,
+   |     ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^ no `TemplateCompilationError` in `codegen::llvm::template`
+   |     |                 |                         |
+   |     |                 |                         no `TemplateCompilationStats` in `codegen::llvm::template`
+   |     |                 no `CompiledTemplateMetadata` in `codegen::llvm::template`
+   |     no `CompiledTemplate` in `codegen::llvm::template`
+89 |     declare_template_runtime_functions, register_standard_filters, runtime as template_runtime
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |     |                                   |
+   |     |                                   no `register_standard_filters` in `codegen::llvm::template`
+   |     no `declare_template_runtime_functions` in `codegen::llvm::template`
+   |
+help: a similar name exists in the module
+   |
+87 -     TemplateCompiler, LlvmTemplateCompiler, TemplateCompilationContext, TemplateOptimizationLevel,
+87 +     TemplateCompiler, LlvmTemplateCompiler, TemplateCompilationDisabled, TemplateOptimizationLevel,
+   |
+help: a similar name exists in the module
+   |
+88 -     CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationStats, TemplateCompilationError,
+88 +     CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationDisabled, TemplateCompilationError,
+   |
+help: a similar name exists in the module
+   |
+88 -     CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationStats, TemplateCompilationError,
+88 +     CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationStats, TemplateCompilationDisabled,
+   |
+
+error[E0432]: unresolved import `crate::runtime::panic`
+    --> src/codegen/llvm/main.rs:1343:29
+     |
+1343 |         use crate::runtime::panic::{PanicSeverity, PanicCategory};
+     |                             ^^^^^ could not find `panic` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::panic`
+    --> src/codegen/llvm/main.rs:1364:29
+     |
+1364 |         use crate::runtime::panic::{PanicSeverity, PanicCategory};
+     |                             ^^^^^ could not find `panic` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::panic`
+    --> src/codegen/llvm/main.rs:2568:29
+     |
+2568 |         use crate::runtime::panic::{PanicSeverity, PanicCategory};
+     |                             ^^^^^ could not find `panic` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::panic`
+    --> src/codegen/llvm/main.rs:2944:21
+     |
+2944 | use crate::runtime::panic::{PanicSeverity, PanicCategory};
+     |                     ^^^^^ could not find `panic` in `runtime`
+
+error[E0432]: unresolved imports `super::optimization::OptimizationConfig`, `super::optimization::OptimizationLevel`, `super::optimization::OptimizationStats`
+ --> src/codegen/llvm/optimization_engine.rs:7:27
+  |
+7 | use super::optimization::{OptimizationConfig, OptimizationLevel, OptimizationStats};
+  |                           ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `OptimizationStats` in `codegen::llvm::optimization`
+  |                           |                   |
+  |                           |                   no `OptimizationLevel` in `codegen::llvm::optimization`
+  |                           no `OptimizationConfig` in `codegen::llvm::optimization`
+  |
+  = help: consider importing one of these enums instead:
+          crate::OptimizationLevel
+          inkwell::OptimizationLevel
+  = help: consider importing this struct instead:
+          crate::codegen::llvm::optimization_integration::OptimizationStats
+
+error[E0432]: unresolved import `crate::optimization`
+ --> src/codegen/llvm/optimization_integration.rs:8:12
+  |
+8 | use crate::optimization::{
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/async_await.rs:10:5
+   |
+10 |     crate::types::{BasicTypeEnum, FunctionType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/channels.rs:18:17
+   |
+18 | use crate::ast::crate::types::{TypeExpression, Type};
+   |                 ^^^^^ `crate` in paths can only be used in start position
+
+error[E0432]: unresolved imports `super::optimization::OptimizationLevel`, `super::optimization::OptimizationConfig`
+ --> src/codegen/llvm/optimization_pipeline.rs:9:27
+  |
+9 | use super::optimization::{OptimizationLevel, OptimizationConfig};
+  |                           ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `OptimizationConfig` in `codegen::llvm::optimization`
+  |                           |
+  |                           no `OptimizationLevel` in `codegen::llvm::optimization`
+  |
+  = help: consider importing one of these enums instead:
+          crate::OptimizationLevel
+          inkwell::OptimizationLevel
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/database_integration.rs:13:12
+   |
+13 | use crate::stdlib::database::llvm_integration::{
+   |            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/database_integration.rs:221:20
+    |
+221 |         use crate::stdlib::database::llvm_integration::ParameterType;
+    |                    ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/database_integration.rs:238:20
+    |
+238 |         use crate::stdlib::database::llvm_integration::ReturnType;
+    |                    ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0432]: unresolved import `crate::runtime::channels`
+  --> src/codegen/llvm/channels.rs:23:21
+   |
+23 | use crate::runtime::channels::{ChannelError, SendResult, ReceiveResult};
+   |                     ^^^^^^^^ could not find `channels` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::debug_info`
+  --> src/codegen/llvm/debug.rs:37:21
+   |
+37 | use crate::runtime::debug_info::VariableInfo;
+   |                     ^^^^^^^^^^ could not find `debug_info` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::debug_info`
+ --> src/codegen/llvm/debug_info.rs:8:21
+  |
+8 | use crate::runtime::debug_info::{DebugInfo, VariableInfo};
+  |                     ^^^^^^^^^^ could not find `debug_info` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::debug_info`
+  --> src/codegen/llvm/debug_metadata.rs:12:21
+   |
+12 | use crate::runtime::debug_info::VariableInfo;
+   |                     ^^^^^^^^^^ could not find `debug_info` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::error_handling`
+  --> src/codegen/llvm/error_handling.rs:11:21
+   |
+11 | use crate::runtime::error_handling::{ErrorRuntime, ErrorContext};
+   |                     ^^^^^^^^^^^^^^ could not find `error_handling` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::panic`
+  --> src/codegen/llvm/error_handling.rs:12:21
+   |
+12 | use crate::runtime::panic::{PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory};
+   |                     ^^^^^ could not find `panic` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::stack_trace`
+  --> src/codegen/llvm/error_handling.rs:13:21
+   |
+13 | use crate::runtime::stack_trace::{StackTraceManager, CallFrame};
+   |                     ^^^^^^^^^^^ could not find `stack_trace` in `runtime`
+
+error[E0432]: unresolved import `crate::type_system`
+  --> src/codegen/llvm/expression_compiler.rs:16:12
+   |
+16 | use crate::type_system::{TypeSystem, TypeInference, TypeEnvironment};
+   |            ^^^^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `codegen::llvm::type_system`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/expression_compiler.rs:24:5
+   |
+24 |     crate::types::{BasicTypeEnum, BasicType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0432]: unresolved import `crate::codegen::llvm::variable_management::VariableManager`
+  --> src/codegen/llvm/expression_compiler.rs:18:5
+   |
+18 | use crate::codegen::llvm::variable_management::VariableManager;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `VariableManager` in `codegen::llvm::variable_management`
+
+error[E0432]: unresolved imports `crate::memory::gc::GcConfig`, `crate::memory::gc::Gc`
+  --> src/codegen/llvm/gc_integration.rs:13:43
+   |
+13 | use crate::memory::gc::{GarbageCollector, GcConfig, Gc};
+   |                                           ^^^^^^^^  ^^ no `Gc` in `memory::gc`
+   |                                           |
+   |                                           no `GcConfig` in `memory::gc`
+
+error[E0432]: unresolved import `crate::memory::object_id`
+  --> src/codegen/llvm/gc_integration.rs:14:20
+   |
+14 | use crate::memory::object_id::ObjectId;
+   |                    ^^^^^^^^^ could not find `object_id` in `memory`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/goroutine.rs:17:5
+   |
+17 |     crate::types::{BasicTypeEnum, IntType, PointerType, FunctionType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/ipc.rs:11:5
+   |
+11 |     crate::types::{BasicTypeEnum, FunctionType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0433]: failed to resolve: unresolved import
+ --> src/codegen/llvm/lto_integration.rs:7:12
+  |
+7 | use crate::optimization::lto::{LtoConfig, LtoLevel, LtoCompilationUnit, LtoStatistics};
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/osr.rs:16:5
+   |
+16 |     crate::types::{BasicTypeEnum, StructType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0432]: unresolved import `crate::runtime::goroutine`
+  --> src/codegen/llvm/gc_integration.rs:15:21
+   |
+15 | use crate::runtime::goroutine::GoroutineScheduler;
+   |                     ^^^^^^^^^ could not find `goroutine` in `runtime`
+
+error[E0432]: unresolved import `crate::runtime::panic`
+ --> src/codegen/llvm/panic.rs:6:21
+  |
+6 | use crate::runtime::panic::{PanicSeverity, PanicCategory};
+  |                     ^^^^^ could not find `panic` in `runtime`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/process_execution.rs:48:5
+   |
+48 |     crate::types::{BasicTypeEnum, IntType, PointerType, FunctionType, ArrayType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution_ffi.rs:13:12
+   |
+13 | use crate::stdlib::process::core::ProcessManager;
+   |            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution_ffi.rs:14:12
+   |
+14 | use crate::stdlib::process::exec_slay::{SlayCommand, SlayOptions};
+   |            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution_ffi.rs:15:12
+   |
+15 | use crate::stdlib::process::exec_vibez::{Cmd, ProcessContext};
+   |            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution_ffi.rs:16:12
+   |
+16 | use crate::stdlib::process::background_tasks::SlayTask;
+   |            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution_ffi.rs:17:12
+   |
+17 | use crate::stdlib::process::pipeline::SlayPipeline;
+   |            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0432]: unresolved import `crate::runtime::recovery`
+ --> src/codegen/llvm/panic.rs:7:21
+  |
+7 | use crate::runtime::recovery::{RecoveryConfig, get_recovery_manager};
+  |                     ^^^^^^^^ could not find `recovery` in `runtime`
+
+error[E0433]: failed to resolve: unresolved import
+  --> src/codegen/llvm/real_compilation.rs:22:12
+   |
+22 | use crate::optimization::llvm_passes::{LlvmPassManager, LtoManager, PgoManager};
+   |            ^^^^^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/real_compilation.rs:25:5
+   |
+25 |     crate::types::{BasicTypeEnum, BasicType},
+   |     ^^^^^ `crate` in paths can only be used in start position
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/real_compilation.rs:490:20
+    |
+490 |         use crate::optimization::optimization_levels::LevelConfig;
+    |                    ^^^^^^^^^^^^
+    |                    |
+    |                    unresolved import
+    |                    help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/real_compilation.rs:512:20
+    |
+512 |         use crate::optimization::optimization_levels::LevelConfig;
+    |                    ^^^^^^^^^^^^
+    |                    |
+    |                    unresolved import
+    |                    help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/real_compilation.rs:530:20
+    |
+530 |         use crate::optimization::optimization_levels::LevelConfig;
+    |                    ^^^^^^^^^^^^
+    |                    |
+    |                    unresolved import
+    |                    help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+ --> src/codegen/llvm/real_optimization_integration.rs:7:12
+  |
+7 | use crate::optimization::config::{OptimizationConfig};
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+ --> src/codegen/llvm/real_optimization_integration.rs:9:12
+  |
+9 | use crate::optimization::real_llvm_passes::{RealLlvmPassManager, OptimizationStatistics as RealOptStats};
+  |            ^^^^^^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: `crate` in paths can only be used in start position
+  --> src/codegen/llvm/type_system.rs:15:17
+   |
+15 | use crate::ast::crate::types::{TypeExpression, Type, StructType, InterfaceType};
+   |                 ^^^^^ `crate` in paths can only be used in start position
+
+error[E0432]: unresolved import `crate::ast::statements::PrintStatement`
+  --> src/codegen/llvm/real_compilation.rs:10:61
+   |
+10 |     BreakStatement, ContinueStatement, AssignmentStatement, PrintStatement
+   |                                                             ^^^^^^^^^^^^^^
+   |                                                             |
+   |                                                             no `PrintStatement` in `ast::statements`
+   |                                                             help: a similar name exists in the module: `PanicStatement`
+
+error[E0432]: unresolved import `crate::type_system`
+  --> src/codegen/llvm/type_system.rs:18:12
+   |
+18 | use crate::type_system::{
+   |            ^^^^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `codegen::llvm::type_system`
+
+error[E0432]: unresolved import `crate::memory::object_id`
+  --> src/codegen/llvm/web_vibez_integration.rs:16:20
+   |
+16 | use crate::memory::object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, ObjectRegistry, SharedObjectRegistry};
+   |                    ^^^^^^^^^ could not find `object_id` in `memory`
+
+error[E0432]: unresolved imports `optimization::OptimizationConfig`, `optimization::OptimizationManager`, `optimization::LlvmOptimizer`
+  --> src/codegen/llvm/mod.rs:71:24
+   |
+71 | pub use optimization::{OptimizationConfig, OptimizationManager, LlvmOptimizer};
+   |                        ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^ no `LlvmOptimizer` in `codegen::llvm::optimization`
+   |                        |                   |
+   |                        |                   no `OptimizationManager` in `codegen::llvm::optimization`
+   |                        |                   help: a similar name exists in the module: `OptimizationDisabled`
+   |                        no `OptimizationConfig` in `codegen::llvm::optimization`
+
+error[E0432]: unresolved imports `performance_monitor::PerformanceMonitor`, `performance_monitor::MonitoringConfig`, `performance_monitor::CodeMetrics`, `performance_monitor::BaselineMetrics`, `performance_monitor::PerformanceReport`
+  --> src/codegen/llvm/mod.rs:83:5
+   |
+83 |     PerformanceMonitor, MonitoringConfig, CodeMetrics, BaselineMetrics, PerformanceReport
+   |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `PerformanceReport` in `codegen::llvm::performance_monitor`
+   |     |                   |                 |            |
+   |     |                   |                 |            no `BaselineMetrics` in `codegen::llvm::performance_monitor`
+   |     |                   |                 no `CodeMetrics` in `codegen::llvm::performance_monitor`
+   |     |                   no `MonitoringConfig` in `codegen::llvm::performance_monitor`
+   |     no `PerformanceMonitor` in `codegen::llvm::performance_monitor`
+
+error[E0432]: unresolved import `crate::type_system`
+  --> src/core/type_checker.rs:10:12
+   |
+10 | use crate::type_system::{
+   |            ^^^^^^^^^^^
+   |            |
+   |            unresolved import
+   |            help: a similar path exists: `codegen::llvm::type_system`
+
+error[E0433]: failed to resolve: could not find `profiling` in the crate root
+ --> src/core/performance_pipeline.rs:7:12
+  |
+7 | use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportConfig, ReportFormat};
+  |            ^^^^^^^^^ could not find `profiling` in the crate root
+
+error[E0432]: unresolved import `crate::object`
+ --> src/core/char.rs:2:12
+  |
+2 | use crate::object::Object;
+  |            ^^^^^^ could not find `object` in the crate root
+
+error[E0432]: unresolved import `crate::debug::enhanced_debug`
+  --> src/error/debug_context.rs:10:19
+   |
+10 | use crate::debug::enhanced_debug::{EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata};
+   |                   ^^^^^^^^^^^^^^ could not find `enhanced_debug` in `debug`
+
+error[E0432]: unresolved import `crate::debug::source_location`
+ --> src/error/error_propagation.rs:2:19
+  |
+2 | use crate::debug::source_location::SourceLocation;
+  |                   ^^^^^^^^^^^^^^^ could not find `source_location` in `debug`
+
+error[E0432]: unresolved import `crate::debug::source_location`
+ --> src/error/types.rs:7:19
+  |
+7 | use crate::debug::source_location::SourceLocation;
+  |                   ^^^^^^^^^^^^^^^ could not find `source_location` in `debug`
+
+error[E0432]: unresolved import `chrono`
+  --> src/ast/documentation.rs:15:5
+   |
+15 | use chrono;
+   |     ^^^^^^ no external crate `chrono`
+
+error[E0432]: unresolved import `regex`
+  --> src/ast/documentation.rs:16:5
+   |
+16 | use regex;
+   |     ^^^^^ no external crate `regex`
+
+error[E0432]: unresolved import `crate::error::ParseError`
+  --> src/parser/async_await.rs:17:27
+   |
+17 | use crate::error::{Error, ParseError};
+   |                           ^^^^^^^^^^
+   |                           |
+   |                           no `ParseError` in `error`
+   |                           help: a similar name exists in the module: `CursedError`
+   |
+   = help: consider importing one of these items instead:
+           crate::error::types::ParseError
+           std::string::ParseError
+           tracing_subscriber::filter::ParseError
+
+error[E0433]: failed to resolve: could not find `result_crate` in `super`
+  --> src/codegen/llvm/main.rs:65:12
+   |
+65 | use super::result_crate::types::{
+   |            ^^^^^^^^^^^^ could not find `result_crate` in `super`
+
+error[E0432]: unresolved import `crate::common::optimization_level`
+  --> src/codegen/llvm/main.rs:10:20
+   |
+10 | use crate::common::optimization_level::OptimizationLevel as OptLevel;
+   |                    ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rayon`
+  --> src/codegen/llvm/optimization_pipeline.rs:13:5
+   |
+13 | use rayon::prelude::*;
+   |     ^^^^^ use of unresolved module or unlinked crate `rayon`
+   |
+   = help: if you wanted to use a crate named `rayon`, use `cargo add rayon` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `crate::common::optimization_level`
+  --> src/codegen/llvm/optimization_integration.rs:15:20
+   |
+15 | use crate::common::optimization_level::OptimizationLevel; // Explicit import to resolve conflict
+   |                    ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0432]: unresolved imports `crate::debug::DebugInfo`, `crate::debug::DebugInfoManager`
+  --> src/codegen/llvm/debug.rs:33:33
+   |
+33 | use crate::debug::{DebugConfig, DebugInfo, DebugInfoManager, SourceLocation};
+   |                                 ^^^^^^^^^  ^^^^^^^^^^^^^^^^ no `DebugInfoManager` in `debug`
+   |                                 |
+   |                                 no `DebugInfo` in `debug`
+
+error[E0432]: unresolved import `crate::debug::dwarf_gen`
+  --> src/codegen/llvm/debug.rs:34:19
+   |
+34 | use crate::debug::dwarf_gen::DwarfGenerator;  // Fixed import path
+   |                   ^^^^^^^^^ could not find `dwarf_gen` in `debug`
+
+error[E0432]: unresolved import `crate::debug::debug_symbols`
+  --> src/codegen/llvm/debug.rs:35:19
+   |
+35 | use crate::debug::debug_symbols::{DebugSymbol, DebugSymbolType};
+   |                   ^^^^^^^^^^^^^ could not find `debug_symbols` in `debug`
+
+error[E0432]: unresolved import `crate::debug::enhanced_debug`
+ --> src/codegen/llvm/debug_info.rs:9:19
+  |
+9 | use crate::debug::enhanced_debug::{
+  |                   ^^^^^^^^^^^^^^ could not find `enhanced_debug` in `debug`
+
+error[E0432]: unresolved import `crate::debug::DebugInfoManager`
+ --> src/codegen/llvm/debug_integration.rs:2:20
+  |
+2 | use crate::debug::{DebugInfoManager, SourceLocation, DebugConfig};
+  |                    ^^^^^^^^^^^^^^^^ no `DebugInfoManager` in `debug`
+
+error[E0432]: unresolved import `crate::debug::DebugInfoManager`
+  --> src/codegen/llvm/debug_metadata.rs:10:49
+   |
+10 | use crate::debug::{DebugConfig, SourceLocation, DebugInfoManager};
+   |                                                 ^^^^^^^^^^^^^^^^ no `DebugInfoManager` in `debug`
+
+error[E0432]: unresolved import `crate::common::optimization_level`
+ --> src/codegen/llvm/real_optimization_integration.rs:8:20
+  |
+8 | use crate::common::optimization_level::OptimizationLevel;
+  |                    ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rayon`
+  --> src/core/performance_pipeline.rs:15:5
+   |
+15 | use rayon::prelude::*;
+   |     ^^^^^ use of unresolved module or unlinked crate `rayon`
+   |
+   = help: if you wanted to use a crate named `rayon`, use `cargo add rayon` to add it to your `Cargo.toml`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`
+  --> src/core/performance_pipeline.rs:14:5
+   |
+14 | use tokio::sync::mpsc;
+   |     ^^^^^ use of unresolved module or unlinked crate `tokio`
+   |
+   = help: if you wanted to use a crate named `tokio`, use `cargo add tokio` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `crate::common::optimization_level`
+  --> src/codegen/llvm/mod.rs:72:24
+   |
+72 | pub use crate::common::optimization_level::OptimizationLevel;
+   |                        ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0106]: missing lifetime specifier
+   --> src/codegen/llvm/main.rs:153:26
+    |
+153 |     expression_compiler: LlvmExpressionCompiler,
+    |                          ^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+    |
+help: consider introducing a named lifetime parameter
+    |
+140 ~ pub struct LlvmCodeGenerator<'a> {
+141 |     // Real LLVM components
+...
+152 |     web_vibez_integration: Option<WebVibezLlvmIntegration<'static>>,
+153 ~     expression_compiler: LlvmExpressionCompiler<'a>,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:159:41
+    |
+159 |     optimization_manager: Option<crate::optimization::AdvancedOptimizationManager>,
+    |                                         ^^^^^^^^^^^^
+    |                                         |
+    |                                         unresolved import
+    |                                         help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0106]: missing lifetime specifier
+   --> src/codegen/llvm/main.rs:235:26
+    |
+235 |     expression_compiler: LlvmExpressionCompiler,
+    |                          ^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+    |
+help: consider using the `'ctx` lifetime
+    |
+235 |     expression_compiler: LlvmExpressionCompiler<'ctx>,
+    |                                                ++++++
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:240:41
+    |
+240 |     optimization_manager: Option<crate::optimization::AdvancedOptimizationManager>,
+    |                                         ^^^^^^^^^^^^
+    |                                         |
+    |                                         unresolved import
+    |                                         help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: could not find `Runtime` in `runtime`
+   --> src/codegen/llvm/main.rs:255:48
+    |
+255 |         Self::new_with_runtime(crate::runtime::Runtime::new()?)
+    |                                                ^^^^^^^ could not find `Runtime` in `runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+255 -         Self::new_with_runtime(crate::runtime::Runtime::new()?)
+255 +         Self::new_with_runtime(crate::CommonError::new()?)
+    |
+255 -         Self::new_with_runtime(crate::runtime::Runtime::new()?)
+255 +         Self::new_with_runtime(crate::Error::new()?)
+    |
+255 -         Self::new_with_runtime(crate::runtime::Runtime::new()?)
+255 +         Self::new_with_runtime(crate::error::types::ErrorCategory::new()?)
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:276:43
+    |
+276 |         let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&optimization_config)
+    |                                           ^^^^^^^^^^^^
+    |                                           |
+    |                                           unresolved import
+    |                                           help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/main.rs:408:22
+    |
+408 |         ast: &crate::stdlib::template::TemplateAst,
+    |                      ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/main.rs:431:25
+    |
+431 |         config: &crate::stdlib::template::TemplateConfig,
+    |                         ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/main.rs:434:32
+    |
+434 |         let mut lexer = crate::stdlib::template::TemplateLexer::new(source, &config.delimiters);
+    |                                ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/main.rs:436:33
+    |
+436 |         let mut parser = crate::stdlib::template::TemplateParser::new(tokens);
+    |                                 ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:454:42
+    |
+454 |         let optimization_config = crate::optimization::OptimizationConfig::default();
+    |                                          ^^^^^^^^^^^^
+    |                                          |
+    |                                          unresolved import
+    |                                          help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:455:43
+    |
+455 |         let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&optimization_config)
+    |                                           ^^^^^^^^^^^^
+    |                                           |
+    |                                           unresolved import
+    |                                           help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: could not find `Runtime` in `runtime`
+   --> src/codegen/llvm/main.rs:494:39
+    |
+494 |         let runtime = crate::runtime::Runtime::new()?;
+    |                                       ^^^^^^^ could not find `Runtime` in `runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+494 -         let runtime = crate::runtime::Runtime::new()?;
+494 +         let runtime = crate::CommonError::new()?;
+    |
+494 -         let runtime = crate::runtime::Runtime::new()?;
+494 +         let runtime = crate::Error::new()?;
+    |
+494 -         let runtime = crate::runtime::Runtime::new()?;
+494 +         let runtime = crate::error::types::ErrorCategory::new()?;
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:705:69
+    |
+705 |     pub fn get_real_pass_manager_statistics(&self) -> Option<crate::optimization::real_llvm_passes::OptimizationStatistics> {
+    |                                                                     ^^^^^^^^^^^^
+    |                                                                     |
+    |                                                                     unresolved import
+    |                                                                     help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:787:70
+    |
+787 |     pub fn optimize_compilation_units(&mut self, units: &mut [crate::optimization::metrics::CompilationUnit]) -> Result<(), Error> {
+    |                                                                      ^^^^^^^^^^^^
+    |                                                                      |
+    |                                                                      unresolved import
+    |                                                                      help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/main.rs:855:20
+    |
+855 |             crate::optimization::metrics::CompilationUnit::new("main".to_string())
+    |                    ^^^^^^^^^^^^
+    |                    |
+    |                    unresolved import
+    |                    help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: could not find `package_manager` in the crate root
+    --> src/codegen/llvm/main.rs:2088:65
+     |
+2088 |         package_manager: std::sync::Arc<std::sync::Mutex<crate::package_manager::PackageManager>>,
+     |                                                                 ^^^^^^^^^^^^^^^ could not find `package_manager` in the crate root
+
+error[E0433]: failed to resolve: unresolved import
+    --> src/codegen/llvm/main.rs:2152:43
+     |
+2152 |         let optimization_manager = crate::optimization::AdvancedOptimizationManager::new(&config)
+     |                                           ^^^^^^^^^^^^
+     |                                           |
+     |                                           unresolved import
+     |                                           help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+    --> src/codegen/llvm/main.rs:2172:59
+     |
+2172 |     pub fn get_optimization_stats(&self) -> Option<crate::optimization::OptimizationStatistics> {
+     |                                                           ^^^^^^^^^^^^
+     |                                                           |
+     |                                                           unresolved import
+     |                                                           help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+  --> src/codegen/llvm/optimization_integration.rs:93:25
+   |
+93 |             Some(crate::optimization::incremental::IncrementalCompiler::new(&config)?)
+   |                         ^^^^^^^^^^^^
+   |                         |
+   |                         unresolved import
+   |                         help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/optimization_integration.rs:100:37
+    |
+100 |             let benchmarks = crate::optimization::benchmarks::BenchmarkRunner::new(config.clone());
+    |                                     ^^^^^^^^^^^^
+    |                                     |
+    |                                     unresolved import
+    |                                     help: a similar path exists: `codegen::llvm::optimization`
+
+error[E0106]: missing lifetime specifier
+  --> src/codegen/llvm/channels.rs:33:14
+   |
+33 |     context: ExpressionContext,
+   |              ^^^^^^^^^^^^^^^^^ expected named lifetime parameter
+   |
+help: consider introducing a named lifetime parameter
+   |
+29 ~ pub struct LlvmChannelCompiler<'a> {
+30 |     /// Type registry for channel type management
+31 |     type_registry: LlvmTypeRegistry,
+32 |     /// Expression context for variable and type management
+33 ~     context: ExpressionContext<'a>,
+   |
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/database_integration.rs:220:66
+    |
+220 |     fn convert_parameter_type_to_llvm(&self, param_type: &crate::stdlib::database::llvm_integration::ParameterType) -> Result<BasicMetada...
+    |                                                                  ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/database_integration.rs:237:64
+    |
+237 |     fn convert_return_type_to_llvm(&self, return_type: &crate::stdlib::database::llvm_integration::ReturnType) -> Result<BasicTypeEnum<'c...
+    |                                                                ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `goroutine` in `runtime`
+  --> src/codegen/llvm/goroutine.rs:24:59
+   |
+24 | static mut RUNTIME_SCHEDULER: Option<*mut crate::runtime::goroutine::GoroutineScheduler> = None;
+   |                                                           ^^^^^^^^^ could not find `goroutine` in `runtime`
+
+error[E0433]: failed to resolve: could not find `goroutine` in `runtime`
+  --> src/codegen/llvm/goroutine.rs:27:62
+   |
+27 | pub fn set_runtime_scheduler(scheduler: *mut crate::runtime::goroutine::GoroutineScheduler) {
+   |                                                              ^^^^^^^^^ could not find `goroutine` in `runtime`
+
+error[E0433]: failed to resolve: could not find `goroutine` in `runtime`
+  --> src/codegen/llvm/goroutine.rs:34:63
+   |
+34 | pub fn get_runtime_scheduler() -> Option<*mut crate::runtime::goroutine::GoroutineScheduler> {
+   |                                                               ^^^^^^^^^ could not find `goroutine` in `runtime`
+
+error[E0433]: failed to resolve: could not find `goroutine` in `runtime`
+   --> src/codegen/llvm/goroutine.rs:340:54
+    |
+340 |         let mut scheduler = Box::new(crate::runtime::goroutine::GoroutineScheduler::new());
+    |                                                      ^^^^^^^^^ could not find `goroutine` in `runtime`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`
+   --> src/codegen/llvm/jit_compilation.rs:581:9
+    |
+581 |         tokio::task::spawn_blocking(move || {
+    |         ^^^^^ use of unresolved module or unlinked crate `tokio`
+    |
+    = help: if you wanted to use a crate named `tokio`, use `cargo add tokio` to add it to your `Cargo.toml`
+
+error[E0106]: missing lifetime specifier
+  --> src/codegen/llvm/jit_engine.rs:27:62
+   |
+27 |     compiled_functions: Arc<Mutex<HashMap<String, JitFunction<()>>>>,
+   |                                                              ^ expected named lifetime parameter
+   |
+help: consider using the `'ctx` lifetime
+   |
+27 |     compiled_functions: Arc<Mutex<HashMap<String, JitFunction<'ctx, ()>>>>,
+   |                                                               +++++
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution.rs:55:56
+   |
+55 | static mut RUNTIME_PROCESS_MANAGER: Option<*mut crate::stdlib::process::core::ProcessManager> = None;
+   |                                                        ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution.rs:58:57
+   |
+58 | pub fn set_runtime_process_manager(manager: *mut crate::stdlib::process::core::ProcessManager) {
+   |                                                         ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+  --> src/codegen/llvm/process_execution.rs:65:60
+   |
+65 | pub fn get_runtime_process_manager() -> Option<*mut crate::stdlib::process::core::ProcessManager> {
+   |                                                            ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/process_execution.rs:793:39
+    |
+793 |         let manager = Box::new(crate::stdlib::process::core::ProcessManager::new());
+    |                                       ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/process_execution_ffi.rs:509:32
+    |
+509 |     let mut io_config = crate::stdlib::process::core::IoRedirection::new();
+    |                                ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `stdlib` in the crate root
+   --> src/codegen/llvm/process_execution_ffi.rs:553:66
+    |
+553 |             let _io_config = Box::from_raw(handle as *mut crate::stdlib::process::core::IoRedirection);
+    |                                                                  ^^^^^^ could not find `stdlib` in the crate root
+
+error[E0433]: failed to resolve: could not find `optimization_level` in `common`
+   --> src/codegen/llvm/real_compilation.rs:489:70
+    |
+489 |     pub fn optimize_module(&self, optimization_level: crate::common::optimization_level::OptimizationLevel) -> Result<(), Error> {
+    |                                                                      ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0433]: failed to resolve: could not find `optimization_level` in `common`
+   --> src/codegen/llvm/real_compilation.rs:511:102
+    |
+511 | ...ptimization_level: crate::common::optimization_level::OptimizationLevel) -> Result<(), Error> {
+    |                                      ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0433]: failed to resolve: could not find `optimization_level` in `common`
+   --> src/codegen/llvm/real_compilation.rs:529:92
+    |
+529 | ...ptimization_level: crate::common::optimization_level::OptimizationLevel) -> Result<(), Error> {
+    |                                      ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0433]: failed to resolve: could not find `optimization_level` in `common`
+   --> src/codegen/llvm/real_compilation.rs:559:44
+    |
+559 |         optimization_level: crate::common::optimization_level::OptimizationLevel,
+    |                                            ^^^^^^^^^^^^^^^^^^ could not find `optimization_level` in `common`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rayon`
+   --> src/core/performance_pipeline.rs:258:9
+    |
+258 |         rayon::ThreadPoolBuilder::new()
+    |         ^^^^^ use of unresolved module or unlinked crate `rayon`
+    |
+    = help: if you wanted to use a crate named `rayon`, use `cargo add rayon` to add it to your `Cargo.toml`
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/debug_context.rs:123:80
+    |
+123 |     pub fn extract_source_snippet(&mut self, context_lines: u32) -> Result<(), Error> {
+    |                                                                                ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use std::error::Error;
+    |
+1   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/debug_context.rs:180:31
+    |
+180 |         let lines: Result<(), Error> = reader.split("\n").collect();
+    |                               ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use std::error::Error;
+    |
+1   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `PropagationError` in this scope
+   --> src/error/error_propagation.rs:249:56
+    |
+14  | pub struct ErrorPropagationError {
+    | -------------------------------- similarly named struct `ErrorPropagationError` defined here
+...
+249 | pub type PropagationResult<T> = std::result::Result<T, PropagationError>;
+    |                                                        ^^^^^^^^^^^^^^^^
+    |
+help: a struct with a similar name exists
+    |
+249 | pub type PropagationResult<T> = std::result::Result<T, ErrorPropagationError>;
+    |                                                        +++++
+help: you might be missing a type parameter
+    |
+249 | pub type PropagationResult<T, PropagationError> = std::result::Result<T, PropagationError>;
+    |                             ++++++++++++++++++
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:865:77
+    |
+865 |     pub fn add_error(&self, error: Box<dyn CursedErrorTrait>) -> Result<(), Error> {
+    |                                                                             ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:886:102
+    |
+886 |     pub fn add_error_to_chain(&self, chain_id: &str, error: Box<dyn CursedErrorTrait>) -> Result<(), Error> {
+    |                                                                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:900:81
+    |
+900 |     pub fn get_errors_by_category(&self, category: ErrorCategory) -> Result<(), Error> {
+    |                                                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:912:81
+    |
+912 |     pub fn get_errors_by_severity(&self, severity: ErrorSeverity) -> Result<(), Error> {
+    |                                                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:922:86
+    |
+922 |     pub fn get_error_count_by_category(&self, category: ErrorCategory) -> Result<(), Error> {
+    |                                                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:929:86
+    |
+929 |     pub fn get_error_count_by_severity(&self, severity: ErrorSeverity) -> Result<(), Error> {
+    |                                                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:936:46
+    |
+936 |     pub fn clear_errors(&self) -> Result<(), Error> {
+    |                                              ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:953:48
+    |
+953 |     pub fn get_statistics(&self) -> Result<(), Error> {
+    |                                                ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:975:76
+    |
+975 |     fn update_category_stats(&self, category: ErrorCategory) -> Result<(), Error> {
+    |                                                                            ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/error/types.rs:983:76
+    |
+983 |     fn update_severity_stats(&self, severity: ErrorSeverity) -> Result<(), Error> {
+    |                                                                            ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use crate::error::types::fmt::Error;
+    |
+6   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/ast/expressions/error_propagation_enhanced.rs:190:21
+    |
+190 |     ) -> Result<(), Error> {
+    |                     ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use std::error::Error;
+    |
+1   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `EnumStatement` in this scope
+   --> src/ast/mod.rs:218:21
+    |
+218 |     EnumDeclaration(EnumStatement),
+    |                     ^^^^^^^^^^^^^
+    |
+   ::: src/ast/conditionals.rs:481:1
+    |
+481 | pub struct ElseStatement {
+    | ------------------------ similarly named struct `ElseStatement` defined here
+    |
+help: a struct with a similar name exists
+    |
+218 -     EnumDeclaration(EnumStatement),
+218 +     EnumDeclaration(ElseStatement),
+    |
+help: consider importing this struct through its public re-export
+    |
+1   + use crate::ast::statements::EnumStatement;
+    |
+
+error[E0412]: cannot find type `ConstantStatement` in this scope
+   --> src/ast/mod.rs:222:25
+    |
+222 |     ConstantDeclaration(ConstantStatement),
+    |                         ^^^^^^^^^^^^^^^^^
+    |
+   ::: src/ast/statements/declaration_statements.rs:208:1
+    |
+208 | pub struct ConstStatement {
+    | ------------------------- similarly named struct `ConstStatement` defined here
+    |
+help: a struct with a similar name exists
+    |
+222 -     ConstantDeclaration(ConstantStatement),
+222 +     ConstantDeclaration(ConstStatement),
+    |
+help: consider importing this struct through its public re-export
+    |
+1   + use crate::ast::statements::ConstantStatement;
+    |
+
+error[E0412]: cannot find type `TypeAliasStatement` in this scope
+   --> src/ast/mod.rs:224:26
+    |
+224 |     TypeAliasDeclaration(TypeAliasStatement),
+    |                          ^^^^^^^^^^^^^^^^^^
+    |
+   ::: src/ast/type_switch.rs:12:1
+    |
+12  | pub struct TypeSwitchStatement {
+    | ------------------------------ similarly named struct `TypeSwitchStatement` defined here
+    |
+help: a struct with a similar name exists
+    |
+224 -     TypeAliasDeclaration(TypeAliasStatement),
+224 +     TypeAliasDeclaration(TypeSwitchStatement),
+    |
+help: consider importing this struct through its public re-export
+    |
+1   + use crate::ast::statements::TypeAliasStatement;
+    |
+
+error[E0412]: cannot find type `ModuleStatement` in this scope
+   --> src/ast/mod.rs:230:23
+    |
+230 |     ModuleDeclaration(ModuleStatement),
+    |                       ^^^^^^^^^^^^^^^
+    |
+   ::: src/ast/statements/declaration_statements.rs:168:1
+    |
+168 | pub struct MutStatement {
+    | ----------------------- similarly named struct `MutStatement` defined here
+    |
+help: a struct with a similar name exists
+    |
+230 -     ModuleDeclaration(ModuleStatement),
+230 +     ModuleDeclaration(MutStatement),
+    |
+help: consider importing this struct through its public re-export
+    |
+1   + use crate::ast::statements::ModuleStatement;
+    |
+
+error[E0412]: cannot find type `ForInStatement` in this scope
+   --> src/ast/mod.rs:238:20
+    |
+238 |     ForInStatement(ForInStatement),
+    |                    ^^^^^^^^^^^^^^
+    |
+   ::: src/ast/statements/declaration_statements.rs:208:1
+    |
+208 | pub struct ConstStatement {
+    | ------------------------- similarly named struct `ConstStatement` defined here
+    |
+help: there is an enum variant `crate::ast::AstNodeType::ForInStatement`; try using the variant's enum
+    |
+238 -     ForInStatement(ForInStatement),
+238 +     ForInStatement(crate::ast::AstNodeType),
+    |
+help: a struct with a similar name exists
+    |
+238 -     ForInStatement(ForInStatement),
+238 +     ForInStatement(ConstStatement),
+    |
+
+error[E0412]: cannot find type `DoWhileStatement` in this scope
+   --> src/ast/mod.rs:240:22
+    |
+240 |     DoWhileStatement(DoWhileStatement),
+    |                      ^^^^^^^^^^^^^^^^
+    |
+   ::: src/ast/statements/basic_statements.rs:114:1
+    |
+114 | pub struct ContinueStatement {
+    | ---------------------------- similarly named struct `ContinueStatement` defined here
+    |
+help: there is an enum variant `crate::ast::AstNodeType::DoWhileStatement`; try using the variant's enum
+    |
+240 -     DoWhileStatement(DoWhileStatement),
+240 +     DoWhileStatement(crate::ast::AstNodeType),
+    |
+help: a struct with a similar name exists
+    |
+240 -     DoWhileStatement(DoWhileStatement),
+240 +     DoWhileStatement(ContinueStatement),
+    |
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/parser/question_mark.rs:22:95
+   |
+22 |     pub fn parse_question_mark_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
+   |                                                                                               ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::Error;
+   |
+1  + use crate::common::Error;
+   |
+1  + use crate::parser::question_mark::fmt::Error;
+   |
+1  + use std::error::Error;
+   |
+     and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/parser/question_mark.rs:51:88
+   |
+51 |     pub fn parse_error_propagation(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
+   |                                                                                        ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::Error;
+   |
+1  + use crate::common::Error;
+   |
+1  + use crate::parser::question_mark::fmt::Error;
+   |
+1  + use std::error::Error;
+   |
+     and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/question_mark.rs:132:90
+    |
+132 |     pub fn validate_question_mark_expression(&self, expr: &dyn Expression) -> Result<(), Error> {
+    |                                                                                          ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use crate::parser::question_mark::fmt::Error;
+    |
+1   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/question_mark.rs:150:97
+    |
+150 |     pub fn parse_chained_question_marks(&mut self, mut expr: Box<dyn Expression>) -> Result<(), Error> {
+    |                                                                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use crate::parser::question_mark::fmt::Error;
+    |
+1   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:268:51
+    |
+268 |     fn parse_result_type(&mut self) -> Result<(), Error>;
+    |                                                   ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:271:51
+    |
+271 |     fn parse_option_type(&mut self) -> Result<(), Error>;
+    |                                                   ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:274:52
+    |
+274 |     fn parse_result_match(&mut self) -> Result<(), Error>;
+    |                                                    ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:277:81
+    |
+277 |     fn parse_try_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error>;
+    |                                                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:280:84
+    |
+280 |     fn parse_unwrap_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error>;
+    |                                                                                    ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:283:58
+    |
+283 |     fn parse_result_constructor(&mut self) -> Result<(), Error>;
+    |                                                          ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:286:54
+    |
+286 |     fn parse_result_pattern(&mut self) -> Result<(), Error>;
+    |                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:289:49
+    |
+289 |     fn parse_match_arm(&mut self) -> Result<(), Error>;
+    |                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:293:51
+    |
+293 |     fn parse_result_type(&mut self) -> Result<(), Error> {
+    |                                                   ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:345:51
+    |
+345 |     fn parse_option_type(&mut self) -> Result<(), Error> {
+    |                                                   ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:383:52
+    |
+383 |     fn parse_result_match(&mut self) -> Result<(), Error> {
+    |                                                    ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:433:81
+    |
+433 |     fn parse_try_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
+    |                                                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:450:84
+    |
+450 |     fn parse_unwrap_expression(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
+    |                                                                                    ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:531:58
+    |
+531 |     fn parse_result_constructor(&mut self) -> Result<(), Error> {
+    |                                                          ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:633:54
+    |
+633 |     fn parse_result_pattern(&mut self) -> Result<(), Error> {
+    |                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/result_types.rs:734:49
+    |
+734 |     fn parse_match_arm(&mut self) -> Result<(), Error> {
+    |                                                 ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+6   + use crate::Error;
+    |
+6   + use crate::common::Error;
+    |
+6   + use std::error::Error;
+    |
+6   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/parser/error_propagation_enhanced.rs:19:97
+   |
+19 |     pub fn parse_error_propagation_enhanced(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
+   |                                                                                                 ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::Error;
+   |
+1  + use crate::common::Error;
+   |
+1  + use crate::parser::error_propagation_enhanced::fmt::Error;
+   |
+1  + use std::error::Error;
+   |
+     and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/parser/error_propagation_enhanced.rs:50:100
+   |
+50 |     fn validate_error_propagation_context_enhanced(&self, location: &SourceLocation) -> Result<(), Error> {
+   |                                                                                                    ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::Error;
+   |
+1  + use crate::common::Error;
+   |
+1  + use crate::parser::error_propagation_enhanced::fmt::Error;
+   |
+1  + use std::error::Error;
+   |
+     and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/error_propagation_enhanced.rs:125:101
+    |
+125 |     pub fn parse_chained_error_propagations(&mut self, mut expr: Box<dyn Expression>) -> Result<(), Error> {
+    |                                                                                                     ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use crate::parser::error_propagation_enhanced::fmt::Error;
+    |
+1   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/error_propagation_enhanced.rs:156:102
+    |
+156 |     pub fn parse_error_propagation_with_recovery(&mut self, left: Box<dyn Expression>) -> Result<(), Error> {
+    |                                                                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use crate::parser::error_propagation_enhanced::fmt::Error;
+    |
+1   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/parser/error_propagation_enhanced.rs:171:70
+    |
+171 |     fn recover_from_error_propagation_error(&mut self) -> Result<(), Error> {
+    |                                                                      ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use crate::parser::error_propagation_enhanced::fmt::Error;
+    |
+1   + use std::error::Error;
+    |
+      and 16 other candidates
+
+error[E0412]: cannot find type `Runtime` in module `crate::runtime`
+   --> src/codegen/llvm/main.rs:147:45
+    |
+147 |     runtime: std::sync::Arc<crate::runtime::Runtime>,
+    |                                             ^^^^^^^ not found in `crate::runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+147 -     runtime: std::sync::Arc<crate::runtime::Runtime>,
+147 +     runtime: std::sync::Arc<crate::CommonError>,
+    |
+147 -     runtime: std::sync::Arc<crate::runtime::Runtime>,
+147 +     runtime: std::sync::Arc<crate::Error>,
+    |
+147 -     runtime: std::sync::Arc<crate::runtime::Runtime>,
+147 +     runtime: std::sync::Arc<crate::error::types::ErrorCategory>,
+    |
+
+error[E0412]: cannot find type `Runtime` in module `crate::runtime`
+   --> src/codegen/llvm/main.rs:231:45
+    |
+231 |     runtime: std::sync::Arc<crate::runtime::Runtime>,
+    |                                             ^^^^^^^ not found in `crate::runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+231 -     runtime: std::sync::Arc<crate::runtime::Runtime>,
+231 +     runtime: std::sync::Arc<crate::CommonError>,
+    |
+231 -     runtime: std::sync::Arc<crate::runtime::Runtime>,
+231 +     runtime: std::sync::Arc<crate::Error>,
+    |
+231 -     runtime: std::sync::Arc<crate::runtime::Runtime>,
+231 +     runtime: std::sync::Arc<crate::error::types::ErrorCategory>,
+    |
+
+error[E0412]: cannot find type `Runtime` in module `crate::runtime`
+   --> src/codegen/llvm/main.rs:258:69
+    |
+258 |     pub fn new_with_runtime(runtime: std::sync::Arc<crate::runtime::Runtime>) -> Result<(), Error> {
+    |                                                                     ^^^^^^^ not found in `crate::runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+258 -     pub fn new_with_runtime(runtime: std::sync::Arc<crate::runtime::Runtime>) -> Result<(), Error> {
+258 +     pub fn new_with_runtime(runtime: std::sync::Arc<crate::CommonError>) -> Result<(), Error> {
+    |
+258 -     pub fn new_with_runtime(runtime: std::sync::Arc<crate::runtime::Runtime>) -> Result<(), Error> {
+258 +     pub fn new_with_runtime(runtime: std::sync::Arc<crate::Error>) -> Result<(), Error> {
+    |
+258 -     pub fn new_with_runtime(runtime: std::sync::Arc<crate::runtime::Runtime>) -> Result<(), Error> {
+258 +     pub fn new_with_runtime(runtime: std::sync::Arc<crate::error::types::ErrorCategory>) -> Result<(), Error> {
+    |
+
+error[E0412]: cannot find type `Runtime` in module `crate::runtime`
+   --> src/codegen/llvm/main.rs:451:49
+    |
+451 |         runtime: std::sync::Arc<crate::runtime::Runtime>,
+    |                                                 ^^^^^^^ not found in `crate::runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+451 -         runtime: std::sync::Arc<crate::runtime::Runtime>,
+451 +         runtime: std::sync::Arc<crate::CommonError>,
+    |
+451 -         runtime: std::sync::Arc<crate::runtime::Runtime>,
+451 +         runtime: std::sync::Arc<crate::Error>,
+    |
+451 -         runtime: std::sync::Arc<crate::runtime::Runtime>,
+451 +         runtime: std::sync::Arc<crate::error::types::ErrorCategory>,
+    |
+
+error[E0425]: cannot find value `coord_level` in this scope
+   --> src/codegen/llvm/main.rs:782:78
+    |
+782 |         tracing::info!("Optimization coordinator initialized with level {}", coord_level.as_str());
+    |                                                                              ^^^^^^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `Runtime` in module `crate::runtime`
+   --> src/codegen/llvm/main.rs:907:65
+    |
+907 |     pub fn get_runtime(&self) -> std::sync::Arc<crate::runtime::Runtime> {
+    |                                                                 ^^^^^^^ not found in `crate::runtime`
+    |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+    |
+907 -     pub fn get_runtime(&self) -> std::sync::Arc<crate::runtime::Runtime> {
+907 +     pub fn get_runtime(&self) -> std::sync::Arc<crate::CommonError> {
+    |
+907 -     pub fn get_runtime(&self) -> std::sync::Arc<crate::runtime::Runtime> {
+907 +     pub fn get_runtime(&self) -> std::sync::Arc<crate::Error> {
+    |
+907 -     pub fn get_runtime(&self) -> std::sync::Arc<crate::runtime::Runtime> {
+907 +     pub fn get_runtime(&self) -> std::sync::Arc<crate::error::types::ErrorCategory> {
+    |
+
+error[E0412]: cannot find type `GcConfig` in module `crate::memory::gc`
+    --> src/codegen/llvm/main.rs:1953:79
+     |
+1953 |     pub fn initialize_gc_integration(&mut self, gc_config: crate::memory::gc::GcConfig) -> Result<(), Error> {
+     |                                                                               ^^^^^^^^ not found in `crate::memory::gc`
+
+error[E0433]: failed to resolve: unresolved import
+    --> src/codegen/llvm/main.rs:2151:58
+     |
+2151 |     pub fn enable_optimization(&mut self, config: crate::optimization::OptimizationConfig) -> Result<(), Error> {
+     |                                                          ^^^^^^^^^^^^ unresolved import
+     |
+help: a similar path exists
+     |
+2151 |     pub fn enable_optimization(&mut self, config: crate::codegen::llvm::optimization::OptimizationConfig) -> Result<(), Error> {
+     |                                                          +++++++++++++++
+help: consider importing this module
+     |
+1    + use crate::codegen::llvm::optimization;
+     |
+help: if you import `optimization`, refer to it directly
+     |
+2151 -     pub fn enable_optimization(&mut self, config: crate::optimization::OptimizationConfig) -> Result<(), Error> {
+2151 +     pub fn enable_optimization(&mut self, config: optimization::OptimizationConfig) -> Result<(), Error> {
+     |
+
+error[E0412]: cannot find type `Runtime` in module `crate::runtime`
+    --> src/codegen/llvm/main.rs:2820:49
+     |
+2820 |         runtime: std::sync::Arc<crate::runtime::Runtime>,
+     |                                                 ^^^^^^^ not found in `crate::runtime`
+     |
+help: there is an enum variant `crate::CommonError::Runtime` and 3 others; try using the variant's enum
+     |
+2820 -         runtime: std::sync::Arc<crate::runtime::Runtime>,
+2820 +         runtime: std::sync::Arc<crate::CommonError>,
+     |
+2820 -         runtime: std::sync::Arc<crate::runtime::Runtime>,
+2820 +         runtime: std::sync::Arc<crate::Error>,
+     |
+2820 -         runtime: std::sync::Arc<crate::runtime::Runtime>,
+2820 +         runtime: std::sync::Arc<crate::error::types::ErrorCategory>,
+     |
+
+error[E0412]: cannot find type `OptimizationLevel` in module `super::optimization`
+  --> src/codegen/llvm/optimization_passes.rs:59:62
+   |
+59 |     pub target_optimization_levels: Vec<super::optimization::OptimizationLevel>,
+   |                                                              ^^^^^^^^^^^^^^^^^ not found in `super::optimization`
+   |
+help: consider importing one of these enums
+   |
+1  + use crate::OptimizationLevel;
+   |
+1  + use inkwell::OptimizationLevel;
+   |
+help: if you import `OptimizationLevel`, refer to it directly
+   |
+59 -     pub target_optimization_levels: Vec<super::optimization::OptimizationLevel>,
+59 +     pub target_optimization_levels: Vec<OptimizationLevel>,
+   |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+  --> src/codegen/llvm/optimization_passes.rs:78:38
+   |
+78 |                 super::optimization::OptimizationLevel::O2,
+   |                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+   |
+help: consider importing one of these enums
+   |
+1  + use crate::OptimizationLevel;
+   |
+1  + use inkwell::OptimizationLevel;
+   |
+help: if you import `OptimizationLevel`, refer to it directly
+   |
+78 -                 super::optimization::OptimizationLevel::O2,
+78 +                 OptimizationLevel::O2,
+   |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+  --> src/codegen/llvm/optimization_passes.rs:79:38
+   |
+79 |                 super::optimization::OptimizationLevel::O3,
+   |                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+   |
+help: consider importing one of these enums
+   |
+1  + use crate::OptimizationLevel;
+   |
+1  + use inkwell::OptimizationLevel;
+   |
+help: if you import `OptimizationLevel`, refer to it directly
+   |
+79 -                 super::optimization::OptimizationLevel::O3,
+79 +                 OptimizationLevel::O3,
+   |
+
+error[E0412]: cannot find type `OptimizationLevel` in module `super::optimization`
+   --> src/codegen/llvm/optimization_passes.rs:104:66
+    |
+104 |     pub fn for_levels(mut self, levels: Vec<super::optimization::OptimizationLevel>) -> Self {
+    |                                                                  ^^^^^^^^^^^^^^^^^ not found in `super::optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+104 -     pub fn for_levels(mut self, levels: Vec<super::optimization::OptimizationLevel>) -> Self {
+104 +     pub fn for_levels(mut self, levels: Vec<OptimizationLevel>) -> Self {
+    |
+
+error[E0412]: cannot find type `OptimizationLevel` in module `super::optimization`
+   --> src/codegen/llvm/optimization_passes.rs:154:50
+    |
+154 |     pub optimization_level: super::optimization::OptimizationLevel,
+    |                                                  ^^^^^^^^^^^^^^^^^ not found in `super::optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+154 -     pub optimization_level: super::optimization::OptimizationLevel,
+154 +     pub optimization_level: OptimizationLevel,
+    |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+   --> src/codegen/llvm/optimization_passes.rs:167:54
+    |
+167 |             optimization_level: super::optimization::OptimizationLevel::O2,
+    |                                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+167 -             optimization_level: super::optimization::OptimizationLevel::O2,
+167 +             optimization_level: OptimizationLevel::O2,
+    |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+   --> src/codegen/llvm/optimization_passes.rs:268:38
+    |
+268 |                 super::optimization::OptimizationLevel::O2,
+    |                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+268 -                 super::optimization::OptimizationLevel::O2,
+268 +                 OptimizationLevel::O2,
+    |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+   --> src/codegen/llvm/optimization_passes.rs:269:38
+    |
+269 |                 super::optimization::OptimizationLevel::O3,
+    |                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+269 -                 super::optimization::OptimizationLevel::O3,
+269 +                 OptimizationLevel::O3,
+    |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+   --> src/codegen/llvm/optimization_passes.rs:280:38
+    |
+280 |                 super::optimization::OptimizationLevel::O3,
+    |                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+280 -                 super::optimization::OptimizationLevel::O3,
+280 +                 OptimizationLevel::O3,
+    |
+
+error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`
+   --> src/codegen/llvm/optimization_passes.rs:291:38
+    |
+291 |                 super::optimization::OptimizationLevel::O3,
+    |                                      ^^^^^^^^^^^^^^^^^ could not find `OptimizationLevel` in `optimization`
+    |
+help: consider importing one of these enums
+    |
+1   + use crate::OptimizationLevel;
+    |
+1   + use inkwell::OptimizationLevel;
+    |
+help: if you import `OptimizationLevel`, refer to it directly
+    |
+291 -                 super::optimization::OptimizationLevel::O3,
+291 +                 OptimizationLevel::O3,
+    |
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/codegen/llvm/error_propagation_enhanced.rs:14:93
+   |
+14 |     fn compile_enhanced_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<(), Error>;
+   |                                                                                             ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+6  + use crate::Error;
+   |
+6  + use crate::common::Error;
+   |
+6  + use std::error::Error;
+   |
+6  + use std::fmt::Error;
+   |
+     and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/codegen/llvm/error_propagation_enhanced.rs:50:93
+   |
+50 |     fn compile_enhanced_error_propagation(&mut self, expr: &ErrorPropagation) -> Result<(), Error> {
+   |                                                                                             ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+6  + use crate::Error;
+   |
+6  + use crate::common::Error;
+   |
+6  + use std::error::Error;
+   |
+6  + use std::fmt::Error;
+   |
+     and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/codegen/llvm/error_propagation_enhanced.rs:66:21
+   |
+66 |     ) -> Result<(), Error> {
+   |                     ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+6  + use crate::Error;
+   |
+6  + use crate::common::Error;
+   |
+6  + use std::error::Error;
+   |
+6  + use std::fmt::Error;
+   |
+     and 15 other candidates
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/expression_compiler.rs:740:28
+    |
+740 |                     crate::type_system::Type::Normie => LlvmType::Int64,
+    |                            ^^^^^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+740 |                     crate::codegen::llvm::type_system::Type::Normie => LlvmType::Int64,
+    |                            +++++++++++++++
+help: consider importing one of these enums
+    |
+1   + use crate::ast::Type;
+    |
+1   + use crate::core::Type;
+    |
+help: if you import `Type`, refer to it directly
+    |
+740 -                     crate::type_system::Type::Normie => LlvmType::Int64,
+740 +                     Type::Normie => LlvmType::Int64,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/expression_compiler.rs:741:28
+    |
+741 |                     crate::type_system::Type::Thicc => LlvmType::Int64,
+    |                            ^^^^^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+741 |                     crate::codegen::llvm::type_system::Type::Thicc => LlvmType::Int64,
+    |                            +++++++++++++++
+help: consider importing one of these enums
+    |
+1   + use crate::ast::Type;
+    |
+1   + use crate::core::Type;
+    |
+help: if you import `Type`, refer to it directly
+    |
+741 -                     crate::type_system::Type::Thicc => LlvmType::Int64,
+741 +                     Type::Thicc => LlvmType::Int64,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/expression_compiler.rs:742:28
+    |
+742 |                     crate::type_system::Type::Lit => LlvmType::Boolean,
+    |                            ^^^^^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+742 |                     crate::codegen::llvm::type_system::Type::Lit => LlvmType::Boolean,
+    |                            +++++++++++++++
+help: consider importing one of these enums
+    |
+1   + use crate::ast::Type;
+    |
+1   + use crate::core::Type;
+    |
+help: if you import `Type`, refer to it directly
+    |
+742 -                     crate::type_system::Type::Lit => LlvmType::Boolean,
+742 +                     Type::Lit => LlvmType::Boolean,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/expression_compiler.rs:743:28
+    |
+743 |                     crate::type_system::Type::Tea => LlvmType::String,
+    |                            ^^^^^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+743 |                     crate::codegen::llvm::type_system::Type::Tea => LlvmType::String,
+    |                            +++++++++++++++
+help: consider importing one of these enums
+    |
+1   + use crate::ast::Type;
+    |
+1   + use crate::core::Type;
+    |
+help: if you import `Type`, refer to it directly
+    |
+743 -                     crate::type_system::Type::Tea => LlvmType::String,
+743 +                     Type::Tea => LlvmType::String,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/expression_compiler.rs:744:28
+    |
+744 |                     crate::type_system::Type::Meal => LlvmType::Float64,
+    |                            ^^^^^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+744 |                     crate::codegen::llvm::type_system::Type::Meal => LlvmType::Float64,
+    |                            +++++++++++++++
+help: consider importing one of these enums
+    |
+1   + use crate::ast::Type;
+    |
+1   + use crate::core::Type;
+    |
+help: if you import `Type`, refer to it directly
+    |
+744 -                     crate::type_system::Type::Meal => LlvmType::Float64,
+744 +                     Type::Meal => LlvmType::Float64,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> src/codegen/llvm/expression_compiler.rs:745:28
+    |
+745 |                     crate::type_system::Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
+    |                            ^^^^^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+745 |                     crate::codegen::llvm::type_system::Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
+    |                            +++++++++++++++
+help: consider importing one of these enums
+    |
+1   + use crate::ast::Type;
+    |
+1   + use crate::core::Type;
+    |
+help: if you import `Type`, refer to it directly
+    |
+745 -                     crate::type_system::Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
+745 +                     Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
+    |
+
+error[E0532]: cannot match against a tuple struct which contains private fields
+   --> src/codegen/llvm/function_registry.rs:264:54
+    |
+264 |             (LlvmType::Pointer(_), LlvmType::Pointer(Box(LlvmType::Void))) => true, // Any pointer to void*
+    |                                                      ^^^ constructor is not visible here due to private fields
+
+error[E0532]: cannot match against a tuple struct which contains private fields
+   --> src/codegen/llvm/function_registry.rs:265:50
+    |
+265 |             (LlvmType::String, LlvmType::Pointer(Box(LlvmType::Void))) => true, // String is a pointer
+    |                                                  ^^^ constructor is not visible here due to private fields
+
+error[E0532]: cannot match against a tuple struct which contains private fields
+   --> src/codegen/llvm/function_registry.rs:268:35
+    |
+268 |             (_, LlvmType::Pointer(Box(LlvmType::Void))) => true, // void* accepts anything
+    |                                   ^^^ constructor is not visible here due to private fields
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/codegen/llvm/ipc.rs:15:34
+   |
+15 | type CursedResult<T> = Result<T, Error>;
+   |                                  ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::Error;
+   |
+1  + use crate::common::Error;
+   |
+1  + use std::error::Error;
+   |
+1  + use std::fmt::Error;
+   |
+     and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+  --> src/codegen/llvm/ipc.rs:26:21
+   |
+26 |     ) -> Result<(), Error> {
+   |                     ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::Error;
+   |
+1  + use crate::common::Error;
+   |
+1  + use std::error::Error;
+   |
+1  + use std::fmt::Error;
+   |
+     and 15 other candidates
+
+error[E0412]: cannot find type `Error` in this scope
+   --> src/codegen/llvm/ipc.rs:139:32
+    |
+139 |     pub fn new() -> Result<(), Error> {
+    |                                ^^^^^ not found in this scope
+    |
+help: consider importing one of these items
+    |
+1   + use crate::Error;
+    |
+1   + use crate::common::Error;
+    |
+1   + use std::error::Error;
+    |
+1   + use std::fmt::Error;
+    |
+      and 15 other candidates
+
+warning: ambiguous glob re-exports
+  --> src/ast/mod.rs:95:9
+   |
+85 | pub use expressions::*;
+   |         -------------- but the name `BlockExpression` in the type namespace is also re-exported here
+...
+95 | pub use block::*;
+   |         ^^^^^^^^ the name `BlockExpression` in the type namespace is first re-exported here
+   |
+   = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+warning: ambiguous glob re-exports
+   --> src/ast/mod.rs:104:9
+    |
+85  | pub use expressions::*;
+    |         -------------- but the name `ChannelSend` in the type namespace is also re-exported here
+...
+104 | pub use channel::*;
+    |         ^^^^^^^^^^ the name `ChannelSend` in the type namespace is first re-exported here
+
+warning: ambiguous glob re-exports
+   --> src/ast/mod.rs:104:9
+    |
+85  | pub use expressions::*;
+    |         -------------- but the name `ChannelReceive` in the type namespace is also re-exported here
+...
+104 | pub use channel::*;
+    |         ^^^^^^^^^^ the name `ChannelReceive` in the type namespace is first re-exported here
+
+warning: ambiguous glob re-exports
+   --> src/ast/mod.rs:104:9
+    |
+85  | pub use expressions::*;
+    |         -------------- but the name `GoroutineSpawn` in the type namespace is also re-exported here
+...
+104 | pub use channel::*;
+    |         ^^^^^^^^^^ the name `GoroutineSpawn` in the type namespace is first re-exported here
+
+warning: unused doc comment
+   --> src/codegen/llvm/database_integration.rs:350:1
+    |
+350 |   /// FFI functions for database LLVM integration
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+351 | / extern "C" {
+352 | |     // Connection management
+353 | |     fn cursed_db_open(driver: *const std::os::raw::c_char, dsn: *const std::os::raw::c_char) -> *mut std::os::raw::c_void;
+354 | |     fn cursed_db_close(connection: *mut std::os::raw::c_void) -> std::os::raw::c_int;
+...   |
+389 | |     fn cursed_db_free(ptr: *mut std::os::raw::c_void);
+390 | | }
+    | |_- rustdoc does not generate documentation for extern blocks
+    |
+    = help: use `//` for a plain comment
+    = note: `#[warn(unused_doc_comments)]` on by default
+
+warning: unused doc comment
+   --> src/codegen/llvm/error_propagation.rs:736:1
+    |
+736 |   /// FFI functions for error propagation support
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+737 | / extern "C" {
+738 | |     /// Check if a result value represents an error
+739 | |     fn cursed_is_error(result_ptr: *const u8) -> bool;
+...   |
+748 | |     fn cursed_propagate_error(error_ptr: *const u8) -> !;
+749 | | }
+    | |_- rustdoc does not generate documentation for extern blocks
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/codegen/llvm/type_switch.rs:870:1
+    |
+870 |   /// FFI functions for runtime type switch support
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+871 | / extern "C" {
+872 | |     /// Check if interface value is of specified type
+873 | |     fn cursed_type_switch_check(interface_ptr: *const u8, type_id: u64) -> bool;
+...   |
+879 | |     fn cursed_type_switch_get_type_id(interface_ptr: *const u8) -> u64;
+880 | | }
+    | |_- rustdoc does not generate documentation for extern blocks
+    |
+    = help: use `//` for a plain comment
+
+error[E0277]: the trait bound `TypedErrorPropagation: traits::Node` is not satisfied
+  --> src/parser/error_propagation.rs:61:21
+   |
+61 | impl Expression for TypedErrorPropagation {
+   |                     ^^^^^^^^^^^^^^^^^^^^^ the trait `traits::Node` is not implemented for `TypedErrorPropagation`
+   |
+   = help: the following other types implement trait `traits::Node`:
+             AST
+             ArrayTypeExpression
+             AssignmentExpression
+             AssignmentStatement
+             AsyncBlockExpression
+             AsyncFunctionStatement
+             AwaitAssignment
+             AwaitExpression
+           and 148 others
+note: required by a bound in `traits::Expression`
+  --> src/ast/traits.rs:27:23
+   |
+27 | pub trait Expression: Node {
+   |                       ^^^^ required by this bound in `Expression`
+
+error[E0046]: not all trait items implemented, missing: `clone_box`
+  --> src/parser/error_propagation.rs:61:1
+   |
+61 | impl Expression for TypedErrorPropagation {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `clone_box` in implementation
+   |
+  ::: src/ast/traits.rs:35:5
+   |
+35 |     fn clone_box(&self) -> Box<dyn Expression>;
+   |     ------------------------------------------- `clone_box` from trait
+
+error[E0599]: no variant or associated item named `from_str` found for enum `error::Error` in the current scope
+   --> src/codegen/llvm/jit_compilation.rs:585:37
+    |
+585 |         }).await.map_err(|e| Error::from_str(&format!("Background optimization failed: {}", e)))?;
+    |                                     ^^^^^^^^ variant or associated item not found in `Error`
+    |
+   ::: src/error/mod.rs:25:1
+    |
+25  | pub enum Error {
+    | -------------- variant or associated item `from_str` not found for this enum
+    |
+note: if you're trying to build a new `error::Error` consider using one of the following associated functions:
+      error::error_propagation::<impl error::Error>::error_propagation_error
+      error::error_propagation::<impl error::Error>::propagation_type_mismatch
+      error::error_propagation::<impl error::Error>::propagation_context_error
+   --> src/error/error_propagation.rs:254:5
+    |
+254 | /     pub fn error_propagation_error(
+255 | |         message: String,
+256 | |         line: Option<usize>,
+257 | |         column: Option<usize>,
+258 | |     ) -> Self {
+    | |_____________^
+...
+263 | /     pub fn propagation_type_mismatch(
+264 | |         expected: String,
+265 | |         actual: String,
+266 | |         location: SourceLocation,
+267 | |     ) -> Self {
+    | |_____________^
+...
+277 | /     pub fn propagation_context_error(
+278 | |         message: String,
+279 | |         location: SourceLocation,
+280 | |     ) -> Self {
+    | |_____________^
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `from_str`, perhaps you need to implement one of them:
+            candidate #1: `FromStr`
+            candidate #2: `clap::ValueEnum`
+help: there is an associated function `from` with a similar name
+    |
+585 -         }).await.map_err(|e| Error::from_str(&format!("Background optimization failed: {}", e)))?;
+585 +         }).await.map_err(|e| Error::from(&format!("Background optimization failed: {}", e)))?;
+    |
+
+error[E0599]: no method named `into_par_iter` found for struct `Vec<CompilationJob>` in the current scope
+   --> src/core/performance_pipeline.rs:380:28
+    |
+380 |         let results = jobs.into_par_iter().map(|job| {
+    |                            ^^^^^^^^^^^^^
+    |
+help: there is a method `into_iter` with a similar name
+    |
+380 -         let results = jobs.into_par_iter().map(|job| {
+380 +         let results = jobs.into_iter().map(|job| {
+    |
+
+Some errors have detailed explanations: E0046, E0106, E0277, E0412, E0425, E0432, E0433, E0532, E0599.
+For more information about an error, try `rustc --explain E0046`.
+warning: `cursed` (lib) generated 7 warnings
+error: could not compile `cursed` (lib) due to 215 previous errors; 7 warnings emitted

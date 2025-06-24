@@ -10,7 +10,7 @@ use inkwell::{
     crate::types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 
 /// Async/await code generation trait (placeholder)
 pub trait AsyncAwaitCompiler {

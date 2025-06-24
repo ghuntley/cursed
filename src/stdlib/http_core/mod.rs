@@ -1,8 +1,9 @@
-use crate::web::StatusCode;
 //! CURSED HTTP Core - Comprehensive HTTP Request and Response Processing
 //!
 //! This package provides comprehensive HTTP request and response processing capabilities
 //! for web applications built with the CURSED programming language.
+
+use crate::web::StatusCode;
 
 pub mod request;
 pub mod response;

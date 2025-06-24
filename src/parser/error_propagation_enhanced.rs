@@ -2,7 +2,7 @@ use crate::ast::expressions::ErrorPropagation;
 use crate::ast::traits::Expression;
 use crate::lexer::{Token, TokenType};
 use crate::parser::{Parser, Precedence};
-use crate::error::{CursedError, SourceLocation};
+use crate::error::{CursedError, Error, SourceLocation};
 use std::fmt;
 
 /// Enhanced parser support for error propagation (`?` operator)

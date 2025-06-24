@@ -18,7 +18,7 @@ use crate::optimization::{
 };
 use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
 use crate::common::optimization_level::OptimizationLevel;
-use crate::core::performance_pipeline::PerformancePipeline;
+use crate::optimization::performance_pipeline::PerformancePipeline;
 use crate::error::CursedError;
 
 /// Configuration for optimization settings that can be persisted

@@ -1,7 +1,7 @@
 use crate::web::StatusCode;
-//! HTTP Response Processing for CURSED web_vibez
-//!
-//! Comprehensive response building, formatting, and writing capabilities.
+// HTTP Response Processing for CURSED web_vibez
+//
+// Comprehensive response building, formatting, and writing capabilities.
 
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
