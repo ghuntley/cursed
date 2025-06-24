@@ -10,7 +10,6 @@ use crate::ast::identifiers::Identifier;
 use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
 use crate::error::{CursedError, Error};
 use std::any::Any;
-use crate::error::Error;
 
 /// Result and Option type pattern expressions
 #[derive(Debug, Clone)]

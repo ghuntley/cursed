@@ -14,7 +14,6 @@ use std::collections::HashMap;
 use crate::error::{Error, CursedError};
 use crate::memory::gc::GarbageCollector;
 use crate::memory::object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, ObjectRegistry, SharedObjectRegistry};
-use crate::error::Error;
 
 /// LLVM Integration for web_vibez HTTP functionality
 pub struct WebVibezLlvmIntegration<'ctx> {

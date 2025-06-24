@@ -1,4 +1,4 @@
-use crate::error::Error;
+
 /// CURSED Programming Language Library (Minimal Build)
 /// 
 /// A minimal implementation focusing on core compiler functionality:
@@ -68,7 +68,6 @@ pub use common::Error as CommonError;
 
 /// Prelude module for minimal imports
 pub mod prelude {
-    pub use crate::error::{Error, SourceLocation};
 }
 
 /// Library version information

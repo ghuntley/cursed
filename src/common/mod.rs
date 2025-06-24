@@ -1,6 +1,5 @@
 // Minimal common module
 use thiserror::Error;
-use crate::error::Error;
 
 // Basic error type for minimal build
 #[derive(Error, Debug, Clone)]

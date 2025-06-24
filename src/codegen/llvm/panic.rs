@@ -14,7 +14,6 @@ use inkwell::types::{BasicTypeEnum, IntType, PointerType};
 use inkwell::basic_block::BasicBlock;
 use inkwell::IntPredicate;
 use std::collections::HashMap;
-use crate::error::Error;
 
 /// Trait for panic-related LLVM code generation
 pub trait PanicCompiler {

@@ -9,7 +9,6 @@ use std::fmt;
 
 use crate::stdlib::value::Value;
 use crate::error::{Error, CursedError};
-use crate::error::Error;
 
 // External crypto crates
 pub use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep, Pss};

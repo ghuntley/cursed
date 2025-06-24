@@ -31,7 +31,6 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::fmt;
 
 use tracing::{debug, error, info, instrument, warn, span, Level};
-use crate::error::Error;
 
 /// Debug statistics for LLVM debug metadata generation
 #[derive(Debug, Clone, Default)]
