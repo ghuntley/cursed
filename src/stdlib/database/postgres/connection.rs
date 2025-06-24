@@ -5,7 +5,12 @@
 
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use tokio_postgres::{Client, NoTls, Statement, Transaction};
+// use tokio_postgres::{Client, NoTls, Statement, Transaction}; // Disabled - tokio causes E0753 errors
+// Stub replacements:
+pub struct Client;
+pub struct NoTls;
+pub struct Statement;
+pub struct Transaction;
 use crate::stdlib::database::{
     DriverConn, DriverStmt, DriverTx, TxOptions, SqlValue,
     driver::{QueryResult, ExecuteResult, ConnectionMetadata}

@@ -7,7 +7,7 @@ use crate::parser::Parser;
 use crate::lexer::{Token, TokenType};
 use crate::ast::traits::Expression;
 use crate::ast::identifiers::Identifier;
-use types::result::{ResultTypeExpression, OptionTypeExpression};
+use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
 use crate::error::{CursedError, Error};
 
 use std::any::Any;

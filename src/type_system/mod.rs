@@ -47,8 +47,32 @@ pub struct TypeKind {
 }
 
 #[derive(Debug, Clone)]
+pub struct InstantiatedType {
+    pub base_type: String,
+    pub type_arguments: Vec<TypeExpression>,
+}
+
+#[derive(Debug, Clone)]
 pub struct MethodSignature {
     // Method signature
+}
+
+#[derive(Debug, Clone)]
+pub struct ConstraintContext {
+    pub constraints: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ConstraintBinding {
+    pub name: String,
+    pub bound_type: TypeExpression,
+}
+
+#[derive(Debug, Clone)]
+pub enum ConstraintStatus {
+    Satisfied,
+    Unsatisfied,
+    Pending,
 }
 
 #[derive(Debug, Clone)]

@@ -330,3 +330,30 @@ mod tests {
         assert!(comparison.overall_score > 0.0);
     }
 }
+
+/// Collection of benchmark results (alias for compatibility)
+pub type BenchmarkResults = Vec<BenchmarkResult>;
+
+/// Benchmark statistics aggregation
+#[derive(Debug, Clone)]
+pub struct BenchmarkStatistics {
+    pub total_benchmarks: usize,
+    pub passed_benchmarks: usize,
+    pub failed_benchmarks: usize,
+    pub average_improvement: f64,
+    pub best_improvement: f64,
+    pub worst_improvement: f64,
+}
+
+impl Default for BenchmarkStatistics {
+    fn default() -> Self {
+        Self {
+            total_benchmarks: 0,
+            passed_benchmarks: 0,
+            failed_benchmarks: 0,
+            average_improvement: 0.0,
+            best_improvement: 0.0,
+            worst_improvement: 0.0,
+        }
+    }
+}
