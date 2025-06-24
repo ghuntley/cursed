@@ -3,7 +3,7 @@
 //! This module provides a comprehensive error type system with categorization,
 //! severity levels, and error chain management.
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use crate::debug::source_location::SourceLocation;
 use std::collections::HashMap;
 use std::fmt;

@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-//! WebSocket support for GlowUpHTTP
+// WebSocket support for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::VibeRequest;

@@ -179,7 +179,7 @@ impl CryptoLLVMIntegrationImpl {
     }
 
     /// Register a crypto function with LLVM
-    fn register_function(&mut self, module: &Module, name: &str, fn_type: inkwell::crate::types::FunctionType) -> Result<(), Error> {
+    fn register_function(&mut self, module: &Module, name: &str, fn_type: inkwell::types::FunctionType) -> Result<(), Error> {
         let function = module.add_function(name, fn_type, None);
         debug!(function_name = name, "Registered crypto function with LLVM");
         Ok(function)

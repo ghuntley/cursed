@@ -8,7 +8,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, PointerValue, IntValue, BasicValue, BasicMetadataValueEnum};
-use inkwell::crate::types::{BasicTypeEnum, FunctionType, StructType, PointerType, IntType};
+use inkwell::types::{BasicTypeEnum, FunctionType, StructType, PointerType, IntType};
 use inkwell::{AddressSpace, IntPredicate};
 use std::collections::HashMap;
 use crate::error::{Error, CursedError};

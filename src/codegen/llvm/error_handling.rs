@@ -7,7 +7,7 @@
 /// - Integration of error handling with function calls
 /// - Debug info emission for error contexts
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error::{Error as CursedError, Error, SourceLocation};
 use crate::runtime::error_handling::{ErrorRuntime, ErrorContext};
 use crate::runtime::panic::{PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory};
 use crate::runtime::stack_trace::{StackTraceManager, CallFrame};

@@ -44,7 +44,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use crate::lexer::Token;
 use crate::error::SourceLocation;
-use crate::ast::ASTNode;
+// Remove duplicate import - ASTNode imported below
 
 // Re-export all sub-modules for easier access
 pub mod traits;
@@ -276,13 +276,13 @@ impl AstNode {
         }
     }
 
-    /// Create a new statement node
-    pub fn new_statement(statement: Statement) -> Self {
-        Self::new(AstNodeType::Statement(statement))
+    /// Create a new statement node from a boxed statement
+    pub fn new_statement(statement: Box<dyn Statement>) -> Self {
+        Self::new(AstNodeType::ExpressionStatement(statement))
     }
 
     /// Create a new program node
-    pub fn new_program(program: ASTProgram) -> Self {
+    pub fn new_program(program: Program) -> Self {
         Self::new(AstNodeType::Program(program))
     }
     

@@ -11,7 +11,7 @@ use crate::ast::declarations::{TypeParameter, GenericConstraint, FieldStatement,
 use crate::error::SourceLocation;
 use crate::lexer::Token;
 use std::any::Any;
-use crate::ast::ASTNode;
+// Remove import to avoid conflict with type alias below
 
 /// AST root type representing complete program structure
 #[derive(Debug, Clone)]

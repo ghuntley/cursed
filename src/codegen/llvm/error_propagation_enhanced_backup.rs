@@ -4,7 +4,7 @@ use crate::codegen::llvm::{LlvmCodeGenerator, ResultTypeCompiler, result_crate::
 use crate::error::{CursedError, ErrorPropagationError, SourceLocation};
 use crate::runtime::panic_recovery::PanicRecoveryRuntime;
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue, StructValue, IntValue, BasicValue};
-use inkwell::crate::types::{BasicTypeEnum, StructType, IntType};
+use inkwell::types::{BasicTypeEnum, StructType, IntType};
 use inkwell::basic_block::BasicBlock;
 use inkwell::{IntPredicate, AddressSpace};
 use std::collections::HashMap;

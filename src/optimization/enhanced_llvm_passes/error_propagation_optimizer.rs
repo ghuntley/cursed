@@ -615,7 +615,7 @@ mod memory_layout_optimizer_real {
     use super::*;
     use std::collections::HashMap;
     use inkwell::values::{PointerValue, StructValue};
-    use inkwell::crate::types::{StructType, PointerType};
+    use inkwell::types::{StructType, PointerType};
     use inkwell::builder::Builder;
     use inkwell::context::Context;
     use tracing::{info, warn};
@@ -2878,11 +2878,11 @@ mod cache_optimizer_real {
             // Estimate the size of data being accessed
             if let Some(basic_type) = instruction.get_type().as_basic_type() {
                 match basic_type {
-                    inkwell::crate::types::BasicTypeEnum::IntType(int_type) => {
+                    inkwell::types::BasicTypeEnum::IntType(int_type) => {
                         (int_type.get_bit_width() / 8) as usize
                     }
-                    inkwell::crate::types::BasicTypeEnum::FloatType(_) => 4,
-                    inkwell::crate::types::BasicTypeEnum::PointerType(_) => 8,
+                    inkwell::types::BasicTypeEnum::FloatType(_) => 4,
+                    inkwell::types::BasicTypeEnum::PointerType(_) => 8,
                     _ => 8, // Default size
                 }
             } else {

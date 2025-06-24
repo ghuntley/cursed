@@ -7,7 +7,7 @@ use crate::error::{Error, SourceLocation};
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::{Parser, ParsedProgram};
 // use crate::compiler::Compiler; // TODO: Implement main compiler interface
-use crate::core::type_checker::TypeChecker as Compiler;
+use crate::type_system::TypeChecker as Compiler;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

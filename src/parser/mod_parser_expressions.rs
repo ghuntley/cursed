@@ -413,7 +413,7 @@ impl Parser {
     
     /// Parse channel type expression (dm Type)
     fn parse_channel_type(&mut self) -> Result<(), Error> {
-        use crate::ast::crate::types::ChannelTypeExpression;
+        use crate::ast::types::ChannelTypeExpression;
         
         let token = self.current_token.literal.clone();
         self.advance_token()?;

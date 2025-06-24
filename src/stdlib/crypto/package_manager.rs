@@ -37,7 +37,7 @@ pub struct PackageInfo {
 pub struct PackageRegistryEntry {
     pub info: PackageInfo,
     pub status: PackageStatus,
-    pub init_function: Option<fn() -> Result<(), Error>,
+    pub init_function: Option<fn() -> Result<(), Error>>,
     pub test_function: Option<fn() -> UnifiedCryptoResult<HashMap<String, bool>>>,
     pub capabilities: PackageCapabilities,
 }

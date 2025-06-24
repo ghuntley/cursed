@@ -2,6 +2,8 @@
 
 0b. study src/* to learn about the application implementations using up to 500 subagents.
 
+0c. study FIX_PLAN.md and use ultra think
+
 1. The build is failing (run the build/test using a single subagent to create or update @FIX_PLAN.md). Pick the most important problem and resolve by either migration, implementation or whatever approach is best to resolve the error. Consider 10 options and chose the most likely one and resolve with **up to 500 parrallel subagents** if required. After resolving, run the test for that unit of code. When doing a build of the application only use one subagent.
 
 2. When the tests pass update the @FIX_PLAN.MD`, then add changed code and @FIX_PLAN.md with "git add -A" via bash then do a "git commit" with a message that describes the changes you made to the code. After the commit do a "git push" to push the changes to the remote repository.

@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-//! HTTP client implementation for GlowUpHTTP
+// HTTP client implementation for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::{VibeRequest, Method};

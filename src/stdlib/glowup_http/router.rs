@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-//! HTTP router implementation for GlowUpHTTP
+// HTTP router implementation for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::handler::{Handler, HandlerFunc};

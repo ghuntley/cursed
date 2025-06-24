@@ -4,7 +4,7 @@
 //! system, including question mark expressions, type assertions, and error recovery.
 
 use crate::ast::traits::Expression;
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use crate::parser::error_propagation::{
     EnhancedQuestionMarkExpression, TypedErrorPropagation, UnwrapOrExpression, 
     TryExpression, FieldAccessExpression, MethodCallExpression
@@ -12,7 +12,7 @@ use crate::parser::error_propagation::{
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
-use inkwell::crate::types::{BasicType, BasicTypeEnum, PointerType, StructType};
+use inkwell::types::{BasicType, BasicTypeEnum, PointerType, StructType};
 use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue, IntValue, PointerValue, StructValue};
 use inkwell::{AddressSpace, FloatPredicate, IntPredicate};
 use std::collections::HashMap;

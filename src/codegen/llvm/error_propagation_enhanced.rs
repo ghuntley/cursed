@@ -5,7 +5,7 @@
 
 use crate::ast::expressions::ErrorPropagation;
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::error::{CursedError, SourceLocation};
+use crate::error::{CursedError, Error, SourceLocation};
 use tracing::{debug, instrument};
 
 /// Enhanced error propagation compilation trait (non-conflicting)

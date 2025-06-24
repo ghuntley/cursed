@@ -1,5 +1,6 @@
 // Minimal ConstantStatement for CURSED minimal build
 
+use std::any::Any;
 use crate::ast::traits::{Node, Statement};
 use crate::error::{Error, SourceLocation};
 
@@ -19,16 +20,20 @@ impl ConstantStatement {
 }
 
 impl Node for ConstantStatement {
-    fn source_location(&self) -> &SourceLocation {
-        &self.location
+    fn string(&self) -> String {
+        format!("facts {} = ...", self.name)
     }
     
-    fn to_string(&self) -> String {
-        format!("ConstantStatement({})", self.name)
+    fn token_literal(&self) -> String {
+        "facts".to_string()
     }
 }
 
 impl Statement for ConstantStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }

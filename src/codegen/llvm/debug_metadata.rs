@@ -8,14 +8,14 @@
 // use crate::ast::traits::{Expression, Statement};
 // use crate::ast::declarations::FunctionDeclaration;
 use crate::debug::{DebugConfig, SourceLocation, DebugInfoManager};
-use crate::error::Error as CursedError;
+use crate::error::{Error as CursedError, Error};
 use crate::runtime::debug_info::VariableInfo;
 
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::values::{FunctionValue, BasicValueEnum, PointerValue, InstructionValue};
-use inkwell::crate::types::{BasicTypeEnum, StructType, FunctionType};
+use inkwell::types::{BasicTypeEnum, StructType, FunctionType};
 
 // NOTE: Debug info types temporarily disabled due to LLVM API changes
 // use inkwell::debug_info::{

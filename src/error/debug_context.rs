@@ -4,7 +4,7 @@
 /// code snippet extraction, and integration with panic system and question mark operator.
 
 use crate::error::Error as CursedError;
-use crate::error::SourceLocation;
+use crate::error::{Error, SourceLocation};
 use crate::runtime::debug_info::{EnhancedStackTrace, EnhancedStackFrame, DebugInfo};
 use crate::runtime::debug_manager::DebugManager;
 use crate::debug::enhanced_debug::{EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata};

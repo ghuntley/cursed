@@ -737,12 +737,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             // Get variable type information
             if let Some((_, var_type)) = var_manager_ref.get_variable(&identifier.value) {
                 let llvm_type = match var_type {
-                    crate::core::type_checker::Type::Normie => LlvmType::Int64,
-                    crate::core::type_checker::Type::Thicc => LlvmType::Int64,
-                    crate::core::type_checker::Type::Lit => LlvmType::Boolean,
-                    crate::core::type_checker::Type::Tea => LlvmType::String,
-                    crate::core::type_checker::Type::Meal => LlvmType::Float64,
-                    crate::core::type_checker::Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
+                    crate::type_system::Type::Normie => LlvmType::Int64,
+                    crate::type_system::Type::Thicc => LlvmType::Int64,
+                    crate::type_system::Type::Lit => LlvmType::Boolean,
+                    crate::type_system::Type::Tea => LlvmType::String,
+                    crate::type_system::Type::Meal => LlvmType::Float64,
+                    crate::type_system::Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
                     _ => LlvmType::Int64, // Default fallback
                 };
                 
@@ -840,12 +840,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         
         // Create function type
         match return_inkwell_type {
-            inkwell::crate::types::BasicTypeEnum::ArrayType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::crate::types::BasicTypeEnum::FloatType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::crate::types::BasicTypeEnum::IntType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::crate::types::BasicTypeEnum::PointerType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::crate::types::BasicTypeEnum::StructType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::crate::types::BasicTypeEnum::VectorType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::ArrayType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::FloatType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::IntType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::PointerType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::StructType(t) => Ok(t.fn_type(&param_types, false)),
+            inkwell::types::BasicTypeEnum::VectorType(t) => Ok(t.fn_type(&param_types, false)),
         }
     }
     

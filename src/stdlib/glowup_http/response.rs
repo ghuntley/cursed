@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-//! HTTP response types and utilities for GlowUpHTTP
+// HTTP response types and utilities for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::{HeaderMap, Cookie};

@@ -9,7 +9,7 @@ use tracing::{debug, instrument, info};
 
 use crate::lexer::{Lexer, TokenType};
 use crate::parser::Parser;
-use crate::core::type_checker::{TypeChecker, Type};
+use crate::type_system::TypeChecker, Type;
 use crate::ast::Program;
 use crate::error::CursedError;
 
