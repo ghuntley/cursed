@@ -16,7 +16,7 @@ pub mod parser;
 pub mod codegen;
 pub mod common;
 pub mod web;
-pub mod tokio;
+// pub mod tokio;  // Temporarily disabled due to dependency conflicts
 pub mod core;
 
 // Standard library module

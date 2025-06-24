@@ -1,4 +1,4 @@
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use crate::stdlib::value::Value as CursedValue;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};

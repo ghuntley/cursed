@@ -1,4 +1,4 @@
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use std::sync::OnceLock;
 use sha2::{Sha256, Digest};
 use tracing::{debug, info, warn, error, instrument};
