@@ -1,7 +1,7 @@
-//! Test Execution System
-//! 
-//! Handles compilation and execution of discovered tests with parallel execution,
-//! result parsing, and performance metrics collection.
+// Test Execution System
+// 
+// Handles compilation and execution of discovered tests with parallel execution,
+// result parsing, and performance metrics collection.
 
 use crate::build_system::test_discovery::{TestFunction, TestCategory, TestFilter};
 use crate::error::Error;

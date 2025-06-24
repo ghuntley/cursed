@@ -1,6 +1,6 @@
-//! GeMSS Multivariate Signature Implementation
-//! 
-//! GeMSS is a multivariate signature scheme based on the HFE (Hidden Field Equations) problem.
+// GeMSS Multivariate Signature Implementation
+// 
+// GeMSS is a multivariate signature scheme based on the HFE (Hidden Field Equations) problem.
 
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::DigitalSignature;

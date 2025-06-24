@@ -1,10 +1,10 @@
 use crate::error::Error;
-//! Formatting provider for CURSED language server
-//! 
-//! Provides document formatting integration with the CURSED formatter
+// Formatting provider for CURSED language server
+// 
+// Provides document formatting integration with the CURSED formatter
 
 use std::collections::HashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, error, instrument, warn};
 
 use crate::tools::formatter::{FormatterConfig, BraceStyle, CursedFormatter, OperatorSpacing, CommaSpacing};

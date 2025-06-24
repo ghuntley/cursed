@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Module loading and caching
+// Module loading and caching
 
 use std::collections::HashMap;
 use std::path::PathBuf;

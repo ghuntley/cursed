@@ -1,7 +1,7 @@
-//! CURSED Documentation System
-//! 
-//! Complete documentation generation system for the CURSED programming language.
-//! Provides unified interface for generating documentation in multiple formats.
+// CURSED Documentation System
+// 
+// Complete documentation generation system for the CURSED programming language.
+// Provides unified interface for generating documentation in multiple formats.
 
 use crate::docs::generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
 use crate::error::Error;

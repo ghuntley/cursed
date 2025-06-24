@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Process monitoring and resource management utilities
+// Process monitoring and resource management utilities
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

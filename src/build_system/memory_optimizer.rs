@@ -1,8 +1,8 @@
 
-//! Memory-Optimized Compilation System
-//! 
-//! Implements memory-aware compilation scheduling, streaming compilation,
-//! and adaptive strategies for handling large codebases efficiently.
+// Memory-Optimized Compilation System
+// 
+// Implements memory-aware compilation scheduling, streaming compilation,
+// and adaptive strategies for handling large codebases efficiently.
 
 use std::collections::{HashMap, VecDeque, BTreeSet};
 use std::sync::{Arc, Mutex, RwLock};

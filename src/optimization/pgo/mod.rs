@@ -1,11 +1,11 @@
-//! Profile-Guided Optimization (PGO) System for CURSED
-//! 
-//! This module provides a comprehensive Profile-Guided Optimization system that includes:
-//! - Runtime profile data collection 
-//! - Efficient profile data storage and management
-//! - PGO-guided LLVM optimization passes
-//! - CLI integration for profile management
-//! - Performance analysis and validation
+// Profile-Guided Optimization (PGO) System for CURSED
+// 
+// This module provides a comprehensive Profile-Guided Optimization system that includes:
+// - Runtime profile data collection 
+// - Efficient profile data storage and management
+// - PGO-guided LLVM optimization passes
+// - CLI integration for profile management
+// - Performance analysis and validation
 
 pub mod profile_collector;
 pub mod profile_storage;

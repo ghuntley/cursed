@@ -1,8 +1,8 @@
-//! Build Artifact Management System
-//! 
-//! Advanced artifact management with intelligent storage, versioning, distribution,
-//! cleanup strategies, and cross-platform artifact handling for optimized build
-//! workflows and improved developer productivity.
+// Build Artifact Management System
+// 
+// Advanced artifact management with intelligent storage, versioning, distribution,
+// cleanup strategies, and cross-platform artifact handling for optimized build
+// workflows and improved developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult};
 use crate::error::Error;

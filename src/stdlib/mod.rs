@@ -10,17 +10,14 @@ pub mod collections;
 pub mod io;
 pub mod fs;
 pub mod errors;
+pub mod errors_simple;
+pub mod exec_vibez;
 
 // Value types
 pub mod value;
 
 // Database
-pub mod database {
-    pub mod llvm_integration {
-use crate::error::Error;
-        pub use crate::common::ParameterType;
-    }
-}
+pub mod database;
 
 // Packages
 pub mod packages {

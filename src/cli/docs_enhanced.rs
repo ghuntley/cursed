@@ -1,8 +1,8 @@
 
-//! Enhanced CLI Documentation Commands
-//! 
-//! Extended command-line interface for CURSED documentation with publishing,
-//! server management, testing, and registry functionality.
+// Enhanced CLI Documentation Commands
+// 
+// Extended command-line interface for CURSED documentation with publishing,
+// server management, testing, and registry functionality.
 
 use clap::{Args, Subcommand};
 use crate::docs::publisher::{DocumentationPublisher, PublishConfig, PublishTarget, OptimizationConfig};

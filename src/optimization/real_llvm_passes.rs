@@ -16,7 +16,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{FunctionValue, InstructionValue, BasicValueEnum, PhiValue},
-    crate::types::{BasicType, IntType, FloatType},
+    types::{BasicType, IntType, FloatType},
     basic_block::BasicBlock,
     builder::Builder,
     passes::PassManager,

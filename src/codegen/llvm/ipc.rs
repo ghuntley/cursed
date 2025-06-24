@@ -9,7 +9,7 @@ use crate::error::{CursedError, Error};
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue, PointerValue},
-    crate::types::{BasicTypeEnum, FunctionType},
+    types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
 

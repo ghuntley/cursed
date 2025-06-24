@@ -1,6 +1,6 @@
-//! Generic Signature Scheme Interface
-//! 
-//! Common trait and types for digital signature schemes in CURSED crypto.
+// Generic Signature Scheme Interface
+// 
+// Common trait and types for digital signature schemes in CURSED crypto.
 
 /// Generic signature scheme trait
 pub trait SignatureScheme {

@@ -1,7 +1,7 @@
-//! Enhanced Performance Analysis for CURSED Compiler
-//! 
-//! Comprehensive analysis tools for identifying performance bottlenecks,
-//! optimization opportunities, and providing actionable recommendations.
+// Enhanced Performance Analysis for CURSED Compiler
+// 
+// Comprehensive analysis tools for identifying performance bottlenecks,
+// optimization opportunities, and providing actionable recommendations.
 
 use crate::error::{Error, Result};
 

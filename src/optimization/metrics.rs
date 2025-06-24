@@ -1,7 +1,7 @@
-//! Optimization metrics collection and analysis
-//!
-//! This module provides comprehensive metrics for optimization performance tracking,
-//! compilation statistics, and system resource monitoring.
+// Optimization metrics collection and analysis
+//
+// This module provides comprehensive metrics for optimization performance tracking,
+// compilation statistics, and system resource monitoring.
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

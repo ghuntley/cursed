@@ -1,11 +1,11 @@
-//! XChaCha20-Poly1305 AEAD (Authenticated Encryption with Associated Data) Implementation
-//! 
-//! This module provides a complete XChaCha20-Poly1305 implementation with both streaming
-//! and one-shot APIs for authenticated encryption and decryption operations.
-//! 
-//! XChaCha20-Poly1305 is a variant of ChaCha20-Poly1305 that uses a 192-bit nonce
-//! (compared to 96-bit for standard ChaCha20-Poly1305), providing better security
-//! properties for long-running sessions and high-volume applications.
+// XChaCha20-Poly1305 AEAD (Authenticated Encryption with Associated Data) Implementation
+// 
+// This module provides a complete XChaCha20-Poly1305 implementation with both streaming
+// and one-shot APIs for authenticated encryption and decryption operations.
+// 
+// XChaCha20-Poly1305 is a variant of ChaCha20-Poly1305 that uses a 192-bit nonce
+// (compared to 96-bit for standard ChaCha20-Poly1305), providing better security
+// properties for long-running sessions and high-volume applications.
 
 use chacha20poly1305::{
     XChaCha20Poly1305, KeyInit, AeadCore, AeadInPlace,

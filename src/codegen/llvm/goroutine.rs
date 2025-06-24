@@ -14,7 +14,7 @@ use std::collections::HashMap;
 // Import real inkwell types for LLVM integration
 use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue},
-    crate::types::{BasicTypeEnum, IntType, PointerType, FunctionType},
+    types::{BasicTypeEnum, IntType, PointerType, FunctionType},
     basic_block::BasicBlock,
     AddressSpace,
     IntPredicate,

@@ -1,8 +1,8 @@
-//! Documentation Generator Implementation
-//! 
-//! Core implementation of the CURSED documentation generation system with
-//! support for multiple output formats, advanced features, and comprehensive
-//! AST analysis.
+// Documentation Generator Implementation
+// 
+// Core implementation of the CURSED documentation generation system with
+// support for multiple output formats, advanced features, and comprehensive
+// AST analysis.
 
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};

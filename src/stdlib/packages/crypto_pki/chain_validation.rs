@@ -1,14 +1,14 @@
-//! Certificate Chain Validation - Production Implementation
-//! 
-//! Complete certificate chain validation including:
-//! - Trust chain building and validation
-//! - Certificate path validation
-//! - Policy validation
-//! - Revocation checking (CRL and OCSP)
+// Certificate Chain Validation - Production Implementation
+// 
+// Complete certificate chain validation including:
+// - Trust chain building and validation
+// - Certificate path validation
+// - Policy validation
+// - Revocation checking (CRL and OCSP)
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    crate::types::*,
+    types::*,
 };
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, Duration};

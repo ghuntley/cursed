@@ -72,8 +72,8 @@ impl WebSocketUpgrader {
         let accept_key = self.generate_accept_key(ws_key);
         
         // Send upgrade response
-        use crate::stdlib::glowup_http::response::StatusCode;
-        w.write_header(StatusCode::SWITCHING_PROTOCOLS);
+        use crate::web::StatusCode;
+        w.write_header(StatusCode::SwitchingProtocols);
         
         {
             let mut headers = w.header().lock().unwrap();

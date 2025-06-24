@@ -1,10 +1,10 @@
-//! Profile Data Collection System
-//! 
-//! Collects runtime profiling data during program execution including:
-//! - Function call frequencies and timing
-//! - Branch prediction statistics
-//! - Memory access patterns and cache behavior
-//! - Loop iteration counts and hot loops
+// Profile Data Collection System
+// 
+// Collects runtime profiling data during program execution including:
+// - Function call frequencies and timing
+// - Branch prediction statistics
+// - Memory access patterns and cache behavior
+// - Loop iteration counts and hot loops
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{PgoSystemConfig, ExecutionContext};

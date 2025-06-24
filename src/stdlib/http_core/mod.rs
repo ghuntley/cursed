@@ -1,7 +1,7 @@
-//! CURSED HTTP Core - Comprehensive HTTP Request and Response Processing
-//!
-//! This package provides comprehensive HTTP request and response processing capabilities
-//! for web applications built with the CURSED programming language.
+// CURSED HTTP Core - Comprehensive HTTP Request and Response Processing
+//
+// This package provides comprehensive HTTP request and response processing capabilities
+// for web applications built with the CURSED programming language.
 
 use crate::web::StatusCode;
 
@@ -19,7 +19,7 @@ use crate::error::Error;
 
 // Re-export main types for convenience
 pub use request::{Request, Method, RequestBuilder};
-pub use response::{Response, StatusCode, ResponseBuilder};
+pub use response::{Response, ResponseBuilder};
 pub use headers::{Headers, HeaderMap};
 pub use cookies::{Cookie, CookieJar};
 pub use url::{Url, QueryParams};

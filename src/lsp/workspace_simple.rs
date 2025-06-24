@@ -1,9 +1,9 @@
-//! Simplified workspace management for CURSED language server
+// Simplified workspace management for CURSED language server
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use dashmap::DashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, info, instrument};
 
 use crate::type_system::TypeChecker, Type;

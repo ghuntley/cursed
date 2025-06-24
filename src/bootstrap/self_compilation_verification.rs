@@ -1,9 +1,9 @@
 use crate::error::Error;
-//! Bootstrap Self-Compilation Verification System
-//!
-//! This module provides comprehensive verification for the CURSED compiler's
-//! ability to compile itself (self-hosting). It implements the 4-stage bootstrap
-//! process defined in the compiler specifications.
+// Bootstrap Self-Compilation Verification System
+//
+// This module provides comprehensive verification for the CURSED compiler's
+// ability to compile itself (self-hosting). It implements the 4-stage bootstrap
+// process defined in the compiler specifications.
 
 use std::collections::HashMap;
 use std::fs;

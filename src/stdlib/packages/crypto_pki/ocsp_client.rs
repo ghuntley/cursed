@@ -2,7 +2,7 @@
 /// 
 /// Handles HTTP communication with OCSP responders and response validation
 
-use crate::stdlib::packages::crypto_pki::crate::types::{
+use crate::stdlib::packages::crypto_pki::types::{
     PkiResult, PkiError, X509Certificate, OcspConfig, CertId, OcspRequestInfo,
     BasicOcspResponse, CertificateStatusInfo, RevocationStatus, OcspResponseStatus
 };
@@ -293,7 +293,7 @@ impl OcspClient {
             serial_number: vec![1, 2, 3, 4],
         };
 
-        let single_response = crate::stdlib::packages::crypto_pki::crate::types::SingleResponse {
+        let single_response = crate::stdlib::packages::crypto_pki::types::SingleResponse {
             cert_id,
             cert_status: RevocationStatus::Good,
             this_update: now,

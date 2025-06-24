@@ -1,4 +1,4 @@
-//! Simple test to verify HTTP client compilation
+// Simple test to verify HTTP client compilation
 
 use cursed::stdlib::glowup_http::client::VibeClient;
 use cursed::stdlib::glowup_http::error::GlowUpResult;

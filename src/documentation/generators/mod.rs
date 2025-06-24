@@ -1,7 +1,7 @@
-//! Documentation Generator Modules
-//! 
-//! This module contains specialized generators for different output formats,
-//! providing advanced features and comprehensive documentation capabilities.
+// Documentation Generator Modules
+// 
+// This module contains specialized generators for different output formats,
+// providing advanced features and comprehensive documentation capabilities.
 
 pub mod latex_generator;
 

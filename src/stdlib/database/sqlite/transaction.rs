@@ -4,7 +4,7 @@
 /// isolation levels, and proper ACID compliance for SQLite.
 
 use std::sync::{Arc, Mutex};
-use rusqlite::{Connection, crate::types::Value as SqliteValue};
+use rusqlite::{Connection, types::Value as SqliteValue};
 use super::{SqliteError, SqliteResult};
 use super::connection::SqliteConnection;
 use super::super::{DriverTx, DatabaseError, SqlValue, TxOptions, SqlIsolationLevel};
@@ -440,7 +440,7 @@ fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::crate::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
             SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
             SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),

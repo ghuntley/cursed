@@ -1,7 +1,7 @@
-//! Optimization compatibility layer to prevent E0659 conflicts
-//! 
-//! This module provides type aliases and re-exports to ensure consistent
-//! naming across optimization modules and prevent ambiguous imports.
+// Optimization compatibility layer to prevent E0659 conflicts
+// 
+// This module provides type aliases and re-exports to ensure consistent
+// naming across optimization modules and prevent ambiguous imports.
 
 /// Core optimization types with explicit naming
 pub use crate::optimization::config::OptimizationConfig as CoreOptimizationConfig;

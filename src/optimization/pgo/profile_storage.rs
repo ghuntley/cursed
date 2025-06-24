@@ -1,10 +1,10 @@
-//! Profile Data Storage and Management System
-//! 
-//! Provides efficient storage, retrieval, and management of profile data including:
-//! - Binary format storage for efficiency
-//! - Profile data merging from multiple runs
-//! - Data validation and sanitization
-//! - Version compatibility and migration
+// Profile Data Storage and Management System
+// 
+// Provides efficient storage, retrieval, and management of profile data including:
+// - Binary format storage for efficiency
+// - Profile data merging from multiple runs
+// - Data validation and sanitization
+// - Version compatibility and migration
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{ProfileData, PgoSystemConfig, PgoError};

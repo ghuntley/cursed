@@ -1,10 +1,10 @@
-//! Profile Manager for PGO System
-//! 
-//! Manages the lifecycle of profile data including:
-//! - Profile validation and quality assessment
-//! - Profile compatibility checking and migration
-//! - Profile session management
-//! - Command interface for profile operations
+// Profile Manager for PGO System
+// 
+// Manages the lifecycle of profile data including:
+// - Profile validation and quality assessment
+// - Profile compatibility checking and migration
+// - Profile session management
+// - Command interface for profile operations
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{ProfileData, PgoSystemConfig, PgoError};

@@ -1,7 +1,7 @@
-//! CLI Documentation Commands
-//! 
-//! Command-line interface for CURSED documentation generation with
-//! comprehensive options and integration with the documentation system.
+// CLI Documentation Commands
+// 
+// Command-line interface for CURSED documentation generation with
+// comprehensive options and integration with the documentation system.
 
 use crate::docs::{DocumentationGenerator, DocGeneratorConfig, DocFormat, ApiExtractor, ExampleGenerator};
 use crate::error::Error;

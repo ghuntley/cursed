@@ -1,8 +1,8 @@
 
-//! Build Analytics and Performance Monitoring
-//! 
-//! Tracks build performance metrics, identifies bottlenecks, and provides
-//! actionable insights for build optimization.
+// Build Analytics and Performance Monitoring
+// 
+// Tracks build performance metrics, identifies bottlenecks, and provides
+// actionable insights for build optimization.
 
 use std::collections::{HashMap, VecDeque, BTreeMap};
 use std::sync::{Arc, Mutex, RwLock};

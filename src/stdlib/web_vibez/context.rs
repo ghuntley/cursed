@@ -793,11 +793,11 @@ mod tests {
     #[test]
     fn test_response_context() {
         let mut response = ResponseContext::new();
-        response.set_status(StatusCode::CREATED);
+        response.set_status(StatusCode::Created);
         response.set_header("Content-Type", "application/json");
         response.set_body_string("test body");
         
-        assert_eq!(response.status, StatusCode::CREATED);
+        assert_eq!(response.status, StatusCode::Created);
         assert_eq!(response.header("Content-Type"), Some("application/json"));
         assert_eq!(response.body, b"test body");
     }

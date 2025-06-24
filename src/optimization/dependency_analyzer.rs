@@ -1,7 +1,7 @@
-//! Dependency analysis for optimization ordering
-//! 
-//! Provides analysis of dependencies between optimization passes and compilation units
-//! to ensure correct ordering and parallel execution opportunities.
+// Dependency analysis for optimization ordering
+// 
+// Provides analysis of dependencies between optimization passes and compilation units
+// to ensure correct ordering and parallel execution opportunities.
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use crate::error::Result;

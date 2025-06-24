@@ -1,7 +1,7 @@
-//! Private key operations
-//! 
-//! Provides comprehensive private key utilities for the CURSED stdlib.
-//! Supports private key generation, validation, format conversion, and security operations.
+// Private key operations
+// 
+// Provides comprehensive private key utilities for the CURSED stdlib.
+// Supports private key generation, validation, format conversion, and security operations.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

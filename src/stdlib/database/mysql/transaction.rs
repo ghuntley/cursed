@@ -14,7 +14,7 @@ use crate::stdlib::database::{
 };
 use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
-use super::crate::types::{convert_from_sql_value, convert_isolation_level, extract_value_by_index, get_column_info};
+use super::types::{convert_from_sql_value, convert_isolation_level, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
 use super::statement::MySqlStatement;
 

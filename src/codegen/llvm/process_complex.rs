@@ -12,7 +12,7 @@ use inkwell::{
     module::Module,
     builder::Builder,
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue},
-    crate::types::{BasicType, IntType},
+    types::{BasicType, IntType},
     AddressSpace,
 };
 

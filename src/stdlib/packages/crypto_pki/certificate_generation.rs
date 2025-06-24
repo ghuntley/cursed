@@ -1,12 +1,12 @@
-//! Certificate Generation Module
-//! 
-//! Comprehensive certificate generation functionality for the CURSED PKI system.
-//! Supports generating certificates for different purposes with full extension handling,
-//! multiple signature algorithms, and advanced certificate management features.
+// Certificate Generation Module
+// 
+// Comprehensive certificate generation functionality for the CURSED PKI system.
+// Supports generating certificates for different purposes with full extension handling,
+// multiple signature algorithms, and advanced certificate management features.
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    crate::types::*,
+    types::*,
 };
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};

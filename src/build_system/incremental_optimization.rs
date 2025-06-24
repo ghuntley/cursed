@@ -1,8 +1,8 @@
-//! Advanced Incremental Compilation Optimization
-//! 
-//! Provides intelligent incremental compilation with fine-grained dependency tracking,
-//! smart invalidation, content-aware change detection, and compilation avoidance
-//! strategies for maximum build performance.
+// Advanced Incremental Compilation Optimization
+// 
+// Provides intelligent incremental compilation with fine-grained dependency tracking,
+// smart invalidation, content-aware change detection, and compilation avoidance
+// strategies for maximum build performance.
 
 use crate::build_system::{
     BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult,

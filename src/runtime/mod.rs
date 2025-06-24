@@ -4,6 +4,7 @@ pub mod stack;
 pub mod value;
 
 // Core runtime modules (enable as needed)
+pub mod runtime;
 pub mod debug_info;
 pub mod panic;
 pub mod goroutine;
@@ -26,3 +27,12 @@ pub mod channels;
 // Basic exports for minimal build
 pub use stack::RuntimeStack;
 pub use value::{ValueManager, CursedValue};
+pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType};
+
+// Additional exports needed by other modules
+pub use goroutine::GoroutineScheduler;
+pub use panic::PanicRuntime;
+pub use error_handling::ErrorRuntime;
+pub use jit_runtime::JitRuntime;
+pub use debug_manager::DebugManager;
+pub use debug_runtime::PerformanceMonitor;

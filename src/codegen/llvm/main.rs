@@ -3,16 +3,9 @@ use crate::error::Error;
 use crate::debug::{DebugConfig, SourceLocation};
 use std::path::PathBuf;
 
-// Import real LLVM optimization passes
-use crate::optimization::real_llvm_passes::RealLlvmPassManager;
-use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
-use crate::optimization::config::OptimizationConfig as OptConfig;
+// Import local LLVM optimization module
+use super::optimization::{OptimizationManager, OptimizationConfig, OptimizationStats, utils as optimization_utils};
 use crate::common::optimization_level::OptimizationLevel as OptLevel;
-use crate::optimization::coordinator::{
-    OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults
-};
-
-use crate::optimization::crate::types::ComprehensiveOptimizationResult;
 
 /// Optimization preset configurations
 #[derive(Debug, Clone, Copy)]
@@ -31,7 +24,7 @@ use inkwell::{
     module::Module,
     builder::Builder,
     values::BasicValueEnum,
-    crate::types::BasicTypeEnum,
+    types::BasicTypeEnum,
 };
 
 // Import from sibling modules
@@ -64,14 +57,13 @@ use super::package_integration::{
     LlvmPackageIntegration, CompiledPackageModule, LlvmPackageStats
 };
 
-use super::result_crate::types::{
+use super::result_types::{
     ResultTypeCompiler as ProductionResultTypeCompiler, 
     result_type_utils as production_result_utils,
     TypeLayout, ResultDiscriminant, OptionDiscriminant
 };
 
 use super::result_types_simple::{ResultTypeLayout, OptionTypeLayout, ResultTypeCompiler as SimpleResultTypeCompiler, result_type_utils as simple_result_utils};
-use super::optimization::{OptimizationManager, OptimizationLevel, OptimizationConfig, OptimizationStats, utils as optimization_utils};
 use super::optimization_engine::{OptimizationEngine, OptimizationEngineConfig, EngineStatistics, OptimizationResult};
 use super::optimization_integration::{LlvmOptimizationIntegration, OptimizationState, HotPath};
 use super::lto_integration::{
@@ -106,7 +98,7 @@ pub use inkwell::{
     context::Context as LlvmContext,
     builder::Builder as LlvmBuilder,
     values::{FunctionValue, PointerValue, IntValue, FloatValue},
-    crate::types::{IntType, FloatType, PointerType, FunctionType},
+    types::{IntType, FloatType, PointerType, FunctionType},
     basic_block::BasicBlock,
     AddressSpace,
 };

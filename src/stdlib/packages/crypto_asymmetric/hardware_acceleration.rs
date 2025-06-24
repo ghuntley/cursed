@@ -1,6 +1,6 @@
-//! Hardware acceleration for cryptography
-//! 
-//! Provides comprehensive hardware acceleration detection and capabilities enumeration.
+// Hardware acceleration for cryptography
+// 
+// Provides comprehensive hardware acceleration detection and capabilities enumeration.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

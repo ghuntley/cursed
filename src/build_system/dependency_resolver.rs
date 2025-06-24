@@ -1,7 +1,7 @@
-//! Dependency Resolution System
-//! 
-//! Resolves package dependencies, handles version constraints,
-//! and builds dependency graphs for CURSED projects.
+// Dependency Resolution System
+// 
+// Resolves package dependencies, handles version constraints,
+// and builds dependency graphs for CURSED projects.
 
 use crate::package_manager::{
     PackageManagerError, 

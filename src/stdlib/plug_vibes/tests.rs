@@ -1,7 +1,7 @@
 use crate::error::Error;
-//! Tests for PlugVibes plugin system
-//!
-//! Comprehensive test suite covering all aspects of the CURSED plugin system.
+// Tests for PlugVibes plugin system
+//
+// Comprehensive test suite covering all aspects of the CURSED plugin system.
 
 use super::*;
 use crate::error::CursedError;

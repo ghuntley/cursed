@@ -1,20 +1,20 @@
-//! Advanced Cryptographic Protocols Module for CURSED
-//! 
-//! This module provides sophisticated cryptographic protocols including challenge-response
-//! authentication, multi-party computation, distributed key generation, and advanced
-//! protocol frameworks. All implementations are production-ready and follow current
-//! cryptographic best practices.
-//! 
-//! # Advanced Protocol Features
-//! 
-//! - **Challenge-Response Authentication**: Multiple rounds with time-based challenges
-//! - **Multi-Party Computation**: Secure distributed computation protocols
-//! - **Distributed Key Generation**: Threshold key generation and management
-//! - **Zero-Knowledge Authentication**: Proof systems for identity verification
-//! - **Secure Multi-Party Key Exchange**: Group key agreement protocols
-//! - **Protocol Composition**: Framework for building complex protocol stacks
-//! - **Byzantine Fault Tolerance**: Protocols resilient to malicious participants
-//! - **Threshold Cryptography**: Secret sharing and reconstruction protocols
+// Advanced Cryptographic Protocols Module for CURSED
+// 
+// This module provides sophisticated cryptographic protocols including challenge-response
+// authentication, multi-party computation, distributed key generation, and advanced
+// protocol frameworks. All implementations are production-ready and follow current
+// cryptographic best practices.
+// 
+// # Advanced Protocol Features
+// 
+// - **Challenge-Response Authentication**: Multiple rounds with time-based challenges
+// - **Multi-Party Computation**: Secure distributed computation protocols
+// - **Distributed Key Generation**: Threshold key generation and management
+// - **Zero-Knowledge Authentication**: Proof systems for identity verification
+// - **Secure Multi-Party Key Exchange**: Group key agreement protocols
+// - **Protocol Composition**: Framework for building complex protocol stacks
+// - **Byzantine Fault Tolerance**: Protocols resilient to malicious participants
+// - **Threshold Cryptography**: Secret sharing and reconstruction protocols
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;

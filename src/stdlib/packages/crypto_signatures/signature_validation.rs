@@ -1,7 +1,7 @@
-//! Production-ready Signature Validation
-//! 
-//! Comprehensive signature validation with algorithm-specific verification,
-//! certificate chain validation, policy enforcement, and security checks.
+// Production-ready Signature Validation
+// 
+// Comprehensive signature validation with algorithm-specific verification,
+// certificate chain validation, policy enforcement, and security checks.
 
 use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},

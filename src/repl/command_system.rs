@@ -1,9 +1,9 @@
 use crate::error::Error;
-//! Built-in Command System for CURSED REPL
-//! 
-//! Provides a comprehensive set of built-in commands for development
-//! productivity including help, file operations, build system integration,
-//! and debugging utilities.
+// Built-in Command System for CURSED REPL
+// 
+// Provides a comprehensive set of built-in commands for development
+// productivity including help, file operations, build system integration,
+// and debugging utilities.
 
 use std::collections::HashMap;
 use std::fs;

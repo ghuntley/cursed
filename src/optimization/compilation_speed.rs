@@ -1,7 +1,7 @@
-//! Compilation speed optimization module
-//!
-//! This module provides utilities for optimizing compilation speed through
-//! parallel processing, caching, and intelligent resource utilization.
+// Compilation speed optimization module
+//
+// This module provides utilities for optimizing compilation speed through
+// parallel processing, caching, and intelligent resource utilization.
 
 pub use super::metrics::{CompilationUnit, CompilationStatistics, SystemStatistics, ResourceStatistics};
 use std::time::{Duration, Instant};

@@ -1,18 +1,18 @@
-//! Real FrodoKEM Key Encapsulation Mechanism Implementation
-//! 
-//! This is a production-ready implementation of FrodoKEM, a lattice-based
-//! Key Encapsulation Mechanism based on the Learning With Errors (LWE) problem.
-//! 
-//! # Mathematical Foundation
-//! 
-//! FrodoKEM operates over the ring Z_q with matrices rather than polynomial rings,
-//! providing a more conservative security assumption than Module-LWE based schemes.
-//! 
-//! # Security Levels
-//! 
-//! - FrodoKEM-640-AES: NIST Level 1 (128-bit classical security)
-//! - FrodoKEM-976-AES: NIST Level 3 (192-bit classical security)
-//! - FrodoKEM-1344-AES: NIST Level 5 (256-bit classical security)
+// Real FrodoKEM Key Encapsulation Mechanism Implementation
+// 
+// This is a production-ready implementation of FrodoKEM, a lattice-based
+// Key Encapsulation Mechanism based on the Learning With Errors (LWE) problem.
+// 
+// # Mathematical Foundation
+// 
+// FrodoKEM operates over the ring Z_q with matrices rather than polynomial rings,
+// providing a more conservative security assumption than Module-LWE based schemes.
+// 
+// # Security Levels
+// 
+// - FrodoKEM-640-AES: NIST Level 1 (128-bit classical security)
+// - FrodoKEM-976-AES: NIST Level 3 (192-bit classical security)
+// - FrodoKEM-1344-AES: NIST Level 5 (256-bit classical security)
 
 use std::fmt;
 use rand::rngs::OsRng;

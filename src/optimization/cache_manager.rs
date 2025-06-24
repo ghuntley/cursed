@@ -1,4 +1,4 @@
-//! Compilation artifact caching for improved build performance
+// Compilation artifact caching for improved build performance
 
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::CompilationUnit;

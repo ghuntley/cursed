@@ -12,7 +12,7 @@
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    crate::types::*,
+    types::*,
     certificate_signing::{CertificateSigner, CertificateSigningRequest},
     key_management::{KeyManager, KeyPair},
     validation::ValidationResult,

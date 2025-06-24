@@ -1,8 +1,8 @@
-//! Advanced Parallel Compilation System
-//! 
-//! Provides intelligent parallel compilation with dependency-aware scheduling,
-//! CPU core optimization, memory-conscious task distribution, and compilation
-//! pipeline optimization for maximum developer productivity.
+// Advanced Parallel Compilation System
+// 
+// Provides intelligent parallel compilation with dependency-aware scheduling,
+// CPU core optimization, memory-conscious task distribution, and compilation
+// pipeline optimization for maximum developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics, TargetType};
 use crate::common::optimization_level::OptimizationLevel;

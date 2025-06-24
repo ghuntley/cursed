@@ -1,8 +1,9 @@
+// Channel buffering system for CURSED channels
+// 
+// Provides both buffered and unbuffered channel implementations with efficient
+// ring buffer storage and proper synchronization primitives.
+
 use crate::error::Error;
-//! Channel buffering system for CURSED channels
-//! 
-//! Provides both buffered and unbuffered channel implementations with efficient
-//! ring buffer storage and proper synchronization primitives.
 
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, Condvar, atomic::{AtomicUsize, Ordering}};

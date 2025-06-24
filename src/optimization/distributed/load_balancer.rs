@@ -1,7 +1,7 @@
-//! Load Balancer for Distributed Compilation
-//!
-//! Intelligent distribution of compilation jobs across worker nodes based on
-//! various strategies and real-time performance metrics.
+// Load Balancer for Distributed Compilation
+//
+// Intelligent distribution of compilation jobs across worker nodes based on
+// various strategies and real-time performance metrics.
 
 use crate::error::{CursedError, Result};
 

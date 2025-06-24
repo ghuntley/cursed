@@ -26,7 +26,7 @@ env_logger = "0.10"  # Logging implementation
 num-traits = "0.2"  # For numerical traits
 num_cpus = "1.16"    # For detecting CPU core count
 libc = "0.2"  # For C functions like strlen
-inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
+inkwell = { version = "0.4", features = ["llvm17-0"] }  # LLVM bindings
 
 # Basic serialization
 serde = { version = "1.0", features = ["derive"] }  
@@ -50,6 +50,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Basic error handling
 backtrace = "0.3.69"  # For stack trace capture
 rustc-demangle = "0.1"  # For demangling Rust symbols
+either = "=1.9.0"  # Pin to working version (1.15 has compilation issues)
 
 # Essential utilities
 walkdir = "2.4"  # Recursive directory traversal
@@ -62,7 +63,7 @@ regex = "1.10"  # Pattern matching (critical)
 sha3 = "0.10"  # SHA-3 cryptographic hashing (critical)
 hmac = "0.12"  # HMAC authentication codes (critical)
 base64 = "0.21"  # Base64 encoding/decoding (critical)
-# tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "io-util", "net", "time", "fs", "sync"] }  # Async runtime (critical)
+# tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "io-util", "net", "time", "fs", "sync"] }  # Async runtime (critical) - DISABLED due to E0753 errors
 
 # Additional missing dependencies found in compilation
 libloading = "0.8"  # Dynamic library loading
@@ -71,6 +72,13 @@ zstd = "0.13"  # ZSTD compression
 httpdate = "1.0"  # HTTP date formatting
 urlencoding = "2.1"  # URL encoding/decoding
 cbc = "0.1"  # CBC mode for block ciphers
+flate2 = "1.0"  # Compression library
+brotli = "3.3"  # Brotli compression
+rayon = "1.8"  # Data parallelism
+uuid = { version = "1.6", features = ["v4"] }  # UUID generation
+chacha20poly1305 = "0.10"  # ChaCha20-Poly1305 AEAD encryption
+rand_chacha = "0.3"  # ChaCha random number generator
+rand_distr = "0.4"  # Random distributions
 
 # DISABLED: Heavy dependencies that slow down compilation
 # Database drivers

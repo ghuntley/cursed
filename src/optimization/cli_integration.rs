@@ -1,4 +1,4 @@
-//! CLI integration for the CURSED optimization system
+// CLI integration for the CURSED optimization system
 
 use crate::error::{Result, CursedError};
 use crate::optimization::build_integration::{BuildOptimizer, create_build_optimizer_from_args, BuildOptimizationResult};

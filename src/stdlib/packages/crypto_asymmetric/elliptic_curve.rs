@@ -1,7 +1,7 @@
-//! Elliptic curve cryptography
-//! 
-//! Provides comprehensive elliptic curve operations for the CURSED stdlib.
-//! Supports ECDSA signing/verification and ECDH key exchange with P-256, P-384 curves.
+// Elliptic curve cryptography
+// 
+// Provides comprehensive elliptic curve operations for the CURSED stdlib.
+// Supports ECDSA signing/verification and ECDH key exchange with P-256, P-384 curves.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

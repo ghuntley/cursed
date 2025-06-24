@@ -1,7 +1,7 @@
-//! Real Compilation Profiler
-//! 
-//! Provides actual compilation profiling with real measurement and analysis
-//! capabilities for the CURSED compiler performance optimization system.
+// Real Compilation Profiler
+// 
+// Provides actual compilation profiling with real measurement and analysis
+// capabilities for the CURSED compiler performance optimization system.
 
 use crate::error::{Error, Result};
 use crate::common::optimization_level::OptimizationLevel;

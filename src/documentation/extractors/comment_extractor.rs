@@ -1,8 +1,8 @@
-//! Enhanced Comment Extractor for CURSED Documentation
-//! 
-//! This module provides comprehensive comment extraction from token streams,
-//! handling multi-line comments, inline documentation, JSDoc-style tags,
-//! code examples, and cross-references.
+// Enhanced Comment Extractor for CURSED Documentation
+// 
+// This module provides comprehensive comment extraction from token streams,
+// handling multi-line comments, inline documentation, JSDoc-style tags,
+// code examples, and cross-references.
 
 use crate::error::{Error, SourceLocation};
 use crate::documentation::comment_parser::{ParsedComment, DocTag, CodeExample};

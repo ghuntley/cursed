@@ -1,4 +1,4 @@
-//! Build system integration for CURSED optimization with Performance Integration
+// Build system integration for CURSED optimization with Performance Integration
 
 use crate::error::{Result, CursedError};
 use crate::optimization::{

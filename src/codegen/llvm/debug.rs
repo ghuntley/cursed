@@ -1,34 +1,34 @@
-//! Simplified LLVM Debug Information Module for CURSED
-//! 
-//! This module provides a simplified debug information system for CURSED programs
-//! compiled to LLVM IR. Debug functionality has been temporarily simplified due to
-//! LLVM API changes in newer versions.
-//!
-//! ## CHANGES MADE FOR COMPILATION COMPATIBILITY:
-//!
-//! 1. **LLVM Debug API Changes**: The original code used inkwell debug types that are
-//!    no longer available or have changed in newer LLVM versions:
-//!    - `DIBuilder`, `DICompileUnit`, `DIFile`, `DISubprogram`, etc.
-//!    - These types were causing compilation failures
-//!
-//! 2. **Simplified Implementation**: Replaced full DWARF generation with simplified
-//!    debug information tracking that maintains the same public interface
-//!
-//! 3. **Interface Preservation**: All public types and functions remain the same
-//!    so other modules that depend on this debug module continue to work
-//!
-//! 4. **Error Handling**: Fixed import path for `DwarfGenerator` (now using
-//!    `crate::debug::dwarf_gen::DwarfGenerator`)
-//!
-//! ## TODO FOR FUTURE UPDATES:
-//! - Update to use correct newer LLVM debug APIs when they become available
-//! - Re-enable full DWARF generation with proper type checking
-//! - Add back comprehensive debug metadata generation
-//!
-//! ## WHY THIS APPROACH:
-//! This simplified version ensures the codebase compiles while preserving the
-//! interface that other modules expect, allowing development to continue while
-//! the LLVM debug APIs are being updated.
+// Simplified LLVM Debug Information Module for CURSED
+// 
+// This module provides a simplified debug information system for CURSED programs
+// compiled to LLVM IR. Debug functionality has been temporarily simplified due to
+// LLVM API changes in newer versions.
+//
+// ## CHANGES MADE FOR COMPILATION COMPATIBILITY:
+//
+// 1. **LLVM Debug API Changes**: The original code used inkwell debug types that are
+//    no longer available or have changed in newer LLVM versions:
+//    - `DIBuilder`, `DICompileUnit`, `DIFile`, `DISubprogram`, etc.
+//    - These types were causing compilation failures
+//
+// 2. **Simplified Implementation**: Replaced full DWARF generation with simplified
+//    debug information tracking that maintains the same public interface
+//
+// 3. **Interface Preservation**: All public types and functions remain the same
+//    so other modules that depend on this debug module continue to work
+//
+// 4. **Error Handling**: Fixed import path for `DwarfGenerator` (now using
+//    `crate::debug::dwarf_gen::DwarfGenerator`)
+//
+// ## TODO FOR FUTURE UPDATES:
+// - Update to use correct newer LLVM debug APIs when they become available
+// - Re-enable full DWARF generation with proper type checking
+// - Add back comprehensive debug metadata generation
+//
+// ## WHY THIS APPROACH:
+// This simplified version ensures the codebase compiles while preserving the
+// interface that other modules expect, allowing development to continue while
+// the LLVM debug APIs are being updated.
 
 use crate::debug::{DebugConfig, DebugInfo, DebugInfoManager, SourceLocation};
 use crate::debug::dwarf_gen::DwarfGenerator;  // Fixed import path

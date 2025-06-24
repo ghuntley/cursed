@@ -1,7 +1,7 @@
-//! Comprehensive Distributed Compilation System for CURSED
-//!
-//! This module provides a production-ready distributed compilation infrastructure
-//! with intelligent work distribution, fault tolerance, and optimization.
+// Comprehensive Distributed Compilation System for CURSED
+//
+// This module provides a production-ready distributed compilation infrastructure
+// with intelligent work distribution, fault tolerance, and optimization.
 
 use crate::error::Result;
 use crate::error::Error;

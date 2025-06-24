@@ -1,7 +1,7 @@
-//! Documentation Server
-//! 
-//! Production web server for hosting CURSED documentation with version management,
-//! search functionality, and performance monitoring.
+// Documentation Server
+// 
+// Production web server for hosting CURSED documentation with version management,
+// search functionality, and performance monitoring.
 
 use crate::error::{CursedError, Result};
 use crate::docs::registry::DocumentationRegistry;

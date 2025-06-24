@@ -1,7 +1,7 @@
-//! # Network Security Features
-//! 
-//! This module provides security-related networking features including TLS support,
-//! certificate validation, security scanning, and encrypted communication utilities.
+// # Network Security Features
+// 
+// This module provides security-related networking features including TLS support,
+// certificate validation, security scanning, and encrypted communication utilities.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};

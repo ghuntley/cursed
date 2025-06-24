@@ -1,7 +1,7 @@
-//! Real Performance Analysis Infrastructure
-//! 
-//! Provides actual performance measurement, analysis, and optimization
-//! recommendations for the CURSED compiler.
+// Real Performance Analysis Infrastructure
+// 
+// Provides actual performance measurement, analysis, and optimization
+// recommendations for the CURSED compiler.
 
 use crate::error::{Error, Result};
 

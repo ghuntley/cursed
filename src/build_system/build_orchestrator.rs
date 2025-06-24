@@ -1,7 +1,7 @@
-//! Build Orchestrator
-//! 
-//! Coordinates the build process, manages dependencies, integrates with toolchain,
-//! and provides build caching and incremental compilation.
+// Build Orchestrator
+// 
+// Coordinates the build process, manages dependencies, integrates with toolchain,
+// and provides build caching and incremental compilation.
 
 use crate::build_system::{
     BuildConfig, BuildTarget, BuildProfile, IncrementalCache, DependencyResolver,

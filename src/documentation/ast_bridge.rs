@@ -1,8 +1,8 @@
-//! AST Bridge for Documentation System
-//! 
-//! This module provides unified conversion methods and traits to bridge type gaps
-//! between different AST representations used throughout the documentation system.
-//! It resolves E0308 type mismatches by providing safe conversion methods.
+// AST Bridge for Documentation System
+// 
+// This module provides unified conversion methods and traits to bridge type gaps
+// between different AST representations used throughout the documentation system.
+// It resolves E0308 type mismatches by providing safe conversion methods.
 
 use crate::ast::*;
 use crate::error::{Error, SourceLocation};

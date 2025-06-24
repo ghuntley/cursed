@@ -445,7 +445,7 @@ impl Router {
                 
                 // Return 404 Not Found
                 let mut response = ResponseContext::new();
-                response.set_status(StatusCode::NOT_FOUND);
+                response.set_status(StatusCode::NotFound);
                 response.set_body("Not Found".as_bytes().to_vec());
                 Ok(response)
             }

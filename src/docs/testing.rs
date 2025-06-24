@@ -1,7 +1,7 @@
-//! Documentation Testing Infrastructure
-//! 
-//! Automated validation and testing for CURSED documentation including
-//! link checking, example verification, and completeness analysis.
+// Documentation Testing Infrastructure
+// 
+// Automated validation and testing for CURSED documentation including
+// link checking, example verification, and completeness analysis.
 
 use crate::error::{CursedError, Result};
 use crate::docs::registry::{DocumentationRegistry, PackageDocumentation};

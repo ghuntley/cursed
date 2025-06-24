@@ -427,7 +427,7 @@ mod tests {
         let request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
         let response = handler.handle(request).await.unwrap();
         
-        assert_eq!(response.status, crate::stdlib::packages::web_vibez::status::StatusCode::Ok);
+        assert_eq!(response.status, crate::stdlib::packages::web_vibez::status::StatusCode::OK);
         assert_eq!(response.body_text().unwrap(), "Hello World");
     }
 

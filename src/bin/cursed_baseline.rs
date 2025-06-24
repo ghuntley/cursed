@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! CURSED Performance Baseline Management CLI Tool
-//! 
-//! Command-line interface for managing performance baselines, running regression
-//! analysis, and monitoring performance trends in the CURSED compiler.
+// CURSED Performance Baseline Management CLI Tool
+// 
+// Command-line interface for managing performance baselines, running regression
+// analysis, and monitoring performance trends in the CURSED compiler.
 
 use clap::{Parser, Subcommand};
 use cursed::optimization::{

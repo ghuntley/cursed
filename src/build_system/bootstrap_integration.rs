@@ -1,8 +1,8 @@
-//! Bootstrap Build System Integration
-//!
-//! This module provides comprehensive integration between the bootstrap verification
-//! system and the build orchestrator, enabling true self-hosting capability for
-//! the CURSED compiler.
+// Bootstrap Build System Integration
+//
+// This module provides comprehensive integration between the bootstrap verification
+// system and the build orchestrator, enabling true self-hosting capability for
+// the CURSED compiler.
 
 use crate::bootstrap::{
     SelfCompilationVerifier, VerificationConfig, VerificationResult,

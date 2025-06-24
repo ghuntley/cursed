@@ -1,8 +1,8 @@
-//! AST Node Support for Documentation Extractors
-//! 
-//! This module provides enhanced AST node structures that are needed
-//! for comprehensive documentation extraction but may not be fully
-//! implemented in the core AST.
+// AST Node Support for Documentation Extractors
+// 
+// This module provides enhanced AST node structures that are needed
+// for comprehensive documentation extraction but may not be fully
+// implemented in the core AST.
 
 use crate::error::SourceLocation;
 use serde::{Deserialize, Serialize};

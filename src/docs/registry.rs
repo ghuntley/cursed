@@ -1,7 +1,7 @@
-//! Documentation Registry
-//! 
-//! Central registry for all published CURSED documentation with package metadata,
-//! version tracking, and cross-reference resolution.
+// Documentation Registry
+// 
+// Central registry for all published CURSED documentation with package metadata,
+// version tracking, and cross-reference resolution.
 
 use crate::error::{CursedError, Result};
 use crate::docs::publisher::PublicationMetadata;

@@ -1,14 +1,14 @@
-//! Certificate Signing Request (CSR) Generator - Production Implementation
-//! 
-//! Complete CSR generation with real signatures including:
-//! - PKCS#10 CSR generation
-//! - Multiple signature algorithms
-//! - Extensions and attributes
-//! - Subject alternative names
+// Certificate Signing Request (CSR) Generator - Production Implementation
+// 
+// Complete CSR generation with real signatures including:
+// - PKCS#10 CSR generation
+// - Multiple signature algorithms
+// - Extensions and attributes
+// - Subject alternative names
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    crate::types::*,
+    types::*,
 };
 use std::collections::HashMap;
 use std::time::SystemTime;

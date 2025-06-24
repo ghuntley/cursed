@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! SlayPipeline implementation for command pipeline execution
+// SlayPipeline implementation for command pipeline execution
 
 use std::io::{self, Read, Write};
 use std::process::{Command, Stdio};

@@ -1,4 +1,4 @@
-//! LLVM pass pipeline management and execution
+// LLVM pass pipeline management and execution
 
 use crate::error::{Result, CursedError};
 use crate::optimization::{OptimizationConfig};

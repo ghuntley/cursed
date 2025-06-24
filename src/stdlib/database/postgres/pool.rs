@@ -320,7 +320,7 @@ impl PooledPostgresConnection {
     }
 
     /// Execute query with parameters
-    pub async fn query(&self, query: &str, params: &[&(dyn tokio_postgres::crate::types::ToSql + Sync)]) -> PostgresResult<Vec<tokio_postgres::Row>> {
+    pub async fn query(&self, query: &str, params: &[&(dyn tokio_postgres::types::ToSql + Sync)]) -> PostgresResult<Vec<tokio_postgres::Row>> {
         self.connection
             .query(query, params)
             .await

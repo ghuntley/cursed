@@ -1,7 +1,7 @@
-//! Post-Quantum Cryptographic Algorithm Implementations
-//! 
-//! This module contains implementations of various post-quantum cryptographic algorithms
-//! organized by cryptographic family.
+// Post-Quantum Cryptographic Algorithm Implementations
+// 
+// This module contains implementations of various post-quantum cryptographic algorithms
+// organized by cryptographic family.
 
 // Lattice-based algorithms
 pub mod kyber;

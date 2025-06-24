@@ -1,7 +1,7 @@
-//! Package Integration with Build System
-//!
-//! Integrates the package manager with the CURSED build system and compilation pipeline.
-//! Handles package resolution, import resolution, and makes packages available during compilation.
+// Package Integration with Build System
+//
+// Integrates the package manager with the CURSED build system and compilation pipeline.
+// Handles package resolution, import resolution, and makes packages available during compilation.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

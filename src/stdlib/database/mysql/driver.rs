@@ -21,7 +21,7 @@ use crate::stdlib::database::{
 use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
 use super::connection::MySqlConnection;
-use super::crate::types::{parse_connection_string, MySqlConnectionInfo};
+use super::types::{parse_connection_string, MySqlConnectionInfo};
 
 /// fr fr MySQL driver configuration
 #[derive(Debug, Clone)]
@@ -227,7 +227,7 @@ impl Clone for MySqlDriver {
 impl Driver for MySqlDriver {
     fn open(&self, data_source_name: &str) -> Result<(), Error> {
         // Validate connection string
-        super::crate::types::validate_connection_string(data_source_name)
+        super::types::validate_connection_string(data_source_name)
             .map_err(|e| e.to_database_error())?;
 
         // Create connection pool
@@ -290,7 +290,7 @@ pub fn parse_mysql_dsn(dsn: &str) -> MySqlResult<MySqlConnectionInfo> {
 
 /// Validate MySQL connection string format
 pub fn validate_mysql_dsn(dsn: &str) -> MySqlResult<()> {
-    super::crate::types::validate_connection_string(dsn)
+    super::types::validate_connection_string(dsn)
 }
 
 /// Build MySQL connection options from DSN and configuration

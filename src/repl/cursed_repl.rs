@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Main CURSED REPL Implementation
-//! 
-//! Provides the core interactive Read-Eval-Print Loop functionality
-//! with comprehensive features for development productivity.
+// Main CURSED REPL Implementation
+// 
+// Provides the core interactive Read-Eval-Print Loop functionality
+// with comprehensive features for development productivity.
 
 use std::io::{self, Write};
 use std::path::PathBuf;

@@ -1,7 +1,7 @@
-//! Documentation Generator
-//! 
-//! Core documentation generation functionality for the CURSED programming language.
-//! Supports multiple output formats and comprehensive documentation extraction.
+// Documentation Generator
+// 
+// Core documentation generation functionality for the CURSED programming language.
+// Supports multiple output formats and comprehensive documentation extraction.
 
 use crate::ast::*;
 use crate::error::{Error, SourceLocation};
@@ -1478,7 +1478,7 @@ impl DocumentationExtractor {
     }
 
     /// Extract generic parameters from type parameter list
-    fn extract_generic_parameters(&self, type_params: &[crate::ast::crate::types::TypeParameter]) -> Result<(), Error> {
+    fn extract_generic_parameters(&self, type_params: &[crate::ast::types::TypeParameter]) -> Result<(), Error> {
         use crate::ast::traits::Node;
         
         let mut generic_docs = Vec::new();

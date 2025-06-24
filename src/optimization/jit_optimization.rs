@@ -1,4 +1,4 @@
-//! JIT compilation optimizations for runtime performance
+// JIT compilation optimizations for runtime performance
 
 use crate::error::{Result, CursedError};
 

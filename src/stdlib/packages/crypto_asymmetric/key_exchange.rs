@@ -1,7 +1,7 @@
-//! Key exchange protocols
-//! 
-//! Provides comprehensive key exchange protocols for the CURSED stdlib.
-//! Supports Diffie-Hellman, X25519, and X448 key exchange mechanisms.
+// Key exchange protocols
+// 
+// Provides comprehensive key exchange protocols for the CURSED stdlib.
+// Supports Diffie-Hellman, X25519, and X448 key exchange mechanisms.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

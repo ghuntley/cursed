@@ -1,17 +1,17 @@
-//! Hybrid Cryptography for Post-Quantum Transition
-//! 
-//! This module provides hybrid implementations that combine classical and post-quantum
-//! cryptography for secure migration during the post-quantum transition period.
-//! 
-//! # Features
-//! 
-//! - Real cryptographic implementations for both classical and PQC algorithms
-//! - Production-ready key generation using secure random number generation
-//! - Multiple key combination strategies with proper KDF/HKDF
-//! - Performance optimization and caching
-//! - Comprehensive security audit logging
-//! - Thread-safe operations for concurrent use
-//! - Integration with existing CURSED crypto infrastructure
+// Hybrid Cryptography for Post-Quantum Transition
+// 
+// This module provides hybrid implementations that combine classical and post-quantum
+// cryptography for secure migration during the post-quantum transition period.
+// 
+// # Features
+// 
+// - Real cryptographic implementations for both classical and PQC algorithms
+// - Production-ready key generation using secure random number generation
+// - Multiple key combination strategies with proper KDF/HKDF
+// - Performance optimization and caching
+// - Comprehensive security audit logging
+// - Thread-safe operations for concurrent use
+// - Integration with existing CURSED crypto infrastructure
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};

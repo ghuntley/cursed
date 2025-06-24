@@ -1,11 +1,11 @@
 
-//! Enhanced Diagnostics provider for CURSED language server
-//! 
-//! Provides real-time syntax errors, type errors, warnings, and linting diagnostics
-//! using CURSED's actual compiler infrastructure
+// Enhanced Diagnostics provider for CURSED language server
+// 
+// Provides real-time syntax errors, type errors, warnings, and linting diagnostics
+// using CURSED's actual compiler infrastructure
 
 use std::collections::HashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, error, instrument, warn, info};
 
 use crate::lexer::{Lexer, Token, TokenType};
@@ -893,42 +893,42 @@ impl DiagnosticsProvider {
     }
 
     /// Check type errors in content
-    pub fn check_type_errors(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_type_errors(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_type_errors_impl(content)
     }
 
     /// Check variable usage
-    pub fn check_variable_usage(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_variable_usage(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_variable_usage_impl(content)
     }
 
     /// Check function calls
-    pub fn check_function_calls(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_function_calls(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_function_calls_impl(content)
     }
 
     /// Check imports
-    pub fn check_imports(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_imports(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_imports_impl(content)
     }
 
     /// Check style issues
-    pub fn check_style_issues(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_style_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_style_issues_impl(content)
     }
 
     /// Check best practices
-    pub fn check_best_practices(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_best_practices(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_best_practices_impl(content)
     }
 
     /// Check performance issues
-    pub fn check_performance_issues(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_performance_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_performance_issues_impl(content)
     }
 
     /// Check security issues
-    pub fn check_security_issues(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {
+    pub fn check_security_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_security_issues_impl(content)
     }
 }

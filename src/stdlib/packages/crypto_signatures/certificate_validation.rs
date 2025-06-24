@@ -1,7 +1,7 @@
-//! Production-ready Certificate Validation for Digital Signatures
-//! 
-//! Comprehensive certificate-based signature validation with X.509 certificate
-//! chain verification, CRL checking, OCSP validation, and policy enforcement.
+// Production-ready Certificate Validation for Digital Signatures
+// 
+// Comprehensive certificate-based signature validation with X.509 certificate
+// chain verification, CRL checking, OCSP validation, and policy enforcement.
 
 use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},

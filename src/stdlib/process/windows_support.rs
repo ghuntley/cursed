@@ -228,7 +228,7 @@ impl WindowsJobObject {
             SetInformationJobObject(
                 self.job_handle,
                 winapi::um::winnt::JobObjectExtendedLimitInformation,
-                &limit_info as *const _ as *mut winapi::ccrate::types::c_void,
+                &limit_info as *const _ as *mut winapi::ctypes::c_void,
                 mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
             )
         };

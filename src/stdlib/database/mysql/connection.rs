@@ -16,7 +16,7 @@ use crate::stdlib::database::{
 };
 use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
-use super::crate::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
+use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
 use super::statement::MySqlStatement;
 use super::transaction::MySqlTransaction;
@@ -145,8 +145,8 @@ impl MySqlConnection {
         let server_version = version_result.unwrap_or_else(|| "Unknown".to_string());
 
         // Parse DSN for metadata
-        let conn_info = super::crate::types::parse_connection_string(&self.dsn)
-            .unwrap_or_else(|_| super::crate::types::MySqlConnectionInfo {
+        let conn_info = super::types::parse_connection_string(&self.dsn)
+            .unwrap_or_else(|_| super::types::MySqlConnectionInfo {
                 host: "localhost".to_string(),
                 port: 3306,
                 user: "unknown".to_string(),

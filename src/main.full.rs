@@ -1,10 +1,10 @@
 use crate::error::Error;
 #!/usr/bin/env rust
-//! CURSED Programming Language CLI
-//! 
-//! Main command-line interface for the CURSED programming language.
-//! Provides access to compilation, execution, package management, 
-//! documentation generation, and other development tools.
+// CURSED Programming Language CLI
+// 
+// Main command-line interface for the CURSED programming language.
+// Provides access to compilation, execution, package management, 
+// documentation generation, and other development tools.
 
 use clap::{Arg, ArgAction, Command};
 use std::env;

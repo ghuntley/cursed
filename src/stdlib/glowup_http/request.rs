@@ -1,4 +1,4 @@
-//! HTTP request types and utilities for GlowUpHTTP
+// HTTP request types and utilities for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use std::collections::HashMap;

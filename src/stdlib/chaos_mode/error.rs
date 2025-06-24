@@ -102,8 +102,8 @@ impl From<std::io::Error> for ChaosError {
     }
 }
 
-impl From<crate::error::crate::types::RuntimeError> for ChaosError {
-    fn from(err: crate::error::crate::types::RuntimeError) -> Self {
+impl From<crate::error::types::RuntimeError> for ChaosError {
+    fn from(err: crate::error::types::RuntimeError) -> Self {
         ChaosError::RuntimeError(err.to_string())
     }
 }

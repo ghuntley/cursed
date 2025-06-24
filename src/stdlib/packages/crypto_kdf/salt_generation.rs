@@ -1,6 +1,6 @@
-//! Salt Generation
-//! 
-//! Salt Generation implementation for CURSED crypto.
+// Salt Generation
+// 
+// Salt Generation implementation for CURSED crypto.
 
 /// Salt Generation implementation
 pub struct SaltGeneration;

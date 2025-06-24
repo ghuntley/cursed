@@ -1,7 +1,7 @@
 
-//! CLI interface for CURSED comprehensive optimization system
-//! 
-//! Provides command-line access to all optimization features.
+// CLI interface for CURSED comprehensive optimization system
+// 
+// Provides command-line access to all optimization features.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;

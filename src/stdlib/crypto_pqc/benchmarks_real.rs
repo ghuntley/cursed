@@ -1,7 +1,7 @@
-//! Real Performance Benchmarking for Post-Quantum Cryptography
-//! 
-//! This module provides comprehensive performance analysis and benchmarking
-//! capabilities for all PQC algorithms with real-world performance metrics.
+// Real Performance Benchmarking for Post-Quantum Cryptography
+// 
+// This module provides comprehensive performance analysis and benchmarking
+// capabilities for all PQC algorithms with real-world performance metrics.
 
 use std::time::{Instant, Duration};
 use std::collections::HashMap;

@@ -11,7 +11,7 @@ use tracing::{debug, trace, info, instrument};
 
 use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, VectorValue},
-    crate::types::{BasicType, BasicTypeEnum, VectorType, IntType, FloatType},
+    types::{BasicType, BasicTypeEnum, VectorType, IntType, FloatType},
     basic_block::BasicBlock,
     builder::Builder,
     context::Context,

@@ -1,30 +1,30 @@
-//! Production-Ready Cryptographic Protocols Module for CURSED
-//! 
-//! This module provides enterprise-grade implementations of cryptographic protocols
-//! including key exchange, authenticated encryption, secure channels, and multi-party
-//! computation protocols. All implementations follow current security best practices
-//! and provide real cryptographic functionality suitable for production use.
-//! 
-//! # Security Features
-//! 
-//! - **Real Key Exchange**: X25519, ECDH, and traditional Diffie-Hellman
-//! - **Authenticated Key Exchange**: ECDHE with signature-based authentication
-//! - **Secure Channels**: End-to-end encrypted communication with forward secrecy
-//! - **Protocol Frameworks**: TLS-like handshaking with extensible message formats
-//! - **Challenge-Response Authentication**: Multiple rounds with replay protection
-//! - **Multi-Party Computation**: Secure key generation and distributed protocols
-//! - **Perfect Forward Secrecy**: Automatic key rotation and ephemeral key management
-//! - **Quantum-Safe Preparation**: Hybrid classical/post-quantum implementations
-//! 
-//! # Protocol Security Properties
-//! 
-//! All protocols in this module provide:
-//! - **Confidentiality**: Strong encryption protecting message content
-//! - **Authenticity**: Digital signatures ensuring message origin
-//! - **Integrity**: Authenticated encryption preventing tampering
-//! - **Forward Secrecy**: Past communications remain secure even if keys are compromised
-//! - **Replay Protection**: Sequence numbers and nonces prevent message replay
-//! - **Side-Channel Resistance**: Constant-time operations where applicable
+// Production-Ready Cryptographic Protocols Module for CURSED
+// 
+// This module provides enterprise-grade implementations of cryptographic protocols
+// including key exchange, authenticated encryption, secure channels, and multi-party
+// computation protocols. All implementations follow current security best practices
+// and provide real cryptographic functionality suitable for production use.
+// 
+// # Security Features
+// 
+// - **Real Key Exchange**: X25519, ECDH, and traditional Diffie-Hellman
+// - **Authenticated Key Exchange**: ECDHE with signature-based authentication
+// - **Secure Channels**: End-to-end encrypted communication with forward secrecy
+// - **Protocol Frameworks**: TLS-like handshaking with extensible message formats
+// - **Challenge-Response Authentication**: Multiple rounds with replay protection
+// - **Multi-Party Computation**: Secure key generation and distributed protocols
+// - **Perfect Forward Secrecy**: Automatic key rotation and ephemeral key management
+// - **Quantum-Safe Preparation**: Hybrid classical/post-quantum implementations
+// 
+// # Protocol Security Properties
+// 
+// All protocols in this module provide:
+// - **Confidentiality**: Strong encryption protecting message content
+// - **Authenticity**: Digital signatures ensuring message origin
+// - **Integrity**: Authenticated encryption preventing tampering
+// - **Forward Secrecy**: Past communications remain secure even if keys are compromised
+// - **Replay Protection**: Sequence numbers and nonces prevent message replay
+// - **Side-Channel Resistance**: Constant-time operations where applicable
 
 use std::collections::HashMap;
 use std::fmt;

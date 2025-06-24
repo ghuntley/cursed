@@ -23,7 +23,7 @@ use crate::codegen::llvm::symbol_table::{SymbolTable, Symbol};
 use crate::optimization::llvm_passes::{LlvmPassManager, LtoManager, PgoManager};
 use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, FloatValue},
-    crate::types::{BasicTypeEnum, BasicType},
+    types::{BasicTypeEnum, BasicType},
     builder::Builder,
     module::Module,
     context::Context,

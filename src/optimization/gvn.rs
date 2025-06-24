@@ -19,7 +19,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValueEnum, IntValue, FloatValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::BasicType,
+    types::BasicType,
 };
 
 /// Global Value Numbering optimizer

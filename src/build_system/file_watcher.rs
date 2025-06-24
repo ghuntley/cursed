@@ -1,52 +1,52 @@
 use crate::error::Error;
-//! # CURSED File Watching System
-//!
-//! This module provides comprehensive file system monitoring capabilities for the CURSED
-//! programming language development environment. It enables real-time file change detection
-//! for automated build workflows, test execution, and development productivity.
-//!
-//! ## Features
-//!
-//! - **Cross-platform support**: Works on Linux, macOS, and Windows
-//! - **Intelligent debouncing**: Prevents rapid-fire events from overwhelming the system
-//! - **Pattern matching**: Selective watching with glob-style patterns
-//! - **Event batching**: Groups related events for efficient processing
-//! - **Thread safety**: Safe concurrent access to watcher state
-//! - **Performance monitoring**: Statistics and metrics for optimization
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! use cursed::build_system::{FileWatcher, WatchConfig};
-//! use std::time::Duration;
-//!
-//! // Create a file watcher configuration
-//! let config = WatchConfig {
-//!     watch_patterns: vec!["*.csd".to_string(), "*.toml".to_string()],
-//!     ignore_patterns: vec!["target/*".to_string()],
-//!     debounce_duration: Duration::from_millis(500),
-//!     ..Default::default()
-//! };
-//!
-//! // Create and configure the watcher
-//! let mut watcher = FileWatcher::new(config)?;
-//! watcher.set_event_callback(|event| {
-//!     println!("File changed: {:?}", event.path());
-//! })?;
-//!
-//! // Start watching
-//! watcher.start_watching(&["./src", "./examples"])?;
-//! ```
-//!
-//! ## Performance Considerations
-//!
-//! - Use specific patterns to reduce the number of monitored files
-//! - Configure appropriate debounce duration based on project size
-//! - Consider batch processing for high-frequency changes
-//! - Monitor memory usage for very large projects
-//!
-//! See the [file watching documentation](../../docs/file_watching.md) for comprehensive
-//! configuration examples and best practices.
+// # CURSED File Watching System
+//
+// This module provides comprehensive file system monitoring capabilities for the CURSED
+// programming language development environment. It enables real-time file change detection
+// for automated build workflows, test execution, and development productivity.
+//
+// ## Features
+//
+// - **Cross-platform support**: Works on Linux, macOS, and Windows
+// - **Intelligent debouncing**: Prevents rapid-fire events from overwhelming the system
+// - **Pattern matching**: Selective watching with glob-style patterns
+// - **Event batching**: Groups related events for efficient processing
+// - **Thread safety**: Safe concurrent access to watcher state
+// - **Performance monitoring**: Statistics and metrics for optimization
+//
+// ## Example Usage
+//
+// ```rust
+// use cursed::build_system::{FileWatcher, WatchConfig};
+// use std::time::Duration;
+//
+// // Create a file watcher configuration
+// let config = WatchConfig {
+//     watch_patterns: vec!["*.csd".to_string(), "*.toml".to_string()],
+//     ignore_patterns: vec!["target/*".to_string()],
+//     debounce_duration: Duration::from_millis(500),
+//     ..Default::default()
+// };
+//
+// // Create and configure the watcher
+// let mut watcher = FileWatcher::new(config)?;
+// watcher.set_event_callback(|event| {
+//     println!("File changed: {:?}", event.path());
+// })?;
+//
+// // Start watching
+// watcher.start_watching(&["./src", "./examples"])?;
+// ```
+//
+// ## Performance Considerations
+//
+// - Use specific patterns to reduce the number of monitored files
+// - Configure appropriate debounce duration based on project size
+// - Consider batch processing for high-frequency changes
+// - Monitor memory usage for very large projects
+//
+// See the [file watching documentation](../../docs/file_watching.md) for comprehensive
+// configuration examples and best practices.
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

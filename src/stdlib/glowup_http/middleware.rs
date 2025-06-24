@@ -49,8 +49,8 @@ pub fn cors_middleware(next: HandlerFunc) -> HandlerFunc {
         
         // Handle preflight requests
         if r.method == crate::stdlib::glowup_http::request::Method::OPTIONS {
-            use crate::stdlib::glowup_http::response::StatusCode;
-            w.write_header(StatusCode::NO_CONTENT);
+            use crate::web::StatusCode;
+            w.write_header(StatusCode::NoContent);
             return Ok(());
         }
         
@@ -99,8 +99,8 @@ pub fn jwt_auth_middleware(secret: String) -> MiddlewareFunc {
             }
             
             // No valid token - return 401
-            use crate::stdlib::glowup_http::response::StatusCode;
-            w.write_header(StatusCode::UNAUTHORIZED);
+            use crate::web::StatusCode;
+            w.write_header(StatusCode::Unauthorized);
             w.write(b"Unauthorized")?;
             Ok(())
         })
@@ -155,8 +155,8 @@ pub fn recovery_middleware(next: HandlerFunc) -> HandlerFunc {
                 // Log the error and return 500
                 tracing::error!("Handler error: {:?}", e);
                 
-                use crate::stdlib::glowup_http::response::StatusCode;
-                w.write_header(StatusCode::INTERNAL_SERVER_ERROR);
+                use crate::web::StatusCode;
+                w.write_header(StatusCode::InternalServerError);
                 w.write(b"Internal Server Error")?;
                 Ok(())
             }
@@ -177,7 +177,7 @@ mod tests {
     use super::*;
     use crate::stdlib::glowup_http::handler::handler_func;
     use crate::stdlib::glowup_http::request::Method;
-    use crate::stdlib::glowup_http::response::StatusCode;
+    use crate::web::StatusCode;
 
     #[test]
     fn test_logging_middleware() {
@@ -226,7 +226,7 @@ mod tests {
         
         middleware_handler(&response, &request).unwrap();
         
-        assert_eq!(response.get_status(), Some(StatusCode::NO_CONTENT));
+        assert_eq!(response.get_status(), Some(StatusCode::NoContent));
         assert_eq!(response.get_body(), b""); // Should be empty for OPTIONS
     }
 
@@ -245,7 +245,7 @@ mod tests {
         
         middleware_handler(&response, &request).unwrap();
         
-        assert_eq!(response.get_status(), Some(StatusCode::UNAUTHORIZED));
+        assert_eq!(response.get_status(), Some(StatusCode::Unauthorized));
         assert_eq!(response.get_body(), b"Unauthorized");
     }
 

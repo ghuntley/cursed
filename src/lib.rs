@@ -17,6 +17,15 @@ pub mod common;
 pub mod web;
 // pub mod tokio;  // Temporarily disabled due to dependency conflicts
 pub mod core;
+pub mod profiling;
+pub mod object;
+pub mod optimization;
+pub mod type_system;
+
+// Crypto module
+pub mod crypto {
+    pub use crate::stdlib::crypto::*;
+}
 
 // Standard library module
 pub mod stdlib;
@@ -24,40 +33,14 @@ pub mod stdlib;
 // Types module for Result, Option, and error patterns
 pub mod types;
 
-// Basic debug module for compatibility
-pub mod debug {
-    pub use crate::error::SourceLocation;
-    
-    #[derive(Debug, Clone)]
-    pub struct DebugConfig {
-        pub enabled: bool,
-    }
-    
-    impl Default for DebugConfig {
-        fn default() -> Self {
-            Self { enabled: false }
-        }
-    }
-}
+// Debug module
+pub mod debug;
 
-// Minimal memory management
-pub mod memory {
-    pub mod gc;
-    // Disable heavy GC features
-    // pub mod goroutine_gc;
-    // pub mod enhanced_gc;
-}
+// Memory management
+pub mod memory;
 
-// Basic runtime - no advanced features
-pub mod runtime {
-    pub mod stack;
-    pub mod value;
-    // Disable heavy runtime features
-    // pub mod goroutine;
-    // pub mod debug_runtime;
-    // pub mod process;
-    // pub mod panic_system;
-}
+// Runtime system
+pub mod runtime;
 
 // Basic execution engine
 pub mod execution;

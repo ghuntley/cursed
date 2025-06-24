@@ -1,7 +1,7 @@
-//! Enhanced Benchmarking System for CURSED Compiler
-//! 
-//! Comprehensive benchmarking infrastructure with statistical analysis,
-//! regression detection, and performance trend tracking.
+// Enhanced Benchmarking System for CURSED Compiler
+// 
+// Comprehensive benchmarking infrastructure with statistical analysis,
+// regression detection, and performance trend tracking.
 
 use crate::error::{Error, Result};
 use crate::optimization::{OptimizationLevel, OptimizationConfig};

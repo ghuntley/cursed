@@ -49,7 +49,7 @@ pub trait Middleware: Send + Sync {
         error: &MiddlewareError,
     ) -> Result<(), Error> {
         // Default implementation sets error response
-        response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
+        response.set_status(StatusCode::InternalServerError);
         response.set_text(&format!("Middleware error: {}", error));
         Ok(())
     }
@@ -139,12 +139,12 @@ impl Middleware for AuthMiddleware {
     ) -> MiddlewareResult {
         match error {
             MiddlewareError::Authentication(_) => {
-                response.set_status(StatusCode::UNAUTHORIZED);
+                response.set_status(StatusCode::Unauthorized);
                 response.set_header("WWW-Authenticate", "Basic");
                 response.set_text("Authentication required");
             }
             _ => {
-                response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
+                response.set_status(StatusCode::InternalServerError);
                 response.set_text("Internal server error");
             }
         }
@@ -406,7 +406,7 @@ impl Middleware for CorsMiddleware {
         // Handle preflight OPTIONS request
         if context.method == HttpMethod::OPTIONS {
             self.set_cors_headers(context, response);
-            response.set_status(StatusCode::NO_CONTENT);
+            response.set_status(StatusCode::NoContent);
             response.mark_sent(); // Skip further processing
         }
 
@@ -561,7 +561,7 @@ impl Middleware for RateLimitMiddleware {
             let reset_time = request_count.window_start + self.window_duration;
             let retry_after = reset_time.duration_since(now).as_secs();
             
-            response.set_status(StatusCode::TOO_MANY_REQUESTS);
+            response.set_status(StatusCode::TooManyRequests);
             response.set_header("Retry-After", &retry_after.to_string());
             response.set_header("X-RateLimit-Limit", &self.requests_per_window.to_string());
             response.set_header("X-RateLimit-Remaining", "0");
@@ -782,7 +782,7 @@ impl MiddlewareChain {
                 Ok(_) => {}
                 Err(e) => {
                     error!(error = %e, "Handler error");
-                    response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
+                    response.set_status(StatusCode::InternalServerError);
                     response.set_text(&format!("Handler error: {}", e));
                 }
             }
@@ -836,7 +836,7 @@ mod tests {
         let result = middleware.before_request(&mut context, &mut response);
         assert!(result.is_ok());
         assert!(response.is_sent()); // Preflight should be handled
-        assert_eq!(response.status, StatusCode::NO_CONTENT);
+        assert_eq!(response.status, StatusCode::NoContent);
     }
 
     #[test]
@@ -859,7 +859,7 @@ mod tests {
         let mut response = ResponseContext::new();
         let result = middleware.before_request(&mut context, &mut response);
         assert!(result.is_err());
-        assert_eq!(response.status, StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(response.status, StatusCode::TooManyRequests);
     }
 
     #[test]

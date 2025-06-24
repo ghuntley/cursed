@@ -22,7 +22,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, FloatValue},
-    crate::types::{BasicTypeEnum, BasicType},
+    types::{BasicTypeEnum, BasicType},
     AddressSpace,
     IntPredicate, FloatPredicate,
 };

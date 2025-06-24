@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! CURSED Post-Quantum Cryptography Hybrid Tool
-//! 
-//! A command-line tool for managing hybrid cryptographic operations
-//! that combine classical and post-quantum algorithms.
+// CURSED Post-Quantum Cryptography Hybrid Tool
+// 
+// A command-line tool for managing hybrid cryptographic operations
+// that combine classical and post-quantum algorithms.
 
 use std::fs;
 use std::path::PathBuf;

@@ -1,8 +1,8 @@
 
-//! Smart Dependency Analysis for Optimized Compilation
-//! 
-//! Provides intelligent dependency resolution that minimizes compilation work
-//! through advanced graph analysis and parallel execution optimization.
+// Smart Dependency Analysis for Optimized Compilation
+// 
+// Provides intelligent dependency resolution that minimizes compilation work
+// through advanced graph analysis and parallel execution optimization.
 
 use std::collections::{HashMap, HashSet, VecDeque, BTreeMap};
 use std::sync::{Arc, Mutex, RwLock};

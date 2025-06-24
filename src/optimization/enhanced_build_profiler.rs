@@ -1,8 +1,8 @@
-//! Enhanced Build Profiler with Real Resource Monitoring
-//! 
-//! This module provides real-time build performance profiling with actual
-//! system resource monitoring, memory tracking, CPU usage analysis, and
-//! comprehensive performance reporting.
+// Enhanced Build Profiler with Real Resource Monitoring
+// 
+// This module provides real-time build performance profiling with actual
+// system resource monitoring, memory tracking, CPU usage analysis, and
+// comprehensive performance reporting.
 
 use crate::error::{Error, Result};
 use crate::optimization::{OptimizationConfig, CompilationUnit};

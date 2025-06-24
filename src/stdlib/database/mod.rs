@@ -38,6 +38,10 @@ pub use core::{
 };
 pub use driver::{Driver, DriverConn, DriverStmt, DriverTx, DriverRegistry};
 pub use pool::{ConnectionPool, PoolConfig, PoolStats};
+pub use llvm_integration::{
+    DatabaseLLVMIntegration, DatabaseLLVMIntegrationImpl, DatabaseFunction, ReturnType,
+    register_database_functions
+};
 pub use query::{QueryExecutor, QueryContext, QueryResult};
 pub use transaction::{Tx, TransactionManager};
 pub use migration::{Migration, Migrator, MigrationStatus};
@@ -45,7 +49,6 @@ pub use error::{DatabaseError, DatabaseErrorKind, SqlStateCode};
 pub use builder::{
     QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder
 };
-pub use llvm_integration::{DatabaseLLVMIntegration, register_database_functions};
 
 // Re-export ORM types for easy access
 pub use orm::{
@@ -69,10 +72,10 @@ pub use postgres::{
 };
 
 // Re-export MySQL driver from db_sql package
-pub use crate::stdlib::packages::db_sql::mysql::{
-    MySqlDriver, MySqlConnection, MySqlPreparedStatement as MySqlStatement, 
-    MySqlTransactionImpl as MySqlTransaction, MySqlError, MySqlResultSet
-};
+// pub use crate::stdlib::packages::db_sql::mysql::{
+//     MySqlDriver, MySqlConnection, MySqlPreparedStatement as MySqlStatement, 
+//     MySqlTransactionImpl as MySqlTransaction, MySqlError, MySqlResultSet
+// };
 
 /// Transaction isolation level (alias for compatibility)
 pub type IsolationLevel = SqlIsolationLevel;

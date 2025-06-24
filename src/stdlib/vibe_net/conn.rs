@@ -1,7 +1,7 @@
-//! Connection types and traits for VibeNet
-//! 
-//! This module provides comprehensive connection handling including TCP, UDP,
-//! and Unix connections with proper I/O operations, deadlines, and configuration.
+// Connection types and traits for VibeNet
+// 
+// This module provides comprehensive connection handling including TCP, UDP,
+// and Unix connections with proper I/O operations, deadlines, and configuration.
 
 use std::io::{Read, Write};
 use std::net::{TcpStream, UdpSocket, Shutdown};
@@ -10,7 +10,7 @@ use std::time::{Duration, SystemTime};
 use std::sync::{Arc, Mutex};
 use crate::error::CursedError;
 use super::addr::{AddrVibe, TCPAddrVibe, UDPAddrVibe, UnixAddrVibe};
-use super::error::{NetError, connection_failed_error, timeout_error};
+use super::error::{NetError as VibeNetError, connection_failed_error, timeout_error};
 use super::NetResult;
 use crate::error::Error;
 pub type NetError = crate::error::Error;
@@ -162,19 +162,19 @@ impl ConnVibe for TCPConnVibe {
     fn read(&mut self, buf: &mut [u8]) -> NetResult<usize> {
         let mut stream = self.stream.lock().unwrap();
         stream.read(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn write(&mut self, buf: &[u8]) -> NetResult<usize> {
         let mut stream = self.stream.lock().unwrap();
         stream.write(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn close(&mut self) -> NetResult<()> {
         let stream = self.stream.lock().unwrap();
         stream.shutdown(Shutdown::Both)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn local_addr(&self) -> NetResult<Box<dyn AddrVibe>> {
@@ -191,9 +191,9 @@ impl ConnVibe for TCPConnVibe {
         
         let stream = self.stream.lock().unwrap();
         stream.set_read_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         stream.set_write_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok(())
     }
     
@@ -203,7 +203,7 @@ impl ConnVibe for TCPConnVibe {
         
         let stream = self.stream.lock().unwrap();
         stream.set_read_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok(())
     }
     
@@ -213,7 +213,7 @@ impl ConnVibe for TCPConnVibe {
         
         let stream = self.stream.lock().unwrap();
         stream.set_write_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok(())
     }
 }
@@ -307,7 +307,7 @@ impl UDPConnVibe {
     pub fn read_from_udp(&mut self, buf: &mut [u8]) -> NetResult<(usize, UDPAddrVibe)> {
         let socket = self.socket.lock().unwrap();
         let (n, addr) = socket.recv_from(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok((n, UDPAddrVibe::from_socket_addr(addr)))
     }
     
@@ -315,7 +315,7 @@ impl UDPConnVibe {
     pub fn write_to_udp(&mut self, buf: &[u8], addr: &UDPAddrVibe) -> NetResult<usize> {
         let socket = self.socket.lock().unwrap();
         socket.send_to(buf, addr.socket_addr())
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
 }
 
@@ -323,13 +323,13 @@ impl ConnVibe for UDPConnVibe {
     fn read(&mut self, buf: &mut [u8]) -> NetResult<usize> {
         let socket = self.socket.lock().unwrap();
         socket.recv(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn write(&mut self, buf: &[u8]) -> NetResult<usize> {
         let socket = self.socket.lock().unwrap();
         socket.send(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn close(&mut self) -> NetResult<()> {
@@ -354,9 +354,9 @@ impl ConnVibe for UDPConnVibe {
         
         let socket = self.socket.lock().unwrap();
         socket.set_read_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         socket.set_write_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok(())
     }
     
@@ -366,7 +366,7 @@ impl ConnVibe for UDPConnVibe {
         
         let socket = self.socket.lock().unwrap();
         socket.set_read_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok(())
     }
     
@@ -376,7 +376,7 @@ impl ConnVibe for UDPConnVibe {
         
         let socket = self.socket.lock().unwrap();
         socket.set_write_timeout(Some(duration))
-            .map_err(|e| CursedError::from(NetError::from(e)))?;
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))?;
         Ok(())
     }
 }
@@ -473,19 +473,19 @@ impl ConnVibe for UnixConnVibe {
     fn read(&mut self, buf: &mut [u8]) -> NetResult<usize> {
         let mut stream = self.stream.lock().unwrap();
         stream.read(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn write(&mut self, buf: &[u8]) -> NetResult<usize> {
         let mut stream = self.stream.lock().unwrap();
         stream.write(buf)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn close(&mut self) -> NetResult<()> {
         let stream = self.stream.lock().unwrap();
         stream.shutdown(Shutdown::Both)
-            .map_err(|e| CursedError::from(NetError::from(e)))
+            .map_err(|e| CursedError::from(VibeNetError::from(e)))
     }
     
     fn local_addr(&self) -> NetResult<Box<dyn AddrVibe>> {

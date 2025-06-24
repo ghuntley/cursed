@@ -1,44 +1,44 @@
-//! Production-Ready Zero-Knowledge Proof Module for CURSED
-//! 
-//! This module provides comprehensive implementations of zero-knowledge proof systems
-//! including commitment schemes, proof protocols, circuit systems, and complete ZK frameworks.
-//! 
-//! # ZK Systems Implemented
-//! 
-//! ## Commitment Schemes
-//! - **Pedersen Commitments**: Elliptic curve based, perfectly hiding
-//! - **Hash Commitments**: Computationally hiding, statistically binding
-//! - **Vector Commitments**: Efficient batch commitments
-//! - **Polynomial Commitments**: KZG-style polynomial commitments
-//! - **Merkle Tree Commitments**: Efficient vector commitments with membership proofs
-//! 
-//! ## Proof Protocols
-//! - **Sigma Protocols**: Three-round public-coin protocols (Schnorr, Chaum-Pedersen)
-//! - **Bulletproofs**: Logarithmic-size range and arithmetic circuit proofs
-//! - **zk-SNARKs**: Groth16 and PLONK implementations
-//! - **zk-STARKs**: Transparent, post-quantum secure proofs
-//! - **Interactive Proofs**: Challenge-response protocols
-//! - **Non-Interactive Proofs**: Fiat-Shamir transformed protocols
-//! 
-//! ## Circuit Systems
-//! - **R1CS**: Rank-1 Constraint Systems for arithmetic circuits
-//! - **PLONK Circuits**: Universal and updatable circuits
-//! - **AIR**: Algebraic Intermediate Representation for STARKs
-//! - **Circuit Builders**: High-level circuit construction APIs
-//! 
-//! ## Privacy-Preserving Applications
-//! - **Anonymous Credentials**: Zero-knowledge authentication
-//! - **Private Set Intersection**: Privacy-preserving set operations
-//! - **Confidential Transactions**: Hidden amounts and balances
-//! - **Anonymous Voting**: Private ballot casting with public verification
-//! - **Private Machine Learning**: ZK inference and training
-//! 
-//! ## Advanced Features
-//! - **Recursive Proofs**: Proof composition and aggregation
-//! - **Lookup Arguments**: Efficient table lookups in circuits
-//! - **Multi-Party Computation**: Collaborative proof generation
-//! - **Threshold Proofs**: Distributed proof systems
-//! - **Zero-Knowledge Virtual Machine**: General-purpose ZK computation
+// Production-Ready Zero-Knowledge Proof Module for CURSED
+// 
+// This module provides comprehensive implementations of zero-knowledge proof systems
+// including commitment schemes, proof protocols, circuit systems, and complete ZK frameworks.
+// 
+// # ZK Systems Implemented
+// 
+// ## Commitment Schemes
+// - **Pedersen Commitments**: Elliptic curve based, perfectly hiding
+// - **Hash Commitments**: Computationally hiding, statistically binding
+// - **Vector Commitments**: Efficient batch commitments
+// - **Polynomial Commitments**: KZG-style polynomial commitments
+// - **Merkle Tree Commitments**: Efficient vector commitments with membership proofs
+// 
+// ## Proof Protocols
+// - **Sigma Protocols**: Three-round public-coin protocols (Schnorr, Chaum-Pedersen)
+// - **Bulletproofs**: Logarithmic-size range and arithmetic circuit proofs
+// - **zk-SNARKs**: Groth16 and PLONK implementations
+// - **zk-STARKs**: Transparent, post-quantum secure proofs
+// - **Interactive Proofs**: Challenge-response protocols
+// - **Non-Interactive Proofs**: Fiat-Shamir transformed protocols
+// 
+// ## Circuit Systems
+// - **R1CS**: Rank-1 Constraint Systems for arithmetic circuits
+// - **PLONK Circuits**: Universal and updatable circuits
+// - **AIR**: Algebraic Intermediate Representation for STARKs
+// - **Circuit Builders**: High-level circuit construction APIs
+// 
+// ## Privacy-Preserving Applications
+// - **Anonymous Credentials**: Zero-knowledge authentication
+// - **Private Set Intersection**: Privacy-preserving set operations
+// - **Confidential Transactions**: Hidden amounts and balances
+// - **Anonymous Voting**: Private ballot casting with public verification
+// - **Private Machine Learning**: ZK inference and training
+// 
+// ## Advanced Features
+// - **Recursive Proofs**: Proof composition and aggregation
+// - **Lookup Arguments**: Efficient table lookups in circuits
+// - **Multi-Party Computation**: Collaborative proof generation
+// - **Threshold Proofs**: Distributed proof systems
+// - **Zero-Knowledge Virtual Machine**: General-purpose ZK computation
 
 use std::collections::HashMap;
 use std::fmt;

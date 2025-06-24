@@ -46,7 +46,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use crate::error::CursedError;
 
 // Re-export and define common types for PEM/DER operations
-pub use crate::stdlib::packages::crypto_pki::crate::types::{
+pub use crate::stdlib::packages::crypto_pki::types::{
     X509Certificate, CertificateSigningRequest as CsrType, PublicKeyAlgorithm, SignatureAlgorithm
 };
 pub use crate::stdlib::packages::crypto_pki::key_management::KeyPair;
@@ -670,7 +670,7 @@ pub mod der {
 
     /// Parse DER certificate
     pub fn parse_der_certificate(data: &[u8]) -> PemDerResult<Certificate> {
-        use crate::stdlib::packages::crypto_pki::crate::types::*;
+        use crate::stdlib::packages::crypto_pki::types::*;
         use std::time::{SystemTime, Duration};
         
         let elements = parse_der(data)?;
@@ -935,7 +935,7 @@ pub mod der {
 /// Certificate parsing helper functions
 pub mod certificate_parsing {
     use super::*;
-    use crate::stdlib::packages::crypto_pki::crate::types::*;
+    use crate::stdlib::packages::crypto_pki::types::*;
     use std::time::{SystemTime, UNIX_EPOCH, Duration};
     
     /// Parse signature algorithm from ASN.1 element

@@ -12,7 +12,7 @@ use crate::stdlib::packages::web_vibez::{
     response::HttpResponse,
     handler::Handler,
     error::{WebError, WebResult},
-    crate::types::Headers,
+    types::Headers,
 };
 
 /// fr fr Middleware trait for request/response processing - pipeline component

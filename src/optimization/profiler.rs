@@ -1,4 +1,4 @@
-//! Enhanced build profiler for compilation performance analysis
+// Enhanced build profiler for compilation performance analysis
 
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::{CompilationUnit, ResourceStatistics};

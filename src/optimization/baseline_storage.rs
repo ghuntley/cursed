@@ -1,8 +1,8 @@
 
-//! Baseline Performance Storage and Management System
-//!
-//! Provides persistent storage and management of performance baselines for
-//! regression analysis and performance tracking over time.
+// Baseline Performance Storage and Management System
+//
+// Provides persistent storage and management of performance baselines for
+// regression analysis and performance tracking over time.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

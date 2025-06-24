@@ -15,7 +15,7 @@ use crate::ast::traits::{Expression, Node};
 use crate::ast::expressions::{Literal, LiteralValue};
 use crate::ast::operators::{BinaryExpression, UnaryExpression, AssignmentExpression};
 use crate::ast::identifiers::Identifier;
-use crate::ast::crate::types::{TypeExpression, Type};
+use crate::ast::types::{TypeExpression, Type};
 use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType, ExpressionContext};
 use crate::codegen::llvm::type_system::LlvmTypeRegistry;
 use crate::error::{Error, CursedError};

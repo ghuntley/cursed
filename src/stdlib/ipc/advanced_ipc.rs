@@ -1,12 +1,12 @@
-//! Advanced IPC (Inter-Process Communication) Implementation
-//! 
-//! This module provides comprehensive IPC mechanisms including:
-//! - High-performance shared memory
-//! - Message queues with priority support
-//! - Named pipes with buffering
-//! - Unix domain sockets
-//! - Connection pooling and management
-//! - Cross-platform compatibility
+// Advanced IPC (Inter-Process Communication) Implementation
+// 
+// This module provides comprehensive IPC mechanisms including:
+// - High-performance shared memory
+// - Message queues with priority support
+// - Named pipes with buffering
+// - Unix domain sockets
+// - Connection pooling and management
+// - Cross-platform compatibility
 
 use std::collections::{HashMap, VecDeque, BTreeMap};
 use std::sync::{Arc, Mutex, RwLock, Condvar, mpsc};

@@ -1,14 +1,14 @@
 use crate::error::Error;
-//! Higher-Kinded Types Implementation for CURSED Language
-//!
-//! This module provides support for type constructors and higher-order generic functions,
-//! enabling advanced generic programming patterns like functors and monads.
+// Higher-Kinded Types Implementation for CURSED Language
+//
+// This module provides support for type constructors and higher-order generic functions,
+// enabling advanced generic programming patterns like functors and monads.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::crate::types::Type;
+use crate::ast::types::Type;
 use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 

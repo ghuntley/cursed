@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use inkwell::{
     values::{BasicValueEnum, PointerValue},
     AddressSpace,
-    crate::types::{BasicTypeEnum, IntType, PointerType},
+    types::{BasicTypeEnum, IntType, PointerType},
 };
 
 // Type aliases for consistency

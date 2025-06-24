@@ -1,4 +1,4 @@
-//! Baseline comparison system for performance regression detection
+// Baseline comparison system for performance regression detection
 
 use crate::error::{Result, CursedError};
 use crate::optimization::{BenchmarkResult, BenchmarkSuiteResult};

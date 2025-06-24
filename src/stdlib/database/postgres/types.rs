@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use bytes::BytesMut;
-use postgres_crate::types::{Type, ToSql, FromSql, IsNull};
+use postgres_types::{Type, ToSql, FromSql, IsNull};
 use tokio_postgres::Row;
 use crate::stdlib::database::SqlValue;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
@@ -63,7 +63,7 @@ pub enum SqlValueType {
 }
 
 /// Convert PostgreSQL value to CURSED SqlValue
-pub fn map_postgres_value(value: &tokio_postgres::crate::types::Type, row: &Row, index: usize) -> PostgresResult<SqlValue> {
+pub fn map_postgres_value(value: &tokio_postgres::types::Type, row: &Row, index: usize) -> PostgresResult<SqlValue> {
     if row.len() <= index {
         return Err(PostgresError::new(
             PostgresErrorKind::TypeConversionError,

@@ -34,7 +34,7 @@ use crate::stdlib::web_vibez::SecurityContext;
     permission_denied, resource_error
 };
 
-use crate::stdlib::ipc::crate::types::{IpcPermissions, ProcessId};
+use crate::stdlib::ipc::types::{IpcPermissions, ProcessId};
 use crate::stdlib::ipc::error::{security_error, system_error};
 
 /// Security context for IPC operations

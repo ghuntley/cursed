@@ -1,9 +1,9 @@
 use crate::error::Error;
 #!/usr/bin/env rust
-//! CURSED Programming Language CLI (Minimal Build)
-//! 
-//! Minimal command-line interface for core CURSED language functionality.
-//! Provides basic compilation, execution, and checking capabilities.
+// CURSED Programming Language CLI (Minimal Build)
+// 
+// Minimal command-line interface for core CURSED language functionality.
+// Provides basic compilation, execution, and checking capabilities.
 
 use clap::{Arg, ArgAction, Command};
 use std::path::PathBuf;

@@ -1,7 +1,7 @@
-//! Post-Quantum Cryptographic Protocols
-//! 
-//! This module provides protocol implementations that use PQC algorithms
-//! for various cryptographic applications.
+// Post-Quantum Cryptographic Protocols
+// 
+// This module provides protocol implementations that use PQC algorithms
+// for various cryptographic applications.
 
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel};
 use crate::error::Error;

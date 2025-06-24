@@ -1,13 +1,13 @@
-//! Simplified standard library error handling utilities for CURSED
-//!
-//! This module provides basic error constructors and utilities that integrate
-//! with the CURSED error handling system without type conflicts.
+// Simplified standard library error handling utilities for CURSED
+//
+// This module provides basic error constructors and utilities that integrate
+// with the CURSED error handling system without type conflicts.
 
 use crate::error::SourceLocation;
 
 // Re-export CursedError for use by other stdlib modules
 pub use crate::error::CursedError;
-use crate::error::crate::types::{
+use crate::error::types::{
     ErrorManager, ErrorManagerConfig, ErrorCategory, ErrorSeverity
 };
 use std::sync::{Arc, OnceLock};

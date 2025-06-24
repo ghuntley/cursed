@@ -1,7 +1,7 @@
-//! Enhanced error hierarchy for CURSED
-//!
-//! This module provides a comprehensive error type system with categorization,
-//! severity levels, and error chain management.
+// Enhanced error hierarchy for CURSED
+//
+// This module provides a comprehensive error type system with categorization,
+// severity levels, and error chain management.
 
 use crate::error::{CursedError, Error};
 use crate::debug::source_location::SourceLocation;

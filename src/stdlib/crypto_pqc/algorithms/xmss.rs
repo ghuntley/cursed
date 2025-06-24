@@ -1,6 +1,6 @@
-//! XMSS (eXtended Merkle Signature Scheme) Hash-based Signature Implementation
-//! 
-//! XMSS is a stateful hash-based signature scheme with forward security.
+// XMSS (eXtended Merkle Signature Scheme) Hash-based Signature Implementation
+// 
+// XMSS is a stateful hash-based signature scheme with forward security.
 
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::DigitalSignature;

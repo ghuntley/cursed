@@ -1,7 +1,7 @@
-//! Comment Parser for Documentation Generation
-//! 
-//! Extracts and parses documentation comments from CURSED source code,
-//! including support for various documentation tags and code examples.
+// Comment Parser for Documentation Generation
+// 
+// Extracts and parses documentation comments from CURSED source code,
+// including support for various documentation tags and code examples.
 
 use crate::error::Error;
 use serde::{Deserialize, Serialize};
@@ -570,11 +570,11 @@ slay function square(x: i32) -> i32 {
     fn test_module_level_comment() {
         let parser = CommentParser::new().unwrap();
         let source = r#"
-//! This is a module-level documentation comment
-//! that describes the entire module.
-//! 
-//! @author John Doe
-//! @version 1.0.0
+// This is a module-level documentation comment
+// that describes the entire module.
+// 
+// @author John Doe
+// @version 1.0.0
 
 slay function some_function() {
     // implementation

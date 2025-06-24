@@ -5,7 +5,7 @@
 
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
-use rusqlite::{Connection, Statement, Transaction, OpenFlags, params, crate::types::Value as SqliteValue};
+use rusqlite::{Connection, Statement, Transaction, OpenFlags, params, types::Value as SqliteValue};
 use super::{SqliteError, SqliteResult, SqliteConfig, SqliteStats, SqliteFFI};
 use super::super::{DriverConn, DatabaseError, SqlValue, TxOptions, DriverStmt, DriverTx};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
@@ -313,7 +313,7 @@ fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::crate::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
             SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
             SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),

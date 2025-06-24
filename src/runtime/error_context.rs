@@ -1,8 +1,8 @@
-//! Error context management for error propagation in CURSED
-//!
-//! This module provides comprehensive error context tracking, including
-//! source location management, function call chains, and error propagation
-//! history for enhanced debugging and error reporting.
+// Error context management for error propagation in CURSED
+//
+// This module provides comprehensive error context tracking, including
+// source location management, function call chains, and error propagation
+// history for enhanced debugging and error reporting.
 
 use crate::error::{CursedError, SourceLocation};
 use crate::runtime::error_propagation::{ErrorPropagationContext, PropagationError};

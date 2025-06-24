@@ -1,10 +1,10 @@
-//! CLI Integration for Profile-Guided Optimization
-//! 
-//! Provides command-line interface for PGO operations including:
-//! - Profile collection during compilation
-//! - Profile management and inspection
-//! - PGO-guided optimization execution
-//! - Performance analysis and reporting
+// CLI Integration for Profile-Guided Optimization
+// 
+// Provides command-line interface for PGO operations including:
+// - Profile collection during compilation
+// - Profile management and inspection
+// - PGO-guided optimization execution
+// - Performance analysis and reporting
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::*;

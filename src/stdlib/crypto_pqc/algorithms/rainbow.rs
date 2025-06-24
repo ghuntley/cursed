@@ -1,6 +1,6 @@
-//! Rainbow Multivariate Signature Implementation
-//! 
-//! Rainbow is a multivariate signature scheme based on solving systems of polynomial equations.
+// Rainbow Multivariate Signature Implementation
+// 
+// Rainbow is a multivariate signature scheme based on solving systems of polynomial equations.
 
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::DigitalSignature;

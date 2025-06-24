@@ -1,7 +1,7 @@
 use crate::error::Error;
-//! PKI Error Handling
-//! 
-//! Comprehensive error types for Public Key Infrastructure operations.
+// PKI Error Handling
+// 
+// Comprehensive error types for Public Key Infrastructure operations.
 
 use std::fmt;
 use crate::error::Error as CursedError;

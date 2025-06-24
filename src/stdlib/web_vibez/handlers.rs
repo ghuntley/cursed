@@ -148,7 +148,7 @@ impl StaticHandler {
 
     pub fn not_found() -> Self {
         Self::new("Not Found")
-            .with_status(StatusCode::NOT_FOUND)
+            .with_status(StatusCode::NotFound)
             .with_content_type("text/plain")
     }
 }
@@ -258,7 +258,7 @@ impl RequestHandler for JsonApiHandler {
                     });
                     response.set_json(&error_response)
                         .map_err(|e| HandlerError::Serialization(format!("Error JSON serialization error: {}", e)))?;
-                    response.set_status(StatusCode::INTERNAL_SERVER_ERROR);
+                    response.set_status(StatusCode::InternalServerError);
                 }
             }
         } else {
@@ -269,7 +269,7 @@ impl RequestHandler for JsonApiHandler {
             });
             response.set_json(&error_response)
                 .map_err(|e| HandlerError::Serialization(format!("Error JSON serialization error: {}", e)))?;
-            response.set_status(StatusCode::METHOD_NOT_ALLOWED);
+            response.set_status(StatusCode::MethodNotAllowed);
         }
 
         Ok(())

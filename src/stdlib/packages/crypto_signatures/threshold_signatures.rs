@@ -1,6 +1,6 @@
-//! Threshold Signatures
-//! 
-//! Threshold signature implementation for CURSED crypto.
+// Threshold Signatures
+// 
+// Threshold signature implementation for CURSED crypto.
 
 /// Threshold signature implementation
 pub struct ThresholdSignatures;

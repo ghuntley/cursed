@@ -1,7 +1,7 @@
-//! Basic heap implementations and convenience types
-//!
-//! This module provides concrete implementations of the heap Interface
-//! for common data types, including integers, strings, and priority queues.
+// Basic heap implementations and convenience types
+//
+// This module provides concrete implementations of the heap Interface
+// for common data types, including integers, strings, and priority queues.
 
 use crate::stdlib::value::Value;
 use crate::error::Error;

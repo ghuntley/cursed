@@ -1,6 +1,6 @@
 /// PKI Utility Functions
 
-use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError};
+use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
 use crate::error::Error;
 
 /// Utility functions for PKI operations

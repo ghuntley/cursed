@@ -1,8 +1,8 @@
 
-//! Configuration management for optimization profiles and settings
-//! 
-//! Provides configuration file loading, saving, and management for
-//! optimization profiles, user preferences, and system settings.
+// Configuration management for optimization profiles and settings
+// 
+// Provides configuration file loading, saving, and management for
+// optimization profiles, user preferences, and system settings.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

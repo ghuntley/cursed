@@ -1,7 +1,7 @@
-//! Production-ready EdDSA Digital Signatures
-//! 
-//! Complete implementation of EdDSA (Edwards curve Digital Signature Algorithm)
-//! with support for Ed25519, Ed448, and comprehensive signature operations.
+// Production-ready EdDSA Digital Signatures
+// 
+// Complete implementation of EdDSA (Edwards curve Digital Signature Algorithm)
+// with support for Ed25519, Ed448, and comprehensive signature operations.
 
 use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},

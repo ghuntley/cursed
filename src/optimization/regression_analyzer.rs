@@ -1,8 +1,8 @@
 
-//! Comprehensive Regression Analysis System
-//!
-//! Provides advanced regression detection and analysis capabilities for
-//! performance monitoring and quality assurance.
+// Comprehensive Regression Analysis System
+//
+// Provides advanced regression detection and analysis capabilities for
+// performance monitoring and quality assurance.
 
 use std::collections::HashMap;
 use std::time::Duration;

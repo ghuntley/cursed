@@ -1,8 +1,8 @@
 
-//! Advanced Caching System for Build Optimization
-//! 
-//! Implements multi-level caching with distributed support for maximum
-//! build performance and team collaboration.
+// Advanced Caching System for Build Optimization
+// 
+// Implements multi-level caching with distributed support for maximum
+// build performance and team collaboration.
 
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::sync::{Arc, RwLock, Mutex};

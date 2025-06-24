@@ -1,37 +1,37 @@
-//! # Live Documentation Server
-//!
-//! Real-time documentation server with hot reload capabilities for the CURSED programming language.
-//! This module provides a WebSocket-enabled HTTP server that automatically regenerates and refreshes
-//! documentation when source files change.
-//!
-//! ## Features
-//!
-//! - **Hot Reload**: Automatic regeneration on file changes with instant browser refresh
-//! - **WebSocket Integration**: Real-time communication between server and browser
-//! - **Interactive Features**: Code playground, executable examples, API explorer
-//! - **Performance Monitoring**: Real-time metrics and generation statistics
-//! - **Error Recovery**: Graceful handling of generation failures with user feedback
-//! - **Multi-Format Support**: Serves multiple documentation formats simultaneously
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! use cursed::documentation::{LiveDocumentationServer, LiveServerConfig};
-//! use std::time::Duration;
-//!
-//! // Create server configuration
-//! let config = LiveServerConfig {
-//!     port: 8080,
-//!     watch_debounce: Duration::from_millis(300),
-//!     enable_playground: true,
-//!     enable_api_explorer: true,
-//!     ..Default::default()
-//! };
-//!
-//! // Start the live documentation server
-//! let mut server = LiveDocumentationServer::new(config)?;
-//! server.start_serving(&["./src"], "./docs").await?;
-//! ```
+// # Live Documentation Server
+//
+// Real-time documentation server with hot reload capabilities for the CURSED programming language.
+// This module provides a WebSocket-enabled HTTP server that automatically regenerates and refreshes
+// documentation when source files change.
+//
+// ## Features
+//
+// - **Hot Reload**: Automatic regeneration on file changes with instant browser refresh
+// - **WebSocket Integration**: Real-time communication between server and browser
+// - **Interactive Features**: Code playground, executable examples, API explorer
+// - **Performance Monitoring**: Real-time metrics and generation statistics
+// - **Error Recovery**: Graceful handling of generation failures with user feedback
+// - **Multi-Format Support**: Serves multiple documentation formats simultaneously
+//
+// ## Example Usage
+//
+// ```rust
+// use cursed::documentation::{LiveDocumentationServer, LiveServerConfig};
+// use std::time::Duration;
+//
+// // Create server configuration
+// let config = LiveServerConfig {
+//     port: 8080,
+//     watch_debounce: Duration::from_millis(300),
+//     enable_playground: true,
+//     enable_api_explorer: true,
+//     ..Default::default()
+// };
+//
+// // Start the live documentation server
+// let mut server = LiveDocumentationServer::new(config)?;
+// server.start_serving(&["./src"], "./docs").await?;
+// ```
 
 use crate::build_system::file_watcher::{FileWatcher, WatchConfig, FileWatchEvent, FileWatcherBuilder};
 use crate::documentation::{DocumentationGenerator, DocumentationConfig, DocGeneratorConfig, DocFormat};

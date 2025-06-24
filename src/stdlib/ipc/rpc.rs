@@ -31,7 +31,7 @@ use crate::stdlib::ipc::{
     connection_failed, timeout_error, resource_error
 };
 
-use crate::stdlib::ipc::crate::types::IpcHandleType;
+use crate::stdlib::ipc::types::IpcHandleType;
 use crate::stdlib::ipc::error::{communication_error, system_error, protocol_error, serialization_error};
 
 /// RPC method signature

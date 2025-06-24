@@ -15,7 +15,7 @@ use inkwell::{
     module::Module,
     passes::{PassManager},
     values::{FunctionValue, BasicValueEnum},
-    crate::types::{IntType, PointerType},
+    types::{IntType, PointerType},
     builder::Builder,
     AddressSpace,
 };

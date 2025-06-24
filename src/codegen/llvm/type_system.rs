@@ -12,7 +12,7 @@
 
 use crate::ast::declarations::{SquadStatement, CollabStatement, FieldStatement, MethodDeclaration, GenericConstraint};
 use crate::ast::identifiers::Identifier;
-use crate::ast::crate::types::{TypeExpression, Type, StructType, InterfaceType};
+use crate::ast::types::{TypeExpression, Type, StructType, InterfaceType};
 use crate::ast::traits::{Node, Expression};
 use crate::error::Error;
 use crate::type_system::{

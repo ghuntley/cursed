@@ -1,14 +1,14 @@
 use crate::error::Error;
-//! Generic Optimization System for CURSED Language
-//!
-//! This module provides advanced optimization techniques for generic code,
-//! including monomorphization, JIT compilation, and memory layout optimization.
+// Generic Optimization System for CURSED Language
+//
+// This module provides advanced optimization techniques for generic code,
+// including monomorphization, JIT compilation, and memory layout optimization.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::crate::types::Type;
+use crate::ast::types::Type;
 use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 

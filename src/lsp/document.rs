@@ -1,11 +1,11 @@
-//! Document management for LSP server
-//! 
-//! Handles text synchronization, incremental updates, and document storage
+// Document management for LSP server
+// 
+// Handles text synchronization, incremental updates, and document storage
 
 use std::collections::HashMap;
 use dashmap::DashMap;
 use ropey::Rope;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument, warn};
 
 /// Document information stored by the LSP server

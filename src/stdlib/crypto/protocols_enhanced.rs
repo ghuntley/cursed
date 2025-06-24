@@ -1,25 +1,25 @@
-//! Advanced Cryptographic Protocols Module for CURSED
-//! 
-//! This module provides production-ready implementations of advanced cryptographic protocols
-//! including TLS handshake simulation, Signal protocol double ratchet, perfect forward secrecy,
-//! and secure channel establishment. This module serves as a bridge between the basic protocols
-//! and the comprehensive protocol suite.
-//! 
-//! # Protocols Implemented
-//! 
-//! - **TLS Handshake**: Simulation and verification of TLS protocol steps
-//! - **Signal Protocol**: Double ratchet algorithm for secure messaging
-//! - **Perfect Forward Secrecy**: Key rotation and ephemeral key management
-//! - **Secure Channels**: End-to-end encrypted communication channels
-//! - **Key Agreement**: Various key exchange protocols with security analysis
-//! - **Authentication**: Multi-factor authentication and identity verification
-//! 
-//! # Integration with Comprehensive Suite
-//! 
-//! This module integrates with the comprehensive protocol suite to provide:
-//! - Legacy protocol support for existing implementations
-//! - Bridge functionality between basic and advanced protocols
-//! - Enhanced protocol features with production-ready implementations
+// Advanced Cryptographic Protocols Module for CURSED
+// 
+// This module provides production-ready implementations of advanced cryptographic protocols
+// including TLS handshake simulation, Signal protocol double ratchet, perfect forward secrecy,
+// and secure channel establishment. This module serves as a bridge between the basic protocols
+// and the comprehensive protocol suite.
+// 
+// # Protocols Implemented
+// 
+// - **TLS Handshake**: Simulation and verification of TLS protocol steps
+// - **Signal Protocol**: Double ratchet algorithm for secure messaging
+// - **Perfect Forward Secrecy**: Key rotation and ephemeral key management
+// - **Secure Channels**: End-to-end encrypted communication channels
+// - **Key Agreement**: Various key exchange protocols with security analysis
+// - **Authentication**: Multi-factor authentication and identity verification
+// 
+// # Integration with Comprehensive Suite
+// 
+// This module integrates with the comprehensive protocol suite to provide:
+// - Legacy protocol support for existing implementations
+// - Bridge functionality between basic and advanced protocols
+// - Enhanced protocol features with production-ready implementations
 
 use std::collections::HashMap;
 use std::fmt;

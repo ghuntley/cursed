@@ -1,4 +1,4 @@
-//! Performance analysis and bottleneck detection
+// Performance analysis and bottleneck detection
 
 use crate::error::{Result, CursedError};
 use crate::optimization::benchmarking::{BenchmarkResults, BenchmarkStatistics};

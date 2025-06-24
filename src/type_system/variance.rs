@@ -1,14 +1,14 @@
 use crate::error::Error;
-//! Variance Analysis Implementation for CURSED Language
-//!
-//! This module provides variance analysis for generic types, enabling safe
-//! subtyping relationships and covariance/contravariance checking.
+// Variance Analysis Implementation for CURSED Language
+//
+// This module provides variance analysis for generic types, enabling safe
+// subtyping relationships and covariance/contravariance checking.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::crate::types::Type;
+use crate::ast::types::Type;
 use crate::ast::traits::TypeParameter;
 use crate::error::CursedError;
 

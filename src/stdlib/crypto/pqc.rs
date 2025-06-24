@@ -1,39 +1,39 @@
-//! Post-Quantum Cryptography Module for CURSED
-//! 
-//! This module provides implementations of post-quantum cryptographic algorithms
-//! that are believed to be secure against attacks by quantum computers.
-//! 
-//! # Algorithms Supported
-//! 
-//! - **Kyber**: Key Encapsulation Mechanism (KEM) based on Module-LWE
-//! - **Dilithium**: Digital signatures based on Module-LWE
-//! - **SPHINCS+**: Hash-based signatures (stateless)
-//! - **Falcon**: Compact signatures based on NTRU lattices
-//! - **NTRU**: Encryption based on NTRU lattices
-//! 
-//! # Security Considerations
-//! 
-//! All implementations follow NIST PQC standardization guidelines and provide
-//! multiple security levels corresponding to classical cryptographic strength:
-//! - Level 1: Equivalent to AES-128
-//! - Level 3: Equivalent to AES-192  
-//! - Level 5: Equivalent to AES-256
-//! 
-//! # Usage Example
-//! 
-//! ```rust
-//! use cursed::stdlib::crypto::pqc::{KyberKem, SecurityLevel};
-//! 
-//! // Generate Kyber-768 key pair (NIST Level 3)
-//! let (public_key, secret_key) = KyberKem::keygen(SecurityLevel::Level3)?;
-//! 
-//! // Encapsulation
-//! let (ciphertext, shared_secret) = KyberKem::encaps(&public_key)?;
-//! 
-//! // Decapsulation
-//! let decaps_secret = KyberKem::decaps(&secret_key, &ciphertext)?;
-//! assert_eq!(shared_secret, decaps_secret);
-//! ```
+// Post-Quantum Cryptography Module for CURSED
+// 
+// This module provides implementations of post-quantum cryptographic algorithms
+// that are believed to be secure against attacks by quantum computers.
+// 
+// # Algorithms Supported
+// 
+// - **Kyber**: Key Encapsulation Mechanism (KEM) based on Module-LWE
+// - **Dilithium**: Digital signatures based on Module-LWE
+// - **SPHINCS+**: Hash-based signatures (stateless)
+// - **Falcon**: Compact signatures based on NTRU lattices
+// - **NTRU**: Encryption based on NTRU lattices
+// 
+// # Security Considerations
+// 
+// All implementations follow NIST PQC standardization guidelines and provide
+// multiple security levels corresponding to classical cryptographic strength:
+// - Level 1: Equivalent to AES-128
+// - Level 3: Equivalent to AES-192  
+// - Level 5: Equivalent to AES-256
+// 
+// # Usage Example
+// 
+// ```rust
+// use cursed::stdlib::crypto::pqc::{KyberKem, SecurityLevel};
+// 
+// // Generate Kyber-768 key pair (NIST Level 3)
+// let (public_key, secret_key) = KyberKem::keygen(SecurityLevel::Level3)?;
+// 
+// // Encapsulation
+// let (ciphertext, shared_secret) = KyberKem::encaps(&public_key)?;
+// 
+// // Decapsulation
+// let decaps_secret = KyberKem::decaps(&secret_key, &ciphertext)?;
+// assert_eq!(shared_secret, decaps_secret);
+// ```
 
 use std::collections::HashMap;
 use std::fmt;

@@ -461,7 +461,7 @@ impl NamedPipeConnection {
                 let result = unsafe {
                     WriteFile(
                         handle as winapi::um::winnt::HANDLE,
-                        data.as_ptr() as *const winapi::ccrate::types::c_void,
+                        data.as_ptr() as *const winapi::ctypes::c_void,
                         data.len() as u32,
                         &mut bytes_written,
                         ptr::null_mut(),
@@ -523,7 +523,7 @@ impl NamedPipeConnection {
                 let result = unsafe {
                     ReadFile(
                         handle as winapi::um::winnt::HANDLE,
-                        buffer.as_mut_ptr() as *mut winapi::ccrate::types::c_void,
+                        buffer.as_mut_ptr() as *mut winapi::ctypes::c_void,
                         buffer.len() as u32,
                         &mut bytes_read,
                         ptr::null_mut(),

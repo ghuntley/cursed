@@ -13,7 +13,7 @@ use crate::stdlib::database::{
 };
 use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
-use super::crate::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
+use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
 
 /// fr fr MySQL prepared statement wrapper

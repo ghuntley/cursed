@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Optimization CLI Commands
-//! 
-//! Command-line interface for performance optimization and compilation speed analysis.
-//! Provides tools for analyzing, benchmarking, profiling, and configuring optimization settings.
+// Optimization CLI Commands
+// 
+// Command-line interface for performance optimization and compilation speed analysis.
+// Provides tools for analyzing, benchmarking, profiling, and configuring optimization settings.
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use std::collections::HashMap;

@@ -1,7 +1,7 @@
-//! Key generation utilities
-//! 
-//! Provides comprehensive key generation functions for the CURSED stdlib.
-//! Supports RSA, ECC, Ed25519, and X25519 key generation with proper validation.
+// Key generation utilities
+// 
+// Provides comprehensive key generation functions for the CURSED stdlib.
+// Supports RSA, ECC, Ed25519, and X25519 key generation with proper validation.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

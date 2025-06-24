@@ -1,9 +1,9 @@
 use crate::error::Error;
-//! CURSED Documentation Generator
-//! 
-//! Standalone binary for generating comprehensive documentation for CURSED projects.
-//! Provides a command-line interface for documenting CURSED source code with
-//! multiple output formats and advanced features.
+// CURSED Documentation Generator
+// 
+// Standalone binary for generating comprehensive documentation for CURSED projects.
+// Provides a command-line interface for documenting CURSED source code with
+// multiple output formats and advanced features.
 
 use clap::{Arg, Command, ArgAction, ArgMatches};
 use cursed::cli::documentation::{add_documentation_commands, handle_documentation_command};

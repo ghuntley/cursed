@@ -1,7 +1,7 @@
-//! Result and Option types for CURSED error handling
-//!
-//! This module provides Result<T, E> and Option<T> types that integrate with
-//! CURSED's panic/recovery system and question mark operator.
+// Result and Option types for CURSED error handling
+//
+// This module provides Result<T, E> and Option<T> types that integrate with
+// CURSED's panic/recovery system and question mark operator.
 
 use crate::ast::traits::{Node, Expression, TypeNode};
 use crate::error::{CursedError, Error, SourceLocation};

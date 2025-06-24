@@ -1,6 +1,6 @@
-//! BIKE (Bit Flipping Key Encapsulation) Code-based Implementation
-//! 
-//! BIKE is a code-based KEM using quasi-cyclic moderate density parity check codes.
+// BIKE (Bit Flipping Key Encapsulation) Code-based Implementation
+// 
+// BIKE is a code-based KEM using quasi-cyclic moderate density parity check codes.
 
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::KeyEncapsulation;

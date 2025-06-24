@@ -1,6 +1,6 @@
-//! Ring Signatures
-//! 
-//! Ring signature implementation for CURSED crypto.
+// Ring Signatures
+// 
+// Ring signature implementation for CURSED crypto.
 
 /// Ring signature implementation
 pub struct RingSignatures;

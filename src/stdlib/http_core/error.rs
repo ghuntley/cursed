@@ -1,6 +1,6 @@
-//! Error Handling for CURSED web_vibez
-//!
-//! Comprehensive error types and handling for HTTP processing.
+// Error Handling for CURSED web_vibez
+//
+// Comprehensive error types and handling for HTTP processing.
 
 use std::fmt;
 use std::error::Error;

@@ -89,7 +89,7 @@ impl SecureMemory {
         {
             use winapi::um::memoryapi::VirtualLock;
             let result = unsafe {
-                VirtualLock(self.data.as_ptr() as *mut winapi::ccrate::types::c_void, self.capacity)
+                VirtualLock(self.data.as_ptr() as *mut winapi::ctypes::c_void, self.capacity)
             };
             if result != 0 {
                 self.locked.store(true, Ordering::Release);
@@ -127,7 +127,7 @@ impl SecureMemory {
         {
             use winapi::um::memoryapi::VirtualUnlock;
             let result = unsafe {
-                VirtualUnlock(self.data.as_ptr() as *mut winapi::ccrate::types::c_void, self.capacity)
+                VirtualUnlock(self.data.as_ptr() as *mut winapi::ctypes::c_void, self.capacity)
             };
             if result != 0 {
                 self.locked.store(false, Ordering::Release);
@@ -317,7 +317,7 @@ pub fn memory_lock(data: &[u8]) -> AdvancedCryptoResult<()> {
     {
         use winapi::um::memoryapi::VirtualLock;
         let result = unsafe {
-            VirtualLock(data.as_ptr() as *mut winapi::ccrate::types::c_void, data.len())
+            VirtualLock(data.as_ptr() as *mut winapi::ctypes::c_void, data.len())
         };
         if result != 0 {
             Ok(())
@@ -353,7 +353,7 @@ pub fn memory_unlock(data: &[u8]) -> AdvancedCryptoResult<()> {
     {
         use winapi::um::memoryapi::VirtualUnlock;
         let result = unsafe {
-            VirtualUnlock(data.as_ptr() as *mut winapi::ccrate::types::c_void, data.len())
+            VirtualUnlock(data.as_ptr() as *mut winapi::ctypes::c_void, data.len())
         };
         if result != 0 {
             Ok(())

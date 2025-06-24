@@ -1,7 +1,7 @@
-//! Production-ready Hash Algorithms for Digital Signatures
-//! 
-//! Comprehensive hash algorithm implementations optimized for signature operations,
-//! with support for multiple algorithms, streaming, and security validation.
+// Production-ready Hash Algorithms for Digital Signatures
+// 
+// Comprehensive hash algorithm implementations optimized for signature operations,
+// with support for multiple algorithms, streaming, and security validation.
 
 use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
 use crate::error::Error;

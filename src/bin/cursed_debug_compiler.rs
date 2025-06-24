@@ -1,10 +1,10 @@
 use crate::error::Error;
-//! CURSED Debug-Enabled Compiler
-//! 
-//! A comprehensive command-line tool for compiling CURSED programs with
-//! full debug information support. This tool demonstrates the complete
-//! LLVM debug integration including DWARF metadata generation,
-//! source location mapping, and debugger compatibility.
+// CURSED Debug-Enabled Compiler
+// 
+// A comprehensive command-line tool for compiling CURSED programs with
+// full debug information support. This tool demonstrates the complete
+// LLVM debug integration including DWARF metadata generation,
+// source location mapping, and debugger compatibility.
 
 use cursed::codegen::llvm::{EnhancedLlvmCodegen, CodegenConfig, LlvmDebugMetadata};
 use cursed::debug::{DebugConfig, SourceLocation};

@@ -1,7 +1,7 @@
-//! Network Optimization for Distributed Compilation
-//!
-//! Optimizes network communications between the coordinator and worker nodes,
-//! including compression, connection pooling, and bandwidth management.
+// Network Optimization for Distributed Compilation
+//
+// Optimizes network communications between the coordinator and worker nodes,
+// including compression, connection pooling, and bandwidth management.
 
 use crate::error::{CursedError, Result};
 

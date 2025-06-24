@@ -1,13 +1,13 @@
-//! Standard library error handling utilities for CURSED
-//!
-//! This module provides common error constructors, formatting functions,
-//! and integration utilities for the CURSED error handling system.
+// Standard library error handling utilities for CURSED
+//
+// This module provides common error constructors, formatting functions,
+// and integration utilities for the CURSED error handling system.
 
 use crate::error::{Error, CursedError, SourceLocation};
 use crate::stdlib::value::Value;
 use crate::stdlib::io::error::IoError as StdlibIoError;
 use crate::types::result::error_patterns;
-use crate::error::types::{CursedErrorTrait, ErrorCategory, ErrorSeverity, IoError, ParseError, RuntimeError};
+use crate::error::types::{CursedErrorTrait, ErrorCategory, ErrorSeverity as CursedErrorSeverity, IoError, ParseError, RuntimeError};
 
 use std::collections::HashMap;
 use std::fmt;

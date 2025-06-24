@@ -1,6 +1,6 @@
 use crate::ast::expressions::{ErrorPropagation, QuestionMarkExpression};
 use crate::ast::traits::Expression;
-use crate::codegen::llvm::{LlvmCodeGenerator, ResultTypeCompiler, result_crate::types::{ResultTypeLayout, OptionTypeLayout}};
+use crate::codegen::llvm::{LlvmCodeGenerator, ResultTypeCompiler, result_types::{ResultTypeLayout, OptionTypeLayout}};
 use crate::error::{CursedError, ErrorPropagationError, SourceLocation};
 use crate::runtime::panic_recovery::PanicRecoveryRuntime;
 

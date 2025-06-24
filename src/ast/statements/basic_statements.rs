@@ -316,3 +316,38 @@ impl Statement for FinallyStatement {
         Box::new(self.clone())
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct PrintStatement {
+    pub expression: Box<dyn Expression>,
+    pub location: SourceLocation,
+}
+
+impl PrintStatement {
+    pub fn new(expression: Box<dyn Expression>) -> Self {
+        Self {
+            expression,
+            location: SourceLocation::default(),
+        }
+    }
+}
+
+impl Node for PrintStatement {
+    fn string(&self) -> String {
+        format!("print({});", self.expression.string())
+    }
+    
+    fn token_literal(&self) -> String {
+        "print".to_string()
+    }
+}
+
+impl Statement for PrintStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(self.clone())
+    }
+}

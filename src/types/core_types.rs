@@ -1,6 +1,6 @@
 
-use crate::crate::types::source_location::SourceLocation;
-use crate::ast::crate::types::Type;
+use crate::types::source_location::SourceLocation;
+use crate::ast::types::Type;
 
 #[derive(Debug, Clone)]
 pub struct StructField {

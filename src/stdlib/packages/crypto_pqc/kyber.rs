@@ -1,39 +1,39 @@
 use crate::error::Error;
-//! fr fr Kyber Key Encapsulation Mechanism (KEM) Implementation
-//! 
-//! This module provides a production-ready implementation of the Kyber post-quantum
-//! Key Encapsulation Mechanism (KEM) following NIST ML-KEM (FIPS 203) standards.
-//! 
-//! Kyber is a lattice-based KEM that provides strong security guarantees against
-//! both classical and quantum attacks. It supports three security levels:
-//! - Kyber-512 (NIST Level 1): Equivalent to AES-128
-//! - Kyber-768 (NIST Level 3): Equivalent to AES-192  
-//! - Kyber-1024 (NIST Level 5): Equivalent to AES-256
-//! 
-//! # Security Features
-//! 
-//! - Cryptographically secure random number generation
-//! - Constant-time operations where possible  
-//! - Memory zeroization for sensitive data
-//! - Input validation and bounds checking
-//! - Timing attack resistance
-//! - Side-channel resistance measures
-//! 
-//! # Usage Example
-//! 
-//! ```rust
-//! use cursed::stdlib::packages::crypto_pqc::kyber::*;
-//! 
-//! // Generate key pair
-//! let keypair = KyberKeyPair::generate(KyberParameterSet::Kyber768)?;
-//! 
-//! // Encapsulation  
-//! let encaps_result = keypair.public_key().encapsulate()?;
-//! 
-//! // Decapsulation
-//! let shared_secret = keypair.private_key().decapsulate(&encaps_result.ciphertext)?;
-//! assert_eq!(encaps_result.shared_secret, shared_secret);
-//! ```
+// fr fr Kyber Key Encapsulation Mechanism (KEM) Implementation
+// 
+// This module provides a production-ready implementation of the Kyber post-quantum
+// Key Encapsulation Mechanism (KEM) following NIST ML-KEM (FIPS 203) standards.
+// 
+// Kyber is a lattice-based KEM that provides strong security guarantees against
+// both classical and quantum attacks. It supports three security levels:
+// - Kyber-512 (NIST Level 1): Equivalent to AES-128
+// - Kyber-768 (NIST Level 3): Equivalent to AES-192  
+// - Kyber-1024 (NIST Level 5): Equivalent to AES-256
+// 
+// # Security Features
+// 
+// - Cryptographically secure random number generation
+// - Constant-time operations where possible  
+// - Memory zeroization for sensitive data
+// - Input validation and bounds checking
+// - Timing attack resistance
+// - Side-channel resistance measures
+// 
+// # Usage Example
+// 
+// ```rust
+// use cursed::stdlib::packages::crypto_pqc::kyber::*;
+// 
+// // Generate key pair
+// let keypair = KyberKeyPair::generate(KyberParameterSet::Kyber768)?;
+// 
+// // Encapsulation  
+// let encaps_result = keypair.public_key().encapsulate()?;
+// 
+// // Decapsulation
+// let shared_secret = keypair.private_key().decapsulate(&encaps_result.ciphertext)?;
+// assert_eq!(encaps_result.shared_secret, shared_secret);
+// ```
 
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};

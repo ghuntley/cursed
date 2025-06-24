@@ -1,7 +1,7 @@
-//! Production-ready Signature Format Utilities
-//! 
-//! Comprehensive signature format handling with support for multiple encoding formats,
-//! ASN.1 DER encoding/decoding, and standard signature formats.
+// Production-ready Signature Format Utilities
+// 
+// Comprehensive signature format handling with support for multiple encoding formats,
+// ASN.1 DER encoding/decoding, and standard signature formats.
 
 use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
 use crate::error::Error;

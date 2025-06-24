@@ -1,6 +1,6 @@
-//! HQC (Hamming Quasi-Cyclic) Code-based Implementation
-//! 
-//! HQC is a code-based KEM using Hamming quasi-cyclic codes.
+// HQC (Hamming Quasi-Cyclic) Code-based Implementation
+// 
+// HQC is a code-based KEM using Hamming quasi-cyclic codes.
 
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::KeyEncapsulation;

@@ -1,11 +1,11 @@
 use crate::error::Error;
-//! Inlay hints implementation for CURSED language
-//! 
-//! Provides contextual inline information including type hints, parameter names,
-//! return types, and implicit conversions.
+// Inlay hints implementation for CURSED language
+// 
+// Provides contextual inline information including type hints, parameter names,
+// return types, and implicit conversions.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, Token, TokenType};

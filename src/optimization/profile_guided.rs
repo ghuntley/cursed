@@ -1,4 +1,4 @@
-//! Profile-guided optimization (PGO) support
+// Profile-guided optimization (PGO) support
 
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::CompilationUnit;

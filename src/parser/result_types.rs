@@ -1,13 +1,13 @@
-//! Parser support for Result and Option types
-//!
-//! This module provides parsing capabilities for Result<T, E> and Option<T> type syntax,
-//! pattern matching expressions, and error handling constructs.
+// Parser support for Result and Option types
+//
+// This module provides parsing capabilities for Result<T, E> and Option<T> type syntax,
+// pattern matching expressions, and error handling constructs.
 
 use crate::parser::Parser;
 use crate::lexer::{Token, TokenType};
 use crate::ast::traits::Expression;
 use crate::ast::identifiers::Identifier;
-use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
+use types::result::{ResultTypeExpression, OptionTypeExpression};
 use crate::error::{CursedError, Error};
 
 use std::any::Any;

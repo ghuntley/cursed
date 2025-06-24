@@ -1,17 +1,17 @@
-//! # Enhanced AST Extractor for Documentation
-//!
-//! Advanced AST analysis and documentation extraction with comprehensive type relationship
-//! mapping, inheritance hierarchies, and cross-reference generation for the CURSED
-//! programming language documentation system.
-//!
-//! ## Features
-//!
-//! - **Complete Type Analysis**: Full type relationship mapping and inheritance hierarchies
-//! - **Cross-Reference Generation**: Comprehensive linking between modules, types, and functions
-//! - **Interactive Navigation**: Code navigation features for documentation
-//! - **Semantic Analysis**: Deep understanding of code structure and relationships
-//! - **Gen Z Integration**: Full support for CURSED's Gen Z slang terminology
-//! - **Performance Optimization**: Efficient AST traversal and caching
+// # Enhanced AST Extractor for Documentation
+//
+// Advanced AST analysis and documentation extraction with comprehensive type relationship
+// mapping, inheritance hierarchies, and cross-reference generation for the CURSED
+// programming language documentation system.
+//
+// ## Features
+//
+// - **Complete Type Analysis**: Full type relationship mapping and inheritance hierarchies
+// - **Cross-Reference Generation**: Comprehensive linking between modules, types, and functions
+// - **Interactive Navigation**: Code navigation features for documentation
+// - **Semantic Analysis**: Deep understanding of code structure and relationships
+// - **Gen Z Integration**: Full support for CURSED's Gen Z slang terminology
+// - **Performance Optimization**: Efficient AST traversal and caching
 
 use crate::ast::*;
 use crate::documentation::extractors::{AstExtractor, ExtractionConfig, EnhancedDocumentationItem};

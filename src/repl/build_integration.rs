@@ -1,9 +1,9 @@
 use crate::error::Error;
-//! Build System Integration for CURSED REPL
-//! 
-//! Provides integration with the CURSED build system, allowing
-//! REPL users to build, test, format, and lint their projects
-//! without leaving the interactive environment.
+// Build System Integration for CURSED REPL
+// 
+// Provides integration with the CURSED build system, allowing
+// REPL users to build, test, format, and lint their projects
+// without leaving the interactive environment.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
