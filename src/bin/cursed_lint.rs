@@ -178,7 +178,7 @@ fn process_path(
     linter: &mut CursedLinter, 
     path: &Path, 
     cli: &Cli
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let mut total_issues = 0;
     let mut total_errors = 0;
     let mut total_warnings = 0;
@@ -226,7 +226,7 @@ fn process_file(
     linter: &mut CursedLinter,
     file_path: &Path,
     cli: &Cli,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let content = fs::read_to_string(file_path)?;
     let results = linter.lint(&content)?;
 

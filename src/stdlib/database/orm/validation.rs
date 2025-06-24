@@ -244,7 +244,7 @@ impl EntityValidator {
 
     /// yolo Validate entity with all rules
     #[instrument(skip(self, context))]
-    pub fn validate(&self, context: &ValidationContext) -> Result<(), Error>> {
+    pub fn validate(&self, context: &ValidationContext) -> Result<(), Error> {
         debug!(entity = %context.entity_type, "Validating entity");
         
         let mut errors = Vec::new();

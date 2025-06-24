@@ -71,7 +71,7 @@ impl std::fmt::Debug for dyn Middleware {
 }
 
 /// Result type for middleware operations
-pub type MiddlewareResult = Result<(), Error>;
+pub type MiddlewareResult<T> = std::result::Result<T, MiddlewareError>;
 
 /// Authentication middleware
 #[derive(Debug)]

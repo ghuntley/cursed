@@ -53,7 +53,7 @@ impl std::fmt::Display for UnifiedCryptoError {
 
 impl std::error::Error for UnifiedCryptoError {}
 
-pub type UnifiedCryptoResult<(), Error>;
+pub type UnifiedCryptoResult<T> = std::result::Result<T, UnifiedCryptoError>;
 
 /// fr fr Crypto operation types
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

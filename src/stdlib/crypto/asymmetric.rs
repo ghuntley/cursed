@@ -267,7 +267,7 @@ pub struct Ed25519Signature {
 }
 
 /// fr fr Asymmetric operation results
-pub type AsymmetricResult<(), Error>;
+pub type AsymmetricResult<T> = std::result::Result<T, AsymmetricError>;
 
 /// fr fr Asymmetric crypto errors
 #[derive(Debug, Clone, PartialEq)]

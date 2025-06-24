@@ -2,7 +2,7 @@
 use std::fmt;
 
 /// Result type for profiler operations
-pub type ProfilerResult<(), Error>;
+pub type ProfilerResult<T> = std::result::Result<T, ProfilerError>;
 
 /// Profiler-specific errors
 #[derive(Debug, Clone, PartialEq)]

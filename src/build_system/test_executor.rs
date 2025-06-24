@@ -242,7 +242,7 @@ impl TestExecutor {
     
     /// Execute a collection of tests
     #[instrument(skip(self, tests))]
-    pub async fn execute_tests(&self, tests: Vec<TestFunction>) -> Result<(), Error>> {
+    pub async fn execute_tests(&self, tests: Vec<TestFunction>) -> Result<(), Error> {
         info!("Starting execution of {} tests with {} threads", 
               tests.len(), self.config.parallel_threads);
         
@@ -423,7 +423,7 @@ impl TestExecutor {
     fn execute_with_timeout(
         mut cmd: Command,
         timeout: Duration,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         let start = Instant::now();
         
         let mut child = cmd.spawn()?;

@@ -1699,7 +1699,7 @@ mod tests {
     }
     
     #[test]
-    fn test_template_generation() -> Result<(), Error>> {
+    fn test_template_generation() -> Result<(), Error> {
         let manager = TemplateManager::new();
         let dir = tempdir()?;
         

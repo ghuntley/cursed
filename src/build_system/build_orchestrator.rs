@@ -2246,7 +2246,7 @@ mod tests {
     }
     
     #[test]
-    fn test_line_counting() -> Result<(), Error>> {
+    fn test_line_counting() -> Result<(), Error> {
         let dir = tempdir()?;
         let file_path = dir.path().join("test.csd");
         

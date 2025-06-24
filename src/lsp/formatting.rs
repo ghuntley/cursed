@@ -26,7 +26,7 @@ impl FormattingProvider {
 
     /// Format entire document
     #[instrument(skip(self, content))]
-    pub async fn format_document(&self, content: &str) -> Result<(), Error>> {
+    pub async fn format_document(&self, content: &str) -> Result<(), Error> {
         debug!("Formatting document");
         
         // Create formatter with default config

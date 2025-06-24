@@ -23,7 +23,7 @@ pub mod error;
 pub mod value;
 
 // Type aliases for convenience
-pub type JsonResult<(), Error>;
+pub type JsonResult<T> = std::result::Result<T, JsonError>;
 pub type JsonObject = HashMap<String, JsonValue>;
 pub type JsonArray = Vec<JsonValue>;
 

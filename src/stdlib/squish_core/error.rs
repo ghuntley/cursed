@@ -82,7 +82,7 @@ impl From<std::string::FromUtf8Error> for SquishError {
 }
 
 /// Result type for SquishCore operations
-pub type SquishResult<(), Error>;
+pub type SquishResult<T> = std::result::Result<T, SquishError>;
 
 /// Specific error type for compression operations
 #[derive(Debug, Clone)]

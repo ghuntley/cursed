@@ -5,7 +5,7 @@ use std::string::FromUtf8Error;
 use std::io;
 
 /// Result type for CSV operations
-pub type CsvResult<(), Error>;
+pub type CsvResult<T> = std::result::Result<T, CsvError>;
 
 /// Comprehensive error types for CSV operations
 #[derive(Debug, Clone)]

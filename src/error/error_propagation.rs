@@ -246,7 +246,7 @@ impl fmt::Display for PropagationContextError {
 impl StdError for PropagationContextError {}
 
 /// Result type for error propagation operations
-pub type PropagationResult<(), Error>;
+pub type PropagationResult<T> = std::result::Result<T, PropagationError>;
 
 /// Helper functions for creating common error propagation errors
 impl Error {

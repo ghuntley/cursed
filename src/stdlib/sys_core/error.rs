@@ -60,7 +60,7 @@ impl From<std::io::Error> for SysCoreError {
 }
 
 /// Result type for system core operations
-pub type SysCoreResult<(), Error>;
+pub type SysCoreResult<T> = std::result::Result<T, SysCoreError>;
 
 /// Helper functions for creating errors
 pub fn system_call_error(msg: &str, errno: i32) -> SysCoreError {

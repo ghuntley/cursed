@@ -5,7 +5,7 @@
 use std::fmt;
 
 /// Result type for digital signature operations
-pub type SignatureResult<(), Error>;
+pub type SignatureResult<T> = std::result::Result<T, SignatureError>;
 
 /// Comprehensive error types for digital signature operations
 #[derive(Debug, Clone)]

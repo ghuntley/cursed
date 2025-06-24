@@ -335,7 +335,7 @@ impl From<PkiError> for CursedError {
 }
 
 /// Convenience type alias for PKI results
-pub type PkiResult<(), Error>;
+pub type PkiResult<T> = std::result::Result<T, PkiError>;
 
 /// Helper functions for creating specific PKI errors
 impl PkiError {

@@ -216,7 +216,7 @@ impl From<FutureError> for AsyncError {
 }
 
 /// Result type for async operations
-pub type AsyncResult<(), Error>;
+pub type AsyncResult<T> = std::result::Result<T, AsyncError>;
 
 /// Helper functions for error conversion
 pub fn io_error(msg: &str) -> AsyncError {

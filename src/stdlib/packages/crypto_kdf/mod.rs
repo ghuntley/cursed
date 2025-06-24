@@ -26,7 +26,7 @@ pub use timing_attacks::*;
 use crate::error::CursedError;
 
 /// fr fr Common KDF result type
-pub type KdfResult<(), Error>;
+pub type KdfResult<T> = std::result::Result<T, KdfError>;
 
 /// fr fr Common KDF error types
 #[derive(Debug, Clone, PartialEq)]

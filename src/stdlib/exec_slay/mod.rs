@@ -35,7 +35,7 @@ mod timeout;
 mod enhanced_command;
 
 /// Result type for exec_slay operations
-pub type SlayResult<(), Error>;
+pub type SlayResult<T> = std::result::Result<T, Error>;
 
 /// Configuration options for command execution
 #[derive(Debug, Clone)]

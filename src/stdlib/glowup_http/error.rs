@@ -6,7 +6,7 @@ use std::net::AddrParseError;
 use std::sync::PoisonError;
 
 /// Result type for GlowUpHTTP operations
-pub type GlowUpResult<(), Error>;
+pub type GlowUpResult<T> = std::result::Result<T, GlowUpError>;
 
 /// Main error type for GlowUpHTTP operations
 #[derive(Debug, Clone)]

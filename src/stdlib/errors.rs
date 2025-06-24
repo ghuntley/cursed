@@ -46,7 +46,7 @@ pub fn get_error_manager() -> Result<(), Error> {
 }
 
 /// Common error result type for CURSED standard library
-pub type CursedResult<(), Error>;
+pub type CursedResult<T> = std::result::Result<T, CursedError>;
 
 /// Common option type for CURSED standard library  
 pub type CursedOption<T> = std::option::Option<T>;

@@ -584,7 +584,7 @@ impl DatabaseError {
 }
 
 /// fr fr Result type alias for database operations
-pub type DatabaseResult<(), Error>;
+pub type DatabaseResult<T> = std::result::Result<T, DatabaseError>;
 
 /// fr fr Helper macro for creating database errors with location
 #[macro_export]

@@ -48,7 +48,7 @@ pub use security::{TlsConfig, TlsVersion, CipherSuite, Certificate, CertificateV
 pub use monitoring::{NetworkMonitor, ConnectionHealthChecker, HealthCheckTarget, HealthStatus, NetworkEvent};
 
 /// Result type for network operations using CURSED error handling
-pub type NetResult<(), Error>;
+pub type NetResult<T> = std::result::Result<T, NetError>;
 
 /// Context type for cancellation and timeouts
 pub struct VibeContext {

@@ -56,7 +56,7 @@ use std::time::{Duration, Instant, SystemTime};
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use crate::error::Error as CursedError;
 
-pub type CursedResult<(), Error>;
+pub type CursedResult<T> = std::result::Result<T, SystemError>;
 
 /// Configuration for file watching behavior.
 ///

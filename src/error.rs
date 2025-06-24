@@ -100,7 +100,7 @@ pub enum Error {
 pub type CursedError = Error;
 
 /// Result type alias for CURSED operations
-pub type Result<(), Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 impl Clone for Error {
     fn clone(&self) -> Self {

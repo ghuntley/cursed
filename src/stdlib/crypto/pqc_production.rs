@@ -156,7 +156,7 @@ impl From<PqcError> for CursedError {
 }
 
 /// Result type for PQC operations
-pub type PqcResult<(), Error>;
+pub type PqcResult<T> = std::result::Result<T, PqcError>;
 
 /// NIST security levels with quantum attack complexity
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

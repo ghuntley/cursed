@@ -58,4 +58,4 @@ impl From<io::Error> for FsError {
 }
 
 /// Result type for file system operations
-pub type FsResult<(), Error>;
+pub type FsResult<T> = std::result::Result<T, FsError>;

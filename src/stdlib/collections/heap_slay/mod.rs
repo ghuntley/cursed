@@ -61,7 +61,7 @@ pub use types::{
 use crate::error::{CursedError, ErrorType};
 
 /// Result type for heap operations
-pub type HeapResult<(), Error>;
+pub type HeapResult<T> = std::result::Result<T, IoError>;
 
 /// Create a heap-specific error
 pub fn heap_error(message: &str) -> CursedError {

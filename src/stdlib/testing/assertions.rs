@@ -12,7 +12,7 @@ use crate::stdlib::value::Value;
 use super::{TestError, assertion_error};
 
 /// Result type for assertion operations
-pub type AssertionResult = Result<(), Error>;
+pub type AssertionResult<T> = std::result::Result<T, AssertionError>;
 
 /// Context information for assertion failures
 #[derive(Debug, Clone)]

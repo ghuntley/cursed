@@ -119,7 +119,7 @@ impl From<std::ffi::OsString> for EnvError {
 }
 
 /// Result type for environment variable operations
-pub type EnvResult<(), Error>;
+pub type EnvResult<T> = std::result::Result<T, EnvError>;
 
 /// Helper function to create environment variable not found errors
 pub fn not_found_error(key: &str) -> EnvError {

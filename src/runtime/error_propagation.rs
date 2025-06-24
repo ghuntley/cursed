@@ -103,7 +103,7 @@ impl ErrorPropagationOperator {
         option_value: CursedOption<T>,
         source_location: SourceLocation,
         function_context: Option<String>,
-    ) -> Result<(), Error>>
+    ) -> Result<(), Error>
     where
         T: Clone + fmt::Debug,
     {

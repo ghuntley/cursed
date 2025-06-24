@@ -3,7 +3,7 @@ use std::fmt;
 use std::io;
 
 /// Result type for process operations
-pub type ProcessResult<(), Error>;
+pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
 /// Error types for process operations
 #[derive(Debug, Clone)]

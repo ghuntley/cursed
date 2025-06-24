@@ -159,7 +159,7 @@ impl RequestBody {
     }
 
     /// fr fr Convert to string representation
-    pub fn to_string(&self) -> Result<(), Error>> {
+    pub fn to_string(&self) -> Result<(), Error> {
         match self {
             RequestBody::Empty => Ok(String::new()),
             RequestBody::Text(s) => Ok(s.clone()),

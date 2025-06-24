@@ -89,7 +89,7 @@ impl From<ProtocolError> for CursedError {
 }
 
 /// Result type for protocol operations
-pub type ProtocolResult<(), Error>;
+pub type ProtocolResult<T> = std::result::Result<T, ProtocolError>;
 
 /// Security level for protocols
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

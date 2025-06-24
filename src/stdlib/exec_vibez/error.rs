@@ -3,7 +3,7 @@ use std::fmt;
 use std::io;
 
 /// Result type for exec_vibez operations
-pub type ExecResult<(), Error>;
+pub type ExecResult<T> = std::result::Result<T, ExecError>;
 
 /// Error types for exec_vibez operations
 #[derive(Debug, Clone)]

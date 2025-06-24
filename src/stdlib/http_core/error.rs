@@ -282,7 +282,7 @@ impl fmt::Display for ErrorCategory {
 }
 
 /// Result type for HTTP operations
-pub type HttpResult<(), Error>;
+pub type HttpResult<T> = std::result::Result<T, HttpError>;
 
 /// Error context for better debugging
 #[derive(Debug, Clone)]

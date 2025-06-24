@@ -41,7 +41,7 @@ use crate::stdlib::process::real_monitoring::{
 use crate::error::CursedError;
 
 /// Result type for SlayCommand operations
-pub type SlayResult<(), Error>;
+pub type SlayResult<T> = std::result::Result<T, ProcessError>;
 
 /// SlayCommand represents an external command to be executed with enhanced features
 #[derive(Debug)]

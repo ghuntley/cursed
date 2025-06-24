@@ -35,7 +35,7 @@ pub use advanced::*;
 pub use sorta_fresh::*;
 
 // Collections result type
-pub type CollectionsResult<(), Error>;
+pub type CollectionsResult<T> = std::result::Result<T, CollectionsError>;
 
 /// Errors that can occur during collection operations
 #[derive(Debug, Clone, PartialEq)]

@@ -20,7 +20,7 @@ use std::panic;
 pub type CoreError = CursedError;
 
 /// Result type for Core operations
-pub type CoreResult<(), Error>;
+pub type CoreResult<T> = std::result::Result<T, CoreError>;
 
 // ================================
 // CURSED TYPE ALIASES

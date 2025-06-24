@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use crate::error::CursedError;
 
 /// Result type for exec_vibez operations
-pub type VibezResult<(), Error>;
+pub type VibezResult<T> = std::result::Result<T, ProcessError>;
 
 /// Execution context for enhanced command execution
 #[derive(Debug, Clone)]

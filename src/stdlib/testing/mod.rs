@@ -94,7 +94,7 @@ pub use macros::{
 use crate::crate::stdlib::errors_simple::CursedError;
 
 /// Result type for testing operations
-pub type TestFrameworkResult<(), Error>;
+pub type TestFrameworkResult<T> = std::result::Result<T, TestError>;
 
 /// Error types specific to the testing framework
 #[derive(Debug, Clone)]
