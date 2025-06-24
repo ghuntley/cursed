@@ -86,7 +86,7 @@ pub mod type_disambiguation;
 // Re-export public API
 // Core types - explicit exports to avoid conflicts
 pub use error::{ProcessError, ProcessResult};
-pub use core::{ProcessManager, ProcessHandle};
+pub use core::{ProcessManager, ProcessHandle, ProcessConfig, ProcessGroup, ProcessState, ProcessInfo};
 pub use info::{ProcessInfo as StdProcessInfo, SystemInfo, ProcessState as StdProcessState};
 pub use control::{ProcessController, ControlOptions};
 pub use enhanced_control::{EnhancedProcessController, EnhancedControlOptions};

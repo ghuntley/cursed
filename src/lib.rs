@@ -15,10 +15,15 @@ pub mod lexer;
 pub mod parser;
 pub mod codegen;
 pub mod common;
+pub mod web;
+pub mod tokio;
 pub mod core;
 
 // Standard library module
 pub mod stdlib;
+
+// Types module for Result, Option, and error patterns
+pub mod types;
 
 // Basic debug module for compatibility
 pub mod debug {
