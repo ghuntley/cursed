@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Memory-mapped files implementation for CURSED
 /// 
 /// This module provides comprehensive memory mapping functionality including:

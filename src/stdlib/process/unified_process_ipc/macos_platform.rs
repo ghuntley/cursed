@@ -1,3 +1,4 @@
+use crate::error::Error;
 // macOS-specific platform implementations for process and IPC management
 use super::*;
 use crate::error::CursedError;

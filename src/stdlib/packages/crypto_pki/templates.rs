@@ -1,6 +1,7 @@
 /// Certificate Templates
 
 use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError};
+use crate::error::Error;
 
 #[derive(Debug, Clone)]
 pub struct CertificateTemplate {

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Connection pool for HTTP client
 
 use std::collections::HashMap;

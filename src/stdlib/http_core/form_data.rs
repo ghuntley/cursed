@@ -1,6 +1,7 @@
-//! Form Data Processing for CURSED web_vibez
-//!
-//! Comprehensive form data parsing for URL-encoded and multipart forms.
+use crate::error::Error;
+/// Form Data Processing for CURSED web_vibez
+///
+/// Comprehensive form data parsing for URL-encoded and multipart forms.
 
 use std::collections::HashMap;
 use std::fmt;

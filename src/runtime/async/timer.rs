@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Timer and delay implementations for async operations
 use std::collections::BinaryHeap;
 use std::sync::{Arc, Mutex, Condvar};

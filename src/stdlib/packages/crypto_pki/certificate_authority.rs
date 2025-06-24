@@ -2,6 +2,7 @@
 
 use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError, X509Certificate};
 use crate::stdlib::packages::crypto_pki::certificate::Certificate;
+use crate::error::Error;
 
 #[derive(Debug, Clone)]
 pub struct CaConfiguration {

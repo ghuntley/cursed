@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Complex number mathematical functions for the CURSED programming language
 /// 
 /// This module provides comprehensive support for complex number arithmetic,

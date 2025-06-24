@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Synchronization primitives for CURSED channels
 /// Provides advanced synchronization patterns beyond basic send/receive
 

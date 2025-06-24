@@ -1,3 +1,4 @@
+
 // Minimal ModuleStatement for CURSED minimal build
 
 use std::any::Any;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template Format Support - Various output formats for CURSED templates
 use std::collections::HashMap;
 use std::path::Path;

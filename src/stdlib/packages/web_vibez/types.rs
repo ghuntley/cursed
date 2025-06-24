@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Core type definitions for web_vibez package
 use std::collections::HashMap;
 use std::fmt;

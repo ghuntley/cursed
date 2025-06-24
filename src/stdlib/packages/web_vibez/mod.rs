@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr HTTP server implementation for CURSED language - web_vibez package
 /// This module provides no-cap HTTP server functionality with Gen Z energy
 

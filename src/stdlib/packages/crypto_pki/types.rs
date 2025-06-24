@@ -3,6 +3,7 @@
 /// This module provides fundamental types used throughout the PKI system
 
 use crate::error::CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 

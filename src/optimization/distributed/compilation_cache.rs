@@ -4,6 +4,7 @@
 //! to avoid redundant compilation work and improve overall performance.
 
 use crate::error::{Error as CursedError, Result};
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};

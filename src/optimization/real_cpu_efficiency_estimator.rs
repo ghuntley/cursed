@@ -4,6 +4,7 @@
 /// pipeline utilization, and modern CPU architecture characteristics.
 
 use crate::error::{Error, Result};
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, trace};

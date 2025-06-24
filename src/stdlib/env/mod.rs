@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Environment variables module for CURSED standard library
 /// 
 /// Provides comprehensive environment variable operations with cross-platform support,

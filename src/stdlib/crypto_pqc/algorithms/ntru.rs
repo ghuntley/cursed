@@ -1,7 +1,8 @@
-//! NTRU Lattice-based Encryption Implementation
-//! 
-//! NTRU is a lattice-based public key encryption scheme that was one of the finalists
-//! in the NIST post-quantum cryptography standardization process.
+use crate::error::Error;
+/// NTRU Lattice-based Encryption Implementation
+/// 
+/// NTRU is a lattice-based public key encryption scheme that was one of the finalists
+/// in the NIST post-quantum cryptography standardization process.
 
 use std::fmt;
 use rand::rngs::OsRng;

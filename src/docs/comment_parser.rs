@@ -4,6 +4,7 @@
 
 use crate::error::{Error, SourceLocation};
 use crate::docs::generator::Example;
+
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 

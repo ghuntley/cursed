@@ -1,28 +1,29 @@
-//! Real SPHINCS+ Hash-based Signature Implementation
-//! 
-//! This is a production-ready implementation of SPHINCS+, a stateless hash-based
-//! digital signature scheme standardized by NIST.
-//! 
-//! # Mathematical Foundation
-//! 
-//! SPHINCS+ is built on:
-//! - One-Time Signatures (WOTS+)
-//! - Merkle Trees for authentication
-//! - FORS (Forest of Random Subsets) for few-time signatures
-//! - Hypertree structure for scalability
-//! 
-//! # Security
-//! 
-//! SPHINCS+ provides:
-//! - EU-CMA security under standard assumptions
-//! - Post-quantum security based on hash function security
-//! - Provable security without additional assumptions
-//! 
-//! # Parameter Sets
-//! 
-//! - SPHINCS+-128s/f: 128-bit security, small/fast variants
-//! - SPHINCS+-192s/f: 192-bit security, small/fast variants
-//! - SPHINCS+-256s/f: 256-bit security, small/fast variants
+use crate::error::Error;
+/// Real SPHINCS+ Hash-based Signature Implementation
+/// 
+/// This is a production-ready implementation of SPHINCS+, a stateless hash-based
+/// digital signature scheme standardized by NIST.
+/// 
+/// # Mathematical Foundation
+/// 
+/// SPHINCS+ is built on:
+/// - One-Time Signatures (WOTS+)
+/// - Merkle Trees for authentication
+/// - FORS (Forest of Random Subsets) for few-time signatures
+/// - Hypertree structure for scalability
+/// 
+/// # Security
+/// 
+/// SPHINCS+ provides:
+/// - EU-CMA security under standard assumptions
+/// - Post-quantum security based on hash function security
+/// - Provable security without additional assumptions
+/// 
+/// # Parameter Sets
+/// 
+/// - SPHINCS+-128s/f: 128-bit security, small/fast variants
+/// - SPHINCS+-192s/f: 192-bit security, small/fast variants
+/// - SPHINCS+-256s/f: 256-bit security, small/fast variants
 
 use std::fmt;
 use rand::rngs::OsRng;

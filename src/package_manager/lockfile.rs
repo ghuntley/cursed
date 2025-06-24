@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Lock file management for reproducible builds
 /// 
 /// Handles generation, parsing, and validation of CursedPackage.lock files

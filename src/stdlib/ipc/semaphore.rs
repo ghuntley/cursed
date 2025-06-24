@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced semaphore implementation for CURSED IPC
 /// 
 /// Provides both named and unnamed semaphores for process synchronization,

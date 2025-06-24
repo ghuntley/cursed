@@ -1,3 +1,4 @@
+use crate::error::Error;
 #![cfg(windows)]
 
 //! Windows-specific process management and IPC implementation (simplified)

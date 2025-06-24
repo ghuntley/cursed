@@ -20,6 +20,7 @@ pub use utils::*;
 
 // Core compilation functions
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// Compile a regular expression pattern into a VibePattern
 /// Returns error if the pattern is invalid

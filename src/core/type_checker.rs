@@ -11,6 +11,7 @@ use crate::type_system::{
     TypeSystem, TypeExpression, TypeEnvironment, TypeDefinition, TypeKind,
     MethodSignature, InferenceContext
 };
+
 use std::collections::HashMap;
 
 /// Compatibility layer between old Type enum and new TypeExpression system

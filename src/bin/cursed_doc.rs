@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! CURSED Documentation Generator
 //! 
 //! Standalone binary for generating comprehensive documentation for CURSED projects.

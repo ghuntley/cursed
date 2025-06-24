@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr MySQL connection pool implementation
 /// 
 /// This module provides advanced connection pooling capabilities for MySQL

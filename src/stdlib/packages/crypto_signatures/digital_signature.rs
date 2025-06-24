@@ -8,6 +8,7 @@ use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, KeyTyp
 use crate::stdlib::packages::crypto_signatures::ed25519::Ed25519Signer;
 use crate::stdlib::packages::crypto_signatures::ecdsa::EcdsaSigner;
 use crate::stdlib::packages::crypto_signatures::rsa_signatures::{RsaSigner, RsaSignatureScheme, RsaHashAlgorithm};
+use crate::error::Error;
 use std::sync::{Arc, Mutex};
 
 /// Universal digital signature trait

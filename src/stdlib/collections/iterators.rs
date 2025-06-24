@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive Iterator system for CURSED collections
 /// 
 /// This module provides:

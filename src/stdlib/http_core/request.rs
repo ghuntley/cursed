@@ -1,6 +1,7 @@
-//! HTTP Request Processing for CURSED web_vibez
-//!
-//! Comprehensive request handling with proper parsing, validation, and security.
+use crate::error::Error;
+/// HTTP Request Processing for CURSED web_vibez
+///
+/// Comprehensive request handling with proper parsing, validation, and security.
 
 use std::collections::HashMap;
 use std::io::{self, Read, BufRead, BufReader};
@@ -10,7 +11,6 @@ use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use crate::stdlib::http_core::{
-use crate::error::Error;
     Headers, HeaderMap, Url, QueryParams, FormData, ContentType,
     Cookie, CookieJar, HttpError, HttpResult, HttpValidator
 };

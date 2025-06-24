@@ -4,6 +4,7 @@
 /// replacing placeholder implementations with real profiling data collection.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};

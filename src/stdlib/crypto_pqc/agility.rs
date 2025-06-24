@@ -1,16 +1,17 @@
-//! Algorithm Agility Framework for Post-Quantum Cryptography
-//! 
-//! This module provides a framework for algorithm agility, allowing systems to
-//! dynamically switch between different cryptographic algorithms based on 
-//! security requirements, performance constraints, and threat assessments.
-//! 
-//! # Key Features
-//! 
-//! - Dynamic algorithm selection based on security policies
-//! - Performance-aware algorithm switching
-//! - Threat-responsive algorithm updates
-//! - Backward compatibility management
-//! - Algorithm deprecation and migration support
+use crate::error::Error;
+/// Algorithm Agility Framework for Post-Quantum Cryptography
+/// 
+/// This module provides a framework for algorithm agility, allowing systems to
+/// dynamically switch between different cryptographic algorithms based on 
+/// security requirements, performance constraints, and threat assessments.
+/// 
+/// # Key Features
+/// 
+/// - Dynamic algorithm selection based on security policies
+/// - Performance-aware algorithm switching
+/// - Threat-responsive algorithm updates
+/// - Backward compatibility management
+/// - Algorithm deprecation and migration support
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};

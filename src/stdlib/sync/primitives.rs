@@ -8,12 +8,14 @@
 /// - Semaphores
 
 use crate::stdlib::sync::error::{SyncError, SyncResult, thread_error, lock_error, timeout_error};
+use crate::error::Error;
 use std::sync::{
     Arc, Mutex as StdMutex, RwLock as StdRwLock, Condvar as StdCondvar, Barrier as StdBarrier,
     atomic::{AtomicBool as StdAtomicBool, AtomicI32 as StdAtomicI32, AtomicI64 as StdAtomicI64, 
              AtomicUsize as StdAtomicUsize, AtomicPtr as StdAtomicPtr, Ordering as StdOrdering},
     Once as StdOnce, OnceLock as StdOnceLock,
 };
+
 use std::thread::{self, ThreadId as StdThreadId, JoinHandle as StdJoinHandle};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;

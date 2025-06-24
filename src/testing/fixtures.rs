@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test Fixtures System
 /// 
 /// Provides test data management, setup/teardown functionality,

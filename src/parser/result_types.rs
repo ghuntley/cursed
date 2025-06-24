@@ -9,6 +9,7 @@ use crate::ast::traits::Expression;
 use crate::ast::identifiers::Identifier;
 use crate::types::result::{ResultTypeExpression, OptionTypeExpression};
 use crate::error::{CursedError, Error};
+
 use std::any::Any;
 
 /// Result and Option type pattern expressions

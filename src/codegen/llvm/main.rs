@@ -11,6 +11,7 @@ use crate::common::optimization_level::OptimizationLevel as OptLevel;
 use crate::optimization::coordinator::{
     OptimizationCoordinator, CoordinatorConfiguration, CoordinatedOptimizationResults
 };
+
 use crate::optimization::crate::types::ComprehensiveOptimizationResult;
 
 /// Optimization preset configurations
@@ -62,11 +63,13 @@ use super::package_integration::{
     LlvmPackageContext, LlvmPackageConfig, LlvmPackageError, 
     LlvmPackageIntegration, CompiledPackageModule, LlvmPackageStats
 };
+
 use super::result_crate::types::{
     ResultTypeCompiler as ProductionResultTypeCompiler, 
     result_type_utils as production_result_utils,
     TypeLayout, ResultDiscriminant, OptionDiscriminant
 };
+
 use super::result_types_simple::{ResultTypeLayout, OptionTypeLayout, ResultTypeCompiler as SimpleResultTypeCompiler, result_type_utils as simple_result_utils};
 use super::optimization::{OptimizationManager, OptimizationLevel, OptimizationConfig, OptimizationStats, utils as optimization_utils};
 use super::optimization_engine::{OptimizationEngine, OptimizationEngineConfig, EngineStatistics, OptimizationResult};
@@ -75,10 +78,12 @@ use super::lto_integration::{
     LlvmLtoIntegration, ModuleSummary, FunctionSummary, GlobalSummary, ImportDecision,
     GlobalCallGraph, LtoResult as LlvmLtoResult, OptimizationResult as LlvmOptimizationResult, ObjectFile
 };
+
 use super::optimization_passes::{
     OptimizationPass, PassConfiguration, PassResult, 
     PassRegistry
 };
+
 use super::ipc::{IpcCompiler, SharedMemoryOperation, PipeOperation, MessageQueueOperation, SemaphoreOperation, SignalOperation};
 use super::type_switch::{TypeSwitchCompilation, TypeSwitchContext, LlvmTypeSwitchCompiler, TypeSwitchUtils};
 use super::jit_engine::{CursedJitEngine, JitEngineConfig, JitEngineStats, JitError, create_optimized_jit_engine, create_debug_jit_engine, create_production_jit_engine};
@@ -88,6 +93,7 @@ use super::template::{
     CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationStats, TemplateCompilationError,
     declare_template_runtime_functions, register_standard_filters, runtime as template_runtime
 };
+
 use super::async_await::{
     AsyncAwaitCompiler, AsyncFunctionContext, AwaitPoint
 };
@@ -1817,7 +1823,6 @@ impl LlvmCodeGenerator {
         })
     }
     
-    
     /// Compile a function call value
     fn compile_function_call_value(&mut self, call: &crate::ast::calls::CallExpression) -> Result<(), Error> {
         use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
@@ -2802,8 +2807,6 @@ impl LlvmCodeGenerator {
         Ok(())
     }
 }
-
-
 
 impl Default for LlvmCodeGenerator {
     fn default() -> Self {

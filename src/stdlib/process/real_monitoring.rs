@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Real-time process monitoring and state tracking
 /// 
 /// This module provides actual process monitoring capabilities with real system integration,

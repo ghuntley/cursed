@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Production-ready RPC transport implementation using Unix domain sockets
 /// 
 /// This module provides a real RPC transport that replaces the mock implementation
@@ -14,6 +15,7 @@ use crate::stdlib::ipc::{
     IpcResult, IpcError,
     communication_error_detailed, connection_failed, timeout_error
 };
+
 use crate::stdlib::ipc::rpc::{RpcTransport, RpcRequest, RpcResponse};
 use super::unix_socket::{UnixSocketTransport, UnixSocketConfig, UnixSocketType};
 use super::traits::{Transport, TransportConnection};

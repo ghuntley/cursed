@@ -1,3 +1,4 @@
+
 /// Constant Propagation and Folding Pass
 /// 
 /// Propagates constant values through the program and folds constant expressions
@@ -13,6 +14,7 @@ use inkwell::{
     basic_block::BasicBlock,
     IntPredicate, FloatPredicate,
 };
+
 use std::collections::HashMap;
 use std::time::Instant;
 use tracing::{debug, info, instrument, warn};

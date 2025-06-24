@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Database error types - when things go sideways periodt
 ///
 /// This module provides comprehensive error handling for database operations.

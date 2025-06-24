@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Elliptic Curve Cryptography implementation with ECDSA signatures
 /// 
 /// This module provides production-ready ECC key generation, ECDSA signing/verification
@@ -14,6 +15,7 @@ use elliptic_curve::{
     pkcs8::{EncodePrivateKey, EncodePublicKey, DecodePrivateKey, DecodePublicKey, LineEnding},
     PublicKey, SecretKey,
 };
+
 use zeroize::Zeroizing;
 use sha2::{Sha256, Sha384, Sha512, Digest};
 use crate::error::CursedError;

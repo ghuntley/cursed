@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive PEM/DER format handling for PKI operations
 /// 
 /// This module provides production-ready implementations for parsing, encoding, and converting

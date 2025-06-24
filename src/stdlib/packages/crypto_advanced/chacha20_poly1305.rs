@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr ChaCha20-Poly1305 authenticated encryption implementation
 use super::errors::*;
 use super::symmetric_cipher::*;

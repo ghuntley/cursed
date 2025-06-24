@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin development utilities and helper functions
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};

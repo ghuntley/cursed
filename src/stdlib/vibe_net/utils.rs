@@ -1,7 +1,8 @@
-//! # Network Utility Functions
-//! 
-//! This module provides network utility functions including IP address manipulation,
-//! network address calculations, bandwidth measurement, and network topology utilities.
+use crate::error::Error;
+/// # Network Utility Functions
+/// 
+/// This module provides network utility functions including IP address manipulation,
+/// network address calculations, bandwidth measurement, and network topology utilities.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};

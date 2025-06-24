@@ -12,6 +12,7 @@ use chacha20poly1305::{
     aead::{Aead, OsRng, Payload},
     XNonce, Key
 };
+use crate::error::Error;
 use crate::error::CursedError;
 use std::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -454,7 +455,6 @@ pub mod utils {
 mod tests {
     use super::*;
     use rand::thread_rng;
-use crate::error::Error;
 
     #[test]
     fn test_key_generation() {

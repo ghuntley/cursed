@@ -7,6 +7,7 @@ use crate::ast::AstNodeType;
 use crate::error::{Error, Result};
 use crate::ast::{AstNode, Expression, Statement, FunctionDeclaration};
 use crate::optimization::ml::CompilationContext;
+
 use std::collections::HashMap;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};

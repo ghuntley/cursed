@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process forking and job control implementation for CURSED
 /// 
 /// Process forking is a fundamental system programming primitive that allows:
@@ -18,6 +19,7 @@ use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error
 };
+
 use crate::stdlib::process::core::{ProcessConfig, ProcessInfo, ProcessState};
 
 /// Fork manager alias for process forking

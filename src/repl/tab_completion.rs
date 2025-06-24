@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Tab Completion for CURSED REPL
 //! 
 //! Provides intelligent tab completion for CURSED keywords,

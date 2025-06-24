@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// HTML Template Features - HTML-specific templating functionality
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

@@ -7,6 +7,7 @@
 use crate::error::{CursedError, SourceLocation};
 // use crate::runtime::value::Value;
 use crate::crate::types::result::{Result as CursedResult, Option as CursedOption};
+
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::sync::{Arc, Mutex, RwLock};
@@ -743,10 +744,6 @@ pub extern "C" fn cursed_check_option(option_ptr: *const u8) -> *mut u8 {
     let success_marker: u8 = 1;
     Box::into_raw(Box::new(success_marker))
 }
-
-
-
-
 
 /// FFI function for error propagation check (expected by tests)
 #[no_mangle]

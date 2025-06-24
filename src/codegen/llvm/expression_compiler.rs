@@ -12,6 +12,7 @@ use crate::ast::{
     calls::CallExpression,
 };
 use crate::error::Error;
+
 use crate::debug::SourceLocation;
 use crate::type_system::{TypeSystem, TypeInference, TypeEnvironment};
 use crate::codegen::llvm::type_system::{TypeCompilationContext, CompiledGenericInstance};
@@ -25,6 +26,7 @@ use inkwell::{
     AddressSpace,
     IntPredicate, FloatPredicate,
 };
+
 use std::any::Any;
 use std::collections::HashMap;
 use std::cell::RefCell;

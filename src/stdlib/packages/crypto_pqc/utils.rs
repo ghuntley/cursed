@@ -1,6 +1,7 @@
 /// fr fr Post-quantum cryptography utilities and mathematical operations
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::fmt;
 
 /// Polynomial ring element for lattice-based cryptography

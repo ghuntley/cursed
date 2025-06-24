@@ -1,19 +1,20 @@
-//! Dilithium Digital Signature Implementation
-//! 
-//! Dilithium is a lattice-based digital signature scheme based on the Module-LWE problem.
-//! It was selected by NIST for standardization as part of the post-quantum cryptography project.
-//! 
-//! # Security
-//! 
-//! Dilithium provides the following security levels:
-//! - Dilithium2: NIST Level 2 (approximately 128-bit classical security)
-//! - Dilithium3: NIST Level 3 (192-bit classical security)
-//! - Dilithium5: NIST Level 5 (256-bit classical security)
-//! 
-//! # Performance
-//! 
-//! Dilithium is designed for fast signature generation and verification with relatively
-//! compact signatures compared to other post-quantum signature schemes.
+use crate::error::Error;
+/// Dilithium Digital Signature Implementation
+/// 
+/// Dilithium is a lattice-based digital signature scheme based on the Module-LWE problem.
+/// It was selected by NIST for standardization as part of the post-quantum cryptography project.
+/// 
+/// # Security
+/// 
+/// Dilithium provides the following security levels:
+/// - Dilithium2: NIST Level 2 (approximately 128-bit classical security)
+/// - Dilithium3: NIST Level 3 (192-bit classical security)
+/// - Dilithium5: NIST Level 5 (256-bit classical security)
+/// 
+/// # Performance
+/// 
+/// Dilithium is designed for fast signature generation and verification with relatively
+/// compact signatures compared to other post-quantum signature schemes.
 
 use std::fmt;
 use rand::rngs::OsRng;

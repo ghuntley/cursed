@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Advanced Mathematical Functions Module for CURSED
 /// 
 /// Provides sophisticated mathematical operations including advanced numerical methods,

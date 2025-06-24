@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Stream handle management for CURSED console I/O operations
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::sync::{Arc, Mutex};

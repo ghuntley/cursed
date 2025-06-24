@@ -4,6 +4,7 @@ use crate::stdlib::glyph_gang::ranges::{
     LATIN, GREEK, CYRILLIC, HEBREW, ARABIC, DEVANAGARI, THAI,
     HAN, HIRAGANA, KATAKANA, HANGUL
 };
+use crate::error::Error;
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 

@@ -173,7 +173,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 
 /// fr fr Initialize the comprehensive crypto ecosystem
-pub fn init_crypto() -> Result<(), Error> {
+pub fn init_crypto() -> std::result::Result<(), Error> {
     println!("🚀 Initializing comprehensive CURSED crypto ecosystem...");
 
     // Initialize the unified crypto ecosystem using package manager
@@ -226,7 +226,7 @@ pub fn init_crypto() -> Result<(), Error> {
 }
 
 /// fr fr Get comprehensive crypto module information
-pub fn get_crypto_info(_args: Vec<Value>) -> Result<(), Error> {
+pub fn get_crypto_info(_args: Vec<Value>) -> std::result::Result<(), Error> {
     let mut info = HashMap::new();
     
     // Basic module info
@@ -306,7 +306,7 @@ pub fn get_crypto_info(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// fr fr Comprehensive crypto functionality testing
-pub fn test_crypto(_args: Vec<Value>) -> Result<(), Error> {
+pub fn test_crypto(_args: Vec<Value>) -> std::result::Result<(), Error> {
     let mut results = HashMap::new();
     
     println!("🧪 Running comprehensive crypto ecosystem tests...");

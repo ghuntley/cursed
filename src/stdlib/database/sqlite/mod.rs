@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQLite Database Driver for CURSED - the lightweight database that slays periodt
 /// 
 /// This module provides a complete SQLite driver implementation with FFI bindings

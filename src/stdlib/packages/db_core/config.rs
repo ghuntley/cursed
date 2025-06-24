@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Database configuration management - settings that matter periodt
 ///
 /// This module handles database configuration, driver settings, connection pools,

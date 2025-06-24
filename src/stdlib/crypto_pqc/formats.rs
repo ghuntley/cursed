@@ -1,7 +1,8 @@
-//! Key Format Conversion and Serialization
-//! 
-//! This module provides functionality for converting PQC keys between different
-//! formats including PEM, DER, JWK, and custom CURSED formats.
+use crate::error::Error;
+/// Key Format Conversion and Serialization
+/// 
+/// This module provides functionality for converting PQC keys between different
+/// formats including PEM, DER, JWK, and custom CURSED formats.
 
 use std::collections::HashMap;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Task management for async runtime
 use std::sync::{Arc, Mutex, atomic::{AtomicU64, AtomicBool, Ordering}};
 use std::task::{Context, Poll, Waker};

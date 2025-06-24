@@ -89,6 +89,7 @@ pub use eddsa::{
 };
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+use crate::error::Error;
 use std::sync::{Arc, Mutex, LazyLock};
 use std::collections::HashMap;
 

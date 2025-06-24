@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// LLVM integration for runtime plugin loading and compilation
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

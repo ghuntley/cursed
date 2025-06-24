@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Real security and permissions management for CURSED IPC
 /// 
 /// This module provides comprehensive security functionality for inter-process
@@ -32,6 +33,7 @@ use crate::stdlib::web_vibez::SecurityContext;
     IpcResult, IpcError,
     permission_denied, resource_error
 };
+
 use crate::stdlib::ipc::crate::types::{IpcPermissions, ProcessId};
 use crate::stdlib::ipc::error::{security_error, system_error};
 

@@ -1,3 +1,4 @@
+use crate::error::Error;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;

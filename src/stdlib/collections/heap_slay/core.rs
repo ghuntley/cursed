@@ -5,6 +5,7 @@
 //! where each parent node satisfies the heap property relative to its children.
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use super::{HeapResult, validate_index, validate_not_empty};
 
 /// The core heap interface that must be implemented by any type wanting to use heap operations.

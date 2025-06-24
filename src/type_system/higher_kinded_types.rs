@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Higher-Kinded Types Implementation for CURSED Language
 //!
 //! This module provides support for type constructors and higher-order generic functions,

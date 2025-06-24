@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Security utilities for input validation, XSS protection, and more
 use std::collections::HashMap;
 use std::fmt;

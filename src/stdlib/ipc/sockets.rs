@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Unix domain sockets implementation for CURSED IPC
 use std::io::{Read, Write, BufReader, BufWriter};
 use std::path::{Path, PathBuf};

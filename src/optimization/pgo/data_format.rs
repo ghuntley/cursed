@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Profile Data Format Definitions
 /// 
 /// Defines the structure and format of profile data collected during execution.

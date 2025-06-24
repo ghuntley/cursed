@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr Error handling for web_vibez package - comprehensive error management
 use std::fmt;
 use std::error::Error as StdError;

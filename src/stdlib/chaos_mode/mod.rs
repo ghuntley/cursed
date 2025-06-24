@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// ChaosMode - CURSED Runtime System Package
 /// 
 /// Provides comprehensive access to the CURSED runtime system for goroutine management,

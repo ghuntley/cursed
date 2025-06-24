@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Build system integration and CI/CD support for profiling
 
 use std::collections::HashMap;

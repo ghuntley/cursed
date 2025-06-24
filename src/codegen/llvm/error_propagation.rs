@@ -4,12 +4,13 @@
 //! system, including question mark expressions, type assertions, and error recovery.
 
 use crate::ast::traits::Expression;
+
 use crate::error::{CursedError, Error};
 use crate::parser::error_propagation::{
-use crate::error::Error;
     EnhancedQuestionMarkExpression, TypedErrorPropagation, UnwrapOrExpression, 
     TryExpression, FieldAccessExpression, MethodCallExpression
 };
+
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;

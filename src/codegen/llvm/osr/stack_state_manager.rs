@@ -4,6 +4,7 @@
 /// between different optimization levels during hot path compilation.
 
 use crate::error::{Error, Result};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};

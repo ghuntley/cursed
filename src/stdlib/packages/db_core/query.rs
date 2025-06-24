@@ -6,7 +6,9 @@
 use crate::stdlib::packages::db_core::{
     DatabaseError, ErrorKind, QueryError
 };
+use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, SystemTime};

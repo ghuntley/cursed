@@ -1,3 +1,4 @@
+
 /// Loop Invariant Code Motion (LICM)
 /// 
 /// This pass moves loop-invariant computations out of loops to reduce redundant calculations.
@@ -15,6 +16,7 @@ use inkwell::{
     builder::Builder,
     crate::types::BasicType,
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

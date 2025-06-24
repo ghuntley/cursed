@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core string operations
 use super::{StringError, StringResult};
 

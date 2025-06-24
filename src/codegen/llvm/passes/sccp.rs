@@ -1,3 +1,4 @@
+
 /// Sparse Conditional Constant Propagation (SCCP)
 /// 
 /// This pass performs more aggressive constant propagation than basic constant propagation
@@ -16,6 +17,7 @@ use inkwell::{
     crate::types::{BasicType, BasicTypeEnum},
     IntPredicate, FloatPredicate,
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

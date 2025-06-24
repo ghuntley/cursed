@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Unified Process Management and IPC Coordination System
 /// 
 /// This module provides a comprehensive integration layer that coordinates
@@ -23,13 +24,13 @@ use crate::stdlib::process::EnhancedProcess;
     IpcConfig, IpcError, IpcResult, NamedPipe, MessageQueue, SharedMemory, Semaphore,
     UnixSocket, RealIpcManager, IpcConnectionPool, ProcessAwareIpcManager
 };
+
 use crate::stdlib::process::error::{ProcessError, ProcessResult};
 use crate::stdlib::process::core::{ProcessConfig as CoreProcessConfig, ProcessManager};
 use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
 use crate::stdlib::process::info::{ProcessState as StdProcessState};
 use crate::runtime::process::{ProcessGroup as RuntimeProcessGroup};
 use crate::stdlib::process::exec_vibez_crate::types::{VibezResult, ExecutionContext, EnhancedCmd};
-
 
 type ProcessState = StdProcessState;
 type ProcessGroup = RuntimeProcessGroup;

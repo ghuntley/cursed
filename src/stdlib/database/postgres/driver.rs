@@ -8,6 +8,7 @@ use std::time::SystemTime;
 use crate::stdlib::database::{
     Driver, DriverConn, DatabaseError, SqlIsolationLevel
 };
+use crate::error::Error;
 use crate::stdlib::database::driver::DriverCapabilities;
 use super::config::{PostgresConfig, PostgresConnectionString};
 use super::connection::PostgresConnection;
@@ -328,7 +329,6 @@ impl Default for PostgresDriverBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_driver_creation() {

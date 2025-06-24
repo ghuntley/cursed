@@ -2,6 +2,7 @@
 
 pub use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError, RevocationStatus, RevocationReason};
 use crate::stdlib::packages::crypto_pki::certificate::Certificate;
+use crate::error::Error;
 use std::time::SystemTime;
 
 pub struct CertificateRevocationList {

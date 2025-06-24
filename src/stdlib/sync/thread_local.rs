@@ -4,6 +4,7 @@
 /// data to be stored per-thread with automatic cleanup.
 
 use crate::stdlib::sync::error::{SyncError, SyncResult, thread_local_error};
+use crate::error::Error;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use std::thread::{self, ThreadId};

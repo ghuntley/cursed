@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// File descriptor operations and management
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};

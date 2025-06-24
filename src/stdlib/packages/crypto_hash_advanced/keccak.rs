@@ -1,6 +1,7 @@
 /// Production-ready Keccak hash function implementation (base for SHA-3)
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 
 /// Keccak permutation constants
 const ROUND_CONSTANTS: [u64; 24] = [

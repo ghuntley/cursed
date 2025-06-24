@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Polynomial commitment schemes for zero-knowledge proofs
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;

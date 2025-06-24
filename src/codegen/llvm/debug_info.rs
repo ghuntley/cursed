@@ -4,13 +4,13 @@
 /// the expected interface. Full DWARF support has been temporarily disabled due
 /// to LLVM API changes.
 
-use crate::error::{Error as CursedError, Error};
+use crate::error::Error;
 use crate::runtime::debug_info::{DebugInfo, VariableInfo};
 use crate::debug::enhanced_debug::{
-use crate::error::Error;
     EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata, TypeDebugInfo, 
     ScopeInfo, SourceMap, SymbolType, TypeKind, FieldDebugInfo
 };
+
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::values::{FunctionValue, PointerValue, BasicValueEnum};

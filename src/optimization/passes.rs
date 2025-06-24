@@ -5,6 +5,7 @@
 
 use crate::error::{Error, Result};
 use crate::ast::*;
+
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 

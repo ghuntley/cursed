@@ -1,5 +1,6 @@
 use crate::stdlib::web_vibez::SecurityContext;
 use crate::stdlib::process::EnhancedProcess;
+use crate::error::Error;
 /// Windows-specific process management and IPC implementation
 /// 
 /// This module provides Windows-specific implementations for the unified
@@ -34,6 +35,7 @@ use crate::error::CursedError;
 use crate::stdlib::process::{
     EnhancedProcess, ResourceLimits, SecurityContext, ProcessState
 };
+
 use super::unified_process_ipc::{
     PlatformHandler, IpcType, IpcConnection, SecuritySettings, WindowsSettings
 };

@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Web module for CURSED HTTP server functionality
 use std::collections::HashMap;
 use std::fmt;

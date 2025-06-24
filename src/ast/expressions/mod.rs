@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Expression modules for the CURSED programming language
 /// 
 /// This module contains AST nodes for various expression types.

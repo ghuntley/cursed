@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Low-level process management operations
 use std::ffi::CString;
 use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, not_supported};

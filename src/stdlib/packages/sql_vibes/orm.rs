@@ -1,5 +1,6 @@
 /// fr fr ORM-style interface for CURSED - object-relational mapping with Gen Z vibes periodt
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, SqlType, DatabaseConnection, QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder, Row, ResultSet};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, OnceLock};
 use serde::{Serialize, Deserialize};

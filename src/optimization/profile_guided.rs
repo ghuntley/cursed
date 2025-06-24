@@ -2,6 +2,7 @@
 
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::CompilationUnit;
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;

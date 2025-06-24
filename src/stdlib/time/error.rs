@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for time and date operations
 use std::fmt;
 use crate::error::CursedError;

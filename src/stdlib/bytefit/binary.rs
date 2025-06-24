@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Binary data manipulation functions
 use super::{ByteFitError, ByteFitResult, invalid_hex, invalid_base64, invalid_input};
 

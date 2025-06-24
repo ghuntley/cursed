@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Environment variable parsing and type conversion for CURSED standard library
 
 use std::path::PathBuf;

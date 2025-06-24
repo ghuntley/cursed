@@ -32,6 +32,7 @@ use crate::memory::{
     object_store::{ObjectStore, Storable},
     roots::{RootSetManager},
 };
+use crate::error::Error;
 use crate::profiling::memory::MemoryProfiler;
 
 /// Production-ready garbage collector configuration

@@ -5,6 +5,7 @@
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use base64::{Engine as _, engine::general_purpose};
 use rsa::{RsaPrivateKey, RsaPublicKey};

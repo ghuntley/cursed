@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Compiler Optimization Tool
 /// 
 /// Standalone tool for analyzing and optimizing CURSED compilation performance.
@@ -9,6 +10,7 @@ use cursed::optimization::{
     profiler::{PerformanceProfiler, ProfileCategory},
     analysis::PerformanceAnalyzer,
 };
+
 use cursed::error::{Error, Result};
 use clap::{Arg, ArgMatches, Command};
 use std::path::PathBuf;

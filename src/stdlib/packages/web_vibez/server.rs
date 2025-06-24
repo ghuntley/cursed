@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr HTTP server implementation for web_vibez - the main server engine
 use std::sync::Arc;
 use std::net::{SocketAddr, TcpListener, TcpStream};

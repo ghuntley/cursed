@@ -4,6 +4,7 @@
 /// with measurable metrics, trend analysis, and adaptive optimization suggestions.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, atomic::{AtomicU64, AtomicUsize, Ordering}};
 use std::time::{Duration, Instant, SystemTime};

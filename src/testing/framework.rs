@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test Framework Core
 /// 
 /// Provides the test execution environment, context management,

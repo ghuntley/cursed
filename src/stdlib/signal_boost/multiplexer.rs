@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Signal multiplexer for distributing signals to multiple channels
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicUsize, AtomicBool, Ordering}};

@@ -1,11 +1,9 @@
 use crate::error::Error;
 pub type JsonError = crate::error::Error;
 
-/*!
- * JSON Value Types
- * 
- * JSON value representation and conversion utilities for CURSED
- */
+/// JSON Value Types
+/// 
+/// JSON value representation and conversion utilities for CURSED
 
 use crate::error::CursedError;
 use crate::runtime::value::Value;

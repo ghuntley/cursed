@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// ExecSlay - Enhanced process execution with style and efficiency
 /// 
 /// This module provides the "ExecSlay" API inspired by Go's os/exec but with enhanced features
@@ -34,10 +35,12 @@ use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error
 };
+
 use crate::stdlib::process::real_monitoring::{
     RealProcessState, register_process_for_monitoring, wait_for_real_process,
     unregister_process_from_monitoring
 };
+
 use crate::error::CursedError;
 
 /// Result type for SlayCommand operations

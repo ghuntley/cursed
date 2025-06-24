@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CSV Writer implementation with comprehensive configuration options
 use std::io::{self, Write, BufWriter};
 use crate::stdlib::csv::error::{CsvError, CsvResult, io_error};

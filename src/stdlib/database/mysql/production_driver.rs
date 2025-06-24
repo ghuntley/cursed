@@ -23,6 +23,7 @@ use mysql::{
     Pool, PooledConn, OptsBuilder, Conn, Opts, Params, Value as MySqlValue,
     TxOpts, IsolationLevel, Row, Column
 };
+use crate::error::Error;
 use mysql::prelude::*;
 use chrono::{NaiveDateTime, NaiveDate};
 
@@ -30,6 +31,7 @@ use crate::stdlib::database::{
     Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, 
     SqlIsolationLevel, SqlValue, TxOptions, VibeContext
 };
+
 use crate::stdlib::database::driver::{
     DriverCapabilities, ConnectionMetadata, QueryResult, ExecuteResult
 };
@@ -1466,7 +1468,6 @@ pub fn create_production_mysql_driver_with_config(config: ProductionMySqlConfig)
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_production_config_default() {

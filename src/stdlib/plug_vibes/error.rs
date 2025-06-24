@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for the PlugVibes plugin system
 use std::fmt;
 use crate::error::CursedError;

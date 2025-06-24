@@ -1,5 +1,6 @@
 /// fr fr Simplified database driver for CURSED - starting simple periodt
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter};
+use crate::error::Error;
 use std::collections::HashMap;
 
 /// fr fr Simple database connection that actually works

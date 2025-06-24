@@ -1,3 +1,4 @@
+
 //! Enhanced Diagnostics provider for CURSED language server
 //! 
 //! Provides real-time syntax errors, type errors, warnings, and linting diagnostics
@@ -890,7 +891,6 @@ impl DiagnosticsProvider {
         }
         false
     }
-
 
     /// Check type errors in content
     pub fn check_type_errors(&self, content: &str) -> Vec<tower_lsp::lsp_crate::types::Diagnostic> {

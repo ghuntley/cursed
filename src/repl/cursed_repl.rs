@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Main CURSED REPL Implementation
 //! 
 //! Provides the core interactive Read-Eval-Print Loop functionality
@@ -16,6 +17,7 @@ use crate::repl::{
     SyntaxHighlighter, CommandSystem, SessionManager, TabCompletion,
     MultiLineEditor, BuildIntegration, ReplEvaluator
 };
+
 use crate::error::CursedError;
 
 /// Main CURSED REPL structure

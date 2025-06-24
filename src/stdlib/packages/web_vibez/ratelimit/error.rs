@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Rate limiting error types - comprehensive error handling
 use std::fmt;
 

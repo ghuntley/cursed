@@ -1,3 +1,4 @@
+
 /// Global Value Numbering (GVN)
 /// 
 /// This pass performs global value numbering to eliminate redundant computations
@@ -16,6 +17,7 @@ use inkwell::{
     crate::types::BasicType,
     IntPredicate, FloatPredicate,
 };
+
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::time::{Duration, Instant};
 use std::fmt;

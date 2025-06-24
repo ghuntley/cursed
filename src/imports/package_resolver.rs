@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Package import resolution
 
 use std::collections::HashMap;

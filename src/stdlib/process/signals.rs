@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Cross-platform signal handling for process management
 /// 
 /// This module provides signal handling capabilities for process control and communication

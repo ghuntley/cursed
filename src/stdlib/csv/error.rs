@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for CSV operations
 use std::fmt;
 use std::error::Error as StdError;

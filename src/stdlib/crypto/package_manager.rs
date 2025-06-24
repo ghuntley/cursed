@@ -15,6 +15,7 @@ use super::unified_api::{
     UnifiedCryptoError, UnifiedCryptoResult, UnifiedCryptoManager, CryptoConfig, 
     PerformanceMetrics, SecurityAuditResult, CryptoOperation
 };
+use crate::error::Error;
 use super::integration_manager::{CryptoIntegrationManager, IntegrationTestResult};
 
 /// fr fr Package information
@@ -752,7 +753,6 @@ pub fn initialize_crypto_ecosystem() -> UnifiedCryptoResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_package_manager_creation() {

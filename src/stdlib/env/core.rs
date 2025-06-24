@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core environment variable operations for CURSED standard library
 
 use std::collections::HashMap;

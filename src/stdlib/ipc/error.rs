@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// IPC-specific error types for CURSED
 /// 
 /// This module provides comprehensive error handling for IPC operations

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Rate limit storage backends - persistent state management
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

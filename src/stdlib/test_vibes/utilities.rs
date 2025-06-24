@@ -4,6 +4,7 @@
 /// and random data generation
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use super::{VibeTest, TestVibesResult};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};

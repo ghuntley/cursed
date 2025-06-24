@@ -7,6 +7,7 @@ use crate::web::StatusCode;
 use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
 use crate::stdlib::web_vibez::{StatusCode};
 use crate::stdlib::web_vibez::error_handling::HandlerError;
+use crate::error::Error;
 
 use async_trait::async_trait;
 use std::collections::HashMap;

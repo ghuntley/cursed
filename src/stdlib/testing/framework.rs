@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core testing framework for CURSED
 /// 
 /// Provides the main TestFramework implementation that coordinates

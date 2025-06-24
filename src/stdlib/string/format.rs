@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// String formatting and padding utilities
 use super::{StringError, StringResult};
 

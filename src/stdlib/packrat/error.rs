@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Error handling for PackRat archive operations
 
 use std::fmt;

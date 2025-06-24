@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Platform-specific process management utilities
 /// 
 /// Process management is crucial for system integration in modern applications.

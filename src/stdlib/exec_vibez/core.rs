@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core types and functions for exec_vibez
 use std::collections::HashMap;
 use std::path::PathBuf;

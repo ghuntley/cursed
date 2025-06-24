@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// HTTP client functionality for making requests
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Digital signatures error types for CURSED crypto
 /// 
 /// Comprehensive error handling for all signature algorithms and operations.

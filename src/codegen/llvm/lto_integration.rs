@@ -4,6 +4,7 @@
 /// including Thin LTO and Full LTO support with CURSED-specific optimizations.
 
 use crate::error::{Error, Result};
+
 use crate::optimization::lto::{LtoConfig, LtoLevel, LtoCompilationUnit, LtoStatistics};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -12,7 +13,6 @@ use std::time::{Duration, Instant};
 use tracing::{info, instrument, warn};
 
 use inkwell::{
-use crate::error::Error;
     context::Context,
     module::Module,
     targets::{Target, TargetMachine, CodeModel, RelocMode, FileType},

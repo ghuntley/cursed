@@ -1,3 +1,4 @@
+use crate::error::Error;
 // CLI tools and utilities for CURSED profiling
 
 use std::path::PathBuf;

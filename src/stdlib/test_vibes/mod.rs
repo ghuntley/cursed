@@ -80,6 +80,7 @@ pub use benchmarking::{
 
 // Error handling
 use crate::crate::stdlib::errors_simple::CursedError;
+use crate::error::Error;
 
 /// Result type for TestVibes operations
 pub type TestVibesResult<T> = std::result::Result<T, TestVibesError>;

@@ -1,3 +1,4 @@
+
 /// Loop Optimization Pass
 /// 
 /// Provides loop unrolling, vectorization, and other loop-specific optimizations
@@ -12,6 +13,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValueEnum},
     basic_block::BasicBlock,
 };
+
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 use tracing::{debug, info, instrument, warn};

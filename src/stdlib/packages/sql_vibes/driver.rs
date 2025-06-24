@@ -1,5 +1,6 @@
 /// fr fr Core database driver interface - the main character of sql_vibes
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::time::Duration;
 use serde::{Serialize, Deserialize};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async runtime system for CURSED that integrates with goroutines
 use std::sync::{Arc, Mutex, Once};
 use std::time::Duration;
@@ -8,6 +9,7 @@ use crate::runtime::r#async::{
     Future, TaskHandle, TaskPriority,
     Promise, PromiseResolver, PromiseRejecter, FutureError, FutureResult
 };
+
 use crate::runtime::goroutine::{GoroutineScheduler, SchedulerConfig};
 
 /// Global async runtime instance

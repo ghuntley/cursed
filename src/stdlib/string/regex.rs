@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Regular Expression Processing Module for CURSED
 /// 
 /// Provides comprehensive regex functionality including pattern matching,

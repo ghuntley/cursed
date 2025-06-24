@@ -2,6 +2,7 @@
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
 use crate::error::CursedError;
+use crate::error::Error;
 use super::pqc_core::{PqcKey, SecurityLevel};
 use super::kyber::{KyberKeyPair, KyberParams};
 use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};

@@ -1,7 +1,8 @@
-//! FrodoKEM Lattice-based Key Encapsulation Implementation
-//! 
-//! FrodoKEM is a lattice-based KEM based on the Learning with Errors (LWE) problem.
-//! It provides very conservative security estimates.
+use crate::error::Error;
+/// FrodoKEM Lattice-based Key Encapsulation Implementation
+/// 
+/// FrodoKEM is a lattice-based KEM based on the Learning with Errors (LWE) problem.
+/// It provides very conservative security estimates.
 
 use std::fmt;
 use rand::rngs::OsRng;

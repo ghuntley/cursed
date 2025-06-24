@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin registry for managing loaded plugins
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

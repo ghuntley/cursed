@@ -1,5 +1,6 @@
 /// Production-ready hash traits and interfaces for advanced cryptographic hashing
 use crate::error::CursedError;
+use crate::error::Error;
 use std::io::{Read, Write};
 use std::fmt::{Debug, Display};
 

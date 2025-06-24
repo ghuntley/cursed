@@ -62,7 +62,7 @@ regex = "1.10"  # Pattern matching (critical)
 sha3 = "0.10"  # SHA-3 cryptographic hashing (critical)
 hmac = "0.12"  # HMAC authentication codes (critical)
 base64 = "0.21"  # Base64 encoding/decoding (critical)
-tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "io-util", "net", "time", "fs", "sync"] }  # Async runtime (critical)
+# tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "io-util", "net", "time", "fs", "sync"] }  # Async runtime (critical)
 
 # Additional missing dependencies found in compilation
 libloading = "0.8"  # Dynamic library loading

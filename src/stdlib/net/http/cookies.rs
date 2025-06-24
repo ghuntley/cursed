@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// HTTP cookie management for CURSED networking
 
 use std::collections::HashMap;

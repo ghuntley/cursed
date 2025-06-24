@@ -1,3 +1,4 @@
+use crate::error::Error;
 // CURSED Profiling CLI Tool
 
 use clap::Parser;

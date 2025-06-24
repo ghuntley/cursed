@@ -5,6 +5,7 @@
 
 use crate::build_system::{BuildConfig, ProjectType};
 use crate::build_system::build_config::ConfigError;
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

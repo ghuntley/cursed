@@ -21,6 +21,7 @@ use crate::type_system::{
     // Disabled imports for simplified AST compatibility:
     // ConstraintResolver, ConstraintSolution (require expanded constraint system)
 };
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 

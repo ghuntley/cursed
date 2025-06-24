@@ -4,6 +4,7 @@
 /// providing detailed error messages for malformed generic syntax.
 
 use crate::error::{Error, SourceLocation};
+
 use std::fmt;
 
 /// Result type for preprocessor operations

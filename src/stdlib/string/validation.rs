@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// String validation and character checking operations
 use super::{StringError, StringResult};
 

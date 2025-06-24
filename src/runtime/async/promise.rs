@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Promise implementation for CURSED async operations
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};

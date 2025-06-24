@@ -1,6 +1,7 @@
-//! Content Type and MIME Type Handling for CURSED web_vibez
-//!
-//! Comprehensive MIME type detection, parsing, and content negotiation.
+use crate::error::Error;
+/// Content Type and MIME Type Handling for CURSED web_vibez
+///
+/// Comprehensive MIME type detection, parsing, and content negotiation.
 
 use std::collections::HashMap;
 use std::fmt;

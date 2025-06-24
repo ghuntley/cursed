@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for sync operations
 use std::fmt;
 use std::error::Error as StdError;

@@ -11,6 +11,7 @@ use crate::stdlib::web_vibez::router::Router;
 use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
 use crate::stdlib::web_vibez::config::WebVibezConfig;
 use crate::stdlib::web_vibez::client::{HttpClient, HttpResponse as ClientHttpResponse, HttpError};
+use crate::error::Error;
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream};

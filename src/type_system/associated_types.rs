@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Associated Types Implementation for CURSED Language
 //! 
 //! This module provides support for associated types in interfaces,

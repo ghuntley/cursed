@@ -1,3 +1,4 @@
+
 //! CLI interface for CURSED comprehensive optimization system
 //! 
 //! Provides command-line access to all optimization features.
@@ -11,6 +12,7 @@ use crate::optimization::comprehensive_optimization_enablement::{
     ComprehensiveOptimizationSystem, ComprehensiveOptimizationConfig,
     OptimizationResults,
 };
+
 use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Result, CursedError};
 

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// WebSocket client implementation
 
 use std::sync::{Arc, Mutex};

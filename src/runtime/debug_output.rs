@@ -7,6 +7,7 @@ use crate::error::{Error as CursedError, SourceLocation};
 use crate::runtime::stack_trace::{StackTrace, CallFrame};
 use crate::runtime::debug_info::{EnhancedStackTrace, EnhancedStackFrame, VariableInfo};
 use crate::runtime::stack_walker::{ContextualStackWalk, RawStackFrame, SourceFrameInfo};
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fmt;

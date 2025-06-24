@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Matrix Operations Module for CURSED
 /// 
 /// Provides comprehensive matrix operations including basic arithmetic, decompositions,

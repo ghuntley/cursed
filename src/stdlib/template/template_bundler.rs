@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template Bundler - Advanced template optimization and bundling system
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};

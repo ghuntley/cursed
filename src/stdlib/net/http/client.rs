@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// HTTP client implementation for CURSED networking
 /// 
 /// This module provides a comprehensive HTTP client with support for various

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Environment and system configuration management
 /// 
 /// This module provides environment and system configuration capabilities including:

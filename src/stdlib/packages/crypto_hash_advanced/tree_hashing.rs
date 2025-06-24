@@ -1,6 +1,7 @@
 /// Production-ready tree hashing implementations for Merkle trees and hash trees
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 use std::collections::VecDeque;
 
 /// Result type for tree operations

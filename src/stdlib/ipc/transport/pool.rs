@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Connection pooling for transport layer
 /// 
 /// This module provides production-ready connection pooling with resource

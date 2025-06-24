@@ -1,5 +1,6 @@
 /// Performance metrics collection and analysis
 use crate::stdlib::profiler::error::{ProfilerError, ProfilerResult, metrics_error};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicU64, AtomicI64, AtomicBool, Ordering}};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

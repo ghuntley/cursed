@@ -4,6 +4,7 @@
 /// placeholder interpolation, format specifications, and context-aware formatting.
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt;
 

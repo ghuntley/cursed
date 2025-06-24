@@ -7,6 +7,7 @@
 use crate::error::{Error, SourceLocation};
 use crate::documentation::comment_parser::{ParsedComment, DocTag, CodeExample};
 use crate::lexer::{Token, TokenType};
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use tracing::{debug, instrument, warn};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template Cache - High-performance multi-level caching system for CURSED templates
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};

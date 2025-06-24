@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Module loading and caching
 
 use std::collections::HashMap;

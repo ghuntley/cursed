@@ -4,6 +4,7 @@
 //! for various cryptographic applications.
 
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel};
+use crate::error::Error;
 use std::collections::HashMap;
 
 /// Protocol types supported

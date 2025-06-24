@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Rate limiting metrics - comprehensive monitoring and statistics
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Signal filtering and throttling utilities
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

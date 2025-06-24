@@ -5,6 +5,7 @@ use crate::optimization::{OptimizationConfig};
 use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::pass_manager::LlvmPassManager;
 use crate::optimization::metrics::CompilationUnit;
+
 use std::collections::HashMap;
 use tracing::{info, debug, warn, error, instrument};
 

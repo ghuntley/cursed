@@ -1,6 +1,7 @@
-//! HTTP Header Management for CURSED web_vibez
-//!
-//! Case-insensitive header storage, parsing, and manipulation.
+use crate::error::Error;
+/// HTTP Header Management for CURSED web_vibez
+///
+/// Case-insensitive header storage, parsing, and manipulation.
 
 use std::collections::HashMap;
 use std::fmt;

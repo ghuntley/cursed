@@ -5,6 +5,7 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{PgoConfig, ProfileData, InstrumentationMode, CollectionMode};
+
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};

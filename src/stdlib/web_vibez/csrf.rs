@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CSRF token generation and validation utilities
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};

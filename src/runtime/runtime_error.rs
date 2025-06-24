@@ -9,6 +9,7 @@
 
 use crate::error::{Error as CursedError, SourceLocation};
 use crate::runtime::stack_trace::{StackTrace, CallFrame};
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::SystemTime;

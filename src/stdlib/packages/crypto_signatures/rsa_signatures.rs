@@ -5,6 +5,7 @@
 
 use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
 use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
+use crate::error::Error;
 use std::sync::{Arc, Mutex};
 
 /// RSA signature schemes

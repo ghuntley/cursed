@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core types and structures for the CURSED IPC system
 /// 
 /// This module defines fundamental types used throughout the IPC subsystem including

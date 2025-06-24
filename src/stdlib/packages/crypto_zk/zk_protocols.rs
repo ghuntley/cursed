@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Zero-knowledge protocol implementations and utilities
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;

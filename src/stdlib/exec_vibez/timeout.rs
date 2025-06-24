@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Timeout and cancellation support for exec_vibez
 /// 
 /// Implements timeout functionality according to specs/stdlib/exec_vibez.md

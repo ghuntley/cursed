@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async timer operations for CURSED stdlib
 use std::time::{Duration, Instant};
 use crate::runtime::r#async::{Future, delay as runtime_delay, timeout as runtime_timeout};

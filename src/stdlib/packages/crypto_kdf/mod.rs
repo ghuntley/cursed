@@ -24,6 +24,7 @@ pub use salt_generation::*;
 pub use timing_attacks::*;
 
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// fr fr Common KDF result type
 pub type KdfResult<T> = std::result::Result<T, KdfError>;

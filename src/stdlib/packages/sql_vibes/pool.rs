@@ -1,5 +1,6 @@
 /// fr fr Connection pool implementation - manage database connections like a boss periodt
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, DatabaseConnection, ConnectionConfig, DatabaseDriver};
+use crate::error::Error;
 use std::sync::{Arc, Mutex, RwLock, Condvar};
 use std::time::{Duration, Instant};
 use std::collections::VecDeque;

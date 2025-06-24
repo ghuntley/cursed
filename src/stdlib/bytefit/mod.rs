@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// ByteFit - Comprehensive byte slice manipulation library for CURSED
 /// 
 /// Provides functions for manipulating byte slices, offering efficient, 

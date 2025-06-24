@@ -9,6 +9,7 @@
 /// Based on lattice-based cryptography with rejection sampling for security.
 
 use crate::stdlib::crypto::CryptoError;
+use crate::error::Error;
 use std::fmt;
 use std::collections::HashMap;
 use zeroize::{Zeroize, ZeroizeOnDrop};

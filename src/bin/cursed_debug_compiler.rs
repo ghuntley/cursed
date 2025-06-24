@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! CURSED Debug-Enabled Compiler
 //! 
 //! A comprehensive command-line tool for compiling CURSED programs with
@@ -14,6 +15,7 @@ use cursed::ast::{
     BlockStatement, AssignmentExpression, VariableExpression, LiteralExpression,
     FunctionCallExpression, TypeParameter
 };
+
 use cursed::ast::{ConditionalIfStatement as IfStatement, ConditionalWhileStatement as WhileStatement};
 use cursed::error::Error as CursedError;
 

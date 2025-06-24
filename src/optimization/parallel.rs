@@ -5,6 +5,7 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::{OptimizationResult, OptimizationConfig};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, mpsc, Condvar, atomic::{AtomicUsize, AtomicBool, Ordering}};

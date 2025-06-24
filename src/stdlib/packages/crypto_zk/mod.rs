@@ -32,6 +32,7 @@ pub use plonk::{
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use std::collections::HashMap;
 
 /// Initialize the crypto_zk package with all subsystems

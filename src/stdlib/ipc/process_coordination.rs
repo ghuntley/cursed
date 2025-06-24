@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// IPC-side Process Coordination for CURSED
 /// 
 /// This module provides IPC-aware process coordination, ensuring that IPC

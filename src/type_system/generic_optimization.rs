@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Generic Optimization System for CURSED Language
 //!
 //! This module provides advanced optimization techniques for generic code,

@@ -14,6 +14,7 @@
 /// - Constant-time operations where feasible
 
 use crate::stdlib::packages::crypto_advanced::{AdvancedCryptoError, AdvancedCryptoResult};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Enhanced symbol support for CURSED language
 //! 
 //! Provides comprehensive symbol information including document symbols,

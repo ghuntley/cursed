@@ -39,11 +39,13 @@ pub use tail_call::TailCallPass;
 pub use jump_threading::JumpThreadingPass;
 
 use crate::error::{Error, Result};
+
 use inkwell::{
     context::Context,
     module::Module,
     values::FunctionValue,
 };
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument};

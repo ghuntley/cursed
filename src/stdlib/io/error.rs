@@ -1,3 +1,4 @@
+
 /// I/O specific error types for CURSED console operations
 use std::fmt;
 use crate::error::{CursedError, SourceLocation};

@@ -1,7 +1,8 @@
-//! Post-Quantum Cryptography Key Management
-//! 
-//! This module provides comprehensive key management functionality for PQC algorithms,
-//! including key generation, serialization, deserialization, validation, and lifecycle management.
+use crate::error::Error;
+/// Post-Quantum Cryptography Key Management
+/// 
+/// This module provides comprehensive key management functionality for PQC algorithms,
+/// including key generation, serialization, deserialization, validation, and lifecycle management.
 
 use std::collections::HashMap;
 use std::fmt;

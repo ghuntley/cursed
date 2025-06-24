@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Timeout wrapper functions for command execution
 
 use std::time::Duration;

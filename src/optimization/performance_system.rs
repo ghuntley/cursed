@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Performance system for comprehensive optimization management
 //!
 //! This module provides a unified interface for performance monitoring,

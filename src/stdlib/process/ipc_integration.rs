@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process-IPC Coordination System for CURSED
 /// 
 /// This module provides comprehensive coordination between process management

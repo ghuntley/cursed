@@ -1,3 +1,4 @@
+use crate::error::Error;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use crate::stdlib::fs::error::{FsError, FsResult};
 

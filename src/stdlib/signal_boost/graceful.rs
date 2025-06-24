@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Graceful shutdown coordination for SignalBoost
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicBool, AtomicUsize, Ordering}};

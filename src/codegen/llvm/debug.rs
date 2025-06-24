@@ -35,6 +35,7 @@ use crate::debug::dwarf_gen::DwarfGenerator;  // Fixed import path
 use crate::debug::debug_symbols::{DebugSymbol, DebugSymbolType};
 use crate::error::{Error as CursedError, Error};
 use crate::runtime::debug_info::VariableInfo;
+
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;

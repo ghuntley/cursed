@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// PLONK universal SNARK implementation
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;

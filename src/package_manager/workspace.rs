@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Workspace management for multi-package CURSED projects
 /// 
 /// Handles workspace discovery, configuration, and operations across

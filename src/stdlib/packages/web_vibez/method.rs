@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr HTTP method definitions for web_vibez - all the methods you need bestie
 use std::fmt;
 use std::str::FromStr;

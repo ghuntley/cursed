@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Health check endpoints and system monitoring
 use std::collections::HashMap;
 use std::sync::mpsc;

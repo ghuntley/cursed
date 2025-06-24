@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test Reporting System
 /// 
 /// Comprehensive test result reporting with multiple output formats

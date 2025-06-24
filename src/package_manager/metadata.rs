@@ -1,3 +1,4 @@
+use crate::error::Error;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Safe ExecSlay implementation replacing unsafe operations
 /// 
 /// This module provides a complete rewrite of the ExecSlay API that eliminates
@@ -18,6 +19,7 @@ use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error
 };
+
 use crate::stdlib::process::safe_process_management::{
     SafeProcessHandle, SafeProcessManager, ProcessMetadata, ResourceLimits,
     ProcessStatistics, global_process_manager

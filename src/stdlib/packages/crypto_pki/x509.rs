@@ -1,6 +1,7 @@
 /// X.509 Operations
 
 use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, X509Certificate};
+use crate::error::Error;
 
 pub struct X509Operations;
 pub type X509 = X509Operations;

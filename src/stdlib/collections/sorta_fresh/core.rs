@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core sorting functions for SortaFresh
 /// 
 /// This module implements the fundamental sorting operations:

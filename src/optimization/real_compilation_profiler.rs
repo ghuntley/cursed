@@ -5,6 +5,7 @@
 
 use crate::error::{Error, Result};
 use crate::common::optimization_level::OptimizationLevel;
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime};
 use std::path::Path;

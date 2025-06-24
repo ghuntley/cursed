@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Bulletproofs implementation for range proofs and more
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Request/response debugging and development utilities
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};

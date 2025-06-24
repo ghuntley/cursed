@@ -4,6 +4,7 @@
 /// with C-style format strings for developers familiar with that syntax.
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use std::io::Write;
 use std::fmt;
 

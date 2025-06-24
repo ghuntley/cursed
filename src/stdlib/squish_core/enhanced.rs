@@ -6,6 +6,7 @@
 
 use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats, CompressionTimer};
 use crate::stdlib::squish_core::utils::{CompressionFormat, detect_format, estimate_compression_ratio};
+use crate::error::Error;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
 use std::thread;

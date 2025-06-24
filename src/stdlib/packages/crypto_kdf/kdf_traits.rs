@@ -4,6 +4,7 @@
 /// to ensure consistency and interoperability.
 
 use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
+use crate::error::Error;
 
 /// fr fr Common KDF trait for all key derivation functions
 pub trait KeyDerivationFunction {

@@ -12,11 +12,13 @@ use super::{
     SqliteStats, SqliteVersion, SqliteFeatures,
     init_sqlite, is_sqlite_initialized
 };
+use crate::error::Error;
 use super::real_connection::RealSqliteConnection;
 use super::super::{
     Driver, DriverConn, DatabaseError, DatabaseErrorKind,
     SqlIsolationLevel, VibeContext
 };
+
 use super::super::driver::DriverCapabilities;
 
 /// fr fr SQLite driver capabilities
@@ -571,7 +573,6 @@ impl Clone for SqliteDriver {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_driver_creation() {

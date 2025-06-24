@@ -11,6 +11,7 @@
 /// - Optimized for performance while maintaining safety
 
 use crate::stdlib::sync::{self, SyncError, SyncResult};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex as StdMutex, RwLock as StdRwLock};
 use std::time::Duration;

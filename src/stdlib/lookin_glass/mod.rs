@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// LookinGlass - Runtime reflection capabilities for CURSED
 /// 
 /// This package provides runtime reflection capabilities that allow programs 

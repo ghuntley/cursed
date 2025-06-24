@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! ExecSlay - Process execution module for CURSED
 //! 
 //! Provides utilities for running external commands with style and efficiency.

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Symmetric cipher trait and implementations
 pub use super::errors::*;
 

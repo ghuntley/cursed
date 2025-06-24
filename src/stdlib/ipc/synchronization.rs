@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Advanced synchronization primitives for CURSED IPC
 /// 
 /// This module provides sophisticated synchronization mechanisms including

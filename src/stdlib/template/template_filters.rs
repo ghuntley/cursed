@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template Filters - Built-in functions and filter registry for CURSED templates
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

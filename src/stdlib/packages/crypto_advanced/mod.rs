@@ -1,4 +1,5 @@
 use crate::stdlib::web_vibez::SecurityContext;
+use crate::error::Error;
 /// fr fr Advanced cryptographic operations for CURSED - production-ready security periodt
 /// 
 /// This module provides state-of-the-art cryptographic implementations including:

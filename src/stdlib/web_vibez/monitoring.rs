@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Performance metrics collection and monitoring utilities
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

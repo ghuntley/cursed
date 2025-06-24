@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr AES-GCM production implementation - maximum security periodt
 use super::errors::*;
 use super::symmetric_cipher::*;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced exec_vibez types that are missing from the main module
 /// 
 /// This module provides the missing types that are being imported but not defined.

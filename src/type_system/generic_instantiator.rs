@@ -128,6 +128,7 @@ use crate::type_system::{
     MethodSignature
     // constraint_resolver::ConstraintResolver disabled for simplified AST compatibility
 };
+
 use std::collections::{HashMap, HashSet};
 
 /// Central generic instantiation coordinator

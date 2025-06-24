@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Token types for the lexer
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {

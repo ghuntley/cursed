@@ -4,6 +4,7 @@
 /// efficient representations and eliminating redundant operations.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info};

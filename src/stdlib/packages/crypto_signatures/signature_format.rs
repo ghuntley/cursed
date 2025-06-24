@@ -4,6 +4,7 @@
 //! ASN.1 DER encoding/decoding, and standard signature formats.
 
 use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+use crate::error::Error;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde::{Deserialize, Serialize};
 use std::fmt;

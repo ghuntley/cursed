@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive integration tests for the no_cap module
 #[cfg(test)]
 mod integration_tests {

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced session management with connection pooling and transaction safety
 use std::collections::HashMap;
 use std::fmt;

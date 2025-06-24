@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Build System CLI
 /// 
 /// Command-line interface for the CURSED build system providing project
@@ -8,6 +9,7 @@ use cursed::build_system::{
     BuildConfig, BuildOrchestrator, TemplateManager, TemplateContext, 
     ProjectType, TemplateCategory, PipelineResult
 };
+
 use cursed::build_system::build_orchestrator::WatchConfig;
 use std::collections::HashMap;
 use std::path::PathBuf;

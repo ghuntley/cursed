@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Semaphores implementation for CURSED IPC
 /// 
 /// Provides System V semaphores and POSIX semaphores for inter-process synchronization

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced Pipeline Execution System for CURSED
 /// 
 /// This module provides comprehensive pipeline execution capabilities,
@@ -14,6 +15,7 @@ use std::time::{Duration, Instant};
 use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, timeout_error, io_error
 };
+
 use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayOptions, SlayProcessState};
 
 /// Process pipeline alias for consistency

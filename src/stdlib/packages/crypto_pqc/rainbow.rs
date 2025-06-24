@@ -11,7 +11,9 @@ use crate::stdlib::packages::crypto_pqc::multivariate_crypto::{
     FieldElement, Polynomial, PolynomialSystem, LinearTransformation,
     MultivariateConfig, MultivariateError, MultivariateSecurityLevel
 };
+use crate::error::Error;
 use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
+
 use std::collections::HashMap;
 use std::fmt;
 

@@ -7,6 +7,7 @@
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics, TargetType};
 use crate::common::optimization_level::OptimizationLevel;
 use crate::build_system::dependency_resolver::{DependencyGraph, DependencyResolver};
+use crate::error::Error;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, mpsc, Condvar};

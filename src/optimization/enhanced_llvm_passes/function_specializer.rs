@@ -4,6 +4,7 @@
 /// and call site analysis to improve performance.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, trace};

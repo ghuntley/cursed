@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Build Configuration System
 //! 
 //! Defines the configuration structure for CURSED projects including

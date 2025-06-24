@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive assertion framework for CURSED unit testing
 /// 
 /// Provides a wide range of assertion functions for validating test expectations

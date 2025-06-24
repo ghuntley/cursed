@@ -20,6 +20,7 @@ use super::super::{
     DriverConn, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, 
     DriverStmt, DriverTx, SqlIsolationLevel
 };
+use crate::error::Error;
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
 
 /// Production SQLite connection with full functionality
@@ -979,7 +980,6 @@ fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> Res
 mod tests {
     use super::*;
     use tempfile::tempdir;
-use crate::error::Error;
 
     #[test]
     fn test_production_connection_creation() {

@@ -6,6 +6,7 @@
 use crate::stdlib::packages::db_core::{DatabaseError, QueryError};
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use crate::stdlib::packages::db_sql::{SqlValue, SqlType, SqlDialectTrait};
+use crate::error::Error;
 use std::collections::HashMap;
 
 /// fr fr Main SQL query builder - the foundation periodt

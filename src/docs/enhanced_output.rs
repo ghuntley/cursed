@@ -5,6 +5,7 @@
 
 use crate::error::{Error, SourceLocation};
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem, CrossReference};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

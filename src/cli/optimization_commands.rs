@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Optimization CLI Commands
 //! 
 //! Command-line interface for performance optimization and compilation speed analysis.
@@ -16,6 +17,7 @@ use crate::optimization::{
     analysis::{PerformanceAnalyzer, CompilationProfiler, BenchmarkRunner},
     utils::{OptimizationRecommendations, PerformanceReport},
 };
+
 use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
 use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::performance_pipeline::PerformancePipeline;

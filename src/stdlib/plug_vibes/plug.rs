@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core plugin representation and loading functionality
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

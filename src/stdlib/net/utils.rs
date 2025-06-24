@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Network utilities for CURSED networking
 /// 
 /// This module provides various network utility functions including

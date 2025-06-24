@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// PostgreSQL Database Driver Module
 /// 
 /// Provides production-ready PostgreSQL database connectivity for the CURSED language

@@ -5,8 +5,8 @@
 
 use std::collections::HashMap;
 use crate::error::{CursedError, Error};
+
 use inkwell::{
-use crate::error::Error;
     context::Context,
     values::{BasicValueEnum, FunctionValue, PointerValue},
     crate::types::{BasicTypeEnum, FunctionType},

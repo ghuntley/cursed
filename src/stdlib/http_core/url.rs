@@ -1,6 +1,7 @@
-//! URL Processing and Query Parameter Handling for CURSED web_vibez
-//!
-//! Comprehensive URL parsing, validation, and manipulation.
+use crate::error::Error;
+/// URL Processing and Query Parameter Handling for CURSED web_vibez
+///
+/// Comprehensive URL parsing, validation, and manipulation.
 
 use std::collections::HashMap;
 use std::fmt;

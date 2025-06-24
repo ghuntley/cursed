@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Unix domain sockets implementation for CURSED IPC
 /// 
 /// Provides Unix domain sockets for local inter-process communication

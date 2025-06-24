@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQL database driver implementation for CURSED language - sql_vibes package
 /// This module provides no-cap database functionality with Gen Z energy periodt
 

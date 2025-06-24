@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Property-based testing framework for CURSED periodt
 ///
 /// This module provides a comprehensive property-based testing system that helps

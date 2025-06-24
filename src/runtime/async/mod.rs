@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async/await runtime system for CURSED
 /// 
 /// Provides Future/Promise types, async executors, and integration with

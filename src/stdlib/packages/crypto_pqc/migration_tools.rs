@@ -6,10 +6,12 @@
 
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+use crate::error::Error;
 use super::compatibility::{
     CompatibilityEngine, CompatibilityAssessment, MigrationRecommendation, 
     MigrationPriority, AlgorithmMapping
 };
+
 use super::pqc_core::SecurityLevel;
 use std::collections::HashMap;
 use std::fmt;

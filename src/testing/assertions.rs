@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test Assertions System
 /// 
 /// Provides comprehensive assertion functions for CURSED tests

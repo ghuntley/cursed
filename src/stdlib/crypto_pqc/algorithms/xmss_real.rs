@@ -1,18 +1,19 @@
-//! Real XMSS (eXtended Merkle Signature Scheme) Implementation
-//! 
-//! This is a production-ready implementation of XMSS, a hash-based
-//! digital signature scheme that provides stateful signatures with provable security.
-//! 
-//! # Mathematical Foundation
-//! 
-//! XMSS is based on the security of cryptographic hash functions and provides
-//! post-quantum security through one-time signatures and Merkle trees.
-//! 
-//! # Security Levels
-//! 
-//! - XMSS-SHA2_10_256: 2^10 signatures, SHA-256
-//! - XMSS-SHA2_16_256: 2^16 signatures, SHA-256
-//! - XMSS-SHA2_20_256: 2^20 signatures, SHA-256
+use crate::error::Error;
+/// Real XMSS (eXtended Merkle Signature Scheme) Implementation
+/// 
+/// This is a production-ready implementation of XMSS, a hash-based
+/// digital signature scheme that provides stateful signatures with provable security.
+/// 
+/// # Mathematical Foundation
+/// 
+/// XMSS is based on the security of cryptographic hash functions and provides
+/// post-quantum security through one-time signatures and Merkle trees.
+/// 
+/// # Security Levels
+/// 
+/// - XMSS-SHA2_10_256: 2^10 signatures, SHA-256
+/// - XMSS-SHA2_16_256: 2^16 signatures, SHA-256
+/// - XMSS-SHA2_20_256: 2^20 signatures, SHA-256
 
 use std::fmt;
 use std::collections::HashMap;

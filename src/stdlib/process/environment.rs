@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Environment variable management for processes
 /// 
 /// This module provides comprehensive environment variable handling for process

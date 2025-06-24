@@ -4,6 +4,7 @@
 //! with intelligent work distribution, fault tolerance, and optimization.
 
 use crate::error::Result;
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

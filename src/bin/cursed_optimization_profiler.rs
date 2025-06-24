@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Optimization Profiler CLI
 /// 
 /// Comprehensive CLI tool for profiling and analyzing CURSED compiler optimizations,
@@ -9,6 +10,7 @@ use cursed::optimization::{
     ml_optimization::{MLOptimizationEngine, MLOptimizationConfig, FeatureVector},
     BenchmarkConfig, BenchmarkType, ComplexityLevel, BenchmarkTestData,
 };
+
 use cursed::error::Result;
 use std::fs;
 use std::path::PathBuf;

@@ -4,6 +4,7 @@
 //! This is included only for research and educational purposes.
 
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+use crate::error::Error;
 use super::KeyEncapsulation;
 
 // Placeholder structures (deprecated algorithm)

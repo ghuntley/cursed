@@ -1,3 +1,4 @@
+
 /// CURSED Programming Language Library
 /// 
 /// A comprehensive programming language implementation with Gen Z slang syntax,

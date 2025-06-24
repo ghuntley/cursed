@@ -5,6 +5,7 @@
  */
 
 use crate::error::CursedError;
+use crate::error::Error;
 use std::fmt;
 
 /// JSON-specific error types

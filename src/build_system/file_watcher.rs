@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! # CURSED File Watching System
 //!
 //! This module provides comprehensive file system monitoring capabilities for the CURSED

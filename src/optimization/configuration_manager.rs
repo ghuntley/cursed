@@ -1,3 +1,4 @@
+
 //! Configuration management for optimization profiles and settings
 //! 
 //! Provides configuration file loading, saving, and management for
@@ -13,6 +14,7 @@ use crate::optimization::{
     OptimizationConfig, OptimizationProfile,
     PerformanceMonitoringConfig, PerformanceReportFormat,
 };
+
 use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Result, CursedError};
 

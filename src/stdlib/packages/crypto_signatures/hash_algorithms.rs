@@ -4,6 +4,7 @@
 //! with support for multiple algorithms, streaming, and security validation.
 
 use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+use crate::error::Error;
 use sha2::{Sha224, Sha256, Sha384, Sha512, Digest};
 use sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512};
 use blake3;

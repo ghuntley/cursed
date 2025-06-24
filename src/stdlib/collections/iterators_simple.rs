@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Simplified Iterator system for CURSED collections
 /// 
 /// This module provides a basic iterator system that avoids complex type constraints

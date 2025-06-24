@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced Background Task Management for CURSED
 /// 
 /// This module provides comprehensive background task execution and management,
@@ -13,6 +14,7 @@ use std::process::{Child, ExitStatus};
 use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, timeout_error, invalid_arguments
 };
+
 use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayProcess, SlayProcessState};
 use crate::stdlib::process::real_monitoring::{ProcessStats, get_real_process_stats};
 

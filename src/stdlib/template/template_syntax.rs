@@ -1,3 +1,4 @@
+
 /// Template Syntax Parser - Lexer, Parser, and AST for CURSED templates
 use std::collections::HashMap;
 use std::fmt;

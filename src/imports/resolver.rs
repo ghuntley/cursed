@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Core import resolution logic
 
 use std::path::{Path, PathBuf};

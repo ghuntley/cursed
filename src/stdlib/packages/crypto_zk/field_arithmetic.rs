@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Field arithmetic operations for zero-knowledge proofs
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div, Neg};

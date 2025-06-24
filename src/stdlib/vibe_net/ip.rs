@@ -1,7 +1,8 @@
-//! IP address types and utilities for VibeNet
-//! 
-//! This module provides comprehensive IP address handling including IPv4 and IPv6
-//! support, network address parsing, and CIDR notation handling.
+use crate::error::Error;
+/// IP address types and utilities for VibeNet
+/// 
+/// This module provides comprehensive IP address handling including IPv4 and IPv6
+/// support, network address parsing, and CIDR notation handling.
 
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};

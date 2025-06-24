@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Benchmarking framework for performance testing and regression detection
 
 use std::collections::HashMap;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CSV data transformation with column mapping and computed fields
 use std::io;
 use std::collections::HashMap;

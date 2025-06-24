@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Context types for exec_vibez - timeout and cancellation support
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr NoSQL driver interfaces - the contracts for NoSQL databases periodt
 
 use async_trait::async_trait;

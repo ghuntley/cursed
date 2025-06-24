@@ -4,6 +4,7 @@
 /// to improve performance and reduce cache misses.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info, instrument};

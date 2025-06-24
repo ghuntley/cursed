@@ -4,6 +4,7 @@
 /// performance on modern processors with vector units.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info, instrument};

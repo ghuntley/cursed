@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! fr fr Kyber Key Encapsulation Mechanism (KEM) Implementation
 //! 
 //! This module provides a production-ready implementation of the Kyber post-quantum

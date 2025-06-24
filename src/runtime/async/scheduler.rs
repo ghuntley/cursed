@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async scheduler that integrates with the existing goroutine scheduler
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, Condvar};

@@ -9,6 +9,7 @@
 /// - Retry logic for failed downloads
 
 use crate::package_manager::{PackageManagerError, metadata::PackageMetadata, registry::{PackageRegistry, PackageData}};
+use crate::error::Error;
 use std::path::{Path, PathBuf};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write, Read, BufWriter, BufReader};

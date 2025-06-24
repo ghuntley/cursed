@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr HTTP routing for web_vibez - path-based request routing
 use std::collections::HashMap;
 use std::sync::Arc;

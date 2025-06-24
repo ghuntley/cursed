@@ -5,6 +5,7 @@
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use p256::{
@@ -12,11 +13,13 @@ use p256::{
     PublicKey as P256PublicKey,
     ecdsa::{SigningKey as P256SigningKey, VerifyingKey as P256VerifyingKey, Signature as P256Signature}
 };
+
 use p384::{
     SecretKey as P384SecretKey, 
     PublicKey as P384PublicKey,
     ecdsa::{SigningKey as P384SigningKey, VerifyingKey as P384VerifyingKey, Signature as P384Signature}
 };
+
 use signature::{Signer, Verifier};
 use sha2::{Sha256, Sha384, Digest};
 use elliptic_curve::sec1::{ToEncodedPoint, FromEncodedPoint};

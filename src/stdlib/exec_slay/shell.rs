@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Shell command execution utilities
 
 use std::collections::HashMap;

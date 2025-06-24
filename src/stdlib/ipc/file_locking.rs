@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// File-based locking mechanisms for CURSED IPC
 /// 
 /// This module provides file locking capabilities for inter-process coordination
@@ -16,6 +17,7 @@ use crate::stdlib::ipc::crate::types::{
     IpcHandle, IpcAddress, IpcPermissions, IpcTimeout, IpcStatistics,
     ResourceLimits
 };
+
 use crate::stdlib::ipc::traits::{
     IpcResource, IpcFileLocking, ResourceState, LockType, LockInfo
 };

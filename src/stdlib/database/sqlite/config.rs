@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQLite configuration and connection string parsing that slays periodt
 /// 
 /// This module handles SQLite-specific configuration options, connection string

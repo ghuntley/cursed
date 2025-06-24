@@ -9,6 +9,7 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::real_llvm_passes::{OptimizationStatistics};
+
 use inkwell::{
     context::Context,
     module::Module,
@@ -20,6 +21,7 @@ use inkwell::{
     OptimizationLevel as InkwellOptLevel,
     AddressSpace,
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

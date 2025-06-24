@@ -1,7 +1,8 @@
-//! Network address types for VibeNet
-//! 
-//! This module provides comprehensive network address handling including TCP, UDP,
-//! and Unix socket addresses with proper resolution and formatting capabilities.
+use crate::error::Error;
+/// Network address types for VibeNet
+/// 
+/// This module provides comprehensive network address handling including TCP, UDP,
+/// and Unix socket addresses with proper resolution and formatting capabilities.
 
 use std::fmt;
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs};

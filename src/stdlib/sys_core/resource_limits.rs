@@ -1,5 +1,6 @@
 /// Resource limits and system resource management
 use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported};
+use crate::error::Error;
 
 /// Resource types that can be limited
 #[derive(Debug, Clone, Copy, PartialEq)]

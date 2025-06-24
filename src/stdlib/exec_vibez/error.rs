@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for exec_vibez
 use std::fmt;
 use std::io;

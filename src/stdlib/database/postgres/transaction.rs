@@ -10,6 +10,7 @@ use crate::stdlib::database::{
     TxOptions, IsolationLevel,
     driver::{QueryResult, ExecuteResult}
 };
+use crate::error::Error;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::connection::ConnectionStats;
@@ -413,7 +414,6 @@ impl std::fmt::Display for TransactionStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_transaction_state() {

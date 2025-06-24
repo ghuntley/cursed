@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template rendering integration utilities
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

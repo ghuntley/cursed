@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Real Inter-Process Communication Implementation for CURSED
 /// 
 /// This module provides production-ready IPC mechanisms including:
@@ -38,11 +39,13 @@ use winapi::um::{
     synchapi::*,
     processthreadsapi::GetCurrentProcessId,
 };
+
 #[cfg(windows)]
 use winapi::shared::{
     winerror::*,
     minwindef::{BOOL, DWORD, FALSE, TRUE},
 };
+
 #[cfg(windows)]
 use std::ffi::OsStr;
 #[cfg(windows)]

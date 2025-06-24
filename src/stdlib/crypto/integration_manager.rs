@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Crypto Package Integration Manager - orchestrates all crypto packages periodt
 /// 
 /// This module manages cross-package integration, compatibility testing,

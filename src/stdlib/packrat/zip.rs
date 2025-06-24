@@ -1,3 +1,4 @@
+use crate::error::Error;
 // ZIP format support for PackRat
 // HoardPack (reader), HoardStash (writer), HoardFile, HoardFileHeader
 

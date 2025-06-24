@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Visualization generation for profiling data
 
 use std::collections::HashMap;

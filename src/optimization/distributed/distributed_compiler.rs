@@ -4,6 +4,7 @@
 //! Handles job distribution, result collection, and coordination with other subsystems.
 
 use crate::error::{CursedError, Result};
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};

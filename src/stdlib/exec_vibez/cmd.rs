@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Command structure and implementation for exec_vibez
 use std::collections::HashMap;
 use std::ffi::OsStr;

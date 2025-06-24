@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Privilege management and security for CURSED processes
 /// 
 /// Privilege management is critical for system security and enables:

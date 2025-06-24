@@ -6,6 +6,7 @@
 use crate::error::{Error, Result};
 use crate::optimization::ml::feature_extraction::FeatureVector;
 use crate::optimization::ml::data_collection::{TrainingDataPoint, CompilationMetrics, RuntimeMetrics};
+
 use std::collections::HashMap;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};

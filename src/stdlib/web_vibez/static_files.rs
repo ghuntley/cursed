@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Static file serving with caching utilities
 use std::collections::HashMap;
 use std::path::PathBuf;

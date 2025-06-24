@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr HTTP request handling for web_vibez - comprehensive request processing
 use std::collections::HashMap;
 use std::net::SocketAddr;

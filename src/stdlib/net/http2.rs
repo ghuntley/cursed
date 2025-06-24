@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// HTTP/2 Protocol Implementation for CURSED
 /// 
 /// Provides comprehensive HTTP/2 client and server functionality including

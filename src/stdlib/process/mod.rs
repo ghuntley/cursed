@@ -1,5 +1,6 @@
 use crate::stdlib::web_vibez::SecurityContext;
 use crate::stdlib::process::EnhancedProcess;
+use crate::error::Error;
 // Remove duplicate imports - these are re-exported below
 /// Process management and system interaction for CURSED
 /// 

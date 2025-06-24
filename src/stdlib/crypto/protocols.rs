@@ -665,7 +665,6 @@ pub fn log_error(args: Vec<CursedValue>) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_jwt_creation_and_validation() {

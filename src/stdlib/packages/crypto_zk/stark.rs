@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// STARK (Scalable Transparent ARgument of Knowledge) implementation
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;

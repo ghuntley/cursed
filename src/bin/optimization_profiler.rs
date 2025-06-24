@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! CURSED Optimization Profiler
 //! 
 //! A command-line tool for analyzing and reporting optimization performance
@@ -9,6 +10,7 @@ use cursed::optimization::{
     EnhancedPerformanceAnalyzer, ParallelCompiler, ParallelCompilationConfig,
     CompilerPassManager
 };
+
 use cursed::error::Result;
 use cursed::optimization::config::OptimizationLevel;
 use std::path::PathBuf;

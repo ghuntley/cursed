@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// High-level IPC channels for CURSED
 /// 
 /// This module provides unified channel abstractions that can work with different

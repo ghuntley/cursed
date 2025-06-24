@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Package Installation System
 /// 
 /// Provides comprehensive package extraction, installation, and management functionality:

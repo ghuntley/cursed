@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Test Discovery System
 //! 
 //! Discovers and analyzes test files in the project to identify test functions,

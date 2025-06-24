@@ -1,8 +1,9 @@
-//! Network-specific error types for VibeNet
-//! 
-//! This module provides comprehensive error handling for network operations,
-//! integrating with the CURSED error system while providing specific network
-//! error context and recovery information.
+use crate::error::Error;
+/// Network-specific error types for VibeNet
+/// 
+/// This module provides comprehensive error handling for network operations,
+/// integrating with the CURSED error system while providing specific network
+/// error context and recovery information.
 
 use std::fmt;
 use std::io;

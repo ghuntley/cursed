@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! CURSED Post-Quantum Cryptography Hybrid Tool
 //! 
 //! A command-line tool for managing hybrid cryptographic operations

@@ -22,6 +22,7 @@ use cursed::optimization::{
     benchmarking::BenchmarkType,
     compilation_speed::CompilationUnit,
 };
+use crate::error::Error;
 
 fn main() -> Result<()> {
     let matches = App::new("cursed-performance")

@@ -9,6 +9,7 @@
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use std::collections::HashMap;
 
 // RSA key handling

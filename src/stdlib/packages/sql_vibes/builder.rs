@@ -1,5 +1,6 @@
 /// fr fr SQL query builder with CURSED-style method chaining - build queries like a boss
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Parameter};
+use crate::error::Error;
 use std::collections::{HashMap, BTreeMap};
 use std::fmt;
 

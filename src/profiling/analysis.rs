@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Advanced performance analysis algorithms and insights
 
 use std::collections::HashMap;

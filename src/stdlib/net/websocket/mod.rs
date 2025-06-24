@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// WebSocket implementation for CURSED networking
 /// 
 /// This module provides WebSocket client and server functionality with support

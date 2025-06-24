@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Package Manager Binary
 /// 
 /// Command-line interface for managing CURSED packages, dependencies,

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Column-based CSV reader with type conversion capabilities
 use std::io;
 use std::collections::HashMap;

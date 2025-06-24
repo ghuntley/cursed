@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Timing attack detection and analysis module
 /// 
 /// This module provides comprehensive timing analysis capabilities to detect

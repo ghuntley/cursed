@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Concurrency profiling for goroutines and channel analysis
 
 use std::collections::HashMap;

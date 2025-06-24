@@ -4,6 +4,7 @@
 //! optimization opportunities, and providing actionable recommendations.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};

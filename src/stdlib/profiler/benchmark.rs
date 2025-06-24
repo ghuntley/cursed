@@ -1,5 +1,6 @@
 /// Benchmark framework for performance testing
 use crate::stdlib::profiler::error::{ProfilerError, ProfilerResult, benchmark_error};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};

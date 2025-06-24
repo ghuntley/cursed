@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process management integration and high-level APIs
 /// 
 /// This module provides unified access to all process management capabilities,

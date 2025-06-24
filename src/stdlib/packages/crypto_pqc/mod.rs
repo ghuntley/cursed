@@ -40,6 +40,7 @@ pub use hybrid_crypto::*;
 
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// Initialize the comprehensive crypto_pqc package
 pub fn init_crypto_pqc() -> AdvancedCryptoResult<()> {

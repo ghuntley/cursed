@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Threading and synchronization primitives for CURSED
 /// 
 /// This module provides comprehensive threading support including:

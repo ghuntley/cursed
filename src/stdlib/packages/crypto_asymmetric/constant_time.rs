@@ -5,6 +5,7 @@
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::ptr;
 
 /// Constant time comparison result

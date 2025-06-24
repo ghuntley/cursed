@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process management for exec_vibez
 /// 
 /// Implements Process and ProcessState types according to specs/stdlib/exec_vibez.md

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for ByteFit operations
 use std::fmt;
 

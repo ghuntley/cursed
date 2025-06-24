@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// JSON request/response handling utilities
 use std::collections::HashMap;
 use std::fmt;

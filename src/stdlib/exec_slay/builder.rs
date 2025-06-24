@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! SlayCommandBuilder implementation for fluent command building
 
 use std::time::Duration;

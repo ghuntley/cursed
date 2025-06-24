@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced features for exec_vibez
 /// 
 /// Implements advanced functionality including LookPath, ProcessMonitor, 

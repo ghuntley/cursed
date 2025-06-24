@@ -1,5 +1,6 @@
 /// fr fr Assertion functions for the TestVibes testing framework
 use crate::stdlib::packages::test_vibes::core::VibeTest;
+use crate::error::Error;
 use std::fmt::Debug;
 
 /// fr fr Basic assertions

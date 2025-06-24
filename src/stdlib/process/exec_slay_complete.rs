@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Complete ExecSlay implementation matching the specification
 /// Provides utilities for running external commands with style and efficiency
 

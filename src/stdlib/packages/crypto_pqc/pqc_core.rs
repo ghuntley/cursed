@@ -1,6 +1,7 @@
 /// fr fr Post-quantum cryptography core infrastructure
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 

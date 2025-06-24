@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process group management for exec_vibez
 /// 
 /// Implements ProcessGroup functionality according to specs/stdlib/exec_vibez.md

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Configuration management for web server settings
 use std::collections::HashMap;
 use std::path::PathBuf;

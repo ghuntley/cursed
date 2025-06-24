@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for SquishCore compression operations
 /// 
 /// This module provides comprehensive error types and handling for all compression

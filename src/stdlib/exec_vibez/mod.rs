@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// exec_vibez - Enhanced external command execution for CURSED
 /// 
 /// This module provides comprehensive functionality for executing external commands

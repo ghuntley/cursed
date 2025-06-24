@@ -1,4 +1,5 @@
-//! Dialer configuration for VibeNet
+use crate::error::Error;
+/// Dialer configuration for VibeNet
 
 use std::time::{Duration, SystemTime};
 use crate::error::CursedError;

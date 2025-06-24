@@ -5,6 +5,7 @@
 /// and detailed performance monitoring.
 
 use crate::error::{Error, Result};
+
 use super::optimization_passes::{PassRegistry, PassConfiguration, PassResult};
 use super::optimization::{OptimizationLevel, OptimizationConfig};
 use std::collections::{HashMap, VecDeque};
@@ -14,7 +15,6 @@ use rayon::prelude::*;
 use tracing::{debug, info, warn, instrument, span, Level};
 
 use inkwell::{
-use crate::error::Error;
     context::Context,
     module::Module,
     passes::PassManager,

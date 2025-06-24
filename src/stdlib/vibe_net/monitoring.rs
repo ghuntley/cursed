@@ -1,8 +1,9 @@
-//! # Network Monitoring and Statistics
-//! 
-//! This module provides comprehensive network monitoring capabilities including
-//! connection health checking, network statistics collection, performance metrics,
-//! and network event monitoring for the CURSED vibe_net package.
+use crate::error::Error;
+/// # Network Monitoring and Statistics
+/// 
+/// This module provides comprehensive network monitoring capabilities including
+/// connection health checking, network statistics collection, performance metrics,
+/// and network event monitoring for the CURSED vibe_net package.
 
 use std::collections::{HashMap, VecDeque};
 use std::net::{IpAddr, SocketAddr};

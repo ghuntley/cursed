@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Bootstrap Self-Compilation Verification System
 //!
 //! This module provides comprehensive verification for the CURSED compiler's

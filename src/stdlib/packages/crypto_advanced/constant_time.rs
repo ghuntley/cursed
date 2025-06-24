@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Constant time operations for cryptographic security
 use super::errors::*;
 use std::sync::atomic::{AtomicU8, Ordering};

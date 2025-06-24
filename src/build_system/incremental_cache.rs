@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Incremental Build Cache
 //! 
 //! Provides caching mechanisms for incremental builds to speed up

@@ -10,10 +10,12 @@ use crate::stdlib::packages::{
     db_sql::{SqlDriver, SqlDialectTrait, SqlFeature, SqlValue, SqlResultSet, SqlExecuteResult},
     // crate::types::ParameterDirection  // Explicit import to resolve E0659
 };
+use crate::error::Error;
 use crate::stdlib::packages::db_sql::drivers::{
     SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
     SqlTransactionIsolation, SqlConnectionInfo, SqlBatch, SqlTransaction
 };
+
 use crate::stdlib::packages::db_core::error::{
     DatabaseResult as DbResult, DatabaseError, ErrorKind, ConnectionError, QueryError, TransactionError
 };

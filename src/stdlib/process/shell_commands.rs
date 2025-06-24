@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Shell command execution for CURSED process management
 /// 
 /// This module provides convenient shell command execution functionality

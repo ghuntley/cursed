@@ -579,7 +579,7 @@ impl ServiceManager {
         Ok(dependencies)
     }
 
-    fn validate_service_systemd(&self, name: &str) -> SystemResult<(), Error> {
+    fn validate_service_systemd(&self, name: &str) -> SystemResult<()> {
         use tracing::debug;
         
         let service_name = if name.ends_with(".service") { 

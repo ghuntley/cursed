@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Signal actions for common signal handling patterns
 use std::process;
 use std::sync::Arc;

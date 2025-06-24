@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test Runner Main Controller
 /// 
 /// Orchestrates the complete test execution pipeline including discovery,

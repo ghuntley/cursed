@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// IP address and socket address handling for the CURSED networking module
 /// 
 /// This module provides comprehensive IP address handling including IPv4, IPv6,

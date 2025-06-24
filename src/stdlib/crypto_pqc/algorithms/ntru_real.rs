@@ -1,18 +1,19 @@
-//! Real NTRU Key Encapsulation Mechanism Implementation
-//! 
-//! This is a production-ready implementation of NTRU, a lattice-based
-//! Key Encapsulation Mechanism based on the NTRU lattice problem.
-//! 
-//! # Mathematical Foundation
-//! 
-//! NTRU operations are performed in the ring R = Z[X]/(X^N - 1) where N is a prime.
-//! The security is based on the difficulty of finding short vectors in NTRU lattices.
-//! 
-//! # Security Levels
-//! 
-//! - NTRU-HPS-509: NIST Level 1 (128-bit classical security)
-//! - NTRU-HPS-677: NIST Level 3 (192-bit classical security)  
-//! - NTRU-HPS-821: NIST Level 5 (256-bit classical security)
+use crate::error::Error;
+/// Real NTRU Key Encapsulation Mechanism Implementation
+/// 
+/// This is a production-ready implementation of NTRU, a lattice-based
+/// Key Encapsulation Mechanism based on the NTRU lattice problem.
+/// 
+/// # Mathematical Foundation
+/// 
+/// NTRU operations are performed in the ring R = Z[X]/(X^N - 1) where N is a prime.
+/// The security is based on the difficulty of finding short vectors in NTRU lattices.
+/// 
+/// # Security Levels
+/// 
+/// - NTRU-HPS-509: NIST Level 1 (128-bit classical security)
+/// - NTRU-HPS-677: NIST Level 3 (192-bit classical security)  
+/// - NTRU-HPS-821: NIST Level 5 (256-bit classical security)
 
 use std::fmt;
 use rand::rngs::OsRng;

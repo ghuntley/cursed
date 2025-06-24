@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async standard library for CURSED
 /// 
 /// Provides high-level async operations for I/O, networking, and other

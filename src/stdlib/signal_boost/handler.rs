@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Signal handler for registering custom signal handlers
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}};

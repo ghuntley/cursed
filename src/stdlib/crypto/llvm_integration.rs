@@ -4,6 +4,7 @@ use crate::stdlib::crypto::{
     SaltGenerator, NonceGenerator, Base64Encoder, HexEncoder, Base32Encoder,
     // CryptoPlatform - removed unused import
 };
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use inkwell::{
@@ -14,6 +15,7 @@ use inkwell::{
     values::{FunctionValue, PointerValue},
     AddressSpace,
 };
+
 use tracing::{debug, info, warn, error, instrument};
 
 /// LLVM integration for crypto functions
@@ -468,7 +470,6 @@ pub extern "C" fn cursed_jwt_create(
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_crypto_llvm_integration_creation() {

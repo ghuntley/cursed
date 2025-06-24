@@ -5,6 +5,7 @@
 
 use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats};
 use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
+use crate::error::Error;
 use std::io::{Read, Write, BufWriter, BufReader};
 use std::time::Instant;
 use std::collections::HashMap;

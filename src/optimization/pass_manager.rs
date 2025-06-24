@@ -4,6 +4,7 @@ use crate::error::{Result, CursedError};
 use crate::optimization::{OptimizationConfig};
 use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::metrics::CompilationUnit;
+
 use std::collections::HashMap;
 use tracing::{info, debug, warn, instrument};
 

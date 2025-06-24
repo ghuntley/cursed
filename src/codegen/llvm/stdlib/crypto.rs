@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr LLVM integration for CURSED crypto - secure code generation periodt
 /// 
 /// This module provides LLVM code generation for cryptographic operations,

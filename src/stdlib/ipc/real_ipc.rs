@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Real IPC (Inter-Process Communication) implementation
 /// 
 /// This module provides production-ready IPC mechanisms including:

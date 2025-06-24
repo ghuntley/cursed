@@ -6,6 +6,7 @@
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
 use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
+use crate::error::Error;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;

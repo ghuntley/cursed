@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive Set implementations for CURSED
 /// 
 /// This module provides three types of sets:

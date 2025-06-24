@@ -1,8 +1,9 @@
-//! GlowUpHTTP - HTTP client and server implementations with modern features
-//!
-//! This package provides HTTP client and server implementations with modern features
-//! and an aesthetically pleasing (glowed up) API. It's inspired by Go's net/http package
-//! but designed for the next generation of web development.
+use crate::error::Error;
+/// GlowUpHTTP - HTTP client and server implementations with modern features
+///
+/// This package provides HTTP client and server implementations with modern features
+/// and an aesthetically pleasing (glowed up) API. It's inspired by Go's net/http package
+/// but designed for the next generation of web development.
 
 pub mod server;
 pub mod client;

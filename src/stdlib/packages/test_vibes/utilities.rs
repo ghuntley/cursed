@@ -1,5 +1,6 @@
 /// fr fr Test utilities and helper functions for the TestVibes framework
 use crate::stdlib::packages::test_vibes::core::VibeTest;
+use crate::error::Error;
 use std::time::{Duration, Instant};
 use std::path::{Path, PathBuf};
 use std::fs::{File, create_dir_all};

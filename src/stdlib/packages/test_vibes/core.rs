@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Core types for the TestVibes testing framework
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

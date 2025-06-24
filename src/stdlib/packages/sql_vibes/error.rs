@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQL error handling - when things go sus in the database periodt
 use std::fmt;
 use std::error::Error;

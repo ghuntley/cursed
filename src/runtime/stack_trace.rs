@@ -8,6 +8,7 @@
 /// - Thread-safe stack frame management
 
 use crate::error::{Error as CursedError, SourceLocation};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, ThreadId};

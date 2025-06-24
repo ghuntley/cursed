@@ -4,6 +4,7 @@
 /// measures compilation time, memory usage, and provides detailed performance reports.
 
 use crate::error::{Error, Result};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

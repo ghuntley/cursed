@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Entropy validation and randomness quality testing module
 /// 
 /// This module provides comprehensive entropy analysis capabilities to validate

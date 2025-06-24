@@ -9,6 +9,7 @@
 /// depending on the function variant used.
 
 use crate::stdlib::math::{MathError, MathResult, validate_float, domain_error, PI, TAU, FRAC_PI_2};
+use crate::error::Error;
 
 /// Computes the sine of a number (in radians).
 /// 

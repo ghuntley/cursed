@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Transport traits for IPC communication
 /// 
 /// This module defines the core traits that all transport implementations

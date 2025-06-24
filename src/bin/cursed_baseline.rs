@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! CURSED Performance Baseline Management CLI Tool
 //! 
 //! Command-line interface for managing performance baselines, running regression
@@ -10,6 +11,7 @@ use cursed::optimization::{
     BenchmarkRunner, BenchmarkConfig, create_default_benchmarks,
     PerformanceThresholds,
 };
+
 use cursed::error::Result;
 use std::path::PathBuf;
 use std::process;

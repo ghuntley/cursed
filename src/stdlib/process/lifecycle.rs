@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// RuntimeProcessInfo lifecycle management for CURSED
 /// 
 /// This module provides comprehensive process lifecycle management including
@@ -12,6 +13,7 @@ use std::time::{Duration, Instant};
 use crate::stdlib::process::error::{
     ProcessError, ProcessResult, timeout_error, execution_failed, invalid_state, system_error
 };
+
 use crate::stdlib::process::core::{ProcessConfig};
 use crate::stdlib::process::info::{ProcessInfo as StdProcessInfo, ProcessState as StdProcessState};
 use crate::runtime::process::{ProcessInfo as RuntimeProcessInfo, ProcessStatus as RuntimeProcessStatus};
@@ -66,7 +68,6 @@ impl LifecycleEvent {
         }
     }
 }
-
 
 /// RuntimeProcessInfo lifecycle manager
 #[derive(Debug)]

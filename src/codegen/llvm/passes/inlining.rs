@@ -1,3 +1,4 @@
+
 /// Function Inlining Pass
 /// 
 /// Implements intelligent function inlining decisions based on cost-benefit analysis,
@@ -12,6 +13,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, CallSiteValue},
     basic_block::BasicBlock,
 };
+
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 use tracing::{debug, info, instrument, warn};

@@ -5,6 +5,7 @@
 /// measurable performance improvements.
 
 use crate::error::{Error, Result};
+
 use inkwell::{
     context::Context,
     module::Module,
@@ -17,6 +18,7 @@ use inkwell::{
     AddressSpace,
     IntPredicate, FloatPredicate,
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

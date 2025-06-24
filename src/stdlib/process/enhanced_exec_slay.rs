@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced ExecSlay implementation with complete feature set
 /// 
 /// This module provides the full ExecSlay API as specified in the CURSED language

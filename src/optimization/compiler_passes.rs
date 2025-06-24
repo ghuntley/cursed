@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Compiler pass management and orchestration
 //! 
 //! Provides infrastructure for managing and executing compiler optimization passes

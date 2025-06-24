@@ -11,6 +11,7 @@ pub use mysql::MySqlDriver;
 pub use mock::MockDriver;
 
 use crate::stdlib::packages::sql_vibes::{DatabaseDriver, SqlResult, SqlError};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

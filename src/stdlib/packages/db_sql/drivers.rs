@@ -8,6 +8,7 @@ use crate::stdlib::packages::db_core::{
     ConnectionConfig, DriverInfo, DriverFeature, DatabaseError,
     PreparedStatement
 };
+use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use crate::stdlib::packages::db_sql::{
     SqlDialect, SqlDialectTrait, SqlValue, SqlType, SqlResultSet,

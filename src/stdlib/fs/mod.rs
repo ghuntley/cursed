@@ -1,65 +1,66 @@
-//! File system operations module for CURSED standard library
-//! 
-//! This module provides comprehensive file and directory operations including:
-//! - Reading and writing files
-//! - Directory creation and traversal
-//! - File metadata and information
-//! - Path manipulation utilities
-//! - Robust error handling
-//! 
-//! # Examples
-//! 
-//! ## Basic File Operations
-//! 
-//! ```rust
-//! use crate::stdlib::fs;
-//! 
-//! // Read a file
-//! let content = fs::read_file("example.txt")?;
-//! 
-//! // Write a file
-//! fs::write_file("output.txt", "Hello, World!")?;
-//! 
-//! // Append to a file
-//! fs::append_file("log.txt", "New log entry\n")?;
-//! ```
-//! 
-//! ## Directory Operations
-//! 
-//! ```rust
-//! use crate::stdlib::fs;
-//! 
-//! // Create a directory
-//! fs::create_dir("new_folder")?;
-//! 
-//! // Create nested directories
-//! fs::create_dir_all("path/to/nested/folder")?;
-//! 
-//! // List directory contents
-//! let entries = fs::list_dir(".")?;
-//! for entry in entries {
-//!     println!("{}: {} bytes", entry.name, entry.size);
-//! }
-//! ```
-//! 
-//! ## Path Utilities
-//! 
-//! ```rust
-//! use crate::stdlib::fs;
-//! 
-//! // Join path components
-//! let path = fs::join_path(vec!["home".to_string(), "user".to_string(), "file.txt".to_string()]);
-//! 
-//! // Get parent directory
-//! if let Some(parent) = fs::parent_dir("/home/user/file.txt") {
-//!     println!("Parent: {}", parent);
-//! }
-//! 
-//! // Get file extension
-//! if let Some(ext) = fs::extension("document.pdf") {
-//!     println!("Extension: {}", ext);
-//! }
-//! ```
+use crate::error::Error;
+/// File system operations module for CURSED standard library
+/// 
+/// This module provides comprehensive file and directory operations including:
+/// - Reading and writing files
+/// - Directory creation and traversal
+/// - File metadata and information
+/// - Path manipulation utilities
+/// - Robust error handling
+/// 
+/// # Examples
+/// 
+/// ## Basic File Operations
+/// 
+/// ```rust
+/// use crate::stdlib::fs;
+/// 
+/// // Read a file
+/// let content = fs::read_file("example.txt")?;
+/// 
+/// // Write a file
+/// fs::write_file("output.txt", "Hello, World!")?;
+/// 
+/// // Append to a file
+/// fs::append_file("log.txt", "New log entry\n")?;
+/// ```
+/// 
+/// ## Directory Operations
+/// 
+/// ```rust
+/// use crate::stdlib::fs;
+/// 
+/// // Create a directory
+/// fs::create_dir("new_folder")?;
+/// 
+/// // Create nested directories
+/// fs::create_dir_all("path/to/nested/folder")?;
+/// 
+/// // List directory contents
+/// let entries = fs::list_dir(".")?;
+/// for entry in entries {
+///     println!("{}: {} bytes", entry.name, entry.size);
+/// }
+/// ```
+/// 
+/// ## Path Utilities
+/// 
+/// ```rust
+/// use crate::stdlib::fs;
+/// 
+/// // Join path components
+/// let path = fs::join_path(vec!["home".to_string(), "user".to_string(), "file.txt".to_string()]);
+/// 
+/// // Get parent directory
+/// if let Some(parent) = fs::parent_dir("/home/user/file.txt") {
+///     println!("Parent: {}", parent);
+/// }
+/// 
+/// // Get file extension
+/// if let Some(ext) = fs::extension("document.pdf") {
+///     println!("Extension: {}", ext);
+/// }
+/// ```
 
 pub mod error;
 pub mod metadata;

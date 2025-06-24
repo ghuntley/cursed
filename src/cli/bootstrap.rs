@@ -6,7 +6,9 @@
 use crate::bootstrap::{
     SelfCompilationVerifier, VerificationConfig, VerificationResult
 };
+
 use crate::error::{Error, Result as CursedResult};
+
 use clap::{Arg, ArgMatches, Command};
 use std::path::PathBuf;
 use std::time::Duration;

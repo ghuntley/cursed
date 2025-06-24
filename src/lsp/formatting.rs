@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Formatting provider for CURSED language server
 //! 
 //! Provides document formatting integration with the CURSED formatter

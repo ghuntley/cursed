@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Environment variable error handling for CURSED standard library
 
 use std::fmt;

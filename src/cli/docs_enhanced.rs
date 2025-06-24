@@ -1,3 +1,4 @@
+
 //! Enhanced CLI Documentation Commands
 //! 
 //! Extended command-line interface for CURSED documentation with publishing,
