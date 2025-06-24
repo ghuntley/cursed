@@ -1,5 +1,11 @@
-// Minimal common module
+// Common module for CURSED
 use thiserror::Error;
+
+// Core modules
+pub mod optimization_level;
+
+// Re-export optimization level from dedicated module
+pub use optimization_level::OptimizationLevel;
 
 // Basic error type for minimal build
 #[derive(Error, Debug, Clone)]
@@ -18,40 +24,5 @@ pub enum MinimalError {
 
 // Use minimal error as Error for now
 pub use MinimalError as Error;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum OptimizationLevel {
-    O0,
-    O1,
-    O2,
-    O3,
-}
-
-impl OptimizationLevel {
-    pub fn to_llvm_level(&self) -> u32 {
-        match self {
-            OptimizationLevel::O0 => 0,
-            OptimizationLevel::O1 => 1,
-            OptimizationLevel::O2 => 2,
-            OptimizationLevel::O3 => 3,
-        }
-    }
-    
-    pub fn from_string(s: &str) -> Self {
-        match s {
-            "O0" => OptimizationLevel::O0,
-            "O1" => OptimizationLevel::O1, 
-            "O2" => OptimizationLevel::O2,
-            "O3" => OptimizationLevel::O3,
-            _ => OptimizationLevel::O0,
-        }
-    }
-}
-
-impl Default for OptimizationLevel {
-    fn default() -> Self {
-        OptimizationLevel::O0
-    }
-}
 
 pub type Result<T> = std::result::Result<T, Error>;
