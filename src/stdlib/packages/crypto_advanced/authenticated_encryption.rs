@@ -335,8 +335,8 @@ impl AeadUtils {
 }
 
 // Type aliases for compatibility
-pub type EncryptionResult<(), Error>;
-pub type DecryptionResult<(), Error>;
+pub type EncryptionResult<T> = std::result::Result<T, CryptoError>;
+pub type DecryptionResult<T> = std::result::Result<T, CryptoError>;
 pub type AuthenticationError = AdvancedCryptoError;
 pub type TagMismatchError = AdvancedCryptoError;
 

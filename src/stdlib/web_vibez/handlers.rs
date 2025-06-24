@@ -15,7 +15,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument};
 
 /// Result type for request handlers
-pub type HandlerResult = Result<(), Error>;
+pub type HandlerResult<T> = std::result::Result<T, HandlerError>;
 
 use std::future::Future;
 use std::pin::Pin;

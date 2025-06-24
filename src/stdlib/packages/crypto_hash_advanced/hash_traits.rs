@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::fmt::{Debug, Display};
 
 /// Result type for hash operations
-pub type HashResult<(), Error>;
+pub type HashResult<T> = std::result::Result<T, CryptoError>;
 
 /// Standard digest size constants
 pub const MD5_DIGEST_SIZE: usize = 16;

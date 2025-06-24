@@ -324,7 +324,7 @@ impl fmt::Display for MathError {
 impl std::error::Error for MathError {}
 
 /// Result type for mathematical operations
-pub type MathResult<(), Error>;
+pub type MathResult<T> = std::result::Result<T, MathError>;
 
 /// Helper function to create domain errors
 pub fn domain_error(function: &str, value: f64, message: &str) -> MathError {

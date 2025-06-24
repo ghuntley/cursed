@@ -5,7 +5,7 @@ use std::error::Error as StdError;
 use crate::stdlib::packages::web_vibez::status::StatusCode;
 
 /// fr fr Result type alias for web operations - clean error handling
-pub type WebResult<(), Error>;
+pub type WebResult<T> = std::result::Result<T, WebError>;
 
 /// fr fr Comprehensive error types for web operations - covers all the things
 #[derive(Debug, Clone)]

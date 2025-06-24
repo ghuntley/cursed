@@ -339,7 +339,7 @@ impl CertificatePathValidator {
         &mut self,
         target_certificate: &CertificateInfo,
         intermediate_certificates: &[CertificateInfo],
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         // Step 1: Build certificate chain
         let chain_result = self.build_certificate_chain(
             target_certificate,
@@ -427,7 +427,7 @@ impl CertificatePathValidator {
         &self,
         target_certificate: &CertificateInfo,
         intermediate_certificates: &[CertificateInfo],
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         let mut chain = vec![target_certificate.clone()];
         let mut current_cert = target_certificate;
         let mut visited = HashSet::new();
@@ -488,7 +488,7 @@ impl CertificatePathValidator {
     fn find_trust_anchor(
         &self,
         certificate_chain: &[CertificateInfo],
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         let root_cert = certificate_chain.last().unwrap();
         
         for trust_anchor in &self.context.trust_anchors {
@@ -513,7 +513,7 @@ impl CertificatePathValidator {
         &self,
         certificate_chain: &[CertificateInfo],
         trust_anchor: &TrustAnchor,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         let root_cert = certificate_chain.last().unwrap();
         
         Ok(ValidationState {
@@ -905,14 +905,14 @@ impl CertificatePathValidator {
     fn is_self_signed(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         Ok(certificate.subject_name == certificate.issuer_name)
     }
     
     fn is_trusted_root(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         for trust_anchor in &self.context.trust_anchors {
             if let Some(anchor_cert) = &trust_anchor.certificate {
                 if self.certificates_match(certificate, anchor_cert)? {
@@ -927,7 +927,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         intermediates: &[CertificateInfo],
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         for intermediate in intermediates {
             if intermediate.subject_name == certificate.issuer_name {
                 // Verify key identifiers match if present
@@ -949,7 +949,7 @@ impl CertificatePathValidator {
     fn find_issuer_in_trust_anchors(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         for trust_anchor in &self.context.trust_anchors {
             if trust_anchor.subject_name == certificate.issuer_name {
                 if let Some(aki) = &certificate.authority_key_identifier {
@@ -970,7 +970,7 @@ impl CertificatePathValidator {
         &self,
         cert1: &CertificateInfo,
         cert2: &CertificateInfo,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         Ok(cert1.subject_name == cert2.subject_name &&
            cert1.public_key == cert2.public_key)
     }
@@ -979,7 +979,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         trust_anchor: &TrustAnchor,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         Ok(certificate.subject_name == trust_anchor.subject_name &&
            certificate.public_key == trust_anchor.public_key)
     }
@@ -1010,7 +1010,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         algorithm: &str,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         // Implement signature verification based on algorithm
         match algorithm {
             "sha256WithRSAEncryption" => {
@@ -1043,7 +1043,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         hash_algorithm: &str,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         // RSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
@@ -1055,7 +1055,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         hash_algorithm: &str,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         // ECDSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
@@ -1151,7 +1151,7 @@ impl CertificatePathValidator {
         &self,
         name: &GeneralName,
         subtree: &GeneralSubtree,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         match (&name, &subtree.base) {
             (GeneralName::DnsName(name), GeneralName::DnsName(constraint)) => {
                 Ok(self.dns_name_matches(name, constraint))
@@ -1296,7 +1296,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         crl_point: &str,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         // CRL revocation checking implementation
         // This would download and parse CRL, then check certificate serial number
         Ok(()) // Placeholder
@@ -1306,7 +1306,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         ocsp_responder: &str,
-    ) -> Result<(), Error>> {
+    ) -> Result<(), Error> {
         // OCSP revocation checking implementation
         // This would send OCSP request and parse response
         Ok(()) // Placeholder
@@ -1388,7 +1388,7 @@ pub fn validate_certificate_path_simple(
     target_certificate: &CertificateInfo,
     intermediate_certificates: &[CertificateInfo],
     trust_anchors: &[TrustAnchor],
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let context = create_validation_context_with_anchors(trust_anchors.to_vec());
     let mut validator = CertificatePathValidator::new(context);
     

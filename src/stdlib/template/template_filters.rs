@@ -11,7 +11,7 @@ use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 
 /// Filter function type
-pub type FilterFn = Box<dyn Fn(&FilterContext, &[CursedObject]) -> Result<(), Error> + Send + Sync>;
+pub type FilterFn = Box<dyn Fn(&FilterContext, &[CursedObject]) -> std::result::Result<CursedObject, TemplateError> + Send + Sync>;
 
 /// Template filter trait for implementing custom filters
 pub trait TemplateFilter: Send + Sync {

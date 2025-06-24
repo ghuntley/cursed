@@ -1,35 +1,57 @@
-/// Common types and utilities used across the CURSED codebase
-/// 
-/// This module provides shared types, constants, and utilities that are used
-/// throughout different parts of the CURSED compiler and runtime.
+// Minimal common module
+use thiserror::Error;
 
-pub mod optimization_level;
+// Basic error type for minimal build
+#[derive(Error, Debug, Clone)]
+pub enum MinimalError {
+    #[error("Parse error: {0}")]
+    Parse(String),
+    #[error("Codegen error: {0}")]  
+    Codegen(String),
+    #[error("Runtime error: {0}")]
+    Runtime(String),
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
+    #[error("IO error: {0}")]
+    Io(String),
+}
 
-// Re-export the canonical optimization level for easy access
-pub use optimization_level::OptimizationLevel;
+// Use minimal error as Error for now
+pub use MinimalError as Error;
 
-/// Version information for the CURSED compiler
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum OptimizationLevel {
+    O0,
+    O1,
+    O2,
+    O3,
+}
 
-/// Target triple information
-#[cfg(all(target_arch = "x86_64", target_os = "linux"))]
-pub const TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
+impl OptimizationLevel {
+    pub fn to_llvm_level(&self) -> u32 {
+        match self {
+            OptimizationLevel::O0 => 0,
+            OptimizationLevel::O1 => 1,
+            OptimizationLevel::O2 => 2,
+            OptimizationLevel::O3 => 3,
+        }
+    }
+    
+    pub fn from_string(s: &str) -> Self {
+        match s {
+            "O0" => OptimizationLevel::O0,
+            "O1" => OptimizationLevel::O1, 
+            "O2" => OptimizationLevel::O2,
+            "O3" => OptimizationLevel::O3,
+            _ => OptimizationLevel::O0,
+        }
+    }
+}
 
-#[cfg(all(target_arch = "x86_64", target_os = "macos"))]
-pub const TARGET_TRIPLE: &str = "x86_64-apple-darwin";
+impl Default for OptimizationLevel {
+    fn default() -> Self {
+        OptimizationLevel::O0
+    }
+}
 
-#[cfg(all(target_arch = "x86_64", target_os = "windows"))]
-pub const TARGET_TRIPLE: &str = "x86_64-pc-windows-msvc";
-
-#[cfg(not(any(
-    all(target_arch = "x86_64", target_os = "linux"),
-    all(target_arch = "x86_64", target_os = "macos"),
-    all(target_arch = "x86_64", target_os = "windows")
-)))]
-pub const TARGET_TRIPLE: &str = "unknown-target";
-
-/// Build timestamp
-pub const BUILD_TIMESTAMP: &str = "unknown";
-
-/// Common result type used throughout the codebase
-pub type Result<(), Error>;
+pub type Result<T> = std::result::Result<T, Error>;

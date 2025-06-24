@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
 /// Result type for collision analysis
-pub type CollisionResult<(), Error>;
+pub type CollisionResult<T> = std::result::Result<T, CryptoError>;
 
 /// Collision detection result
 #[derive(Debug, Clone)]

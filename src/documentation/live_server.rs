@@ -49,7 +49,7 @@ use warp::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 use warp::{Filter, Rejection, Reply};
 
-pub type LiveServerResult<(), Error>;
+pub type LiveServerResult<T> = std::result::Result<T, IoError>;
 
 /// Configuration for the live documentation server
 #[derive(Debug, Clone, Serialize, Deserialize)]

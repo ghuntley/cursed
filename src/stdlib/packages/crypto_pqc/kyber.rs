@@ -85,7 +85,7 @@ pub trait SecureDrop: Drop {
 }
 
 /// Cryptographic result type for Kyber operations
-pub type KyberResult<(), Error>;
+pub type KyberResult<T> = std::result::Result<T, CryptoError>;
 
 /// Cryptographic error types for Kyber
 #[derive(Debug, Clone, PartialEq)]

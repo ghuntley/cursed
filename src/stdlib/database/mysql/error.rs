@@ -202,7 +202,7 @@ impl MySqlError {
 }
 
 /// Result type for MySQL operations
-pub type MySqlResult<(), Error>;
+pub type MySqlResult<T> = std::result::Result<T, MySqlError>;
 
 /// Convert mysql crate errors to MySqlError
 impl From<mysql::Error> for MySqlError {

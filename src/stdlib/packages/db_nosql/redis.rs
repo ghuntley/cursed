@@ -208,7 +208,7 @@ impl Default for RedisDriver {
 
 #[async_trait]
 impl NoSqlDriver for RedisDriver {
-    async fn connect(&self, connection_string: &str) -> Result<(), Error>> {
+    async fn connect(&self, connection_string: &str) -> Result<(), Error> {
         let mut config = self.config.clone();
         if !connection_string.is_empty() {
             config.url = connection_string.to_string();
@@ -659,7 +659,7 @@ impl RedisConnection {
 #[async_trait]
 impl NoSqlConnection for RedisConnection {
     /// slay Insert document (stored as JSON string)
-    async fn insert(&mut self, collection: &str, document: serde_json::Value) -> Result<(), Error>> {
+    async fn insert(&mut self, collection: &str, document: serde_json::Value) -> Result<(), Error> {
         let doc_json = document.to_string();
         let key = format!("{}:{}", collection, Uuid::new_v4());
         
@@ -668,7 +668,7 @@ impl NoSqlConnection for RedisConnection {
     }
     
     /// slay Find documents (basic key pattern matching)
-    async fn find(&mut self, collection: &str, _query: serde_json::Value) -> Result<(), Error>> {
+    async fn find(&mut self, collection: &str, _query: serde_json::Value) -> Result<(), Error> {
         let pattern = format!("{}:*", collection);
         let keys = self.keys(&pattern).await?;
         

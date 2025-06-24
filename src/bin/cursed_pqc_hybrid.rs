@@ -284,7 +284,7 @@ struct BenchmarkResults {
     throughput_ops_per_sec: f64,
 }
 
-fn main() -> Result<(), Error>> {
+fn main() -> Result<(), Error> {
     env_logger::init();
     
     let cli = Cli::parse();
@@ -334,7 +334,7 @@ fn cmd_keygen(
     secret_key_out: Option<PathBuf>,
     enable_caching: bool,
     enable_logging: bool,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     println!("🔑 Generating hybrid key pair...");
     println!("   Classical: {:?}", classical);
     println!("   Post-Quantum: {:?}", pqc);
@@ -397,7 +397,7 @@ fn cmd_encaps(
     classical: ClassicalAlgorithmCli,
     pqc: AlgorithmTypeCli,
     security_level: SecurityLevelCli,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     println!("🔒 Performing hybrid encapsulation...");
     
     // Load public key
@@ -441,7 +441,7 @@ fn cmd_decaps(
     classical: ClassicalAlgorithmCli,
     pqc: AlgorithmTypeCli,
     security_level: SecurityLevelCli,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     println!("🔓 Performing hybrid decapsulation...");
     
     // Load secret key and ciphertext
@@ -484,7 +484,7 @@ fn cmd_benchmark(
     security_level: Option<SecurityLevelCli>,
     iterations: usize,
     output: Option<PathBuf>,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     println!("📊 Running hybrid cryptography benchmarks...");
     
     let classical_algorithms = classical.map(|c| vec![c]).unwrap_or_else(|| vec![
@@ -542,7 +542,7 @@ fn benchmark_combination(
     pqc: AlgorithmType,
     security_level: SecurityLevel,
     iterations: usize,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let hybrid_kem = HybridKem::new(classical, pqc, security_level);
     
     let mut keygen_times = Vec::new();
@@ -606,7 +606,7 @@ fn cmd_compatibility(
     excellent_only: bool,
     security_level: Option<SecurityLevelCli>,
     format: OutputFormat,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     println!("🔍 Analyzing algorithm compatibility...");
     
     let matrix = HybridCompatibilityMatrix::new();
@@ -682,7 +682,7 @@ fn cmd_compatibility(
     Ok(())
 }
 
-fn cmd_migration(phase: Option<usize>, format: OutputFormat) -> Result<(), Error>> {
+fn cmd_migration(phase: Option<usize>, format: OutputFormat) -> Result<(), Error> {
     println!("🚀 Post-Quantum Migration Strategy:");
     
     let strategy = HybridMigrationStrategy::standard();
@@ -739,7 +739,7 @@ fn cmd_validate(
     classical: ClassicalAlgorithmCli,
     pqc: AlgorithmTypeCli,
     security_level: SecurityLevelCli,
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     println!("🔍 Validating hybrid key pair...");
     
     // Load keys

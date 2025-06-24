@@ -65,7 +65,7 @@ impl fmt::Display for CryptoError {
 impl std::error::Error for CryptoError {}
 
 /// Type alias for crypto results
-pub type CryptoResult<(), Error>;
+pub type CryptoResult<T> = std::result::Result<T, CryptoError>;
 
 /// fr fr Encryption result with metadata
 #[derive(Debug, Clone)]

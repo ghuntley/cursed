@@ -114,7 +114,7 @@ struct DatabaseTimeout {
 }
 
 /// Timeout result for async operations
-pub type TimeoutResult<(), Error>;
+pub type TimeoutResult<T> = std::result::Result<T, TimeoutError>;
 
 /// Timeout error types
 #[derive(Debug, Clone)]

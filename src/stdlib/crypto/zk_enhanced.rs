@@ -177,7 +177,7 @@ impl From<ZkError> for CursedError {
 }
 
 /// Result type for ZK operations
-pub type ZkResult<(), Error>;
+pub type ZkResult<T> = std::result::Result<T, ZkError>;
 
 /// Security parameters for ZK systems
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

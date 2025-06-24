@@ -17,7 +17,7 @@ use serde_json;
 use tracing::{info, debug, error, Level};
 use tracing_subscriber;
 
-fn main() -> Result<(), Error>> {
+fn main() -> Result<(), Error> {
     // Initialize tracing
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)

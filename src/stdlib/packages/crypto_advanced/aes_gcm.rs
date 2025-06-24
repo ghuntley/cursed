@@ -373,7 +373,7 @@ impl SymmetricCipher for AesGcm128 {
 pub type AesGcmCipher = AesGcm256;
 pub type AesGcmKey = Vec<u8>;
 pub type AesGcmNonce = Vec<u8>;
-pub type AesGcmResult<(), Error>;
+pub type AesGcmResult<T> = std::result::Result<T, CryptoError>;
 pub type AesGcmError = AdvancedCryptoError;
 pub const AES_GCM_KEY_SIZE_256: usize = 32;
 pub const AES_GCM_KEY_SIZE_192: usize = 24;

@@ -193,7 +193,7 @@ impl fmt::Display for CertificateError {
 
 impl std::error::Error for CertificateError {}
 
-pub type CertificateResult<(), Error>;
+pub type CertificateResult<T> = std::result::Result<T, CertificateError>;
 
 /// fr fr Certificate encoding formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

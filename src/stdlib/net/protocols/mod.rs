@@ -41,7 +41,7 @@ impl std::fmt::Display for ProtocolError {
 
 impl std::error::Error for ProtocolError {}
 
-pub type ProtocolResult<(), Error>;
+pub type ProtocolResult<T> = std::result::Result<T, ProtocolError>;
 
 #[cfg(test)]
 mod tests {

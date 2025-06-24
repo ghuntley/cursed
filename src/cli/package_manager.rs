@@ -328,7 +328,7 @@ pub fn add_package_commands(app: Command) -> Command {
 }
 
 /// Handle package management commands with real implementations
-pub fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Error>> {
+pub fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     // Create async runtime for handling async operations
     let rt = Runtime::new()?;
     
@@ -350,7 +350,7 @@ pub fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Error>> 
 async fn execute_package_command(
     matches: &clap::ArgMatches, 
     config: CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let package_config = config.package_manager.clone();
     let mut manager = PackageManager::new(package_config)?;
     
@@ -398,7 +398,7 @@ async fn handle_get_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let package_spec = matches.get_one::<String>("package").unwrap();
     let version = matches.get_one::<String>("version");
     let save_dev = matches.get_flag("save-dev");
@@ -476,7 +476,7 @@ async fn handle_search_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let query = matches.get_one::<String>("query").unwrap();
     let limit: usize = matches.get_one::<String>("limit").unwrap().parse()?;
     let exact = matches.get_flag("exact");
@@ -548,7 +548,7 @@ async fn handle_list_command(
     manager: &PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let outdated_only = matches.get_flag("outdated");
     let show_tree = matches.get_flag("tree");
     
@@ -620,7 +620,7 @@ async fn handle_update_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let package = matches.get_one::<String>("package");
     let dry_run = matches.get_flag("dry-run");
     let latest = matches.get_flag("latest");
@@ -714,7 +714,7 @@ async fn handle_remove_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let package = matches.get_one::<String>("package").unwrap();
     let purge = matches.get_flag("purge");
     
@@ -753,7 +753,7 @@ async fn handle_remove_command(
 async fn handle_init_command(
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let name = matches.get_one::<String>("name");
     let is_lib = matches.get_flag("lib");
     let version = matches.get_one::<String>("version");
@@ -808,7 +808,7 @@ async fn handle_resolve_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let format = matches.get_one::<String>("format").unwrap();
     let package = matches.get_one::<String>("package");
     
@@ -871,7 +871,7 @@ async fn handle_check_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let fix_issues = matches.get_flag("fix");
     let check_integrity = matches.get_flag("integrity");
     
@@ -926,7 +926,7 @@ async fn handle_clean_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let clean_all = matches.get_flag("all");
     let dry_run = matches.get_flag("dry-run");
     
@@ -1016,7 +1016,7 @@ async fn handle_info_command(
     manager: &mut PackageManager,
     matches: &clap::ArgMatches,
     config: &CliConfig
-) -> Result<(), Error>> {
+) -> Result<(), Error> {
     let package = matches.get_one::<String>("package").unwrap();
     let version = matches.get_one::<String>("version");
     
@@ -1086,7 +1086,7 @@ async fn handle_info_command(
 }
 
 /// Load configuration from CLI arguments and config files
-fn load_cli_config(matches: &clap::ArgMatches) -> Result<(), Error>> {
+fn load_cli_config(matches: &clap::ArgMatches) -> Result<(), Error> {
     let mut package_config = PackageManagerConfig::default();
     
     // Apply CLI overrides

@@ -96,7 +96,7 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), Error>> {
+fn main() -> Result<(), Error> {
     let cli = Cli::parse();
     
     // Build test framework configuration
@@ -177,7 +177,7 @@ fn parse_report_format(format: &str) -> ReportFormat {
     }
 }
 
-fn run_all_tests(framework: &mut TestFramework) -> Result<(), Error>> {
+fn run_all_tests(framework: &mut TestFramework) -> Result<(), Error> {
     println!("🚀 Running CURSED tests...");
     
     let report = framework.run_tests()?;
@@ -195,7 +195,7 @@ fn run_all_tests(framework: &mut TestFramework) -> Result<(), Error>> {
     }
 }
 
-fn run_specific_tests(framework: &mut TestFramework, test_names: &[String]) -> Result<(), Error>> {
+fn run_specific_tests(framework: &mut TestFramework, test_names: &[String]) -> Result<(), Error> {
     println!("🎯 Running specific tests: {:?}", test_names);
     
     let mut passed = 0;
@@ -231,7 +231,7 @@ fn run_specific_tests(framework: &mut TestFramework, test_names: &[String]) -> R
     }
 }
 
-fn list_tests(framework: &mut TestFramework, detailed: bool) -> Result<(), Error>> {
+fn list_tests(framework: &mut TestFramework, detailed: bool) -> Result<(), Error> {
     println!("🔍 Discovering tests...");
     
     // For now, we'll simulate test discovery since we don't have actual test files
@@ -259,7 +259,7 @@ fn list_tests(framework: &mut TestFramework, detailed: bool) -> Result<(), Error
     Ok(())
 }
 
-fn show_statistics(framework: &TestFramework) -> Result<(), Error>> {
+fn show_statistics(framework: &TestFramework) -> Result<(), Error> {
     println!("📊 Test Statistics:");
     
     let stats = framework.get_statistics();
@@ -275,7 +275,7 @@ fn show_statistics(framework: &TestFramework) -> Result<(), Error>> {
     Ok(())
 }
 
-fn generate_report(framework: &mut TestFramework, format: &str, output: Option<PathBuf>) -> Result<(), Error>> {
+fn generate_report(framework: &mut TestFramework, format: &str, output: Option<PathBuf>) -> Result<(), Error> {
     println!("📄 Generating {} report...", format);
     
     // Run tests to get results

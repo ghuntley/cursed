@@ -626,7 +626,7 @@ mod tests {
     }
     
     #[test]
-    fn test_cache_entry_operations() -> Result<(), Error>> {
+    fn test_cache_entry_operations() -> Result<(), Error> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut cache = IncrementalCache::new(cache_path)?;
@@ -652,7 +652,7 @@ mod tests {
     }
     
     #[test]
-    fn test_rebuild_detection() -> Result<(), Error>> {
+    fn test_rebuild_detection() -> Result<(), Error> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut cache = IncrementalCache::new(cache_path)?;
@@ -688,7 +688,7 @@ mod tests {
     }
     
     #[test]
-    fn test_cache_cleanup() -> Result<(), Error>> {
+    fn test_cache_cleanup() -> Result<(), Error> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut cache = IncrementalCache::new(cache_path)?;
@@ -707,7 +707,7 @@ mod tests {
     }
     
     #[test]
-    fn test_cache_manager() -> Result<(), Error>> {
+    fn test_cache_manager() -> Result<(), Error> {
         let dir = tempdir()?;
         let cache_path = dir.path().to_path_buf();
         let mut manager = CacheManager::new(cache_path)?;

@@ -150,7 +150,7 @@ impl From<PemDerError> for CursedError {
 }
 
 /// Result type for PEM/DER operations
-pub type PemDerResult<(), Error>;
+pub type PemDerResult<T> = std::result::Result<T, PemDerError>;
 
 /// PEM format types and headers
 #[derive(Debug, Clone, PartialEq)]

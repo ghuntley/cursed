@@ -30,7 +30,7 @@ pub use regex::{
 };
 
 // String manipulation result type
-pub type StringResult<(), Error>;
+pub type StringResult<T> = std::result::Result<T, StringError>;
 
 /// Errors that can occur during string operations
 #[derive(Debug, Clone, PartialEq)]

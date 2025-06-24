@@ -25,7 +25,7 @@ use crate::stdlib::value::Value;
 use crate::crate::stdlib::errors::CursedError;
 
 /// fr fr Result type for quick test operations
-pub type QuickTestResult<(), Error>;
+pub type QuickTestResult<T> = std::result::Result<T, Error>;
 
 /// fr fr Configuration for how a test is run
 #[derive(Debug, Clone)]

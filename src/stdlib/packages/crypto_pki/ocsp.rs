@@ -63,7 +63,7 @@ impl From<OcspError> for PkiError {
 }
 
 /// OCSP result type
-pub type OcspResult<(), Error>;
+pub type OcspResult<T> = std::result::Result<T, OcspError>;
 
 /// OCSP Request structure
 #[derive(Debug, Clone)]

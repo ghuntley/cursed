@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 /// fr fr Result type for side-channel analysis
-pub type SideChannelResult<(), Error>;
+pub type SideChannelResult<T> = std::result::Result<T, CryptoError>;
 
 /// fr fr Side-channel analysis result
 #[derive(Debug, Clone)]

@@ -33,7 +33,7 @@ pub enum FutureState {
 }
 
 /// Result type for futures
-pub type FutureResult<(), Error>;
+pub type FutureResult<T> = std::result::Result<T, AsyncError>;
 
 /// Error types specific to futures
 #[derive(Debug, Clone)]

@@ -31,7 +31,7 @@ impl MySqlError {
     }
 }
 
-pub type MySqlResult<(), Error>;
+pub type MySqlResult<T> = std::result::Result<T, MySqlError>;
 
 /// MySQL configuration
 #[derive(Debug, Clone)]

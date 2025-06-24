@@ -472,7 +472,7 @@ impl From<SqliteError> for DatabaseError {
 }
 
 /// fr fr SQLite result type
-pub type SqliteResult<(), Error>;
+pub type SqliteResult<T> = std::result::Result<T, SqliteError>;
 
 /// fr fr Error context builder for fluent error construction
 pub struct SqliteErrorBuilder {

@@ -4,7 +4,7 @@ use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::time::{Duration, Instant};
 
 /// Result type for password operations
-pub type PasswordResult<(), Error>;
+pub type PasswordResult<T> = std::result::Result<T, CryptoError>;
 
 /// Password hashing algorithm variants
 #[derive(Debug, Clone, Copy, PartialEq)]

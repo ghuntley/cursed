@@ -437,7 +437,7 @@ impl DiagnosticsProvider {
     }
 
     /// Analyze lexer errors
-    fn analyze_lexer_errors(&self, content: &str) -> Result<(), Error>> {
+    fn analyze_lexer_errors(&self, content: &str) -> Result<(), Error> {
         let mut diagnostics = Vec::new();
         let mut lexer = Lexer::new(content.to_string());
         
@@ -487,7 +487,7 @@ impl DiagnosticsProvider {
     }
 
     /// Analyze parser errors
-    fn analyze_parser_errors(&self, content: &str) -> Result<(), Error>> {
+    fn analyze_parser_errors(&self, content: &str) -> Result<(), Error> {
         let mut diagnostics = Vec::new();
         let lexer = Lexer::new(content.to_string());
         let mut parser = match Parser::new(lexer) {

@@ -309,7 +309,7 @@ impl ChaCha20Poly1305 {
 // Type aliases and constants
 pub type ChaCha20Key = SecureMemory;
 pub type ChaCha20Nonce = Vec<u8>;
-pub type ChaCha20Result<(), Error>;
+pub type ChaCha20Result<T> = std::result::Result<T, CryptoError>;
 pub type ChaCha20Error = AdvancedCryptoError;
 
 /// Constants

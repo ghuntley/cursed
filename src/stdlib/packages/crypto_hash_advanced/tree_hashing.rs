@@ -4,7 +4,7 @@ use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::collections::VecDeque;
 
 /// Result type for tree operations
-pub type TreeResult<(), Error>;
+pub type TreeResult<T> = std::result::Result<T, CryptoError>;
 
 /// Merkle tree implementation
 #[derive(Debug, Clone)]

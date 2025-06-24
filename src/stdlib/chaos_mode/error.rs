@@ -47,7 +47,7 @@ impl fmt::Display for ChaosError {
 
 impl std::error::Error for ChaosError {}
 
-pub type ChaosResult<(), Error>;
+pub type ChaosResult<T> = std::result::Result<T, ChaosError>;
 
 // Helper functions for creating errors
 pub fn runtime_error(msg: &str) -> ChaosError {

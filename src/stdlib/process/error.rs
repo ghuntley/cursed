@@ -9,7 +9,7 @@ use std::num;
 use std::time::Duration;
 
 /// Result type for process operations
-pub type ProcessResult<(), Error>;
+pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
 /// Comprehensive error types for process management
 #[derive(Debug, Clone)]

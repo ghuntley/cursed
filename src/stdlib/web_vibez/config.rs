@@ -443,7 +443,7 @@ fn expand_environment_variables(content: &str) -> Result<(), Error> {
 
 impl WebVibezConfig {
     /// Load configuration from file with enhanced error handling
-    pub fn from_file(path: &str) -> Result<(), Error>> {
+    pub fn from_file(path: &str) -> Result<(), Error> {
         let content = std::fs::read_to_string(path)?;
         Self::from_toml(&content)
     }
@@ -456,7 +456,7 @@ impl WebVibezConfig {
     }
 
     /// Parse configuration from TOML string (legacy method)
-    pub fn from_toml(toml_str: &str) -> Result<(), Error>> {
+    pub fn from_toml(toml_str: &str) -> Result<(), Error> {
         // Parse the TOML string into a toml::Value first for custom handling
         let toml_value: toml::Value = toml::from_str(toml_str)?;
         
@@ -840,7 +840,7 @@ impl WebVibezConfig {
 }
 
 // Helper functions for parsing TOML sections
-fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = ServerConfig::default();
     
     if let Some(host) = table.get("host").and_then(|v| v.as_str()) {
@@ -874,7 +874,7 @@ fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> Result<()
     Ok(config)
 }
 
-fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = SecurityConfig::default();
     
     if let Some(secret) = table.get("csrf_secret").and_then(|v| v.as_str()) {
@@ -908,7 +908,7 @@ fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> Result<
     Ok(config)
 }
 
-fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = PerformanceConfig::default();
     
     if let Some(enable) = table.get("enable_compression").and_then(|v| v.as_bool()) {
@@ -939,7 +939,7 @@ fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> Resu
     Ok(config)
 }
 
-fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = SessionConfig::default();
     
     if let Some(name) = table.get("cookie_name").and_then(|v| v.as_str()) {
@@ -993,7 +993,7 @@ fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> Result<(
     Ok(config)
 }
 
-fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = TemplateConfig::default();
     
     if let Some(dir) = table.get("template_dir").and_then(|v| v.as_str()) {
@@ -1019,7 +1019,7 @@ fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> Result<
     Ok(config)
 }
 
-fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = StaticFileConfig::default();
     
     if let Some(dir) = table.get("static_dir").and_then(|v| v.as_str()) {
@@ -1050,7 +1050,7 @@ fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> Resu
     Ok(config)
 }
 
-fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = LoggingConfig::default();
     
     if let Some(enable) = table.get("enable_request_logging").and_then(|v| v.as_bool()) {
@@ -1094,7 +1094,7 @@ fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<(
     Ok(config)
 }
 
-fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error>> {
+fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
     let mut config = DevelopmentConfig::default();
     
     if let Some(enable) = table.get("enable_hot_reload").and_then(|v| v.as_bool()) {

@@ -80,7 +80,7 @@ impl From<PluginError> for CursedError {
 }
 
 /// Result type for plugin operations
-pub type PluginResult<(), Error>;
+pub type PluginResult<T> = std::result::Result<T, PluginError>;
 
 /// Helper functions for creating specific plugin errors
 impl PluginError {

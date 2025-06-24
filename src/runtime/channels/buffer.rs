@@ -11,7 +11,7 @@ use crate::memory::gc::GarbageCollector;
 use crate::error::Error as CursedError;
 
 /// Result type for buffer operations
-pub type BufferResult<(), Error>;
+pub type BufferResult<T> = std::result::Result<T, ChannelError>;
 
 /// Errors that can occur during buffer operations
 #[derive(Debug, Clone, PartialEq)]

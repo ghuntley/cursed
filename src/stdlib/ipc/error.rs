@@ -7,7 +7,7 @@ use std::io;
 use std::time::Duration;
 
 /// Result type for IPC operations
-pub type IpcResult<(), Error>;
+pub type IpcResult<T> = std::result::Result<T, IpcError>;
 
 /// Comprehensive error types for IPC operations
 #[derive(Debug, Clone)]

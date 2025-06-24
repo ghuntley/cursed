@@ -497,7 +497,7 @@ mod tests {
     }
 
     #[test]
-    fn test_watch_valid_path() -> Result<(), Error>> {
+    fn test_watch_valid_path() -> Result<(), Error> {
         let temp_dir = TempDir::new()?;
         let mut watcher = HotReloadWatcher::new();
         
@@ -509,7 +509,7 @@ mod tests {
     }
 
     #[test]
-    fn test_enable_disable_watcher() -> Result<(), Error>> {
+    fn test_enable_disable_watcher() -> Result<(), Error> {
         let temp_dir = TempDir::new()?;
         let mut watcher = HotReloadWatcher::new();
         

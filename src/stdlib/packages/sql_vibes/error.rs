@@ -4,7 +4,7 @@ use std::error::Error;
 use serde::{Serialize, Deserialize};
 
 /// fr fr SQL operation result type - either success or error bestie
-pub type SqlResult<(), Error>;
+pub type SqlResult<T> = std::result::Result<T, SqlError>;
 
 /// fr fr Main SQL error type - comprehensive error handling
 #[derive(Debug, Clone, Serialize, Deserialize)]

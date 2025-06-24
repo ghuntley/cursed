@@ -416,7 +416,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    pub async fn execute(&self, cli: ProfileCli) -> Result<(), Error>> {
+    pub async fn execute(&self, cli: ProfileCli) -> Result<(), Error> {
         match cli.command {
             ProfileCommand::Profile(ref args) => self.execute_profile(args, &cli).await,
             ProfileCommand::Benchmark(args) => self.execute_benchmark(args).await,
@@ -428,7 +428,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_profile(&self, args: &ProfileArgs, cli: &ProfileCli) -> Result<(), Error>> {
+    async fn execute_profile(&self, args: &ProfileArgs, cli: &ProfileCli) -> Result<(), Error> {
         info!("Starting profiling session for: {:?}", args.program);
         
         // Build profiler configuration
@@ -490,7 +490,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_benchmark(&self, args: BenchmarkArgs) -> Result<(), Error>> {
+    async fn execute_benchmark(&self, args: BenchmarkArgs) -> Result<(), Error> {
         info!("Running benchmark suite: {:?}", args.suite);
         
         let config = BenchmarkConfig {
@@ -568,7 +568,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_analyze(&self, args: AnalyzeArgs) -> Result<(), Error>> {
+    async fn execute_analyze(&self, args: AnalyzeArgs) -> Result<(), Error> {
         info!("Analyzing profiling data: {:?}", args.data);
         
         // Load profiling data
@@ -631,21 +631,21 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_report(&self, _args: ReportArgs) -> Result<(), Error>> {
+    async fn execute_report(&self, _args: ReportArgs) -> Result<(), Error> {
         // Report generation would be implemented here
         println!("Report generation completed");
         Ok(())
     }
     
     #[instrument(skip(self))]
-    async fn execute_compare(&self, _args: CompareArgs) -> Result<(), Error>> {
+    async fn execute_compare(&self, _args: CompareArgs) -> Result<(), Error> {
         // Comparison logic would be implemented here
         println!("Performance comparison completed");
         Ok(())
     }
     
     #[instrument(skip(self))]
-    async fn execute_visualize(&self, _args: VisualizeArgs) -> Result<(), Error>> {
+    async fn execute_visualize(&self, _args: VisualizeArgs) -> Result<(), Error> {
         // Visualization generation would be implemented here
         println!("Visualization generated");
         Ok(())

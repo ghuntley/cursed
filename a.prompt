@@ -1,0 +1,4 @@
+study specs/* to understand the application
+study debug.log to determine why the application does not compile
+do not run the tests or compile the application
+your task is to consider the 5 most likely options that would resolve the compilation errors and to write them out as FIX_PLAN.md - you may read the source code in src/* using subagents as needed
