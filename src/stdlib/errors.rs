@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::error::Error;
 pub enum ErrorSeverity {
     Low,
     Medium,

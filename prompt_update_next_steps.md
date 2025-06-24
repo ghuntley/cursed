@@ -1,1 +1,0 @@
-continue investigation and updating @IMPLEMENTATION_PLAN.md  with features in src/* that are defined in specs/* which have not been implemented. keep going forever until you have studied all
