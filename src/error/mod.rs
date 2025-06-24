@@ -22,7 +22,7 @@ impl Default for SourceLocation {
 
 // Basic error type for minimal build
 #[derive(Error, Debug, Clone)]
-pub enum Error {
+pub enum CursedError {
     #[error("Parse error: {0}")]
     Parse(String),
     
@@ -48,17 +48,23 @@ pub enum Error {
     Generic(String),
 }
 
-impl From<std::io::Error> for Error {
+impl From<std::io::Error> for CursedError {
     fn from(err: std::io::Error) -> Self {
-        Error::Io(err.to_string())
+        CursedError::Io(err.to_string())
     }
 }
 
-impl From<String> for Error {
+impl From<String> for CursedError {
     fn from(err: String) -> Self {
-        Error::Generic(err)
+        CursedError::Generic(err)
     }
 }
+
+// Type alias for backwards compatibility and easier imports
+pub type Error = CursedError;
+
+// Unified Result type for consistent error handling
+pub type Result<T> = std::result::Result<T, CursedError>;
 
 impl From<&str> for Error {
     fn from(err: &str) -> Self {

@@ -10,7 +10,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::stdlib::value::Value;
-use crate::error::CursedError;
+use crate::error::{CursedError, Error};
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
 // Use explicit imports instead of glob import to avoid conflicts
 use x509_parser::certificate::X509Certificate as X509ParserCertificate;

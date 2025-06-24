@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::fs;
 use super::{FsError, FsResult};
+use crate::error::Error;
 
 // =============================================================================
 // FILE SYSTEM EVENT TYPES
