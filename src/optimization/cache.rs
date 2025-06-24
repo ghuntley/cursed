@@ -4,6 +4,7 @@
 /// to speed up compilation by reusing previously computed results.
 
 use crate::error::{Error, Result};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};

@@ -6,6 +6,7 @@ use crate::stdlib::web_vibez::session::{Session, SessionValue, SessionError};
 use crate::stdlib::web_vibez::timeout_middleware::{TimeoutMiddleware, TimeoutResult, TimeoutError};
 use crate::stdlib::web_vibez::config::{SessionConfig, SessionStoreType};
 use crate::stdlib::database::{DatabaseError, DatabaseConfig};
+use crate::error::Error;
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

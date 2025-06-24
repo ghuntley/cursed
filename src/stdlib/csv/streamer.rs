@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CSV Streamer for processing large files with minimal memory usage
 use std::io;
 use crate::stdlib::csv::reader::Reader;

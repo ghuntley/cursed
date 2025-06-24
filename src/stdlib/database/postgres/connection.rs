@@ -10,6 +10,7 @@ use crate::stdlib::database::{
     DriverConn, DriverStmt, DriverTx, TxOptions, SqlValue,
     driver::{QueryResult, ExecuteResult, ConnectionMetadata}
 };
+use crate::error::Error;
 use super::config::PostgresConfig;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info};
@@ -485,7 +486,6 @@ impl DriverConn for PostgresConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_connection_stats() {

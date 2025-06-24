@@ -3,6 +3,7 @@
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::CompilationUnit;
 use crate::optimization::dependency_analyzer::{DependencyGraph, CompilationPlan};
+
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};

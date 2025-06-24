@@ -11,6 +11,7 @@ use crate::stdlib::database::{
     DriverStmt, DatabaseError, SqlValue,
     driver::{QueryResult, ExecuteResult}
 };
+use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
 use super::crate::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
@@ -219,7 +220,6 @@ impl Clone for MySqlStatement {
 mod tests {
     use super::*;
     use crate::stdlib::database::SqlValue;
-use crate::error::Error;
 
     #[test]
     fn test_parameter_counting() {

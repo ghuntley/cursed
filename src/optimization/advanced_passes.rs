@@ -7,6 +7,7 @@
 /// - Cross-module optimization
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// General proof utilities and common proof patterns
 use std::collections::HashMap;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;

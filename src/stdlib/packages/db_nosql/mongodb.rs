@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// MongoDB driver for CURSED programming language
 /// 
 /// This module provides a comprehensive MongoDB driver with:
@@ -27,6 +28,7 @@ use mongodb::{
     },
     Client, Database, Collection, IndexModel, Cursor
 };
+
 use futures::stream::TryStreamExt;
 
 use crate::stdlib::value::Value;
@@ -980,8 +982,6 @@ impl MongoDbTransaction {
         Ok(())
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

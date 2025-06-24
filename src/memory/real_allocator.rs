@@ -18,6 +18,7 @@ use crate::memory::{
     metadata::{ObjectHeader, ObjectMetadata},
     pressure_detection::{MemoryPressureDetector, PressureLevel},
 };
+use crate::error::Error;
 use crate::profiling::memory::MemoryProfiler;
 
 /// Real memory allocator with multiple allocation strategies

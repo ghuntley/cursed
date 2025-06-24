@@ -1,5 +1,6 @@
 /// fr fr Database migration system - schema evolution with CURSED vibes periodt
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, DatabaseConnection, QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder};
+use crate::error::Error;
 use std::collections::{HashMap, BTreeMap};
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Serialize, Deserialize};

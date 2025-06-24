@@ -33,6 +33,7 @@ pub use hmac::*;
 pub use hmac_variants::*;
 
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// Initialize advanced cryptographic hash package with comprehensive functionality
 pub fn init_crypto_hash_advanced() -> Result<(), Error> {

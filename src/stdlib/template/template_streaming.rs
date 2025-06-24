@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template Streaming Renderer - High-performance streaming template rendering
 use std::collections::HashMap;
 use std::io::{Write, BufWriter};

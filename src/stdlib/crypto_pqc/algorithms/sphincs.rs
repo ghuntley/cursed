@@ -1,21 +1,22 @@
-//! SPHINCS+ Hash-based Signature Implementation
-//! 
-//! SPHINCS+ is a stateless hash-based signature scheme providing strong security guarantees
-//! based on the security of underlying hash functions. It was selected by NIST for
-//! standardization as part of the post-quantum cryptography project.
-//! 
-//! # Security
-//! 
-//! SPHINCS+ provides the following security levels:
-//! - SPHINCS+-128s: NIST Level 1 (128-bit security, small signatures)
-//! - SPHINCS+-192s: NIST Level 3 (192-bit security, small signatures)
-//! - SPHINCS+-256s: NIST Level 5 (256-bit security, small signatures)
-//! 
-//! # Performance
-//! 
-//! SPHINCS+ offers very strong security based on well-understood hash functions but
-//! has larger signature sizes compared to lattice-based schemes. The 's' variants
-//! prioritize smaller signatures over faster signing speed.
+use crate::error::Error;
+/// SPHINCS+ Hash-based Signature Implementation
+/// 
+/// SPHINCS+ is a stateless hash-based signature scheme providing strong security guarantees
+/// based on the security of underlying hash functions. It was selected by NIST for
+/// standardization as part of the post-quantum cryptography project.
+/// 
+/// # Security
+/// 
+/// SPHINCS+ provides the following security levels:
+/// - SPHINCS+-128s: NIST Level 1 (128-bit security, small signatures)
+/// - SPHINCS+-192s: NIST Level 3 (192-bit security, small signatures)
+/// - SPHINCS+-256s: NIST Level 5 (256-bit security, small signatures)
+/// 
+/// # Performance
+/// 
+/// SPHINCS+ offers very strong security based on well-understood hash functions but
+/// has larger signature sizes compared to lattice-based schemes. The 's' variants
+/// prioritize smaller signatures over faster signing speed.
 
 use std::fmt;
 use rand::rngs::OsRng;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Comprehensive cryptographic security analysis framework
 /// 
 /// This module provides state-of-the-art security analysis capabilities including:

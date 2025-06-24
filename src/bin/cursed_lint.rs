@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Language Linter CLI
 /// 
 /// Command-line interface for the CURSED linter with comprehensive

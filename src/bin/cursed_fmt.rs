@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Code Formatter CLI Tool
 /// 
 /// A command-line interface for formatting CURSED source code files with

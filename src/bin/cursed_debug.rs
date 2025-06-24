@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Debug Information Generator
 /// 
 /// Command-line tool for generating and inspecting debug information

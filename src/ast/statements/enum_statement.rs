@@ -1,3 +1,4 @@
+
 // Minimal EnumStatement for CURSED minimal build
 
 use std::any::Any;

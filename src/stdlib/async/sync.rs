@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async synchronization primitives for CURSED stdlib
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, Condvar};

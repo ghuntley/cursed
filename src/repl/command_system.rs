@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Built-in Command System for CURSED REPL
 //! 
 //! Provides a comprehensive set of built-in commands for development

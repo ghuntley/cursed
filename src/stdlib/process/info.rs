@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process information and system utilities for CURSED
 /// 
 /// This module provides functions to query process information, system statistics,

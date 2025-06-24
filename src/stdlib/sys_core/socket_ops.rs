@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Socket operations at the system level
 use std::mem;
 use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported, invalid_argument};

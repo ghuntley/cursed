@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr Rate limiting configuration - comprehensive settings
 use std::time::Duration;
 use serde::{Deserialize, Serialize};

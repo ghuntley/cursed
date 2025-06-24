@@ -1,3 +1,4 @@
+use crate::error::Error;
 // I/O profiling for file and network operations
 
 use std::collections::HashMap;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Protocol implementations for CURSED networking
 /// 
 /// This module provides implementations for common network protocols

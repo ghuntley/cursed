@@ -11,6 +11,7 @@
 /// - Optimized for performance while maintaining precision
 
 use crate::stdlib::math::{self, MathError, MathResult};
+use crate::error::Error;
 use std::collections::HashMap;
 
 /// Error type for MathZ operations

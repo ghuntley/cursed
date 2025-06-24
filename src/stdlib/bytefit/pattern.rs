@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Pattern matching functions for byte slices
 use super::{ByteFitError, ByteFitResult, invalid_pattern, regex_error};
 

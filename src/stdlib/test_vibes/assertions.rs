@@ -4,6 +4,7 @@
 /// and support for various data types and conditions.
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use super::{VibeTest, TestVibesResult, assertion_failed};
 use std::collections::HashMap;
 

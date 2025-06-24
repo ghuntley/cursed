@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Simple message queue implementation for CURSED IPC
 use std::collections::VecDeque;
 use std::fs::{File, OpenOptions};

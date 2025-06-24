@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Network interface enumeration and management for CURSED networking
 /// 
 /// This module provides functionality to discover and query network interfaces

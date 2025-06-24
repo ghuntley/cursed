@@ -1,6 +1,7 @@
 /// Production-ready xxHash implementation - fast non-cryptographic hash function
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 use std::io::Read;
 
 // xxHash constants

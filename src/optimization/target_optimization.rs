@@ -7,6 +7,7 @@
 /// - Memory layout optimizations for different CPU families
 
 use crate::error::{Error, Result};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

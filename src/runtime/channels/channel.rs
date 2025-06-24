@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core channel implementation for CURSED programming language
 /// Provides Go-like channel semantics with dm<T> syntax
 

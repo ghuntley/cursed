@@ -1,9 +1,7 @@
 use crate::error::Error;
-/*!
- * JSON Encoder
- * 
- * JSON encoding functionality for CURSED
- */
+/// JSON Encoder
+/// 
+/// JSON encoding functionality for CURSED
 
 use crate::error::CursedError;
 use crate::runtime::value::Value;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Environment variable expansion and substitution for CURSED standard library
 
 use std::collections::HashMap;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin distribution and package management functionality
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

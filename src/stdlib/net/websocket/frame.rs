@@ -3,6 +3,7 @@
 use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
 use crate::stdlib::net::socket::TcpSocket;
 use crate::stdlib::net::websocket::CloseCode;
+use crate::error::Error;
 
 /// WebSocket frame opcodes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

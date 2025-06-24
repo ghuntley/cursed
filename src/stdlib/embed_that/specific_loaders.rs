@@ -1,5 +1,6 @@
 use crate::stdlib::embed_that::core::{ThatFile, tea, FileSystemVibe};
 use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
+use crate::error::Error;
 use std::io::Read;
 
 /// Specific resource loaders for various file types

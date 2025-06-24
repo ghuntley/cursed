@@ -5,6 +5,7 @@
 
 use crate::error::Error as CursedError;
 use crate::debug::enhanced_debug::{SymbolMetadata, SymbolType, SymbolVisibility, TypeDebugInfo};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::path::PathBuf;

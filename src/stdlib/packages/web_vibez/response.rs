@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr HTTP response handling for web_vibez - comprehensive response building
 use std::collections::HashMap;
 use std::fmt;

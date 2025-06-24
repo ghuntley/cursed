@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Statistical functions module for CURSED programming language
 /// 
 /// Provides comprehensive statistical analysis including descriptive statistics,

@@ -3,6 +3,7 @@
 use crate::error::{Result, CursedError};
 pub use crate::optimization::metrics::CompilationUnit;
 use crate::optimization::dependency_analyzer::{DependencyGraph, DependencyAnalyzer};
+
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, Duration};
 use std::path::{Path, PathBuf};

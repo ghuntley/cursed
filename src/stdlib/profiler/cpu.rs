@@ -1,5 +1,6 @@
 /// CPU profiling functionality
 use crate::stdlib::profiler::error::{ProfilerError, ProfilerResult};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicU64, AtomicBool, Ordering}};
 use std::time::{Duration, Instant};

@@ -4,6 +4,7 @@
 /// with high confidence and minimal false positives.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 use serde::{Serialize, Deserialize};

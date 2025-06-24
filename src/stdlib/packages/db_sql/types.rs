@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQL data types and values - the foundation of all SQL operations periodt
 ///
 /// This module defines all the SQL data types, values, and conversion logic

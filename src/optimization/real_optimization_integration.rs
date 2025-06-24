@@ -6,6 +6,7 @@
 use crate::error::{Error, Result};
 use crate::optimization::config::{OptimizationConfig};
 use crate::common::optimization_level::OptimizationLevel;
+
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tracing::{info, warn, instrument};
@@ -14,9 +15,11 @@ use tracing::{info, warn, instrument};
 use super::real_optimization_implementation::{
     RealPerformanceCalculator, PerformanceImprovements, BaselineMetrics, PerformanceTrends
 };
+
 use super::real_cpu_efficiency_estimator::{
     CpuEfficiencyEstimator, CpuEfficiencyEstimation
 };
+
 use super::real_regression_detector::{
     RegressionDetector, RegressionDetectionResult, PerformanceDataPoint, EnvironmentInfo
 };

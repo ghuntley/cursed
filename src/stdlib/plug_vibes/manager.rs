@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin manager for comprehensive plugin lifecycle management
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

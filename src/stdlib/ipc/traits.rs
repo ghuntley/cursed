@@ -3,6 +3,7 @@
 /// This module provides common traits for IPC resources
 
 use crate::stdlib::ipc::error::{IpcError, IpcResult};
+use crate::error::Error;
 use std::time::Duration;
 
 /// Trait for IPC resources that can be created, opened, and closed

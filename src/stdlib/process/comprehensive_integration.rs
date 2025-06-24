@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive Process Management and IPC Integration System
 /// 
 /// This module provides a unified integration layer that connects all process

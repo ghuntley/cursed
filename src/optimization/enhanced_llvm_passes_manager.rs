@@ -7,6 +7,7 @@
 use crate::error::{Error, Result};
 use crate::optimization::config::{OptimizationConfig};
 use crate::common::optimization_level::OptimizationLevel;
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

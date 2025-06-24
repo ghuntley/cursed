@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive Queue implementations for CURSED
 /// 
 /// This module provides four types of queues:

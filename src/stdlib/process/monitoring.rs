@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process monitoring, health checks, and resource tracking
 /// 
 /// This module provides comprehensive process monitoring capabilities essential for:

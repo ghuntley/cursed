@@ -1,4 +1,5 @@
 use crate::crate::types::SecurityContext;
+use crate::error::Error;
 /// Template Renderer - Executes template AST and generates output
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -13,6 +14,7 @@ use super::template_syntax::{
 use crate::stdlib::web_vibez::SecurityContext;
     TemplateAst, TemplateNode, BlockNode, TemplateExpression, FilterCall, BinaryOperator, UnaryOperator
 };
+
 use super::template_filters::FilterRegistry;
 use super::template_security::{TemplateSecurityValidator, SecurityContext};
 

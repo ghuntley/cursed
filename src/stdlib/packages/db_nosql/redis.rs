@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Redis driver for CURSED - blazing fast key-value operations periodt
 ///
 /// This module provides a comprehensive Redis database driver for the CURSED

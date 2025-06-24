@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Memory mapping and management operations
 use std::ptr;
 use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, not_supported, invalid_argument};

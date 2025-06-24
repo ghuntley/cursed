@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// FTP client implementation with comprehensive protocol support
 /// 
 /// This module provides a complete FTP client implementation supporting:

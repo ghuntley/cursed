@@ -59,12 +59,14 @@ use ark_relations::{
     r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError, Variable},
     lc,
 };
+use crate::error::Error;
 use ark_r1cs_std::{
     alloc::{AllocVar, AllocationMode},
     fields::fp::FpVar,
     eq::EqGadget,
     R1CSVar,
 };
+
 use ark_groth16::{Groth16, ProvingKey, VerifyingKey, Proof as Groth16ProofInternal};
 use ark_poly::univariate::DensePolynomial;
 use ark_poly_commit::{PolynomialCommitment as ArkPolynomialCommitment, kzg10::KZG10};
@@ -2430,7 +2432,6 @@ pub fn create_zk_vm_state(
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_field_element_arithmetic() {

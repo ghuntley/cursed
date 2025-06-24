@@ -1,4 +1,5 @@
-//! Rate limiter implementation for VibeNet
+use crate::error::Error;
+/// Rate limiter implementation for VibeNet
 
 use std::time::Duration;
 use crate::error::CursedError;

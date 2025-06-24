@@ -5,6 +5,7 @@
 //! and optimization recommendations for improved developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildError, BuildResult, BuildStatistics};
+use crate::error::Error;
 use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};

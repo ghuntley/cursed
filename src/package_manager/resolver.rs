@@ -1,4 +1,5 @@
 use crate::package_manager::{PackageManagerError, metadata::PackageMetadata, registry::{PackageInfo, PackageRegistry}};
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque, BTreeMap};
 use std::sync::{Arc, Mutex};

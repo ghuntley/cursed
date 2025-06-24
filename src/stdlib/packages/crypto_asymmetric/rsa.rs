@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr RSA implementation with real cryptographic operations
 /// 
 /// This module provides production-ready RSA key generation, encryption, decryption,

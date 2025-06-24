@@ -401,7 +401,7 @@ fn validate_pid(pid: u32) -> SignalBoostResult<()> {
 }
 
 /// Signal multiple processes
-pub fn signal_processes(pids: &[u32], signal: BoostSignal) -> SignalBoostResult<(), Error> {
+pub fn signal_processes(pids: &[u32], signal: BoostSignal) -> SignalBoostResult<()> {
     let mut results = Vec::new();
     
     for &pid in pids {

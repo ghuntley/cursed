@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! PKI Error Handling
 //! 
 //! Comprehensive error types for Public Key Infrastructure operations.

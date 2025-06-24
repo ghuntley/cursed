@@ -1,6 +1,7 @@
 /// Error types for system core operations
 use std::fmt;
 use std::error::Error;
+use crate::error::Error as CursedError;
 
 /// System core operation errors
 #[derive(Debug, Clone)]

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Core database interfaces and types - the foundation periodt
 /// 
 /// This module provides the fundamental database abstractions that all

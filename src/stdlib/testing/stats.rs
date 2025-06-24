@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Statistics and performance measurement for CURSED testing framework
 /// 
 /// Provides comprehensive metrics collection, timing analysis, and

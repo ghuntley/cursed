@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// VibePattern - Core regex pattern implementation
 use super::error::{RegexVibesError, RegexVibesResult, compilation_error, invalid_input_error, encoding_error};
 use super::groups::VibeGroups;

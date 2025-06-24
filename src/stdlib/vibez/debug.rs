@@ -4,6 +4,7 @@
 /// debug inspection, trace output, and configurable debug levels.
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use std::io::{self, Write, stderr};
 use std::collections::HashMap;
 use std::sync::{Mutex, Arc};

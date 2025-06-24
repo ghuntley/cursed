@@ -51,7 +51,9 @@ use crate::stdlib::packages::db_core::{
     DatabaseError, DriverRegistry, 
     ConnectionConfig, DatabaseDriver
 };
+use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+
 use std::sync::Arc;
 
 /// fr fr SQL driver registry for managing SQL-specific drivers

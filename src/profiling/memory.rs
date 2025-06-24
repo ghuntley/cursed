@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Memory profiling for allocation tracking and analysis
 
 use std::collections::HashMap;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for GlyphGang Unicode operations
 use std::fmt;
 

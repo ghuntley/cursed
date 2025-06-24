@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process control and signal handling for CURSED
 /// 
 /// This module provides functionality for controlling processes, sending signals,

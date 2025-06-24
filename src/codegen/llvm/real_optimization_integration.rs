@@ -4,6 +4,7 @@
 /// for the CURSED compiler, replacing placeholder implementations.
 
 use crate::error::{Error, Result};
+
 use crate::optimization::config::{OptimizationConfig};
 use crate::common::optimization_level::OptimizationLevel;
 use crate::optimization::real_llvm_passes::{RealLlvmPassManager, OptimizationStatistics as RealOptStats};
@@ -13,7 +14,6 @@ use std::time::{Duration, Instant};
 use tracing::{info, instrument, debug, warn};
 
 use inkwell::{
-use crate::error::Error;
     context::Context,
     module::Module,
     passes::PassManager,

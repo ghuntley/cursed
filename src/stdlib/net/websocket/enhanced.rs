@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced WebSocket Implementation for CURSED
 /// 
 /// Provides advanced WebSocket functionality including subprotocols,

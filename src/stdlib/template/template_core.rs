@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core Template Engine - The heart of CURSED templating
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

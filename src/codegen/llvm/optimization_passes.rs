@@ -4,13 +4,13 @@
 /// optimization passes, their dependencies, execution order, and performance tracking.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, instrument, span, Level};
 
 use inkwell::{
-use crate::error::Error;
     context::Context,
     module::Module,
     passes::PassManager,

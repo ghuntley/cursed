@@ -11,9 +11,9 @@ use inkwell::values::FunctionValue;
 use inkwell::AddressSpace;
 
 use crate::stdlib::database::llvm_integration::{
-use crate::error::Error;
     DatabaseLLVMIntegration, DatabaseLLVMIntegrationImpl, DatabaseFunction
 };
+use crate::error::Error;
 
 /// Database types mapping for LLVM code generation
 #[derive(Debug, Clone)]

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// LLVM-related type definitions for the CURSED compiler
 /// 
 /// This module provides type definitions for LLVM code generation

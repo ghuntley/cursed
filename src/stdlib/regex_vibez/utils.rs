@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Utility functions for regex operations
 use super::error::{RegexVibesResult, RegexVibesError, invalid_input_error, encoding_error};
 use super::pattern::VibePattern;

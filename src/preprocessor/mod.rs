@@ -15,6 +15,7 @@ pub use error::{PreprocessorError, PreprocessorResult};
 
 use crate::lexer::Lexer;
 use crate::error::SourceLocation;
+use crate::error::Error;
 
 /// Initialize a preprocessor with the given lexer
 pub fn new_preprocessor(lexer: Lexer) -> Preprocessor {

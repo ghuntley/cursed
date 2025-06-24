@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr Request handler definitions for web_vibez - processing incoming requests
 use std::sync::Arc;
 use std::future::Future;

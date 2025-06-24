@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr X25519 key exchange implementation
 /// 
 /// This module provides production-ready X25519 Elliptic Curve Diffie-Hellman (ECDH)

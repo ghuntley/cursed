@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! LSP backend implementation providing the core language server functionality
 
 use std::collections::HashMap;

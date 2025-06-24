@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SPHINCS+ Hash-Based Digital Signatures for Post-Quantum Cryptography
 /// no cap Stateless post-quantum signatures with proven security based on hash functions
 

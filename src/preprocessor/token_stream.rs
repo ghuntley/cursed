@@ -6,6 +6,7 @@
 use crate::lexer::Token;
 use crate::error::SourceLocation;
 use crate::preprocessor::error::{PreprocessorError, PreprocessorResult};
+use crate::error::Error;
 
 /// Enhanced token with contextual information
 #[derive(Debug, Clone, PartialEq)]

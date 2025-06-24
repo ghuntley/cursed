@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Rate limiting module for web_vibez - comprehensive rate limiting system
 pub mod store;
 pub mod algorithm;

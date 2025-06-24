@@ -1,3 +1,4 @@
+use crate::error::Error;
 // TAR format support for PackRat
 // RatPack (reader), RatStash (writer), RatHeader
 

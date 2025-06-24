@@ -1,6 +1,7 @@
 //! DNS resolution types and utilities for VibeNet
 
 use crate::error::CursedError;
+use crate::error::Error;
 use super::ip::IPVibe;
 use super::error::{NetError, dns_resolution_error};
 use super::NetResult;

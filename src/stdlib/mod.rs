@@ -72,7 +72,7 @@ pub mod r#async {
     pub use crate::common::*;
     
     pub type AsyncError = crate::error::Error;
-    pub type AsyncResult<T> = Result<T, AsyncError>;
+    pub type AsyncResult<T> = std::result::Result<T, AsyncError>;
     
     pub fn spawn_blocking_io<F, T>(_f: F) -> AsyncResult<T> 
     where F: FnOnce() -> T {
@@ -159,7 +159,7 @@ pub mod sync {
     pub use crate::common::*;
     
     pub type SyncError = crate::error::Error;
-    pub type SyncResult<T> = Result<T, SyncError>;
+    pub type SyncResult<T> = std::result::Result<T, SyncError>;
     
     pub mod error {
         pub use super::{SyncError, SyncResult};
@@ -233,7 +233,7 @@ pub mod process {
         pub use crate::common::*;
         
         pub type ProcessError = crate::error::Error;
-        pub type ProcessResult<T> = Result<T, ProcessError>;
+        pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
         
         pub fn system_error(msg: &str) -> ProcessError {
             ProcessError::General(format!("System error: {}", msg))
@@ -249,7 +249,7 @@ pub mod time {
         pub use crate::common::*;
         
         pub type TimeError = crate::error::Error;
-        pub type TimeResult<T> = Result<T, TimeError>;
+        pub type TimeResult<T> = std::result::Result<T, TimeError>;
         
         pub fn invalid_date_error(msg: &str) -> TimeError {
             TimeError::General(format!("Invalid date: {}", msg))
@@ -297,7 +297,7 @@ pub mod net {
     // Network utilities  
     pub use crate::common::*;
     
-    pub type NetResult<T> = Result<T, crate::error::Error>;
+    pub type NetResult<T> = std::result::Result<T, crate::error::Error>;
 }
 
 pub mod testing {

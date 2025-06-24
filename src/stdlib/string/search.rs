@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Search and replace operations for strings
 use super::{StringError, StringResult};
 

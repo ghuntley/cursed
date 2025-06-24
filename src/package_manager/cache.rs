@@ -1,4 +1,5 @@
 use crate::package_manager::{PackageManagerError, metadata::PackageMetadata, registry::PackageData};
+use crate::error::Error;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};

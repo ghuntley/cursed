@@ -1,3 +1,4 @@
+use crate::error::Error;
 // PackRat (archive packages)
 // Provides access to file archiving and compression formats
 

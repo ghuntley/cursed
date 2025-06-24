@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Profiling infrastructure for optimization analysis
 //! 
 //! Provides comprehensive profiling capabilities to measure performance

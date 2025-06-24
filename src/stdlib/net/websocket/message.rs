@@ -2,6 +2,7 @@
 
 use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
 use crate::stdlib::net::websocket::{WebSocketFrame, Opcode};
+use crate::error::Error;
 
 /// WebSocket message types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

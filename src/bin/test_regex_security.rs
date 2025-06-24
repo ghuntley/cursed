@@ -1,3 +1,4 @@
+use crate::error::Error;
 use regex::Regex;
 use std::collections::HashMap;
 

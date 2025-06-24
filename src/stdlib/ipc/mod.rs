@@ -121,6 +121,7 @@ fn setup_signal_handlers() -> IpcResult<()> {
 mod tests {
     use super::*;
 use crate::stdlib::process::real_ipc::IpcMessage;
+use crate::error::Error;
 
     #[test]
     fn test_ipc_config_default() {

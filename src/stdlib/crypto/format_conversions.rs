@@ -651,8 +651,7 @@ pub fn detect_format(args: Vec<Value>) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
-    
+
     #[test]
     fn test_key_format_detection() {
         // Test PEM format

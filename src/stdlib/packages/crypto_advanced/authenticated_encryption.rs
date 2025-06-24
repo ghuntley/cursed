@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Authenticated Encryption with Associated Data (AEAD) implementations
 use super::errors::*;
 use super::memory_protection::*;

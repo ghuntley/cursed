@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Memory protection for sensitive cryptographic data
 use super::errors::*;
 use std::alloc::{alloc_zeroed, dealloc, Layout};

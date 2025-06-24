@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async I/O operations for CURSED stdlib
 use std::pin::Pin;
 use std::task::{Context, Poll};

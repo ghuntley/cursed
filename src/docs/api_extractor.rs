@@ -4,6 +4,7 @@
 
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem, ItemKind, Visibility, Parameter, Example, SourceInfo};
 use crate::error::{Error, SourceLocation};
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;

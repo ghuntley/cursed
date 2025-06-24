@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Named pipes and process communication primitives
 /// 
 /// This module provides cross-platform named pipe implementation for process communication

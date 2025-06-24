@@ -10,7 +10,9 @@ use crate::stdlib::packages::crypto_signatures::ecdsa::{EcdsaVerifier, EcdsaCurv
 use crate::stdlib::packages::crypto_signatures::rsa_signatures::{
     RsaVerifier, RsaSignatureScheme, RsaKeySize, RsaHashAlgorithm, utils as rsa_utils
 };
+use crate::error::Error;
 use crate::stdlib::packages::crypto_signatures::multisig::{MultiSigSigner, MultiSignature};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

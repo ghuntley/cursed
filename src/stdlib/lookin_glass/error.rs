@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for LookinGlass reflection package
 use std::fmt;
 use crate::error::CursedError;

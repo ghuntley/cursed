@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process communication and IPC integration for CURSED
 /// 
 /// This module provides high-level process communication functionality,
@@ -10,6 +11,7 @@ use std::time::Duration;
 use crate::stdlib::process::error::{
     ProcessError, ProcessResult, communication_error, timeout_error, invalid_arguments
 };
+
 use crate::stdlib::process::core::{Process, ProcessConfig};
 use crate::stdlib::process::ipc_integration::{ProcessIpcCoordinator, InterProcessChannel};
 use crate::stdlib::ipc::process_coordination::{IpcProcessRegistry, ProcessAwareIpcManager};

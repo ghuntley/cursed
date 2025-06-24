@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process management error types for CURSED
 /// 
 /// This module provides comprehensive error handling for process management operations,

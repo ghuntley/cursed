@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Basic mathematical operations and utility functions
 
 use super::{MathError, MathResult, validate_float, division_by_zero_error, negative_input_error};

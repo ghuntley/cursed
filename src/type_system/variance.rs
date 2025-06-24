@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Variance Analysis Implementation for CURSED Language
 //!
 //! This module provides variance analysis for generic types, enabling safe

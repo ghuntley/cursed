@@ -72,10 +72,6 @@ impl From<&str> for Error {
     }
 }
 
-// Type aliases for compatibility
-pub type CursedError = Error;
-pub type Result<T> = std::result::Result<T, Error>;
-
 // Re-export submodules that exist
 pub mod debug_context;
 pub mod error_propagation;

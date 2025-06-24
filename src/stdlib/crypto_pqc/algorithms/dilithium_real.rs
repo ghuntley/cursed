@@ -1,18 +1,19 @@
-//! Real Dilithium Digital Signature Implementation
-//! 
-//! This is a production-ready implementation of CRYSTALS-Dilithium, a lattice-based
-//! digital signature scheme standardized by NIST.
-//! 
-//! # Mathematical Foundation
-//! 
-//! Dilithium is based on the Module-LWE (Learning With Errors) problem over polynomial rings.
-//! It uses rejection sampling and the Fiat-Shamir transform to create secure signatures.
-//! 
-//! # Security Levels
-//! 
-//! - Dilithium2: NIST Level 2 (~128-bit classical security)
-//! - Dilithium3: NIST Level 3 (192-bit classical security)  
-//! - Dilithium5: NIST Level 5 (256-bit classical security)
+use crate::error::Error;
+/// Real Dilithium Digital Signature Implementation
+/// 
+/// This is a production-ready implementation of CRYSTALS-Dilithium, a lattice-based
+/// digital signature scheme standardized by NIST.
+/// 
+/// # Mathematical Foundation
+/// 
+/// Dilithium is based on the Module-LWE (Learning With Errors) problem over polynomial rings.
+/// It uses rejection sampling and the Fiat-Shamir transform to create secure signatures.
+/// 
+/// # Security Levels
+/// 
+/// - Dilithium2: NIST Level 2 (~128-bit classical security)
+/// - Dilithium3: NIST Level 3 (192-bit classical security)  
+/// - Dilithium5: NIST Level 5 (256-bit classical security)
 
 use std::fmt;
 use rand::rngs::OsRng;

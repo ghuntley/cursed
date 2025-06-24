@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQLite PRAGMA management that slays periodt
 /// 
 /// This module provides a comprehensive interface for managing SQLite

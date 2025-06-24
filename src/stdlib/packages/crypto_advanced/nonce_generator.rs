@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Nonce generation for cryptographic operations
 use super::errors::*;
 use std::sync::atomic::{AtomicU64, Ordering};

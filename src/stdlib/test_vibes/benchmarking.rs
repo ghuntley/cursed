@@ -3,6 +3,7 @@
 /// Provides functions for performance testing and measurement
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use super::{VibeBench, TestVibesResult};
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};

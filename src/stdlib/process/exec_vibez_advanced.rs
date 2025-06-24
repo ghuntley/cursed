@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// exec_vibez_advanced - Advanced process execution features
 /// 
 /// This module provides the complete exec_vibez functionality as specified,
@@ -24,6 +25,7 @@ use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error, platform_error
 };
+
 use crate::stdlib::process::exec_vibez::{Cmd, Process, ProcessState, Error, ProcessContext, Environment};
 
 /// Enhanced Process Group with sophisticated lifecycle management

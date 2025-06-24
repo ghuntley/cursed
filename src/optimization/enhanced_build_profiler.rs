@@ -6,6 +6,7 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::{OptimizationConfig, CompilationUnit};
+
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};

@@ -6,6 +6,7 @@
 
 use crate::error::Error as CursedError;
 use crate::runtime::debug_info::{DebugInfo, VariableInfo, EnhancedStackFrame};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

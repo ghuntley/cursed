@@ -9,6 +9,7 @@
 
 use crate::error::{Error as CursedError, SourceLocation};
 use crate::runtime::debug_info::{DebugInfo, SymbolInfo, SymbolResolver};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::backtrace::Backtrace; // BacktraceFrame is unstable

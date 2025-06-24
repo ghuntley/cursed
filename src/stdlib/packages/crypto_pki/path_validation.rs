@@ -25,6 +25,7 @@
 /// - Trust anchor validation
 
 use crate::stdlib::packages::crypto_pki::*;
+use crate::error::Error;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{SystemTime, UNIX_EPOCH};
 

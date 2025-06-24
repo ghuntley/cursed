@@ -1,6 +1,7 @@
 /// Production-ready hash function performance analysis and benchmarking
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 

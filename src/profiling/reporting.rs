@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Performance reporting and visualization generation
 
 use std::collections::HashMap;

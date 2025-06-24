@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// String splitting and joining operations
 use super::{StringError, StringResult};
 

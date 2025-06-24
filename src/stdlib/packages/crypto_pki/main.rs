@@ -1,6 +1,7 @@
 /// Main PKI Implementation - Production Ready
 
 use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError};
+use crate::error::Error;
 
 /// PKI main operations
 pub struct PkiMain;

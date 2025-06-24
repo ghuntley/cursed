@@ -1,6 +1,7 @@
 /// Enhanced PKI Main Implementation
 
 use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError};
+use crate::error::Error;
 
 /// Enhanced PKI operations
 pub struct EnhancedPkiMain;

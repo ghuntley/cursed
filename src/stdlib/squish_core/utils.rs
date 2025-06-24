@@ -4,6 +4,7 @@
 /// benchmarking, and other compression-related operations.
 
 use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionStats};
+use crate::error::Error;
 use std::time::{Duration, Instant};
 
 /// Supported compression formats

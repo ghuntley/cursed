@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Enhanced SlayCommand implementation with comprehensive process management
 //! 
 //! This module provides advanced process management features including:

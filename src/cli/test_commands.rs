@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CLI Test Commands
 /// 
 /// Command-line interface for the CURSED test runner system.

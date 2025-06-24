@@ -1,3 +1,4 @@
+
 /// Jump Threading Optimization
 /// 
 /// This pass eliminates redundant conditional branches by "threading" jumps through
@@ -15,6 +16,7 @@ use inkwell::{
     crate::types::BasicType,
     IntPredicate,
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

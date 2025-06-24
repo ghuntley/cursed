@@ -1,18 +1,19 @@
-//! Real LMS (Leighton-Micali Signatures) Implementation
-//! 
-//! This is a production-ready implementation of LMS, a hash-based digital signature scheme
-//! that provides quantum resistance through one-way hash functions.
-//! 
-//! # Mathematical Foundation
-//! 
-//! LMS is based on one-time signatures (OTS) combined with Merkle tree authentication.
-//! It provides provable security based only on the security of the hash function.
-//! 
-//! # Security Properties
-//! 
-//! - Quantum resistance: Based on hash function security
-//! - Provable security: Security reduction to hash function collision resistance
-//! - Stateful: Each signature uses a different OTS key (must track state)
+use crate::error::Error;
+/// Real LMS (Leighton-Micali Signatures) Implementation
+/// 
+/// This is a production-ready implementation of LMS, a hash-based digital signature scheme
+/// that provides quantum resistance through one-way hash functions.
+/// 
+/// # Mathematical Foundation
+/// 
+/// LMS is based on one-time signatures (OTS) combined with Merkle tree authentication.
+/// It provides provable security based only on the security of the hash function.
+/// 
+/// # Security Properties
+/// 
+/// - Quantum resistance: Based on hash function security
+/// - Provable security: Security reduction to hash function collision resistance
+/// - Stateful: Each signature uses a different OTS key (must track state)
 
 use std::fmt;
 use std::collections::HashMap;

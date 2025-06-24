@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// HTTP client library for the CURSED networking module
 /// 
 /// This module provides a comprehensive HTTP client implementation supporting

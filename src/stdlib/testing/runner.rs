@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test runner implementation for CURSED testing framework
 /// 
 /// Coordinates test discovery, execution, and reporting to provide

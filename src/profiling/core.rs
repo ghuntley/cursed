@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Core profiling infrastructure and configuration
 
 use std::collections::HashMap;

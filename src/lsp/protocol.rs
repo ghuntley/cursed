@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! CURSED-specific LSP protocol extensions
 //! 
 //! Defines custom LSP methods and protocol extensions specific to CURSED

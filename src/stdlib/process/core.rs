@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Core process management functionality for CURSED
 use std::collections::HashMap;
 use std::process::{Command, Child, Stdio};

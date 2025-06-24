@@ -4,6 +4,7 @@
 /// Based on the signal_boost.md specification
 
 use crate::stdlib::ipc::error::{IpcError, IpcResult, system_error, timeout_error, invalid_operation};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, OnceLock};
 use std::sync::mpsc::{self, Receiver, Sender};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Safe Process Management System for CURSED
 /// 
 /// This module provides a comprehensive, safe process management system that

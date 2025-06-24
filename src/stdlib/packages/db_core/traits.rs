@@ -8,7 +8,9 @@ use crate::stdlib::packages::db_core::{
     Row, Column, ColumnType, ExecuteResult, TransactionOptions,
     DatabaseError, QueryStats, ResultMetadata, SavePoint as CoreSavePoint
 };
+use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use async_trait::async_trait;

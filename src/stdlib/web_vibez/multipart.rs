@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// File uploads and multipart form processing utilities
 use std::collections::HashMap;
 

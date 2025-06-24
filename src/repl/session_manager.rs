@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Session Management for CURSED REPL
 //! 
 //! Manages REPL session state including variables, functions,

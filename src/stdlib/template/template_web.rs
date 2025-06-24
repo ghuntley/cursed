@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Web Framework Integration - CURSED template integration for web applications
 use std::collections::HashMap;
 use std::sync::Arc;

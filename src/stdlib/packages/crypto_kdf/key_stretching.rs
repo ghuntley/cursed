@@ -6,6 +6,7 @@
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
 use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
+use crate::error::Error;
 use sha2::{Sha256, Sha512, Digest};
 use sha3::{Sha3_256, Sha3_512};
 

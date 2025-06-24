@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Semantic highlighting implementation for CURSED language constructs
 //! 
 //! Provides comprehensive semantic highlighting for CURSED's Gen Z slang keywords,

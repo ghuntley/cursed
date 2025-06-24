@@ -3,6 +3,7 @@ use crate::error::CursedError;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::packages::crypto_random::SecureRandom;
 use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};

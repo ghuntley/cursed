@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Navigation provider for CURSED language server
 //! 
 //! Provides go to definition, find references, hover information, etc.

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr XChaCha20-Poly1305 implementation stub
 use super::errors::*;
 

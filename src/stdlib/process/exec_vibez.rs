@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// exec_vibez - Process execution with enhanced features
 /// 
 /// This module provides functionality for executing external commands and managing
@@ -20,6 +21,7 @@ use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error, platform_error
 };
+
 use crate::stdlib::process::real_monitoring::{
     RealProcessState, register_process_for_monitoring, wait_for_real_process,
     unregister_process_from_monitoring
@@ -906,8 +908,6 @@ pub fn new_input_generator(cmd: Cmd) -> InputGenerator {
 pub fn new_environment() -> Environment {
     Environment::new()
 }
-
-
 
 #[cfg(test)]
 mod tests {

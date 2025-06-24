@@ -5,6 +5,7 @@
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use sha2::{Sha256, Sha384, Sha512, Digest};
 use rsa::{RsaPrivateKey, RsaPublicKey};

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Console I/O operations module for CURSED programming language
 /// 
 /// This module provides comprehensive console input/output functionality including:

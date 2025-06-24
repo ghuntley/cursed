@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Local Package Database Management
 /// 
 /// Provides persistent storage and management of installed package metadata:

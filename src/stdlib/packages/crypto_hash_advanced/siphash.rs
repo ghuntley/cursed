@@ -1,6 +1,7 @@
 /// Production-ready SipHash implementation - cryptographically strong keyed hash function
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 use std::io::Read;
 
 /// SipHash-2-4 implementation (2 compression rounds, 4 finalization rounds)

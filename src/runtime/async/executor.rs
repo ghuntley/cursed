@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Async executor implementation for CURSED runtime
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, Condvar};

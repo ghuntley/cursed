@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test attributes and metadata parsing for CURSED testing framework
 /// 
 /// Handles parsing and validation of test attributes like #[test], #[ignore],

@@ -8,6 +8,7 @@ use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext, Context
 use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
 use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
 use crate::stdlib::web_vibez::error_handling::MiddlewareError;
+use crate::error::Error;
 
 // Re-export timeout middleware
 pub use crate::stdlib::web_vibez::timeout_middleware::{

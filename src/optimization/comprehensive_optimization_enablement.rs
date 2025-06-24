@@ -1,3 +1,4 @@
+
 //! Comprehensive Performance Optimization System for CURSED
 //! 
 //! This module provides a complete optimization system that enables all major
@@ -18,6 +19,7 @@ use crate::optimization::{
     BaselineComparator, BaselineComparisonConfig,
     BenchmarkRunner, BenchmarkConfig,
 };
+
 use crate::common::optimization_level::OptimizationLevel;
 
 // Type alias for compatibility

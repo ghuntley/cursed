@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin security features including signature verification and key management
 use std::path::Path;
 use std::fs;

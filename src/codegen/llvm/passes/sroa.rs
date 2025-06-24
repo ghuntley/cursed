@@ -1,3 +1,4 @@
+
 /// Scalar Replacement of Aggregates (SROA)
 /// 
 /// This pass replaces aggregate types (structs, arrays) with their individual scalar
@@ -16,6 +17,7 @@ use inkwell::{
     crate::types::{BasicType, BasicTypeEnum, StructType, ArrayType, PointerType},
     AddressSpace,
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

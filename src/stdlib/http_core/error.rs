@@ -4,6 +4,7 @@
 
 use std::fmt;
 use std::error::Error;
+use crate::error::Error as CursedError;
 
 /// HTTP-specific error types
 #[derive(Debug, Clone)]

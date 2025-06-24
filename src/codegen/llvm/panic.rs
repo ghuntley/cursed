@@ -6,6 +6,7 @@
 use crate::runtime::panic::{PanicSeverity, PanicCategory};
 use crate::runtime::recovery::{RecoveryConfig, get_recovery_manager};
 use crate::error::{Error as CursedError, Error, SourceLocation};
+
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;

@@ -7,6 +7,7 @@ use crate::error::{Error, SourceLocation};
 use crate::lexer::{Lexer, TokenType};
 use crate::parser::{Parser, ParsedProgram};
 use crate::ast::{AstNode, Statement, Expression, Declaration};
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

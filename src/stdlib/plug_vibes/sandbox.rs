@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin sandboxing for security and resource management
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

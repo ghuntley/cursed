@@ -1,17 +1,18 @@
-//! Real FALCON Digital Signature Implementation
-//! 
-//! This is a production-ready implementation of FALCON, a lattice-based
-//! digital signature scheme with compact signatures.
-//! 
-//! # Mathematical Foundation
-//! 
-//! FALCON is based on the Short Integer Solution (SIS) problem over NTRU lattices.
-//! It uses Gaussian sampling to generate signatures with very small sizes.
-//! 
-//! # Security Levels
-//! 
-//! - FALCON-512: NIST Level 1 (128-bit classical security)
-//! - FALCON-1024: NIST Level 5 (256-bit classical security)
+use crate::error::Error;
+/// Real FALCON Digital Signature Implementation
+/// 
+/// This is a production-ready implementation of FALCON, a lattice-based
+/// digital signature scheme with compact signatures.
+/// 
+/// # Mathematical Foundation
+/// 
+/// FALCON is based on the Short Integer Solution (SIS) problem over NTRU lattices.
+/// It uses Gaussian sampling to generate signatures with very small sizes.
+/// 
+/// # Security Levels
+/// 
+/// - FALCON-512: NIST Level 1 (128-bit classical security)
+/// - FALCON-1024: NIST Level 5 (256-bit classical security)
 
 use std::fmt;
 use rand::rngs::OsRng;

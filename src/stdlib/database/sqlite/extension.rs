@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr SQLite extensions and user-defined functions that slay periodt
 /// 
 /// This module provides support for SQLite extensions, user-defined functions,

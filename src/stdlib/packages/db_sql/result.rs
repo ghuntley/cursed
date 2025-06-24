@@ -3,6 +3,7 @@
 use crate::stdlib::packages::db_core::{
     Row, ExecuteResult, ResultSet
 };
+use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 #[derive(Debug)]

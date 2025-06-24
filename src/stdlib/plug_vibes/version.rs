@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin versioning system for compatibility checking
 use std::fmt;
 use std::str::FromStr;

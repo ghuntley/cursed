@@ -4,6 +4,7 @@
 /// and build time analysis for the CURSED build system.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};

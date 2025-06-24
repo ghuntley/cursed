@@ -4,6 +4,7 @@
 /// reducing overhead and improving performance of error paths.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use tracing::{debug, trace};

@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// Comprehensive networking and protocol support module for CURSED programming language
 /// 
 /// This module provides production-ready networking capabilities including:

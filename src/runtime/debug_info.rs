@@ -4,6 +4,7 @@
 /// and integration with LLVM debug metadata for production-quality debugging capabilities.
 
 use crate::error::{Error as CursedError, SourceLocation};
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Mutex};
 use std::path::{Path, PathBuf};

@@ -1,4 +1,5 @@
 use crate::package_manager::{PackageManagerError, metadata::PackageMetadata};
+use crate::error::Error;
 use reqwest::{Client, ClientBuilder, Response};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime};

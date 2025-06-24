@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Configuration types for the CURSED compiler
 /// 
 /// This module provides type definitions for various configuration

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Vibez - CURSED formatting and printing utilities with Gen Z flair
 /// 
 /// This module provides comprehensive formatting and printing functionality

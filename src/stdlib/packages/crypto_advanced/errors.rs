@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Common result types for crypto operations
 use std::fmt;
 

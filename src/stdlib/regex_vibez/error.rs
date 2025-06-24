@@ -1,5 +1,6 @@
 /// Error handling for RegexVibez module
 use crate::error::CursedError;
+use crate::error::Error;
 use std::fmt;
 
 /// Result type for RegexVibez operations

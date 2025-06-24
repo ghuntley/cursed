@@ -1,4 +1,5 @@
-//! Circuit breaker implementation for VibeNet
+use crate::error::Error;
+/// Circuit breaker implementation for VibeNet
 
 use std::time::Duration;
 use crate::error::CursedError;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Socket operations for the CURSED networking module
 /// 
 /// This module provides TCP and UDP socket implementations with comprehensive

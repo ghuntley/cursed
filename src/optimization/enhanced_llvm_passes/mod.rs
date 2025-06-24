@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced LLVM Passes Module
 /// 
 /// This module contains specialized optimizers for CURSED-specific constructs

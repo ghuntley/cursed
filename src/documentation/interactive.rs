@@ -13,6 +13,7 @@
 //! - **Error Display**: Real-time error highlighting and explanations
 
 use crate::error::Error as CursedError;
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

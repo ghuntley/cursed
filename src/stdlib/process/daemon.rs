@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Cross-platform daemon and service management
 /// 
 /// This module provides facilities for creating and managing daemon processes

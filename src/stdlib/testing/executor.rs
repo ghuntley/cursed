@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test execution engine for CURSED testing framework
 /// 
 /// Handles the actual execution of discovered tests with support for

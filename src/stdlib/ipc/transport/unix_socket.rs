@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Production-ready Unix domain socket transport implementation
 /// 
 /// This module provides a high-performance, thread-safe Unix domain socket
@@ -23,9 +24,11 @@ use crate::stdlib::ipc::{
     communication_error_detailed, connection_failed, timeout_error, resource_error,
     system_error
 };
+
 use super::traits::{
     Transport, TransportConnection, TransportListener, StreamTransport, DatagramTransport
 };
+
 use super::pool::{TransportPool, PoolConfig, PoolStatistics};
 
 /// Unix domain socket transport configuration

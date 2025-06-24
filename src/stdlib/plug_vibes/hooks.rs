@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Plugin hooks and extension points for host application integration
 use std::collections::{HashMap, BTreeMap};
 use std::sync::{Arc, Mutex};

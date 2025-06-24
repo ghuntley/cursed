@@ -1,5 +1,6 @@
 use crate::stdlib::web_vibez::SecurityContext;
 use crate::stdlib::process::EnhancedProcess;
+use crate::error::Error;
 /// Unix-specific process management and IPC implementation
 /// 
 /// This module provides Unix-specific implementations for the unified
@@ -34,7 +35,6 @@ use crate::stdlib::process::error::{ProcessError, ProcessResult};
 use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
 use crate::runtime::process::{ResourceLimits as RuntimeResourceLimits, SecurityContext as RuntimeSecurityContext};
 use crate::stdlib::process::info::{ProcessState as StdProcessState};
-
 
 type ResourceLimits = RuntimeResourceLimits;
 type SecurityContext = RuntimeSecurityContext;

@@ -14,6 +14,7 @@ use crate::stdlib::database::{
     DriverConn, DatabaseError, SqlValue, TxOptions,
     driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverStmt, DriverTx}
 };
+use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
 use super::crate::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
@@ -269,7 +270,6 @@ impl DriverConn for MySqlConnection {
 mod tests {
     use super::*;
     use crate::stdlib::database::SqlIsolationLevel;
-use crate::error::Error;
 
     #[test]
     fn test_connection_creation() {

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// GenZ themed features for signal handling with enhanced capabilities
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicBool, AtomicUsize, Ordering}};

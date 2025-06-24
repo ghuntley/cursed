@@ -1,3 +1,4 @@
+use crate::error::Error;
 use std::any::Any;
 use crate::ast::traits::{Expression, Node};
 

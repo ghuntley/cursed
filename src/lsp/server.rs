@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Main LSP server implementation
 
 use std::sync::Arc;

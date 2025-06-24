@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! REPL User Interface Module
 //! 
 //! Provides the main interface components for the CURSED REPL,

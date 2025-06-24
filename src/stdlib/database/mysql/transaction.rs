@@ -12,6 +12,7 @@ use crate::stdlib::database::{
     DriverTx, DriverStmt, DatabaseError, SqlValue, TxOptions, SqlIsolationLevel,
     driver::{QueryResult, ExecuteResult}
 };
+use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
 use super::crate::types::{convert_from_sql_value, convert_isolation_level, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
@@ -280,7 +281,6 @@ impl Drop for MySqlTransaction {
 mod tests {
     use super::*;
     use crate::stdlib::database::SqlIsolationLevel;
-use crate::error::Error;
 
     #[test]
     fn test_transaction_options() {

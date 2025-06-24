@@ -1,4 +1,5 @@
 use crate::error::CursedError;
+use crate::error::Error;
 use thiserror::Error;
 
 /// Errors that can occur during embed operations

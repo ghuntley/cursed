@@ -4,6 +4,7 @@
 /// code characteristics, and historical performance.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};

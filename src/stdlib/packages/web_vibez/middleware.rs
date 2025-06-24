@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 /// fr fr Middleware system for web_vibez - request/response processing pipeline
 use std::sync::Arc;
 use std::future::Future;

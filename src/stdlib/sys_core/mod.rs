@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// System core operations module for CURSED
 /// 
 /// This module provides low-level system operations including:

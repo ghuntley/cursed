@@ -1,18 +1,19 @@
-//! Real Kyber Key Encapsulation Mechanism Implementation
-//! 
-//! This is a production-ready implementation of CRYSTALS-Kyber, a lattice-based
-//! Key Encapsulation Mechanism (KEM) standardized by NIST.
-//! 
-//! # Mathematical Foundation
-//! 
-//! Kyber is based on the Module-LWE (Learning With Errors) problem over polynomial rings.
-//! It provides IND-CCA2 security through the Fujisaki-Okamoto transform.
-//! 
-//! # Security Levels
-//! 
-//! - Kyber512: NIST Level 1 (128-bit classical security)
-//! - Kyber768: NIST Level 3 (192-bit classical security)
-//! - Kyber1024: NIST Level 5 (256-bit classical security)
+use crate::error::Error;
+/// Real Kyber Key Encapsulation Mechanism Implementation
+/// 
+/// This is a production-ready implementation of CRYSTALS-Kyber, a lattice-based
+/// Key Encapsulation Mechanism (KEM) standardized by NIST.
+/// 
+/// # Mathematical Foundation
+/// 
+/// Kyber is based on the Module-LWE (Learning With Errors) problem over polynomial rings.
+/// It provides IND-CCA2 security through the Fujisaki-Okamoto transform.
+/// 
+/// # Security Levels
+/// 
+/// - Kyber512: NIST Level 1 (128-bit classical security)
+/// - Kyber768: NIST Level 3 (192-bit classical security)
+/// - Kyber1024: NIST Level 5 (256-bit classical security)
 
 use std::fmt;
 use rand::rngs::OsRng;

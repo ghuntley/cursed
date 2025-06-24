@@ -1,8 +1,9 @@
-//! # Enhanced Networking Utilities
-//! 
-//! This module provides advanced networking features including load balancing,
-//! retry mechanisms with exponential backoff, network quality assessment,
-//! and advanced protocol support for the CURSED vibe_net package.
+use crate::error::Error;
+/// # Enhanced Networking Utilities
+/// 
+/// This module provides advanced networking features including load balancing,
+/// retry mechanisms with exponential backoff, network quality assessment,
+/// and advanced protocol support for the CURSED vibe_net package.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};

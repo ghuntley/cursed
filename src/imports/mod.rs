@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Import Resolution System
 //!
 //! Handles resolution of imports including:

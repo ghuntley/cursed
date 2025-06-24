@@ -11,6 +11,7 @@
 /// - Optimized for performance while maintaining ease of use
 
 use crate::stdlib::string::{self, StringError, StringResult};
+use crate::error::Error;
 use std::collections::HashMap;
 
 /// Error type for StringZ operations

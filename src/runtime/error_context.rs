@@ -6,6 +6,7 @@
 
 use crate::error::{CursedError, SourceLocation};
 use crate::runtime::error_propagation::{ErrorPropagationContext, PropagationError};
+
 use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::fmt;
 use std::path::{Path, PathBuf};

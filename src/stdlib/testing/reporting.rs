@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test reporting system for CURSED testing framework
 /// 
 /// Provides multiple report formats and comprehensive test result reporting

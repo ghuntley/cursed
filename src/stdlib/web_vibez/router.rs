@@ -14,6 +14,7 @@ use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
 use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
 use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareChain};
 use crate::stdlib::web_vibez::error_handling::RouterError;
+use crate::error::Error;
 
 use std::collections::HashMap;
 use std::sync::Arc;

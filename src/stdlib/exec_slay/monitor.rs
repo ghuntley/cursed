@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Process monitoring and resource management utilities
 
 use std::sync::{Arc, Mutex};

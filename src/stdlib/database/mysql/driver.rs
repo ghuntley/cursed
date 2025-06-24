@@ -18,6 +18,7 @@ use crate::stdlib::database::{
     Driver, DriverConn, DatabaseError, DatabaseErrorKind, SqlIsolationLevel,
     driver::{DriverCapabilities, ConnectionMetadata}
 };
+use crate::error::Error;
 use super::error::{MySqlError, MySqlResult};
 use super::connection::MySqlConnection;
 use super::crate::types::{parse_connection_string, MySqlConnectionInfo};
@@ -302,7 +303,6 @@ pub fn build_mysql_opts(dsn: &str, config: &MySqlConfig) -> MySqlResult<mysql::O
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_mysql_driver_creation() {

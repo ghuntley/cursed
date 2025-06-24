@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test macros and code generation for CURSED testing framework
 /// 
 /// Provides utility functions for generating test code and handling

@@ -6,6 +6,7 @@
 use crate::error::{CursedError, Result};
 use crate::docs::publisher::PublicationMetadata;
 use crate::package_manager::{Package, PackageManager};
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

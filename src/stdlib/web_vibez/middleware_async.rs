@@ -8,6 +8,7 @@ use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext, Context
 use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
 use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
 use crate::stdlib::web_vibez::error_handling::MiddlewareError;
+use crate::error::Error;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

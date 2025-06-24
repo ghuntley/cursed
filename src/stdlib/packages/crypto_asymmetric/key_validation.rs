@@ -5,6 +5,7 @@
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use num_bigint::BigUint;
 use num_traits::{Zero, One, ToPrimitive};

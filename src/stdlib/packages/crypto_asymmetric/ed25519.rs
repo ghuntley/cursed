@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Ed25519 digital signature implementation
 /// 
 /// This module provides production-ready Ed25519 signature operations using

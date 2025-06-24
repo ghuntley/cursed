@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Simple CURSED Package Manager Binary
 use std::path::PathBuf;
 use cursed::package_manager::{PackageManager, PackageManagerConfig};

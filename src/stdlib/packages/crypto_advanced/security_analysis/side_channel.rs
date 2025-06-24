@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Side-channel attack detection and analysis module
 /// 
 /// This module provides comprehensive side-channel analysis capabilities to detect

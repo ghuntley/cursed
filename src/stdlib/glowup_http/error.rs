@@ -1,4 +1,5 @@
-//! GlowUpHTTP error types and error handling utilities
+use crate::error::Error;
+/// GlowUpHTTP error types and error handling utilities
 
 use std::fmt;
 use std::io;

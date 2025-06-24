@@ -4,6 +4,7 @@
 /// between generated and original source code.
 
 use crate::error::Error as CursedError;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;

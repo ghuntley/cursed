@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Inlay hints implementation for CURSED language
 //! 
 //! Provides contextual inline information including type hints, parameter names,

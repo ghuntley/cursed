@@ -1,3 +1,4 @@
+
 /// Memory to Register Promotion (Mem2Reg)
 /// 
 /// This pass promotes memory operations to register operations by converting
@@ -15,6 +16,7 @@ use inkwell::{
     builder::Builder,
     crate::types::{BasicType, BasicTypeEnum},
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

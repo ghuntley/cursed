@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Session management and storage utilities
 use std::collections::HashMap;
 use std::fmt;

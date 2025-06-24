@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive Stack implementations for CURSED
 /// 
 /// This module provides four types of stacks:

@@ -8,6 +8,7 @@ use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
 use crate::documentation::ast_bridge::{AstBridge, ToDocumentationAst, SafeConverter};
 use crate::error::{Error, SourceLocation};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

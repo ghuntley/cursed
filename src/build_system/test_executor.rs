@@ -4,6 +4,7 @@
 //! result parsing, and performance metrics collection.
 
 use crate::build_system::test_discovery::{TestFunction, TestCategory, TestFilter};
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

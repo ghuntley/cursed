@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Search functions for SortaFresh
 /// 
 /// This module provides binary search functionality for sorted data:

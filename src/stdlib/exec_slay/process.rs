@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! SlayProcess implementation for process management
 
 use std::sync::{Arc, Mutex};

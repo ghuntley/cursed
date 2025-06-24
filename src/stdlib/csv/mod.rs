@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CSV (Comma Separated Values) processing module for CURSED
 /// 
 /// This module provides comprehensive CSV reading, writing, and processing functionality

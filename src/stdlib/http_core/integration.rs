@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 // Integration utilities for CURSED web_vibez package
 //
 // Higher-level utilities that combine multiple components for common use cases.
@@ -7,10 +8,10 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::stdlib::http_core::{
-use crate::error::Error;
     Request, Response, StatusCode, Method, ContentType, FormData,
     HttpError, HttpResult, HttpValidator, ValidationRules
 };
+
 use crate::stdlib::http_core::validation::SecurityConfig;
 
 /// HTTP server context with request/response processing

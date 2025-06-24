@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Advanced Collections Module for CURSED
 /// 
 /// Provides specialized data structures including tries, graphs, spatial data structures,

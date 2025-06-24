@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr NoSQL database drivers - for when you need flexibility periodt
 ///
 /// This package provides NoSQL database support for CURSED with drivers for

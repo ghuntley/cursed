@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// PostgreSQL Connection Pool Implementation
 /// 
 /// Provides high-performance connection pooling for PostgreSQL using bb8 with

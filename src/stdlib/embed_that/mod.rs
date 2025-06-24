@@ -1,42 +1,43 @@
-//! EmbedThat - File embedding support for CURSED
-//! 
-//! This module provides comprehensive support for embedding files in compiled binaries
-//! and accessing them at runtime. It's inspired by Go's embed package but with enhanced
-//! features for resource management and more flexible embedding options.
-//!
-//! # Core Features
-//!
-//! - **File Embedding**: Embed files at compile time using directives
-//! - **Dynamic Loading**: Load embedded files at runtime with pattern matching
-//! - **Resource Management**: Efficient caching and compression support
-//! - **Template Integration**: Parse embedded templates with various engines
-//! - **Type-Specific Loaders**: Special handling for images, configs, etc.
-//! - **FileSystem Interface**: Use embedded files as a virtual filesystem
-//!
-//! # Usage Examples
-//!
-//! ```rust
-//! use cursed::stdlib::embed_that::*;
-//!
-//! // Load a single embedded file
-//! let file = load_that_file("config.json")?;
-//! let content = file.content_string()?;
-//!
-//! // Load files matching a pattern
-//! let templates = load_that_pattern("templates/*.html")?;
-//! println!("Found {} templates", templates.count());
-//!
-//! // Parse embedded templates
-//! let engine = parse_templates(&["templates/*.html"])?;
-//!
-//! // Load and parse configuration
-//! let mut config = MyConfig::default();
-//! load_json("config.json", &mut config)?;
-//!
-//! // Use caching for better performance
-//! let cache = new_resource_cache();
-//! let file = cache.load_file("large_dataset.csv")?;
-//! ```
+use crate::error::Error;
+/// EmbedThat - File embedding support for CURSED
+/// 
+/// This module provides comprehensive support for embedding files in compiled binaries
+/// and accessing them at runtime. It's inspired by Go's embed package but with enhanced
+/// features for resource management and more flexible embedding options.
+///
+/// # Core Features
+///
+/// - **File Embedding**: Embed files at compile time using directives
+/// - **Dynamic Loading**: Load embedded files at runtime with pattern matching
+/// - **Resource Management**: Efficient caching and compression support
+/// - **Template Integration**: Parse embedded templates with various engines
+/// - **Type-Specific Loaders**: Special handling for images, configs, etc.
+/// - **FileSystem Interface**: Use embedded files as a virtual filesystem
+///
+/// # Usage Examples
+///
+/// ```rust
+/// use cursed::stdlib::embed_that::*;
+///
+/// // Load a single embedded file
+/// let file = load_that_file("config.json")?;
+/// let content = file.content_string()?;
+///
+/// // Load files matching a pattern
+/// let templates = load_that_pattern("templates/*.html")?;
+/// println!("Found {} templates", templates.count());
+///
+/// // Parse embedded templates
+/// let engine = parse_templates(&["templates/*.html"])?;
+///
+/// // Load and parse configuration
+/// let mut config = MyConfig::default();
+/// load_json("config.json", &mut config)?;
+///
+/// // Use caching for better performance
+/// let cache = new_resource_cache();
+/// let file = cache.load_file("large_dataset.csv")?;
+/// ```
 
 pub mod core;
 pub mod error;

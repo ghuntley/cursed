@@ -9,6 +9,7 @@ use crate::runtime::debug_info::{EnhancedStackTrace, EnhancedStackFrame, DebugIn
 use crate::runtime::debug_manager::DebugManager;
 use crate::debug::enhanced_debug::{EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata};
 use crate::runtime::debug_runtime::{RuntimeDebugger, VariableInspection};
+
 use std::sync::Arc;
 use std::path::{Path, PathBuf};
 use std::fmt;

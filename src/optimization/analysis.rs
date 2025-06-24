@@ -3,6 +3,7 @@
 use crate::error::{Result, CursedError};
 use crate::optimization::benchmarking::{BenchmarkResults, BenchmarkStatistics};
 use crate::optimization::metrics::{SystemStatistics, ResourceStatistics};
+
 use std::time::Duration;
 use std::collections::HashMap;
 use tracing::{info, debug, warn, instrument};

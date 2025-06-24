@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for ChaosMode runtime system
 use std::fmt;
 

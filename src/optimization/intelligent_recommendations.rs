@@ -10,6 +10,7 @@ use crate::codegen::llvm::optimization::{OptimizationConfig};
 use crate::common::optimization_level::OptimizationLevel;
 use crate::error::Result;
 use crate::optimization::ast_analyzer::AdvancedASTAnalyzer;
+use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 use tracing::{debug, info, warn, instrument};
 

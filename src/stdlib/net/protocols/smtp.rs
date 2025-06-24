@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// SMTP client implementation for email sending
 
 use std::time::Duration;

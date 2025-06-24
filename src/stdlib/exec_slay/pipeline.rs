@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! SlayPipeline implementation for command pipeline execution
 
 use std::io::{self, Read, Write};

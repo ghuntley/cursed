@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Cryptographic parameter verification module
 /// 
 /// This module provides comprehensive verification of cryptographic parameters

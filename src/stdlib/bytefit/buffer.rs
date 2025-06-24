@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced Buffer type for efficient byte manipulation
 use super::{ByteFitError, ByteFitResult, buffer_overflow, invalid_input};
 use std::sync::{Arc, Mutex};

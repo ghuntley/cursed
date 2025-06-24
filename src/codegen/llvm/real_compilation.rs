@@ -9,6 +9,7 @@ use crate::ast::statements::{
     LetStatement, FactsStatement, ReturnStatement, ExpressionStatement,
     BreakStatement, ContinueStatement, AssignmentStatement, PrintStatement
 };
+use crate::error::Error;
 use crate::ast::expressions::{Literal, LiteralValue};
 use crate::ast::operators::{BinaryExpression, UnaryExpression, AssignmentExpression, IndexExpression};
 use crate::ast::calls::CallExpression;
@@ -16,7 +17,7 @@ use crate::ast::identifiers::Identifier;
 use crate::ast::if_expression::IfExpression;
 use crate::ast::conditionals::IfStatement;
 use crate::ast::block::BlockStatement;
-use crate::error::Error;
+
 use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
 use crate::codegen::llvm::symbol_table::{SymbolTable, Symbol};
 use crate::optimization::llvm_passes::{LlvmPassManager, LtoManager, PgoManager};
@@ -28,6 +29,7 @@ use inkwell::{
     context::Context,
     AddressSpace,
 };
+
 use std::collections::HashMap;
 
 /// Real LLVM compilation implementation

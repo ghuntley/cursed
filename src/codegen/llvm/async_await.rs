@@ -5,12 +5,12 @@
 
 use std::collections::HashMap;
 use inkwell::{
-use crate::error::Error;
     context::Context,
     values::{BasicValueEnum, FunctionValue},
     crate::types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
+
 use crate::error::{CursedError, Error};
 
 /// Async/await code generation trait (placeholder)

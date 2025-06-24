@@ -1,7 +1,8 @@
-//! Post-Quantum Cryptography Security Analysis
-//! 
-//! This module provides tools for analyzing the quantum resistance and security
-//! properties of PQC algorithms.
+use crate::error::Error;
+/// Post-Quantum Cryptography Security Analysis
+/// 
+/// This module provides tools for analyzing the quantum resistance and security
+/// properties of PQC algorithms.
 
 use std::collections::HashMap;
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};

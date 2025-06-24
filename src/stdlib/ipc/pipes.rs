@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Named pipes (FIFO) implementation for CURSED IPC
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write, BufReader, BufWriter};

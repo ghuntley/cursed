@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Process namespaces implementation for CURSED (Linux-specific)
 /// 
 /// Process namespaces are a fundamental Linux feature that enables:

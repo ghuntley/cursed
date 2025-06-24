@@ -1,3 +1,4 @@
+
 // Minimal ConstantStatement for CURSED minimal build
 
 use std::any::Any;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Output streaming and input generation for exec_vibez
 /// 
 /// Implements OutputStreamer and InputGenerator functionality according to specs/stdlib/exec_vibez.md

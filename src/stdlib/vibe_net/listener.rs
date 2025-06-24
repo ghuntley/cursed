@@ -1,7 +1,8 @@
-//! Listener types for VibeNet
-//! 
-//! This module provides network listeners for accepting incoming connections
-//! on TCP and Unix domain sockets.
+use crate::error::Error;
+/// Listener types for VibeNet
+/// 
+/// This module provides network listeners for accepting incoming connections
+/// on TCP and Unix domain sockets.
 
 use std::net::{TcpListener, SocketAddr};
 use std::os::unix::net::UnixListener;

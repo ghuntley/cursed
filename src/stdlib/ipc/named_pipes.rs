@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Named pipes (FIFOs) implementation for CURSED IPC
 /// 
 /// Provides cross-platform named pipe functionality for inter-process communication

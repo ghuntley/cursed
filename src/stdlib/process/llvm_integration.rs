@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// LLVM Integration for Process Management and IPC
 /// 
 /// This module provides LLVM code generation support for process management

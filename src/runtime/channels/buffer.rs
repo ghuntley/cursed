@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Channel buffering system for CURSED channels
 //! 
 //! Provides both buffered and unbuffered channel implementations with efficient

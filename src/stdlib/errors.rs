@@ -48,7 +48,6 @@ impl ErrorManager {
     }
 }
 
-
 /// Initialize the global error system (minimal implementation)
 pub fn init_error_system() -> Result<(), Error> {
     // Basic error system initialization

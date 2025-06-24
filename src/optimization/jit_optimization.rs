@@ -1,6 +1,7 @@
 //! JIT compilation optimizations for runtime performance
 
 use crate::error::{Result, CursedError};
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tracing::{info, debug, warn, instrument};

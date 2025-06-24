@@ -3,6 +3,7 @@ use crate::error::CursedError;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use crate::stdlib::packages::crypto_random::SecureRandom;
+use crate::error::Error;
 
 /// Key derivation function types
 #[derive(Debug, Clone, PartialEq)]

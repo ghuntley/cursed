@@ -1,5 +1,6 @@
 /// fr fr Transaction management - ACID compliance with CURSED vibes periodt
 use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Parameter, ResultSet};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

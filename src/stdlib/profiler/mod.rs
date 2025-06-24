@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Performance monitoring and profiling tools for CURSED
 pub mod error;
 pub mod cpu;

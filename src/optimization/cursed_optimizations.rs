@@ -8,6 +8,7 @@
 
 use crate::ast::{AstNode, Expression, Statement};
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};

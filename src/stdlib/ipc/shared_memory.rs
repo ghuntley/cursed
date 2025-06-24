@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Shared memory implementation for CURSED IPC
 /// 
 /// Provides System V shared memory and POSIX shared memory for inter-process communication

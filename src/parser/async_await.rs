@@ -7,7 +7,6 @@
 use crate::parser::Parser;
 use crate::lexer::{TokenType, Token};
 use crate::ast::{
-use crate::error::Error;
     declarations::async_function::{AsyncFunctionStatement, AsyncFunctionDeclaration},
     expressions::await_expression::{AwaitExpression, AwaitAssignment, AsyncBlockExpression, SourceLocation},
     identifiers::Identifier,
@@ -15,6 +14,7 @@ use crate::error::Error;
     block::BlockStatement,
     traits::{Statement, Expression},
 };
+
 use crate::error::{Error, ParseError};
 
 impl Parser {

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced ExecVibez Implementation - Complete Process Execution System
 /// 
 /// This module provides a complete implementation of the ExecVibez specification

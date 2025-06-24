@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Windows-specific process management implementation
 /// 
 /// This module provides complete Windows support for process management,

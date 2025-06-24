@@ -1,3 +1,4 @@
+use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, mpsc, RwLock};
@@ -7,6 +8,7 @@ use std::time::{Duration, Instant, SystemTime};
 use notify::{
     Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher,
 };
+
 use glob;
 
 use crate::error::Error as CursedError;

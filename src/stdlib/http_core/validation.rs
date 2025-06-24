@@ -1,6 +1,7 @@
-//! HTTP Validation and Security for CURSED web_vibez
-//!
-//! Comprehensive validation rules and security checks for HTTP processing.
+use crate::error::Error;
+/// HTTP Validation and Security for CURSED web_vibez
+///
+/// Comprehensive validation rules and security checks for HTTP processing.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};

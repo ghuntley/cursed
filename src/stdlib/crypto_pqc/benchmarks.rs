@@ -1,6 +1,7 @@
-//! Post-Quantum Cryptography Performance Benchmarking
-//! 
-//! This module provides comprehensive benchmarking capabilities for PQC algorithms.
+use crate::error::Error;
+/// Post-Quantum Cryptography Performance Benchmarking
+/// 
+/// This module provides comprehensive benchmarking capabilities for PQC algorithms.
 
 use std::time::{Duration, Instant};
 use std::collections::HashMap;

@@ -1,6 +1,7 @@
 /// Certificate Transparency Support
 
 use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError};
+use crate::error::Error;
 
 pub struct CertificateTransparency;
 pub struct SignedCertificateTimestamp;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CSV Reader implementation with comprehensive configuration options
 use std::io::{self, BufRead, BufReader};
 use std::collections::VecDeque;

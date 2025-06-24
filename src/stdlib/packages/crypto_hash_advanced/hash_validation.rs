@@ -1,6 +1,7 @@
 /// Production-ready hash validation and verification system
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 

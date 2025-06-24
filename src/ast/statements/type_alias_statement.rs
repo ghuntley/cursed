@@ -1,3 +1,4 @@
+
 // Minimal TypeAliasStatement for CURSED minimal build
 
 use std::any::Any;

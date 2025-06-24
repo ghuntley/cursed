@@ -1,4 +1,5 @@
 use crate::web::StatusCode;
+use crate::error::Error;
 // HTTP Response Processing for CURSED web_vibez
 //
 // Comprehensive response building, formatting, and writing capabilities.
@@ -9,7 +10,6 @@ use std::io::{self, Write};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::stdlib::http_core::{
-use crate::error::Error;
     Headers, HeaderMap, ContentType, Cookie, CookieJar, HttpError, HttpResult
 };
 

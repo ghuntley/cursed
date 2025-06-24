@@ -1,6 +1,7 @@
 /// Duration and time arithmetic functionality
 use crate::stdlib::time::error::{TimeError, TimeResult, duration_error, arithmetic_overflow_error};
 use crate::stdlib::time::datetime::DateTime;
+use crate::error::Error;
 
 /// Represents a duration of time
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

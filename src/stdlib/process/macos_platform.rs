@@ -1,6 +1,7 @@
 use crate::crate::types::SecurityContext;
 use crate::stdlib::web_vibez::SecurityContext;
 use crate::stdlib::process::EnhancedProcess;
+use crate::error::Error;
 /// macOS-specific process management and IPC implementation
 /// 
 /// This module provides macOS-specific implementations for the unified
@@ -21,6 +22,7 @@ use crate::error::CursedError;
 use crate::stdlib::process::{
     EnhancedProcess, ResourceLimits, SecurityContext, ProcessState
 };
+
 use super::unified_process_ipc::{
 use crate::stdlib::process::info::ProcessState;
     PlatformHandler, IpcType, IpcConnection, SecuritySettings

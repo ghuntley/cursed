@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Resource limits implementation for CURSED processes
 /// 
 /// Resource limits are essential for system programming and security because they:

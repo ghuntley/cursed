@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Enhanced Auto-completion provider for CURSED language server
 //! 
 //! Provides intelligent context-aware code completion using CURSED's type system,

@@ -5,6 +5,7 @@
 /// vectorization, cache optimization, and microarchitecture-aware transformations.
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

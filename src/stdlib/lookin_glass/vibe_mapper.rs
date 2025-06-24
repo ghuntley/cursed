@@ -1,5 +1,6 @@
 /// VibeMapper - Enhanced mapping and conversion utilities for CURSED reflection
 use crate::stdlib::lookin_glass::{Value, Type, Kind, error::*, utilities::*};
+use crate::error::Error;
 use std::collections::HashMap;
 use serde_json;
 

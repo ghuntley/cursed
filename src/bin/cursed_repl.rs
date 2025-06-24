@@ -1,3 +1,4 @@
+use crate::error::Error;
 #!/usr/bin/env rust
 //! CURSED REPL - Interactive Read-Eval-Print Loop
 //! 

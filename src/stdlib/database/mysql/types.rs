@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr MySQL type conversion and value handling
 /// 
 /// This module provides comprehensive type conversion between MySQL types

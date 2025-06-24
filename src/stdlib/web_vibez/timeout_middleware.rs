@@ -9,6 +9,7 @@ use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareResult};
 use crate::stdlib::web_vibez::config::{ServerConfig, SessionConfig};
 use crate::stdlib::web_vibez::error_handling::MiddlewareError;
 use crate::stdlib::web_vibez::StatusCode;
+use crate::error::Error;
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

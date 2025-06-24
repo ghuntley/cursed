@@ -1,6 +1,7 @@
 /// Production-ready password hashing with modern algorithms (Argon2, scrypt, PBKDF2)
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
+use crate::error::Error;
 use std::time::{Duration, Instant};
 
 /// Result type for password operations

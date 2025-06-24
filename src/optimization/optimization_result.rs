@@ -3,6 +3,7 @@
 /// Provides unified result types for all optimization operations
 
 use crate::error::{Error, Result};
+
 use std::collections::HashMap;
 use std::time::Duration;
 

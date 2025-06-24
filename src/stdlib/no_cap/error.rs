@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error handling for NoCap string conversion module
 use std::fmt;
 

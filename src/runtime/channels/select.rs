@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Channel selection and multiplexing for CURSED channels
 /// Provides Go-like select statement functionality for non-blocking operations on multiple channels
 

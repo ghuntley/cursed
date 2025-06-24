@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Test discovery system for CURSED testing framework
 /// 
 /// Handles finding and cataloging test functions across CURSED source files

@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Package Manager CLI Integration
 //! 
 //! Real implementation integrating package management commands with the CURSED CLI interface.

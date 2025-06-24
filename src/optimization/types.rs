@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Core optimization types for the CURSED compiler
 /// 
 /// This module provides type definitions for optimization-related functionality

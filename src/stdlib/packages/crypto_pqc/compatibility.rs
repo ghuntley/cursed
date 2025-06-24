@@ -7,6 +7,7 @@
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
+use crate::error::Error;
 use super::pqc_core::{PqcKey, SecurityLevel, PqcKeyFormat};
 use super::hybrid::{HybridKeyPair, HybridAlgorithmConfig, HybridSchemeType};
 use std::collections::HashMap;

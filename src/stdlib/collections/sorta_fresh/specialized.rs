@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Specialized sorting functions for common types
 /// 
 /// This module provides optimized sorting functions for:

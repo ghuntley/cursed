@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Error types for the profiler subsystem
 use std::fmt;
 

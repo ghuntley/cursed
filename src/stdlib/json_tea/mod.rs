@@ -1,10 +1,8 @@
 use crate::error::Error;
-/*!
- * JSON Tea - JSON encoding and decoding for CURSED
- * 
- * This module provides JSON encoding and decoding functionality compatible with
- * the encode_mood interfaces and CURSED's type system.
- */
+/// JSON Tea - JSON encoding and decoding for CURSED
+/// 
+/// This module provides JSON encoding and decoding functionality compatible with
+/// the encode_mood interfaces and CURSED's type system.
 
 use crate::error::CursedError;
 use crate::runtime::value::Value;

@@ -2,6 +2,7 @@
 
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::CompilationUnit;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

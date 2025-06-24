@@ -5,6 +5,7 @@
 
 use crate::error::{Error, Result};
 use crate::optimization::config::OptimizationConfig;
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

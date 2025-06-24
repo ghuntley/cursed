@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// DNS resolution and hostname lookup for the CURSED networking module
 /// 
 /// This module provides comprehensive DNS functionality including hostname

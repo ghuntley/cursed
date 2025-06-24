@@ -69,6 +69,7 @@ use crate::type_system::{
     TypeEnvironment, TypeExpression, TypeDefinition, MethodSignature
     // ConstraintContext, constraint_resolver::ConstraintResolver disabled for simplified AST
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Central type inference coordinator

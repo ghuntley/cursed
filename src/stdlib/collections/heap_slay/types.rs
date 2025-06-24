@@ -4,6 +4,7 @@
 //! for common data types, including integers, strings, and priority queues.
 
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use super::core::Interface;
 use super::{HeapResult, heap_error};
 

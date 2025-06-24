@@ -7,6 +7,7 @@
 /// - Performance profiling and analysis
 
 use crate::error::{Error, Result};
+
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::time::{Duration, Instant};

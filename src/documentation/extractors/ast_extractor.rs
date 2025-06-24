@@ -12,6 +12,7 @@ use crate::documentation::extractors::type_extractor::TypeExtractor;
 use crate::documentation::extractors::generic_extractor::GenericExtractor;
 use crate::documentation::extractors::relationship_extractor::RelationshipExtractor;
 use crate::documentation::extractors::ast_node_support::*;
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;

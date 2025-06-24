@@ -5,6 +5,7 @@
 //! workflows and improved developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult};
+use crate::error::Error;
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::path::{Path, PathBuf};
 use std::fs;

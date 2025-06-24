@@ -1,30 +1,31 @@
-//! Production-Ready Classic McEliece Code-based Cryptography Implementation
-//! 
-//! Classic McEliece is a code-based Key Encapsulation Mechanism based on error-correcting codes.
-//! This implementation provides quantum-resistant security through the hardness of the syndrome
-//! decoding problem for Goppa codes.
-//! 
-//! # Mathematical Foundation
-//! 
-//! Classic McEliece is based on:
-//! - Goppa codes over finite fields GF(2^m)
-//! - The Syndrome Decoding problem (proven NP-complete)
-//! - Error correction using algebraic decoding algorithms
-//! 
-//! # Security Levels
-//! 
-//! - mceliece348864: NIST Level 1 (128-bit security, n=3488, k=2720, t=64)
-//! - mceliece460896: NIST Level 3 (192-bit security, n=4608, k=3360, t=96)  
-//! - mceliece6688128: NIST Level 5 (256-bit security, n=6688, k=5024, t=128)
-//! - mceliece6960119: NIST Level 5 (256-bit security, n=6960, k=5413, t=119)
-//! - mceliece8192128: NIST Level 5 (256-bit security, n=8192, k=6528, t=128)
-//! 
-//! # Performance Characteristics
-//! 
-//! - Large public keys (typical: 261KB - 1.3MB)
-//! - Small private keys (typical: 6KB - 14KB)
-//! - Fast encryption/decryption operations
-//! - Constant-time operations for side-channel resistance
+use crate::error::Error;
+/// Production-Ready Classic McEliece Code-based Cryptography Implementation
+/// 
+/// Classic McEliece is a code-based Key Encapsulation Mechanism based on error-correcting codes.
+/// This implementation provides quantum-resistant security through the hardness of the syndrome
+/// decoding problem for Goppa codes.
+/// 
+/// # Mathematical Foundation
+/// 
+/// Classic McEliece is based on:
+/// - Goppa codes over finite fields GF(2^m)
+/// - The Syndrome Decoding problem (proven NP-complete)
+/// - Error correction using algebraic decoding algorithms
+/// 
+/// # Security Levels
+/// 
+/// - mceliece348864: NIST Level 1 (128-bit security, n=3488, k=2720, t=64)
+/// - mceliece460896: NIST Level 3 (192-bit security, n=4608, k=3360, t=96)  
+/// - mceliece6688128: NIST Level 5 (256-bit security, n=6688, k=5024, t=128)
+/// - mceliece6960119: NIST Level 5 (256-bit security, n=6960, k=5413, t=119)
+/// - mceliece8192128: NIST Level 5 (256-bit security, n=8192, k=6528, t=128)
+/// 
+/// # Performance Characteristics
+/// 
+/// - Large public keys (typical: 261KB - 1.3MB)
+/// - Small private keys (typical: 6KB - 14KB)
+/// - Fast encryption/decryption operations
+/// - Constant-time operations for side-channel resistance
 
 use std::fmt;
 use std::collections::HashSet;

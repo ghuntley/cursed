@@ -4,6 +4,7 @@
 //! Handles worker registration, capability detection, health monitoring, and task assignment.
 
 use crate::error::{CursedError, Result};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;

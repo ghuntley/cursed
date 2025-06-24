@@ -1,6 +1,7 @@
-//! HTTP Cookie Management for CURSED web_vibez
-//!
-//! Comprehensive cookie parsing, validation, and management.
+use crate::error::Error;
+/// HTTP Cookie Management for CURSED web_vibez
+///
+/// Comprehensive cookie parsing, validation, and management.
 
 use std::collections::HashMap;
 use std::fmt;

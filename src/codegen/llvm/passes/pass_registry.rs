@@ -1,3 +1,4 @@
+
 /// Pass Registry and Management System
 /// 
 /// Provides registration, dependency resolution, and execution management

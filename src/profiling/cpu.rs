@@ -1,3 +1,4 @@
+use crate::error::Error;
 // CPU profiling with call stack sampling and performance analysis
 
 use std::collections::HashMap;

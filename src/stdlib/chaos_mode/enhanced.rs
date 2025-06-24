@@ -5,6 +5,7 @@
 
 use crate::stdlib::chaos_mode::error::{ChaosResult, config_error, system_error, runtime_error};
 use crate::stdlib::vibecheck;
+use crate::error::Error;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 

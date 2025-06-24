@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// fr fr Unified key generator for all asymmetric cryptography algorithms
 /// 
 /// This module provides a unified interface for generating keys across different

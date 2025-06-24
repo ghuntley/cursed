@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Multi-line Input Editor for CURSED REPL
 //! 
 //! Handles multi-line input with automatic indentation detection,

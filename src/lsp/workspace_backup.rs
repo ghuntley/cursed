@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Workspace management for CURSED language server
 //! 
 //! Handles multi-file projects, workspace folders, and project-wide operations

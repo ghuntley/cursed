@@ -1,3 +1,4 @@
+use crate::error::Error;
 // Compression utilities for PackRat
 
 use std::fs::File;

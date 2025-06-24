@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Production-ready response compression utilities (gzip, deflate, brotli, zstd)
 use std::collections::HashMap;
 use std::io::{Read, Write};

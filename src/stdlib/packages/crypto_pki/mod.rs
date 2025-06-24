@@ -151,6 +151,7 @@ pub use templates::{
 };
 
 use crate::error::CursedError;
+use crate::error::Error;
 use std::sync::Arc;
 
 /// fr fr Global PKI configuration

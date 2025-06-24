@@ -1,3 +1,4 @@
+
 /// Networking error types and utilities for the CURSED networking module
 /// 
 /// This module provides comprehensive error handling for all networking operations

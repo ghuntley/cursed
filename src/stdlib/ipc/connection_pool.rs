@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Connection pooling and resource management for IPC
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock, Condvar};

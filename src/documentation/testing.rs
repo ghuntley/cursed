@@ -15,6 +15,7 @@
 
 use crate::documentation::interactive::{CodeExecutionRequest, CodeExecutionResult, InteractiveDocumentation};
 use crate::error::Error as CursedError;
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

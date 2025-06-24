@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Channel runtime system for CURSED
 //! 
 //! Provides channel operations, buffering, synchronization primitives,

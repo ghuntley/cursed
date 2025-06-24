@@ -1,3 +1,4 @@
+use crate::error::Error;
 use std::fs;
 use std::path::Path;
 use crate::stdlib::fs::error::{FsError, FsResult};

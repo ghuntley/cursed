@@ -11,6 +11,7 @@
 /// - Optimized for performance while maintaining ease of use
 
 use crate::stdlib::io::{self, IoError, IoResult};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::io::{Write, BufRead, BufReader, BufWriter};
 use std::fs::File;

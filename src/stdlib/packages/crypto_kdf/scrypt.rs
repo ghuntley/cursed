@@ -5,6 +5,7 @@
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
+use crate::error::Error;
 use base64;
 
 /// fr fr scrypt configuration parameters

@@ -9,6 +9,7 @@ use crate::stdlib::vibecheck::{
     cpu_profiler::{self, CpuProfilerConfig, CpuProfile},
     profile_data::{ProfileData, ProfileReportConfig, ReportFormat, MetricValue},
 };
+
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicBool, Ordering}};
 use std::time::{Duration, Instant};
 use std::thread;

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced ExecSlay Implementation - Complete Process Management System
 /// 
 /// This module provides a complete implementation of the ExecSlay specification

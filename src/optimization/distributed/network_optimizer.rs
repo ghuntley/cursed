@@ -4,6 +4,7 @@
 //! including compression, connection pooling, and bandwidth management.
 
 use crate::error::{CursedError, Result};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;

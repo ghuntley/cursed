@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Buffered I/O implementations for efficient CURSED console operations
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::sync::{Arc, Mutex};

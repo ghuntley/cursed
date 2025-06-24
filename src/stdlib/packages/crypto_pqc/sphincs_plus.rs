@@ -8,6 +8,7 @@ use crate::error::CursedError;
 use crate::stdlib::value::Value;
 use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
 use crate::stdlib::packages::crypto_pqc::hash_crypto::{HashFunction, HashFunctionImpl, HashError};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt;
 

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Safe Script Execution System
 /// 
 /// Provides sandboxed execution of package installation scripts:

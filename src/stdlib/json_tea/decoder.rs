@@ -8,6 +8,7 @@ use crate::error::CursedError;
 use crate::runtime::value::Value;
 use crate::stdlib::json_tea::{JsonResult, JsonValue};
 use crate::stdlib::json_tea::value::unescape_json_string;
+use crate::error::Error;
 use std::collections::HashMap;
 use std::io::Read;
 use std::str::from_utf8;

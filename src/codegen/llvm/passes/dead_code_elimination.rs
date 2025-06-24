@@ -1,3 +1,4 @@
+
 /// Dead Code Elimination Pass
 /// 
 /// Removes unused functions, unreachable basic blocks, and dead instructions
@@ -12,6 +13,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValueEnum},
     basic_block::BasicBlock,
 };
+
 use std::collections::{HashSet, HashMap, VecDeque};
 use std::time::Instant;
 use tracing::{debug, info, instrument, warn};

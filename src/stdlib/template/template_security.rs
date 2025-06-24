@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Template Security Validator - Advanced security features for CURSED templates
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

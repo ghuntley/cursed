@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// GlyphGang Unicode package - Unicode character processing with CURSED flair
 /// 
 /// This module provides comprehensive Unicode support including:

@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Production-ready hash function implementations
 use super::algorithms::AdvancedHashAlgorithm;
 use super::blake3::Blake3Hasher;

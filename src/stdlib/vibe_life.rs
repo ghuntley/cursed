@@ -14,6 +14,7 @@ use crate::stdlib::{env, process, fs};
 use crate::stdlib::env::{EnvError, EnvResult};
 use crate::stdlib::process::{ProcessError, ProcessResult};
 use crate::stdlib::fs::{FsError, FsResult};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, Duration};

@@ -16,6 +16,7 @@ use crate::stdlib::web_vibez::config::{WebVibezConfig, ServerConfig};
 use crate::stdlib::web_vibez::error_handling::RouterError;
 use crate::stdlib::web_vibez::middleware::MiddlewareChain;
 use crate::stdlib::web_vibez::health::{HealthChecker, HealthStatus};
+use crate::error::Error;
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener};

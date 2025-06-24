@@ -4,6 +4,7 @@
 //! recommendations for the CURSED compiler.
 
 use crate::error::{Error, Result};
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use std::path::Path;

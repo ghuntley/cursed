@@ -73,6 +73,7 @@ pub use key_formats::{
 };
 
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// fr fr Initialize asymmetric crypto package with comprehensive testing
 pub fn init_crypto_asymmetric() -> Result<(), Error> {

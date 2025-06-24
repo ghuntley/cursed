@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Channel send and receive operations for CURSED programming language
 /// Implements Go-like channel semantics: ch <- value and value := <-ch
 

@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! Build System Integration for CURSED REPL
 //! 
 //! Provides integration with the CURSED build system, allowing

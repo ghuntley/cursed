@@ -1,19 +1,20 @@
-//! Kyber Key Encapsulation Mechanism Implementation
-//! 
-//! Kyber is a lattice-based Key Encapsulation Mechanism (KEM) based on the Module-LWE problem.
-//! It was selected by NIST for standardization as part of the post-quantum cryptography project.
-//! 
-//! # Security
-//! 
-//! Kyber provides the following security levels:
-//! - Kyber-512: NIST Level 1 (128-bit classical security)
-//! - Kyber-768: NIST Level 3 (192-bit classical security)  
-//! - Kyber-1024: NIST Level 5 (256-bit classical security)
-//! 
-//! # Performance
-//! 
-//! Kyber is designed for high performance with relatively small key sizes compared to other
-//! post-quantum KEMs, making it suitable for real-world deployment.
+use crate::error::Error;
+/// Kyber Key Encapsulation Mechanism Implementation
+/// 
+/// Kyber is a lattice-based Key Encapsulation Mechanism (KEM) based on the Module-LWE problem.
+/// It was selected by NIST for standardization as part of the post-quantum cryptography project.
+/// 
+/// # Security
+/// 
+/// Kyber provides the following security levels:
+/// - Kyber-512: NIST Level 1 (128-bit classical security)
+/// - Kyber-768: NIST Level 3 (192-bit classical security)  
+/// - Kyber-1024: NIST Level 5 (256-bit classical security)
+/// 
+/// # Performance
+/// 
+/// Kyber is designed for high performance with relatively small key sizes compared to other
+/// post-quantum KEMs, making it suitable for real-world deployment.
 
 use std::fmt;
 use rand::rngs::OsRng;

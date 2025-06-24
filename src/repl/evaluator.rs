@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! REPL Evaluation Engine for CURSED
 //! 
 //! Provides incremental compilation and execution capabilities

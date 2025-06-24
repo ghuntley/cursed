@@ -1,3 +1,4 @@
+use crate::error::Error;
 //! SlayCommand implementation for process execution
 
 use std::collections::HashMap;

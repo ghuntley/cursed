@@ -7,6 +7,7 @@ use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, Signatu
 use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
 use crate::stdlib::packages::crypto_signatures::ed25519::{Ed25519Signer, Ed25519Verifier};
 use crate::stdlib::packages::crypto_signatures::ecdsa::{EcdsaSigner, EcdsaVerifier, EcdsaCurve};
+use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 

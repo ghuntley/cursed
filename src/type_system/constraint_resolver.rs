@@ -122,6 +122,7 @@ use crate::type_system::{
     TypeEnvironment, TypeExpression, TypeDefinition, ConstraintContext,
     ConstraintBinding, ConstraintStatus
 };
+
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Central constraint resolver managing all constraint operations

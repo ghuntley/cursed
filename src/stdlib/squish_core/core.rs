@@ -4,6 +4,7 @@
 /// throughout the SquishCore compression system.
 
 use crate::stdlib::squish_core::{SquishError, SquishResult};
+use crate::error::Error;
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 

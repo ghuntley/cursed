@@ -12,6 +12,7 @@ use crate::memory::{
     ObjectRegistry,
     Traceable, Visitor,
 };
+use crate::error::Error;
 use crate::memory::gc::GcConfig;
 use crate::memory::heap_manager::HeapConfig;
 

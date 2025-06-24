@@ -7,6 +7,7 @@ use crate::lexer::{Lexer, Token};
 use crate::error::SourceLocation;
 use crate::preprocessor::token_stream::{TokenStream, TokenWithContext, TokenMetadata};
 use crate::preprocessor::error::{PreprocessorError, PreprocessorResult};
+use crate::error::Error;
 use std::collections::VecDeque;
 
 /// Maximum nesting depth for generic types to prevent stack overflow

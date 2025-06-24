@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Comprehensive string manipulation utilities for CURSED
 /// 
 /// This module provides a complete set of string operations including:

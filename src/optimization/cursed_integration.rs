@@ -9,6 +9,7 @@ use crate::optimization::enhanced_analysis::{
     EnhancedPerformanceAnalyzer, EnhancedAnalysisResult, PerformanceBottleneck, 
     OptimizationRecommendation, CompilationPhase
 };
+
 use crate::optimization::lto::{LtoOptimizer, LtoConfig, LtoLevel};
 use crate::codegen::llvm::optimization::{OptimizationManager, OptimizationStats};
 

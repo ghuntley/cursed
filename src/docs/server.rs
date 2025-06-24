@@ -5,6 +5,7 @@
 
 use crate::error::{CursedError, Result};
 use crate::docs::registry::DocumentationRegistry;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;

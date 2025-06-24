@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// Enhanced process control and management operations
 /// 
 /// This module provides comprehensive process control functionality including advanced
@@ -12,6 +13,7 @@ use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error
 };
+
 use crate::stdlib::process::core::{ProcessConfig, Process};
 use crate::stdlib::process::control::{Signal, Priority};
 use crate::stdlib::process::fork::{JobControlManager, fork_process, exec_program};

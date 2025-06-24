@@ -1,3 +1,4 @@
+
 //! Optimization Enablement System for CURSED Compiler
 //! 
 //! Provides comprehensive optimization enablement with:
@@ -16,6 +17,7 @@ use crate::optimization::{
     OptimizationConfig,
     TimeSavingsCalculator, TimeSavingsConfig,
 };
+
 use crate::common::optimization_level::OptimizationLevel;
 use crate::error::{Result, CursedError};
 
@@ -197,8 +199,6 @@ impl OptimizationEnablementSystem {
         std::fs::write(config_path, config_content)?;
         Ok(())
     }
-    
-
     
     /// Get optimization configuration for a specific profile
     #[instrument(skip(self))]
